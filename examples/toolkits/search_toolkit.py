@@ -50,6 +50,40 @@ QMH0wSjDYOq)
 ===============================================================================
 """
 
+bing_call_agent = ChatAgent(
+    system_message="""You are a helpful assistant that can use baidu search 
+        engine to answer questions.""",
+    tools=[FunctionTool(SearchToolkit().search_bing)],
+)
+
+bing_usr_msg = "帮忙查询巴黎圣母院最新修复进展"
+
+response = bing_call_agent.step(
+    input_message=bing_usr_msg, response_format=None
+)
+
+print(response.msgs[0].content)
+
+"""
+===============================================================================
+以下是关于巴黎圣母院最新修复进展的一些信息:
+
+1. **时隔4年,灾后余生的巴黎圣母院即将重生** -
+[知乎](https://zhuanlan.zhihu.com/p/619405504)
+   
+2. **历时4年,耗资70亿,被烧塌的巴黎圣母院修好了!!** -
+[腾讯网](https://news.qq.com/rain/a/20231018A0329F00)
+
+3. **一票难求!巴黎圣母院重新开放!5年修复离不开来自东方的支持** -
+[新浪财经](https://finance.sina.com.cn/wm/2024-12-08/doc-incyumnp3384392.shtml)
+
+4. **巴黎圣母院浴火重生!建筑学者:勘探报告近3000页,修复工作复杂** -
+[腾讯网](https://news.qq.com/rain/a/20241208A05Q9K00)
+
+这些链接提供了关于巴黎圣母院修复的详细信息和最新进展。
+===============================================================================
+"""
+
 res_simple = SearchToolkit().query_wolfram_alpha(
     query="solve 3x-7=11", is_detailed=False
 )
