@@ -92,6 +92,8 @@ class SingleStepEnv:
             return
 
         try:
+            if hasattr(self.dataset, "setup") and callable(self.dataset.setup):
+                await self.dataset.setup()
             await self.verifier.setup()
             await self.extractor.setup()
 
@@ -116,6 +118,11 @@ class SingleStepEnv:
 
         try:
             self._is_setup = False
+
+            if hasattr(self.dataset, "cleanup") and callable(
+                self.dataset.cleanup
+            ):
+                await self.dataset.cleanup()
             await self.verifier.cleanup()
             await self.extractor.cleanup()
             self._state = None

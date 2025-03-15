@@ -25,6 +25,7 @@ from typing import (
 from pydantic import ValidationError
 
 from camel.agents import ChatAgent
+from camel.extractors import BaseExtractor
 from camel.logger import get_logger
 from camel.verifiers import BaseVerifier
 from camel.verifiers.models import VerifierInput
@@ -50,8 +51,69 @@ class BaseGenerator(abc.ABC):
             **kwargs: Additional generator parameters.
         """
         self._rng = random.Random(seed)
-
         self._data: List[DataPoint] = []
+        self._is_setup: bool = False
+        self._metadata = kwargs
+
+    async def setup(self) -> None:
+        r"""Set up resources needed for generation.
+
+        This method ensures that the generator is ready for data generation.
+        It initializes necessary resources and sets up the generator state.
+
+        Raises:
+            RuntimeError: If setup fails due to an internal error.
+        """
+        if self._is_setup:
+            logger.debug(f"{self.__class__.__name__} already initialized")
+            return
+
+        try:
+            await self._setup()
+            self._is_setup = True
+            logger.info(f"{self.__class__.__name__} initialized successfully")
+        except Exception as e:
+            error_msg = (
+                f"Failed to initialize {self.__class__.__name__}: {e!s}"
+            )
+            logger.error(error_msg, exc_info=True)
+            await self.cleanup()
+            raise RuntimeError(error_msg) from e
+
+    @abc.abstractmethod
+    async def _setup(self) -> None:
+        r"""Implement generator-specific setup logic."""
+        pass
+
+    async def cleanup(self) -> None:
+        r"""Clean up resources after generation.
+
+        This method ensures that all resources are properly released
+        and the generator state is reset.
+
+        Raises:
+            RuntimeError: If cleanup fails.
+        """
+        if not self._is_setup:
+            logger.debug(
+                f"{self.__class__.__name__} not initialized, skipping cleanup"
+            )
+            return
+
+        try:
+            await self._cleanup()
+            logger.info(f"{self.__class__.__name__} cleaned up successfully")
+        except Exception as e:
+            error_msg = f"Failed to cleanup {self.__class__.__name__}: {e!s}"
+            logger.error(error_msg, exc_info=True)
+            raise RuntimeError(error_msg) from e
+        finally:
+            self._is_setup = False
+
+    @abc.abstractmethod
+    async def _cleanup(self) -> None:
+        r"""Implement generator-specific cleanup logic."""
+        pass
 
     @abc.abstractmethod
     async def generate_new(self, n: int, **kwargs) -> List[DataPoint]:
@@ -140,6 +202,7 @@ class FewShotGenerator(BaseGenerator):
         seed_dataset: StaticDataset,
         verifier: BaseVerifier,
         agent: ChatAgent,
+        extractor: BaseExtractor,
         seed: int = 42,
         **kwargs,
     ):
@@ -150,6 +213,7 @@ class FewShotGenerator(BaseGenerator):
                 use for examples.
             verifier (BaseVerifier): Verifier to validate generated content.
             agent (ChatAgent): Agent to generate new datapoints.
+            extractor (BaseExtractor): Extractor to process responses.
             seed (int): Random seed for reproducibility. (default: :obj:`42`)
             **kwargs: Additional generator parameters.
         """
@@ -160,6 +224,7 @@ class FewShotGenerator(BaseGenerator):
         except Exception:
             raise RuntimeError("Seed Data does not follow Datapoint format")
         self.verifier = verifier
+        self.extractor = extractor
         self.agent = agent
 
     # TODO: Validate that seed dataset contains rationale
@@ -189,6 +254,22 @@ class FewShotGenerator(BaseGenerator):
             prompt += f"Final Answer: {example.final_answer}\n\n"
         prompt += "New datapoint:"
         return prompt
+
+    async def _setup(self) -> None:
+        r"""Set up resources needed for generation.
+
+        Initializes the verifier.
+        """
+        await self.verifier.setup()
+        await self.extractor.setup()
+
+    async def _cleanup(self) -> None:
+        r"""Clean up resources after generation.
+
+        Cleans up the verifier.
+        """
+        await self.verifier.cleanup()
+        await self.extractor.cleanup()
 
     async def generate_new(
         self,
@@ -236,100 +317,113 @@ class FewShotGenerator(BaseGenerator):
                 is raised.
             - Metadata includes a timestamp for tracking datapoint creation.
         """
-        valid_data_points: List[DataPoint] = []
-        retries = 0
+        # Setup resources before generation
+        await self.setup()
 
-        while len(valid_data_points) < n and retries < max_retries:
-            try:
-                examples = [
-                    self.seed_dataset.sample() for _ in range(num_examples)
-                ]
-                prompt = self._construct_prompt(examples)
+        try:
+            valid_data_points: List[DataPoint] = []
+            retries = 0
 
+            while len(valid_data_points) < n and retries < max_retries:
                 try:
-                    agent_output = (
-                        self.agent.step(prompt, response_format=DataPoint)
-                        .msgs[0]
-                        .parsed
-                    )
-                    if not isinstance(agent_output, dict):
-                        raise TypeError("Agent output must be a dictionary")
-                    if "question" not in agent_output:
-                        raise KeyError(
-                            "Missing 'question' in agent"
-                            f"output {agent_output}"
+                    examples = [
+                        self.seed_dataset.sample() for _ in range(num_examples)
+                    ]
+                    prompt = self._construct_prompt(examples)
+
+                    try:
+                        agent_output = (
+                            self.agent.step(prompt, response_format=DataPoint)
+                            .msgs[0]
+                            .parsed
                         )
-                    if "rationale" not in agent_output:
-                        raise KeyError(
-                            "Missing 'rationale' in agent"
-                            f"output {agent_output}"
+                        if not isinstance(agent_output, dict):
+                            raise TypeError(
+                                "Agent output must be a dictionary"
+                            )
+                        if "question" not in agent_output:
+                            raise KeyError(
+                                "Missing 'question' in agent"
+                                f"output {agent_output}"
+                            )
+                        if "rationale" not in agent_output:
+                            raise KeyError(
+                                "Missing 'rationale' in agent"
+                                f"output {agent_output}"
+                            )
+                    except (TypeError, KeyError) as e:
+                        logger.warning(
+                            f"Agent output issue: {e}, retrying... "
+                            f"({retries + 1}/{max_retries})"
                         )
-                except (TypeError, KeyError) as e:
+                        retries += 1
+                        continue
+
+                    rationale = agent_output.get("rationale")
+
+                    if not isinstance(rationale, str):
+                        raise TypeError(
+                            f"Rationale {rationale} is not a string."
+                        )
+
+                    try:
+                        verifier_response = await self.verifier.verify(
+                            VerifierInput(
+                                llm_response=rationale,
+                                ground_truth=None,
+                            )
+                        )
+                        if (
+                            not verifier_response
+                            or not verifier_response.result
+                        ):
+                            raise ValueError(
+                                "Verifier unsuccessful, response: "
+                                f"{verifier_response}"
+                            )
+                    except (ValueError, AttributeError) as e:
+                        logger.warning(
+                            f"Verifier issue: {e}, "
+                            f"retrying... ({retries + 1}/{max_retries})"
+                        )
+                        retries += 1
+                        continue
+
+                    try:
+                        new_datapoint = DataPoint(
+                            question=agent_output["question"],
+                            rationale=rationale,
+                            final_answer=verifier_response.result,
+                            metadata={
+                                "synthetic": str(True),
+                                "created": datetime.now().isoformat(),
+                                "generator": "few_shot",
+                            },
+                        )
+                    except ValidationError as e:
+                        logger.warning(
+                            f"Datapoint validation failed: {e}, "
+                            f"retrying... ({retries + 1}/{max_retries})"
+                        )
+                        retries += 1
+                        continue
+
+                    valid_data_points.append(new_datapoint)
+
+                except Exception as e:
                     logger.warning(
-                        f"Agent output issue: {e}, retrying... "
-                        f"({retries + 1}/{max_retries})"
+                        f"Unexpected error: {e}, retrying..."
+                        f" ({retries + 1}/{max_retries})"
                     )
                     retries += 1
-                    continue
 
-                rationale = agent_output.get("rationale")
-
-                if not isinstance(rationale, str):
-                    raise TypeError(f"Rationale {rationale} is not a string.")
-
-                try:
-                    verifier_response = await self.verifier.verify(
-                        VerifierInput(
-                            llm_response=rationale,
-                            ground_truth=None,
-                        )
-                    )
-                    if not verifier_response or not verifier_response.result:
-                        raise ValueError(
-                            "Verifier unsuccessful, response: "
-                            f"{verifier_response}"
-                        )
-                except (ValueError, AttributeError) as e:
-                    logger.warning(
-                        f"Verifier issue: {e}, "
-                        f"retrying... ({retries + 1}/{max_retries})"
-                    )
-                    retries += 1
-                    continue
-
-                try:
-                    new_datapoint = DataPoint(
-                        question=agent_output["question"],
-                        rationale=rationale,
-                        final_answer=verifier_response.result,
-                        metadata={
-                            "synthetic": str(True),
-                            "created": datetime.now().isoformat(),
-                            "generator": "few_shot",
-                        },
-                    )
-                except ValidationError as e:
-                    logger.warning(
-                        f"Datapoint validation failed: {e}, "
-                        f"retrying... ({retries + 1}/{max_retries})"
-                    )
-                    retries += 1
-                    continue
-
-                valid_data_points.append(new_datapoint)
-
-            except Exception as e:
-                logger.warning(
-                    f"Unexpected error: {e}, retrying..."
-                    f" ({retries + 1}/{max_retries})"
+            if len(valid_data_points) < n:
+                raise RuntimeError(
+                    f"Failed to generate {n} valid datapoints "
+                    f"after {max_retries} retries."
                 )
-                retries += 1
 
-        if len(valid_data_points) < n:
-            raise RuntimeError(
-                f"Failed to generate {n} valid datapoints "
-                f"after {max_retries} retries."
-            )
-
-        self._data.extend(valid_data_points)
-        return valid_data_points
+            self._data.extend(valid_data_points)
+            return valid_data_points
+        finally:
+            await self.cleanup()
