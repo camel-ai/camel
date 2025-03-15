@@ -34,6 +34,8 @@ from typing import (
     cast,
 )
 
+
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from PIL import Image, ImageDraw, ImageFont
 
 if TYPE_CHECKING:
@@ -488,10 +490,23 @@ class BaseBrowser:
         self.page.mouse.click(0, 0)
         self._wait_for_load()
 
-    def visit_page(self, url: str) -> None:
-        r"""Visit a page with the given URL."""
-
-        self.page.goto(url)
+    def visit_page(self, url: str, timeout: int = 30000, max_retries: int = 2) -> None:
+        r"""Visit a page with the given URL, retrying with an increased timeout if necessary.
+        
+        Raises:
+            Exception: If the page cannot be accessed after the maximum retries.
+        """
+        current_timeout = timeout
+        for _ in range(max_retries):
+            try:
+                self.page.goto(url, timeout=current_timeout)
+                break 
+            except PlaywrightTimeoutError as e:
+                current_timeout += 20000  
+        else:
+            error_msg = f"Unable to access {url} even after {max_retries} attempts with increased timeouts."
+            logger.warning(error_msg)
+            raise Exception(error_msg)
         self._wait_for_load()
         self.page_url = url
 
@@ -1367,7 +1382,12 @@ Your output should be in json format, including the following fields:
         logger.debug(f"Detailed plan: {detailed_plan}")
 
         self.browser.init()
-        self.browser.visit_page(start_url)
+        try:
+            self.browser.visit_page(start_url)
+        except Exception as e:
+            self.browser.close()
+            logger.warning(f"Error visiting the start URL: {start_url}. Exception: {e}")
+            return None
 
         for i in range(round_limit):
             observation, reasoning, action_code = self._observe(
