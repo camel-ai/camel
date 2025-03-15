@@ -835,6 +835,52 @@ class SearchToolkit(BaseToolkit):
         except Exception as e:
             return {"error": f"Baidu scraping error: {e!s}"}
 
+    def search_bing(self, query: str, max_results: int = 5) -> Dict[str, Any]:
+        from urllib.parse import urlencode
+
+        from bs4 import BeautifulSoup
+
+        query = urlencode({"q": query})
+        url = f'https://cn.bing.com/search?{query}'
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            ),
+        }
+        html = requests.get(url, headers=headers)
+        html.encoding = 'utf-8'
+        soup = BeautifulSoup(html.text, 'html.parser')
+
+        results = soup.find("ol", id="b_results")
+        if results is None:
+            return {"results": []}
+
+        results = results.find_all("li")
+
+        search_data = []
+        for i in range(min(len(results), max_results)):
+            row = results[i]
+            if len(row.find_all("h2")) == 0:
+                continue
+
+            h2 = row.find("h2")
+            title = h2.text.strip()
+            link = h2.find("a").get("href")
+
+            content = row.find("p", class_="b_algoSlug")
+            content_format = content.text if content else ""
+
+            row_data = {
+                "snippet": content_format,
+                "title": title,
+                "link": link,
+            }
+            search_data.append(row_data)
+
+        return {"results": search_data}
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
@@ -853,4 +899,5 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.search_brave),
             FunctionTool(self.search_bocha),
             FunctionTool(self.search_baidu),
+            FunctionTool(self.search_bing),
         ]
