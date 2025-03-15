@@ -305,6 +305,7 @@ def test_search_bing(mock_get, search_toolkit):
                 "Chrome/120.0.0.0 Safari/537.36"
             ),
         },
+        timeout=10,
     )
 
 
