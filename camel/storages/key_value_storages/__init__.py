@@ -14,7 +14,7 @@
 
 from .base import BaseKeyValueStorage
 from .in_memory import InMemoryKeyValueStorage
-from .json import JsonStorage
+from .json import CamelJSONEncoder, JsonStorage
 from .redis import RedisStorage
 
 __all__ = [
@@ -22,4 +22,5 @@ __all__ = [
     'InMemoryKeyValueStorage',
     'JsonStorage',
     'RedisStorage',
+    'CamelJSONEncoder',
 ]
