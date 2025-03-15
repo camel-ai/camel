@@ -851,14 +851,15 @@ class SearchToolkit(BaseToolkit):
             Dict[str, Any]: A dictionary containing search results or error
                 message.
                 Each dictionary contains the following keys:
-                - 'snippet': A brief description or snippet of 
-                             the search result.
+                - 'snippet': A brief description or snippet of
+                        the search result.
                 - 'title': The title of the search result.
                 - 'link': The URL of the search result.
         """
+        from typing import Any, Dict, List, cast
         from urllib.parse import urlencode
 
-        from bs4 import BeautifulSoup
+        from bs4 import BeautifulSoup, Tag
 
         try:
             query = urlencode({"q": query})
@@ -874,34 +875,46 @@ class SearchToolkit(BaseToolkit):
             html.encoding = 'utf-8'
             soup = BeautifulSoup(html.text, 'html.parser')
 
-            b_results = soup.find("ol", id="b_results")
-            if b_results is None:
+            b_results_element = soup.find("ol", id="b_results")
+            if b_results_element is None:
                 return {"results": []}
 
-            b_results = b_results.find_all("li")
+            # Ensure b_results is a Tag and find all li elements
+            b_results_tag = cast(Tag, b_results_element)
+            result_items = b_results_tag.find_all("li")
 
-            results = []
-            for i in range(min(len(b_results), max_results)):
-                row = b_results[i]
-                h2 = row.find("h2")
-                if h2 is None:
+            results: List[Dict[str, Any]] = []
+            for i in range(min(len(result_items), max_results)):
+                row = result_items[i]
+                if not isinstance(row, Tag):
                     continue
 
-                title = h2.text.strip()
-                link_tag = h2.find("a")
-                if link_tag is None:
+                h2_element = row.find("h2")
+                if h2_element is None:
                     continue
+                h2_tag = cast(Tag, h2_element)
+
+                title = h2_tag.get_text().strip()
+
+                link_tag_element = h2_tag.find("a")
+                if link_tag_element is None:
+                    continue
+                link_tag = cast(Tag, link_tag_element)
 
                 link = link_tag.get("href")
                 if link is None:
                     continue
 
-                content = row.find("p", class_="b_algoSlug")
-                content_format = content.text if content else ""
+                content_element = row.find("p", class_="b_algoSlug")
+                content_text = ""
+                if content_element is not None and isinstance(
+                    content_element, Tag
+                ):
+                    content_text = content_element.get_text()
 
                 row_data = {
                     "result_id": i + 1,
-                    "snippet": content_format,
+                    "snippet": content_text,
                     "title": title,
                     "link": link,
                 }
