@@ -219,13 +219,13 @@ class FileWriteToolkit(BaseToolkit):
                 try:
                     # Try parsing as JSON string first
                     data = json.loads(content)
-                    json.dump(data, f)
+                    json.dump(data, f, ensure_ascii=False)
                 except json.JSONDecodeError:
                     # If not valid JSON string, write as is
                     f.write(content)
             else:
                 # If not string, dump as JSON
-                json.dump(content, f)
+                json.dump(content, f, ensure_ascii=False)
         logger.debug(f"Wrote JSON to {file_path} with {encoding} encoding")
 
     def _write_yaml_file(
