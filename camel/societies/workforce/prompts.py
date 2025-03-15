@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from camel.prompts import TextPrompt
+from camel.prompts.output_format.prompts import JsonOutputFormatPrompt
 
 # ruff: noqa: E501
 CREATE_NODE_PROMPT = TextPrompt(
@@ -46,7 +47,7 @@ The information returned should be concise and clear.
 """
 )
 
-ASSIGN_TASK_PROMPT = TextPrompt(
+ASSIGN_TASK_PROMPT = JsonOutputFormatPrompt(
     """You need to assign the task to a worker node.
 The content of the task is:
 
