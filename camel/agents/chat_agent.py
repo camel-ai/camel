@@ -699,18 +699,21 @@ class ChatAgent(BaseAgent):
         if not response and self.model_backend.num_models > 1:
             raise ModelProcessingError(
                 "Unable to process messages: none of the provided models "
-                "run succesfully."
+                "run successfully."
             )
         elif not response:
             raise ModelProcessingError(
                 f"Unable to process messages: the only provided model "
-                f"did not run succesfully. Error: {error_info}"
+                f"did not run successfully. Error: {error_info}"
             )
 
+        sanitized_messages = self._sanitize_messages_for_logging(
+            openai_messages
+        )
         logger.info(
             f"Model {self.model_backend.model_type}, "
             f"index {self.model_backend.current_model_index}, "
-            f"processed these messages: {openai_messages}"
+            f"processed these messages: {sanitized_messages}"
         )
 
         if isinstance(response, ChatCompletion):
@@ -744,24 +747,155 @@ class ChatAgent(BaseAgent):
         if not response and self.model_backend.num_models > 1:
             raise ModelProcessingError(
                 "Unable to process messages: none of the provided models "
-                "run succesfully."
+                "run successfully."
             )
         elif not response:
             raise ModelProcessingError(
                 f"Unable to process messages: the only provided model "
-                f"did not run succesfully. Error: {error_info}"
+                f"did not run successfully. Error: {error_info}"
             )
 
+        sanitized_messages = self._sanitize_messages_for_logging(
+            openai_messages
+        )
         logger.info(
             f"Model {self.model_backend.model_type}, "
             f"index {self.model_backend.current_model_index}, "
-            f"processed these messages: {openai_messages}"
+            f"processed these messages: {sanitized_messages}"
         )
 
         if isinstance(response, ChatCompletion):
             return self._handle_batch_response(response)
         else:
             return await self._ahandle_stream_response(response, num_tokens)
+
+    def _sanitize_messages_for_logging(self, messages):
+        r"""Sanitize OpenAI messages for logging by replacing base64 image
+        data with a simple message and a link to view the image.
+
+        Args:
+            messages (List[OpenAIMessage]): The OpenAI messages to sanitize.
+
+        Returns:
+            List[OpenAIMessage]: The sanitized OpenAI messages.
+        """
+        import hashlib
+        import os
+        import re
+        import tempfile
+
+        # Create a copy of messages for logging to avoid modifying the
+        # original messages
+        sanitized_messages = []
+        for msg in messages:
+            if isinstance(msg, dict):
+                sanitized_msg = msg.copy()
+                # Check if content is a list (multimodal content with images)
+                if isinstance(sanitized_msg.get('content'), list):
+                    content_list = []
+                    for item in sanitized_msg['content']:
+                        if (
+                            isinstance(item, dict)
+                            and item.get('type') == 'image_url'
+                        ):
+                            # Handle image URL
+                            image_url = item.get('image_url', {}).get(
+                                'url', ''
+                            )
+                            if image_url and image_url.startswith(
+                                'data:image'
+                            ):
+                                # Extract image data and format
+                                match = re.match(
+                                    r'data:image/([^;]+);base64,(.+)',
+                                    image_url,
+                                )
+                                if match:
+                                    img_format, base64_data = match.groups()
+
+                                    # Create a hash of the image data to use
+                                    # as filename
+                                    img_hash = hashlib.md5(
+                                        base64_data[:100].encode()
+                                    ).hexdigest()[:10]
+                                    img_filename = (
+                                        f"image_{img_hash}.{img_format}"
+                                    )
+
+                                    # Save image to temp directory for viewing
+                                    try:
+                                        import base64
+
+                                        temp_dir = tempfile.gettempdir()
+                                        img_path = os.path.join(
+                                            temp_dir, img_filename
+                                        )
+
+                                        # Only save if file doesn't exist
+                                        if not os.path.exists(img_path):
+                                            with open(img_path, 'wb') as f:
+                                                f.write(
+                                                    base64.b64decode(
+                                                        base64_data
+                                                    )
+                                                )
+
+                                        # Create a file:// URL that can be
+                                        # opened
+                                        file_url = f"file://{img_path}"
+
+                                        content_list.append(
+                                            {
+                                                'type': 'image_url',
+                                                'image_url': {
+                                                    'url': f'{file_url}',
+                                                    'detail': item.get(
+                                                        'image_url', {}
+                                                    ).get('detail', 'auto'),
+                                                },
+                                            }
+                                        )
+                                    except Exception as e:
+                                        # If saving fails, fall back to simple
+                                        # message
+                                        content_list.append(
+                                            {
+                                                'type': 'image_url',
+                                                'image_url': {
+                                                    'url': '[base64 '
+                                                    + 'image - error saving: '
+                                                    + str(e)
+                                                    + ']',
+                                                    'detail': item.get(
+                                                        'image_url', {}
+                                                    ).get('detail', 'auto'),
+                                                },
+                                            }
+                                        )
+                                else:
+                                    # If regex fails, fall back to simple
+                                    # message
+                                    content_list.append(
+                                        {
+                                            'type': 'image_url',
+                                            'image_url': {
+                                                'url': '[base64 '
+                                                + 'image - invalid format]',
+                                                'detail': item.get(
+                                                    'image_url', {}
+                                                ).get('detail', 'auto'),
+                                            },
+                                        }
+                                    )
+                            else:
+                                content_list.append(item)
+                        else:
+                            content_list.append(item)
+                    sanitized_msg['content'] = content_list
+                sanitized_messages.append(sanitized_msg)
+            else:
+                sanitized_messages.append(msg)
+        return sanitized_messages
 
     def _step_get_info(
         self,
@@ -1043,7 +1177,13 @@ class ChatAgent(BaseAgent):
         args = tool_call_request.args
         tool_call_id = tool_call_request.tool_call_id
         tool = self._internal_tools[func_name]
-        result = tool(**args)
+        try:
+            result = tool(**args)
+        except Exception as e:
+            # Capture the error message to prevent framework crash
+            error_msg = f"Error executing tool '{func_name}': {e!s}"
+            result = {"error": error_msg}
+            logging.warning(error_msg)
 
         return self._record_tool_calling(func_name, args, result, tool_call_id)
 
@@ -1055,7 +1195,14 @@ class ChatAgent(BaseAgent):
         args = tool_call_request.args
         tool_call_id = tool_call_request.tool_call_id
         tool = self._internal_tools[func_name]
-        result = await tool.async_call(**args)
+        try:
+            result = await tool.async_call(**args)
+        except Exception as e:
+            # Capture the error message to prevent framework crash
+            error_msg = f"Error executing async tool '{func_name}': {e!s}"
+            result = {"error": error_msg}
+            logging.warning(error_msg)
+
         return self._record_tool_calling(func_name, args, result, tool_call_id)
 
     def _record_tool_calling(

@@ -101,6 +101,7 @@ class ModelType(UnifiedModelType, Enum):
     CLAUDE_3_HAIKU = "claude-3-haiku-20240307"
     CLAUDE_3_5_SONNET = "claude-3-5-sonnet-latest"
     CLAUDE_3_5_HAIKU = "claude-3-5-haiku-latest"
+    CLAUDE_3_7_SONNET = "claude-3-7-sonnet-latest"
 
     # Nvidia models
     NVIDIA_NEMOTRON_340B_INSTRUCT = "nvidia/nemotron-4-340b-instruct"
@@ -165,6 +166,7 @@ class ModelType(UnifiedModelType, Enum):
     QWEN_2_5_14B = "qwen2.5-14b-instruct"
     QWEN_QWQ_32B = "qwq-32b-preview"
     QWEN_QVQ_72B = "qvq-72b-preview"
+    QWEN_QWQ_PLUS = "qwq-plus"
 
     # Yi models (01-ai)
     YI_LIGHTNING = "yi-lightning"
@@ -248,6 +250,7 @@ class ModelType(UnifiedModelType, Enum):
                 self.is_siliconflow,
                 self.is_zhipuai,
                 self.is_aiml,
+                self.is_azure_openai,
             ]
         )
 
@@ -315,6 +318,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_HAIKU,
             ModelType.CLAUDE_3_5_SONNET,
             ModelType.CLAUDE_3_5_HAIKU,
+            ModelType.CLAUDE_3_7_SONNET,
         }
 
     @property
@@ -467,6 +471,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_2_5_14B,
             ModelType.QWEN_QWQ_32B,
             ModelType.QWEN_QVQ_72B,
+            ModelType.QWEN_QWQ_PLUS,
         }
 
     @property
@@ -596,6 +601,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NVIDIA_MISTRAL_LARGE,
             ModelType.NVIDIA_MIXTRAL_8X7B,
             ModelType.QWEN_QWQ_32B,
+            ModelType.QWEN_QWQ_PLUS,
             ModelType.QWEN_QVQ_72B,
             ModelType.INTERNLM3_8B_INSTRUCT,
             ModelType.INTERNLM3_LATEST,
@@ -683,6 +689,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_HAIKU,
             ModelType.CLAUDE_3_5_SONNET,
             ModelType.CLAUDE_3_5_HAIKU,
+            ModelType.CLAUDE_3_7_SONNET,
             ModelType.YI_MEDIUM_200K,
         }:
             return 200_000
@@ -886,6 +893,7 @@ class ModelPlatformType(Enum):
     MOONSHOT = "moonshot"
     SILICONFLOW = "siliconflow"
     AIML = "aiml"
+    VOLCANO = "volcano"
 
     @property
     def is_openai(self) -> bool:
@@ -1007,6 +1015,11 @@ class ModelPlatformType(Enum):
     def is_aiml(self) -> bool:
         r"""Returns whether this platform is AIML."""
         return self is ModelPlatformType.AIML
+
+    @property
+    def is_volcano(self) -> bool:
+        r"""Returns whether this platform is volcano."""
+        return self is ModelPlatformType.VOLCANO
 
 
 class AudioModelType(Enum):

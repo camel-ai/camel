@@ -80,10 +80,14 @@ for module_function in modules_functions:
                     output = sys.stdout.read()
                     sys.stdout = sys.__stdout__
                     return {
-                        "output": json.dumps(response_data),
+                        "output": json.dumps(
+                            response_data, ensure_ascii=False
+                        ),
                         "stdout": output,
                     }
-                return {"output": json.dumps(response_data)}
+                return {
+                    "output": json.dumps(response_data, ensure_ascii=False)
+                }
 
     except (ImportError, AttributeError) as e:
         logger.error(f"Error importing {module_function}: {e}")

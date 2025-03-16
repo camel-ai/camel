@@ -133,7 +133,7 @@ class FunctionCallingMessage(BaseMessage):
                     "type": "function",
                     "function": {
                         "name": self.func_name,
-                        "arguments": json.dumps(self.args),
+                        "arguments": json.dumps(self.args, ensure_ascii=False),
                     },
                 }
             ],
