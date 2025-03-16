@@ -1,27 +1,46 @@
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import time
 from enum import Enum, auto
 from string import Template
-from typing import Optional, List, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 from github import Github
 from pydantic import BaseModel
+from qdrant_client.models import FieldCondition, Filter, MatchValue
 
 from camel.agents import ChatAgent
-from camel.embeddings import OpenAIEmbedding
+from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.responses import ChatAgentResponse
 from camel.retrievers import VectorRetriever
-from camel.types import ModelPlatformType, ModelType, RoleType, \
-    OpenAIBackendRole
-from camel.logger import get_logger
-# from camel.utils.chunker import CodeChunker
+from camel.types import (
+    ModelPlatformType,
+    ModelType,
+    OpenAIBackendRole,
+    RoleType,
+)
+from camel.utils.chunker import CodeChunker
 
 logger = get_logger(__name__)
+
 
 class ProcessingMode(Enum):
     FULL_CONTEXT = auto()
     RAG = auto()
+
 
 class GitHubFile(BaseModel):
     r"""Model to hold GitHub file information.
@@ -54,7 +73,9 @@ class RepositoryInfo(BaseModel):
 class RepoAgent(ChatAgent):
     def __init__(
         self,
-        system_message: Optional[str] = "You are a code assistant with repo context.",
+        system_message: Optional[
+            str
+        ] = "You are a code assistant with repo context.",
         repo_paths: Optional[List[str]] = None,
         model: Optional[BaseModelBackend] = None,
         max_context_tokens: int = 2000,
@@ -64,7 +85,7 @@ class RepoAgent(ChatAgent):
         top_k: Optional[int] = 5,
         similarity: Optional[float] = 0.6,
         collection_name: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         if model is None:
             model = ModelFactory.create(
@@ -83,7 +104,8 @@ class RepoAgent(ChatAgent):
         self.top_k = top_k
         self.similarity = similarity
         self.collection_name = collection_name
-        self.prompt_template = Template("$type: $repo\n"
+        self.prompt_template = Template(
+            "$type: $repo\n"
             "You are an AI coding assistant. "
             "Your task is to generate code based on provided GitHub "
             "repositories. \n"
@@ -99,9 +121,10 @@ class RepoAgent(ChatAgent):
             "\n If the repositories lack necessary details, "
             "infer best practices and suggest improvements.\n"
             "Now, analyze the repositories and generate the "
-            "required code.")
+            "required code."
+        )
         self.full_text = ""
-        # self.chunker = CodeChunker(chunk_size=chunk_size)
+        self.chunker = CodeChunker(chunk_size=chunk_size)
         if len(self.repos) > 0:
             self.construct_full_text()
             self.num_tokens = self.count_tokens()
@@ -114,8 +137,15 @@ class RepoAgent(ChatAgent):
                     role=OpenAIBackendRole.SYSTEM,
                 )
 
-
     def parse_url(self, url: str) -> Tuple[str, str]:
+        r"""Parse the GitHub URL and return the (owner, repo_name) tuple.
+
+        Args:
+            url (str): The URL to be parsed.
+
+        Returns:
+            Tuple[str, str]: The (owner, repo_name) tuple.
+        """
         try:
             url_path = url.replace("https://github.com/", "")
             parts = url_path.split("/")
@@ -137,8 +167,8 @@ class RepoAgent(ChatAgent):
             repo_urls (str): The list of Repo URLs.
 
         Returns:
-            RepositoryInfo: An object containing information about the repository,
-                including its contents.
+            List[RepositoryInfo]: A list of objects containing information
+            about the all repositories, including the contents.
         """
         github_client = Github(self.github_auth_token)
         res = []
@@ -159,6 +189,14 @@ class RepoAgent(ChatAgent):
         github_client: Github,
     ) -> RepositoryInfo:
         r"""Load the content of a GitHub repository.
+
+        Args:
+            repo_urls (str): The Repo URL to be loaded.
+            github_client (str): The established GitHub client.
+
+        Returns:
+            RepositoryInfo: The object containing information
+                about the repository, including the contents.
         """
         try:
             owner, repo_name = self.parse_url(repo_url)
@@ -177,8 +215,10 @@ class RepoAgent(ChatAgent):
         while contents:
             file = contents.pop(0)
             if file.type == "file":
-                if any(file.path.endswith(ext) for ext in
-                       [".png", ".jpg", ".pdf", ".zip", ".gitignore"]):
+                if any(
+                    file.path.endswith(ext)
+                    for ext in [".png", ".jpg", ".pdf", ".zip", ".gitignore"]
+                ):
                     logger.info(f"Skipping binary file: {file.path}")
                     continue
                 try:
@@ -200,6 +240,11 @@ class RepoAgent(ChatAgent):
         return info
 
     def count_tokens(self) -> int:
+        r"""To count the tokens that's currently in the memory
+
+        Returns:
+            int: The number of tokens
+        """
         counter = self.model_backend.token_counter
         content_token_count = counter.count_tokens_from_messages(
             messages=[
@@ -212,20 +257,25 @@ class RepoAgent(ChatAgent):
         return content_token_count
 
     def construct_full_text(self):
-        """Construct full context text from repositories."""
+        r"""Construct full context text from repositories by concatenation."""
         repo_texts = [
             {"content": f.content, "path": f.file_path}
-            for repo in self.repos for f in repo.contents
+            for repo in self.repos
+            for f in repo.contents
         ]
         self.full_text = self.prompt_template.safe_substitute(
             type="Repository",
             repo="\n".join(
                 f"{repo['path']}\n{repo['content']}" for repo in repo_texts
-            )
+            ),
         )
 
     def add_repositories(self, repo_urls: List[str]):
-        r"""Add a GitHub repository to the list of repositories."""
+        r"""Add a GitHub repository to the list of repositories.
+
+        Args:
+            repo_urls (str): The Repo URL to be added.
+        """
         new_repos = self.load_repositories(repo_urls)
         self.repos.extend(new_repos)
         self.construct_full_text()
@@ -235,15 +285,20 @@ class RepoAgent(ChatAgent):
                 for f in repo.contents:
                     self.vector_retriever.process(
                         content=f.content,
-                        max_characters=200000,
                         should_chunk=True,
-                        file_path=f.file_path,
-                        # chunker=self.chunker
+                        extra_info={"file_path": f.file_path},
+                        chunker=self.chunker,
                     )
         else:
             self.check_switch_mode()
 
     def check_switch_mode(self) -> bool:
+        r"""Check if the current context exceeds the context window; if so,
+            switch to RAG mode.
+
+        Returns:
+            bool: True if the mode was switched, False otherwise
+        """
         if self.processing_mode == ProcessingMode.RAG:
             return False
 
@@ -262,31 +317,30 @@ class RepoAgent(ChatAgent):
                 for f in repo.contents:
                     self.vector_retriever.process(
                         content=f.content,
-                        max_characters=200000,
                         should_chunk=True,
-                        file_path=f.file_path,
-                        # chunker=self.chunker,
+                        extra_info={"file_path": f.file_path},
+                        chunker=self.chunker,
                     )
+            self._system_message = None
             self.reset()
             return True
         return False
 
     def step(
-        self,
-        input_message: Union[BaseMessage, str],
-        *args,
-        **kwargs
+        self, input_message: Union[BaseMessage, str], *args, **kwargs
     ) -> ChatAgentResponse:
-        r""" Overrides `ChatAgent.step()` to first retrieve relevant context
+        r"""Overrides `ChatAgent.step()` to first retrieve relevant context
         from the vector store before passing the input to the language model.
         """
-        if (self.processing_mode == ProcessingMode.RAG and
-                self.vector_retriever):
+        if (
+            self.processing_mode == ProcessingMode.RAG
+            and self.vector_retriever
+        ):
             user_query = input_message
             if isinstance(input_message, BaseMessage):
                 user_query = input_message.content
             retrieved_content = []
-            retries = 3
+            retries = 1
             for attempt in range(retries):
                 try:
                     raw_rag_content = self.vector_retriever.query(
@@ -297,16 +351,18 @@ class RepoAgent(ChatAgent):
                     # Remove duplicates and retrieve the whole file
                     paths = []
                     for record in raw_rag_content:
-                        if record["file_path"] not in paths:
+                        file_path = record["extra_info"]["file_path"]
+                        if file_path not in paths:
                             retrieved_content.append(
                                 {
                                     "content": self.search_by_file_path(
-                                        record["file_path"]
+                                        file_path
                                     ),
-                                    "similarity": record["similarity score"]
+                                    "similarity": record["similarity score"],
                                 }
                             )
-                            paths.append(record["file_path"])
+                            paths.append(file_path)
+
                     retrieved_content = sorted(
                         retrieved_content,
                         key=lambda x: x["similarity"],
@@ -316,18 +372,21 @@ class RepoAgent(ChatAgent):
                     full_prompt = self.prompt_template.safe_substitute(
                         type="Retrieved code",
                         repo="\n".join(
-                            [
-                                record["content"] for record in
-                                retrieved_content
-                            ]
-                        )
+                            [record["content"] for record in retrieved_content]
+                        ),
                     )
-                    input_message.content = user_query + "\n" + full_prompt
-                    print(f"full prompt: {full_prompt}")
+
+                    new_query = user_query + "\n" + full_prompt
+                    if isinstance(input_message, BaseMessage):
+                        input_message.content = new_query
+                    else:
+                        input_message = BaseMessage.make_user_message(
+                            role_name="User", content=new_query
+                        )
                     break
                 except Exception:
                     if attempt < retries - 1:
-                        sleep_time = 2 ** attempt
+                        sleep_time = 2**attempt
                         logger.info(
                             f"Retrying qdrant query in {sleep_time} seconds..."
                         )
@@ -338,7 +397,7 @@ class RepoAgent(ChatAgent):
                             "attempts."
                         )
 
-        # return super().step(input_message, *args, **kwargs)
+        return super().step(input_message, *args, **kwargs)
 
     def reset(self):
         super().reset()
@@ -351,10 +410,7 @@ class RepoAgent(ChatAgent):
         else:
             self.num_tokens = 0
 
-
-    async def search_by_file_path(
-        self, file_path: str
-    ) -> str:
+    def search_by_file_path(self, file_path: str) -> str:
         r"""Search for all payloads in the vector database where
         file_path matches the given value (the same file),
         then sort by piece_num and concatenate text fields to return a
@@ -367,21 +423,22 @@ class RepoAgent(ChatAgent):
             str: A concatenated string of the `text` fields sorted by
                 `piece_num`.
         """
-
         try:
             storage_instance = self.vector_retriever.storage
+            collection_name = (
+                self.collection_name or storage_instance.collection_name
+            )
             source_data, _ = storage_instance.client.scroll(
-                collection_name=self.collection_name ,
+                collection_name=collection_name,
                 limit=1000,
-                scroll_filter={
-                    "must": [
-                        {
-                            "key": "file_path",
-                            "match": {"value": file_path},
-                        },
+                scroll_filter=Filter(
+                    must=[
+                        FieldCondition(
+                            key="extra_info.file_path",
+                            match=MatchValue(value=file_path),
+                        )
                     ]
-                },
-                sort=[{"metadata.piece_num": "asc"}],
+                ),
                 with_payload=True,
                 with_vectors=False,
             )
@@ -399,7 +456,7 @@ class RepoAgent(ChatAgent):
             if piece_num is not None and text:
                 results.append({"piece_num": piece_num, "text": text})
 
-        full_doc = "\n".join([item["text"] for item in results])
+        sorted_results = sorted(results, key=lambda x: x["piece_num"])
+        full_doc = "\n".join([item["text"] for item in sorted_results])
 
         return full_doc
-
