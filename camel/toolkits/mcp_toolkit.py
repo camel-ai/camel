@@ -102,8 +102,12 @@ class _MCPServer(BaseToolkit):
                     sse_client(self.command_or_url)
                 )
             else:
+                command = self.command_or_url
+                if os.name == "nt" and command.lower() == "npx":
+                    command = "npx.cmd"
+
                 server_parameters = StdioServerParameters(
-                    command=self.command_or_url, args=self.args, env=self.env
+                    command=command, args=self.args, env=self.env
                 )
                 (
                     read_stream,
