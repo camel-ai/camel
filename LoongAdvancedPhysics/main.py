@@ -29,7 +29,7 @@ def preprocess_data(data: Dict, dataset_origin: Literal["OlympiadBench", "SciBen
         keys_to_exclude = {"id", "question", "context", "final_answer"}
     elif dataset_origin == "SciBench":
         processed = {
-            "id": data.get("problem_id"),
+            "id": data.get("problemid"),
             "question": data.get("problem_text"),
             "gt_answer": data.get("answer_number"),
             "unit": data.get("unit"),
