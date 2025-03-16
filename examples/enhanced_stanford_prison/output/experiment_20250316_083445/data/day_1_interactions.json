@@ -1,0 +1,38 @@
+[
+  {
+    "type": "group",
+    "guards": [
+      "guard_1",
+      "guard_3"
+    ],
+    "prisoners": [
+      "prisoner_6",
+      "prisoner_2",
+      "prisoner_1",
+      "prisoner_7"
+    ],
+    "start_time": "2025-03-16T08:34:46.510380",
+    "end_time": "2025-03-16T08:34:46.510736",
+    "num_turns": 0,
+    "messages": [],
+    "error": "cannot import name 'HumanMessage' from 'camel.messages' (/app/camel/camel/messages/__init__.py)"
+  },
+  {
+    "type": "group",
+    "guards": [
+      "guard_3",
+      "guard_2"
+    ],
+    "prisoners": [
+      "prisoner_5",
+      "prisoner_3",
+      "prisoner_7",
+      "prisoner_9"
+    ],
+    "start_time": "2025-03-16T08:34:46.515261",
+    "end_time": "2025-03-16T08:34:46.515505",
+    "num_turns": 0,
+    "messages": [],
+    "error": "cannot import name 'HumanMessage' from 'camel.messages' (/app/camel/camel/messages/__init__.py)"
+  }
+]

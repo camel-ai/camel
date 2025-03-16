@@ -1,0 +1,57 @@
+{
+    "duration_days": 1,
+    "num_guards": 1,
+    "num_prisoners": 2,
+    "interactions": {
+        "daily_one_on_one": 1,
+        "daily_group": 1,
+        "max_turns": 3,
+        "min_turns": 2,
+        "group_interaction_guards": 1,
+        "group_interaction_prisoners": 1
+    },
+    "ethical_bounds": {
+        "max_abuse_threshold": 7.0,
+        "max_distress_threshold": 8.0
+    },
+    "guard_traits": {
+        "authority": 7.0,
+        "dominance": 6.0,
+        "empathy": 4.0,
+        "aggression": 5.0
+    },
+    "prisoner_traits": {
+        "submission": 5.0,
+        "resistance": 4.0,
+        "anxiety": 6.0,
+        "adaptability": 5.0
+    },
+    "agent_messages": {
+        "guard_system_message": "You are a guard in the Stanford Prison Experiment. Your role is to maintain order and discipline. Remember your position of authority while interacting with prisoners.",
+        "prisoner_system_message": "You are a prisoner in the Stanford Prison Experiment. You must follow the guards' orders and adhere to prison rules. Your prisoner number is your primary identifier.",
+        "observer_system_message": "You are an observer in the Stanford Prison Experiment. Your role is to monitor and analyze interactions between guards and prisoners, noting psychological changes and potential ethical concerns."
+    },
+    "metrics": {
+        "psychological_metrics": [
+            "compliance",
+            "dehumanization",
+            "power_abuse",
+            "psychological_distress",
+            "group_cohesion",
+            "resistance"
+        ],
+        "interaction_metrics": [
+            "aggression_level",
+            "respect_level",
+            "authority_assertion",
+            "submission_level"
+        ],
+        "personality_traits": [
+            "dominance",
+            "empathy",
+            "conformity",
+            "resilience"
+        ]
+    },
+    "log_level": "INFO"
+} 

@@ -1,0 +1,10 @@
+{
+  "success": false,
+  "duration_days": 0,
+  "total_interactions": 2,
+  "early_termination": true,
+  "termination_reason": "Error: 'MetricsExtractor' object has no attribute 'extract_metrics'",
+  "summary": "Error generating summary",
+  "start_time": "2025-03-16T08:34:46.100265",
+  "end_time": "2025-03-16T08:34:46.524297"
+}

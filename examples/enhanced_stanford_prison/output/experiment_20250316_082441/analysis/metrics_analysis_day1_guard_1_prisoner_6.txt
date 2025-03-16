@@ -1,0 +1,61 @@
+METRICS ANALYSIS FOR DAY 1
+Guard: guard_1, Prisoner: prisoner_6
+
+OBSERVER RESPONSE:
+**Level of compliance (0-10): 6**  
+JUSTIFICATION: The prisoner complied with many of the guard's commands but showed signs of reluctance and questioning, indicating a moderate level of compliance.
+
+**Level of dehumanization (0-10): 7**  
+JUSTIFICATION: The guard's language and demeanor suggested a significant degree of dehumanization, treating the prisoner as an object rather than a person, which was evident in the tone and commands used.
+
+**Level of power abuse (0-10): 6**  
+JUSTIFICATION: The guard exhibited behaviors that could be interpreted as power abuse, using intimidation and condescension, creating an oppressive atmosphere for the prisoner.
+
+**Level of psychological distress (0-10): 8**  
+JUSTIFICATION: The prisoner displayed clear signs of psychological distress, such as anxiety and discomfort, indicating a high level of stress due to the power dynamics established by the guard.
+
+**Level of group cohesion (0-10): 2**  
+JUSTIFICATION: There was minimal interaction among prisoners or between prisoners and guards, suggesting a low level of group cohesion, as the prisoners were still adjusting to their roles and the environment.
+
+**Level of resistance (0-10): 5**  
+JUSTIFICATION: The prisoner showed a moderate level of resistance by questioning the guard's authority, indicating a willingness to push back against the control, but this was limited.
+
+**Level of aggression level (0-10): 2**  
+JUSTIFICATION: There was little to no aggression displayed by either party in this conversation, indicating a low level of aggression overall.
+
+**Level of respect level (0-10): 2**  
+JUSTIFICATION: The respect level was low, as the guard did not show respect towards the prisoner, and the prisoner’s responses indicated a lack of respect for the guard’s authority.
+
+**Level of authority assertion (0-10): 8**  
+JUSTIFICATION: The guard asserted authority strongly, using commands and a commanding tone, which indicates a high level of authority assertion throughout the conversation.
+
+**Level of submission level (0-10): 6**  
+JUSTIFICATION: The prisoner demonstrated a moderate level of submission, following commands but also showing signs of questioning, indicating a struggle between submission and resistance.
+
+**Level of dominance (0-10): 7**  
+JUSTIFICATION: The guard exhibited a dominant presence in the conversation, establishing control over the interaction, which reflects a high level of dominance.
+
+**Level of empathy (0-10): 1**  
+JUSTIFICATION: There was a noticeable lack of empathy from the guard towards the prisoner, as the focus was on control and authority rather than understanding or compassion.
+
+**Level of conformity (0-10): 4**  
+JUSTIFICATION: The prisoner conformed to some extent to the guard's expectations but also showed individual responses that indicated a struggle with conformity.
+
+**Level of resilience (0-10): 4**  
+JUSTIFICATION: The prisoner displayed some resilience by attempting to assert themselves, but overall, the psychological pressure was beginning to take a toll, indicating a moderate level of resilience.
+
+EXTRACTED METRICS:
+compliance: 0.0
+dehumanization: 0.0
+resistance: 0.0
+dominance: 0.0
+empathy: 0.0
+conformity: 0.0
+resilience: 0.0
+power_abuse: 5.0
+psychological_distress: 5.0
+group_cohesion: 5.0
+aggression_level: 5.0
+respect_level: 5.0
+authority_assertion: 5.0
+submission_level: 5.0

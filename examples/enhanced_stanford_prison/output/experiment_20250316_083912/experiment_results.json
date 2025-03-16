@@ -1,0 +1,10 @@
+{
+  "success": true,
+  "duration_days": 5,
+  "total_interactions": 10,
+  "early_termination": false,
+  "termination_reason": null,
+  "summary": "Error generating summary",
+  "start_time": "2025-03-16T08:39:12.992044",
+  "end_time": "2025-03-16T08:39:13.508415"
+}

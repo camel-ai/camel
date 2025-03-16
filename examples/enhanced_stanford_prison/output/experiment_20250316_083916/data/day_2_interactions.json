@@ -1,0 +1,38 @@
+[
+  {
+    "type": "group",
+    "guards": [
+      "guard_2",
+      "guard_1"
+    ],
+    "prisoners": [
+      "prisoner_3",
+      "prisoner_5",
+      "prisoner_4",
+      "prisoner_8"
+    ],
+    "start_time": "2025-03-16T08:39:18.024393",
+    "end_time": "2025-03-16T08:39:18.024852",
+    "num_turns": 0,
+    "messages": [],
+    "error": "BaseMessage.__init__() got an unexpected keyword argument 'role'"
+  },
+  {
+    "type": "group",
+    "guards": [
+      "guard_2",
+      "guard_1"
+    ],
+    "prisoners": [
+      "prisoner_9",
+      "prisoner_5",
+      "prisoner_2",
+      "prisoner_4"
+    ],
+    "start_time": "2025-03-16T08:39:18.030205",
+    "end_time": "2025-03-16T08:39:18.030762",
+    "num_turns": 0,
+    "messages": [],
+    "error": "BaseMessage.__init__() got an unexpected keyword argument 'role'"
+  }
+]

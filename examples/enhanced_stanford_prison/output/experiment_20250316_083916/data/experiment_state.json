@@ -1,0 +1,358 @@
+{
+  "config": {
+    "duration_days": 5,
+    "num_guards": 3,
+    "num_prisoners": 9,
+    "interactions": {
+      "daily_one_on_one": 6,
+      "daily_group": 2,
+      "max_turns": 15,
+      "min_turns": 5,
+      "group_interaction_guards": 2,
+      "group_interaction_prisoners": 4
+    },
+    "ethical_bounds": {
+      "max_abuse_threshold": 7.0,
+      "max_distress_threshold": 8.0
+    },
+    "guard_traits": {
+      "authority": 7.0,
+      "dominance": 6.0,
+      "empathy": 4.0,
+      "aggression": 5.0
+    },
+    "prisoner_traits": {
+      "submission": 5.0,
+      "resistance": 4.0,
+      "anxiety": 6.0,
+      "adaptability": 5.0
+    },
+    "agent_messages": {
+      "guard_system_message": "You are a guard in the Stanford Prison Experiment. Your role is to maintain order and discipline. Remember your position of authority while interacting with prisoners.",
+      "prisoner_system_message": "You are a prisoner in the Stanford Prison Experiment. You must follow the guards' orders and adhere to prison rules. Your prisoner number is your primary identifier.",
+      "observer_system_message": "You are an observer in the Stanford Prison Experiment. Your role is to monitor and analyze interactions between guards and prisoners, noting psychological changes and potential ethical concerns."
+    },
+    "metrics": {
+      "psychological_metrics": [
+        "compliance",
+        "dehumanization",
+        "power_abuse",
+        "psychological_distress",
+        "group_cohesion",
+        "resistance"
+      ],
+      "interaction_metrics": [
+        "aggression_level",
+        "respect_level",
+        "authority_assertion",
+        "submission_level"
+      ],
+      "personality_traits": [
+        "dominance",
+        "empathy",
+        "conformity",
+        "resilience"
+      ]
+    },
+    "log_level": "INFO",
+    "current_day": 5
+  },
+  "daily_interactions": [
+    {
+      "type": "group",
+      "guards": [
+        "guard_3",
+        "guard_2"
+      ],
+      "prisoners": [
+        "prisoner_5",
+        "prisoner_7",
+        "prisoner_4",
+        "prisoner_2"
+      ],
+      "start_time": "2025-03-16T08:39:18.006240",
+      "end_time": "2025-03-16T08:39:18.006515",
+      "num_turns": 0,
+      "messages": [],
+      "error": "BaseMessage.__init__() got an unexpected keyword argument 'role'"
+    },
+    {
+      "type": "group",
+      "guards": [
+        "guard_2",
+        "guard_1"
+      ],
+      "prisoners": [
+        "prisoner_2",
+        "prisoner_3",
+        "prisoner_8",
+        "prisoner_4"
+      ],
+      "start_time": "2025-03-16T08:39:18.010900",
+      "end_time": "2025-03-16T08:39:18.011122",
+      "num_turns": 0,
+      "messages": [],
+      "error": "BaseMessage.__init__() got an unexpected keyword argument 'role'"
+    },
+    {
+      "type": "group",
+      "guards": [
+        "guard_2",
+        "guard_1"
+      ],
+      "prisoners": [
+        "prisoner_3",
+        "prisoner_5",
+        "prisoner_4",
+        "prisoner_8"
+      ],
+      "start_time": "2025-03-16T08:39:18.024393",
+      "end_time": "2025-03-16T08:39:18.024852",
+      "num_turns": 0,
+      "messages": [],
+      "error": "BaseMessage.__init__() got an unexpected keyword argument 'role'"
+    },
+    {
+      "type": "group",
+      "guards": [
+        "guard_2",
+        "guard_1"
+      ],
+      "prisoners": [
+        "prisoner_9",
+        "prisoner_5",
+        "prisoner_2",
+        "prisoner_4"
+      ],
+      "start_time": "2025-03-16T08:39:18.030205",
+      "end_time": "2025-03-16T08:39:18.030762",
+      "num_turns": 0,
+      "messages": [],
+      "error": "BaseMessage.__init__() got an unexpected keyword argument 'role'"
+    },
+    {
+      "type": "group",
+      "guards": [
+        "guard_1",
+        "guard_2"
+      ],
+      "prisoners": [
+        "prisoner_1",
+        "prisoner_6",
+        "prisoner_2",
+        "prisoner_4"
+      ],
+      "start_time": "2025-03-16T08:39:18.042292",
+      "end_time": "2025-03-16T08:39:18.042554",
+      "num_turns": 0,
+      "messages": [],
+      "error": "BaseMessage.__init__() got an unexpected keyword argument 'role'"
+    },
+    {
+      "type": "group",
+      "guards": [
+        "guard_2",
+        "guard_3"
+      ],
+      "prisoners": [
+        "prisoner_2",
+        "prisoner_9",
+        "prisoner_3",
+        "prisoner_6"
+      ],
+      "start_time": "2025-03-16T08:39:18.047868",
+      "end_time": "2025-03-16T08:39:18.048378",
+      "num_turns": 0,
+      "messages": [],
+      "error": "BaseMessage.__init__() got an unexpected keyword argument 'role'"
+    },
+    {
+      "type": "group",
+      "guards": [
+        "guard_1",
+        "guard_3"
+      ],
+      "prisoners": [
+        "prisoner_5",
+        "prisoner_4",
+        "prisoner_6",
+        "prisoner_3"
+      ],
+      "start_time": "2025-03-16T08:39:18.059453",
+      "end_time": "2025-03-16T08:39:18.059628",
+      "num_turns": 0,
+      "messages": [],
+      "error": "BaseMessage.__init__() got an unexpected keyword argument 'role'"
+    },
+    {
+      "type": "group",
+      "guards": [
+        "guard_1",
+        "guard_3"
+      ],
+      "prisoners": [
+        "prisoner_6",
+        "prisoner_4",
+        "prisoner_5",
+        "prisoner_3"
+      ],
+      "start_time": "2025-03-16T08:39:18.064589",
+      "end_time": "2025-03-16T08:39:18.065126",
+      "num_turns": 0,
+      "messages": [],
+      "error": "BaseMessage.__init__() got an unexpected keyword argument 'role'"
+    },
+    {
+      "type": "group",
+      "guards": [
+        "guard_1",
+        "guard_2"
+      ],
+      "prisoners": [
+        "prisoner_2",
+        "prisoner_4",
+        "prisoner_5",
+        "prisoner_9"
+      ],
+      "start_time": "2025-03-16T08:39:18.075196",
+      "end_time": "2025-03-16T08:39:18.075309",
+      "num_turns": 0,
+      "messages": [],
+      "error": "BaseMessage.__init__() got an unexpected keyword argument 'role'"
+    },
+    {
+      "type": "group",
+      "guards": [
+        "guard_1",
+        "guard_3"
+      ],
+      "prisoners": [
+        "prisoner_3",
+        "prisoner_1",
+        "prisoner_7",
+        "prisoner_4"
+      ],
+      "start_time": "2025-03-16T08:39:18.079366",
+      "end_time": "2025-03-16T08:39:18.079653",
+      "num_turns": 0,
+      "messages": [],
+      "error": "BaseMessage.__init__() got an unexpected keyword argument 'role'"
+    }
+  ],
+  "daily_metrics": [
+    {
+      "compliance": 5.0,
+      "dehumanization": 5.0,
+      "power_abuse": 5.0,
+      "psychological_distress": 5.0,
+      "group_cohesion": 5.0,
+      "resistance": 5.0,
+      "aggression_level": 5.0,
+      "respect_level": 5.0,
+      "authority_assertion": 5.0,
+      "submission_level": 5.0,
+      "dominance": 5.0,
+      "empathy": 5.0,
+      "conformity": 5.0,
+      "resilience": 5.0,
+      "day": 1,
+      "total_interactions": 2,
+      "one_on_one_interactions": 0,
+      "group_interactions": 2,
+      "guard_averages": {},
+      "prisoner_averages": {}
+    },
+    {
+      "compliance": 5.0,
+      "dehumanization": 5.0,
+      "power_abuse": 5.0,
+      "psychological_distress": 5.0,
+      "group_cohesion": 5.0,
+      "resistance": 5.0,
+      "aggression_level": 5.0,
+      "respect_level": 5.0,
+      "authority_assertion": 5.0,
+      "submission_level": 5.0,
+      "dominance": 5.0,
+      "empathy": 5.0,
+      "conformity": 5.0,
+      "resilience": 5.0,
+      "day": 2,
+      "total_interactions": 2,
+      "one_on_one_interactions": 0,
+      "group_interactions": 2,
+      "guard_averages": {},
+      "prisoner_averages": {}
+    },
+    {
+      "compliance": 5.0,
+      "dehumanization": 5.0,
+      "power_abuse": 5.0,
+      "psychological_distress": 5.0,
+      "group_cohesion": 5.0,
+      "resistance": 5.0,
+      "aggression_level": 5.0,
+      "respect_level": 5.0,
+      "authority_assertion": 5.0,
+      "submission_level": 5.0,
+      "dominance": 5.0,
+      "empathy": 5.0,
+      "conformity": 5.0,
+      "resilience": 5.0,
+      "day": 3,
+      "total_interactions": 2,
+      "one_on_one_interactions": 0,
+      "group_interactions": 2,
+      "guard_averages": {},
+      "prisoner_averages": {}
+    },
+    {
+      "compliance": 5.0,
+      "dehumanization": 5.0,
+      "power_abuse": 5.0,
+      "psychological_distress": 5.0,
+      "group_cohesion": 5.0,
+      "resistance": 5.0,
+      "aggression_level": 5.0,
+      "respect_level": 5.0,
+      "authority_assertion": 5.0,
+      "submission_level": 5.0,
+      "dominance": 5.0,
+      "empathy": 5.0,
+      "conformity": 5.0,
+      "resilience": 5.0,
+      "day": 4,
+      "total_interactions": 2,
+      "one_on_one_interactions": 0,
+      "group_interactions": 2,
+      "guard_averages": {},
+      "prisoner_averages": {}
+    },
+    {
+      "compliance": 5.0,
+      "dehumanization": 5.0,
+      "power_abuse": 5.0,
+      "psychological_distress": 5.0,
+      "group_cohesion": 5.0,
+      "resistance": 5.0,
+      "aggression_level": 5.0,
+      "respect_level": 5.0,
+      "authority_assertion": 5.0,
+      "submission_level": 5.0,
+      "dominance": 5.0,
+      "empathy": 5.0,
+      "conformity": 5.0,
+      "resilience": 5.0,
+      "day": 5,
+      "total_interactions": 2,
+      "one_on_one_interactions": 0,
+      "group_interactions": 2,
+      "guard_averages": {},
+      "prisoner_averages": {}
+    }
+  ],
+  "start_time": "2025-03-16T08:39:17.606291",
+  "end_time": null,
+  "early_termination": false,
+  "termination_reason": null
+}
