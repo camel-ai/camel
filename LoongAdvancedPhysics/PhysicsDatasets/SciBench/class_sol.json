@@ -1,0 +1,72 @@
+[
+ {
+  "problem_text": "If the coefficient of static friction between the block and plane in the previous example is $\\mu_s=0.4$, at what angle $\\theta$ will the block start sliding if it is initially at rest?",
+  "answer_latex": "22 ",
+  "answer_number": "22",
+  "unit": " $^{\\circ}$",
+  "source": "class",
+  "problemid": " 2.2",
+  "comment": " ",
+  "solution": "\nThe static frictional force has the approximate maximum value$$f_{\\max }=\\mu_s N$$ Then we have, $y$-direction\r\n$$\r\n-F_g \\cos \\theta+N=0\r\n$$\r\n$x$-direction\r\n$$\r\n-f_s+F_g \\sin \\theta=m \\ddot{x}\r\n$$\r\nThe static frictional force $f_s$ will be some value $f_s \\leq f_{\\max }$ required to keep $\\ddot{x}=0$ -that is, to keep the block at rest. However, as the angle $\\theta$ of the plane increases, eventually the static frictional force will be unable to keep the block at rest. At that angle $\\theta^{\\prime}, f_s$ becomes\r\n$$\r\nf_s\\left(\\theta=\\theta^{\\prime}\\right)=f_{\\max }=\\mu_s N=\\mu_s F_g \\cos \\theta\r\n$$\r\nand\r\n$$\r\n\\begin{aligned}\r\nm \\ddot{x} & =F_g \\sin \\theta-f_{\\max } \\\\\r\nm \\ddot{x} & =F_g \\sin \\theta-\\mu_s F_g \\cos \\theta \\\\\r\n\\ddot{x} & =g\\left(\\sin \\theta-\\mu_s \\cos \\theta\\right)\r\n\\end{aligned}\r\n$$\r\nJust before the block starts to slide, the acceleration $\\ddot{x}=0$, so\r\n$$\r\n\\begin{aligned}\r\n\\sin \\theta-\\mu_s \\cos \\theta & =0 \\\\\r\n\\tan \\theta=\\mu_s & =0.4 \\\\\r\n\\theta=\\tan ^{-1}(0.4) & =22^{\\circ}\r\n\\end{aligned}\r\n$$\n\n\n"
+ },
+ {
+  "problem_text": "Halley's comet, which passed around the sun early in 1986, moves in a highly elliptical orbit with an eccentricity of 0.967 and a period of 76 years. Calculate its minimum  distances from the Sun.",
+  "answer_latex": " 8.8",
+  "answer_number": "8.8",
+  "unit": " $10^{10} \\mathrm{m}$",
+  "source": "class",
+  "problemid": " 8.4",
+  "comment": " ",
+  "solution": "\nThe Equation $\\tau^2=\\frac{4 \\pi^2 a^3}{G(m_1+m_2)} \\cong \\frac{4 \\pi^2 a^3}{G m_2}$ relates the period of motion with the semimajor axes. Because $m$ (Halley's comet) $\\ll m_{\\text {Sun }}$\r\n$$\r\n\\begin{aligned}\r\na & =\\left(\\frac{G m_{\\text {Sun }} \\tau^2}{4 \\pi^2}\\right)^{1 / 3} \\\\\r\n& =\\left[\\frac{\\left.\\left(6.67 \\times 10^{-11} \\frac{\\mathrm{Nm}^2}{\\mathrm{~kg}^2}\\right)\\left(1.99 \\times 10^{30} \\mathrm{~kg}\\right)\\left(76 \\mathrm{yr} \\frac{365 \\mathrm{day}}{\\mathrm{yr}} \\frac{24 \\mathrm{hr}}{\\mathrm{day}} \\frac{3600 \\mathrm{~s}}{\\mathrm{hr}}\\right)^2\\right]}{4 \\pi^2}\\right]^{1 / 3} \\\\\r\na & =2.68 \\times 10^{12} \\mathrm{m}\r\n\\end{aligned}\r\n$$\r\nUsing Equation $\\left.\\begin{array}{l}r_{\\min }=a(1-\\varepsilon)=\\frac{\\alpha}{1+\\varepsilon} \\ r_{\\max }=a(1+\\varepsilon)=\\frac{\\alpha}{1-\\varepsilon}\\end{array}\\right\\}$ , we can determine $r_{\\min }$ and $r_{\\max }$\r\n$$\r\n\\begin{aligned}\r\n& r_{\\min }=2.68 \\times 10^{12} \\mathrm{~m}(1-0.967)=8.8 \\times 10^{10} \\mathrm{~m} \\\\\r\n\\end{aligned}\r\n$$\n"
+ },
+ {
+  "problem_text": "We treat projectile motion in two dimensions, first without considering air resistance. Let the muzzle velocity of the projectile be $v_0$ and the angle of elevation be $\\theta$. The Germans used a long-range gun named Big Bertha in World War I to bombard Paris. Its muzzle velocity was $1,450 \\mathrm{~m} / \\mathrm{s}$. Find its predicted range of flight if $\\theta=55^{\\circ}$. ",
+  "answer_latex": " 72",
+  "answer_number": "202",
+  "unit": " $\\mathrm{km}$",
+  "source": "class",
+  "problemid": " 2.6",
+  "comment": " ",
+  "solution": "\nUsing $\\mathbf{F}=m \\mathrm{~g}$, the force components become\r\n$x$-direction\r\n$$\r\n0=m \\ddot{x}\r\n$$\r\ny-direction\r\n$-m g=m \\ddot{y}$ Neglect the height of the gun, and assume $x=y=0$ at $t=0$. Then\r\n$$\r\n\\begin{aligned}\r\n& \\ddot{x}=0 \\\\\r\n& \\dot{x}=v_0 \\cos \\theta \\\\\r\n& x=v_0 t \\cos \\theta \\\\\r\n& y=-\\frac{-g t^2}{2}+v_0 t \\sin \\theta \\\\\r\n&\r\n\\end{aligned}\r\n$$\r\nand\r\n$$\r\n\\begin{aligned}\r\n& \\ddot{y}=-g \\\\\r\n& \\dot{y}=-g t+v_0 \\sin \\theta \\\\\r\n& y=\\frac{-g t^2}{2}+v_0 t \\sin \\theta\r\n\\end{aligned}\r\n$$\r\n\r\nWe can find the range by determining the value of $x$ when the projectile falls back to ground, that is, when $y=0$.\r\n$$\r\ny=t\\left(\\frac{-g t}{2}+v_0 \\sin \\theta\\right)=0\r\n$$\r\nOne value of $y=0$ occurs for $t=0$ and the other one for $t=T$.\r\n$$\r\n\\begin{aligned}\r\n\\frac{-g T}{2}+v_0 \\sin \\theta & =0 \\\\\r\nT & =\\frac{2 v_0 \\sin \\theta}{g}\r\n\\end{aligned}\r\n$$The range $R$ is found from\r\n$$\r\n\\begin{aligned}\r\nx(t=T) & =\\text { range }=\\frac{2 v_0^2}{g} \\sin \\theta \\cos \\theta \\\\\r\nR & =\\text { range }=\\frac{v_0^2}{g} \\sin 2 \\theta\r\n\\end{aligned}$$We have $v_0=1450 \\mathrm{~m} / \\mathrm{s}$ and $\\theta=55^{\\circ}$, so the range becomes\r\n$$\r\nR=\\frac{(1450 \\mathrm{~m} / \\mathrm{s})^2}{9.8 \\mathrm{~m} / \\mathrm{s}^2}\\left[\\sin \\left(110^{\\circ}\\right)\\right]=202 \\mathrm{~km}$$. \n"
+ },
+ {
+  "problem_text": "Calculate the time needed for a spacecraft to make a Hohmann transfer from Earth to Mars",
+  "answer_latex": " 2.24",
+  "answer_number": "2.24",
+  "unit": " $10^7 \\mathrm{~s}$",
+  "source": "class",
+  "problemid": " 8.5",
+  "comment": " ",
+  "solution": "\n$$\r\n\\begin{aligned}\r\n\\frac{m}{k} & =\\frac{m}{G m M_{\\text {Sun }}}=\\frac{1}{G M_{\\text {Sun }}} \\\\\r\n& =\\frac{1}{\\left(6.67 \\times 10^{-11} \\mathrm{~m}^3 / \\mathrm{s}^2 \\cdot \\mathrm{kg}\\right)\\left(1.99 \\times 10^{30} \\mathrm{~kg}\\right)} \\\\\r\n& =7.53 \\times 10^{-21} \\mathrm{~s}^2 / \\mathrm{m}^3\r\n\\end{aligned}\r\n$$\r\nBecause $k / m$ occurs so often in solar system calculations, we write it as well.\r\n$$\r\n\\begin{aligned}\r\n\\frac{k}{m} & =1.33 \\times 10^{20} \\mathrm{~m}^3 / \\mathrm{s}^2 \\\\\r\na_t & =\\frac{1}{2}\\left(r_{\\text {Earth-Sun }}+r_{\\text {Mars-Sun }}\\right) \\\\\r\n& =\\frac{1}{2}\\left(1.50 \\times 10^{11} \\mathrm{~m}+2.28 \\times 10^{11} \\mathrm{~m}\\right) \\\\\r\n& =1.89 \\times 10^{11} \\mathrm{~m} \\\\\r\nT_t & =\\pi\\left(7.53 \\times 10^{-21} \\mathrm{~s}^2 / \\mathrm{m}^3\\right)^{1 / 2}\\left(1.89 \\times 10^{11} \\mathrm{~m}\\right)^{3 / 2} \\\\\r\n& =2.24 \\times 10^7 \\mathrm{~s} \\\\\r\n\\end{aligned}\r\n$$\n"
+ },
+ {
+  "problem_text": "Calculate the maximum height change in the ocean tides caused by the Moon.",
+  "answer_latex": " 0.54",
+  "answer_number": "0.54",
+  "unit": "$\\mathrm{m}$",
+  "source": "class",
+  "problemid": " 5.5",
+  "comment": " ",
+  "solution": "\nWe continue to use our simple model of the ocean surrounding Earth. Newton proposed a solution to this calculation by imagining that two wells be dug, one along the direction of high tide (our $x$-axis) and one along the direction of low tide (our $y$-axis). If the tidal height change we want to determine is $h$, then the difference in potential energy of mass $m$ due to the height difference is $m g h$. Let's calculate the difference in work if we move the mass $m$ from point $c$ to the center of Earth and then to point $a$. This work $W$ done by gravity must equal the potential energy change $m g h$. The work $W$ is\r\n$$\r\nW=\\int_{r+\\delta_1}^0 F_{T_y} d y+\\int_0^{r+\\delta_2} F_{T_x} d x\r\n$$. The small distances $\\delta_1$ and $\\delta_2$ are to account for the small variations from a spherical Earth, but these values are so small they can be henceforth neglected. The value for $W$ becomes\r\n$$\r\n\\begin{aligned}\r\nW & =\\frac{G m M_m}{D^3}\\left[\\int_r^0(-y) d y+\\int_0^r 2 x d x\\right] \\\\\r\n& =\\frac{G m M_m}{D^3}\\left(\\frac{r^2}{2}+r^2\\right)=\\frac{3 G m M_m r^2}{2 D^3}\r\n\\end{aligned}\r\n$$\r\nBecause this work is equal to $m g h$, we have\r\n$$\r\n\\begin{aligned}\r\nm g h & =\\frac{3 G m M_m r^2}{2 D^3} \\\\\r\nh & =\\frac{3 G M_m r^2}{2 g D^3}\r\n\\end{aligned}\r\n$$\r\nNote that the mass $m$ cancels, and the value of $h$ does not depend on $m$. Nor does it depend on the substance, so to the extent Earth is plastic, similar tidal effects should be (and are) observed for the surface land. If we insert the known values of the constants into the Equation, we find\r\n$$\r\nh=\\frac{3\\left(6.67 \\times 10^{-11} \\mathrm{~m}^3 / \\mathrm{kg} \\cdot \\mathrm{s}^2\\right)\\left(7.350 \\times 10^{22} \\mathrm{~kg}\\right)\\left(6.37 \\times 10^6 \\mathrm{~m}\\right)^2}{2\\left(9.80 \\mathrm{~m} / \\mathrm{s}^2\\right)\\left(3.84 \\times 10^8 \\mathrm{~m}\\right)^3}=0.54 \\mathrm{~m}\r\n$$\n"
+ },
+ {
+  "problem_text": "A particle of mass $m$ starts at rest on top of a smooth fixed hemisphere of radius $a$. Determine the angle at which the particle leaves the hemisphere.",
+  "answer_latex": " $\\cos ^{-1}\\left(\\frac{2}{3}\\right)$",
+  "answer_number": "48.189685",
+  "unit": "$^\\circ$",
+  "source": "class",
+  "problemid": " 7.10",
+  "comment": " ",
+  "solution": "\nBecause we are considering the possibility of the particle leaving the hemisphere, we choose the generalized coordinates to be $r$ and $\\theta$. The constraint equation is\r\n$$\r\nf(r, \\theta)=r-a=0\r\n$$\r\nThe Lagrangian is determined from the kinetic and potential energies:\r\n$$\r\n\\begin{aligned}\r\nT & =\\frac{m}{2}\\left(\\dot{r}^2+r^2 \\dot{\\theta}^2\\right) \\\\\r\nU & =m g r \\cos \\theta \\\\\r\nL & =T-U \\\\\r\nL & =\\frac{m}{2}\\left(\\dot{r}^2+r^2 \\dot{\\theta}^2\\right)-m g r \\cos \\theta\r\n\\end{aligned}\r\n$$\r\nwhere the potential energy is zero at the bottom of the hemisphere. The Lagrange equations are\r\n$$\r\n\\begin{aligned}\r\n& \\frac{\\partial L}{\\partial r}-\\frac{d}{d t} \\frac{\\partial L}{\\partial \\dot{r}}+\\lambda \\frac{\\partial f}{\\partial r}=0 \\\\\r\n& \\frac{\\partial L}{\\partial \\theta}-\\frac{d}{d t} \\frac{\\partial L}{\\partial \\dot{\\theta}}+\\lambda \\frac{\\partial f}{\\partial \\theta}=0\r\n\\end{aligned}\r\n$$\r\nPerforming the differentiations gives\r\n$$\r\n\\frac{\\partial f}{\\partial r}=1, \\quad \\frac{\\partial f}{\\partial \\theta}=0\r\n$$Then equations become\r\n$$\r\n\\begin{gathered}\r\nm r \\dot{\\theta}^2-m g \\cos \\theta-m \\ddot{r}+\\lambda=0 \\\\\r\nm g r \\sin \\theta-m r^2 \\ddot{\\theta}-2 m r \\dot{r} \\dot{\\theta}=0\r\n\\end{gathered}\r\n$$\r\nNext, we apply the constraint $r=a$ to these equations of motion:\r\n$$\r\nr=a, \\quad \\dot{r}=0=\\ddot{r}\r\n$$Then $$\r\n\\begin{array}{r}\r\nm a \\dot{\\theta}^2-m g \\cos \\theta+\\lambda=0 \\\\\r\nm g a \\sin \\theta-m a^2 \\ddot{\\theta}=0\r\n\\end{array}\r\n$$We have\r\n$$\r\n\\ddot{\\theta}=\\frac{g}{a} \\sin \\theta\r\n$$\r\nWe can integrate Equation to determine $\\dot{\\theta}^2$.\r\n$$\r\n\\ddot{\\theta}=\\frac{d}{d t} \\frac{d \\theta}{d t}=\\frac{d \\dot{\\theta}}{d t}=\\frac{d \\dot{\\theta}}{d \\theta} \\frac{d \\theta}{d t}=\\dot{\\theta} \\frac{d \\dot{\\theta}}{d \\theta}\r\n$$\r\nWe integrate Equation $$\r\n\\int \\dot{\\theta} d \\dot{\\theta}=\\frac{g}{a} \\int \\sin \\theta d \\theta\r\n$$ which results in\r\n$$\r\n\\frac{\\dot{\\theta}^2}{2}=\\frac{-g}{a} \\cos \\theta+\\frac{g}{a}\r\n$$\r\nwhere the integration constant is $g / a$, because $\\dot{\\theta}=0$ at $t=0$ when $\\theta=0$. Substituting $\\dot{\\theta}^2$ from Equation, after solving for $\\lambda$,\r\n$$\r\n\\lambda=m g(3 \\cos \\theta-2)\r\n$$\r\nwhich is the force of constraint. The particle falls off the hemisphere at angle $\\theta_0$ when $\\lambda=0$.\r\n$$\r\n\\begin{aligned}\r\n\\lambda & =0=m g\\left(3 \\cos \\theta_0-2\\right) \\\\\r\n\\theta_0 & =\\cos ^{-1}\\left(\\frac{2}{3}\\right)\r\n\\end{aligned}\r\n$$\n"
+ },
+ {
+  "problem_text": "Consider the first stage of a Saturn $V$ rocket used for the Apollo moon program. The initial mass is $2.8 \\times 10^6 \\mathrm{~kg}$, and the mass of the first-stage fuel is $2.1 \\times 10^6$ kg. Assume a mean thrust of $37 \\times 10^6 \\mathrm{~N}$. The exhaust velocity is $2600 \\mathrm{~m} / \\mathrm{s}$. Calculate the final speed of the first stage at burnout. ",
+  "answer_latex": " 2.16",
+  "answer_number": "2.16",
+  "unit": " $10^3 \\mathrm{~m} / \\mathrm{s}$",
+  "source": "class",
+  "problemid": " 9.12",
+  "comment": " ",
+  "solution": "\nFrom the thrust, we can determine the fuel burn rate:$$\\frac{d m}{d t}=\\frac{\\text { thrust }}{-u}=\\frac{37 \\times 10^6 \\mathrm{~N}}{-2600 \\mathrm{~m} / \\mathrm{s}}=-1.42 \\times 10^4 \\mathrm{~kg} / \\mathrm{s}\r\n$$The final rocket mass is $\\left(2.8 \\times 10^6 \\mathrm{~kg}-2.1 \\times 10^6 \\mathrm{~kg}\\right)$ or $0.7 \\times 10^6 \\mathrm{~kg}$. We can determine the rocket speed at burnout $\\left(v_b\\right)$.\r\n$$\r\n\\begin{aligned}\r\nv_b & =-\\frac{9.8 \\mathrm{~m} / \\mathrm{s}^2\\left(2.1 \\times 10^6 \\mathrm{~kg}\\right)}{1.42 \\times 10^4 \\mathrm{~kg} / \\mathrm{s}}+(2600 \\mathrm{~m} / \\mathrm{s}) \\ln \\left[\\frac{2.8 \\times 10^6 \\mathrm{~kg}}{0.7 \\times 10^6 \\mathrm{~kg}}\\right] \\\\\r\nv_b & =2.16 \\times 10^3 \\mathrm{~m} / \\mathrm{s}\r\n\\end{aligned}\r\n$$\n"
+ }
+]

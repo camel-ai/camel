@@ -1,0 +1,2992 @@
+[
+  {
+    "id": 7343,
+    "question": "$小明设计了一个青蛙捉飞虫的游戏，游戏中蛙和虫都在xOy竖直平面内运动。虫可以从水平x轴上任意位置处由静止开始做匀加速直线运动，每次运动的加速度大小恒为\\frac{5}{9}g(g为重力加速度)，方向均与x轴负方向成37^\\circ 斜向上(x轴向右为正)。蛙位于y轴上M点处，OM=H，能以不同速率向右或向左水平跳出，蛙运动过程中仅受重力作用。蛙和虫均视为质点，取\\sin 37^\\circ =\\frac{3}{5}.$\n若蛙跳出的速率不大于(1)问中的最大跳出速率，蛙跳出时刻不早于虫飞出时刻，虫能被捉住，求虫在x轴上飞出的位置范围。",
+    "solution": [
+      "$若虫能被捉住，则蛙与虫能在空中相遇，对应于虫出发位置的极值时，蛙应以最大速率跳出。先求最右侧极值：设相遇点的位置坐标为(x_1,y_1)、虫在x轴上飞出的位置坐标为(x_2,0)，蛙的运动时间为t_1，虫比蛙早开始运动时间为\\Delta t。该过程蛙与虫的运动轨迹大致如图乙所示。$\n\n<img_801>\n\n$对蛙有x_1=v_mt_1、H-y_1=\\frac{1}{2}g{t_1}^2$\n\n$对虫有y_1=\\frac{1}{2}\\times \\frac{5}{9}g(t_1+\\Delta t)^2 \\sin 37^\\circ $\n\n$x_2-x_1=\\frac{1}{2}\\times \\frac{5}{9}g(t_1+\\Delta t)^2 \\cos 37^\\circ $\n\n联立整理可得\n\n$2gt_1^2-4\\sqrt{gH}t_1-4H+3x_2=0$\n\n$则\\Delta =(-4\\sqrt{gH})^2-4\\times 2g\\times (-4H+3x_2)\\geq 0$\n\n$解得x_2\\leq 2H$\n\n$再求左侧极值：蛙以最大速率水平向左跳出且与虫同时开始运动时对应的位置最远，设相遇点的位置坐标为(x_3，y_2)，虫在x轴上飞出的位置坐标为(x_4，0)，蛙与虫的运动时间均为t_2。该过程蛙与虫的运动轨迹大致如图丙所示。$\n\n<img_650>\n\n$对蛙有|x_3|=v_mt_2、H-y_2=\\frac{1}{2}gt^2_2$\n\n$对虫有y_2=\\frac{1}{2}\\times \\frac{5}{9}gt_2^2 \\sin 37^\\circ $\n\n$|x_3|-|x_4|=\\frac{1}{2}\\times \\frac{5}{9}gt_2^2 \\cos 37^\\circ $\n\n$联立可解得|x_4|=\\frac{2\\sqrt{6}-1}{3}H,即x_4=\\frac{1-2\\sqrt{6}}{3}H$\n\n$故\\frac{1-2\\sqrt{6}}{3}H\\leq x\\leq 2H$"
+    ],
+    "final_answer": [
+      "$[\\frac{1-2\\sqrt{6}}{3}H, 2H]$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Interval",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 7374,
+    "question": "$轮胎气压是行车安全的重要参数。某型号汽车轮胎容积 V_0 为25 L，安全气压范围为2.4～3.0 atm。汽车行驶一段时间后，发现胎压下降到 p_1 =2.0 atm，用车载气泵给其充气，气泵每秒钟注入0.5 L压强为 p_0 =1.0 atm的空气。忽略轮胎容积与气体温度的变化。为使气压回到安全范围，求气泵工作的时间范围。$",
+    "solution": [
+      "$忽略轮胎容积与气体温度的变化，外部向内部充气过程中，气体发生等温变化，以轮胎内已有气体和充入气体整体为研究对象，根据玻意耳定律有 pV_0 = p_1V_0 + np_0V，设气泵工作的时间为 t，因为 p_0 一定，则有 nV = 0.5t (L)，联立得 pV_0 = p_1V_0 + p_0 \\times 0.5t，代入数据得 p = 2 + 0.02t (atm)，由于 2.4 atm \\leq p \\leq 3.0 atm，则 20s \\leq t \\leq 50s。$"
+    ],
+    "final_answer": [
+      "$[20, 50]$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "s",
+    "answer_type": "Interval",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Thermodynamics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 7421,
+    "question": "$小明设计了一个青蛙捉飞虫的游戏，游戏中蛙和虫都在xOy竖直平面内运动。虫可以从水平x轴上任意位置处由静止开始做匀加速直线运动，每次运动的加速度大小恒为\\frac{5}{9}g(g为重力加速度)，方向均与x轴负方向成37^\\circ 斜向上(x轴向右为正)。蛙位于y轴上M点处，OM=H，能以不同速率向右或向左水平跳出，蛙运动过程中仅受重力作用。蛙和虫均视为质点，取\\sin 37^\\circ =\\frac{3}{5}.$\n$若虫从某位置飞出后，蛙可选择在某时刻以某速率跳出，捉住虫时蛙与虫的运动时间之比为1:\\sqrt{2}；蛙也可选择在另一时刻以同一速率跳出，捉住虫时蛙与虫的运动时间之比为1:\\sqrt{17}.求满足上述条件的虫飞出的所有可能位置及蛙对应的跳出速率(x,v)。$",
+    "solution": [
+      "$设蛙运动的时间为t或t'，则由竖直方向上的运动有$\n$\\frac{1}{2}gt^2+\\frac{1}{2}\\times\\frac{5}{9}g\\times(\\sqrt{2}t)^2 \\sin 37^\\circ =H$\n和\n$\\frac{1}{2}gt'^2+\\frac{1}{2}\\times\\frac{5}{9}g\\times(\\sqrt{17}t')^2 \\sin 37^\\circ =H$\n$解得t=\\sqrt{\\frac{6H}{5g}}，t'=\\sqrt{\\frac{3H}{10g}}$\n在水平面方向上，当蛙两次均向右侧跳出时\n$x_1=v_1t+\\frac{1}{2}\\times\\frac{5}{9}g\\times(\\sqrt{2}t)^2 \\cos 37^\\circ $\n$x_1=v_1t'+\\frac{1}{2}\\times\\frac{5}{9}g\\times(\\sqrt{17}t')^2 \\cos 37^\\circ $\n$联立解得v_1=\\frac{1}{5}\\sqrt{30gH}，x_1=\\frac{26}{15}H$\n当蛙两次都向左侧跳出时，不可能满足题述情境\n当蛙只有一次向左侧跳出时\n$x_2=v_2t+\\frac{1}{2}\\times\\frac{5}{9}g\\times(\\sqrt{2}t)^2 \\cos 37^\\circ $\n$x_2=\\frac{1}{2}\\times\\frac{5}{9}g\\times(\\sqrt{17}t')^2 \\cos 37^\\circ -v_2t'$\n$解得v_2=\\frac{1}{15}\\sqrt{30gH}，x_2=\\frac{14}{15}H$\n\n"
+    ],
+    "final_answer": [
+      "$(\\frac{26}{15}H, \\frac{1}{5}\\sqrt{30gH}), (\\frac{14}{15}H, \\frac{1}{15}\\sqrt{30gH})$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": true,
+    "unit": null,
+    "answer_type": "Interval",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 7513,
+    "question": "$一个质量为m的物体，在光滑水平面上向左做匀加速直线运动。某时刻物体的速度为v_1，经过一段时间\\Delta t，速度变为v_2。$\n$若物体继续向左运动与竖直墙壁发生碰撞。碰前瞬间物体的速度大小为7 m/s，碰后物体以6 m/s的速度反向运动。碰撞时间为0.05 s，已知m=0.5 kg，求碰撞过程中墙壁对物体的平均作用力的大小。$",
+    "solution": [
+      "$由(2)分析可知 F\\Delta t=\\Delta p=mv'-mv$\n\n$解得 F=130\\, N$"
+    ],
+    "final_answer": [
+      "130"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "N",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 7592,
+    "question": "$带电荷量为6\\times10^{-6} C的负电荷从电场中的A点运动到B点，克服静电力做了3\\times10^{-5} J的功，再从B运动到C，静电力做了1.2\\times10^{-5} J的功，则：$\n电荷从A运动到B，再从B运动到C的过程中电势能改变了多少？",
+    "solution": [
+      "$由电场力做功规律可得 W_{AC} = W_{AB} ＋ W_{BC} = (-3\\times 10^{-5} + 1.2\\times 10^{-5}) J = -1.8\\times 10^{-5} J,由功能关系可得\\Delta  E_{p} = - W_{AC} = 1.8\\times 10^{-5} J。$\n\n"
+    ],
+    "final_answer": [
+      "$1.8\\times 10^-5$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "J",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Electromagnetism",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 7593,
+    "question": "$带电荷量为6\\times10^{-6} C的负电荷从电场中的A点运动到B点，克服静电力做了3\\times10^{-5} J的功，再从B运动到C，静电力做了1.2\\times10^{-5} J的功，则：$\n如果规定A点的电势能为零，则该电荷在B点和C点的电势能分别为多少？",
+    "solution": [
+      "$由功能关系可得W_{AB}=E_{pA}-E_{pB}=-3\\times10^{-5} J，又E_{pA}=0，则E_{pB}=3\\times10^{-5} J。同理，W_{AC}=E_{pA}-E_{pC}=-1.8\\times10^{-5} J，则E_{pC}=1.8\\times10^{-5} J。$\n\n"
+    ],
+    "final_answer": [
+      "$3\\times 10^{-5}$, $1.8\\times 10^{-5}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": true,
+    "unit": "J",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Electromagnetism",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 7594,
+    "question": "$带电荷量为6\\times10^{-6} C的负电荷从电场中的A点运动到B点，克服静电力做了3\\times10^{-5} J的功，再从B运动到C，静电力做了1.2\\times10^{-5} J的功，则：$\nB、C两点的电势差为多少？",
+    "solution": [
+      "$根据电势差定义可得U_{BC}=\\phi _{B}-\\phi _{C}=-2 V。$"
+    ],
+    "final_answer": [
+      "-2"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "V",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Electromagnetism",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 7595,
+    "question": "$有一电流表G，内阻R_g=10 \\Omega ，满偏电流I_g=3 mA。$\n要把它改装成量程为0~3 V的电压表，应串联一个多大的电阻？改装后电压表的内阻是多大？",
+    "solution": [
+      "把电流表G改装成0~3 V的电压表，需要串联电阻的阻值为\n$R = \\frac{U}{I_\\mathrm{g}} - R_g = \\frac{3}{0.003} \\Omega  - 10 \\Omega  = 990 \\Omega $\n电压表的内阻为\n$R_{内} = R_g + R = 1 000 \\Omega $\n\n"
+    ],
+    "final_answer": [
+      "990, 1000"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "\\Omega",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Electromagnetism",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 7596,
+    "question": "$有一电流表G，内阻R_g=10 \\Omega ，满偏电流I_g=3 mA。$\n要把它改装成量程为$0~6 A$的电流表，需要并联一个多大的电阻？改装后电流表的内阻是多大？",
+    "solution": [
+      "把G改装成$0~6 A$的电流表，需要并联电阻的阻值为\n$R=\\frac{I_\\mathrm{g}R_\\mathrm{g}}{I-I_\\mathrm{g}}=\\frac{0.003 \\times 10}{6-0.003} \\Omega \\approx 0.005 \\Omega $\n改装后的电流表内阻为\n$R_{内}=\\frac{R_\\mathrm{g}R}{R_\\mathrm{g}+R}\\approx 0.005 \\Omega $\n\n"
+    ],
+    "final_answer": [
+      "0.005, 0.005"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "\\Omega",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Electromagnetism",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 7602,
+    "question": "$新冠疫情传播非常迅速，负压隔离病房在抗击疫情中起了关键作用。所谓负压病房是指在特殊的装置作用下，使病房内的气压低于病房外的气压。已知某负压隔离病房正常工作时，病房内温度为22 ^\\circ C，负压值(病房外与病房内气压差)为100 Pa。空气可视为理想气体，病房外大气压强恒为1.03 \\times 10^5 Pa。$\n若该病房初始温度为7 ^\\circ C，先密闭升温到22 ^\\circ C，求此时病房内的气压(保留三位有效数字)；",
+    "solution": [
+      "$若该病房初始温度为7 ^\\circ C，先密闭升温到22 ^\\circ C，设升温后病房内的气压是p_1，病房内气体发生的是等容变化，则有$\n\n$T_0=(7+273) K=280 K$\n\n$T_1=(22+273) K=295 K$\n\n$由查理定律可得 \\frac{p_0}{T_0}=\\frac{p_1}{T_1}$\n\n$代入数据解得 p_1 \\approx 1.09\\times 10^5 Pa$\n\n"
+    ],
+    "final_answer": [
+      "$1.09\\times 10^5$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "Pa",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Thermodynamics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 7603,
+    "question": "$新冠疫情传播非常迅速，负压隔离病房在抗击疫情中起了关键作用。所谓负压病房是指在特殊的装置作用下，使病房内的气压低于病房外的气压。已知某负压隔离病房正常工作时，病房内温度为22 ^\\circ C，负压值(病房外与病房内气压差)为100 Pa。空气可视为理想气体，病房外大气压强恒为1.03 \\times 10^5 Pa。$\n$再通过抽气使病房进入正常工作状态，则需抽取出的气体质量与原来气体质量的百分比\\eta(保留两位有效数字)为多少？$",
+    "solution": [
+      "$设病房体积是 V_1，气体从压强为 p_1 做等温膨胀后压强变为 p_2，体积为 V_2，由题意可得$\n\n$p_2=p_0 - 100 Pa=1.03 \\times 10^5 Pa - 100 Pa=1.029 \\times 10^5 Pa$\n\n$由玻意耳定律可得 p_1V_1 = p_2V_2$\n\n联立解得需抽取出的气体质量与原来气体质量的百分比\n\n$\\eta = \\frac{V_2 - V_1}{V_2} \\times100% \\approx  5.2%$"
+    ],
+    "final_answer": [
+      "5.2"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "%",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Thermodynamics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 7610,
+    "question": "$机动车礼让行人是一种文明行为。汽车以某一速度在水平路面上匀速行驶，在距离斑马线边界s=20 m处，驾驶员发现有人正在走斑马线过马路，立即刹车礼让行人，该车在到达斑马线边界前做匀减速直线运动，让过行人后恰好以v=5 m/s经过斑马线边界，刹车第1秒内的位移为x=12.5 m。忽略驾驶员反应时间。$\n求：汽车刹车过程中加速度的大小和刹车到斑马线边界的时间。",
+    "solution": [
+      "$汽车做匀减速直线运动，由匀变速直线运动规律可得 v^2-v_0^2=-2as$\n\n第一秒内位移\n\n$x=v_0t_1-\\frac{1}{2}at_1^2$\n\n经过边界时速度\n\n$v=v_0-at$\n\n$解得v_0=15 m/s、a=5 m/s^2、t=2 s$"
+    ],
+    "final_answer": [
+      "$5$, $2$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "m/s^2, s",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 7659,
+    "question": "$一高压舱内气体的压强为1.2个大气压，温度为17 ^\\circ C，密度为1.46 kg/m^3。$\n升高气体温度并释放出舱内部分气体以保持压强不变，求气体温度升至27 ^\\circ C时舱内气体的密度；",
+    "solution": [
+      "对原舱内全部气体，保持压强不变，温度升高，体积增大，根据盖-吕萨克定律有\n\n$\\frac{V}{T_1}$\n\n=\n\n$\\frac{V'}{T_2}$\n\n$而 T_{1} =(273+17) K=290 K、T_{2} =(273+27) K=300 K，$\n\n释放的气体和舱内留下的气体密度相同\n\n$V = \\frac{m}{\\rho _1}, V' = \\frac{m}{\\rho _2}$\n\n$联立解得 \\rho_{2} \\approx 1.41 kg/m^{3}$"
+    ],
+    "final_answer": [
+      "$1.41$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "kg/m^3",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Thermodynamics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 7660,
+    "question": "$一高压舱内气体的压强为1.2个大气压，温度为17 ^\\circ C，密度为1.46 kg/m^3。$\n保持温度27 ^\\circ C不变，再释放出舱内部分气体使舱内压强降至1.0个大气压，求高压舱内气体的密度。",
+    "solution": [
+      "对此时舱内的全部气体，温度保持27 ^\\circ C不变，压强降低，体积增大，根据玻意耳定律有\n$p_1V'=p_2V″$\n$而p_1=1.2 atm、p_2=1.0 atm$\n释放的气体和舱内留下的气体密度相同\n$V'=\\frac{m}{\\rho _2}，V″=\\frac{m}{\\rho _3}$\n$解得\\rho _3\\approx 1.18 kg/m^3$"
+    ],
+    "final_answer": [
+      "$1.18$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "kg/m^3",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Thermodynamics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 7667,
+    "question": "$冬奥会雪上项目的运动员都佩戴有护目镜，护目镜上附有一层“增反膜”，以减小紫外线对眼睛的伤害。制作护目镜时需要测量紫外线的波长。假设利用双缝干涉进行波长的测量，实验中使用的双缝间距d=0.1 mm，双缝到屏的距离L=1 m，测得屏上干涉条纹中相邻亮条纹间距\\Delta x=3.6 mm。已知光在空气中传播的速度为c=3\\times 10^8 m/s，求:$\n被测紫外线的频率f;",
+    "solution": [
+      "$设紫外线在空气中的波长为 \\lambda _0，由于\\Delta x= \\frac{L}{d} \\lambda _0，且 \\lambda _0= \\frac{c}{f}，联立解得 f= \\frac{cL}{\\Delta x \\cdot d}，代入数据可得 f= \\frac{25}{3} \\times 10^{14} Hz。$\n\n"
+    ],
+    "final_answer": [
+      "$\\frac{25}{3}\\times 10^14$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "Hz",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Optics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 7668,
+    "question": "$冬奥会雪上项目的运动员都佩戴有护目镜，护目镜上附有一层“增反膜”，以减小紫外线对眼睛的伤害。制作护目镜时需要测量紫外线的波长。假设利用双缝干涉进行波长的测量，实验中使用的双缝间距d=0.1 mm，双缝到屏的距离L=1 m，测得屏上干涉条纹中相邻亮条纹间距\\Delta x=3.6 mm。已知光在空气中传播的速度为c=3\\times 10^8 m/s，求:$\n$若选用薄膜材料的折射率为n=1.5，则制作护目镜时，“增反膜”的最小厚度。$",
+    "solution": [
+      "$设“增反膜”中紫外线的波长为\\lambda ，则有n=\\frac{c}{v}=\\frac{\\lambda _0}{\\lambda }；膜的最小厚度d=\\frac{\\lambda }{2},代入数据可得d=1.2\\times 10^{-7} m。$"
+    ],
+    "final_answer": [
+      "$1.2\\times 10^-7$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "m",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Optics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 7669,
+    "question": "$4\\times 100米接力中的交接棒过程会直接影响比赛成绩。甲、乙两名运动员在直跑道上进行交接棒训练，某次训练中，甲在距离接力区前端x_0=24 m处向乙发出起跑口令，并以10 m/s的速度跑完全程，乙在接力区前端听到起跑口令后立即起跑，在甲、乙相遇时完成交接棒。已知乙在起跑加速阶段的第4 s内通过的距离为7 m，乙从起跑到接棒前做的是匀加速直线运动，接力区的长度为L=20 m，求：$\n乙加速阶段的加速度大小及交接棒时乙的速度大小；",
+    "solution": [
+      "$根据题意，设乙在匀加速阶段的加速度大小为a，在前3 s和前4 s内通过的位移大小分别为x_3和x_4，根据运动学规律得$\n\n$x_3=\\frac{1}{2}a(3 s)^2$\n\n$x_4=\\frac{1}{2}a(4 s)^2$\n\n$则第4 s内的位移大小为\\Delta x=x_4-x_3=7 m$\n\n$联立可得a=2 m/s^2$\n\n$设经过时间t_1甲追上乙，则x_0=x_{甲1}-x_{乙1}=v{t_1}-\\frac{1}{2}at_1^2$\n\n$解得t_1=4 s(甲、乙在4 s时相遇交接，故t_1=6 s舍去)$\n\n$此刻乙的速度大小v_{乙}=at_1$\n\n$可得v_{乙}=8 m/s$"
+    ],
+    "final_answer": [
+      "2, 8"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "m/s^2, m/s",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 7677,
+    "question": "一辆货车由质量为m的车头和质量为3m的车厢组成，车头和车厢受到的阻力均为各自车重的k倍。在货车沿平直公路以速度v匀速前进的过程中，某一时刻车厢突然脱落，而此时司机并没有发现故障，继续保持车头动力前进，直至脱落车厢停下时才恰好发现。于是立即刹车减速，再掉头返回，车头和车厢均可视为质点。重力加速度为g。求司机发现车厢脱落时，车头和车厢的距离。",
+    "solution": [
+      "物理科目的题目：\n\n\n$货车匀速运动过程，牵引力F=k(3m+m)g=4kmg$\n$车厢脱落后，对车厢受力分析可得k\\cdot 3mg=3ma_1$\n$解得a_1=kg$\n$车厢从脱落至停下的过程，所用时间t_1=\\frac{v}{a_1}=\\frac{v}{kg}$\n$车厢的位移x_1=\\frac{v^2}{2a_1}=\\frac{v^2}{2kg}$\n$在该过程中对车头受力分析可得F-kmg=ma_2$\n$解得a_2=3kg$\n$该过程中车头的位移x_2=vt_1+\\frac{1}{2}a_2t_1^2$\n$解得x_2=\\frac{5v^2}{2kg}$\n则司机发现车厢脱落时，车头和车厢的距离\n$\\Delta x=x_2-x_1=\\frac{2v^2}{kg}$"
+    ],
+    "final_answer": [
+      "$\\frac{2v^2}{kg}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 7692,
+    "question": "$某大型水陆两栖飞机具有水面滑行汲水和空中投水等功能。某次演练中，该飞机在水面上由静止开始匀加速直线滑行并汲水，速度达到v_1=80 m/s时离开水面，该过程滑行距离L=1600 m、汲水质量m=1.0\\times 10^4 kg。离开水面后，飞机攀升高度h=100 m时速度达到v_2=100 m/s，之后保持水平匀速飞行，待接近目标时开始空中投水。取重力加速度g=10 m/s^2。求：$\n$飞机在水面滑行阶段的加速度a的大小及滑行时间t；$",
+    "solution": [
+      "$由v_1^2=2aL得a=\\frac{v^2_1}{2L}=\\frac{80^2}{2\\times 1600} m/s^2=2 m/s^2$\n\n$由t=\\frac{v_1-v_0}{a}得t=\\frac{80-0}{2} s=40 s$"
+    ],
+    "final_answer": [
+      "$2$, $40$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "m/s^2, s",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 7693,
+    "question": "$某大型水陆两栖飞机具有水面滑行汲水和空中投水等功能。某次演练中，该飞机在水面上由静止开始匀加速直线滑行并汲水，速度达到v_1=80 m/s时离开水面，该过程滑行距离L=1600 m、汲水质量m=1.0\\times 10^4 kg。离开水面后，飞机攀升高度h=100 m时速度达到v_2=100 m/s，之后保持水平匀速飞行，待接近目标时开始空中投水。取重力加速度g=10 m/s^2。求：$\n$整个攀升阶段，飞机汲取的水的机械能增加量\\Delta E。$",
+    "solution": [
+      "飞机汲取的水的机械能增加量\n\n$\\Delta E=mgh+\\frac{1}{2}mv_2^2-\\frac{1}{2}mv_1^2$\n\n$代入数据解得\\Delta E=2.8\\times 10^7 J$\n\n"
+    ],
+    "final_answer": [
+      "$2.8\\times 10^7$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "J",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 7729,
+    "question": "已知地铁列车起动加速度大小为$1.0 m/s^2$，常用制动加速度大小为$1.0 m/s^2$，起动和制动过程可视为匀变速直线运动。地铁列车加速运行和匀速运行时受到的阻力大小恒为$2\\times 10^5 N$，列车的额定功率为$6\\times 10^3 kW$，总质量为$2.2\\times 10^5 kg$。若甲站与相邻的乙站相距$2.7 km$(两站之间的线路可视为水平直线)，试求地铁列车从甲站运行到乙站的过程中。\n地铁列车的最大速度；",
+    "solution": [
+      "$地铁列车以额定功率行驶时，速度最大，则有 P=F_{牵}v_{m}，F_{牵}=f，解得 v_{m}=\\frac{P}{f}=\\frac{6 \\times 10^6}{2 \\times 10^5} m/s=30 m/s$"
+    ],
+    "final_answer": [
+      "$30$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "m/s",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 7730,
+    "question": "已知地铁列车起动加速度大小为$1.0 m/s^2$，常用制动加速度大小为$1.0 m/s^2$，起动和制动过程可视为匀变速直线运动。地铁列车加速运行和匀速运行时受到的阻力大小恒为$2\\times 10^5 N$，列车的额定功率为$6\\times 10^3 kW$，总质量为$2.2\\times 10^5 kg$。若甲站与相邻的乙站相距$2.7 km$(两站之间的线路可视为水平直线)，试求地铁列车从甲站运行到乙站的过程中。\n到达乙站所需要的时间；",
+    "solution": [
+      "$起动阶段有v_m = at_1，解得t_1 = \\frac{v_m}{a} = 30 s，通过的位移为x_1 = \\frac{v_m t_1}{2} = 450 m，制动阶段有v_m = a’ t_3，解得t_3 = \\frac{v_m}{a'} = 30 s，通过的位移为x_3 = \\frac{v_m t_3}{2} = 450 m，匀速阶段有x_2 = v_m t_2 = L - x_1 - x_3，解得t_2 = \\frac{L - x_1 - x_3}{v_m} = \\frac{2 700 - 450 - 450}{30} s = 60 s，从甲站到乙站需要的时间t = t_1 + t_2 + t_3 = 120 s。$"
+    ],
+    "final_answer": [
+      "$120$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "s",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 7731,
+    "question": "已知地铁列车起动加速度大小为$1.0 m/s^2$，常用制动加速度大小为$1.0 m/s^2$，起动和制动过程可视为匀变速直线运动。地铁列车加速运行和匀速运行时受到的阻力大小恒为$2\\times 10^5 N$，列车的额定功率为$6\\times 10^3 kW$，总质量为$2.2\\times 10^5 kg$。若甲站与相邻的乙站相距$2.7 km$(两站之间的线路可视为水平直线)，试求地铁列车从甲站运行到乙站的过程中。\n牵引力做的功。",
+    "solution": [
+      "$牵引力在地铁列车加速和匀速运动阶段做功，根据动能定理可得W_{牵}-f(x_{1}+x_{2})=\\frac{1}{2}mv^2_{m} 解得W_{牵}=5.49 \\times 10^{8} J$\n\n"
+    ],
+    "final_answer": [
+      "$5.49\\times 10^8$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "J",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 7761,
+    "question": "$随着海拔高度的增加，大气压会相应地减小，高度每增加1 m，大气压强降低约11 Pa；某登山运动员在攀登珠穆朗玛峰的过程中，发现他携带的手表表面玻璃发生了爆裂。此时，运动员所在高度的气温为-15 ^\\circ C。已知27 ^\\circ C时，表内压强与海平面处的大气压相等，均为1\\times 10^5 Pa；当手表内外压强差超过6\\times 10^4 Pa时，手表表面玻璃可能爆裂，求手表表面玻璃爆裂前瞬间表内压强p_1和运动员所在的高度。(结果取整数)$",
+    "solution": [
+      "$设此时的高度为h，气体等容变化，由查理定律得$\n$\\frac{p_1}{T_1}=\\frac{p_0}{T_0}$\n$由题中信息知T_0=300 K、T_1=258 K，解得-15 ^\\circ C时表内气体压强p_1=86 000 Pa。由题意可知p_h=p_1-6\\times 10^4 Pa，又因为p_h=p_0-11h，解得h\\approx 6 727 m。$\n\n"
+    ],
+    "final_answer": [
+      "$86000$,　$6727$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "Pa, m",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Thermodynamics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 7776,
+    "question": "促进西部大开发的一个重要保障是解决能源问题，西部具有丰富的水资源。一个小型水电站的河水流量为$4 m^3/s$，水流下落的高度为5 m。若该水电站发电机组的总效率为50%，取$g=10 m/s^2$ 求：\n发电机组的输出功率；",
+    "solution": [
+      "$利用水的机械能发电，水推动发电机叶轮的功率为 P = \\frac{\\rho Qght}{t} = \\rho Qgh = 2\\times 10^5 W$\n\n$发电机组的输出功率 P_{出} = P \\cdot 50% = 1\\times 10^5 W$\n\n"
+    ],
+    "final_answer": [
+      "$1\\times 10^5$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "W",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Electromagnetism",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 7777,
+    "question": "$在磁感应强度为B的匀强磁场中，一个静止的放射性原子核发生了一次\\alpha 衰变。放射出的\\alpha 粒子(^4_2He)在与磁场垂直的平面内做圆周运动，其轨道半径为R。以m、q分别表示\\alpha 粒子的质量和电荷量。$\n$\\alpha$ 粒子的圆周运动可以等效成一个环形电流，求圆周运动的周期和环形电流大小。",
+    "solution": [
+      "$设\\alpha 粒子的速度大小为v，由qvB=m\\frac{v^2}{R}，T=\\frac{2\\pi R}{v}，得\\alpha 粒子在磁场中运动周期T=\\frac{2\\pi m}{qB}$\n\n$环形电流大小I=\\frac{q}{T}=\\frac{q^2B}{2\\pi m}$"
+    ],
+    "final_answer": [
+      "$\\frac{2\\pi m}{qB}$, $\\frac{q^2B}{2\\pi m}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": true,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Electromagnetism",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 7815,
+    "question": "$负压病房内的气压低于病房外的气压，外面的新鲜空气能流进病房，病房内的空气不会自动泄漏出去，而是通过专门的通道排放到固定的地方。某负压病房面积约为40 m^2，高度为3 m，净化标准10万级，负压差5~20 Pa，新风换气次数为每小时6次，新风风量150 m^3/h，病房外大气压强p_0=100 020 Pa，假设病房内外温度相同且恒定。$\n\n$①若病房原负压差为20 Pa，进气的时候不排气，求进气一次后，病房内的压强。(保留2位有效数字)$\n\n$②若病房换气时同时进气和排气，则1 h内须向外排出多少气体才能让病房负压差为10 Pa？(保留2位有效数字)$",
+    "solution": [
+      "$①设病房原来的压强为p_1、体积为V、进气即进入病房气体体积为\\Delta V、进气后病房的压强为p_2，$\n$则有p_1=100020 Pa-20 Pa=100000 Pa，V=40\\times3 m^3=120 m^3，\\Delta V= \\frac{150}{6} m^3=25 m^3$\n$根据玻意耳定律有p_2V=p_0\\Delta V+p_1V$\n$解得p_2 \\approx 1.2\\times10^5 Pa$\n$②假如1 h内只进气不排气，病房压强p_3=100010 Pa(负压差为10 Pa)，病房内理想气体的体积为V'，则有$\n$p_3V'=150 m^3\\times p_0+p_1V$\n$解得V' \\approx 270 m^3，所以1 h内应排气$\n$\\Delta V'=V'-120 m^3=150 m^3=1.5\\times10^2 m^3$\n\n"
+    ],
+    "final_answer": [
+      "$1.2\\times 10^5, 1.5\\times 10^2$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "Pa, m^3",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Thermodynamics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 7862,
+    "question": "$均匀介质中质点A、B的平衡位置位于x轴上，坐标分别为0和x_B=16 cm。某简谐横波沿x轴正方向传播，波速为v=20 cm/s，波长大于20 cm，振幅为y_0=1 cm，且传播时无衰减。t=0时刻A、B偏离平衡位置的位移大小相等、方向相同，运动方向相反，此后每隔\\Delta t=0.6 s两者偏离平衡位置的位移大小相等、方向相同。已知在t_1时刻(t_1>0)，质点A位于波峰。求$\n$从t_{1}时刻开始，质点B最少要经过多长时间位于波峰；$",
+    "solution": [
+      "$因t_1时刻A位于波峰，A、B间水平距离\\Delta x=16 cm＜\\lambda，且波由A向B传播，故质点B到达波峰所需最短时间：t=\\frac{\\Delta x}{v}=0.8 s$"
+    ],
+    "final_answer": [
+      "0.8"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "s",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 7863,
+    "question": "$均匀介质中质点A、B的平衡位置位于x轴上，坐标分别为0和x_B=16 cm。某简谐横波沿x轴正方向传播，波速为v=20 cm/s，波长大于20 cm，振幅为y_0=1 cm，且传播时无衰减。t=0时刻A、B偏离平衡位置的位移大小相等、方向相同，运动方向相反，此后每隔\\Delta t=0.6 s两者偏离平衡位置的位移大小相等、方向相同。已知在t_1时刻(t_1>0)，质点A位于波峰。求$\n$t_1时刻质点B偏离平衡位置的位移。$",
+    "solution": [
+      "$由“每隔\\Delta t=0.6 s两者偏离平衡位置的位移大小相等、方向相同”可知T=2\\Delta t=1.2 s$\n\n$因波速v=20 cm/s$\n\n$故波长\\lambda=vT=24 cm$\n\n$由于\\Delta x=16 cm=\\frac{2}{3}\\lambda,故B的振动状态滞后于A的相位\\phi=\\frac{2}{3}\\times 2\\pi =\\frac{4}{3}\\pi $\n\n$t_{1}时刻A质点的位移y_{A}=y_{0}=1 cm$\n\n$故B质点的位移y_{B}=y_{0} \\cos \\frac{4}{3}\\pi =-0.5 cm$"
+    ],
+    "final_answer": [
+      "-0.5"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "cm",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 7905,
+    "question": "某高速公路上一长直路段设置有区间测速，区间长度为19 km，一辆小汽车通过测速起点时的速度为92 km/h，汽车匀加速行驶36 s后速度为108 km/h，接着匀速行驶6 min，然后匀减速行驶并通过测速终点。为使汽车在该区间的平均速度不超过最高限速100 km/h，求：\n小汽车在该区间运动的最短总时间；",
+    "solution": [
+      "$对汽车行驶的全过程，根据 \\overline{v}=\\frac{x}{t} 可得 t_{\\text{min}}=\\frac{x}{\\overline{v}}=684\\text{s}。$"
+    ],
+    "final_answer": [
+      "684"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "s",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 7906,
+    "question": "某高速公路上一长直路段设置有区间测速，区间长度为19 km，一辆小汽车通过测速起点时的速度为92 km/h，汽车匀加速行驶36 s后速度为108 km/h，接着匀速行驶6 min，然后匀减速行驶并通过测速终点。为使汽车在该区间的平均速度不超过最高限速100 km/h，求：\n该车通过区间测速终点时的最高速度大小。",
+    "solution": [
+      "$本题中汽车匀加速及匀速运动的时间、位移为定值，则在该区间运动的时间越短，到终点时的速度越大。设汽车匀加速行驶的时间为t_1，匀速行驶的时间为t_2，汽车在区间测速起点的速度为v_1，匀速行驶的速度为v_2，区间测速终点的最高速度为v_{max}，总位移为x。$\n\n$对匀加速过程，汽车的位移为x_1 = \\frac{v_1+v_2}{2} t_1$\n\n$对匀速过程，汽车的位移为x_2 = v_2 t_2 $\n\n$对匀减速过程，汽车的位移为x_3 = \\frac{v_{max}+v_2}{2}(t_{min}-t_1-t_2)$\n\n$则总位移x = x_1 + x_2 + x_3 $\n\n$联立可得v_{max}=72 km/h$"
+    ],
+    "final_answer": [
+      "$72$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "km/h",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 7932,
+    "question": "$国际宇航联合会将2020年度“世界航天奖”授予我国“嫦娥四号”任务团队。“嫦娥四号”任务创造了多项世界第一。在探月任务中，“玉兔二号”月球车朝正下方发射一束频率为f的电磁波，该电磁波分别在月壤层的上、下表面被反射回来，反射波回到“玉兔二号”的时间差为\\Delta t。已知电磁波在月壤层中传播的波长为\\lambda，求该月壤层的厚度d。$",
+    "solution": [
+      "$电磁波的传播速度v=f\\lambda $\n\n$根据题意2d=v\\Delta t，解得d=\\frac{f\\lambda \\Delta t}{2}$\n\n"
+    ],
+    "final_answer": [
+      "$\\frac{f\\lambda \\Delta t}{2}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Optics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 7989,
+    "question": "$某双层玻璃保温杯夹层中有少量空气，温度为27 ^\\circ C时，压强为3.0\\times 10^{3} Pa.$\n当夹层中空气的温度升至37 ^\\circ C，求此时夹层中空气的压强；",
+    "solution": [
+      "夹层内气体原状态\n\n$T_1=(273+27) K=300 K，p_1=3.0\\times 10^3 Pa$\n\n$温度升高后 T_2=(273+37) K=310 K$\n\n$等容变化 \\frac{p_1}{T_1} = \\frac{p_2}{T_2}，解得p_2=3.1\\times 10^3 Pa$\n\n"
+    ],
+    "final_answer": [
+      "$3.1\\times 10^3$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "Pa",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Thermodynamics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 7990,
+    "question": "$某双层玻璃保温杯夹层中有少量空气，温度为27 ^\\circ C时，压强为3.0\\times 10^{3} Pa.$\n$当保温杯外层出现裂隙，静置足够长时间，求夹层中增加的空气质量与原有空气质量的比值。设环境温度为27 ^\\circ C，大气压强为1.0\\times 10^5 Pa。$",
+    "solution": [
+      "$设夹层容积为 V ，夹层中增加的气体在压强为 p_1 状态下的体积为 nV ，大气压强为 p_0$\n\n$等温变化 p_1 (V + nV) = p_0V ，解得 n = \\frac{97}{3} ， \\frac{\\Delta m}{m} = \\frac{\\rho nV}{\\rho V} = \\frac{97}{3}$"
+    ],
+    "final_answer": [
+      "$\\frac{97}{3}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Numerical",
+    "error": "1e-2",
+    "question_type": "Open-ended",
+    "subfield": "Thermodynamics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8005,
+    "question": "$长途旅行出发之前，小王检查轮胎的充气情况，发现轮胎的胎压为3.15 \\times 10^{5} Pa，温度为15 ^\\circ C，在高速公路上行驶几个小时后，胎内气体从外界吸收2600 J的热量，检查轮胎的胎压为3.50 \\times 10^{5} Pa。轮胎制造商建议胎压保持在2.91 \\times 10^{5} Pa至3.21 \\times 10^{5} Pa之间，于是他将轮胎中的一些气体放掉，使胎压重新降为3.15 \\times 10^{5} Pa，若放气过程中温度保持不变，整个过程中轮胎的体积不变，求：$\n$胎压为3.50\\times 10^5 Pa时，胎内气体的温度；$",
+    "solution": [
+      "整个过程中轮胎的体积不变，则有\n$\\frac{p_1}{T_1} = \\frac{p_2}{T_2}$\n\n$可得 T_{2} = \\frac{p_2T_1}{p_1} = \\frac{3.50\\times {10}^5\\times (15+273)}{3.15\\times {10}^5} K=320 K=47 ^\\circ C$\n\n"
+    ],
+    "final_answer": [
+      "47"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "^\\circ C",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Thermodynamics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8006,
+    "question": "$长途旅行出发之前，小王检查轮胎的充气情况，发现轮胎的胎压为3.15 \\times 10^{5} Pa，温度为15 ^\\circ C，在高速公路上行驶几个小时后，胎内气体从外界吸收2600 J的热量，检查轮胎的胎压为3.50 \\times 10^{5} Pa。轮胎制造商建议胎压保持在2.91 \\times 10^{5} Pa至3.21 \\times 10^{5} Pa之间，于是他将轮胎中的一些气体放掉，使胎压重新降为3.15 \\times 10^{5} Pa，若放气过程中温度保持不变，整个过程中轮胎的体积不变，求：$\n$未放气前，胎压从3.15 \\times 10^{5} Pa变为3.50 \\times 10^{5} Pa过程中，气体内能的增加量；$",
+    "solution": [
+      "未放气前，整个过程中轮胎的体积不变，所以外界没有对气体做功，则气体内能的增加量\n$\\Delta U=Q=2 600 J$"
+    ],
+    "final_answer": [
+      "2600"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "J",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Thermodynamics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8007,
+    "question": "$长途旅行出发之前，小王检查轮胎的充气情况，发现轮胎的胎压为3.15 \\times 10^{5} Pa，温度为15 ^\\circ C，在高速公路上行驶几个小时后，胎内气体从外界吸收2600 J的热量，检查轮胎的胎压为3.50 \\times 10^{5} Pa。轮胎制造商建议胎压保持在2.91 \\times 10^{5} Pa至3.21 \\times 10^{5} Pa之间，于是他将轮胎中的一些气体放掉，使胎压重新降为3.15 \\times 10^{5} Pa，若放气过程中温度保持不变，整个过程中轮胎的体积不变，求：$\n从轮胎中放掉气体的分子数目与总数目之比的值。",
+    "solution": [
+      "放气过程中温度保持不变，则有\n\n$p_{2}V_{1}=p_{1}(V_{1}+\\Delta V)$\n\n$则\\Delta V=\\frac{(p_2-p_1)V_1}{p_1}$\n\n$=\\frac{V_1}{9}$\n\n从轮胎中放掉气体的分子数目与总数目之比\n\n$n：N=\\Delta V：(\\Delta V+V_{1})=1：10$"
+    ],
+    "final_answer": [
+      "1/10"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Thermodynamics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8008,
+    "question": "$热等静压设备广泛应用于材料加工中。该设备工作时，先在室温下把惰性气体用压缩机压入到一个预抽真空的炉腔中，然后炉腔升温，利用高温高气压环境对放入炉腔中的材料加工处理，改善其性能。一台热等静压设备的炉腔中某次放入固体材料后剩余的容积为0.13 m^3，炉腔抽真空后，在室温下用压缩机将10瓶氩气压入到炉腔中。已知每瓶氩气的容积为3.2\\times 10^{-2} m^3，使用前瓶中气体压强为1.5\\times 10^{7} Pa，使用后瓶中剩余气体压强为2.0\\times 10^{6} Pa；室温温度为27 ^\\circ C。氩气可视为理想气体。$\n求压入氩气后炉腔中气体在室温下的压强；",
+    "solution": [
+      "$设初始时每瓶气体的体积为V_0，压强为p_0；使用后气瓶中剩余气体的压强为p_1。假设体积为V_0、压强为p_0的气体压强变为p_1时，其体积膨胀为V_1。由玻意耳定律$\n\n$p_0 V_0 = p_1 V_1$\n\n$被压入炉腔的气体在室温和p_1条件下的体积为$\n\n$V_1' = V_1 - V_0$\n\n$设10瓶气体压入完成后炉腔中气体的压强为p_2，体积为V_2。由玻意耳定律p_2 V_2 = 10 p_1 V_1'$\n\n联立以上三式并代入题给数据得\n\n$p_2 = 3.2 \\times  10^7 Pa$\n\n"
+    ],
+    "final_answer": [
+      "$3.2\\times 10^7$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "Pa",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Thermodynamics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8009,
+    "question": "$热等静压设备广泛应用于材料加工中。该设备工作时，先在室温下把惰性气体用压缩机压入到一个预抽真空的炉腔中，然后炉腔升温，利用高温高气压环境对放入炉腔中的材料加工处理，改善其性能。一台热等静压设备的炉腔中某次放入固体材料后剩余的容积为0.13 m^3，炉腔抽真空后，在室温下用压缩机将10瓶氩气压入到炉腔中。已知每瓶氩气的容积为3.2\\times 10^{-2} m^3，使用前瓶中气体压强为1.5\\times 10^{7} Pa，使用后瓶中剩余气体压强为2.0\\times 10^{6} Pa；室温温度为27 ^\\circ C。氩气可视为理想气体。$\n将压入氩气后的炉腔加热到1227摄氏度 ，求此时炉腔中气体的压强。",
+    "solution": [
+      "$设加热前炉腔的温度为T_0，加热后炉腔温度为T_1，气体压强为p_3。由查理定律$\n\n$\\frac{p_3}{T_1} = \\frac{p_2}{T_0}$ ⑤\n\n联立④⑤式并代入题给数据得\n\n$p_3 = 1.6 \\times 10^8 Pa$ ⑥\n\n"
+    ],
+    "final_answer": [
+      "$1.6\\times 10^8$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "Pa",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Thermodynamics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8062,
+    "question": "将电动势为3.0 V的电源接入电路中,测得电源两极间的电压为2.4 V,当电路中有6 C的电荷流过时,求：\n电源中有多少其他形式的能转化为电能；",
+    "solution": [
+      "$电源中其他形式的能转化为的电能等于非静电力所做的功，即：W_{非}=EIt=Eq=3.0\\times 6 J=18 J$"
+    ],
+    "final_answer": [
+      "18"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "J",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Electromagnetism",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8063,
+    "question": "将电动势为3.0 V的电源接入电路中,测得电源两极间的电压为2.4 V,当电路中有6 C的电荷流过时,求：\n外电路中有多少电能转化为其他形式的能；",
+    "solution": [
+      "$外电路电能转化成其他形式的能等于外电路中静电力所做的功，即：W_{外}=UIt=Uq=2.4\\times 6 J=14.4 J$"
+    ],
+    "final_answer": [
+      "14.4"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "J",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Electromagnetism",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8064,
+    "question": "将电动势为3.0 V的电源接入电路中,测得电源两极间的电压为2.4 V,当电路中有6 C的电荷流过时,求：\n内电路中有多少电能转化为其他形式的能。",
+    "solution": [
+      "内电路电能转化成其他形式的能等于内电路中静电力所做的功，即：\n\n$W_{内}=(E-U)It=(E-U)q=(3-2.4)\\times 6 J=3.6 J$"
+    ],
+    "final_answer": [
+      "3.6"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "J",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Electromagnetism",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8080,
+    "question": "$科学家创造出一种利用细菌将太阳能转化为液体燃料的“人造树叶”系统，使太阳取代石油成为可能。假设该“人造树叶”工作一段时间后，能将10^{-6} g的水分解为氢气和氧气。已知水的密度\\rho =1.0\\times 10^3 kg/m^3、摩尔质量M=1.8\\times 10^{-2} kg/mol，阿伏加德罗常数N_A=6.02\\times 10^{23} mol^{-1}。试求：(结果均保留一位有效数字)$\n$被分解的水中含有水分子的总数N；$",
+    "solution": [
+      "$水分子数N=\\frac{mN_\\mathrm{A}}{M}\\approx 3\\times 10^{16}个。$\n\n"
+    ],
+    "final_answer": [
+      "$3\\times 10^{16}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": null,
+    "unit": null,
+    "answer_type": "Numerical",
+    "error": "1e15",
+    "question_type": "Open-ended",
+    "subfield": "Thermodynamics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8081,
+    "question": "$科学家创造出一种利用细菌将太阳能转化为液体燃料的“人造树叶”系统，使太阳取代石油成为可能。假设该“人造树叶”工作一段时间后，能将10^{-6} g的水分解为氢气和氧气。已知水的密度\\rho =1.0\\times 10^3 kg/m^3、摩尔质量M=1.8\\times 10^{-2} kg/mol，阿伏加德罗常数N_A=6.02\\times 10^{23} mol^{-1}。试求：(结果均保留一位有效数字)$\n一个水分子的体积V。",
+    "solution": [
+      "$水的摩尔体积为V_{0}=\\frac{M}{\\rho }，一个水分子体积V=\\frac{V_0}{N_\\mathrm{A}}=\\frac{M}{\\rho N_\\mathrm{A}}\\approx 3\\times 10^-29 m^3。$"
+    ],
+    "final_answer": [
+      "$3\\times 10^{-29}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "m^3",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Thermodynamics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8083,
+    "question": "某双层玻璃保温杯夹层中有少量空气，温度为27 ^\\circ C时，压强为$3.0\\times 10^3 Pa$。\n当夹层中空气的温度升至37 ^\\circ C，求此时夹层中空气的压强；",
+    "solution": [
+      "夹层内气体原状态：\n$T_1=(273+27) K=300 K，$\n$p_1=3.0\\times 10^3 Pa$\n$温度升高后T_2=(273+37) K=310 K，求p_2$\n$等容变化 \\frac{p_1}{T_1} = \\frac{p_2}{T_2}$\n$解得p_2=3.1\\times 10^3 Pa$\n\n"
+    ],
+    "final_answer": [
+      "$3.1\\times 10^3$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "Pa",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Thermodynamics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8084,
+    "question": "某双层玻璃保温杯夹层中有少量空气，温度为27 ^\\circ C时，压强为$3.0\\times 10^3 Pa$。\n$当保温杯外层出现裂隙，静置足够长时间，求夹层中增加的空气质量与原有空气质量的比值。设环境温度为27 ^\\circ C，大气压强为1.0\\times 10^5 Pa.$",
+    "solution": [
+      "$设夹层容积为V，夹层中增加的气体在压强为p_1状态下的体积为nV,大气压强为p_0$\n\n$等温变化：p_1(V+nV)=p_0V$\n\n$解得n=\\frac{97}{3}$\n\n$\\frac{\\Delta m}{m}=\\frac{\\rho nV}{\\rho V}=\\frac{97}{3}$"
+    ],
+    "final_answer": [
+      "$\\frac{97}{3}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Thermodynamics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8085,
+    "question": "$家用轿车轮胎气压的安全范围为2.3～2.5 bar (bar是胎压单位，计算时可以近似认为1 bar=1 atm )。已知当某汽车正常胎压为2.4 bar时，此时轮胎内气体体积为V_0。长时间行驶后,发现左前轮胎胎压显示为2.0 bar,且轮胎内气体体积为\\frac{19}{20}V_0。现用电动气泵给左前轮胎充气,每秒钟充入压强为1 atm、体积为\\Delta V=\\frac{1}{200}V_0的气体，求如果使胎压达到2.4 bar，电动气泵需要给左前轮胎充气多长时间?(充气过程中认为气体温度不变)$",
+    "solution": [
+      "$初态左前轮胎内气体压强p_1=2.0 atm，气体体积为V_1=\\frac{19}{20}V_0，设要充入的气体压强为p_0=1 atm，总体积为V，末状态轮胎内气体压强p_2=2.4 atm，体积为V_0，该过程为等温变化，$\n\n$由玻意耳定律可得p_1\\cdot V_1+p_0\\cdot V=p_2\\cdot V_0$\n\n$设充气时间为t，则\\Delta V\\cdot t=V$\n\n$代入数据解得t=100 s$"
+    ],
+    "final_answer": [
+      "100"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "s",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Thermodynamics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8087,
+    "question": "为研究小行星登陆器的缓冲性能，无风天气下在地球某试验场做如下试验：登陆器悬停于离地面$H=367.4 m$的高空，关闭动力后，登陆器先做自由落体运动，一段时间后点火打开反推发动机，登陆器马上以大小为$a=20 m/s^2$的加速度匀减速下降，竖直落地时要求速度不能超过2 m/s。重力加速度$g=10 m/s^2$，求：\n打开反推发动机时的最大速度；",
+    "solution": [
+      "$在登陆器落地时的速度v=2 m/s的情况下，打开反推发动机时有最大速度v_m，且登陆器在空中运动的时间最短，设登陆器做自由落体运动的位移为h，则有$\n\n$v_m^2=2gh$\n\n$v^2-v_m^2=-2a(H-h)$\n\n$联立解得h=245 m，v_m=70 m/s$"
+    ],
+    "final_answer": [
+      "$70$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "m/s",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8088,
+    "question": "为研究小行星登陆器的缓冲性能，无风天气下在地球某试验场做如下试验：登陆器悬停于离地面$H=367.4 m$的高空，关闭动力后，登陆器先做自由落体运动，一段时间后点火打开反推发动机，登陆器马上以大小为$a=20 m/s^2$的加速度匀减速下降，竖直落地时要求速度不能超过2 m/s。重力加速度$g=10 m/s^2$，求：\n登陆器在空中运动的最短时间。",
+    "solution": [
+      "$由h=\\frac{1}{2} gt^{2_1} 可得登陆器在空中做自由落体运动的时间为t_1=\\sqrt{\\frac{2h}{g}}=7s$\n$减速运动的时间为t_2=\\frac{H-h}{\\overline{v}}=\\frac{367.4-245}{\\frac{70+2}{2}}s=3.4s$\n$在空中运动的最短时间为t=t_1+t_2=10.4s$"
+    ],
+    "final_answer": [
+      "$10.4$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "s",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8089,
+    "question": "$某商场内儿童游乐区设置了双人赛车竞技轨道,参与游戏的儿童可通过游戏手柄控制赛车在赛道上进行坡道加速、弯道减速和直道冲刺等动作。某时刻甲、乙两辆赛车同时通过赛道上的同一位置后进入一段长为10 m的直轨道开始竞速,若甲车通过该位置后速度大小始终为2 m/s,乙车通过该位置时的速度为1 m/s,并开始以0.5 m/s^{2} 的加速度开始加速。$\n若乙车一直加速,求乙车追上甲车前,两车间的最大距离。",
+    "solution": [
+      "$当甲、乙两车速度相等时,它们之间的距离最大，即v_{甲}=v_{乙}+at$\n\n$解得t=2 s$\n\n$则两车之间的距离为\\Delta s=s_{甲}-s_{乙}$\n\n$由于s_{甲}=v_{甲}t$\n\n$s_{乙}=v_{乙}t+\\frac{1}{2}at^{2}$\n\n$代入解得\\Delta s=1 m$"
+    ],
+    "final_answer": [
+      "$1$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "m",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8103,
+    "question": "$某学校举行校庆，准备放飞气球渲染气氛。当天上午10点，学校地表附近的气温为27 ^\\circ C，大气压强为p_0=1.0\\times 10^5 Pa，此时气球体积为V_0。气球内充的氦气可视为理想气体，气球内外气压差很小，可以忽略。$\n$已知在距地面2000m高处的大气压强为p_1=0.8\\times 10^5 Pa，若气球升到2000m高处时体积变为1.2V_0，则此时2000m高处的气温为多少？$",
+    "solution": [
+      "$由理想气体状态方程有\\frac{P_1\\times 1.2V_0}{T_1}=\\frac{P_0\\times V_0}{T_0}，解得T_1=288 K。$"
+    ],
+    "final_answer": [
+      "$288$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "K",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Thermodynamics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8119,
+    "question": "$水面救生无人船已经成为水面救援的重要科技装备。在某次测试中，一质量为20 kg的无人船在平静水面上沿直线直奔目标地点。无人船先从静止出发，匀加速运动10 s后达到最大速度4 m/s，接着立即做匀减速运动，匀减速运动了16 m后速度变为零。已知无人船运行过程中受到水的阻力恒定且大小为4 N，不计空气阻力，g取10 m/s^2。求：$\n$在匀加速过程中，无人船发动机提供的动力的大小 F_1；$",
+    "solution": [
+      "$匀加速阶段加速度大小为a_{1}=\\frac{v_\\mathrm{m}-0}{t_1}$\n\n$代入数据解得a_{1}＝0.4 m/s^2$\n\n$由牛顿第二定律得F_{1}-f=ma_{1}$\n\n$解得F_{1}＝12 N$"
+    ],
+    "final_answer": [
+      "$12$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "N",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8120,
+    "question": "$水面救生无人船已经成为水面救援的重要科技装备。在某次测试中，一质量为20 kg的无人船在平静水面上沿直线直奔目标地点。无人船先从静止出发，匀加速运动10 s后达到最大速度4 m/s，接着立即做匀减速运动，匀减速运动了16 m后速度变为零。已知无人船运行过程中受到水的阻力恒定且大小为4 N，不计空气阻力，g取10 m/s^2。求：$\n$在匀减速过程中，无人船发动机提供的阻力的大小F_2；$",
+    "solution": [
+      "$匀减速阶段：0-v^2_m=-2a_2x_2$\n\n$解得a_2=0.5 m/s^{2}$\n\n$由牛顿第二定律得F_2+f=ma_2$\n\n$解得F_2=6 N$"
+    ],
+    "final_answer": [
+      "$6$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "N",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8121,
+    "question": "$水面救生无人船已经成为水面救援的重要科技装备。在某次测试中，一质量为20 kg的无人船在平静水面上沿直线直奔目标地点。无人船先从静止出发，匀加速运动10 s后达到最大速度4 m/s，接着立即做匀减速运动，匀减速运动了16 m后速度变为零。已知无人船运行过程中受到水的阻力恒定且大小为4 N，不计空气阻力，g取10 m/s^2。求：$\n$无人船在上述测试中，运动的总时间t及总位移大小x。$",
+    "solution": [
+      "$匀减速阶段的运动时间为t_2 = \\frac{0-v_m}{-a_2} ＝8 s$\n\n$运动总时间t = t_1 + t_2 ＝18 s$\n\n$匀加速阶段的位移大小为x_1 = \\frac{v_m+0}{2}t_1 ＝20 m$\n\n$运动总位移大小x = x_1 + x_2 ＝36 m$"
+    ],
+    "final_answer": [
+      "$18$, $36$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "s,m",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8169,
+    "question": "长为l的轻绳上端固定，下端系着质量为m_1的小球A,处于静止状态。A受到一个水平瞬时冲量后在竖直平面内做圆周运动，恰好能通过圆周轨迹的最高点。当A回到最低点时，质量为m_2的小球B与之迎面正碰，碰后A、B粘在一起，仍做圆周运动，并能通过圆周轨迹的最高点。不计空气阻力，重力加速度为g,求\nA受到的水平瞬时冲量I的大小;",
+    "solution": [
+      "A恰好能通过圆周轨迹的最高点，此时轻绳的拉力刚好为零，设A在最高点时的速度大小为v，由牛顿第二定律，有\n\n$m_1g=m_1\\frac{v^2}{l} ①$\n\n$A从最低点到最高点的过程中机械能守恒，取轨迹最低点处重力势能为零，设A在最低点的速度大小为v_A，有$\n\n$\\frac{1}{2}m_1v^2_A=\\frac{1}{2}m_1v^2+2m_1gl ②$\n\n$由动量定理，有I=m_1v_A ③$\n\n$联立①②③式，得I=m_1\\sqrt{5gl} ④$"
+    ],
+    "final_answer": [
+      "$m_1\\sqrt{5gl}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8178,
+    "question": "$有一辆总质量m=2\\times 10^3 kg的电动汽车，当驱动电机的输入电流I=400 A，电压U=300 V时，在此行驶状态下：(g=10 m/s^2)$\n$若该汽车所受阻力与车重的比值为0.15，驱动电机能够将输入功率的90%转化为用于牵引汽车前进的机械功率P_{机}，求该汽车可以达到的最大速度。$",
+    "solution": [
+      "$驱动电机的机械功率P_{机}=\\eta _{1}P_{入}=90\\% \\times UI=90\\% \\times 300 \\times 400 W=1.08 \\times 10^{5} W，当牵引力等于阻力时，汽车达到最大速度，F_{牵}=f=0.15G=0.15 \\times 2 \\times 10^{3} \\times 10 N=3 \\times 10^{3} N，由P_{机}=F_{牵}v，解得v=36 m/s。$"
+    ],
+    "final_answer": [
+      "36"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "m/s",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Electromagnetism",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8179,
+    "question": "$有一辆总质量m=2\\times 10^3 kg的电动汽车，当驱动电机的输入电流I=400 A，电压U=300 V时，在此行驶状态下：(g=10 m/s^2)$\n$设想改用纯太阳能电池给该车供电，其他条件不变，求所需太阳能电池板的最小面积。(已知太阳辐射的总功率P_0=4\\times 10^26 W，太阳到地球的距离r=1.5\\times 10^11 m，太阳光传播到达地面的过程中大约有30%的能量损耗，该车所用太阳能电池的能量转化效率约为15%，球体的表面积公式S=4\\pi R^2)$",
+    "solution": [
+      "当阳光垂直照射太阳能电池板时，所需太阳能电池板的面积最小，设为S，由题意有\n\n$\\frac{(1-30\\% )P_0}{4\\pi r^2} S\\cdot 15% = P_{入}, 解得S = \\frac{UI\\cdot 4\\pi r^2}{70\\% \\times 15\\% \\times P_0} = \\frac{300\\times 400\\times 4\\pi \\times (1.5\\times 10^{11})^2}{70\\% \\times 15\\% \\times 4\\times 10^{26}} m^2 \\approx  807.4 m^2.$"
+    ],
+    "final_answer": [
+      "$807.4$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "m^2",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Electromagnetism",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8203,
+    "question": "$一篮球质量为m=0.60 kg，一运动员使其从距地面高度为h_1=1.8 m处由静止自由落下，反弹高度为h_2=1.2 m。若使篮球从距地面h_3=1.5 m的高度由静止下落，并在开始下落的同时向下拍球，球落地后反弹的高度也为1.5 m。假设运动员拍球时对球的作用力为恒力，作用时间为t=0.20 s；该篮球每次与地面碰撞前后的动能的比值不变。重力加速度大小取g=10 m/s^2，不计空气阻力。求$\n运动员拍球过程中对篮球所做的功；",
+    "solution": [
+      "篮球下落及上升过程中，机械能均守恒，由此可得篮球与地面碰撞前后的动能的比值\n$$\n\\alpha= \\frac{mgh_1}{mgh_2}\n$$\n①\n\n设运动员拍球过程中对篮球所做的功为W，由动能定理及题给条件得\n$$\n\\frac{mgh_3+W}{mgh_3}= \\alpha\n$$\n②\n\n联立①②式并代入题给数据得\n$$\nW=4.5 \\, \\text{J}\n$$\n③"
+    ],
+    "final_answer": [
+      "4.5"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "J",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8204,
+    "question": "$一篮球质量为m=0.60 kg，一运动员使其从距地面高度为h_1=1.8 m处由静止自由落下，反弹高度为h_2=1.2 m。若使篮球从距地面h_3=1.5 m的高度由静止下落，并在开始下落的同时向下拍球，球落地后反弹的高度也为1.5 m。假设运动员拍球时对球的作用力为恒力，作用时间为t=0.20 s；该篮球每次与地面碰撞前后的动能的比值不变。重力加速度大小取g=10 m/s^2，不计空气阻力。求$\n运动员拍球时对篮球的作用力的大小。",
+    "solution": [
+      "$设运动员拍球时对篮球的作用力的大小为F，球的加速度大小为a，由牛顿第二定律有$\n\n$F+mg=ma (④)$\n\n$设时间t内篮球运动的距离为s，则$\n\n$s=\\frac{1}{2}at^2 (⑤)$\n\n$W=Fs (⑥)$\n\n联立③④⑤⑥式并代入题给数据得\n\n$F=9.0 N$"
+    ],
+    "final_answer": [
+      "9.0"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "N",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8215,
+    "question": "$空间飞行器的交会对接是载人航天中的一项基础技术。北京时间2021年9月20日，天舟三号货运飞船采用自主交会对接模式成功和天和核心舱完成对接。成功对接后组合体沿圆形轨道运行，经过时间t，组合体绕地球转过的角度为\\theta 。地球半径为R，地球表面重力加速度为g，引力常量为G，不考虑地球自转。$\n求组合体所在圆形轨道离地高度H；",
+    "solution": [
+      "$由牛顿第二定律有G\\frac{Mm_0}{R^2}=m_0g$\n\n$G\\frac{Mm}{{(R+H)}^2}=m(R+H)\\omega ^2，联立可得H=\\sqrt[3]{\\frac{gR^2t^2}{\\theta ^2}}-R$"
+    ],
+    "final_answer": [
+      "$\\sqrt[3]{\\frac{gR^2t^2}{\\theta ^2}} - R$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8216,
+    "question": "$空间飞行器的交会对接是载人航天中的一项基础技术。北京时间2021年9月20日，天舟三号货运飞船采用自主交会对接模式成功和天和核心舱完成对接。成功对接后组合体沿圆形轨道运行，经过时间t，组合体绕地球转过的角度为\\theta 。地球半径为R，地球表面重力加速度为g，引力常量为G，不考虑地球自转。$\n$已知天舟三号飞船在对接过程中的某一时刻质量为m，发动机喷气孔打开，在极短的时间内向后喷射出质量为\\Delta m的燃气，喷出的燃气相对于喷气后飞船的速度为v，求喷气后火箭增加的速度\\Delta v。$",
+    "solution": [
+      "$(取喷气之后的飞船为参考系)-m\\cdot \\Delta v=-\\Delta m\\cdot v，得\\Delta v=\\frac{\\Delta m \\cdot v}{m}。$"
+    ],
+    "final_answer": [
+      "$\\frac{\\Delta m \\cdot v}{m}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8220,
+    "question": "$一玩具以初速度v_0从水平地面竖直向上抛出，达到最高点时，用遥控器将玩具内压缩的轻弹簧弹开，该玩具沿水平方向分裂成质量之比为1:4的两部分，此时它们的动能之和与玩具从地面抛出时的动能相等。弹簧弹开的时间极短，不计空气阻力。求$\n两部分落地时速度大小之比的值。",
+    "solution": [
+      "$设玩具分开时两部分的质量分别为m_1、m_2，水平速度大小分别为v_1、v_2。依题意，动能关系为$\n\n$\\frac{1}{2}m_1v^2_1 + \\frac{1}{2}m_2v^2_2 = \\frac{1}{2}(m_1+m_2)v_0^2$\n\n玩具达到最高点时速度为零，两部分分开时速度方向相反，水平方向动量守恒，有\n\n$m_1v_1 - m_2v_2 = 0$\n\n$分开后两部分做平抛运动，由运动学关系，两部分落回地面时，竖直方向分速度大小为v_0，设两部分落地时的速度大小分别为v_1'、v_2'，由速度合成公式，有$\n\n$v_1' = \\sqrt{v_0^2+v_1^2}$\n\n$v_2' = \\sqrt{v_0^2+v_2^2}$\n\n$联立上述各式，考虑到m_1:m_2=1:4，得$\n\n$v_1':v_2'=2:1$"
+    ],
+    "final_answer": [
+      "2"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8239,
+    "question": "\n$在\"焊接\"视网膜的眼科手术中，所用激光的波长\\lambda = 6.4\\times 10^-7 m，每个激光脉冲的能量E = 1.5\\times 10^-2 J。求每个脉冲中的光子数目。(已知普朗克常量h = 6.63\\times 10^-34 J\\cdot s，光速c = 3\\times 10^8 m/s。计算结果保留一位有效数字)$",
+    "solution": [
+      "$光子能量\\epsilon=\\frac{hc}{\\lambda }，光子数目n=\\frac{E}{\\varepsilon }，代入数据得n=5\\times 10^16。$"
+    ],
+    "final_answer": [
+      "$5\\times 10^{16}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Modern Physics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8242,
+    "question": "$甲、乙两个储气罐储存有同种气体(可视为理想气体)。甲罐的容积为V，罐中气体的压强为p；乙罐的容积为2V，罐中气体的压强为\\frac{1}{2}p。现通过连接两罐的细管把甲罐中的部分气体调配到乙罐中去，两罐中气体温度相同且在调配过程中保持不变，调配后两罐中气体的压强相等。求调配后$\n两罐中气体的压强；",
+    "solution": [
+      "$假设乙罐中的气体被压缩到压强为p，其体积变为V_{1}，由玻意耳定律有$\n\n$\\frac{1}{2}p \\cdot 2V=pV_{1}   (①)$\n\n$现两罐气体压强均为p，总体积为(V+V_{1})。设调配后两罐中气体的压强为p'，由玻意耳定律有$\n\n$p(V+V_{1})=p'(V+2V)   (②)$\n\n联立①②式可得\n\n$p'=\\frac{2}{3}p   (③)$"
+    ],
+    "final_answer": [
+      "$\\frac{2}{3} p$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Thermodynamics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8243,
+    "question": "$甲、乙两个储气罐储存有同种气体(可视为理想气体)。甲罐的容积为V，罐中气体的压强为p；乙罐的容积为2V，罐中气体的压强为\\frac{1}{2}p。现通过连接两罐的细管把甲罐中的部分气体调配到乙罐中去，两罐中气体温度相同且在调配过程中保持不变，调配后两罐中气体的压强相等。求调配后$\n甲罐中气体的质量与甲罐中原有气体的质量之比的值。",
+    "solution": [
+      "$若调配后甲罐中的气体再被压缩到原来的压强p时，体积为V_2，由玻意耳定律 p'V=pV_2$\n\n$设调配后甲罐中气体的质量与甲罐中原有气体的质量之比为k，由密度的定义有 k=\\frac{V_2}{V}$\n\n$联立以上式子可得 k=\\frac{2}{3}.$"
+    ],
+    "final_answer": [
+      "$\\frac{2}{3}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Thermodynamics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8246,
+    "question": "$装有氮气的气球半径为R，现向气球内缓慢充入氮气，当气球膨胀至半径为2R时破裂，已知大气压强为p_{0}，该气球内外压强差\\Delta p=\\frac{\\beta }{r}(\\beta 为常量、r为气球半径)，球的体积公式为V=\\frac{4}{3}\\pi r^3。求：$\n$气球破裂前瞬间气球内气体压强p和充气过程中对气球外大气做的功W；$",
+    "solution": [
+      "$破裂前瞬间气球半径为2R，内外压强差\\Delta p= \\frac{\\beta }{2R}，大气压强为p_0$\n$则球内气体压强为p= p_0+ \\frac{\\beta }{2R}$\n气球膨胀时对外界大气做正功，气体体积变化\n$\\Delta V= \\frac{4}{3} \\pi [(2R)^3-R^3]$\n$则W= p_0\\Delta V$\n$解得W= \\frac{28}{3} p_0\\pi R^3$"
+    ],
+    "final_answer": [
+      "$\\frac{28}{3} p_0\\pi R^3$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Thermodynamics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8296,
+    "question": "$我国自主研制了运-20重型运输机。飞机获得的升力大小F可用F=kv^2 描写，k为系数；v是飞机在平直跑道上的滑行速度，F与飞机所受重力相等时的v称为飞机的起飞离地速度。已知飞机质量为1.21\\times 10^5 kg时，起飞离地速度为66 m/s；装载货物后质量为1.69\\times 10^5 kg，装载货物前后起飞离地时的k值可视为不变。$\n求飞机装载货物后的起飞离地速度；",
+    "solution": [
+      "$设飞机装载货物前质量为m_1，起飞离地速度为v_1；装载货物后质量为m_2，起飞离地速度为v_2，重力加速度大小为g。飞机起飞离地应满足条件$\n\n$m_1g = kv^2_1   ①$\n\n$m_2g = kv^2_2   ②$\n\n$由 ①② 式及题给条件得 v_2 = 78 m/s  ③$"
+    ],
+    "final_answer": [
+      "78"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "m/s",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8297,
+    "question": "$我国自主研制了运-20重型运输机。飞机获得的升力大小F可用F=kv^2 描写，k为系数；v是飞机在平直跑道上的滑行速度，F与飞机所受重力相等时的v称为飞机的起飞离地速度。已知飞机质量为1.21\\times 10^5 kg时，起飞离地速度为66 m/s；装载货物后质量为1.69\\times 10^5 kg，装载货物前后起飞离地时的k值可视为不变。$\n若该飞机装载货物后，从静止开始匀加速滑行1521m起飞离地，求飞机在滑行过程中加速度的大小和所用的时间。",
+    "solution": [
+      "$设飞机滑行距离为s，滑行过程中加速度大小为a，所用时间为t。由匀变速直线运动公式有$\n\n$v_2^2 = 2as  (④)$\n\n$v_2 = at  (⑤)$\n\n$联立③④⑤式及题给条件得a=2.0 m/s^2  (⑥)$\n\n$t=39 s  (⑦)$"
+    ],
+    "final_answer": [
+      "$2.0, 39$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "m/s^2, s",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8298,
+    "question": "$近几年,国家取消了7座及以下小型汽车在部分法定假期间的高速公路收费,给自驾出行带来了很大的实惠,但车辆的增多也给道路的畅通增加了压力,因此交管部门规定,上述车辆通过收费站口时,在专用车道上可以不停车拿(交)卡而直接减速通过。若某车减速前的速度v_0=72 km/h,靠近站口时以大小为5 m/s^2 的加速度匀减速行驶,通过收费站口时的速度v_t=28.8 km/h,然后立即以大小为4 m/s^2 的加速度加速至原来的速度(假设收费站的前、后都是平直大道)。问:$\n该车驾驶员应在距收费站口多远处开始减速?",
+    "solution": [
+      "$设该车初速度方向为正方向, v_t = 28.8 km/h = 8 m/s, v_0 =72 km/h = 20 m/s, a_1 = -5 m/s^2, a_2 = 4 m/s^2。$\n\n$该车进入站口前做匀减速直线运动,设该车在距离收费站x_1处开始制动,由v_t^2 - v_0^2 = 2a_1x_1，解得x_1 = 33.6 m。$"
+    ],
+    "final_answer": [
+      "33.6"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "m",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8299,
+    "question": "$近几年,国家取消了7座及以下小型汽车在部分法定假期间的高速公路收费,给自驾出行带来了很大的实惠,但车辆的增多也给道路的畅通增加了压力,因此交管部门规定,上述车辆通过收费站口时,在专用车道上可以不停车拿(交)卡而直接减速通过。若某车减速前的速度v_0=72 km/h,靠近站口时以大小为5 m/s^2 的加速度匀减速行驶,通过收费站口时的速度v_t=28.8 km/h,然后立即以大小为4 m/s^2 的加速度加速至原来的速度(假设收费站的前、后都是平直大道)。问:$\n该车从减速开始到最终恢复到原来速度的过程中,运动的时间是多少?",
+    "solution": [
+      "$该车通过收费站经历匀减速和匀加速两个阶段,前后两段位移分别为x_1和x_2,时间为t_1和t_2,则减速阶段由v_t=v_0+a_1t_1,得t_1=\\frac{v_t-v_0}{a_{1}}=2.4 s。$\n\n$同理，加速阶段t_2=\\frac{v_0-v_t}{a_2}=3 s。$\n\n$则加速和减速的总时间t=t_1+t_2=5.4 s。$"
+    ],
+    "final_answer": [
+      "5.4"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "s",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8300,
+    "question": "$近几年,国家取消了7座及以下小型汽车在部分法定假期间的高速公路收费,给自驾出行带来了很大的实惠,但车辆的增多也给道路的畅通增加了压力,因此交管部门规定,上述车辆通过收费站口时,在专用车道上可以不停车拿(交)卡而直接减速通过。若某车减速前的速度v_0=72 km/h,靠近站口时以大小为5 m/s^2 的加速度匀减速行驶,通过收费站口时的速度v_t=28.8 km/h,然后立即以大小为4 m/s^2 的加速度加速至原来的速度(假设收费站的前、后都是平直大道)。问:$\n在(1)(2)问题中,该车因减速和加速过站而耽误的时间为多少?",
+    "solution": [
+      "$在加速阶段x_2=\\frac{v_t+v_0}{2}t_2=42 m$\n\n$则总位移x=x_1+x_2=75.6 m$\n\n$若匀速通过相同位移，所需要时间t'=\\frac{x}{v_0}=3.78 s$\n\n$车因减速和加速过站而耽误的时间\\Delta t=t-t'=1.62 s。$"
+    ],
+    "final_answer": [
+      "$1.62$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "s",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8301,
+    "question": "$四分之一英里赛程(1英里＝1.6 km)的直线加速赛车比赛，不仅是世界上速度最快的车赛，而且是最能体现纯机械性能的比赛之一。在一次比赛中，某赛车在完成整个赛程时车速达到540 km/h。现将该赛车在整个赛程中的运动简化为长度相等的两段匀加速运动，若前、后两段的加速度大小之比是25:11，求该赛车：$\n到达赛程中点的速度大小；",
+    "solution": [
+      "$设该赛车前、后两段的加速度分别为a_1、a_2，到达赛程中点的速度为v_1，最终速度为v_2，总位移为x，且v_2=540 km/s=150 m/s，则$\n$对前半程：v^2_1=2a_1\\cdot \\frac{x}{2} ①$\n\n$对后半程：v^2_2-v^2_1=2a_2\\cdot \\frac{x}{2} ②$\n\n$联立①②得：\\frac{v^2_1}{v^2_2-v^2_1}=\\frac{a_1}{a_2} ③$\n\n$即\\frac{v^2_1}{(150)^2-v^2_1}=\\frac{25}{11}$\n$解得v_1＝125 m/s$"
+    ],
+    "final_answer": [
+      "125"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "m/s",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8302,
+    "question": "$四分之一英里赛程(1英里＝1.6 km)的直线加速赛车比赛，不仅是世界上速度最快的车赛，而且是最能体现纯机械性能的比赛之一。在一次比赛中，某赛车在完成整个赛程时车速达到540 km/h。现将该赛车在整个赛程中的运动简化为长度相等的两段匀加速运动，若前、后两段的加速度大小之比是25:11，求该赛车：$\n完成整的赛程所用时间。",
+    "solution": [
+      "$设该赛车前、后两段的运动时间分别为t_1、t_2，则对前半程：\\frac{x}{2}=\\frac{v_1}{2}t_1$\n$即\\frac{1}{2}\\times\\frac{1}{4} \\times1.6 km=200 m=\\frac{125}{2} m/s \\cdot t_1$\n$解得t_1=3.2 s$\n$对后半程：\\frac{x}{2}=\\frac{v_1+v_2}{2}t_2$\n$即200 m=\\frac{125+150}{2} m/s \\cdot t_2$\n$解得t_2 \\approx 1.45 s$\n$完成整个赛程所用时间t=t_1+t_2=4.65 s$"
+    ],
+    "final_answer": [
+      "$4.65$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "s",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8305,
+    "question": "国庆期间小明同学乘坐K5212次客运列车从石家庄出发到北京观看升旗仪式，某段时间该列车匀速行驶，其车轮在轨道间的接缝处会产生周期性的撞击，小明用手机测得从第1次到第13次撞击声的时间间隔为10 s。在相邻的平行车道上有一列货车共有45节，每节货车车厢的长度为15 m,当小明经过货车车尾时，货车恰好从静止开始以恒定加速度沿列车行驶方向运动，小明在此后的20 s内，看到恰好有30节货车车厢被他连续超过。已知每根铁轨的长度为25 m，货车车厢间距忽略不计。求:\n列车运行的速度大小和货车运行的加速度大小;",
+    "solution": [
+      "第1次撞击声到第13次撞击声之间列车经过12根铁轨\\\n$所以列车的速度大小为v=\\frac{12L_\\text{铁}}{t}=30 m/s$\n$可知20 s的时间内列车前进的距离x_1=vt_1=600 m$\n$货车做匀加速运动的位移x_2=\\frac{1}{2}at_1^2，$\n$则有x_1-x_2=30L_\\text{货}，解得a=0.75 m/s^2。$"
+    ],
+    "final_answer": [
+      "$30, 0.75$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "m/s, m/s^2",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8306,
+    "question": "国庆期间小明同学乘坐K5212次客运列车从石家庄出发到北京观看升旗仪式，某段时间该列车匀速行驶，其车轮在轨道间的接缝处会产生周期性的撞击，小明用手机测得从第1次到第13次撞击声的时间间隔为10 s。在相邻的平行车道上有一列货车共有45节，每节货车车厢的长度为15 m,当小明经过货车车尾时，货车恰好从静止开始以恒定加速度沿列车行驶方向运动，小明在此后的20 s内，看到恰好有30节货车车厢被他连续超过。已知每根铁轨的长度为25 m，货车车厢间距忽略不计。求:\n小明最多可以追上几节货车车厢。",
+    "solution": [
+      "$由题目可知，当货车的速度大小等于列车的速度大小时，小明追上的货车车厢数不再增多，根据匀变速直线运动规律可知，v=at_2，解得t_2=40s；$\n$x_3=vt_2=1200m，x_4=\\frac{1}{2}at_2^2=600m$\n$在此过程中，货车车尾被小明超过的距离x'=x_3-x_4=600m$\n$小明可以追上的车厢节数N=\\frac{x'}{L_{货}}=40$"
+    ],
+    "final_answer": [
+      "40"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8332,
+    "question": "$一火星探测器着陆火星之前，需经历动力减速、悬停避障两个阶段。在动力减速阶段，探测器速度大小由96 m/s减小到0，历时80 s。在悬停避障阶段，探测器启用最大推力为7 500 N的变推力发动机，在距火星表面约百米高度处悬停，寻找着陆点。已知火星半径约为地球半径的\\frac{1}{2}，火星质量约为地球质量的\\frac{1}{10}，地球表面重力加速度大小取10 m/s^2，探测器在动力减速阶段的运动视为竖直向下的匀减速运动。求：$\n在动力减速阶段，探测器的加速度大小和下降距离；",
+    "solution": [
+      "$设探测器在动力减速阶段所用时间为t，初速度大小为v_1，末速度大小为v_2，加速度大小为a，由匀变速直线运动速度-时间公式有v_2=v_1-at ①$\n\n$代入题给数据得a=1.2 m/s^2 ②$\n\n$设探测器下降的距离为s，由匀变速直线运动位移-时间公式有s=v_1t-\\frac{1}{2}at^2 ③$\n\n$联立②③式并代入题给数据得s=3840 m ④$"
+    ],
+    "final_answer": [
+      "$1.2, 3840$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "m/s^2, m",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8333,
+    "question": "$一火星探测器着陆火星之前，需经历动力减速、悬停避障两个阶段。在动力减速阶段，探测器速度大小由96 m/s减小到0，历时80 s。在悬停避障阶段，探测器启用最大推力为7 500 N的变推力发动机，在距火星表面约百米高度处悬停，寻找着陆点。已知火星半径约为地球半径的\\frac{1}{2}，火星质量约为地球质量的\\frac{1}{10}，地球表面重力加速度大小取10 m/s^2，探测器在动力减速阶段的运动视为竖直向下的匀减速运动。求：$\n在悬停避障阶段，能借助该变推力发动机实现悬停的探测器的最大质量。",
+    "solution": [
+      "$设火星的质量、半径和表面重力加速度大小分别为M_{火}、r_{火}、g_{火}，地球的质量、半径和表面重力加速度大小分别为M_{地}、r_{地}、g_{地}。由牛顿第二定律和万有引力定律，对星球表面质量为m的物体有$\n\n$\\frac{GM_{火}m}{r^2_{火}} = mg_{火}$\n\n—⑤\n\n$\\frac{GM_{地}m}{r^2_{地}} = mg_{地}$\n\n—⑥\n\n$式中G为引力常量。设变推力发动机的最大推力为F，能够悬停的火星探测器最大质量为m_{max}，由力的平衡条件有F = m_{max}g_{火}$\n\n—⑦\n\n$联立⑤⑥⑦式并代入题给数据得m_{max}=1 875 kg$\n\n—⑧"
+    ],
+    "final_answer": [
+      "1875"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "kg",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8334,
+    "question": "利用物理模型对问题进行分析，是重要的科学思维方法。\n$宇宙中某恒星质量是太阳质量的2倍，单位时间内向外辐射的能量是太阳的16倍。设想地球“流浪”后绕此恒星公转，且在新公转轨道上的温度与“流浪”前一样。地球绕太阳公转的周期为T_1，绕此恒星公转的周期为T_2，求\\frac{T_2}{T_1}。$",
+    "solution": [
+      "$假定恒星的能量辐射各向坦匀，恒星单位时间内向外辐射的能量为P_0。以恒星为球心，以r为半径的球面上，单位面积单位时间接收到的辐射能量P=\\frac{P_0}{4\\pi r^2}。$\n\n$设地球绕太阳公转半径为r_1，在新轨道上公转半径为r_2。地球在新公转轨道上的温度与“流浪”前一样，必须满足P_地不变，由于恒星单位时间内向外辐射的能量是太阳的16倍，得r_2=4r_1。$\n\n设恒星质量为M，地球在轨道上运行周期为T。\n\n$万有引力提供向心力\\frac{GMm'}{r^2}=m'\\frac{4\\pi ^2r}{T^2}，得T=\\sqrt{\\frac{4\\pi ^2r^3}{GM}}。$\n\n$由于恒星质量是太阳质量的2倍，得\\frac{T_2}{T_1}=4\\sqrt{2}。$"
+    ],
+    "final_answer": [
+      "$4 \\sqrt{2}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8408,
+    "question": "$一只质量为1.4 kg的乌贼吸入0.1 kg的水，静止在水中。遇到危险时，它在极短时间内把吸入的水向后全部喷出，以2 m/s的速度向前逃窜。求该乌贼喷出的水的速度大小v。$",
+    "solution": [
+      "$由动量守恒定律得 mv-Mv'=0$\n\n$解得 v=\\frac{Mv'}{m}，代入数据得 v=28 m/s$"
+    ],
+    "final_answer": [
+      "28"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": "m/s",
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8450,
+    "question": "$小明设计了一个青蛙捉飞虫的游戏，游戏中蛙和虫都在xOy竖直平面内运动。虫可以从水平x轴上任意位置处由静止开始做匀加速直线运动，每次运动的加速度大小恒为\\frac{5}{9}g(g为重力加速度)，方向均与x轴负方向成37^\\circ 斜向上(x轴向右为正)。蛙位于y轴上M点处，OM=H，能以不同速率向右或向左水平跳出，蛙运动过程中仅受重力作用。蛙和虫均视为质点，取\\sin 37^\\circ =\\frac{3}{5}.$\n$若虫飞出一段时间后，蛙以其最大跳出速率向右水平跳出，在y = \\frac{3}{4}H的高度捉住虫时，蛙与虫的水平位移大小之比为2\\sqrt{2} : 3，求蛙的最大跳出速率。$",
+    "solution": [
+      "$蛙做平抛运动,设其最大跳出速率为v_m，则在捉住虫的过程中，蛙与虫的运动轨迹大致如图甲所示$\n<img_697>\n\n$对于蛙有x=vmt、H-y=\\frac{1}{2}gt^2 $\n\n$对于虫有\\tan 37^\\circ =\\frac{y}{\\Delta x} $\n\n$由题给条件\\frac{x}{\\Delta x}=\\frac{2\\sqrt{2}}{3}，y=\\frac{3}{4}H, $\n\n$解得v_m=\\frac{4}{3}\\sqrt{gH}$"
+    ],
+    "final_answer": [
+      "$\\frac{4}{3}\\sqrt{gH}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8492,
+    "question": "$我国成功发射神舟十三号载人飞船，神舟十三号与之前在轨运行的空间站组合体成功对接，航天员进入空间站。空间站绕地球运行的轨道可视为圆轨道，离地面的高度约为地球半径的p倍，地球同步卫星的轨道离地面的高度约为地球半径的q倍，空间站和地球同步卫星皆在地球赤道平面内(已知引力常量为G，地球自转周期为T)。$\n估算地球的平均密度。",
+    "solution": [
+      "$设地球的半径为R，同步卫星离地面的高度为h，根据万有引力提供向心力可得G \\frac{Mm}{(R+h)^2}=m \\frac{4\\pi ^2}{T^2}(R+h)，根据题意可知h=qR，又因为M=\\rho \\cdot \\frac{4}{3}\\pi R^3，解得\\rho =\\frac{3\\pi (1+q)^3}{GT^2}.$"
+    ],
+    "final_answer": [
+      "$\\frac{3\\pi (1+q)^3}{GT^2}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8493,
+    "question": "$我国成功发射神舟十三号载人飞船，神舟十三号与之前在轨运行的空间站组合体成功对接，航天员进入空间站。空间站绕地球运行的轨道可视为圆轨道，离地面的高度约为地球半径的p倍，地球同步卫星的轨道离地面的高度约为地球半径的q倍，空间站和地球同步卫星皆在地球赤道平面内(已知引力常量为G，地球自转周期为T)。$\n求空间站的运行周期。",
+    "solution": [
+      "$设空间站的运行周期为T_1，根据万有引力提供向心力有G\\frac{Mm}{(R+pR)^2}=m\\frac{4\\pi ^2}{T_1^2}(R+pR)，解得T_1=T\\sqrt{\\left(\\frac{1+p}{1+q}\\right)^3}。$\n\n"
+    ],
+    "final_answer": [
+      "$T \\sqrt{\\left(\\frac{1+p}{1+q}\\right)^3}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": null,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8494,
+    "question": "$我国成功发射神舟十三号载人飞船，神舟十三号与之前在轨运行的空间站组合体成功对接，航天员进入空间站。空间站绕地球运行的轨道可视为圆轨道，离地面的高度约为地球半径的p倍，地球同步卫星的轨道离地面的高度约为地球半径的q倍，空间站和地球同步卫星皆在地球赤道平面内(已知引力常量为G，地球自转周期为T)。$\n求空间站每天绕地球的圈数n。",
+    "solution": [
+      "$空间站每天绕地球的圈数n，则n=\\frac{T}{T_1}，解得n=\\sqrt{\\left(\\frac{1+q}{1+p}\\right)^3}。$\n\n"
+    ],
+    "final_answer": [
+      "$\\sqrt{\\left(\\frac{1+q}{1+p}\\right)^3}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": null,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8520,
+    "question": "$无人机在距离水平地面高度h处，以速度v_0水平匀速飞行并释放一包裹，不计空气阻力，重力加速度为g。$\n$求包裹释放点到落地点的水平距离x；$",
+    "solution": [
+      "$包裹被释放后做平抛运动，在水平方向有：x=v_{0}t，在竖直方向有：h=\\frac{1}{2}gt^{2}，解得：x=v_{0}\\sqrt{\\frac{2h}{g}}。$"
+    ],
+    "final_answer": [
+      "$v_{0}\\sqrt{\\frac{2h}{g}}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8521,
+    "question": "$无人机在距离水平地面高度h处，以速度v_0水平匀速飞行并释放一包裹，不计空气阻力，重力加速度为g。$\n$求包裹落地时的速度大小v；$",
+    "solution": [
+      "$包裹被释放后做平抛运动，在竖直方向有：v_y^2 = 2gh，则包裹落地时的速度大小v = \\sqrt{v_y^2+v_0^2}，解得：v = \\sqrt{2gh+v_0^2}。$"
+    ],
+    "final_answer": [
+      "$v = \\sqrt{2gh+v^2_0}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8530,
+    "question": "$设地球是质量分布均匀的半径为R的球体。已知引力常量G，地球表面的重力加速度g，忽略地球自转。$\n推导地球质量M的表达式。",
+    "solution": [
+      "$忽略地球自转，地球表面的物体所受重力等于万有引力mg=G \\frac{Mm}{R^2}$\n$解得地球质量M= \\frac{gR^2}{G}$"
+    ],
+    "final_answer": [
+      "$\\frac{gR^2}{G}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8531,
+    "question": "$设地球是质量分布均匀的半径为R的球体。已知引力常量G，地球表面的重力加速度g，忽略地球自转。$\n$推导地球第一宇宙速度v的表达式。$",
+    "solution": [
+      "在地球表面附近万有引力提供向心力\n$G\\frac{Mm}{R^2}=m\\frac{v^2}{R}$\n$解得地球第一宇宙速度v=\\sqrt{\\frac{GM}{R}}=\\sqrt{gR}$"
+    ],
+    "final_answer": [
+      "$\\sqrt{gR}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8533,
+    "question": "无处不在的引力场，构建出一幅和谐而神秘的宇宙图景。\n地球附近的物体处在地球产生的引力场中。地球可视为质量分布均匀的球体。已知地球的质量为M，引力常量为G。请类比电场强度的定义，写出距地心r处的引力场强度g的表达式。(已知r大于地球半径，结果用M、G和r表示)",
+    "solution": [
+      "$根据类比，有 g = \\frac{F}{m} = \\frac{G\\frac{Mm}{r^2}}{m} = \\frac{GM}{r^2}$"
+    ],
+    "final_answer": [
+      "$g = \\frac{GM}{r^2}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8546,
+    "question": "$一个质量为m的物体，在光滑水平面上向左做匀加速直线运动。某时刻物体的速度为v_1，经过一段时间\\Delta t，速度变为v_2。$\n求物体的加速度大小a；",
+    "solution": [
+      "$根据匀变速直线运动规律v_2=v_1+a\\Delta t$\n$可得a=\\frac{v_2-v_1}{\\Delta t}$"
+    ],
+    "final_answer": [
+      "$\\frac{v_2-v_1}{\\Delta t}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8547,
+    "question": "$一个质量为m的物体，在光滑水平面上向左做匀加速直线运动。某时刻物体的速度为v_1，经过一段时间\\Delta t，速度变为v_2。$\n$若物体所受合力为F，在\\Delta t时间内动量的变化量为\\Delta p，根据牛顿第二定律推导\\Delta p与F的关系；$",
+    "solution": [
+      "$根据牛顿第二定律 F=ma$\n\n$a=\\frac{v_2-v_1}{\\Delta t}$\n\n$\\Delta p=mv_2-mv_1$\n\n$所以 \\Delta p=ma\\Delta t=F\\Delta t$"
+    ],
+    "final_answer": [
+      "$\\Delta p=F\\Delta t$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8577,
+    "question": "“夸父一号”太阳探测卫星可以观测太阳辐射的硬X射线。硬X射线是波长很短的光子,设波长为\\lambda 。若太阳均匀地向各个方向辐射硬X射线,卫星探测仪镜头正对着太阳，每秒接收到N个该种光子。已知探测仪镜头面积为S,卫星离太阳中心的距离为R,普朗克常量为h,光速为c,求:\n$每个光子的动量p和能量E;$",
+    "solution": [
+      "$根据光子的动量和能量表达式可直接得出结果p=\\frac{h}{\\lambda }，E=h\\nu =\\frac{hc}{\\lambda }。$"
+    ],
+    "final_answer": [
+      "$\\frac{h}{\\lambda }，\\frac{hc}{\\lambda }$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": true,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Modern Physics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8578,
+    "question": "“夸父一号”太阳探测卫星可以观测太阳辐射的硬X射线。硬X射线是波长很短的光子,设波长为\\lambda 。若太阳均匀地向各个方向辐射硬X射线,卫星探测仪镜头正对着太阳，每秒接收到N个该种光子。已知探测仪镜头面积为S,卫星离太阳中心的距离为R,普朗克常量为h,光速为c,求:\n太阳辐射硬X射线的总功率P。",
+    "solution": [
+      "$由题意可知镜头接收到的功率 P_0 为单位时间内接收到光子的总能量,故 P_0 = \\frac{W}{t} = \\frac{Nhc}{\\lambda } 。太阳辐射的总功率可以看成是均匀分布在一个面积为4\\pi  R^2 的球面上，镜头接收到的功率占太阳辐射总功率的 \\frac{S}{4\\pi R^2}，故 \\frac{P_0}{P} = \\frac{S}{4\\pi R^2},得 P = \\frac{4\\pi R^2Nhc}{\\lambda S}.$"
+    ],
+    "final_answer": [
+      "$\\frac{4\\pi R^2Nhc}{\\lambda S}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Modern Physics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8658,
+    "question": "$一列简谐横波在介质中沿x轴正方向传播，O和A是介质中平衡位置分别为x=0和x=10 cm处的两个质点，且两质点的振动情况始终相反。t=0时，质点O的位移为y_0=5 cm，向上振动;t_1=\\frac{2}{3} s时，质点O的位移第二次为y_1=5 cm;t_2=1 s时，质点O的位移第一次为y_2=-5 cm。求:$\n质点O的位移随时间变化的关系式。",
+    "solution": [
+      "$T=2 s，则\\omega =\\frac{2\\pi }{T}=\\pi  rad/s，设质点O的位移随时间变化的关系式为y=A \\sin (\\omega t+\\phi _0)，则t=0时，有y_0=A \\sin \\phi _0，t_1=\\frac{2}{3} s时，有y_1=A \\sin \\left(\\frac{2}{3}\\pi +\\varphi _0\\right)，解得A=10 cm，\\phi _0=\\frac{\\pi }{6}，所以质点O的位移随时间变化的关系式为y=10 \\sin \\left(\\pi t+\\frac{\\pi }{6}\\right) cm。$"
+    ],
+    "final_answer": [
+      "$y=10 \\sin (\\pi t+\\frac{\\pi }{6})$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8664,
+    "question": "$将扁平的石子向水面快速抛出，石子可能会在水面上一跳一跳地飞向远方，俗称“打水漂”。要使石子从水面跳起产生“水漂”效果，石子接触水面时的速度方向与水面的夹角不能大于 \\theta。为了观察到“水漂”，一同学将一石子从距水面高度为 h 处水平抛出，抛出速度的最小值为多少？(不计石子在空中飞行时的空气阻力，重力加速度大小为 g)$",
+    "solution": [
+      "$设石子抛出时的水平速度为v_0，接触水面时的速度方向与水面的夹角为\\alpha ，由题意可知，石子在空中做平抛运动，则v^2_y=2gh,解得v_{y}=\\sqrt{2gh}$\n\n$由\\tan \\alpha =\\frac{v_y}{v_0}，\\alpha \\leq \\theta ，联立解得v_0\\geq \\frac{\\sqrt{2gh}}{\\tan  \\theta }$\n\n$所以石子抛出速度的最小值v_{min}=\\frac{\\sqrt{2gh}}{\\tan  \\theta }。$"
+    ],
+    "final_answer": [
+      "$\\frac{\\sqrt{2gh}}{\\tan  \\theta }$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8709,
+    "question": "促进西部大开发的一个重要保障是解决能源问题，西部具有丰富的水资源。一个小型水电站的河水流量为$4 m^3/s$，水流下落的高度为5 m。若该水电站发电机组的总效率为50%，取$g=10 m/s^2$ 求：\n设发电机组的输出电率为350 V，输电线的电阻为4 \\Omega ，要使输电线上损耗的电功率为输出电功率的5%，在用户需要电压为220 V时，所用升压变压器和降压变压器线圈的匝数之比的值各是多少。",
+    "solution": [
+      "$升压变压器原线圈中的电流I_1 = \\frac{P_{\\text{出}}}{U_1} = \\frac{2 000}{7} A$\n\n$输电线上损耗的电功率P_{损} = P_{出} \\times 5\\% = 5 000 W$\n\n$输电线中的电流I_2 = \\sqrt{\\frac{P_{\\text{损}}}{r_{\\text{线}}} = 25\\sqrt{2} A$\n\n$降压变压器副线圈中的电流I_3 = \\frac{P_{\\text{用}}}{U_{\\text{用}}}$\n\n$P_{用} = P_{出} - P_{损} = 9.5 \\times 10^4 W，故I_3 = \\frac{4 750}{11} A$\n\n$\\frac{n_1}{n_2} = \\frac{I_2}{I_1} = \\frac{7\\sqrt{2}}{80}$\n\n$\\frac{n_3}{n_4} = \\frac{I_3}{I_2} = \\frac{95\\sqrt{2}}{11}$"
+    ],
+    "final_answer": [
+      "$\\frac{7\\sqrt{2}}{80}$, $\\frac{95\\sqrt{2}}{11}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": true,
+    "unit": null,
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Electromagnetism",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8710,
+    "question": "$在磁感应强度为B的匀强磁场中，一个静止的放射性原子核发生了一次\\alpha 衰变。放射出的\\alpha 粒子(^4_2He)在与磁场垂直的平面内做圆周运动，其轨道半径为R。以m、q分别表示\\alpha 粒子的质量和电荷量。$\n设该衰变过程释放的核能都转化为$\\alpha$ 粒子和新核的动能，新核的质量为M，求衰变过程的质量亏损$\\Delta m$。",
+    "solution": [
+      "$由qvB=m\\frac{v^2}{R}，得v=\\frac{qBR}{m}。设衰变后新核Y的速度大小为v'，系统动量守恒。Mv'-mv=0，v'=\\frac{mv}{M}=\\frac{qBR}{M}。由\\Delta mc^2=\\frac{1}{2}Mv'^2+\\frac{1}{2}mv^2，得\\Delta m=\\frac{(M+m)(qBR)^2}{2mMc^2}。说明：若利用M=\\frac{A-4}{4}m解答，亦可。$"
+    ],
+    "final_answer": [
+      "$\\Delta m=\\frac{(M+m)(qBR)^2}{2mMc^2}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Electromagnetism",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8731,
+    "question": "$2021年2月10日，执行中国首次火星探测任务的天问一号探测器实施制动，进入环火轨道，已知天问一号的质量为m_0，环火轨道半径为r，火星的半径为R，火星表面的重力加速度为g_0，引力常量为G，设探测器沿环火轨道做匀速圆周运动，求：$\n火星的第一宇宙速度大小；",
+    "solution": [
+      "$设某质量为m的卫星贴近火星表面做匀速圆周运动，则有$\n$\\frac{GMm}{R^2}$\n$=m\\frac{v^2}{R}$\n\n又\n$\\frac{GMm}{R^2}$\n$=mg_0$\n\n$联立解得v=\\sqrt{g_0R}$"
+    ],
+    "final_answer": [
+      "$\\sqrt{g_0R}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8732,
+    "question": "$2021年2月10日，执行中国首次火星探测任务的天问一号探测器实施制动，进入环火轨道，已知天问一号的质量为m_0，环火轨道半径为r，火星的半径为R，火星表面的重力加速度为g_0，引力常量为G，设探测器沿环火轨道做匀速圆周运动，求：$\n天问一号在环火轨道受到的火星引力大小。",
+    "solution": [
+      "$火星对天问一号的引力为 F=\\frac{GMm_0}{r^2} $\n\n$设火星表面有一质量为 m' 物体，则有 \\frac{GMm'}{R^2}=m'g_0 $\n\n$联立解得 F=\\frac{m_0g_0R^2}{r^2}$"
+    ],
+    "final_answer": [
+      "$\\frac{m_0g_0R^2}{r^2}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8757,
+    "question": "$某医用氧气瓶容积为40 L，瓶内贮有压强为9.6 \\times 10^6 Pa的氧气，可视为理想气体。广泛用于野外急救的氧气袋容积为5 L。将氧气瓶内的氧气分装到氧气袋，充气前袋内为真空，充气后袋内压强为1.2 \\times 10^6 Pa。分装过程不漏气，环境温度不变。$\n若将医用氧气瓶内的氧气依次分装到原为真空、容积为5 L的若干个便携式钢瓶内，每次分装后，钢瓶内气体压强与氧气瓶内剩余气体压强相等，求分装30次后医用氧气瓶内剩余氧气的压强与分装前氧气瓶内氧气压强之比。",
+    "solution": [
+      "根据玻意耳定律，\n$- 分装一次有 pV_0 = p_1 (V_0+\\Delta V)$\n$- 分装二次 p_1V_0 = p_2(V_0+\\Delta V)$\n$- 分装三次 p_2V_0 = p_3(V_0+\\Delta V)$\n\n$\\ldots \\ldots $\n\n$依次类推，第 n 次分装后 p_{n-1} V_0 = p_n (V_0+\\Delta V)$\n\n$可以得到 p_{30} = p \\left( \\frac{V_0}{V_0+\\Delta V}\\right)^{30}$\n\n$代入数据解得 \\frac{p_{30}}{p} = \\left(\\frac{8}{9}\\right)^{30}$\n\n"
+    ],
+    "final_answer": [
+      "$\\left(\\frac{8}{9}\\right)^{30}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": null,
+    "unit": null,
+    "answer_type": "Numerical",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Thermodynamics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8760,
+    "question": "$从地面处竖直上抛一个小球，小球两次经历高度为h处经历的时间为\\Delta t=\\sqrt{\\frac{h}{g}}，求小球抛出的初速度大小和在空中运动的总时间(忽略空气阻力，重力加速度为g)。$",
+    "solution": [
+      "$设小球在h高度处上方上升h'，由竖直上抛运动的对称性特点，有：h'=\\frac{1}{2}g\\left(\\frac{\\Delta t}{2}\\right)^2$\n\n$解得h'=\\frac{1}{8}h$\n\n$整个上升过程逆向看有：v^2_0=2g(h+h')$\n\n$解得：v<sub>0</sub>=\\frac{3}{2}\\sqrt{gh}$\n\n设小球在空中运动的总时间为t，小球下落过程有：\n\n$h+h'=\\frac{1}{2}g\\left(\\frac{t}{2}\\right)^2$\n\n$解得：t=3\\sqrt{\\frac{h}{g}}$"
+    ],
+    "final_answer": [
+      "$\\frac{3}{2}\\sqrt{gh}$, $3\\sqrt{\\frac{h}{g}}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": true,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8826,
+    "question": "$某学校举行校庆，准备放飞气球渲染气氛。当天上午10点，学校地表附近的气温为27 ^\\circ C，大气压强为p_0=1.0\\times 10^5 Pa，此时气球体积为V_0。气球内充的氦气可视为理想气体，气球内外气压差很小，可以忽略。$\n$正午时地表附近气温达到37 ^\\circ C，大气压仍为p_0，此时气球的体积多大？$",
+    "solution": [
+      "气球内外气压认为相等，由题意可知此过程为等压变化过程，由盖-吕萨克定律知\n$\\frac{V_0}{T_0} = \\frac{V}{T}，且T_0=300 K, T=310 K，解得V= \\frac{31}{30}V_0。$"
+    ],
+    "final_answer": [
+      "$\\frac{31}{30} V_{0}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Thermodynamics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8833,
+    "question": "无人机在距离水平地面高度h处，以速度$v_0$水平匀速飞行并释放一包裹，不计空气阻力，重力加速度为g。\n$求包裹释放点到落地点的水平距离x；$",
+    "solution": [
+      "包裹被释放后做平抛运动，在水平方向有：\n$x=v_0t$\n$在竖直方向有：h=\\frac{1}{2}gt^2$\n$解得：x=v_0\\sqrt{\\frac{2h}{g}}$"
+    ],
+    "final_answer": [
+      "$v_0\\sqrt{\\frac{2h}{g}}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8834,
+    "question": "无人机在距离水平地面高度h处，以速度$v_0$水平匀速飞行并释放一包裹，不计空气阻力，重力加速度为g。\n$求包裹落地时的速度大小v；$",
+    "solution": [
+      "包裹被释放后做平抛运动，在竖直方向有：\n$v^2_y=2gh$\n\n$则包裹落地的速度大小：v=\\sqrt{v^2_y+v^2_0}$\n\n$解得：v=\\sqrt{2gh+v^2_0}$"
+    ],
+    "final_answer": [
+      "$\\sqrt{2gh+v^2_0}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8847,
+    "question": "长为l的轻绳上端固定，下端系着质量为m_1的小球A,处于静止状态。A受到一个水平瞬时冲量后在竖直平面内做圆周运动，恰好能通过圆周轨迹的最高点。当A回到最低点时，质量为m_2的小球B与之迎面正碰，碰后A、B粘在一起，仍做圆周运动，并能通过圆周轨迹的最高点。不计空气阻力，重力加速度为g,求\n$碰撞前瞬间B的动能E_k至少多大。$",
+    "solution": [
+      "$设两球粘在一起时的速度大小为v'，碰撞前瞬间B的动能最小值，对应A、B粘在一起后恰能通过圆周轨迹的最高点，需满足$\n$v'=v_{A}$\n\n$要达到上述条件，碰后两球速度方向必须与碰前B的速度方向相同，以此方向为正方向，设B碰前瞬间的速度大小为v_{B}，由动量守恒定律，有$\n$m_{2}v_{B}-m_{1}v_{A}=(m_{1}+m_{2})v'$\n\n$又E_{k}=\\frac{1}{2}m_{2}v^2_{B}$\n\n$联立式子，得碰撞前瞬间B的动能E_{k}至少为$\n$E_{k}=\\frac{5gl(2m_{1}+m_{2})^2}{2m_{2}}$"
+    ],
+    "final_answer": [
+      "$\\frac{5gl(2m_1+m_2)^2}{2m_2}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8852,
+    "question": "$空间存在一方向竖直向下的匀强电场，O、P是电场中的两点，从O点沿水平方向以不同速度先后发射两个质量均为m的小球A、B。A不带电，B的电荷量为q(q>0)。A从O点发射时的速度大小为v_0，到达P点所用时间为t；B从O点到达P点所用时间为\\frac{t}{2}. 重力加速度为g，求$\n电场强度的大小；",
+    "solution": [
+      "设电场强度的大小为E，小球B运动的加速度为a。根据牛顿第二定律、运动学公式和题给条件，有\n\n$mg+qE=ma　　　①$\n\n$\\frac{1}{2}a\\left(\\frac{t}{2}\\right)^2=\\frac{1}{2}gt^2　　　②$\n\n$解得 E = \\frac{3mg}{q}　　　③$"
+    ],
+    "final_answer": [
+      "$\\frac{3mg}{q}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Electromagnetism",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8853,
+    "question": "$空间存在一方向竖直向下的匀强电场，O、P是电场中的两点，从O点沿水平方向以不同速度先后发射两个质量均为m的小球A、B。A不带电，B的电荷量为q(q>0)。A从O点发射时的速度大小为v_0，到达P点所用时间为t；B从O点到达P点所用时间为\\frac{t}{2}. 重力加速度为g，求$\nB 运动到 P 点时的动能。",
+    "solution": [
+      "$设B从O点发射时的速度为v_1,到达P点时的动能为E_k，O、P两点的高度差为h，根据动能定理有$\n$E_k-\\frac{1}{2}mv_1^2=mgh+qEh$\n④\n$且有v_1=\\frac{t}{2}=v_0t$\n⑤\n$h=\\frac{1}{2}gt^2$\n⑥\n联立③④⑤⑥式得\n$E_k=2m(v_0^2+g^2t^2)$\n⑦"
+    ],
+    "final_answer": [
+      "$2m(v_0^2 + g^2t^2)$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Electromagnetism",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8874,
+    "question": "$空间飞行器的交会对接是载人航天中的一项基础技术。北京时间2021年9月20日，天舟三号货运飞船采用自主交会对接模式成功和天和核心舱完成对接。成功对接后组合体沿圆形轨道运行，经过时间t，组合体绕地球转过的角度为\\theta 。地球半径为R，地球表面重力加速度为g，引力常量为G，不考虑地球自转。$\n求组合体运动的周期T；",
+    "solution": [
+      "$由角速度的定义式\\omega =\\frac{\\theta }{t}，得周期表达式T=\\frac{2\\pi }{\\omega }=\\frac{2\\pi t}{\\theta }.$"
+    ],
+    "final_answer": [
+      "$\\frac{2\\pi t}{\\theta }$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8891,
+    "question": "$装有氮气的气球半径为R，现向气球内缓慢充入氮气，当气球膨胀至半径为2R时破裂，已知大气压强为p_{0}，该气球内外压强差\\Delta p=\\frac{\\beta }{r}(\\beta 为常量、r为气球半径)，球的体积公式为V=\\frac{4}{3}\\pi r^3。求：$\n充气前气球内气体质量与破裂前瞬间气球内气体质量之比k。",
+    "solution": [
+      "$充气前气球内气体压强为p_1=p_0+\\frac{\\beta }{R}$\n\n$设充气前气球内气体的体积为V_1，破裂前原来气体在压强为p的状态下体积为V'_1，则p_1V_1=pV'_1$\n\n$破裂前气球内气体的总体积为8V_1$\n\n$质量之比k=\\frac{V'_1}{8V_1}$\n\n$解得k=\\frac{p_0R+\\beta }{8p_0R+4\\beta }$"
+    ],
+    "final_answer": [
+      "$k=\\frac{p_0R+\\beta }{8p_0R+4\\beta }$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Thermodynamics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8900,
+    "question": "$汽车从静止开始以大小为a的加速度做匀加速直线运动，经一段时间以后，以大小为2a的加速度做匀减速直线运动，它一共前进了l的距离后静止，求该汽车运动的平均速度大小。$",
+    "solution": [
+      "$设汽车加速结束时的速度为v，则\\frac{v^2}{2a} + \\frac{v^2}{2 \\times 2a} = l，得v=\\sqrt{\\frac{4al}{3}}，而\\frac{0+v}{2}t_1 + \\frac{v+0}{2}t_2 = l，得\\frac{v}{2}(t_1+t_2)=l，即\\frac{v}{2}=\\frac{l}{t_1+t_2}=\\overline{v}，因此，全程的平均速度\\overline{v}=\\frac{v}{2}=\\frac{\\sqrt{\\frac{4al}{3}}}{2}=\\frac{\\sqrt{3al}}{3}。$"
+    ],
+    "final_answer": [
+      "$\\frac{\\sqrt{3al}}{3}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8906,
+    "question": "利用物理模型对问题进行分析，是重要的科学思维方法。\n$某质量为m的行星绕太阳运动的轨迹为椭圆，在近日点速度为v_1，在远日点速度为v_2。求从近日点到远日点过程中太阳对行星所做的功W。$",
+    "solution": [
+      "$根据动能定理有 W=\\frac{1}{2}mv_2^2 - \\frac{1}{2}mv_1^2$"
+    ],
+    "final_answer": [
+      "$\\frac{1}{2}mv^2_2 - \\frac{1}{2}mv^2_1$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8913,
+    "question": "$秋千由踏板和绳构成，人在秋千上的摆动过程可以简化为单摆的摆动，等效“摆球”的质量为m，人蹲在踏板上时摆长为l_1，人站立时摆长为l_2。不计空气阻力，重力加速度大小为g。$\n$如果摆长为l_{1}，“摆球”通过最低点时的速度为v，求此时“摆球”受到拉力T的大小。$",
+    "solution": [
+      "$根据牛顿运动定律 T-mg=m\\frac{v^2}{l_1}$\n\n$得 T=mg+m\\frac{v^2}{l_1}$"
+    ],
+    "final_answer": [
+      "$T=mg+m\\frac{v^2}{l_1}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8916,
+    "question": "$一质量为m的烟花弹获得动能E后，从地面竖直升空。当烟花弹上升的速度为零时，弹中火药爆炸将烟花弹炸为质量相等的两部分，两部分获得的动能之和也为E，且均沿竖直方向运动。爆炸时间极短，重力加速度大小为g，不计空气阻力和火药的质量。求爆炸后烟花弹向上运动的部分距地面的最大高度。$",
+    "solution": [
+      "$设爆炸时烟花弹距地面的高度为h_1,由机械能守恒定律有E=mgh_1 $\n\n① \n\n$火药爆炸后，烟花弹上、下两部分均沿竖直方向运动，设炸后瞬间其速度分别为v_1和v_2。由题给条件和动量守恒定律有\\frac{1}{4}mv^2_1+\\frac{1}{4}mv^2_2=E$\n\n②\n\n$\\frac{1}{2}mv_1+\\frac{1}{2}mv_2=0$\n\n③\n\n$由③式知，烟花弹两部分的速度方向相反，向上运动部分做竖直上抛运动。设爆炸后烟花弹向上运动部分继续上升的高度为h_2，由机械能守恒定律有\\frac{1}{4}mv^2_1=\\frac{1}{2}mgh_2$\n\n④\n\n$联立①②③④式得，烟花弹向上运动部分距地面的最大高度为h=h_1+h_2=\\frac{2E}{mg}$\n\n⑤"
+    ],
+    "final_answer": [
+      "$\\frac{2E}{mg}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8922,
+    "question": "$雨滴落到地面的速度通常仅为几米每秒，这与雨滴下落过程中受到空气阻力有关。雨滴间无相互作用且雨滴质量不变，重力加速度为g。$\n$质量为m的雨滑由静止开始，下落高度h时速度为u，求这一过程中克服空气阻力所做的功W。$",
+    "solution": [
+      "$根据动能定理 mgh-W=\\frac{1}{2}mu^2  $\n\n(由于空气阻力未知，故只能从功和能量转化角度分析解决问题)\n\n$可得 W=mgh-\\frac{1}{2}mu^2  $"
+    ],
+    "final_answer": [
+      "$mgh - \\frac{1}{2} mu^2$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Mechanics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8950,
+    "question": "$宇宙飞船上的太阳帆在光压作用下，获得动力，实现星际航行。频率为\\nu的单色光垂直照射到镀铝帆板上，帆板几乎能反射所有光子。已知该帆板接收到的光辐射功率为P，普朗克常量为h，真空中光速为c，求：$\n$每秒钟碰到帆板的光子数n；$",
+    "solution": [
+      "$根据 Pt=nth\\nu  解得 n= \\frac{P}{h\\nu }.$"
+    ],
+    "final_answer": [
+      "$\\frac{P}{h\\nu }$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Optics",
+    "subject": "Physics",
+    "language": "Chinese"
+  },
+  {
+    "id": 8951,
+    "question": "$宇宙飞船上的太阳帆在光压作用下，获得动力，实现星际航行。频率为\\nu的单色光垂直照射到镀铝帆板上，帆板几乎能反射所有光子。已知该帆板接收到的光辐射功率为P，普朗克常量为h，真空中光速为c，求：$\n帆板所受的光压力大小F。",
+    "solution": [
+      "$光子的动量大小p=\\frac{h\\nu }{c}，取光子反射后的方向为正方向，则根据动量定理有Ft=ntp-nt(-p)，解得F=\\frac{2P}{c}.$"
+    ],
+    "final_answer": [
+      "$\\frac{2P}{c}$"
+    ],
+    "context": null,
+    "image_1": null,
+    "image_2": null,
+    "image_3": null,
+    "image_4": null,
+    "image_5": null,
+    "modality": "Text-only",
+    "difficulty": "Chinese College Entrance Exam",
+    "is_multiple_answer": false,
+    "unit": null,
+    "answer_type": "Expression",
+    "error": null,
+    "question_type": "Open-ended",
+    "subfield": "Optics",
+    "subject": "Physics",
+    "language": "Chinese"
+  }
+]

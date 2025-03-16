@@ -1,0 +1,172 @@
+[
+ {
+  "problem_text": "In this problem, 3.00 mol of liquid mercury is transformed from an initial state characterized by $T_i=300 . \\mathrm{K}$ and $P_i=1.00$ bar to a final state characterized by $T_f=600 . \\mathrm{K}$ and $P_f=3.00$ bar.\r\nCalculate $\\Delta S$ for this process; $\\beta=1.81 \\times 10^{-4} \\mathrm{~K}^{-1}, \\rho=13.54 \\mathrm{~g} \\mathrm{~cm}^{-3}$, and $C_{P, m}$ for $\\mathrm{Hg}(l)=27.98 \\mathrm{~J} \\mathrm{~mol}^{-1} \\mathrm{~K}^{-1}$.",
+  "answer_latex": " 58.2",
+  "answer_number": "58.2",
+  "unit": "$\\mathrm{~J}\\mathrm{~K}^{-1}$",
+  "source": "thermo",
+  "problemid": " 5.6",
+  "comment": " ",
+  "solution": "\nBecause the volume changes only slightly with temperature and pressure over the range indicated,\r\n$$\r\n\\begin{aligned}\r\n& \\Delta S=\\int_{T_i}^{T_f} \\frac{C_P}{T} d T-\\int_{P_i}^{P_f} V \\beta d P \\approx n C_{P, m} \\ln \\frac{T_f}{T_i}-n V_{m, i} \\beta\\left(P_f-P_i\\right) \\\\\r\n& =3.00 \\mathrm{~mol} \\times 27.98 \\mathrm{~J} \\mathrm{~mol}^{-1} \\mathrm{~K}^{-1} \\times \\ln \\frac{600 . \\mathrm{K}}{300 . \\mathrm{K}} \\\\\r\n& -3.00 \\mathrm{~mol} \\times \\frac{200.59 \\mathrm{~g} \\mathrm{~mol}^{-1}}{13.54 \\mathrm{~g} \\mathrm{~cm}^{-3} \\times \\frac{10^6 \\mathrm{~cm}^3}{\\mathrm{~m}^3}} \\times 1.81 \\times 10^{-4} \\mathrm{~K}^{-1} \\times 2.00 \\mathrm{bar} \\\\\r\n& \\times 10^5 \\mathrm{Pabar}^{-1} \\\\\r\n& =58.2 \\mathrm{~J} \\mathrm{~K}^{-1}-1.61 \\times 10^{-3} \\mathrm{~J} \\mathrm{~K}^{-1}=58.2 \\mathrm{~J} \\mathrm{~K}^{-1} \\\\\r\n&\r\n\\end{aligned}\r\n$$\n"
+ },
+ {
+  "problem_text": "For an ensemble consisting of 1.00 moles of particles having two energy levels separated by $h v=1.00 \\times 10^{-20} \\mathrm{~J}$, at what temperature will the internal energy of this system equal $1.00 \\mathrm{~kJ}$ ?",
+  "answer_latex": " 449",
+  "answer_number": "449",
+  "unit": " $\\mathrm{~K}$",
+  "source": "thermo",
+  "problemid": " 15.2",
+  "comment": " ",
+  "solution": "Using the expression for total energy and recognizing that $N=n N_A$,\r\n$$\r\nU=-\\left(\\frac{\\partial \\ln Q}{\\partial \\beta}\\right)_V=-n N_A\\left(\\frac{\\partial \\ln q}{\\partial \\beta}\\right)_V\r\n$$\r\nEvaluating the preceding expression and paying particular attention to units, we get\r\n$$\r\n\\begin{aligned}\r\n& U=-n N_A\\left(\\frac{\\partial}{\\partial \\beta} \\ln q\\right)_V=-\\frac{n N_A}{q}\\left(\\frac{\\partial q}{\\partial \\beta}\\right)_V \\\\\r\n& \\frac{U}{n N_A}=\\frac{-1}{\\left(1+e^{-\\beta h \\nu}\\right)}\\left(\\frac{\\partial}{\\partial \\beta}\\left(1+e^{-\\beta h \\nu}\\right)\\right)_V \\\\\r\n&=\\frac{h \\nu e^{-\\beta h \\nu}}{1+e^{-\\beta h \\nu}}=\\frac{h \\nu}{e^{\\beta h \\nu}+1} \\\\\r\n& \\frac{n N_A h \\nu}{U}-1=e^{\\beta h \\nu} \\\\\r\n& \\ln \\left(\\frac{n N_A h \\nu}{U}-1\\right)=\\beta h \\nu=\\frac{h \\nu}{k T}\r\n\\end{aligned}\r\n$$\r\n$$\r\n\\begin{aligned}\r\nT & =\\frac{h \\nu}{k \\ln \\left(\\frac{n N_A h \\nu}{U}-1\\right)} \\\\\r\n= & \\frac{1.00 \\times 10^{-20} \\mathrm{~J}}{\\left(1.38 \\times 10^{-23} \\mathrm{~J} \\mathrm{~K}^{-1}\\right) \\ln \\left(\\frac{(1.00 \\mathrm{~mol})\\left(6.022 \\times 10^{23} \\mathrm{~mol}^{-1}\\right)\\left(1.00 \\times 10^{-20} \\mathrm{~J}\\right)}{\\left(1.00 \\times 10^3 \\mathrm{~J}\\right)}-1\\right)} \\\\\r\n& =449 \\mathrm{~K}\r\n\\end{aligned}\r\n$$"
+ },
+ {
+  "problem_text": "The sedimentation coefficient of lysozyme $\\left(\\mathrm{M}=14,100 \\mathrm{~g} \\mathrm{~mol}^{-1}\\right)$ in water at $20^{\\circ} \\mathrm{C}$ is $1.91 \\times 10^{-13} \\mathrm{~s}$ and the specific volume is $0.703 \\mathrm{~cm}^3 \\mathrm{~g}^{-1}$. The density of water at this temperature is $0.998 \\mathrm{~g} \\mathrm{~cm}^{-3}$ and $\\eta=1.002 \\mathrm{cP}$. Assuming lysozyme is spherical, what is the radius of this protein?",
+  "answer_latex": "1.94",
+  "answer_number": "1.94",
+  "unit": " $\\mathrm{~nm}$",
+  "source": "thermo",
+  "problemid": " 17.9",
+  "comment": " ",
+  "solution": "\nThe frictional coefficient is dependent on molecular radius. Solving Equation for $f$, we obtain\r\n$$\r\n\\begin{aligned}\r\n& f=\\frac{m(1-\\overline{\\mathrm{V}} \\rho)}{\\overline{\\mathrm{s}}}=\\frac{\\frac{\\left(14,100 \\mathrm{~g} \\mathrm{~mol}^{-1}\\right)}{\\left(6.022 \\times 10^{23} \\mathrm{~mol}^{-1}\\right)}\\left(1-(0.703 \\mathrm{~mL} \\mathrm{~g})\\left(0.998 \\mathrm{~g} \\mathrm{~mL}^{-1}\\right)\\right)}{1.91 \\times 10^{-13} \\mathrm{~s}} \\\\\r\n& =3.66 \\times 10^{-8} \\mathrm{~g} \\mathrm{~s}^{-1} \\\\\r\n&\r\n\\end{aligned}\r\n$$\r\nThe frictional coefficient is related to the radius for a spherical particle by Equation such that\r\n$$\r\nr=\\frac{f}{6 \\pi \\eta}=\\frac{3.66 \\times 10^{-8} \\mathrm{~g} \\mathrm{~s}^{-1}}{6 \\pi\\left(1.002 \\mathrm{~g} \\mathrm{~m}^{-1} \\mathrm{~s}^{-1}\\right)}=1.94 \\times 10^{-9} \\mathrm{~m}=1.94 \\mathrm{~nm}\r\n$$\n"
+ },
+ {
+  "problem_text": "Determine the standard molar entropy of $\\mathrm{Ne}$ under standard thermodynamic conditions.",
+  "answer_latex": "164 ",
+  "answer_number": "146",
+  "unit": " $ \\mathrm{Jmol}^{-1} \\mathrm{~K}^{-1}$",
+  "source": "thermo",
+  "problemid": " 15.5",
+  "comment": " ",
+  "solution": "\nBeginning with the expression for entropy:\r\n$$\r\n\\begin{aligned}\r\nS & =\\frac{5}{2} R+R \\ln \\left(\\frac{V}{\\Lambda^3}\\right)-R \\ln N_A \\\\\r\n& =\\frac{5}{2} R+R \\ln \\left(\\frac{V}{\\Lambda^3}\\right)-54.75 R \\\\\r\n& =R \\ln \\left(\\frac{V}{\\Lambda^3}\\right)-52.25 R\r\n\\end{aligned}\r\n$$\r\nThe conventional standard state is defined by $T=298 \\mathrm{~K}$ and $V_m=24.4 \\mathrm{~L}\\left(0.0244 \\mathrm{~m}^3\\right)$. The thermal wavelength for $\\mathrm{Ne}$ is\r\n$$\r\n\\begin{aligned}\r\n\\Lambda & =\\left(\\frac{h^2}{2 \\pi m k T}\\right)^{1 / 2} \\\\\r\n& =\\left(\\frac{\\left(6.626 \\times 10^{-34} \\mathrm{~J} \\mathrm{~s}\\right)^2}{2 \\pi\\left(\\frac{0.02018 \\mathrm{~kg} \\mathrm{~mol}^{-1}}{N_A}\\right)\\left(1.38 \\times 10^{-23} \\mathrm{~J} \\mathrm{~K}^{-1}\\right)(298 \\mathrm{~K})}\\right)^{1 / 2} \\\\\r\n& =2.25 \\times 10^{-11} \\mathrm{~m}\r\n\\end{aligned}\r\n$$\r\nUsing this value for the thermal wavelength, the entropy becomes\r\n$$\r\n\\begin{aligned}\r\nS & =R \\ln \\left(\\frac{0.0244 \\mathrm{~m}^3}{\\left(2.25 \\times 10^{-11} \\mathrm{~m}\\right)^3}\\right)-52.25 R \\\\\r\n& =69.84 R-52.25 R=17.59 R=146 \\mathrm{~J} \\mathrm{~mol}^{-1} \\mathrm{~K}^{-1}\r\n\\end{aligned}\r\n$$\n"
+ },
+ {
+  "problem_text": "Carbon-14 is a radioactive nucleus with a half-life of 5760 years. Living matter exchanges carbon with its surroundings (for example, through $\\mathrm{CO}_2$ ) so that a constant level of ${ }^{14} \\mathrm{C}$ is maintained, corresponding to 15.3 decay events per minute. Once living matter has died, carbon contained in the matter is not exchanged with the surroundings, and the amount of ${ }^{14} \\mathrm{C}$ that remains in the dead material decreases with time due to radioactive decay. Consider a piece of fossilized wood that demonstrates $2.4{ }^{14} \\mathrm{C}$ decay events per minute. How old is the wood?",
+  "answer_latex": "4.86 ",
+  "answer_number": "4.86",
+  "unit": " $10^{11} \\mathrm{~s}$",
+  "source": "thermo",
+  "problemid": " 18.4",
+  "comment": " ",
+  "solution": "The ratio of decay events yields the amount of ${ }^{14} \\mathrm{C}$ present currently versus the amount that was present when the tree died:\r\n$$\r\n\\frac{\\left[{ }^{14} \\mathrm{C}\\right]}{\\left[{ }^{14} \\mathrm{C}\\right]_0}=\\frac{2.40 \\mathrm{~min}^{-1}}{15.3 \\mathrm{~min}^{-1}}=0.157\r\n$$\r\nThe rate constant for isotope decay is related to the half-life as follows:\r\n$$\r\nk=\\frac{\\ln 2}{t_{1 / 2}}=\\frac{\\ln 2}{5760 \\text { years }}=\\frac{\\ln 2}{1.82 \\times 10^{11} \\mathrm{~s}}=3.81 \\times 10^{-12} \\mathrm{~s}^{-1}\r\n$$\r\nWith the rate constant and ratio of isotope concentrations, the age of the fossilized wood is readily determined:\r\n$$\r\n\\begin{aligned}\r\n\\frac{\\left[{ }^{14} \\mathrm{C}\\right]}{\\left[{ }^{14} \\mathrm{C}\\right]_0} & =e^{-k t} \\\\\r\n\\ln \\left(\\frac{\\left[{ }^{14} \\mathrm{C}\\right]}{\\left[{ }^{14} \\mathrm{C}\\right]_0}\\right) & =-k t \\\\\r\n-\\frac{1}{k} \\ln \\left(\\frac{\\left[{ }^{14} \\mathrm{C}\\right]}{\\left[{ }^{14} \\mathrm{C}\\right]_0}\\right) & =-\\frac{1}{3.81 \\times 10^{-12} \\mathrm{~s}} \\ln (0.157)=t \\\\\r\n4.86 \\times 10^{11} \\mathrm{~s} & =t\r\n\\end{aligned}\r\n$$\r\nThis time corresponds to an age of roughly 15,400 years."
+ },
+ {
+  "problem_text": "Carbon-14 is a radioactive nucleus with a half-life of 5760 years. Living matter exchanges carbon with its surroundings (for example, through $\\mathrm{CO}_2$ ) so that a constant level of ${ }^{14} \\mathrm{C}$ is maintained, corresponding to 15.3 decay events per minute. Once living matter has died, carbon contained in the matter is not exchanged with the surroundings, and the amount of ${ }^{14} \\mathrm{C}$ that remains in the dead material decreases with time due to radioactive decay. Consider a piece of fossilized wood that demonstrates $2.4{ }^{14} \\mathrm{C}$ decay events per minute. How old is the wood?",
+  "answer_latex": "4.86 ",
+  "answer_number": "4.86",
+  "unit": " $10^{11} \\mathrm{~s}$",
+  "source": "thermo",
+  "problemid": " 18.4",
+  "comment": " ",
+  "solution": "The ratio of decay events yields the amount of ${ }^{14} \\mathrm{C}$ present currently versus the amount that was present when the tree died:\r\n$$\r\n\\frac{\\left[{ }^{14} \\mathrm{C}\\right]}{\\left[{ }^{14} \\mathrm{C}\\right]_0}=\\frac{2.40 \\mathrm{~min}^{-1}}{15.3 \\mathrm{~min}^{-1}}=0.157\r\n$$\r\nThe rate constant for isotope decay is related to the half-life as follows:\r\n$$\r\nk=\\frac{\\ln 2}{t_{1 / 2}}=\\frac{\\ln 2}{5760 \\text { years }}=\\frac{\\ln 2}{1.82 \\times 10^{11} \\mathrm{~s}}=3.81 \\times 10^{-12} \\mathrm{~s}^{-1}\r\n$$\r\nWith the rate constant and ratio of isotope concentrations, the age of the fossilized wood is readily determined:\r\n$$\r\n\\begin{aligned}\r\n\\frac{\\left[{ }^{14} \\mathrm{C}\\right]}{\\left[{ }^{14} \\mathrm{C}\\right]_0} & =e^{-k t} \\\\\r\n\\ln \\left(\\frac{\\left[{ }^{14} \\mathrm{C}\\right]}{\\left[{ }^{14} \\mathrm{C}\\right]_0}\\right) & =-k t \\\\\r\n-\\frac{1}{k} \\ln \\left(\\frac{\\left[{ }^{14} \\mathrm{C}\\right]}{\\left[{ }^{14} \\mathrm{C}\\right]_0}\\right) & =-\\frac{1}{3.81 \\times 10^{-12} \\mathrm{~s}} \\ln (0.157)=t \\\\\r\n4.86 \\times 10^{11} \\mathrm{~s} & =t\r\n\\end{aligned}\r\n$$\r\nThis time corresponds to an age of roughly 15,400 years."
+ },
+ {
+  "problem_text": "Determine the diffusion coefficient for Ar at $298 \\mathrm{~K}$ and a pressure of $1.00 \\mathrm{~atm}$.",
+  "answer_latex": "1.1 ",
+  "answer_number": "1.1",
+  "unit": " $10^{-5}~\\mathrm{m^2~s^{-1}}$",
+  "source": "thermo",
+  "problemid": " 17.1",
+  "comment": " ",
+  "solution": "\n$$\r\n\\begin{aligned}\r\nD_{Ar} &= \\frac{1}{3} \\nu_{ave, Ar} \\lambda_{Ar} \\\\\r\n&= \\frac{1}{3} \\left(\\frac{8RT}{\\pi M_{Ar}}\\right)^{\\frac{1}{2}} \\left(\\frac{RT}{PN_A\\sqrt{2}\\sigma_{Ar}}\\right) \\\\\r\n&= \\frac{1}{3} \\left(\\frac{8(8.314~\\mathrm{J~mol^{-1}~K^{-1}}) \\times 298~\\mathrm{K}}{\\pi(0.040~\\mathrm{kg~mol^{-1}})}\\right)^{\\frac{1}{2}} \\\\\r\n&\\quad \\times \\left(\\frac{(8.314~\\mathrm{J~mol^{-1}~K^{-1}}) \\times 298~\\mathrm{K}}{(101,325~\\mathrm{Pa}) \\times (6.022 \\times 10^{23}~\\mathrm{mol^{-1}})} \\times \\frac{1}{\\sqrt{2}(3.6 \\times 10^{-19}~\\mathrm{m^2})}\\right) \\\\\r\n&= \\frac{1}{3} \\times (397~\\mathrm{m~s^{-1}}) \\times (7.98 \\times 10^{-8}~\\mathrm{m}) \\\\\r\n&= 1.1 \\times 10^{-5}~\\mathrm{m^2~s^{-1}}\r\n\\end{aligned}\r\n$$\n"
+ },
+ {
+  "problem_text": "Gas cylinders of $\\mathrm{CO}_2$ are sold in terms of weight of $\\mathrm{CO}_2$. A cylinder contains $50 \\mathrm{lb}$ (22.7 $\\mathrm{kg}$ ) of $\\mathrm{CO}_2$. How long can this cylinder be used in an experiment that requires flowing $\\mathrm{CO}_2$ at $293 \\mathrm{~K}(\\eta=146 \\mu \\mathrm{P})$ through a 1.00-m-long tube (diameter $\\left.=0.75 \\mathrm{~mm}\\right)$ with an input pressure of $1.05 \\mathrm{~atm}$ and output pressure of $1.00 \\mathrm{~atm}$ ? The flow is measured at the tube output.",
+  "answer_latex": "4.49 ",
+  "answer_number": "4.49",
+  "unit": " $10^6 \\mathrm{~s}$",
+  "source": "thermo",
+  "problemid": "17.7 ",
+  "comment": " ",
+  "solution": "\nThe gas flow rate $\\Delta V / \\Delta t$ is\r\n$$\r\n\\begin{aligned}\r\n\\frac{\\Delta V}{\\Delta t}= & \\frac{\\pi r^4}{16 \\eta L P_0}\\left(P_2^2-P_1^2\\right) \\\\\r\n= & \\frac{\\pi\\left(0.375 \\times 10^{-3} \\mathrm{~m}\\right)^4}{16\\left(1.46 \\times 10^{-5} \\mathrm{~kg} \\mathrm{~m}^{-1} \\mathrm{~s}^{-1}\\right)(1.00 \\mathrm{~m})(101,325 \\mathrm{~Pa})} \\\\\r\n& \\times\\left((106,391 \\mathrm{~Pa})^2-(101,325 \\mathrm{~Pa})^2\\right) \\\\\r\n= & 2.76 \\times 10^{-6} \\mathrm{~m}^3 \\mathrm{~s}^{-1}\r\n\\end{aligned}\r\n$$\r\nConverting the $\\mathrm{CO}_2$ contained in the cylinder to the volume occupied at $298 \\mathrm{~K}$ and 1 atm pressure, we get\r\n$$\r\n\\begin{aligned}\r\nn_{\\mathrm{CO}_2} & =22.7 \\mathrm{~kg}\\left(\\frac{1}{0.044 \\mathrm{~kg} \\mathrm{~mol}^{-1}}\\right)=516 \\mathrm{~mol} \\\\\r\nV & =\\frac{n R T}{P}=1.24 \\times 10^4 \\mathrm{~L}\\left(\\frac{10^{-3} \\mathrm{~m}^3}{\\mathrm{~L}}\\right)=12.4 \\mathrm{~m}^3\r\n\\end{aligned}\r\n$$\r\nGiven the effective volume of $\\mathrm{CO}_2$ contained in the cylinder, the duration over which the cylinder can be used is\r\n$$\r\n\\frac{12.4 \\mathrm{~m}^3}{2.76 \\times 10^{-6} \\mathrm{~m}^3 \\mathrm{~s}^{-1}}=4.49 \\times 10^6 \\mathrm{~s}\r\n$$\r\nThis time corresponds to roughly 52 days.\n"
+ },
+ {
+  "problem_text": "The vibrational frequency of $I_2$ is $208 \\mathrm{~cm}^{-1}$. What is the probability of $I_2$ populating the $n=2$ vibrational level if the molecular temperature is $298 \\mathrm{~K}$ ?",
+  "answer_latex": " 0.086",
+  "answer_number": "0.086",
+  "unit": " ",
+  "source": "thermo",
+  "problemid": " 13.5",
+  "comment": " ",
+  "solution": "Molecular vibrational energy levels can be modeled as harmonic oscillators; therefore, this problem can be solved by employing a strategy identical to the one just presented. To evaluate the partition function $q$, the \"trick\" used earlier was to write the partition function as a series and use the equivalent series expression:\r\n$$\r\n\\begin{aligned}\r\nq & =\\sum_n e^{-\\beta \\varepsilon_n}=1+e^{-\\beta h c \\widetilde{\\nu}}+e^{-2 \\beta h c \\tilde{\\nu}}+e^{-3 \\beta h c \\widetilde{\\nu}}+\\ldots \\\\\r\n& =\\frac{1}{1-e^{-\\beta h c \\widetilde{\\nu}}}\r\n\\end{aligned}\r\n$$\r\nSince $\\tilde{\\nu}=208 \\mathrm{~cm}^{-1}$ and $T=298 \\mathrm{~K}$, the partition function is\r\n$$\r\n\\begin{aligned}\r\nq & =\\frac{1}{1-e^{-\\beta h c \\widetilde{\\nu}}} \\\\\r\n& =\\frac{1}{1-e^{-h c \\widetilde{\\nu} / k T}} \\\\\r\n& =\\frac{1}{1-\\exp \\left[-\\left(\\frac{\\left(6.626 \\times 10^{-34} \\mathrm{Js}\\right)\\left(3.00 \\times 10^{10} \\mathrm{~cm} \\mathrm{~s}^{-1}\\right)\\left(208 \\mathrm{~cm}^{-1}\\right)}{\\left(1.38 \\times 10^{-23} \\mathrm{~J} \\mathrm{~K}^{-1}\\right)(298 \\mathrm{~K})}\\right)\\right]} \\\\\r\n& =\\frac{1}{1-e^{-1}}=1.58\r\n\\end{aligned}\r\n$$\r\nThis result is then used to evaluate the probability of occupying the second vibrational state $(n=2)$ as follows:\r\n$$\r\n\\begin{aligned}\r\np_2 & =\\frac{e^{-2 \\beta h c \\tilde{\\nu}}}{q} \\\\\r\n& =\\frac{\\exp \\left[-2\\left(\\frac{\\left(6.626 \\times 10^{-34} \\mathrm{~J} \\mathrm{~s}^{-1}\\right)\\left(3.00 \\times 10^{10} \\mathrm{~cm} \\mathrm{~s}^{-1}\\right)\\left(208 \\mathrm{~cm}^{-1}\\right)}{\\left(1.38 \\times 10^{-23} \\mathrm{~J} \\mathrm{~K}^{-1}\\right)(298 \\mathrm{~K})}\\right)\\right]}{1.58} \\\\\r\n& =0.086\r\n\\end{aligned}\r\n$$"
+ },
+ {
+  "problem_text": "The value of $\\Delta G_f^{\\circ}$ for $\\mathrm{Fe}(g)$ is $370.7 \\mathrm{~kJ} \\mathrm{~mol}^{-1}$ at $298.15 \\mathrm{~K}$, and $\\Delta H_f^{\\circ}$ for $\\mathrm{Fe}(g)$ is $416.3 \\mathrm{~kJ} \\mathrm{~mol}^{-1}$ at the same temperature. Assuming that $\\Delta H_f^{\\circ}$ is constant in the interval $250-400 \\mathrm{~K}$, calculate $\\Delta G_f^{\\circ}$ for $\\mathrm{Fe}(g)$ at 400. K.",
+  "answer_latex": "355.1 ",
+  "answer_number": "355.1",
+  "unit": " $\\mathrm{~kJ} \\mathrm{~mol}^{-1}$",
+  "source": "thermo",
+  "problemid": " 6.4",
+  "comment": "\n ",
+  "solution": "$$\r\n\\begin{aligned}\r\n\\Delta G_f^{\\circ}\\left(T_2\\right) & =T_2\\left[\\frac{\\Delta G_f^{\\circ}\\left(T_1\\right)}{T_1}+\\Delta H_f^{\\circ}\\left(T_1\\right) \\times\\left(\\frac{1}{T_2}-\\frac{1}{T_1}\\right)\\right] \\\\\r\n& =400 . \\mathrm{K} \\times\\left[\\begin{array}{l}\r\n\\left.\\frac{370.7 \\times 10^3 \\mathrm{~J} \\mathrm{~mol}^{-1}}{298.15 \\mathrm{~K}}+416.3 \\times 10^3 \\mathrm{~J} \\mathrm{~mol}^{-1}\\right] \\\\\r\n\\times\\left(\\frac{1}{400 . \\mathrm{K}}-\\frac{1}{298.15 \\mathrm{~K}}\\right)\r\n\\end{array}\\right] \\\\\r\n\\Delta G_f^{\\circ}(400 . \\mathrm{K}) & =355.1 \\mathrm{~kJ} \\mathrm{~mol}^{-1}\r\n\\end{aligned}\r\n$$"
+ },
+ {
+  "problem_text": "The reactant 1,3-cyclohexadiene can be photochemically converted to cis-hexatriene. In an experiment, $2.5 \\mathrm{mmol}$ of cyclohexadiene are converted to cis-hexatriene when irradiated with 100. W of 280. nm light for $27.0 \\mathrm{~s}$. All of the light is absorbed by the sample. What is the overall quantum yield for this photochemical process?",
+  "answer_latex": " 0.396",
+  "answer_number": "0.396",
+  "unit": " ",
+  "source": "thermo",
+  "problemid": " 19.6",
+  "comment": " ",
+  "solution": "First, the total photon energy absorbed by the sample, $E_{a b s}$, is\r\n$$\r\nE_{a b s}=(\\text { power }) \\Delta t=\\left(100 . \\mathrm{Js}^{-1}\\right)(27.0 \\mathrm{~s})=2.70 \\times 10^3 \\mathrm{~J}\r\n$$\r\nNext, the photon energy at $280 . \\mathrm{nm}$ is\r\n$$\r\n\\mathrm{E}_{p h}=\\frac{h c}{\\lambda}=\\frac{\\left(6.626 \\times 10^{-34} \\mathrm{Js}\\right)\\left(2.998 \\times 10^8 \\mathrm{~ms}^{-1}\\right)}{2.80 \\times 10^{-7} \\mathrm{~m}}=7.10 \\times 10^{-19} \\mathrm{~J}\r\n$$\r\nThe total number of photons absorbed by the sample is therefore\r\n$$\r\n\\frac{E_{a b s}}{E_{p h}}=\\frac{2.70 \\times 10^3 \\mathrm{~J}}{7.10 \\times 10^{-19} \\mathrm{~J} \\text { photon }^{-1}}=3.80 \\times 10^{21} \\text { photons }\r\n$$\r\nDividing this result by Avogadro's number results in $6.31 \\times 10^{-3}$ Einsteins or moles of photons. Therefore, the overall quantum yield is\r\n$$\r\n\\phi=\\frac{\\text { moles }_{\\text {react }}}{\\text { moles }_{\\text {photon }}}=\\frac{2.50 \\times 10^{-3} \\mathrm{~mol}}{6.31 \\times 10^{-3} \\mathrm{~mol}}=0.396 \\approx 0.40\r\n$$"
+ },
+ {
+  "problem_text": "In this problem, $2.50 \\mathrm{~mol}$ of $\\mathrm{CO}_2$ gas is transformed from an initial state characterized by $T_i=450 . \\mathrm{K}$ and $P_i=1.35$ bar to a final state characterized by $T_f=800 . \\mathrm{K}$ and $P_f=$ 3.45 bar. Using Equation (5.23), calculate $\\Delta S$ for this process. Assume ideal gas behavior and use the ideal gas value for $\\beta$. For $\\mathrm{CO}_2$,\r\n$$\r\n\\frac{C_{P, m}}{\\mathrm{~J} \\mathrm{~mol}^{-1} \\mathrm{~K}^{-1}}=18.86+7.937 \\times 10^{-2} \\frac{T}{\\mathrm{~K}}-6.7834 \\times 10^{-5} \\frac{T^2}{\\mathrm{~K}^2}+2.4426 \\times 10^{-8} \\frac{T^3}{\\mathrm{~K}^3}\r\n$$",
+  "answer_latex": " 48.6",
+  "answer_number": "48.6",
+  "unit": " $\\mathrm{~J} \\mathrm{~K}^{-1}$",
+  "source": "thermo",
+  "problemid": " 5.5",
+  "comment": " ",
+  "solution": "\nConsider the following reversible process in order to calculate $\\Delta S$. The gas is first heated reversibly from 450 . to 800 . $\\mathrm{K}$ at a constant pressure of 1.35 bar. Subsequently, the gas is reversibly compressed at a constant temperature of 800 . $\\mathrm{K}$ from a pressure of 1.35 bar to a pressure of 3.45 bar.\r\n$$\r\n\\begin{aligned}\r\n& \\Delta S=\\int_{T_i}^{T_f} \\frac{C_P}{T} d T-\\int_{P_i}^{P_f} V \\beta d P=\\int_{T_i}^{T_f} \\frac{C_P}{T} d T-n R \\int_{P_i}^{P_f} \\frac{d P}{P}=\\int_{T_i}^{T_f} \\frac{C_P}{T} d T-n R \\ln \\frac{P_f}{P_i} \\\\\r\n& =2.50 \\times \\int_{450 .}^{800 .} \\frac{\\left(18.86+7.937 \\times 10^{-2} \\frac{T}{\\mathrm{~K}}-6.7834 \\times 10^{-5} \\frac{T^2}{\\mathrm{~K}^2}+2.4426 \\times 10^{-8} \\frac{T^3}{\\mathrm{~K}^3}\\right)}{\\frac{T}{\\mathrm{~K}}} d \\frac{T}{\\mathrm{~K}} \\\\\r\n& -2.50 \\mathrm{~mol} \\times 8.314 \\mathrm{~J} \\mathrm{~K}^{-1} \\mathrm{~mol}^{-1} \\times \\ln \\frac{3.45 \\mathrm{bar}}{1.35 \\mathrm{bar}} \\\\\r\n& =27.13 \\mathrm{~J} \\mathrm{~K}^{-1}+69.45 \\mathrm{~J} \\mathrm{~K}^{-1}-37.10 \\mathrm{~J} \\mathrm{~K}^{-1}+8.57 \\mathrm{~J} \\mathrm{~K}^{-1} \\\\\r\n& -19.50 \\mathrm{~J} \\mathrm{~K}^{-1} \\\\\r\n& =48.6 \\mathrm{~J} \\mathrm{~K}^{-1} \\\\\r\n&\r\n\\end{aligned}\r\n$$\n"
+ },
+ {
+  "problem_text": "One mole of $\\mathrm{CO}$ gas is transformed from an initial state characterized by $T_i=320 . \\mathrm{K}$ and $V_i=80.0 \\mathrm{~L}$ to a final state characterized by $T_f=650 . \\mathrm{K}$ and $V_f=120.0 \\mathrm{~L}$. Using Equation (5.22), calculate $\\Delta S$ for this process. Use the ideal gas values for $\\beta$ and $\\kappa$. For CO,\r\n$$\r\n\\frac{C_{V, m}}{\\mathrm{~J} \\mathrm{~mol}^{-1} \\mathrm{~K}^{-1}}=31.08-0.01452 \\frac{T}{\\mathrm{~K}}+3.1415 \\times 10^{-5} \\frac{T^2}{\\mathrm{~K}^2}-1.4973 \\times 10^{-8} \\frac{T^3}{\\mathrm{~K}^3}\r\n$$",
+  "answer_latex": " 24.4",
+  "answer_number": "24.4",
+  "unit": " $\\mathrm{~J} \\mathrm{~K}^{-1}$",
+  "source": "thermo",
+  "problemid": " 5.4",
+  "comment": " ",
+  "solution": "\nFor an ideal gas,\r\n$$\r\n\\begin{gathered}\r\n\\beta=\\frac{1}{V}\\left(\\frac{\\partial V}{\\partial T}\\right)_P=\\frac{1}{V}\\left(\\frac{\\partial[n R T / P]}{\\partial T}\\right)_P=\\frac{1}{T} \\text { and } \\\\\r\n\\kappa=-\\frac{1}{V}\\left(\\frac{\\partial V}{\\partial P}\\right)_T=-\\frac{1}{V}\\left(\\frac{\\partial[n R T / P]}{\\partial P}\\right)_T=\\frac{1}{P}\r\n\\end{gathered}\r\n$$\r\nConsider the following reversible process in order to calculate $\\Delta S$. The gas is first heated reversibly from 320 . to $650 . \\mathrm{K}$ at a constant volume of $80.0 \\mathrm{~L}$. Subsequently, the gas is reversibly expanded at a constant temperature of 650 . $\\mathrm{K}$ from a volume of $80.0 \\mathrm{~L}$ to a volume of $120.0 \\mathrm{~L}$. The entropy change for this process is obtained using the integral form with the values of $\\beta$ and $\\kappa$ cited earlier. The result is\r\n$$\r\n\\Delta S=\\int_{T_i}^{T_f} \\frac{C_V}{T} d T+n R \\ln \\frac{V_f}{V_i}\r\n$$\r\n$\\Delta S=$\r\n$$\r\n\\begin{aligned}\r\n1 \\mathrm{~mol} \\times & \\int_{320 .}^{650 .} \\frac{\\left(31.08-0.01452 \\frac{T}{\\mathrm{~K}}+3.1415 \\times 10^{-5} \\frac{T^2}{\\mathrm{~K}^2}-1.4973 \\times 10^{-8} \\frac{T^3}{\\mathrm{~K}^3}\\right)}{\\mathrm{K}} d \\frac{T}{\\mathrm{~K}} \\\\\r\n& +1 \\mathrm{~mol} \\times 8.314 \\mathrm{~J} \\mathrm{~K}^{-1} \\mathrm{~mol}^{-1} \\times \\ln \\frac{120.0 \\mathrm{~L}}{80.0 \\mathrm{~L}} \\\\\r\n= & 22.025 \\mathrm{~J} \\mathrm{~K}^{-1}-4.792 \\mathrm{~J} \\mathrm{~K}^{-1}+5.028 \\mathrm{~J} \\mathrm{~K}^{-1} \\\\\r\n& -1.207 \\mathrm{~J} \\mathrm{~K}^{-1}+3.371 \\mathrm{~J} \\mathrm{~K}^{-1} \\\\\r\n= & 24.4 \\mathrm{~J} \\mathrm{~K}^{-1}\r\n\\end{aligned}\r\n$$\n"
+ },
+ {
+  "problem_text": "You are given the following reduction reactions and $E^{\\circ}$ values:\r\n$$\r\n\\begin{array}{ll}\r\n\\mathrm{Fe}^{3+}(a q)+\\mathrm{e}^{-} \\rightarrow \\mathrm{Fe}^{2+}(a q) & E^{\\circ}=+0.771 \\mathrm{~V} \\\\\r\n\\mathrm{Fe}^{2+}(a q)+2 \\mathrm{e}^{-} \\rightarrow \\mathrm{Fe}(s) & E^{\\circ}=-0.447 \\mathrm{~V}\r\n\\end{array}\r\n$$\r\nCalculate $E^{\\circ}$ for the half-cell reaction $\\mathrm{Fe}^{3+}(a q)+3 \\mathrm{e}^{-} \\rightarrow \\mathrm{Fe}(s)$.",
+  "answer_latex": " -0.041",
+  "answer_number": "-0.041",
+  "unit": " $\\mathrm{~V}$",
+  "source": "thermo",
+  "problemid": " 11.3",
+  "comment": " ",
+  "solution": "We calculate the desired value of $E^{\\circ}$ by converting the given $E^{\\circ}$ values to $\\Delta G^{\\circ}$ values, and combining these reduction reactions to obtain the desired equation.\r\n$$\r\n\\begin{gathered}\r\n\\mathrm{Fe}^{3+}(a q)+\\mathrm{e}^{-} \\rightarrow \\mathrm{Fe}^{2+}(a q) \\\\\r\n\\Delta G^{\\circ}=-n F E^{\\circ}=-1 \\times 96485 \\mathrm{C} \\mathrm{mol}^{-1} \\times 0.771 \\mathrm{~V}=-74.39 \\mathrm{~kJ} \\mathrm{~mol}^{-1} \\\\\r\n\\mathrm{Fe}^{2+}(a q)+2 \\mathrm{e}^{-} \\rightarrow \\mathrm{Fe}(s) \\\\\r\n\\Delta G^{\\circ}=-n F E^{\\circ}=-2 \\times 96485 \\mathrm{C} \\mathrm{mol}^{-1} \\times(-0.447 \\mathrm{~V})=86.26 \\mathrm{~kJ} \\mathrm{~mol}^{-1}\r\n\\end{gathered}\r\n$$\r\nWe next add the two equations as well as their $\\Delta G^{\\circ}$ to obtain\r\n$$\r\n\\begin{gathered}\r\n\\mathrm{Fe}^{3+}(a q)+3 \\mathrm{e}^{-} \\rightarrow \\mathrm{Fe}(s) \\\\\r\n\\Delta G^{\\circ}=-74.39 \\mathrm{~kJ} \\mathrm{~mol}^{-1}+86.26 \\mathrm{~kJ} \\mathrm{~mol}^{-1}=11.87 \\mathrm{~kJ} \\mathrm{~mol}^{-1} \\\\\r\nE_{F e^{3+} / F e}^{\\circ}=-\\frac{\\Delta G^{\\circ}}{n F}=\\frac{-11.87 \\times 10^3 \\mathrm{~J} \\mathrm{~mol}^{-1}}{3 \\times 96485 \\mathrm{C} \\mathrm{mol}^{-1}}=-0.041 \\mathrm{~V}\r\n\\end{gathered}\r\n$$\r\nThe $E^{\\circ}$ values cannot be combined directly, because they are intensive rather than extensive quantities.\r\nThe preceding calculation can be generalized as follows. Assume that $n_1$ electrons are transferred in the reaction with the potential $E_{A / B}^{\\circ}$, and $n_2$ electrons are transferred in the reaction with the potential $E_{B / C}^{\\circ}$. If $n_3$ electrons are transferred in the reaction with the potential $E_{A / C}^{\\circ}$, then $n_3 E_{A / C}^{\\circ}=n_1 E_{A / B}^{\\circ}+n_2 E_{B / C}^{\\circ}$."
+ },
+ {
+  "problem_text": "At $298.15 \\mathrm{~K}, \\Delta G_f^{\\circ}(\\mathrm{C}$, graphite $)=0$, and $\\Delta G_f^{\\circ}(\\mathrm{C}$, diamond $)=2.90 \\mathrm{~kJ} \\mathrm{~mol}^{-1}$. Therefore, graphite is the more stable solid phase at this temperature at $P=P^{\\circ}=1$ bar. Given that the densities of graphite and diamond are 2.25 and $3.52 \\mathrm{~kg} / \\mathrm{L}$, respectively, at what pressure will graphite and diamond be in equilibrium at $298.15 \\mathrm{~K}$ ?",
+  "answer_latex": "1.51 ",
+  "answer_number": "1.51",
+  "unit": " $10^4 \\mathrm{bar}$",
+  "source": "thermo",
+  "problemid": " 6.13",
+  "comment": " ",
+  "solution": "At equilibrium $\\Delta G=G(\\mathrm{C}$, graphite $)-G(\\mathrm{C}$, diamond $)=0$. Using the pressure dependence of $G,\\left(\\partial G_m / \\partial P\\right)_T=V_m$, we establish the condition for equilibrium:\r\n$$\r\n\\begin{gathered}\r\n\\Delta G=\\Delta G_f^{\\circ}(\\mathrm{C}, \\text { graphite })-\\Delta G_f^{\\circ}(\\mathrm{C}, \\text { diamond }) \\\\\r\n+\\left(V_m^{\\text {graphite }}-V_m^{\\text {diamond }}\\right)(\\Delta P)=0 \\\\\r\n0=0-2.90 \\times 10^3+\\left(V_m^{\\text {graphite }}-V_m^{\\text {diamond }}\\right)(P-1 \\mathrm{bar}) \\\\\r\nP=1 \\mathrm{bar}+\\frac{2.90 \\times 10^3}{M_C\\left(\\frac{1}{\\rho_{\\text {graphite }}}-\\frac{1}{\\rho_{\\text {diamond }}}\\right)} \\\\\r\n=1 \\mathrm{bar}+\\frac{2.90 \\times 10^3}{12.00 \\times 10^{-3} \\mathrm{~kg} \\mathrm{~mol}^{-1} \\times\\left(\\frac{1}{2.25 \\times 10^3 \\mathrm{~kg} \\mathrm{~m}^{-3}}-\\frac{1}{3.52 \\times 10^3 \\mathrm{~kg} \\mathrm{~m}^{-3}}\\right)}\\\\\r\n=10^5 \\mathrm{~Pa}+1.51 \\times 10^9 \\mathrm{~Pa}=1.51 \\times 10^4 \\mathrm{bar}\r\n\\end{gathered}\r\n$$\r\nFortunately for all those with diamond rings, although the conversion of diamond to graphite at $1 \\mathrm{bar}$ and $298 \\mathrm{~K}$ is spontaneous, the rate of conversion is vanishingly small.\r\n"
+ },
+ {
+  "problem_text": "Imagine tossing a coin 50 times. What are the probabilities of observing heads 25 times (i.e., 25 successful experiments)?",
+  "answer_latex": "0.11 ",
+  "answer_number": "0.11",
+  "unit": " ",
+  "source": "thermo",
+  "problemid": " 12.8",
+  "comment": " ",
+  "solution": "The trial of interest consists of 50 separate experiments; therefore, $n=50$. Considering the case of 25 successful experiments where $j=25$. The probability $\\left(P_{25}\\right)$ is\r\n$$\r\n\\begin{aligned}\r\nP_{25} & =C(n, j)\\left(P_E\\right)^j\\left(1-P_E\\right)^{n-j} \\\\\r\n& =C(50,25)\\left(P_E\\right)^{25}\\left(1-P_E\\right)^{25} \\\\\r\n& =\\left(\\frac{50 !}{(25 !)(25 !)}\\right)\\left(\\frac{1}{2}\\right)^{25}\\left(\\frac{1}{2}\\right)^{25}=\\left(1.26 \\times 10^{14}\\right)\\left(8.88 \\times 10^{-16}\\right)=0.11\r\n\\end{aligned}\r\n$$"
+ },
+ {
+  "problem_text": "In a rotational spectrum of $\\operatorname{HBr}\\left(B=8.46 \\mathrm{~cm}^{-1}\\right)$, the maximum intensity transition in the R-branch corresponds to the $J=4$ to 5 transition. At what temperature was the spectrum obtained?",
+  "answer_latex": "4943 ",
+  "answer_number": "4943",
+  "unit": " $\\mathrm{~K}$",
+  "source": "thermo",
+  "problemid": " 14.4",
+  "comment": " ",
+  "solution": "The information provided for this problem dictates that the $J=4$ rotational energy level was the most populated at the temperature at which the spectrum was taken. To determine the temperature, we first determine the change in occupation number for the rotational energy level, $a_J$, versus $J$ as follows:\r\n$$\r\n\\begin{aligned}\r\na_J & =\\frac{N(2 J+1) e^{-\\beta h c B J(J+1)}}{q_R}=\\frac{N(2 J+1) e^{-\\beta h c B J(J+1)}}{\\left(\\frac{1}{\\beta h c B}\\right)} \\\\\r\n& =N \\beta h c B(2 J+1) e^{-\\beta h c B J(J+1)}\r\n\\end{aligned}\r\n$$\r\nNext, we take the derivative of $a_J$ with respect to $J$ and set the derivative equal to zero to find the maximum of the function:\r\n$$\r\n\\begin{aligned}\r\n\\frac{d a_J}{d J} & =0=\\frac{d}{d J} N \\beta h c B(2 J+1) e^{-\\beta h c B J(J+1)} \\\\\r\n0 & =\\frac{d}{d J}(2 J+1) e^{-\\beta h c B J(J+1)} \\\\\r\n0 & =2 e^{-\\beta h c B J(J+1)}-\\beta h c B(2 J+1)^2 e^{-\\beta h c B J(J+1)} \\\\\r\n0 & =2-\\beta h c B(2 J+1)^2 \\\\\r\n2 & =\\beta h c B(2 J+1)^2=\\frac{h c B}{k T}(2 J+1)^2 \\\\\r\nT & =\\frac{(2 J+1)^2 h c B}{2 k}\r\n\\end{aligned}\r\n$$\r\nSubstitution of $J=4$ into the preceding expression results in the following temperature at which the spectrum was obtained:\r\n$$\r\n\\begin{aligned}\r\nT & =\\frac{(2 J+1)^2 h c B}{2 k} \\\\\r\n& =\\frac{(2(4)+1)^2\\left(6.626 \\times 10^{-34} \\mathrm{~J} \\mathrm{~s}\\right)\\left(3.00 \\times 10^{10} \\mathrm{~cm} \\mathrm{~s}^{-1}\\right)\\left(8.46 \\mathrm{~cm}^{-1}\\right)}{2\\left(1.38 \\times 10^{-23} \\mathrm{~J} \\mathrm{~K}^{-1}\\right)} \\\\\r\n& =4943 \\mathrm{~K}\r\n\\end{aligned}\r\n$$"
+ }
+]

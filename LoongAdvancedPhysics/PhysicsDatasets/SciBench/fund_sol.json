@@ -1,0 +1,102 @@
+[
+ {
+  "problem_text": "A $2.00 \\mathrm{~kg}$ particle moves along an $x$ axis in one-dimensional motion while a conservative force along that axis acts on it. The potential energy $U(x)$ is 0 when $x = 6.5 \\mathrm{~m} $ and is $7 \\mathrm{~J}$ when $x = 4.5 \\mathrm{~m} $. At $x=6.5 \\mathrm{~m}$, the particle has velocity $\\vec{v}_0=(-4.00 \\mathrm{~m} / \\mathrm{s}) \\hat{\\mathrm{i}}$ Determine the particle's speed at $x_1=4.5 \\mathrm{~m}$.",
+  "answer_latex": "3.0",
+  "answer_number": "3.0",
+  "unit": " m/s",
+  "source": "fund",
+  "problemid": " 8.04",
+  "comment": " ",
+  "solution": "\nAt $x=6.5 \\mathrm{~m}$, the particle has kinetic energy\n$$\n\\begin{aligned}\nK_0 & =\\frac{1}{2} m v_0^2=\\frac{1}{2}(2.00 \\mathrm{~kg})(4.00 \\mathrm{~m} / \\mathrm{s})^2 \\\\\n& =16.0 \\mathrm{~J} .\n\\end{aligned}\n$$\nBecause the potential energy there is $U=0$, the mechanical energy is\n$$\nE_{\\text {mec }}=K_0+U_0=16.0 \\mathrm{~J}+0=16.0 \\mathrm{~J} .\n$$The kinetic energy $K_1$ is the difference between $E_{\\text {mec }}$ and $U_1$ :\n$$\nK_1=E_{\\text {mec }}-U_1=16.0 \\mathrm{~J}-7.0 \\mathrm{~J}=9.0 \\mathrm{~J} .\n$$\nBecause $K_1=\\frac{1}{2} m v_1^2$, we find\n$$\nv_1=3.0 \\mathrm{~m} / \\mathrm{s}\n$$\n\n\n"
+ },
+ {
+  "problem_text": "A playful astronaut releases a bowling ball, of mass $m=$ $7.20 \\mathrm{~kg}$, into circular orbit about Earth at an altitude $h$ of $350 \\mathrm{~km}$.\r\nWhat is the mechanical energy $E$ of the ball in its orbit?",
+  "answer_latex": " -214",
+  "answer_number": "-214",
+  "unit": " MJ",
+  "source": "fund",
+  "problemid": " 13.05",
+  "comment": " ",
+  "solution": "We can get $E$ from the orbital energy, given by Eq. $13-40$ ( $E=-G M m / 2 r)$ ), if we first find the orbital radius $r$. (It is not simply the given altitude.)\nCalculations: The orbital radius must be\n$$\nr=R+h=6370 \\mathrm{~km}+350 \\mathrm{~km}=6.72 \\times 10^6 \\mathrm{~m},\n$$\nin which $R$ is the radius of Earth. Then, from Eq. 13-40 with Earth mass $M=5.98 \\times 10^{24} \\mathrm{~kg}$, the mechanical energy is\n$$\n\\begin{aligned}\nE & =-\\frac{G M m}{2 r} \\\\\n& =-\\frac{\\left(6.67 \\times 10^{-11} \\mathrm{~N} \\cdot \\mathrm{m}^2 / \\mathrm{kg}^2\\right)\\left(5.98 \\times 10^{24} \\mathrm{~kg}\\right)(7.20 \\mathrm{~kg})}{(2)\\left(6.72 \\times 10^6 \\mathrm{~m}\\right)} \\\\\n& =-2.14 \\times 10^8 \\mathrm{~J}=-214 \\mathrm{MJ} .\n\\end{aligned}\n$$"
+ },
+ {
+  "problem_text": "There is a disk mounted on a fixed horizontal axle, with mass $M = 2.5 \\mathrm{~kg}$ and radius $R = 20\\mathrm{~cm}$. A block with mass m = $1.2 \\mathrm{~kg}$ hangs from a massless cord that is wrapped around the rim of the disk. A block hangs from a massless cord that is wrapped around the rim of the disk. The cord does not slip and there is no friction at the axle. Let the disk start from rest at time $t=0$ and also let the tension in the massless cord be $6.0 \\mathrm{~N}$ and the angular acceleration of the disk be $-24 \\mathrm{rad} / \\mathrm{s}^2$. What is its rotational kinetic energy $K$ at $t=2.5 \\mathrm{~s}$ ?",
+  "answer_latex": " 90",
+  "answer_number": "90",
+  "unit": " J",
+  "source": "fund",
+  "problemid": " 10.11",
+  "comment": " ",
+  "solution": "\nWe can find $K$ with Eq. $10-34\\left(K=\\frac{1}{2} I \\omega^2\\right)$. We already know that $I=\\frac{1}{2} M R^2$, but we do not yet know $\\omega$ at $t=2.5 \\mathrm{~s}$. However, because the angular acceleration $\\alpha$ has the constant value of $-24 \\mathrm{rad} / \\mathrm{s}^2$, we can apply the equations for constant angular acceleration.\n\nCalculations: Because we want $\\omega$ and know $\\alpha$ and $\\omega_0(=0)$, we use Eq. 10-12:\n$$\n\\omega=\\omega_0+\\alpha t=0+\\alpha t=\\alpha t .\n$$\nSubstituting $\\omega=\\alpha t$ and $I=\\frac{1}{2} M R^2$ into Eq. 10-34, we find\n$$\n\\begin{aligned}\nK & =\\frac{1}{2} I \\omega^2=\\frac{1}{2}\\left(\\frac{1}{2} M R^2\\right)(\\alpha t)^2=\\frac{1}{4} M(R \\alpha t)^2 \\\\\n& =\\frac{1}{4}(2.5 \\mathrm{~kg})\\left[(0.20 \\mathrm{~m})\\left(-24 \\mathrm{rad} / \\mathrm{s}^2\\right)(2.5 \\mathrm{~s})\\right]^2 \\\\\n& =90 \\mathrm{~J} .\n\\end{aligned}\n$$\n\n"
+ },
+ {
+  "problem_text": "A food shipper pushes a wood crate of cabbage heads (total mass $m=14 \\mathrm{~kg}$ ) across a concrete floor with a constant horizontal force $\\vec{F}$ of magnitude $40 \\mathrm{~N}$. In a straight-line displacement of magnitude $d=0.50 \\mathrm{~m}$, the speed of the crate decreases from $v_0=0.60 \\mathrm{~m} / \\mathrm{s}$ to $v=0.20 \\mathrm{~m} / \\mathrm{s}$. What is the increase $\\Delta E_{\\text {th }}$ in the thermal energy of the crate and floor?",
+  "answer_latex": " 22.2",
+  "answer_number": "22.2",
+  "unit": " J",
+  "source": "fund",
+  "problemid": " 8.05",
+  "comment": " ",
+  "solution": "\nWe can relate $\\Delta E_{\\text{th }}$ to the work $W$ done by $\\vec{F}$ with the energy statement for a system that involves friction:\n$$\nW=\\Delta E_{\\text {mec }}+\\Delta E_{\\text {th }} .\n$$\nCalculations: We know the value of $W=F d \\cos \\phi=(40 \\mathrm{~N})(0.50 \\mathrm{~m}) \\cos 0^{\\circ}=20 \\mathrm{~J}$. The change $\\Delta E_{\\text {mec }}$ in the crate's mechanical energy is just the change in its kinetic energy because no potential energy changes occur, so we have\n$$\n\\Delta E_{\\mathrm{mec}}=\\Delta K=\\frac{1}{2} m v^2-\\frac{1}{2} m v_0^2 .\n$$\nSubstituting this into above equation and solving for $\\Delta E_{\\mathrm{th}}$, we find\n$$\n\\begin{aligned}\n\\Delta E_{\\mathrm{th}} & =W-\\left(\\frac{1}{2} m v^2-\\frac{1}{2} m v_0^2\\right)=W-\\frac{1}{2} m\\left(v^2-v_0^2\\right) \\\\\n& =20 \\mathrm{~J}-\\frac{1}{2}(14 \\mathrm{~kg})\\left[(0.20 \\mathrm{~m} / \\mathrm{s})^2-(0.60 \\mathrm{~m} / \\mathrm{s})^2\\right] \\\\\n& =22.2 \\mathrm{~J}.\n\\end{aligned}\n$$\n"
+ },
+ {
+  "problem_text": "While you are operating a Rotor (a large, vertical, rotating cylinder found in amusement parks), you spot a passenger in acute distress and decrease the angular velocity of the cylinder from $3.40 \\mathrm{rad} / \\mathrm{s}$ to $2.00 \\mathrm{rad} / \\mathrm{s}$ in $20.0 \\mathrm{rev}$, at constant angular acceleration. (The passenger is obviously more of a \"translation person\" than a \"rotation person.\")\r\nWhat is the constant angular acceleration during this decrease in angular speed?",
+  "answer_latex": "-0.0301",
+  "answer_number": "-0.0301",
+  "unit": " $\\mathrm{rad} / \\mathrm{s}^2$",
+  "source": "fund",
+  "problemid": " 10.04",
+  "comment": " ",
+  "solution": "\nBecause the cylinder's angular acceleration is constant, we can relate it to the angular velocity and angular displacement via the basic equations for constant angular acceleration.\n\nCalculations: Let's first do a quick check to see if we can solve the basic equations. The initial angular velocity is $\\omega_0=3.40$\n$\\mathrm{rad} / \\mathrm{s}$, the angular displacement is $\\theta-\\theta_0=20.0 \\mathrm{rev}$, and the angular velocity at the end of that displacement is $\\omega=2.00$ $\\mathrm{rad} / \\mathrm{s}$. In addition to the angular acceleration $\\alpha$ that we want, both basic equations also contain time $t$, which we do not necessarily want.\n\nTo eliminate the unknown $t$, we use $$\\omega  =\\omega_0+\\alpha t$$ to write\n$$\nt=\\frac{\\omega-\\omega_0}{\\alpha}\n$$\nwhich we then substitute into equation $$\\theta-\\theta_0 =\\omega_0 t+\\frac{1}{2} \\alpha t^2 $$ to write\n$$\n\\theta-\\theta_0=\\omega_0\\left(\\frac{\\omega-\\omega_0}{\\alpha}\\right)+\\frac{1}{2} \\alpha\\left(\\frac{\\omega-\\omega_0}{\\alpha}\\right)^2 .\n$$\nSolving for $\\alpha$, substituting known data, and converting 20 rev to $125.7 \\mathrm{rad}$, we find\n$$\n\\begin{aligned}\n\\alpha & =\\frac{\\omega^2-\\omega_0^2}{2\\left(\\theta-\\theta_0\\right)}=\\frac{(2.00 \\mathrm{rad} / \\mathrm{s})^2-(3.40 \\mathrm{rad} / \\mathrm{s})^2}{2(125.7 \\mathrm{rad})} \\\\\n& =-0.0301 \\mathrm{rad} / \\mathrm{s}^2\n\\end{aligned}\n$$\n\n"
+ },
+ {
+  "problem_text": "A living room has floor dimensions of $3.5 \\mathrm{~m}$ and $4.2 \\mathrm{~m}$ and a height of $2.4 \\mathrm{~m}$.\r\nWhat does the air in the room weigh when the air pressure is $1.0 \\mathrm{~atm}$ ?",
+  "answer_latex": " 418",
+  "answer_number": "418",
+  "unit": " N",
+  "source": "fund",
+  "problemid": " 14.01",
+  "comment": " ",
+  "solution": "\n(1) The air's weight is equal to $m g$, where $m$ is its mass.\n(2) Mass $m$ is related to the air density $\\rho$ and the air volume $V$ by Eq $(\\rho=m / V)$.\n\nCalculation: Putting the two ideas together and taking the density of air at 1.0 atm, we find\n$$\n\\begin{aligned}\nm g & =(\\rho V) g \\\\\n& =\\left(1.21 \\mathrm{~kg} / \\mathrm{m}^3\\right)(3.5 \\mathrm{~m} \\times 4.2 \\mathrm{~m} \\times 2.4 \\mathrm{~m})\\left(9.8 \\mathrm{~m} / \\mathrm{s}^2\\right) \\\\\n& =418 \\mathrm{~N} \n\\end{aligned}\n$$\n"
+ },
+ {
+  "problem_text": "An astronaut whose height $h$ is $1.70 \\mathrm{~m}$ floats \"feet down\" in an orbiting space shuttle at distance $r=6.77 \\times 10^6 \\mathrm{~m}$ away from the center of Earth. What is the difference between the gravitational acceleration at her feet and at her head?",
+  "answer_latex": "-4.37 ",
+  "answer_number": "-4.37 ",
+  "unit": " $10 ^ {-6}m/s^2$",
+  "source": "fund",
+  "problemid": " 13.02",
+  "comment": " ",
+  "solution": "\nWe can approximate Earth as a uniform sphere of mass $M_E$. Then the gravitational acceleration at any distance $r$ from the center of Earth is\n$$\na_g=\\frac{G M_E}{r^2}\n$$\nWe might simply apply this equation twice, first with $r=$ $6.77 \\times 10^6 \\mathrm{~m}$ for the location of the feet and then with $r=6.77 \\times 10^6 \\mathrm{~m}+1.70 \\mathrm{~m}$ for the location of the head. However, a calculator may give us the same value for $a_g$ twice, and thus a difference of zero, because $h$ is so much smaller than $r$. Here's a more promising approach: Because we have a differential change $d r$ in $r$ between the astronaut's feet and head, we should differentiate above equation with respect to $r$.\nCalculations: The differentiation gives us\n$$\nd a_g=-2 \\frac{G M_E}{r^3} d r\n$$\nwhere $d a_g$ is the differential change in the gravitational acceleration due to the differential change $d r$ in $r$. For the astronaut, $d r=h$ and $r=6.77 \\times 10^6 \\mathrm{~m}$. Substituting data into equation, we find\n$$\n\\begin{aligned}\nd a_g & =-2 \\frac{\\left(6.67 \\times 10^{-11} \\mathrm{~m}^3 / \\mathrm{kg} \\cdot \\mathrm{s}^2\\right)\\left(5.98 \\times 10^{24} \\mathrm{~kg}\\right)}{\\left(6.77 \\times 10^6 \\mathrm{~m}\\right)^3}(1.70 \\mathrm{~m}) \\\\\n& =-4.37 \\times 10^{-6} \\mathrm{~m} / \\mathrm{s}^2, \\quad \\text { (Answer) }\n\\end{aligned}\n$$\n"
+ },
+ {
+  "problem_text": "If the particles in a system all move together, the com moves with them-no trouble there. But what happens when they move in different directions with different accelerations? Here is an example.\r\n\r\nThe three particles in Figure are initially at rest. Each experiences an external force due to bodies outside the three-particle system. The directions are indicated, and the magnitudes are $F_1=6.0 \\mathrm{~N}, F_2=12 \\mathrm{~N}$, and $F_3=14 \\mathrm{~N}$. What is the acceleration of the center of mass of the system?",
+  "answer_latex": " 1.16",
+  "answer_number": " 1.16",
+  "unit": " $m/s^2$",
+  "source": "fund",
+  "problemid": " 9.03",
+  "comment": " ",
+  "solution": "\nWe can treat the center of mass as if it were a real particle, with a mass equal to the system's total mass $M=16 \\mathrm{~kg}$. We can also treat the three external forces as if they act at the center of mass.\n\nCalculations: We can now apply Newton's second law $\\left(\\vec{F}_{\\text {net }}=m \\vec{a}\\right)$ to the center of mass, writing\n$$\n\\vec{F}_{\\text {net }}=M \\vec{a}_{\\mathrm{com}}\n$$\nor\n$$\n\\begin{aligned}\n& \\vec{F}_1+\\vec{F}_2+\\vec{F}_3=M \\vec{a}_{\\mathrm{com}} \\\\\n& \\vec{a}_{\\mathrm{com}}=\\frac{\\vec{F}_1+\\vec{F}_2+\\vec{F}_3}{M} .\n\\end{aligned}\n$$\nEquation tells us that the acceleration $\\vec{a}_{\\text {com }}$ of the center of mass is in the same direction as the net external force $\\vec{F}_{\\text {net }}$ on the system. Because the particles are initially at rest, the center of mass must also be at rest. As the center of mass then begins to accelerate, it must move off in the common direction of $\\vec{a}_{\\text {com }}$ and $\\vec{F}_{\\text {net }}$.\n\nWe can evaluate the right side of the above equation directly on a vector-capable calculator, or we can rewrite the equation in component form, find the components of $\\vec{a}_{\\text {com }}$, and then find $\\vec{a}_{\\text {com }}$. Along the $x$ axis, we have\n$$\n\\begin{aligned}\na_{\\mathrm{com}, x} & =\\frac{F_{1 x}+F_{2 x}+F_{3 x}}{M} \\\\\n& =\\frac{-6.0 \\mathrm{~N}+(12 \\mathrm{~N}) \\cos 45^{\\circ}+14 \\mathrm{~N}}{16 \\mathrm{~kg}}=1.03 \\mathrm{~m} / \\mathrm{s}^2 .\n\\end{aligned}\n$$\nAlong the $y$ axis, we have\n$$\n\\begin{aligned}\na_{\\mathrm{com}, y} & =\\frac{F_{1 y}+F_{2 y}+F_{3 y}}{M} \\\\\n& =\\frac{0+(12 \\mathrm{~N}) \\sin 45^{\\circ}+0}{16 \\mathrm{~kg}}=0.530 \\mathrm{~m} / \\mathrm{s}^2 .\n\\end{aligned}\n$$\nFrom these components, we find that $\\vec{a}_{\\mathrm{com}}$ has the magnitude\n$$\n\\begin{aligned}\na_{\\mathrm{com}} & =\\sqrt{\\left(a_{\\mathrm{com}, x}\\right)^2+\\left(a_{\\text {com }, y}\\right)^2} \\\\\n& =1.16 \\mathrm{~m} / \\mathrm{s}^2 \n\\end{aligned}\n$$\n"
+ },
+ {
+  "problem_text": "An asteroid, headed directly toward Earth, has a speed of $12 \\mathrm{~km} / \\mathrm{s}$ relative to the planet when the asteroid is 10 Earth radii from Earth's center. Neglecting the effects of Earth's atmosphere on the asteroid, find the asteroid's speed $v_f$ when it reaches Earth's surface.",
+  "answer_latex": "1.60",
+  "answer_number": "1.60",
+  "unit": " $10^4 \\mathrm{~m} / \\mathrm{s}$",
+  "source": "fund",
+  "problemid": " 13.03",
+  "comment": " ",
+  "solution": "\nBecause we are to neglect the effects of the atmosphere on the asteroid, the mechanical energy of the asteroid-Earth system is conserved during the fall. Thus, the final mechanical energy (when the asteroid reaches Earth's surface) is equal to the initial mechanical energy. With kinetic energy $K$ and gravitational potential energy $U$, we can write this as\n$$\nK_f+U_f=K_i+U_i\n$$\nAlso, if we assume the system is isolated, the system's linear momentum must be conserved during the fall. Therefore, the momentum change of the asteroid and that of Earth must be equal in magnitude and opposite in sign. However, because Earth's mass is so much greater than the asteroid's mass, the change in Earth's speed is negligible relative to the change in the asteroid's speed. So, the change in Earth's kinetic energy is also negligible. Thus, we can assume that the kinetic energies in above equation are those of the asteroid alone.\n\nCalculations: Let $m$ represent the asteroid's mass and $M$ represent Earth's mass $\\left(5.98 \\times 10^{24} \\mathrm{~kg}\\right)$. The asteroid is ini-\ntially at distance $10 R_E$ and finally at distance $R_E$, where $R_E$ is Earth's radius $\\left(6.37 \\times 10^6 \\mathrm{~m}\\right)$. Substituting $-\\frac{G M m}{r}$ for $U$ and $\\frac{1}{2} m v^2$ for $K$, we rewrite above equation as\n$$\n\\frac{1}{2} m v_f^2-\\frac{G M m}{R_E}=\\frac{1}{2} m v_i^2-\\frac{G M m}{10 R_E} .\n$$\nRearranging and substituting known values, we find\n$$\n\\begin{aligned}\nv_f^2= & v_i^2+\\frac{2 G M}{R_E}\\left(1-\\frac{1}{10}\\right) \\\\\n= & \\left(12 \\times 10^3 \\mathrm{~m} / \\mathrm{s}\\right)^2 \\\\\n& +\\frac{2\\left(6.67 \\times 10^{-11} \\mathrm{~m}^3 / \\mathrm{kg} \\cdot \\mathrm{s}^2\\right)\\left(5.98 \\times 10^{24} \\mathrm{~kg}\\right)}{6.37 \\times 10^6 \\mathrm{~m}} 0.9 \\\\\n= & 2.567 \\times 10^8 \\mathrm{~m}^2 / \\mathrm{s}^2,\n\\end{aligned}\n$$\nand\n$$\nv_f=1.60 \\times 10^4 \\mathrm{~m} / \\mathrm{s}\n$$\n"
+ },
+ {
+  "problem_text": "The huge advantage of using the conservation of energy instead of Newton's laws of motion is that we can jump from the initial state to the final state without considering all the intermediate motion. Here is an example. In Figure, a child of mass $m$ is released from rest at the top of a water slide, at height $h=8.5 \\mathrm{~m}$ above the bottom of the slide. Assuming that the slide is frictionless because of the water on it, find the child's speed at the bottom of the slide.",
+  "answer_latex": " 13",
+  "answer_number": "13",
+  "unit": " m/s",
+  "source": "fund",
+  "problemid": "  8.03",
+  "comment": " ",
+  "solution": "\nLet the mechanical energy be $E_{\\text {mec }, t}$ when the child is at the top of the slide and $E_{\\mathrm{mec}, b}$ when she is at the bottom. Then the conservation principle tells us\n$$\nE_{\\mathrm{mec}, b}=E_{\\mathrm{mec}, t} .\n$$\nTo show both kinds of mechanical energy, we have\n$$\n\\begin{aligned}\nK_b+U_b & =K_t+U_t, \\\\\n\\frac{1}{2} m v_b^2+m g y_b & =\\frac{1}{2} m v_t^2+m g y_t .\n\\end{aligned}\n$$\nDividing by $m$ and rearranging yield\n$$\nv_b^2=v_t^2+2 g\\left(y_t-y_b\\right)\n$$\nPutting $v_t=0$ and $y_t-y_b=h$ leads to\n$$\n\\begin{aligned}\nv_b & =\\sqrt{2 g h}=\\sqrt{(2)\\left(9.8 \\mathrm{~m} / \\mathrm{s}^2\\right)(8.5 \\mathrm{~m})} \\\\\n& =13 \\mathrm{~m} / \\mathrm{s} .\n\\end{aligned}\n$$\n"
+ }
+]
