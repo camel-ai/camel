@@ -106,3 +106,563 @@
         "unit_match": true
     }
 }
+{
+    "sample_id": 802,
+    "question": "- Proton mass, $m_{p}=1.67 \\cdot 10^{-27} \\mathrm{~kg}$\n- Neutron mass, $m_{n}=1.67 \\cdot 10^{-27} \\mathrm{~kg}$\n- Electron mass, $m_{e}=9.11 \\cdot 10^{-31} \\mathrm{~kg}$\n- Avogadro's constant, $N_{0}=6.02 \\cdot 10^{23} \\mathrm{~mol}^{-1}$\n- Universal gas constant, $R=8.31 \\mathrm{~J} /(\\mathrm{mol} \\cdot \\mathrm{K})$\n- Boltzmann's constant, $k_{B}=1.38 \\cdot 10^{-23} \\mathrm{~J} / \\mathrm{K}$\n- Electron charge magnitude, $e=1.60 \\cdot 10^{-19} \\mathrm{C}$\n- 1 electron volt, $1 \\mathrm{eV}=1.60 \\cdot 10^{-19} \\mathrm{~J}$\n- Speed of light, $c=3.00 \\cdot 10^{8} \\mathrm{~m} / \\mathrm{s}$\n- Universal Gravitational constant,\n\n$$\nG=6.67 \\cdot 10^{-11}\\left(\\mathrm{~N} \\cdot \\mathrm{m}^{2}\\right) / \\mathrm{kg}^{2}\n$$\n\n- Solar Mass\n\n$$\nM_{\\odot}=1.988 \\cdot 10^{30} \\mathrm{~kg}\n$$\n\n- Acceleration due to gravity, $g=9.8 \\mathrm{~m} / \\mathrm{s}^{2}$\n- 1 unified atomic mass unit,\n\n$$\n1 \\mathrm{u}=1.66 \\cdot 10^{-27} \\mathrm{~kg}=931 \\mathrm{MeV} / \\mathrm{c}^{2}\n$$\n\n- Planck's constant,\n\n$$\nh=6.63 \\cdot 10^{-34} \\mathrm{~J} \\cdot \\mathrm{s}=4.41 \\cdot 10^{-15} \\mathrm{eV} \\cdot \\mathrm{s}\n$$\n\n- Permittivity of free space,\n\n$$\n\\epsilon_{0}=8.85 \\cdot 10^{-12} \\mathrm{C}^{2} /\\left(\\mathrm{N} \\cdot \\mathrm{m}^{2}\\right)\n$$\n\n- Coulomb's law constant,\n\n$$\nk=\\frac{1}{4 \\pi \\epsilon_{0}}=8.99 \\cdot 10^{9}\\left(\\mathrm{~N} \\cdot \\mathrm{m}^{2}\\right) / \\mathrm{C}^{2}\n$$\n\n- Permeability of free space,\n\n$$\n\\mu_{0}=4 \\pi \\cdot 10^{-7} \\mathrm{~T} \\cdot \\mathrm{m} / \\mathrm{A}\n$$\n\n- Magnetic constant,\n\n$$\n\\frac{\\mu_{0}}{4 \\pi}=1 \\cdot 10^{-7}(\\mathrm{~T} \\cdot \\mathrm{m}) / \\mathrm{A}\n$$\n\n- 1 atmospheric pressure,\n\n$$\n1 \\mathrm{~atm}=1.01 \\cdot 10^{5} \\mathrm{~N} / \\mathrm{m}^{2}=1.01 \\cdot 10^{5} \\mathrm{~Pa}\n$$\n\n- Wien's displacement constant, $b=2.9$. $10^{-3} \\mathrm{~m} \\cdot \\mathrm{K}$\n- Stefan-Boltzmann constant,\n\n$$\n\\sigma=5.67 \\cdot 10^{-8} \\mathrm{~W} / \\mathrm{m}^{2} / \\mathrm{K}^{4}\n$$\nIn an old coal factory, a conveyor belt will move at a constant velocity of $20.3 \\mathrm{~m} / \\mathrm{s}$ and can deliver a maximum power of $15 \\mathrm{MW}$. Each wheel in the conveyor belt has a diameter of $2 \\mathrm{~m}$. However a changing demand has pushed the coal factory to fill their coal hoppers with a different material with a certain constant specific density. These \"coal\" hoppers have been modified to deliver a constant $18 \\mathrm{~m}^{3} \\mathrm{~s}^{-1}$ of the new material to the conveyor belt. Assume that the kinetic and static friction are the same and that there is no slippage. What is the maximum density of the material?",
+    "response": {
+        "reasoning": "To find the maximum density of the new material being delivered to the conveyor belt, we can use the relationship between power, mass flow rate, and velocity. \n\n1. **Understanding the Problem**: The conveyor belt has a maximum power output of 15 MW and is moving at a constant velocity of 20.3 m/s. The volume flow rate of the new material is given as 18 m\u00b3/s. We need to find the maximum density of this material.\n\n2. **Relevant Equations**: \n   - Power (P) is related to mass flow rate (\\( \\dot{m} \\)) and velocity (v) by the equation:  \n     \\[ P = \\dot{m} \\cdot v \\]  \n   - The mass flow rate can also be expressed in terms of density (\\( \\rho \\)) and volume flow rate (Q):  \n     \\[ \\dot{m} = \\rho \\cdot Q \\]  \n   - Combining these equations gives us:  \n     \\[ P = \\rho \\cdot Q \\cdot v \\]  \n   - Rearranging for density gives:  \n     \\[ \\rho = \\frac{P}{Q \\cdot v} \\]  \n\n3. **Substituting Values**:  \n   - Power (P) = 15 MW = 15 x 10^6 W  \n   - Volume flow rate (Q) = 18 m\u00b3/s  \n   - Velocity (v) = 20.3 m/s  \n\n4. **Calculating Density**:  \n   - Substitute the values into the density equation:  \n     \\[ \\rho = \\frac{15 \\times 10^6}{18 \\cdot 20.3} \\]  \n   - Calculate the density to find the maximum density of the new material.",
+        "code": "import sympy as sp\n\n# Given values\nP = 15 * 10**6  # Power in Watts (15 MW)\nQ = 18  # Volume flow rate in m^3/s\nv = 20.3  # Velocity in m/s\n\n# Calculate density\nrho = P / (Q * v)\n\n# Store the result\nresult = rho\n\n# Display the result with units\nresult",
+        "unit": "kg/m**3"
+    },
+    "gt_answer": "$2022.2$",
+    "unit": "$\\frac{\\mathrm{kg}}{\\mathrm{m}^{3}}$",
+    "metadata": {
+        "solution": [
+            "The maximal force the convey belt can provide to a particle is:\n$$\nF=\\frac{P}{v}\n$$\n\nThe conveyor belt must provide an impulse to the particles to have a momentum of $p=m v$, where $m$ is the mass of the particle and $v$ is the velocity.\n\n$$\nF=\\frac{d p}{d t}\n$$\n\nwhere $\\frac{d p}{d t}$ is:\n\n$$\n\\rho \\dot{V} v\n$$\n\nSolving for for the maximum density we get:\n\n$$\n\\begin{gathered}\n\\rho=\\frac{P}{\\dot{V} v^{2}} \\\\\n\\rho=2022.2 \\frac{\\mathrm{kg}}{\\mathrm{m}^{3}}\n\\end{gathered}\n$$"
+        ],
+        "image_1": null,
+        "image_2": null,
+        "image_3": null,
+        "image_4": null,
+        "image_5": null,
+        "modality": "Text-only",
+        "difficulty": "Competition",
+        "is_multiple_answer": false,
+        "unit": "$\\frac{\\mathrm{kg}}{\\mathrm{m}^{3}}$",
+        "answer_type": "Numerical",
+        "error": "1e-1",
+        "question_type": "Open-ended",
+        "subfield": "Mechanics",
+        "subject": "Physics",
+        "language": "English"
+    },
+    "verification_outcome": {
+        "output_match": false,
+        "unit_match": false
+    }
+}
+{
+    "sample_id": 802,
+    "question": "- Proton mass, $m_{p}=1.67 \\cdot 10^{-27} \\mathrm{~kg}$\n- Neutron mass, $m_{n}=1.67 \\cdot 10^{-27} \\mathrm{~kg}$\n- Electron mass, $m_{e}=9.11 \\cdot 10^{-31} \\mathrm{~kg}$\n- Avogadro's constant, $N_{0}=6.02 \\cdot 10^{23} \\mathrm{~mol}^{-1}$\n- Universal gas constant, $R=8.31 \\mathrm{~J} /(\\mathrm{mol} \\cdot \\mathrm{K})$\n- Boltzmann's constant, $k_{B}=1.38 \\cdot 10^{-23} \\mathrm{~J} / \\mathrm{K}$\n- Electron charge magnitude, $e=1.60 \\cdot 10^{-19} \\mathrm{C}$\n- 1 electron volt, $1 \\mathrm{eV}=1.60 \\cdot 10^{-19} \\mathrm{~J}$\n- Speed of light, $c=3.00 \\cdot 10^{8} \\mathrm{~m} / \\mathrm{s}$\n- Universal Gravitational constant,\n\n$$\nG=6.67 \\cdot 10^{-11}\\left(\\mathrm{~N} \\cdot \\mathrm{m}^{2}\\right) / \\mathrm{kg}^{2}\n$$\n\n- Solar Mass\n\n$$\nM_{\\odot}=1.988 \\cdot 10^{30} \\mathrm{~kg}\n$$\n\n- Acceleration due to gravity, $g=9.8 \\mathrm{~m} / \\mathrm{s}^{2}$\n- 1 unified atomic mass unit,\n\n$$\n1 \\mathrm{u}=1.66 \\cdot 10^{-27} \\mathrm{~kg}=931 \\mathrm{MeV} / \\mathrm{c}^{2}\n$$\n\n- Planck's constant,\n\n$$\nh=6.63 \\cdot 10^{-34} \\mathrm{~J} \\cdot \\mathrm{s}=4.41 \\cdot 10^{-15} \\mathrm{eV} \\cdot \\mathrm{s}\n$$\n\n- Permittivity of free space,\n\n$$\n\\epsilon_{0}=8.85 \\cdot 10^{-12} \\mathrm{C}^{2} /\\left(\\mathrm{N} \\cdot \\mathrm{m}^{2}\\right)\n$$\n\n- Coulomb's law constant,\n\n$$\nk=\\frac{1}{4 \\pi \\epsilon_{0}}=8.99 \\cdot 10^{9}\\left(\\mathrm{~N} \\cdot \\mathrm{m}^{2}\\right) / \\mathrm{C}^{2}\n$$\n\n- Permeability of free space,\n\n$$\n\\mu_{0}=4 \\pi \\cdot 10^{-7} \\mathrm{~T} \\cdot \\mathrm{m} / \\mathrm{A}\n$$\n\n- Magnetic constant,\n\n$$\n\\frac{\\mu_{0}}{4 \\pi}=1 \\cdot 10^{-7}(\\mathrm{~T} \\cdot \\mathrm{m}) / \\mathrm{A}\n$$\n\n- 1 atmospheric pressure,\n\n$$\n1 \\mathrm{~atm}=1.01 \\cdot 10^{5} \\mathrm{~N} / \\mathrm{m}^{2}=1.01 \\cdot 10^{5} \\mathrm{~Pa}\n$$\n\n- Wien's displacement constant, $b=2.9$. $10^{-3} \\mathrm{~m} \\cdot \\mathrm{K}$\n- Stefan-Boltzmann constant,\n\n$$\n\\sigma=5.67 \\cdot 10^{-8} \\mathrm{~W} / \\mathrm{m}^{2} / \\mathrm{K}^{4}\n$$\nIn an old coal factory, a conveyor belt will move at a constant velocity of $20.3 \\mathrm{~m} / \\mathrm{s}$ and can deliver a maximum power of $15 \\mathrm{MW}$. Each wheel in the conveyor belt has a diameter of $2 \\mathrm{~m}$. However a changing demand has pushed the coal factory to fill their coal hoppers with a different material with a certain constant specific density. These \"coal\" hoppers have been modified to deliver a constant $18 \\mathrm{~m}^{3} \\mathrm{~s}^{-1}$ of the new material to the conveyor belt. Assume that the kinetic and static friction are the same and that there is no slippage. What is the maximum density of the material?",
+    "response": {
+        "reasoning": "To find the maximum density of the new material that can be delivered to the conveyor belt, we can use the relationship between power, mass flow rate, and velocity. The power delivered by the conveyor belt can be expressed as the product of the mass flow rate of the material and the velocity of the conveyor belt. \n\n1. **Understanding the Power Equation**: The power (P) delivered by the conveyor belt is given by:\n   \\[ P = \\text{mass flow rate} \\times v \\]  \n   where the mass flow rate can be expressed as \\( \\text{mass flow rate} = \\text{density} \\times \\text{volume flow rate} \\). \n\n2. **Volume Flow Rate**: The volume flow rate of the new material is given as \\( Q = 18 \\mathrm{~m}^3/\\mathrm{s} \\). \n\n3. **Relating Density and Power**: The mass flow rate can be expressed as:\n   \\[ \\text{mass flow rate} = \\rho \\times Q \\]  \n   where \\( \\rho \\) is the density of the new material. \n\n4. **Substituting into the Power Equation**: Substituting the mass flow rate into the power equation gives:\n   \\[ P = \\rho \\times Q \\times v \\]  \n   Rearranging this equation to solve for density \\( \\rho \\) gives:\n   \\[ \\rho = \\frac{P}{Q \\times v} \\]  \n\n5. **Substituting Known Values**: We know:\n   - Power, \\( P = 15 \\mathrm{~MW} = 15 \\times 10^6 \\mathrm{~W} \\)\n   - Volume flow rate, \\( Q = 18 \\mathrm{~m}^3/\\mathrm{s} \\)\n   - Velocity, \\( v = 20.3 \\mathrm{~m/s} \\)\n\n6. **Calculating Density**: Now we can substitute these values into the equation to find the maximum density of the new material.",
+        "code": "import sympy as sp\n\n# Given values\nP = 15 * 10**6  # Power in Watts (15 MW)\nQ = 18  # Volume flow rate in m^3/s\nv = 20.3  # Velocity in m/s\n\n# Calculate maximum density\nrho = P / (Q * v)\n\n# Store the result\nresult = rho\n\n# Display the result\nresult",
+        "unit": "kg/m**3"
+    },
+    "gt_answer": "$2022.2$",
+    "unit": "$\\frac{\\mathrm{kg}}{\\mathrm{m}^{3}}$",
+    "metadata": {
+        "solution": [
+            "The maximal force the convey belt can provide to a particle is:\n$$\nF=\\frac{P}{v}\n$$\n\nThe conveyor belt must provide an impulse to the particles to have a momentum of $p=m v$, where $m$ is the mass of the particle and $v$ is the velocity.\n\n$$\nF=\\frac{d p}{d t}\n$$\n\nwhere $\\frac{d p}{d t}$ is:\n\n$$\n\\rho \\dot{V} v\n$$\n\nSolving for for the maximum density we get:\n\n$$\n\\begin{gathered}\n\\rho=\\frac{P}{\\dot{V} v^{2}} \\\\\n\\rho=2022.2 \\frac{\\mathrm{kg}}{\\mathrm{m}^{3}}\n\\end{gathered}\n$$"
+        ],
+        "image_1": null,
+        "image_2": null,
+        "image_3": null,
+        "image_4": null,
+        "image_5": null,
+        "modality": "Text-only",
+        "difficulty": "Competition",
+        "is_multiple_answer": false,
+        "unit": "$\\frac{\\mathrm{kg}}{\\mathrm{m}^{3}}$",
+        "answer_type": "Numerical",
+        "error": "1e-1",
+        "question_type": "Open-ended",
+        "subfield": "Mechanics",
+        "subject": "Physics",
+        "language": "English"
+    },
+    "verification_outcome": {
+        "output_match": false,
+        "unit_match": false
+    }
+}
+{
+    "sample_id": 802,
+    "question": "- Proton mass, $m_{p}=1.67 \\cdot 10^{-27} \\mathrm{~kg}$\n- Neutron mass, $m_{n}=1.67 \\cdot 10^{-27} \\mathrm{~kg}$\n- Electron mass, $m_{e}=9.11 \\cdot 10^{-31} \\mathrm{~kg}$\n- Avogadro's constant, $N_{0}=6.02 \\cdot 10^{23} \\mathrm{~mol}^{-1}$\n- Universal gas constant, $R=8.31 \\mathrm{~J} /(\\mathrm{mol} \\cdot \\mathrm{K})$\n- Boltzmann's constant, $k_{B}=1.38 \\cdot 10^{-23} \\mathrm{~J} / \\mathrm{K}$\n- Electron charge magnitude, $e=1.60 \\cdot 10^{-19} \\mathrm{C}$\n- 1 electron volt, $1 \\mathrm{eV}=1.60 \\cdot 10^{-19} \\mathrm{~J}$\n- Speed of light, $c=3.00 \\cdot 10^{8} \\mathrm{~m} / \\mathrm{s}$\n- Universal Gravitational constant,\n\n$$\nG=6.67 \\cdot 10^{-11}\\left(\\mathrm{~N} \\cdot \\mathrm{m}^{2}\\right) / \\mathrm{kg}^{2}\n$$\n\n- Solar Mass\n\n$$\nM_{\\odot}=1.988 \\cdot 10^{30} \\mathrm{~kg}\n$$\n\n- Acceleration due to gravity, $g=9.8 \\mathrm{~m} / \\mathrm{s}^{2}$\n- 1 unified atomic mass unit,\n\n$$\n1 \\mathrm{u}=1.66 \\cdot 10^{-27} \\mathrm{~kg}=931 \\mathrm{MeV} / \\mathrm{c}^{2}\n$$\n\n- Planck's constant,\n\n$$\nh=6.63 \\cdot 10^{-34} \\mathrm{~J} \\cdot \\mathrm{s}=4.41 \\cdot 10^{-15} \\mathrm{eV} \\cdot \\mathrm{s}\n$$\n\n- Permittivity of free space,\n\n$$\n\\epsilon_{0}=8.85 \\cdot 10^{-12} \\mathrm{C}^{2} /\\left(\\mathrm{N} \\cdot \\mathrm{m}^{2}\\right)\n$$\n\n- Coulomb's law constant,\n\n$$\nk=\\frac{1}{4 \\pi \\epsilon_{0}}=8.99 \\cdot 10^{9}\\left(\\mathrm{~N} \\cdot \\mathrm{m}^{2}\\right) / \\mathrm{C}^{2}\n$$\n\n- Permeability of free space,\n\n$$\n\\mu_{0}=4 \\pi \\cdot 10^{-7} \\mathrm{~T} \\cdot \\mathrm{m} / \\mathrm{A}\n$$\n\n- Magnetic constant,\n\n$$\n\\frac{\\mu_{0}}{4 \\pi}=1 \\cdot 10^{-7}(\\mathrm{~T} \\cdot \\mathrm{m}) / \\mathrm{A}\n$$\n\n- 1 atmospheric pressure,\n\n$$\n1 \\mathrm{~atm}=1.01 \\cdot 10^{5} \\mathrm{~N} / \\mathrm{m}^{2}=1.01 \\cdot 10^{5} \\mathrm{~Pa}\n$$\n\n- Wien's displacement constant, $b=2.9$. $10^{-3} \\mathrm{~m} \\cdot \\mathrm{K}$\n- Stefan-Boltzmann constant,\n\n$$\n\\sigma=5.67 \\cdot 10^{-8} \\mathrm{~W} / \\mathrm{m}^{2} / \\mathrm{K}^{4}\n$$\nIn an old coal factory, a conveyor belt will move at a constant velocity of $20.3 \\mathrm{~m} / \\mathrm{s}$ and can deliver a maximum power of $15 \\mathrm{MW}$. Each wheel in the conveyor belt has a diameter of $2 \\mathrm{~m}$. However a changing demand has pushed the coal factory to fill their coal hoppers with a different material with a certain constant specific density. These \"coal\" hoppers have been modified to deliver a constant $18 \\mathrm{~m}^{3} \\mathrm{~s}^{-1}$ of the new material to the conveyor belt. Assume that the kinetic and static friction are the same and that there is no slippage. What is the maximum density of the material?",
+    "response": {
+        "reasoning": "To find the maximum density of the new material being delivered to the conveyor belt, we can use the relationship between power, flow rate, and density. The power delivered by the conveyor belt can be expressed in terms of the mass flow rate and the velocity of the material being transported. \n\n1. **Understanding Power**: The power (P) delivered by the conveyor belt is given by the formula:\n   \\[ P = \\text{Force} \\times \\text{Velocity} \\]  \n   where Force is the product of mass flow rate and acceleration due to gravity (in this case, we will consider the force due to the weight of the material being lifted against gravity).\n\n2. **Mass Flow Rate**: The mass flow rate (\\( \\dot{m} \\)) can be calculated from the volume flow rate (Q) and the density (\\( \\rho \\)) of the material:\n   \\[ \\dot{m} = Q \\times \\rho \\]  \n   where Q is given as 18 m\u00b3/s.\n\n3. **Force Calculation**: The force exerted by the mass flow rate against gravity is:\n   \\[ \\text{Force} = \\dot{m} \\times g = (Q \\times \\rho) \\times g \\]  \n   where g is the acceleration due to gravity (9.8 m/s\u00b2).\n\n4. **Combining Equations**: Substituting the expression for force into the power equation gives:\n   \\[ P = (Q \\times \\rho) \\times g \\times v \\]  \n   where v is the velocity of the conveyor belt (20.3 m/s).\n\n5. **Solving for Density**: Rearranging the equation to solve for density (\\( \\rho \\)) gives:\n   \\[ \\rho = \\frac{P}{Q \\times g \\times v} \\]  \n   Now we can substitute the known values:\n   - P = 15 MW = 15 \u00d7 10^6 W\n   - Q = 18 m\u00b3/s\n   - g = 9.8 m/s\u00b2\n   - v = 20.3 m/s\n\n6. **Calculation**: We will now compute the maximum density using the above formula.",
+        "code": "import sympy as sp\n\n# Given values\nP = 15 * 10**6  # Power in Watts (15 MW)\nQ = 18  # Volume flow rate in m^3/s\ng = 9.8  # Acceleration due to gravity in m/s^2\nv = 20.3  # Velocity in m/s\n\n# Calculate maximum density\nrho = P / (Q * g * v)\n\n# Store the result\nresult = rho\n\n# Display the result\nresult",
+        "unit": "kg/m**3"
+    },
+    "gt_answer": "$2022.2$",
+    "unit": "$\\frac{\\mathrm{kg}}{\\mathrm{m}^{3}}$",
+    "metadata": {
+        "solution": [
+            "The maximal force the convey belt can provide to a particle is:\n$$\nF=\\frac{P}{v}\n$$\n\nThe conveyor belt must provide an impulse to the particles to have a momentum of $p=m v$, where $m$ is the mass of the particle and $v$ is the velocity.\n\n$$\nF=\\frac{d p}{d t}\n$$\n\nwhere $\\frac{d p}{d t}$ is:\n\n$$\n\\rho \\dot{V} v\n$$\n\nSolving for for the maximum density we get:\n\n$$\n\\begin{gathered}\n\\rho=\\frac{P}{\\dot{V} v^{2}} \\\\\n\\rho=2022.2 \\frac{\\mathrm{kg}}{\\mathrm{m}^{3}}\n\\end{gathered}\n$$"
+        ],
+        "image_1": null,
+        "image_2": null,
+        "image_3": null,
+        "image_4": null,
+        "image_5": null,
+        "modality": "Text-only",
+        "difficulty": "Competition",
+        "is_multiple_answer": false,
+        "unit": "$\\frac{\\mathrm{kg}}{\\mathrm{m}^{3}}$",
+        "answer_type": "Numerical",
+        "error": "1e-1",
+        "question_type": "Open-ended",
+        "subfield": "Mechanics",
+        "subject": "Physics",
+        "language": "English"
+    },
+    "verification_outcome": {
+        "output_match": false,
+        "unit_match": false
+    }
+}
+{
+    "sample_id": 802,
+    "question": "- Proton mass, $m_{p}=1.67 \\cdot 10^{-27} \\mathrm{~kg}$\n- Neutron mass, $m_{n}=1.67 \\cdot 10^{-27} \\mathrm{~kg}$\n- Electron mass, $m_{e}=9.11 \\cdot 10^{-31} \\mathrm{~kg}$\n- Avogadro's constant, $N_{0}=6.02 \\cdot 10^{23} \\mathrm{~mol}^{-1}$\n- Universal gas constant, $R=8.31 \\mathrm{~J} /(\\mathrm{mol} \\cdot \\mathrm{K})$\n- Boltzmann's constant, $k_{B}=1.38 \\cdot 10^{-23} \\mathrm{~J} / \\mathrm{K}$\n- Electron charge magnitude, $e=1.60 \\cdot 10^{-19} \\mathrm{C}$\n- 1 electron volt, $1 \\mathrm{eV}=1.60 \\cdot 10^{-19} \\mathrm{~J}$\n- Speed of light, $c=3.00 \\cdot 10^{8} \\mathrm{~m} / \\mathrm{s}$\n- Universal Gravitational constant,\n\n$$\nG=6.67 \\cdot 10^{-11}\\left(\\mathrm{~N} \\cdot \\mathrm{m}^{2}\\right) / \\mathrm{kg}^{2}\n$$\n\n- Solar Mass\n\n$$\nM_{\\odot}=1.988 \\cdot 10^{30} \\mathrm{~kg}\n$$\n\n- Acceleration due to gravity, $g=9.8 \\mathrm{~m} / \\mathrm{s}^{2}$\n- 1 unified atomic mass unit,\n\n$$\n1 \\mathrm{u}=1.66 \\cdot 10^{-27} \\mathrm{~kg}=931 \\mathrm{MeV} / \\mathrm{c}^{2}\n$$\n\n- Planck's constant,\n\n$$\nh=6.63 \\cdot 10^{-34} \\mathrm{~J} \\cdot \\mathrm{s}=4.41 \\cdot 10^{-15} \\mathrm{eV} \\cdot \\mathrm{s}\n$$\n\n- Permittivity of free space,\n\n$$\n\\epsilon_{0}=8.85 \\cdot 10^{-12} \\mathrm{C}^{2} /\\left(\\mathrm{N} \\cdot \\mathrm{m}^{2}\\right)\n$$\n\n- Coulomb's law constant,\n\n$$\nk=\\frac{1}{4 \\pi \\epsilon_{0}}=8.99 \\cdot 10^{9}\\left(\\mathrm{~N} \\cdot \\mathrm{m}^{2}\\right) / \\mathrm{C}^{2}\n$$\n\n- Permeability of free space,\n\n$$\n\\mu_{0}=4 \\pi \\cdot 10^{-7} \\mathrm{~T} \\cdot \\mathrm{m} / \\mathrm{A}\n$$\n\n- Magnetic constant,\n\n$$\n\\frac{\\mu_{0}}{4 \\pi}=1 \\cdot 10^{-7}(\\mathrm{~T} \\cdot \\mathrm{m}) / \\mathrm{A}\n$$\n\n- 1 atmospheric pressure,\n\n$$\n1 \\mathrm{~atm}=1.01 \\cdot 10^{5} \\mathrm{~N} / \\mathrm{m}^{2}=1.01 \\cdot 10^{5} \\mathrm{~Pa}\n$$\n\n- Wien's displacement constant, $b=2.9$. $10^{-3} \\mathrm{~m} \\cdot \\mathrm{K}$\n- Stefan-Boltzmann constant,\n\n$$\n\\sigma=5.67 \\cdot 10^{-8} \\mathrm{~W} / \\mathrm{m}^{2} / \\mathrm{K}^{4}\n$$\nIn an old coal factory, a conveyor belt will move at a constant velocity of $20.3 \\mathrm{~m} / \\mathrm{s}$ and can deliver a maximum power of $15 \\mathrm{MW}$. Each wheel in the conveyor belt has a diameter of $2 \\mathrm{~m}$. However a changing demand has pushed the coal factory to fill their coal hoppers with a different material with a certain constant specific density. These \"coal\" hoppers have been modified to deliver a constant $18 \\mathrm{~m}^{3} \\mathrm{~s}^{-1}$ of the new material to the conveyor belt. Assume that the kinetic and static friction are the same and that there is no slippage. What is the maximum density of the material?",
+    "response": {
+        "reasoning": "To find the maximum density of the new material that can be delivered by the conveyor belt, we need to consider the relationship between power, mass flow rate, and velocity. The power delivered by the conveyor belt can be expressed as:\n\n\\[ P = F \\cdot v \\]\\\n\nwhere \\( P \\) is the power, \\( F \\) is the force exerted by the material on the conveyor belt, and \\( v \\) is the velocity of the conveyor belt. The force can also be expressed in terms of mass flow rate and acceleration due to gravity:\n\n\\[ F = \\dot{m} \\cdot g \\]\\\n\nwhere \\( \\dot{m} \\) is the mass flow rate of the material and \\( g \\) is the acceleration due to gravity. The mass flow rate can be related to the density \\( \\rho \\) of the material and the volumetric flow rate \\( Q \\):\n\n\\[ \\dot{m} = \\rho \\cdot Q \\]\\\n\nSubstituting this into the power equation gives:\n\n\\[ P = \\rho \\cdot Q \\cdot g \\cdot v \\]\\\n\nFrom this equation, we can solve for the maximum density \\( \\rho \\):\n\n\\[ \\rho = \\frac{P}{Q \\cdot g \\cdot v} \\]\\\n\nNow we can substitute the given values:\n- Power \\( P = 15 \\mathrm{~MW} = 15 \\times 10^6 \\mathrm{~W} \\)\n- Volumetric flow rate \\( Q = 18 \\mathrm{~m}^3/\\mathrm{s} \\)\n- Acceleration due to gravity \\( g = 9.8 \\mathrm{~m/s}^2 \\)\n- Velocity of the conveyor belt \\( v = 20.3 \\mathrm{~m/s} \\)\n\nNow we can calculate the maximum density of the material.",
+        "code": "import sympy as sp\n\n# Given values\nP = 15 * 10**6  # Power in Watts\nQ = 18  # Volumetric flow rate in m^3/s\ng = 9.8  # Acceleration due to gravity in m/s^2\nv = 20.3  # Velocity of the conveyor belt in m/s\n\n# Calculate maximum density\nrho = P / (Q * g * v)\n\n# Store the result\nresult = rho\n\n# Display the result\nresult",
+        "unit": "kg/m**3"
+    },
+    "gt_answer": "$2022.2$",
+    "unit": "$\\frac{\\mathrm{kg}}{\\mathrm{m}^{3}}$",
+    "metadata": {
+        "solution": [
+            "The maximal force the convey belt can provide to a particle is:\n$$\nF=\\frac{P}{v}\n$$\n\nThe conveyor belt must provide an impulse to the particles to have a momentum of $p=m v$, where $m$ is the mass of the particle and $v$ is the velocity.\n\n$$\nF=\\frac{d p}{d t}\n$$\n\nwhere $\\frac{d p}{d t}$ is:\n\n$$\n\\rho \\dot{V} v\n$$\n\nSolving for for the maximum density we get:\n\n$$\n\\begin{gathered}\n\\rho=\\frac{P}{\\dot{V} v^{2}} \\\\\n\\rho=2022.2 \\frac{\\mathrm{kg}}{\\mathrm{m}^{3}}\n\\end{gathered}\n$$"
+        ],
+        "image_1": null,
+        "image_2": null,
+        "image_3": null,
+        "image_4": null,
+        "image_5": null,
+        "modality": "Text-only",
+        "difficulty": "Competition",
+        "is_multiple_answer": false,
+        "unit": "$\\frac{\\mathrm{kg}}{\\mathrm{m}^{3}}$",
+        "answer_type": "Numerical",
+        "error": "1e-1",
+        "question_type": "Open-ended",
+        "subfield": "Mechanics",
+        "subject": "Physics",
+        "language": "English"
+    },
+    "verification_outcome": {
+        "output_match": false,
+        "unit_match": false
+    }
+}
+{
+    "sample_id": 802,
+    "question": "- Proton mass, $m_{p}=1.67 \\cdot 10^{-27} \\mathrm{~kg}$\n- Neutron mass, $m_{n}=1.67 \\cdot 10^{-27} \\mathrm{~kg}$\n- Electron mass, $m_{e}=9.11 \\cdot 10^{-31} \\mathrm{~kg}$\n- Avogadro's constant, $N_{0}=6.02 \\cdot 10^{23} \\mathrm{~mol}^{-1}$\n- Universal gas constant, $R=8.31 \\mathrm{~J} /(\\mathrm{mol} \\cdot \\mathrm{K})$\n- Boltzmann's constant, $k_{B}=1.38 \\cdot 10^{-23} \\mathrm{~J} / \\mathrm{K}$\n- Electron charge magnitude, $e=1.60 \\cdot 10^{-19} \\mathrm{C}$\n- 1 electron volt, $1 \\mathrm{eV}=1.60 \\cdot 10^{-19} \\mathrm{~J}$\n- Speed of light, $c=3.00 \\cdot 10^{8} \\mathrm{~m} / \\mathrm{s}$\n- Universal Gravitational constant,\n\n$$\nG=6.67 \\cdot 10^{-11}\\left(\\mathrm{~N} \\cdot \\mathrm{m}^{2}\\right) / \\mathrm{kg}^{2}\n$$\n\n- Solar Mass\n\n$$\nM_{\\odot}=1.988 \\cdot 10^{30} \\mathrm{~kg}\n$$\n\n- Acceleration due to gravity, $g=9.8 \\mathrm{~m} / \\mathrm{s}^{2}$\n- 1 unified atomic mass unit,\n\n$$\n1 \\mathrm{u}=1.66 \\cdot 10^{-27} \\mathrm{~kg}=931 \\mathrm{MeV} / \\mathrm{c}^{2}\n$$\n\n- Planck's constant,\n\n$$\nh=6.63 \\cdot 10^{-34} \\mathrm{~J} \\cdot \\mathrm{s}=4.41 \\cdot 10^{-15} \\mathrm{eV} \\cdot \\mathrm{s}\n$$\n\n- Permittivity of free space,\n\n$$\n\\epsilon_{0}=8.85 \\cdot 10^{-12} \\mathrm{C}^{2} /\\left(\\mathrm{N} \\cdot \\mathrm{m}^{2}\\right)\n$$\n\n- Coulomb's law constant,\n\n$$\nk=\\frac{1}{4 \\pi \\epsilon_{0}}=8.99 \\cdot 10^{9}\\left(\\mathrm{~N} \\cdot \\mathrm{m}^{2}\\right) / \\mathrm{C}^{2}\n$$\n\n- Permeability of free space,\n\n$$\n\\mu_{0}=4 \\pi \\cdot 10^{-7} \\mathrm{~T} \\cdot \\mathrm{m} / \\mathrm{A}\n$$\n\n- Magnetic constant,\n\n$$\n\\frac{\\mu_{0}}{4 \\pi}=1 \\cdot 10^{-7}(\\mathrm{~T} \\cdot \\mathrm{m}) / \\mathrm{A}\n$$\n\n- 1 atmospheric pressure,\n\n$$\n1 \\mathrm{~atm}=1.01 \\cdot 10^{5} \\mathrm{~N} / \\mathrm{m}^{2}=1.01 \\cdot 10^{5} \\mathrm{~Pa}\n$$\n\n- Wien's displacement constant, $b=2.9$. $10^{-3} \\mathrm{~m} \\cdot \\mathrm{K}$\n- Stefan-Boltzmann constant,\n\n$$\n\\sigma=5.67 \\cdot 10^{-8} \\mathrm{~W} / \\mathrm{m}^{2} / \\mathrm{K}^{4}\n$$\nIn an old coal factory, a conveyor belt will move at a constant velocity of $20.3 \\mathrm{~m} / \\mathrm{s}$ and can deliver a maximum power of $15 \\mathrm{MW}$. Each wheel in the conveyor belt has a diameter of $2 \\mathrm{~m}$. However a changing demand has pushed the coal factory to fill their coal hoppers with a different material with a certain constant specific density. These \"coal\" hoppers have been modified to deliver a constant $18 \\mathrm{~m}^{3} \\mathrm{~s}^{-1}$ of the new material to the conveyor belt. Assume that the kinetic and static friction are the same and that there is no slippage. What is the maximum density of the material?",
+    "response": {
+        "reasoning": "To find the maximum density of the new material being delivered to the conveyor belt, we can use the relationship between power, flow rate, and density. The power delivered by the conveyor belt can be expressed in terms of the mass flow rate of the material and the velocity of the conveyor belt. \n\n1. **Understanding Power**: The power (P) delivered by the conveyor belt is given by the formula:\n   \n   \\[ P = \\text{mass flow rate} \\times v \\] \n   \n   where the mass flow rate can be expressed as:\n   \n   \\[ \\text{mass flow rate} = \\text{density} \\times \\text{volume flow rate} \\] \n   \n   Therefore, we can rewrite the power equation as:\n   \n   \\[ P = \\text{density} \\times \\text{volume flow rate} \\times v \\] \n\n2. **Given Values**: From the problem statement, we have:\n   - Power, P = 15 MW = 15 \\times 10^6 W\n   - Volume flow rate, Q = 18 m\u00b3/s\n   - Velocity, v = 20.3 m/s\n\n3. **Rearranging for Density**: We can rearrange the equation to solve for density (\\( \\rho \\)):\n   \n   \\[ \\rho = \\frac{P}{Q \\times v} \\] \n\n4. **Substituting Values**: Now we can substitute the known values into the equation to find the maximum density of the new material.",
+        "code": "import sympy as sp\n\n# Given values\nP = 15e6  # Power in Watts (15 MW)\nQ = 18  # Volume flow rate in m^3/s\nv = 20.3  # Velocity in m/s\n\n# Calculate maximum density\nrho = P / (Q * v)\n\n# Store the result\nresult = rho\nresult",
+        "unit": "kg/m**3"
+    },
+    "gt_answer": "$2022.2$",
+    "unit": "$\\frac{\\mathrm{kg}}{\\mathrm{m}^{3}}$",
+    "metadata": {
+        "solution": [
+            "The maximal force the convey belt can provide to a particle is:\n$$\nF=\\frac{P}{v}\n$$\n\nThe conveyor belt must provide an impulse to the particles to have a momentum of $p=m v$, where $m$ is the mass of the particle and $v$ is the velocity.\n\n$$\nF=\\frac{d p}{d t}\n$$\n\nwhere $\\frac{d p}{d t}$ is:\n\n$$\n\\rho \\dot{V} v\n$$\n\nSolving for for the maximum density we get:\n\n$$\n\\begin{gathered}\n\\rho=\\frac{P}{\\dot{V} v^{2}} \\\\\n\\rho=2022.2 \\frac{\\mathrm{kg}}{\\mathrm{m}^{3}}\n\\end{gathered}\n$$"
+        ],
+        "image_1": null,
+        "image_2": null,
+        "image_3": null,
+        "image_4": null,
+        "image_5": null,
+        "modality": "Text-only",
+        "difficulty": "Competition",
+        "is_multiple_answer": false,
+        "unit": "$\\frac{\\mathrm{kg}}{\\mathrm{m}^{3}}$",
+        "answer_type": "Numerical",
+        "error": "1e-1",
+        "question_type": "Open-ended",
+        "subfield": "Mechanics",
+        "subject": "Physics",
+        "language": "English"
+    },
+    "verification_outcome": {
+        "output_match": false,
+        "unit_match": true
+    }
+}
+{
+    "sample_id": 803,
+    "question": "- Proton mass, $m_{p}=1.67 \\cdot 10^{-27} \\mathrm{~kg}$\n- Neutron mass, $m_{n}=1.67 \\cdot 10^{-27} \\mathrm{~kg}$\n- Electron mass, $m_{e}=9.11 \\cdot 10^{-31} \\mathrm{~kg}$\n- Avogadro's constant, $N_{0}=6.02 \\cdot 10^{23} \\mathrm{~mol}^{-1}$\n- Universal gas constant, $R=8.31 \\mathrm{~J} /(\\mathrm{mol} \\cdot \\mathrm{K})$\n- Boltzmann's constant, $k_{B}=1.38 \\cdot 10^{-23} \\mathrm{~J} / \\mathrm{K}$\n- Electron charge magnitude, $e=1.60 \\cdot 10^{-19} \\mathrm{C}$\n- 1 electron volt, $1 \\mathrm{eV}=1.60 \\cdot 10^{-19} \\mathrm{~J}$\n- Speed of light, $c=3.00 \\cdot 10^{8} \\mathrm{~m} / \\mathrm{s}$\n- Universal Gravitational constant,\n\n$$\nG=6.67 \\cdot 10^{-11}\\left(\\mathrm{~N} \\cdot \\mathrm{m}^{2}\\right) / \\mathrm{kg}^{2}\n$$\n\n- Solar Mass\n\n$$\nM_{\\odot}=1.988 \\cdot 10^{30} \\mathrm{~kg}\n$$\n\n- Acceleration due to gravity, $g=9.8 \\mathrm{~m} / \\mathrm{s}^{2}$\n- 1 unified atomic mass unit,\n\n$$\n1 \\mathrm{u}=1.66 \\cdot 10^{-27} \\mathrm{~kg}=931 \\mathrm{MeV} / \\mathrm{c}^{2}\n$$\n\n- Planck's constant,\n\n$$\nh=6.63 \\cdot 10^{-34} \\mathrm{~J} \\cdot \\mathrm{s}=4.41 \\cdot 10^{-15} \\mathrm{eV} \\cdot \\mathrm{s}\n$$\n\n- Permittivity of free space,\n\n$$\n\\epsilon_{0}=8.85 \\cdot 10^{-12} \\mathrm{C}^{2} /\\left(\\mathrm{N} \\cdot \\mathrm{m}^{2}\\right)\n$$\n\n- Coulomb's law constant,\n\n$$\nk=\\frac{1}{4 \\pi \\epsilon_{0}}=8.99 \\cdot 10^{9}\\left(\\mathrm{~N} \\cdot \\mathrm{m}^{2}\\right) / \\mathrm{C}^{2}\n$$\n\n- Permeability of free space,\n\n$$\n\\mu_{0}=4 \\pi \\cdot 10^{-7} \\mathrm{~T} \\cdot \\mathrm{m} / \\mathrm{A}\n$$\n\n- Magnetic constant,\n\n$$\n\\frac{\\mu_{0}}{4 \\pi}=1 \\cdot 10^{-7}(\\mathrm{~T} \\cdot \\mathrm{m}) / \\mathrm{A}\n$$\n\n- 1 atmospheric pressure,\n\n$$\n1 \\mathrm{~atm}=1.01 \\cdot 10^{5} \\mathrm{~N} / \\mathrm{m}^{2}=1.01 \\cdot 10^{5} \\mathrm{~Pa}\n$$\n\n- Wien's displacement constant, $b=2.9$. $10^{-3} \\mathrm{~m} \\cdot \\mathrm{K}$\n- Stefan-Boltzmann constant,\n\n$$\n\\sigma=5.67 \\cdot 10^{-8} \\mathrm{~W} / \\mathrm{m}^{2} / \\mathrm{K}^{4}\n$$\nNeutrinos are extremely light particles and rarely interact with matter. The Sun emits neutrinos, each with an energy of $8 \\times 10^{-14} \\mathrm{~J}$ and reaches a flux density of $10^{11}$ neutrinos $/\\left(\\mathrm{s} \\mathrm{cm}^{2}\\right)$ at Earth's surface.\n\nIn the movie 2012, neutrinos have mutated and now are completely absorbed by the Earth's inner core, heating it up. Model the inner core as a sphere of radius $1200 \\mathrm{~km}$, density $12.8 \\mathrm{~g} / \\mathrm{cm}^{3}$, and a specific heat of $0.400 \\mathrm{~J} / \\mathrm{g} \\mathrm{K}$. The time scale, in seconds, that it will take to heat up the inner core by $1^{\\circ} \\mathrm{C}$ is $t=1 \\times 10^{N}$ where $N$ is an integer. What is the value of $N$ ?",
+    "response": {
+        "reasoning": "To determine the time scale it will take to heat up the Earth's inner core by 1\u00b0C due to the absorption of neutrinos, we can follow these steps:\n\n1. **Calculate the Volume of the Inner Core**: The inner core is modeled as a sphere with a radius of 1200 km. The volume (V) of a sphere is given by:\n   \\[ V = \\frac{4}{3} \\pi r^3 \\]\n   where \\( r \\) is the radius in meters.\n\n2. **Calculate the Mass of the Inner Core**: The mass (M) can be calculated using the density (\\( \\rho \\)) and volume (V):\n   \\[ M = \\rho \\times V \\]\n   The density is given as 12.8 g/cm\u00b3, which needs to be converted to kg/m\u00b3 for consistency in SI units.\n\n3. **Calculate the Energy Required to Heat the Inner Core**: The energy (Q) required to raise the temperature of the inner core by 1\u00b0C can be calculated using the specific heat capacity (c):\n   \\[ Q = M \\times c \\times \\Delta T \\]\n   where \\( \\Delta T = 1 \\mathrm{~K} \\) (since a change of 1\u00b0C is equivalent to a change of 1 K).\n\n4. **Calculate the Total Neutrino Energy Absorbed per Second**: The total energy absorbed from neutrinos per second can be calculated using the flux density (\\( F \\)) and the area (A) of the inner core:\n   \\[ A = 4 \\pi r^2 \\]\n   The energy absorbed per second (E) is given by:\n   \\[ E = F \\times A \\]\n\n5. **Calculate the Time to Heat the Inner Core**: Finally, the time (t) required to heat the inner core by 1\u00b0C can be calculated as:\n   \\[ t = \\frac{Q}{E} \\]\n\n6. **Express the Time in the Form \\( t = 1 \\times 10^N \\)**: We will express the result in the form of \\( t = 1 \\times 10^N \\) to find the integer value of N.",
+        "code": "import sympy as sp\n\n# Given values\nradius_km = 1200  # radius in kilometers\nradius_m = radius_km * 1000  # convert to meters\ndensity_g_cm3 = 12.8  # density in g/cm^3\ndensity_kg_m3 = density_g_cm3 * 1000  # convert to kg/m^3\nspecific_heat = 0.400  # specific heat in J/g*K\nspecific_heat_kg = specific_heat * 1000  # convert to J/kg*K\n\n# Calculate volume of the inner core (V)\nV = (4/3) * sp.pi * radius_m**3\n\n# Calculate mass of the inner core (M)\nM = density_kg_m3 * V\n\n# Energy required to heat the inner core by 1\u00b0C (Q)\nQ = M * specific_heat_kg * 1  # delta T = 1 K\n\n# Neutrino flux density (F)\nflux_density = 1e11  # neutrinos/(s cm^2)\nflux_density_m2 = flux_density * 1e4  # convert to neutrinos/(s m^2)\n\n# Area of the inner core (A)\nA = 4 * sp.pi * radius_m**2\n\n# Total energy absorbed from neutrinos per second (E)\nE = flux_density_m2 * A\n\n# Time to heat the inner core by 1\u00b0C (t)\ntime_seconds = Q / E\n\n# Express time in the form of 1 x 10^N\nN = sp.log10(time_seconds).evalf()  # Calculate N\n\n# Store the result\nresult = int(N)",
+        "unit": "s"
+    },
+    "gt_answer": "$1 \\times 10^{14}$",
+    "unit": "s",
+    "metadata": {
+        "solution": [
+            "The cross sectional area is $\\pi r^{2}$, so the incoming power generated by the neutrinos is:\n$$\nP=\\pi r^{2} E \\Phi\n$$\n\nwhere $E$ is the energy of each neutrino and $\\Phi$ is the flux density. We want to cause a change in energy of:\n\n$$\n\\Delta Q=m c \\Delta T=\\rho \\frac{4}{3} \\pi r^{3} c \\Delta T\n$$\n\nwhich can be accomplished in a time:\n\n$$\nP t=\\Delta Q \\Longrightarrow t=\\frac{\\rho\\left(4 \\pi r^{3}\\right) c \\Delta T}{3 \\pi r^{2} E \\Phi}=\\frac{4 \\rho r c \\Delta T}{3 E \\Phi}=1 \\times 10^{14} \\mathrm{~s}\n$$"
+        ],
+        "image_1": null,
+        "image_2": null,
+        "image_3": null,
+        "image_4": null,
+        "image_5": null,
+        "modality": "Text-only",
+        "difficulty": "Competition",
+        "is_multiple_answer": false,
+        "unit": "s",
+        "answer_type": "Numerical",
+        "error": "1e13",
+        "question_type": "Open-ended",
+        "subfield": "Modern Physics",
+        "subject": "Physics",
+        "language": "English"
+    },
+    "verification_outcome": {
+        "output_match": false,
+        "unit_match": false
+    }
+}
+{
+    "sample_id": 802,
+    "question": "- Proton mass, $m_{p}=1.67 \\cdot 10^{-27} \\mathrm{~kg}$\n- Neutron mass, $m_{n}=1.67 \\cdot 10^{-27} \\mathrm{~kg}$\n- Electron mass, $m_{e}=9.11 \\cdot 10^{-31} \\mathrm{~kg}$\n- Avogadro's constant, $N_{0}=6.02 \\cdot 10^{23} \\mathrm{~mol}^{-1}$\n- Universal gas constant, $R=8.31 \\mathrm{~J} /(\\mathrm{mol} \\cdot \\mathrm{K})$\n- Boltzmann's constant, $k_{B}=1.38 \\cdot 10^{-23} \\mathrm{~J} / \\mathrm{K}$\n- Electron charge magnitude, $e=1.60 \\cdot 10^{-19} \\mathrm{C}$\n- 1 electron volt, $1 \\mathrm{eV}=1.60 \\cdot 10^{-19} \\mathrm{~J}$\n- Speed of light, $c=3.00 \\cdot 10^{8} \\mathrm{~m} / \\mathrm{s}$\n- Universal Gravitational constant,\n\n$$\nG=6.67 \\cdot 10^{-11}\\left(\\mathrm{~N} \\cdot \\mathrm{m}^{2}\\right) / \\mathrm{kg}^{2}\n$$\n\n- Solar Mass\n\n$$\nM_{\\odot}=1.988 \\cdot 10^{30} \\mathrm{~kg}\n$$\n\n- Acceleration due to gravity, $g=9.8 \\mathrm{~m} / \\mathrm{s}^{2}$\n- 1 unified atomic mass unit,\n\n$$\n1 \\mathrm{u}=1.66 \\cdot 10^{-27} \\mathrm{~kg}=931 \\mathrm{MeV} / \\mathrm{c}^{2}\n$$\n\n- Planck's constant,\n\n$$\nh=6.63 \\cdot 10^{-34} \\mathrm{~J} \\cdot \\mathrm{s}=4.41 \\cdot 10^{-15} \\mathrm{eV} \\cdot \\mathrm{s}\n$$\n\n- Permittivity of free space,\n\n$$\n\\epsilon_{0}=8.85 \\cdot 10^{-12} \\mathrm{C}^{2} /\\left(\\mathrm{N} \\cdot \\mathrm{m}^{2}\\right)\n$$\n\n- Coulomb's law constant,\n\n$$\nk=\\frac{1}{4 \\pi \\epsilon_{0}}=8.99 \\cdot 10^{9}\\left(\\mathrm{~N} \\cdot \\mathrm{m}^{2}\\right) / \\mathrm{C}^{2}\n$$\n\n- Permeability of free space,\n\n$$\n\\mu_{0}=4 \\pi \\cdot 10^{-7} \\mathrm{~T} \\cdot \\mathrm{m} / \\mathrm{A}\n$$\n\n- Magnetic constant,\n\n$$\n\\frac{\\mu_{0}}{4 \\pi}=1 \\cdot 10^{-7}(\\mathrm{~T} \\cdot \\mathrm{m}) / \\mathrm{A}\n$$\n\n- 1 atmospheric pressure,\n\n$$\n1 \\mathrm{~atm}=1.01 \\cdot 10^{5} \\mathrm{~N} / \\mathrm{m}^{2}=1.01 \\cdot 10^{5} \\mathrm{~Pa}\n$$\n\n- Wien's displacement constant, $b=2.9$. $10^{-3} \\mathrm{~m} \\cdot \\mathrm{K}$\n- Stefan-Boltzmann constant,\n\n$$\n\\sigma=5.67 \\cdot 10^{-8} \\mathrm{~W} / \\mathrm{m}^{2} / \\mathrm{K}^{4}\n$$\nIn an old coal factory, a conveyor belt will move at a constant velocity of $20.3 \\mathrm{~m} / \\mathrm{s}$ and can deliver a maximum power of $15 \\mathrm{MW}$. Each wheel in the conveyor belt has a diameter of $2 \\mathrm{~m}$. However a changing demand has pushed the coal factory to fill their coal hoppers with a different material with a certain constant specific density. These \"coal\" hoppers have been modified to deliver a constant $18 \\mathrm{~m}^{3} \\mathrm{~s}^{-1}$ of the new material to the conveyor belt. Assume that the kinetic and static friction are the same and that there is no slippage. What is the maximum density of the material?",
+    "response": {
+        "reasoning": "To find the maximum density of the new material being delivered to the conveyor belt, we can use the relationship between power, density, volume flow rate, and velocity. \n\n1. **Understanding the Problem**: \n   - The conveyor belt moves at a constant velocity of 20.3 m/s and has a maximum power output of 15 MW (15,000,000 W). \n   - The volume flow rate of the new material is given as 18 m\u00b3/s. \n   - We need to find the maximum density of the material that can be delivered without exceeding the power limit of the conveyor belt.\n\n2. **Relevant Equations**: \n   - The power (P) required to move a mass (m) at a constant velocity (v) is given by: \n     \\[ P = F \\cdot v \\] \n     where F is the force required to move the mass. \n   - The force can be expressed in terms of density (\\( \\rho \\)), volume flow rate (Q), and gravitational acceleration (g): \n     \\[ F = \\rho \\cdot Q \\cdot g \\] \n   - Therefore, substituting this into the power equation gives: \n     \\[ P = \\rho \\cdot Q \\cdot g \\cdot v \\] \n   - Rearranging for density (\\( \\rho \\)): \n     \\[ \\rho = \\frac{P}{Q \\cdot g \\cdot v} \\] \n\n3. **Assumptions**: \n   - The kinetic and static friction are the same, and there is no slippage, which allows us to use the above equations directly. \n   - We will assume that the gravitational acceleration (g) is 9.8 m/s\u00b2.\n\n4. **Calculating the Maximum Density**: \n   - We can now plug in the values: \n     - Power (P) = 15,000,000 W \n     - Volume flow rate (Q) = 18 m\u00b3/s \n     - Velocity (v) = 20.3 m/s \n     - Gravitational acceleration (g) = 9.8 m/s\u00b2 \n   - Using these values in the density equation will give us the maximum density of the material.",
+        "code": "import sympy as sp\n\n# Given constants\nP = 15e6  # Power in Watts (15 MW)\nQ = 18  # Volume flow rate in m^3/s\nv = 20.3  # Velocity in m/s\ng = 9.8  # Acceleration due to gravity in m/s^2\n\n# Calculate maximum density using the derived formula\nrho = P / (Q * g * v)\n\n# Store the result\nresult = rho\n\n# Display the result\nresult",
+        "unit": "kg/m**3"
+    },
+    "gt_answer": "$2022.2$",
+    "unit": "$\\frac{\\mathrm{kg}}{\\mathrm{m}^{3}}$",
+    "metadata": {
+        "solution": [
+            "The maximal force the convey belt can provide to a particle is:\n$$\nF=\\frac{P}{v}\n$$\n\nThe conveyor belt must provide an impulse to the particles to have a momentum of $p=m v$, where $m$ is the mass of the particle and $v$ is the velocity.\n\n$$\nF=\\frac{d p}{d t}\n$$\n\nwhere $\\frac{d p}{d t}$ is:\n\n$$\n\\rho \\dot{V} v\n$$\n\nSolving for for the maximum density we get:\n\n$$\n\\begin{gathered}\n\\rho=\\frac{P}{\\dot{V} v^{2}} \\\\\n\\rho=2022.2 \\frac{\\mathrm{kg}}{\\mathrm{m}^{3}}\n\\end{gathered}\n$$"
+        ],
+        "image_1": null,
+        "image_2": null,
+        "image_3": null,
+        "image_4": null,
+        "image_5": null,
+        "modality": "Text-only",
+        "difficulty": "Competition",
+        "is_multiple_answer": false,
+        "unit": "$\\frac{\\mathrm{kg}}{\\mathrm{m}^{3}}$",
+        "answer_type": "Numerical",
+        "error": "1e-1",
+        "question_type": "Open-ended",
+        "subfield": "Mechanics",
+        "subject": "Physics",
+        "language": "English"
+    },
+    "verification_outcome": {
+        "output_match": false,
+        "unit_match": true
+    }
+}
+{
+    "sample_id": 803,
+    "question": "- Proton mass, $m_{p}=1.67 \\cdot 10^{-27} \\mathrm{~kg}$\n- Neutron mass, $m_{n}=1.67 \\cdot 10^{-27} \\mathrm{~kg}$\n- Electron mass, $m_{e}=9.11 \\cdot 10^{-31} \\mathrm{~kg}$\n- Avogadro's constant, $N_{0}=6.02 \\cdot 10^{23} \\mathrm{~mol}^{-1}$\n- Universal gas constant, $R=8.31 \\mathrm{~J} /(\\mathrm{mol} \\cdot \\mathrm{K})$\n- Boltzmann's constant, $k_{B}=1.38 \\cdot 10^{-23} \\mathrm{~J} / \\mathrm{K}$\n- Electron charge magnitude, $e=1.60 \\cdot 10^{-19} \\mathrm{C}$\n- 1 electron volt, $1 \\mathrm{eV}=1.60 \\cdot 10^{-19} \\mathrm{~J}$\n- Speed of light, $c=3.00 \\cdot 10^{8} \\mathrm{~m} / \\mathrm{s}$\n- Universal Gravitational constant,\n\n$$\nG=6.67 \\cdot 10^{-11}\\left(\\mathrm{~N} \\cdot \\mathrm{m}^{2}\\right) / \\mathrm{kg}^{2}\n$$\n\n- Solar Mass\n\n$$\nM_{\\odot}=1.988 \\cdot 10^{30} \\mathrm{~kg}\n$$\n\n- Acceleration due to gravity, $g=9.8 \\mathrm{~m} / \\mathrm{s}^{2}$\n- 1 unified atomic mass unit,\n\n$$\n1 \\mathrm{u}=1.66 \\cdot 10^{-27} \\mathrm{~kg}=931 \\mathrm{MeV} / \\mathrm{c}^{2}\n$$\n\n- Planck's constant,\n\n$$\nh=6.63 \\cdot 10^{-34} \\mathrm{~J} \\cdot \\mathrm{s}=4.41 \\cdot 10^{-15} \\mathrm{eV} \\cdot \\mathrm{s}\n$$\n\n- Permittivity of free space,\n\n$$\n\\epsilon_{0}=8.85 \\cdot 10^{-12} \\mathrm{C}^{2} /\\left(\\mathrm{N} \\cdot \\mathrm{m}^{2}\\right)\n$$\n\n- Coulomb's law constant,\n\n$$\nk=\\frac{1}{4 \\pi \\epsilon_{0}}=8.99 \\cdot 10^{9}\\left(\\mathrm{~N} \\cdot \\mathrm{m}^{2}\\right) / \\mathrm{C}^{2}\n$$\n\n- Permeability of free space,\n\n$$\n\\mu_{0}=4 \\pi \\cdot 10^{-7} \\mathrm{~T} \\cdot \\mathrm{m} / \\mathrm{A}\n$$\n\n- Magnetic constant,\n\n$$\n\\frac{\\mu_{0}}{4 \\pi}=1 \\cdot 10^{-7}(\\mathrm{~T} \\cdot \\mathrm{m}) / \\mathrm{A}\n$$\n\n- 1 atmospheric pressure,\n\n$$\n1 \\mathrm{~atm}=1.01 \\cdot 10^{5} \\mathrm{~N} / \\mathrm{m}^{2}=1.01 \\cdot 10^{5} \\mathrm{~Pa}\n$$\n\n- Wien's displacement constant, $b=2.9$. $10^{-3} \\mathrm{~m} \\cdot \\mathrm{K}$\n- Stefan-Boltzmann constant,\n\n$$\n\\sigma=5.67 \\cdot 10^{-8} \\mathrm{~W} / \\mathrm{m}^{2} / \\mathrm{K}^{4}\n$$\nNeutrinos are extremely light particles and rarely interact with matter. The Sun emits neutrinos, each with an energy of $8 \\times 10^{-14} \\mathrm{~J}$ and reaches a flux density of $10^{11}$ neutrinos $/\\left(\\mathrm{s} \\mathrm{cm}^{2}\\right)$ at Earth's surface.\n\nIn the movie 2012, neutrinos have mutated and now are completely absorbed by the Earth's inner core, heating it up. Model the inner core as a sphere of radius $1200 \\mathrm{~km}$, density $12.8 \\mathrm{~g} / \\mathrm{cm}^{3}$, and a specific heat of $0.400 \\mathrm{~J} / \\mathrm{g} \\mathrm{K}$. The time scale, in seconds, that it will take to heat up the inner core by $1^{\\circ} \\mathrm{C}$ is $t=1 \\times 10^{N}$ where $N$ is an integer. What is the value of $N$ ?",
+    "response": {
+        "reasoning": "To determine the time scale it will take to heat up the Earth's inner core by 1\u00b0C due to the absorption of neutrinos, we can follow these steps:\n\n1. **Understanding the Problem**: \n   - We need to calculate the total energy absorbed by the inner core from the neutrinos and then relate that to the specific heat capacity to find the time taken to raise the temperature by 1\u00b0C.\n   - The inner core is modeled as a sphere with a given radius and density, and we know the energy per neutrino and the flux density.\n\n2. **Relevant Equations**: \n   - The volume (V) of the inner core can be calculated using the formula for the volume of a sphere: \n     \\[ V = \\frac{4}{3} \\pi r^3 \\] \n   - The mass (m) of the inner core can be calculated using its density (\\( \\rho \\)) and volume: \n     \\[ m = \\rho \\cdot V \\] \n   - The total energy (E) absorbed by the inner core per second from the neutrinos can be calculated as: \n     \\[ E = \\text{flux density} \\cdot A \\cdot E_{neutrino} \\] \n     where A is the surface area of the inner core: \\( A = 4 \\pi r^2 \\).\n   - The energy required to raise the temperature of the inner core by 1\u00b0C can be calculated using: \n     \\[ Q = m \times c \times \\Delta T \\] \n     where \\( c \\) is the specific heat capacity and \\( \\Delta T = 1 \\) \u00b0C.\n   - Finally, the time (t) required to heat the inner core by 1\u00b0C is given by: \n     \\[ t = \\frac{Q}{E} \\] \n\n3. **Assumptions**: \n   - The neutrinos are completely absorbed by the inner core.\n   - The specific heat capacity remains constant over the temperature change.\n\n4. **Calculating the Values**: \n   - Convert the density from g/cm\u00b3 to kg/m\u00b3: \\( 12.8 \text{ g/cm}^3 = 12800 \text{ kg/m}^3 \\).\n   - Calculate the volume of the inner core using its radius (1200 km = 1.2 \u00d7 10^6 m).\n   - Calculate the mass of the inner core.\n   - Calculate the total energy absorbed per second from the neutrinos.\n   - Calculate the energy required to raise the temperature by 1\u00b0C.\n   - Finally, calculate the time required and express it in the form \\( t = 1 \\times 10^N \\) to find the integer N.",
+        "code": "import sympy as sp\n\n# Given constants\nradius_km = 1200  # radius in kilometers\nradius_m = radius_km * 1e3  # convert to meters\ndensity_g_cm3 = 12.8  # density in g/cm^3\ndensity_kg_m3 = density_g_cm3 * 1e3  # convert to kg/m^3\nspecific_heat = 0.400  # specific heat in J/g/K\nspecific_heat_kg = specific_heat * 1e3  # convert to J/kg/K\nflux_density = 1e11  # neutrinos per (s cm^2)\nflux_density_m2 = flux_density * 1e4  # convert to neutrinos per (s m^2)\nenergy_per_neutrino = 8e-14  # energy in J\n\n# Calculate volume of the inner core\nvolume = (4/3) * sp.pi * radius_m**3\n\n# Calculate mass of the inner core\nmass = density_kg_m3 * volume\n\n# Calculate surface area of the inner core\nsurface_area = 4 * sp.pi * radius_m**2\n\n# Calculate total energy absorbed per second from neutrinos\nenergy_absorbed_per_second = flux_density_m2 * surface_area * energy_per_neutrino\n\n# Calculate energy required to raise the temperature by 1\u00b0C\nQ = mass * specific_heat_kg * 1  # for 1\u00b0C\n\n# Calculate time required to heat the inner core by 1\u00b0C\ntime_seconds = Q / energy_absorbed_per_second\n\n# Express time in the form 1 x 10^N\nN = sp.log(time_seconds, 10).evalf()  # Calculate N\nN = sp.floor(N)\n\n# Store the result\nresult = int(N)  # Convert to integer\n\n# Display the result\nresult",
+        "unit": "int"
+    },
+    "gt_answer": "$1 \\times 10^{14}$",
+    "unit": "s",
+    "metadata": {
+        "solution": [
+            "The cross sectional area is $\\pi r^{2}$, so the incoming power generated by the neutrinos is:\n$$\nP=\\pi r^{2} E \\Phi\n$$\n\nwhere $E$ is the energy of each neutrino and $\\Phi$ is the flux density. We want to cause a change in energy of:\n\n$$\n\\Delta Q=m c \\Delta T=\\rho \\frac{4}{3} \\pi r^{3} c \\Delta T\n$$\n\nwhich can be accomplished in a time:\n\n$$\nP t=\\Delta Q \\Longrightarrow t=\\frac{\\rho\\left(4 \\pi r^{3}\\right) c \\Delta T}{3 \\pi r^{2} E \\Phi}=\\frac{4 \\rho r c \\Delta T}{3 E \\Phi}=1 \\times 10^{14} \\mathrm{~s}\n$$"
+        ],
+        "image_1": null,
+        "image_2": null,
+        "image_3": null,
+        "image_4": null,
+        "image_5": null,
+        "modality": "Text-only",
+        "difficulty": "Competition",
+        "is_multiple_answer": false,
+        "unit": "s",
+        "answer_type": "Numerical",
+        "error": "1e13",
+        "question_type": "Open-ended",
+        "subfield": "Modern Physics",
+        "subject": "Physics",
+        "language": "English"
+    },
+    "verification_outcome": {
+        "output_match": false,
+        "unit_match": false
+    }
+}
+{
+    "sample_id": 802,
+    "question": "- Proton mass, $m_{p}=1.67 \\cdot 10^{-27} \\mathrm{~kg}$\n- Neutron mass, $m_{n}=1.67 \\cdot 10^{-27} \\mathrm{~kg}$\n- Electron mass, $m_{e}=9.11 \\cdot 10^{-31} \\mathrm{~kg}$\n- Avogadro's constant, $N_{0}=6.02 \\cdot 10^{23} \\mathrm{~mol}^{-1}$\n- Universal gas constant, $R=8.31 \\mathrm{~J} /(\\mathrm{mol} \\cdot \\mathrm{K})$\n- Boltzmann's constant, $k_{B}=1.38 \\cdot 10^{-23} \\mathrm{~J} / \\mathrm{K}$\n- Electron charge magnitude, $e=1.60 \\cdot 10^{-19} \\mathrm{C}$\n- 1 electron volt, $1 \\mathrm{eV}=1.60 \\cdot 10^{-19} \\mathrm{~J}$\n- Speed of light, $c=3.00 \\cdot 10^{8} \\mathrm{~m} / \\mathrm{s}$\n- Universal Gravitational constant,\n\n$$\nG=6.67 \\cdot 10^{-11}\\left(\\mathrm{~N} \\cdot \\mathrm{m}^{2}\\right) / \\mathrm{kg}^{2}\n$$\n\n- Solar Mass\n\n$$\nM_{\\odot}=1.988 \\cdot 10^{30} \\mathrm{~kg}\n$$\n\n- Acceleration due to gravity, $g=9.8 \\mathrm{~m} / \\mathrm{s}^{2}$\n- 1 unified atomic mass unit,\n\n$$\n1 \\mathrm{u}=1.66 \\cdot 10^{-27} \\mathrm{~kg}=931 \\mathrm{MeV} / \\mathrm{c}^{2}\n$$\n\n- Planck's constant,\n\n$$\nh=6.63 \\cdot 10^{-34} \\mathrm{~J} \\cdot \\mathrm{s}=4.41 \\cdot 10^{-15} \\mathrm{eV} \\cdot \\mathrm{s}\n$$\n\n- Permittivity of free space,\n\n$$\n\\epsilon_{0}=8.85 \\cdot 10^{-12} \\mathrm{C}^{2} /\\left(\\mathrm{N} \\cdot \\mathrm{m}^{2}\\right)\n$$\n\n- Coulomb's law constant,\n\n$$\nk=\\frac{1}{4 \\pi \\epsilon_{0}}=8.99 \\cdot 10^{9}\\left(\\mathrm{~N} \\cdot \\mathrm{m}^{2}\\right) / \\mathrm{C}^{2}\n$$\n\n- Permeability of free space,\n\n$$\n\\mu_{0}=4 \\pi \\cdot 10^{-7} \\mathrm{~T} \\cdot \\mathrm{m} / \\mathrm{A}\n$$\n\n- Magnetic constant,\n\n$$\n\\frac{\\mu_{0}}{4 \\pi}=1 \\cdot 10^{-7}(\\mathrm{~T} \\cdot \\mathrm{m}) / \\mathrm{A}\n$$\n\n- 1 atmospheric pressure,\n\n$$\n1 \\mathrm{~atm}=1.01 \\cdot 10^{5} \\mathrm{~N} / \\mathrm{m}^{2}=1.01 \\cdot 10^{5} \\mathrm{~Pa}\n$$\n\n- Wien's displacement constant, $b=2.9$. $10^{-3} \\mathrm{~m} \\cdot \\mathrm{K}$\n- Stefan-Boltzmann constant,\n\n$$\n\\sigma=5.67 \\cdot 10^{-8} \\mathrm{~W} / \\mathrm{m}^{2} / \\mathrm{K}^{4}\n$$\nIn an old coal factory, a conveyor belt will move at a constant velocity of $20.3 \\mathrm{~m} / \\mathrm{s}$ and can deliver a maximum power of $15 \\mathrm{MW}$. Each wheel in the conveyor belt has a diameter of $2 \\mathrm{~m}$. However a changing demand has pushed the coal factory to fill their coal hoppers with a different material with a certain constant specific density. These \"coal\" hoppers have been modified to deliver a constant $18 \\mathrm{~m}^{3} \\mathrm{~s}^{-1}$ of the new material to the conveyor belt. Assume that the kinetic and static friction are the same and that there is no slippage. What is the maximum density of the material?",
+    "response": {
+        "reasoning": "To determine the maximum density of the new material that the conveyor belt can handle, we need to analyze the power delivered by the conveyor belt and the flow rate of the material being transported. \n\n1. **Understanding Power and Flow Rate**: The power delivered by the conveyor belt is given as 15 MW (or 15,000,000 W). The conveyor belt moves at a constant velocity of 20.3 m/s, and it delivers a volume flow rate of 18 m\u00b3/s of the new material.\n\n2. **Relating Power to Flow Rate and Density**: The power (P) required to move a mass flow rate (\u1e41) of material at a constant velocity (v) can be expressed as:\n   \n   \\[ P = \\frac{d(m)}{dt} \\cdot v = \\dot{m} \\cdot v \\] \n   \n   where \\( \\dot{m} \\) is the mass flow rate. The mass flow rate can be related to the density (\\( \\rho \\)) and the volume flow rate (Q) as follows:\n   \n   \\[ \\dot{m} = \\rho \\cdot Q \\] \n   \n   Therefore, substituting this into the power equation gives:\n   \n   \\[ P = \\rho \\cdot Q \\cdot v \\] \n   \n3. **Solving for Density**: Rearranging the equation to solve for density (\\( \\rho \\)) gives:\n   \n   \\[ \\rho = \\frac{P}{Q \\cdot v} \\] \n   \n   We can now substitute the known values:\n   - Power, \\( P = 15,000,000 \\text{ W} \\)\n   - Volume flow rate, \\( Q = 18 \\text{ m}^3/s \\)\n   - Velocity, \\( v = 20.3 \\text{ m/s} \\)\n   \n4. **Calculating Density**: We will now compute the maximum density using the above formula.",
+        "code": "import sympy as sp\n\n# Given values\nP = 15_000_000  # Power in Watts (15 MW)\nQ = 18  # Volume flow rate in m^3/s\nv = 20.3  # Velocity in m/s\n\n# Calculate density using the formula: \u03c1 = P / (Q * v)\n\rho = P / (Q * v)\n\n# Store the result in a variable named 'result'\nresult = rho\n\n# Display the result\nresult",
+        "unit": "kg/m**3"
+    },
+    "gt_answer": "$2022.2$",
+    "unit": "$\\frac{\\mathrm{kg}}{\\mathrm{m}^{3}}$",
+    "metadata": {
+        "solution": [
+            "The maximal force the convey belt can provide to a particle is:\n$$\nF=\\frac{P}{v}\n$$\n\nThe conveyor belt must provide an impulse to the particles to have a momentum of $p=m v$, where $m$ is the mass of the particle and $v$ is the velocity.\n\n$$\nF=\\frac{d p}{d t}\n$$\n\nwhere $\\frac{d p}{d t}$ is:\n\n$$\n\\rho \\dot{V} v\n$$\n\nSolving for for the maximum density we get:\n\n$$\n\\begin{gathered}\n\\rho=\\frac{P}{\\dot{V} v^{2}} \\\\\n\\rho=2022.2 \\frac{\\mathrm{kg}}{\\mathrm{m}^{3}}\n\\end{gathered}\n$$"
+        ],
+        "image_1": null,
+        "image_2": null,
+        "image_3": null,
+        "image_4": null,
+        "image_5": null,
+        "modality": "Text-only",
+        "difficulty": "Competition",
+        "is_multiple_answer": false,
+        "unit": "$\\frac{\\mathrm{kg}}{\\mathrm{m}^{3}}$",
+        "answer_type": "Numerical",
+        "error": "1e-1",
+        "question_type": "Open-ended",
+        "subfield": "Mechanics",
+        "subject": "Physics",
+        "language": "English"
+    },
+    "verification_outcome": {
+        "output_match": false,
+        "unit_match": false
+    }
+}
+{
+    "sample_id": 803,
+    "question": "- Proton mass, $m_{p}=1.67 \\cdot 10^{-27} \\mathrm{~kg}$\n- Neutron mass, $m_{n}=1.67 \\cdot 10^{-27} \\mathrm{~kg}$\n- Electron mass, $m_{e}=9.11 \\cdot 10^{-31} \\mathrm{~kg}$\n- Avogadro's constant, $N_{0}=6.02 \\cdot 10^{23} \\mathrm{~mol}^{-1}$\n- Universal gas constant, $R=8.31 \\mathrm{~J} /(\\mathrm{mol} \\cdot \\mathrm{K})$\n- Boltzmann's constant, $k_{B}=1.38 \\cdot 10^{-23} \\mathrm{~J} / \\mathrm{K}$\n- Electron charge magnitude, $e=1.60 \\cdot 10^{-19} \\mathrm{C}$\n- 1 electron volt, $1 \\mathrm{eV}=1.60 \\cdot 10^{-19} \\mathrm{~J}$\n- Speed of light, $c=3.00 \\cdot 10^{8} \\mathrm{~m} / \\mathrm{s}$\n- Universal Gravitational constant,\n\n$$\nG=6.67 \\cdot 10^{-11}\\left(\\mathrm{~N} \\cdot \\mathrm{m}^{2}\\right) / \\mathrm{kg}^{2}\n$$\n\n- Solar Mass\n\n$$\nM_{\\odot}=1.988 \\cdot 10^{30} \\mathrm{~kg}\n$$\n\n- Acceleration due to gravity, $g=9.8 \\mathrm{~m} / \\mathrm{s}^{2}$\n- 1 unified atomic mass unit,\n\n$$\n1 \\mathrm{u}=1.66 \\cdot 10^{-27} \\mathrm{~kg}=931 \\mathrm{MeV} / \\mathrm{c}^{2}\n$$\n\n- Planck's constant,\n\n$$\nh=6.63 \\cdot 10^{-34} \\mathrm{~J} \\cdot \\mathrm{s}=4.41 \\cdot 10^{-15} \\mathrm{eV} \\cdot \\mathrm{s}\n$$\n\n- Permittivity of free space,\n\n$$\n\\epsilon_{0}=8.85 \\cdot 10^{-12} \\mathrm{C}^{2} /\\left(\\mathrm{N} \\cdot \\mathrm{m}^{2}\\right)\n$$\n\n- Coulomb's law constant,\n\n$$\nk=\\frac{1}{4 \\pi \\epsilon_{0}}=8.99 \\cdot 10^{9}\\left(\\mathrm{~N} \\cdot \\mathrm{m}^{2}\\right) / \\mathrm{C}^{2}\n$$\n\n- Permeability of free space,\n\n$$\n\\mu_{0}=4 \\pi \\cdot 10^{-7} \\mathrm{~T} \\cdot \\mathrm{m} / \\mathrm{A}\n$$\n\n- Magnetic constant,\n\n$$\n\\frac{\\mu_{0}}{4 \\pi}=1 \\cdot 10^{-7}(\\mathrm{~T} \\cdot \\mathrm{m}) / \\mathrm{A}\n$$\n\n- 1 atmospheric pressure,\n\n$$\n1 \\mathrm{~atm}=1.01 \\cdot 10^{5} \\mathrm{~N} / \\mathrm{m}^{2}=1.01 \\cdot 10^{5} \\mathrm{~Pa}\n$$\n\n- Wien's displacement constant, $b=2.9$. $10^{-3} \\mathrm{~m} \\cdot \\mathrm{K}$\n- Stefan-Boltzmann constant,\n\n$$\n\\sigma=5.67 \\cdot 10^{-8} \\mathrm{~W} / \\mathrm{m}^{2} / \\mathrm{K}^{4}\n$$\nNeutrinos are extremely light particles and rarely interact with matter. The Sun emits neutrinos, each with an energy of $8 \\times 10^{-14} \\mathrm{~J}$ and reaches a flux density of $10^{11}$ neutrinos $/\\left(\\mathrm{s} \\mathrm{cm}^{2}\\right)$ at Earth's surface.\n\nIn the movie 2012, neutrinos have mutated and now are completely absorbed by the Earth's inner core, heating it up. Model the inner core as a sphere of radius $1200 \\mathrm{~km}$, density $12.8 \\mathrm{~g} / \\mathrm{cm}^{3}$, and a specific heat of $0.400 \\mathrm{~J} / \\mathrm{g} \\mathrm{K}$. The time scale, in seconds, that it will take to heat up the inner core by $1^{\\circ} \\mathrm{C}$ is $t=1 \\times 10^{N}$ where $N$ is an integer. What is the value of $N$ ?",
+    "response": {
+        "reasoning": "To find the time scale it will take to heat up the Earth's inner core by 1\u00b0C due to the absorption of neutrinos, we can follow these steps:\n\n1. **Calculate the Volume of the Inner Core**: The inner core is modeled as a sphere with a radius of 1200 km. The volume (V) of a sphere is given by:\n   \\[ V = \\frac{4}{3} \\pi r^3 \\]\n   where \\( r \\) is the radius in meters.\n\n2. **Calculate the Mass of the Inner Core**: The density of the inner core is given as 12.8 g/cm\u00b3. We need to convert this to kg/m\u00b3 for consistency in SI units:\n   \\[ 12.8 \\text{ g/cm}^3 = 12.8 \\times 10^3 \\text{ kg/m}^3 \\]\n   The mass (m) can be calculated using the formula:\n   \\[ m = \\text{density} \\times V \\]\n\n3. **Calculate the Energy Required to Heat the Inner Core**: The specific heat capacity (c) is given as 0.400 J/g\u00b7K. We need to convert this to J/kg\u00b7K:\n   \\[ 0.400 \\text{ J/g\u00b7K} = 400 \\text{ J/kg\u00b7K} \\]\n   The energy (Q) required to raise the temperature by 1\u00b0C (or 1 K) is given by:\n   \\[ Q = m \\cdot c \\cdot \\Delta T \\]\n   where \\( \\Delta T = 1 \\, \\text{K} \\).\n\n4. **Calculate the Total Neutrino Energy Absorbed per Second**: The flux density of neutrinos is given as 10\u00b9\u00b9 neutrinos/(s\u00b7cm\u00b2). The energy per neutrino is 8 \u00d7 10\u207b\u00b9\u2074 J. The total energy absorbed per second (E) can be calculated by:\n   \\[ E = \\text{flux density} \\times \\text{area} \\times \\text{energy per neutrino} \\]\n   The area (A) of the Earth facing the Sun can be approximated as a circle with radius equal to the Earth's radius (approximately 6371 km):\n   \\[ A = \\pi R^2 \\]\n\n5. **Calculate the Time Required to Heat the Inner Core**: Finally, the time (t) required to heat the inner core by 1\u00b0C can be calculated using:\n   \\[ t = \\frac{Q}{E} \\]\n   We will express the time in seconds and then find the integer N such that \\( t = 1 \\times 10^N \\).",
+        "code": "import sympy as sp\n\n# Constants\nradius_inner_core_km = 1200  # radius in km\nradius_inner_core_m = radius_inner_core_km * 1000  # convert to meters\n\ndensity_inner_core_g_cm3 = 12.8  # density in g/cm^3\n# Convert density to kg/m^3\n\ndensity_inner_core_kg_m3 = density_inner_core_g_cm3 * 1000  # convert to kg/m^3\n\n# Volume of the inner core (sphere)\nV = (4/3) * sp.pi * radius_inner_core_m**3\n\n# Mass of the inner core\nmass_inner_core = density_inner_core_kg_m3 * V\n\n# Specific heat capacity\nspecific_heat_capacity_J_gK = 0.400  # in J/g\u00b7K\n# Convert to J/kg\u00b7K\nspecific_heat_capacity_J_kgK = specific_heat_capacity_J_gK * 1000  # in J/kg\u00b7K\n\n# Energy required to heat the inner core by 1\u00b0C (or 1 K)\nQ = mass_inner_core * specific_heat_capacity_J_kgK * 1  # in Joules\n\n# Neutrino flux density\nflux_density_neutrinos = 1e11  # in neutrinos/(s\u00b7cm\u00b2)\nenergy_per_neutrino = 8e-14  # in Joules\n\n# Area of the Earth facing the Sun (approximate as a circle)\nradius_earth_m = 6371e3  # in meters\nA = sp.pi * radius_earth_m**2  # in m\u00b2\n\n# Total energy absorbed per second\nE = flux_density_neutrinos * A * energy_per_neutrino  # in Joules/s\n\n# Time required to heat the inner core by 1\u00b0C\nt = Q / E  # in seconds\n\n# Express t in the form 1 x 10^N\nN = sp.log(t, 10).evalf()\n\n# Store the integer part of N\nresult = int(N)\n\n# Display the result\nresult",
+        "unit": "dimensionless"
+    },
+    "gt_answer": "$1 \\times 10^{14}$",
+    "unit": "s",
+    "metadata": {
+        "solution": [
+            "The cross sectional area is $\\pi r^{2}$, so the incoming power generated by the neutrinos is:\n$$\nP=\\pi r^{2} E \\Phi\n$$\n\nwhere $E$ is the energy of each neutrino and $\\Phi$ is the flux density. We want to cause a change in energy of:\n\n$$\n\\Delta Q=m c \\Delta T=\\rho \\frac{4}{3} \\pi r^{3} c \\Delta T\n$$\n\nwhich can be accomplished in a time:\n\n$$\nP t=\\Delta Q \\Longrightarrow t=\\frac{\\rho\\left(4 \\pi r^{3}\\right) c \\Delta T}{3 \\pi r^{2} E \\Phi}=\\frac{4 \\rho r c \\Delta T}{3 E \\Phi}=1 \\times 10^{14} \\mathrm{~s}\n$$"
+        ],
+        "image_1": null,
+        "image_2": null,
+        "image_3": null,
+        "image_4": null,
+        "image_5": null,
+        "modality": "Text-only",
+        "difficulty": "Competition",
+        "is_multiple_answer": false,
+        "unit": "s",
+        "answer_type": "Numerical",
+        "error": "1e13",
+        "question_type": "Open-ended",
+        "subfield": "Modern Physics",
+        "subject": "Physics",
+        "language": "English"
+    },
+    "verification_outcome": {
+        "output_match": false,
+        "unit_match": false
+    }
+}
+{
+    "sample_id": 802,
+    "question": "- Proton mass, $m_{p}=1.67 \\cdot 10^{-27} \\mathrm{~kg}$\n- Neutron mass, $m_{n}=1.67 \\cdot 10^{-27} \\mathrm{~kg}$\n- Electron mass, $m_{e}=9.11 \\cdot 10^{-31} \\mathrm{~kg}$\n- Avogadro's constant, $N_{0}=6.02 \\cdot 10^{23} \\mathrm{~mol}^{-1}$\n- Universal gas constant, $R=8.31 \\mathrm{~J} /(\\mathrm{mol} \\cdot \\mathrm{K})$\n- Boltzmann's constant, $k_{B}=1.38 \\cdot 10^{-23} \\mathrm{~J} / \\mathrm{K}$\n- Electron charge magnitude, $e=1.60 \\cdot 10^{-19} \\mathrm{C}$\n- 1 electron volt, $1 \\mathrm{eV}=1.60 \\cdot 10^{-19} \\mathrm{~J}$\n- Speed of light, $c=3.00 \\cdot 10^{8} \\mathrm{~m} / \\mathrm{s}$\n- Universal Gravitational constant,\n\n$$\nG=6.67 \\cdot 10^{-11}\\left(\\mathrm{~N} \\cdot \\mathrm{m}^{2}\\right) / \\mathrm{kg}^{2}\n$$\n\n- Solar Mass\n\n$$\nM_{\\odot}=1.988 \\cdot 10^{30} \\mathrm{~kg}\n$$\n\n- Acceleration due to gravity, $g=9.8 \\mathrm{~m} / \\mathrm{s}^{2}$\n- 1 unified atomic mass unit,\n\n$$\n1 \\mathrm{u}=1.66 \\cdot 10^{-27} \\mathrm{~kg}=931 \\mathrm{MeV} / \\mathrm{c}^{2}\n$$\n\n- Planck's constant,\n\n$$\nh=6.63 \\cdot 10^{-34} \\mathrm{~J} \\cdot \\mathrm{s}=4.41 \\cdot 10^{-15} \\mathrm{eV} \\cdot \\mathrm{s}\n$$\n\n- Permittivity of free space,\n\n$$\n\\epsilon_{0}=8.85 \\cdot 10^{-12} \\mathrm{C}^{2} /\\left(\\mathrm{N} \\cdot \\mathrm{m}^{2}\\right)\n$$\n\n- Coulomb's law constant,\n\n$$\nk=\\frac{1}{4 \\pi \\epsilon_{0}}=8.99 \\cdot 10^{9}\\left(\\mathrm{~N} \\cdot \\mathrm{m}^{2}\\right) / \\mathrm{C}^{2}\n$$\n\n- Permeability of free space,\n\n$$\n\\mu_{0}=4 \\pi \\cdot 10^{-7} \\mathrm{~T} \\cdot \\mathrm{m} / \\mathrm{A}\n$$\n\n- Magnetic constant,\n\n$$\n\\frac{\\mu_{0}}{4 \\pi}=1 \\cdot 10^{-7}(\\mathrm{~T} \\cdot \\mathrm{m}) / \\mathrm{A}\n$$\n\n- 1 atmospheric pressure,\n\n$$\n1 \\mathrm{~atm}=1.01 \\cdot 10^{5} \\mathrm{~N} / \\mathrm{m}^{2}=1.01 \\cdot 10^{5} \\mathrm{~Pa}\n$$\n\n- Wien's displacement constant, $b=2.9$. $10^{-3} \\mathrm{~m} \\cdot \\mathrm{K}$\n- Stefan-Boltzmann constant,\n\n$$\n\\sigma=5.67 \\cdot 10^{-8} \\mathrm{~W} / \\mathrm{m}^{2} / \\mathrm{K}^{4}\n$$\nIn an old coal factory, a conveyor belt will move at a constant velocity of $20.3 \\mathrm{~m} / \\mathrm{s}$ and can deliver a maximum power of $15 \\mathrm{MW}$. Each wheel in the conveyor belt has a diameter of $2 \\mathrm{~m}$. However a changing demand has pushed the coal factory to fill their coal hoppers with a different material with a certain constant specific density. These \"coal\" hoppers have been modified to deliver a constant $18 \\mathrm{~m}^{3} \\mathrm{~s}^{-1}$ of the new material to the conveyor belt. Assume that the kinetic and static friction are the same and that there is no slippage. What is the maximum density of the material?",
+    "response": {
+        "reasoning": "To find the maximum density of the new material that the conveyor belt can handle, we need to analyze the power delivered by the conveyor belt and the flow rate of the material being delivered. \n\n1. **Understanding Power and Flow Rate**: The power delivered by the conveyor belt is given as 15 MW (or 15,000,000 W). The conveyor belt moves at a constant velocity of 20.3 m/s. The flow rate of the material is given as 18 m\u00b3/s.\n\n2. **Relating Power to Density**: The power can be related to the mass flow rate and the velocity of the material. The mass flow rate \\( \\\\dot{m} \\) can be expressed as:\n   \\[ \\\\dot{m} = \\rho \\cdot Q \\]  \n   where \\( \\rho \\) is the density of the material and \\( Q \\) is the volumetric flow rate (18 m\u00b3/s).\n\n3. **Kinetic Energy and Power**: The power can also be expressed in terms of the kinetic energy of the flowing material:\n   \\[ P = \\frac{1}{2} \\dot{m} v^2 \\]  \n   where \\( v \\) is the velocity of the conveyor belt (20.3 m/s).\n\n4. **Combining the Equations**: We can substitute the expression for \\( \\dot{m} \\) into the power equation:\n   \\[ P = \\frac{1}{2} (\\rho \\cdot Q) v^2 \\]  \n   Rearranging gives:\n   \\[ \\rho = \\frac{2P}{Q v^2} \\]\n\n5. **Substituting Values**: Now we can substitute the known values into this equation:\n   - Power, \\( P = 15,000,000 \\, \\text{W} \\)\n   - Flow rate, \\( Q = 18 \\, \\text{m}^3/s \\)\n   - Velocity, \\( v = 20.3 \\, \\text{m/s} \\)\n\n6. **Calculating Density**: We will calculate the maximum density using the derived formula.",
+        "code": "import sympy as sp\n\n# Given constants\nP = 15e6  # Power in Watts (15 MW)\nQ = 18  # Flow rate in m^3/s\nv = 20.3  # Velocity in m/s\n\n# Calculate maximum density using the derived formula\nrho = (2 * P) / (Q * v**2)\n\n# Store the result\nresult = rho\nresult",
+        "unit": "kg/m**3"
+    },
+    "gt_answer": "$2022.2$",
+    "unit": "$\\frac{\\mathrm{kg}}{\\mathrm{m}^{3}}$",
+    "metadata": {
+        "solution": [
+            "The maximal force the convey belt can provide to a particle is:\n$$\nF=\\frac{P}{v}\n$$\n\nThe conveyor belt must provide an impulse to the particles to have a momentum of $p=m v$, where $m$ is the mass of the particle and $v$ is the velocity.\n\n$$\nF=\\frac{d p}{d t}\n$$\n\nwhere $\\frac{d p}{d t}$ is:\n\n$$\n\\rho \\dot{V} v\n$$\n\nSolving for for the maximum density we get:\n\n$$\n\\begin{gathered}\n\\rho=\\frac{P}{\\dot{V} v^{2}} \\\\\n\\rho=2022.2 \\frac{\\mathrm{kg}}{\\mathrm{m}^{3}}\n\\end{gathered}\n$$"
+        ],
+        "image_1": null,
+        "image_2": null,
+        "image_3": null,
+        "image_4": null,
+        "image_5": null,
+        "modality": "Text-only",
+        "difficulty": "Competition",
+        "is_multiple_answer": false,
+        "unit": "$\\frac{\\mathrm{kg}}{\\mathrm{m}^{3}}$",
+        "answer_type": "Numerical",
+        "error": "1e-1",
+        "question_type": "Open-ended",
+        "subfield": "Mechanics",
+        "subject": "Physics",
+        "language": "English"
+    },
+    "verification_outcome": {
+        "output_match": false,
+        "unit_match": true
+    }
+}
+{
+    "sample_id": 803,
+    "question": "- Proton mass, $m_{p}=1.67 \\cdot 10^{-27} \\mathrm{~kg}$\n- Neutron mass, $m_{n}=1.67 \\cdot 10^{-27} \\mathrm{~kg}$\n- Electron mass, $m_{e}=9.11 \\cdot 10^{-31} \\mathrm{~kg}$\n- Avogadro's constant, $N_{0}=6.02 \\cdot 10^{23} \\mathrm{~mol}^{-1}$\n- Universal gas constant, $R=8.31 \\mathrm{~J} /(\\mathrm{mol} \\cdot \\mathrm{K})$\n- Boltzmann's constant, $k_{B}=1.38 \\cdot 10^{-23} \\mathrm{~J} / \\mathrm{K}$\n- Electron charge magnitude, $e=1.60 \\cdot 10^{-19} \\mathrm{C}$\n- 1 electron volt, $1 \\mathrm{eV}=1.60 \\cdot 10^{-19} \\mathrm{~J}$\n- Speed of light, $c=3.00 \\cdot 10^{8} \\mathrm{~m} / \\mathrm{s}$\n- Universal Gravitational constant,\n\n$$\nG=6.67 \\cdot 10^{-11}\\left(\\mathrm{~N} \\cdot \\mathrm{m}^{2}\\right) / \\mathrm{kg}^{2}\n$$\n\n- Solar Mass\n\n$$\nM_{\\odot}=1.988 \\cdot 10^{30} \\mathrm{~kg}\n$$\n\n- Acceleration due to gravity, $g=9.8 \\mathrm{~m} / \\mathrm{s}^{2}$\n- 1 unified atomic mass unit,\n\n$$\n1 \\mathrm{u}=1.66 \\cdot 10^{-27} \\mathrm{~kg}=931 \\mathrm{MeV} / \\mathrm{c}^{2}\n$$\n\n- Planck's constant,\n\n$$\nh=6.63 \\cdot 10^{-34} \\mathrm{~J} \\cdot \\mathrm{s}=4.41 \\cdot 10^{-15} \\mathrm{eV} \\cdot \\mathrm{s}\n$$\n\n- Permittivity of free space,\n\n$$\n\\epsilon_{0}=8.85 \\cdot 10^{-12} \\mathrm{C}^{2} /\\left(\\mathrm{N} \\cdot \\mathrm{m}^{2}\\right)\n$$\n\n- Coulomb's law constant,\n\n$$\nk=\\frac{1}{4 \\pi \\epsilon_{0}}=8.99 \\cdot 10^{9}\\left(\\mathrm{~N} \\cdot \\mathrm{m}^{2}\\right) / \\mathrm{C}^{2}\n$$\n\n- Permeability of free space,\n\n$$\n\\mu_{0}=4 \\pi \\cdot 10^{-7} \\mathrm{~T} \\cdot \\mathrm{m} / \\mathrm{A}\n$$\n\n- Magnetic constant,\n\n$$\n\\frac{\\mu_{0}}{4 \\pi}=1 \\cdot 10^{-7}(\\mathrm{~T} \\cdot \\mathrm{m}) / \\mathrm{A}\n$$\n\n- 1 atmospheric pressure,\n\n$$\n1 \\mathrm{~atm}=1.01 \\cdot 10^{5} \\mathrm{~N} / \\mathrm{m}^{2}=1.01 \\cdot 10^{5} \\mathrm{~Pa}\n$$\n\n- Wien's displacement constant, $b=2.9$. $10^{-3} \\mathrm{~m} \\cdot \\mathrm{K}$\n- Stefan-Boltzmann constant,\n\n$$\n\\sigma=5.67 \\cdot 10^{-8} \\mathrm{~W} / \\mathrm{m}^{2} / \\mathrm{K}^{4}\n$$\nNeutrinos are extremely light particles and rarely interact with matter. The Sun emits neutrinos, each with an energy of $8 \\times 10^{-14} \\mathrm{~J}$ and reaches a flux density of $10^{11}$ neutrinos $/\\left(\\mathrm{s} \\mathrm{cm}^{2}\\right)$ at Earth's surface.\n\nIn the movie 2012, neutrinos have mutated and now are completely absorbed by the Earth's inner core, heating it up. Model the inner core as a sphere of radius $1200 \\mathrm{~km}$, density $12.8 \\mathrm{~g} / \\mathrm{cm}^{3}$, and a specific heat of $0.400 \\mathrm{~J} / \\mathrm{g} \\mathrm{K}$. The time scale, in seconds, that it will take to heat up the inner core by $1^{\\circ} \\mathrm{C}$ is $t=1 \\times 10^{N}$ where $N$ is an integer. What is the value of $N$ ?",
+    "response": {
+        "reasoning": "To determine the time scale it will take to heat up the Earth's inner core by 1\u00b0C due to the absorption of neutrinos, we need to follow these steps:\n\n1. **Calculate the Volume of the Inner Core**: The inner core is modeled as a sphere with a radius of 1200 km. The volume \\( V \\) of a sphere is given by:\n   \\[ V = \\frac{4}{3} \\pi r^3 \\]\n   where \\( r \\) is the radius in meters.\n\n2. **Calculate the Mass of the Inner Core**: The mass \\( m \\) can be calculated using the density \\( \\rho \\) and the volume \\( V \\):\n   \\[ m = \\rho \\cdot V \\]\n   The density is given as 12.8 g/cm\u00b3, which needs to be converted to kg/m\u00b3 (1 g/cm\u00b3 = 1000 kg/m\u00b3).\n\n3. **Calculate the Energy Required to Heat the Inner Core**: The energy required to raise the temperature of the inner core by 1\u00b0C can be calculated using:\n   \\[ Q = m c \\Delta T \\]\n   where \\( c \\) is the specific heat capacity (0.400 J/g\u00b7K) and \\( \\Delta T \\) is the change in temperature (1\u00b0C).\n   We need to convert the specific heat from J/g\u00b7K to J/kg\u00b7K for consistency in units.\n\n4. **Calculate the Total Neutrino Energy Absorbed per Second**: The flux density of neutrinos is given as 10\u00b9\u00b9 neutrinos/(s\u00b7cm\u00b2). The energy per neutrino is given as 8 \u00d7 10\u207b\u00b9\u2074 J. The total energy absorbed per second by the inner core can be calculated by multiplying the flux density by the area of the inner core and the energy per neutrino:\n   \\[ P = \\text{flux density} \\cdot A \\cdot E_{neutrino} \\]\n   where \\( A \\) is the surface area of the sphere, given by \\( A = 4 \\pi r^2 \\).\n\n5. **Calculate the Time Required**: Finally, the time \\( t \\) required to heat the inner core by 1\u00b0C can be calculated using:\n   \\[ t = \\frac{Q}{P} \\]\n   The result will be expressed in seconds, and we will find the integer \\( N \\) such that \\( t = 1 \\times 10^N \\).",
+        "code": "import sympy as sp\n\n# Constants\nradius_km = 1200  # radius in kilometers\nradius_m = radius_km * 1000  # convert to meters\n\n# Density in g/cm^3 and convert to kg/m^3\ndensity_g_cm3 = 12.8  # g/cm^3\ndensity_kg_m3 = density_g_cm3 * 1000  # kg/m^3\n\n# Specific heat in J/g\u00b7K and convert to J/kg\u00b7K\nspecific_heat_J_gK = 0.400  # J/g\u00b7K\nspecific_heat_J_kgK = specific_heat_J_gK * 1000  # J/kg\u00b7K\n\n# Volume of the inner core\nV = (4/3) * sp.pi * radius_m**3  # Volume in m^3\n\n# Mass of the inner core\nmass = density_kg_m3 * V  # Mass in kg\n\n# Energy required to heat the inner core by 1\u00b0C\nQ = mass * specific_heat_J_kgK * 1  # Energy in Joules\n\n# Neutrino flux density and energy per neutrino\nflux_density = 1e11  # neutrinos/(s\u00b7cm^2)\nflux_density_m2 = flux_density * 1e4  # convert to neutrinos/(s\u00b7m^2)\nenergy_per_neutrino = 8e-14  # J\n\n# Surface area of the inner core\nA = 4 * sp.pi * radius_m**2  # Surface area in m^2\n\n# Total energy absorbed per second\nP = flux_density_m2 * A * energy_per_neutrino  # Power in Watts (J/s)\n\n# Time required to heat the inner core by 1\u00b0C\nt = Q / P  # Time in seconds\n\n# Expressing time in the form 1 x 10^N\nN = sp.log(t, 10).evalf()  # Calculate N\n\n# Store the result\nresult = sp.floor(N)  # Get the integer part of N\nresult",
+        "unit": "dimensionless"
+    },
+    "gt_answer": "$1 \\times 10^{14}$",
+    "unit": "s",
+    "metadata": {
+        "solution": [
+            "The cross sectional area is $\\pi r^{2}$, so the incoming power generated by the neutrinos is:\n$$\nP=\\pi r^{2} E \\Phi\n$$\n\nwhere $E$ is the energy of each neutrino and $\\Phi$ is the flux density. We want to cause a change in energy of:\n\n$$\n\\Delta Q=m c \\Delta T=\\rho \\frac{4}{3} \\pi r^{3} c \\Delta T\n$$\n\nwhich can be accomplished in a time:\n\n$$\nP t=\\Delta Q \\Longrightarrow t=\\frac{\\rho\\left(4 \\pi r^{3}\\right) c \\Delta T}{3 \\pi r^{2} E \\Phi}=\\frac{4 \\rho r c \\Delta T}{3 E \\Phi}=1 \\times 10^{14} \\mathrm{~s}\n$$"
+        ],
+        "image_1": null,
+        "image_2": null,
+        "image_3": null,
+        "image_4": null,
+        "image_5": null,
+        "modality": "Text-only",
+        "difficulty": "Competition",
+        "is_multiple_answer": false,
+        "unit": "s",
+        "answer_type": "Numerical",
+        "error": "1e13",
+        "question_type": "Open-ended",
+        "subfield": "Modern Physics",
+        "subject": "Physics",
+        "language": "English"
+    },
+    "verification_outcome": {
+        "output_match": false,
+        "unit_match": false
+    }
+}
+{
+    "sample_id": 802,
+    "question": "- Proton mass, $m_{p}=1.67 \\cdot 10^{-27} \\mathrm{~kg}$\n- Neutron mass, $m_{n}=1.67 \\cdot 10^{-27} \\mathrm{~kg}$\n- Electron mass, $m_{e}=9.11 \\cdot 10^{-31} \\mathrm{~kg}$\n- Avogadro's constant, $N_{0}=6.02 \\cdot 10^{23} \\mathrm{~mol}^{-1}$\n- Universal gas constant, $R=8.31 \\mathrm{~J} /(\\mathrm{mol} \\cdot \\mathrm{K})$\n- Boltzmann's constant, $k_{B}=1.38 \\cdot 10^{-23} \\mathrm{~J} / \\mathrm{K}$\n- Electron charge magnitude, $e=1.60 \\cdot 10^{-19} \\mathrm{C}$\n- 1 electron volt, $1 \\mathrm{eV}=1.60 \\cdot 10^{-19} \\mathrm{~J}$\n- Speed of light, $c=3.00 \\cdot 10^{8} \\mathrm{~m} / \\mathrm{s}$\n- Universal Gravitational constant,\n\n$$\nG=6.67 \\cdot 10^{-11}\\left(\\mathrm{~N} \\cdot \\mathrm{m}^{2}\\right) / \\mathrm{kg}^{2}\n$$\n\n- Solar Mass\n\n$$\nM_{\\odot}=1.988 \\cdot 10^{30} \\mathrm{~kg}\n$$\n\n- Acceleration due to gravity, $g=9.8 \\mathrm{~m} / \\mathrm{s}^{2}$\n- 1 unified atomic mass unit,\n\n$$\n1 \\mathrm{u}=1.66 \\cdot 10^{-27} \\mathrm{~kg}=931 \\mathrm{MeV} / \\mathrm{c}^{2}\n$$\n\n- Planck's constant,\n\n$$\nh=6.63 \\cdot 10^{-34} \\mathrm{~J} \\cdot \\mathrm{s}=4.41 \\cdot 10^{-15} \\mathrm{eV} \\cdot \\mathrm{s}\n$$\n\n- Permittivity of free space,\n\n$$\n\\epsilon_{0}=8.85 \\cdot 10^{-12} \\mathrm{C}^{2} /\\left(\\mathrm{N} \\cdot \\mathrm{m}^{2}\\right)\n$$\n\n- Coulomb's law constant,\n\n$$\nk=\\frac{1}{4 \\pi \\epsilon_{0}}=8.99 \\cdot 10^{9}\\left(\\mathrm{~N} \\cdot \\mathrm{m}^{2}\\right) / \\mathrm{C}^{2}\n$$\n\n- Permeability of free space,\n\n$$\n\\mu_{0}=4 \\pi \\cdot 10^{-7} \\mathrm{~T} \\cdot \\mathrm{m} / \\mathrm{A}\n$$\n\n- Magnetic constant,\n\n$$\n\\frac{\\mu_{0}}{4 \\pi}=1 \\cdot 10^{-7}(\\mathrm{~T} \\cdot \\mathrm{m}) / \\mathrm{A}\n$$\n\n- 1 atmospheric pressure,\n\n$$\n1 \\mathrm{~atm}=1.01 \\cdot 10^{5} \\mathrm{~N} / \\mathrm{m}^{2}=1.01 \\cdot 10^{5} \\mathrm{~Pa}\n$$\n\n- Wien's displacement constant, $b=2.9$. $10^{-3} \\mathrm{~m} \\cdot \\mathrm{K}$\n- Stefan-Boltzmann constant,\n\n$$\n\\sigma=5.67 \\cdot 10^{-8} \\mathrm{~W} / \\mathrm{m}^{2} / \\mathrm{K}^{4}\n$$\nIn an old coal factory, a conveyor belt will move at a constant velocity of $20.3 \\mathrm{~m} / \\mathrm{s}$ and can deliver a maximum power of $15 \\mathrm{MW}$. Each wheel in the conveyor belt has a diameter of $2 \\mathrm{~m}$. However a changing demand has pushed the coal factory to fill their coal hoppers with a different material with a certain constant specific density. These \"coal\" hoppers have been modified to deliver a constant $18 \\mathrm{~m}^{3} \\mathrm{~s}^{-1}$ of the new material to the conveyor belt. Assume that the kinetic and static friction are the same and that there is no slippage. What is the maximum density of the material?",
+    "response": {
+        "reasoning": "To find the maximum density of the new material that can be delivered by the conveyor belt, we need to consider the power delivered by the conveyor belt and the relationship between power, mass flow rate, and velocity. \n\n1. **Understanding Power**: The power delivered by the conveyor belt is given as 15 MW (or 15,000,000 W). Power can also be expressed in terms of mass flow rate and velocity:\n   \n   \\[ P = \\frac{dm}{dt} \\cdot v \\]\n   \n   where \\( P \\) is the power, \\( \\frac{dm}{dt} \\) is the mass flow rate (in kg/s), and \\( v \\) is the velocity of the conveyor belt (in m/s).\n\n2. **Mass Flow Rate**: The mass flow rate can also be expressed in terms of density and volumetric flow rate:\n   \n   \\[ \\frac{dm}{dt} = \\rho \\cdot Q \\]\n   \n   where \\( \\rho \\) is the density of the material (in kg/m\u00b3) and \\( Q \\) is the volumetric flow rate (in m\u00b3/s). In this case, the volumetric flow rate is given as 18 m\u00b3/s.\n\n3. **Combining Equations**: We can substitute the mass flow rate into the power equation:\n   \n   \\[ P = \\rho \\cdot Q \\cdot v \\]\n   \n   Rearranging gives us:\n   \n   \\[ \\rho = \\frac{P}{Q \\cdot v} \\]\n\n4. **Substituting Values**: Now we can substitute the known values into this equation:\n   - Power, \\( P = 15,000,000 \\) W\n   - Volumetric flow rate, \\( Q = 18 \\) m\u00b3/s\n   - Velocity, \\( v = 20.3 \\) m/s\n\n5. **Calculating Density**: We can now calculate the maximum density of the material using the above formula.",
+        "code": "import sympy as sp\n\n# Given values\nP = 15e6  # Power in Watts (15 MW)\nQ = 18  # Volumetric flow rate in m^3/s\nv = 20.3  # Velocity in m/s\n\n# Calculate maximum density\nrho = P / (Q * v)\n\n# Store the result\nresult = rho\nresult",
+        "unit": "kg/m\u00b3"
+    },
+    "gt_answer": "$2022.2$",
+    "unit": "$\\frac{\\mathrm{kg}}{\\mathrm{m}^{3}}$",
+    "metadata": {
+        "solution": [
+            "The maximal force the convey belt can provide to a particle is:\n$$\nF=\\frac{P}{v}\n$$\n\nThe conveyor belt must provide an impulse to the particles to have a momentum of $p=m v$, where $m$ is the mass of the particle and $v$ is the velocity.\n\n$$\nF=\\frac{d p}{d t}\n$$\n\nwhere $\\frac{d p}{d t}$ is:\n\n$$\n\\rho \\dot{V} v\n$$\n\nSolving for for the maximum density we get:\n\n$$\n\\begin{gathered}\n\\rho=\\frac{P}{\\dot{V} v^{2}} \\\\\n\\rho=2022.2 \\frac{\\mathrm{kg}}{\\mathrm{m}^{3}}\n\\end{gathered}\n$$"
+        ],
+        "image_1": null,
+        "image_2": null,
+        "image_3": null,
+        "image_4": null,
+        "image_5": null,
+        "modality": "Text-only",
+        "difficulty": "Competition",
+        "is_multiple_answer": false,
+        "unit": "$\\frac{\\mathrm{kg}}{\\mathrm{m}^{3}}$",
+        "answer_type": "Numerical",
+        "error": "1e-1",
+        "question_type": "Open-ended",
+        "subfield": "Mechanics",
+        "subject": "Physics",
+        "language": "English"
+    },
+    "verification_outcome": {
+        "output_match": false,
+        "unit_match": false
+    }
+}
+{
+    "sample_id": 803,
+    "question": "- Proton mass, $m_{p}=1.67 \\cdot 10^{-27} \\mathrm{~kg}$\n- Neutron mass, $m_{n}=1.67 \\cdot 10^{-27} \\mathrm{~kg}$\n- Electron mass, $m_{e}=9.11 \\cdot 10^{-31} \\mathrm{~kg}$\n- Avogadro's constant, $N_{0}=6.02 \\cdot 10^{23} \\mathrm{~mol}^{-1}$\n- Universal gas constant, $R=8.31 \\mathrm{~J} /(\\mathrm{mol} \\cdot \\mathrm{K})$\n- Boltzmann's constant, $k_{B}=1.38 \\cdot 10^{-23} \\mathrm{~J} / \\mathrm{K}$\n- Electron charge magnitude, $e=1.60 \\cdot 10^{-19} \\mathrm{C}$\n- 1 electron volt, $1 \\mathrm{eV}=1.60 \\cdot 10^{-19} \\mathrm{~J}$\n- Speed of light, $c=3.00 \\cdot 10^{8} \\mathrm{~m} / \\mathrm{s}$\n- Universal Gravitational constant,\n\n$$\nG=6.67 \\cdot 10^{-11}\\left(\\mathrm{~N} \\cdot \\mathrm{m}^{2}\\right) / \\mathrm{kg}^{2}\n$$\n\n- Solar Mass\n\n$$\nM_{\\odot}=1.988 \\cdot 10^{30} \\mathrm{~kg}\n$$\n\n- Acceleration due to gravity, $g=9.8 \\mathrm{~m} / \\mathrm{s}^{2}$\n- 1 unified atomic mass unit,\n\n$$\n1 \\mathrm{u}=1.66 \\cdot 10^{-27} \\mathrm{~kg}=931 \\mathrm{MeV} / \\mathrm{c}^{2}\n$$\n\n- Planck's constant,\n\n$$\nh=6.63 \\cdot 10^{-34} \\mathrm{~J} \\cdot \\mathrm{s}=4.41 \\cdot 10^{-15} \\mathrm{eV} \\cdot \\mathrm{s}\n$$\n\n- Permittivity of free space,\n\n$$\n\\epsilon_{0}=8.85 \\cdot 10^{-12} \\mathrm{C}^{2} /\\left(\\mathrm{N} \\cdot \\mathrm{m}^{2}\\right)\n$$\n\n- Coulomb's law constant,\n\n$$\nk=\\frac{1}{4 \\pi \\epsilon_{0}}=8.99 \\cdot 10^{9}\\left(\\mathrm{~N} \\cdot \\mathrm{m}^{2}\\right) / \\mathrm{C}^{2}\n$$\n\n- Permeability of free space,\n\n$$\n\\mu_{0}=4 \\pi \\cdot 10^{-7} \\mathrm{~T} \\cdot \\mathrm{m} / \\mathrm{A}\n$$\n\n- Magnetic constant,\n\n$$\n\\frac{\\mu_{0}}{4 \\pi}=1 \\cdot 10^{-7}(\\mathrm{~T} \\cdot \\mathrm{m}) / \\mathrm{A}\n$$\n\n- 1 atmospheric pressure,\n\n$$\n1 \\mathrm{~atm}=1.01 \\cdot 10^{5} \\mathrm{~N} / \\mathrm{m}^{2}=1.01 \\cdot 10^{5} \\mathrm{~Pa}\n$$\n\n- Wien's displacement constant, $b=2.9$. $10^{-3} \\mathrm{~m} \\cdot \\mathrm{K}$\n- Stefan-Boltzmann constant,\n\n$$\n\\sigma=5.67 \\cdot 10^{-8} \\mathrm{~W} / \\mathrm{m}^{2} / \\mathrm{K}^{4}\n$$\nNeutrinos are extremely light particles and rarely interact with matter. The Sun emits neutrinos, each with an energy of $8 \\times 10^{-14} \\mathrm{~J}$ and reaches a flux density of $10^{11}$ neutrinos $/\\left(\\mathrm{s} \\mathrm{cm}^{2}\\right)$ at Earth's surface.\n\nIn the movie 2012, neutrinos have mutated and now are completely absorbed by the Earth's inner core, heating it up. Model the inner core as a sphere of radius $1200 \\mathrm{~km}$, density $12.8 \\mathrm{~g} / \\mathrm{cm}^{3}$, and a specific heat of $0.400 \\mathrm{~J} / \\mathrm{g} \\mathrm{K}$. The time scale, in seconds, that it will take to heat up the inner core by $1^{\\circ} \\mathrm{C}$ is $t=1 \\times 10^{N}$ where $N$ is an integer. What is the value of $N$ ?",
+    "response": {
+        "reasoning": "To determine the time scale it will take to heat up the Earth's inner core by 1\u00b0C due to the absorption of neutrinos, we need to follow these steps:\n\n1. **Calculate the Volume of the Inner Core**: The inner core is modeled as a sphere with a radius of 1200 km. The volume \\( V \\) of a sphere is given by:\n   \\[ V = \\frac{4}{3} \\pi r^3 \\]\n   where \\( r \\) is the radius in meters.\n\n2. **Calculate the Mass of the Inner Core**: The mass \\( m \\) can be calculated using the density \\( \\rho \\) and volume \\( V \\):\n   \\[ m = \\rho \\cdot V \\]\n   The density is given as 12.8 g/cm\u00b3, which needs to be converted to kg/m\u00b3 (1 g/cm\u00b3 = 1000 kg/m\u00b3).\n\n3. **Calculate the Energy Required to Heat the Inner Core by 1\u00b0C**: The energy \\( Q \\) required to heat the inner core can be calculated using the specific heat capacity \\( c \\):\n   \\[ Q = m \times c \times \\Delta T \\]\n   where \\( \\Delta T = 1 \\) \u00b0C.\n   The specific heat capacity is given as 0.400 J/g\u00b7K, which also needs to be converted to J/kg\u00b7K (1 g = 0.001 kg).\n\n4. **Calculate the Total Neutrino Flux Absorbed by the Inner Core**: The flux density of neutrinos is given as 10^{11} neutrinos/(s\u00b7cm\u00b2). We need to convert this to neutrinos/(s\u00b7m\u00b2) and then calculate the total number of neutrinos hitting the inner core surface:\n   \\[ \\text{Total Neutrinos} = \\text{Flux Density} \\times \\text{Surface Area} \\]\n   The surface area \\( A \\) of the sphere is given by:\n   \\[ A = 4 \\pi r^2 \\]\n\n5. **Calculate the Total Energy from Neutrinos**: Each neutrino has an energy of \\( 8 \\times 10^{-14} \\) J, so the total energy from the neutrinos hitting the inner core per second is:\n   \\[ E_{neutrinos} = \\text{Total Neutrinos} \\times \\text{Energy per Neutrino} \\]\n\n6. **Calculate the Time to Heat the Inner Core**: Finally, the time \\( t \\) required to heat the inner core by 1\u00b0C is given by:\n   \\[ t = \\frac{Q}{E_{neutrinos}} \\]\n   This will give us the time in seconds, and we will express it in the form \\( t = 1 \\times 10^{N} \\) to find the integer \\( N \\).",
+        "code": "import sympy as sp\n\n# Constants\nradius_km = 1200  # radius in kilometers\nradius_m = radius_km * 1000  # convert to meters\n\n# Density in kg/m^3\ndensity_g_cm3 = 12.8  # density in g/cm^3\ndensity_kg_m3 = density_g_cm3 * 1000  # convert to kg/m^3\n\n# Specific heat in J/kg\u00b7K\nspecific_heat_J_gK = 0.400  # J/g\u00b7K\nspecific_heat_J_kgK = specific_heat_J_gK * 1000  # convert to J/kg\u00b7K\n\n# Volume of the inner core\nvolume = (4/3) * sp.pi * radius_m**3\n\n# Mass of the inner core\nmass = density_kg_m3 * volume\n\n# Energy required to heat the inner core by 1\u00b0C\ndelta_T = 1  # change in temperature in \u00b0C\nQ = mass * specific_heat_J_kgK * delta_T\n\n# Neutrino flux density\nflux_density_neutrinos = 1e11  # neutrinos/(s\u00b7cm\u00b2)\nflux_density_neutrinos_m2 = flux_density_neutrinos * 1e4  # convert to neutrinos/(s\u00b7m\u00b2)\n\n# Surface area of the inner core\nsurface_area = 4 * sp.pi * radius_m**2\n\n# Total neutrinos hitting the inner core per second\ntotal_neutrinos = flux_density_neutrinos_m2 * surface_area\n\n# Energy from neutrinos hitting the inner core per second\nenergy_per_neutrino = 8e-14  # energy in J\nE_neutrinos = total_neutrinos * energy_per_neutrino\n\n# Time to heat the inner core by 1\u00b0C\ntime_seconds = Q / E_neutrinos\n\n# Expressing time in the form 1 x 10^N\nN = sp.log(time_seconds, 10).evalf()\n\n# Store the integer part of N\nresult = int(N)\nresult",
+        "unit": "dimensionless"
+    },
+    "gt_answer": "$1 \\times 10^{14}$",
+    "unit": "s",
+    "metadata": {
+        "solution": [
+            "The cross sectional area is $\\pi r^{2}$, so the incoming power generated by the neutrinos is:\n$$\nP=\\pi r^{2} E \\Phi\n$$\n\nwhere $E$ is the energy of each neutrino and $\\Phi$ is the flux density. We want to cause a change in energy of:\n\n$$\n\\Delta Q=m c \\Delta T=\\rho \\frac{4}{3} \\pi r^{3} c \\Delta T\n$$\n\nwhich can be accomplished in a time:\n\n$$\nP t=\\Delta Q \\Longrightarrow t=\\frac{\\rho\\left(4 \\pi r^{3}\\right) c \\Delta T}{3 \\pi r^{2} E \\Phi}=\\frac{4 \\rho r c \\Delta T}{3 E \\Phi}=1 \\times 10^{14} \\mathrm{~s}\n$$"
+        ],
+        "image_1": null,
+        "image_2": null,
+        "image_3": null,
+        "image_4": null,
+        "image_5": null,
+        "modality": "Text-only",
+        "difficulty": "Competition",
+        "is_multiple_answer": false,
+        "unit": "s",
+        "answer_type": "Numerical",
+        "error": "1e13",
+        "question_type": "Open-ended",
+        "subfield": "Modern Physics",
+        "subject": "Physics",
+        "language": "English"
+    },
+    "verification_outcome": {
+        "output_match": false,
+        "unit_match": false
+    }
+}
+{
+    "sample_id": 802,
+    "question": "- Proton mass, $m_{p}=1.67 \\cdot 10^{-27} \\mathrm{~kg}$\n- Neutron mass, $m_{n}=1.67 \\cdot 10^{-27} \\mathrm{~kg}$\n- Electron mass, $m_{e}=9.11 \\cdot 10^{-31} \\mathrm{~kg}$\n- Avogadro's constant, $N_{0}=6.02 \\cdot 10^{23} \\mathrm{~mol}^{-1}$\n- Universal gas constant, $R=8.31 \\mathrm{~J} /(\\mathrm{mol} \\cdot \\mathrm{K})$\n- Boltzmann's constant, $k_{B}=1.38 \\cdot 10^{-23} \\mathrm{~J} / \\mathrm{K}$\n- Electron charge magnitude, $e=1.60 \\cdot 10^{-19} \\mathrm{C}$\n- 1 electron volt, $1 \\mathrm{eV}=1.60 \\cdot 10^{-19} \\mathrm{~J}$\n- Speed of light, $c=3.00 \\cdot 10^{8} \\mathrm{~m} / \\mathrm{s}$\n- Universal Gravitational constant,\n\n$$\nG=6.67 \\cdot 10^{-11}\\left(\\mathrm{~N} \\cdot \\mathrm{m}^{2}\\right) / \\mathrm{kg}^{2}\n$$\n\n- Solar Mass\n\n$$\nM_{\\odot}=1.988 \\cdot 10^{30} \\mathrm{~kg}\n$$\n\n- Acceleration due to gravity, $g=9.8 \\mathrm{~m} / \\mathrm{s}^{2}$\n- 1 unified atomic mass unit,\n\n$$\n1 \\mathrm{u}=1.66 \\cdot 10^{-27} \\mathrm{~kg}=931 \\mathrm{MeV} / \\mathrm{c}^{2}\n$$\n\n- Planck's constant,\n\n$$\nh=6.63 \\cdot 10^{-34} \\mathrm{~J} \\cdot \\mathrm{s}=4.41 \\cdot 10^{-15} \\mathrm{eV} \\cdot \\mathrm{s}\n$$\n\n- Permittivity of free space,\n\n$$\n\\epsilon_{0}=8.85 \\cdot 10^{-12} \\mathrm{C}^{2} /\\left(\\mathrm{N} \\cdot \\mathrm{m}^{2}\\right)\n$$\n\n- Coulomb's law constant,\n\n$$\nk=\\frac{1}{4 \\pi \\epsilon_{0}}=8.99 \\cdot 10^{9}\\left(\\mathrm{~N} \\cdot \\mathrm{m}^{2}\\right) / \\mathrm{C}^{2}\n$$\n\n- Permeability of free space,\n\n$$\n\\mu_{0}=4 \\pi \\cdot 10^{-7} \\mathrm{~T} \\cdot \\mathrm{m} / \\mathrm{A}\n$$\n\n- Magnetic constant,\n\n$$\n\\frac{\\mu_{0}}{4 \\pi}=1 \\cdot 10^{-7}(\\mathrm{~T} \\cdot \\mathrm{m}) / \\mathrm{A}\n$$\n\n- 1 atmospheric pressure,\n\n$$\n1 \\mathrm{~atm}=1.01 \\cdot 10^{5} \\mathrm{~N} / \\mathrm{m}^{2}=1.01 \\cdot 10^{5} \\mathrm{~Pa}\n$$\n\n- Wien's displacement constant, $b=2.9$. $10^{-3} \\mathrm{~m} \\cdot \\mathrm{K}$\n- Stefan-Boltzmann constant,\n\n$$\n\\sigma=5.67 \\cdot 10^{-8} \\mathrm{~W} / \\mathrm{m}^{2} / \\mathrm{K}^{4}\n$$\nIn an old coal factory, a conveyor belt will move at a constant velocity of $20.3 \\mathrm{~m} / \\mathrm{s}$ and can deliver a maximum power of $15 \\mathrm{MW}$. Each wheel in the conveyor belt has a diameter of $2 \\mathrm{~m}$. However a changing demand has pushed the coal factory to fill their coal hoppers with a different material with a certain constant specific density. These \"coal\" hoppers have been modified to deliver a constant $18 \\mathrm{~m}^{3} \\mathrm{~s}^{-1}$ of the new material to the conveyor belt. Assume that the kinetic and static friction are the same and that there is no slippage. What is the maximum density of the material?",
+    "response": {
+        "reasoning": "To find the maximum density of the new material that can be delivered by the conveyor belt, we need to analyze the power delivered by the conveyor belt and the relationship between power, flow rate, and density. \n\n1. **Understanding Power and Flow Rate**: The power delivered by the conveyor belt can be expressed in terms of the mass flow rate and the velocity of the material being transported. The formula for power (P) in terms of mass flow rate (\\( \\dot{m} \\)) and velocity (v) is:\n   \n   \\[ P = \\dot{m} \\cdot v \\]\n\n2. **Mass Flow Rate**: The mass flow rate can be expressed as:\n   \n   \\[ \\dot{m} = \\rho \\cdot Q \\]\n   \n   where \\( \\rho \\) is the density of the material and \\( Q \\) is the volumetric flow rate. \n\n3. **Volumetric Flow Rate**: The problem states that the volumetric flow rate of the new material is \\( Q = 18 \\mathrm{~m}^3/\\mathrm{s} \\).\n\n4. **Substituting into the Power Equation**: Substituting the expression for mass flow rate into the power equation gives:\n   \n   \\[ P = \\rho \\cdot Q \\cdot v \\]\n   \n   Rearranging this to solve for density \\( \\rho \\) yields:\n   \n   \\[ \\rho = \\frac{P}{Q \\cdot v} \\]\n\n5. **Substituting Known Values**: We know the maximum power \\( P = 15 \\mathrm{~MW} = 15 \\times 10^6 \\mathrm{~W} \\), the volumetric flow rate \\( Q = 18 \\mathrm{~m}^3/\\mathrm{s} \\), and the velocity \\( v = 20.3 \\mathrm{~m/s} \\). \n   \n   Now we can substitute these values into the equation to find the maximum density:\n   \n   \\[ \\rho = \\frac{15 \\times 10^6 \\mathrm{~W}}{18 \\mathrm{~m}^3/\\mathrm{s} \\cdot 20.3 \\mathrm{~m/s}} \\]\n\n6. **Calculating the Density**: We will perform the calculation to find the maximum density of the new material.",
+        "code": "import sympy as sp\n\n# Given values\nP = 15 * 10**6  # Power in Watts\nQ = 18  # Volumetric flow rate in m^3/s\nv = 20.3  # Velocity in m/s\n\n# Calculate density using the formula derived\nrho = P / (Q * v)\n\n# Store the result\nresult = rho\nresult",
+        "unit": "kg/m**3"
+    },
+    "gt_answer": "$2022.2$",
+    "unit": "$\\frac{\\mathrm{kg}}{\\mathrm{m}^{3}}$",
+    "metadata": {
+        "solution": [
+            "The maximal force the convey belt can provide to a particle is:\n$$\nF=\\frac{P}{v}\n$$\n\nThe conveyor belt must provide an impulse to the particles to have a momentum of $p=m v$, where $m$ is the mass of the particle and $v$ is the velocity.\n\n$$\nF=\\frac{d p}{d t}\n$$\n\nwhere $\\frac{d p}{d t}$ is:\n\n$$\n\\rho \\dot{V} v\n$$\n\nSolving for for the maximum density we get:\n\n$$\n\\begin{gathered}\n\\rho=\\frac{P}{\\dot{V} v^{2}} \\\\\n\\rho=2022.2 \\frac{\\mathrm{kg}}{\\mathrm{m}^{3}}\n\\end{gathered}\n$$"
+        ],
+        "image_1": null,
+        "image_2": null,
+        "image_3": null,
+        "image_4": null,
+        "image_5": null,
+        "modality": "Text-only",
+        "difficulty": "Competition",
+        "is_multiple_answer": false,
+        "unit": "$\\frac{\\mathrm{kg}}{\\mathrm{m}^{3}}$",
+        "answer_type": "Numerical",
+        "error": "1e-1",
+        "question_type": "Open-ended",
+        "subfield": "Mechanics",
+        "subject": "Physics",
+        "language": "English"
+    },
+    "verification_outcome": {
+        "output_match": false,
+        "unit_match": true
+    }
+}
+{
+    "sample_id": 803,
+    "question": "- Proton mass, $m_{p}=1.67 \\cdot 10^{-27} \\mathrm{~kg}$\n- Neutron mass, $m_{n}=1.67 \\cdot 10^{-27} \\mathrm{~kg}$\n- Electron mass, $m_{e}=9.11 \\cdot 10^{-31} \\mathrm{~kg}$\n- Avogadro's constant, $N_{0}=6.02 \\cdot 10^{23} \\mathrm{~mol}^{-1}$\n- Universal gas constant, $R=8.31 \\mathrm{~J} /(\\mathrm{mol} \\cdot \\mathrm{K})$\n- Boltzmann's constant, $k_{B}=1.38 \\cdot 10^{-23} \\mathrm{~J} / \\mathrm{K}$\n- Electron charge magnitude, $e=1.60 \\cdot 10^{-19} \\mathrm{C}$\n- 1 electron volt, $1 \\mathrm{eV}=1.60 \\cdot 10^{-19} \\mathrm{~J}$\n- Speed of light, $c=3.00 \\cdot 10^{8} \\mathrm{~m} / \\mathrm{s}$\n- Universal Gravitational constant,\n\n$$\nG=6.67 \\cdot 10^{-11}\\left(\\mathrm{~N} \\cdot \\mathrm{m}^{2}\\right) / \\mathrm{kg}^{2}\n$$\n\n- Solar Mass\n\n$$\nM_{\\odot}=1.988 \\cdot 10^{30} \\mathrm{~kg}\n$$\n\n- Acceleration due to gravity, $g=9.8 \\mathrm{~m} / \\mathrm{s}^{2}$\n- 1 unified atomic mass unit,\n\n$$\n1 \\mathrm{u}=1.66 \\cdot 10^{-27} \\mathrm{~kg}=931 \\mathrm{MeV} / \\mathrm{c}^{2}\n$$\n\n- Planck's constant,\n\n$$\nh=6.63 \\cdot 10^{-34} \\mathrm{~J} \\cdot \\mathrm{s}=4.41 \\cdot 10^{-15} \\mathrm{eV} \\cdot \\mathrm{s}\n$$\n\n- Permittivity of free space,\n\n$$\n\\epsilon_{0}=8.85 \\cdot 10^{-12} \\mathrm{C}^{2} /\\left(\\mathrm{N} \\cdot \\mathrm{m}^{2}\\right)\n$$\n\n- Coulomb's law constant,\n\n$$\nk=\\frac{1}{4 \\pi \\epsilon_{0}}=8.99 \\cdot 10^{9}\\left(\\mathrm{~N} \\cdot \\mathrm{m}^{2}\\right) / \\mathrm{C}^{2}\n$$\n\n- Permeability of free space,\n\n$$\n\\mu_{0}=4 \\pi \\cdot 10^{-7} \\mathrm{~T} \\cdot \\mathrm{m} / \\mathrm{A}\n$$\n\n- Magnetic constant,\n\n$$\n\\frac{\\mu_{0}}{4 \\pi}=1 \\cdot 10^{-7}(\\mathrm{~T} \\cdot \\mathrm{m}) / \\mathrm{A}\n$$\n\n- 1 atmospheric pressure,\n\n$$\n1 \\mathrm{~atm}=1.01 \\cdot 10^{5} \\mathrm{~N} / \\mathrm{m}^{2}=1.01 \\cdot 10^{5} \\mathrm{~Pa}\n$$\n\n- Wien's displacement constant, $b=2.9$. $10^{-3} \\mathrm{~m} \\cdot \\mathrm{K}$\n- Stefan-Boltzmann constant,\n\n$$\n\\sigma=5.67 \\cdot 10^{-8} \\mathrm{~W} / \\mathrm{m}^{2} / \\mathrm{K}^{4}\n$$\nNeutrinos are extremely light particles and rarely interact with matter. The Sun emits neutrinos, each with an energy of $8 \\times 10^{-14} \\mathrm{~J}$ and reaches a flux density of $10^{11}$ neutrinos $/\\left(\\mathrm{s} \\mathrm{cm}^{2}\\right)$ at Earth's surface.\n\nIn the movie 2012, neutrinos have mutated and now are completely absorbed by the Earth's inner core, heating it up. Model the inner core as a sphere of radius $1200 \\mathrm{~km}$, density $12.8 \\mathrm{~g} / \\mathrm{cm}^{3}$, and a specific heat of $0.400 \\mathrm{~J} / \\mathrm{g} \\mathrm{K}$. The time scale, in seconds, that it will take to heat up the inner core by $1^{\\circ} \\mathrm{C}$ is $t=1 \\times 10^{N}$ where $N$ is an integer. What is the value of $N$ ?",
+    "response": {
+        "reasoning": "To determine the time scale it will take to heat up the Earth's inner core by 1\u00b0C due to the absorption of neutrinos, we will follow these steps:\n\n1. **Calculate the Volume of the Inner Core**: The inner core is modeled as a sphere with a radius of 1200 km. The volume \\( V \\) of a sphere is given by the formula:\n   \n   \\[ V = \\frac{4}{3} \\pi r^3 \\]\n   \n   where \\( r \\) is the radius in meters.\n\n2. **Calculate the Mass of the Inner Core**: The mass \\( m \\) can be calculated using the density \\( \\rho \\) and volume \\( V \\):\n   \n   \\[ m = \\rho \\cdot V \\]\n   \n   The density is given as 12.8 g/cm\u00b3, which we need to convert to kg/m\u00b3 (1 g/cm\u00b3 = 1000 kg/m\u00b3).\n\n3. **Calculate the Energy Required to Heat the Inner Core by 1\u00b0C**: The energy \\( Q \\) required to raise the temperature of the inner core by 1\u00b0C can be calculated using the specific heat capacity \\( c \\):\n   \n   \\[ Q = m \times c \\times \\Delta T \\]\n   \n   where \\( \\Delta T = 1 \\mathrm{~K} \\) (since a change of 1\u00b0C is equivalent to a change of 1 K).\n\n4. **Calculate the Total Energy Received from Neutrinos**: The total energy received from neutrinos can be calculated using the flux density \\( F \\) and the area \\( A \\) of the inner core:\n   \n   \\[ E = F \\cdot A \\cdot t \\]\n   \n   where \\( A = 4 \\pi r^2 \\) is the surface area of the sphere and \\( F = 10^{11} \\mathrm{~neutrinos/(s \\, cm^2)} \\) converted to neutrinos/(s m\u00b2).\n\n5. **Set the Energy Absorbed Equal to the Energy Required**: To find the time \\( t \\) it takes to heat the inner core by 1\u00b0C, we set the energy absorbed equal to the energy required:\n   \n   \\[ F \\cdot A \\cdot t = Q \\]\n   \n   Rearranging gives:\n   \n   \\[ t = \\frac{Q}{F \\cdot A} \\]\n\n6. **Calculate the Time and Find N**: Finally, we will calculate the time in seconds and express it in the form \\( t = 1 \\times 10^N \\) to find the integer value of \\( N \\).",
+        "code": "import sympy as sp\n\n# Given values\nradius_km = 1200  # radius in kilometers\nradius_m = radius_km * 1000  # convert to meters\ndensity_g_cm3 = 12.8  # density in g/cm^3\ndensity_kg_m3 = density_g_cm3 * 1000  # convert to kg/m^3\nspecific_heat = 0.400  # specific heat in J/g K\nspecific_heat_kg = specific_heat * 1000  # convert to J/kg K\nDelta_T = 1  # temperature change in K\nflux_density = 10**11  # flux density in neutrinos/(s cm^2)\nflux_density_m2 = flux_density * 10**4  # convert to neutrinos/(s m^2)\n\n# Calculate volume of the inner core\nV = (4/3) * sp.pi * radius_m**3\n\n# Calculate mass of the inner core\nmass = density_kg_m3 * V\n\n# Calculate energy required to heat the inner core by 1\u00b0C\nQ = mass * specific_heat_kg * Delta_T\n\n# Calculate surface area of the inner core\nA = 4 * sp.pi * radius_m**2\n\n# Calculate time to heat the inner core by 1\u00b0C\nt = Q / (flux_density_m2 * A)\n\n# Express time in the form 1 x 10^N\nN = sp.log(t, 10).evalf()\n\n# Store the integer part of N\nresult = int(N)\nresult",
+        "unit": "s"
+    },
+    "gt_answer": "$1 \\times 10^{14}$",
+    "unit": "s",
+    "metadata": {
+        "solution": [
+            "The cross sectional area is $\\pi r^{2}$, so the incoming power generated by the neutrinos is:\n$$\nP=\\pi r^{2} E \\Phi\n$$\n\nwhere $E$ is the energy of each neutrino and $\\Phi$ is the flux density. We want to cause a change in energy of:\n\n$$\n\\Delta Q=m c \\Delta T=\\rho \\frac{4}{3} \\pi r^{3} c \\Delta T\n$$\n\nwhich can be accomplished in a time:\n\n$$\nP t=\\Delta Q \\Longrightarrow t=\\frac{\\rho\\left(4 \\pi r^{3}\\right) c \\Delta T}{3 \\pi r^{2} E \\Phi}=\\frac{4 \\rho r c \\Delta T}{3 E \\Phi}=1 \\times 10^{14} \\mathrm{~s}\n$$"
+        ],
+        "image_1": null,
+        "image_2": null,
+        "image_3": null,
+        "image_4": null,
+        "image_5": null,
+        "modality": "Text-only",
+        "difficulty": "Competition",
+        "is_multiple_answer": false,
+        "unit": "s",
+        "answer_type": "Numerical",
+        "error": "1e13",
+        "question_type": "Open-ended",
+        "subfield": "Modern Physics",
+        "subject": "Physics",
+        "language": "English"
+    },
+    "verification_outcome": {
+        "output_match": false,
+        "unit_match": true
+    }
+}
