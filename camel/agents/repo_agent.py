@@ -98,7 +98,6 @@ class RepoAgent(ChatAgent):
         self.vector_retriever = vector_retriever
         self.github_auth_token = github_auth_token
         self.chunk_size = chunk_size
-        self.repos = self.load_repositories(repo_paths)
         self.num_tokens = 0
         self.processing_mode = ProcessingMode.FULL_CONTEXT
         self.top_k = top_k
@@ -125,6 +124,8 @@ class RepoAgent(ChatAgent):
         )
         self.full_text = ""
         self.chunker = CodeChunker(chunk_size=chunk_size)
+        if repo_paths:
+            self.repos = self.load_repositories(repo_paths)
         if len(self.repos) > 0:
             self.construct_full_text()
             self.num_tokens = self.count_tokens()
@@ -209,7 +210,7 @@ class RepoAgent(ChatAgent):
         info = RepositoryInfo(
             repo_name=repo.full_name,
             repo_url=repo.html_url,
-            content=[],
+            contents=[],
         )
 
         while contents:
@@ -307,7 +308,8 @@ class RepoAgent(ChatAgent):
                 logger.warning(
                     f"Token count ({self.num_tokens}) exceeds limit "
                     f"({self.max_context_tokens}). "
-                    "Either reduce repository size or provide a VectorRetriever."
+                    "Either reduce repository size or provide a "
+                    "VectorRetriever."
                 )
                 return False
 
