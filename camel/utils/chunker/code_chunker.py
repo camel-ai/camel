@@ -105,14 +105,14 @@ class CodeChunker(BaseChunker):
         Returns:
             List[str]: A list of chunked text segments.
         """
-        content = "\n".join(map(str, content))
+        content_str = "\n".join(map(str, content))
         chunks = []
         current_chunk: list[str] = []
         current_tokens = 0
         struct_buffer: list[str] = []
         struct_tokens = 0
 
-        for line in content.splitlines(keepends=True):
+        for line in content_str.splitlines(keepends=True):
             if self.remove_image:
                 if self.image_pattern.match(line):
                     continue
@@ -174,13 +174,11 @@ class CodeChunker(BaseChunker):
             else:
                 final_chunks.append(chunk)
 
-        #TODO: need to reconsider how to correctly form metadata (maybe need
+        # TODO: need to reconsider how to correctly form metadata (maybe need
         # to decouple the connection with unstructuredIO)
         chunked_elements = []
         for chunk in final_chunks:
-            element = Element(
-                metadata=ElementMetadata()
-            )
+            element = Element(metadata=ElementMetadata())
             element.text = chunk
             chunked_elements.append(element)
         return chunked_elements
