@@ -11,10 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import pytest
+import os
 from pathlib import Path
-from unittest.mock import patch 
-import os 
+from unittest.mock import patch
+
+import pytest
 
 from camel.configs import (
     AnthropicConfig,
@@ -172,12 +173,13 @@ json_config_files = [
     "test_config_file/json_configs/openai3.5_turbo_config.json",
     "test_config_file/json_configs/openai4o_config.json",
     "test_config_file/json_configs/stub_config.json",
-    "test_config_file/json_configs/stub_custom_token_counter_config.json"
+    "test_config_file/json_configs/stub_custom_token_counter_config.json",
 ]
+
 
 @pytest.mark.parametrize("config_file", json_config_files)
 @patch.dict(os.environ, {"OPENAI_API_KEY": "test_key"})
-@patch("camel.models.base_model.BaseModelBackend.run")  
+@patch("camel.models.base_model.BaseModelBackend.run")
 def test_model_factory_json(mock_run, config_file):
     """Test ModelFactory with JSON files without actual API calls."""
 
@@ -191,9 +193,9 @@ def test_model_factory_json(mock_run, config_file):
         "choices": [
             {
                 "finish_reason": "stop",
-                "message": {"role": "assistant", "content": "Hello, test!"}
+                "message": {"role": "assistant", "content": "Hello, test!"},
             }
-        ]
+        ],
     }
 
     model_inst = ModelFactory.create_from_json(str(json_path))
@@ -215,20 +217,22 @@ def test_model_factory_json(mock_run, config_file):
     print(f"JSON file {config_file} loaded successfully.")
 
 
-yaml_config_files = ["test_config_file/yaml_configs/claude2_config.yaml",
-                     "test_config_file/yaml_configs/claude2_openai_config.yaml",
-                     "test_config_file/yaml_configs/gemini_1.5_flash_config.yaml",
-                     "test_config_file/yaml_configs/ollama_config.yaml",
-                     "test_config_file/yaml_configs/ollama_openai_config.yaml",
-                     "test_config_file/yaml_configs/openai3.5_turbo_config.yaml",
-                     "test_config_file/yaml_configs/openai4o_config.yaml",
-                     "test_config_file/yaml_configs/stub_config.yaml",
-                     "test_config_file/yaml_configs/stub_custom_token_counter.yaml"]
+yaml_config_files = [
+    "test_config_file/yaml_configs/claude2_config.yaml",
+    "test_config_file/yaml_configs/claude2_openai_config.yaml",
+    "test_config_file/yaml_configs/gemini_1.5_flash_config.yaml",
+    "test_config_file/yaml_configs/ollama_config.yaml",
+    "test_config_file/yaml_configs/ollama_openai_config.yaml",
+    "test_config_file/yaml_configs/openai3.5_turbo_config.yaml",
+    "test_config_file/yaml_configs/openai4o_config.yaml",
+    "test_config_file/yaml_configs/stub_config.yaml",
+    "test_config_file/yaml_configs/stub_custom_token_counter.yaml",
+]
 
 
 @pytest.mark.parametrize("config_file", yaml_config_files)
-@patch.dict(os.environ, {"OPENAI_API_KEY": "test_key"})  
-@patch("camel.models.base_model.BaseModelBackend.run") 
+@patch.dict(os.environ, {"OPENAI_API_KEY": "test_key"})
+@patch("camel.models.base_model.BaseModelBackend.run")
 def test_model_factory_yaml(mock_run, config_file):
     """Test ModelFactory with YAML files without real API calls."""
 
@@ -242,9 +246,9 @@ def test_model_factory_yaml(mock_run, config_file):
         "choices": [
             {
                 "finish_reason": "stop",
-                "message": {"role": "assistant", "content": "Hello, test!"}
+                "message": {"role": "assistant", "content": "Hello, test!"},
             }
-        ]
+        ],
     }
 
     model_inst = ModelFactory.create_from_yaml(str(yaml_path))

@@ -62,22 +62,28 @@ assistant_response = agent.step(user_msg)
 print(assistant_response.msg.content)
 
 
-
 # Creating a model instance by loading model configs from a JSON file.
-model_inst_from_json = ModelFactory.create_from_json("config_files/config.json")
+model_inst_from_json = ModelFactory.create_from_json(
+    "config_files/config.json"
+)
 
 # Using the same system message and user message.
-agent_1 = ChatAgent(system_message=assistant_sys_msg, model=model_inst_from_json)
+agent_1 = ChatAgent(
+    system_message=assistant_sys_msg, model=model_inst_from_json
+)
 
 agent_1_response = agent.step(user_msg)
 print(agent_1_response.msg.content)
 
 
-
 # Creating a model instance by loading model configs fomr a YAML file.
-model_inst_from_yaml = ModelFactory.create_from_yaml("config_files/config.yaml")
+model_inst_from_yaml = ModelFactory.create_from_yaml(
+    "config_files/config.yaml"
+)
 
-agent_2 = ChatAgent(system_message=assistant_sys_msg, model=model_inst_from_yaml)
+agent_2 = ChatAgent(
+    system_message=assistant_sys_msg, model=model_inst_from_yaml
+)
 
 agent_2_response = agent_2.step(user_msg)
 print(agent_2_response.msg.content)
