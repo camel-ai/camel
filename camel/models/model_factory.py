@@ -166,8 +166,6 @@ class ModelFactory:
             else:
                 platform_name = model_platform_str.upper()  
 
-            print(f"Converted platform name: {platform_name}")  # Debugging line
-
             if platform_name not in ModelPlatformType.__members__:
                 raise ValueError(
                     f"Invalid model platform: {platform_name}. "
