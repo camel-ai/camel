@@ -1,12 +1,13 @@
 import time
 from enum import Enum, auto
 from string import Template
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Union
 
 from github import Github
 from pydantic import BaseModel
 
 from camel.agents import ChatAgent
+from camel.embeddings import OpenAIEmbedding
 from camel.messages import BaseMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.responses import ChatAgentResponse
@@ -14,6 +15,7 @@ from camel.retrievers import VectorRetriever
 from camel.types import ModelPlatformType, ModelType, RoleType, \
     OpenAIBackendRole
 from camel.logger import get_logger
+# from camel.utils.chunker import CodeChunker
 
 logger = get_logger(__name__)
 
@@ -55,7 +57,7 @@ class RepoAgent(ChatAgent):
         system_message: Optional[str] = "You are a code assistant with repo context.",
         repo_paths: Optional[List[str]] = None,
         model: Optional[BaseModelBackend] = None,
-        max_context_tokens: int = 2000000,
+        max_context_tokens: int = 2000,
         vector_retriever: Optional[VectorRetriever] = None,
         github_auth_token: Optional[str] = None,
         chunk_size: Optional[int] = 8192,
@@ -66,8 +68,8 @@ class RepoAgent(ChatAgent):
     ):
         if model is None:
             model = ModelFactory.create(
-                model_platform=ModelPlatformType.ANTHROPIC,
-                model_type=ModelType.CLAUDE_3_5_SONNET,
+                model_platform=ModelPlatformType.OPENAI,
+                model_type=ModelType.GPT_4O_MINI,
             )
 
         super().__init__(system_message=system_message, model=model, **kwargs)
@@ -81,7 +83,7 @@ class RepoAgent(ChatAgent):
         self.top_k = top_k
         self.similarity = similarity
         self.collection_name = collection_name
-        self.prompt_template = Template("$type: $repo"
+        self.prompt_template = Template("$type: $repo\n"
             "You are an AI coding assistant. "
             "Your task is to generate code based on provided GitHub "
             "repositories. \n"
@@ -99,7 +101,7 @@ class RepoAgent(ChatAgent):
             "Now, analyze the repositories and generate the "
             "required code.")
         self.full_text = ""
-
+        # self.chunker = CodeChunker(chunk_size=chunk_size)
         if len(self.repos) > 0:
             self.construct_full_text()
             self.num_tokens = self.count_tokens()
@@ -233,10 +235,10 @@ class RepoAgent(ChatAgent):
                 for f in repo.contents:
                     self.vector_retriever.process(
                         content=f.content,
-                        chunk_type="chunk_by_title",
-                        max_characters=self.chunk_size,
+                        max_characters=200000,
                         should_chunk=True,
                         file_path=f.file_path,
+                        # chunker=self.chunker
                     )
         else:
             self.check_switch_mode()
@@ -260,10 +262,10 @@ class RepoAgent(ChatAgent):
                 for f in repo.contents:
                     self.vector_retriever.process(
                         content=f.content,
-                        chunk_type="chunk_by_title",
-                        max_characters=self.chunk_size,
+                        max_characters=200000,
                         should_chunk=True,
                         file_path=f.file_path,
+                        # chunker=self.chunker,
                     )
             self.reset()
             return True
@@ -271,7 +273,7 @@ class RepoAgent(ChatAgent):
 
     def step(
         self,
-        input_message: BaseMessage,
+        input_message: Union[BaseMessage, str],
         *args,
         **kwargs
     ) -> ChatAgentResponse:
@@ -280,12 +282,15 @@ class RepoAgent(ChatAgent):
         """
         if (self.processing_mode == ProcessingMode.RAG and
                 self.vector_retriever):
+            user_query = input_message
+            if isinstance(input_message, BaseMessage):
+                user_query = input_message.content
             retrieved_content = []
             retries = 3
             for attempt in range(retries):
                 try:
                     raw_rag_content = self.vector_retriever.query(
-                        query=input_message.content,
+                        query=user_query,
                         top_k=self.top_k,
                         similarity_threshold=self.similarity,
                     )
@@ -302,14 +307,12 @@ class RepoAgent(ChatAgent):
                                 }
                             )
                             paths.append(record["file_path"])
-
                     retrieved_content = sorted(
                         retrieved_content,
                         key=lambda x: x["similarity"],
                         reverse=True,
                     )
 
-                    user_query = input_message.content
                     full_prompt = self.prompt_template.safe_substitute(
                         type="Retrieved code",
                         repo="\n".join(
@@ -320,6 +323,8 @@ class RepoAgent(ChatAgent):
                         )
                     )
                     input_message.content = user_query + "\n" + full_prompt
+                    print(f"full prompt: {full_prompt}")
+                    break
                 except Exception:
                     if attempt < retries - 1:
                         sleep_time = 2 ** attempt
@@ -333,7 +338,7 @@ class RepoAgent(ChatAgent):
                             "attempts."
                         )
 
-        return super().step(input_message, *args, **kwargs)
+        # return super().step(input_message, *args, **kwargs)
 
     def reset(self):
         super().reset()
