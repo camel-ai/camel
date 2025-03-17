@@ -839,9 +839,10 @@ async def test_few_shot_generator():
         msgs=[
             MagicMock(
                 parsed=DataPoint(
-                        question='Generated Question',
-                        rationale = 'Generated Rationale',
-                        final_answer = "final"),
+                    question='Generated Question',
+                    rationale='Generated Rationale',
+                    final_answer="final",
+                ),
             )
         ]
     )
@@ -909,7 +910,7 @@ async def test_generate_new():
                     parsed=DataPoint(
                         question="What is 5 + 6?",
                         rationale="print(5 + 6)",
-                        final_answer="11"
+                        final_answer="11",
                     )
                 )
             ]
@@ -921,7 +922,7 @@ async def test_generate_new():
                     parsed=DataPoint(
                         question="What is 3 + 5?",
                         rationale="print(2 + )",  # Syntax error
-                        final_answer="None"  # No valid answer
+                        final_answer="None",  # No valid answer
                     )
                 )
             ]
@@ -932,13 +933,12 @@ async def test_generate_new():
                     parsed=DataPoint(
                         question="What is 7 + 8?",
                         rationale="print(7 + 8)",
-                        final_answer="15"
+                        final_answer="15",
                     )
                 )
             ]
         ),
     ]
-
 
     # Create FewShotGenerator with mocks
     dataset = FewShotGenerator(
@@ -1017,7 +1017,7 @@ async def test_generate_new_with_max_retries():
                     parsed=DataPoint(
                         question="What is 3 + 4?",
                         rationale="print(3 + 4)",
-                        final_answer="7"
+                        final_answer="7",
                     )
                 )
             ]
@@ -1029,7 +1029,7 @@ async def test_generate_new_with_max_retries():
                     parsed=DataPoint(
                         question="What is 5 + 6?",
                         rationale="print(5 + )",  # Syntax error
-                        final_answer="None"  # No valid answer
+                        final_answer="None",  # No valid answer
                     )
                 )
             ]
@@ -1041,7 +1041,7 @@ async def test_generate_new_with_max_retries():
                     parsed=DataPoint(
                         question="What is 7 + 8?",
                         rationale="print(7 + )",  # Syntax error
-                        final_answer="None"
+                        final_answer="None",
                     )
                 )
             ]
@@ -1053,7 +1053,7 @@ async def test_generate_new_with_max_retries():
                     parsed=DataPoint(
                         question="What is 9 + 10?",
                         rationale="print(9 + )",  # Syntax error
-                        final_answer="None"
+                        final_answer="None",
                     )
                 )
             ]
@@ -1065,13 +1065,12 @@ async def test_generate_new_with_max_retries():
                     parsed=DataPoint(
                         question="What is 11 + 12?",
                         rationale="print(11 + 12)",
-                        final_answer="23"
+                        final_answer="23",
                     )
                 )
             ]
         ),
     ]
-
 
     model = StubModel("OpenAI")
 
