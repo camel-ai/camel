@@ -24,7 +24,7 @@ from camel.types import ModelType
 
 user_role_message = {
     "role": "user",
-    "content": "How fast can you solve a math problem ?",
+    "content": "How fast can you solve a math problem?",
 }
 
 model_types = [
@@ -39,6 +39,7 @@ model_types = [
     ModelType.NVIDIA_LLAMA3_1_405B_INSTRUCT,
     ModelType.NVIDIA_LLAMA3_2_1B_INSTRUCT,
     ModelType.NVIDIA_LLAMA3_2_3B_INSTRUCT,
+    ModelType.NVIDIA_LLAMA3_3_70B_INSTRUCT,
 ]
 
 
@@ -54,7 +55,7 @@ def mock_openai_client():
     with patch("camel.models.nvidia_model.OpenAI") as mock_openai:
         mock_client = MagicMock()
         mock_openai.return_value = mock_client
-        mock_client.chat.completion.create.return_value = None
+        mock_client.chat.completions.create.return_value = None
         yield mock_client
 
 
@@ -68,7 +69,7 @@ def mock_async_openai_client():
         # functionality
         mock_chat = AsyncMock()
         mock_chat.return_value = None
-        mock_client.chat.completion.create.return_value = mock_chat
+        mock_client.chat.completions.create.return_value = mock_chat
         yield mock_client
 
 
@@ -109,8 +110,8 @@ def test_nvidia_model_run(mock_openai_client, model_type: ModelType):
     # Check message contents
     assert kwargs["messages"][0]["role"] == 'user'
     assert (
-        "How fast can you solve a math problem ?"
-        in kwargs["messages"][0]["content"]
+        kwargs["messages"][0]["content"]
+        == "How fast can you solve a math problem?"
     )
 
 
@@ -141,8 +142,8 @@ async def test_nvidia_model_arun(
     # Check message contents
     assert kwargs["messages"][0]["role"] == 'user'
     assert (
-        "How fast can you solve a math problem ?"
-        in kwargs["messages"][0]["content"]
+        kwargs["messages"][0]["content"]
+        == "How fast can you solve a math problem?"
     )
 
 
