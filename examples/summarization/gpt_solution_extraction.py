@@ -148,7 +148,7 @@ def solution_extraction(
     # Save new dictionary as JSON file
     save_path = os.path.join(args.solution_dir, f'{file_name}.json')
     with open(save_path, "w") as f:
-        json.dump(conversation, f)
+        json.dump(conversation, f, ensure_ascii=False)
 
 
 def main():

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.29"
+version = "0.2.33"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -26,11 +26,8 @@ dependencies = [
     "tiktoken>=0.7.0,<0.8",
     "colorama>=0.4.6,<0.5",
     "jsonschema>=4,<5",
-    "protobuf>=5,<6",
     "docstring-parser>=0.15,<0.16",
     "pydantic>=1.9,<2.10",
-    "eval-type-backport==0.2.0",
-    "curl_cffi==0.6.2",
     "httpx>=0.28.0,<1.0.0dev",
     "psutil>=5.9.8,<6",
     "pyyaml>=6.0.2,<7",
@@ -96,6 +93,7 @@ web_tools = [
     "fastapi>=0.115.11",
     "playwright>=1.50.0",
     "html2text>=2024.2.26",
+    "beautifulsoup4>=4,<5",
 ]
 document_tools = [
     "beautifulsoup4>=4,<5",

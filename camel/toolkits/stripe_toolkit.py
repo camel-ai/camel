@@ -85,7 +85,7 @@ class StripeToolkit(BaseToolkit):
             self.logger.info(f"Retrieving customer with ID: {customer_id}")
             customer = stripe.Customer.retrieve(customer_id)
             self.logger.info(f"Retrieved customer: {customer.id}")
-            json_string = json.dumps(customer)
+            json_string = json.dumps(customer, ensure_ascii=False)
             return json_string
         except Exception as e:
             return self.handle_exception("customer_get", e)
@@ -109,7 +109,9 @@ class StripeToolkit(BaseToolkit):
             self.logger.info(
                 f"Successfully retrieved {len(customers)} customers."
             )
-            return json.dumps([customer for customer in customers])
+            return json.dumps(
+                [customer for customer in customers], ensure_ascii=False
+            )
         except Exception as e:
             return self.handle_exception("customer_list", e)
 
@@ -128,7 +130,7 @@ class StripeToolkit(BaseToolkit):
             self.logger.info(
                 f"Successfully retrieved account balance: {balance}."
             )
-            return json.dumps(balance)
+            return json.dumps(balance, ensure_ascii=False)
         except Exception as e:
             return self.handle_exception("balance_get", e)
 
@@ -154,7 +156,10 @@ class StripeToolkit(BaseToolkit):
                 f"Successfully retrieved {len(transactions)} "
                 "balance transactions."
             )
-            return json.dumps([transaction for transaction in transactions])
+            return json.dumps(
+                [transaction for transaction in transactions],
+                ensure_ascii=False,
+            )
         except Exception as e:
             return self.handle_exception("balance_transaction_list", e)
 
@@ -174,7 +179,7 @@ class StripeToolkit(BaseToolkit):
             self.logger.info(f"Retrieving payment with ID: {payment_id}")
             payment = stripe.PaymentIntent.retrieve(payment_id)
             self.logger.info(f"Retrieved payment: {payment.id}")
-            return json.dumps(payment)
+            return json.dumps(payment, ensure_ascii=False)
         except Exception as e:
             return self.handle_exception("payment_get", e)
 
@@ -197,7 +202,9 @@ class StripeToolkit(BaseToolkit):
             self.logger.info(
                 f"Successfully retrieved {len(payments)} payments."
             )
-            return json.dumps([payment for payment in payments])
+            return json.dumps(
+                [payment for payment in payments], ensure_ascii=False
+            )
         except Exception as e:
             return self.handle_exception("payment_list", e)
 
@@ -217,7 +224,7 @@ class StripeToolkit(BaseToolkit):
             self.logger.info(f"Retrieving refund with ID: {refund_id}")
             refund = stripe.Refund.retrieve(refund_id)
             self.logger.info(f"Retrieved refund: {refund.id}")
-            return json.dumps(refund)
+            return json.dumps(refund, ensure_ascii=False)
         except Exception as e:
             return self.handle_exception("refund_get", e)
 
@@ -238,7 +245,9 @@ class StripeToolkit(BaseToolkit):
             self.logger.info(f"Listing refunds with limit={limit}")
             refunds = stripe.Refund.list(limit=limit).data
             self.logger.info(f"Successfully retrieved {len(refunds)} refunds.")
-            return json.dumps([refund for refund in refunds])
+            return json.dumps(
+                [refund for refund in refunds], ensure_ascii=False
+            )
         except Exception as e:
             return self.handle_exception("refund_list", e)
 

@@ -120,7 +120,7 @@ class BaseGenerator(abc.ABC):
         try:
             with file_path.open("w", encoding="utf-8") as f:
                 for datapoint in self._data:
-                    json.dump(datapoint.to_dict(), f)
+                    json.dump(datapoint.to_dict(), f, ensure_ascii=False)
                     f.write("\n")  # Ensure each entry is on a new line
             logger.info(f"Dataset saved successfully to {file_path}")
         except IOError as e:
