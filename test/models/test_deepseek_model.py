@@ -40,7 +40,7 @@ def mock_openai_client():
     with patch("camel.models.deepseek_model.OpenAI") as mock_openai:
         mock_client = MagicMock()
         mock_openai.return_value = mock_client
-        mock_client.chat.completion.create.return_value = (
+        mock_client.chat.completions.create.return_value = (
             deepseek_model_response
         )
         yield mock_client
@@ -56,7 +56,7 @@ def mock_async_openai_client():
         # functionality
         mock_chat = AsyncMock()
         mock_chat.return_value = deepseek_model_response
-        mock_client.chat.completion.create.return_value = mock_chat
+        mock_client.chat.completions.create.return_value = mock_chat
         yield mock_client
 
 
@@ -134,15 +134,25 @@ def test_deepseek_run(mock_openai_client, model_type: ModelType):
     if model_type in [
         ModelType.DEEPSEEK_REASONER,
     ]:
-        # Check that the reasoning message is parsed
-        # TODO findout how to make this assertion work
-        """assert (
-            response.choices[0].message.content.strip()  # type: ignore[union-attr]
-            == (
-                f"<think>\n{deepseek_model_response.choices[0].message.reasoning_content}\n</think>\n"
-            )
+        # Check that the reasoning message is parsed correctly
+        # The expected content is the reasoning content wrapped in <think> tags
+        # followed by the original content
+        expected_content = (
+            f"<think>\n{deepseek_model_response.choices[0].message.reasoning_content}\n</think>\n"
             + deepseek_model_response.choices[0].message.content
-        )"""
+        )
+
+        # Create a DeepSeekModel instance to test the _post_handle_response method
+        with patch.dict(os.environ, {"GET_REASONING_CONTENT": "True"}):
+            # Mock the response that would be returned after post-processing
+            processed_response = model._post_handle_response(
+                deepseek_model_response
+            )
+            # Verify the processed content matches our expectation
+            assert (
+                processed_response.choices[0].message.content
+                == expected_content
+            )
 
 
 @pytest.mark.model_backend
