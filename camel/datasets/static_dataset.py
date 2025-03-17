@@ -336,15 +336,15 @@ class StaticDataset(Dataset):
         r"""Load and parse a dataset from a JSONL file.
 
         Args:
-            data (:obj:`Path`): Path to the JSONL file.
+            data (Path): Path to the JSONL file.
 
         Returns:
-            :obj:`List[Dict[str, Any]]`: A list of datapoint dictionaries.
+            List[Dict[str, Any]]: A list of datapoint dictionaries.
 
         Raises:
             FileNotFoundError: If the specified JSONL file does not exist.
             ValueError: If a line in the file contains invalid JSON or
-            is not a dictionary.
+                is not a dictionary.
         """
         if not data.exists():
             raise FileNotFoundError(f"JSONL file not found: {data}")
