@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import asyncio
 import os
 import re
 from types import SimpleNamespace
@@ -72,11 +73,14 @@ def mock_async_client_openai():
         mock_client = MagicMock()
         mock_async_client_openai.return_value = mock_client
 
-        async def async_create(*args, **kwargs):
-            return None
+        # Create a proper awaitable mock
+        async_response = MagicMock()
+        future = asyncio.Future()
+        future.set_result(async_response)
 
-        mock_client.chat.completions.create.return_value = async_create()
-        mock_client.beta.chat.completions.parse.return_value = async_create()
+        # Set the return values to be awaitable futures
+        mock_client.chat.completions.create.return_value = future
+        mock_client.beta.chat.completions.parse.return_value = future
         yield mock_client
 
 
@@ -112,6 +116,10 @@ def test_gemini_run(mock_openai_client, model_type: ModelType):
     assert "messages" in kwargs
     assert len(kwargs["messages"]) == 2
 
+    # Check that the first message content is preserved correctly
+    assert kwargs["messages"][0]["content"] == user_role_message["content"]
+    assert kwargs["messages"][0]["role"] == user_role_message["role"]
+
     # Check the model type
     assert "model" in kwargs
     assert kwargs["model"] == model_type
@@ -145,6 +153,7 @@ def test_gemini_run_with_response_format(
 
     # Check that we pass a response format
     assert "response_format" in kwargs
+    assert kwargs["response_format"] == ResponseFormat
 
 
 @pytest.mark.model_backend
@@ -199,6 +208,7 @@ async def test_gemini_arun_with_response_format(
 
     # Check that we pass a response format
     assert "response_format" in kwargs
+    assert kwargs["response_format"] == ResponseFormat
 
 
 @pytest.mark.model_backend
