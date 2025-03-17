@@ -18,6 +18,7 @@ from .chunkr_reader import ChunkrLoader
 from .firecrawl_reader import FirecrawlLoader
 from .jina_url_reader import JinaURLLoader
 from .mineru_extractor import MinerULoader
+from .olmocr_reader import olmOCRLoader
 from .panda_reader import PandasLoader
 from .unstructured_io import UnstructuredIOLoader
 
@@ -32,17 +33,5 @@ __all__ = [
     'MinerULoader',
     'PandasLoader',
     'ApifyLoader',
+    'olmOCRLoader',
 ]
-
-# __all__ = [
-#     'File',
-#     'create_file',
-#     'create_file_from_raw_bytes',
-#     'UnstructuredIO',
-#     'JinaURLReader',
-#     'Firecrawl',
-#     'Apify',
-#     'ChunkrReader',
-#     'PandaReader',
-#     'MinerU',
-# ]

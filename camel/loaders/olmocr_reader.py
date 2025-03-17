@@ -58,11 +58,11 @@ class olmOCRLoader(BaseLoader):
             "beaker-py",
         ]
         for package in required_packages:
-            package_name = package.split('=')[0]
+            package_name = package.split(">")[0].split("=")[0]
             try:
                 importlib.import_module(package_name)
             except ImportError:
-                subprocess.check_all(
+                subprocess.check_call(
                     [sys.executable, "-m", "pip", "install", package]
                 )
 
