@@ -372,6 +372,7 @@ class HuggingFaceDatasetManager(BaseDatasetManager):
                     for record in records
                 ],
                 f,
+                ensure_ascii=False,
             )
             temp_file_path = f.name
 
@@ -411,14 +412,14 @@ class HuggingFaceDatasetManager(BaseDatasetManager):
                         )
                 else:
                     try:
-                        json.dumps(file_content)
+                        json.dumps(file_content, ensure_ascii=False)
                         json_content = file_content
                     except (TypeError, ValueError):
                         raise ValueError(
                             "file_content is not JSON serializable."
                         )
 
-                json.dump(json_content, f)
+                json.dump(json_content, f, ensure_ascii=False)
             elif file_type == "md" or file_type == "txt":
                 f.write(file_content)
             else:

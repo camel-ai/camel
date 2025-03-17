@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import asyncio
 from datetime import datetime
 from typing import List
 
@@ -29,14 +30,12 @@ from .static_dataset import StaticDataset
 
 logger = get_logger(__name__)
 
-SYSTEM_PROMPT = """# **Few-Shot Data Generation System Prompt**
-
-## **You are an advanced data generation assistant.**  
+SYSTEM_PROMPT = """**You are an advanced data generation assistant.**  
 Your goal is to generate high-quality synthetic data points based on 
 provided examples. Your output must be well-structured, 
 logically sound, and formatted correctly. 
 
-## **Instructions:**
+**Instructions:**
 1. **Follow the Structure**  
    Each data point must include:  
    - **Question**: A clear, well-formed query.  
@@ -80,7 +79,8 @@ class FewShotGenerator(BaseGenerator):
             seed_dataset (StaticDataset): Validated static dataset to
                 use for examples.
             verifier (BaseVerifier): Verifier to validate generated content.
-            agent (ChatAgent): Agent to generate new datapoints.
+            model (BaseModelBackend): The underlying LLM that the generating
+            agent will be initiated with.
             seed (int): Random seed for reproducibility. (default: :obj:`42`)
             **kwargs: Additional generator parameters.
         """
@@ -255,5 +255,7 @@ class FewShotGenerator(BaseGenerator):
                 f"after {max_retries} retries."
             )
 
-        self._data.extend(valid_data_points)
+        # Thread-safe way to extend the data list
+        async with asyncio.Lock():
+            self._data.extend(valid_data_points)
         return valid_data_points

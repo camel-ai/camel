@@ -37,7 +37,7 @@ def generate_tool_prompt(tool_schema_list: List[Dict[str, Any]]) -> str:
         tool_info = tool["function"]
         tool_name = tool_info["name"]
         tool_description = tool_info["description"]
-        tool_json = json.dumps(tool_info, indent=4)
+        tool_json = json.dumps(tool_info, indent=4, ensure_ascii=False)
 
         prompt = (
             f"Use the function '{tool_name}' to '{tool_description}':\n"
