@@ -914,6 +914,750 @@ class BaseBrowser:
         markdown_content = html2text(html_content)
         return markdown_content
 
+class AsyncBaseBrowser:
+    def __init__(self, headless: bool = True, cache_dir: Optional[str] = None, async_mode: bool = True):
+        r"""
+        Initialize the asynchronous browser core.
+
+        Args:
+            headless (bool): Whether to run the browser in headless mode.
+            cache_dir (Optional[str]): The directory to store cache files.
+            async_mode (bool): Mode flag; if True, functions 
+        
+        Returns:
+            None
+        """
+        from playwright.sync_api import (
+            sync_playwright,
+        )
+        from playwright.async_api import (
+            async_playwright,
+        )
+        
+        self.headless = headless
+        self.async_mode = async_mode
+        self.history: list = []            # Stores history of operations
+        self.page_history: list = []       # Stores the history of visited pages
+        
+        # Initialize Playwright based on the mode
+        if self.async_mode:
+            # Note: In async mode, must later await self.playwright.start()
+            self.playwright = async_playwright()
+        else:
+            # For synchronous mode, start Playwright immediately.
+            self.playwright = sync_playwright().start()
+        
+        # Set the cache directory
+        self.cache_dir = "tmp/" if cache_dir is None else cache_dir
+        os.makedirs(self.cache_dir, exist_ok=True)
+
+        # Load the page script
+        abs_dir_path = os.path.dirname(os.path.abspath(__file__))
+        page_script_path = os.path.join(abs_dir_path, "page_script.js")
+        
+        try:
+            with open(page_script_path, "r", encoding='utf-8') as f:
+                self.page_script = f.read()
+            f.close()
+        except FileNotFoundError:
+            raise FileNotFoundError(
+                f"Page script file not found at path: {page_script_path}"
+            )
+    async def async_init(self) -> None:
+        r"""Asynchronously initialize the browser."""
+        # Start Playwright asynchronously (only needed in async mode)
+        self.playwright = await self.playwright.start()
+        # Launch the browser asynchronously.
+        self.browser = await self.playwright.chromium.launch(headless=self.headless)
+        # Create a new context asynchronously.
+        self.context = await self.browser.new_context(accept_downloads=True)
+        # Create a new page asynchronously.
+        self.page = await self.context.new_page()
+
+    def init(self) -> None:
+        r"""Initialize the browser."""
+        if self.async_mode:
+            logger.warning("Async mode is enabled. Please use 'await self.async_init()' in an asynchronous context to initialize the browser.")
+        else:
+            # Synchronous initialization
+            self.browser = self.playwright.chromium.launch(headless=self.headless)
+            self.context = self.browser.new_context(accept_downloads=True)
+            self.page = self.context.new_page()
+
+    def clean_cache(self) -> None:
+        r"""Delete the cache directory and its contents."""
+        if os.path.exists(self.cache_dir):
+            shutil.rmtree(self.cache_dir)
+    
+    async def async_wait_for_load(self, timeout: int = 20) -> None:
+        r"""
+        Asynchronously Wait for a certain amount of time for the page to load.
+
+        Args:
+            timeout (int): Timeout in seconds.
+        """
+        timeout_ms = timeout * 1000
+        await self.page.wait_for_load_state("load", timeout=timeout_ms)
+        
+        # TODO: check if this is needed
+        await asyncio.sleep(2)
+    
+    def wait_for_load(self, timeout: int = 20) -> None:
+        r"""Wait for a certain amount of time for the page to load.
+
+        Args:
+            timeout (int): Timeout in seconds.
+        """
+        if self.async_mode:
+            return self.async_wait_for_load(timeout)
+        else:
+            return async_to_sync(self.async_wait_for_load)(timeout)
+        
+    async def async_click_blank_area(self) -> None:
+        r"""Asynchronously click a blank area of the page to unfocus the current element."""
+        await self.page.mouse.click(0, 0)
+        await self.wait_for_load()
+    def click_blank_area(self) -> None:
+        r"""Click a blank area of the page to unfocus the current element."""
+        if self.async_mode:
+            return self.async_click_blank_area()
+        else:
+            return async_to_sync(self.async_click_blank_area)()
+    
+    async def async_visit_page(self, url: str, timeout: int = 30000, max_retries: int = 2) -> None:
+        r"""Asynchronously visit a page with the given URL, retrying with an increased timeout if necessary.
+        
+        Raises:
+            Exception: If the page cannot be accessed after the maximum retries.
+        """
+        current_timeout = timeout
+        for _ in range(max_retries):
+            try:
+                await self.page.goto(url, timeout=current_timeout)
+                break
+            except Exception as e:
+                current_timeout *= 2
+                logger.warning(f"Failed to visit page {url}. Retrying with increased timeout.")
+                logger.warning(f"Error message: {e}")
+        else:
+            error_msg = f"Unable to access {url} even after {max_retries} attempts with increased timeouts."
+            logger.warning(error_msg)
+            raise Exception(error_msg)
+        await self.wait_for_load()
+        self.page_url = url
+    
+    def visit_page(self, url: str, timeout: int = 30000, max_retries: int = 2) -> None:
+        r"""Visit a page with the given URL, retrying with an increased timeout if necessary.
+        
+        Raises:
+            Exception: If the page cannot be accessed after the maximum retries.
+        """
+        if self.async_mode:
+            return self.async_visit_page(url, timeout, max_retries)
+        else:
+            return async_to_sync(self.async_visit_page)(url, timeout, max_retries)
+    
+    def ask_question_about_video(self, question: str) -> str:
+        r"""Ask a question about the video on the current page,
+        such as YouTube video.
+
+        Args:
+            question (str): The question to ask.
+
+        Returns:
+            str: The answer to the question.
+        """
+        video_analyzer = VideoAnalysisToolkit()
+        result = video_analyzer.ask_question_about_video(
+            self.page_url, question
+        )
+        return result
+    
+    @retry_on_error()
+    async def async_get_screenshot(
+        self, save_image: bool = False
+    ) -> Tuple[Image.Image, Union[str, None]]:
+        r"""Asynchronously get a screenshot of the current page.
+
+        Args:
+            save_image (bool): Whether to save the image to the cache
+                directory.
+
+        Returns:
+            Tuple[Image.Image, str]: A tuple containing the screenshot
+            image and the path to the image file if saved, otherwise
+            :obj:`None`.
+        """
+        image_data = await self.page.screenshot(timeout=60000)
+        image = Image.open(io.BytesIO(image_data))
+
+        file_path = None
+        if save_image:
+            # Get url name to form a file name
+            url_name = self.page_url.split("/")[-1]
+            for char in ['\\', '/', ':', '*', '?', '"', '<', '>', '|', '.']:
+                url_name = url_name.replace(char, "_")
+                
+            # Get formatted time: mmddhhmmss
+            timestamp = datetime.datetime.now().strftime("%m%d%H%M%S")
+            file_path = os.path.join(
+                self.cache_dir, f"{url_name}_{timestamp}.png"
+            )
+            with open(file_path, "wb") as f:
+                image.save(f, "PNG")
+            f.close()
+    
+        return image, file_path
+    
+    @retry_on_error()
+    def get_screenshot(
+        self, save_image: bool = False
+    ) -> Tuple[Image.Image, Union[str, None]]:
+        r"""Get a screenshot of the current page.
+        
+        Args:
+            save_image (bool): Whether to save the image to the cache
+                directory.
+
+        Returns:
+            Tuple[Image.Image, str]: A tuple containing the screenshot
+            image and the path to the image file if saved, otherwise
+            :obj:`None`.
+        """
+        if self.async_mode:
+            return self.async_get_screenshot(save_image)
+        else:
+            return async_to_sync(self.async_get_screenshot)(save_image)
+    
+    async def async_capture_full_page_screenshots(
+        self, scroll_ratio: float = 0.8
+    ) -> List[str]:
+        r"""Asynchronously capture full page screenshots by scrolling the page with a buffer zone.
+        
+        Args:
+            scroll_ratio (float): The ratio of viewport height to scroll each step (default: 0.8).
+        
+        Returns:
+            List[str]: A list of paths to the captured screenshots.
+        """
+        screenshots = []
+        scroll_height = await self.page.evaluate("document.body.scrollHeight")
+        assert self.page.viewport_size is not None
+        viewport_height = self.page.viewport_size["height"]
+        current_scroll = 0
+        screenshot_index = 1
+        
+        max_height = scroll_height - viewport_height
+        scroll_step = int(viewport_height * scroll_ratio)
+
+        last_height = 0
+        
+        while True:
+            logger.debug(
+                f"Current scroll: {current_scroll}, max_height: "
+                f"{max_height}, step: {scroll_step}"
+            )
+            
+            _, file_path = await self.get_screenshot(save_image=True)
+            screenshots.append(file_path)
+            
+            await self.page.evaluate(f"window.scrollBy(0, {scroll_step})")
+            # Allow time for content to load
+            await asyncio.sleep(0.5)
+            
+            current_scroll = await self.page.evaluate("window.scrollY")
+            # Break if there is no significant scroll
+            if abs(current_scroll - last_height) < viewport_height * 0.1:
+                break
+            
+            last_height = current_scroll
+            screenshot_index += 1
+            
+        return screenshots
+    
+    def capture_full_page_screenshots(
+        self, scroll_ratio: float = 0.8
+    ) -> List[str]:
+        r"""Capture full page screenshots by scrolling the page with a buffer zone.
+        
+        Args:
+            scroll_ratio (float): The ratio of viewport height to scroll each step (default: 0.8).
+            
+        Returns:
+            List[str]: A list of paths to the captured screenshots.
+        """
+        if self.async_mode:
+            return self.async_capture_full_page_screenshots(scroll_ratio)
+        else:
+            return async_to_sync(self.async_capture_full_page_screenshots)(scroll_ratio)
+        
+    async def async_get_visual_viewport(self) -> VisualViewport:
+        r"""Asynchronously get the visual viewport of the current page.
+        
+        Returns:
+            VisualViewport: The visual viewport of the current page.
+        """
+        try:
+            await self.page.evaluate(self.page_script)
+        except Exception as e:
+            logger.warning(f"Error evaluating page script: {e}")
+            
+        return visual_viewport_from_dict(
+            await self.page.evaluate("MultimodalWebSurfer.getVisualViewport();")
+        )
+    
+    def get_visual_viewport(self) -> VisualViewport:
+        r"""Get the visual viewport of the current page.
+        
+        Returns:
+            VisualViewport: The visual viewport of the current page.
+        """
+        if self.async_mode:
+            return self.async_get_visual_viewport()
+        else:
+            return async_to_sync(self.async_get_visual_viewport)()
+        
+    async def async_get_interactive_elements(self) -> Dict[str, InteractiveRegion]:
+        r"""Asynchronously get the interactive elements of the current page.
+        
+        Returns:
+            Dict[str, InteractiveRegion]: A dictionary containing the
+            interactive elements of the current page.
+        """
+        try:
+            await self.page.evaluate(self.page_script)
+        except Exception as e:
+            logger.warning(f"Error evaluating page script: {e}")
+            
+        result = cast(
+            Dict[str, Dict[str, Any]],
+            await self.page.evaluate("MultimodalWebSurfer.getInteractiveRects();"),
+        )
+        
+        typed_results: Dict[str, InteractiveRegion] = {}
+        for k in result:
+            typed_results[k] = interactive_region_from_dict(result[k])
+        
+        return typed_results  # type: ignore[return-value]
+    
+    def get_interactive_elements(self) -> Dict[str, InteractiveRegion]:
+        r"""Get the interactive elements of the current page.
+        
+        Returns:
+            Dict[str, InteractiveRegion]: A dictionary of interactive elements.
+        """
+        if self.async_mode:
+            return self.async_get_interactive_elements()
+        else:
+            return async_to_sync(self.async_get_interactive_elements)()
+    
+    async def async_get_som_screenshot(
+        self,
+        save_image: bool = False,
+    ) -> Tuple[Image.Image, Union[str, None]]:
+        r"""Asynchronously get a screenshot of the current viewport with interactive elements marked.
+        
+        Args:
+            save_image (bool): Whether to save the image to the cache directory.
+        
+        Returns:
+            Tuple[Image.Image, str]: A tuple containing the screenshot image and the path to the image file.
+        
+        """
+        
+        await self.wait_for_load()
+        screenshot, _ = await self.get_screenshot(save_image=False)
+        rects = await self.get_interactive_elements()
+        
+        file_path = None
+        comp, visible_rects, rects_above, rects_below = add_set_of_mark(
+            screenshot,
+            rects,  # type: ignore[arg-type]
+        )
+        if save_image:
+            url_name = self.page_url.split("/")[-1]
+            for char in ['\\', '/', ':', '*', '?', '"', '<', '>', '|', '.']:
+                url_name = url_name.replace(char, "_")
+            timestamp = datetime.datetime.now().strftime("%m%d%H%M%S")
+            file_path = os.path.join(
+                self.cache_dir, f"{url_name}_{timestamp}.png"
+            )
+            with open(file_path, "wb") as f:
+                comp.save(f, "PNG")
+            f.close()
+            
+        return comp, file_path
+    
+    def get_som_screenshot(
+        self,
+        save_image: bool = False,
+    ) -> Tuple[Image.Image, Union[str, None]]:
+        r"""Get a screenshot of the current viewport with interactive elements marked.
+        
+        Args:
+            save_image (bool): Whether to save the image to the cache directory.
+        
+        Returns:
+            Tuple[Image.Image, str]: A tuple containing the screenshot image and the path to the image file.
+        """
+        if self.async_mode:
+            return self.async_get_som_screenshot(save_image)
+        else:
+            return async_to_sync(self.async_get_som_screenshot)(save_image)
+    
+    async def async_scroll_up(self) -> None:
+        r"""Asynchronously scroll up the page."""
+        await self.page.keyboard.press("PageUp")
+    
+    def scroll_up(self) -> None:
+        r"""Scroll up the page."""
+        if self.async_mode:
+            return self.async_scroll_up()
+        else:
+            return async_to_sync(self.async_scroll_up)()
+    
+    async def async_scroll_down(self) -> None:
+        r"""Asynchronously scroll down the page."""
+        await self.page.keyboard.press("PageDown")
+    
+    def scroll_down(self) -> None:
+        r"""Scroll down the page."""
+        if self.async_mode:
+            return self.async_scroll_down()
+        else:
+            return async_to_sync(self.async_scroll_down)()
+    
+    def get_url(self) -> str:
+        r"""Get the URL of the current page."""
+        return self.page.url
+    
+    async def async_click_id(self, identifier: Union[str, int]) -> None:
+        r"""Asynchronously click an element with the given ID.
+        
+        Args:
+            identifier (Union[str, int]): The ID of the element to click.
+        """
+        if isinstance(identifier, int):
+            identifier = str(identifier)
+        target = self.page.locator(f"[__elementId='{identifier}']")
+        
+        try:
+            await target.wait_for(timeout=5000)
+        except (TimeoutError, Exception) as e:
+            logger.debug(f"Error during click operation: {e}")
+            raise ValueError("No such element.") from None
+        
+        await target.scroll_into_view_if_needed()
+        
+        new_page = None
+        try:
+            async with self.page.expect_event("popup", timeout=1000) as page_info:
+                box = cast(Dict[str, Union[int, float]], await target.bounding_box())
+                await self.page.mouse.click(
+                    box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
+                )
+                new_page = page_info.value
+                
+                # If a new page is opened, switch to it
+                if new_page:
+                    self.page_history.append(deepcopy(self.page.url))
+                    self.page = new_page
+        except (TimeoutError, Exception) as e:
+            logger.debug(f"Error during click operation: {e}")
+        
+        await self.wait_for_load()
+    
+    def click_id(self, identifier: Union[str, int]) -> None:
+        r"""Click an element with the given identifier."""
+        if self.async_mode:
+            return self.async_click_id(identifier)
+        else:
+            return async_to_sync(self.async_click_id)(identifier)
+        
+    async def async_extract_url_content(self) -> str:
+        r"""Asynchronously extract the content of the current page."""
+        content = await self.page.content()
+        return content
+
+    def extract_url_content(self) -> str:
+        r"""Extract the content of the current page."""
+        if self.async_mode:
+            return self.async_extract_url_content()
+        else:
+            return async_to_sync(self.async_extract_url_content)()
+
+    async def async_download_file_id(self, identifier: Union[str, int]) -> str:
+        r"""Asynchronously download a file with the given selector.
+        
+        Args:
+            identifier (Union[str, int]): The identifier of the file to download.
+            
+        Returns:
+            str: The path to the downloaded file.
+        """
+        if isinstance(identifier, int):
+            identifier = str(identifier)
+        try:
+            target = self.page.locator(f"[__elementId='{identifier}']")
+        except Exception as e:
+            logger.debug(f"Error during download operation: {e}")
+            logger.warning(f"Element with identifier '{identifier}' not found.")
+            return f"Element with identifier '{identifier}' not found."
+        
+        await target.scroll_into_view_if_needed()
+        
+        file_path = os.path.join(self.cache_dir)
+        await self.wait_for_load()
+        
+        try:
+            # 异步等待下载事件，设置超时时间（例如 5000 毫秒）
+            async with self.page.expect_download(timeout=5000) as download_info:
+                await target.click()
+                download = await download_info.value
+                file_name = download.suggested_filename
+                file_path = os.path.join(file_path, file_name)
+                await download.save_as(file_path)
+            return f"Downloaded file to path '{file_path}'."
+        except Exception as e:
+            logger.debug(f"Error during download operation: {e}")
+            return f"Failed to download file with identifier '{identifier}'."
+        
+    def download_file_id(self, identifier: Union[str, int]) -> str:
+        r"""Download a file with the given identifier."""
+        if self.async_mode:
+            return self.async_download_file_id(identifier)
+        else:
+            return async_to_sync(self.async_download_file_id)(identifier)
+    
+    async def async_fill_input_id(self, identifier: Union[str, int], text: str) -> str:
+        r"""Asynchronously fill an input field with the given text, and then press Enter.
+        
+        Args:
+            identifier (Union[str, int]): The identifier of the input field.
+            text (str): The text to fill.
+            
+        Returns:
+            str: The result of the action.
+        """
+        if isinstance(identifier, int):
+            identifier = str(identifier)
+        
+        try:
+            target = self.page.locator(f"[__elementId='{identifier}']")
+        except Exception as e:
+            logger.debug(f"Error during fill operation: {e}")
+            logger.warning(f"Element with identifier '{identifier}' not found.")
+            return f"Element with identifier '{identifier}' not found."
+        
+        await target.scroll_into_view_if_needed()
+        await target.focus()
+        try:
+            await target.fill(text)
+        except Exception as e:
+            logger.debug(f"Error during fill operation: {e}")
+            await target.press_sequentially(text)
+        
+        await target.press("Enter")
+        await self.wait_for_load()
+        return (
+            f"Filled input field '{identifier}' with text '{text}' "
+            f"and pressed Enter."
+        )
+    
+    def fill_input_id(self, identifier: Union[str, int], text: str) -> str:
+        r"""Fill an input field with the given text, and then press Enter."""
+        if self.async_mode:
+            return self.async_fill_input_id(identifier, text)
+        else:
+            return async_to_sync(self.async_fill_input_id)(identifier, text)
+    
+    async def async_scroll_to_bottom(self) -> str:
+        r"""Asynchronously scroll to the bottom of the page."""
+        await self.page.evaluate("window.scrollTo(0, document.body.scrollHeight);")
+        await self.wait_for_load()
+        return "Scrolled to the bottom of the page."
+    
+    def scroll_to_bottom(self) -> str:
+        r"""Scroll to the bottom of the page."""
+        if self.async_mode:
+            return self.async_scroll_to_bottom()
+        else:
+            return async_to_sync(self.async_scroll_to_bottom)()
+    
+    async def async_scroll_to_top(self) -> str:
+        r"""Asynchronously scroll to the top of the page."""
+        await self.page.evaluate("window.scrollTo(0, 0);")
+        await self.wait_for_load()
+        return "Scrolled to the top of the page."
+    
+    def scroll_to_top(self) -> str:
+        r"""Scroll to the top of the page."""
+        if self.async_mode:
+            return self.async_scroll_to_top()
+        else:
+            return async_to_sync(self.async_scroll_to_top)()
+    
+    async def async_hover_id(self, identifier: Union[str, int]) -> str:
+        r"""Asynchronously hover over an element with the given identifier.
+        
+        Args:
+            identifier (Union[str, int]): The identifier of the element to hover over.
+            
+        Returns:
+            str: The result of the action.
+        """
+        if isinstance(identifier, int):
+            identifier = str(identifier)
+        try:
+            target = self.page.locator(f"[__elementId='{identifier}']")
+        except Exception as e:
+            logger.debug(f"Error during hover operation: {e}")
+            logger.warning(
+                f"Element with identifier '{identifier}' not found."
+            )
+            return f"Element with identifier '{identifier}' not found."
+        await target.scroll_into_view_if_needed()
+        await target.hover()
+        await self.wait_for_load()
+        return f"Hovered over element with identifier '{identifier}'."
+    
+    def hover_id(self, identifier: Union[str, int]) -> str:
+        r"""Hover over an element with the given identifier."""
+        if self.async_mode:
+            return self.async_hover_id(identifier)
+        else:
+            return async_to_sync(self.async_hover_id)(identifier)
+        
+    async def async_find_text_on_page(self, search_text: str) -> str:
+        r"""Asynchronously find the next given text on the page.It is equivalent to pressing Ctrl + F and searching for the text.
+        
+        Args:
+            search_text (str): The text to search for.
+            
+        Returns:
+            str: The result of the action.
+        """
+        script = f"""
+        (function() {{
+            let text = "{search_text}";
+            let found = window.find(text);
+            if (!found) {{
+                let elements = document.querySelectorAll("*:not(script):not(style)"); 
+                for (let el of elements) {{
+                    if (el.innerText && el.innerText.includes(text)) {{
+                        el.scrollIntoView({{behavior: "smooth", block: "center"}});
+                        el.style.backgroundColor = "yellow";
+                        el.style.border = '2px solid red';
+                        return true;
+                    }}
+                }}
+                return false;
+            }}
+            return true;
+        }})();
+        """
+        found = await self.page.evaluate(script)
+        await self.wait_for_load()
+        if found:
+            return f"Found text '{search_text}' on the page."
+        else:
+            return f"Text '{search_text}' not found on the page."
+    def find_text_on_page(self, search_text: str) -> str:
+        r"""Find the next given text on the page, and scroll the page to the targeted text. It is equivalent to pressing Ctrl + F and searching for the text.
+        
+        Args:
+            search_text (str): The text to search for.
+            
+        Returns:
+            str: The result of the action.
+        """
+        if self.async_mode:
+            return self.async_find_text_on_page(search_text)
+        else:
+            return async_to_sync(self.async_find_text_on_page)(search_text)
+    
+    async def async_back(self) -> str:
+        r"""Asynchronously navigate back to the previous page.
+        
+        Returns:
+            str: The result of the action.
+        """
+        page_url_before = self.page.url
+        await self.page.go_back()
+        
+        page_url_after = self.page.url
+        
+        if page_url_after == "about:blank":
+            await self.visit_page(page_url_before)
+        
+        if page_url_before == page_url_after:
+            # If the page is not changed, try to use the history
+            if len(self.page_history) > 0:
+                await self.visit_page(self.page_history.pop())
+        
+        await asyncio.sleep(1)
+        await self.wait_for_load()
+    
+    def back(self) -> str:
+        r"""Navigate back to the previous page."""
+        if self.async_mode:
+            return self.async_back()
+        else:
+            return async_to_sync(self.async_back)()
+    
+    async def async_close(self) -> None:
+        r"""Asynchronously close the browser."""
+        await self.browser.close()
+    
+    def close(self) -> None:
+        r"""Close the browser."""
+        if self.async_mode:
+            return self.async_close()
+        else:
+            return async_to_sync(self.async_close)()
+    
+    async def async_show_interactive_elements(self) -> None:
+        r"""Asynchronously show simple interactive elements on the current page."""
+        await self.page.evaluate(self.page_script)
+        await self.page.evaluate(
+            """
+            () => {
+                document.querySelectorAll(
+                    'a, button, input, select, textarea, [tabindex]:not([tabindex="-1"]), [contenteditable="true"]'
+                ).forEach(el => {
+                    el.style.border = '2px solid red';
+                });
+            }
+            """
+        )
+
+    def show_interactive_elements(self) -> None:
+        r"""Show simple interactive elements on the current page."""
+        if self.async_mode:
+            return self.async_show_interactive_elements()
+        else:
+            return async_to_sync(self.async_show_interactive_elements)()
+
+    @retry_on_error()
+    async def async_get_webpage_content(self) -> str:
+        r"""Asynchronously extract the content of the current page and convert it to markdown."""
+        from html2text import html2text
+        
+        await self.wait_for_load()
+        html_content = await self.page.content()
+        
+        markdown_content = html2text(html_content)
+        return markdown_content
+
+    @retry_on_error()
+    def get_webpage_content(self) -> str:
+        r"""Extract the content of the current page."""
+        if self.async_mode:
+            return self.async_get_webpage_content()
+        else:
+            return async_to_sync(self.async_get_webpage_content)()
+
+
 
 class BrowserToolkit(BaseToolkit):
     r"""A class for browsing the web and interacting with web pages.
