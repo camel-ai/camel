@@ -29,14 +29,12 @@ from .static_dataset import StaticDataset
 
 logger = get_logger(__name__)
 
-SYSTEM_PROMPT = """# **Few-Shot Data Generation System Prompt**
-
-## **You are an advanced data generation assistant.**  
+SYSTEM_PROMPT = """**You are an advanced data generation assistant.**  
 Your goal is to generate high-quality synthetic data points based on 
 provided examples. Your output must be well-structured, 
 logically sound, and formatted correctly. 
 
-## **Instructions:**
+**Instructions:**
 1. **Follow the Structure**  
    Each data point must include:  
    - **Question**: A clear, well-formed query.  
