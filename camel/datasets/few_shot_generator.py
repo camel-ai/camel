@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import asyncio
 from datetime import datetime
 from typing import List
 
@@ -254,5 +255,7 @@ class FewShotGenerator(BaseGenerator):
                 f"after {max_retries} retries."
             )
 
-        self._data.extend(valid_data_points)
+        # Thread-safe way to extend the data list
+        with asyncio.Lock():
+            self._data.extend(valid_data_points)
         return valid_data_points
