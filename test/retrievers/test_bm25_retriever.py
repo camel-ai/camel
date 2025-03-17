@@ -16,13 +16,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from camel.loaders import Chunk
 from camel.retrievers import BM25Retriever
-
-
-@pytest.fixture
-def mock_unstructured_modules():
-    with patch('camel.retrievers.bm25_retriever.UnstructuredIO') as mock:
-        yield mock
 
 
 def test_bm25retriever_initialization():
@@ -31,8 +26,17 @@ def test_bm25retriever_initialization():
     assert retriever.content_input_path == ""
 
 
-def test_process(mock_unstructured_modules):
-    mock_instance = mock_unstructured_modules.return_value
+def test_load_chunks():
+    retriever = BM25Retriever()
+    mock_chunk1 = Chunk(text='Chunk 1 text', metadata={'id': 'chunk1'})
+    mock_chunk2 = Chunk(text='Chunk 2 text', metadata={'id': 'chunk2'})
+    retriever.load_chunks([mock_chunk1, mock_chunk2])
+    assert retriever.bm25 is not None
+
+
+@patch('camel.loaders.UnstructuredIO')
+def test_process(mock_unstructured_io):
+    mock_instance = mock_unstructured_io.return_value
 
     # Create a mock chunk with metadata
     mock_chunk = MagicMock()
@@ -56,11 +60,11 @@ def test_query(mock_bm25):
     mock_bm25_instance = mock_bm25.return_value
     mock_bm25_instance.get_scores.return_value = [0.8, 0.5]  # Mock scores
 
-    # Create mock chunks with `metadata` attribute
-    mock_chunk1 = MagicMock(text='Chunk 1 text')
-    mock_chunk1.metadata.to_dict.return_value = {'id': 'chunk1'}
-    mock_chunk2 = MagicMock(text='Chunk 2 text')
-    mock_chunk2.metadata.to_dict.return_value = {'id': 'chunk2'}
+    # Create mock chunks as dictionaries with 'text' and 'metadata'
+    # It is the standard format for different chunk types
+    mock_chunk1 = Chunk(text='Chunk 1 text', metadata={'id': 'chunk1'})
+
+    mock_chunk2 = Chunk(text='Chunk 2 text', metadata={'id': 'chunk2'})
 
     retriever = BM25Retriever()
     retriever.bm25 = mock_bm25_instance
