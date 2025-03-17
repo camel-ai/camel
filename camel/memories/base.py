@@ -16,7 +16,7 @@ from abc import ABC, abstractmethod
 from typing import List, Tuple
 
 from camel.memories.records import ContextRecord, MemoryRecord
-from camel.messages import OpenAIMessage
+from camel.messages import BaseMessage
 from camel.utils import BaseTokenCounter
 
 
@@ -85,7 +85,7 @@ class BaseContextCreator(ABC):
     def create_context(
         self,
         records: List[ContextRecord],
-    ) -> Tuple[List[OpenAIMessage], int]:
+    ) -> Tuple[List[BaseMessage], int]:
         r"""An abstract method to create conversational context from the chat
         history.
 
@@ -130,7 +130,7 @@ class AgentMemory(MemoryBlock, ABC):
         """
         pass
 
-    def get_context(self) -> Tuple[List[OpenAIMessage], int]:
+    def get_context(self) -> Tuple[List[BaseMessage], int]:
         r"""Gets chat context with a proper size for the agent from the memory.
 
         Returns:
