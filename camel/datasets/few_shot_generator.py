@@ -78,7 +78,8 @@ class FewShotGenerator(BaseGenerator):
             seed_dataset (StaticDataset): Validated static dataset to
                 use for examples.
             verifier (BaseVerifier): Verifier to validate generated content.
-            agent (ChatAgent): Agent to generate new datapoints.
+            model (BaseModelBackend): The underlying LLM that the generating
+            agent will be initiated with.
             seed (int): Random seed for reproducibility. (default: :obj:`42`)
             **kwargs: Additional generator parameters.
         """
