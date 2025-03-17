@@ -33,7 +33,8 @@ from typing import (
     Union,
     cast,
 )
-
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+import asyncio
 from PIL import Image, ImageDraw, ImageFont
 
 if TYPE_CHECKING:
@@ -85,6 +86,24 @@ unfocus itself (e.g. Menu bar) to automatically render the updated webpage.
 current webpage which contains video, e.g. youtube websites.
 """
 
+ASYNC_ACTIONS = [
+    "fill_input_id",
+    "click_id",
+    "hover_id",
+    "download_file_id",
+    "scroll_up",
+    "scroll_down",
+    "scroll_to_bottom",
+    "scroll_to_top",
+    "back",
+    "stop",
+    "find_text_on_page",
+    "visit_page",
+    "click_blank_area",
+]
+
+
+
 ACTION_WITH_FEEDBACK_LIST = [
     'ask_question_about_video',
     'download_file_id',
@@ -124,6 +143,36 @@ class InteractiveRegion(TypedDict):
     aria_name: str
     v_scrollable: bool
     rects: List[DOMRectangle]
+
+def extract_function_name(s: str) -> str:
+    r"""Extract the pure function name from a string (without parameters or parentheses)
+
+    Args:
+        s (str): Input string, e.g., `1.`**`click_id(14)`**, `scroll_up()`, `'visit_page(url)'`, etc.
+
+    Returns:
+        str: Pure function name (e.g., `click_id`, `scroll_up`, `visit_page`)
+    """
+    # Preprocessing steps
+    s = s.strip()  # Remove leading/trailing whitespace
+    
+    # 1. Remove enclosing symbols (backticks, quotes)
+    s = s.strip('`"\'')
+    
+    # 2. Remove leading numbering (e.g., `12.` or `3.`)
+    if '.' in s[:5]:  # Check for numbering prefix
+        parts = s.split('.', 1)
+        s = parts[1].strip()
+    
+    # 3. Extract core function name (using regular expression)
+    match = re.search(r'^(\w+)\s*\(', s)
+    if match:
+        return match.group(1).strip()
+    else:
+        # If no parentheses detected, return part before first space or special character
+        return s.split(' ')[0].split('(')[0].strip()
+
+
 
 
 def _get_str(d: Any, k: str) -> str:
@@ -1348,7 +1397,6 @@ class AsyncBaseBrowser:
         await self.wait_for_load()
         
         try:
-            # 异步等待下载事件，设置超时时间（例如 5000 毫秒）
             async with self.page.expect_download(timeout=5000) as download_info:
                 await target.click()
                 download = await download_info.value
@@ -2078,3 +2126,534 @@ Your output should be in json format, including the following fields:
 
     def get_tools(self) -> List[FunctionTool]:
         return [FunctionTool(self.browse_url)]
+
+
+class AsyncBrowserToolkit(BaseToolkit):
+    r"""An asynchronous class for browsing the web and interacting with web pages."""
+     
+    def __init__(
+        self,
+        headless: bool = False,
+        cache_dir: Optional[str] = None,
+        history_window: int = 5,
+        web_agent_model: Optional[BaseModelBackend] = None,
+        planning_agent_model: Optional[BaseModelBackend] = None,
+        output_language: str = "en",
+    ):
+        
+        r"""Initialize the AsyncBrowserToolkit instance.
+
+        Args:
+            headless (bool): Whether to run the browser in headless mode.
+            cache_dir (Union[str, None]): The directory to store cache files.
+            history_window (int): The window size for storing the history of
+                actions.
+            web_agent_model (Optional[BaseModelBackend]): The model backend
+                for the web agent.
+            planning_agent_model (Optional[BaseModelBackend]): The model
+                backend for the planning agent.
+        """
+        self.browser = AsyncBaseBrowser(headless=headless, cache_dir=cache_dir)
+        
+        self.history_window = history_window
+        self.web_agent_model = web_agent_model
+        self.planning_agent_model = planning_agent_model
+        self.output_language = output_language
+
+        self.history: list = []
+        self.web_agent, self.planning_agent = self._initialize_agent()
+        
+    def _reset(self):
+        self.web_agent.reset()
+        self.planning_agent.reset()
+        self.history = []
+        os.makedirs(self.browser.cache_dir, exist_ok=True)
+    
+    def _initialize_agent(self) -> Tuple["ChatAgent", "ChatAgent"]:
+        r"""Initialize the agent."""
+        from camel.agents import ChatAgent
+
+        if self.web_agent_model is None:
+            web_agent_model = ModelFactory.create(
+                model_platform=ModelPlatformType.OPENAI,
+                model_type=ModelType.GPT_4O,
+                model_config_dict={"temperature": 0, "top_p": 1},
+            )
+        else:
+            web_agent_model = self.web_agent_model
+
+        if self.planning_agent_model is None:
+            planning_model = ModelFactory.create(
+                model_platform=ModelPlatformType.OPENAI,
+                model_type=ModelType.O3_MINI,
+            )
+        else:
+            planning_model = self.planning_agent_model
+
+        system_prompt = """
+        You are a helpful web agent that can assist users in browsing the web.
+        Given a high-level task, you can leverage predefined browser tools to help users achieve their goals.
+        """
+
+        web_agent = ChatAgent(
+            system_message=system_prompt,
+            model=web_agent_model,
+            output_language=self.output_language,
+        )
+
+        planning_system_prompt = """
+        You are a helpful planning agent that can assist users in planning complex tasks which need multi-step browser interaction.
+        """
+
+        planning_agent = ChatAgent(
+            system_message=planning_system_prompt,
+            model=planning_model,
+            output_language=self.output_language,
+        )
+
+        return web_agent, planning_agent
+    
+    
+    async def async_observe(
+        self, task_prompt: str, detailed_plan: Optional[str] = None
+    ) -> Tuple[str, str, str]:
+        r"""Let agent observe the current environment, and get the next action."""
+
+        detailed_plan_prompt = ""
+
+        if detailed_plan is not None:
+            detailed_plan_prompt = f"""
+        Here is a plan about how to solve the task step-by-step which you must follow: 
+        <detailed_plan>{detailed_plan}<detailed_plan>
+        """
+
+        observe_prompt = f"""
+        Please act as a web agent to help me complete the following high-level task: 
+        <task>{task_prompt}</task>
+        Now, I have made screenshot (only the current viewport, not the full webpage) 
+        based on the current browser state, and marked interactive elements in the 
+        webpage.
+        Please carefully examine the requirements of the task, and current state of 
+        the browser, and provide the next appropriate action to take.
+
+        {detailed_plan_prompt}
+
+        Here are the current available browser functions you can use:
+        {AVAILABLE_ACTIONS_PROMPT}
+
+        Here are the latest {self.history_window} trajectory (at most) you have taken:
+        <history>
+        {self.history[-self.history_window:]}
+        </history>
+
+        Your output should be in json format, including the following fields:
+        - `observation`: The detailed image description about the current viewport. Do 
+        not over-confident about the correctness of the history actions. You should 
+        always check the current viewport to make sure the correctness of the next 
+        action.
+        - `reasoning`: The reasoning about the next action you want to take, and the 
+        possible obstacles you may encounter, and how to solve them. Do not forget to 
+        check the history actions to avoid the same mistakes.
+        - `action_code`: The action code you want to take. It is only one step action 
+        code, without any other texts (such as annotation)
+
+        Here are an example of the output:
+        ```json
+        {{
+            "observation": [IMAGE_DESCRIPTION],
+            "reasoning": [YOUR_REASONING],
+            "action_code": "fill_input_id([ID], [TEXT])"
+        }}
+        
+        {{
+        "observation":  "The current page is a CAPTCHA verification page on Amazon. It asks the user to ..",
+        "reasoning": "To proceed with the task of searching for products, I need to complete..",
+        "action_code": "fill_input_id(3, 'AUXPMR')"
+        }}      
+
+
+        Here are some tips for you:
+        - Never forget the overall question: **{task_prompt}**
+        - Maybe after a certain operation (e.g. click_id), the page content has not 
+        changed. You can check whether the action step is successful by looking at the 
+        `success` of the action step in the history. If successful, it means that the 
+        page content is indeed the same after the click. You need to try other methods.
+        - If using one way to solve the problem is not successful, try other ways. 
+        Make sure your provided ID is correct!
+        - Some cases are very complex and need to be achieve by an iterative process. 
+        You can use the `back()` function to go back to the previous page to try other 
+        methods.
+        - There are many links on the page, which may be useful for solving the 
+        problem. You can use the `click_id()` function to click on the link to see if 
+        it is useful.
+        - Always keep in mind that your action must be based on the ID shown in the 
+        current image or viewport, not the ID shown in the history.
+        - Do not use `stop()` lightly. Always remind yourself that the image only 
+        shows a part of the full page. If you cannot find the answer, try to use 
+        functions like `scroll_up()` and `scroll_down()` to check the full content of 
+        the webpage before doing anything else, because the answer or next key step 
+        may be hidden in the content below.
+        - If the webpage needs human verification, you must avoid processing it. 
+        Please use `back()` to go back to the previous page, and try other ways.
+        - If you have tried everything and still cannot resolve the issue, please stop 
+        the simulation, and report issues you have encountered.
+        - Check the history actions carefully, detect whether you have repeatedly made 
+        the same actions or not.
+        - When dealing with wikipedia revision history related tasks, you need to 
+        think about the solution flexibly. First, adjust the browsing history 
+        displayed on a single page to the maximum, and then make use of the 
+        find_text_on_page function. This is extremely useful which can quickly locate 
+        the text you want to find and skip massive amount of useless information.
+        - Flexibly use interactive elements like slide down selection bar to filter 
+        out the information you need. Sometimes they are extremely useful.
+        ```
+        """
+
+        # get current state
+        som_screenshot, _ = await self.browser.get_som_screenshot(save_image=True)
+        img = _reload_image(som_screenshot)
+        message = BaseMessage.make_user_message(
+            role_name='user', content=observe_prompt, image_list=[img]
+        )
+        resp = self.web_agent.step(message)
+
+        resp_content = resp.msgs[0].content
+
+        resp_dict = _parse_json_output(resp_content)
+        observation_result: str = resp_dict.get("observation", "")
+        reasoning_result: str = resp_dict.get("reasoning", "")
+        action_code: str = resp_dict.get("action_code", "")
+        if action_code and "(" in action_code and ")" not in action_code:
+            action_match = re.search(
+                r'"action_code"\s*:\s*[`"]([^`"]*\([^)]*\))[`"]', resp_content
+            )
+            if action_match:
+                action_code = action_match.group(1)
+            else:
+                logger.warning(
+                    f"Incomplete action_code detected: {action_code}"
+                )
+                if action_code.startswith("fill_input_id("):
+                    parts = action_code.split(",", 1)
+                    if len(parts) > 1:
+                        id_part = (
+                            parts[0].replace("fill_input_id(", "").strip()
+                        )
+                        action_code = f"fill_input_id({id_part}, 'Please fill the text here.')"
+
+        action_code = action_code.replace("`", "").strip()
+
+        return observation_result, reasoning_result, action_code
+    
+    
+    async def async_act(self, action_code: str) -> Tuple[bool, str]:
+        r"""Let agent act based on the given action code.
+        Args:
+            action_code (str): The action code to act.
+
+        Returns:
+            Tuple[bool, str]: A tuple containing a boolean indicating whether
+                the action was successful, and the information to be returned.
+        """
+
+        def _check_if_with_feedback(action_code: str) -> bool:
+            r"""Check if the action code needs feedback."""
+
+            for action_with_feedback in ACTION_WITH_FEEDBACK_LIST:
+                if action_with_feedback in action_code:
+                    return True
+
+            return False
+        def _fix_action_code(action_code: str) -> str:
+            r"""Fix potential missing quotes in action code"""
+
+            match = re.match(r'(\w+)\((.*)\)', action_code)
+            if not match:
+                return action_code
+
+            func_name, args_str = match.groups()
+
+            args = []
+            current_arg = ""
+            in_quotes = False
+            quote_char = None
+
+            for char in args_str:
+                if char in ['"', "'"]:
+                    if not in_quotes:
+                        in_quotes = True
+                        quote_char = char
+                        current_arg += char
+                    elif char == quote_char:
+                        in_quotes = False
+                        quote_char = None
+                        current_arg += char
+                    else:
+                        current_arg += char
+                elif char == ',' and not in_quotes:
+                    args.append(current_arg.strip())
+                    current_arg = ""
+                else:
+                    current_arg += char
+
+            if current_arg:
+                args.append(current_arg.strip())
+
+            fixed_args = []
+            for arg in args:
+                if (
+                    (arg.startswith('"') and arg.endswith('"'))
+                    or (arg.startswith("'") and arg.endswith("'"))
+                    or re.match(r'^-?\d+(\.\d+)?$', arg)
+                    or re.match(r'^-?\d+\.?\d*[eE][-+]?\d+$', arg)
+                    or re.match(r'^0[xX][0-9a-fA-F]+$', arg)
+                ):
+                    fixed_args.append(arg)
+
+                else:
+                    fixed_args.append(f"'{arg}'")
+
+            return f"{func_name}({', '.join(fixed_args)})"
+
+        action_code = _fix_action_code(action_code)
+        prefix = "self.browser."
+                
+        code = f"{prefix}{action_code}"
+        
+        async_flag = extract_function_name(action_code) in ASYNC_ACTIONS
+        feedback_flag = _check_if_with_feedback(action_code)
+        
+        try:
+            result = "Action was successful."
+            if async_flag:
+                temp_coroutine = eval(code)
+                if feedback_flag:
+                    result = await temp_coroutine
+                else:
+                    await temp_coroutine
+                await asyncio.sleep(1)
+                return True, result
+            else:
+                if feedback_flag:
+                    result = eval(code)
+                else:
+                    exec(code)
+                await asyncio.sleep(1)
+                return True, result
+        
+        except Exception as e:
+            await asyncio.sleep(1)
+            return (
+                False,
+                f"Error while executing the action {action_code}: {e}. "
+                f"If timeout, please recheck whether you have provided the "
+                f"correct identifier.",
+            )
+
+    def _get_final_answer(self, task_prompt: str) -> str:
+        r"""Get the final answer based on the task prompt and current browser state.
+        It is used when the agent thinks that the task can be completed without any further action, and answer can be directly found in the current viewport.
+        """
+
+        prompt = f"""
+        We are solving a complex web task which needs multi-step browser interaction. After the multi-step observation, reasoning and acting with web browser, we think that the task is currently solved.
+        Here are all trajectory we have taken:
+        <history>{self.history}</history>
+        Please find the final answer, or give valuable insights and founds (e.g. if previous actions contain downloading files, your output should include the path of the downloaded file) about the overall task: <task>{task_prompt}</task>
+        """
+
+        message = BaseMessage.make_user_message(
+            role_name='user',
+            content=prompt,
+        )
+
+        resp = self.web_agent.step(message)
+        return resp.msgs[0].content
+    
+    async def _make_reflection(self, task_prompt: str) -> str:
+        r"""Make a reflection about the current state and the task prompt."""
+
+        reflection_prompt = f"""
+        Now we are working on a complex task that requires multi-step browser interaction. The task is: <task>{task_prompt}</task>
+        To achieve this goal, we have made a series of observations, reasonings, and actions. We have also made a reflection on previous states.
+
+        Here are the global available browser functions we can use:
+        {AVAILABLE_ACTIONS_PROMPT}
+
+        Here are the latest {self.history_window} trajectory (at most) we have taken:
+        <history>{self.history[-self.history_window:]}</history>
+
+        The image provided is the current state of the browser, where we have marked interactive elements. 
+        Please carefully examine the requirements of the task, and the current state of the browser, and then make reflections on the previous steps, thinking about whether they are helpful or not, and why, offering detailed feedback and suggestions for the next steps.
+        Your output should be in json format, including the following fields:
+        - `reflection`: The reflection about the previous steps, thinking about whether they are helpful or not, and why, offering detailed feedback.
+        - `suggestion`: The suggestion for the next steps, offering detailed suggestions, including the common solutions to the overall task based on the current state of the browser.
+        """
+        som_image, _ = await self.browser.get_som_screenshot()
+        img = _reload_image(som_image)
+
+        message = BaseMessage.make_user_message(
+            role_name='user', content=reflection_prompt, image_list=[img]
+        )
+
+        resp = self.web_agent.step(message)
+
+        return resp.msgs[0].content
+    
+    def _task_planning(self, task_prompt: str, start_url: str) -> str:
+        r"""Plan the task based on the given task prompt."""
+
+        # Here are the available browser functions we can use: {AVAILABLE_ACTIONS_PROMPT}
+
+        planning_prompt = f"""
+        <task>{task_prompt}</task>
+        According to the problem above, if we use browser interaction, what is the general process of the interaction after visiting the webpage `{start_url}`? 
+
+        Please note that it can be viewed as Partially Observable MDP. Do not over-confident about your plan.
+        Please first restate the task in detail, and then provide a detailed plan to solve the task.
+"""
+        # Here are some tips for you: Please note that we can only see a part of the full page because of the limited viewport after an action. Thus, do not forget to use methods like `scroll_up()` and `scroll_down()` to check the full content of the webpage, because the answer or next key step may be hidden in the content below.
+
+        message = BaseMessage.make_user_message(
+            role_name='user', content=planning_prompt
+        )
+
+        resp = self.planning_agent.step(message)
+        return resp.msgs[0].content
+
+    def _task_replanning(
+        self, task_prompt: str, detailed_plan: str
+    ) -> Tuple[bool, str]:
+        r"""Replan the task based on the given task prompt.
+
+        Args:
+            task_prompt (str): The original task prompt.
+            detailed_plan (str): The detailed plan to replan.
+
+        Returns:
+            Tuple[bool, str]: A tuple containing a boolean indicating whether the task needs to be replanned, and the replanned schema.
+        """
+
+        # Here are the available browser functions we can use: {AVAILABLE_ACTIONS_PROMPT}
+        replanning_prompt = f"""
+        We are using browser interaction to solve a complex task which needs multi-step actions.
+        Here are the overall task:
+        <overall_task>{task_prompt}</overall_task>
+
+        In order to solve the task, we made a detailed plan previously. Here is the detailed plan:
+        <detailed plan>{detailed_plan}</detailed plan>
+
+        According to the task above, we have made a series of observations, reasonings, and actions. Here are the latest {self.history_window} trajectory (at most) we have taken:
+        <history>{self.history[-self.history_window:]}</history>
+
+        However, the task is not completed yet. As the task is partially observable, we may need to replan the task based on the current state of the browser if necessary.
+        Now please carefully examine the current task planning schema, and our history actions, and then judge whether the task needs to be fundamentally replanned. If so, please provide a detailed replanned schema (including the restated overall task).
+
+        Your output should be in json format, including the following fields:
+        - `if_need_replan`: bool, A boolean value indicating whether the task needs to be fundamentally replanned.
+        - `replanned_schema`: str, The replanned schema for the task, which should not be changed too much compared with the original one. If the task does not need to be replanned, the value should be an empty string. 
+"""
+        resp = self.planning_agent.step(replanning_prompt)
+        resp_dict = _parse_json_output(resp.msgs[0].content)
+
+        if_need_replan = resp_dict.get("if_need_replan", False)
+        replanned_schema = resp_dict.get("replanned_schema", "")
+
+        if if_need_replan:
+            return True, replanned_schema
+        else:
+            return False, replanned_schema
+    
+    @dependencies_required("playwright")
+    async def async_browse_url(
+        self, task_prompt: str, start_url: str, round_limit: int = 12
+    ) -> str:
+        r"""A powerful toolkit which can simulate the browser interaction to solve the task which needs multi-step actions.
+
+        Args:
+            task_prompt (str): The task prompt to solve.
+            start_url (str): The start URL to visit.
+            round_limit (int): The round limit to solve the task (default: 12).
+
+        Returns:
+            str: The simulation result to the task.
+        """
+
+        self._reset()
+        task_completed = False
+        detailed_plan = self._task_planning(task_prompt, start_url)
+        logger.debug(f"Detailed plan: {detailed_plan}")
+
+        await self.browser.async_init()
+        try:
+            await self.browser.visit_page(start_url)
+        except Exception as e:
+            await self.browser.close()
+            logger.warning(f"Error visiting the start URL: {start_url}. Exception: {e}")
+            return None
+
+
+        for i in range(round_limit):
+            observation, reasoning, action_code = await self.async_observe(
+                task_prompt, detailed_plan
+            )
+            logger.debug(f"Observation: {observation}")
+            logger.debug(f"Reasoning: {reasoning}")
+            logger.debug(f"Action code: {action_code}")
+
+            if "stop" in action_code:
+                task_completed = True
+                trajectory_info = {
+                    "round": i,
+                    "observation": observation,
+                    "thought": reasoning,
+                    "action": action_code,
+                    "action_if_success": True,
+                    "info": None,
+                    "current_url": self.browser.get_url(),
+                }
+                self.history.append(trajectory_info)
+                break
+
+            else:
+                success, info = await self.async_act(action_code)
+                if not success:
+                    logger.warning(f"Error while executing the action: {info}")
+
+                trajectory_info = {
+                    "round": i,
+                    "observation": observation,
+                    "thought": reasoning,
+                    "action": action_code,
+                    "action_if_success": success,
+                    "info": info,
+                    "current_url": self.browser.get_url(),
+                }
+                self.history.append(trajectory_info)
+
+                # replan the task if necessary
+                if_need_replan, replanned_schema = self._task_replanning(
+                    task_prompt, detailed_plan
+                )
+                if if_need_replan:
+                    detailed_plan = replanned_schema
+                    logger.debug(f"Replanned schema: {replanned_schema}")
+
+        if not task_completed:
+            simulation_result = f"""
+                The task is not completed within the round limit. Please check the last round {self.history_window} information to see if there is any useful information:
+                <history>{self.history[-self.history_window:]}</history>
+            """
+
+        else:
+            simulation_result = self._get_final_answer(task_prompt)
+
+        await self.browser.close()
+        return simulation_result
+    
+    def browse_url(self, task_prompt: str, start_url: str, round_limit: int = 12) -> str:
+        return self.async_browse_url(task_prompt, start_url, round_limit)
+
+    def get_tools(self) -> List[FunctionTool]:
+        return [FunctionTool(self.browse_url)]
+
