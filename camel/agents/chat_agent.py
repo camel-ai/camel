@@ -49,7 +49,9 @@ from camel.memories import (
     ChatHistoryMemory,
     MemoryRecord,
     ScoreBasedContextCreator,
+    LongtermAgentMemory,
 )
+from camel.memories.blocks import ChatHistoryBlock, VectorDBBlock
 from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
 from camel.models import (
     BaseModelBackend,
@@ -138,6 +140,8 @@ class ChatAgent(BaseAgent):
             the next model in ModelManager. (default: :str:`round_robin`)
         single_iteration (bool): Whether to let the agent perform only one
             model calling at each step. (default: :obj:`False`)
+        retrieve_limit (int, optional): The maximum number of messages to
+            retrieve from the memory. (default: 3)
     """
 
     def __init__(
@@ -157,6 +161,8 @@ class ChatAgent(BaseAgent):
         response_terminators: Optional[List[ResponseTerminator]] = None,
         scheduling_strategy: str = "round_robin",
         single_iteration: bool = False,
+        retrieve_limit: int = 3,
+        **kwargs: Any,
     ) -> None:
         # Set up model backend
         self.model_backend = ModelManager(
@@ -177,9 +183,21 @@ class ChatAgent(BaseAgent):
             self.model_backend.token_counter,
             token_limit or self.model_backend.token_limit,
         )
-        self.memory: AgentMemory = memory or ChatHistoryMemory(
-            context_creator, window_size=message_window_size
-        )
+        
+        if memory is not None:
+            self.memory = memory
+        elif message_window_size is not None:
+            # If window_size is specified, use ChatHistoryMemory
+            self.memory = ChatHistoryMemory(
+                context_creator, window_size=message_window_size
+            )
+        else:
+            # Default to LongtermAgentMemory for better memory capabilities
+            self.memory = LongtermAgentMemory(
+                context_creator=context_creator,
+                retrieve_limit=kwargs.get('retrieve_limit', retrieve_limit),
+                **kwargs,
+            )
 
         # Set up system message and initialize messages
         self._original_system_message = (

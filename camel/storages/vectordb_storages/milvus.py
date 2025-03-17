@@ -13,9 +13,9 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import logging
 import re
+import json
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
-
 from camel.storages.vectordb_storages import (
     BaseVectorStorage,
     VectorDBQuery,
@@ -24,8 +24,41 @@ from camel.storages.vectordb_storages import (
     VectorRecord,
 )
 from camel.utils import dependencies_required
+from enum import Enum
 
 logger = logging.getLogger(__name__)
+
+class CustomJSONEncoder(json.JSONEncoder):
+    """Custom JSON encoder that handles special types including Enums."""
+    def default(self, obj):
+        if isinstance(obj, Enum):
+            return obj.value.lower() if hasattr(obj, 'value') else obj.name.lower()
+        if isinstance(obj, dict):
+            return {k: self.default(v) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [self.default(item) for item in obj]
+        try:
+            return obj.__dict__
+        except (AttributeError, TypeError):
+            try:
+                return str(obj)
+            except:
+                return f"<Non-serializable object: {type(obj).__name__}>"
+        return super().default(obj)
+
+
+class MilvusPointAdapter:
+    def __init__(self, record: VectorRecord):
+        self.id = record.id
+        self.payload = json.dumps(record.payload, cls=CustomJSONEncoder) if record.payload else ''
+        self.vector = record.vector
+        
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "id": self.id,
+            "payload": self.payload,
+            "vector": self.vector
+        }
 
 
 class MilvusStorage(BaseVectorStorage):
@@ -37,13 +70,12 @@ class MilvusStorage(BaseVectorStorage):
 
     Args:
         vector_dim (int): The dimenstion of storing vectors.
-        url_and_api_key (Tuple[str, str]): Tuple containing
-           the URL and API key for connecting to a remote Milvus instance.
-           URL maps to Milvus uri concept, typically "endpoint:port".
-           API key maps to Milvus token concept, for self-hosted it's
-           "username:pwd", for Zilliz Cloud (fully-managed Milvus) it's API
-           Key.
-        collection_name (Optional[str], optional): Name for the collection in
+        milvus_uri (str, optional): The URI for connecting to a Milvus instance.
+            Typically "endpoint:port" for remote server or a local file path for
+            Milvus Lite. (default: :obj:`"./milvus.db"`)
+        milvus_token (str, optional): The token for authentication. For self-hosted
+            it's "username:pwd", for Zilliz Cloud it's API Key. (default: :obj:`""`)
+        milvus_collection_name (Optional[str], optional): Name for the collection in
             the Milvus. If not provided, set it to the current time with iso
             format. (default: :obj:`None`)
         **kwargs (Any): Additional keyword arguments for initializing
@@ -57,37 +89,43 @@ class MilvusStorage(BaseVectorStorage):
     def __init__(
         self,
         vector_dim: int,
-        url_and_api_key: Tuple[str, str],
-        collection_name: Optional[str] = None,
+        milvus_uri: str = "./milvus.db",
+        milvus_token: str = "",
+        milvus_collection_name: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         from pymilvus import MilvusClient
 
         self._client: MilvusClient
-        self._create_client(url_and_api_key, **kwargs)
+        
+        uri = kwargs.pop('milvus_uri', milvus_uri)
+        token = kwargs.pop('milvus_token', milvus_token)
+        collection = kwargs.pop('milvus_collection_name', milvus_collection_name)
+        
+        self._create_client(uri, token, **kwargs)
+        
         self.vector_dim = vector_dim
-        self.collection_name = (
-            collection_name or self._generate_collection_name()
-        )
+        self.collection_name = collection or self._generate_collection_name()
         self._check_and_create_collection()
 
     def _create_client(
         self,
-        url_and_api_key: Tuple[str, str],
+        uri: str,
+        token: str,
         **kwargs: Any,
     ) -> None:
         r"""Initializes the Milvus client with the provided connection details.
 
         Args:
-            url_and_api_key (Tuple[str, str]): The URL and API key for the
-                Milvus server.
+            uri (str): The URI for the Milvus server.
+            token (str): The token for authentication.
             **kwargs: Additional keyword arguments passed to the Milvus client.
         """
         from pymilvus import MilvusClient
 
         self._client = MilvusClient(
-            uri=url_and_api_key[0],
-            token=url_and_api_key[1],
+            uri=uri,
+            token=token,
             **kwargs,
         )
 
@@ -126,7 +164,6 @@ class MilvusStorage(BaseVectorStorage):
 
         from pymilvus import DataType
 
-        # Set the schema
         schema = self._client.create_schema(
             auto_id=False,
             enable_dynamic_field=True,
@@ -140,7 +177,6 @@ class MilvusStorage(BaseVectorStorage):
             is_primary=True,
             max_length=65535,
         )
-        # max_length reference: https://milvus.io/docs/limitations.md
         schema.add_field(
             field_name="vector",
             datatype=DataType.FLOAT_VECTOR,
@@ -150,22 +186,16 @@ class MilvusStorage(BaseVectorStorage):
         schema.add_field(
             field_name="payload",
             datatype=DataType.JSON,
-            description=(
-                'Any additional metadata or information related'
-                'to the vector'
-            ),
+            description='Any additional metadata or information related to the vector',
         )
 
-        # Create the collection
         self._client.create_collection(
             collection_name=collection_name,
             schema=schema,
             **kwargs,
         )
 
-        # Set the index of the parameters
         index_params = self._client.prepare_index_params()
-
         index_params.add_index(
             field_name="vector",
             metric_type="COSINE",
@@ -176,6 +206,7 @@ class MilvusStorage(BaseVectorStorage):
         self._client.create_index(
             collection_name=collection_name, index_params=index_params
         )
+        self.load()
 
     def _delete_collection(
         self,
@@ -245,34 +276,6 @@ class MilvusStorage(BaseVectorStorage):
             "vector_dim": dim_value,  # the dimension of the vector
         }
 
-    def _validate_and_convert_vectors(
-        self, records: List[VectorRecord]
-    ) -> List[dict]:
-        r"""Validates and converts VectorRecord instances to the format
-        expected by Milvus.
-
-        Args:
-            records (List[VectorRecord]): List of vector records to validate
-            and convert.
-
-        Returns:
-            List[dict]: A list of dictionaries formatted for Milvus insertion.
-        """
-
-        validated_data = []
-
-        for record in records:
-            record_dict = {
-                "id": record.id,
-                "payload": record.payload
-                if record.payload is not None
-                else '',
-                "vector": record.vector,
-            }
-            validated_data.append(record_dict)
-
-        return validated_data
-
     def add(
         self,
         records: List[VectorRecord],
@@ -286,15 +289,22 @@ class MilvusStorage(BaseVectorStorage):
 
         Raises:
             RuntimeError: If there was an error in the addition process.
+            TypeError: If there was an error serializing the payload to JSON.
         """
-        validated_records = self._validate_and_convert_vectors(records)
-
-        op_info = self._client.insert(
-            collection_name=self.collection_name,
-            data=validated_records,
-            **kwargs,
-        )
-        logger.debug(f"Successfully added vectors in Milvus: {op_info}")
+        try:
+            milvus_points = [MilvusPointAdapter(record).to_dict() for record in records]
+            
+            self._client.insert(
+                collection_name=self.collection_name,
+                data=milvus_points,
+                **kwargs,
+            )
+        except TypeError as e:
+            error_msg = f"Failed to serialize record payload to JSON: {str(e)}"
+            raise TypeError(error_msg) from e
+        except Exception as e:
+            error_msg = f"Error adding records to Milvus: {str(e)}"
+            raise RuntimeError(error_msg) from e
 
     def delete(
         self,
@@ -314,10 +324,9 @@ class MilvusStorage(BaseVectorStorage):
             RuntimeError: If there is an error during the deletion process.
         """
 
-        op_info = self._client.delete(
+        self._client.delete(
             collection_name=self.collection_name, pks=ids, **kwargs
         )
-        logger.debug(f"Successfully deleted vectors in Milvus: {op_info}")
 
     def status(self) -> VectorDBStatus:
         r"""Retrieves the current status of the Milvus collection. This method
@@ -358,18 +367,92 @@ class MilvusStorage(BaseVectorStorage):
             output_fields=['vector', 'payload'],
             **kwargs,
         )
+        
         query_results = []
         for point in search_result:
+            entry = point[0]
+            record_id = str(entry['id'])
+            distance = entry['distance']
+            payload = entry['entity'].get('payload', '')
+            vector = entry['entity'].get('vector')
+            
+            try:
+                if isinstance(payload, str) and payload:
+                    payload_dict = json.loads(payload)
+                elif isinstance(payload, dict):
+                    payload_dict = payload
+                else:
+                    payload_dict = {"payload": str(payload) if payload else ""}
+                
+                # Process enum values
+                self._process_role_fields(payload_dict)
+                
+            except Exception as e:
+                payload_dict = {"error": str(e), "raw": str(payload)}
+            
             query_results.append(
                 VectorDBQueryResult.create(
-                    similarity=(point[0]['distance']),
-                    id=str(point[0]['id']),
-                    payload=(point[0]['entity'].get('payload')),
-                    vector=point[0]['entity'].get('vector'),
+                    similarity=distance,
+                    id=record_id,
+                    payload=payload_dict,
+                    vector=vector,
                 )
             )
-
+        
         return query_results
+
+    def _process_role_fields(self, payload_dict: Dict[str, Any], key_prefix: str = "") -> None:
+        """Recursively process all fields in the payload dictionary to handle potential enum fields.
+        
+        This function looks for fields that might be Enum values and converts them to lowercase
+        to match the expected format during validation.
+        
+        Args:
+            payload_dict: The dictionary to process
+            key_prefix: Current key prefix for nested dictionaries (used in recursion)
+        """
+        # Common enum-related field names that might need lowercase conversion
+        enum_field_names = [
+            # Role related
+            "role", "role_at_backend", "role_type", "type", "message_type", 
+            "sender", "receiver", "agent_type",
+            # Model related
+            "model_type", "model_platform", "embedding_model", "audio_model",
+            "voice_type", "task_type", "vector_distance", "storage_type",
+            "termination_mode", "openai_backend_role", "openai_image_type",
+            "openai_vision_detail_type", "open_api_name", "jina_return_format",
+            "huggingface_repo_type"
+        ]
+        
+        if not isinstance(payload_dict, dict):
+            return
+            
+        for key, value in list(payload_dict.items()):
+            full_key = f"{key_prefix}.{key}" if key_prefix else key
+            
+            # Check if this is an enum-related field and value is a string
+            if isinstance(value, str) and (
+                key in enum_field_names or 
+                any(enum_name in key.lower() for enum_name in ['role', 'type', 'model', 'format', 'mode', 'distance'])
+            ):
+                # Convert to lowercase for consistent validation
+                payload_dict[key] = value.lower()
+            
+            # Recursively process nested dictionaries
+            elif isinstance(value, dict):
+                self._process_role_fields(value, full_key)
+                
+            # Process dictionaries in lists
+            elif isinstance(value, list):
+                for i, item in enumerate(value):
+                    if isinstance(item, dict):
+                        self._process_role_fields(item, f"{full_key}[{i}]")
+                    elif isinstance(item, str) and (
+                        key in enum_field_names or 
+                        any(enum_name in key.lower() for enum_name in ['role', 'type', 'model', 'format', 'mode', 'distance'])
+                    ):
+                        # Convert string values in lists if they match enum field patterns
+                        value[i] = item.lower()
 
     def clear(self) -> None:
         r"""Removes all vectors from the Milvus collection. This method

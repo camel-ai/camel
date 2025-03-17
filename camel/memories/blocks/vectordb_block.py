@@ -12,14 +12,14 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import List, Optional
+from typing import List, Optional, Any
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
 from camel.memories.base import MemoryBlock
 from camel.memories.records import ContextRecord, MemoryRecord
 from camel.storages.vectordb_storages import (
     BaseVectorStorage,
-    QdrantStorage,
+    MilvusStorage,
     VectorDBQuery,
     VectorRecord,
 )
@@ -32,21 +32,32 @@ class VectorDBBlock(MemoryBlock):
 
     Args:
         storage (Optional[BaseVectorStorage], optional): The storage mechanism
-            for the vector database. Defaults to in-memory :obj:`Qdrant` if not
+            for the vector database. Defaults to in-memory :obj:`MilvusStorage` if not
             provided. (default: :obj:`None`)
         embedding (Optional[BaseEmbedding], optional): Embedding mechanism to
             convert chat messages into vector representations. Defaults to
             :obj:`OpenAiEmbedding` if not provided. (default: :obj:`None`)
+        milvus_uri (str): The URI of the Milvus database.
+        milvus_token (str): The token for accessing the Milvus database.
+        milvus_collection_name (Optional[str], optional): The name of the collection in the Milvus database.
     """
 
     def __init__(
         self,
         storage: Optional[BaseVectorStorage] = None,
         embedding: Optional[BaseEmbedding] = None,
+        **kwargs: Any,
     ) -> None:
         self.embedding = embedding or OpenAIEmbedding()
         self.vector_dim = self.embedding.get_output_dim()
-        self.storage = storage or QdrantStorage(vector_dim=self.vector_dim)
+        
+        if storage is None:
+            self.storage = MilvusStorage(
+                vector_dim=self.vector_dim,
+                **kwargs
+            )
+        else:
+            self.storage = storage
 
     def retrieve(
         self,

@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import warnings
-from typing import List, Optional
+from typing import List, Optional, Any
 
 from camel.memories.base import AgentMemory, BaseContextCreator
 from camel.memories.blocks import ChatHistoryBlock, VectorDBBlock
@@ -141,9 +141,10 @@ class LongtermAgentMemory(AgentMemory):
         chat_history_block: Optional[ChatHistoryBlock] = None,
         vector_db_block: Optional[VectorDBBlock] = None,
         retrieve_limit: int = 3,
+        **kwargs: Any,
     ) -> None:
         self.chat_history_block = chat_history_block or ChatHistoryBlock()
-        self.vector_db_block = vector_db_block or VectorDBBlock()
+        self.vector_db_block = vector_db_block or VectorDBBlock(**kwargs)
         self.retrieve_limit = retrieve_limit
         self._context_creator = context_creator
         self._current_topic: str = ""
