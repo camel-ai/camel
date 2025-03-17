@@ -26,7 +26,6 @@ dependencies = [
     "tiktoken>=0.7.0,<0.8",
     "colorama>=0.4.6,<0.5",
     "jsonschema>=4,<5",
-    "protobuf>=5,<6",
     "docstring-parser>=0.15,<0.16",
     "pydantic>=1.9,<2.10",
     "httpx>=0.28.0,<1.0.0dev",
