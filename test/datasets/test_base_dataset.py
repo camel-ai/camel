@@ -27,6 +27,7 @@ from camel.datasets import (
     FewShotGenerator,
     StaticDataset,
 )
+from camel.models.stub_model import StubModel
 
 
 # ruff: noqa: RUF001
@@ -837,10 +838,10 @@ async def test_few_shot_generator():
     mock_agent.step.return_value = MagicMock(
         msgs=[
             MagicMock(
-                parsed={
-                    'question': 'Generated Question',
-                    'rationale': 'Generated Rationale',
-                }
+                parsed=DataPoint(
+                        question='Generated Question',
+                        rationale = 'Generated Rationale',
+                        final_answer = "final"),
             )
         ]
     )
@@ -849,8 +850,10 @@ async def test_few_shot_generator():
     dataset = FewShotGenerator(
         seed_dataset=mock_static_dataset,
         verifier=mock_verifier,
-        agent=mock_agent,
+        model=StubModel("Stub"),
     )
+
+    dataset.agent = mock_agent
 
     # Test generate_new method
     await dataset.generate_new(2)
@@ -887,13 +890,15 @@ async def test_generate_new():
     ]
 
     mock_agent = MagicMock()
+    mock_agent.reset = MagicMock()
     mock_agent.step.return_value = MagicMock(
         msgs=[
             MagicMock(
-                parsed={
-                    'question': 'Generated Question',
-                    'rationale': 'Generated Rationale',
-                }
+                parsed=DataPoint(
+                    question="Generated Question",
+                    rationale="Generated Rationale",
+                    final_answer="Generated Answer",
+                )
             )
         ]
     )
@@ -901,10 +906,11 @@ async def test_generate_new():
         MagicMock(
             msgs=[
                 MagicMock(
-                    parsed={
-                        "question": "What is 5 + 6?",
-                        "rationale": "print(5 + 6)",
-                    }
+                    parsed=DataPoint(
+                        question="What is 5 + 6?",
+                        rationale="print(5 + 6)",
+                        final_answer="11"
+                    )
                 )
             ]
         ),
@@ -912,31 +918,36 @@ async def test_generate_new():
         MagicMock(
             msgs=[
                 MagicMock(
-                    parsed={
-                        "question": "What is 3 + 5?",
-                        "rationale": "print(2 + )",
-                    }
+                    parsed=DataPoint(
+                        question="What is 3 + 5?",
+                        rationale="print(2 + )",  # Syntax error
+                        final_answer="None"  # No valid answer
+                    )
                 )
             ]
         ),
         MagicMock(
             msgs=[
                 MagicMock(
-                    parsed={
-                        "question": "What is 7 + 8?",
-                        "rationale": "print(7 + 8)",
-                    }
+                    parsed=DataPoint(
+                        question="What is 7 + 8?",
+                        rationale="print(7 + 8)",
+                        final_answer="15"
+                    )
                 )
             ]
         ),
     ]
 
+
     # Create FewShotGenerator with mocks
     dataset = FewShotGenerator(
         seed_dataset=mock_static_dataset,
         verifier=mock_verifier,
-        agent=mock_agent,
+        model=StubModel("Stub"),
     )
+
+    dataset.agent = mock_agent
 
     new_datapoints = await dataset.generate_new(2)
 
@@ -997,15 +1008,17 @@ async def test_generate_new_with_max_retries():
 
     # Set up mock agent with specific output sequence
     mock_agent = MagicMock()
+    mock_agent.reset.return_value = None  # Ensures it does nothing
     mock_agent.step.side_effect = [
         # Correct
         MagicMock(
             msgs=[
                 MagicMock(
-                    parsed={
-                        "question": "What is 3 + 4?",
-                        "rationale": "print(3 + 4)",
-                    }
+                    parsed=DataPoint(
+                        question="What is 3 + 4?",
+                        rationale="print(3 + 4)",
+                        final_answer="7"
+                    )
                 )
             ]
         ),
@@ -1013,10 +1026,11 @@ async def test_generate_new_with_max_retries():
         MagicMock(
             msgs=[
                 MagicMock(
-                    parsed={
-                        "question": "What is 5 + 6?",
-                        "rationale": "print(5 + )",
-                    }
+                    parsed=DataPoint(
+                        question="What is 5 + 6?",
+                        rationale="print(5 + )",  # Syntax error
+                        final_answer="None"  # No valid answer
+                    )
                 )
             ]
         ),
@@ -1024,10 +1038,11 @@ async def test_generate_new_with_max_retries():
         MagicMock(
             msgs=[
                 MagicMock(
-                    parsed={
-                        "question": "What is 7 + 8?",
-                        "rationale": "print(7 + )",
-                    }
+                    parsed=DataPoint(
+                        question="What is 7 + 8?",
+                        rationale="print(7 + )",  # Syntax error
+                        final_answer="None"
+                    )
                 )
             ]
         ),
@@ -1035,10 +1050,11 @@ async def test_generate_new_with_max_retries():
         MagicMock(
             msgs=[
                 MagicMock(
-                    parsed={
-                        "question": "What is 9 + 10?",
-                        "rationale": "print(9 + )",
-                    }
+                    parsed=DataPoint(
+                        question="What is 9 + 10?",
+                        rationale="print(9 + )",  # Syntax error
+                        final_answer="None"
+                    )
                 )
             ]
         ),
@@ -1046,20 +1062,24 @@ async def test_generate_new_with_max_retries():
         MagicMock(
             msgs=[
                 MagicMock(
-                    parsed={
-                        "question": "What is 11 + 12?",
-                        "rationale": "print(11 + 12)",
-                    }
+                    parsed=DataPoint(
+                        question="What is 11 + 12?",
+                        rationale="print(11 + 12)",
+                        final_answer="23"
+                    )
                 )
             ]
         ),
     ]
 
+
+    model = StubModel("OpenAI")
+
     dataset = FewShotGenerator(
-        seed_dataset=mock_static_dataset,
-        verifier=mock_verifier,
-        agent=mock_agent,
+        seed_dataset=mock_static_dataset, verifier=mock_verifier, model=model
     )
+
+    dataset.agent = mock_agent
 
     # Expect RuntimeError due to insufficient valid
     # datapoints within retry limit
@@ -1118,13 +1138,18 @@ async def test_few_shot_generator_save_to_jsonl(tmp_path):
             )
         ]
     )
+    mock_agent.reset = MagicMock()
+
+    model = StubModel("OpenAI")
 
     # Create FewShotGenerator with mocks
     dataset = FewShotGenerator(
         seed_dataset=mock_static_dataset,
         verifier=mock_verifier,
-        agent=mock_agent,
+        model=model,
     )
+
+    dataset.agent = mock_agent
 
     # Mock data
     dataset._data = [
