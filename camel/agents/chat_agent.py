@@ -446,7 +446,6 @@ class ChatAgent(BaseAgent):
         self,
         input_message: Union[BaseMessage, str],
         response_format: Optional[Type[BaseModel]] = None,
-        reason_params: Optional[Dict[str, Any]] = None,
     ) -> ChatAgentResponse:
         r"""Executes a single step in the chat session, generating a response
         to the input message.
@@ -459,13 +458,6 @@ class ChatAgent(BaseAgent):
                 model defining the expected structure of the response. Used to
                 generate a structured response if provided. (default:
                 :obj:`None`)
-            reason_params (Optional[Dict[str, Any]], optional): A dictionary
-                containing the parameters for the reasoning step.
-                Argument `choices` is the number of choices/candidates to
-                consider.
-                Argument `threshold` is the threshold for the probability of
-                the choices.
-                (default: :obj:`None`)
 
         Returns:
             ChatAgentResponse: Contains output messages, a termination status
@@ -477,9 +469,6 @@ class ChatAgent(BaseAgent):
             input_message = BaseMessage.make_user_message(
                 role_name="User", content=input_message
             )
-
-        # Inject thinking steps
-        input_message = self._update_reasoning(input_message, reason_params)
 
         # Add user input to memory
         self.update_memory(input_message, OpenAIBackendRole.USER)
@@ -521,47 +510,6 @@ class ChatAgent(BaseAgent):
         return self._convert_to_chatagent_response(
             response, tool_call_records, num_tokens, external_tool_call_request
         )
-
-    def _update_reasoning(
-        self,
-        input_message: BaseMessage,
-        reason_params: Optional[Dict[str, Any]] = None,
-    ) -> BaseMessage:
-        r"""Updates the input message to include reasoning instructions and
-        adds human interaction capability.
-
-        Args:
-            input_message (BaseMessage): The message to be updated with
-                reasoning instructions.
-            reason_params (Optional[Dict[str, Any]], optional): Parameters for
-                the reasoning process.
-
-        Returns:
-            BaseMessage: The updated message with reasoning instructions.
-        """
-        if reason_params is None:
-            return input_message
-        choices = reason_params.get("choices", 3)
-        threshold = reason_params.get("threshold", 0.5)
-
-        input_message.content += f"""First, come up with potential {choices} 
-        choices/candidates. 
-        Next, assign a probability/credibility between 0 and 1 to each choice 
-        (make sure they add up to 1). 
-        Finally, if only one choice has a probability/credibility greater than
-        {threshold}, continue with that choice.
-        Otherwise, call tool `ask_human_via_console` to ask the user to decide 
-        which one to continue with, give user the probability/credibility of 
-        all choices, and the reason for each choice.
-        """
-
-        # Add tools to agent
-        from camel.toolkits.human_toolkit import HumanToolkit
-
-        human_toolkit = HumanToolkit()
-        self.add_tool(human_toolkit.ask_human_via_console)
-
-        return input_message
 
     @property
     def chat_history(self) -> List[OpenAIMessage]:
