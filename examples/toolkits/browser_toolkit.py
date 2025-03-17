@@ -1,8 +1,7 @@
 import asyncio
-import os
-from camel.toolkits.browser_toolkit import AsyncBaseBrowser  # please ensure the module path is correct
+from camel.toolkits.browser_toolkit import AsyncBaseBrowser,AsyncBrowserToolkit  # please ensure the module path is correct
 
-async def test_all_functions():
+async def test_AsyncBaseBrowser_all_functions():
     # Instantiate the asynchronous browser (adjust the headless parameter as needed)
     browser = AsyncBaseBrowser(headless=False)
     print("Initializing browser...")
@@ -274,7 +273,38 @@ async def test_all_functions():
     ==========================================================================
     """
 
-if __name__ == "__main__":
-    import asyncio
+async def test_AsyncBrowserToolkit():
+    toolkit = AsyncBrowserToolkit(headless=False)
 
-    asyncio.run(test_all_functions())
+    # Define task parameters
+    task_prompt = "Retrieve the current weather information for Beijing."
+    start_url = "https://www.accuweather.com/en/cn/beijing/101924/current-weather/101924"
+    round_limit = 12
+
+    result = await toolkit.browse_url(task_prompt, start_url, round_limit)
+    print("Simulated result:")
+    print(result)
+    
+    """
+    ==========================================================================
+    The task to retrieve the current weather information for Beijing has been successfully completed. Here is the final weather information obtained:
+
+    - **Temperature**: 4°C
+    - **Weather Condition**: Clear
+    - **Wind Gusts**: 17 km/h
+    - **Humidity**: 28%
+    - **Pressure**: 1026 mb
+    - **Cloud Cover**: 0%
+
+    This information was retrieved from the AccuWeather website for Beijing, and no further actions are needed.
+    ==========================================================================
+    """
+
+async def main():
+    await test_AsyncBaseBrowser_all_functions()  
+    print("\n=========================\n")
+    await test_AsyncBrowserToolkit()  
+
+if __name__ == "__main__":
+    asyncio.run(main()) 
+    
