@@ -913,6 +913,7 @@ class BaseBrowser:
 
         markdown_content = html2text(html_content)
         return markdown_content
+
 class AsyncBaseBrowser:
     def __init__(self, headless: bool = True, cache_dir: Optional[str] = None):
         r"""
@@ -1561,7 +1562,6 @@ class AsyncBaseBrowser:
     def get_webpage_content(self) -> str:
         r"""Extract the content of the current page."""
         return self.async_get_webpage_content()
-
 
 
 class BrowserToolkit(BaseToolkit):
