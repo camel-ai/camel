@@ -1223,3 +1223,167 @@ async def test_few_shot_generator_save_to_jsonl(tmp_path):
     ]
     with pytest.raises(IOError, match="No such file or directory"):
         dataset.save_to_jsonl(invalid_path)
+
+
+@pytest.mark.asyncio
+async def test_few_shot_generator_flush(tmp_path):
+    r"""Test FewShotGenerator's flush method with mocked data.
+
+    This test verifies that:
+    1. Data can be successfully flushed to a JSONL file and
+       the internal data is cleared.
+    2. The method handles empty datasets appropriately.
+    3. IO errors are caught and raised as expected.
+
+    Args:
+        tmp_path: Pytest fixture providing a temporary directory.
+    """
+    # Mock the seed dataset
+    mock_static_dataset = MagicMock(spec=StaticDataset)
+    mock_static_dataset.__len__.return_value = 5
+    mock_static_dataset.__getitem__.side_effect = lambda i: DataPoint(
+        question=f"Question {i}",
+        rationale=f"Rationale {i}",
+        final_answer=f"Answer {i}",
+    )
+
+    # Mock the verifier
+    mock_verifier = MagicMock()
+    mock_verifier.verify = AsyncMock()
+    mock_verifier.verify.return_value = MagicMock(result="Verified Answer")
+
+    # Mock the agent
+    mock_agent = MagicMock()
+    mock_agent.step.return_value = MagicMock(
+        msgs=[
+            MagicMock(
+                parsed={
+                    'question': 'Generated Question',
+                    'rationale': 'Generated Rationale',
+                }
+            )
+        ]
+    )
+    mock_agent.reset = MagicMock()
+
+    model = StubModel("OpenAI")
+
+    # Create FewShotGenerator with mocks
+    dataset = FewShotGenerator(
+        seed_dataset=mock_static_dataset,
+        verifier=mock_verifier,
+        model=model,
+    )
+
+    dataset.agent = mock_agent
+
+    # Mock data
+    dataset._data = [
+        DataPoint(
+            question="What is 2 + 2?",
+            rationale="Adding 2 and 2 gives 4.",
+            final_answer="4",
+            metadata={"created": "2025-03-12T10:00:00"},
+        ),
+        DataPoint(
+            question="What color is the sky?",
+            rationale="The sky appears blue due to Rayleigh scattering.",
+            final_answer="Blue",
+            metadata={"created": "2025-03-12T10:01:00"},
+        ),
+        DataPoint(
+            question="How many sides does a triangle have?",
+            rationale="A triangle is defined as a shape with three sides.",
+            final_answer="3",
+            metadata={"created": "2025-03-12T10:02:00"},
+        ),
+        DataPoint(
+            question="What is the capital of France?",
+            rationale="France is a country in Europe, "
+            "and its capital is well-known.",
+            final_answer="Paris",
+            metadata={"created": "2025-03-12T10:03:00"},
+        ),
+    ]
+
+    # **Test 1: Successful flush**
+    file_path = tmp_path / "test_dataset.jsonl"
+    dataset.flush(file_path)
+
+    # Verify file exists and content is correct
+    assert file_path.exists(), "JSONL file was not created"
+    with file_path.open("r", encoding="utf-8") as f:
+        lines = f.readlines()
+    assert len(lines) == 4, "Incorrect number of lines in JSONL file"
+
+    # Parse and verify all lines
+    for i, line in enumerate(lines):
+        parsed_line = json.loads(line)
+        expected_dp = dataset._data[i] if i < len(dataset._data) else None
+        # Since flush clears the data, we can't
+        # directly compare with dataset._data
+        # Instead, we check against the original data structure we set up
+        original_data = [
+            {
+                "question": "What is 2 + 2?",
+                "rationale": "Adding 2 and 2 gives 4.",
+                "final_answer": "4",
+                "metadata": {"created": "2025-03-12T10:00:00"},
+            },
+            {
+                "question": "What color is the sky?",
+                "rationale": "The sky appears blue due to "
+                "Rayleigh scattering.",
+                "final_answer": "Blue",
+                "metadata": {"created": "2025-03-12T10:01:00"},
+            },
+            {
+                "question": "How many sides does a triangle have?",
+                "rationale": "A triangle is defined as a "
+                "shape with three sides.",
+                "final_answer": "3",
+                "metadata": {"created": "2025-03-12T10:02:00"},
+            },
+            {
+                "question": "What is the capital of France?",
+                "rationale": "France is a country in Europe, "
+                "and its capital is well-known.",
+                "final_answer": "Paris",
+                "metadata": {"created": "2025-03-12T10:03:00"},
+            },
+        ]
+        expected_dp = original_data[i]
+        assert (
+            parsed_line["question"] == expected_dp["question"]
+        ), f"Question mismatch at line {i+1}"
+        assert (
+            parsed_line["rationale"] == expected_dp["rationale"]
+        ), f"Rationale mismatch at line {i+1}"
+        assert (
+            parsed_line["final_answer"] == expected_dp["final_answer"]
+        ), f"Final answer mismatch at line {i+1}"
+        assert "metadata" in parsed_line, f"Metadata missing at line {i+1}"
+        assert (
+            parsed_line["metadata"]["created"]
+            == expected_dp["metadata"]["created"]
+        ), f"Metadata mismatch at line {i+1}"
+
+    # Verify that internal data is cleared
+    assert len(dataset._data) == 0, "Internal data was not cleared after flush"
+
+    # **Test 2: Flush with empty dataset**
+    dataset._data = []
+    with pytest.raises(ValueError, match="Dataset is empty. No data to save."):
+        dataset.flush(file_path)
+
+    # **Test 3: IO Error handling with flush**
+    invalid_path = tmp_path / "nonexistent" / "test.jsonl"
+    dataset._data = [
+        DataPoint(
+            question="Test",
+            rationale="Test rationale",
+            final_answer="Test answer",
+        )
+    ]
+    with pytest.raises(IOError, match="No such file or directory"):
+        dataset.flush(invalid_path)

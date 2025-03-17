@@ -116,3 +116,19 @@ class BaseGenerator(abc.ABC):
         except IOError as e:
             logger.error(f"Error writing to file {file_path}: {e}")
             raise
+
+    def flush(self, file_path: Union[str, Path]) -> None:
+        r"""Flush the current data to a JSONL file and clear the data.
+
+        Args:
+            file_path (Union[str, Path]): Path to save the JSONL file.
+
+        Notes:
+            - Uses save_to_jsonl for the saving process.
+        """
+
+        self.save_to_jsonl(file_path)
+        self._data = []
+        logger.info(
+            f"Data flushed to {file_path} and cleared from the memmory"
+        )
