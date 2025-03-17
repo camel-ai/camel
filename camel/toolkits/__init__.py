@@ -108,3 +108,30 @@ __all__ = [
     'TerminalToolkit',
     'PubMedToolkit',
 ]
+
+no_api_key_toolkits = None
+
+
+def get_no_api_key_toolkits():
+    global no_api_key_toolkits
+    if no_api_key_toolkits is None:
+        no_api_key_toolkits = [
+            *ArxivToolkit().get_tools(),
+            *AudioAnalysisToolkit().get_tools(),
+            *CodeExecutionToolkit().get_tools(),
+            *DalleToolkit().get_tools(),
+            *ExcelToolkit().get_tools(),
+            *FileWriteToolkit().get_tools(),
+            *HumanToolkit().get_tools(),
+            *ImageAnalysisToolkit().get_tools(),
+            *MathToolkit().get_tools(),
+            *NetworkXToolkit().get_tools(),
+            *PubMedToolkit().get_tools(),
+            *RetrievalToolkit().get_tools(),
+            FunctionTool(SearchToolkit().search_duckduckgo),
+            FunctionTool(SearchToolkit().search_baidu),
+            *SemanticScholarToolkit().get_tools(),
+            *SymPyToolkit().get_tools(),
+            *TerminalToolkit().get_tools(),
+        ]
+    return no_api_key_toolkits
