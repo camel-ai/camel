@@ -332,7 +332,9 @@ class GAIABenchmark(BaseBenchmark):
             "history": agent.memory.get_context(),
         }
         self._results.append(result_data)
-        file_obj.write(json.dumps(result_data, indent=2) + "\n")
+        file_obj.write(
+            json.dumps(result_data, indent=2) + "\n", ensure_ascii=False
+        )
         file_obj.flush()
 
     def _handle_error(
@@ -351,7 +353,9 @@ class GAIABenchmark(BaseBenchmark):
             "score": 0,
         }
         self._results.append(error_data)
-        file_obj.write(json.dumps(error_data, indent=2) + "\n")
+        file_obj.write(
+            json.dumps(error_data, indent=2) + "\n", ensure_ascii=False
+        )
         file_obj.flush()
 
     def _generate_summary(self) -> Dict[str, Any]:

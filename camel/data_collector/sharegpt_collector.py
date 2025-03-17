@@ -108,6 +108,7 @@ class ShareGPTDataCollector(BaseDataCollector):
             tools=json.dumps(
                 [t.get_openai_tool_schema()["function"] for t in self.tools]
             ),
+            ensure_ascii=False,
             conversations=[],
         )
 
@@ -124,7 +125,9 @@ class ShareGPTDataCollector(BaseDataCollector):
                     conversations.append(
                         {
                             "from": "function_call",
-                            "value": json.dumps(message.function_call),
+                            "value": json.dumps(
+                                message.function_call, ensure_ascii=False
+                            ),
                         }
                     )
                 else:
@@ -135,7 +138,9 @@ class ShareGPTDataCollector(BaseDataCollector):
                 conversations.append(
                     {
                         "from": "observation",
-                        "value": json.dumps(message.message),  # type: ignore[attr-defined]
+                        "value": json.dumps(
+                            message.message, ensure_ascii=False
+                        ),  # type: ignore[attr-defined]
                     }
                 )
         data["conversations"] = conversations
@@ -171,7 +176,8 @@ class ShareGPTDataCollector(BaseDataCollector):
         context.append(
             "Tools: "
             + json.dumps(
-                [t.get_openai_tool_schema()["function"] for t in self.tools]
+                [t.get_openai_tool_schema()["function"] for t in self.tools],
+                ensure_ascii=False,
             )
         )
         for _data in self.get_agent_history(str(self.agent_name)):
@@ -180,10 +186,15 @@ class ShareGPTDataCollector(BaseDataCollector):
                 f"{role}: " if role != "user" else "User: " + f"{_data.name}: "
             )
             if message.function_call:
-                context.append(prefix + json.dumps(message.function_call))
+                context.append(
+                    prefix
+                    + json.dumps(message.function_call, ensure_ascii=False)
+                )
 
             elif role == "function" or role == "tool":
-                context.append(prefix + json.dumps(message.message))  # type: ignore[attr-defined]
+                context.append(
+                    prefix + json.dumps(message.message, ensure_ascii=False)
+                )  # type: ignore[attr-defined]
             else:
                 context.append(prefix + str(message.message))
         return converter.convert(

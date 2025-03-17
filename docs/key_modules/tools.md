@@ -173,7 +173,7 @@ CAMEL provides a variety of built-in toolkits that you can use right away. Here'
 | OpenBBToolkit | A toolkit for accessing and analyzing financial market data through the OpenBB Platform, including stocks, ETFs, cryptocurrencies, and economic indicators. |
 | RedditToolkit | A toolkit for Reddit operations including collecting top posts, performing sentiment analysis on comments, and tracking keyword discussions. |
 | RetrievalToolkit | A toolkit for retrieving information from local vector storage systems based on specified queries. |
-| SearchToolkit | A toolkit for performing web searches using various search engines like Google, DuckDuckGo, Wikipedia, and Wolfram Alpha. |
+| SearchToolkit | A toolkit for performing web searches using various search engines like Google, DuckDuckGo, Wikipedia, Bing, BaiDu and Wolfram Alpha. |
 | SemanticScholarToolkit | A toolkit for interacting with the Semantic Scholar API to fetch paper and author data from academic publications. |
 | SlackToolkit | A toolkit for Slack operations including creating channels, joining channels, and managing channel membership. |
 | StripeToolkit | A toolkit for processing payments and managing financial transactions via Stripe. |
