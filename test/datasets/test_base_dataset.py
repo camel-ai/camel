@@ -27,6 +27,7 @@ from camel.datasets import (
     FewShotGenerator,
     StaticDataset,
 )
+from camel.models.stub_model import StubModel
 
 
 # ruff: noqa: RUF001
@@ -598,6 +599,210 @@ def test_static_dataset_init_from_json_file():
     ), "Invalid items should be filtered out in non-strict mode."
 
 
+def test_static_dataset_init_from_jsonl_file():
+    r"""
+    Test StaticDataset initialization from a JSONL file with various scenarios.
+    """
+    import json
+    import tempfile
+    from pathlib import Path
+
+    import pytest
+
+    # **Test 1: Initialization with a valid JSONL file (only required fields)**
+    with tempfile.NamedTemporaryFile(
+        mode='w', suffix='.jsonl', delete=False
+    ) as tmp_file:
+        valid_data = [
+            {
+                "question": "What is 2 + 2?",
+                "rationale": "Addition of 2 and 2.",
+                "final_answer": "4",
+            },
+            {
+                "question": "Is the sky blue?",
+                "rationale": "Observation of clear weather.",
+                "final_answer": "yes",
+            },
+        ]
+        # Write each dictionary as a separate JSON line.
+        for item in valid_data:
+            tmp_file.write(json.dumps(item) + "\n")
+        tmp_file_path = Path(tmp_file.name)
+
+    dataset = StaticDataset(data=tmp_file_path, min_samples=1, strict=True)
+    assert len(dataset) == 2, "Dataset should contain 2 items."
+    assert isinstance(
+        dataset[0], DataPoint
+    ), "Items should be DataPoint instances."
+    assert (
+        dataset[0].question == "What is 2 + 2?"
+    ), "Question should match input."
+    assert (
+        dataset[0].rationale == "Addition of 2 and 2."
+    ), "Rationale should match input."
+    assert dataset[0].final_answer == "4", "Final answer should match input."
+    assert (
+        dataset[1].question == "Is the sky blue?"
+    ), "Second question should match input."
+    assert (
+        dataset[1].rationale == "Observation of clear weather."
+    ), "Second rationale should match input."
+    assert (
+        dataset[1].final_answer == "yes"
+    ), "Second final answer should match input."
+    assert (
+        dataset[0].metadata is None
+    ), "Metadata should be None when not provided."
+
+    # **Test 2: Initialization with invalid JSONL file (malformed JSON)**
+    with tempfile.NamedTemporaryFile(
+        mode='w', suffix='.jsonl', delete=False
+    ) as tmp_file:
+        # Write a malformed JSON line (missing closing brace).
+        tmp_file.write(
+            '{"question": "Test", "rationale": "Test",'
+            '"final_answer": "Test"\n'
+        )
+        tmp_file_path = Path(tmp_file.name)
+
+    with pytest.raises(ValueError, match="Invalid JSON on line"):
+        StaticDataset(data=tmp_file_path, min_samples=1, strict=True)
+
+    # **Test 3: Initialization with JSONL file containing non-dict items**
+    with tempfile.NamedTemporaryFile(
+        mode='w', suffix='.jsonl', delete=False
+    ) as tmp_file:
+        tmp_file.write(
+            json.dumps(
+                {
+                    "question": "Test",
+                    "rationale": "Test",
+                    "final_answer": "Test",
+                }
+            )
+            + "\n"
+        )
+        # Write a non-dict item on the second line.
+        tmp_file.write(json.dumps("not a dict") + "\n")
+        tmp_file_path = Path(tmp_file.name)
+
+    with pytest.raises(ValueError, match="Expected a dictionary at record 2"):
+        StaticDataset(data=tmp_file_path, min_samples=1, strict=True)
+
+    # **Test 4: Initialization with a missing JSONL file**
+    missing_file_path = Path("non_existent_file.jsonl")
+    with pytest.raises(FileNotFoundError, match="JSONL file not found:"):
+        StaticDataset(data=missing_file_path, min_samples=1, strict=True)
+
+    # **Test 5: Initialization with an empty JSONL file**
+    with tempfile.NamedTemporaryFile(
+        mode='w', suffix='.jsonl', delete=False
+    ) as tmp_file:
+        tmp_file_path = Path(tmp_file.name)
+
+    # Sub-test 5a: Empty dataset with min_samples=1
+    with pytest.raises(
+        ValueError, match="The dataset does not contain enough samples"
+    ):
+        StaticDataset(data=tmp_file_path, min_samples=1, strict=True)
+
+    # Sub-test 5b: Empty dataset with min_samples=0
+    dataset_empty = StaticDataset(
+        data=tmp_file_path, min_samples=0, strict=True
+    )
+    assert (
+        len(dataset_empty) == 0
+    ), "Empty dataset should have zero length when min_samples=0."
+
+    # **Test 6: Initialization with optional fields and additional fields**
+    with tempfile.NamedTemporaryFile(
+        mode='w', suffix='.jsonl', delete=False
+    ) as tmp_file:
+        data_with_optional = [
+            {
+                "question": "What is the capital of France?",
+                "rationale": "France is a country in Europe.",
+                "final_answer": "Paris",
+                "metadata": {"source": "geography", "id": 123},
+                "extra_field": "this should be ignored",
+            }
+        ]
+        for item in data_with_optional:
+            tmp_file.write(json.dumps(item) + "\n")
+        tmp_file_path = Path(tmp_file.name)
+
+    dataset_optional = StaticDataset(
+        data=tmp_file_path, min_samples=1, strict=True
+    )
+    assert len(dataset_optional) == 1, "Dataset should contain 1 item."
+    assert isinstance(
+        dataset_optional[0], DataPoint
+    ), "Item should be a DataPoint instance."
+    assert (
+        dataset_optional[0].question == "What is the capital of France?"
+    ), "Question should match."
+    assert (
+        dataset_optional[0].rationale == "France is a country in Europe."
+    ), "Rationale should match."
+    assert (
+        dataset_optional[0].final_answer == "Paris"
+    ), "Final answer should match."
+    assert dataset_optional[0].metadata == {
+        "source": "geography",
+        "id": 123,
+    }, "Metadata should match."
+    assert (
+        "extra_field" not in dataset_optional[0].__dict__
+    ), "Extra field should not be present in DataPoint."
+
+    # **Test 7: JSONL-specific edge cases:
+    # Missing required field in strict mode**
+    with tempfile.NamedTemporaryFile(
+        mode='w', suffix='.jsonl', delete=False
+    ) as tmp_file:
+        # Missing 'rationale' field.
+        tmp_file.write(
+            json.dumps(
+                {
+                    "question": "What is 3 + 3?",
+                    "final_answer": "6",
+                }
+            )
+            + "\n"
+        )
+        tmp_file_path = Path(tmp_file.name)
+
+    with pytest.raises(
+        ValueError,
+        match="Sample at index 0 has invalid 'rationale'",
+    ):
+        StaticDataset(data=tmp_file_path, min_samples=1, strict=True)
+
+    # **Test 8: JSONL-specific edge cases:
+    # Missing required field in non-strict mode**
+    with tempfile.NamedTemporaryFile(
+        mode='w', suffix='.jsonl', delete=False
+    ) as tmp_file:
+        tmp_file.write(
+            json.dumps(
+                {
+                    "question": "What is 3 + 3?",
+                    "final_answer": "6",
+                }
+            )
+            + "\n"
+        )
+        tmp_file_path = Path(tmp_file.name)
+
+    dataset_non_strict = StaticDataset(
+        data=tmp_file_path, min_samples=0, strict=False
+    )
+    assert (
+        len(dataset_non_strict) == 0
+    ), "Invalid items should be filtered out in non-strict mode."
+
+
 def test_static_dataset_init_from_list():
     r"""
     Test StaticDataset initialization from a list of
@@ -837,10 +1042,11 @@ async def test_few_shot_generator():
     mock_agent.step.return_value = MagicMock(
         msgs=[
             MagicMock(
-                parsed={
-                    'question': 'Generated Question',
-                    'rationale': 'Generated Rationale',
-                }
+                parsed=DataPoint(
+                    question='Generated Question',
+                    rationale='Generated Rationale',
+                    final_answer="final",
+                ),
             )
         ]
     )
@@ -849,8 +1055,10 @@ async def test_few_shot_generator():
     dataset = FewShotGenerator(
         seed_dataset=mock_static_dataset,
         verifier=mock_verifier,
-        agent=mock_agent,
+        model=StubModel("Stub"),
     )
+
+    dataset.agent = mock_agent
 
     # Test generate_new method
     await dataset.generate_new(2)
@@ -887,13 +1095,15 @@ async def test_generate_new():
     ]
 
     mock_agent = MagicMock()
+    mock_agent.reset = MagicMock()
     mock_agent.step.return_value = MagicMock(
         msgs=[
             MagicMock(
-                parsed={
-                    'question': 'Generated Question',
-                    'rationale': 'Generated Rationale',
-                }
+                parsed=DataPoint(
+                    question="Generated Question",
+                    rationale="Generated Rationale",
+                    final_answer="Generated Answer",
+                )
             )
         ]
     )
@@ -901,10 +1111,11 @@ async def test_generate_new():
         MagicMock(
             msgs=[
                 MagicMock(
-                    parsed={
-                        "question": "What is 5 + 6?",
-                        "rationale": "print(5 + 6)",
-                    }
+                    parsed=DataPoint(
+                        question="What is 5 + 6?",
+                        rationale="print(5 + 6)",
+                        final_answer="11",
+                    )
                 )
             ]
         ),
@@ -912,20 +1123,22 @@ async def test_generate_new():
         MagicMock(
             msgs=[
                 MagicMock(
-                    parsed={
-                        "question": "What is 3 + 5?",
-                        "rationale": "print(2 + )",
-                    }
+                    parsed=DataPoint(
+                        question="What is 3 + 5?",
+                        rationale="print(2 + )",  # Syntax error
+                        final_answer="None",  # No valid answer
+                    )
                 )
             ]
         ),
         MagicMock(
             msgs=[
                 MagicMock(
-                    parsed={
-                        "question": "What is 7 + 8?",
-                        "rationale": "print(7 + 8)",
-                    }
+                    parsed=DataPoint(
+                        question="What is 7 + 8?",
+                        rationale="print(7 + 8)",
+                        final_answer="15",
+                    )
                 )
             ]
         ),
@@ -935,8 +1148,10 @@ async def test_generate_new():
     dataset = FewShotGenerator(
         seed_dataset=mock_static_dataset,
         verifier=mock_verifier,
-        agent=mock_agent,
+        model=StubModel("Stub"),
     )
+
+    dataset.agent = mock_agent
 
     new_datapoints = await dataset.generate_new(2)
 
@@ -997,15 +1212,17 @@ async def test_generate_new_with_max_retries():
 
     # Set up mock agent with specific output sequence
     mock_agent = MagicMock()
+    mock_agent.reset.return_value = None  # Ensures it does nothing
     mock_agent.step.side_effect = [
         # Correct
         MagicMock(
             msgs=[
                 MagicMock(
-                    parsed={
-                        "question": "What is 3 + 4?",
-                        "rationale": "print(3 + 4)",
-                    }
+                    parsed=DataPoint(
+                        question="What is 3 + 4?",
+                        rationale="print(3 + 4)",
+                        final_answer="7",
+                    )
                 )
             ]
         ),
@@ -1013,10 +1230,11 @@ async def test_generate_new_with_max_retries():
         MagicMock(
             msgs=[
                 MagicMock(
-                    parsed={
-                        "question": "What is 5 + 6?",
-                        "rationale": "print(5 + )",
-                    }
+                    parsed=DataPoint(
+                        question="What is 5 + 6?",
+                        rationale="print(5 + )",  # Syntax error
+                        final_answer="None",  # No valid answer
+                    )
                 )
             ]
         ),
@@ -1024,10 +1242,11 @@ async def test_generate_new_with_max_retries():
         MagicMock(
             msgs=[
                 MagicMock(
-                    parsed={
-                        "question": "What is 7 + 8?",
-                        "rationale": "print(7 + )",
-                    }
+                    parsed=DataPoint(
+                        question="What is 7 + 8?",
+                        rationale="print(7 + )",  # Syntax error
+                        final_answer="None",
+                    )
                 )
             ]
         ),
@@ -1035,10 +1254,11 @@ async def test_generate_new_with_max_retries():
         MagicMock(
             msgs=[
                 MagicMock(
-                    parsed={
-                        "question": "What is 9 + 10?",
-                        "rationale": "print(9 + )",
-                    }
+                    parsed=DataPoint(
+                        question="What is 9 + 10?",
+                        rationale="print(9 + )",  # Syntax error
+                        final_answer="None",
+                    )
                 )
             ]
         ),
@@ -1046,20 +1266,23 @@ async def test_generate_new_with_max_retries():
         MagicMock(
             msgs=[
                 MagicMock(
-                    parsed={
-                        "question": "What is 11 + 12?",
-                        "rationale": "print(11 + 12)",
-                    }
+                    parsed=DataPoint(
+                        question="What is 11 + 12?",
+                        rationale="print(11 + 12)",
+                        final_answer="23",
+                    )
                 )
             ]
         ),
     ]
 
+    model = StubModel("OpenAI")
+
     dataset = FewShotGenerator(
-        seed_dataset=mock_static_dataset,
-        verifier=mock_verifier,
-        agent=mock_agent,
+        seed_dataset=mock_static_dataset, verifier=mock_verifier, model=model
     )
+
+    dataset.agent = mock_agent
 
     # Expect RuntimeError due to insufficient valid
     # datapoints within retry limit
@@ -1118,13 +1341,18 @@ async def test_few_shot_generator_save_to_jsonl(tmp_path):
             )
         ]
     )
+    mock_agent.reset = MagicMock()
+
+    model = StubModel("OpenAI")
 
     # Create FewShotGenerator with mocks
     dataset = FewShotGenerator(
         seed_dataset=mock_static_dataset,
         verifier=mock_verifier,
-        agent=mock_agent,
+        model=model,
     )
+
+    dataset.agent = mock_agent
 
     # Mock data
     dataset._data = [
