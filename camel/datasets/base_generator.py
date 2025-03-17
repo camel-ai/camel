@@ -17,6 +17,7 @@ import json
 import random
 from pathlib import Path
 from typing import Any, Dict, List, Union
+from pydantic import ValidationError
 
 from camel.logger import get_logger
 
@@ -51,17 +52,18 @@ class BaseGenerator(abc.ABC):
         self._rng = random.Random(seed)
         self.save_to = Path(save_to)
 
+        self._data: List[DataPoint] = []
+
         if data_path is not None:
             file_path = Path(data_path)
             raw_data = self._init_from_jsonl(file_path)
             try:
-                self._data = [DataPoint(**item) for item in raw_data]
+                data_points = [DataPoint(**item) for item in raw_data]
+                self._data.extend(data_points)
             except ValidationError as e:
                 raise ValueError(
                     f"Failed to create DataPoint from JSONL data: {e}"
                 )
-        else:
-            self._data: List[DataPoint] = []
 
     @abc.abstractmethod
     async def generate_new(self, n: int, **kwargs) -> List[DataPoint]:
