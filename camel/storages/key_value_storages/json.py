@@ -75,7 +75,11 @@ class JsonStorage(BaseKeyValueStorage):
         """
         with self.json_path.open("a") as f:
             f.writelines(
-                [json.dumps(r, cls=_CamelJSONEncoder) + "\n" for r in records]
+                [
+                    json.dumps(r, cls=_CamelJSONEncoder, ensure_ascii=False)
+                    + "\n"
+                    for r in records
+                ]
             )
 
     def load(self) -> List[Dict[str, Any]]:
