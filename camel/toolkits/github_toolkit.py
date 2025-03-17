@@ -111,6 +111,7 @@ class GithubToolkit(BaseToolkit):
         """
         sb = self.repo.get_branch(self.repo.default_branch)
         from github import GithubException
+
         try:
             self.repo.create_git_ref(
                 ref=f"refs/heads/{branch_name}", sha=sb.commit.sha
