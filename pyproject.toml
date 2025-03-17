@@ -29,8 +29,6 @@ dependencies = [
     "protobuf>=5,<6",
     "docstring-parser>=0.15,<0.16",
     "pydantic>=1.9,<2.10",
-    "eval-type-backport==0.2.0",
-    "curl_cffi==0.6.2",
     "httpx>=0.28.0,<1.0.0dev",
     "psutil>=5.9.8,<6",
     "pyyaml>=6.0.2,<7",
