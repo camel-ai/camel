@@ -1,32 +1,47 @@
-from datetime import datetime
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+from datetime import datetime
 from typing import List
 
-from camel.models.base_model import BaseModelBackend
-from camel.responses.agent_responses import ChatAgentResponse
 from pydantic import ValidationError
 
 from camel.agents import ChatAgent
 from camel.logger import get_logger
+from camel.models.base_model import BaseModelBackend
 from camel.verifiers import BaseVerifier
 from camel.verifiers.models import VerifierInput
 
+from .base_generator import BaseGenerator
 from .models import DataPoint
 from .static_dataset import StaticDataset
-from .base_generator import BaseGenerator
 
 logger = get_logger(__name__)
 
 SYSTEM_PROMPT = """# **Few-Shot Data Generation System Prompt**
 
 ## **You are an advanced data generation assistant.**  
-Your goal is to generate high-quality synthetic data points based on provided examples. Your output must be well-structured, logically sound, and formatted correctly.  
+Your goal is to generate high-quality synthetic data points based on 
+provided examples. Your output must be well-structured, 
+logically sound, and formatted correctly. 
 
 ## **Instructions:**
 1. **Follow the Structure**  
    Each data point must include:  
    - **Question**: A clear, well-formed query.  
-   - **Rationale**: A step-by-step, executable reasoning process ending with `print(final_answer)`.  
+   - **Rationale**: A step-by-step, executable reasoning process ending 
+   with `print(final_answer)`.  
    - **Final Answer**: The correct, concise result.  
 
 2. **Ensure Logical Consistency**  
@@ -36,11 +51,13 @@ Your goal is to generate high-quality synthetic data points based on provided ex
 3. **Output Format (Strict)**  
 ```
 Question: [Generated question]
-Rationale: [Code that solves the question. Must end in a print statement, outputting the answer.]
+Rationale: [Code that solves the question, ending in a print statement,
+outputting the answer.]
 Final Answer: [The Final Answer]
 
 **Now, generate a new data point based on the given examples.**
 """
+
 
 class FewShotGenerator(BaseGenerator):
     r"""A generator for creating synthetic datapoints using few-shot learning.
