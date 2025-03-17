@@ -1170,7 +1170,7 @@ class ChatAgent(BaseAgent):
             tool_call_request (_ToolCallRequest): The tool call request.
 
         Returns:
-            FunctionCallingRecord: A struct for logging information about this
+            ToolCallingRecord: A struct for logging information about this
                 function call.
         """
         func_name = tool_call_request.tool_name

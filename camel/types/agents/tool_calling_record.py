@@ -20,7 +20,7 @@ class ToolCallingRecord(BaseModel):
     r"""Historical records of tools called in the conversation.
 
     Attributes:
-        func_name (str): The name of the tool being called.
+        tool_name (str): The name of the tool being called.
         args (Dict[str, Any]): The dictionary of arguments passed to the tool.
         result (Any): The execution result of calling this tool.
         tool_call_id (str): The ID of the tool call, if available.

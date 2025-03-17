@@ -88,7 +88,7 @@ print(str(response.info['tool_calls'])[:1000])
 
 '''
 ================================================================
-[FunctionCallingRecord(func_name='fetch_paper_data_title', 
+[ToolCallingRecord(tool_name='fetch_paper_data_title', 
 args={'paperTitle': 'Construction of the Literature Graph in
 Semantic Scholar', 'fields': 'title,abstract,authors,year,
 citationCount,paperId'}, result={'total': 1, 'offset': 0,
@@ -117,7 +117,7 @@ print(str(response.info['tool_calls'])[:1000])
 
 '''
 ================================================================
-[FunctionCallingRecord(func_name='fetch_paper_data_id', args=
+[ToolCallingRecord(tool_name='fetch_paper_data_id', args=
 {'paperID': '649def34f8be52c8b66281af98ae884c09aef38b', 
 'fields': 'title,abstract,authors,year,citationCount,
 publicationTypes,publicationDate,openAccessPdf'}, 
@@ -147,7 +147,7 @@ print(str(response.info['tool_calls'])[:1000])
 
 '''
 ================================================================
-[FunctionCallingRecord(func_name='fetch_bulk_paper_data', 
+[ToolCallingRecord(tool_name='fetch_bulk_paper_data', 
 args={'query': 'generative ai', 'year': '2024-', 'fields':
 'title,url,publicationTypes,publicationDate,openAccessPdf'},
 result={'total': 9849, 'token': 'PCOA3RZZB2ADADAEYCX2BLJJRDEGL
@@ -176,7 +176,7 @@ print(str(response.info['tool_calls'])[:1000])
 
 '''
 ================================================================
-[FunctionCallingRecord(func_name='fetch_bulk_paper_data', 
+[ToolCallingRecord(tool_name='fetch_bulk_paper_data', 
 args={'query': 'ai and bio', 'year': '2024-', 'fields': 'title,
 url,publicationTypes,publicationDate,openAccessPdf'}, result=
 {'total': 207, 'token': None, 'data': [{'paperId': '00c8477a9c
@@ -208,7 +208,7 @@ print(str(response.info['tool_calls'])[:1000])
 
 '''
 ================================================================
-[FunctionCallingRecord(func_name='fetch_recommended_papers',
+[ToolCallingRecord(tool_name='fetch_recommended_papers',
 args={'positive_paper_ids': ['02138d6d094d1e7511c157f0b1a3dd4e
 5b20ebee', '018f58247a20ec6b3256fd3119f57980a6f37748'], 'negati
 ve_paper_ids': ['0045ad0c1e14a4d1f4b011c92eb36b8df63d65bc'], 
@@ -237,7 +237,7 @@ print(str(response.info['tool_calls'])[:1000])
 
 '''
 ================================================================
-[FunctionCallingRecord(func_name='fetch_recommended_papers', 
+[ToolCallingRecord(tool_name='fetch_recommended_papers', 
 args={'positive_paper_ids': ['02138d6d094d1e7511c157f0b1a3dd4e5
 b20ebee', '018f58247a20ec6b3256fd3119f57980a6f37748'], 'negativ
 e_paper_ids': ['0045ad0c1e14a4d1f4b011c92eb36b8df63d65bc'],
@@ -269,7 +269,7 @@ print(str(response.info['tool_calls'])[:1000])
 
 '''
 ================================================================
-[FunctionCallingRecord(func_name='fetch_recommended_papers', 
+[ToolCallingRecord(tool_name='fetch_recommended_papers', 
 args={'positive_paper_ids': ['02138d6d094d1e7511c157f0b1a3dd4e5
 b20ebee', '018f58247a20ec6b3256fd3119f57980a6f37748'], 'negat
 ive_paper_ids': ['0045ad0c1e14a4d1f4b011c92eb36b8df63d65bc'],
@@ -299,7 +299,7 @@ print(str(response.info['tool_calls'])[:1000])
 
 '''
 ================================================================
-[FunctionCallingRecord(func_name='fetch_author_data', args=
+[ToolCallingRecord(tool_name='fetch_author_data', args=
 {'ids': ['2281351310', '2281342663', '2300302076', '230014152
 0'], 'fields': 'name,url,paperCount,hIndex,papers', 'save_to_
 file': True}, result=[{'authorId': '2281351310', 'url': 'ht
