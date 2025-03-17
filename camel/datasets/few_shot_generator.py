@@ -178,7 +178,6 @@ class FewShotGenerator(BaseGenerator):
                 prompt = self._construct_prompt(examples)
 
                 try:
-                    print("Querying OpenAI")
                     agent_output = (
                         self.agent.step(prompt, response_format=DataPoint)
                         .msgs[0]
@@ -198,7 +197,6 @@ class FewShotGenerator(BaseGenerator):
                     continue
 
                 rationale = agent_output.rationale
-                print(rationale)
 
                 if not isinstance(rationale, str):
                     raise TypeError(f"Rationale {rationale} is not a string.")
