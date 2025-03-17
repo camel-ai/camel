@@ -256,6 +256,6 @@ class FewShotGenerator(BaseGenerator):
             )
 
         # Thread-safe way to extend the data list
-        with asyncio.Lock():
+        async with asyncio.Lock():
             self._data.extend(valid_data_points)
         return valid_data_points
