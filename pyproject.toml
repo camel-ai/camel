@@ -180,6 +180,12 @@ storage = [
     "google-cloud-storage>=2.18.0,<3",
     "botocore>=1.35.3,<2",
 ]
+owl = [
+    "chunkr-ai>=0.0.41",
+    "docx2markdown>=0.1.1",
+    "mcp-simple-arxiv==0.2.2",
+    "mcp-server-fetch==2025.1.17",
+]
 all = [
     "transformers>=4,<5",
     "diffusers>=0.25.0,<0.26",
@@ -213,6 +219,10 @@ all = [
     "firecrawl-py>=1.0.0,<2",
     "arxiv>=2.1.3,<3",
     "arxiv2text>=0.1.14,<0.2",
+    "chunkr-ai>=0.0.41",
+    "docx2markdown>=0.1.1",
+    "mcp-simple-arxiv==0.2.2",
+    "mcp-server-fetch==2025.1.17",
     "imageio[pyav]>=2.34.2,<3",
     "pillow>=10.1.0,<11.0.0",
     "slack-sdk>=3.27.2,<4",
