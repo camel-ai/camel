@@ -54,7 +54,7 @@ class BaseGenerator(abc.ABC):
 
         self._data: List[DataPoint] = []
 
-        if data_path is not None:
+        if data_path:
             file_path = Path(data_path)
             raw_data = self._init_from_jsonl(file_path)
             try:
