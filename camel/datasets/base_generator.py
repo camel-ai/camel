@@ -125,6 +125,16 @@ class BaseGenerator(IterableDataset):
         Yields:
             DataPoint: A single datapoint.
         """
+        try:
+            if asyncio.get_event_loop().is_running():
+                raise RuntimeError(
+                    "Cannot use synchronous iteration (__iter__) in an async "
+                    "context; use 'async for' with __aiter__ instead"
+                )
+        except RuntimeError as e:
+            if "no running event loop" not in str(e):
+                raise
+
         while True:
             if not self._data:
                 new_datapoints = asyncio.run(self.generate_new(20))
@@ -141,17 +151,52 @@ class BaseGenerator(IterableDataset):
                 self._batch_to_save = []
 
     def sample(self) -> DataPoint:
-        r"""Returns the next datapoint from the current dataset.
+        r"""Returns the next datapoint from the current dataset
+        synchronously.
 
         Raises:
-            RuntimeError: If the Dataset is empty.
+            RuntimeError: If the Dataset is empt or if called
+            in an async context.
 
         Returns:
             Datapoint: The next Datapoint.
+
+        Note:
+            This method is intended for synchronous contexts.
+            Use 'async_sample' in asynchronous contexts to
+            avoid blocking or runtime errors.
         """
+        try:
+            if asyncio.get_event_loop().is_running():
+                raise RuntimeError(
+                    "Cannot use synchronous sampling (sample) "
+                    "in an async context; use async_sample instead"
+                )
+        except RuntimeError as e:
+            if "no running event loop" not in str(e):
+                raise
+
         if len(self._data) == 0:
             raise RuntimeError("Dataset is empty, cannot sample.")
         return next(iter(self))
+
+    async def async_sample(self) -> DataPoint:
+        r"""Returns the next datapoint from the current dataset asynchronously.
+
+        Raises:
+            RuntimeError: If the dataset is empty.
+
+        Returns:
+            DataPoint: The next datapoint.
+
+        Note:
+            This method is intended for asynchronous contexts. Use 'sample'
+            in synchronous contexts.
+        """
+        if len(self._data) == 0:
+            raise RuntimeError("Dataset is empty, cannot sample.")
+        async_iter = self.__aiter__()
+        return await async_iter.__anext__()
 
     def save_to_jsonl(self, file_path: Union[str, Path]) -> None:
         r"""Saves the generated datapoints to a JSONL (JSON Lines) file.

@@ -27,7 +27,9 @@ from camel.datasets import (
     FewShotGenerator,
     StaticDataset,
 )
+from camel.models.base_model import BaseModelBackend
 from camel.models.stub_model import StubModel
+from camel.verifiers import BaseVerifier
 
 
 # ruff: noqa: RUF001
@@ -1591,3 +1593,192 @@ async def test_few_shot_generator_flush(tmp_path):
     ]
     with pytest.raises(IOError, match="No such file or directory"):
         dataset.flush(invalid_path)
+
+
+# Fixture for a valid JSONL file with 4 datapoints
+# Needed for other tests
+@pytest.fixture
+def mock_jsonl_file(tmp_path: Path) -> Path:
+    r"""Creates a temporary JSONL file with four valid datapoints."""
+    file_path = tmp_path / "mock_data.jsonl"
+    datapoints = [
+        {
+            "question": "What is 2 + 2?",
+            "rationale": "Adding 2 and 2 gives 4.",
+            "final_answer": "4",
+        },
+        {
+            "question": "What color is the sky?",
+            "rationale": "The sky appears blue due to scattering.",
+            "final_answer": "Blue",
+        },
+        {
+            "question": "How many sides does a triangle have?",
+            "rationale": "A triangle has three sides.",
+            "final_answer": "3",
+        },
+        {
+            "question": "What is the capital of France?",
+            "rationale": "France’s capital is well-known.",
+            "final_answer": "Paris",
+        },
+    ]
+    with file_path.open("w", encoding="utf-8") as f:
+        for dp in datapoints:
+            json.dump(dp, f)
+            f.write("\n")
+    return file_path
+
+
+# Fixture for an invalid JSONL file
+# Needed for other tests
+@pytest.fixture
+def mock_wrong_jsonl_file(tmp_path: Path) -> Path:
+    r"""Creates a temporary JSONL file with
+    invalid data for error handling tests."""
+
+    file_path = tmp_path / "mock_wrong_data.jsonl"
+    invalid_data = [
+        '{"question": "Invalid", "rationale": "Missing final_answer"}',
+        '{"question": "Invalid", "final_answer": "Answer"}',
+        "Not a JSON object",
+    ]
+    with file_path.open("w", encoding="utf-8") as f:
+        for line in invalid_data:
+            f.write(line + "\n")
+    return file_path
+
+
+@pytest.mark.asyncio
+async def test_few_shot_generator_async(
+    mock_jsonl_file: Path, mock_wrong_jsonl_file: Path
+):
+    r"""Tests FewShotGenerator in an asynchronous context: initialization,
+    async sampling, async iteration, and error handling."""
+
+    mock_static_dataset = MagicMock(spec=StaticDataset)
+    mock_verifier = MagicMock(spec=BaseVerifier)
+    mock_model = MagicMock(spec=BaseModelBackend)
+    mock_model.model_type = "mock_model_type"
+
+    # --- Test 1: Initialization from a valid JSONL file ---
+    generator = FewShotGenerator(
+        seed_dataset=mock_static_dataset,
+        verifier=mock_verifier,
+        model=mock_model,
+        data_path=mock_jsonl_file,
+    )
+    assert (
+        len(generator._data) == 4
+    ), "Expected 4 datapoints to be loaded from JSONL"
+    assert all(
+        isinstance(dp, DataPoint) for dp in generator._data
+    ), "All loaded items should be DataPoint instances"
+    original_data = generator._data.copy()
+
+    # --- Test 2: Async sampling one datapoint ---
+    sampled_dp = await generator.async_sample()
+    assert isinstance(
+        sampled_dp, DataPoint
+    ), "Sampled item should be a DataPoint"
+    assert (
+        sampled_dp in original_data
+    ), "Sampled item should be one of the loaded datapoints"
+    assert (
+        len(generator._data) == 3
+    ), "Async sampling should reduce the number of datapoints by 1"
+
+    # --- Test 3: Asynchronous iteration (__aiter__) ---
+    collected_data = []
+    async for dp in generator:
+        collected_data.append(dp)
+        if len(collected_data) == 3:
+            break
+    assert (
+        len(collected_data) == 3
+    ), "Asynchronous iteration should yield the remaining 3 datapoints"
+    assert all(
+        isinstance(dp, DataPoint) for dp in collected_data
+    ), "All iterated items should be DataPoint instances"
+    assert sorted([dp.question for dp in collected_data]) == sorted(
+        [dp.question for dp in original_data[1:]]
+    ), (
+        "Remaining datapoints should match the "
+        "original data (minus the sampled one)"
+    )
+
+    # --- Test 4: Error handling with an invalid JSONL file ---
+    with pytest.raises(ValueError):
+        FewShotGenerator(
+            seed_dataset=mock_static_dataset,
+            verifier=mock_verifier,
+            model=mock_model,
+            data_path=mock_wrong_jsonl_file,
+        )
+
+
+def test_few_shot_generator_sync(
+    mock_jsonl_file: Path, mock_wrong_jsonl_file: Path
+):
+    r"""Tests FewShotGenerator in a synchronous context: initialization,
+    sampling, iteration, and error handling."""
+
+    mock_static_dataset = MagicMock(spec=StaticDataset)
+    mock_verifier = MagicMock(spec=BaseVerifier)
+    mock_model = MagicMock(spec=BaseModelBackend)
+    mock_model.model_type = "mock_model_type"
+
+    # --- Test 1: Initialization from a valid JSONL file ---
+    generator = FewShotGenerator(
+        seed_dataset=mock_static_dataset,
+        verifier=mock_verifier,
+        model=mock_model,
+        data_path=mock_jsonl_file,
+    )
+    assert (
+        len(generator._data) == 4
+    ), "Expected 4 datapoints to be loaded from JSONL"
+    assert all(
+        isinstance(dp, DataPoint) for dp in generator._data
+    ), "All loaded items should be DataPoint instances"
+    original_data = generator._data.copy()
+
+    # --- Test 2: Sampling one datapoint ---
+    sampled_dp = generator.sample()
+    assert isinstance(
+        sampled_dp, DataPoint
+    ), "Sampled item should be a DataPoint"
+    assert (
+        sampled_dp in original_data
+    ), "Sampled item should be one of the loaded datapoints"
+    assert (
+        len(generator._data) == 3
+    ), "Sampling should reduce the number of datapoints by 1"
+
+    # --- Test 3: Synchronous iteration (__iter__) ---
+    collected_data = []
+    for dp in generator:
+        collected_data.append(dp)
+        if len(collected_data) == 3:
+            break
+    assert (
+        len(collected_data) == 3
+    ), "Synchronous iteration should yield the remaining 3 datapoints"
+    assert all(
+        isinstance(dp, DataPoint) for dp in collected_data
+    ), "All iterated items should be DataPoint instances"
+    assert sorted([dp.question for dp in collected_data]) == sorted(
+        [dp.question for dp in original_data[1:]]
+    ), (
+        "Remaining datapoints should match the "
+        "original data (minus the sampled one)"
+    )
+
+    # --- Test 4: Error handling with an invalid JSONL file ---
+    with pytest.raises(ValueError):
+        FewShotGenerator(
+            seed_dataset=mock_static_dataset,
+            verifier=mock_verifier,
+            model=mock_model,
+            data_path=mock_wrong_jsonl_file,
+        )
