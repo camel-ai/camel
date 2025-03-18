@@ -108,7 +108,7 @@ class BaseGenerator(IterableDataset):
                     if self.cache:
                         with self.cache.open("a", encoding="utf-8") as f:
                             for dp in self._batch_to_save:
-                                json.dump(dp.to_dict(), f)
+                                json.dump(dp.to_dict(), f, ensure_ascii=False)
                                 f.write("\n")
                     self._batch_to_save = []
 
@@ -146,7 +146,7 @@ class BaseGenerator(IterableDataset):
                 if self.cache:
                     with self.cache.open("a", encoding="utf-8") as f:
                         for dp in self._batch_to_save:
-                            json.dump(dp.to_dict(), f)
+                            json.dump(dp.to_dict(), f, ensure_ascii=False)
                             f.write("\n")
                 self._batch_to_save = []
 
