@@ -17,29 +17,45 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
+from camel.logger import get_logger
 from camel.models import BaseModelBackend, ModelFactory
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.types import ModelPlatformType, ModelType
+from camel.utils import api_keys_required
+
+logger = get_logger(__name__)
 
 
 class OpenAIAgentToolkit(BaseToolkit):
-    r"""A toolkit for OpenAI's agent tools including web search and
+    r"""Toolkit for accessing OpenAI's agent tools including web search and
         file search.
 
-    Args:
-        model (Optional[BaseModelBackend], optional): The model to use for
-            responses. If None, defaults to gpt-4o-mini.
-            (default: :obj:`OpenAIModel` with `GPT_4O_MINI`)
-        api_key (Optional[str], optional): OpenAI API key. If not provided,
-            will attempt to use OPENAI_API_KEY environment variable.
+    Provides access to OpenAI's web search and file search capabilities
+    through the Responses API, allowing agents to retrieve information from
+    the web and search through uploaded files.
     """
 
+    @api_keys_required(
+        [
+            (None, "OPENAI_API_KEY"),
+        ]
+    )
     def __init__(
         self,
         model: Optional[BaseModelBackend] = None,
         api_key: Optional[str] = None,
     ) -> None:
+        r"""Initialize the OpenAI agent toolkit.
+
+        Args:
+            model (BaseModelBackend, optional): The model to use for
+                responses. If None, defaults to gpt-4o-mini.
+                (default: :obj:`None`)
+            api_key (str, optional): OpenAI API key. If not provided,
+                will attempt to use OPENAI_API_KEY environment variable.
+                (default: :obj:`None`)
+        """
         super().__init__()
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         if not self.api_key:
@@ -59,11 +75,16 @@ class OpenAIAgentToolkit(BaseToolkit):
         r"""Call the OpenAI Responses API with the given query and tools.
 
         Args:
-            query (str): The query to send.
-            tools (List[Dict[str, Any]]): The tools to use.
-            model (str, optional): The model to use. Defaults to "gpt-4o-mini".
+            query (str): The query to send to the API.
+            tools (List[Dict[str, Any]]): The tools to use for the query.
+            model (str, optional): The model to use for the query.
+                (default: :obj:`"gpt-4o-mini"`)
+
         Returns:
             Dict[str, Any]: The API response.
+
+        Raises:
+            ValueError: If the API call fails.
         """
         headers = {
             "Content-Type": "application/json",
@@ -84,6 +105,7 @@ class OpenAIAgentToolkit(BaseToolkit):
             return response.json()
 
         except Exception as e:
+            logger.error(f"API call failed: {e!s}")
             raise ValueError(f"API call failed: {e!s}")
 
     def _extract_output_text(self, response: Dict[str, Any]) -> str:
@@ -94,6 +116,9 @@ class OpenAIAgentToolkit(BaseToolkit):
 
         Returns:
             str: The extracted text.
+
+        Raises:
+            ValueError: If no text output is found in the response.
         """
         for output in response.get("output", []):
             if output.get("type") == "message":
@@ -101,7 +126,8 @@ class OpenAIAgentToolkit(BaseToolkit):
                     if content.get("type") == "output_text":
                         return content.get("text", "")
 
-        return "No text output found."
+        logger.error("No text output found in API response")
+        raise ValueError("No text output found in API response")
 
     def web_search(self, query: str) -> str:
         r"""Perform a web search using OpenAI's web search tool.
@@ -110,7 +136,7 @@ class OpenAIAgentToolkit(BaseToolkit):
             query (str): The search query.
 
         Returns:
-            str: The search result.
+            str: The search result or error message.
         """
         try:
             response = self._call_responses_api(
@@ -120,6 +146,7 @@ class OpenAIAgentToolkit(BaseToolkit):
             return self._extract_output_text(response)
 
         except Exception as e:
+            logger.error(f"Web search failed: {e!s}")
             return f"Web search failed: {e!s}"
 
     def file_search(
@@ -134,10 +161,11 @@ class OpenAIAgentToolkit(BaseToolkit):
             vector_store_id (str): The vector store ID to search in.
 
         Returns:
-            str: The search result.
+            str: The search result or error message.
         """
-        if not vector_store_id:
-            return "No vector store ID provided."
+        if not vector_store_id.strip():
+            logger.error("Empty vector store ID provided.")
+            raise ValueError("Vector store ID cannot be empty.")
 
         tool = {
             "type": "file_search",
@@ -154,13 +182,15 @@ class OpenAIAgentToolkit(BaseToolkit):
             return self._extract_output_text(response)
 
         except Exception as e:
+            logger.error(f"File search failed: {e!s}")
             return f"File search failed: {e!s}"
 
     def get_tools(self) -> List[FunctionTool]:
-        r"""Returns a list of available tools.
+        r"""Retrieve available toolkit functions as FunctionTool objects.
 
         Returns:
-            List[FunctionTool]: List of function tools.
+            List[FunctionTool]: Collection of FunctionTool objects representing
+                the available search functions in this toolkit.
         """
         return [
             FunctionTool(self.web_search),
