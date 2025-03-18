@@ -35,22 +35,25 @@ class BaseGenerator(abc.ABC):
 
     def __init__(
         self,
-        save_to: Union[str, Path],
         seed: int = 42,
+        cache: Union[str, Path, None] = None,
         data_path: Union[str, Path, None] = None,
         **kwargs,
     ):
         r"""Initialize the base generator.
 
         Args:
-            save_to (Union[str, Path]): Path to save generated datapoints during iteration.
             seed (int): Random seed for reproducibility. (default: :obj:`42`)
-            data_path (Union[str, Path, None]): Optional path to a JSONL file to
-                initialize the dataset from.
+            cache (Union[str, Path, None]): Optional path to save generated
+                datapoints during iteration. If None is provided, Datapoints
+                will be deleted every 100 generations.
+            data_path (Union[str, Path, None]): Optional path to a JSONL file
+                to initialize the dataset from.
             **kwargs: Additional generator parameters.
         """
         self._rng = random.Random(seed)
-        self.save_to = Path(save_to)
+        if cache:
+            self.cache = Path(cache)
 
         self._data: List[DataPoint] = []
 
@@ -81,9 +84,11 @@ class BaseGenerator(abc.ABC):
     def __aiter__(self):
         r"""Async iterator that yields datapoints dynamically.
 
-        Yields one datapoint at a time. If data_path was provided, yields those first.
-        When self._data is empty, generates 20 new datapoints. Every 100 yields appends
-        the batch to the specified JSONL file.
+        Yields one datapoint at a time. If data_path was provided,
+            yields those first.
+        When self._data is empty, generates 20 new datapoints.
+        Every 100 yields appends the batch to the specified JSONL file
+            or discards the batch if cache is None.
         """
         batch_to_save = []
 
@@ -97,7 +102,7 @@ class BaseGenerator(abc.ABC):
                 yield datapoint
                 batch_to_save.append(datapoint)
                 if len(batch_to_save) == 100:
-                    with self.save_to.open("a", encoding="utf-8") as f:
+                    with self.cache.open("a", encoding="utf-8") as f:
                         for dp in batch_to_save:
                             json.dump(dp.to_dict(), f)
                             f.write("\n")
@@ -135,10 +140,10 @@ class BaseGenerator(abc.ABC):
         file_path = Path(file_path)
 
         try:
-            with file_path.open("w", encoding="utf-8") as f:
+            with file_path.open("a", encoding="utf-8") as f:
                 for datapoint in self._data:
                     json.dump(datapoint.to_dict(), f, ensure_ascii=False)
-                    f.write("\n")  # Ensure each entry is on a new line
+                    f.write("\n")
             logger.info(f"Dataset saved successfully to {file_path}")
         except IOError as e:
             logger.error(f"Error writing to file {file_path}: {e}")
@@ -171,7 +176,8 @@ class BaseGenerator(abc.ABC):
 
         Raises:
             FileNotFoundError: If the specified JSONL file does not exist.
-            ValueError: If a line in the file contains invalid JSON or is not a dictionary.
+            ValueError: If a line in the file contains
+                invalid JSON or is not a dictionary.
         """
         if not file_path.exists():
             raise FileNotFoundError(f"JSONL file not found: {file_path}")
@@ -187,11 +193,13 @@ class BaseGenerator(abc.ABC):
                     record = json.loads(line)
                 except json.JSONDecodeError as e:
                     raise ValueError(
-                        f"Invalid JSON on line {line_number} in file {file_path}: {e}"
+                        f"Invalid JSON on line {line_number} "
+                        f"in file {file_path}: {e}"
                     )
                 if not isinstance(record, dict):
                     raise ValueError(
-                        f"Expected a dictionary at line {line_number}, got {type(record).__name__}"
+                        f"Expected a dictionary at line {line_number}, "
+                        f"got {type(record).__name__}"
                     )
                 raw_data.append(record)
         logger.info(
