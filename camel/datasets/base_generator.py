@@ -29,7 +29,7 @@ from .models import DataPoint
 logger = get_logger(__name__)
 
 
-class BaseGenerator(IterableDataset):
+class BaseGenerator(abc.ABC, IterableDataset):
     r"""Abstract base class for data generators.
 
     This class defines the interface for generating synthetic datapoints.
