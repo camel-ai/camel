@@ -1,6 +1,6 @@
 # Tools
 
-For more detailed usage information, please refer to our cookbook: [Tools Cookbook](../cookbooks/agents_with_tools.ipynb)
+For more detailed usage information, please refer to our cookbook: [Tools Cookbook](../cookbooks/advanced_features/agents_with_tools.ipynb)
 
 ## 1. Concept
 Tools serve as interfaces that allow LLMs and Agents to interact with the world. A tool is essentially a function that has a name, a description, input parameters, and an output type. In this section, we will introduce the tools currently supported by CAMEL and explain how to define your own tools and Toolkits.
@@ -122,7 +122,7 @@ tools = toolkit.get_tools()
 To utilize specific tools from the toolkits, you can implement code like the following:
 
 ```python
-from camel.toolkits import SearchToolkit
+from camel.toolkits import FunctionTool, SearchToolkit
 
 google_tool = FunctionTool(SearchToolkit().search_google)
 wiki_tool = FunctionTool(SearchToolkit().search_wiki)
