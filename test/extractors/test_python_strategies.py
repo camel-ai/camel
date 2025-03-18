@@ -13,8 +13,9 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import pytest
 
-from camel.extractors.python_strategies import (
-    BoxedStrategy,
+from camel.extractors.general import BoxedStrategy
+
+from camel.extractors.python import (
     PythonDictStrategy,
     PythonListStrategy,
     PythonSetStrategy,

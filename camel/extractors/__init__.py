@@ -18,22 +18,15 @@ from .graph_math_strategies import (
     GraphNodeListStrategy,
     MathValueStrategy,
 )
-from .python_strategies import (
-    BoxedStrategy,
-    PythonDictStrategy,
-    PythonListStrategy,
-    PythonSetStrategy,
-    PythonTupleStrategy,
-)
+from . import python
+
+from . import general
 
 __all__ = [
     "Extractor",
     "ExtractorStrategy",
-    "BoxedStrategy",
-    "PythonDictStrategy",
-    "PythonListStrategy",
-    "PythonSetStrategy",
-    "PythonTupleStrategy",
+    "general",
+    "python",
     "GraphDictionaryStrategy",
     "GraphListStrategy",
     "GraphNodeListStrategy",
