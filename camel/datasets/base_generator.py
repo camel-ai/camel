@@ -155,8 +155,8 @@ class BaseGenerator(IterableDataset):
         synchronously.
 
         Raises:
-            RuntimeError: If the Dataset is empt or if called
-            in an async context.
+            RuntimeError: If the Dataset is empty or if called
+                in an async context.
 
         Returns:
             Datapoint: The next Datapoint.
