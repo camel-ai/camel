@@ -72,7 +72,7 @@ class SingleAgentWorker(Worker):
             additional_info=task.additional_info,
         )
         try:
-            response = self.worker.astep(prompt, response_format=TaskResult)
+            response = await self.worker.astep(prompt, response_format=TaskResult)
         except Exception as e:
             print(
                 f"{Fore.RED}Error occurred while processing task {task.id}:"
