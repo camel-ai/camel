@@ -42,9 +42,9 @@ class VirtualTryOnToolkit(BaseToolkit):
     
     def __init__(
         self,
-        access_key: str = "824f47402271487b94fb0e709dcf80fd", # get from https://www.klingai.com/dashboard/api (replace with your own)
-        secret_key: str = "1caa70bf71bb40f3960d393553224234", # get from https://www.klingai.com/dashboard/api (replace with your own)
-        model_image_path: str = "/Users/liwenjie/Documents/op_space/test_sandbox/owl/tmp/models/model.png", # your virtual "model" image path (replace with your own)
+        access_key: str = "", # get from https://www.klingai.com/dashboard/api (replace with your own)
+        secret_key: str = "", # get from https://www.klingai.com/dashboard/api (replace with your own)
+        model_image_path: str = "", # your virtual "model" image path (replace with your own)
         output_dir: str = "./tmp/fitting_room", # the directory to save the generated try-on images
         api_domain: str = "https://api.klingai.com", # the API domain
         default_model_name: str = "kolors-virtual-try-on-v1-5" # the default model name
