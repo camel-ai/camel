@@ -85,7 +85,7 @@ class FileWriteToolkit(BaseToolkit):
             path_obj = self.output_dir / path_obj
 
         sanitized_filename = self._sanitize_filename(path_obj.name)
-        path_obj = path_obj.parent/sanitized_filename
+        path_obj = path_obj.parent / sanitized_filename
         return path_obj.resolve()
 
     def _write_text_file(
@@ -375,16 +375,19 @@ class FileWriteToolkit(BaseToolkit):
         return [
             FunctionTool(self.write_to_file),
         ]
-        
-    def _sanitize_filename(self,filename: str)-> str:
-        r"""Sanitize a filename by replacing any character that is not alphanumeric,
-        a dot (.), hyphen (-), or underscore (_) with an underscore (_).
+
+    def _sanitize_filename(self, filename: str) -> str:
+        r"""Sanitize a filename by replacing any character that is not
+        alphanumeric, a dot (.), hyphen (-), or underscore (_) with an
+        underscore (_).
 
         Args:
-            filename (str): The original filename which may contain spaces or special characters.
+            filename (str): The original filename which may contain spaces or
+                special characters.
 
         Returns:
-            str: The sanitized filename with disallowed characters replaced by underscores.
+            str: The sanitized filename with disallowed characters replaced by
+                underscores.
         """
         safe = re.sub(r'[^\w\-.]', '_', filename)
         return safe
