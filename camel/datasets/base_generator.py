@@ -59,6 +59,7 @@ class BaseGenerator(IterableDataset):
             self.cache = Path(cache)
 
         self._data: List[DataPoint] = []
+        self._batch_to_save: List[DataPoint] = []
 
         if data_path:
             file_path = Path(data_path)
@@ -93,24 +94,22 @@ class BaseGenerator(IterableDataset):
         Every 100 yields appends the batch to the specified JSONL file
             or discards the batch if cache is None.
         """
-        batch_to_save = []
 
         async def generator():
-            nonlocal batch_to_save
             while True:
                 if not self._data:
                     new_datapoints = await self.generate_new(20)
                     self._data.extend(new_datapoints)
                 datapoint = self._data.pop(0)
                 yield datapoint
-                batch_to_save.append(datapoint)
-                if len(batch_to_save) == 100:
-                    if self.cache is not None:
+                self._batch_to_save.append(datapoint)
+                if len(self._batch_to_save) == 100:
+                    if self.cache:
                         with self.cache.open("a", encoding="utf-8") as f:
-                            for dp in batch_to_save:
+                            for dp in self._batch_to_save:
                                 json.dump(dp.to_dict(), f)
                                 f.write("\n")
-                    batch_to_save = []
+                    self._batch_to_save = []
 
         return generator()
 
@@ -123,22 +122,20 @@ class BaseGenerator(IterableDataset):
         Every 100 yields appends the batch to the specified JSONL file
             or discards the batch if cache is None.
         """
-        batch_to_save = []
-
         while True:
             if not self._data:
                 new_datapoints = asyncio.run(self.generate_new(20))
                 self._data.extend(new_datapoints)
             datapoint = self._data.pop(0)
             yield datapoint
-            batch_to_save.append(datapoint)
-            if len(batch_to_save) == 100:
-                if self.cache is not None:
+            self._batch_to_save.append(datapoint)
+            if len(self._batch_to_save) == 100:
+                if self.cache:
                     with self.cache.open("a", encoding="utf-8") as f:
-                        for dp in batch_to_save:
+                        for dp in self._batch_to_save:
                             json.dump(dp.to_dict(), f)
                             f.write("\n")
-                batch_to_save = []
+                self._batch_to_save = []
 
     def sample(self) -> DataPoint:
         r"""Sample a random datapoint from the current dataset.
@@ -151,7 +148,7 @@ class BaseGenerator(IterableDataset):
         """
         if len(self._data) == 0:
             raise RuntimeError("Dataset is empty, cannot sample.")
-        return self._data.pop(0)
+        return next(iter(self))
 
     def save_to_jsonl(self, file_path: Union[str, Path]) -> None:
         r"""Saves the generated datapoints to a JSONL (JSON Lines) file.
