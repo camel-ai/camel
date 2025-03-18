@@ -2418,7 +2418,6 @@ class AsyncBrowserToolkit(BaseToolkit):
         prefix = "self.browser."
                 
         code = f"{prefix}{action_code}"
-        print(code)
         async_flag = extract_function_name(action_code) in ASYNC_ACTIONS
         feedback_flag = _check_if_with_feedback(action_code)
         
