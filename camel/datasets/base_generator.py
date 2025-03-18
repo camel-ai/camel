@@ -13,11 +13,14 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import abc
+import asyncio
 import json
 import random
 from pathlib import Path
 from typing import Any, Dict, List, Union
+
 from pydantic import ValidationError
+from torch.utils.data import IterableDataset
 
 from camel.logger import get_logger
 
@@ -26,7 +29,7 @@ from .models import DataPoint
 logger = get_logger(__name__)
 
 
-class BaseGenerator(abc.ABC):
+class BaseGenerator(IterableDataset):
     r"""Abstract base class for data generators.
 
     This class defines the interface for generating synthetic datapoints.
@@ -102,13 +105,40 @@ class BaseGenerator(abc.ABC):
                 yield datapoint
                 batch_to_save.append(datapoint)
                 if len(batch_to_save) == 100:
+                    if self.cache is not None:
+                        with self.cache.open("a", encoding="utf-8") as f:
+                            for dp in batch_to_save:
+                                json.dump(dp.to_dict(), f)
+                                f.write("\n")
+                    batch_to_save = []
+
+        return generator()
+
+    def __iter__(self):
+        r"""Synchronous iterator for PyTorch IterableDataset compatibility.
+
+        Yields one datapoint at a time. If data_path was provided,
+            yields those first.
+        When self._data is empty, generates 20 new datapoints.
+        Every 100 yields appends the batch to the specified JSONL file
+            or discards the batch if cache is None.
+        """
+        batch_to_save = []
+
+        while True:
+            if not self._data:
+                new_datapoints = asyncio.run(self.generate_new(20))
+                self._data.extend(new_datapoints)
+            datapoint = self._data.pop(0)
+            yield datapoint
+            batch_to_save.append(datapoint)
+            if len(batch_to_save) == 100:
+                if self.cache is not None:
                     with self.cache.open("a", encoding="utf-8") as f:
                         for dp in batch_to_save:
                             json.dump(dp.to_dict(), f)
                             f.write("\n")
-                    batch_to_save = []
-
-        return generator()
+                batch_to_save = []
 
     def sample(self) -> DataPoint:
         r"""Sample a random datapoint from the current dataset."""
