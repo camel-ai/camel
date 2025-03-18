@@ -51,37 +51,40 @@ logger = get_logger(__name__)
 TOP_NO_LABEL_ZONE = 20
 
 AVAILABLE_ACTIONS_PROMPT = """
-1. `fill_input_id(identifier: Union[str, int], text: str)`: Fill an input 
+1. `get_partial_screenshot(identifier: Union[str, int])`: Get the partial screenshot of the element with the given identifier. For example, if the ID is 1, you can save the partial screenshot of it by calling get_partial_screenshot(1). If the partial screenshot is 
+successfully taken, you can stop the simulation and report the path to 
+the partial screenshot for further processing.
+2. `fill_input_id(identifier: Union[str, int], text: str)`: Fill an input 
 field (e.g. search box) with the given text and press Enter.
-2. `click_id(identifier: Union[str, int])`: Click an element with the given ID.
-3. `hover_id(identifier: Union[str, int])`: Hover over an element with the 
+3. `click_id(identifier: Union[str, int])`: Click an element with the given ID.
+4. `hover_id(identifier: Union[str, int])`: Hover over an element with the 
 given ID.
-4. `download_file_id(identifier: Union[str, int])`: Download a file with the 
+5. `download_file_id(identifier: Union[str, int])`: Download a file with the 
 given ID. It returns the path to the downloaded file. If the file is 
 successfully downloaded, you can stop the simulation and report the path to 
 the downloaded file for further processing.
-5. `scroll_to_bottom()`: Scroll to the bottom of the page.
-6. `scroll_to_top()`: Scroll to the top of the page.
-7. `scroll_up()`: Scroll up the page. It is suitable when you want to see the 
+6. `scroll_to_bottom()`: Scroll to the bottom of the page.
+7. `scroll_to_top()`: Scroll to the top of the page.
+8. `scroll_up()`: Scroll up the page. It is suitable when you want to see the 
 elements above the current viewport.
-8. `scroll_down()`: Scroll down the page. It is suitable when you want to see 
+9. `scroll_down()`: Scroll down the page. It is suitable when you want to see 
 the elements below the current viewport. If the webpage does not change, It 
 means that the webpage has scrolled to the bottom.
-9. `back()`: Navigate back to the previous page. This is useful when you want 
+10. `back()`: Navigate back to the previous page. This is useful when you want 
 to go back to the previous page, as current page is not useful.
-10. `stop()`: Stop the action process, because the task is completed or failed 
+11. `stop()`: Stop the action process, because the task is completed or failed 
 (impossible to find the answer). In this situation, you should provide your 
 answer in your output.
-11. `get_url()`: Get the current URL of the current page.
-12. `find_text_on_page(search_text: str)`: Find the next given text on the 
+12. `get_url()`: Get the current URL of the current page.
+13. `find_text_on_page(search_text: str)`: Find the next given text on the 
 current whole page, and scroll the page to the targeted text. It is equivalent 
 to pressing Ctrl + F and searching for the text, and is powerful when you want 
 to fast-check whether the current page contains some specific text.
-13. `visit_page(url: str)`: Go to the specific url page.
-14. `click_blank_area()`: Click a blank area of the page to unfocus the 
+14. `visit_page(url: str)`: Go to the specific url page.
+15. `click_blank_area()`: Click a blank area of the page to unfocus the 
 current element. It is useful when you have clicked an element but it cannot 
 unfocus itself (e.g. Menu bar) to automatically render the updated webpage.
-15. `ask_question_about_video(question: str)`: Ask a question about the 
+16. `ask_question_about_video(question: str)`: Ask a question about the 
 current webpage which contains video, e.g. youtube websites.
 """
 
@@ -89,6 +92,7 @@ ACTION_WITH_FEEDBACK_LIST = [
     'ask_question_about_video',
     'download_file_id',
     'find_text_on_page',
+    'get_partial_screenshot',
 ]
 
 
@@ -914,6 +918,91 @@ class BaseBrowser:
         markdown_content = html2text(html_content)
         return markdown_content
 
+    def get_partial_screenshot(self, identifier: Union[str, int]) -> str:
+        r"""Get the partial screenshot of the element with the given identifier. For example, if the ID is 1, you can save the partial screenshot of it by calling get_partial_screenshot(1).
+        
+        Args:
+            identifier: The identifier (ID) of the element to get the partial screenshot of.
+            
+        Returns:
+            str: The path to the partial screenshot of the element. (By default a partial screenshot of the element is saved in the cache_dir/clothes folder.)
+        """
+        if isinstance(identifier, int):
+            identifier = str(identifier)
+        
+        # 获取元素定位器
+        target = self.page.locator(f"[__elementId='{identifier}']")
+        
+        try:
+            # 检查元素是否存在
+            target.wait_for(timeout=5000)
+        except Exception as e:
+            logger.debug(f"Cannot find the element with ID {identifier}: {e}")
+            raise ValueError(f"Cannot find the element with ID {identifier}")
+        
+        # 确保元素在可视区域内
+        target.scroll_into_view_if_needed()
+        
+        # 获取当前URL的名称部分作为前缀
+        url_name = self.page.url.split("/")[-1]
+        for char in ['\\', '/', ':', '*', '?', '"', '<', '>', '|', '.']:
+            url_name = url_name.replace(char, "_")
+        
+        # 生成时间戳
+        timestamp = datetime.datetime.now().strftime("%m%d%H%M%S")
+        
+        # 构建文件名：url_element_{id}_{timestamp}.png
+        save_name = f"{url_name}_element_{identifier}_{timestamp}.png"
+        
+        
+        save_path = os.path.join(self.cache_dir, "clothes") # by default, the partial screenshot is saved in the cache_dir/clothes folder.
+        
+        try:    
+            # 确保路径存在
+            os.makedirs(save_path, exist_ok=True)
+            save_path = os.path.join(save_path, save_name)
+            logger.debug(f"（get_partial_screenshot...） The sub-screenshot will be saved in: {save_path}")
+        except Exception as e:
+            logger.debug(f"（get_partial_screenshot...） Cannot create the path in {save_path}: {e}")
+            return f"Cannot create the path in {save_path}: {e}, please check if the save_path: {save_path} is correct"
+        
+        # 截取元素图片
+        try:
+            img_bytes = target.screenshot()
+            img = Image.open(io.BytesIO(img_bytes))
+            
+            # 保存图片
+            img.save(save_path)
+            
+            # return img, save_path
+            return f"The partial screenshot of the element with ID {identifier} has been saved to {save_path}."
+        except Exception as e:
+            logger.debug(f"Failed to screenshot the element with ID {identifier}: {e}")
+            
+            # 尝试方法2：从整页截图中裁剪
+            try:
+                # 获取元素位置
+                elements = self.get_interactive_elements()
+                if str(identifier) in elements and len(elements[str(identifier)]["rects"]) > 0:
+                    rect = elements[str(identifier)]["rects"][0]
+                    
+                    # 获取整页截图并裁剪
+                    full_screenshot, _ = self.get_screenshot()
+                    left, top = rect["left"], rect["top"]
+                    right, bottom = rect["right"], rect["bottom"]
+                    
+                    element_img = full_screenshot.crop((left, top, right, bottom))
+                    element_img.save(save_path)
+                    
+                    # return element_img, save_path
+                    return f"The partial screenshot of the element with ID {identifier} has been saved to {save_path}."
+            except Exception as inner_e:
+                logger.debug(f"The alternative method for getting the partial screenshot also failed: {inner_e}")
+                
+            raise ValueError(f"Cannot screenshot the element with ID {identifier}: {str(e)}")
+
+        return f"The partial screenshot of the element with ID {identifier} has been saved to {save_path}."
+
 
 class BrowserToolkit(BaseToolkit):
     r"""A class for browsing the web and interacting with web pages.
@@ -1079,6 +1168,7 @@ problem. You can use the `click_id()` function to click on the link to see if
 it is useful.
 - Always keep in mind that your action must be based on the ID shown in the 
 current image or viewport, not the ID shown in the history.
+- If you need to get the partial screenshot of a specific area (indicated by the ID), for example, a specific sub area of the page, you can use the `get_partial_screenshot` function. By calling `get_partial_screenshot(ID)`, you can get the partial screenshot of the element with the given ID. With this browser function, always remember you have the ability to get any partial screenshot on a web page and don't ask me to save the screenshot manually.
 - Do not use `stop()` lightly. Always remind yourself that the image only 
 shows a part of the full page. If you cannot find the answer, try to use 
 functions like `scroll_up()` and `scroll_down()` to check the full content of 
