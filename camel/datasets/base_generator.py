@@ -48,15 +48,14 @@ class BaseGenerator(IterableDataset):
         Args:
             seed (int): Random seed for reproducibility. (default: :obj:`42`)
             cache (Union[str, Path, None]): Optional path to save generated
-                datapoints during iteration. If None is provided, Datapoints
-                will be deleted every 100 generations.
+                datapoints during iteration. If None is provided, datapoints
+                will be discarded every 100 generations.
             data_path (Union[str, Path, None]): Optional path to a JSONL file
                 to initialize the dataset from.
             **kwargs: Additional generator parameters.
         """
         self._rng = random.Random(seed)
-        if cache:
-            self.cache = Path(cache)
+        self.cache = Path(cache) if cache else None
 
         self._data: List[DataPoint] = []
         self._batch_to_save: List[DataPoint] = []
@@ -88,11 +87,13 @@ class BaseGenerator(IterableDataset):
     def __aiter__(self):
         r"""Async iterator that yields datapoints dynamically.
 
-        Yields one datapoint at a time. If data_path was provided,
-            yields those first.
-        When self._data is empty, generates 20 new datapoints.
-        Every 100 yields appends the batch to the specified JSONL file
-            or discards the batch if cache is None.
+        If a `data_path` was provided during initialization, those datapoints
+        are yielded first. When self._data is empty, 20 new datapoints
+        are generated. Every 100 yields, the batch is appended to the
+        JSONL file or discarded if `cache` is None.
+
+        Yields:
+            DataPoint: A single datapoint.
         """
 
         async def generator():
@@ -116,11 +117,13 @@ class BaseGenerator(IterableDataset):
     def __iter__(self):
         r"""Synchronous iterator for PyTorch IterableDataset compatibility.
 
-        Yields one datapoint at a time. If data_path was provided,
-            yields those first.
-        When self._data is empty, generates 20 new datapoints.
-        Every 100 yields appends the batch to the specified JSONL file
-            or discards the batch if cache is None.
+        If a `data_path` was provided during initialization, those datapoints
+        are yielded first. When self._data is empty, 20 new datapoints
+        are generated. Every 100 yields, the batch is appended to the
+        JSONL file or discarded if `cache` is None.
+
+        Yields:
+            DataPoint: A single datapoint.
         """
         while True:
             if not self._data:
@@ -138,7 +141,7 @@ class BaseGenerator(IterableDataset):
                 self._batch_to_save = []
 
     def sample(self) -> DataPoint:
-        r"""Sample a random datapoint from the current dataset.
+        r"""Returns the next datapoint from the current dataset.
 
         Raises:
             RuntimeError: If the Dataset is empty.
@@ -164,7 +167,7 @@ class BaseGenerator(IterableDataset):
 
         Notes:
             - Uses `self._data`, which contains the generated datapoints.
-            - Overwrites the file if it already exists.
+            - Appends to the file if it already exists.
             - Ensures compatibility with large datasets by using JSONL format.
         """
         if not self._data:
@@ -189,14 +192,12 @@ class BaseGenerator(IterableDataset):
             file_path (Union[str, Path]): Path to save the JSONL file.
 
         Notes:
-            - Uses save_to_jsonl for the saving process.
+            - Uses `save_to_jsonl` to save `self._data`.
         """
 
         self.save_to_jsonl(file_path)
         self._data = []
-        logger.info(
-            f"Data flushed to {file_path} and cleared from the memmory"
-        )
+        logger.info(f"Data flushed to {file_path} and cleared from the memory")
 
     def _init_from_jsonl(self, file_path: Path) -> List[Dict[str, Any]]:
         r"""Load and parse a dataset from a JSONL file.
@@ -209,8 +210,7 @@ class BaseGenerator(IterableDataset):
 
         Raises:
             FileNotFoundError: If the specified JSONL file does not exist.
-            ValueError: If a line in the file contains
-                invalid JSON or is not a dictionary.
+            ValueError: If a line contains invalid JSON or is not a dictionary.
         """
         if not file_path.exists():
             raise FileNotFoundError(f"JSONL file not found: {file_path}")
