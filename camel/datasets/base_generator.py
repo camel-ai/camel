@@ -159,7 +159,7 @@ class BaseGenerator(IterableDataset):
                 in an async context.
 
         Returns:
-            Datapoint: The next Datapoint.
+            DataPoint: The next DataPoint.
 
         Note:
             This method is intended for synchronous contexts.
