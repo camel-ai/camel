@@ -51,37 +51,37 @@ logger = get_logger(__name__)
 TOP_NO_LABEL_ZONE = 20
 
 AVAILABLE_ACTIONS_PROMPT = """
-1. `fill_input_id(identifier: Union[str, int], text: str)`: Fill an input 
+1. `fill_input_id(identifier: Union[str, int], text: str)`: Fill an input
 field (e.g. search box) with the given text and press Enter.
 2. `click_id(identifier: Union[str, int])`: Click an element with the given ID.
-3. `hover_id(identifier: Union[str, int])`: Hover over an element with the 
+3. `hover_id(identifier: Union[str, int])`: Hover over an element with the
 given ID.
-4. `download_file_id(identifier: Union[str, int])`: Download a file with the 
-given ID. It returns the path to the downloaded file. If the file is 
-successfully downloaded, you can stop the simulation and report the path to 
+4. `download_file_id(identifier: Union[str, int])`: Download a file with the
+given ID. It returns the path to the downloaded file. If the file is
+successfully downloaded, you can stop the simulation and report the path to
 the downloaded file for further processing.
 5. `scroll_to_bottom()`: Scroll to the bottom of the page.
 6. `scroll_to_top()`: Scroll to the top of the page.
-7. `scroll_up()`: Scroll up the page. It is suitable when you want to see the 
+7. `scroll_up()`: Scroll up the page. It is suitable when you want to see the
 elements above the current viewport.
-8. `scroll_down()`: Scroll down the page. It is suitable when you want to see 
-the elements below the current viewport. If the webpage does not change, It 
+8. `scroll_down()`: Scroll down the page. It is suitable when you want to see
+the elements below the current viewport. If the webpage does not change, It
 means that the webpage has scrolled to the bottom.
-9. `back()`: Navigate back to the previous page. This is useful when you want 
+9. `back()`: Navigate back to the previous page. This is useful when you want
 to go back to the previous page, as current page is not useful.
-10. `stop()`: Stop the action process, because the task is completed or failed 
-(impossible to find the answer). In this situation, you should provide your 
+10. `stop()`: Stop the action process, because the task is completed or failed
+(impossible to find the answer). In this situation, you should provide your
 answer in your output.
 11. `get_url()`: Get the current URL of the current page.
-12. `find_text_on_page(search_text: str)`: Find the next given text on the 
-current whole page, and scroll the page to the targeted text. It is equivalent 
-to pressing Ctrl + F and searching for the text, and is powerful when you want 
+12. `find_text_on_page(search_text: str)`: Find the next given text on the
+current whole page, and scroll the page to the targeted text. It is equivalent
+to pressing Ctrl + F and searching for the text, and is powerful when you want
 to fast-check whether the current page contains some specific text.
 13. `visit_page(url: str)`: Go to the specific url page.
-14. `click_blank_area()`: Click a blank area of the page to unfocus the 
-current element. It is useful when you have clicked an element but it cannot 
+14. `click_blank_area()`: Click a blank area of the page to unfocus the
+current element. It is useful when you have clicked an element but it cannot
 unfocus itself (e.g. Menu bar) to automatically render the updated webpage.
-15. `ask_question_about_video(question: str)`: Ask a question about the 
+15. `ask_question_about_video(question: str)`: Ask a question about the
 current webpage which contains video, e.g. youtube websites.
 """
 
@@ -424,7 +424,7 @@ def _get_random_color(identifier: int) -> Tuple[int, int, int, int]:
 
 
 class BaseBrowser:
-    def __init__(self, headless=True, cache_dir: Optional[str] = None):
+    def __init__(self, headless=True, cache_dir: Optional[str] = None, persistent: bool = False):
         r"""Initialize the WebBrowserToolkit instance.
 
         Args:
@@ -437,16 +437,19 @@ class BaseBrowser:
         from playwright.sync_api import (
             sync_playwright,
         )
+        self._ensure_browser_installed()
 
         self.history: list = []
         self.headless = headless
         self.playwright = sync_playwright().start()
         self.page_history: list = []  # stores the history of visited pages
+        self.persistent = persistent
 
         # Set the cache directory
         self.cache_dir = "tmp/" if cache_dir is None else cache_dir
         os.makedirs(self.cache_dir, exist_ok=True)
-
+        self.browser_data_dir = os.path.join(self.cache_dir, "browser_data")
+        os.makedirs(self.browser_data_dir, exist_ok=True)
         # Load the page script
         abs_dir_path = os.path.dirname(os.path.abspath(__file__))
         page_script_path = os.path.join(abs_dir_path, "page_script.js")
@@ -462,12 +465,23 @@ class BaseBrowser:
 
     def init(self) -> None:
         r"""Initialize the browser."""
-        # Launch the browser, if headless is False, the browser will display
-        self.browser = self.playwright.chromium.launch(headless=self.headless)
-        # Create a new context
-        self.context = self.browser.new_context(accept_downloads=True)
-        # Create a new page
-        self.page = self.context.new_page()
+        if self.persistent:
+            self.context = self.playwright.chromium.launch_persistent_context(
+                user_data_dir=os.path.abspath(self.browser_data_dir),
+                headless=self.headless,
+                accept_downloads=True
+            )
+            if len(self.context.pages) > 0:
+                self.page = self.context.pages[0]
+            else:
+                self.page = self.context.new_page()
+        else:
+            # Launch the browser, if headless is False, the browser will display
+            self.browser = self.playwright.chromium.launch(headless=self.headless)
+            # Create a new context
+            self.context = self.browser.new_context(accept_downloads=True)
+            # Create a new page
+            self.page = self.context.new_page()
 
     def clean_cache(self) -> None:
         r"""Delete the cache directory and its contents."""
@@ -490,7 +504,6 @@ class BaseBrowser:
 
     def visit_page(self, url: str) -> None:
         r"""Visit a page with the given URL."""
-
         self.page.goto(url)
         self._wait_for_load()
         self.page_url = url
@@ -849,7 +862,7 @@ class BaseBrowser:
             let text = "{search_text}";
             let found = window.find(text);
             if (!found) {{
-                let elements = document.querySelectorAll("*:not(script):not(style)"); 
+                let elements = document.querySelectorAll("*:not(script):not(style)");
                 for (let el of elements) {{
                     if (el.innerText && el.innerText.includes(text)) {{
                         el.scrollIntoView({{behavior: "smooth", block: "center"}});
@@ -890,7 +903,12 @@ class BaseBrowser:
         self._wait_for_load()
 
     def close(self):
-        self.browser.close()
+        if hasattr(self, 'context'):
+            self.context.close()
+        if hasattr(self, 'browser') and self.browser is not None:
+            self.browser.close()
+        if hasattr(self, 'playwright'):
+            self.playwright.stop()
 
     # ruff: noqa: E501
     def show_interactive_elements(self):
@@ -914,6 +932,32 @@ class BaseBrowser:
         markdown_content = html2text(html_content)
         return markdown_content
 
+    def _ensure_browser_installed(self) -> None:
+        import platform
+        import subprocess
+        import sys
+
+        try:
+            from playwright.sync_api import sync_playwright
+            with sync_playwright() as p:
+                browser = p.chromium.launch()
+                browser.close()
+        except Exception:
+            logger.info("Installing Chromium browser...")
+            try:
+                subprocess.run(
+                    [sys.executable, "-m", "playwright", "install", "chromium"],
+                    check=True, capture_output=True
+                )
+                if platform.system().lower() == "linux":
+                    subprocess.run(
+                        [sys.executable, "-m", "playwright", "install-deps", "chromium"],
+                        check=True, capture_output=True
+                    )
+                logger.info("Chromium browser installation completed")
+            except subprocess.CalledProcessError as e:
+                raise RuntimeError(f"Failed to install browser: {e.stderr}")
+
 
 class BrowserToolkit(BaseToolkit):
     r"""A class for browsing the web and interacting with web pages.
@@ -930,6 +974,7 @@ class BrowserToolkit(BaseToolkit):
         web_agent_model: Optional[BaseModelBackend] = None,
         planning_agent_model: Optional[BaseModelBackend] = None,
         output_language: str = "en",
+        persistent: bool = False,
     ):
         r"""Initialize the BrowserToolkit instance.
 
@@ -944,7 +989,7 @@ class BrowserToolkit(BaseToolkit):
                 backend for the planning agent.
         """
 
-        self.browser = BaseBrowser(headless=headless, cache_dir=cache_dir)
+        self.browser = BaseBrowser(headless=headless, cache_dir=cache_dir, persistent=persistent)
 
         self.history_window = history_window
         self.web_agent_model = web_agent_model
@@ -983,7 +1028,7 @@ class BrowserToolkit(BaseToolkit):
 
         system_prompt = """
 You are a helpful web agent that can assist users in browsing the web.
-Given a high-level task, you can leverage predefined browser tools to help 
+Given a high-level task, you can leverage predefined browser tools to help
 users achieve their goals.
         """
 
@@ -994,7 +1039,7 @@ users achieve their goals.
         )
 
         planning_system_prompt = """
-You are a helpful planning agent that can assist users in planning complex 
+You are a helpful planning agent that can assist users in planning complex
 tasks which need multi-step browser interaction.
         """
 
@@ -1015,17 +1060,17 @@ tasks which need multi-step browser interaction.
 
         if detailed_plan is not None:
             detailed_plan_prompt = f"""
-Here is a plan about how to solve the task step-by-step which you must follow: 
+Here is a plan about how to solve the task step-by-step which you must follow:
 <detailed_plan>{detailed_plan}<detailed_plan>
         """
 
         observe_prompt = f"""
-Please act as a web agent to help me complete the following high-level task: 
+Please act as a web agent to help me complete the following high-level task:
 <task>{task_prompt}</task>
-Now, I have made screenshot (only the current viewport, not the full webpage) 
-based on the current browser state, and marked interactive elements in the 
+Now, I have made screenshot (only the current viewport, not the full webpage)
+based on the current browser state, and marked interactive elements in the
 webpage.
-Please carefully examine the requirements of the task, and current state of 
+Please carefully examine the requirements of the task, and current state of
 the browser, and provide the next appropriate action to take.
 
 {detailed_plan_prompt}
@@ -1039,14 +1084,14 @@ Here are the latest {self.history_window} trajectory (at most) you have taken:
 </history>
 
 Your output should be in json format, including the following fields:
-- `observation`: The detailed image description about the current viewport. Do 
-not over-confident about the correctness of the history actions. You should 
-always check the current viewport to make sure the correctness of the next 
+- `observation`: The detailed image description about the current viewport. Do
+not over-confident about the correctness of the history actions. You should
+always check the current viewport to make sure the correctness of the next
 action.
-- `reasoning`: The reasoning about the next action you want to take, and the 
-possible obstacles you may encounter, and how to solve them. Do not forget to 
+- `reasoning`: The reasoning about the next action you want to take, and the
+possible obstacles you may encounter, and how to solve them. Do not forget to
 check the history actions to avoid the same mistakes.
-- `action_code`: The action code you want to take. It is only one step action 
+- `action_code`: The action code you want to take. It is only one step action
 code, without any other texts (such as annotation)
 
 Here is two example of the output:
@@ -1065,37 +1110,37 @@ Here is two example of the output:
 
 Here are some tips for you:
 - Never forget the overall question: **{task_prompt}**
-- Maybe after a certain operation (e.g. click_id), the page content has not 
-changed. You can check whether the action step is successful by looking at the 
-`success` of the action step in the history. If successful, it means that the 
+- Maybe after a certain operation (e.g. click_id), the page content has not
+changed. You can check whether the action step is successful by looking at the
+`success` of the action step in the history. If successful, it means that the
 page content is indeed the same after the click. You need to try other methods.
-- If using one way to solve the problem is not successful, try other ways. 
+- If using one way to solve the problem is not successful, try other ways.
 Make sure your provided ID is correct!
-- Some cases are very complex and need to be achieve by an iterative process. 
-You can use the `back()` function to go back to the previous page to try other 
+- Some cases are very complex and need to be achieve by an iterative process.
+You can use the `back()` function to go back to the previous page to try other
 methods.
-- There are many links on the page, which may be useful for solving the 
-problem. You can use the `click_id()` function to click on the link to see if 
+- There are many links on the page, which may be useful for solving the
+problem. You can use the `click_id()` function to click on the link to see if
 it is useful.
-- Always keep in mind that your action must be based on the ID shown in the 
+- Always keep in mind that your action must be based on the ID shown in the
 current image or viewport, not the ID shown in the history.
-- Do not use `stop()` lightly. Always remind yourself that the image only 
-shows a part of the full page. If you cannot find the answer, try to use 
-functions like `scroll_up()` and `scroll_down()` to check the full content of 
-the webpage before doing anything else, because the answer or next key step 
+- Do not use `stop()` lightly. Always remind yourself that the image only
+shows a part of the full page. If you cannot find the answer, try to use
+functions like `scroll_up()` and `scroll_down()` to check the full content of
+the webpage before doing anything else, because the answer or next key step
 may be hidden in the content below.
-- If the webpage needs human verification, you must avoid processing it. 
+- If the webpage needs human verification, you must avoid processing it.
 Please use `back()` to go back to the previous page, and try other ways.
-- If you have tried everything and still cannot resolve the issue, please stop 
+- If you have tried everything and still cannot resolve the issue, please stop
 the simulation, and report issues you have encountered.
-- Check the history actions carefully, detect whether you have repeatedly made 
+- Check the history actions carefully, detect whether you have repeatedly made
 the same actions or not.
-- When dealing with wikipedia revision history related tasks, you need to 
-think about the solution flexibly. First, adjust the browsing history 
-displayed on a single page to the maximum, and then make use of the 
-find_text_on_page function. This is extremely useful which can quickly locate 
+- When dealing with wikipedia revision history related tasks, you need to
+think about the solution flexibly. First, adjust the browsing history
+displayed on a single page to the maximum, and then make use of the
+find_text_on_page function. This is extremely useful which can quickly locate
 the text you want to find and skip massive amount of useless information.
-- Flexibly use interactive elements like slide down selection bar to filter 
+- Flexibly use interactive elements like slide down selection bar to filter
 out the information you need. Sometimes they are extremely useful.
 ```
         """
@@ -1265,7 +1310,7 @@ Here are the global available browser functions we can use:
 Here are the latest {self.history_window} trajectory (at most) we have taken:
 <history>{self.history[-self.history_window:]}</history>
 
-The image provided is the current state of the browser, where we have marked interactive elements. 
+The image provided is the current state of the browser, where we have marked interactive elements.
 Please carefully examine the requirements of the task, and the current state of the browser, and then make reflections on the previous steps, thinking about whether they are helpful or not, and why, offering detailed feedback and suggestions for the next steps.
 Your output should be in json format, including the following fields:
 - `reflection`: The reflection about the previous steps, thinking about whether they are helpful or not, and why, offering detailed feedback.
@@ -1289,7 +1334,7 @@ Your output should be in json format, including the following fields:
 
         planning_prompt = f"""
 <task>{task_prompt}</task>
-According to the problem above, if we use browser interaction, what is the general process of the interaction after visiting the webpage `{start_url}`? 
+According to the problem above, if we use browser interaction, what is the general process of the interaction after visiting the webpage `{start_url}`?
 
 Please note that it can be viewed as Partially Observable MDP. Do not over-confident about your plan.
 Please first restate the task in detail, and then provide a detailed plan to solve the task.
@@ -1333,7 +1378,7 @@ Now please carefully examine the current task planning schema, and our history a
 
 Your output should be in json format, including the following fields:
 - `if_need_replan`: bool, A boolean value indicating whether the task needs to be fundamentally replanned.
-- `replanned_schema`: str, The replanned schema for the task, which should not be changed too much compared with the original one. If the task does not need to be replanned, the value should be an empty string. 
+- `replanned_schema`: str, The replanned schema for the task, which should not be changed too much compared with the original one. If the task does not need to be replanned, the value should be an empty string.
 """
         resp = self.planning_agent.step(replanning_prompt)
         resp_dict = _parse_json_output(resp.msgs[0].content)
