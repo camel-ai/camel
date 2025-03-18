@@ -141,11 +141,17 @@ class BaseGenerator(IterableDataset):
                 batch_to_save = []
 
     def sample(self) -> DataPoint:
-        r"""Sample a random datapoint from the current dataset."""
+        r"""Sample a random datapoint from the current dataset.
+
+        Raises:
+            RuntimeError: If the Dataset is empty.
+
+        Returns:
+            Datapoint: The next Datapoint.
+        """
         if len(self._data) == 0:
             raise RuntimeError("Dataset is empty, cannot sample.")
-        idx = self._rng.randint(0, len(self._data) - 1)
-        return self._data[idx]
+        return self._data.pop(0)
 
     def save_to_jsonl(self, file_path: Union[str, Path]) -> None:
         r"""Saves the generated datapoints to a JSONL (JSON Lines) file.
