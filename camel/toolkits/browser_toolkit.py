@@ -424,7 +424,12 @@ def _get_random_color(identifier: int) -> Tuple[int, int, int, int]:
 
 
 class BaseBrowser:
-    def __init__(self, headless=True, cache_dir: Optional[str] = None, persistent: bool = False):
+    def __init__(
+        self,
+        headless=True,
+        cache_dir: Optional[str] = None,
+        persistent: bool = False,
+    ):
         r"""Initialize the WebBrowserToolkit instance.
 
         Args:
@@ -437,6 +442,7 @@ class BaseBrowser:
         from playwright.sync_api import (
             sync_playwright,
         )
+
         self._ensure_browser_installed()
 
         self.history: list = []
@@ -469,7 +475,7 @@ class BaseBrowser:
             self.context = self.playwright.chromium.launch_persistent_context(
                 user_data_dir=os.path.abspath(self.browser_data_dir),
                 headless=self.headless,
-                accept_downloads=True
+                accept_downloads=True,
             )
             if len(self.context.pages) > 0:
                 self.page = self.context.pages[0]
@@ -477,7 +483,9 @@ class BaseBrowser:
                 self.page = self.context.new_page()
         else:
             # Launch the browser, if headless is False, the browser will display
-            self.browser = self.playwright.chromium.launch(headless=self.headless)
+            self.browser = self.playwright.chromium.launch(
+                headless=self.headless
+            )
             # Create a new context
             self.context = self.browser.new_context(accept_downloads=True)
             # Create a new page
@@ -939,6 +947,7 @@ class BaseBrowser:
 
         try:
             from playwright.sync_api import sync_playwright
+
             with sync_playwright() as p:
                 browser = p.chromium.launch()
                 browser.close()
@@ -946,13 +955,27 @@ class BaseBrowser:
             logger.info("Installing Chromium browser...")
             try:
                 subprocess.run(
-                    [sys.executable, "-m", "playwright", "install", "chromium"],
-                    check=True, capture_output=True
+                    [
+                        sys.executable,
+                        "-m",
+                        "playwright",
+                        "install",
+                        "chromium",
+                    ],
+                    check=True,
+                    capture_output=True,
                 )
                 if platform.system().lower() == "linux":
                     subprocess.run(
-                        [sys.executable, "-m", "playwright", "install-deps", "chromium"],
-                        check=True, capture_output=True
+                        [
+                            sys.executable,
+                            "-m",
+                            "playwright",
+                            "install-deps",
+                            "chromium",
+                        ],
+                        check=True,
+                        capture_output=True,
                     )
                 logger.info("Chromium browser installation completed")
             except subprocess.CalledProcessError as e:
@@ -989,7 +1012,9 @@ class BrowserToolkit(BaseToolkit):
                 backend for the planning agent.
         """
 
-        self.browser = BaseBrowser(headless=headless, cache_dir=cache_dir, persistent=persistent)
+        self.browser = BaseBrowser(
+            headless=headless, cache_dir=cache_dir, persistent=persistent
+        )
 
         self.history_window = history_window
         self.web_agent_model = web_agent_model
