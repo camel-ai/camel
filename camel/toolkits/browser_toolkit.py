@@ -2127,7 +2127,6 @@ Your output should be in json format, including the following fields:
     def get_tools(self) -> List[FunctionTool]:
         return [FunctionTool(self.browse_url)]
 
-
 class AsyncBrowserToolkit(BaseToolkit):
     r"""An asynchronous class for browsing the web and interacting with web pages."""
      
@@ -2419,7 +2418,7 @@ class AsyncBrowserToolkit(BaseToolkit):
         prefix = "self.browser."
                 
         code = f"{prefix}{action_code}"
-        
+        print(code)
         async_flag = extract_function_name(action_code) in ASYNC_ACTIONS
         feedback_flag = _check_if_with_feedback(action_code)
         
@@ -2565,7 +2564,7 @@ class AsyncBrowserToolkit(BaseToolkit):
             return False, replanned_schema
     
     @dependencies_required("playwright")
-    async def async_browse_url(
+    async def browse_url(
         self, task_prompt: str, start_url: str, round_limit: int = 12
     ) -> str:
         r"""A powerful toolkit which can simulate the browser interaction to solve the task which needs multi-step actions.
@@ -2651,9 +2650,5 @@ class AsyncBrowserToolkit(BaseToolkit):
         await self.browser.close()
         return simulation_result
     
-    def browse_url(self, task_prompt: str, start_url: str, round_limit: int = 12) -> str:
-        return self.async_browse_url(task_prompt, start_url, round_limit)
-
     def get_tools(self) -> List[FunctionTool]:
         return [FunctionTool(self.browse_url)]
-
