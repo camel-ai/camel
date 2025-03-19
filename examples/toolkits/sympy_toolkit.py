@@ -15,7 +15,7 @@
 from camel.agents import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
 from camel.models import ModelFactory
-from camel.toolkits import SymPyToolkit
+from camel.toolkits import MedCalcToolkit
 from camel.types import ModelPlatformType, ModelType
 
 # Define system message
@@ -23,7 +23,7 @@ sys_msg = """You are a helpful math assistant that can perform symbolic
 computations"""
 
 # Set model config
-tools = SymPyToolkit().get_tools()
+tools = MedCalcToolkit().get_tools()
 model_config_dict = ChatGPTConfig(
     temperature=0.0,
 ).as_dict()
