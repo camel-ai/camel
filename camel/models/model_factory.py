@@ -172,7 +172,8 @@ class ModelFactory:
             if platform_name not in ModelPlatformType.__members__:
                 raise ValueError(
                     f"Invalid model platform: {platform_name}. "
-                    f"Valid options: {', '.join(ModelPlatformType.__members__.keys())}"
+                    f"""Valid options: {', '
+                    .join(ModelPlatformType.__members__.keys())}"""
                 )
 
             return ModelPlatformType[platform_name]
