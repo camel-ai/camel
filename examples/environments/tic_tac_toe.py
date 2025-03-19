@@ -14,7 +14,7 @@
 import asyncio
 import random
 
-from camel.environments.envs import TicTacToeEnv
+from camel.environments import TicTacToeEnv
 from camel.environments.models import Action
 
 

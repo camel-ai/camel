@@ -17,6 +17,7 @@ from abc import abstractmethod
 from typing import Any, Dict, Optional, Tuple, Union
 
 from camel.datasets import BaseGenerator, DataPoint, StaticDataset
+from camel.environments.models import Action, Observation, StepResult
 from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
 from camel.verifiers.base import (
@@ -26,8 +27,6 @@ from camel.verifiers.base import (
 from camel.verifiers.models import (
     VerifierInput,
 )
-
-from .models import Action, Observation, StepResult
 
 logger = get_logger(__name__)
 
