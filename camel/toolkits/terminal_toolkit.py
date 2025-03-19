@@ -21,7 +21,6 @@ import queue
 from queue import Queue
 import sys
 import venv
-import errno
 
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
@@ -60,7 +59,7 @@ class TerminalToolkit(BaseToolkit):
         self,
         timeout: Optional[float] = None,
         shell_sessions: Optional[Dict[str, Any]] = None,
-        working_dir: Optional[str] = None,
+        working_dir: Optional[str] = "./workspace",
         need_terminal: bool = True,
         use_shell_mode: bool = True,  
         clone_current_env: bool = False, 
@@ -75,13 +74,14 @@ class TerminalToolkit(BaseToolkit):
         self.gui_thread = None
         self.safe_mode = safe_mode
         
-
-        self.python_executable = sys.executable
-        self.virtual_env = os.environ.get('VIRTUAL_ENV')
+        self.cloned_env_path = None
+        self.working_dir = None
         self.use_shell_mode = use_shell_mode
         
-
-        self.working_dir = None
+        self.python_executable = sys.executable
+        self.virtual_env = os.environ.get('VIRTUAL_ENV')
+        self.is_macos = platform.system() == 'Darwin'
+                
         if working_dir is not None:
             if not os.path.exists(working_dir):
                 os.makedirs(working_dir, exist_ok=True)
@@ -90,7 +90,6 @@ class TerminalToolkit(BaseToolkit):
             if self.safe_mode:
                 self._update_terminal_output("Safe mode enabled: Write operations can only be performed within the working directory\n")
             
-
             if clone_current_env:
                 self.cloned_env_path = os.path.join(self.working_dir, ".venv")
                 self._clone_current_environment()
@@ -98,71 +97,80 @@ class TerminalToolkit(BaseToolkit):
                 self.cloned_env_path = None
 
 
+        
         if need_terminal:
-            self.gui_thread = threading.Thread(target=self._create_terminal, daemon=True)
-            self.gui_thread.start()
-
-            self.terminal_ready.wait(timeout=5)
+            if self.is_macos:
+                # macOS uses non-GUI mode
+                logger.info("Detected macOS environment, using non-GUI mode")   
+                self._setup_file_output()
+                self.terminal_ready.set()
+            else:
+                # Other platforms use normal GUI
+                self.gui_thread = threading.Thread(target=self._create_terminal, daemon=True)
+                self.gui_thread.start()
+                self.terminal_ready.wait(timeout=5)
 
         self.safe_mode = safe_mode
 
+    def _setup_file_output(self):
+        """Set up file output to replace GUI, using a fixed file to simulate terminal"""
+
+        self.log_file = os.path.join(os.getcwd(), "camel_terminal.txt")
+        
+        # If the file already exists, clear its content; if not, create a new file
+        if os.path.exists(self.log_file):
+            with open(self.log_file, "w") as f:
+                f.truncate(0)
+                f.write("CAMEL Terminal Session\n")
+                f.write("=" * 50 + "\n")
+                f.write(f"Working Directory: {os.getcwd()}\n")
+                f.write("=" * 50 + "\n\n")
+        else:
+            with open(self.log_file, "w") as f:
+                f.write("CAMEL Terminal Session\n")
+                f.write("=" * 50 + "\n")
+                f.write(f"Working Directory: {os.getcwd()}\n")
+                f.write("=" * 50 + "\n\n")
+                
+        # Inform the user
+        print(f"Terminal output redirected to: {self.log_file}")
+        
+        def file_update(output: str):
+            try:
+                # Directly append to the end of the file
+                with open(self.log_file, "a") as f:
+                    f.write(output)
+                    # If the output does not end with a newline, add one
+                    if output and not output.endswith('\n'):
+                        f.write('\n')
+                # Ensure the agent also receives the output
+                self.agent_queue.put(output)
+            except Exception as e:
+                logger.error(f"Failed to write to terminal: {e}")
+        
+        # Replace the update method
+        self._update_terminal_output = file_update
+    
     def _clone_current_environment(self):
-        """Clone the current Python environment to the working directory"""
+        """Create a new Python virtual environment"""
         try:
             if os.path.exists(self.cloned_env_path):
                 self._update_terminal_output(f"Using existing environment: {self.cloned_env_path}\n")
                 return
                 
-            self._update_terminal_output(f"Cloning current Python environment to: {self.cloned_env_path}...\n")
+            self._update_terminal_output(f"Creating new Python environment at: {self.cloned_env_path}...\n")
             
 
             venv.create(self.cloned_env_path, with_pip=True)
-            
-
-            if self.os_type == 'Windows':
-                pip_path = os.path.join(self.cloned_env_path, "Scripts", "pip.exe")
-                python_path = os.path.join(self.cloned_env_path, "Scripts", "python.exe")
-            else:
-                pip_path = os.path.join(self.cloned_env_path, "bin", "pip")
-                python_path = os.path.join(self.cloned_env_path, "bin", "python")
-            
-
-            result = subprocess.run(
-                [self.python_executable, "-m", "pip", "freeze"],
-                capture_output=True,
-                text=True
-            )
-            
-            if result.returncode == 0:
-                packages = result.stdout.strip()
-                if packages:
-
-                    req_file = os.path.join(self.working_dir, "requirements.txt")
-                    with open(req_file, "w") as f:
-                        f.write(packages)
-
-                    self._update_terminal_output("Installing dependencies, this may take a few minutes...\n")
-                    install_result = subprocess.run(
-                        [pip_path, "install", "-r", req_file],
-                        capture_output=True,
-                        text=True
-                    )
-                    
-                    if install_result.returncode == 0:
-                        self._update_terminal_output("Environment cloning completed!\n")
-                    else:
-                        self._update_terminal_output(f"Error installing packages: {install_result.stderr}\n")
-                else:
-                    self._update_terminal_output("No packages installed in the current environment, created an empty environment\n")
-            else:
-                self._update_terminal_output(f"Failed to get the package list of the current environment: {result.stderr}\n")
+            self._update_terminal_output("New Python environment created successfully!\n")
                 
         except Exception as e:
-            self._update_terminal_output(f"Failed to clone environment: {str(e)}\n")
-            logger.error(f"Failed to clone environment: {e}")
+            self._update_terminal_output(f"Failed to create environment: {str(e)}\n")
+            logger.error(f"Failed to create environment: {e}")
 
     def _create_terminal(self):
-        """Create terminal interface"""
+        """Create a terminal GUI"""
+
         try:
             import tkinter as tk
             from tkinter import ttk, scrolledtext
@@ -220,10 +228,22 @@ class TerminalToolkit(BaseToolkit):
     def _update_terminal_output(self, output: str):
         """Update terminal output and send to agent"""
         try:
+            # If it is macOS , only write to file
+            if self.is_macos:
+                if hasattr(self, 'log_file'):
+                    with open(self.log_file, "a") as f:
+                        f.write(output)
+                # Ensure the agent also receives the output
+                self.agent_queue.put(output)
+                return
+            
+            # For other cases, try to update the GUI (if it exists)
             if hasattr(self, 'root') and self.root:
                 self.output_queue.put(output)
-                # Also send to agent
-                self.agent_queue.put(output)
+            
+            # Always send to agent queue
+            self.agent_queue.put(output)
+            
         except Exception as e:
             logger.error(f"Failed to update terminal output: {e}")
 
@@ -509,7 +529,7 @@ class TerminalToolkit(BaseToolkit):
         return True, command
 
     def shell_exec(self, id: str, exec_dir: str, command: str) -> str:
-        r"""Execute commands in a specified shell session.
+        r"""Execute commands. This can be used to execute various commands, such as writing code, executing code, and running commands.
 
         Args:
             id (str): Unique identifier of the target shell session.
@@ -532,15 +552,13 @@ class TerminalToolkit(BaseToolkit):
         if not os.path.exists(exec_dir):
             return f"Directory not found: {exec_dir}"
 
-        # Check and modify command to ensure safety
-        is_safe, sanitized_command = self._sanitize_command(command, exec_dir)
-        if not is_safe:
-            return sanitized_command  # Return error message
-            
-        # Use modified safe command
-        command = sanitized_command
+        if self.safe_mode:
+            is_safe, sanitized_command = self._sanitize_command(command, exec_dir)
+            if not is_safe:
+                return f"Command rejected: {sanitized_command}"
+            command = sanitized_command
 
-        # If the session doesn't exist, create a new one
+        # If the session does not exist, create a new session
         if id not in self.shell_sessions:
             self.shell_sessions[id] = {
                 "process": None,
@@ -549,169 +567,57 @@ class TerminalToolkit(BaseToolkit):
             }
 
         try:
-            # Display command in terminal
+            # First, log the command to be executed
             self._update_terminal_output(f"\n$ {command}\n")
             
-            # Set environment variables
-            env = os.environ.copy()
-            
-            # If using cloned environment
-            if self.cloned_env_path and os.path.exists(self.cloned_env_path):
-                if self.os_type == 'Windows':
-                    python_exe = os.path.join(self.cloned_env_path, "Scripts", "python.exe")
-                    env['PATH'] = f"{os.path.join(self.cloned_env_path, 'Scripts')};{env['PATH']}"
-                else:
-                    python_exe = os.path.join(self.cloned_env_path, "bin", "python")
-                    env['PATH'] = f"{os.path.join(self.cloned_env_path, 'bin')}:{env['PATH']}"
-                
-                env['VIRTUAL_ENV'] = self.cloned_env_path
-            else:
-                python_exe = self.python_executable
-                if self.virtual_env:
-                    env['VIRTUAL_ENV'] = self.virtual_env
+            if command.startswith('python') or command.startswith('pip'):
+                if self.cloned_env_path:
+
                     if self.os_type == 'Windows':
-                        env['PATH'] = f"{os.path.join(self.virtual_env, 'Scripts')};{env['PATH']}"
+                        base_path = os.path.join(self.cloned_env_path, "Scripts")
+                        python_path = os.path.join(base_path, "python.exe")
+                        pip_path = os.path.join(base_path, "pip.exe")
                     else:
-                        env['PATH'] = f"{os.path.join(self.virtual_env, 'bin')}:{env['PATH']}"
-            
-            # Handle Python commands
-            if command.startswith('python ') and not self.use_shell_mode:
-                command = command.replace('python ', f'"{python_exe}" ')
-            
-            if self.os_type in ['Darwin', 'Linux']:
-                # Unix system implementation
-                import pty
-                import fcntl
-                import termios
-                import struct
-                
-                try:
-                    # Create pseudo terminal with proper permissions
-                    master_fd, slave_fd = pty.openpty()
-                    
-                    # Set terminal attributes
-                    term_settings = termios.tcgetattr(slave_fd)
-                    term_settings[3] = term_settings[3] & ~termios.ECHO  # Disable echo
-                    termios.tcsetattr(slave_fd, termios.TCSANOW, term_settings)
-                    
-                    # Set window size
-                    term_size = struct.pack('HHHH', 24, 80, 0, 0)
-                    fcntl.ioctl(slave_fd, termios.TIOCSWINSZ, term_size)
-                    
-                    # Set to non-blocking mode
-                    flags = fcntl.fcntl(master_fd, fcntl.F_GETFL)
-                    fcntl.fcntl(master_fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
-                    
-                    # Set proper permissions for the PTY
-                    os.fchmod(master_fd, 0o622)
-                    os.fchmod(slave_fd, 0o622)
-                    
-                    process = subprocess.Popen(
-                        command,
-                        shell=True,
-                        cwd=exec_dir,
-                        stdin=slave_fd,
-                        stdout=slave_fd,
-                        stderr=slave_fd,
-                        env=env,
-                        start_new_session=True
-                    )
-                    
-                    os.close(slave_fd)  # Close child process end
-                    
-                    # Create read output thread with proper error handling
-                    def _read_output():
-                        """Read output from master_fd with improved error handling"""
-                        buffer = ""
-                        try:
-                            while True:
-                                try:
-                                    data = os.read(master_fd, 1024)
-                                    if data:
-                                        output = data.decode('utf-8', errors='replace')
-                                        buffer += output
-                                        self._update_terminal_output(output)
-                                except OSError as e:
-                                    if e.errno != errno.EAGAIN:  # Ignore expected non-blocking read errors
-                                        logger.error(f"Terminal read error: {e}")
-                                        break
-                                    time.sleep(0.1)
-                                except Exception as e:
-                                    logger.error(f"Unexpected terminal error: {e}")
-                                    break
-                                    
-                                # Check process status
-                                if process.poll() is not None:
-                                    # Process ended, flush remaining output
-                                    try:
-                                        remaining = os.read(master_fd, 4096)
-                                        if remaining:
-                                            output = remaining.decode('utf-8', errors='replace')
-                                            buffer += output
-                                            self._update_terminal_output(output)
-                                    except:
-                                        pass
-                                    break
-                                    
-                        except Exception as e:
-                            logger.error(f"Terminal thread error: {e}")
-                        finally:
-                            try:
-                                os.close(master_fd)
-                            except:
-                                pass
-                            
-                            # Store final output
-                            session = self.shell_sessions.get(id)
-                            if session:
-                                session["output"] = buffer
-                    
-                    # Start read output thread
-                    output_thread = threading.Thread(target=_read_output, daemon=True)
-                    output_thread.start()
-                    
-                    self.shell_sessions[id] = {
-                        "process": process,
-                        "master_fd": master_fd,
-                        "output": "",
-                        "running": True,
-                        "command": command,
-                        "output_thread": output_thread
-                    }
-                    
-                except Exception as e:
-                    error_msg = f"Error creating Linux terminal: {e}"
-                    logger.error(error_msg)
-                    self._update_terminal_output(f"\nError: {error_msg}\n")
-                    
-                    # Clean up resources on error
-                    try:
-                        if 'master_fd' in locals():
-                            os.close(master_fd)
-                        if 'slave_fd' in locals():
-                            os.close(slave_fd)
-                    except:
-                        pass
-                    
-                    return f"Error: {error_msg}"
-            else:  # Windows
-                # Determine the shell command to execute
-                if self.use_shell_mode:
-                    # In shell mode, execute command using cmd.exe
-                    shell_cmd = command
-                    shell = True
+                        base_path = os.path.join(self.cloned_env_path, "bin")
+                        python_path = os.path.join(base_path, "python")
+                        pip_path = os.path.join(base_path, "pip")
                 else:
-                    # In Python mode, check if Python interpreter needs to be replaced
-                    if command.startswith('python '):
-                        shell_cmd = command.replace('python ', f'"{python_exe}" ')
-                    else:
-                        shell_cmd = command
-                    shell = True
+
+                    python_path = self.python_executable
+                    pip_path = f'"{python_path}" -m pip'
+                    
+                if command.startswith('python'):
+                    command = command.replace('python', f'"{python_path}"', 1)
+                elif command.startswith('pip'):
+                    command = command.replace('pip', pip_path, 1)
+
+            if self.is_macos:
+
+                process = subprocess.run(
+                    command,
+                    shell=True,
+                    cwd=exec_dir,
+                    capture_output=True,
+                    text=True,
+                    env=os.environ.copy()
+                )
                 
-                # Create process
+                # Process the output
+                output = process.stdout or ""
+                if process.stderr:
+                    output += f"\nErrors:\n{process.stderr}"
+                
+                # Update session information and terminal
+                self.shell_sessions[id]["output"] = output
+                self._update_terminal_output(output + "\n")
+                
+                return output
+                
+            else:
+                # Non-macOS systems use the Popen method
                 process = subprocess.Popen(
-                    shell_cmd,
-                    shell=shell,
+                    command,
+                    shell=True,
                     cwd=exec_dir,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
@@ -719,116 +625,35 @@ class TerminalToolkit(BaseToolkit):
                     text=True,
                     bufsize=1,
                     universal_newlines=True,
-                    env=env
+                    env=os.environ.copy()
                 )
+
+                # Store the process and mark it as running
+                self.shell_sessions[id]["process"] = process
+                self.shell_sessions[id]["running"] = True
                 
-                # Check for ModuleNotFoundError
-                error_output = process.stderr.readline() if process.stderr else ""
-                if error_output and "ModuleNotFoundError: No module named" in error_output:
-                    # Extract missing module name
-                    import re
-                    module_match = re.search(r"No module named '(\w+)'", error_output)
-                    if module_match:
-                        missing_module = module_match.group(1)
-                        install_msg = f"\nDetected missing module: {missing_module}, installing automatically...\n"
-                        self._update_terminal_output(install_msg)
-                        
-                        # Determine pip path
-                        if self.cloned_env_path:
-                            if self.os_type == 'Windows':
-                                pip_cmd = os.path.join(self.cloned_env_path, "Scripts", "pip.exe")
-                            else:
-                                pip_cmd = os.path.join(self.cloned_env_path, "bin", "pip")
-                        else:
-                            pip_cmd = os.path.join(os.path.dirname(python_exe), 'pip')
-                            if self.os_type == 'Windows':
-                                pip_cmd += '.exe'
-                        
-                        # Install missing module
-                        pip_process = subprocess.run(
-                            f'"{pip_cmd}" install {missing_module}',
-                            shell=True,
-                            capture_output=True,
-                            text=True,
-                            env=env
-                        )
-                        
-                        if pip_process.returncode == 0:
-                            success_msg = f"Successfully installed {missing_module}\n"
-                            self._update_terminal_output(success_msg)
-                            # Re-run original command
-                            process = subprocess.Popen(
-                                shell_cmd,
-                                shell=shell,
-                                cwd=exec_dir,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
-                                stdin=subprocess.PIPE,
-                                text=True,
-                                bufsize=1,
-                                universal_newlines=True,
-                                env=env
-                            )
-                        else:
-                            error_msg = f"Failed to install {missing_module}: {pip_process.stderr}\n"
-                            self._update_terminal_output(error_msg)
-                            return error_msg
-                    else:
-                        # If not a module missing error, output original error message
-                        self._update_terminal_output(error_output)
+                # Get output
+                stdout, stderr = process.communicate()
                 
-                def _read_output(pipe, prefix=""):
-                    try:
-                        for line in iter(pipe.readline, ''):
-                            self._update_terminal_output(prefix + line)
-                    except Exception as e:
-                        logger.error(f"Error reading output: {e}")
-                    finally:
-                        pipe.close()
+                output = stdout or ""
+                if stderr:
+                    output += f"\nErrors:\n{stderr}"
+
+                # Update session information and terminal
+                self.shell_sessions[id]["output"] = output
+                self._update_terminal_output(output + "\n")
                 
-                # Start read output thread
-                threading.Thread(
-                    target=_read_output,
-                    args=(process.stdout,),
-                    daemon=True
-                ).start()
-                
-                threading.Thread(
-                    target=_read_output,
-                    args=(process.stderr, "Error: "),
-                    daemon=True
-                ).start()
-                
-                self.shell_sessions[id] = {
-                    "process": process,
-                    "output": "",
-                    "running": True,
-                    "command": command
-                }
-            
-            # Wait for a while to collect initial output
-            import time
-            time.sleep(0.5)
-            
-            # Collect all output from agent queue
-            collected_output = ""
-            try:
-                while True:
-                    output = self.agent_queue.get_nowait()
-                    collected_output += output
-            except queue.Empty:
-                pass
-            
-            # Return session information and initial output
-            env_info = "Cloned environment" if self.cloned_env_path else "Current environment"
-            mode_info = "Shell mode" if self.use_shell_mode else "Python mode"
-            return collected_output or f"Terminal session '{id}' started in {env_info}, {mode_info}."
-            
+                return output
+
         except Exception as e:
-            error_msg = f"Error creating terminal session: {e}"
-            self._update_terminal_output(f"\nError: {error_msg}\n")
+            error_msg = f"Command execution error: {str(e)}"
             logger.error(error_msg)
-            return f"Error: {e!s}"
+            self._update_terminal_output(f"\nError: {error_msg}\n")
+            
+            # More detailed error information
+            import traceback
+            detailed_error = traceback.format_exc()
+            return f"Error: {error_msg}\n\nDetailed information: {detailed_error}"
 
     def shell_view(self, id: str) -> str:
         r"""View the content of a specified shell session.
