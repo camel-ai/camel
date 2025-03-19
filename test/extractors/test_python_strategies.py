@@ -14,7 +14,6 @@
 import pytest
 
 from camel.extractors.general import BoxedStrategy
-
 from camel.extractors.python import (
     PythonDictStrategy,
     PythonListStrategy,
