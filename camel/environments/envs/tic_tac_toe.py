@@ -1,13 +1,24 @@
-from typing import Any, Dict, List, Optional, Tuple
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import math
-
-from camel.extractors import BaseExtractor, BaseExtractorStrategy
-from camel.environments.multi_step import MultiStepEnv
+import re
+from typing import Any, ClassVar, Dict, List, Optional, Tuple
 
 from camel.environments.models import Action, Observation
+from camel.environments.multi_step import MultiStepEnv
+from camel.extractors import BaseExtractor, BaseExtractorStrategy
 
-import re
-from typing import Optional
 
 class ActionParser(BaseExtractorStrategy):
     async def extract(self, text: str) -> Optional[str]:
@@ -16,8 +27,9 @@ class ActionParser(BaseExtractorStrategy):
             return match.group(1)
         return None
 
+
 class TicTacToeEnv(MultiStepEnv):
-    WIN_COMBINATIONS = [
+    WIN_COMBINATIONS: ClassVar = [
         (0, 1, 2),
         (3, 4, 5),
         (6, 7, 8),
@@ -42,26 +54,35 @@ class TicTacToeEnv(MultiStepEnv):
 
     def _get_initial_state(self) -> Dict[str, Any]:
         # State includes the board (9 cells), game_over flag, and winner info.
-        return {"board": [" " for _ in range(9)], "game_over": False, "winner": None}
+        return {
+            "board": [" " for _ in range(9)],
+            "game_over": False,
+            "winner": None,
+        }
 
-    #TODO: simplify, give feedback if fails
+    # TODO: simplify, give feedback if fails
     async def _update_state(self, action: Action) -> None:
         board = self._state["board"]
 
         # Attempt to parse the agent's chosen move
         extraction_result = await self.extractor.extract(action.llm_response)
         if not extraction_result:
-            raise ValueError(f"Couldn't extract anything from {action.llm_response}")
-        
+            raise ValueError(
+                f"Couldn't extract anything from {action.llm_response}"
+            )
+
         try:
             move = int(extraction_result)
         except ValueError:
-            raise ValueError(f"Extraction result '{extraction_result}' is not a valid move")
+            raise ValueError(
+                f"Extraction result '{extraction_result}' is not a valid move"
+            )
 
         # Convert 1-indexed move to 0-indexed board position.
         index = move - 1
         if index < 0 or index > 8 or board[index] != " ":
-            # Illegal move: losing condition. #TODO: give feedback instead of autoloss
+            # Illegal move: losing condition.
+            # TODO: give feedback instead of autoloss
             self._state["game_over"] = True
             self._state["winner"] = "O"
             return
@@ -90,13 +111,14 @@ class TicTacToeEnv(MultiStepEnv):
     def _get_next_observation(self) -> Observation:
         board = self._state["board"]
         obs = (
-            "You are playing Tic Tac Toe with standard rules. You are the player with X. "
+            "You are playing Tic Tac Toe with standard rules."
+            "You are the player with X."
             "Choose a number between 1 and 9 to place an X.\n"
             "This is the current state of the board:\n"
             f"{self.render_board(board)}"
         )
-        
-        return Observation(question=obs, context = {}, metadata = {})
+
+        return Observation(question=obs, context={}, metadata={})
 
     def _get_terminal_observation(self) -> Observation:
         board = self._state["board"]
@@ -108,12 +130,9 @@ class TicTacToeEnv(MultiStepEnv):
         else:
             result_message = "It's a draw!"
 
-        obs = (
-            f"{self.render_board(board)}\nGame Over. {result_message}"
-        )
-        
-        return Observation(question=obs, context = {}, metadata = {})
+        obs = f"{self.render_board(board)}\nGame Over. {result_message}"
 
+        return Observation(question=obs, context={}, metadata={})
 
     async def compute_reward(self) -> Tuple[float, Dict[str, float]]:
         # Simple reward: 1 for win, -1 for loss, 0 for draw or ongoing.
@@ -134,6 +153,7 @@ class TicTacToeEnv(MultiStepEnv):
         # Create a nice formatted board.
         def cell_value(i: int) -> str:
             return board[i] if board[i] != " " else str(i + 1)
+
         rows = []
         for i in range(0, 9, 3):
             row = " | ".join(cell_value(j) for j in range(i, i + 3))
@@ -162,7 +182,9 @@ class TicTacToeEnv(MultiStepEnv):
         _, move = self.minimax(board, is_maximizing=True)
         return move
 
-    def minimax(self, board: List[str], is_maximizing: bool) -> Tuple[float, Optional[int]]:
+    def minimax(
+        self, board: List[str], is_maximizing: bool
+    ) -> Tuple[float, Optional[int]]:
         winner = self.check_winner(board)
         if winner == "O":
             return (1, None)
@@ -194,4 +216,3 @@ class TicTacToeEnv(MultiStepEnv):
                     best_score = score
                     best_move = move
             return best_score, best_move
-

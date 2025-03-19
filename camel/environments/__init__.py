@@ -11,11 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+from . import envs
 from .models import Action, Environment, Observation, StepResult
 from .multi_step import MultiStepEnv
 from .single_step import SingleStepEnv
-
-from . import envs
 
 __all__ = [
     "Environment",
@@ -24,5 +23,5 @@ __all__ = [
     "Action",
     "Observation",
     "StepResult",
-    "envs"
+    "envs",
 ]
