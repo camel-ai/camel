@@ -155,8 +155,7 @@ class BaseGenerator(abc.ABC, IterableDataset):
         synchronously.
 
         Raises:
-            RuntimeError: If the Dataset is empty or if called
-                in an async context.
+            RuntimeError: If called in an async context.
 
         Returns:
             DataPoint: The next DataPoint.
@@ -176,15 +175,10 @@ class BaseGenerator(abc.ABC, IterableDataset):
             if "no running event loop" not in str(e):
                 raise
 
-        if len(self._data) == 0:
-            raise RuntimeError("Dataset is empty, cannot sample.")
         return next(iter(self))
 
     async def async_sample(self) -> DataPoint:
         r"""Returns the next datapoint from the current dataset asynchronously.
-
-        Raises:
-            RuntimeError: If the dataset is empty.
 
         Returns:
             DataPoint: The next datapoint.
@@ -193,8 +187,7 @@ class BaseGenerator(abc.ABC, IterableDataset):
             This method is intended for asynchronous contexts. Use 'sample'
             in synchronous contexts.
         """
-        if len(self._data) == 0:
-            raise RuntimeError("Dataset is empty, cannot sample.")
+
         async_iter = self.__aiter__()
         return await async_iter.__anext__()
 
