@@ -239,8 +239,8 @@ async def test_verify_batch(test_verifier):
         )
     )
 
-    async def mock_verify(input_data):
-        if "fail" in input_data.llm_response.lower():
+    async def mock_verify(solution, ground_truth):
+        if "fail" in solution.lower():
             return VerificationResult(
                 status=VerificationOutcome.FAILURE,
                 result="Verification failed",
@@ -282,8 +282,8 @@ async def test_verify_batch_with_error_handling(test_verifier):
         )
     )
 
-    async def mock_verify(input_data):
-        if "error" in input_data.llm_response.lower():
+    async def mock_verify(solution, ground_truth):
+        if "error" in solution.lower():
             raise ValueError("Simulated error in verification")
         return VerificationResult(
             status=VerificationOutcome.SUCCESS,
