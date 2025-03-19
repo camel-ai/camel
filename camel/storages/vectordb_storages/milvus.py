@@ -11,11 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import json
 import logging
 import re
-import json
 from datetime import datetime
+from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
+
 from camel.storages.vectordb_storages import (
     BaseVectorStorage,
     VectorDBQuery,
@@ -24,7 +26,6 @@ from camel.storages.vectordb_storages import (
     VectorRecord,
 )
 from camel.utils import dependencies_required
-from enum import Enum
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +49,7 @@ class CustomJSONEncoder(json.JSONEncoder):
         except (AttributeError, TypeError):
             try:
                 return str(obj)
-            except:
+            except Exception:
                 return f"<Non-serializable object: {type(obj).__name__}>"
         return super().default(obj)
 
@@ -56,17 +57,24 @@ class CustomJSONEncoder(json.JSONEncoder):
 class MilvusPointAdapter:
     def __init__(self, record: VectorRecord):
         self.id = record.id
-        self.payload = json.dumps(record.payload, cls=CustomJSONEncoder) if record.payload else ''
+        self.payload = (
+            json.dumps(record.payload, cls=CustomJSONEncoder) 
+            if record.payload else ''
+        )
         self.dense = record.vector  
         
         self.text = ""
         if record.payload:
             try:
-                if "message" in record.payload and record.payload["message"] is not None:
-                    if isinstance(record.payload["message"], dict) and "content" in record.payload["message"]:
+                if ("message" in record.payload and 
+                        record.payload["message"] is not None):
+                    if (isinstance(record.payload["message"], dict) and 
+                            "content" in record.payload["message"]):
                         self.text = record.payload["message"]["content"]
             except Exception as e:
-                logger.warning(f"Failed to extract content from message: {str(e)}")
+                logger.warning(
+                    f"Failed to extract content from message: {e!s}"
+                )
         
         if not self.text and record.payload and "content" in record.payload:
             self.text = record.payload["content"]
@@ -98,8 +106,9 @@ class MilvusStorage(BaseVectorStorage):
         collection_name (Optional[str], optional): Name for the collection in 
             the Milvus. If not provided, set it to the current time with iso
             format. (default: :obj:`None`)
-        enable_hybrid_search (bool, optional): Whether to enable hybrid search. 
-            Hybrid search is not supported in Milvus Lite. (default: :obj:`False`)
+        enable_hybrid_search (bool, optional): Whether to enable hybrid search.
+            Hybrid search is not supported in Milvus Lite.
+            (default: :obj:`False`)
         **kwargs (Any): Additional keyword arguments for initializing
             the Milvus. 
 
@@ -128,7 +137,9 @@ class MilvusStorage(BaseVectorStorage):
 
         self.enable_hybrid_search = enable_hybrid_search
         self.vector_dim = vector_dim
-        self.collection_name = collection_name or self._generate_collection_name()
+        self.collection_name = (
+            collection_name or self._generate_collection_name()
+        )
         self._check_and_create_collection()
 
     def _create_client(
@@ -212,7 +223,8 @@ class MilvusStorage(BaseVectorStorage):
         schema.add_field(
             field_name="payload",
             datatype=DataType.JSON,
-            description='Any additional metadata or information related to the vector',
+            description='Any additional metadata or information related to '
+                       'the vector',
         )
 
         schema.add_field(
@@ -253,10 +265,10 @@ class MilvusStorage(BaseVectorStorage):
             index_params.add_index(
                 field_name="sparse",
                 index_name="sparse_index",
-                index_type="SPARSE_INVERTED_INDEX", # Index type for sparse vectors
+                index_type="SPARSE_INVERTED_INDEX",
                 metric_type="BM25",
-            params={"inverted_index_algo": "DAAT_MAXSCORE"}, # The ratio of small vector values to be dropped during indexing
-        )
+                params={"inverted_index_algo": "DAAT_MAXSCORE"},
+            )
 
         self._client.create_collection(
             collection_name=collection_name,
@@ -361,10 +373,10 @@ class MilvusStorage(BaseVectorStorage):
                 **kwargs,
             )
         except TypeError as e:
-            error_msg = f"Failed to serialize record payload to JSON: {str(e)}"
+            error_msg = f"Failed to serialize record payload to JSON: {e!s}"
             raise TypeError(error_msg) from e
         except Exception as e:
-            error_msg = f"Error adding records to Milvus: {str(e)}"
+            error_msg = f"Error adding records to Milvus: {e!s}"
             raise RuntimeError(error_msg) from e
 
     def delete(
@@ -410,12 +422,14 @@ class MilvusStorage(BaseVectorStorage):
         **kwargs: Any,
     ) -> List[VectorDBQueryResult]:
         """Searches for similar vectors in the storage based on the provided
-        query, supporting both vector and text search when query_text is provided.
+        query, supporting both vector and text search when query_text is
+        provided.
 
         Args:
             query (VectorDBQuery): The query object containing the search
                 vector and the number of top similar vectors to retrieve.
-                If query_text is provided as an attribute, hybrid search will be used.
+                If query_text is provided as an attribute, hybrid search will
+                be used.
             **kwargs (Any): Additional keyword arguments passed to search.
 
         Returns:
@@ -510,14 +524,16 @@ class MilvusStorage(BaseVectorStorage):
     def _process_role_fields(
         self, payload_dict: Dict[str, Any], key_prefix: str = ""
     ) -> None:
-        """Recursively process all fields in the payload dictionary to handle potential enum fields.
+        """Recursively process all fields in the payload dictionary to handle
+        potential enum fields.
 
-        This function looks for fields that might be Enum values and converts them to lowercase
-        to match the expected format during validation.
+        This function looks for fields that might be Enum values and converts
+        them to lowercase to match the expected format during validation.
 
         Args:
             payload_dict: The dictionary to process
-            key_prefix: Current key prefix for nested dictionaries (used in recursion)
+            key_prefix: Current key prefix for nested dictionaries
+                (used in recursion)
         """
         # Common enum-related field names that might need lowercase conversion
         enum_field_names = [
@@ -595,7 +611,8 @@ class MilvusStorage(BaseVectorStorage):
                             ]
                         )
                     ):
-                        # Convert string values in lists if they match enum field patterns
+                        # Convert string values in lists if they match enum
+                        # field patterns
                         value[i] = item.lower()
 
     def clear(self) -> None:

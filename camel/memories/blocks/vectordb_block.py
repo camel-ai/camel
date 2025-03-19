@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import List, Optional, Any
+from typing import Any, List, Optional
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
 from camel.memories.base import MemoryBlock
@@ -32,8 +32,8 @@ class VectorDBBlock(MemoryBlock):
 
     Args:
         storage (Optional[BaseVectorStorage], optional): The storage mechanism
-            for the vector database. Defaults to in-memory :obj:`MilvusStorage` if not
-            provided. (default: :obj:`None`)
+            for the vector database. Defaults to in-memory 
+            :obj:`MilvusStorage` if not provided. (default: :obj:`None`)
         embedding (Optional[BaseEmbedding], optional): Embedding mechanism to
             convert chat messages into vector representations. Defaults to
             :obj:`OpenAiEmbedding` if not provided. (default: :obj:`None`)
@@ -76,7 +76,11 @@ class VectorDBBlock(MemoryBlock):
         """
         query_vector = self.embedding.embed(keyword)
         results = self.storage.query(
-            VectorDBQuery(query_vector=query_vector, top_k=limit, query_text=keyword)
+            VectorDBQuery(
+                query_vector=query_vector, 
+                top_k=limit, 
+                query_text=keyword
+            )
         )
         return [
             ContextRecord(
