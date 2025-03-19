@@ -20,10 +20,11 @@ import tempfile
 import venv
 from typing import List, Optional
 
+from camel.extractors import BaseExtractor
 from camel.logger import get_logger
 from camel.verifiers import BaseVerifier
 
-from .models import VerificationOutcome, VerificationResult, VerifierInput
+from .models import VerificationOutcome, VerificationResult
 
 logger = get_logger(__name__)
 
@@ -47,6 +48,7 @@ class PythonVerifier(BaseVerifier):
         self,
         timeout: Optional[float] = 30.0,
         required_packages: Optional[List[str]] = None,
+        extractor: Optional[BaseExtractor] = None,
     ):
         r"""Initializes the PythonVerifier.
 
@@ -102,24 +104,33 @@ class PythonVerifier(BaseVerifier):
             self.venv_path = None
 
     async def _verify_implementation(
-        self, result: VerifierInput
+        self, solution: str, ground_truth: Optional[str]
     ) -> VerificationResult:
-        r"""Executes the LLM-generated response in a Python virtual
-        environment.
+        r"""Executes and verifies the LLM-generated Python solution in an
+        isolated virtual environment.
+
+        This method runs the given Python solution inside a controlled virtual
+        environment, captures its execution output, and optionally compares it
+        against a provided ground truth. Handles timeouts and execution errors.
 
         Args:
-            result (VerifierInput): Contains the LLM-generated Python code to
-                execute and optional ground truth for comparison.
+            solution (str): The Python code to execute and verify.
+            ground_truth (Optional[str]): The expected output for comparison.
+                If None, verification is based only on execution success.
 
         Returns:
-            VerificationResult: Contains verification status (SUCCESS/FAILURE/
-                ERROR), execution output, error messages if any, and execution
-                duration.
+            VerificationResult: A structured object containing:
+                - status (VerificationOutcome): SUCCESS, FAILURE, ERROR,
+                or TIMEOUT.
+                - result (str): The execution output of the solution.
+                - error_message (Optional[str]): Captured error message,
+                if any.
+                - duration (float, optional): Execution time (set externally).
 
         Raises:
             asyncio.TimeoutError: If execution exceeds the configured timeout.
-            Exception: Any unexpected errors during execution are caught and
-                converted to an ERROR verification result.
+            Exception: Any unexpected errors are caught and converted to an
+            ERROR verification result.
         """
         if not self.venv_path:
             return VerificationResult(
@@ -128,7 +139,7 @@ class PythonVerifier(BaseVerifier):
                 error_message="Virtual environment is not set up.",
             )
 
-        script = result.llm_response.strip()
+        script = solution.strip()
         venv_python = os.path.join(self.venv_path, self.bin_dir, "python")
 
         if not os.path.exists(venv_python):
@@ -156,11 +167,11 @@ class PythonVerifier(BaseVerifier):
 
             if process.returncode == 0:
                 # If ground truth is provided, compare it with the result
-                if result.ground_truth is not None:
+                if ground_truth is not None:
                     # Normalize both strings by removing extra whitespace
                     normalized_output = ' '.join(output_result.strip().split())
                     normalized_truth = ' '.join(
-                        str(result.ground_truth).strip().split()
+                        str(ground_truth).strip().split()
                     )
 
                     if normalized_output == normalized_truth:

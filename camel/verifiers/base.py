@@ -19,11 +19,7 @@ from typing import List, Optional
 from camel.logger import get_logger
 from camel.utils import BatchProcessor
 
-from .models import (
-    VerificationOutcome,
-    VerificationResult,
-    VerifierInput,
-)
+from .models import VerificationOutcome, VerificationResult
 
 logger = get_logger(__name__)
 
@@ -157,26 +153,33 @@ class BaseVerifier(ABC):
         r"""Implement verifier-specific cleanup logic."""
         pass
 
-    async def verify(self, result: VerifierInput) -> VerificationResult:
+    async def verify(
+        self, solution: str, ground_truth: Optional[str]
+    ) -> VerificationResult:
         r"""Perform verification with full error handling.
 
-        Verifies correctness, expected output, reasoning, and symbolic
-        consistency.
+        This method verifies the correctness of a generated solution by
+        comparing it against the provided ground truth. It handles
+        execution errors, timeouts, and retry attempts to ensure robust
+        validation.
 
         Args:
-            result: The response to verify.
+            solution (str): The generated response that needs verification.
+            ground_truth (Optional[str]): The expected correct answer
+            to compare against.
 
         Returns:
-            VerificationResult: Structured result containing:
-                - status: SUCCESS/FAILURE/ERROR/TIMEOUT
-                - result: Verification outcome description
-                - duration: Time taken for verification
-                - metadata: Additional details
-                - error_message: Error description if applicable
+            VerificationResult: A structured object containing:
+                - status (SUCCESS/FAILURE/ERROR/TIMEOUT)
+                - result (str): The verification outcome or processed output.
+                - duration (float): Time taken for verification.
+                - metadata (dict): Additional details such as retry attempts.
+                - error_message (Optional[str]): Error description,
+                if applicable.
 
         Raises:
             RuntimeError: If verification fails unexpectedly.
-            asyncio.TimeoutError: If verification times out.
+            asyncio.TimeoutError: If verification exceeds the time limit.
         """
         if not self._is_setup:
             logger.warning(
@@ -191,11 +194,13 @@ class BaseVerifier(ABC):
             try:
                 verification_result = (
                     await asyncio.wait_for(
-                        self._verify_implementation(result),
+                        self._verify_implementation(solution, ground_truth),
                         timeout=self._timeout,
                     )
                     if self._timeout
-                    else await self._verify_implementation(result)
+                    else await self._verify_implementation(
+                        solution, ground_truth
+                    )
                 )
 
                 verification_result.duration = time.time() - start_time
@@ -240,18 +245,23 @@ class BaseVerifier(ABC):
 
     @abstractmethod
     async def _verify_implementation(
-        self, result: VerifierInput
+        self, solution: str, ground_truth: Optional[str]
     ) -> VerificationResult:
-        r"""Implement the actual verification logic.
+        r"""Abstract method for verification logic.
+
+        Subclasses must implement this method to define how the solution
+        should be processed, evaluated, and compared to the ground truth.
 
         Args:
-            result: The response to verify.
+            solution (str): The generated response requiring verification.
+            ground_truth (Optional[str]): The expected reference output.
 
         Returns:
-            VerificationResult: Containing the verification outcome.
+            VerificationResult: Contains verification status and details.
 
         Raises:
-            NotImplementedError: Must be implemented in subclasses.
+            NotImplementedError: If the method is not implemented
+            in a subclass.
         """
         raise NotImplementedError(
             "Subclasses must implement _verify_implementation()"
@@ -259,31 +269,40 @@ class BaseVerifier(ABC):
 
 
 async def verify_batch(
-    self, results: List[VerifierInput], raise_on_error: bool = False
+    self,
+    solutions: List[str],
+    ground_truths: List[Optional[str]],
+    raise_on_error: bool = False,
 ) -> List[VerificationResult]:
-    r"""Verify multiple results in parallel with controlled concurrency.
+    r"""Verify multiple solutions in parallel with controlled concurrency.
+
+    This method verifies multiple generated solutions against their respective
+    ground truths using parallel execution. It handles timeouts, execution
+    errors, and batch processing optimizations.
 
     Args:
-        results: List of responses to verify.
-        raise_on_error: Whether to raise an exception if any verification
-            fails. (default: :obj:`False`)
+        solutions (List[str]): A list of generated solutions to be verified.
+        ground_truths (List[Optional[str]]): A list of expected outputs for
+            comparison. Each element corresponds to a solution.
+        raise_on_error (bool, optional): If True, raises an exception if any
+            verification fails. Defaults to False.
 
     Returns:
-        List[VerificationResult]: One for each input response.
+        List[VerificationResult]: A list of verification results, one per
+            input solution.
 
     Raises:
-        RuntimeError: If any verification fails and raise_on_error is True.
-        asyncio.TimeoutError: If verifications time out and max retries
-            exceeded.
+        RuntimeError: If any verification fails and `raise_on_error` is True.
+        asyncio.TimeoutError: If verifications time out after maximum retries.
     """
+
     if not self._is_setup:
         logger.warning(
             f"{self.__class__.__name__} not set up, calling setup()"
         )
         await self.setup()
 
-    # Get current batch parameters from processor with defaults if not
-    #  present
+    # Retrieve batch processing settings
     max_workers = getattr(
         self._batch_processor, 'max_workers', self._max_parallel or 1
     )
@@ -293,12 +312,12 @@ async def verify_batch(
     semaphore = asyncio.Semaphore(max(1, max_workers))
 
     async def _verify_with_semaphore(
-        response: VerifierInput,
+        solution: str, ground_truth: Optional[str]
     ) -> VerificationResult:
         start_time = time.time()
         try:
             async with semaphore:
-                verification_result = await self.verify(response)
+                verification_result = await self.verify(solution, ground_truth)
             processing_time = time.time() - start_time
             success = verification_result.status == VerificationOutcome.SUCCESS
             self._batch_processor.adjust_batch_size(success, processing_time)
@@ -316,10 +335,15 @@ async def verify_batch(
 
     # Process in batches
     all_results: List[VerificationResult] = []
-    for i in range(0, len(results), batch_size):
-        batch = results[i : i + batch_size]
+    for i in range(0, len(solutions), batch_size):
+        batch_solutions = solutions[i : i + batch_size]
+        batch_ground_truths = ground_truths[i : i + batch_size]
+
         verification_tasks = [
-            _verify_with_semaphore(result) for result in batch
+            _verify_with_semaphore(solution, ground_truth)
+            for solution, ground_truth in zip(
+                batch_solutions, batch_ground_truths
+            )
         ]
         try:
             batch_results = await asyncio.gather(*verification_tasks)
