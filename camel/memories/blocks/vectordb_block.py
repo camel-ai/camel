@@ -37,9 +37,7 @@ class VectorDBBlock(MemoryBlock):
         embedding (Optional[BaseEmbedding], optional): Embedding mechanism to
             convert chat messages into vector representations. Defaults to
             :obj:`OpenAiEmbedding` if not provided. (default: :obj:`None`)
-        milvus_uri (str): The URI of the Milvus database.
-        milvus_token (str): The token for accessing the Milvus database.
-        milvus_collection_name (Optional[str], optional): The name of the collection in the Milvus database.
+        **kwargs: Additional keyword arguments for the vector database storage.
     """
 
     def __init__(
