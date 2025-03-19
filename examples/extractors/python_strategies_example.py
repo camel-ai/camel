@@ -14,12 +14,9 @@
 import ast
 import asyncio
 
-from camel.extractors import (
-    BoxedStrategy,
-    Extractor,
-    PythonDictStrategy,
-    PythonListStrategy,
-)
+from camel.extractors import Extractor
+from camel.extractors.general import BoxedStrategy
+from camel.extractors.python import PythonDictStrategy, PythonListStrategy
 from camel.logger import get_logger
 
 logger = get_logger(__name__)

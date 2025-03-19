@@ -15,13 +15,13 @@ import ast
 import asyncio
 
 from camel.extractors import (
-    BoxedStrategy,
     Extractor,
     GraphDictionaryStrategy,
     GraphListStrategy,
     GraphNodeListStrategy,
     MathValueStrategy,
 )
+from camel.extractors.general import BoxedStrategy
 from camel.logger import get_logger
 
 logger = get_logger(__name__)
