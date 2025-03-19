@@ -164,4 +164,4 @@ class ChunkrReader:
         Returns:
             str: Formatted JSON as a string.
         """
-        return json.dumps(response_json, indent=4)
+        return json.dumps(response_json, indent=4, ensure_ascii=False)

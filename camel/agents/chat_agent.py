@@ -528,7 +528,6 @@ class ChatAgent(BaseAgent):
         self,
         input_message: Union[BaseMessage, str],
         response_format: Optional[Type[BaseModel]] = None,
-        reason_params: Optional[Dict[str, Any]] = None,
     ) -> ChatAgentResponse:
         r"""Executes a single step in the chat session, generating a response
         to the input message.
@@ -541,13 +540,6 @@ class ChatAgent(BaseAgent):
                 model defining the expected structure of the response. Used to
                 generate a structured response if provided. (default:
                 :obj:`None`)
-            reason_params (Optional[Dict[str, Any]], optional): A dictionary
-                containing the parameters for the reasoning step.
-                Argument `choices` is the number of choices/candidates to
-                consider.
-                Argument `threshold` is the threshold for the probability of
-                the choices.
-                (default: :obj:`None`)
 
         Returns:
             ChatAgentResponse: Contains output messages, a termination status
@@ -559,9 +551,6 @@ class ChatAgent(BaseAgent):
             input_message = BaseMessage.make_user_message(
                 role_name="User", content=input_message
             )
-
-        # Inject thinking steps
-        input_message = self._update_reasoning(input_message, reason_params)
 
         # Add user input to memory
         self.update_memory(input_message, OpenAIBackendRole.USER)
@@ -603,47 +592,6 @@ class ChatAgent(BaseAgent):
         return self._convert_to_chatagent_response(
             response, tool_call_records, num_tokens, external_tool_call_request
         )
-
-    def _update_reasoning(
-        self,
-        input_message: BaseMessage,
-        reason_params: Optional[Dict[str, Any]] = None,
-    ) -> BaseMessage:
-        r"""Updates the input message to include reasoning instructions and
-        adds human interaction capability.
-
-        Args:
-            input_message (BaseMessage): The message to be updated with
-                reasoning instructions.
-            reason_params (Optional[Dict[str, Any]], optional): Parameters for
-                the reasoning process.
-
-        Returns:
-            BaseMessage: The updated message with reasoning instructions.
-        """
-        if reason_params is None:
-            return input_message
-        choices = reason_params.get("choices", 3)
-        threshold = reason_params.get("threshold", 0.5)
-
-        input_message.content += f"""First, come up with potential {choices} 
-        choices/candidates. 
-        Next, assign a probability/credibility between 0 and 1 to each choice 
-        (make sure they add up to 1). 
-        Finally, if only one choice has a probability/credibility greater than
-        {threshold}, continue with that choice.
-        Otherwise, call tool `ask_human_via_console` to ask the user to decide 
-        which one to continue with, give user the probability/credibility of 
-        all choices, and the reason for each choice.
-        """
-
-        # Add tools to agent
-        from camel.toolkits.human_toolkit import HumanToolkit
-
-        human_toolkit = HumanToolkit()
-        self.add_tool(human_toolkit.ask_human_via_console)
-
-        return input_message
 
     @property
     def chat_history(self) -> List[OpenAIMessage]:
@@ -789,10 +737,13 @@ class ChatAgent(BaseAgent):
                 f"did not run successfully. Error: {error_info}"
             )
 
+        sanitized_messages = self._sanitize_messages_for_logging(
+            openai_messages
+        )
         logger.info(
             f"Model {self.model_backend.model_type}, "
             f"index {self.model_backend.current_model_index}, "
-            f"processed these messages: {openai_messages}"
+            f"processed these messages: {sanitized_messages}"
         )
 
         if isinstance(response, ChatCompletion):
@@ -834,16 +785,147 @@ class ChatAgent(BaseAgent):
                 f"did not run successfully. Error: {error_info}"
             )
 
+        sanitized_messages = self._sanitize_messages_for_logging(
+            openai_messages
+        )
         logger.info(
             f"Model {self.model_backend.model_type}, "
             f"index {self.model_backend.current_model_index}, "
-            f"processed these messages: {openai_messages}"
+            f"processed these messages: {sanitized_messages}"
         )
 
         if isinstance(response, ChatCompletion):
             return self._handle_batch_response(response)
         else:
             return await self._ahandle_stream_response(response, num_tokens)
+
+    def _sanitize_messages_for_logging(self, messages):
+        r"""Sanitize OpenAI messages for logging by replacing base64 image
+        data with a simple message and a link to view the image.
+
+        Args:
+            messages (List[OpenAIMessage]): The OpenAI messages to sanitize.
+
+        Returns:
+            List[OpenAIMessage]: The sanitized OpenAI messages.
+        """
+        import hashlib
+        import os
+        import re
+        import tempfile
+
+        # Create a copy of messages for logging to avoid modifying the
+        # original messages
+        sanitized_messages = []
+        for msg in messages:
+            if isinstance(msg, dict):
+                sanitized_msg = msg.copy()
+                # Check if content is a list (multimodal content with images)
+                if isinstance(sanitized_msg.get('content'), list):
+                    content_list = []
+                    for item in sanitized_msg['content']:
+                        if (
+                            isinstance(item, dict)
+                            and item.get('type') == 'image_url'
+                        ):
+                            # Handle image URL
+                            image_url = item.get('image_url', {}).get(
+                                'url', ''
+                            )
+                            if image_url and image_url.startswith(
+                                'data:image'
+                            ):
+                                # Extract image data and format
+                                match = re.match(
+                                    r'data:image/([^;]+);base64,(.+)',
+                                    image_url,
+                                )
+                                if match:
+                                    img_format, base64_data = match.groups()
+
+                                    # Create a hash of the image data to use
+                                    # as filename
+                                    img_hash = hashlib.md5(
+                                        base64_data[:100].encode()
+                                    ).hexdigest()[:10]
+                                    img_filename = (
+                                        f"image_{img_hash}.{img_format}"
+                                    )
+
+                                    # Save image to temp directory for viewing
+                                    try:
+                                        import base64
+
+                                        temp_dir = tempfile.gettempdir()
+                                        img_path = os.path.join(
+                                            temp_dir, img_filename
+                                        )
+
+                                        # Only save if file doesn't exist
+                                        if not os.path.exists(img_path):
+                                            with open(img_path, 'wb') as f:
+                                                f.write(
+                                                    base64.b64decode(
+                                                        base64_data
+                                                    )
+                                                )
+
+                                        # Create a file:// URL that can be
+                                        # opened
+                                        file_url = f"file://{img_path}"
+
+                                        content_list.append(
+                                            {
+                                                'type': 'image_url',
+                                                'image_url': {
+                                                    'url': f'{file_url}',
+                                                    'detail': item.get(
+                                                        'image_url', {}
+                                                    ).get('detail', 'auto'),
+                                                },
+                                            }
+                                        )
+                                    except Exception as e:
+                                        # If saving fails, fall back to simple
+                                        # message
+                                        content_list.append(
+                                            {
+                                                'type': 'image_url',
+                                                'image_url': {
+                                                    'url': '[base64 '
+                                                    + 'image - error saving: '
+                                                    + str(e)
+                                                    + ']',
+                                                    'detail': item.get(
+                                                        'image_url', {}
+                                                    ).get('detail', 'auto'),
+                                                },
+                                            }
+                                        )
+                                else:
+                                    # If regex fails, fall back to simple
+                                    # message
+                                    content_list.append(
+                                        {
+                                            'type': 'image_url',
+                                            'image_url': {
+                                                'url': '[base64 '
+                                                + 'image - invalid format]',
+                                                'detail': item.get(
+                                                    'image_url', {}
+                                                ).get('detail', 'auto'),
+                                            },
+                                        }
+                                    )
+                            else:
+                                content_list.append(item)
+                        else:
+                            content_list.append(item)
+                    sanitized_msg['content'] = content_list
+                sanitized_messages.append(sanitized_msg)
+            else:
+                sanitized_messages.append(msg)
+        return sanitized_messages
 
     def _step_get_info(
         self,
@@ -1125,7 +1207,13 @@ class ChatAgent(BaseAgent):
         args = tool_call_request.args
         tool_call_id = tool_call_request.tool_call_id
         tool = self._internal_tools[func_name]
-        result = tool(**args)
+        try:
+            result = tool(**args)
+        except Exception as e:
+            # Capture the error message to prevent framework crash
+            error_msg = f"Error executing tool '{func_name}': {e!s}"
+            result = {"error": error_msg}
+            logging.warning(error_msg)
 
         return self._record_tool_calling(func_name, args, result, tool_call_id)
 
@@ -1137,7 +1225,14 @@ class ChatAgent(BaseAgent):
         args = tool_call_request.args
         tool_call_id = tool_call_request.tool_call_id
         tool = self._internal_tools[func_name]
-        result = await tool.async_call(**args)
+        try:
+            result = await tool.async_call(**args)
+        except Exception as e:
+            # Capture the error message to prevent framework crash
+            error_msg = f"Error executing async tool '{func_name}': {e!s}"
+            result = {"error": error_msg}
+            logging.warning(error_msg)
+
         return self._record_tool_calling(func_name, args, result, tool_call_id)
 
     def _record_tool_calling(

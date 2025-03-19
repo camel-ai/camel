@@ -18,23 +18,18 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-import torch
 from datasets import Dataset as HFDataset
 from pydantic import ValidationError
 from torch.utils.data import Dataset
 
-from camel.datasets.base import (
-    BaseDataset,
+from camel.datasets import (
     DataPoint,
-    GenerativeDataset,
-    PyTorchDataset,
-    SeedDataset,
-    SyntheticDataset,
-    convert_hf_to_pytorch,
-    convert_synthetic_to_pytorch,
-    load_pytorch_dataset,
-    save_synthetic_dataset,
+    FewShotGenerator,
+    StaticDataset,
 )
+from camel.models.base_model import BaseModelBackend
+from camel.models.stub_model import StubModel
+from camel.verifiers import BaseVerifier
 
 
 # ruff: noqa: RUF001
@@ -51,7 +46,6 @@ def test_datapoint_creation():
     assert datapoint.question == 'What is 2+2?'
     assert datapoint.rationale == 'Addition of two numbers'
     assert datapoint.final_answer == '4'
-    assert datapoint.difficulty is None
     assert datapoint.metadata is None
 
 
@@ -60,8 +54,17 @@ def test_datapoint_validation():
     with pytest.raises(ValidationError):
         DataPoint(question='What is 2+2?')
 
-    with pytest.raises(ValidationError):
-        DataPoint(question='What is 2+2?', rationale='Addition')
+    datapoint = DataPoint(question='What is 2+2?', final_answer='4')
+    assert datapoint.question == 'What is 2+2?'
+    assert datapoint.rationale is None
+    assert datapoint.final_answer == '4'
+
+    datapoint = DataPoint(
+        question='What is 2+2?', rationale='Addition', final_answer='4'
+    )
+    assert datapoint.question == 'What is 2+2?'
+    assert datapoint.rationale == 'Addition'
+    assert datapoint.final_answer == '4'
 
 
 def test_datapoint_to_dict():
@@ -70,7 +73,6 @@ def test_datapoint_to_dict():
         'question': 'What is 2+2?',
         'rationale': 'Addition of two numbers',
         'final_answer': '4',
-        'difficulty': 'easy',
         'metadata': {'topic': 'math'},
     }
 
@@ -80,12 +82,12 @@ def test_datapoint_to_dict():
     assert data_dict['question'] == 'What is 2+2?'
     assert data_dict['rationale'] == 'Addition of two numbers'
     assert data_dict['final_answer'] == '4'
-    assert data_dict['difficulty'] == 'easy'
     assert data_dict['metadata'] == {'topic': 'math'}
 
 
 def test_datapoint_from_dict():
     r"""Test creating DataPoint from dictionary."""
+    # Test with rationale
     data = {
         'question': 'What is 2+2?',
         'rationale': 'Addition of two numbers',
@@ -116,87 +118,9 @@ def sample_data():
     ]
 
 
-@pytest.mark.asyncio
-async def test_base_dataset_setup(sample_data):
-    r"""Test BaseDataset setup process."""
-    with tempfile.TemporaryDirectory() as temp_dir:
-        dataset = BaseDataset(data=sample_data, cache_dir=temp_dir)
-        await dataset.setup()
-
-        assert dataset._is_setup
-        assert len(dataset.data) == 2
-        assert isinstance(dataset.data[0], DataPoint)
-        assert dataset.data[0].question == 'What is 2+2?'
-        assert dataset.data[1].final_answer == '9'
-
-
-@pytest.mark.asyncio
-async def test_base_dataset_empty_setup():
-    r"""Test BaseDataset setup with empty data."""
-    dataset = BaseDataset(data=None)
-    await dataset.setup()
-
-    assert dataset._is_setup
-    assert len(dataset.data) == 0
-
-
-@pytest.mark.asyncio
-async def test_base_dataset_cleanup():
-    r"""Test BaseDataset cleanup process."""
-    dataset = BaseDataset(data=[])
-    await dataset.setup()
-    assert dataset._is_setup
-
-    await dataset.cleanup()
-    assert not dataset._is_setup
-
-
-def test_base_dataset_sample(sample_data):
-    r"""Test sampling from BaseDataset."""
-    dataset = BaseDataset(data=sample_data)
-    dataset._is_setup = True
-    dataset.data = [DataPoint(**item) for item in sample_data]
-
-    sample = dataset.sample()
-    assert isinstance(sample, DataPoint)
-    assert sample in dataset.data
-
-
-def test_base_dataset_len(sample_data):
-    r"""Test BaseDataset length."""
-    dataset = BaseDataset(data=sample_data)
-    dataset._is_setup = True
-    dataset.data = [DataPoint(**item) for item in sample_data]
-
-    assert len(dataset) == 2
-
-
-def test_base_dataset_getitem(sample_data):
-    r"""Test BaseDataset item access."""
-    dataset = BaseDataset(data=sample_data)
-    dataset._is_setup = True
-    dataset.data = [DataPoint(**item) for item in sample_data]
-
-    item = dataset[0]
-    assert isinstance(item, DataPoint)
-    assert item.question == 'What is 2+2?'
-
-    with pytest.raises(IndexError):
-        _ = dataset[100]  # Out of bounds
-
-
-def test_base_dataset_metadata():
-    r"""Test BaseDataset metadata."""
-    dataset = BaseDataset(data=[], cache_dir='/tmp', custom_param='value')
-
-    metadata = dataset.metadata
-    assert metadata['cache_dir'] == '/tmp'
-    assert metadata['custom_param'] == 'value'
-
-
-def test_seed_dataset_init_from_hf_dataset():
+def test_static_dataset_init_from_hf_dataset():
     r"""
-    Test SeedDataset initialization from a
+    Test StaticDataset initialization from a
     Hugging Face Dataset with various scenarios.
     """
 
@@ -215,7 +139,7 @@ def test_seed_dataset_init_from_hf_dataset():
     ]
     hf_valid = HFDataset.from_list(valid_data)
 
-    dataset = SeedDataset(data=hf_valid, min_samples=1, strict=True)
+    dataset = StaticDataset(data=hf_valid, min_samples=1, strict=True)
 
     # Verify the dataset initialized correctly
     assert len(dataset) == 2, "Dataset should contain 2 items."
@@ -239,9 +163,6 @@ def test_seed_dataset_init_from_hf_dataset():
         dataset[1].final_answer == "yes"
     ), "Second final answer should match input."
     assert (
-        dataset[0].difficulty is None
-    ), "Difficulty should be None when not provided."
-    assert (
         dataset[0].metadata is None
     ), "Metadata should be None when not provided."
 
@@ -256,10 +177,10 @@ def test_seed_dataset_init_from_hf_dataset():
         match="Sample at index 0 has invalid 'rationale': "
         "expected str, got <class 'NoneType'>",
     ):
-        SeedDataset(data=hf_invalid_missing, min_samples=1, strict=True)
+        StaticDataset(data=hf_invalid_missing, min_samples=1, strict=True)
 
     # Sub-test 2b: Missing required field with strict=False
-    dataset_non_strict = SeedDataset(
+    dataset_non_strict = StaticDataset(
         data=hf_invalid_missing, min_samples=0, strict=False
     )
     assert (
@@ -272,10 +193,10 @@ def test_seed_dataset_init_from_hf_dataset():
         ValueError,
         match="The dataset does not contain enough samples. Need 1, got 0",
     ):
-        SeedDataset(data=hf_empty, min_samples=1, strict=True)
+        StaticDataset(data=hf_empty, min_samples=1, strict=True)
 
     # Sub-test 2d: Empty dataset with min_samples=0
-    dataset_empty = SeedDataset(data=hf_empty, min_samples=0, strict=True)
+    dataset_empty = StaticDataset(data=hf_empty, min_samples=0, strict=True)
     assert (
         len(dataset_empty) == 0
     ), "Empty dataset should have zero length when min_samples=0."
@@ -286,13 +207,12 @@ def test_seed_dataset_init_from_hf_dataset():
             "question": "What is the capital of France?",
             "rationale": "France is a country in Europe.",
             "final_answer": "Paris",
-            "difficulty": "easy",
             "metadata": {"source": "geography", "id": 123},
             "extra_field": "this should be ignored",  # Not in DataPoint
         }
     ]
     hf_optional = HFDataset.from_list(data_with_optional)
-    dataset_optional = SeedDataset(
+    dataset_optional = StaticDataset(
         data=hf_optional, min_samples=1, strict=True
     )
 
@@ -310,9 +230,6 @@ def test_seed_dataset_init_from_hf_dataset():
     assert (
         dataset_optional[0].final_answer == "Paris"
     ), "Final answer should match."
-    assert (
-        dataset_optional[0].difficulty == "easy"
-    ), "Difficulty should be set correctly."
     assert dataset_optional[0].metadata == {
         "source": "geography",
         "id": 123,
@@ -322,9 +239,9 @@ def test_seed_dataset_init_from_hf_dataset():
     ), "Extra field should not be present in DataPoint."
 
 
-def test_seed_dataset_init_from_pytorch_dataset():
+def test_static_dataset_init_from_pytorch_dataset():
     r"""
-    Test SeedDataset initialization from a
+    Test StaticDataset initialization from a
     PyTorch Dataset with various scenarios.
     """
 
@@ -352,7 +269,7 @@ def test_seed_dataset_init_from_pytorch_dataset():
         },
     ]
     pytorch_valid = MockPyTorchDataset(valid_data)
-    dataset = SeedDataset(data=pytorch_valid, min_samples=1, strict=True)
+    dataset = StaticDataset(data=pytorch_valid, min_samples=1, strict=True)
 
     assert len(dataset) == 2, "Dataset should contain 2 items."
     assert isinstance(
@@ -375,9 +292,6 @@ def test_seed_dataset_init_from_pytorch_dataset():
         dataset[1].final_answer == "yes"
     ), "Second final answer should match input."
     assert (
-        dataset[0].difficulty is None
-    ), "Difficulty should be None when not provided."
-    assert (
         dataset[0].metadata is None
     ), "Metadata should be None when not provided."
 
@@ -395,10 +309,10 @@ def test_seed_dataset_init_from_pytorch_dataset():
         match="Sample at index 0 has invalid 'rationale': "
         "expected str, got <class 'NoneType'>",
     ):
-        SeedDataset(data=pytorch_invalid_missing, min_samples=1, strict=True)
+        StaticDataset(data=pytorch_invalid_missing, min_samples=1, strict=True)
 
     # Sub-test 2b: Missing required field with strict=False
-    dataset_non_strict = SeedDataset(
+    dataset_non_strict = StaticDataset(
         data=pytorch_invalid_missing, min_samples=0, strict=False
     )
     assert (
@@ -411,10 +325,12 @@ def test_seed_dataset_init_from_pytorch_dataset():
         ValueError,
         match="The dataset does not contain enough samples. Need 1, got 0",
     ):
-        SeedDataset(data=pytorch_empty, min_samples=1, strict=True)
+        StaticDataset(data=pytorch_empty, min_samples=1, strict=True)
 
     # Sub-test 2d: Empty dataset with min_samples=0
-    dataset_empty = SeedDataset(data=pytorch_empty, min_samples=0, strict=True)
+    dataset_empty = StaticDataset(
+        data=pytorch_empty, min_samples=0, strict=True
+    )
     assert (
         len(dataset_empty) == 0
     ), "Empty dataset should have zero length when min_samples=0."
@@ -425,13 +341,12 @@ def test_seed_dataset_init_from_pytorch_dataset():
             "question": "What is the capital of France?",
             "rationale": "France is a country in Europe.",
             "final_answer": "Paris",
-            "difficulty": "easy",
             "metadata": {"source": "geography", "id": 123},
             "extra_field": "this should be ignored",  # Not in DataPoint
         }
     ]
     pytorch_optional = MockPyTorchDataset(data_with_optional)
-    dataset_optional = SeedDataset(
+    dataset_optional = StaticDataset(
         data=pytorch_optional, min_samples=1, strict=True
     )
 
@@ -449,9 +364,6 @@ def test_seed_dataset_init_from_pytorch_dataset():
     assert (
         dataset_optional[0].final_answer == "Paris"
     ), "Final answer should match."
-    assert (
-        dataset_optional[0].difficulty == "easy"
-    ), "Difficulty should be set correctly."
     assert dataset_optional[0].metadata == {
         "source": "geography",
         "id": 123,
@@ -471,7 +383,7 @@ def test_seed_dataset_init_from_pytorch_dataset():
             }
 
     with pytest.raises(TypeError) as excinfo:
-        SeedDataset(NoLenDataset(), min_samples=1, strict=True)
+        StaticDataset(NoLenDataset(), min_samples=1, strict=True)
     assert "does not implement `__len__()`." in str(excinfo.value)
 
     # Sub-test 4b: Dataset with non-dict items
@@ -485,12 +397,12 @@ def test_seed_dataset_init_from_pytorch_dataset():
     with pytest.raises(
         TypeError, match="Item at index 0 is not a dict: got str"
     ):
-        SeedDataset(data=NonDictDataset(), min_samples=1, strict=True)
+        StaticDataset(data=NonDictDataset(), min_samples=1, strict=True)
 
 
-def test_seed_dataset_init_from_json_file():
+def test_static_dataset_init_from_json_file():
     r"""
-    Test SeedDataset initialization from a JSON file with various scenarios.
+    Test StaticDataset initialization from a JSON file with various scenarios.
     """
 
     # **Test 1: Initialization with a valid JSON file (only required fields)**
@@ -512,7 +424,7 @@ def test_seed_dataset_init_from_json_file():
         json.dump(valid_data, tmp_file)
         tmp_file_path = Path(tmp_file.name)
 
-    dataset = SeedDataset(data=tmp_file_path, min_samples=1, strict=True)
+    dataset = StaticDataset(data=tmp_file_path, min_samples=1, strict=True)
     assert len(dataset) == 2, "Dataset should contain 2 items."
     assert isinstance(
         dataset[0], DataPoint
@@ -534,9 +446,6 @@ def test_seed_dataset_init_from_json_file():
         dataset[1].final_answer == "yes"
     ), "Second final answer should match input."
     assert (
-        dataset[0].difficulty is None
-    ), "Difficulty should be None when not provided."
-    assert (
         dataset[0].metadata is None
     ), "Metadata should be None when not provided."
 
@@ -550,7 +459,7 @@ def test_seed_dataset_init_from_json_file():
         tmp_file_path = Path(tmp_file.name)
 
     with pytest.raises(ValueError, match="Invalid JSON in file"):
-        SeedDataset(data=tmp_file_path, min_samples=1, strict=True)
+        StaticDataset(data=tmp_file_path, min_samples=1, strict=True)
 
     # **Test 3: Initialization with JSON file containing non-list data**
     with tempfile.NamedTemporaryFile(
@@ -565,7 +474,7 @@ def test_seed_dataset_init_from_json_file():
     with pytest.raises(
         ValueError, match="JSON file must contain a list of dictionaries"
     ):
-        SeedDataset(data=tmp_file_path, min_samples=1, strict=True)
+        StaticDataset(data=tmp_file_path, min_samples=1, strict=True)
 
     # **Test 4: Initialization with JSON file containing non-dict items**
     with tempfile.NamedTemporaryFile(
@@ -581,12 +490,12 @@ def test_seed_dataset_init_from_json_file():
     with pytest.raises(
         ValueError, match="Expected a dictionary at index 1, got str"
     ):
-        SeedDataset(data=tmp_file_path, min_samples=1, strict=True)
+        StaticDataset(data=tmp_file_path, min_samples=1, strict=True)
 
     # **Test 5: Initialization with a missing JSON file**
     missing_file_path = Path("non_existent_file.json")
     with pytest.raises(FileNotFoundError, match="JSON file not found:"):
-        SeedDataset(data=missing_file_path, min_samples=1, strict=True)
+        StaticDataset(data=missing_file_path, min_samples=1, strict=True)
 
     # **Test 6: Initialization with an empty JSON file**
     with tempfile.NamedTemporaryFile(
@@ -600,10 +509,12 @@ def test_seed_dataset_init_from_json_file():
         ValueError,
         match="The dataset does not contain enough samples. Need 1, got 0",
     ):
-        SeedDataset(data=tmp_file_path, min_samples=1, strict=True)
+        StaticDataset(data=tmp_file_path, min_samples=1, strict=True)
 
     # Sub-test 6b: Empty dataset with min_samples=0
-    dataset_empty = SeedDataset(data=tmp_file_path, min_samples=0, strict=True)
+    dataset_empty = StaticDataset(
+        data=tmp_file_path, min_samples=0, strict=True
+    )
     assert (
         len(dataset_empty) == 0
     ), "Empty dataset should have zero length when min_samples=0."
@@ -617,7 +528,6 @@ def test_seed_dataset_init_from_json_file():
                 "question": "What is the capital of France?",
                 "rationale": "France is a country in Europe.",
                 "final_answer": "Paris",
-                "difficulty": "easy",
                 "metadata": {"source": "geography", "id": 123},
                 "extra_field": "this should be ignored",
             }
@@ -625,7 +535,7 @@ def test_seed_dataset_init_from_json_file():
         json.dump(data_with_optional, tmp_file)
         tmp_file_path = Path(tmp_file.name)
 
-    dataset_optional = SeedDataset(
+    dataset_optional = StaticDataset(
         data=tmp_file_path, min_samples=1, strict=True
     )
     assert len(dataset_optional) == 1, "Dataset should contain 1 item."
@@ -641,9 +551,6 @@ def test_seed_dataset_init_from_json_file():
     assert (
         dataset_optional[0].final_answer == "Paris"
     ), "Final answer should match."
-    assert (
-        dataset_optional[0].difficulty == "easy"
-    ), "Difficulty should be set correctly."
     assert dataset_optional[0].metadata == {
         "source": "geography",
         "id": 123,
@@ -671,7 +578,7 @@ def test_seed_dataset_init_from_json_file():
         match="Sample at index 0 has invalid 'rationale': "
         "expected str, got <class 'NoneType'>",
     ):
-        SeedDataset(data=tmp_file_path, min_samples=1, strict=True)
+        StaticDataset(data=tmp_file_path, min_samples=1, strict=True)
 
     # Sub-test 8b: Invalid data with strict=False
     with tempfile.NamedTemporaryFile(
@@ -686,7 +593,7 @@ def test_seed_dataset_init_from_json_file():
         json.dump(invalid_data, tmp_file)
         tmp_file_path = Path(tmp_file.name)
 
-    dataset_non_strict = SeedDataset(
+    dataset_non_strict = StaticDataset(
         data=tmp_file_path, min_samples=0, strict=False
     )
     assert (
@@ -694,26 +601,38 @@ def test_seed_dataset_init_from_json_file():
     ), "Invalid items should be filtered out in non-strict mode."
 
 
-def test_seed_dataset_init_from_list():
+def test_static_dataset_init_from_jsonl_file():
     r"""
-    Test SeedDataset initialization from a list of
-    dictionaries with various scenarios.
+    Test StaticDataset initialization from a JSONL file with various scenarios.
     """
+    import json
+    import tempfile
+    from pathlib import Path
 
-    # **Test 1: Initialization with a valid list (only required fields)**
-    valid_data = [
-        {
-            "question": "What is 2 + 2?",
-            "rationale": "Addition of 2 and 2.",
-            "final_answer": "4",
-        },
-        {
-            "question": "Is the sky blue?",
-            "rationale": "Observation of clear weather.",
-            "final_answer": "yes",
-        },
-    ]
-    dataset = SeedDataset(data=valid_data, min_samples=1, strict=True)
+    import pytest
+
+    # **Test 1: Initialization with a valid JSONL file (only required fields)**
+    with tempfile.NamedTemporaryFile(
+        mode='w', suffix='.jsonl', delete=False
+    ) as tmp_file:
+        valid_data = [
+            {
+                "question": "What is 2 + 2?",
+                "rationale": "Addition of 2 and 2.",
+                "final_answer": "4",
+            },
+            {
+                "question": "Is the sky blue?",
+                "rationale": "Observation of clear weather.",
+                "final_answer": "yes",
+            },
+        ]
+        # Write each dictionary as a separate JSON line.
+        for item in valid_data:
+            tmp_file.write(json.dumps(item) + "\n")
+        tmp_file_path = Path(tmp_file.name)
+
+    dataset = StaticDataset(data=tmp_file_path, min_samples=1, strict=True)
     assert len(dataset) == 2, "Dataset should contain 2 items."
     assert isinstance(
         dataset[0], DataPoint
@@ -735,8 +654,197 @@ def test_seed_dataset_init_from_list():
         dataset[1].final_answer == "yes"
     ), "Second final answer should match input."
     assert (
-        dataset[0].difficulty is None
-    ), "Difficulty should be None when not provided."
+        dataset[0].metadata is None
+    ), "Metadata should be None when not provided."
+
+    # **Test 2: Initialization with invalid JSONL file (malformed JSON)**
+    with tempfile.NamedTemporaryFile(
+        mode='w', suffix='.jsonl', delete=False
+    ) as tmp_file:
+        # Write a malformed JSON line (missing closing brace).
+        tmp_file.write(
+            '{"question": "Test", "rationale": "Test",'
+            '"final_answer": "Test"\n'
+        )
+        tmp_file_path = Path(tmp_file.name)
+
+    with pytest.raises(ValueError, match="Invalid JSON on line"):
+        StaticDataset(data=tmp_file_path, min_samples=1, strict=True)
+
+    # **Test 3: Initialization with JSONL file containing non-dict items**
+    with tempfile.NamedTemporaryFile(
+        mode='w', suffix='.jsonl', delete=False
+    ) as tmp_file:
+        tmp_file.write(
+            json.dumps(
+                {
+                    "question": "Test",
+                    "rationale": "Test",
+                    "final_answer": "Test",
+                }
+            )
+            + "\n"
+        )
+        # Write a non-dict item on the second line.
+        tmp_file.write(json.dumps("not a dict") + "\n")
+        tmp_file_path = Path(tmp_file.name)
+
+    with pytest.raises(ValueError, match="Expected a dictionary at record 2"):
+        StaticDataset(data=tmp_file_path, min_samples=1, strict=True)
+
+    # **Test 4: Initialization with a missing JSONL file**
+    missing_file_path = Path("non_existent_file.jsonl")
+    with pytest.raises(FileNotFoundError, match="JSONL file not found:"):
+        StaticDataset(data=missing_file_path, min_samples=1, strict=True)
+
+    # **Test 5: Initialization with an empty JSONL file**
+    with tempfile.NamedTemporaryFile(
+        mode='w', suffix='.jsonl', delete=False
+    ) as tmp_file:
+        tmp_file_path = Path(tmp_file.name)
+
+    # Sub-test 5a: Empty dataset with min_samples=1
+    with pytest.raises(
+        ValueError, match="The dataset does not contain enough samples"
+    ):
+        StaticDataset(data=tmp_file_path, min_samples=1, strict=True)
+
+    # Sub-test 5b: Empty dataset with min_samples=0
+    dataset_empty = StaticDataset(
+        data=tmp_file_path, min_samples=0, strict=True
+    )
+    assert (
+        len(dataset_empty) == 0
+    ), "Empty dataset should have zero length when min_samples=0."
+
+    # **Test 6: Initialization with optional fields and additional fields**
+    with tempfile.NamedTemporaryFile(
+        mode='w', suffix='.jsonl', delete=False
+    ) as tmp_file:
+        data_with_optional = [
+            {
+                "question": "What is the capital of France?",
+                "rationale": "France is a country in Europe.",
+                "final_answer": "Paris",
+                "metadata": {"source": "geography", "id": 123},
+                "extra_field": "this should be ignored",
+            }
+        ]
+        for item in data_with_optional:
+            tmp_file.write(json.dumps(item) + "\n")
+        tmp_file_path = Path(tmp_file.name)
+
+    dataset_optional = StaticDataset(
+        data=tmp_file_path, min_samples=1, strict=True
+    )
+    assert len(dataset_optional) == 1, "Dataset should contain 1 item."
+    assert isinstance(
+        dataset_optional[0], DataPoint
+    ), "Item should be a DataPoint instance."
+    assert (
+        dataset_optional[0].question == "What is the capital of France?"
+    ), "Question should match."
+    assert (
+        dataset_optional[0].rationale == "France is a country in Europe."
+    ), "Rationale should match."
+    assert (
+        dataset_optional[0].final_answer == "Paris"
+    ), "Final answer should match."
+    assert dataset_optional[0].metadata == {
+        "source": "geography",
+        "id": 123,
+    }, "Metadata should match."
+    assert (
+        "extra_field" not in dataset_optional[0].__dict__
+    ), "Extra field should not be present in DataPoint."
+
+    # **Test 7: JSONL-specific edge cases:
+    # Missing required field in strict mode**
+    with tempfile.NamedTemporaryFile(
+        mode='w', suffix='.jsonl', delete=False
+    ) as tmp_file:
+        # Missing 'rationale' field.
+        tmp_file.write(
+            json.dumps(
+                {
+                    "question": "What is 3 + 3?",
+                    "final_answer": "6",
+                }
+            )
+            + "\n"
+        )
+        tmp_file_path = Path(tmp_file.name)
+
+    with pytest.raises(
+        ValueError,
+        match="Sample at index 0 has invalid 'rationale'",
+    ):
+        StaticDataset(data=tmp_file_path, min_samples=1, strict=True)
+
+    # **Test 8: JSONL-specific edge cases:
+    # Missing required field in non-strict mode**
+    with tempfile.NamedTemporaryFile(
+        mode='w', suffix='.jsonl', delete=False
+    ) as tmp_file:
+        tmp_file.write(
+            json.dumps(
+                {
+                    "question": "What is 3 + 3?",
+                    "final_answer": "6",
+                }
+            )
+            + "\n"
+        )
+        tmp_file_path = Path(tmp_file.name)
+
+    dataset_non_strict = StaticDataset(
+        data=tmp_file_path, min_samples=0, strict=False
+    )
+    assert (
+        len(dataset_non_strict) == 0
+    ), "Invalid items should be filtered out in non-strict mode."
+
+
+def test_static_dataset_init_from_list():
+    r"""
+    Test StaticDataset initialization from a list of
+    dictionaries with various scenarios.
+    """
+
+    # **Test 1: Initialization with a valid list (only required fields)**
+    valid_data = [
+        {
+            "question": "What is 2 + 2?",
+            "rationale": "Addition of 2 and 2.",
+            "final_answer": "4",
+        },
+        {
+            "question": "Is the sky blue?",
+            "rationale": "Observation of clear weather.",
+            "final_answer": "yes",
+        },
+    ]
+    dataset = StaticDataset(data=valid_data, min_samples=1, strict=True)
+    assert len(dataset) == 2, "Dataset should contain 2 items."
+    assert isinstance(
+        dataset[0], DataPoint
+    ), "Items should be DataPoint instances."
+    assert (
+        dataset[0].question == "What is 2 + 2?"
+    ), "Question should match input."
+    assert (
+        dataset[0].rationale == "Addition of 2 and 2."
+    ), "Rationale should match input."
+    assert dataset[0].final_answer == "4", "Final answer should match input."
+    assert (
+        dataset[1].question == "Is the sky blue?"
+    ), "Second question should match input."
+    assert (
+        dataset[1].rationale == "Observation of clear weather."
+    ), "Second rationale should match input."
+    assert (
+        dataset[1].final_answer == "yes"
+    ), "Second final answer should match input."
     assert (
         dataset[0].metadata is None
     ), "Metadata should be None when not provided."
@@ -749,7 +857,7 @@ def test_seed_dataset_init_from_list():
     with pytest.raises(
         ValueError, match="Expected a dictionary at index 1, got str"
     ):
-        SeedDataset(data=invalid_list_data, min_samples=1, strict=True)
+        StaticDataset(data=invalid_list_data, min_samples=1, strict=True)
 
     # **Test 3: Initialization with an empty list**
     empty_data = []
@@ -758,9 +866,9 @@ def test_seed_dataset_init_from_list():
         ValueError,
         match="The dataset does not contain enough samples. Need 1, got 0",
     ):
-        SeedDataset(data=empty_data, min_samples=1, strict=True)
+        StaticDataset(data=empty_data, min_samples=1, strict=True)
     # Sub-test 3b: Empty list with min_samples=0
-    dataset_empty = SeedDataset(data=empty_data, min_samples=0, strict=True)
+    dataset_empty = StaticDataset(data=empty_data, min_samples=0, strict=True)
     assert (
         len(dataset_empty) == 0
     ), "Empty dataset should have zero length when min_samples=0."
@@ -778,9 +886,9 @@ def test_seed_dataset_init_from_list():
         match="Sample at index 0 has invalid 'rationale': "
         "expected str, got <class 'NoneType'>",
     ):
-        SeedDataset(data=invalid_data_missing, min_samples=1, strict=True)
+        StaticDataset(data=invalid_data_missing, min_samples=1, strict=True)
     # Sub-test 4b: Missing required field with strict=False
-    dataset_non_strict = SeedDataset(
+    dataset_non_strict = StaticDataset(
         data=invalid_data_missing, min_samples=0, strict=False
     )
     assert (
@@ -793,12 +901,11 @@ def test_seed_dataset_init_from_list():
             "question": "What is the capital of France?",
             "rationale": "France is a country in Europe.",
             "final_answer": "Paris",
-            "difficulty": "easy",
             "metadata": {"source": "geography", "id": 123},
             "extra_field": "this should be ignored",
         }
     ]
-    dataset_optional = SeedDataset(
+    dataset_optional = StaticDataset(
         data=data_with_optional, min_samples=1, strict=True
     )
     assert len(dataset_optional) == 1, "Dataset should contain 1 item."
@@ -814,9 +921,6 @@ def test_seed_dataset_init_from_list():
     assert (
         dataset_optional[0].final_answer == "Paris"
     ), "Final answer should match."
-    assert (
-        dataset_optional[0].difficulty == "easy"
-    ), "Difficulty should be set correctly."
     assert dataset_optional[0].metadata == {
         "source": "geography",
         "id": 123,
@@ -837,7 +941,7 @@ def test_seed_dataset_init_from_list():
             "final_answer": "Invalid",
         },  # Missing rationale
     ]
-    dataset_mixed = SeedDataset(data=mixed_data, min_samples=1, strict=False)
+    dataset_mixed = StaticDataset(data=mixed_data, min_samples=1, strict=False)
     assert (
         len(dataset_mixed) == 1
     ), "Only valid items should be included in non-strict mode."
@@ -846,10 +950,10 @@ def test_seed_dataset_init_from_list():
     ), "Only the valid item should be present."
 
 
-def test_seed_dataset_methods():
+def test_static_dataset_methods():
     r"""
     Test the __len__, __getitem__, and sample methods
-    of SeedDataset with a mock dataset.
+    of StaticDataset with a mock dataset.
     """
     mock_data = [
         {
@@ -873,7 +977,7 @@ def test_seed_dataset_methods():
             "final_answer": "3",
         },
     ]
-    dataset = SeedDataset(data=mock_data, min_samples=1, strict=True)
+    dataset = StaticDataset(data=mock_data, min_samples=1, strict=True)
 
     assert len(dataset) == 4, "Dataset should have 4 items."
     assert (
@@ -915,253 +1019,18 @@ def test_seed_dataset_methods():
     ), "Sampled item should be in the dataset."
 
     # Test __len__ and sample with empty dataset
-    empty_dataset = SeedDataset(data=[], min_samples=0, strict=True)
+    empty_dataset = StaticDataset(data=[], min_samples=0, strict=True)
     assert len(empty_dataset) == 0, "Empty dataset should have length 0."
     with pytest.raises(RuntimeError, match="Dataset is empty, cannot sample."):
         empty_dataset.sample()
 
 
-def test_synthetic_dataset_init():
-    r"""Test SyntheticDataset initialization."""
-    dataset = SyntheticDataset()
-    assert dataset._raw_data == []
-    assert dataset.data == []
-
-
-def test_synthetic_dataset_add():
-    r"""Test adding items to SyntheticDataset."""
-    dataset = SyntheticDataset()
-    datapoint = DataPoint(
-        question='What is 2+2?',
-        rationale='Addition of two numbers',
-        final_answer='4',
-    )
-
-    dataset.add(datapoint)
-    assert len(dataset.data) == 1
-    assert dataset.data[0] == datapoint
-
-
-def test_synthetic_dataset_add_batch():
-    r"""Test adding batch of items to SyntheticDataset."""
-    dataset = SyntheticDataset()
-    datapoints = [
-        DataPoint(
-            question='What is 2+2?',
-            rationale='Addition of two numbers',
-            final_answer='4',
-        ),
-        DataPoint(
-            question='What is 3×3?',
-            rationale='Multiplication of two numbers',
-            final_answer='9',
-        ),
-    ]
-
-    dataset.add_batch(datapoints)
-    assert len(dataset.data) == 2
-    assert dataset.data == datapoints
-
-
-def test_synthetic_dataset_filter():
-    r"""Test filtering SyntheticDataset."""
-    dataset = SyntheticDataset()
-    datapoints = [
-        DataPoint(
-            question='What is 2+2?',
-            rationale='Addition of two numbers',
-            final_answer='4',
-            difficulty='easy',
-        ),
-        DataPoint(
-            question='What is 3×3?',
-            rationale='Multiplication of two numbers',
-            final_answer='9',
-            difficulty='medium',
-        ),
-    ]
-    dataset.add_batch(datapoints)
-
-    # Filter for easy questions
-    filtered = dataset.filter(lambda dp: dp.difficulty == 'easy')
-    assert len(filtered.data) == 1
-    assert filtered.data[0].question == 'What is 2+2?'
-
-
-def test_pytorch_dataset_init(sample_data):
-    r"""Test PyTorchDataset initialization."""
-    dataset = PyTorchDataset(sample_data)
-    assert len(dataset) == 2
-    assert dataset[0]['question'] == 'What is 2+2?'
-
-
-def test_pytorch_dataset_from_datapoints():
-    r"""Test creating PyTorchDataset from DataPoints."""
-    datapoints = [
-        DataPoint(
-            question='What is 2+2?',
-            rationale='Addition of two numbers',
-            final_answer='4',
-        ),
-        DataPoint(
-            question='What is 3×3?',
-            rationale='Multiplication of two numbers',
-            final_answer='9',
-        ),
-    ]
-
-    dataset = PyTorchDataset.from_datapoints(datapoints)
-    assert len(dataset) == 2
-    assert dataset[0]['question'] == 'What is 2+2?'
-    assert dataset[1]['final_answer'] == '9'
-
-
-def test_pytorch_dataset_transform():
-    r"""Test PyTorchDataset with transform function."""
-    data = [
-        {
-            'question': 'What is 2+2?',
-            'rationale': 'Addition of two numbers',
-            'final_answer': '4',
-        }
-    ]
-
-    def transform(sample):
-        sample['question'] = sample['question'].upper()
-        return sample
-
-    dataset = PyTorchDataset(data, transform=transform)
-    assert dataset[0]['question'] == 'WHAT IS 2+2?'
-
-
-def test_pytorch_dataset_collate_fn():
-    r"""Test PyTorchDataset collate function."""
-    batch = [
-        {
-            'question': 'What is 2+2?',
-            'rationale': 'Addition of two numbers',
-            'final_answer': '4',
-            'numeric_value': 4,
-        },
-        {
-            'question': 'What is 3×3?',
-            'rationale': 'Multiplication of two numbers',
-            'final_answer': '9',
-            'numeric_value': 9,
-        },
-    ]
-
-    result = PyTorchDataset.collate_fn(batch)
-
-    # String fields should be lists
-    assert isinstance(result['question'], list)
-    assert result['question'] == ['What is 2+2?', 'What is 3×3?']
-
-    # Numeric fields should be tensors
-    assert isinstance(result['numeric_value'], torch.Tensor)
-    assert torch.equal(result['numeric_value'], torch.tensor([4, 9]))
-
-
-def test_convert_hf_to_pytorch():
-    r"""Test converting HuggingFace dataset to PyTorchDataset."""
-    hf_data = [
-        {
-            'q': 'What is 2+2?',
-            'r': 'Addition of two numbers',
-            'a': '4',
-        },
-        {
-            'q': 'What is 3×3?',
-            'r': 'Multiplication of two numbers',
-            'a': '9',
-        },
-    ]
-
-    hf_dataset = HFDataset.from_list(hf_data)
-
-    # Test with column mapping
-    column_mapping = {'q': 'question', 'r': 'rationale', 'a': 'final_answer'}
-    pytorch_dataset = convert_hf_to_pytorch(
-        hf_dataset, column_mapping=column_mapping
-    )
-
-    assert len(pytorch_dataset) == 2
-    assert pytorch_dataset[0]['question'] == 'What is 2+2?'
-    assert pytorch_dataset[1]['final_answer'] == '9'
-
-
-def test_convert_synthetic_to_pytorch():
-    r"""Test converting SyntheticDataset to PyTorchDataset."""
-    synthetic_dataset = SyntheticDataset()
-    datapoints = [
-        DataPoint(
-            question='What is 2+2?',
-            rationale='Addition of two numbers',
-            final_answer='4',
-        ),
-        DataPoint(
-            question='What is 3×3?',
-            rationale='Multiplication of two numbers',
-            final_answer='9',
-        ),
-    ]
-    synthetic_dataset.add_batch(datapoints)
-
-    pytorch_dataset = convert_synthetic_to_pytorch(synthetic_dataset)
-
-    assert len(pytorch_dataset) == 2
-    assert pytorch_dataset[0]['question'] == 'What is 2+2?'
-    assert pytorch_dataset[1]['final_answer'] == '9'
-
-
-def test_save_and_load_pytorch_dataset():
-    r"""Test saving and loading PyTorchDataset."""
-    with tempfile.NamedTemporaryFile(suffix='.pt') as temp_file:
-        # Create and save dataset
-        data = [
-            {
-                'question': 'What is 2+2?',
-                'rationale': 'Addition of two numbers',
-                'final_answer': '4',
-            }
-        ]
-        dataset = PyTorchDataset(data)
-        dataset.save_to_disk(temp_file.name)
-
-        # Load dataset
-        loaded_dataset = load_pytorch_dataset(temp_file.name)
-
-        assert len(loaded_dataset) == 1
-        assert loaded_dataset[0]['question'] == 'What is 2+2?'
-
-
-def test_save_synthetic_dataset():
-    r"""Test saving SyntheticDataset."""
-    with tempfile.NamedTemporaryFile(suffix='.pt') as temp_file:
-        # Create and save dataset
-        synthetic_dataset = SyntheticDataset()
-        datapoint = DataPoint(
-            question='What is 2+2?',
-            rationale='Addition of two numbers',
-            final_answer='4',
-        )
-        synthetic_dataset.add(datapoint)
-
-        save_synthetic_dataset(synthetic_dataset, temp_file.name)
-
-        # Load dataset
-        loaded_dataset = load_pytorch_dataset(temp_file.name)
-
-        assert len(loaded_dataset) == 1
-        assert loaded_dataset[0]['question'] == 'What is 2+2?'
-
-
 @pytest.mark.asyncio
-async def test_generative_dataset():
-    r"""Test GenerativeDataset with mocked components."""
-    mock_seed_dataset = MagicMock(spec=SeedDataset)
-    mock_seed_dataset.__len__.return_value = 5
-    mock_seed_dataset.__getitem__.side_effect = lambda i: DataPoint(
+async def test_few_shot_generator():
+    r"""Test FewShotGenerator with mocked components."""
+    mock_static_dataset = MagicMock(spec=StaticDataset)
+    mock_static_dataset.__len__.return_value = 5
+    mock_static_dataset.__getitem__.side_effect = lambda i: DataPoint(
         question=f"Question {i}",
         rationale=f"Rationale {i}",
         final_answer=f"Answer {i}",
@@ -1175,20 +1044,23 @@ async def test_generative_dataset():
     mock_agent.step.return_value = MagicMock(
         msgs=[
             MagicMock(
-                parsed={
-                    'question': 'Generated Question',
-                    'rationale': 'Generated Rationale',
-                }
+                parsed=DataPoint(
+                    question='Generated Question',
+                    rationale='Generated Rationale',
+                    final_answer="final",
+                ),
             )
         ]
     )
 
-    # Create GenerativeDataset with mocks
-    dataset = GenerativeDataset(
-        seed_dataset=mock_seed_dataset,
+    # Create FewShotGenerator with mocks
+    dataset = FewShotGenerator(
+        seed_dataset=mock_static_dataset,
         verifier=mock_verifier,
-        agent=mock_agent,
+        model=StubModel("Stub"),
     )
+
+    dataset.agent = mock_agent
 
     # Test generate_new method
     await dataset.generate_new(2)
@@ -1196,8 +1068,717 @@ async def test_generative_dataset():
     # Verify interactions
     assert mock_agent.step.call_count >= 2
     assert mock_verifier.verify.await_count >= 2
-    assert len(dataset.data) == 2
+    assert len(dataset._data) == 2
 
     # Verify generated data
-    assert all(isinstance(dp, DataPoint) for dp in dataset.data)
-    assert all(dp.final_answer == "Verified Answer" for dp in dataset.data)
+    assert all(isinstance(dp, DataPoint) for dp in dataset._data)
+    assert all(dp.final_answer == "Verified Answer" for dp in dataset._data)
+
+
+@pytest.mark.asyncio
+async def test_generate_new():
+    r"""Test FewShotGenerator with mocked components."""
+    mock_static_dataset = MagicMock(spec=StaticDataset)
+    mock_static_dataset.__len__.return_value = 5
+    mock_static_dataset.__getitem__.side_effect = lambda i: DataPoint(
+        question=f"Question {i}",
+        rationale=f"Rationale {i}",
+        final_answer=f"Answer {i}",
+    )
+
+    # Create a mock verifier instead of using a real PythonVerifier
+    mock_verifier = MagicMock()
+
+    mock_verifier.verify = AsyncMock()
+    mock_verifier.verify.side_effect = [
+        MagicMock(result="11"),
+        MagicMock(result=None),
+        MagicMock(result="15"),
+    ]
+
+    mock_agent = MagicMock()
+    mock_agent.reset = MagicMock()
+    mock_agent.step.return_value = MagicMock(
+        msgs=[
+            MagicMock(
+                parsed=DataPoint(
+                    question="Generated Question",
+                    rationale="Generated Rationale",
+                    final_answer="Generated Answer",
+                )
+            )
+        ]
+    )
+    mock_agent.step.side_effect = [
+        MagicMock(
+            msgs=[
+                MagicMock(
+                    parsed=DataPoint(
+                        question="What is 5 + 6?",
+                        rationale="print(5 + 6)",
+                        final_answer="11",
+                    )
+                )
+            ]
+        ),
+        # syntactically incorrect
+        MagicMock(
+            msgs=[
+                MagicMock(
+                    parsed=DataPoint(
+                        question="What is 3 + 5?",
+                        rationale="print(2 + )",  # Syntax error
+                        final_answer="None",  # No valid answer
+                    )
+                )
+            ]
+        ),
+        MagicMock(
+            msgs=[
+                MagicMock(
+                    parsed=DataPoint(
+                        question="What is 7 + 8?",
+                        rationale="print(7 + 8)",
+                        final_answer="15",
+                    )
+                )
+            ]
+        ),
+    ]
+
+    # Create FewShotGenerator with mocks
+    dataset = FewShotGenerator(
+        seed_dataset=mock_static_dataset,
+        verifier=mock_verifier,
+        model=StubModel("Stub"),
+    )
+
+    dataset.agent = mock_agent
+
+    new_datapoints = await dataset.generate_new(2)
+
+    assert (
+        len(new_datapoints) == 2
+    ), "Should generate exactly 2 valid datapoints"
+    assert mock_agent.step.call_count == 3, "Should retry past invalid output"
+
+    # Check first correct datapoint (5 + 6 = 11)
+    dp1 = new_datapoints[0]
+    assert dp1.question == "What is 5 + 6?"
+    assert dp1.rationale == "print(5 + 6)"
+    assert (
+        dp1.final_answer == "11"
+    ), "Verifier should output '11' from print(5 + 6)"
+    assert dp1.metadata["synthetic"] == "True"
+
+    # Check second correct datapoint (7 + 8 = 15)
+    dp2 = new_datapoints[1]
+    assert dp2.question == "What is 7 + 8?"
+    assert dp2.rationale == "print(7 + 8)"
+    assert (
+        dp2.final_answer == "15"
+    ), "Verifier should output '15' from print(7 + 8)"
+    assert dp2.metadata["synthetic"] == "True"
+
+    # Verify that the mock verifier was called the expected number of times
+    assert (
+        mock_verifier.verify.call_count == 3
+    ), "Verifier should be called 3 times"
+
+
+@pytest.mark.asyncio
+async def test_generate_new_with_max_retries():
+    r"""Test FewShotGenerator retry mechanism with
+    max_retries=2 and a sequence of one correct, three wrong,
+    and one correct output, expecting failure."""
+
+    mock_static_dataset = MagicMock(spec=StaticDataset)
+    mock_static_dataset.__len__.return_value = 5
+    mock_static_dataset.__getitem__.side_effect = lambda i: DataPoint(
+        question=f"Question {i}",
+        rationale=f"Rationale {i}",
+        final_answer=f"Answer {i}",
+    )
+
+    # Create a mock verifier instead of using a real PythonVerifier
+    mock_verifier = MagicMock()
+
+    mock_verifier.verify = AsyncMock()
+    mock_verifier.verify.side_effect = [
+        MagicMock(result="7"),
+        MagicMock(result=None),
+        MagicMock(result=None),
+        MagicMock(result=None),
+        MagicMock(result="23"),
+    ]
+
+    # Set up mock agent with specific output sequence
+    mock_agent = MagicMock()
+    mock_agent.reset.return_value = None  # Ensures it does nothing
+    mock_agent.step.side_effect = [
+        # Correct
+        MagicMock(
+            msgs=[
+                MagicMock(
+                    parsed=DataPoint(
+                        question="What is 3 + 4?",
+                        rationale="print(3 + 4)",
+                        final_answer="7",
+                    )
+                )
+            ]
+        ),
+        # Wrong: Syntactically incorrect
+        MagicMock(
+            msgs=[
+                MagicMock(
+                    parsed=DataPoint(
+                        question="What is 5 + 6?",
+                        rationale="print(5 + )",  # Syntax error
+                        final_answer="None",  # No valid answer
+                    )
+                )
+            ]
+        ),
+        # Wrong: Syntactically incorrect
+        MagicMock(
+            msgs=[
+                MagicMock(
+                    parsed=DataPoint(
+                        question="What is 7 + 8?",
+                        rationale="print(7 + )",  # Syntax error
+                        final_answer="None",
+                    )
+                )
+            ]
+        ),
+        # Wrong: Syntactically incorrect
+        MagicMock(
+            msgs=[
+                MagicMock(
+                    parsed=DataPoint(
+                        question="What is 9 + 10?",
+                        rationale="print(9 + )",  # Syntax error
+                        final_answer="None",
+                    )
+                )
+            ]
+        ),
+        # Correct
+        MagicMock(
+            msgs=[
+                MagicMock(
+                    parsed=DataPoint(
+                        question="What is 11 + 12?",
+                        rationale="print(11 + 12)",
+                        final_answer="23",
+                    )
+                )
+            ]
+        ),
+    ]
+
+    model = StubModel("OpenAI")
+
+    dataset = FewShotGenerator(
+        seed_dataset=mock_static_dataset, verifier=mock_verifier, model=model
+    )
+
+    dataset.agent = mock_agent
+
+    # Expect RuntimeError due to insufficient valid
+    # datapoints within retry limit
+    with pytest.raises(
+        RuntimeError,
+        match="Failed to generate 2 valid datapoints after 2 retries.",
+    ):
+        await dataset.generate_new(2, max_retries=2)
+
+    # Verify that the agent was called 3 times before failing
+    assert (
+        mock_agent.step.call_count == 3
+    ), "Should attempt 3 times: correct, wrong, wrong"
+
+    # Verify that the mock verifier was called the expected number of times
+    assert (
+        mock_verifier.verify.call_count == 3
+    ), "Verifier should be called 3 times"
+
+
+@pytest.mark.asyncio
+async def test_few_shot_generator_save_to_jsonl(tmp_path):
+    r"""Test FewShotGenerator's save_to_jsonl method with mocked data.
+
+    This test verifies that:
+    1. Data can be successfully saved to a JSONL file.
+    2. The method handles empty datasets appropriately.
+    3. IO errors are caught and raised as expected.
+
+    Args:
+        tmp_path: Pytest fixture providing a temporary directory.
+    """
+    # Mock the seed dataset
+    mock_static_dataset = MagicMock(spec=StaticDataset)
+    mock_static_dataset.__len__.return_value = 5
+    mock_static_dataset.__getitem__.side_effect = lambda i: DataPoint(
+        question=f"Question {i}",
+        rationale=f"Rationale {i}",
+        final_answer=f"Answer {i}",
+    )
+
+    # Mock the verifier
+    mock_verifier = MagicMock()
+    mock_verifier.verify = AsyncMock()
+    mock_verifier.verify.return_value = MagicMock(result="Verified Answer")
+
+    # Mock the agent
+    mock_agent = MagicMock()
+    mock_agent.step.return_value = MagicMock(
+        msgs=[
+            MagicMock(
+                parsed={
+                    'question': 'Generated Question',
+                    'rationale': 'Generated Rationale',
+                }
+            )
+        ]
+    )
+    mock_agent.reset = MagicMock()
+
+    model = StubModel("OpenAI")
+
+    # Create FewShotGenerator with mocks
+    dataset = FewShotGenerator(
+        seed_dataset=mock_static_dataset,
+        verifier=mock_verifier,
+        model=model,
+    )
+
+    dataset.agent = mock_agent
+
+    # Mock data
+    dataset._data = [
+        DataPoint(
+            question="What is 2 + 2?",
+            rationale="Adding 2 and 2 gives 4.",
+            final_answer="4",
+            metadata={"created": "2025-03-12T10:00:00"},
+        ),
+        DataPoint(
+            question="What color is the sky?",
+            rationale="The sky appears blue due to Rayleigh scattering.",
+            final_answer="Blue",
+            metadata={"created": "2025-03-12T10:01:00"},
+        ),
+        DataPoint(
+            question="How many sides does a triangle have?",
+            rationale="A triangle is defined as a shape with three sides.",
+            final_answer="3",
+            metadata={"created": "2025-03-12T10:02:00"},
+        ),
+        DataPoint(
+            question="What is the capital of France?",
+            rationale="France is a country in Europe, and its capital "
+            "is well-known.",
+            final_answer="Paris",
+            metadata={"created": "2025-03-12T10:03:00"},
+        ),
+    ]
+
+    # Test 1: Successful save to JSONL
+    file_path = tmp_path / "test_dataset.jsonl"
+    dataset.save_to_jsonl(file_path)
+
+    # Verify file exists and content is correct
+    assert file_path.exists(), "JSONL file was not created"
+    with file_path.open("r", encoding="utf-8") as f:
+        lines = f.readlines()
+    assert len(lines) == 4, "Incorrect number of lines in JSONL file"
+
+    # Parse and verify all lines
+    for i, (line, expected_dp) in enumerate(zip(lines, dataset._data)):
+        parsed_line = json.loads(line)
+        assert (
+            parsed_line["question"] == expected_dp.question
+        ), f"Question mismatch at line {i+1}"
+        assert (
+            parsed_line["rationale"] == expected_dp.rationale
+        ), f"Rationale mismatch at line {i+1}"
+        assert (
+            parsed_line["final_answer"] == expected_dp.final_answer
+        ), f"Final answer mismatch at line {i+1}"
+        assert "metadata" in parsed_line, f"Metadata missing at line {i+1}"
+        assert (
+            parsed_line["metadata"]["created"]
+            == expected_dp.metadata["created"]
+        ), f"Metadata mismatch at line {i+1}"
+
+    # Test 2: Empty dataset raises ValueError
+    dataset._data = []
+    with pytest.raises(ValueError, match="Dataset is empty. No data to save."):
+        dataset.save_to_jsonl(file_path)
+
+    # Test 3: IO Error handling (simulate by using a directory path)
+    invalid_path = tmp_path / "nonexistent" / "test.jsonl"
+    dataset._data = [
+        DataPoint(
+            question="Test",
+            rationale="Test rationale",
+            final_answer="Test answer",
+        )
+    ]
+    with pytest.raises(IOError, match="No such file or directory"):
+        dataset.save_to_jsonl(invalid_path)
+
+
+@pytest.mark.asyncio
+async def test_few_shot_generator_flush(tmp_path):
+    r"""Test FewShotGenerator's flush method with mocked data.
+
+    This test verifies that:
+    1. Data can be successfully flushed to a JSONL file and
+       the internal data is cleared.
+    2. The method handles empty datasets appropriately.
+    3. IO errors are caught and raised as expected.
+
+    Args:
+        tmp_path: Pytest fixture providing a temporary directory.
+    """
+    # Mock the seed dataset
+    mock_static_dataset = MagicMock(spec=StaticDataset)
+    mock_static_dataset.__len__.return_value = 5
+    mock_static_dataset.__getitem__.side_effect = lambda i: DataPoint(
+        question=f"Question {i}",
+        rationale=f"Rationale {i}",
+        final_answer=f"Answer {i}",
+    )
+
+    # Mock the verifier
+    mock_verifier = MagicMock()
+    mock_verifier.verify = AsyncMock()
+    mock_verifier.verify.return_value = MagicMock(result="Verified Answer")
+
+    # Mock the agent
+    mock_agent = MagicMock()
+    mock_agent.step.return_value = MagicMock(
+        msgs=[
+            MagicMock(
+                parsed={
+                    'question': 'Generated Question',
+                    'rationale': 'Generated Rationale',
+                }
+            )
+        ]
+    )
+    mock_agent.reset = MagicMock()
+
+    model = StubModel("OpenAI")
+
+    # Create FewShotGenerator with mocks
+    dataset = FewShotGenerator(
+        seed_dataset=mock_static_dataset,
+        verifier=mock_verifier,
+        model=model,
+    )
+
+    dataset.agent = mock_agent
+
+    # Mock data
+    dataset._data = [
+        DataPoint(
+            question="What is 2 + 2?",
+            rationale="Adding 2 and 2 gives 4.",
+            final_answer="4",
+            metadata={"created": "2025-03-12T10:00:00"},
+        ),
+        DataPoint(
+            question="What color is the sky?",
+            rationale="The sky appears blue due to Rayleigh scattering.",
+            final_answer="Blue",
+            metadata={"created": "2025-03-12T10:01:00"},
+        ),
+        DataPoint(
+            question="How many sides does a triangle have?",
+            rationale="A triangle is defined as a shape with three sides.",
+            final_answer="3",
+            metadata={"created": "2025-03-12T10:02:00"},
+        ),
+        DataPoint(
+            question="What is the capital of France?",
+            rationale="France is a country in Europe, "
+            "and its capital is well-known.",
+            final_answer="Paris",
+            metadata={"created": "2025-03-12T10:03:00"},
+        ),
+    ]
+
+    # **Test 1: Successful flush**
+    file_path = tmp_path / "test_dataset.jsonl"
+    dataset.flush(file_path)
+
+    # Verify file exists and content is correct
+    assert file_path.exists(), "JSONL file was not created"
+    with file_path.open("r", encoding="utf-8") as f:
+        lines = f.readlines()
+    assert len(lines) == 4, "Incorrect number of lines in JSONL file"
+
+    # Parse and verify all lines
+    for i, line in enumerate(lines):
+        parsed_line = json.loads(line)
+        expected_dp = dataset._data[i] if i < len(dataset._data) else None
+        # Since flush clears the data, we can't
+        # directly compare with dataset._data
+        # Instead, we check against the original data structure we set up
+        original_data = [
+            {
+                "question": "What is 2 + 2?",
+                "rationale": "Adding 2 and 2 gives 4.",
+                "final_answer": "4",
+                "metadata": {"created": "2025-03-12T10:00:00"},
+            },
+            {
+                "question": "What color is the sky?",
+                "rationale": "The sky appears blue due to "
+                "Rayleigh scattering.",
+                "final_answer": "Blue",
+                "metadata": {"created": "2025-03-12T10:01:00"},
+            },
+            {
+                "question": "How many sides does a triangle have?",
+                "rationale": "A triangle is defined as a "
+                "shape with three sides.",
+                "final_answer": "3",
+                "metadata": {"created": "2025-03-12T10:02:00"},
+            },
+            {
+                "question": "What is the capital of France?",
+                "rationale": "France is a country in Europe, "
+                "and its capital is well-known.",
+                "final_answer": "Paris",
+                "metadata": {"created": "2025-03-12T10:03:00"},
+            },
+        ]
+        expected_dp = original_data[i]
+        assert (
+            parsed_line["question"] == expected_dp["question"]
+        ), f"Question mismatch at line {i+1}"
+        assert (
+            parsed_line["rationale"] == expected_dp["rationale"]
+        ), f"Rationale mismatch at line {i+1}"
+        assert (
+            parsed_line["final_answer"] == expected_dp["final_answer"]
+        ), f"Final answer mismatch at line {i+1}"
+        assert "metadata" in parsed_line, f"Metadata missing at line {i+1}"
+        assert (
+            parsed_line["metadata"]["created"]
+            == expected_dp["metadata"]["created"]
+        ), f"Metadata mismatch at line {i+1}"
+
+    # Verify that internal data is cleared
+    assert len(dataset._data) == 0, "Internal data was not cleared after flush"
+
+    # **Test 2: Flush with empty dataset**
+    dataset._data = []
+    with pytest.raises(ValueError, match="Dataset is empty. No data to save."):
+        dataset.flush(file_path)
+
+    # **Test 3: IO Error handling with flush**
+    invalid_path = tmp_path / "nonexistent" / "test.jsonl"
+    dataset._data = [
+        DataPoint(
+            question="Test",
+            rationale="Test rationale",
+            final_answer="Test answer",
+        )
+    ]
+    with pytest.raises(IOError, match="No such file or directory"):
+        dataset.flush(invalid_path)
+
+
+# Fixture for a valid JSONL file with 4 datapoints
+# Needed for other tests
+@pytest.fixture
+def mock_jsonl_file(tmp_path: Path) -> Path:
+    r"""Creates a temporary JSONL file with four valid datapoints."""
+    file_path = tmp_path / "mock_data.jsonl"
+    datapoints = [
+        {
+            "question": "What is 2 + 2?",
+            "rationale": "Adding 2 and 2 gives 4.",
+            "final_answer": "4",
+        },
+        {
+            "question": "What color is the sky?",
+            "rationale": "The sky appears blue due to scattering.",
+            "final_answer": "Blue",
+        },
+        {
+            "question": "How many sides does a triangle have?",
+            "rationale": "A triangle has three sides.",
+            "final_answer": "3",
+        },
+        {
+            "question": "What is the capital of France?",
+            "rationale": "France’s capital is well-known.",
+            "final_answer": "Paris",
+        },
+    ]
+    with file_path.open("w", encoding="utf-8") as f:
+        for dp in datapoints:
+            json.dump(dp, f)
+            f.write("\n")
+    return file_path
+
+
+# Fixture for an invalid JSONL file
+# Needed for other tests
+@pytest.fixture
+def mock_wrong_jsonl_file(tmp_path: Path) -> Path:
+    r"""Creates a temporary JSONL file with
+    invalid data for error handling tests."""
+
+    file_path = tmp_path / "mock_wrong_data.jsonl"
+    invalid_data = [
+        '{"question": "Invalid", "rationale": "Missing final_answer"}',
+        '{"question": "Invalid", "final_answer": "Answer"}',
+        "Not a JSON object",
+    ]
+    with file_path.open("w", encoding="utf-8") as f:
+        for line in invalid_data:
+            f.write(line + "\n")
+    return file_path
+
+
+@pytest.mark.asyncio
+async def test_few_shot_generator_async(
+    mock_jsonl_file: Path, mock_wrong_jsonl_file: Path
+):
+    r"""Tests FewShotGenerator in an asynchronous context: initialization,
+    async sampling, async iteration, and error handling."""
+
+    mock_static_dataset = MagicMock(spec=StaticDataset)
+    mock_verifier = MagicMock(spec=BaseVerifier)
+    mock_model = MagicMock(spec=BaseModelBackend)
+    mock_model.model_type = "mock_model_type"
+
+    # --- Test 1: Initialization from a valid JSONL file ---
+    generator = FewShotGenerator(
+        seed_dataset=mock_static_dataset,
+        verifier=mock_verifier,
+        model=mock_model,
+        data_path=mock_jsonl_file,
+    )
+    assert (
+        len(generator._data) == 4
+    ), "Expected 4 datapoints to be loaded from JSONL"
+    assert all(
+        isinstance(dp, DataPoint) for dp in generator._data
+    ), "All loaded items should be DataPoint instances"
+    original_data = generator._data.copy()
+
+    # --- Test 2: Async sampling one datapoint ---
+    sampled_dp = await generator.async_sample()
+    assert isinstance(
+        sampled_dp, DataPoint
+    ), "Sampled item should be a DataPoint"
+    assert (
+        sampled_dp in original_data
+    ), "Sampled item should be one of the loaded datapoints"
+    assert (
+        len(generator._data) == 3
+    ), "Async sampling should reduce the number of datapoints by 1"
+
+    # --- Test 3: Asynchronous iteration (__aiter__) ---
+    collected_data = []
+    async for dp in generator:
+        collected_data.append(dp)
+        if len(collected_data) == 3:
+            break
+    assert (
+        len(collected_data) == 3
+    ), "Asynchronous iteration should yield the remaining 3 datapoints"
+    assert all(
+        isinstance(dp, DataPoint) for dp in collected_data
+    ), "All iterated items should be DataPoint instances"
+    assert sorted([dp.question for dp in collected_data]) == sorted(
+        [dp.question for dp in original_data[1:]]
+    ), (
+        "Remaining datapoints should match the "
+        "original data (minus the sampled one)"
+    )
+
+    # --- Test 4: Error handling with an invalid JSONL file ---
+    with pytest.raises(ValueError):
+        FewShotGenerator(
+            seed_dataset=mock_static_dataset,
+            verifier=mock_verifier,
+            model=mock_model,
+            data_path=mock_wrong_jsonl_file,
+        )
+
+
+def test_few_shot_generator_sync(
+    mock_jsonl_file: Path, mock_wrong_jsonl_file: Path
+):
+    r"""Tests FewShotGenerator in a synchronous context: initialization,
+    sampling, iteration, and error handling."""
+
+    mock_static_dataset = MagicMock(spec=StaticDataset)
+    mock_verifier = MagicMock(spec=BaseVerifier)
+    mock_model = MagicMock(spec=BaseModelBackend)
+    mock_model.model_type = "mock_model_type"
+
+    # --- Test 1: Initialization from a valid JSONL file ---
+    generator = FewShotGenerator(
+        seed_dataset=mock_static_dataset,
+        verifier=mock_verifier,
+        model=mock_model,
+        data_path=mock_jsonl_file,
+    )
+    assert (
+        len(generator._data) == 4
+    ), "Expected 4 datapoints to be loaded from JSONL"
+    assert all(
+        isinstance(dp, DataPoint) for dp in generator._data
+    ), "All loaded items should be DataPoint instances"
+    original_data = generator._data.copy()
+
+    # --- Test 2: Sampling one datapoint ---
+    sampled_dp = generator.sample()
+    assert isinstance(
+        sampled_dp, DataPoint
+    ), "Sampled item should be a DataPoint"
+    assert (
+        sampled_dp in original_data
+    ), "Sampled item should be one of the loaded datapoints"
+    assert (
+        len(generator._data) == 3
+    ), "Sampling should reduce the number of datapoints by 1"
+
+    # --- Test 3: Synchronous iteration (__iter__) ---
+    collected_data = []
+    for dp in generator:
+        collected_data.append(dp)
+        if len(collected_data) == 3:
+            break
+    assert (
+        len(collected_data) == 3
+    ), "Synchronous iteration should yield the remaining 3 datapoints"
+    assert all(
+        isinstance(dp, DataPoint) for dp in collected_data
+    ), "All iterated items should be DataPoint instances"
+    assert sorted([dp.question for dp in collected_data]) == sorted(
+        [dp.question for dp in original_data[1:]]
+    ), (
+        "Remaining datapoints should match the "
+        "original data (minus the sampled one)"
+    )
+
+    # --- Test 4: Error handling with an invalid JSONL file ---
+    with pytest.raises(ValueError):
+        FewShotGenerator(
+            seed_dataset=mock_static_dataset,
+            verifier=mock_verifier,
+            model=mock_model,
+            data_path=mock_wrong_jsonl_file,
+        )

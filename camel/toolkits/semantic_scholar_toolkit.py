@@ -238,7 +238,7 @@ class SemanticScholarToolkit(BaseToolkit):
             papers = response.json()
             if save_to_file:
                 with open('recommended_papers.json', 'w') as output:
-                    json.dump(papers, output)
+                    json.dump(papers, output, ensure_ascii=False)
             return papers
         except requests.exceptions.RequestException as e:
             return {"error": str(e)}
@@ -282,7 +282,7 @@ class SemanticScholarToolkit(BaseToolkit):
             response_data = response.json()
             if save_to_file:
                 with open('author_information.json', 'w') as output:
-                    json.dump(response_data, output)
+                    json.dump(response_data, output, ensure_ascii=False)
             return response_data
         except requests.exceptions.RequestException as e:
             return {"error": str(e)}

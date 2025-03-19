@@ -1,6 +1,6 @@
 # Tools
 
-For more detailed usage information, please refer to our cookbook: [Tools Cookbook](../cookbooks/agents_with_tools.ipynb)
+For more detailed usage information, please refer to our cookbook: [Tools Cookbook](../cookbooks/advanced_features/agents_with_tools.ipynb)
 
 ## 1. Concept
 Tools serve as interfaces that allow LLMs and Agents to interact with the world. A tool is essentially a function that has a name, a description, input parameters, and an output type. In this section, we will introduce the tools currently supported by CAMEL and explain how to define your own tools and Toolkits.
@@ -122,7 +122,7 @@ tools = toolkit.get_tools()
 To utilize specific tools from the toolkits, you can implement code like the following:
 
 ```python
-from camel.toolkits import SearchToolkit
+from camel.toolkits import FunctionTool, SearchToolkit
 
 google_tool = FunctionTool(SearchToolkit().search_google)
 wiki_tool = FunctionTool(SearchToolkit().search_wiki)
@@ -173,7 +173,7 @@ CAMEL provides a variety of built-in toolkits that you can use right away. Here'
 | OpenBBToolkit | A toolkit for accessing and analyzing financial market data through the OpenBB Platform, including stocks, ETFs, cryptocurrencies, and economic indicators. |
 | RedditToolkit | A toolkit for Reddit operations including collecting top posts, performing sentiment analysis on comments, and tracking keyword discussions. |
 | RetrievalToolkit | A toolkit for retrieving information from local vector storage systems based on specified queries. |
-| SearchToolkit | A toolkit for performing web searches using various search engines like Google, DuckDuckGo, Wikipedia, and Wolfram Alpha. |
+| SearchToolkit | A toolkit for performing web searches using various search engines like Google, DuckDuckGo, Wikipedia, Bing, BaiDu and Wolfram Alpha. |
 | SemanticScholarToolkit | A toolkit for interacting with the Semantic Scholar API to fetch paper and author data from academic publications. |
 | SlackToolkit | A toolkit for Slack operations including creating channels, joining channels, and managing channel membership. |
 | StripeToolkit | A toolkit for processing payments and managing financial transactions via Stripe. |
@@ -183,7 +183,7 @@ CAMEL provides a variety of built-in toolkits that you can use right away. Here'
 | VideoAnalysisToolkit | A toolkit for analyzing video content with vision-language models, including frame extraction and question answering about video content. |
 | VideoDownloaderToolkit | A toolkit for downloading videos and optionally splitting them into chunks, with support for various video services. |
 | WeatherToolkit | A toolkit for fetching weather data for cities using the OpenWeatherMap API. |
-| WebToolkit | A toolkit for browsing the web and interacting with web pages, including browser simulation and content extraction. |
+| BrowserToolkit | A toolkit for browsing the web and interacting with web pages, including browser simulation and content extraction. |
 | WhatsAppToolkit | A toolkit for interacting with the WhatsApp Business API, including sending messages, managing message templates, and accessing business profile information. |
 | ZapierToolkit | A toolkit for interacting with Zapier's NLA API to execute actions through natural language commands and automate workflows. |
 

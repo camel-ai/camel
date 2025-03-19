@@ -162,7 +162,7 @@ import os
 load_dotenv()
 ```
 For more details about the key names in project and how to apply key, 
-you can refer to [here](https://github.com/camel-ai/camel/.env).
+you can refer to [here](./setup.md).
 
 > [!TIP]
 > By default, the load_dotenv() function does not overwrite existing environment variables that are already set in your system. It only populates variables that are missing.

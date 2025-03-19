@@ -324,7 +324,10 @@ def _kill_process_tree(
 
             # Sometime processes cannot be killed with SIGKILL
             # so we send an additional signal to kill them.
-            itself.send_signal(signal.SIGQUIT)
+            if hasattr(signal, "SIGQUIT"):
+                itself.send_signal(signal.SIGQUIT)
+            else:
+                itself.send_signal(signal.SIGTERM)
         except psutil.NoSuchProcess:
             pass
 
@@ -350,8 +353,9 @@ def _wait_for_server(base_url: str, timeout: Optional[int] = 30) -> None:
     r"""Wait for the server to be ready by polling the /v1/models endpoint.
 
     Args:
-        base_url: The base URL of the server
-        timeout: Maximum time to wait in seconds. Default is 30 seconds.
+        base_url (str): The base URL of the server
+        timeout (Optional[int]): Maximum time to wait in seconds.
+            (default: :obj:`30`)
     """
     import requests
 
