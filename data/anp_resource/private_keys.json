@@ -1,0 +1,10 @@
+{
+    "did": "did:wba:agent-did.com:test:public",
+    "created_at": "2025-03-04T22:14:16.233463",
+    "keys": {
+      "key-1": {
+        "path": "key-1_private.pem",
+        "type": "EcdsaSecp256k1"
+      }
+    }
+  }
