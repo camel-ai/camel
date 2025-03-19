@@ -1,7 +1,20 @@
-import weight_conversion
-import ideal_body_weight
-from rounding import round_number
+# import weight_conversion
+# import ideal_body_weight
+# from rounding import round_number
 
+from camel.toolkits.medcalc import weight_conversion
+from camel.toolkits.medcalc import ideal_body_weight
+from camel.toolkits.medcalc.rounding import round_number
+
+# def round_number(num):
+#     if num > 0.001:
+#         # Round to the nearest thousandth
+#         return round(num, 3)
+#     else:
+#         # Round to three significant digits
+#         if num == 0:
+#             return 0
+#         return round(num, -int(floor(log10(abs(num)))) + 2)
 
 def abw_explanation(input_variables):
 
