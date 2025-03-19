@@ -251,3 +251,71 @@ dingFormat":None,"hostPageDisplayUrl":"https://m.sohu.com/a/796245119_121713887
 dly":None},"videos":None}
 ===============================================================================
 """
+
+
+agent = ChatAgent(
+    system_message="""You are a helpful assistant that can use baidu search 
+        engine to answer questions.""",
+    tools=[FunctionTool(SearchToolkit().search_baidu)],
+)
+
+usr_msg = "今天北京的天气如何"
+
+response = agent.step(input_message=usr_msg, response_format=None)
+
+print(response.msgs[0].content)
+
+"""
+===============================================================================
+今天北京的天气信息可以通过以下链接查看:
+
+1. [中国天气网 - 北京天气预报](http://www.baidu.com/link?
+url=AJhE9PhEO3TmkJ70CUcRsR3NVB3m6wxN5Imdp0ZVsEBK1t8YhtM6YMxrQy3_vRN6dJv4FLHkBCe
+fZURnzHTm9gio-dS4-4MwGVgJe40m7prOoggce2eB0h-3DsllbKMm)
+2. [中国天气网 - 北京天气预报](http://www.baidu.com/link?
+url=1vhNOfl9tV65_104GMQbDnU_fdCZPXDV2BtTJelxdd6isdSZjAHvtoXqOWG3n7D1N-m9zAmOhQG
+c-jEGqiXe9K)
+3. [中国天气网 - 北京天气预报](http://www.baidu.com/link?
+url=Q0URfpodXDpUe1TKBPpToKIyIuCcjSGUR5jorx81g8Pni5XH-Tbc6AXMa7EwCWjBG3jysTZb43S
+6ZCsJOKvPw2EbIlQ_bMu42-5sCraqXlS)
+4. [中国天气网 - 北京天气预报一周](http://www.baidu.com/link?
+url=TtFe8QryJFuwX1kx50YF5WijRcd2TMJRhPudDQvqW7TG4siah68gUZd_frsVWPi1xkYvrxoYL87
+QMH0wSjDYOq)
+
+请点击链接查看详细的天气预报信息。
+===============================================================================
+"""
+
+bing_call_agent = ChatAgent(
+    system_message="""You are a helpful assistant that can use baidu search 
+        engine to answer questions.""",
+    tools=[FunctionTool(SearchToolkit().search_bing)],
+)
+
+bing_usr_msg = "帮忙查询巴黎圣母院最新修复进展"
+
+response = bing_call_agent.step(
+    input_message=bing_usr_msg, response_format=None
+)
+
+print(response.msgs[0].content)
+
+"""
+===============================================================================
+以下是关于巴黎圣母院最新修复进展的一些信息:
+
+1. **时隔4年,灾后余生的巴黎圣母院即将重生** -
+[知乎](https://zhuanlan.zhihu.com/p/619405504)
+   
+2. **历时4年,耗资70亿,被烧塌的巴黎圣母院修好了!!** -
+[腾讯网](https://news.qq.com/rain/a/20231018A0329F00)
+
+3. **一票难求!巴黎圣母院重新开放!5年修复离不开来自东方的支持** -
+[新浪财经](https://finance.sina.com.cn/wm/2024-12-08/doc-incyumnp3384392.shtml)
+
+4. **巴黎圣母院浴火重生!建筑学者:勘探报告近3000页,修复工作复杂** -
+[腾讯网](https://news.qq.com/rain/a/20241208A05Q9K00)
+
+这些链接提供了关于巴黎圣母院修复的详细信息和最新进展。
+===============================================================================
+"""

@@ -11,14 +11,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from .base_generator import BaseGenerator
-from .few_shot_generator import FewShotGenerator
-from .models import DataPoint
-from .static_dataset import StaticDataset
+import os
 
-__all__ = [
-    "BaseGenerator",
-    "DataPoint",
-    "FewShotGenerator",
-    "StaticDataset",
-]
+from camel.logger import get_logger, set_log_file, set_log_level
+
+# Set log output to a file using an absolute path
+log_path = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    'camel.log',
+)
+set_log_file(log_path)
+
+# Set the logging level
+set_log_level('DEBUG')
+
+# Use the logger
+logger = get_logger(__name__)
+logger.debug('This is a debug message')
+logger.info('This is an info message')
+logger.warning('This is a warning message')

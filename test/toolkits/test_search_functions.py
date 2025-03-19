@@ -185,6 +185,131 @@ def test_search_duckduckgo_images():
 
 
 @patch('requests.get')
+def test_search_baidu(mock_get, search_toolkit):
+    # Mock the response from Baidu search
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.encoding = "utf-8"
+    mock_response.text = """
+    <html>
+        <head><title>Baidu Search</title></head>
+        <body>
+            <div class="result c-container">
+                <h3 class="t">
+                    <a href="https://example1.com">Test Title 1</a>
+                </h3>
+                <div class="c-abstract">Test Abstract 1</div>
+            </div>
+            <div class="result c-container">
+                <h3 class="t">
+                    <a href="https://example2.com">Test Title 2</a>
+                </h3>
+                <div class="c-abstract">Test Abstract 2</div>
+            </div>
+        </body>
+    </html>
+    """
+    mock_get.return_value = mock_response
+
+    # Call the function under test
+    result = search_toolkit.search_baidu(query="test query", max_results=5)
+
+    # Expected output
+    expected_output = {
+        "results": [
+            {
+                "result_id": 1,
+                "title": "Test Title 1",
+                "description": "Test Abstract 1",
+                "url": "https://example1.com",
+            },
+            {
+                "result_id": 2,
+                "title": "Test Title 2",
+                "description": "Test Abstract 2",
+                "url": "https://example2.com",
+            },
+        ]
+    }
+
+    # Assertions
+    assert result == expected_output
+    mock_get.assert_called_once_with(
+        "https://www.baidu.com/s",
+        headers={
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            ),
+            "Referer": "https://www.baidu.com",
+        },
+        params={"wd": "test query", "rn": "5"},
+    )
+
+
+@patch('requests.get')
+def test_search_bing(mock_get, search_toolkit):
+    # Mock the response from Bing search
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.encoding = "utf-8"
+    mock_response.text = """
+    <html>
+        <head><title>Bing Search</title></head>
+        <body>
+            <ol id="b_results">
+                <li>
+                    <h2><a href="https://example1.com">Test Title 1</a></h2>
+                    <p class="b_algoSlug">Test Snippet 1</p>
+                </li>
+                <li>
+                    <h2><a href="https://example2.com">Test Title 2</a></h2>
+                    <p class="b_algoSlug">Test Snippet 2</p>
+                </li>
+            </ol>
+        </body>
+    </html>
+    """
+    mock_get.return_value = mock_response
+
+    # Call the function under test
+    result = search_toolkit.search_bing(query="test query", max_results=5)
+
+    # Expected output
+    expected_output = {
+        "results": [
+            {
+                "result_id": 1,
+                "title": "Test Title 1",
+                "snippet": "Test Snippet 1",
+                "link": "https://example1.com",
+            },
+            {
+                "result_id": 2,
+                "title": "Test Title 2",
+                "snippet": "Test Snippet 2",
+                "link": "https://example2.com",
+            },
+        ]
+    }
+
+    # Assertions
+    assert result == expected_output
+    mock_get.assert_called_once_with(
+        "https://cn.bing.com/search?q=test+query",
+        headers={
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            ),
+        },
+        timeout=10,
+    )
+
+
+@patch('requests.get')
 @patch('wolframalpha.Client')
 @patch('os.environ.get')
 def test_query_wolfram_alpha(mock_get_env, mock_client, mock_requests_get):
