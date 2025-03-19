@@ -1,6 +1,6 @@
 # Memory
 
-For more detailed usage information, please refer to our cookbook: [Memory Cookbook](../cookbooks/agents_with_memory.ipynb)
+For more detailed usage information, please refer to our cookbook: [Memory Cookbook](../cookbooks/advanced_features/agents_with_memory.ipynb)
 
 ## 1. Concept
 The Memory module in CAMEL provides a flexible and powerful system for storing, retrieving, and managing information for AI agents. It enables agents to maintain context across conversations and retrieve relevant information from past interactions, enhancing the coherence and relevance of AI responses.

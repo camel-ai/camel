@@ -70,6 +70,11 @@ provided Node and Relationship classes.
 Ensure that the extracted data adheres to the structure defined by the classes.
 Output the structured data in a format that can be easily validated against 
 the provided code.
+Do not wrap the output in lists or dictionaries, provide the Node and 
+Relationship with unique identifiers.
+Strictly follow the format provided in the example output, do not add any 
+additional information.
+
 
 Instructions for you:
 Read the provided content thoroughly.

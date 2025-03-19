@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Union
@@ -69,17 +70,22 @@ class FileWriteToolkit(BaseToolkit):
         r"""Convert the given string path to a Path object.
 
         If the provided path is not absolute, it is made relative to the
-        default output directory.
+        default output directory. The filename part is sanitized to replace
+        spaces and special characters with underscores, ensuring safe usage
+        in downstream processing.
 
         Args:
             file_path (str): The file path to resolve.
 
         Returns:
-            Path: A fully resolved (absolute) Path object.
+            Path: A fully resolved (absolute) and sanitized Path object.
         """
         path_obj = Path(file_path)
         if not path_obj.is_absolute():
             path_obj = self.output_dir / path_obj
+
+        sanitized_filename = self._sanitize_filename(path_obj.name)
+        path_obj = path_obj.parent / sanitized_filename
         return path_obj.resolve()
 
     def _write_text_file(
@@ -369,3 +375,19 @@ class FileWriteToolkit(BaseToolkit):
         return [
             FunctionTool(self.write_to_file),
         ]
+
+    def _sanitize_filename(self, filename: str) -> str:
+        r"""Sanitize a filename by replacing any character that is not
+        alphanumeric, a dot (.), hyphen (-), or underscore (_) with an
+        underscore (_).
+
+        Args:
+            filename (str): The original filename which may contain spaces or
+                special characters.
+
+        Returns:
+            str: The sanitized filename with disallowed characters replaced by
+                underscores.
+        """
+        safe = re.sub(r'[^\w\-.]', '_', filename)
+        return safe
