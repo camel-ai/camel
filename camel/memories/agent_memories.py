@@ -144,7 +144,7 @@ class LongtermAgentMemory(AgentMemory):
         **kwargs: Any,
     ) -> None:
         self.chat_history_block = chat_history_block or ChatHistoryBlock()
-        self.vector_db_block = vector_db_block or VectorDBBlock(**kwargs)
+        self.vector_db_block = vector_db_block or VectorDBBlock()
         self.retrieve_limit = retrieve_limit
         self._context_creator = context_creator
         self._current_topic: str = ""

@@ -50,14 +50,13 @@ class VectorDBBlock(MemoryBlock):
     ) -> None:
         self.embedding = embedding or OpenAIEmbedding()
         self.vector_dim = self.embedding.get_output_dim()
-        
+
         if storage is None:
-            self.storage = MilvusStorage(
-                vector_dim=self.vector_dim,
-                **kwargs
+            self.storage: BaseVectorStorage = MilvusStorage(
+                vector_dim=self.vector_dim, **kwargs
             )
         else:
-            self.storage = storage
+            self.storage: BaseVectorStorage = storage
 
     def retrieve(
         self,
@@ -79,7 +78,7 @@ class VectorDBBlock(MemoryBlock):
         """
         query_vector = self.embedding.embed(keyword)
         results = self.storage.query(
-            VectorDBQuery(query_vector=query_vector, top_k=limit)
+            VectorDBQuery(query_vector=query_vector, top_k=limit, query_text=keyword)
         )
         return [
             ContextRecord(
