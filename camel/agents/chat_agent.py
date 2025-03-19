@@ -49,7 +49,9 @@ from camel.memories import (
     ChatHistoryMemory,
     MemoryRecord,
     ScoreBasedContextCreator,
+    LongtermAgentMemory,
 )
+from camel.memories.blocks import ChatHistoryBlock, VectorDBBlock
 from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
 from camel.models import (
     BaseModelBackend,
@@ -177,10 +179,11 @@ class ChatAgent(BaseAgent):
             self.model_backend.token_counter,
             token_limit or self.model_backend.token_limit,
         )
+
         self.memory: AgentMemory = memory or ChatHistoryMemory(
             context_creator, window_size=message_window_size
         )
-
+        
         # Set up system message and initialize messages
         self._original_system_message = (
             BaseMessage.make_assistant_message(

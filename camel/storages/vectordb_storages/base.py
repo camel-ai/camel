@@ -45,12 +45,16 @@ class VectorDBQuery(BaseModel):
             vector.
         top_k (int, optional): The number of top similar vectors to retrieve
             from the database. (default: :obj:`1`)
+        query_text (Optional[str], optional): The original text query for 
+            hybrid search. (default: :obj:`None`)
     """
 
     query_vector: List[float]
     """The numerical representation of the query vector."""
     top_k: int = 1
     """The number of top similar vectors to retrieve from the database."""
+    query_text: Optional[str] = None
+    """The original text query for hybrid search."""
 
     def __init__(
         self, query_vector: List[float], top_k: int, **kwargs: Any
