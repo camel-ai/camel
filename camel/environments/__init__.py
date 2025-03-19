@@ -15,6 +15,8 @@ from .models import Action, Environment, Observation, StepResult
 from .multi_step import MultiStepEnv
 from .single_step import SingleStepEnv
 
+from . import envs
+
 __all__ = [
     "Environment",
     "SingleStepEnv",
@@ -22,4 +24,5 @@ __all__ = [
     "Action",
     "Observation",
     "StepResult",
+    "envs"
 ]
