@@ -62,7 +62,7 @@ from camel.models import (
 )
 from camel.prompts import TextPrompt
 from camel.responses import ChatAgentResponse
-from camel.storages.key_value_storages.json import JsonStorage
+from camel.storages import JsonStorage
 from camel.toolkits import FunctionTool
 from camel.types import (
     ChatCompletion,
@@ -379,8 +379,34 @@ class ChatAgent(BaseAgent):
             )
 
         for record_dict in all_records:
-            record = MemoryRecord.from_dict(record_dict)
-            self.memory.write_records([record])
+            # Validate the record dictionary before conversion
+            required_keys = ['message', 'role_at_backend', 'agent_id']
+            if not all(key in record_dict for key in required_keys):
+                logger.warning(
+                    f"Skipping invalid record: missing required "
+                    f"keys in {record_dict}"
+                )
+                continue
+
+            # Validate message structure in the record
+            if (
+                not isinstance(record_dict['message'], dict)
+                or '__class__' not in record_dict['message']
+            ):
+                logger.warning(
+                    f"Skipping invalid record: malformed message "
+                    f"structure in {record_dict}"
+                )
+                continue
+
+            try:
+                record = MemoryRecord.from_dict(record_dict)
+                self.memory.write_records([record])
+            except Exception as e:
+                logger.warning(
+                    f"Error converting record to MemoryRecord: {e}. "
+                    f"Record: {record_dict}"
+                )
         logger.info(f"Memory loaded from {path}")
 
     def save_memory(self, path: str) -> None:
