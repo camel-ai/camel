@@ -68,8 +68,8 @@ class TerminalToolkit(BaseToolkit):
         super().__init__(timeout=timeout)
         self.shell_sessions = shell_sessions or {}
         self.os_type = platform.system()
-        self.output_queue = Queue()
-        self.agent_queue = Queue()
+        self.output_queue: Queue[str] = Queue()
+        self.agent_queue: Queue[str] = Queue()
         self.terminal_ready = threading.Event()
         self.gui_thread = None
         self.safe_mode = safe_mode
@@ -717,29 +717,35 @@ class TerminalToolkit(BaseToolkit):
             return f"Process in session '{id}' is not running"
 
         try:
-            # Use communicate with timeout
-            stdout, stderr = process.communicate(timeout=seconds)
+            if hasattr(process, 'communicate'):
+                # Use communicate with timeout
+                stdout, stderr = process.communicate(timeout=seconds)
 
-            if stdout:
-                stdout_str = (
-                    stdout.decode('utf-8')
-                    if isinstance(stdout, bytes)
-                    else stdout
-                )
-                session["output"] += stdout_str
-            if stderr:
-                stderr_str = (
-                    stderr.decode('utf-8')
-                    if isinstance(stderr, bytes)
-                    else stderr
-                )
-                session["output"] += f"\nErrors:\n{stderr_str}"
+                if stdout:
+                    stdout_str = (
+                        stdout.decode('utf-8')
+                        if isinstance(stdout, bytes)
+                        else stdout
+                    )
+                    session["output"] += stdout_str
+                if stderr:
+                    stderr_str = (
+                        stderr.decode('utf-8')
+                        if isinstance(stderr, bytes)
+                        else stderr
+                    )
+                    session["output"] += f"\nErrors:\n{stderr_str}"
 
-            session["running"] = False
-            return (
-                f"Process completed in session '{id}'. "
-                f"Output: {session['output']}"
-            )
+                session["running"] = False
+                return (
+                    f"Process completed in session '{id}'. "
+                    f"Output: {session['output']}"
+                )
+            else:
+                return (
+                    f"Process already completed in session '{id}'. "
+                    f"Output: {session['output']}"
+                )
 
         except subprocess.TimeoutExpired:
             return (
