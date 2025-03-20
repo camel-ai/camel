@@ -166,6 +166,7 @@ class ModelType(UnifiedModelType, Enum):
     QWEN_2_5_14B = "qwen2.5-14b-instruct"
     QWEN_QWQ_32B = "qwq-32b-preview"
     QWEN_QVQ_72B = "qvq-72b-preview"
+    QWEN_QWQ_PLUS = "qwq-plus"
 
     # Yi models (01-ai)
     YI_LIGHTNING = "yi-lightning"
@@ -216,6 +217,14 @@ class ModelType(UnifiedModelType, Enum):
     def __new__(cls, value) -> "ModelType":
         return cast("ModelType", UnifiedModelType.__new__(cls, value))
 
+    @classmethod
+    def from_name(cls, name):
+        r"""Returns the ModelType enum value from a string."""
+        for model_type in cls:
+            if model_type.value == name:
+                return model_type
+        raise ValueError(f"Unknown ModelType name: {name}")
+
     @property
     def value_for_tiktoken(self) -> str:
         if self.is_openai:
@@ -249,6 +258,7 @@ class ModelType(UnifiedModelType, Enum):
                 self.is_siliconflow,
                 self.is_zhipuai,
                 self.is_aiml,
+                self.is_azure_openai,
             ]
         )
 
@@ -469,6 +479,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_2_5_14B,
             ModelType.QWEN_QWQ_32B,
             ModelType.QWEN_QVQ_72B,
+            ModelType.QWEN_QWQ_PLUS,
         }
 
     @property
@@ -598,6 +609,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NVIDIA_MISTRAL_LARGE,
             ModelType.NVIDIA_MIXTRAL_8X7B,
             ModelType.QWEN_QWQ_32B,
+            ModelType.QWEN_QWQ_PLUS,
             ModelType.QWEN_QVQ_72B,
             ModelType.INTERNLM3_8B_INSTRUCT,
             ModelType.INTERNLM3_LATEST,
@@ -889,6 +901,15 @@ class ModelPlatformType(Enum):
     MOONSHOT = "moonshot"
     SILICONFLOW = "siliconflow"
     AIML = "aiml"
+    VOLCANO = "volcano"
+
+    @classmethod
+    def from_name(cls, name):
+        r"""Returns the ModelPlatformType enum value from a string."""
+        for model_platfrom_type in cls:
+            if model_platfrom_type.value == name:
+                return model_platfrom_type
+        raise ValueError(f"Unknown ModelPlatformType name: {name}")
 
     @property
     def is_openai(self) -> bool:
@@ -1010,6 +1031,11 @@ class ModelPlatformType(Enum):
     def is_aiml(self) -> bool:
         r"""Returns whether this platform is AIML."""
         return self is ModelPlatformType.AIML
+
+    @property
+    def is_volcano(self) -> bool:
+        r"""Returns whether this platform is volcano."""
+        return self is ModelPlatformType.VOLCANO
 
 
 class AudioModelType(Enum):

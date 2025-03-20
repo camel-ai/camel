@@ -70,6 +70,11 @@ provided Node and Relationship classes.
 Ensure that the extracted data adheres to the structure defined by the classes.
 Output the structured data in a format that can be easily validated against 
 the provided code.
+Do not wrap the output in lists or dictionaries, provide the Node and 
+Relationship with unique identifiers.
+Strictly follow the format provided in the example output, do not add any 
+additional information.
+
 
 Instructions for you:
 Read the provided content thoroughly.
@@ -226,7 +231,8 @@ class KnowledgeGraphAgent(ChatAgent):
         node_pattern = r"Node\(id='(.*?)', type='(.*?)'\)"
         rel_pattern = (
             r"Relationship\(subj=Node\(id='(.*?)', type='(.*?)'\), "
-            r"obj=Node\(id='(.*?)', type='(.*?)'\), type='(.*?)'\)"
+            r"obj=Node\(id='(.*?)', type='(.*?)'\), "
+            r"type='(.*?)'(?:, timestamp='(.*?)')?\)"
         )
 
         nodes = {}
@@ -243,13 +249,24 @@ class KnowledgeGraphAgent(ChatAgent):
 
         # Extract relationships
         for match in re.finditer(rel_pattern, input_string):
-            subj_id, subj_type, obj_id, obj_type, rel_type = match.groups()
+            groups = match.groups()
+            if len(groups) == 6:
+                subj_id, subj_type, obj_id, obj_type, rel_type, timestamp = (
+                    groups
+                )
+            else:
+                subj_id, subj_type, obj_id, obj_type, rel_type = groups
+                timestamp = None
             properties = {'source': 'agent_created'}
             if subj_id in nodes and obj_id in nodes:
                 subj = nodes[subj_id]
                 obj = nodes[obj_id]
                 relationship = Relationship(
-                    subj=subj, obj=obj, type=rel_type, properties=properties
+                    subj=subj,
+                    obj=obj,
+                    type=rel_type,
+                    timestamp=timestamp,
+                    properties=properties,
                 )
                 if self._validate_relationship(relationship):
                     relationships.append(relationship)
