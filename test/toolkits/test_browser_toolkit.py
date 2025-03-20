@@ -11,16 +11,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import io
 import os
+from typing import (
+    TYPE_CHECKING,
+)
+
+from PIL import Image
+
+if TYPE_CHECKING:
+    from camel.agents import ChatAgent
+
+
 import pytest
 from unittest.mock import MagicMock, patch
-from PIL import Image
-import io
 
 from camel.toolkits.browser_toolkit import (
+    AcceptedBrowserChannels,
     BaseBrowser,
     BrowserToolkit,
-    AcceptedBrowserChannels,
 )
 
 
