@@ -16,6 +16,7 @@ import time
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
+from camel.interpreters.base import BaseInterpreter
 from camel.logger import get_logger
 from camel.utils import BatchProcessor
 
@@ -44,10 +45,12 @@ class BaseVerifier(ABC):
     - Comprehensive error handling and logging
     - Configurable batch processing
     - Resource monitoring for adaptive scaling
+    - Support for various code interpreters
     """
 
     def __init__(
         self,
+        interpreter: Optional[BaseInterpreter] = None,
         max_parallel: Optional[int] = None,
         timeout: Optional[float] = None,
         max_retries: int = 3,
@@ -60,6 +63,8 @@ class BaseVerifier(ABC):
         r"""Initialize the verifier with configuration parameters.
 
         Args:
+            interpreter: Optional interpreter to use for code execution.
+                (default: :obj:`None`)
             max_parallel: Maximum number of parallel verifications. If None,
                 determined dynamically based on system resources.
                 (default: :obj:`None`)
@@ -77,6 +82,7 @@ class BaseVerifier(ABC):
             **kwargs: Additional verifier parameters.
         """
         self._is_setup: bool = False
+        self._interpreter = interpreter
         self._max_parallel: Optional[int] = max_parallel
         self._timeout: Optional[float] = timeout
         self._max_retries: int = max_retries
@@ -285,10 +291,10 @@ async def verify_batch(
     # Get current batch parameters from processor with defaults if not
     #  present
     max_workers = getattr(
-        self._batch_processor, 'max_workers', self._max_parallel or 1
+        self._batch_processor, "max_workers", self._max_parallel or 1
     )
     batch_size = getattr(
-        self._batch_processor, 'batch_size', self._initial_batch_size or 10
+        self._batch_processor, "batch_size", self._initial_batch_size or 10
     )
     semaphore = asyncio.Semaphore(max(1, max_workers))
 
