@@ -21,6 +21,7 @@ import re
 import shutil
 import time
 from copy import deepcopy
+from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -33,7 +34,7 @@ from typing import (
     Union,
     cast,
 )
-from enum import Enum
+
 from PIL import Image, ImageDraw, ImageFont
 
 if TYPE_CHECKING:
@@ -125,10 +126,12 @@ class InteractiveRegion(TypedDict):
     v_scrollable: bool
     rects: List[DOMRectangle]
 
+
 class AcceptedBrowserChannels(Enum):
     """
     Enum for the accepted browser channels.
     """
+
     CHROME = "chrome"
     MSEDGE = "msedge"
     CHROMIUM = "chromium"
@@ -432,7 +435,12 @@ def _get_random_color(identifier: int) -> Tuple[int, int, int, int]:
 
 
 class BaseBrowser:
-    def __init__(self, headless=True, cache_dir: Optional[str] = None, channel: str = AcceptedBrowserChannels.CHROMIUM.value):
+    def __init__(
+        self,
+        headless=True,
+        cache_dir: Optional[str] = None,
+        channel: str = AcceptedBrowserChannels.CHROMIUM.value,
+    ):
         r"""Initialize the WebBrowser instance.
 
         Args:
@@ -473,7 +481,9 @@ class BaseBrowser:
     def init(self) -> None:
         r"""Initialize the browser."""
         # Launch the browser, if headless is False, the browser will display
-        self.browser = self.playwright.chromium.launch(headless=self.headless, channel=self.channel)
+        self.browser = self.playwright.chromium.launch(
+            headless=self.headless, channel=self.channel
+        )
         # Create a new context
         self.context = self.browser.new_context(accept_downloads=True)
         # Create a new page
@@ -997,7 +1007,9 @@ class BrowserToolkit(BaseToolkit):
                 backend for the planning agent.
         """
 
-        self.browser = BaseBrowser(headless=headless, cache_dir=cache_dir, channel=channel)
+        self.browser = BaseBrowser(
+            headless=headless, cache_dir=cache_dir, channel=channel
+        )
         # This needs to be called explicitly
         self.browser.init()
 

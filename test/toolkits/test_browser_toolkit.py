@@ -20,11 +20,12 @@ from typing import (
 from PIL import Image
 
 if TYPE_CHECKING:
-    from camel.agents import ChatAgent
+    pass
 
+
+from unittest.mock import MagicMock, patch
 
 import pytest
-from unittest.mock import MagicMock, patch
 
 from camel.toolkits.browser_toolkit import (
     AcceptedBrowserChannels,
