@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-# memory_toolkit.py
 import json
 from typing import TYPE_CHECKING, Optional
 
@@ -36,6 +35,12 @@ class MemoryToolkit(BaseToolkit):
       - agent.load_memory(new_memory_obj)
       - agent.load_memory_from_path(path)
       - agent.clear_memory()
+
+    Args:
+        agent (ChatAgent): The chat agent whose memory will be managed.
+        timeout (Optional[float], optional): Maximum execution time allowed for
+            toolkit operations in seconds. If None, no timeout is applied.
+            (default: :obj:`None`)
     """
 
     def __init__(self, agent: 'ChatAgent', timeout: Optional[float] = None):
@@ -43,8 +48,7 @@ class MemoryToolkit(BaseToolkit):
         self.agent = agent
 
     def save(self, path: str) -> str:
-        r"""Saves the agent's current memory to a JSON file by calling
-        agent.save_memory(path).
+        r"""Saves the agent's current memory to a JSON file.
 
         Args:
             path (str): The file path to save the memory to.
