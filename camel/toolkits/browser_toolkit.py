@@ -452,8 +452,6 @@ class BaseBrowser:
         # Set the cache directory
         self.cache_dir = "tmp/" if cache_dir is None else cache_dir
         os.makedirs(self.cache_dir, exist_ok=True)
-        self.browser_data_dir = os.path.join(self.cache_dir, "browser_data")
-        os.makedirs(self.browser_data_dir, exist_ok=True)
         # Load the page script
         abs_dir_path = os.path.dirname(os.path.abspath(__file__))
         page_script_path = os.path.join(abs_dir_path, "page_script.js")
@@ -469,7 +467,7 @@ class BaseBrowser:
 
     def init(self) -> None:
         r"""Initialize the browser."""
-            # Launch the browser, if headless is False, the browser will display
+        # Launch the browser, if headless is False, the browser will display
         self.browser = self.playwright.chromium.launch(
             headless=self.headless
         )
@@ -980,7 +978,6 @@ class BrowserToolkit(BaseToolkit):
         web_agent_model: Optional[BaseModelBackend] = None,
         planning_agent_model: Optional[BaseModelBackend] = None,
         output_language: str = "en",
-        persistent: bool = False,
     ):
         r"""Initialize the BrowserToolkit instance.
 
@@ -996,7 +993,7 @@ class BrowserToolkit(BaseToolkit):
         """
 
         self.browser = BaseBrowser(
-            headless=headless, cache_dir=cache_dir, persistent=persistent
+            headless=headless, cache_dir=cache_dir,
         )
 
         self.history_window = history_window
