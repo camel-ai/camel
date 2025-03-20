@@ -443,7 +443,6 @@ class BaseBrowser:
         )
 
         self._ensure_browser_installed()
-
         self.history: list = []
         self.headless = headless
         self.playwright = sync_playwright().start()
@@ -468,9 +467,7 @@ class BaseBrowser:
     def init(self) -> None:
         r"""Initialize the browser."""
         # Launch the browser, if headless is False, the browser will display
-        self.browser = self.playwright.chromium.launch(
-            headless=self.headless
-        )
+        self.browser = self.playwright.chromium.launch(headless=self.headless)
         # Create a new context
         self.context = self.browser.new_context(accept_downloads=True)
         # Create a new page
@@ -993,9 +990,9 @@ class BrowserToolkit(BaseToolkit):
         """
 
         self.browser = BaseBrowser(
-            headless=headless, cache_dir=cache_dir,
+            headless=headless,
+            cache_dir=cache_dir,
         )
-
         self.history_window = history_window
         self.web_agent_model = web_agent_model
         self.planning_agent_model = planning_agent_model
