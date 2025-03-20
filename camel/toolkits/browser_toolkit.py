@@ -51,37 +51,37 @@ logger = get_logger(__name__)
 TOP_NO_LABEL_ZONE = 20
 
 AVAILABLE_ACTIONS_PROMPT = """
-1. `fill_input_id(identifier: Union[str, int], text: str)`: Fill an input 
+1. `fill_input_id(identifier: Union[str, int], text: str)`: Fill an input
 field (e.g. search box) with the given text and press Enter.
 2. `click_id(identifier: Union[str, int])`: Click an element with the given ID.
-3. `hover_id(identifier: Union[str, int])`: Hover over an element with the 
+3. `hover_id(identifier: Union[str, int])`: Hover over an element with the
 given ID.
-4. `download_file_id(identifier: Union[str, int])`: Download a file with the 
-given ID. It returns the path to the downloaded file. If the file is 
-successfully downloaded, you can stop the simulation and report the path to 
+4. `download_file_id(identifier: Union[str, int])`: Download a file with the
+given ID. It returns the path to the downloaded file. If the file is
+successfully downloaded, you can stop the simulation and report the path to
 the downloaded file for further processing.
 5. `scroll_to_bottom()`: Scroll to the bottom of the page.
 6. `scroll_to_top()`: Scroll to the top of the page.
-7. `scroll_up()`: Scroll up the page. It is suitable when you want to see the 
+7. `scroll_up()`: Scroll up the page. It is suitable when you want to see the
 elements above the current viewport.
-8. `scroll_down()`: Scroll down the page. It is suitable when you want to see 
-the elements below the current viewport. If the webpage does not change, It 
+8. `scroll_down()`: Scroll down the page. It is suitable when you want to see
+the elements below the current viewport. If the webpage does not change, It
 means that the webpage has scrolled to the bottom.
-9. `back()`: Navigate back to the previous page. This is useful when you want 
+9. `back()`: Navigate back to the previous page. This is useful when you want
 to go back to the previous page, as current page is not useful.
-10. `stop()`: Stop the action process, because the task is completed or failed 
-(impossible to find the answer). In this situation, you should provide your 
+10. `stop()`: Stop the action process, because the task is completed or failed
+(impossible to find the answer). In this situation, you should provide your
 answer in your output.
 11. `get_url()`: Get the current URL of the current page.
-12. `find_text_on_page(search_text: str)`: Find the next given text on the 
-current whole page, and scroll the page to the targeted text. It is equivalent 
-to pressing Ctrl + F and searching for the text, and is powerful when you want 
+12. `find_text_on_page(search_text: str)`: Find the next given text on the
+current whole page, and scroll the page to the targeted text. It is equivalent
+to pressing Ctrl + F and searching for the text, and is powerful when you want
 to fast-check whether the current page contains some specific text.
 13. `visit_page(url: str)`: Go to the specific url page.
-14. `click_blank_area()`: Click a blank area of the page to unfocus the 
-current element. It is useful when you have clicked an element but it cannot 
+14. `click_blank_area()`: Click a blank area of the page to unfocus the
+current element. It is useful when you have clicked an element but it cannot
 unfocus itself (e.g. Menu bar) to automatically render the updated webpage.
-15. `ask_question_about_video(question: str)`: Ask a question about the 
+15. `ask_question_about_video(question: str)`: Ask a question about the
 current webpage which contains video, e.g. youtube websites.
 """
 
