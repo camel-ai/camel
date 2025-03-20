@@ -22,7 +22,7 @@ from camel.extractors import BaseExtractor, BaseExtractorStrategy
 
 class ActionParser(BaseExtractorStrategy):
     async def extract(self, text: str) -> Optional[str]:
-        match = re.search(r"<Action>(\d)", text)
+        match = re.search(r"<Action>(\d+)", text)
         if match:
             return match.group(1)
         return None
