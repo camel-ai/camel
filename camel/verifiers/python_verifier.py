@@ -130,7 +130,7 @@ class PythonVerifier(BaseVerifier):
         Raises:
             asyncio.TimeoutError: If execution exceeds the configured timeout.
             Exception: Any unexpected errors are caught and converted to an
-            ERROR verification result.
+                ERROR verification result.
         """
         if not self.venv_path:
             return VerificationResult(
@@ -171,7 +171,9 @@ class PythonVerifier(BaseVerifier):
                 if ground_truth is not None:
                     # Normalize both strings by removing extra whitespace
                     normalized_output = ' '.join(output_result.strip().split())
-                    normalized_truth = ' '.join(ground_truth.strip().split())
+                    normalized_truth = ' '.join(
+                        str(ground_truth).strip().split()
+                    )
 
                     if normalized_output == normalized_truth:
                         return VerificationResult(

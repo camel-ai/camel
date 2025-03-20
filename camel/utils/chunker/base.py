@@ -11,16 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+from abc import ABC, abstractmethod
+from typing import Any
 
-from .base import BaseKeyValueStorage
-from .in_memory import InMemoryKeyValueStorage
-from .json import CamelJSONEncoder, JsonStorage
-from .redis import RedisStorage
 
-__all__ = [
-    'BaseKeyValueStorage',
-    'InMemoryKeyValueStorage',
-    'JsonStorage',
-    'RedisStorage',
-    'CamelJSONEncoder',
-]
+class BaseChunker(ABC):
+    r"""An abstract base class for all CAMEL chunkers."""
+
+    @abstractmethod
+    def chunk(self, content: Any) -> Any:
+        r"""Chunk the given content"""
+        pass

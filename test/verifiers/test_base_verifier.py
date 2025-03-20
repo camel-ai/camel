@@ -257,8 +257,8 @@ async def test_verify_batch(test_verifier):
             test_verifier, *args, **kwargs
         )
 
-        solutions = (["Success 1", "Success 2", "This will fail"],)
-        ground_truthes = (["Expected 1", "Expected 2", "Expected 3"],)
+        solutions = ["Success 1", "Success 2", "This will fail"]
+        ground_truthes = ["Expected 1", "Expected 2", "Expected 3"]
 
         results = await test_verifier.verify_batch(solutions, ground_truthes)
 
@@ -297,7 +297,7 @@ async def test_verify_batch_with_error_handling(test_verifier):
             test_verifier, *args, **kwargs
         )
 
-        solutions = (["Success", "This will cause an error"],)
+        solutions = ["Success", "This will cause an error"]
         ground_truthes = ["Expected 1", "Expected 2"]
 
         with pytest.raises(
@@ -333,8 +333,8 @@ async def test_verify_batch_concurrency_limiting(test_verifier):
         async def __aexit__(self, *args):
             self.count -= 1
 
-    solutions = (["Success 1", "Success 2", "Success 3"],)
-    ground_truthes = (["Expected 1", "Expected 2", "Expected 3"],)
+    solutions = ["Success 1", "Success 2", "Success 3"]
+    ground_truthes = ["Expected 1", "Expected 2", "Expected 3"]
 
     mock_sem = MockSemaphore(1)
 
