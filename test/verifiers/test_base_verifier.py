@@ -251,10 +251,12 @@ async def test_verify_batch(test_verifier):
         )
 
     with patch.object(test_verifier, "verify", side_effect=mock_verify):
-        from camel.verifiers.base import verify_batch
+        from camel.verifiers.base import BaseVerifier
 
-        test_verifier.verify_batch = lambda *args, **kwargs: verify_batch(
-            test_verifier, *args, **kwargs
+        test_verifier.verify_batch = (
+            lambda *args, **kwargs: BaseVerifier.verify_batch(
+                test_verifier, *args, **kwargs
+            )
         )
 
         solutions = ["Success 1", "Success 2", "This will fail"]
@@ -291,10 +293,12 @@ async def test_verify_batch_with_error_handling(test_verifier):
         )
 
     with patch.object(test_verifier, "verify", side_effect=mock_verify):
-        from camel.verifiers.base import verify_batch
+        from camel.verifiers.base import BaseVerifier
 
-        test_verifier.verify_batch = lambda *args, **kwargs: verify_batch(
-            test_verifier, *args, **kwargs
+        test_verifier.verify_batch = (
+            lambda *args, **kwargs: BaseVerifier.verify_batch(
+                test_verifier, *args, **kwargs
+            )
         )
 
         solutions = ["Success", "This will cause an error"]
