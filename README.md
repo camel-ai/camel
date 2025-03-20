@@ -202,7 +202,7 @@ Explore different types of agents, their roles, and their applications.
 
 ### Seeking Help
 
-Please reachout to us on [CAMEL discord](https://discord.camel-ai.org/) if you encounter any issue set up CAMEL.
+Please reach out to us on [CAMEL discord](https://discord.camel-ai.org/) if you encounter any issue set up CAMEL.
 
 <br>
 
@@ -276,7 +276,7 @@ We believe that studying these agents on a large scale offers valuable insights 
 
 <br>
 
-## Syenthetic Datasets
+## Synthetic Datasets
 
 ### 1. Utilize Various LLMs as Backends
 

@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from abc import ABC, abstractmethod
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from camel.memories.records import ContextRecord, MemoryRecord
 from camel.messages import OpenAIMessage
@@ -112,6 +112,16 @@ class AgentMemory(MemoryBlock, ABC):
     the memory records stored within the AgentMemory.
     """
 
+    @property
+    @abstractmethod
+    def agent_id(self) -> Optional[str]:
+        pass
+
+    @agent_id.setter
+    @abstractmethod
+    def agent_id(self, val: Optional[str]) -> None:
+        pass
+
     @abstractmethod
     def retrieve(self) -> List[ContextRecord]:
         r"""Get a record list from the memory for creating model context.
@@ -138,3 +148,15 @@ class AgentMemory(MemoryBlock, ABC):
                 context in OpenAIMessage format and the total token count.
         """
         return self.get_context_creator().create_context(self.retrieve())
+
+    def __repr__(self) -> str:
+        r"""Returns a string representation of the AgentMemory.
+
+        Returns:
+            str: A string in the format 'ClassName(agent_id=<id>)'
+                if agent_id exists, otherwise just 'ClassName()'.
+        """
+        agent_id = getattr(self, '_agent_id', None)
+        if agent_id:
+            return f"{self.__class__.__name__}(agent_id='{agent_id}')"
+        return f"{self.__class__.__name__}()"
