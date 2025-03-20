@@ -19,7 +19,7 @@ from camel.loaders import UnstructuredIO
 from camel.utils.chunker import BaseChunker
 
 
-class UioChunker(BaseChunker):
+class UnstructuredIOChunker(BaseChunker):
     r"""A class for chunking text while respecting structure and
     character limits.
 
