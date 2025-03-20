@@ -58,6 +58,7 @@ class TicTacToeEnv(MultiStepEnv):
             "board": [" " for _ in range(9)],
             "game_over": False,
             "winner": None,
+            "last_move_illegal": False,
         }
 
     # TODO: simplify, give feedback if fails
@@ -81,11 +82,11 @@ class TicTacToeEnv(MultiStepEnv):
         # Convert 1-indexed move to 0-indexed board position.
         index = move - 1
         if index < 0 or index > 8 or board[index] != " ":
-            # Illegal move: losing condition.
-            # TODO: give feedback instead of autoloss
-            self._state["game_over"] = True
-            self._state["winner"] = "O"
+            self._state["last_move_illegal"] = True
             return
+
+        # Reset the flag
+        self._state["last_move_illegal"] = False
 
         # Agent (X) makes the move.
         board[index] = "X"
@@ -110,13 +111,24 @@ class TicTacToeEnv(MultiStepEnv):
 
     def _get_next_observation(self) -> Observation:
         board = self._state["board"]
-        obs = (
-            "You are playing Tic Tac Toe with standard rules."
-            "You are the player with X."
-            "Choose a number between 1 and 9 to place an X.\n"
-            "This is the current state of the board:\n"
-            f"{self.render_board(board)}"
-        )
+        if self._state["last_move_illegal"]:
+            obs = (
+                "You are playing Tic Tac Toe with standard rules.\n"
+                "You are the player with X.\n"
+                "Your last move was illegal.\n"
+                "Choose a number between 1 and 9 to place an X.\n"
+                "The field must still be available.\n"
+                "This is the current state of the board:\n"
+                f"{self.render_board(board)}"
+            )
+        else:
+            obs = (
+                "You are playing Tic Tac Toe with standard rules.\n"
+                "You are the player with X.\n"
+                "Choose a number between 1 and 9 to place an X.\n"
+                "This is the current state of the board:\n"
+                f"{self.render_board(board)}"
+            )
 
         return Observation(question=obs, context={}, metadata={})
 
