@@ -23,9 +23,6 @@ from camel.verifiers.base import (
     BaseVerifier,
     VerificationResult,
 )
-from camel.verifiers.models import (
-    VerifierInput,
-)
 
 from .models import Action, Observation, StepResult
 
@@ -189,10 +186,7 @@ class SingleStepEnv:
 
         # verify the extracted
         verification_result = await self.verifier.verify(
-            VerifierInput(
-                llm_response=extraction_result,
-                ground_truth=self._state.final_answer,
-            )
+            solution=extraction_result, ground_truth=self._state.final_answer
         )
 
         # compute rewards
