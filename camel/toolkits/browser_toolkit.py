@@ -130,7 +130,6 @@ class AcceptedBrowserChannels(Enum):
     Enum for the accepted browser channels.
     """
     CHROME = "chrome"
-    FIREFOX = "firefox"
     MSEDGE = "msedge"
     CHROMIUM = "chromium"
 
