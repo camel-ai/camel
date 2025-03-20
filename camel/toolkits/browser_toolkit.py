@@ -428,14 +428,12 @@ class BaseBrowser:
         self,
         headless=True,
         cache_dir: Optional[str] = None,
-        persistent: bool = False,
     ):
         r"""Initialize the WebBrowserToolkit instance.
 
         Args:
             headless (bool): Whether to run the browser in headless mode.
             cache_dir (Union[str, None]): The directory to store cache files.
-            persistent (bool): Whether to use a persistent browser context.
 
         Returns:
             None
@@ -450,7 +448,6 @@ class BaseBrowser:
         self.headless = headless
         self.playwright = sync_playwright().start()
         self.page_history: list = []  # stores the history of visited pages
-        self.persistent = persistent
 
         # Set the cache directory
         self.cache_dir = "tmp/" if cache_dir is None else cache_dir
@@ -472,25 +469,14 @@ class BaseBrowser:
 
     def init(self) -> None:
         r"""Initialize the browser."""
-        if self.persistent:
-            self.context = self.playwright.chromium.launch_persistent_context(
-                user_data_dir=os.path.abspath(self.browser_data_dir),
-                headless=self.headless,
-                accept_downloads=True,
-            )
-            if len(self.context.pages) > 0:
-                self.page = self.context.pages[0]
-            else:
-                self.page = self.context.new_page()
-        else:
             # Launch the browser, if headless is False, the browser will display
-            self.browser = self.playwright.chromium.launch(
-                headless=self.headless
-            )
-            # Create a new context
-            self.context = self.browser.new_context(accept_downloads=True)
-            # Create a new page
-            self.page = self.context.new_page()
+        self.browser = self.playwright.chromium.launch(
+            headless=self.headless
+        )
+        # Create a new context
+        self.context = self.browser.new_context(accept_downloads=True)
+        # Create a new page
+        self.page = self.context.new_page()
 
     def clean_cache(self) -> None:
         r"""Delete the cache directory and its contents."""
@@ -912,12 +898,7 @@ class BaseBrowser:
         self._wait_for_load()
 
     def close(self):
-        if hasattr(self, 'context'):
-            self.context.close()
-        if hasattr(self, 'browser') and self.browser is not None:
-            self.browser.close()
-        if hasattr(self, 'playwright'):
-            self.playwright.stop()
+        self.browser.close()
 
     # ruff: noqa: E501
     def show_interactive_elements(self):
