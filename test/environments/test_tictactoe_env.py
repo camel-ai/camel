@@ -11,13 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import pytest
-import re
 from unittest.mock import AsyncMock, MagicMock
+
+import pytest
+
+from camel.environments.models import Action
 from camel.environments.tic_tac_toe import TicTacToeEnv
-from camel.environments.models import Action, Observation
 
 # --- Setup and Initialization Tests ---
+
 
 @pytest.mark.asyncio
 async def test_setup_and_reset():
@@ -41,20 +43,25 @@ async def test_setup_and_reset():
     assert env._current_step == 0
     await env.close()
 
+
 # --- Step Tests: Moves ---
 
+
 @pytest.mark.asyncio
-@pytest.mark.parametrize("move, expected_behavior", [
-    ("5", "valid"),
-    ("10", "invalid_move"),
-    ("-1", "invalid_input"),
-])
+@pytest.mark.parametrize(
+    "move, expected_behavior",
+    [
+        ("5", "valid"),
+        ("10", "invalid_move"),
+        ("-1", "invalid_input"),
+    ],
+)
 async def test_moves(move, expected_behavior):
     env = TicTacToeEnv()
     await env.setup()
     await env.reset()
     action = Action(llm_response=f"<Action>{move}</Action>")
-    
+
     if expected_behavior == "invalid_input":
         with pytest.raises(ValueError):
             await env.step(action)
@@ -74,6 +81,7 @@ async def test_moves(move, expected_behavior):
         assert step_result.done is False
     await env.close()
 
+
 @pytest.mark.asyncio
 async def test_move_occupied():
     """Test moving to an occupied position."""
@@ -90,10 +98,14 @@ async def test_move_occupied():
     assert "Your last move was illegal" in step_result.observation.question
     await env.close()
 
+
 # --- Step Tests: Invalid Inputs ---
 
+
 @pytest.mark.asyncio
-@pytest.mark.parametrize("invalid_input", ["<Action>abc</Action>", "5", "<Action></Action>"])
+@pytest.mark.parametrize(
+    "invalid_input", ["<Action>abc</Action>", "5", "<Action></Action>"]
+)
 async def test_invalid_inputs(invalid_input):
     """Test invalid action inputs."""
     env = TicTacToeEnv()
@@ -104,7 +116,9 @@ async def test_invalid_inputs(invalid_input):
         await env.step(action)
     await env.close()
 
+
 # --- Game End Tests ---
+
 
 @pytest.mark.asyncio
 async def test_agent_wins():
@@ -123,6 +137,7 @@ async def test_agent_wins():
     assert "Congratulations, you won!" in step_result.observation.question
     await env.close()
 
+
 @pytest.mark.asyncio
 async def test_opponent_wins():
     """Test opponent winning after agent's move."""
@@ -139,6 +154,7 @@ async def test_opponent_wins():
     assert step_result.done is True
     assert "Sorry, you lost!" in step_result.observation.question
     await env.close()
+
 
 @pytest.mark.asyncio
 async def test_draw():
@@ -157,21 +173,36 @@ async def test_draw():
     assert "It's a draw!" in step_result.observation.question
     await env.close()
 
+
 # --- Helper Method Tests ---
+
 
 def test_helper_methods():
     """Test render_board, check_winner, and available_moves."""
     env = TicTacToeEnv()
     # Test render_board
     board = ["X", "O", " ", " ", "X", " ", " ", " ", "O"]
-    assert env.render_board(board) == "X | O | 3\n---------\n4 | X | 6\n---------\n7 | 8 | O"
+    assert (
+        env.render_board(board)
+        == "X | O | 3\n---------\n4 | X | 6\n---------\n7 | 8 | O"
+    )
     # Test check_winner
-    assert env.check_winner(["X", "X", "X", "O", "O", " ", " ", " ", " "]) == "X"
-    assert env.check_winner(["O", " ", " ", "O", " ", " ", "O", " ", " "]) == "O"
-    assert env.check_winner(["X", "O", "X", "X", "O", "O", "O", "X", "X"]) == "draw"
-    assert env.check_winner(["X", "O", " ", " ", " ", " ", " ", " ", " "]) is None
+    assert (
+        env.check_winner(["X", "X", "X", "O", "O", " ", " ", " ", " "]) == "X"
+    )
+    assert (
+        env.check_winner(["O", " ", " ", "O", " ", " ", "O", " ", " "]) == "O"
+    )
+    assert (
+        env.check_winner(["X", "O", "X", "X", "O", "O", "O", "X", "X"])
+        == "draw"
+    )
+    assert (
+        env.check_winner(["X", "O", " ", " ", " ", " ", " ", " ", " "]) is None
+    )
     # Test available_moves
     assert env.available_moves(board) == [2, 3, 5, 6, 7]
+
 
 def test_opponent_move_and_minimax():
     """Test opponent move and minimax algorithm."""
@@ -182,7 +213,9 @@ def test_opponent_move_and_minimax():
     assert score == -1
     assert move == 2
 
+
 # --- Error Handling Tests ---
+
 
 @pytest.mark.asyncio
 async def test_step_errors():
@@ -216,6 +249,7 @@ async def test_step_errors():
         await env.step(Action(llm_response="<Action>5</Action>"))
     await env.close()
 
+
 # --- Full test ---
 @pytest.mark.asyncio
 async def test_full_game():
@@ -226,7 +260,9 @@ async def test_full_game():
 
     moves = ["1", "2", "4"]
     for i, move in enumerate(moves):
-        step_result = await env.step(Action(llm_response=f"<Action>{move}</Action>"))
+        step_result = await env.step(
+            Action(llm_response=f"<Action>{move}</Action>")
+        )
         if i < len(moves) - 1:
             assert step_result.done is False
             assert step_result.reward == 0.0
