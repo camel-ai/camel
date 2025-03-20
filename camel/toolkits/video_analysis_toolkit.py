@@ -14,6 +14,7 @@
 
 import os
 import tempfile
+import io 
 from pathlib import Path
 from typing import List, Optional
 
@@ -99,10 +100,12 @@ class VideoAnalysisToolkit(BaseToolkit):
         download_directory: Optional[str] = None,
         model: Optional[BaseModelBackend] = None,
         use_audio_transcription: bool = False,
+        output_language: str = "English",
     ) -> None:
         self._cleanup = download_directory is None
         self._temp_files: list[str] = []  # Track temporary files for cleanup
         self._use_audio_transcription = use_audio_transcription
+        self.output_language = output_language
 
         self._download_directory = Path(
             download_directory or tempfile.mkdtemp()
@@ -131,13 +134,13 @@ class VideoAnalysisToolkit(BaseToolkit):
             # Import ChatAgent at runtime to avoid circular imports
             from camel.agents import ChatAgent
 
-            self.vl_agent = ChatAgent(model=self.vl_model)
+            self.vl_agent = ChatAgent(model=self.vl_model,output_language=self.output_language)
         else:
             # If no model is provided, use default model in ChatAgent
             # Import ChatAgent at runtime to avoid circular imports
             from camel.agents import ChatAgent
 
-            self.vl_agent = ChatAgent()
+            self.vl_agent = ChatAgent(output_language=self.output_language)
             logger.warning(
                 "No vision-language model provided. Using default model in"
                 " ChatAgent."
@@ -204,8 +207,6 @@ class VideoAnalysisToolkit(BaseToolkit):
         base_path = os.path.splitext(video_path)[0]
         output_path = f"{base_path}.{output_format}"
 
-        if os.path.exists(output_path):
-            return output_path
         try:
             (
                 ffmpeg.input(video_path)
@@ -219,90 +220,8 @@ class VideoAnalysisToolkit(BaseToolkit):
             error_message = f"FFmpeg-Python failed: {e}"
             logger.error(error_message)
             raise RuntimeError(error_message)
-        
 
-    def convert_webm_to_mp4(self, video_path: str) -> str:
-        r"""Convert a .webm video file to .mp4 format.
-
-        Args:
-            video_path (str): The path to the .webm video file.
-
-        Returns:
-            str: The path to the converted .mp4 file.
-
-        Raises:
-            RuntimeError: If the conversion fails.
-        """
-        import ffmpeg
-        # 检查文件是否存在
-        if not os.path.exists(video_path):
-            raise FileNotFoundError(f"Video file not found: {video_path}")
-
-        # 检查文件是否为 .webm 格式
-        if not video_path.lower().endswith(".webm"):
-            raise ValueError(f"File is not a .webm video: {video_path}")
-
-        # 生成输出文件路径
-        output_path = video_path.rsplit('.', 1)[0]  ".mp4"
-
-        # 如果输出文件已存在，直接返回
-        if os.path.exists(output_path):
-            return output_path
-
-        try:
-            # 使用 FFmpeg 转换格式
-            (
-                ffmpeg.input(video_path)
-                .output(output_path, vcodec="libx264", acodec="aac")
-                .run()
-            )
-            return output_path
-        except ffmpeg.Error as e:
-            raise RuntimeError(f"FFmpeg-Python failed: {e}")
-
-    def split_audio_segments(self, video_path, segment_duration=60 * 2, sample_rate=16000):
-        """
-        将视频中的音频拆分为多个大小相同的片段，并保存为 WAV 格式。
-
-        Args:
-            video_path (str): 视频文件路径。
-            output_dir (str): 输出目录路径。
-            segment_duration (int): 每个音频片段的时长（秒）。
-            sample_rate (int): 音频采样率（Hz）。
-
-        Returns:
-            List[str]: 生成的音频片段文件路径列表。
-        """
-        import os
-        # 确保输出目录存在
-        output_dir = os.path.dirname(video_path)
-
-        # 生成输出文件模板
-        output_template = os.path.join(output_dir, "segment_%03d.wav")
-
-        # 使用 FFmpeg 拆分音频
-        import ffmpeg
-        try:
-            (
-                ffmpeg.input(video_path)
-                .output(
-                    output_template,
-                    f="segment",  # 使用 segment 过滤器
-                    segment_time=segment_duration,  # 每个片段的时长
-                    acodec="pcm_s16le",  # 使用 WAV 格式的编码器
-                    ar=sample_rate,  # 设置采样率
-                    ac=1,  # 单声道（可选）
-                )
-                .run()
-            )
-        except ffmpeg.Error as e:
-            raise RuntimeError(f"FFmpeg failed: {e}")
- 
-        # 返回生成的音频片段文件列表
-        return sorted([os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.startswith("segment_")])
- 
-
-    def _transcribe_audio(self, segments: list[str]) -> str:
+    def _transcribe_audio(self, audio_path: str) -> str:
         r"""Transcribe the audio of the video."""
         # Check if audio transcription is enabled and audio models are
         # available
@@ -311,69 +230,33 @@ class VideoAnalysisToolkit(BaseToolkit):
             return "No audio transcription available."
 
         try:
-            result = ''
-            for segment in segments:
-                audio_transcript = self.audio_models.speech_to_text(segment)
-                result += audio_transcript
+            audio_transcript = self.audio_models.speech_to_text(audio_path)
             if not audio_transcript:
                 logger.warning("Audio transcription returned empty result")
                 return "No audio transcription available."
             return audio_transcript
         except Exception as e:
             logger.error(f"Audio transcription failed: {e}")
-            try:
-                audio_transcript = self.transcribe_audio_whisper(segments=segments)
-                return audio_transcript
-            except Exception as e:
-                logger.warning("Audio transcription failed.")
-                return None
-
-    def transcribe_audio_whisper(self, segments, type='tiny'):
-        import whisper
-        from concurrent.futures import ProcessPoolExecutor
-        import os
-        import time
-
-        # 设置 OpenMP 为单线程模式
-        os.environ["OMP_NUM_THREADS"] = "1"
-
-        # 加载 Whisper 模型
-        start = time.time()
-          # 显式使用 FP32
-
-        def transcribe_segment(segment_path):
-            # 禁用 FFmpeg 日志输出
-            import whisper
-            # whisper.transcribe = whisper.transcribe.DisableFFmpegLogging()
-            model = whisper.load_model(type, device="cpu")
-            # 转录音频片段
-            result = model.transcribe(segment_path)
-            return result['text']
-
-        # 使用线程池并行转录
-        results = []
-        for segment_path in segments:
-            result = transcribe_segment(segment_path)
-            results.append(result)
-
-        print(f'audio to txt cost {time.time() - start}')
-        return results
+            return "Audio transcription failed."
 
     def _extract_keyframes(
-        self, video_path: str, num_frames: int, threshold: float = 25.0
+        self, video_path: str, threshold: float = 25.0
     ) -> List[Image.Image]:
-        r"""Extract keyframes from a video based on scene changes
+        r"""Extract keyframes from a video based on scene changes and regular intervals,
         and return them as PIL.Image.Image objects.
 
         Args:
             video_path (str): Path to the video file.
-            num_frames (int): Number of keyframes to extract.
             threshold (float): The threshold value for scene change detection.
+                This is kept for backward compatibility but not used in the
+                current implementation.
 
         Returns:
             list: A list of PIL.Image.Image objects representing
                 the extracted keyframes.
         """
+        import cv2
+        import numpy as np
         from scenedetect import (  # type: ignore[import-untyped]
             SceneManager,
             VideoManager,
@@ -381,13 +264,34 @@ class VideoAnalysisToolkit(BaseToolkit):
         from scenedetect.detectors import (  # type: ignore[import-untyped]
             ContentDetector,
         )
-
-        if num_frames <= 0:
-            logger.warning(
-                f"Invalid num_frames: {num_frames}, using default of 1"
-            )
-            num_frames = 1
-
+        
+        # Get video information
+        cap = cv2.VideoCapture(video_path)
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        duration = total_frames / fps if fps > 0 else 0
+        cap.release()
+        
+        # Extract one frame every 4 seconds
+        frame_interval = 4.0  # seconds
+        
+        # Calculate the total number of frames to extract
+        if duration <= 0 or fps <= 0:
+            logger.warning("Invalid video duration or fps, using default frame count")
+            num_frames = 10
+        else:
+            num_frames = max(int(duration / frame_interval), 1)
+            
+            # Limit the maximum number of frames to avoid processing too many frames for long videos
+            max_frames = 100
+            if num_frames > max_frames:
+                # If exceeding the maximum number of frames, adjust the interval to maintain even distribution
+                frame_interval = duration / max_frames
+                num_frames = max_frames
+            
+            logger.info(f"Video duration: {duration:.2f}s, target frames: {num_frames} at {frame_interval:.2f}s intervals")
+        
+        # Use scene detection to extract keyframes
         video_manager = VideoManager([video_path])
         scene_manager = SceneManager()
         scene_manager.add_detector(ContentDetector(threshold=threshold))
@@ -398,49 +302,129 @@ class VideoAnalysisToolkit(BaseToolkit):
 
         scenes = scene_manager.get_scene_list()
         keyframes: List[Image.Image] = []
-
-        # Handle case where no scenes are detected
-        if not scenes:
-            logger.warning(
-                "No scenes detected in video, capturing frames at "
-                "regular intervals"
-            )
-            import cv2
-
-            cap = cv2.VideoCapture(video_path)
-            total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            fps = cap.get(cv2.CAP_PROP_FPS)
-            duration = total_frames / fps if fps > 0 else 0
-
-            if duration > 0 and total_frames > 0:
-                # Extract frames at regular intervals
-                interval = duration / min(num_frames, total_frames)
-                for i in range(min(num_frames, total_frames)):
-                    time_sec = i * interval
+        
+        # If scene detection is successful, prioritize scene change points
+        if scenes:
+            logger.info(f"Detected {len(scenes)} scene changes")
+            
+            # If the number of scenes exceeds the required number of frames, select scenes evenly
+            if len(scenes) > num_frames:
+                scene_indices = np.linspace(0, len(scenes) - 1, num_frames, dtype=int)
+                selected_scenes = [scenes[i] for i in scene_indices]
+            else:
+                selected_scenes = scenes
+            
+            # Extract frames from scenes
+            for start_time, _ in selected_scenes:
+                try:
+                    frame = _capture_screenshot(video_path, start_time)
+                    keyframes.append(frame)
+                except Exception as e:
+                    logger.warning(f"Failed to capture frame at scene change {start_time}s: {e}")
+        
+        # If scene detection doesn't provide enough frames, or no scenes are detected, supplement with regular interval frames
+        if len(keyframes) < num_frames and duration > 0:
+            logger.info(f"Scene detection provided {len(keyframes)} frames, supplementing with regular interval frames")
+            
+            # Calculate the time points of existing scene frames for deduplication
+            existing_times = []
+            if scenes:
+                existing_times = [start_time for start_time, _ in scenes]
+            
+            # Extract frames at fixed intervals, avoiding duplication with existing scene frames
+            regular_frames = []
+            for i in range(num_frames):
+                time_sec = i * frame_interval
+                
+                # Check if it's close to an existing scene frame (within 1 second)
+                is_duplicate = False
+                for existing_time in existing_times:
+                    if abs(existing_time - time_sec) < 1.0:
+                        is_duplicate = True
+                        break
+                
+                if not is_duplicate:
+                    try:
+                        frame = _capture_screenshot(video_path, time_sec)
+                        regular_frames.append(frame)
+                    except Exception as e:
+                        logger.warning(f"Failed to capture frame at {time_sec}s: {e}")
+            
+            # If needed, select some frames from the fixed interval frames to supplement the keyframes
+            frames_needed = num_frames - len(keyframes)
+            if frames_needed > 0 and regular_frames:
+                # If the number of fixed interval frames exceeds the required number, select evenly
+                if len(regular_frames) > frames_needed:
+                    indices = np.linspace(0, len(regular_frames) - 1, frames_needed, dtype=int)
+                    selected_frames = [regular_frames[i] for i in indices]
+                else:
+                    selected_frames = regular_frames
+                
+                keyframes.extend(selected_frames)
+        
+        # If no frames are extracted (both scene detection and fixed interval methods failed), use a simple fixed interval method
+        if not keyframes:
+            logger.warning("No frames extracted, falling back to simple interval extraction")
+            for i in range(min(num_frames, 10)):  # Limit to a maximum of 10 frames to avoid infinite loops
+                time_sec = i * (duration / 10 if duration > 0 else 6.0)
+                try:
                     frame = _capture_screenshot(video_path, time_sec)
                     keyframes.append(frame)
-
-            cap.release()
-        else:
-            # Extract frames from detected scenes
-            for start_time, _ in scenes:
-                if len(keyframes) >= num_frames:
-                    break
-                frame = _capture_screenshot(video_path, start_time)
-                keyframes.append(frame)
-
+                except Exception as e:
+                    logger.warning(f"Failed to capture frame at {time_sec}s: {e}")
+        
         if not keyframes:
             logger.error("Failed to extract any keyframes from video")
             raise ValueError("Failed to extract keyframes from video")
+        
+        # Normalize image sizes
+        normalized_keyframes = self._normalize_frames(keyframes)
+        
+        logger.info(f"Extracted and normalized {len(normalized_keyframes)} keyframes")
+        return normalized_keyframes
 
-        logger.info(f"Extracted {len(keyframes)} keyframes")
-        return keyframes
+    def _normalize_frames(self, frames: List[Image.Image], target_width: int = 512) -> List[Image.Image]:
+        r"""Normalize the size of extracted frames.
+        
+        Args:
+            frames (List[Image.Image]): List of frames to normalize.
+            target_width (int): Target width for normalized frames.
+                
+        Returns:
+            List[Image.Image]: List of normalized frames.
+        """
+        normalized_frames = []
+        
+        for frame in frames:
+            # Get original dimensions
+            width, height = frame.size
+            
+            # Calculate new height, maintaining aspect ratio
+            aspect_ratio = width / height
+            new_height = int(target_width / aspect_ratio)
+            
+            # Resize image
+            resized_frame = frame.resize((target_width, new_height), Image.LANCZOS)
+            
+            # Ensure the image has a proper format (convert to RGB and set format to JPEG)
+            if resized_frame.mode != 'RGB':
+                resized_frame = resized_frame.convert('RGB')
+            
+            # Create a new image with explicit format
+            with io.BytesIO() as buffer:
+                resized_frame.save(buffer, format='JPEG')
+                buffer.seek(0)
+                formatted_frame = Image.open(buffer)
+                formatted_frame.load()  # Load the image data
+                
+            normalized_frames.append(formatted_frame)
+            
+        return normalized_frames
 
     def ask_question_about_video(
         self,
         video_path: str,
         question: str,
-        num_frames: int = 28,
     ) -> str:
         r"""Ask a question about the video.
 
@@ -448,9 +432,6 @@ class VideoAnalysisToolkit(BaseToolkit):
             video_path (str): The path to the video file.
                 It can be a local file or a URL (such as Youtube website).
             question (str): The question to ask about the video.
-            num_frames (int): The number of frames to extract from the video.
-                To be adjusted based on the length of the video.
-                (default: :obj:`28`)
 
         Returns:
             str: The answer to the question.
@@ -459,12 +440,6 @@ class VideoAnalysisToolkit(BaseToolkit):
 
         if not question:
             raise ValueError("Question cannot be empty")
-
-        if num_frames <= 0:
-            logger.warning(
-                f"Invalid num_frames: {num_frames}, using default of 28"
-            )
-            num_frames = 28
 
         parsed_url = urlparse(video_path)
         is_url = all([parsed_url.scheme, parsed_url.netloc])
@@ -488,14 +463,10 @@ class VideoAnalysisToolkit(BaseToolkit):
 
             audio_transcript = "No audio transcription available."
             if self._use_audio_transcription:
-                
-                if video_path.lower().endswith(".webm"):
-                    video_path = self.convert_webm_to_mp4(video_path=video_path)
+                audio_path = self._extract_audio_from_video(video_path)
+                audio_transcript = self._transcribe_audio(audio_path)
 
-                segments = self.split_audio_segments(video_path)
-                audio_transcript = self._transcribe_audio(segments)
-
-            video_frames = self._extract_keyframes(video_path, num_frames)
+            video_frames = self._extract_keyframes(video_path)
             prompt = VIDEO_QA_PROMPT.format(
                 audio_transcription=audio_transcript,
                 question=question,
