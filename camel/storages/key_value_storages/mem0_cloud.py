@@ -14,20 +14,20 @@
 
 import logging
 import os
-from typing import Any, Dict, List, Optional, Union
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from camel.storages.text_storages import BaseTextStorage
-from camel.types import OpenAIBackendRole, RoleType
-from camel.messages import BaseMessage
 from camel.memories.records import MemoryRecord
+from camel.messages import BaseMessage
+from camel.storages.key_value_storages import BaseKeyValueStorage
+from camel.types import OpenAIBackendRole, RoleType
 
 logger = logging.getLogger(__name__)
 
 
-class Mem0Storage(BaseTextStorage):
-    r"""A concrete implementation of the :obj:`BaseTextStorage` using Mem0
+class Mem0Storage(BaseKeyValueStorage):
+    r"""A concrete implementation of the :obj:`BaseKeyValueStorage` using Mem0
     as the backend. This storage system uses Mem0's text capabilities to store,
     search, and manage text with context.
 
@@ -45,8 +45,8 @@ class Mem0Storage(BaseTextStorage):
 
     def __init__(
         self,
+        agent_id: str,
         api_key: Optional[str] = None,
-        agent_id: Optional[str] = None,
         user_id: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
@@ -84,7 +84,7 @@ class Mem0Storage(BaseTextStorage):
             "user_id": user_id or self.user_id,
             "metadata": {**self.metadata, **(metadata or {})},
             "output_format": "v1.1",
-            **kwargs
+            **kwargs,
         }
         return {k: v for k, v in options.items() if v is not None}
 
@@ -104,48 +104,40 @@ class Mem0Storage(BaseTextStorage):
             base_filters["AND"].append({"user_id": user_id or self.user_id})
         return base_filters if base_filters["AND"] else {}
 
-    def add(
+    def _prepare_messages(
         self,
-        content: Union[str, List[Dict[str, str]]],
-        **kwargs: Any,
-    ) -> Dict[str, Any]:
+        records: List[Dict[str, Any]],
+    ) -> List[Dict[str, Any]]:
+        messages = []
+        for record in records:
+            content = record["message"]["content"]
+            role = record["role_at_backend"].value
+            messages.append({"role": role, "content": content})
+        return messages
+
+    def save(self, records: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Add a memory or list of memories to Mem0 storage."""
         try:
-            if isinstance(content, str):
-                messages = [{"role": "user", "content": content}]
-            else:
-                messages = []
-                for message in content:
-                    print(message["role"])
-                    if message["role"] == OpenAIBackendRole.USER:
-                        messages.append({"role": "user", "content": message["content"]})
-                    else:
-                        messages.append({"role": "assistant", "content": message["content"]})
+            messages = self._prepare_messages(records)
 
             options = self._prepare_options(
                 agent_id=self.agent_id,
                 user_id=self.user_id,
                 metadata=self.metadata,
-                **kwargs
             )
             return self.client.add(messages, **options)
         except Exception as e:
             logger.error(f"Error adding memory: {e}")
             return {"error": str(e)}
 
-    def search(
-        self,
-        query: str,
-        limit: int = 10,
-        **kwargs: Any,
-    ) -> List[Dict[str, Any]]:
-        """Search for memories in Mem0 storage using semantic similarity."""
+    def load(self) -> List[Dict[str, Any]]:
+        """Load all memories from Mem0 storage."""
         try:
             filters = self._prepare_filters(
                 agent_id=self.agent_id,
                 user_id=self.user_id,
             )
-            results = self.client.search(query=query, version="v2", top_k=limit, **filters)
+            results = self.client.get_all(version="v2", **filters)
 
             # Transform results into MemoryRecord objects
             transformed_results = []
@@ -156,89 +148,32 @@ class Mem0Storage(BaseTextStorage):
                         role_name="user",
                         role_type=RoleType.USER,
                         meta_dict={},
-                        content=result["memory"]
+                        content=result["memory"],
                     ),
                     role_at_backend=OpenAIBackendRole.USER,
                     extra_info=result.get("metadata", {}),
-                    timestamp=datetime.fromisoformat(result["created_at"]).timestamp(),
-                    agent_id=result.get("agent_id", "")
+                    timestamp=datetime.fromisoformat(
+                        result["created_at"]
+                    ).timestamp(),
+                    agent_id=result.get("agent_id", ""),
                 )
-                # Add score from search result
-                result_dict = {}
-                result_dict["memory_record"] = memory_record
-                result_dict["score"] = result.get("score", 0.0)
-                transformed_results.append(result_dict)
+                transformed_results.append(memory_record.to_dict())
 
             return transformed_results
         except Exception as e:
             logger.error(f"Error searching memories: {e}")
             return []
 
-    def get_all(
+    def clear(
         self,
-        filters: Optional[Dict[str, Any]] = None,
-        page: int = 1,
-        page_size: int = 100,
-        **kwargs: Any,
     ) -> Dict[str, Any]:
-        """Retrieve all memories from Mem0 storage matching criteria."""
+        """Delete all memories from Mem0 storage."""
         try:
-            options = self._prepare_options(
+            filters = self._prepare_filters(
                 agent_id=self.agent_id,
                 user_id=self.user_id,
-                version="v2",
-                filters=self._prepare_filters(
-                    agent_id=self.agent_id,
-                    user_id=self.user_id,
-                    filters=filters,
-                ),
-                page=page,
-                page_size=page_size,
-                **kwargs
             )
-            return self.client.getAll(options)
-        except Exception as e:
-            logger.error(f"Error getting memories: {e}")
-            return {"memories": [], "total": 0, "page": page, "page_size": page_size}
-
-    def delete(
-        self,
-        memory_ids: Optional[List[str]] = None,
-        filters: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> Dict[str, Any]:
-        """Delete memories from Mem0 storage."""
-        try:
-            if memory_ids:
-                # Delete specific memories by ID
-                return self.client.batchDelete([{"memory_id": id} for id in memory_ids])
-            else:
-                # Delete memories matching filters
-                filters = self._prepare_filters(
-                    agent_id=self.agent_id,
-                    user_id=self.user_id,
-                    filters=filters,
-                )
-                return self.client.delete_users(filters)
+            return self.client.delete_users(**filters)
         except Exception as e:
             logger.error(f"Error deleting memories: {e}")
-            return {"error": str(e)}
-
-    def update(
-        self,
-        memory_id: str,
-        content: Union[str, Dict[str, str]],
-        metadata: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> Dict[str, Any]:
-        """Update a specific memory in Mem0 storage."""
-        try:
-            if isinstance(content, str):
-                content = {"role": "user", "content": content}
-            update_data = {"memory_id": memory_id, "text": content}
-            if metadata:
-                update_data["metadata"] = metadata
-            return self.client.update(memory_id, update_data)
-        except Exception as e:
-            logger.error(f"Error updating memory: {e}")
             return {"error": str(e)}
