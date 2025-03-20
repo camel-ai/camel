@@ -13,14 +13,14 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-import subprocess
-from typing import Any, Dict, List, Optional
 import platform
-import threading
 import queue
-from queue import Queue
+import subprocess
 import sys
+import threading
 import venv
+from queue import Queue
+from typing import Any, Dict, List, Optional
 
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
@@ -40,14 +40,19 @@ class TerminalToolkit(BaseToolkit):
         timeout (Optional[float]): The timeout for terminal operations.
         shell_sessions (Optional[Dict[str, Any]]): A dictionary to store
             shell session information. If None, an empty dictionary will be
-            used.
+            used. (default: :obj:`{}`)
         working_dir (Optional[str]): The working directory for operations.
-            If specified, all execution and write operations will be restricted 
-            to this directory. Read operations can access paths outside this directory.
-            Default is None (no restriction).
-        use_shell_mode (bool): Whether to use shell mode.
-        clone_current_env (bool): Whether to clone the current environment.
-        safe_mode (bool): Whether to enable safe mode.
+            If specified, all execution and write operations will be restricted
+            to this directory. Read operations can access paths outside this
+            directory.(default: :obj:`"./workspace"`)
+        need_terminal (bool): Whether to create a terminal interface.
+            (default: :obj:`True`)
+        use_shell_mode (bool): Whether to use shell mode for command execution.
+            (default: :obj:`True`)
+        clone_current_env (bool): Whether to clone the current Python
+            environment.(default: :obj:`False`)
+        safe_mode (bool): Whether to enable safe mode to restrict operations.
+            (default: :obj:`True`)
 
     Note:
         Most functions are compatible with Unix-based systems (macOS, Linux).
@@ -61,9 +66,9 @@ class TerminalToolkit(BaseToolkit):
         shell_sessions: Optional[Dict[str, Any]] = None,
         working_dir: Optional[str] = "./workspace",
         need_terminal: bool = True,
-        use_shell_mode: bool = True,  
-        clone_current_env: bool = False, 
-        safe_mode: bool = True,  
+        use_shell_mode: bool = True,
+        clone_current_env: bool = False,
+        safe_mode: bool = True,
     ):
         super().__init__(timeout=timeout)
         self.shell_sessions = shell_sessions or {}
@@ -73,51 +78,57 @@ class TerminalToolkit(BaseToolkit):
         self.terminal_ready = threading.Event()
         self.gui_thread = None
         self.safe_mode = safe_mode
-        
+
         self.cloned_env_path = None
         self.working_dir = None
         self.use_shell_mode = use_shell_mode
-        
+
         self.python_executable = sys.executable
         self.virtual_env = os.environ.get('VIRTUAL_ENV')
         self.is_macos = platform.system() == 'Darwin'
-                
+
         if working_dir is not None:
             if not os.path.exists(working_dir):
                 os.makedirs(working_dir, exist_ok=True)
             self.working_dir = os.path.abspath(working_dir)
-            self._update_terminal_output(f"Working directory set to: {self.working_dir}\n")
+            self._update_terminal_output(
+                f"Working directory set to: {self.working_dir}\n"
+            )
             if self.safe_mode:
-                self._update_terminal_output("Safe mode enabled: Write operations can only be performed within the working directory\n")
-            
+                self._update_terminal_output(
+                    "Safe mode enabled: Write operations can only "
+                    "be performed within the working directory\n"
+                )
+
             if clone_current_env:
                 self.cloned_env_path = os.path.join(self.working_dir, ".venv")
                 self._clone_current_environment()
             else:
                 self.cloned_env_path = None
 
-
-        
         if need_terminal:
             if self.is_macos:
                 # macOS uses non-GUI mode
-                logger.info("Detected macOS environment, using non-GUI mode")   
+                logger.info("Detected macOS environment, using non-GUI mode")
                 self._setup_file_output()
                 self.terminal_ready.set()
             else:
                 # Other platforms use normal GUI
-                self.gui_thread = threading.Thread(target=self._create_terminal, daemon=True)
+                self.gui_thread = threading.Thread(
+                    target=self._create_terminal, daemon=True
+                )
                 self.gui_thread.start()
                 self.terminal_ready.wait(timeout=5)
 
         self.safe_mode = safe_mode
 
     def _setup_file_output(self):
-        """Set up file output to replace GUI, using a fixed file to simulate terminal"""
+        r"""Set up file output to replace GUI,
+        using a fixed file to simulate terminal.
+        """
 
         self.log_file = os.path.join(os.getcwd(), "camel_terminal.txt")
-        
-        # If the file already exists, clear its content; if not, create a new file
+
         if os.path.exists(self.log_file):
             with open(self.log_file, "w") as f:
                 f.truncate(0)
@@ -131,10 +142,10 @@ class TerminalToolkit(BaseToolkit):
                 f.write("=" * 50 + "\n")
                 f.write(f"Working Directory: {os.getcwd()}\n")
                 f.write("=" * 50 + "\n\n")
-                
+
         # Inform the user
-        print(f"Terminal output redirected to: {self.log_file}")
-        
+        logger.info(f"Terminal output redirected to: {self.log_file}")
+
         def file_update(output: str):
             try:
                 # Directly append to the end of the file
@@ -147,34 +158,41 @@ class TerminalToolkit(BaseToolkit):
                 self.agent_queue.put(output)
             except Exception as e:
                 logger.error(f"Failed to write to terminal: {e}")
-        
+
         # Replace the update method
         self._update_terminal_output = file_update
-    
+
     def _clone_current_environment(self):
-        """Create a new Python virtual environment"""
+        r"""Create a new Python virtual environment."""
         try:
             if os.path.exists(self.cloned_env_path):
-                self._update_terminal_output(f"Using existing environment: {self.cloned_env_path}\n")
+                self._update_terminal_output(
+                    f"Using existing environment: {self.cloned_env_path}\n"
+                )
                 return
-                
-            self._update_terminal_output(f"Creating new Python environment at: {self.cloned_env_path}...\n")
-            
+
+            self._update_terminal_output(
+                f"Creating new Python environment at:{self.cloned_env_path}\n"
+            )
 
             venv.create(self.cloned_env_path, with_pip=True)
-            self._update_terminal_output("New Python environment created successfully!\n")
-                
+            self._update_terminal_output(
+                "New Python environment created successfully!\n"
+            )
+
         except Exception as e:
-            self._update_terminal_output(f"Failed to create environment: {str(e)}\n")
+            self._update_terminal_output(
+                f"Failed to create environment: {e!s}\n"
+            )
             logger.error(f"Failed to create environment: {e}")
 
     def _create_terminal(self):
-        """Create a terminal GUI"""
+        r"""Create a terminal GUI."""
 
         try:
             import tkinter as tk
-            from tkinter import ttk, scrolledtext
-            
+            from tkinter import scrolledtext
+
             def update_terminal():
                 try:
                     while True:
@@ -189,44 +207,47 @@ class TerminalToolkit(BaseToolkit):
 
             self.root = tk.Tk()
             self.root.title(f"{self.os_type} Terminal")
-            
 
             self.root.geometry("800x600")
             self.root.minsize(400, 300)
-            
+
             self.terminal = scrolledtext.ScrolledText(
                 self.root,
                 wrap=tk.WORD,
                 bg='black',
                 fg='white',
                 font=('Consolas', 10),
-                insertbackground='white'  # Cursor color
+                insertbackground='white',  # Cursor color
             )
             self.terminal.pack(fill=tk.BOTH, expand=True)
-            
+
             # Set the handling for closing the window
             def on_closing():
                 self.root.quit()
                 self.root.destroy()
                 self.root = None
-            
+
             self.root.protocol("WM_DELETE_WINDOW", on_closing)
-            
+
             # Start updating
             update_terminal()
-            
+
             # Mark the terminal as ready
             self.terminal_ready.set()
-            
+
             # Start the main loop
             self.root.mainloop()
-                
+
         except Exception as e:
             logger.error(f"Failed to create terminal: {e}")
             self.terminal_ready.set()
 
     def _update_terminal_output(self, output: str):
-        """Update terminal output and send to agent"""
+        r"""Update terminal output and send to agent.
+
+        Args:
+            output (str): The output to be sent to the agent
+        """
         try:
             # If it is macOS , only write to file
             if self.is_macos:
@@ -236,59 +257,69 @@ class TerminalToolkit(BaseToolkit):
                 # Ensure the agent also receives the output
                 self.agent_queue.put(output)
                 return
-            
+
             # For other cases, try to update the GUI (if it exists)
             if hasattr(self, 'root') and self.root:
                 self.output_queue.put(output)
-            
+
             # Always send to agent queue
             self.agent_queue.put(output)
-            
+
         except Exception as e:
             logger.error(f"Failed to update terminal output: {e}")
 
     def _is_path_within_working_dir(self, path: str) -> bool:
-        """Check if the path is within the working directory.
-        
+        r"""Check if the path is within the working directory.
+
         Args:
             path (str): The path to check
-            
+
         Returns:
-            bool: Returns True if the path is within the working directory or if the working directory is not set, otherwise returns False
+            bool: Returns True if the path is within the working directory
+            or if the working directory is not set, otherwise returns False
         """
         if self.working_dir is None:
             return True
-            
+
         abs_path = os.path.abspath(path)
         return abs_path.startswith(self.working_dir)
-    
+
     def _enforce_working_dir_for_execution(self, path: str) -> Optional[str]:
-        """Enforce working directory restrictions, return error message if execution path is not within the working directory.
-        
+        r"""Enforce working directory restrictions, return error message
+        if execution path is not within the working directory.
+
         Args:
             path (str): The path to be used for executing operations
-            
+
         Returns:
-            Optional[str]: Returns error message if the path is not within the working directory, otherwise returns None
+            Optional[str]: Returns error message if the path is not within
+            the working directory, otherwise returns None
         """
         if not self._is_path_within_working_dir(path):
-            return f"Operation restriction: Execution path {path} must be within working directory {self.working_dir}"
+            return (
+                f"Operation restriction: Execution path {path} must "
+                f"be within working directory {self.working_dir}"
+            )
         return None
 
-    def _copy_external_file_to_workdir(self, external_file: str) -> Optional[str]:
-        """Copy external file to working directory.
-        
+    def _copy_external_file_to_workdir(
+        self, external_file: str
+    ) -> Optional[str]:
+        r"""Copy external file to working directory.
+
         Args:
             external_file (str): The path of the external file
-            
+
         Returns:
-            Optional[str]: New path after copying to the working directory, returns None on failure
+            Optional[str]: New path after copying to the working directory,
+            returns None on failure
         """
         if not self.working_dir:
             return None
-        
+
         try:
             import shutil
+
             filename = os.path.basename(external_file)
             new_path = os.path.join(self.working_dir, filename)
             shutil.copy2(external_file, new_path)
@@ -312,7 +343,7 @@ class TerminalToolkit(BaseToolkit):
         Returns:
             str: Matching content found in the file.
         """
-        # This is a read operation, allowing access to files outside the working directory
+
         if not os.path.exists(file):
             return f"File not found: {file}"
 
@@ -323,7 +354,7 @@ class TerminalToolkit(BaseToolkit):
         if sudo:
             error_msg = self._enforce_working_dir_for_execution(file)
             if error_msg:
-                    return error_msg
+                return error_msg
             command.extend(["sudo"])
 
         if self.os_type in ['Darwin', 'Linux']:  # macOS or Linux
@@ -351,7 +382,6 @@ class TerminalToolkit(BaseToolkit):
         Returns:
             str: List of files matching the pattern.
         """
-        # This is a read operation, allowing access to directories outside the working directory
         if not os.path.exists(path):
             return f"Directory not found: {path}"
 
@@ -370,9 +400,17 @@ class TerminalToolkit(BaseToolkit):
 
         try:
             result = subprocess.run(
-                command, check=False, capture_output=True, text=True,shell=True
+                command,
+                check=False,
+                capture_output=True,
+                text=True,
+                shell=True,
             )
-            return result.stdout.strip()
+
+            output = result.stdout.strip()
+            if self.os_type == 'Windows':
+                output = output.replace('\\', '/')
+            return output
         except subprocess.SubprocessError as e:
             logger.error(f"Error finding files by name: {e}")
             return f"Error: {e!s}"
@@ -380,18 +418,18 @@ class TerminalToolkit(BaseToolkit):
     def _sanitize_command(self, command: str, exec_dir: str) -> tuple:
         """
         Check and modify command to ensure safety
-        
+
         Returns: (is safe, modified command or error message)
         """
         if not self.safe_mode:
             return True, command
-            
+
         # Split command for analysis
         parts = []
         current = ""
         in_quotes = False
         quote_char = None
-        
+
         # Parse command, handling quotes
         for char in command:
             if char in ['"', "'"]:
@@ -408,128 +446,218 @@ class TerminalToolkit(BaseToolkit):
                     current = ""
             else:
                 current += char
-                
+
         if current:
             parts.append(current)
-            
+
         if not parts:
             return False, "Empty command"
-            
+
         # Get base command
         base_cmd = parts[0].lower()
-        
+
         # Handle special commands
         if base_cmd in ['cd', 'chdir']:
             # Check if cd command attempts to leave the working directory
             if len(parts) > 1:
                 target_dir = parts[1].strip('"\'')
-                if target_dir.startswith('/') or target_dir.startswith('\\') or ':' in target_dir:
+                if (
+                    target_dir.startswith('/')
+                    or target_dir.startswith('\\')
+                    or ':' in target_dir
+                ):
                     # Absolute path
                     abs_path = os.path.abspath(target_dir)
                 else:
                     # Relative path
-                    abs_path = os.path.abspath(os.path.join(exec_dir, target_dir))
-                    
+                    abs_path = os.path.abspath(
+                        os.path.join(exec_dir, target_dir)
+                    )
+
                 if not self._is_path_within_working_dir(abs_path):
-                    return False, f"Safety restriction: Cannot change to directory outside of working directory {self.working_dir}"
-            
+                    return False, (
+                        f"Safety restriction: Cannot change to directory"
+                        f"outside of working directory {self.working_dir}"
+                    )
+
         # Check file operation commands
-        elif base_cmd in ['rm', 'del', 'rmdir', 'rd', 'deltree', 'erase', 'unlink', 
-                         'shred', 'srm', 'wipe', 'remove']:
+        elif base_cmd in [
+            'rm',
+            'del',
+            'rmdir',
+            'rd',
+            'deltree',
+            'erase',
+            'unlink',
+            'shred',
+            'srm',
+            'wipe',
+            'remove',
+        ]:
             # Check targets of delete commands
-            for i, part in enumerate(parts[1:], 1):
-                if part.startswith('-') or part.startswith('/'):  # Skip options
+            for _, part in enumerate(parts[1:], 1):
+                if part.startswith('-') or part.startswith(
+                    '/'
+                ):  # Skip options
                     continue
-                    
+
                 target = part.strip('"\'')
-                if target.startswith('/') or target.startswith('\\') or ':' in target:
+                if (
+                    target.startswith('/')
+                    or target.startswith('\\')
+                    or ':' in target
+                ):
                     # Absolute path
                     abs_path = os.path.abspath(target)
                 else:
                     # Relative path
                     abs_path = os.path.abspath(os.path.join(exec_dir, target))
-                    
+
                 if not self._is_path_within_working_dir(abs_path):
-                    return False, f"Safety restriction: Cannot delete files outside of working directory {self.working_dir}"
-                    
+                    return False, (
+                        f"Safety restriction: Cannot delete files outside"
+                        f"of working directory {self.working_dir}"
+                    )
+
         # Check write/modify commands
-        elif base_cmd in ['touch', 'mkdir', 'md', 'echo', 'cat', 'cp', 'copy', 'mv', 'move',
-                         'rename', 'ren', 'write', 'output']:
+        elif base_cmd in [
+            'touch',
+            'mkdir',
+            'md',
+            'echo',
+            'cat',
+            'cp',
+            'copy',
+            'mv',
+            'move',
+            'rename',
+            'ren',
+            'write',
+            'output',
+        ]:
             # Check for redirection symbols
             full_cmd = command.lower()
             if '>' in full_cmd:
                 # Find the file path after redirection
                 redirect_parts = command.split('>')
                 if len(redirect_parts) > 1:
-                    output_file = redirect_parts[1].strip().split()[0].strip('"\'')
-                    if output_file.startswith('/') or output_file.startswith('\\') or ':' in output_file:
+                    output_file = (
+                        redirect_parts[1].strip().split()[0].strip('"\'')
+                    )
+                    if (
+                        output_file.startswith('/')
+                        or output_file.startswith('\\')
+                        or ':' in output_file
+                    ):
                         # Absolute path
                         abs_path = os.path.abspath(output_file)
                     else:
                         # Relative path
-                        abs_path = os.path.abspath(os.path.join(exec_dir, output_file))
-                        
+                        abs_path = os.path.abspath(
+                            os.path.join(exec_dir, output_file)
+                        )
+
                     if not self._is_path_within_working_dir(abs_path):
-                        return False, f"Safety restriction: Cannot write to files outside of working directory {self.working_dir}"
-            
+                        return False, (
+                            f"Safety restriction: Cannot write to file outside"
+                            f"of working directory {self.working_dir}"
+                        )
+
             # For cp/mv commands, check target paths
             if base_cmd in ['cp', 'copy', 'mv', 'move']:
                 # Simple handling, assuming the last parameter is the target
                 if len(parts) > 2:
                     target = parts[-1].strip('"\'')
-                    if target.startswith('/') or target.startswith('\\') or ':' in target:
+                    if (
+                        target.startswith('/')
+                        or target.startswith('\\')
+                        or ':' in target
+                    ):
                         # Absolute path
                         abs_path = os.path.abspath(target)
                     else:
                         # Relative path
-                        abs_path = os.path.abspath(os.path.join(exec_dir, target))
-                        
+                        abs_path = os.path.abspath(
+                            os.path.join(exec_dir, target)
+                        )
+
                     if not self._is_path_within_working_dir(abs_path):
-                        return False, f"Safety restriction: Cannot write to files outside of working directory {self.working_dir}"
-                        
+                        return False, (
+                            f"Safety restriction: Cannot write to file outside"
+                            f"of working directory {self.working_dir}"
+                        )
+
         # Check dangerous commands
-        elif base_cmd in ['sudo', 'su', 'chmod', 'chown', 'chgrp', 'passwd', 'mkfs', 'fdisk',
-                         'dd', 'shutdown', 'reboot', 'halt', 'poweroff', 'init']:
-            return False, f"Safety restriction: Command '{base_cmd}' may affect system security and is prohibited"
-            
+        elif base_cmd in [
+            'sudo',
+            'su',
+            'chmod',
+            'chown',
+            'chgrp',
+            'passwd',
+            'mkfs',
+            'fdisk',
+            'dd',
+            'shutdown',
+            'reboot',
+            'halt',
+            'poweroff',
+            'init',
+        ]:
+            return False, (
+                f"Safety restriction: Command '{base_cmd}' may affect system"
+                f"security and is prohibited"
+            )
+
         # Check network commands
         elif base_cmd in ['ssh', 'telnet', 'ftp', 'sftp', 'nc', 'netcat']:
-            return False, f"Safety restriction: Network command '{base_cmd}' is prohibited"
-            
+            return False, (
+                f"Safety restriction: Network command '{base_cmd}'"
+                f"is prohibited"
+            )
+
         # Add copy functionality - copy from external to working directory
         elif base_cmd == 'safecopy':
             # Custom command: safecopy <source file> <target file>
             if len(parts) != 3:
                 return False, "Usage: safecopy <source file> <target file>"
-                
+
             source = parts[1].strip('\'"')
             target = parts[2].strip('\'"')
-            
+
             # Check if source file exists
             if not os.path.exists(source):
                 return False, f"Source file does not exist: {source}"
-                
+
             # Ensure target is within working directory
-            if target.startswith('/') or target.startswith('\\') or ':' in target:
+            if (
+                target.startswith('/')
+                or target.startswith('\\')
+                or ':' in target
+            ):
                 # Absolute path
                 abs_target = os.path.abspath(target)
             else:
                 # Relative path
                 abs_target = os.path.abspath(os.path.join(exec_dir, target))
-                
+
             if not self._is_path_within_working_dir(abs_target):
-                return False, f"Safety restriction: Target file must be within working directory {self.working_dir}"
-                
+                return False, (
+                    f"Safety restriction: Target file must be within "
+                    f"working directory {self.working_dir}"
+                )
+
             # Replace with safe copy command
             if self.os_type == 'Windows':
                 return True, f"copy \"{source}\" \"{abs_target}\""
             else:
                 return True, f"cp \"{source}\" \"{abs_target}\""
-                
+
         return True, command
 
     def shell_exec(self, id: str, exec_dir: str, command: str) -> str:
-        r"""Execute commands. This can be used to execute various commands, such as writing code, executing code, and running commands.
+        r"""Execute commands. This can be used to execute various commands,
+        such as writing code, executing code, and running commands.
 
         Args:
             id (str): Unique identifier of the target shell session.
@@ -545,7 +673,7 @@ class TerminalToolkit(BaseToolkit):
             error_msg = self._enforce_working_dir_for_execution(exec_dir)
             if error_msg:
                 return error_msg
-                
+
         if not os.path.isabs(exec_dir):
             return f"exec_dir must be an absolute path: {exec_dir}"
 
@@ -553,7 +681,9 @@ class TerminalToolkit(BaseToolkit):
             return f"Directory not found: {exec_dir}"
 
         if self.safe_mode:
-            is_safe, sanitized_command = self._sanitize_command(command, exec_dir)
+            is_safe, sanitized_command = self._sanitize_command(
+                command, exec_dir
+            )
             if not is_safe:
                 return f"Command rejected: {sanitized_command}"
             command = sanitized_command
@@ -569,12 +699,13 @@ class TerminalToolkit(BaseToolkit):
         try:
             # First, log the command to be executed
             self._update_terminal_output(f"\n$ {command}\n")
-            
+
             if command.startswith('python') or command.startswith('pip'):
                 if self.cloned_env_path:
-
                     if self.os_type == 'Windows':
-                        base_path = os.path.join(self.cloned_env_path, "Scripts")
+                        base_path = os.path.join(
+                            self.cloned_env_path, "Scripts"
+                        )
                         python_path = os.path.join(base_path, "python.exe")
                         pip_path = os.path.join(base_path, "pip.exe")
                     else:
@@ -582,40 +713,39 @@ class TerminalToolkit(BaseToolkit):
                         python_path = os.path.join(base_path, "python")
                         pip_path = os.path.join(base_path, "pip")
                 else:
-
                     python_path = self.python_executable
                     pip_path = f'"{python_path}" -m pip'
-                    
+
                 if command.startswith('python'):
                     command = command.replace('python', f'"{python_path}"', 1)
                 elif command.startswith('pip'):
                     command = command.replace('pip', pip_path, 1)
 
             if self.is_macos:
-
+                # Type safe version - macOS uses subprocess.run
                 process = subprocess.run(
                     command,
                     shell=True,
                     cwd=exec_dir,
                     capture_output=True,
                     text=True,
-                    env=os.environ.copy()
+                    env=os.environ.copy(),
                 )
-                
+
                 # Process the output
                 output = process.stdout or ""
                 if process.stderr:
                     output += f"\nErrors:\n{process.stderr}"
-                
+
                 # Update session information and terminal
                 self.shell_sessions[id]["output"] = output
                 self._update_terminal_output(output + "\n")
-                
+
                 return output
-                
+
             else:
                 # Non-macOS systems use the Popen method
-                process = subprocess.Popen(
+                proc = subprocess.Popen(
                     command,
                     shell=True,
                     cwd=exec_dir,
@@ -625,16 +755,16 @@ class TerminalToolkit(BaseToolkit):
                     text=True,
                     bufsize=1,
                     universal_newlines=True,
-                    env=os.environ.copy()
+                    env=os.environ.copy(),
                 )
 
                 # Store the process and mark it as running
-                self.shell_sessions[id]["process"] = process
+                self.shell_sessions[id]["process"] = proc
                 self.shell_sessions[id]["running"] = True
-                
+
                 # Get output
-                stdout, stderr = process.communicate()
-                
+                stdout, stderr = proc.communicate()
+
                 output = stdout or ""
                 if stderr:
                     output += f"\nErrors:\n{stderr}"
@@ -642,18 +772,22 @@ class TerminalToolkit(BaseToolkit):
                 # Update session information and terminal
                 self.shell_sessions[id]["output"] = output
                 self._update_terminal_output(output + "\n")
-                
+
                 return output
 
         except Exception as e:
-            error_msg = f"Command execution error: {str(e)}"
+            error_msg = f"Command execution error: {e!s}"
             logger.error(error_msg)
             self._update_terminal_output(f"\nError: {error_msg}\n")
-            
+
             # More detailed error information
             import traceback
+
             detailed_error = traceback.format_exc()
-            return f"Error: {error_msg}\n\nDetailed information: {detailed_error}"
+            return (
+                f"Error: {error_msg}\n\n"
+                f"Detailed information: {detailed_error}"
+            )
 
     def shell_view(self, id: str) -> str:
         r"""View the content of a specified shell session.
@@ -666,14 +800,14 @@ class TerminalToolkit(BaseToolkit):
         """
         if id not in self.shell_sessions:
             return f"Shell session not found: {id}"
-            
+
         session = self.shell_sessions[id]
-        
+
         try:
             # Check process status
             if session["process"].poll() is not None:
                 session["running"] = False
-                
+
             # Collect all new output from agent queue
             new_output = ""
             try:
@@ -683,9 +817,9 @@ class TerminalToolkit(BaseToolkit):
                     session["output"] += output
             except queue.Empty:
                 pass
-            
+
             return new_output or session["output"]
-        
+
         except Exception as e:
             error_msg = f"Error reading terminal output: {e}"
             self._update_terminal_output(f"\nError: {error_msg}\n")
