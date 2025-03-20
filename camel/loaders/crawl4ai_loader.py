@@ -71,7 +71,7 @@ class Crawl4AI:
     async def crawl(
         self,
         start_url: str,
-        max_depth: int = 10,
+        max_depth: int = 1,
         extraction_strategy: Optional[LLMExtractionStrategy] = None,
         **kwargs: Any,
     ) -> List[Dict[str, Any]]:
@@ -103,23 +103,23 @@ class Crawl4AI:
         async with self.crawler() as c:
             while not queue.empty():
                 url, depth = await queue.get()
-
                 try:
                     result: CrawlResult = await c.arun(url, config=config)
                     all_results.append(
                         {
                             "url": url,
                             "raw_result": result,
-                            "extracted_data": result.extracted_data,
+                            "markdown": result.markdown,
                             "cleaned_html": result.cleaned_html,
                         }
                     )
 
                     if depth < max_depth and result.links:
-                        for link in result.links:
-                            if link not in visited_urls:
-                                visited_urls.add(link)
-                                await queue.put((link, depth + 1))
+                        for _, links in result.links.items():
+                            for link in links:
+                                if link['href'] not in visited_urls:
+                                    visited_urls.add(link['href'])
+                                    await queue.put((link['href'], depth + 1))
 
                 except Exception as e:
                     print(f"Error crawling {url}: {e}")
@@ -157,7 +157,7 @@ class Crawl4AI:
         return {
             "url": url,
             "raw_result": result,
-            "extracted_data": result.extracted_data,
+            "markdown": result.markdown,
             "cleaned_html": result.cleaned_html,
         }
 
@@ -239,13 +239,13 @@ async def main():
     # --- Crawling (BFS) ---
     try:
         crawl_results = await crawler.crawl(
-            "https://quotes.toscrape.com", max_depth=2
+            "https://github.com/camel-ai/camel/issues/1685", max_depth=1
         )
         print("\n--- Crawl Results (BFS): ---")
         for page_data in crawl_results:
             print(f"URL: {page_data['url']}")
-            if page_data["extracted_data"]:
-                print(f"Extracted Data: {page_data['extracted_data'][:10]}")
+            if page_data["markdown"]:
+                print(f"Markdown Data: {page_data['markdown']}")
             print("-" * 20)
     except RuntimeError as e:
         print(e)
