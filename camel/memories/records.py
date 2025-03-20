@@ -39,6 +39,8 @@ class MemoryRecord(BaseModel):
             key-value pairs that provide more information. If not given, it
             will be an empty `Dict`.
         timestamp (float, optional): The timestamp when the record was created.
+        agent_id (str): The identifier of the agent associated with this
+            memory.
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -50,6 +52,7 @@ class MemoryRecord(BaseModel):
     timestamp: float = Field(
         default_factory=lambda: datetime.now(timezone.utc).timestamp()
     )
+    agent_id: str = Field(default="")
 
     _MESSAGE_TYPES: ClassVar[dict] = {
         "BaseMessage": BaseMessage,
@@ -73,6 +76,7 @@ class MemoryRecord(BaseModel):
             role_at_backend=record_dict["role_at_backend"],
             extra_info=record_dict["extra_info"],
             timestamp=record_dict["timestamp"],
+            agent_id=record_dict["agent_id"],
         )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -88,6 +92,7 @@ class MemoryRecord(BaseModel):
             "role_at_backend": self.role_at_backend,
             "extra_info": self.extra_info,
             "timestamp": self.timestamp,
+            "agent_id": self.agent_id,
         }
 
     def to_openai_message(self) -> OpenAIMessage:
