@@ -27,7 +27,7 @@ from camel.storages import (
     VectorRecord,
 )
 from camel.utils import Constants
-from camel.utils.chunker import BaseChunker, UioChunker
+from camel.utils.chunker import BaseChunker, UnstructuredIOChunker
 
 if TYPE_CHECKING:
     from unstructured.documents.elements import Element
@@ -104,7 +104,7 @@ class VectorRetriever(BaseRetriever):
             **kwargs (Any): Additional keyword arguments for content parsing.
         """
         if chunker is None:
-            chunker = UioChunker(
+            chunker = UnstructuredIOChunker(
                 chunk_type=chunk_type,
                 max_characters=max_characters,
                 metadata_filename=metadata_filename,

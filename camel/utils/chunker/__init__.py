@@ -13,10 +13,10 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from .base import BaseChunker
 from .code_chunker import CodeChunker
-from .uio_chunker import UioChunker
+from .uio_chunker import UnstructuredIOChunker
 
 __all__ = [
     "BaseChunker",
     "CodeChunker",
-    "UioChunker",
+    "UnstructuredIOChunker",
 ]

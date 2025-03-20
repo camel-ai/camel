@@ -90,6 +90,30 @@ class BaseTokenCounter(ABC):
         """
         pass
 
+    @abstractmethod
+    def encode(self, text: str) -> List[int]:
+        r"""Encode text into token IDs.
+
+        Args:
+            text (str): The text to encode.
+
+        Returns:
+            List[int]: List of token IDs.
+        """
+        pass
+
+    @abstractmethod
+    def decode(self, token_ids: List[int]) -> str:
+        r"""Decode token IDs back to text.
+
+        Args:
+            token_ids (List[int]): List of token IDs to decode.
+
+        Returns:
+            str: Decoded text.
+        """
+        pass
+
 
 class OpenAITokenCounter(BaseTokenCounter):
     def __init__(self, model: UnifiedModelType):
@@ -227,6 +251,28 @@ class OpenAITokenCounter(BaseTokenCounter):
         total = EXTRA_TOKENS + SQUARE_TOKENS * h * w
         return total
 
+    def encode(self, text: str) -> List[int]:
+        r"""Encode text into token IDs.
+
+        Args:
+            text (str): The text to encode.
+
+        Returns:
+            List[int]: List of token IDs.
+        """
+        return self.encoding.encode(text, disallowed_special=())
+
+    def decode(self, token_ids: List[int]) -> str:
+        r"""Decode token IDs back to text.
+
+        Args:
+            token_ids (List[int]): List of token IDs to decode.
+
+        Returns:
+            str: Decoded text.
+        """
+        return self.encoding.decode(token_ids)
+
 
 class AnthropicTokenCounter(BaseTokenCounter):
     @dependencies_required('anthropic')
@@ -265,6 +311,33 @@ class AnthropicTokenCounter(BaseTokenCounter):
             ],
             model=self.model,
         ).input_tokens
+
+    def encode(self, text: str) -> List[int]:
+        r"""Encode text into token IDs.
+
+        Args:
+            text (str): The text to encode.
+
+        Returns:
+            List[int]: List of token IDs.
+        """
+        raise NotImplementedError(
+            "The Anthropic API does not provide direct access to token IDs. "
+            "Use count_tokens_from_messages() for token counting instead."
+        )
+
+    def decode(self, token_ids: List[int]) -> str:
+        r"""Decode token IDs back to text.
+
+        Args:
+            token_ids (List[int]): List of token IDs to decode.
+
+        Returns:
+            str: Decoded text.
+        """
+        raise NotImplementedError(
+            "The Anthropic API does not provide functionality to decode token IDs."
+        )
 
 
 class LiteLLMTokenCounter(BaseTokenCounter):
@@ -318,6 +391,32 @@ class LiteLLMTokenCounter(BaseTokenCounter):
             float: The cost of the completion call in USD.
         """
         return self.completion_cost(completion_response=response)
+
+    def encode(self, text: str) -> List[int]:
+        r"""Encode text into token IDs.
+
+        Args:
+            text (str): The text to encode.
+
+        Returns:
+            List[int]: List of token IDs.
+        """
+        from litellm import encoding
+
+        return encoding.encode(text, disallowed_special=())
+
+    def decode(self, token_ids: List[int]) -> str:
+        r"""Decode token IDs back to text.
+
+        Args:
+            token_ids (List[int]): List of token IDs to decode.
+
+        Returns:
+            str: Decoded text.
+        """
+        from litellm import encoding
+
+        return encoding.decode(token_ids)
 
 
 class MistralTokenCounter(BaseTokenCounter):
@@ -390,3 +489,37 @@ class MistralTokenCounter(BaseTokenCounter):
         )
 
         return mistral_request
+
+    def encode(self, text: str) -> List[int]:
+        r"""Encode text into token IDs.
+
+        Args:
+            text (str): The text to encode.
+
+        Returns:
+            List[int]: List of token IDs.
+        """
+        # Use the Mistral tokenizer to encode the text
+        return self.tokenizer.encode_chat_completion(
+            ChatCompletionRequest(
+                model=self.model_type,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": text,
+                    }
+                ],
+            )
+        )
+
+    def decode(self, token_ids: List[int]) -> str:
+        r"""Decode token IDs back to text.
+
+        Args:
+            token_ids (List[int]): List of token IDs to decode.
+
+        Returns:
+            str: Decoded text.
+        """
+        # Use the Mistral tokenizer to decode the tokens
+        return self.tokenizer.decode(token_ids)
