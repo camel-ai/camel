@@ -83,6 +83,7 @@ class ModelType(UnifiedModelType, Enum):
     SGLANG_LLAMA_3_2_1B = "meta-llama/Llama-3.2-1B-Instruct"
     SGLANG_MIXTRAL_NEMO = "mistralai/Mistral-Nemo-Instruct-2407"
     SGLANG_MISTRAL_7B = "mistralai/Mistral-7B-Instruct-v0.3"
+    SGLANG_OPEN_R1_OLYMPIC_CODER_32B = "open-r1/OlympicCoder-32B"
     SGLANG_QWEN_2_5_7B = "Qwen/Qwen2.5-7B-Instruct"
     SGLANG_QWEN_2_5_32B = "Qwen/Qwen2.5-32B-Instruct"
     SGLANG_QWEN_2_5_72B = "Qwen/Qwen2.5-72B-Instruct"
