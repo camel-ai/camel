@@ -180,13 +180,14 @@ class SingleStepEnv:
 
         # extract verifiable part from llm response
         extraction_result = await self.extractor.extract(action.llm_response)
+        ground_truth = await self.extractor.extract(self._state.final_answer)
 
         if not extraction_result:
             raise RuntimeError(f"Couldn't extract from {action.llm_response}")
 
         # verify the extracted
         verification_result = await self.verifier.verify(
-            solution=extraction_result, ground_truth=self._state.final_answer
+            solution=extraction_result, ground_truth=ground_truth
         )
 
         # compute rewards
@@ -249,7 +250,6 @@ class SingleStepEnv:
 
         return sum(rewards.values()), rewards
 
-    @abstractmethod
     async def _compute_custom_reward(
         self,
         action: Action,
@@ -272,7 +272,7 @@ class SingleStepEnv:
             Dict[str, float]: A dictionary mapping custom reward categories
                 to their values.
         """
-        pass
+        return {}
 
     @property
     def metadata(self) -> Dict[str, Any]:
