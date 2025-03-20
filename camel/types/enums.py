@@ -217,6 +217,14 @@ class ModelType(UnifiedModelType, Enum):
     def __new__(cls, value) -> "ModelType":
         return cast("ModelType", UnifiedModelType.__new__(cls, value))
 
+    @classmethod
+    def from_name(cls, name):
+        r"""Returns the ModelType enum value from a string."""
+        for model_type in cls:
+            if model_type.value == name:
+                return model_type
+        raise ValueError(f"Unknown ModelType name: {name}")
+
     @property
     def value_for_tiktoken(self) -> str:
         if self.is_openai:
@@ -894,6 +902,14 @@ class ModelPlatformType(Enum):
     SILICONFLOW = "siliconflow"
     AIML = "aiml"
     VOLCANO = "volcano"
+
+    @classmethod
+    def from_name(cls, name):
+        r"""Returns the ModelPlatformType enum value from a string."""
+        for model_platfrom_type in cls:
+            if model_platfrom_type.value == name:
+                return model_platfrom_type
+        raise ValueError(f"Unknown ModelPlatformType name: {name}")
 
     @property
     def is_openai(self) -> bool:

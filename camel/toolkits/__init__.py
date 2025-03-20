@@ -50,6 +50,7 @@ from .semantic_scholar_toolkit import SemanticScholarToolkit
 from .zapier_toolkit import ZapierToolkit
 from .sympy_toolkit import SymPyToolkit
 from .mineru_toolkit import MinerUToolkit
+from .memory_toolkit import MemoryToolkit
 from .audio_analysis_toolkit import AudioAnalysisToolkit
 from .excel_toolkit import ExcelToolkit
 from .video_analysis_toolkit import VideoAnalysisToolkit
@@ -60,7 +61,6 @@ from .file_write_toolkit import FileWriteToolkit
 from .terminal_toolkit import TerminalToolkit
 from .pubmed_toolkit import PubMedToolkit
 from .medcalc_toolkit import MedCalcToolkit
-
 
 __all__ = [
     'BaseToolkit',
@@ -98,6 +98,7 @@ __all__ = [
     'ZapierToolkit',
     'SymPyToolkit',
     'MinerUToolkit',
+    'MemoryToolkit',
     'MCPToolkit',
     'MCPToolkitManager',
     'AudioAnalysisToolkit',
