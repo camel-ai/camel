@@ -153,17 +153,6 @@ class StaticDataset(Dataset):
                     return None
 
             rationale = item.get('rationale')
-            if not isinstance(rationale, str):
-                if self._strict:
-                    raise ValueError(
-                        f"Sample at index {idx} has invalid 'rationale': "
-                        f"expected str, got {type(rationale)}"
-                    )
-                else:
-                    logger.warning(
-                        f"Skipping sample at index {idx}: invalid 'rationale'"
-                    )
-                    return None
 
             final_answer = item.get('final_answer')
             if not isinstance(final_answer, str):
