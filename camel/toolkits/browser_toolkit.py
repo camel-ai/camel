@@ -978,6 +978,7 @@ class BrowserToolkit(BaseToolkit):
         self,
         headless: bool = False,
         cache_dir: Optional[str] = None,
+        channel: str = AcceptedBrowserChannels.CHROMIUM.value,
         history_window: int = 5,
         web_agent_model: Optional[BaseModelBackend] = None,
         planning_agent_model: Optional[BaseModelBackend] = None,
@@ -996,7 +997,7 @@ class BrowserToolkit(BaseToolkit):
                 backend for the planning agent.
         """
 
-        self.browser = BaseBrowser(headless=headless, cache_dir=cache_dir)
+        self.browser = BaseBrowser(headless=headless, cache_dir=cache_dir, channel=channel)
         # This needs to be called explicitly
         self.browser.init()
 
