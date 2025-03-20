@@ -239,7 +239,9 @@ class StaticDataset(Dataset):
         if self._length == 0:
             raise RuntimeError("Dataset is empty, cannot sample.")
         idx = self._rng.randint(0, self._length - 1)
-        return self[idx]
+        sample = self[idx]
+        assert isinstance(sample, DataPoint)
+        return sample
 
     @property
     def metadata(self) -> Dict[str, Any]:
