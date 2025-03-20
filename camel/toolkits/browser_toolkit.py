@@ -433,7 +433,7 @@ def _get_random_color(identifier: int) -> Tuple[int, int, int, int]:
 
 class BaseBrowser:
     def __init__(self, headless=True, cache_dir: Optional[str] = None, channel: str = AcceptedBrowserChannels.CHROMIUM.value):
-        r"""Initialize the WebBrowserToolkit instance.
+        r"""Initialize the WebBrowser instance.
 
         Args:
             headless (bool): Whether to run the browser in headless mode.
