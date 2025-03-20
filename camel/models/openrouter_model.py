@@ -195,7 +195,10 @@ class OpenRouterModel(BaseModelBackend):
 
     @property
     def stream(self) -> bool:
-        r"""Returns whether the model supports streaming. But OpenRouter API
-        does not support streaming.
+        r"""Returns whether the model is in stream mode, which sends partial
+        results each time.
+
+        Returns:
+            bool: Whether the model is in stream mode.
         """
-        return False
+        return self.model_config_dict.get("stream", False)
