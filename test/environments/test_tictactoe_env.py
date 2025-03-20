@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -229,7 +228,7 @@ async def test_step_errors():
     with pytest.raises(RuntimeError, match="Episode has ended"):
         await env.step(Action(llm_response="<Action>5</Action>"))
     await env.close()
-    
+
     env = TicTacToeEnv()
     await env.setup()
     env._last_observation = None  # Simulate no reset
