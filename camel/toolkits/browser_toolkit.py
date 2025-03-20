@@ -435,6 +435,7 @@ class BaseBrowser:
         Args:
             headless (bool): Whether to run the browser in headless mode.
             cache_dir (Union[str, None]): The directory to store cache files.
+            persistent (bool): Whether to use a persistent browser context.
 
         Returns:
             None
@@ -941,6 +942,7 @@ class BaseBrowser:
         return markdown_content
 
     def _ensure_browser_installed(self) -> None:
+        r"""Ensure the browser is installed."""
         import platform
         import subprocess
         import sys
