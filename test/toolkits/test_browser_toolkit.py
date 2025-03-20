@@ -26,7 +26,7 @@ from camel.toolkits.browser_toolkit import (
 
 @pytest.fixture(scope="function")
 def base_browser_fixture():
-    with patch('playwright.sync_api.sync_playwright') as mock_playwright:
+    with patch('playwright.sync_api.sync_playwright'):
         browser = BaseBrowser(headless=True, cache_dir="test_cache")
         yield browser
         # Cleanup
@@ -36,7 +36,7 @@ def base_browser_fixture():
 
 @pytest.fixture(scope="function")
 def browser_toolkit_fixture():
-    with patch('playwright.sync_api.sync_playwright') as mock_playwright:
+    with patch('playwright.sync_api.sync_playwright'):
         toolkit = BrowserToolkit(headless=True, cache_dir="test_cache")
         yield toolkit
         # Cleanup
@@ -53,7 +53,7 @@ def test_base_browser_init(base_browser_fixture):
 
 
 def test_base_browser_initialization_order():
-    with patch('playwright.sync_api.sync_playwright') as mock_playwright:
+    with patch('playwright.sync_api.sync_playwright'):
         browser = BaseBrowser(headless=True)  # __init__ called
         assert not hasattr(browser, 'browser')  # browser not launched yet
         assert not hasattr(browser, 'page')  # page not created yet
@@ -64,7 +64,7 @@ def test_base_browser_initialization_order():
 
 
 def test_browser_channel_selection():
-    with patch('playwright.sync_api.sync_playwright') as mock_playwright:
+    with patch('playwright.sync_api.sync_playwright'):
         browser = BaseBrowser(
             headless=True,
             channel=AcceptedBrowserChannels.CHROME.value
