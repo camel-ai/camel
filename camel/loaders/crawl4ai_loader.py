@@ -25,6 +25,7 @@ from crawl4ai import (  # type: ignore[import-untyped]
     AsyncWebCrawler,
     CrawlerRunConfig,
     CrawlResult,
+    LLMConfig,
 )
 from crawl4ai.extraction_strategy import (  # type: ignore[import-untyped]
     LLMExtractionStrategy,
@@ -162,7 +163,11 @@ class Crawl4AI:
         }
 
     async def structured_scrape(
-        self, url: str, response_format: BaseModel, **kwargs: Any
+        self,
+        url: str,
+        response_format: BaseModel,
+        llm_provider: str = 'openai/gpt-4o-mini',
+        **kwargs: Any,
     ) -> Dict[str, Any]:
         r"""Use LLM to extract structured data from a given URL.
 
@@ -186,9 +191,8 @@ class Crawl4AI:
             )
 
         extraction_strategy = LLMExtractionStrategy(
-            provider="openai/gpt-4o",
-            api_token=api_key,
-            schema=response_format.schema(),
+            llm_config=LLMConfig(provider=llm_provider, api_token=api_key),
+            schema=response_format.model_json_schema(),
             extraction_type="schema",
             instruction="Extract the data according to the schema.",
         )
@@ -247,6 +251,34 @@ async def main():
             if page_data["markdown"]:
                 print(f"Markdown Data: {page_data['markdown']}")
             print("-" * 20)
+
+        # --- Scraping ---
+        scrape_result = await crawler.scrape(
+            "https://github.com/camel-ai/camel/issues/1685"
+        )
+        print("\n--- Scrape Result: ---")
+        print(f"URL: {scrape_result['url']}")
+        print(f"Markdown Data: {scrape_result['markdown']}")
+        print("-" * 20)
+
+        # --- Structured Scraping ---
+        from pydantic import BaseModel, Field
+
+        class MovieResponse(BaseModel):
+            title: str = Field(..., description="The title of the movie.")
+            year: int = Field(
+                ..., description="The release year of the movie."
+            )
+            rating: float = Field(..., description="The rating of the movie.")
+
+        structured_scrape_result = await crawler.structured_scrape(
+            "https://www.imdb.com/title/tt0111161/",
+            response_format=MovieResponse,
+        )
+        print("\n--- Structured Scrape Result: ---")
+        print(f"URL: {structured_scrape_result[0].url}")
+        print(f"Markdown Data: {structured_scrape_result[0].markdown}")
+        print("-" * 20)
     except RuntimeError as e:
         print(e)
 
