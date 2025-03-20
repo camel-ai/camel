@@ -988,6 +988,8 @@ class BrowserToolkit(BaseToolkit):
         """
 
         self.browser = BaseBrowser(headless=headless, cache_dir=cache_dir)
+        # This needs to be called explicitly
+        self.browser.init()
 
         self.history_window = history_window
         self.web_agent_model = web_agent_model
