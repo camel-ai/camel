@@ -33,7 +33,7 @@ from typing import (
     Union,
     cast,
 )
-
+from enum import Enum
 from PIL import Image, ImageDraw, ImageFont
 
 if TYPE_CHECKING:
@@ -124,6 +124,15 @@ class InteractiveRegion(TypedDict):
     aria_name: str
     v_scrollable: bool
     rects: List[DOMRectangle]
+
+class AcceptedBrowserChannels(Enum):
+    """
+    Enum for the accepted browser channels.
+    """
+    CHROME = "chrome"
+    FIREFOX = "firefox"
+    MSEDGE = "msedge"
+    CHROMIUM = "chromium"
 
 
 def _get_str(d: Any, k: str) -> str:
