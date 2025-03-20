@@ -460,7 +460,6 @@ def test_chat_agent_record_messages_condition_with_tools():
     assistant.model_backend.run = MagicMock(
         return_value=model_backend_rsp_base
     )
-    original_update_memory = assistant.update_memory
     assistant.update_memory = MagicMock()
 
     # Create a user message
@@ -480,7 +479,7 @@ def test_chat_agent_record_messages_condition_with_tools():
     assert assistant.update_memory.call_count == 0
 
     # Restore original method
-    assistant.update_memory = original_update_memory
+    assistant.update_memory = None
 
 
 @pytest.mark.model_backend
