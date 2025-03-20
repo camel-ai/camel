@@ -361,11 +361,11 @@ def test_chat_agent_step_with_external_tools(step_call_count=3):
         response = external_tool_agent.step(usr_msg)
         assert not response.msg.content
 
-        external_tool_call_request = response.info[
-            "external_tool_call_request"
+        external_tool_call_requests = response.info[
+            "external_tool_call_requests"
         ]
         assert (
-            external_tool_call_request.tool_name == "sub"
+            external_tool_call_requests[0].tool_name == "sub"
         ), f"Error in calling round {i+1}"
 
 
