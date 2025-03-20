@@ -1,6 +1,6 @@
 # Task
 
-For more detailed usage information, please refer to our cookbook: [Task Generation Cookbook](../cookbooks/task_generation.ipynb)
+For more detailed usage information, please refer to our cookbook: [Task Generation Cookbook](../cookbooks/multi_agent_society/task_generation.ipynb)
 
 ## 1. Concept
 > In the CAMEL framework, a task is a specific assignment that can be delegated to an agent and resolved by that agent. Tasks represent a higher-level concept than prompts and should be managed by other modules such as the Planner and Workforce. There are two key characteristics of a task: 
