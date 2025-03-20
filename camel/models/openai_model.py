@@ -159,7 +159,7 @@ class OpenAIModel(BaseModelBackend):
                 processed_message["role"] == "system"
                 or processed_message["role"] == "developer"
             ):
-                processed_message["role"] = "user"
+                processed_message["role"] = "user" # type: ignore[arg-type]
             processed_messages.append(processed_message)
 
         return processed_messages
