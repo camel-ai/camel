@@ -13,7 +13,6 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 
-from abc import abstractmethod
 from typing import Any, Dict, Optional, Tuple, Union
 
 from camel.datasets import BaseGenerator, DataPoint, StaticDataset

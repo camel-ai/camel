@@ -139,8 +139,8 @@ class PythonVerifier(BaseVerifier):
                 error_message="Virtual environment is not set up.",
             )
 
-        script = "print(" + solution.strip() + ")" 
-        # FIXME: This is quite hacky and should be addressed 
+        script = "print(" + solution.strip() + ")"
+        # FIXME: This is quite hacky and should be addressed
         venv_python = os.path.join(self.venv_path, self.bin_dir, "python")
 
         if not os.path.exists(venv_python):
@@ -171,9 +171,7 @@ class PythonVerifier(BaseVerifier):
                 if ground_truth is not None:
                     # Normalize both strings by removing extra whitespace
                     normalized_output = ' '.join(output_result.strip().split())
-                    normalized_truth = ' '.join(
-                        ground_truth.strip().split()
-                    )
+                    normalized_truth = ' '.join(ground_truth.strip().split())
 
                     if normalized_output == normalized_truth:
                         return VerificationResult(
