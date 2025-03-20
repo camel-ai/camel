@@ -16,7 +16,10 @@ from __future__ import annotations
 import json
 import logging
 import textwrap
+import uuid
 from collections import defaultdict
+from datetime import datetime
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -59,6 +62,7 @@ from camel.models import (
 )
 from camel.prompts import TextPrompt
 from camel.responses import ChatAgentResponse
+from camel.storages import JsonStorage
 from camel.toolkits import FunctionTool
 from camel.types import (
     ChatCompletion,
@@ -138,6 +142,8 @@ class ChatAgent(BaseAgent):
             the next model in ModelManager. (default: :str:`round_robin`)
         single_iteration (bool): Whether to let the agent perform only one
             model calling at each step. (default: :obj:`False`)
+        agent_id (str, optional): The ID of the agent. If not provided, a
+            random UUID will be generated. (default: :obj:`None`)
     """
 
     def __init__(
@@ -157,6 +163,7 @@ class ChatAgent(BaseAgent):
         response_terminators: Optional[List[ResponseTerminator]] = None,
         scheduling_strategy: str = "round_robin",
         single_iteration: bool = False,
+        agent_id: Optional[str] = None,
     ) -> None:
         # Set up model backend
         self.model_backend = ModelManager(
@@ -171,15 +178,24 @@ class ChatAgent(BaseAgent):
             scheduling_strategy=scheduling_strategy,
         )
         self.model_type = self.model_backend.model_type
+        # Assign unique ID
+        self.agent_id = agent_id if agent_id else str(uuid.uuid4())
 
         # Set up memory
         context_creator = ScoreBasedContextCreator(
             self.model_backend.token_counter,
             token_limit or self.model_backend.token_limit,
         )
+
         self.memory: AgentMemory = memory or ChatHistoryMemory(
-            context_creator, window_size=message_window_size
+            context_creator,
+            window_size=message_window_size,
+            agent_id=self.agent_id,
         )
+
+        # So we don't have to pass agent_id when we define memory
+        if memory is not None:
+            memory.agent_id = self.agent_id
 
         # Set up system message and initialize messages
         self._original_system_message = (
@@ -321,8 +337,100 @@ class ChatAgent(BaseAgent):
             role (OpenAIBackendRole): The backend role type.
         """
         self.memory.write_record(
-            MemoryRecord(message=message, role_at_backend=role)
+            MemoryRecord(
+                message=message,
+                role_at_backend=role,
+                timestamp=datetime.now().timestamp(),
+                agent_id=self.agent_id,
+            )
         )
+
+    def load_memory(self, memory: AgentMemory) -> None:
+        r"""Load the provided memory into the agent.
+
+        Args:
+            memory (AgentMemory): The memory to load into the agent.
+
+        Returns:
+            None
+        """
+
+        for context_record in memory.retrieve():
+            self.memory.write_record(context_record.memory_record)
+        logger.info(f"Memory loaded from {memory}")
+
+    def load_memory_from_path(self, path: str) -> None:
+        r"""Loads memory records from a JSON file filtered by this agent's ID.
+
+        Args:
+            path (str): The file path to a JSON memory file that uses
+                JsonStorage.
+
+        Raises:
+            ValueError: If no matching records for the agent_id are found
+                (optional check; commented out below).
+        """
+        json_store = JsonStorage(Path(path))
+        all_records = json_store.load()
+
+        if not all_records:
+            raise ValueError(
+                f"No records found for agent_id={self.agent_id} in {path}"
+            )
+
+        for record_dict in all_records:
+            # Validate the record dictionary before conversion
+            required_keys = ['message', 'role_at_backend', 'agent_id']
+            if not all(key in record_dict for key in required_keys):
+                logger.warning(
+                    f"Skipping invalid record: missing required "
+                    f"keys in {record_dict}"
+                )
+                continue
+
+            # Validate message structure in the record
+            if (
+                not isinstance(record_dict['message'], dict)
+                or '__class__' not in record_dict['message']
+            ):
+                logger.warning(
+                    f"Skipping invalid record: malformed message "
+                    f"structure in {record_dict}"
+                )
+                continue
+
+            try:
+                record = MemoryRecord.from_dict(record_dict)
+                self.memory.write_records([record])
+            except Exception as e:
+                logger.warning(
+                    f"Error converting record to MemoryRecord: {e}. "
+                    f"Record: {record_dict}"
+                )
+        logger.info(f"Memory loaded from {path}")
+
+    def save_memory(self, path: str) -> None:
+        r"""Retrieves the current conversation data from memory and writes it
+        into a JSON file using JsonStorage.
+
+        Args:
+            path (str): Target file path to store JSON data.
+        """
+        json_store = JsonStorage(Path(path))
+        context_records = self.memory.retrieve()
+        to_save = [cr.memory_record.to_dict() for cr in context_records]
+        json_store.save(to_save)
+        logger.info(f"Memory saved to {path}")
+
+    def clear_memory(self) -> None:
+        r"""Clear the agent's memory and reset to initial state.
+
+        Returns:
+            None
+        """
+        self.memory.clear()
+        if self.system_message is not None:
+            self.update_memory(self.system_message, OpenAIBackendRole.SYSTEM)
 
     def _generate_system_message_for_output_language(
         self,
