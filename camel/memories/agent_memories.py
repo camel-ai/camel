@@ -21,7 +21,7 @@ from camel.memories.records import ContextRecord, MemoryRecord
 from camel.storages import (
     BaseKeyValueStorage,
     BaseVectorStorage,
-    BaseMemoryStorage,
+    BaseTextStorage,
     Mem0Storage,
 )
 from camel.types import OpenAIBackendRole
@@ -248,7 +248,7 @@ class Mem0Memory(AgentMemory):
 
     Args:
         context_creator (BaseContextCreator): A model context creator.
-        storage (Optional[BaseMemoryStorage], optional): A Mem0 storage backend. If
+        storage (Optional[BaseTextStorage], optional): A Mem0 storage backend. If
             `None`, a new :obj:`Mem0Storage` will be created. (default: :obj:`None`)
         api_key (str, optional): The API key for Mem0. Only used if storage is None.
         user_id (str, optional): The user ID for memory context.
@@ -262,26 +262,32 @@ class Mem0Memory(AgentMemory):
     def __init__(
         self,
         context_creator: BaseContextCreator,
-        storage: Optional[BaseMemoryStorage] = None,
+        storage: Optional[BaseTextStorage] = None,
         api_key: Optional[str] = None,
-        user_id: Optional[str] = None,
         agent_id: Optional[str] = None,
-        run_id: Optional[str] = None,
+        user_id: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
         retrieve_limit: int = 5,
     ) -> None:
         self._context_creator = context_creator
         self._storage = storage or Mem0Storage(
             api_key=api_key,
-            user_id=user_id,
             agent_id=agent_id,
-            run_id=run_id,
+            user_id=user_id,
             metadata=metadata,
         )
         if not isinstance(self._storage, Mem0Storage):
             raise TypeError("Storage must be an instance of Mem0Storage")
         self._retrieve_limit = retrieve_limit
         self._current_topic: str = ""
+    
+    @property
+    def agent_id(self) -> Optional[str]:
+        return self._agent_id
+
+    @agent_id.setter
+    def agent_id(self, val: Optional[str]) -> None:
+        self._agent_id = val
 
     def retrieve(self) -> List[ContextRecord]:
         r"""Retrieves relevant memories using semantic search based on the current
@@ -302,23 +308,12 @@ class Mem0Memory(AgentMemory):
         # Convert memories to context records
         context_records = []
         for memory in memories:
-            if isinstance(memory.get("text"), dict):
-                text = memory["text"]
-                context_records.append(
-                    ContextRecord(
-                        role_at_backend=text.get("role", OpenAIBackendRole.USER),
-                        content=text.get("content", ""),
-                        metadata=memory.get("metadata", {}),
-                    )
+            context_records.append(
+                ContextRecord(
+                    memory_record=memory["memory_record"],
+                    score=memory["score"],
                 )
-            elif isinstance(memory.get("text"), str):
-                context_records.append(
-                    ContextRecord(
-                        role_at_backend=OpenAIBackendRole.USER,
-                        content=memory["text"],
-                        metadata=memory.get("metadata", {}),
-                    )
-                )
+            )
 
         return context_records
 

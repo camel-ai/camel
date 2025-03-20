@@ -15,6 +15,8 @@
 import unittest
 from typing import Dict, Any, List
 from unittest.mock import Mock, patch
+from datetime import datetime
+from uuid import UUID
 
 from camel.memories import (
     AgentMemory,
@@ -24,8 +26,8 @@ from camel.memories import (
     ContextRecord,
 )
 from camel.messages import BaseMessage
-from camel.storages import BaseMemoryStorage, Mem0Storage
-from camel.types import OpenAIBackendRole
+from camel.storages import Mem0Storage
+from camel.types import OpenAIBackendRole, RoleType
 
 
 class MockContextCreator(BaseContextCreator):
@@ -44,7 +46,6 @@ class TestMem0Memory(unittest.TestCase):
         self.api_key = "test_api_key"
         self.user_id = "test_user"
         self.agent_id = "test_agent"
-        self.run_id = "test_run"
         self.metadata = {"test_key": "test_value"}
         self.retrieve_limit = 5
 
@@ -58,7 +59,6 @@ class TestMem0Memory(unittest.TestCase):
             api_key=self.api_key,
             user_id=self.user_id,
             agent_id=self.agent_id,
-            run_id=self.run_id,
             metadata=self.metadata,
             retrieve_limit=self.retrieve_limit,
         )
@@ -71,6 +71,14 @@ class TestMem0Memory(unittest.TestCase):
         self.assertEqual(self.memory._retrieve_limit, self.retrieve_limit)
         self.assertEqual(self.memory._current_topic, "")
 
+    def test_agent_id_property(self):
+        """Test agent_id property and setter."""
+        # Set agent_id
+        test_id = "new_agent_id"
+        self.memory.agent_id = test_id
+        # Verify it was set correctly
+        self.assertEqual(self.memory.agent_id, test_id)
+
     def test_initialization_without_storage(self):
         """Test initialization without providing storage."""
         with patch('camel.memories.agent_memories.Mem0Storage') as mock_storage_class:
@@ -80,9 +88,8 @@ class TestMem0Memory(unittest.TestCase):
             )
             mock_storage_class.assert_called_once_with(
                 api_key=self.api_key,
-                user_id=None,
                 agent_id=None,
-                run_id=None,
+                user_id=None,
                 metadata=None,
             )
             self.assertIsNotNone(memory._storage)
@@ -96,23 +103,41 @@ class TestMem0Memory(unittest.TestCase):
     def test_retrieve_with_topic(self):
         """Test retrieve with a current topic."""
         self.memory._current_topic = "test topic"
-        mock_memories = [
-            {
-                "text": {
-                    "role": OpenAIBackendRole.USER,
-                    "content": "test content 1"
-                },
-                "metadata": {"score": 0.9}
-            },
-            {
-                "text": {
-                    "role": OpenAIBackendRole.ASSISTANT,
-                    "content": "test content 2"
-                },
-                "metadata": {"score": 0.8}
-            }
+        
+        # Create mock memory records
+        mock_memory_record1 = MemoryRecord(
+            uuid=UUID("123e4567-e89b-12d3-a456-426614174000"),
+            message=BaseMessage(
+                role_name="user",
+                role_type=RoleType.USER,
+                meta_dict={},
+                content="test content 1"
+            ),
+            role_at_backend=OpenAIBackendRole.USER,
+            extra_info={"type": "test1"},
+            timestamp=datetime.fromisoformat("2023-01-01T00:00:00").timestamp(),
+            agent_id="test_agent"
+        )
+        
+        mock_memory_record2 = MemoryRecord(
+            uuid=UUID("123e4567-e89b-12d3-a456-426614174001"),
+            message=BaseMessage(
+                role_name="assistant",
+                role_type=RoleType.ASSISTANT,
+                meta_dict={},
+                content="test content 2"
+            ),
+            role_at_backend=OpenAIBackendRole.ASSISTANT,
+            extra_info={"type": "test2"},
+            timestamp=datetime.fromisoformat("2023-01-02T00:00:00").timestamp(),
+            agent_id="test_agent"
+        )
+        
+        # Mock the storage.search return value in the format expected by Mem0Memory.retrieve
+        self.mock_storage.search.return_value = [
+            {"memory_record": mock_memory_record1, "score": 0.9},
+            {"memory_record": mock_memory_record2, "score": 0.8},
         ]
-        self.mock_storage.search.return_value = mock_memories
 
         results = self.memory.retrieve()
 
@@ -120,51 +145,57 @@ class TestMem0Memory(unittest.TestCase):
             query="test topic",
             limit=self.retrieve_limit,
         )
+        
         self.assertEqual(len(results), 2)
         self.assertIsInstance(results[0], ContextRecord)
-        self.assertEqual(results[0].role_at_backend, OpenAIBackendRole.USER)
-        self.assertEqual(results[0].content, "test content 1")
-
-    def test_retrieve_with_string_text(self):
-        """Test retrieve with memories containing string text."""
-        self.memory._current_topic = "test topic"
-        mock_memories = [
-            {
-                "text": "plain text memory",
-                "metadata": {"score": 0.9}
-            }
-        ]
-        self.mock_storage.search.return_value = mock_memories
-
-        results = self.memory.retrieve()
-
-        self.assertEqual(len(results), 1)
-        self.assertEqual(results[0].role_at_backend, OpenAIBackendRole.USER)
-        self.assertEqual(results[0].content, "plain text memory")
+        self.assertEqual(results[0].memory_record, mock_memory_record1)
+        self.assertEqual(results[0].score, 0.9)
+        self.assertEqual(results[1].memory_record, mock_memory_record2)
+        self.assertEqual(results[1].score, 0.8)
 
     def test_write_records(self):
         """Test writing memory records."""
-        mock_message = Mock(spec=BaseMessage)
-        mock_message.content = "test content"
+        # Create test messages
+        user_message = BaseMessage(
+            role_name="user",
+            role_type=RoleType.USER,
+            meta_dict={},
+            content="test user content"
+        )
         
+        assistant_message = BaseMessage(
+            role_name="assistant",
+            role_type=RoleType.ASSISTANT,
+            meta_dict={},
+            content="test assistant content"
+        )
+        
+        # Create memory records
         records = [
-            MemoryRecord(role_at_backend=OpenAIBackendRole.USER,
-                        message=mock_message),
-            MemoryRecord(role_at_backend=OpenAIBackendRole.ASSISTANT,
-                        message=mock_message),
+            MemoryRecord(
+                role_at_backend=OpenAIBackendRole.USER,
+                message=user_message
+            ),
+            MemoryRecord(
+                role_at_backend=OpenAIBackendRole.ASSISTANT,
+                message=assistant_message
+            ),
         ]
 
         self.memory.write_records(records)
 
         # Verify current topic is updated from user message
-        self.assertEqual(self.memory._current_topic, "test content")
+        self.assertEqual(self.memory._current_topic, "test user content")
 
         # Verify storage.add is called with correct format
         self.mock_storage.add.assert_called_once()
         call_args = self.mock_storage.add.call_args[0][0]
+        
         self.assertEqual(len(call_args), 2)
         self.assertEqual(call_args[0]["role"], OpenAIBackendRole.USER)
-        self.assertEqual(call_args[0]["content"], "test content")
+        self.assertEqual(call_args[0]["content"], "test user content")
+        self.assertEqual(call_args[1]["role"], OpenAIBackendRole.ASSISTANT)
+        self.assertEqual(call_args[1]["content"], "test assistant content")
 
     def test_get_context_creator(self):
         """Test getting the context creator."""

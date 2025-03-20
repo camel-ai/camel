@@ -15,23 +15,27 @@
 import logging
 import os
 from typing import Any, Dict, List, Optional, Union
+from datetime import datetime
+from uuid import UUID
 
-from camel.storages.text_storages import BaseMemoryStorage
+from camel.storages.text_storages import BaseTextStorage
+from camel.types import OpenAIBackendRole, RoleType
+from camel.messages import BaseMessage
+from camel.memories.records import MemoryRecord
 
 logger = logging.getLogger(__name__)
 
 
-class Mem0Storage(BaseMemoryStorage):
-    r"""A concrete implementation of the :obj:`BaseMemoryStorage` using Mem0
-    as the backend. This storage system uses Mem0's memory capabilities to store,
-    search, and manage memories with context.
+class Mem0Storage(BaseTextStorage):
+    r"""A concrete implementation of the :obj:`BaseTextStorage` using Mem0
+    as the backend. This storage system uses Mem0's text capabilities to store,
+    search, and manage text with context.
 
     Args:
         api_key (str, optional): The API key for authentication. If not provided,
             will try to get from environment variable MEM0_API_KEY.
         user_id (str, optional): Default user ID to associate memories with.
         agent_id (str, optional): Default agent ID to associate memories with.
-        run_id (str, optional): Default run ID for session-based memories.
         metadata (Dict[str, Any], optional): Default metadata to include with
             all memories.
 
@@ -42,16 +46,15 @@ class Mem0Storage(BaseMemoryStorage):
     def __init__(
         self,
         api_key: Optional[str] = None,
-        user_id: Optional[str] = None,
         agent_id: Optional[str] = None,
-        run_id: Optional[str] = None,
+        user_id: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
         try:
-            from mem0ai import MemoryClient
+            from mem0 import MemoryClient
         except ImportError as exc:
             logger.error(
-                "Please install `mem0ai` first. You can install it by "
+                "Please install `mem0` first. You can install it by "
                 "running `pip install mem0ai`."
             )
             raise exc
@@ -64,55 +67,46 @@ class Mem0Storage(BaseMemoryStorage):
             )
 
         self.client = MemoryClient(api_key=self.api_key)
-        self.user_id = user_id
         self.agent_id = agent_id
-        self.run_id = run_id
+        self.user_id = user_id
         self.metadata = metadata or {}
 
     def _prepare_options(
         self,
-        user_id: Optional[str] = None,
         agent_id: Optional[str] = None,
-        run_id: Optional[str] = None,
+        user_id: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Helper method to prepare options for Mem0 API calls."""
         options = {
-            "user_id": user_id or self.user_id,
             "agent_id": agent_id or self.agent_id,
-            "run_id": run_id or self.run_id,
+            "user_id": user_id or self.user_id,
             "metadata": {**self.metadata, **(metadata or {})},
+            "output_format": "v1.1",
             **kwargs
         }
         return {k: v for k, v in options.items() if v is not None}
 
     def _prepare_filters(
         self,
-        user_id: Optional[str] = None,
         agent_id: Optional[str] = None,
-        run_id: Optional[str] = None,
+        user_id: Optional[str] = None,
         filters: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Helper method to prepare filters for Mem0 API calls."""
         base_filters = {"AND": []}
         if filters:
             base_filters["AND"].append(filters)
-        if user_id or self.user_id:
-            base_filters["AND"].append({"user_id": user_id or self.user_id})
         if agent_id or self.agent_id:
             base_filters["AND"].append({"agent_id": agent_id or self.agent_id})
-        if run_id or self.run_id:
-            base_filters["AND"].append({"run_id": run_id or self.run_id})
+        if user_id or self.user_id:
+            base_filters["AND"].append({"user_id": user_id or self.user_id})
         return base_filters if base_filters["AND"] else {}
 
     def add(
         self,
         content: Union[str, List[Dict[str, str]]],
-        user_id: Optional[str] = None,
-        agent_id: Optional[str] = None,
-        run_id: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Add a memory or list of memories to Mem0 storage."""
@@ -120,16 +114,21 @@ class Mem0Storage(BaseMemoryStorage):
             if isinstance(content, str):
                 messages = [{"role": "user", "content": content}]
             else:
-                messages = content
+                messages = []
+                for message in content:
+                    print(message["role"])
+                    if message["role"] == OpenAIBackendRole.USER:
+                        messages.append({"role": "user", "content": message["content"]})
+                    else:
+                        messages.append({"role": "assistant", "content": message["content"]})
 
             options = self._prepare_options(
-                user_id=user_id,
-                agent_id=agent_id,
-                run_id=run_id,
-                metadata=metadata,
+                agent_id=self.agent_id,
+                user_id=self.user_id,
+                metadata=self.metadata,
                 **kwargs
             )
-            return self.client.add(messages, options)
+            return self.client.add(messages, **options)
         except Exception as e:
             logger.error(f"Error adding memory: {e}")
             return {"error": str(e)}
@@ -137,40 +136,46 @@ class Mem0Storage(BaseMemoryStorage):
     def search(
         self,
         query: str,
-        user_id: Optional[str] = None,
-        agent_id: Optional[str] = None,
-        run_id: Optional[str] = None,
-        filters: Optional[Dict[str, Any]] = None,
         limit: int = 10,
         **kwargs: Any,
     ) -> List[Dict[str, Any]]:
         """Search for memories in Mem0 storage using semantic similarity."""
         try:
-            options = self._prepare_options(
-                user_id=user_id,
-                agent_id=agent_id,
-                run_id=run_id,
-                version="v2",
-                filters=self._prepare_filters(
-                    user_id=user_id,
-                    agent_id=agent_id,
-                    run_id=run_id,
-                    filters=filters,
-                ),
-                limit=limit,
-                **kwargs
+            filters = self._prepare_filters(
+                agent_id=self.agent_id,
+                user_id=self.user_id,
             )
-            results = self.client.search(query, options)
-            return results.get("memories", [])
+            results = self.client.search(query=query, version="v2", top_k=limit, **filters)
+
+            # Transform results into MemoryRecord objects
+            transformed_results = []
+            for result in results:
+                memory_record = MemoryRecord(
+                    uuid=UUID(result["id"]),
+                    message=BaseMessage(
+                        role_name="user",
+                        role_type=RoleType.USER,
+                        meta_dict={},
+                        content=result["memory"]
+                    ),
+                    role_at_backend=OpenAIBackendRole.USER,
+                    extra_info=result.get("metadata", {}),
+                    timestamp=datetime.fromisoformat(result["created_at"]).timestamp(),
+                    agent_id=result.get("agent_id", "")
+                )
+                # Add score from search result
+                result_dict = {}
+                result_dict["memory_record"] = memory_record
+                result_dict["score"] = result.get("score", 0.0)
+                transformed_results.append(result_dict)
+
+            return transformed_results
         except Exception as e:
             logger.error(f"Error searching memories: {e}")
             return []
 
     def get_all(
         self,
-        user_id: Optional[str] = None,
-        agent_id: Optional[str] = None,
-        run_id: Optional[str] = None,
         filters: Optional[Dict[str, Any]] = None,
         page: int = 1,
         page_size: int = 100,
@@ -179,14 +184,12 @@ class Mem0Storage(BaseMemoryStorage):
         """Retrieve all memories from Mem0 storage matching criteria."""
         try:
             options = self._prepare_options(
-                user_id=user_id,
-                agent_id=agent_id,
-                run_id=run_id,
+                agent_id=self.agent_id,
+                user_id=self.user_id,
                 version="v2",
                 filters=self._prepare_filters(
-                    user_id=user_id,
-                    agent_id=agent_id,
-                    run_id=run_id,
+                    agent_id=self.agent_id,
+                    user_id=self.user_id,
                     filters=filters,
                 ),
                 page=page,
@@ -201,9 +204,6 @@ class Mem0Storage(BaseMemoryStorage):
     def delete(
         self,
         memory_ids: Optional[List[str]] = None,
-        user_id: Optional[str] = None,
-        agent_id: Optional[str] = None,
-        run_id: Optional[str] = None,
         filters: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
@@ -215,9 +215,8 @@ class Mem0Storage(BaseMemoryStorage):
             else:
                 # Delete memories matching filters
                 filters = self._prepare_filters(
-                    user_id=user_id,
-                    agent_id=agent_id,
-                    run_id=run_id,
+                    agent_id=self.agent_id,
+                    user_id=self.user_id,
                     filters=filters,
                 )
                 return self.client.delete_users(filters)

@@ -254,6 +254,104 @@ Methods:
 - `get_context_creator()`: Get the context creator
 - `clear()`: Remove all records from both memory blocks
 
+### 5.4 Mem0Memory
+
+An `AgentMemory` implementation that uses [Mem0](https://mem0.ai/) cloud memory capabilities for semantic search and context management.
+
+Initialization:
+
+- `context_creator`: `BaseContextCreator`
+- `storage`: Optional `Mem0Storage`
+- `api_key`: Optional str for Mem0 API authentication
+- `agent_id`: Optional str to associate memories with an agent
+- `user_id`: Optional str to associate memories with a user
+- `metadata`: Optional dictionary of metadata to include with all memories
+- `retrieve_limit`: int for maximum number of retrieved messages (default: `5`)
+
+Methods:
+
+- `retrieve()`: Get semantically relevant messages based on the current topic
+- `write_records()`: Write new records and update the current topic
+- `get_context_creator()`: Get the context creator
+- `clear()`: Remove all memories
+
+Example usage:
+
+```python
+from camel.memories import Mem0Memory, MemoryRecord, ScoreBasedContextCreator
+from camel.messages import BaseMessage
+from camel.types import ModelType, OpenAIBackendRole
+from camel.utils import OpenAITokenCounter
+from camel.storages import Mem0Storage
+
+# Initialize the MEM0 API key (get from environment variable or provide directly)
+# You can get the API key https://app.mem0.ai/dashboard/api-keys
+api_key = "your_mem0_api_key"
+
+# Initialize the memory
+memory = Mem0Memory(
+    context_creator=ScoreBasedContextCreator(
+        token_counter=OpenAITokenCounter(ModelType.GPT_4O_MINI),
+        token_limit=1024,
+    ),
+    api_key=api_key,
+    agent_id="agent456",
+    user_id="user123",  # Optional identifier for the user
+    metadata={"source": "example"},  # Optional metadata for all memories
+    retrieve_limit=5,  # Maximum number of records to retrieve
+)
+
+# Create and write new records
+records = [
+    MemoryRecord(
+        message=BaseMessage.make_user_message(
+            role_name="User",
+            meta_dict=None,
+            content="What is CAMEL AI?",
+        ),
+        role_at_backend=OpenAIBackendRole.USER,
+    ),
+    MemoryRecord(
+        message=BaseMessage.make_assistant_message(
+            role_name="Agent",
+            meta_dict=None,
+            content="CAMEL-AI.org is the 1st LLM multi-agent framework and "
+                    "an open-source community dedicated to finding the scaling law "
+                    "of agents.",
+        ),
+        role_at_backend=OpenAIBackendRole.ASSISTANT,
+    ),
+]
+memory.write_records(records)
+
+# Later, when the user asks a related question:
+new_question = MemoryRecord(
+    message=BaseMessage.make_user_message(
+        role_name="User",
+        meta_dict=None,
+        content="Tell me more about multi-agent frameworks",
+    ),
+    role_at_backend=OpenAIBackendRole.USER,
+)
+memory.write_records([new_question])
+
+# Get context for the agent - this will retrieve relevant memories
+# including the previous conversation about CAMEL AI
+context, token_count = memory.get_context()
+
+print(f"Retrieved context (token count: {token_count}):")
+for message in context:
+    print(f"{message}")
+```
+
+```markdown
+>>> Retrieved context (token count: 49):
+{'role': 'user', 'content': 'CAMEL-AI.org is an open-source community dedicated to finding the scaling law of agents.'}
+{'role': 'user', 'content': 'CAMEL-AI.org is the 1st LLM multi-agent framework.'}
+```
+
+The Mem0Memory is particularly useful when you need semantic search capabilities across a large corpus of memory without managing your own vector database. The cloud-based Mem0 service handles the vector embeddings and similarity search automatically.
+
 ## 6. Advanced Topics
 
 ### 6.1 Customizing Context Creator

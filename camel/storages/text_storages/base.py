@@ -15,9 +15,9 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Union
 
-class BaseMemoryStorage(ABC):
-    r"""An abstract base class for memory-based storage systems. This class is
-    designed to handle memory operations with support for user contexts, memory
+class BaseTextStorage(ABC):
+    r"""An abstract base class for text-based storage systems. This class is
+    designed to handle text operations with support for user contexts, memory
     persistence, and advanced querying capabilities.
 
     The class provides a foundation for implementing memory storage systems that
@@ -37,10 +37,6 @@ class BaseMemoryStorage(ABC):
     def add(
         self,
         content: Union[str, List[Dict[str, str]]],
-        user_id: Optional[str] = None,
-        agent_id: Optional[str] = None,
-        run_id: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         r"""Add a memory or list of memories to the storage.
@@ -48,10 +44,6 @@ class BaseMemoryStorage(ABC):
         Args:
             content (Union[str, List[Dict[str, str]]]): The content to store.
                 Can be either a string or a list of message dictionaries.
-            user_id (str, optional): ID of the user associated with the memory.
-            agent_id (str, optional): ID of the agent associated with the memory.
-            run_id (str, optional): ID of the session/run for temporary memories.
-            metadata (Dict[str, Any], optional): Additional metadata for the memory.
             **kwargs (Any): Additional implementation-specific parameters.
 
         Returns:
@@ -63,10 +55,6 @@ class BaseMemoryStorage(ABC):
     def search(
         self,
         query: str,
-        user_id: Optional[str] = None,
-        agent_id: Optional[str] = None,
-        run_id: Optional[str] = None,
-        filters: Optional[Dict[str, Any]] = None,
         limit: int = 10,
         **kwargs: Any,
     ) -> List[Dict[str, Any]]:
@@ -74,10 +62,6 @@ class BaseMemoryStorage(ABC):
 
         Args:
             query (str): The search query.
-            user_id (str, optional): Filter by user ID.
-            agent_id (str, optional): Filter by agent ID.
-            run_id (str, optional): Filter by session/run ID.
-            filters (Dict[str, Any], optional): Additional filters to apply.
             limit (int): Maximum number of results to return.
             **kwargs (Any): Additional implementation-specific parameters.
 
@@ -89,9 +73,6 @@ class BaseMemoryStorage(ABC):
     @abstractmethod
     def get_all(
         self,
-        user_id: Optional[str] = None,
-        agent_id: Optional[str] = None,
-        run_id: Optional[str] = None,
         filters: Optional[Dict[str, Any]] = None,
         page: int = 1,
         page_size: int = 100,
@@ -100,9 +81,6 @@ class BaseMemoryStorage(ABC):
         r"""Retrieve all memories matching the specified criteria.
 
         Args:
-            user_id (str, optional): Filter by user ID.
-            agent_id (str, optional): Filter by agent ID.
-            run_id (str, optional): Filter by session/run ID.
             filters (Dict[str, Any], optional): Additional filters to apply.
             page (int): Page number for pagination.
             page_size (int): Number of items per page.
@@ -117,9 +95,6 @@ class BaseMemoryStorage(ABC):
     def delete(
         self,
         memory_ids: Optional[List[str]] = None,
-        user_id: Optional[str] = None,
-        agent_id: Optional[str] = None,
-        run_id: Optional[str] = None,
         filters: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
@@ -127,9 +102,6 @@ class BaseMemoryStorage(ABC):
 
         Args:
             memory_ids (List[str], optional): List of specific memory IDs to delete.
-            user_id (str, optional): Delete memories for this user.
-            agent_id (str, optional): Delete memories for this agent.
-            run_id (str, optional): Delete memories for this session.
             filters (Dict[str, Any], optional): Additional filters for deletion.
             **kwargs (Any): Additional implementation-specific parameters.
 
