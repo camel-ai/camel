@@ -196,25 +196,35 @@ class StaticDataset(Dataset):
         r"""Return the size of the dataset."""
         return self._length
 
-    def __getitem__(self, idx: int) -> DataPoint:
-        r"""Retrieve a datapoint by index.
+    def __getitem__(
+        self, idx: Union[int, slice]
+    ) -> Union[DataPoint, List[DataPoint]]:
+        r"""Retrieve a datapoint or a batch of datapoints by index or slice.
 
         Args:
-            idx (int): Index of the datapoint.
+            idx (Union[int, slice]): Index or slice of the datapoint(s).
 
         Returns:
-            DataPoint: The datapoint corresponding to the given index.
+            Union[DataPoint, List[DataPoint]]: A single `DataPoint`
+            if an integer index is provided, or a list
+            of `DataPoint` objects if a slice is provided.
 
         Raises:
-            IndexError: If :obj:`idx` is out of bounds (negative or greater
-                than dataset length - 1).
+            IndexError: If an integer `idx` is out of bounds.
         """
+        if isinstance(idx, int):
+            if idx < 0 or idx >= self._length:
+                raise IndexError(
+                    f"Index {idx} out of bounds for dataset"
+                    f"of size {self._length}"
+                )
+            return self.data[idx]
 
-        if idx < 0 or idx >= self._length:
-            raise IndexError(
-                f"Index {idx} out of bounds for dataset of size {self._length}"
-            )
-        return self.data[idx]
+        elif isinstance(idx, slice):
+            return self.data[idx.start : idx.stop : idx.step]
+
+        else:
+            raise TypeError(f"Indexing type {type(idx)} not supported.")
 
     def sample(self) -> DataPoint:
         r"""Sample a random datapoint from the dataset.
