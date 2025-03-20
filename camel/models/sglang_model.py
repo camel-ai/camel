@@ -324,7 +324,10 @@ def _kill_process_tree(
 
             # Sometime processes cannot be killed with SIGKILL
             # so we send an additional signal to kill them.
-            itself.send_signal(signal.SIGQUIT)
+            if hasattr(signal, "SIGQUIT"):
+                itself.send_signal(signal.SIGQUIT)
+            else:
+                itself.send_signal(signal.SIGTERM)
         except psutil.NoSuchProcess:
             pass
 

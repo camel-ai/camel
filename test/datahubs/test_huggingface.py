@@ -160,7 +160,7 @@ def test_update_records(manager):
         mock_download.return_value = "/mock/path/records.json"
 
         mock_open.return_value.__enter__.return_value.read.return_value = (
-            json.dumps(existing_records)
+            json.dumps(existing_records, ensure_ascii=False)
         )
 
         manager.update_records(dataset_name=REPO_ID, records=new_records)
@@ -195,7 +195,7 @@ def test_list_records(manager):
     ):
         mock_download.return_value = "/mock/path/records.json"
         mock_open.return_value.__enter__.return_value.read.return_value = (
-            json.dumps(mock_records)
+            json.dumps(mock_records, ensure_ascii=False)
         )
 
         records = manager.list_records(dataset_name=REPO_ID)
@@ -285,7 +285,10 @@ def test_delete_record(manager):
             ),
         ]
         mock_open.return_value.__enter__.return_value.read.return_value = (
-            json.dumps([record.model_dump() for record in existing_records])
+            json.dumps(
+                [record.model_dump() for record in existing_records],
+                ensure_ascii=False,
+            )
         )
 
         manager.delete_record(dataset_name=REPO_ID, record_id="record-1")

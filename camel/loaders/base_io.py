@@ -276,7 +276,7 @@ class JsonFile(File):
         # Parse the JSON data from the file
         data = json.load(file)
         # Create a dictionary with the parsed data
-        doc = {"page_content": json.dumps(data)}
+        doc = {"page_content": json.dumps(data, ensure_ascii=False)}
         # Calculate a unique identifier for the file
         file_id = md5(file.getvalue()).hexdigest()
         # Reset the file pointer to the beginning
