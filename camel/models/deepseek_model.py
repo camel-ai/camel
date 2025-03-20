@@ -178,7 +178,7 @@ class DeepSeekModel(BaseModelBackend):
                         message={
                             "role": response.choices[0].message.role,
                             "content": combined_content,
-                            "tool_calls": response.choices[0].message.tool_calls,
+                            "tool_calls": None,
                         },
                         finish_reason=response.choices[0].finish_reason
                         if response.choices[0].finish_reason
