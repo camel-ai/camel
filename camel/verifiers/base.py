@@ -165,8 +165,8 @@ class BaseVerifier(ABC):
 
         Args:
             solution (str): The generated response that needs verification.
-            ground_truth (Optional[str]): The expected correct answer
-            to compare against.
+            ground_truth (Optional[str]): The expected correct answer to
+                compare against.
 
         Returns:
             VerificationResult: A structured object containing:
@@ -261,104 +261,117 @@ class BaseVerifier(ABC):
 
         Raises:
             NotImplementedError: If the method is not implemented
-            in a subclass.
+                in a subclass.
         """
         raise NotImplementedError(
             "Subclasses must implement _verify_implementation()"
         )
 
+    async def verify_batch(
+        self,
+        solutions: List[str],
+        ground_truths: List[Optional[str]],
+        raise_on_error: bool = False,
+    ) -> List[VerificationResult]:
+        r"""Verify multiple solutions in parallel with controlled concurrency.
 
-async def verify_batch(
-    self,
-    solutions: List[str],
-    ground_truths: List[Optional[str]],
-    raise_on_error: bool = False,
-) -> List[VerificationResult]:
-    r"""Verify multiple solutions in parallel with controlled concurrency.
+        This method verifies multiple generated solutions against their
+        respective ground truths using parallel execution. It handles
+        timeouts, execution errors, and batch processing optimizations.
 
-    This method verifies multiple generated solutions against their respective
-    ground truths using parallel execution. It handles timeouts, execution
-    errors, and batch processing optimizations.
+        Args:
+            solutions (List[str]): A list of generated solutions to be
+                verified.
+            ground_truths (List[Optional[str]]): A list of expected outputs for
+                comparison. Each element corresponds to a solution.
+            raise_on_error (bool, optional): If True, raises an exception if
+                any verification fails. (default: :obj:`False`)
 
-    Args:
-        solutions (List[str]): A list of generated solutions to be verified.
-        ground_truths (List[Optional[str]]): A list of expected outputs for
-            comparison. Each element corresponds to a solution.
-        raise_on_error (bool, optional): If True, raises an exception if any
-            verification fails. Defaults to False.
+        Returns:
+            List[VerificationResult]: A list of verification results, one per
+                input solution.
 
-    Returns:
-        List[VerificationResult]: A list of verification results, one per
-            input solution.
+        Raises:
+            RuntimeError: If any verification fails and `raise_on_error` is
+                True.
+            asyncio.TimeoutError: If verifications time out after maximum
+                retries.
+        """
 
-    Raises:
-        RuntimeError: If any verification fails and `raise_on_error` is True.
-        asyncio.TimeoutError: If verifications time out after maximum retries.
-    """
+        if not self._is_setup:
+            logger.warning(
+                f"{self.__class__.__name__} not set up, calling setup()"
+            )
+            await self.setup()
 
-    if not self._is_setup:
-        logger.warning(
-            f"{self.__class__.__name__} not set up, calling setup()"
+        # Retrieve batch processing settings
+        max_workers = getattr(
+            self._batch_processor, 'max_workers', self._max_parallel or 1
         )
-        await self.setup()
+        batch_size = getattr(
+            self._batch_processor, 'batch_size', self._initial_batch_size or 10
+        )
+        semaphore = asyncio.Semaphore(max(1, max_workers))
 
-    # Retrieve batch processing settings
-    max_workers = getattr(
-        self._batch_processor, 'max_workers', self._max_parallel or 1
-    )
-    batch_size = getattr(
-        self._batch_processor, 'batch_size', self._initial_batch_size or 10
-    )
-    semaphore = asyncio.Semaphore(max(1, max_workers))
+        async def _verify_with_semaphore(
+            solution: str, ground_truth: Optional[str]
+        ) -> VerificationResult:
+            start_time = time.time()
+            try:
+                async with semaphore:
+                    verification_result = await self.verify(
+                        solution, ground_truth
+                    )
+                processing_time = time.time() - start_time
+                success = (
+                    verification_result.status == VerificationOutcome.SUCCESS
+                )
+                self._batch_processor.adjust_batch_size(
+                    success, processing_time
+                )
+                return verification_result
+            except Exception as e:
+                processing_time = time.time() - start_time
+                self._batch_processor.adjust_batch_size(False, processing_time)
+                logger.error(f"Verification failed: {e!s}", exc_info=True)
+                return VerificationResult(
+                    status=VerificationOutcome.ERROR,
+                    result="",
+                    error_message=str(e),
+                    metadata={"error_type": type(e).__name__},
+                )
 
-    async def _verify_with_semaphore(
-        solution: str, ground_truth: Optional[str]
-    ) -> VerificationResult:
-        start_time = time.time()
-        try:
-            async with semaphore:
-                verification_result = await self.verify(solution, ground_truth)
-            processing_time = time.time() - start_time
-            success = verification_result.status == VerificationOutcome.SUCCESS
-            self._batch_processor.adjust_batch_size(success, processing_time)
-            return verification_result
-        except Exception as e:
-            processing_time = time.time() - start_time
-            self._batch_processor.adjust_batch_size(False, processing_time)
-            logger.error(f"Verification failed: {e!s}", exc_info=True)
-            return VerificationResult(
-                status=VerificationOutcome.ERROR,
-                result="",
-                error_message=str(e),
-                metadata={"error_type": type(e).__name__},
-            )
+        # Process in batches
+        all_results: List[VerificationResult] = []
+        for i in range(0, len(solutions), batch_size):
+            batch_solutions = solutions[i : i + batch_size]
+            batch_ground_truths = ground_truths[i : i + batch_size]
 
-    # Process in batches
-    all_results: List[VerificationResult] = []
-    for i in range(0, len(solutions), batch_size):
-        batch_solutions = solutions[i : i + batch_size]
-        batch_ground_truths = ground_truths[i : i + batch_size]
+            verification_tasks = [
+                _verify_with_semaphore(solution, ground_truth)
+                for solution, ground_truth in zip(
+                    batch_solutions, batch_ground_truths
+                )
+            ]
+            try:
+                batch_results = await asyncio.gather(*verification_tasks)
+                all_results.extend(batch_results)
+            except Exception as e:
+                logger.error(
+                    f"Batch verification failed: {e!s}", exc_info=True
+                )
+                if raise_on_error:
+                    raise RuntimeError(
+                        f"Batch verification failed: {e!s}"
+                    ) from e
 
-        verification_tasks = [
-            _verify_with_semaphore(solution, ground_truth)
-            for solution, ground_truth in zip(
-                batch_solutions, batch_ground_truths
-            )
-        ]
-        try:
-            batch_results = await asyncio.gather(*verification_tasks)
-            all_results.extend(batch_results)
-        except Exception as e:
-            logger.error(f"Batch verification failed: {e!s}", exc_info=True)
-            if raise_on_error:
-                raise RuntimeError(f"Batch verification failed: {e!s}") from e
+        if raise_on_error and any(
+            r.status
+            in {VerificationOutcome.ERROR, VerificationOutcome.TIMEOUT}
+            for r in all_results
+        ):
+            error_msg = "One or more verifications failed"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg)
 
-    if raise_on_error and any(
-        r.status in {VerificationOutcome.ERROR, VerificationOutcome.TIMEOUT}
-        for r in all_results
-    ):
-        error_msg = "One or more verifications failed"
-        logger.error(error_msg)
-        raise RuntimeError(error_msg)
-
-    return all_results
+        return all_results
