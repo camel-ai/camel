@@ -433,7 +433,7 @@ def _get_random_color(identifier: int) -> Tuple[int, int, int, int]:
 
 
 class BaseBrowser:
-    def __init__(self, headless=True, cache_dir: Optional[str] = None):
+    def __init__(self, headless=True, cache_dir: Optional[str] = None, channel: str = AcceptedBrowserChannels.CHROMIUM.value):
         r"""Initialize the WebBrowserToolkit instance.
 
         Args:
@@ -447,9 +447,10 @@ class BaseBrowser:
             sync_playwright,
         )
 
-        self._ensure_browser_installed()
         self.history: list = []
         self.headless = headless
+        self.channel = channel
+        self._ensure_browser_installed()
         self.playwright = sync_playwright().start()
         self.page_history: list = []  # stores the history of visited pages
 
@@ -473,7 +474,7 @@ class BaseBrowser:
     def init(self) -> None:
         r"""Initialize the browser."""
         # Launch the browser, if headless is False, the browser will display
-        self.browser = self.playwright.chromium.launch(headless=self.headless)
+        self.browser = self.playwright.chromium.launch(headless=self.headless, channel=self.channel)
         # Create a new context
         self.context = self.browser.new_context(accept_downloads=True)
         # Create a new page
@@ -934,7 +935,7 @@ class BaseBrowser:
             from playwright.sync_api import sync_playwright
 
             with sync_playwright() as p:
-                browser = p.chromium.launch()
+                browser = p.chromium.launch(channel=self.channel)
                 browser.close()
         except Exception:
             logger.info("Installing Chromium browser...")
@@ -945,7 +946,7 @@ class BaseBrowser:
                         "-m",
                         "playwright",
                         "install",
-                        "chromium",
+                        self.channel,
                     ],
                     check=True,
                     capture_output=True,
@@ -957,7 +958,7 @@ class BaseBrowser:
                             "-m",
                             "playwright",
                             "install-deps",
-                            "chromium",
+                            self.channel,
                         ],
                         check=True,
                         capture_output=True,
