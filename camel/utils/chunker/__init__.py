@@ -11,16 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-
-from .base import BaseKeyValueStorage
-from .in_memory import InMemoryKeyValueStorage
-from .json import CamelJSONEncoder, JsonStorage
-from .redis import RedisStorage
+from .base import BaseChunker
+from .code_chunker import CodeChunker
+from .uio_chunker import UnstructuredIOChunker
 
 __all__ = [
-    'BaseKeyValueStorage',
-    'InMemoryKeyValueStorage',
-    'JsonStorage',
-    'RedisStorage',
-    'CamelJSONEncoder',
+    "BaseChunker",
+    "CodeChunker",
+    "UnstructuredIOChunker",
 ]

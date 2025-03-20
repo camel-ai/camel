@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.34"
+version = "0.2.35"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -302,7 +302,7 @@ include = ["camel"]
 [tool.ruff]
 line-length = 79
 fix = true
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.format]
 quote-style = "preserve"
