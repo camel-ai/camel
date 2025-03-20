@@ -24,9 +24,6 @@ from camel.environments.tic_tac_toe import TicTacToeEnv
 @pytest.mark.asyncio
 async def test_setup_and_reset():
     """Test setup idempotency and reset functionality."""
-    mock_extractor = MagicMock()
-    mock_extractor.setup = AsyncMock()
-    mock_extractor.cleanup = AsyncMock()
     env = TicTacToeEnv()
     await env.setup()
     assert env._is_setup is True
@@ -221,15 +218,10 @@ def test_opponent_move_and_minimax():
 async def test_step_errors():
     """Test errors for stepping without setup, after done, or without reset."""
     # Without setup
-    mock_extractor = MagicMock()
     env = TicTacToeEnv()
     with pytest.raises(RuntimeError, match="Environment not set up"):
         await env.step(Action(llm_response="<Action>5</Action>"))
 
-    # After done
-    mock_extractor = MagicMock()
-    mock_extractor.setup = AsyncMock()
-    mock_extractor.cleanup = AsyncMock()
     env = TicTacToeEnv()
     await env.setup()
     await env.reset()
@@ -237,11 +229,7 @@ async def test_step_errors():
     with pytest.raises(RuntimeError, match="Episode has ended"):
         await env.step(Action(llm_response="<Action>5</Action>"))
     await env.close()
-
-    # Without reset
-    mock_extractor = MagicMock()
-    mock_extractor.setup = AsyncMock()
-    mock_extractor.cleanup = AsyncMock()
+    
     env = TicTacToeEnv()
     await env.setup()
     env._last_observation = None  # Simulate no reset
