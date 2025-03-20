@@ -179,7 +179,7 @@ storage = [
     "azure-storage-blob>=12.21.0,<13",
     "google-cloud-storage>=2.18.0,<3",
     "botocore>=1.35.3,<2",
-    "mem0ai>=0.1.67"
+    "mem0ai>=0.1.73"
 ]
 all = [
     "transformers>=4,<5",
