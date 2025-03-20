@@ -155,8 +155,11 @@ class DeepSeekModel(BaseModelBackend):
         self, response: ChatCompletion
     ) -> ChatCompletion:
         r"""Handle reasoning content with <think> tags at the beginning."""
+        model_type_str = str(self.model_type).lower().replace("-", "").replace("_", "")
+        is_deepseek_r1 = "deepseekr1" in model_type_str or self.model_type in [ModelType.DEEPSEEK_REASONER]
+        
         if (
-            self.model_type in [ModelType.DEEPSEEK_REASONER]
+            is_deepseek_r1
             and os.environ.get("GET_REASONING_CONTENT", "false").lower()
             == "true"
         ):
@@ -175,7 +178,7 @@ class DeepSeekModel(BaseModelBackend):
                         message={
                             "role": response.choices[0].message.role,
                             "content": combined_content,
-                            "tool_calls": None,
+                            "tool_calls": response.choices[0].message.tool_calls,
                         },
                         finish_reason=response.choices[0].finish_reason
                         if response.choices[0].finish_reason
