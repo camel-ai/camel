@@ -12,9 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import io
 import os
 import tempfile
-import io 
 from pathlib import Path
 from typing import List, Optional
 
@@ -134,7 +134,9 @@ class VideoAnalysisToolkit(BaseToolkit):
             # Import ChatAgent at runtime to avoid circular imports
             from camel.agents import ChatAgent
 
-            self.vl_agent = ChatAgent(model=self.vl_model,output_language=self.output_language)
+            self.vl_agent = ChatAgent(
+                model=self.vl_model, output_language=self.output_language
+            )
         else:
             # If no model is provided, use default model in ChatAgent
             # Import ChatAgent at runtime to avoid circular imports
@@ -242,12 +244,14 @@ class VideoAnalysisToolkit(BaseToolkit):
     def _extract_keyframes(
         self, video_path: str, threshold: float = 25.0
     ) -> List[Image.Image]:
-        r"""Extract keyframes from a video based on scene changes and regular intervals,
-        and return them as PIL.Image.Image objects.
+        r"""Extract keyframes from a video based on scene changes and
+        regular intervals,and return them as PIL.Image.Image objects.
 
         Args:
             video_path (str): Path to the video file.
             threshold (float): The threshold value for scene change detection.
+                This is kept for backward compatibility but not used in the
+                current implementation.
 
         Returns:
             list: A list of PIL.Image.Image objects representing
@@ -262,33 +266,36 @@ class VideoAnalysisToolkit(BaseToolkit):
         from scenedetect.detectors import (  # type: ignore[import-untyped]
             ContentDetector,
         )
-        
+
         # Get video information
         cap = cv2.VideoCapture(video_path)
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         fps = cap.get(cv2.CAP_PROP_FPS)
         duration = total_frames / fps if fps > 0 else 0
         cap.release()
-        
+
         # Extract one frame every 4 seconds
         frame_interval = 4.0  # seconds
-        
+
         # Calculate the total number of frames to extract
         if duration <= 0 or fps <= 0:
-            logger.warning("Invalid video duration or fps, using default frame count")
+            logger.warning(
+                "Invalid video duration or fps, using default frame count"
+            )
             num_frames = 10
         else:
             num_frames = max(int(duration / frame_interval), 1)
-            
-            # Limit the maximum number of frames to avoid processing too many frames for long videos
+
             max_frames = 100
             if num_frames > max_frames:
-                # If exceeding the maximum number of frames, adjust the interval to maintain even distribution
                 frame_interval = duration / max_frames
                 num_frames = max_frames
-            
-            logger.info(f"Video duration: {duration:.2f}s, target frames: {num_frames} at {frame_interval:.2f}s intervals")
-        
+
+            logger.info(
+                f"Video duration: {duration:.2f}s, target frames: {num_frames}"
+                f"at {frame_interval:.2f}s intervals"
+            )
+
         # Use scene detection to extract keyframes
         video_manager = VideoManager([video_path])
         scene_manager = SceneManager()
@@ -300,123 +307,140 @@ class VideoAnalysisToolkit(BaseToolkit):
 
         scenes = scene_manager.get_scene_list()
         keyframes: List[Image.Image] = []
-        
+
         # If scene detection is successful, prioritize scene change points
         if scenes:
             logger.info(f"Detected {len(scenes)} scene changes")
-            
-            # If the number of scenes exceeds the required number of frames, select scenes evenly
+
             if len(scenes) > num_frames:
-                scene_indices = np.linspace(0, len(scenes) - 1, num_frames, dtype=int)
+                scene_indices = np.linspace(
+                    0, len(scenes) - 1, num_frames, dtype=int
+                )
                 selected_scenes = [scenes[i] for i in scene_indices]
             else:
                 selected_scenes = scenes
-            
+
             # Extract frames from scenes
             for start_time, _ in selected_scenes:
                 try:
                     frame = _capture_screenshot(video_path, start_time)
                     keyframes.append(frame)
                 except Exception as e:
-                    logger.warning(f"Failed to capture frame at scene change {start_time}s: {e}")
-        
-        # If scene detection doesn't provide enough frames, or no scenes are detected, supplement with regular interval frames
+                    logger.warning(
+                        f"Failed to capture frame at scene change"
+                        f" {start_time}s: {e}"
+                    )
+
         if len(keyframes) < num_frames and duration > 0:
-            logger.info(f"Scene detection provided {len(keyframes)} frames, supplementing with regular interval frames")
-            
-            # Calculate the time points of existing scene frames for deduplication
+            logger.info(
+                f"Scene detection provided {len(keyframes)} frames, "
+                f"supplementing with regular interval frames"
+            )
+
             existing_times = []
             if scenes:
                 existing_times = [start_time for start_time, _ in scenes]
-            
-            # Extract frames at fixed intervals, avoiding duplication with existing scene frames
+
             regular_frames = []
             for i in range(num_frames):
                 time_sec = i * frame_interval
-                
-                # Check if it's close to an existing scene frame (within 1 second)
+
                 is_duplicate = False
                 for existing_time in existing_times:
                     if abs(existing_time - time_sec) < 1.0:
                         is_duplicate = True
                         break
-                
+
                 if not is_duplicate:
                     try:
                         frame = _capture_screenshot(video_path, time_sec)
                         regular_frames.append(frame)
                     except Exception as e:
-                        logger.warning(f"Failed to capture frame at {time_sec}s: {e}")
-            
-            # If needed, select some frames from the fixed interval frames to supplement the keyframes
+                        logger.warning(
+                            f"Failed to capture frame at {time_sec}s: {e}"
+                        )
+
             frames_needed = num_frames - len(keyframes)
             if frames_needed > 0 and regular_frames:
-                # If the number of fixed interval frames exceeds the required number, select evenly
                 if len(regular_frames) > frames_needed:
-                    indices = np.linspace(0, len(regular_frames) - 1, frames_needed, dtype=int)
+                    indices = np.linspace(
+                        0, len(regular_frames) - 1, frames_needed, dtype=int
+                    )
                     selected_frames = [regular_frames[i] for i in indices]
                 else:
                     selected_frames = regular_frames
-                
+
                 keyframes.extend(selected_frames)
-        
-        # If no frames are extracted (both scene detection and fixed interval methods failed), use a simple fixed interval method
+
         if not keyframes:
-            logger.warning("No frames extracted, falling back to simple interval extraction")
-            for i in range(min(num_frames, 10)):  # Limit to a maximum of 10 frames to avoid infinite loops
+            logger.warning(
+                "No frames extracted, falling back to simple interval"
+                "extraction"
+            )
+            for i in range(
+                min(num_frames, 10)
+            ):  # Limit to a maximum of 10 frames to avoid infinite loops
                 time_sec = i * (duration / 10 if duration > 0 else 6.0)
                 try:
                     frame = _capture_screenshot(video_path, time_sec)
                     keyframes.append(frame)
                 except Exception as e:
-                    logger.warning(f"Failed to capture frame at {time_sec}s: {e}")
-        
+                    logger.warning(
+                        f"Failed to capture frame at {time_sec}s: {e}"
+                    )
+
         if not keyframes:
             logger.error("Failed to extract any keyframes from video")
             raise ValueError("Failed to extract keyframes from video")
-        
+
         # Normalize image sizes
         normalized_keyframes = self._normalize_frames(keyframes)
-        
-        logger.info(f"Extracted and normalized {len(normalized_keyframes)} keyframes")
+
+        logger.info(
+            f"Extracted and normalized {len(normalized_keyframes)} keyframes"
+        )
         return normalized_keyframes
 
-    def _normalize_frames(self, frames: List[Image.Image], target_width: int = 512) -> List[Image.Image]:
+    def _normalize_frames(
+        self, frames: List[Image.Image], target_width: int = 512
+    ) -> List[Image.Image]:
         r"""Normalize the size of extracted frames.
-        
+
         Args:
             frames (List[Image.Image]): List of frames to normalize.
             target_width (int): Target width for normalized frames.
-                
+
         Returns:
             List[Image.Image]: List of normalized frames.
         """
-        normalized_frames = []
-        
+        normalized_frames: List[Image.Image] = []
+
         for frame in frames:
             # Get original dimensions
             width, height = frame.size
-            
+
             # Calculate new height, maintaining aspect ratio
             aspect_ratio = width / height
             new_height = int(target_width / aspect_ratio)
-            
+
             # Resize image
-            resized_frame = frame.resize((target_width, new_height), Image.LANCZOS)
-            
-            # Ensure the image has a proper format (convert to RGB and set format to JPEG)
+            resized_frame = frame.resize(
+                (target_width, new_height), Image.Resampling.LANCZOS
+            )
+
+            # Ensure the image has a proper format
             if resized_frame.mode != 'RGB':
                 resized_frame = resized_frame.convert('RGB')
-            
+
             # Create a new image with explicit format
             with io.BytesIO() as buffer:
                 resized_frame.save(buffer, format='JPEG')
                 buffer.seek(0)
                 formatted_frame = Image.open(buffer)
                 formatted_frame.load()  # Load the image data
-                
+
             normalized_frames.append(formatted_frame)
-            
+
         return normalized_frames
 
     def ask_question_about_video(
