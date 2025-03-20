@@ -248,8 +248,6 @@ class VideoAnalysisToolkit(BaseToolkit):
         Args:
             video_path (str): Path to the video file.
             threshold (float): The threshold value for scene change detection.
-                This is kept for backward compatibility but not used in the
-                current implementation.
 
         Returns:
             list: A list of PIL.Image.Image objects representing
