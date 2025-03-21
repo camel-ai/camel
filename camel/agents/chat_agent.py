@@ -493,18 +493,24 @@ class ChatAgent(BaseAgent):
         max_retries = self.tools_max_retries
         while True:
             max_retries -= 1
-
+            try:
+                openai_messages, num_tokens = self.memory.get_context()
+                # print(openai_messages[-1])
+                # if len(openai_messages) > 0 and openai_messages[-1]["role"] == 'tool': 
+                #     status = dict(openai_messages[-1]["content"]).get("status")
+                    
+                #     if not status or status == "success":
+                #         enforce_no_tools = True
+            except RuntimeError as e:
+                return self._step_token_exceed(
+                    e.args[1], tool_call_records, "max_tokens_exceeded"
+                )
+            
             if max_retries == -1:
                 # TODO: need changes!  Review after Wendong
                 logger.info("Max retries reached, terminating the session.")
                 enforce_no_tools = True
 
-            try:
-                openai_messages, num_tokens = self.memory.get_context()
-            except RuntimeError as e:
-                return self._step_token_exceed(
-                    e.args[1], tool_call_records, "max_tokens_exceeded"
-                )
             if enforce_no_tools:
                 # Get response from model backend which enforce no tools
                 response = self._get_model_response(
