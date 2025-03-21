@@ -123,6 +123,7 @@ class RepoAgent(ChatAgent):
             "required code."
         )
         self.full_text = ""
+        assert chunk_size is not None
         self.chunker = CodeChunker(chunk_size=chunk_size)
         if repo_paths:
             self.repos = self.load_repositories(repo_paths)
@@ -202,7 +203,7 @@ class RepoAgent(ChatAgent):
         try:
             owner, repo_name = self.parse_url(repo_url)
             repo = github_client.get_repo(f"{owner}/{repo_name}")
-            contents = repo.get_contents("")
+            contents = repo.get_contents("")  # type: ignore[attr-defined]
         except Exception as e:
             logger.error(f"Error loading repository: {e}")
             raise Exception(e)
@@ -284,6 +285,7 @@ class RepoAgent(ChatAgent):
         if self.processing_mode == ProcessingMode.RAG:
             for repo in new_repos:
                 for f in repo.contents:
+                    assert self.vector_retriever is not None
                     self.vector_retriever.process(
                         content=f.content,
                         should_chunk=True,
@@ -338,17 +340,18 @@ class RepoAgent(ChatAgent):
             self.processing_mode == ProcessingMode.RAG
             and self.vector_retriever
         ):
-            user_query = input_message
             if isinstance(input_message, BaseMessage):
                 user_query = input_message.content
+            else:
+                user_query = input_message
             retrieved_content = []
             retries = 1
             for attempt in range(retries):
                 try:
                     raw_rag_content = self.vector_retriever.query(
                         query=user_query,
-                        top_k=self.top_k,
-                        similarity_threshold=self.similarity,
+                        top_k=self.top_k or 5,
+                        similarity_threshold=self.similarity or 0.6,
                     )
                     # Remove duplicates and retrieve the whole file
                     paths = []
@@ -426,6 +429,7 @@ class RepoAgent(ChatAgent):
                 `piece_num`.
         """
         try:
+            assert self.vector_retriever is not None
             storage_instance = self.vector_retriever.storage
             collection_name = (
                 self.collection_name or storage_instance.collection_name
