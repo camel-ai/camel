@@ -988,7 +988,7 @@ class BrowserToolkit(BaseToolkit):
         self,
         headless: bool = False,
         cache_dir: Optional[str] = None,
-        channel: str = AcceptedBrowserChannels.CHROMIUM.value,
+        channel: AcceptedBrowserChannels = AcceptedBrowserChannels.CHROMIUM,
         history_window: int = 5,
         web_agent_model: Optional[BaseModelBackend] = None,
         planning_agent_model: Optional[BaseModelBackend] = None,
