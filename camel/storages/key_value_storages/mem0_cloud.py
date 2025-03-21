@@ -32,12 +32,14 @@ class Mem0Storage(BaseKeyValueStorage):
     search, and manage text with context.
 
     Args:
-        api_key (str, optional): The API key for authentication. If not provided,
-            will try to get from environment variable MEM0_API_KEY.
-        user_id (str, optional): Default user ID to associate memories with.
-        agent_id (str, optional): Default agent ID to associate memories with.
+        agent_id (str): Default agent ID to associate memories with.
+        api_key (str, optional): The API key for authentication. If not
+            provided, will try to get from environment variable MEM0_API_KEY
+            (default: :obj:`None`).
+        user_id (str, optional): Default user ID to associate memories with
+            (default: :obj:`None`).
         metadata (Dict[str, Any], optional): Default metadata to include with
-            all memories.
+            all memories (default: :obj:`None`).
 
     References:
         https://docs.mem0.ai
@@ -78,7 +80,20 @@ class Mem0Storage(BaseKeyValueStorage):
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
-        """Helper method to prepare options for Mem0 API calls."""
+        r"""Helper method to prepare options for Mem0 API calls.
+
+        Args:
+            agent_id (Optional[str], optional): Agent ID to use (default:
+                :obj:`None`).
+            user_id (Optional[str], optional): User ID to use (default:
+                :obj:`None`).
+            metadata (Optional[Dict[str, Any]], optional): Additional metadata
+                to include (default: :obj:`None`).
+            **kwargs (Any): Additional keyword arguments.
+
+        Returns:
+            Dict[str, Any]: Prepared options dictionary for API calls.
+        """
         options = {
             "agent_id": agent_id or self.agent_id,
             "user_id": user_id or self.user_id,
@@ -94,8 +109,20 @@ class Mem0Storage(BaseKeyValueStorage):
         user_id: Optional[str] = None,
         filters: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        """Helper method to prepare filters for Mem0 API calls."""
-        base_filters = {"AND": []}
+        r"""Helper method to prepare filters for Mem0 API calls.
+
+        Args:
+            agent_id (Optional[str], optional): Agent ID to filter by
+                (default: :obj:`None`).
+            user_id (Optional[str], optional): User ID to filter by (default:
+                :obj:`None`).
+            filters (Optional[Dict[str, Any]], optional): Additional filters
+                (default: :obj:`None`).
+
+        Returns:
+            Dict[str, Any]: Prepared filters dictionary for API calls.
+        """
+        base_filters: Dict[str, Any] = {"AND": []}
         if filters:
             base_filters["AND"].append(filters)
         if agent_id or self.agent_id:
@@ -108,6 +135,14 @@ class Mem0Storage(BaseKeyValueStorage):
         self,
         records: List[Dict[str, Any]],
     ) -> List[Dict[str, Any]]:
+        r"""Prepare messages from records for Mem0 API calls.
+
+        Args:
+            records (List[Dict[str, Any]]): List of record dictionaries.
+
+        Returns:
+            List[Dict[str, Any]]: List of prepared message dictionaries.
+        """
         messages = []
         for record in records:
             content = record["message"]["content"]
@@ -115,8 +150,13 @@ class Mem0Storage(BaseKeyValueStorage):
             messages.append({"role": role, "content": content})
         return messages
 
-    def save(self, records: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Add a memory or list of memories to Mem0 storage."""
+    def save(self, records: List[Dict[str, Any]]) -> None:
+        r"""Saves a batch of records to the Mem0 storage system.
+
+        Args:
+            records (List[Dict[str, Any]]): A list of dictionaries, where each
+                dictionary represents a unique record to be stored.
+        """
         try:
             messages = self._prepare_messages(records)
 
@@ -125,13 +165,18 @@ class Mem0Storage(BaseKeyValueStorage):
                 user_id=self.user_id,
                 metadata=self.metadata,
             )
-            return self.client.add(messages, **options)
+            self.client.add(messages, **options)
         except Exception as e:
             logger.error(f"Error adding memory: {e}")
-            return {"error": str(e)}
+            logger.error(f"Error: {e}")
 
     def load(self) -> List[Dict[str, Any]]:
-        """Load all memories from Mem0 storage."""
+        r"""Loads all stored records from the Mem0 storage system.
+
+        Returns:
+            List[Dict[str, Any]]: A list of dictionaries, where each dictionary
+                represents a stored record.
+        """
         try:
             filters = self._prepare_filters(
                 agent_id=self.agent_id,
@@ -166,14 +211,14 @@ class Mem0Storage(BaseKeyValueStorage):
 
     def clear(
         self,
-    ) -> Dict[str, Any]:
-        """Delete all memories from Mem0 storage."""
+    ) -> None:
+        r"""Removes all records from the Mem0 storage system."""
         try:
             filters = self._prepare_filters(
                 agent_id=self.agent_id,
                 user_id=self.user_id,
             )
-            return self.client.delete_users(**filters)
+            self.client.delete_users(**filters)
         except Exception as e:
             logger.error(f"Error deleting memories: {e}")
-            return {"error": str(e)}
+            logger.error(f"Error: {e}")

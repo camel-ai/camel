@@ -23,7 +23,7 @@ from camel.types import OpenAIBackendRole
 
 
 class TestMem0Storage(unittest.TestCase):
-    """Unit tests for the Mem0Storage class."""
+    r"""Unit tests for the Mem0Storage class."""
 
     def setUp(self):
         """Set up test fixtures before each test method."""
@@ -48,18 +48,18 @@ class TestMem0Storage(unittest.TestCase):
         )
 
     def tearDown(self):
-        """Clean up test fixtures after each test method."""
+        r"""Clean up test fixtures after each test method."""
         self.patcher.stop()
 
     def test_initialization(self):
-        """Test proper initialization of Mem0Storage."""
+        r"""Test proper initialization of Mem0Storage."""
         self.assertIsInstance(self.storage, BaseKeyValueStorage)
         self.assertEqual(self.storage.user_id, self.user_id)
         self.assertEqual(self.storage.agent_id, self.agent_id)
         self.assertEqual(self.storage.metadata, self.metadata)
 
     def test_initialization_required_agent_id(self):
-        """Test initialization with required agent_id parameter."""
+        r"""Test initialization with required agent_id parameter."""
         storage = Mem0Storage(api_key=self.api_key, agent_id="required_agent")
         self.assertIsNotNone(storage)
         self.assertIsNone(storage.user_id)
@@ -67,7 +67,7 @@ class TestMem0Storage(unittest.TestCase):
         self.assertEqual(storage.metadata, {})
 
     def test_save(self):
-        """Test saving records to Mem0 storage."""
+        r"""Test saving records to Mem0 storage."""
         # Create test records
         records = [
             {
@@ -100,7 +100,7 @@ class TestMem0Storage(unittest.TestCase):
         self.assertEqual(kwargs.get("metadata"), self.metadata)
 
     def test_load(self):
-        """Test loading records from Mem0 storage."""
+        r"""Test loading records from Mem0 storage."""
         # Setup mock return value
         mock_results = [
             {
@@ -145,7 +145,7 @@ class TestMem0Storage(unittest.TestCase):
             )
 
     def test_clear(self):
-        """Test clearing all records from Mem0 storage."""
+        r"""Test clearing all records from Mem0 storage."""
         # Call clear method
         self.storage.clear()
 
@@ -162,7 +162,7 @@ class TestMem0Storage(unittest.TestCase):
             self.assertEqual(kwargs[key], value)
 
     def test_error_handling_save(self):
-        """Test error handling for save method."""
+        r"""Test error handling for save method."""
         self.mock_mem0_client.add.side_effect = Exception("API Error")
 
         records = [
@@ -172,27 +172,43 @@ class TestMem0Storage(unittest.TestCase):
             }
         ]
 
-        result = self.storage.save(records)
-        self.assertIn("error", result)
-        self.assertEqual(result["error"], "API Error")
+        # The method doesn't return anything, it just logs the error
+        with self.assertLogs(level='ERROR') as log_context:
+            self.storage.save(records)
+
+        # Check that the error was logged
+        self.assertTrue(
+            any(
+                "Error adding memory: API Error" in message
+                for message in log_context.output
+            )
+        )
 
     def test_error_handling_load(self):
-        """Test error handling for load method."""
+        r"""Test error handling for load method."""
         self.mock_mem0_client.get_all.side_effect = Exception("API Error")
 
         results = self.storage.load()
         self.assertEqual(results, [])
 
     def test_error_handling_clear(self):
-        """Test error handling for clear method."""
+        r"""Test error handling for clear method."""
         self.mock_mem0_client.delete_users.side_effect = Exception("API Error")
 
-        result = self.storage.clear()
-        self.assertIn("error", result)
-        self.assertEqual(result["error"], "API Error")
+        # The method doesn't return anything, it just logs the error
+        with self.assertLogs(level='ERROR') as log_context:
+            self.storage.clear()
+
+        # Check that the error was logged
+        self.assertTrue(
+            any(
+                "Error deleting memories: API Error" in message
+                for message in log_context.output
+            )
+        )
 
     def test_prepare_messages(self):
-        """Test message preparation helper method."""
+        r"""Test message preparation helper method."""
         records = [
             {
                 "message": {"content": "test message 1"},
@@ -217,7 +233,7 @@ class TestMem0Storage(unittest.TestCase):
         not os.getenv("MEM0_API_KEY"), reason="MEM0_API_KEY not set"
     )
     def test_integration(self):
-        """Integration test with actual Mem0 API.
+        r"""Integration test with actual Mem0 API.
 
         This test is skipped unless MEM0_API_KEY environment variable is set.
         """
