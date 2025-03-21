@@ -3,7 +3,7 @@ This code is borrowed and modified based on the source code from the 'MedCalc-Be
 Original repository: https://github.com/ncbi-nlp/MedCalc-Bench
 
 Modifications include:
-- rewrite function weight_conversion_explanation
+- rewrite function ibw_explanation
 - translation
 
 Date: March 2025
