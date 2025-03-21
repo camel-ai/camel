@@ -11,12 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from .base import BaseVerifier
-from .models import VerificationOutcome
-from .python_verifier import PythonVerifier
+from .base import BaseChunker
+from .code_chunker import CodeChunker
+from .uio_chunker import UnstructuredIOChunker
 
 __all__ = [
-    "BaseVerifier",
-    "VerificationOutcome",
-    "PythonVerifier",
+    "BaseChunker",
+    "CodeChunker",
+    "UnstructuredIOChunker",
 ]

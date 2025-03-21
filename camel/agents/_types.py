@@ -34,7 +34,7 @@ class ModelResponse(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     response: Union[ChatCompletion, Stream, AsyncStream]
-    tool_call_request: Optional[ToolCallRequest]
+    tool_call_requests: Optional[List[ToolCallRequest]]
     output_messages: List[BaseMessage]
     finish_reasons: List[str]
     usage_dict: Dict[str, Any]
