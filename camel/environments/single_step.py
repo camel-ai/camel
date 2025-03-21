@@ -126,8 +126,9 @@ class SingleStepEnv:
     ) -> Union[Observation, List[Observation]]:
         r"""Reset the environment and start a new episode.
 
-        This method samples a new batch of data points from the dataset and returns the
-        initial observations. If the batch size is 1, a single observation is returned.
+        This method samples a new batch of data points from the dataset
+            and returns the initial observations.
+        If the batch size is 1, a single observation is returned.
 
         Returns:
             Union[Observation, List[Observation]]:
@@ -150,7 +151,8 @@ class SingleStepEnv:
 
             if batch_size > dataset_len:
                 raise ValueError(
-                    f"Batch size {batch_size} is too large for dataset of size {dataset_len}"
+                    f"Batch size {batch_size} is too large for dataset"
+                    f"of size {dataset_len}"
                 )
 
             start_idx = random.randint(0, dataset_len - batch_size)
