@@ -12,8 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-
-from typing import Any, Dict, Optional, Tuple, Union
+import random
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from camel.datasets import BaseGenerator, DataPoint, StaticDataset
 from camel.extractors.base import BaseExtractor
@@ -71,7 +71,7 @@ class SingleStepEnv:
 
         # State tracking
         self._is_setup: bool = False
-        self._state: Optional[DataPoint] = None
+        self._state: List[DataPoint] = []
         self._episode_ended: bool = False
 
     async def setup(self) -> None:
@@ -114,22 +114,24 @@ class SingleStepEnv:
             self._is_setup = False
             await self.verifier.cleanup()
             await self.extractor.cleanup()
-            self._state = None
+            self._state = []
             self._episode_ended = False
             logger.info('Environment closed successfully')
         except Exception as e:
             logger.error(f'Failed to close environment: {e}')
             raise
 
-    async def reset(self) -> Observation:
+    async def reset(
+        self, batch_size: int = 1, seed: Optional[int] = 42
+    ) -> Union[Observation, List[Observation]]:
         r"""Reset the environment and start a new episode.
 
-        This method samples a new data point from the dataset and returns the
-        initial observation.
+        This method samples a new batch of data points from the dataset and returns the
+        initial observations. If the batch size is 1, a single observation is returned.
 
         Returns:
-            Observation: The first observation of the new episode, including
-                the question.
+            Union[Observation, List[Observation]]:
+                One or more initial observations.
 
         Raises:
             Exception: If the environment is not set up properly.
@@ -140,36 +142,39 @@ class SingleStepEnv:
 
         self._episode_ended = False
 
-        # Sample a datapoint
+        if seed is not None:
+            random.seed(seed)
 
-        self._state = self.dataset.sample()
+        if isinstance(self.dataset, StaticDataset):
+            dataset_len = len(self.dataset)
 
-        observation = Observation(
-            question=self._state.question, context={}, metadata={}
-        )
+            if batch_size > dataset_len:
+                raise ValueError(
+                    f"Batch size {batch_size} is too large for dataset of size {dataset_len}"
+                )
 
-        return observation
+            start_idx = random.randint(0, dataset_len - batch_size)
+            idx = slice(start_idx, start_idx + batch_size)
+            self._state = self.dataset[idx]
 
-    async def step(self, action: Action) -> StepResult:
-        r"""Take a step in the environment using the given action.
+            observations = [
+                Observation(question=sample.question, context={}, metadata={})
+                for sample in self._state
+            ]
 
-        This method processes the LLM response, extracts verifiable content,
-        verifies correctness, computes rewards, and ends the episode.
+            return observations[0] if batch_size == 1 else observations
 
-        Args:
-            action (Action): The action containing the LLM response to
-                evaluate.
+        elif isinstance(self.dataset, BaseGenerator):
+            raise NotImplementedError(
+                "Reset not yet implemented for BaseGenerator datasets."
+            )
 
-        Returns:
-            StepResult: Contains the next observation (placeholder), total
-                reward, reward breakdown, completion flag, and additional
-                information.
+        else:
+            raise TypeError(f"Unsupported dataset type: {type(self.dataset)}")
 
-        Raises:
-            RuntimeError: If the environment is not set up, the episode has
-                ended, or there is no valid current observation.
-        """
-
+    async def step(
+        self, action: Union[Action, List[Action]]
+    ) -> Union[StepResult, List[StepResult]]:
         if not self._is_setup:
             raise RuntimeError("Environment not set up. Call setup() first.")
         if self._episode_ended:
@@ -177,36 +182,49 @@ class SingleStepEnv:
         if self._state is None:
             raise RuntimeError("No current observation. Call reset() first.")
 
-        # extract verifiable part from llm response
-        extraction_result = await self.extractor.extract(action.llm_response)
-        ground_truth = await self.extractor.extract(self._state.final_answer)
+        # Normalize everything to list
+        actions = [action] if isinstance(action, Action) else action
+        datapoints = self._state
 
-        if not extraction_result:
-            raise RuntimeError(f"Couldn't extract from {action.llm_response}")
+        if len(actions) != len(datapoints):
+            raise ValueError(
+                "Number of actions must match number of data points."
+            )
 
-        # verify the extracted
-        verification_result = await self.verifier.verify(
-            solution=extraction_result, ground_truth=ground_truth
-        )
+        step_results = []
+        # TODO: batch this too!
+        for act, dp in zip(actions, datapoints):
+            # extract & verify
+            extraction_result = await self.extractor.extract(act.llm_response)
+            ground_truth = await self.extractor.extract(dp.final_answer)
 
-        # compute rewards
-        total_reward, rewards_dict = await self._compute_reward(
-            action, extraction_result, verification_result
-        )
+            if not extraction_result:
+                raise RuntimeError(f"Couldn't extract from {act.llm_response}")
+
+            verification_result = await self.verifier.verify(
+                solution=extraction_result, ground_truth=ground_truth
+            )
+
+            total_reward, rewards_dict = await self._compute_reward(
+                act, extraction_result, verification_result
+            )
+
+            step_results.append(
+                StepResult(
+                    observation=self.PLACEHOLDER_OBS,
+                    reward=total_reward,
+                    rewards_dict=rewards_dict,
+                    done=True,
+                    info={
+                        "extraction_result": extraction_result,
+                        "verification_result": verification_result,
+                        "state": dp,
+                    },
+                )
+            )
 
         self._episode_ended = True
-
-        return StepResult(
-            observation=self.PLACEHOLDER_OBS,
-            reward=total_reward,
-            rewards_dict=rewards_dict,
-            done=True,
-            info={
-                "extraction_result": extraction_result,
-                "verification_result": verification_result,
-                "state": self._state,
-            },
-        )
+        return step_results[0] if len(step_results) == 1 else step_results
 
     async def _compute_reward(
         self,
