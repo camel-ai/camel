@@ -462,5 +462,6 @@ module = [
     "fpdf",
     "mcp",
     "typer",
+    "mem0",
 ]
 ignore_missing_imports = true
