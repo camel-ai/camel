@@ -18,10 +18,8 @@ from typing import List, Optional
 from camel.memories.base import AgentMemory, BaseContextCreator
 from camel.memories.blocks import ChatHistoryBlock, VectorDBBlock
 from camel.memories.records import ContextRecord, MemoryRecord
-from camel.storages import (
-    BaseKeyValueStorage,
-    BaseVectorStorage,
-)
+from camel.storages.key_value_storages.base import BaseKeyValueStorage
+from camel.storages.vectordb_storages.base import BaseVectorStorage
 from camel.types import OpenAIBackendRole
 
 
