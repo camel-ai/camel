@@ -350,7 +350,7 @@ class ModelType(UnifiedModelType, Enum):
 
     @property
     def is_openrouter(self) -> bool:
-        r"""Returns whether this type of models is served by Groq."""
+        r"""Returns whether this type of models is served by OpenRouter."""
         return self in {
             ModelType.OPENROUTER_LLAMA_3_1_405B,
             ModelType.OPENROUTER_LLAMA_3_1_70B,

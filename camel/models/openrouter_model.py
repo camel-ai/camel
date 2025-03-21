@@ -117,7 +117,7 @@ class OpenRouterModel(BaseModelBackend):
         response_format: Optional[type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        r"""Runs inference of OpenRouter chat completion.
+        r"""Runs inference of OpenAI chat completion.
 
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
