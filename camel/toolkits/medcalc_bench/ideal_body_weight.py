@@ -3,7 +3,7 @@ This code is borrowed and modified based on the source code from the 'MedCalc-Be
 Original repository: https://github.com/ncbi-nlp/MedCalc-Bench
 
 Modifications include:
-- rewrite function weight_conversion_explanation
+- rewrite function ibw_explanation
 - translation
 
 Date: March 2025
@@ -65,3 +65,20 @@ def ibw_explanation(input_variables):
     explanation += f"Hence, the patient's IBW is {ibw} kg."
     
     return {"Explanation": explanation, "Answer": ibw}
+
+
+if __name__ == "__main__":
+    # Defining test cases
+    test_cases = [
+        {
+            "height": (72, 'in'),  # weight 150 lbs
+            "sex": "Male"  # Male
+        }
+    ]
+
+    # Iterate the test cases and print the results
+    for i, input_variables in enumerate(test_cases, 1):
+        print(f"Test Case {i}: Input = {input_variables}")
+        result = ibw_explanation(input_variables)
+        print(result)
+        print("-" * 50)
