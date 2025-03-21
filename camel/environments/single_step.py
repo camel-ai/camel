@@ -151,7 +151,7 @@ class SingleStepEnv:
 
             if batch_size > dataset_len:
                 raise ValueError(
-                    f"Batch size {batch_size} is too large for dataset"
+                    f"Batch size {batch_size} is too large for dataset "
                     f"of size {dataset_len}"
                 )
 
