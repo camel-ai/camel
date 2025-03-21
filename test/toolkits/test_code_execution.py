@@ -57,7 +57,7 @@ def test_execute_code(code_execution_toolkit):
     result = code_execution_toolkit.execute_code(code)
 
     # ruff: noqa: E501
-    expected_result = f"Executed the code below:\n```py\n{code}\n```\n> Executed Results:\nab"
+    expected_result = f"Executed the code below:\n```py\n{code}\n```\n> Executed Results:\n'ab'\n"
     assert expected_result == result
 
 

@@ -22,7 +22,6 @@ from camel.agents import ChatAgent
 from camel.logger import get_logger
 from camel.models.base_model import BaseModelBackend
 from camel.verifiers import BaseVerifier
-from camel.verifiers.models import VerifierInput
 
 from .base_generator import BaseGenerator
 from .models import DataPoint
@@ -203,10 +202,8 @@ class FewShotGenerator(BaseGenerator):
 
                 try:
                     verifier_response = await self.verifier.verify(
-                        VerifierInput(
-                            llm_response=rationale,
-                            ground_truth=None,
-                        )
+                        solution=rationale,
+                        ground_truth=None,
                     )
                     if not verifier_response or not verifier_response.result:
                         raise ValueError(

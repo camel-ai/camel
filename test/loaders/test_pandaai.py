@@ -47,6 +47,9 @@ def test_topk():
     }
     doc = reader.load(pd.DataFrame(sales_by_country))
     resp: pd.DataFrame = doc.chat("Which are the top 5 countries by sales?")
+    assert isinstance(
+        resp, pd.DataFrame
+    ), f"Expected a DataFrame but got: {resp}"
     assert resp["country"].tolist() == [
         "China",
         "United States",

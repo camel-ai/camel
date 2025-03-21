@@ -83,7 +83,9 @@ class Test_MCPServer:
                 assert connected_server._mcp_tools == ["tool1", "tool2"]
 
             # Verify mocks were called correctly
-            mock_sse_client.assert_called_once_with("https://example.com/api")
+            mock_sse_client.assert_called_once_with(
+                "https://example.com/api", headers={}
+            )
             mock_session.assert_called_once()
             mock_session_instance.initialize.assert_called_once()
             mock_session_instance.list_tools.assert_called_once()
@@ -369,7 +371,9 @@ class Test_MCPServer:
             assert server._session is not None
 
             # Verify mocks were called correctly
-            mock_sse_client.assert_called_once_with("https://example.com/api")
+            mock_sse_client.assert_called_once_with(
+                "https://example.com/api", headers={}
+            )
             mock_session.assert_called_once()
             mock_session_instance.initialize.assert_called_once()
             mock_session_instance.list_tools.assert_called_once()

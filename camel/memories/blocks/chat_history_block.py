@@ -16,7 +16,8 @@ from typing import List, Optional
 
 from camel.memories.base import MemoryBlock
 from camel.memories.records import ContextRecord, MemoryRecord
-from camel.storages import BaseKeyValueStorage, InMemoryKeyValueStorage
+from camel.storages.key_value_storages.base import BaseKeyValueStorage
+from camel.storages.key_value_storages.in_memory import InMemoryKeyValueStorage
 from camel.types import OpenAIBackendRole
 
 

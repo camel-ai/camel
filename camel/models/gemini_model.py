@@ -172,6 +172,24 @@ class GeminiModel(BaseModelBackend):
             for tool in tools:
                 function_dict = tool.get('function', {})
                 function_dict.pop("strict", None)
+
+                # Process parameters to remove anyOf
+                if 'parameters' in function_dict:
+                    params = function_dict['parameters']
+                    if 'properties' in params:
+                        for prop_name, prop_value in params[
+                            'properties'
+                        ].items():
+                            if 'anyOf' in prop_value:
+                                # Replace anyOf with the first type in the list
+                                first_type = prop_value['anyOf'][0]
+                                params['properties'][prop_name] = first_type
+                                # Preserve description if it exists
+                                if 'description' in prop_value:
+                                    params['properties'][prop_name][
+                                        'description'
+                                    ] = prop_value['description']
+
             request_config["tools"] = tools
 
         return self._client.chat.completions.create(
@@ -191,6 +209,24 @@ class GeminiModel(BaseModelBackend):
             for tool in tools:
                 function_dict = tool.get('function', {})
                 function_dict.pop("strict", None)
+
+                # Process parameters to remove anyOf
+                if 'parameters' in function_dict:
+                    params = function_dict['parameters']
+                    if 'properties' in params:
+                        for prop_name, prop_value in params[
+                            'properties'
+                        ].items():
+                            if 'anyOf' in prop_value:
+                                # Replace anyOf with the first type in the list
+                                first_type = prop_value['anyOf'][0]
+                                params['properties'][prop_name] = first_type
+                                # Preserve description if it exists
+                                if 'description' in prop_value:
+                                    params['properties'][prop_name][
+                                        'description'
+                                    ] = prop_value['description']
+
             request_config["tools"] = tools
 
         return await self._async_client.chat.completions.create(
