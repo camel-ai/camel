@@ -20,6 +20,7 @@ import base64
 import requests
 import datetime
 from typing import List, Optional, Literal, Union, Dict, Any, Tuple
+from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_result, retry_if_exception_type
 
 # from PIL import Image
 
@@ -37,8 +38,24 @@ class VirtualTryOnToolkit(BaseToolkit):
     by combining clothing images with model images.
 
     To generate a virtual try-on image, you need to provide a clothing image path and pass it to the virtual_try_on method.
-    The model image and other parameters are pre-configured so you don't need to provide them.
+    You can specify the model image and other parameters in __init__ method as below.
+
+    Args:
+            access_key: Keling AI API access key. If not provided, will try to load from 
+                environment variable KELING_ACCESS_KEY.
+            secret_key: Keling AI API secret key. If not provided, will try to load from
+                environment variable KELING_SECRET_KEY.
+            model_image_path: Path to the default model image. If not provided, will try
+                to load from environment variable KELING_MODEL_IMAGE.
+            output_dir: Directory to save the generated images.
+            api_domain: Keling AI API domain.
+            default_model_name: Default Keling AI model name to use.
     """
+    # the headers for the JWT token
+    headers = {
+            "alg": "HS256",
+            "typ": "JWT"
+        }
     
     def __init__(
         self,
@@ -49,19 +66,7 @@ class VirtualTryOnToolkit(BaseToolkit):
         api_domain: str = "https://api.klingai.com", # the API domain
         default_model_name: str = "kolors-virtual-try-on-v1-5" # the default model name
     ):
-        """Initialize the VirtualTryOnToolkit.
-        
-        Args:
-            access_key: Keling AI API access key. If not provided, will try to load from 
-                environment variable KELING_ACCESS_KEY.
-            secret_key: Keling AI API secret key. If not provided, will try to load from
-                environment variable KELING_SECRET_KEY.
-            model_image_path: Path to the default model image. If not provided, will try
-                to load from environment variable KELING_MODEL_IMAGE.
-            output_dir: Directory to save the generated images.
-            api_domain: Keling AI API domain.
-            default_model_name: Default Keling AI model name to use.
-        """
+
         self.access_key = access_key or os.getenv("KELING_ACCESS_KEY")
         self.secret_key = secret_key or os.getenv("KELING_SECRET_KEY")
         self.model_image_path = model_image_path or os.getenv("KELING_MODEL_IMAGE")
@@ -87,27 +92,22 @@ class VirtualTryOnToolkit(BaseToolkit):
         os.makedirs(self.output_dir, exist_ok=True)
     
     def _generate_auth_token(self) -> str:
-        """Generate JWT authentication token for Keling AI API.
+        r"""Generate JWT authentication token for Keling AI API.
         
         Returns:
             str: The JWT token.
         """
-        headers = {
-            "alg": "HS256",
-            "typ": "JWT"
-        }
-        
         payload = {
             "iss": self.access_key,
             "exp": int(time.time()) + 1800,  # 30 minutes expiration
             "nbf": int(time.time()) - 5      # Valid from 5 seconds ago
         }
         
-        token = jwt.encode(payload, self.secret_key, algorithm="HS256", headers=headers)
+        token = jwt.encode(payload, self.secret_key, algorithm="HS256", headers=self.headers)
         return token
     
     def _image_to_base64(self, image_path: str) -> str:
-        """Convert an image to base64 encoding.
+        r"""Convert an image to base64 encoding.
         
         Args:
             image_path: Path to the image file.
@@ -118,55 +118,56 @@ class VirtualTryOnToolkit(BaseToolkit):
         with open(image_path, "rb") as image_file:
             return base64.b64encode(image_file.read()).decode('utf-8')
     
-    def _poll_task_status(
-        self, 
-        task_id: str, 
-        headers: Dict[str, str], 
-        max_attempts: int = 30,
-        poll_interval: int = 6,
-    ) -> Dict[str, Any]:
+    @staticmethod
+    def _is_not_complete(result):
+        # Continue retrying if task is still in progress
+        if not result or not isinstance(result, dict):
+            return True
+        data = result.get("data", {})
+        task_status = data.get("task_status")
+        
+        # If succeed but no images, continue retrying
+        if task_status == "succeed":
+            return not ("task_result" in data and "images" in data["task_result"])
+        
+        # If not failed, continue retrying
+        return task_status != "failed"
+
+    @retry(
+        stop=stop_after_attempt(30),
+        wait=wait_fixed(6),
+        retry=retry_if_result(_is_not_complete)
+    )
+    def _poll_task_status(self, task_id: str, headers: Dict[str, str]) -> Dict[str, Any]:
         """Poll for task status until completion.
         
         Args:
             task_id: The ID of the task to poll.
             headers: HTTP headers for the request.
-            max_attempts: Maximum number of polling attempts.
-            poll_interval: Time between polling attempts in seconds.
             
         Returns:
             Dict[str, Any]: The task result data.
         
         Raises:
-            Exception: If polling times out or the task fails.
+            Exception: If the task fails.
         """
         status_url = f"{self.api_domain}/v1/images/kolors-virtual-try-on/{task_id}"
         
-        attempts = 0
-        while attempts < max_attempts:
-            time.sleep(poll_interval)
-            attempts += 1
-            
-            response = requests.get(status_url, headers=headers)
-            status_data = response.json()
-            
-            logger.debug(f"Poll attempt {attempts}: {json.dumps(status_data, indent=2)}")
-            
-            task_status = status_data["data"]["task_status"]
-            if task_status == "succeed":
-                if "task_result" in status_data["data"] and "images" in status_data["data"]["task_result"]:
-                    return status_data
-                else:
-                    logger.warning("任务成功但未找到图片URL，继续查询...")
-            elif task_status == "failed":
-                fail_msg = status_data["data"].get("task_status_msg", "未知错误")
-                raise Exception(f"虚拟试衣任务失败: {fail_msg}")
-            
-            logger.debug(f"任务状态: {task_status}，继续等待...")
+        response = requests.get(status_url, headers=headers)
+        status_data = response.json()
         
-        raise Exception("等待任务完成超时")
+        logger.debug(f"Poll attempt: {json.dumps(status_data, indent=2)}")
+        
+        task_status = status_data["data"]["task_status"]
+        if task_status == "failed":
+            fail_msg = status_data["data"].get("task_status_msg", "unknown error")
+            raise Exception(f"Virtual try-on task failed: {fail_msg}")
+        
+        logger.debug(f"Task status: {task_status}")
+        return status_data
     
     def _download_image(self, url: str, save_path: str) -> str:
-        """Download an image from a URL and save it to disk.
+        r"""Download an image from a URL and save it to disk.
         
         Args:
             url: URL of the image to download.
@@ -184,14 +185,14 @@ class VirtualTryOnToolkit(BaseToolkit):
             with open(save_path, 'wb') as f:
                 for chunk in response.iter_content(1024):
                     f.write(chunk)
-            logger.debug(f"图片已保存到: {save_path}")
+            logger.debug(f"The image has been saved to: {save_path}")
             return save_path
         else:
-            raise Exception(f"下载图片失败: HTTP {response.status_code}")
+            raise Exception(f"Failed to download the image: HTTP {response.status_code}")
     
-    @dependencies_required("jwt", "requests")
+    @dependencies_required("jwt", "requests", "tenacity")
     def virtual_try_on(self, clothing_image_path: str) -> Dict[str, str]:
-        """Generate a virtual try-on image by combining a clothing image with a model image.
+        r"""Generate a virtual try-on image by combining a clothing image with a model image.
         
         This simplified version only requires the clothing image path, using pre-configured 
         values for the model image and other parameters.
@@ -259,11 +260,11 @@ class VirtualTryOnToolkit(BaseToolkit):
             response = requests.post(request_url, headers=headers, json=payload)
             
             if response.status_code != 200:
-                raise Exception(f"API调用失败: {response.status_code}, {response.text}")
+                raise Exception(f"API call failed: {response.status_code}, {response.text}")
             
             result = response.json()
             task_id = result["data"]["task_id"]
-            logger.info(f"虚拟试衣任务已提交，任务ID: {task_id}")
+            logger.info(f"Virtual try-on task submitted, task ID: {task_id}")
             
             # Poll for task completion
             final_result = self._poll_task_status(task_id, headers)
@@ -275,11 +276,11 @@ class VirtualTryOnToolkit(BaseToolkit):
             return {
                 "result_path": saved_path,
                 "status": "success",
-                "message": "虚拟试衣完成"
+                "message": "Virtual try-on completed"
             }
             
         except Exception as e:
-            error_message = f"虚拟试衣失败: {str(e)}"
+            error_message = f"Virtual try-on failed: {str(e)}"
             logger.error(error_message)
             return {
                 "result_path": "",
@@ -288,7 +289,7 @@ class VirtualTryOnToolkit(BaseToolkit):
             }
     
     def get_tools(self) -> List[FunctionTool]:
-        """Get the list of tools provided by this toolkit.
+        r"""Get the list of tools provided by this toolkit.
         
         Returns:
             List[FunctionTool]: List of function tools.
