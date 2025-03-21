@@ -493,24 +493,17 @@ class ChatAgent(BaseAgent):
         max_retries = self.tools_max_retries
         while True:
             max_retries -= 1
+
+            if max_retries == -1:
+                logger.info("Max retries reached, terminating the session.")
+                enforce_no_tools = True
+
             try:
                 openai_messages, num_tokens = self.memory.get_context()
-                # print(openai_messages[-1])
-                # if len(openai_messages) > 0 and openai_messages[-1]["role"] == 'tool': 
-                #     status = dict(openai_messages[-1]["content"]).get("status")
-                    
-                #     if not status or status == "success":
-                #         enforce_no_tools = True
             except RuntimeError as e:
                 return self._step_token_exceed(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
-            
-            if max_retries == -1:
-                # TODO: need changes!  Review after Wendong
-                logger.info("Max retries reached, terminating the session.")
-                enforce_no_tools = True
-
             if enforce_no_tools:
                 # Get response from model backend which enforce no tools
                 response = self._get_model_response(
@@ -536,7 +529,11 @@ class ChatAgent(BaseAgent):
                     external_tool_call_request = tool_call_request
                     break
 
-                tool_call_records.append(self._execute_tool(tool_call_request))
+                tool_record, is_success = self._execute_tool(tool_call_request)
+
+                tool_call_records.append(tool_record)
+                if is_success:
+                    enforce_no_tools = True
                 continue
 
             break
@@ -1041,15 +1038,15 @@ class ChatAgent(BaseAgent):
     def _execute_tool(
         self,
         tool_call_request: ToolCallRequest,
-    ) -> ToolCallingRecord:
+    ) -> Tuple[ToolCallingRecord, bool]:
         r"""Execute the tool with arguments following the model's response.
 
         Args:
             tool_call_request (_ToolCallRequest): The tool call request.
 
         Returns:
-            FunctionCallingRecord: A struct for logging information about this
-                function call.
+            Tuple[FunctionCallingRecord, bool]: A struct for logging information about this
+                function call and a boolean indicating success.
         """
         func_name = tool_call_request.tool_name
         args = tool_call_request.args
@@ -1057,7 +1054,25 @@ class ChatAgent(BaseAgent):
         tool = self._internal_tools[func_name]
         result = tool(**args)
 
-        return self._record_tool_calling(func_name, args, result, tool_call_id)
+        tool_record = self._record_tool_calling(func_name, args, result, tool_call_id)
+
+        # Check if result indicates success
+        try:
+            if isinstance(eval(result), dict):
+                result = eval(result)
+                if not result.get('status'):
+                    if result.get('result') == []:
+                        return tool_record, False
+                    else:
+                        return tool_record, True
+                if result.get('status') != 'error':
+                    return tool_record, True
+        except Exception:
+            if "stderr" not in result:
+                return tool_record, True
+            else:
+                return tool_record, False
+        return tool_record, False
 
     async def _aexecute_tool(
         self,
