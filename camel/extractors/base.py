@@ -292,15 +292,19 @@ class BaseExtractor:
             responses (List[str]): A list of raw response texts to process.
 
         Returns:
-            List[Optional[str]]: A list of extracted data corresponding to each input,
-                where each element is a string if successful, otherwise None.
+            List[Optional[str]]: A list of extracted data corresponding to
+                each input, where each element is a string if successful,
+                otherwise None
 
         Raises:
-            ValueError: If the responses list is empty or contains invalid entries.
+            ValueError: If the responses list is empty or contains
+                invalid entries.
             RuntimeError: If extractor is not initialized.
         """
         if not self._is_setup:
-            raise RuntimeError("Extractor must be initialized before extraction")
+            raise RuntimeError(
+                "Extractor must be initialized before extraction"
+            )
         if not responses:
             raise ValueError("Responses list cannot be empty")
         if not all(isinstance(r, str) and r.strip() for r in responses):
@@ -320,5 +324,3 @@ class BaseExtractor:
                 final_results.append(result)
 
         return final_results
-
-        
