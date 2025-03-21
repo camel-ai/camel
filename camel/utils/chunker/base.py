@@ -11,12 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from .base import BaseVerifier
-from .models import VerificationOutcome
-from .python_verifier import PythonVerifier
+from abc import ABC, abstractmethod
+from typing import Any
 
-__all__ = [
-    "BaseVerifier",
-    "VerificationOutcome",
-    "PythonVerifier",
-]
+
+class BaseChunker(ABC):
+    r"""An abstract base class for all CAMEL chunkers."""
+
+    @abstractmethod
+    def chunk(self, content: Any) -> Any:
+        r"""Chunk the given content"""
+        pass
