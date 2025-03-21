@@ -215,7 +215,7 @@ class StaticDataset(Dataset):
         if isinstance(idx, int):
             if idx < 0 or idx >= self._length:
                 raise IndexError(
-                    f"Index {idx} out of bounds for dataset"
+                    f"Index {idx} out of bounds for dataset "
                     f"of size {self._length}"
                 )
             return self.data[idx]
