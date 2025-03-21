@@ -196,18 +196,14 @@ class StaticDataset(Dataset):
         r"""Return the size of the dataset."""
         return self._length
 
-    def __getitem__(
-        self, idx: Union[int, slice]
-    ) -> Union[DataPoint, List[DataPoint]]:
+    def __getitem__(self, idx: Union[int, slice]) -> List[DataPoint]:
         r"""Retrieve a datapoint or a batch of datapoints by index or slice.
 
         Args:
             idx (Union[int, slice]): Index or slice of the datapoint(s).
 
         Returns:
-            Union[DataPoint, List[DataPoint]]: A single `DataPoint`
-            if an integer index is provided, or a list
-            of `DataPoint` objects if a slice is provided.
+            List[DataPoint]: A list of `DataPoint` objects.
 
         Raises:
             IndexError: If an integer `idx` is out of bounds.
@@ -218,7 +214,7 @@ class StaticDataset(Dataset):
                     f"Index {idx} out of bounds for dataset "
                     f"of size {self._length}"
                 )
-            return self.data[idx]
+            return [self.data[idx]]
 
         elif isinstance(idx, slice):
             return self.data[idx.start : idx.stop : idx.step]
