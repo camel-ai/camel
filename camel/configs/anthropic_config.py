@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Any, ClassVar, List, Union
+from typing import Any, List, Optional
 
 from camel.configs.base_config import BaseConfig
 
@@ -65,15 +65,15 @@ class AnthropicConfig(BaseConfig):
             (default: :obj:`NotGiven()`)
     """
 
-    max_tokens: Union[int, None] = None
-    stop_sequences: ClassVar[Union[List[str], None]] = None
-    temperature: Union[float, None] = None
-    top_p: Union[float, None] = None
-    top_k: Union[int, None] = None
-    stream: Union[bool, None] = None
-    metadata: Union[dict, None] = None
-    thinking: Union[dict, None] = None
-    tool_choice: Union[dict, None] = None
+    max_tokens: Optional[int] = None
+    stop_sequences: Optional[List[str]] = None
+    temperature: Optional[float] = None
+    top_p: Optional[float] = None
+    top_k: Optional[int] = None
+    stream: Optional[bool] = None
+    metadata: Optional[dict] = None
+    thinking: Optional[dict] = None
+    tool_choice: Optional[dict] = None
 
     def as_dict(self) -> dict[str, Any]:
         config_dict = super().as_dict()
