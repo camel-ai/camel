@@ -34,6 +34,7 @@ from camel.types import (
 )
 from camel.utils.chunker import CodeChunker
 
+# mypy: disable-error-code=union-attr
 logger = get_logger(__name__)
 
 
@@ -238,7 +239,7 @@ class RepoAgent(ChatAgent):
                     raise Exception(e)
                 logger.info(f"Successfully loaded file: {file.path}")
             elif file.type == "dir":
-                contents.extend(repo.get_contents(file.path))
+                contents.extend(repo.get_contents(file.path))  # type: ignore[arg-type]
         return info
 
     def count_tokens(self) -> int:
@@ -432,7 +433,7 @@ class RepoAgent(ChatAgent):
             assert self.vector_retriever is not None
             storage_instance = self.vector_retriever.storage
             collection_name = (
-                self.collection_name or storage_instance.collection_name
+                self.collection_name or storage_instance.collection_name  # type: ignore[attr-defined]
             )
             source_data, _ = storage_instance.client.scroll(
                 collection_name=collection_name,
