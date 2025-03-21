@@ -63,6 +63,11 @@ class ModelType(UnifiedModelType, Enum):
     GROQ_MIXTRAL_8_7B = "mixtral-8x7b-32768"
     GROQ_GEMMA_2_9B_IT = "gemma2-9b-it"
 
+    # OpenRouter models
+    OPENROUTER_LLAMA_3_1_405B = "meta-llama/llama-3.3-405b-instruct"
+    OPENROUTER_LLAMA_3_1_70B = "meta-llama/llama-3.3-70b-instruct"
+    OPENROUTER_OLYMPICODER_7B = "open-r1/olympiccoder-7b:free"
+
     # TogetherAI platform models support tool calling
     TOGETHER_LLAMA_3_1_8B = "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo"
     TOGETHER_LLAMA_3_1_70B = "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo"
@@ -217,6 +222,14 @@ class ModelType(UnifiedModelType, Enum):
     def __new__(cls, value) -> "ModelType":
         return cast("ModelType", UnifiedModelType.__new__(cls, value))
 
+    @classmethod
+    def from_name(cls, name):
+        r"""Returns the ModelType enum value from a string."""
+        for model_type in cls:
+            if model_type.value == name:
+                return model_type
+        raise ValueError(f"Unknown ModelType name: {name}")
+
     @property
     def value_for_tiktoken(self) -> str:
         if self.is_openai:
@@ -245,6 +258,7 @@ class ModelType(UnifiedModelType, Enum):
                 self.is_together,
                 self.is_sambanova,
                 self.is_groq,
+                self.is_openrouter,
                 self.is_sglang,
                 self.is_moonshot,
                 self.is_siliconflow,
@@ -332,6 +346,15 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GROQ_LLAMA_3_70B,
             ModelType.GROQ_MIXTRAL_8_7B,
             ModelType.GROQ_GEMMA_2_9B_IT,
+        }
+
+    @property
+    def is_openrouter(self) -> bool:
+        r"""Returns whether this type of models is served by OpenRouter."""
+        return self in {
+            ModelType.OPENROUTER_LLAMA_3_1_405B,
+            ModelType.OPENROUTER_LLAMA_3_1_70B,
+            ModelType.OPENROUTER_OLYMPICODER_7B,
         }
 
     @property
@@ -572,6 +595,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MOONSHOT_V1_8K,
             ModelType.GLM_4V_FLASH,
             ModelType.GLM_4_AIRX,
+            ModelType.OPENROUTER_OLYMPICODER_7B,
         }:
             return 8_192
         elif self in {
@@ -678,6 +702,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.SGLANG_QWEN_2_5_7B,
             ModelType.SGLANG_QWEN_2_5_32B,
             ModelType.SGLANG_QWEN_2_5_72B,
+            ModelType.OPENROUTER_LLAMA_3_1_70B,
+            ModelType.OPENROUTER_LLAMA_3_1_405B,
         }:
             return 131_072
         elif self in {
@@ -873,6 +899,7 @@ class ModelPlatformType(Enum):
     AZURE = "azure"
     ANTHROPIC = "anthropic"
     GROQ = "groq"
+    OPENROUTER = "openrouter"
     OLLAMA = "ollama"
     LITELLM = "litellm"
     ZHIPU = "zhipuai"
@@ -895,6 +922,14 @@ class ModelPlatformType(Enum):
     AIML = "aiml"
     VOLCANO = "volcano"
 
+    @classmethod
+    def from_name(cls, name):
+        r"""Returns the ModelPlatformType enum value from a string."""
+        for model_platfrom_type in cls:
+            if model_platfrom_type.value == name:
+                return model_platfrom_type
+        raise ValueError(f"Unknown ModelPlatformType name: {name}")
+
     @property
     def is_openai(self) -> bool:
         r"""Returns whether this platform is openai."""
@@ -914,6 +949,11 @@ class ModelPlatformType(Enum):
     def is_groq(self) -> bool:
         r"""Returns whether this platform is groq."""
         return self is ModelPlatformType.GROQ
+
+    @property
+    def is_openrouter(self) -> bool:
+        r"""Returns whether this platform is openrouter."""
+        return self is ModelPlatformType.OPENROUTER
 
     @property
     def is_ollama(self) -> bool:
