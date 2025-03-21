@@ -32,7 +32,7 @@ print(result)
 result = asyncio.run(
     verifier.verify(solution=numpy_test_code, ground_truth="32")
 )
-print(f"Result: {result.status}")
+print(f"Result: {result}")
 
 result = asyncio.run(
     verifier.verify(solution=numpy_test_code, ground_truth="40")
@@ -40,6 +40,6 @@ result = asyncio.run(
 
 # Now we expect the VerificationOutcome to be a failure,
 # because the answer is wrong.
-print(f"Result: {result.status}")
+print(f"Result: {result}")
 
 asyncio.run(verifier.cleanup())

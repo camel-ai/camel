@@ -12,15 +12,15 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import ast
 import asyncio
 import os
 import shutil
 import subprocess
 import tempfile
 import venv
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
-from camel.extractors import BaseExtractor
 from camel.logger import get_logger
 from camel.verifiers import BaseVerifier
 
@@ -48,7 +48,6 @@ class PythonVerifier(BaseVerifier):
         self,
         timeout: Optional[float] = 30.0,
         required_packages: Optional[List[str]] = None,
-        extractor: Optional[BaseExtractor] = None,
     ):
         r"""Initializes the PythonVerifier.
 
@@ -106,32 +105,30 @@ class PythonVerifier(BaseVerifier):
     async def _verify_implementation(
         self, solution: str, ground_truth: Optional[str]
     ) -> VerificationResult:
-        r"""Executes and verifies the LLM-generated Python solution in an
-        isolated virtual environment.
+        r"""Executes the provided Python solution in an isolated environment
+        and verifies its output against an optional ground truth.
 
-        This method runs the given Python solution inside a controlled virtual
-        environment, captures its execution output, and optionally compares it
-        against a provided ground truth. Handles timeouts and execution errors.
+        This method evaluates both the solution and the ground truth by running
+        each in a temporary script within the configured virtual environment.
+        It supports both full code blocks and standalone expressions by
+        automatically wrapping expressions in `print(...)`.
+
+        If both executions are successful, the outputs are compared using
+        Python semantics (via `eval`). If evaluation fails, a fallback to
+        raw string comparison is used.
 
         Args:
-            solution (str): The Python code to execute and verify.
-            ground_truth (Optional[str]): The expected output for comparison.
-                If None, verification is based only on execution success.
+            solution (str): The Python code or expression to execute
+                and verify.
+            ground_truth (Optional[str]): The expected output as code or
+                expression for comparison. If None, execution is only checked
+                for success.
 
         Returns:
-            VerificationResult: A structured object containing:
-                - status (VerificationOutcome): SUCCESS, FAILURE, ERROR,
-                or TIMEOUT.
-                - result (str): The execution output of the solution.
-                - error_message (Optional[str]): Captured error message,
-                if any.
-                - duration (float, optional): Execution time (set externally).
-
-        Raises:
-            asyncio.TimeoutError: If execution exceeds the configured timeout.
-            Exception: Any unexpected errors are caught and converted to an
-                ERROR verification result.
+            VerificationResult: Structured result containing status, result,
+            and any error messages from execution or comparison.
         """
+
         if not self.venv_path:
             return VerificationResult(
                 status=VerificationOutcome.ERROR,
@@ -139,8 +136,6 @@ class PythonVerifier(BaseVerifier):
                 error_message="Virtual environment is not set up.",
             )
 
-        script = "print(" + solution.strip() + ")"
-        # FIXME: This is quite hacky and should be addressed
         venv_python = os.path.join(self.venv_path, self.bin_dir, "python")
 
         if not os.path.exists(venv_python):
@@ -151,52 +146,65 @@ class PythonVerifier(BaseVerifier):
             )
 
         try:
-            process = await asyncio.create_subprocess_exec(
-                venv_python,
-                "-c",
-                script,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
+            sol_out, sol_err, sol_code = await self._run_code_block(
+                solution, venv_python
             )
+            if ground_truth is not None:
+                gt_out, gt_err, gt_code = await self._run_code_block(
+                    ground_truth, venv_python
+                )
+            else:
+                gt_out = None
 
-            stdout, stderr = await asyncio.wait_for(
-                process.communicate(), timeout=self._timeout
-            )
+            if sol_code != 0:
+                return VerificationResult(
+                    status=VerificationOutcome.ERROR,
+                    result=sol_out,
+                    error_message=f"Solution code error:\n{sol_err}",
+                )
 
-            output_result = stdout.decode().strip()
-            error_output = stderr.decode().strip()
+            if ground_truth is not None and gt_code != 0:
+                return VerificationResult(
+                    status=VerificationOutcome.ERROR,
+                    result=gt_out,
+                    error_message=f"Ground truth code error:\n{gt_err}",
+                )
 
-            if process.returncode == 0:
-                # If ground truth is provided, compare it with the result
-                if ground_truth is not None:
-                    # Normalize both strings by removing extra whitespace
-                    normalized_output = ' '.join(output_result.strip().split())
-                    normalized_truth = ' '.join(
-                        str(ground_truth).strip().split()
-                    )
-
-                    if normalized_output == normalized_truth:
+            # Compare outputs semantically if possible
+            if ground_truth is not None:
+                try:
+                    sol_val = eval(sol_out, {}, {})
+                    gt_val = eval(gt_out, {}, {})
+                    if sol_val == gt_val:
                         return VerificationResult(
                             status=VerificationOutcome.SUCCESS,
-                            result=output_result,
+                            result=sol_out,
                         )
                     else:
                         return VerificationResult(
                             status=VerificationOutcome.FAILURE,
-                            error_message="Output doesn't match ground truth",
-                            result=output_result,
+                            result=sol_out,
+                            error_message="Printed outputs differ.",
                         )
-                else:
-                    return VerificationResult(
-                        status=VerificationOutcome.SUCCESS,
-                        result=output_result,
-                    )
-
+                except Exception:
+                    # Fallback to string comparison
+                    logger.warning("Fallback to String matching.")
+                    if sol_out == gt_out:
+                        return VerificationResult(
+                            status=VerificationOutcome.SUCCESS,
+                            result=sol_out,
+                        )
+                    else:
+                        return VerificationResult(
+                            status=VerificationOutcome.FAILURE,
+                            result=sol_out,
+                            error_message="Fallback to string matching:"
+                            f"printed outputs {sol_out} and {gt_out} differ.",
+                        )
             else:
                 return VerificationResult(
-                    status=VerificationOutcome.ERROR,
-                    error_message=error_output,
-                    result=output_result,
+                    status=VerificationOutcome.SUCCESS,
+                    result=sol_out,
                 )
 
         except asyncio.TimeoutError:
@@ -210,5 +218,74 @@ class PythonVerifier(BaseVerifier):
             return VerificationResult(
                 status=VerificationOutcome.ERROR,
                 result="",
-                error_message=f"Execution error: {e}",
+                error_message=f"Unexpected error: {e}",
             )
+
+    async def _run_code_block(
+        self, code: str, venv_path: str
+    ) -> Tuple[str, str, int]:
+        r"""Executes a block of Python code or expression in the virtual
+         environment.
+
+        If the input is a single-line expression, it is automatically wrapped
+        in `print(...)` to ensure its result is captured via stdout. The code
+        is written to a temporary file, executed using the Python interpreter
+        from the specified virtual environment, and its output and
+        error streams are captured.
+
+        Args:
+            code (str): The Python code or expression to execute.
+            venv_path (str): The path to the virtual environment's
+                Python binary.
+
+        Returns:
+            Tuple[str, str, int]: A tuple containing the stdout output,
+            stderr output, and return code from the executed script.
+        """
+
+        if self._is_expression(code):
+            code = f"print({code})"
+
+        with tempfile.NamedTemporaryFile(
+            "w+", suffix=".py", delete=False
+        ) as tmp:
+            tmp.write(code)
+            tmp_path = tmp.name
+
+        proc = await asyncio.create_subprocess_exec(
+            venv_path,
+            tmp_path,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await asyncio.wait_for(
+            proc.communicate(), timeout=self._timeout
+        )
+        os.remove(tmp_path)
+        return (
+            stdout.decode().strip(),
+            stderr.decode().strip(),
+            proc.returncode,
+        )
+
+    def _is_expression(self, code: str) -> bool:
+        r"""Determines whether a given string of code is a single expression.
+
+        This utility uses Python's AST module to parse the code and checks if
+        it consists of a single expression node. This helps distinguish between
+        full code blocks (e.g., function definitions) and evaluatable
+        expressions (e.g., `2 + 2`, `[1, 2, 3]`).
+
+        Args:
+            code (str): The Python code to analyze.
+
+        Returns:
+            bool: True if the code is a single expression, False otherwise.
+        """
+        try:
+            parsed = ast.parse(code)
+            return len(parsed.body) == 1 and isinstance(
+                parsed.body[0], ast.Expr
+            )
+        except Exception:
+            return False
