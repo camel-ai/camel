@@ -1050,7 +1050,7 @@ class BrowserToolkit(BaseToolkit):
 
         system_prompt = """
 You are a helpful web agent that can assist users in browsing the web.
-Given a high-level task, you can leverage predefined browser tools to help 
+Given a high-level task, you can leverage predefined browser tools to help
 users achieve their goals.
         """
 
@@ -1061,7 +1061,7 @@ users achieve their goals.
         )
 
         planning_system_prompt = """
-You are a helpful planning agent that can assist users in planning complex 
+You are a helpful planning agent that can assist users in planning complex
 tasks which need multi-step browser interaction.
         """
 
@@ -1082,17 +1082,17 @@ tasks which need multi-step browser interaction.
 
         if detailed_plan is not None:
             detailed_plan_prompt = f"""
-Here is a plan about how to solve the task step-by-step which you must follow: 
+Here is a plan about how to solve the task step-by-step which you must follow:
 <detailed_plan>{detailed_plan}<detailed_plan>
         """
 
         observe_prompt = f"""
-Please act as a web agent to help me complete the following high-level task: 
+Please act as a web agent to help me complete the following high-level task:
 <task>{task_prompt}</task>
-Now, I have made screenshot (only the current viewport, not the full webpage) 
-based on the current browser state, and marked interactive elements in the 
+Now, I have made screenshot (only the current viewport, not the full webpage)
+based on the current browser state, and marked interactive elements in the
 webpage.
-Please carefully examine the requirements of the task, and current state of 
+Please carefully examine the requirements of the task, and current state of
 the browser, and provide the next appropriate action to take.
 
 {detailed_plan_prompt}
@@ -1106,14 +1106,14 @@ Here are the latest {self.history_window} trajectory (at most) you have taken:
 </history>
 
 Your output should be in json format, including the following fields:
-- `observation`: The detailed image description about the current viewport. Do 
-not over-confident about the correctness of the history actions. You should 
-always check the current viewport to make sure the correctness of the next 
+- `observation`: The detailed image description about the current viewport. Do
+not over-confident about the correctness of the history actions. You should
+always check the current viewport to make sure the correctness of the next
 action.
-- `reasoning`: The reasoning about the next action you want to take, and the 
-possible obstacles you may encounter, and how to solve them. Do not forget to 
+- `reasoning`: The reasoning about the next action you want to take, and the
+possible obstacles you may encounter, and how to solve them. Do not forget to
 check the history actions to avoid the same mistakes.
-- `action_code`: The action code you want to take. It is only one step action 
+- `action_code`: The action code you want to take. It is only one step action
 code, without any other texts (such as annotation)
 
 Here is two example of the output:
@@ -1132,37 +1132,37 @@ Here is two example of the output:
 
 Here are some tips for you:
 - Never forget the overall question: **{task_prompt}**
-- Maybe after a certain operation (e.g. click_id), the page content has not 
-changed. You can check whether the action step is successful by looking at the 
-`success` of the action step in the history. If successful, it means that the 
+- Maybe after a certain operation (e.g. click_id), the page content has not
+changed. You can check whether the action step is successful by looking at the
+`success` of the action step in the history. If successful, it means that the
 page content is indeed the same after the click. You need to try other methods.
-- If using one way to solve the problem is not successful, try other ways. 
+- If using one way to solve the problem is not successful, try other ways.
 Make sure your provided ID is correct!
-- Some cases are very complex and need to be achieve by an iterative process. 
-You can use the `back()` function to go back to the previous page to try other 
+- Some cases are very complex and need to be achieve by an iterative process.
+You can use the `back()` function to go back to the previous page to try other
 methods.
-- There are many links on the page, which may be useful for solving the 
-problem. You can use the `click_id()` function to click on the link to see if 
+- There are many links on the page, which may be useful for solving the
+problem. You can use the `click_id()` function to click on the link to see if
 it is useful.
-- Always keep in mind that your action must be based on the ID shown in the 
+- Always keep in mind that your action must be based on the ID shown in the
 current image or viewport, not the ID shown in the history.
-- Do not use `stop()` lightly. Always remind yourself that the image only 
-shows a part of the full page. If you cannot find the answer, try to use 
-functions like `scroll_up()` and `scroll_down()` to check the full content of 
-the webpage before doing anything else, because the answer or next key step 
+- Do not use `stop()` lightly. Always remind yourself that the image only
+shows a part of the full page. If you cannot find the answer, try to use
+functions like `scroll_up()` and `scroll_down()` to check the full content of
+the webpage before doing anything else, because the answer or next key step
 may be hidden in the content below.
-- If the webpage needs human verification, you must avoid processing it. 
+- If the webpage needs human verification, you must avoid processing it.
 Please use `back()` to go back to the previous page, and try other ways.
-- If you have tried everything and still cannot resolve the issue, please stop 
+- If you have tried everything and still cannot resolve the issue, please stop
 the simulation, and report issues you have encountered.
-- Check the history actions carefully, detect whether you have repeatedly made 
+- Check the history actions carefully, detect whether you have repeatedly made
 the same actions or not.
-- When dealing with wikipedia revision history related tasks, you need to 
-think about the solution flexibly. First, adjust the browsing history 
-displayed on a single page to the maximum, and then make use of the 
-find_text_on_page function. This is extremely useful which can quickly locate 
+- When dealing with wikipedia revision history related tasks, you need to
+think about the solution flexibly. First, adjust the browsing history
+displayed on a single page to the maximum, and then make use of the
+find_text_on_page function. This is extremely useful which can quickly locate
 the text you want to find and skip massive amount of useless information.
-- Flexibly use interactive elements like slide down selection bar to filter 
+- Flexibly use interactive elements like slide down selection bar to filter
 out the information you need. Sometimes they are extremely useful.
 ```
         """
