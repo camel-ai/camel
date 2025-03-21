@@ -62,15 +62,15 @@ class CohereConfig(BaseConfig):
             value of `0.01`, max value of `0.99`. (default: :obj:`0.75`)
     """
 
-    temperature: Optional[float] = 0.2
+    temperature: Optional[float] = None
     documents: Optional[list] = None
     max_tokens: Optional[int] = None
     stop_sequences: Optional[List[str]] = None
     seed: Optional[int] = None
-    frequency_penalty: Optional[float] = 0.0
-    presence_penalty: Optional[float] = 0.0
-    k: Optional[int] = 0
-    p: Optional[float] = 0.75
+    frequency_penalty: Optional[float] = None
+    presence_penalty: Optional[float] = None
+    k: Optional[int] = None
+    p: Optional[float] = None
 
 
 COHERE_API_PARAMS = {param for param in CohereConfig().model_fields.keys()}

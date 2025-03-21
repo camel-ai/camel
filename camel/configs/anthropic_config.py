@@ -16,7 +16,6 @@ from __future__ import annotations
 from typing import Any, ClassVar, List, Union
 
 from camel.configs.base_config import BaseConfig
-from camel.types import NotGiven
 
 
 class AnthropicConfig(BaseConfig):
@@ -66,22 +65,21 @@ class AnthropicConfig(BaseConfig):
             (default: :obj:`NotGiven()`)
     """
 
-    max_tokens: int = 8192
-    stop_sequences: ClassVar[Union[List[str], NotGiven]] = []
-    temperature: float = 1
-    top_p: Union[float, NotGiven] = 0.7
-    stream: bool = False
-    metadata: Union[dict, NotGiven] = NotGiven()
-    thinking: Union[dict, NotGiven] = NotGiven()
-    tool_choice: Union[dict, NotGiven] = NotGiven()
+    max_tokens: Union[int, None] = None
+    stop_sequences: ClassVar[Union[List[str], None]] = None
+    temperature: Union[float, None] = None
+    top_p: Union[float, None] = None
+    top_k: Union[int, None] = None
+    stream: Union[bool, None] = None
+    metadata: Union[dict, None] = None
+    thinking: Union[dict, None] = None
+    tool_choice: Union[dict, None] = None
 
     def as_dict(self) -> dict[str, Any]:
         config_dict = super().as_dict()
         # Create a list of keys to remove to avoid modifying dict
         keys_to_remove = [
-            key
-            for key, value in config_dict.items()
-            if isinstance(value, NotGiven)
+            key for key, value in config_dict.items() if value is None
         ]
 
         for key in keys_to_remove:
@@ -89,8 +87,8 @@ class AnthropicConfig(BaseConfig):
 
         # remove some keys if thinking is enabled
         thinking_enabled = (
-            not isinstance(self.thinking, NotGiven)
-            and self.thinking["type"] == "enabled"
+            self.thinking is not None
+            and self.thinking.get("type") == "enabled"
         )
         if thinking_enabled:
             # `top_p`, `top_k`, `temperature` must be unset when thinking is

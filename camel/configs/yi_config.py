@@ -16,7 +16,6 @@ from __future__ import annotations
 from typing import Optional, Union
 
 from camel.configs.base_config import BaseConfig
-from camel.types import NOT_GIVEN, NotGiven
 
 
 class YiConfig(BaseConfig):
@@ -49,10 +48,10 @@ class YiConfig(BaseConfig):
     """
 
     tool_choice: Optional[Union[dict[str, str], str]] = None
-    max_tokens: Union[int, NotGiven] = NOT_GIVEN
-    top_p: float = 0.9
-    temperature: float = 0.3
-    stream: bool = False
+    max_tokens: Optional[int] = None
+    top_p: Optional[float] = None
+    temperature: Optional[float] = None
+    stream: Optional[bool] = None
 
 
 YI_API_PARAMS = {param for param in YiConfig.model_fields.keys()}

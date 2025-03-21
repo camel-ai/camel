@@ -55,13 +55,13 @@ class SambaVerseAPIConfig(BaseConfig):
             (default: :obj:`False`)
     """
 
-    temperature: Optional[float] = 0.7
-    top_p: Optional[float] = 0.95
-    top_k: Optional[int] = 50
-    max_tokens: Optional[int] = 2048
-    repetition_penalty: Optional[float] = 1.0
-    stop: Optional[Union[str, list[str]]] = ""
-    stream: Optional[bool] = False
+    temperature: Optional[float] = None
+    top_p: Optional[float] = None
+    top_k: Optional[int] = None
+    max_tokens: Optional[int] = None
+    repetition_penalty: Optional[float] = None
+    stop: Optional[Union[str, list[str]]] = None
+    stream: Optional[bool] = None
 
     def as_dict(self) -> dict[str, Any]:
         config_dict = super().as_dict()

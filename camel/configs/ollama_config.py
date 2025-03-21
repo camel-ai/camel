@@ -13,12 +13,11 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Sequence, Type, Union
+from typing import Optional, Sequence, Type, Union
 
 from pydantic import BaseModel
 
 from camel.configs.base_config import BaseConfig
-from camel.types import NOT_GIVEN, NotGiven
 
 
 class OllamaConfig(BaseConfig):
@@ -71,14 +70,14 @@ class OllamaConfig(BaseConfig):
             about frequency and presence penalties. (default: :obj:`0.0`)
     """
 
-    temperature: float = 0.2
-    top_p: float = 1.0
-    stream: bool = False
-    stop: Union[str, Sequence[str], NotGiven] = NOT_GIVEN
-    max_tokens: Union[int, NotGiven] = NOT_GIVEN
-    presence_penalty: float = 0.0
-    response_format: Union[Type[BaseModel], dict, NotGiven] = NOT_GIVEN
-    frequency_penalty: float = 0.0
+    temperature: Optional[float] = None
+    top_p: Optional[float] = None
+    stream: Optional[bool] = None
+    stop: Optional[Union[str, Sequence[str]]] = None
+    max_tokens: Optional[int] = None
+    presence_penalty: Optional[float] = None
+    response_format: Optional[Union[Type[BaseModel], dict]] = None
+    frequency_penalty: Optional[float] = None
 
 
 OLLAMA_API_PARAMS = {param for param in OllamaConfig.model_fields.keys()}

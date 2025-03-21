@@ -16,7 +16,6 @@ from __future__ import annotations
 from typing import Optional, Sequence, Union
 
 from camel.configs.base_config import BaseConfig
-from camel.types import NOT_GIVEN, NotGiven
 
 
 class ZhipuAIConfig(BaseConfig):
@@ -60,11 +59,11 @@ class ZhipuAIConfig(BaseConfig):
             are present.
     """
 
-    temperature: float = 0.2
-    top_p: float = 0.6
-    stream: bool = False
-    stop: Union[str, Sequence[str], NotGiven] = NOT_GIVEN
-    max_tokens: Union[int, NotGiven] = NOT_GIVEN
+    temperature: Optional[float] = None
+    top_p: Optional[float] = None
+    stream: Optional[bool] = None
+    stop: Optional[Union[str, Sequence[str]]] = None
+    max_tokens: Optional[int] = None
     tool_choice: Optional[Union[dict[str, str], str]] = None
 
 

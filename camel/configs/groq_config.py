@@ -16,7 +16,6 @@ from __future__ import annotations
 from typing import Optional, Sequence, Union
 
 from camel.configs.base_config import BaseConfig
-from camel.types import NOT_GIVEN, NotGiven
 
 
 class GroqConfig(BaseConfig):
@@ -88,17 +87,17 @@ class GroqConfig(BaseConfig):
             are present.
     """
 
-    temperature: float = 0.2  # openai default: 1.0
-    top_p: float = 1.0
-    n: int = 1
-    stream: bool = False
-    stop: Union[str, Sequence[str], NotGiven] = NOT_GIVEN
-    max_tokens: Union[int, NotGiven] = NOT_GIVEN
-    presence_penalty: float = 0.0
-    response_format: Union[dict, NotGiven] = NOT_GIVEN
-    frequency_penalty: float = 0.0
-    user: str = ""
-    tool_choice: Optional[Union[dict[str, str], str]] = "auto"
+    temperature: Optional[float] = None
+    top_p: Optional[float] = None
+    n: Optional[int] = None
+    stream: Optional[bool] = None
+    stop: Optional[Union[str, Sequence[str]]] = None
+    max_tokens: Optional[int] = None
+    presence_penalty: Optional[float] = None
+    response_format: Optional[dict] = None
+    frequency_penalty: Optional[float] = None
+    user: Optional[str] = None
+    tool_choice: Optional[Union[dict[str, str], str]] = None
 
 
 GROQ_API_PARAMS = {param for param in GroqConfig.model_fields.keys()}

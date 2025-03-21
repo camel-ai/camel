@@ -16,7 +16,6 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional, Sequence, Union
 
 from camel.configs.base_config import BaseConfig
-from camel.types import NOT_GIVEN, NotGiven
 
 
 class SGLangConfig(BaseConfig):
@@ -63,14 +62,14 @@ class SGLangConfig(BaseConfig):
             documentation.
     """
 
-    stop: Union[str, Sequence[str], NotGiven] = NOT_GIVEN
-    temperature: float = 1.0
-    top_p: float = 1.0
-    n: int = 1
-    frequency_penalty: float = 0.0
-    presence_penalty: float = 0.0
-    stream: bool = False
-    max_tokens: Union[int, NotGiven] = NOT_GIVEN
+    stop: Optional[Union[str, Sequence[str]]] = None
+    temperature: Optional[float] = None
+    top_p: Optional[float] = None
+    n: Optional[int] = None
+    frequency_penalty: Optional[float] = None
+    presence_penalty: Optional[float] = None
+    stream: Optional[bool] = None
+    max_tokens: Optional[int] = None
     tools: Optional[Union[List[Dict[str, Any]]]] = None
 
 

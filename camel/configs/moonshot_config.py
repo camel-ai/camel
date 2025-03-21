@@ -49,14 +49,14 @@ class MoonshotConfig(BaseConfig):
             (default: :obj:`None`)
     """
 
-    temperature: float = 0.3
+    temperature: Optional[float] = None
     max_tokens: Optional[int] = None
-    stream: bool = False
+    stream: Optional[bool] = None
     tools: Optional[list] = None
-    top_p: float = 1.0
-    n: int = 1
-    presence_penalty: float = 0.0
-    frequency_penalty: float = 0.0
+    top_p: Optional[float] = None
+    n: Optional[int] = None
+    presence_penalty: Optional[float] = None
+    frequency_penalty: Optional[float] = None
     stop: Optional[Union[str, List[str]]] = None
 
 

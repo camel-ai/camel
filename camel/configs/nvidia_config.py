@@ -18,7 +18,7 @@ from typing import List, Optional, Union
 from pydantic import Field
 
 from camel.configs.base_config import BaseConfig
-from camel.types import NOT_GIVEN, NotGiven
+from camel.types import NotGiven
 
 
 class NvidiaConfig(BaseConfig):
@@ -56,12 +56,12 @@ class NvidiaConfig(BaseConfig):
             (default: :obj:`None`)
     """
 
-    stream: bool = Field(default=False)
-    temperature: float = Field(default=0.7)
-    top_p: float = Field(default=0.95)
-    presence_penalty: float = Field(default=0.0)
-    frequency_penalty: float = Field(default=0.0)
-    max_tokens: Union[int, NotGiven] = Field(default=NOT_GIVEN)
+    stream: Optional[bool] = Field(default=None)
+    temperature: Optional[float] = Field(default=None)
+    top_p: Optional[float] = Field(default=None)
+    presence_penalty: Optional[float] = Field(default=None)
+    frequency_penalty: Optional[float] = Field(default=None)
+    max_tokens: Optional[Union[int, NotGiven]] = Field(default=None)
     seed: Optional[int] = Field(default=None)
     tool_choice: Optional[str] = Field(default=None)
     stop: Optional[List[str]] = Field(default=None)

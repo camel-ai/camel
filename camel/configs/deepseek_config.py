@@ -85,16 +85,16 @@ class DeepSeekConfig(BaseConfig):
             :obj:`True`)
     """
 
-    temperature: float = 1.0  # deepseek default: 1.0
-    top_p: float = 1.0
-    stream: bool = False
+    temperature: Optional[float] = None  # deepseek default: 1.0
+    top_p: Optional[float] = None
+    stream: Optional[bool] = None
     stop: Optional[Union[str, Sequence[str]]] = None
     max_tokens: Optional[int] = None
-    presence_penalty: float = 0.0
+    presence_penalty: Optional[float] = None
     response_format: Optional[Union[Type[BaseModel], dict]] = None
-    frequency_penalty: float = 0.0
+    frequency_penalty: Optional[float] = None
     tool_choice: Optional[Union[dict[str, str], str]] = None
-    logprobs: bool = False
+    logprobs: Optional[bool] = None
     top_logprobs: Optional[int] = None
 
     def __init__(self, include_usage: bool = True, **kwargs):

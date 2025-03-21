@@ -60,8 +60,8 @@ class RekaConfig(BaseConfig):
     max_tokens: Optional[int] = None
     stop: Optional[Union[str, list[str]]] = None
     seed: Optional[int] = None
-    frequency_penalty: float = 0.0
-    presence_penalty: float = 0.0
+    frequency_penalty: Optional[float] = 0.0
+    presence_penalty: Optional[float] = 0.0
     use_search_engine: Optional[bool] = False
 
     def as_dict(self) -> dict[str, Any]:

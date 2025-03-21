@@ -50,9 +50,9 @@ class InternLMConfig(BaseConfig):
             are present.
     """
 
-    stream: bool = False
-    temperature: float = 0.8
-    top_p: float = 0.9
+    stream: Optional[bool] = None
+    temperature: Optional[float] = None
+    top_p: Optional[float] = None
     max_tokens: Optional[int] = None
     tool_choice: Optional[Union[dict[str, str], str]] = None
 

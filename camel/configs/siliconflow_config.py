@@ -13,12 +13,12 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Any, Sequence, Type, Union
+from typing import Any, Optional, Sequence, Type, Union
 
 from pydantic import BaseModel
 
 from camel.configs.base_config import BaseConfig
-from camel.types import NOT_GIVEN, NotGiven
+from camel.types import NOT_GIVEN
 
 
 class SiliconFlowConfig(BaseConfig):
@@ -51,14 +51,14 @@ class SiliconFlowConfig(BaseConfig):
             for. A max of 128 functions are supported.
     """
 
-    temperature: float = 0.7
-    top_p: float = 0.7
-    n: int = 1
-    stream: bool = False
-    stop: Union[str, Sequence[str], NotGiven] = NOT_GIVEN
-    max_tokens: Union[int, NotGiven] = NOT_GIVEN
-    response_format: Union[Type[BaseModel], dict, NotGiven] = NOT_GIVEN
-    frequency_penalty: float = 0.0
+    temperature: Optional[float] = None
+    top_p: Optional[float] = None
+    n: Optional[int] = None
+    stream: Optional[bool] = None
+    stop: Optional[Union[str, Sequence[str]]] = None
+    max_tokens: Optional[int] = None
+    response_format: Optional[Union[Type[BaseModel], dict]] = None
+    frequency_penalty: Optional[float] = None
 
     def as_dict(self) -> dict[str, Any]:
         r"""Convert the current configuration to a dictionary.

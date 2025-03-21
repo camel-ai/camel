@@ -13,12 +13,11 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Any, Sequence, Union
+from typing import Any, Optional, Sequence, Union
 
 from pydantic import Field
 
 from camel.configs.base_config import BaseConfig
-from camel.types import NOT_GIVEN, NotGiven
 
 
 class TogetherAIConfig(BaseConfig):
@@ -83,17 +82,17 @@ class TogetherAIConfig(BaseConfig):
             (default: :obj:`""`)
     """
 
-    temperature: float = 0.2  # openai default: 1.0
-    top_p: float = 1.0
-    n: int = 1
-    stream: bool = False
-    stop: Union[str, Sequence[str], NotGiven] = NOT_GIVEN
-    max_tokens: Union[int, NotGiven] = NOT_GIVEN
-    presence_penalty: float = 0.0
-    response_format: Union[dict, NotGiven] = NOT_GIVEN
-    frequency_penalty: float = 0.0
+    temperature: Optional[float] = None  # openai default: 1.0
+    top_p: Optional[float] = None
+    n: Optional[int] = None
+    stream: Optional[bool] = None
+    stop: Optional[Union[str, Sequence[str]]] = None
+    max_tokens: Optional[int] = None
+    presence_penalty: Optional[float] = None
+    response_format: Optional[dict] = None
+    frequency_penalty: Optional[float] = None
     logit_bias: dict = Field(default_factory=dict)
-    user: str = ""
+    user: Optional[str] = None
 
     def as_dict(self) -> dict[str, Any]:
         config_dict = super().as_dict()

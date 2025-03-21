@@ -13,12 +13,12 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Sequence, Type, Union
+from typing import Optional, Sequence, Union
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from camel.configs.base_config import BaseConfig
-from camel.types import NOT_GIVEN, NotGiven
+from camel.types import NotGiven
 
 
 class AIMLConfig(BaseConfig):
@@ -65,16 +65,16 @@ class AIMLConfig(BaseConfig):
             for. A max of 128 functions are supported.
     """
 
-    temperature: float = 0.7
-    top_p: float = 0.7
-    n: int = 1
-    stream: bool = False
-    stop: Union[str, Sequence[str], NotGiven] = NOT_GIVEN
-    max_tokens: Union[int, NotGiven] = NOT_GIVEN
+    temperature: Optional[float] = None
+    top_p: Optional[float] = None
+    n: Optional[int] = None
+    stream: Optional[bool] = None
+    stop: Optional[Union[str, Sequence[str], NotGiven]] = None
+    max_tokens: Optional[Union[int, NotGiven]] = None
     logit_bias: dict = Field(default_factory=dict)
-    response_format: Union[Type[BaseModel], dict, NotGiven] = NOT_GIVEN
-    presence_penalty: float = 0.0
-    frequency_penalty: float = 0.0
+    response_format: Optional[Union[dict, NotGiven]] = None
+    presence_penalty: Optional[float] = None
+    frequency_penalty: Optional[float] = None
 
 
 AIML_API_PARAMS = {param for param in AIMLConfig.model_fields.keys()}

@@ -75,10 +75,10 @@ class GeminiConfig(BaseConfig):
             are present.
     """
 
-    temperature: float = 0.2  # openai default: 1.0
-    top_p: float = 1.0
-    n: int = 1
-    stream: bool = False
+    temperature: Optional[float] = None  # openai default: 1.0
+    top_p: Optional[float] = None
+    n: Optional[int] = None
+    stream: Optional[bool] = None
     stop: Optional[Union[str, Sequence[str]]] = None
     max_tokens: Optional[int] = None
     response_format: Optional[Union[Type[BaseModel], dict]] = None

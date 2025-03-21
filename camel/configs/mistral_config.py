@@ -58,9 +58,9 @@ class MistralConfig(BaseConfig):
     max_tokens: Optional[int] = None
     stop: Optional[Union[str, list[str]]] = None
     random_seed: Optional[int] = None
-    safe_prompt: bool = False
+    safe_prompt: Optional[bool] = None
     response_format: Optional[Union[Dict[str, str], Any]] = None
-    tool_choice: Optional[str] = "auto"
+    tool_choice: Optional[str] = None
 
     @field_validator("response_format", mode="before")
     @classmethod

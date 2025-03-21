@@ -70,10 +70,10 @@ class QwenConfig(BaseConfig):
             (default: :obj:`True`)
     """
 
-    stream: bool = False
-    temperature: float = 0.3
-    top_p: float = 0.9
-    presence_penalty: float = 0.0
+    stream: Optional[bool] = None
+    temperature: Optional[float] = None
+    top_p: Optional[float] = None
+    presence_penalty: Optional[float] = None
     response_format: Optional[Dict[str, str]] = None
     max_tokens: Optional[int] = None
     seed: Optional[int] = None
