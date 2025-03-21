@@ -34,6 +34,7 @@ class ModelType(UnifiedModelType, Enum):
     GPT_4_TURBO = "gpt-4-turbo"
     GPT_4O = "gpt-4o"
     GPT_4O_MINI = "gpt-4o-mini"
+    GPT_4_5_PREVIEW = "gpt-4.5-preview"
     O1 = "o1"
     O1_PREVIEW = "o1-preview"
     O1_MINI = "o1-mini"
@@ -100,6 +101,7 @@ class ModelType(UnifiedModelType, Enum):
     CLAUDE_3_HAIKU = "claude-3-haiku-20240307"
     CLAUDE_3_5_SONNET = "claude-3-5-sonnet-latest"
     CLAUDE_3_5_HAIKU = "claude-3-5-haiku-latest"
+    CLAUDE_3_7_SONNET = "claude-3-7-sonnet-latest"
 
     # Nvidia models
     NVIDIA_NEMOTRON_340B_INSTRUCT = "nvidia/nemotron-4-340b-instruct"
@@ -164,6 +166,7 @@ class ModelType(UnifiedModelType, Enum):
     QWEN_2_5_14B = "qwen2.5-14b-instruct"
     QWEN_QWQ_32B = "qwq-32b-preview"
     QWEN_QVQ_72B = "qvq-72b-preview"
+    QWEN_QWQ_PLUS = "qwq-plus"
 
     # Yi models (01-ai)
     YI_LIGHTNING = "yi-lightning"
@@ -214,6 +217,14 @@ class ModelType(UnifiedModelType, Enum):
     def __new__(cls, value) -> "ModelType":
         return cast("ModelType", UnifiedModelType.__new__(cls, value))
 
+    @classmethod
+    def from_name(cls, name):
+        r"""Returns the ModelType enum value from a string."""
+        for model_type in cls:
+            if model_type.value == name:
+                return model_type
+        raise ValueError(f"Unknown ModelType name: {name}")
+
     @property
     def value_for_tiktoken(self) -> str:
         if self.is_openai:
@@ -247,6 +258,7 @@ class ModelType(UnifiedModelType, Enum):
                 self.is_siliconflow,
                 self.is_zhipuai,
                 self.is_aiml,
+                self.is_azure_openai,
             ]
         )
 
@@ -263,6 +275,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.O1_PREVIEW,
             ModelType.O1_MINI,
             ModelType.O3_MINI,
+            ModelType.GPT_4_5_PREVIEW,
         }
 
     @property
@@ -313,6 +326,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_HAIKU,
             ModelType.CLAUDE_3_5_SONNET,
             ModelType.CLAUDE_3_5_HAIKU,
+            ModelType.CLAUDE_3_7_SONNET,
         }
 
     @property
@@ -465,6 +479,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_2_5_14B,
             ModelType.QWEN_QWQ_32B,
             ModelType.QWEN_QVQ_72B,
+            ModelType.QWEN_QWQ_PLUS,
         }
 
     @property
@@ -594,6 +609,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NVIDIA_MISTRAL_LARGE,
             ModelType.NVIDIA_MIXTRAL_8X7B,
             ModelType.QWEN_QWQ_32B,
+            ModelType.QWEN_QWQ_PLUS,
             ModelType.QWEN_QVQ_72B,
             ModelType.INTERNLM3_8B_INSTRUCT,
             ModelType.INTERNLM3_LATEST,
@@ -623,6 +639,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4_TURBO,
             ModelType.O1_PREVIEW,
             ModelType.O1_MINI,
+            ModelType.GPT_4_5_PREVIEW,
             ModelType.MISTRAL_LARGE,
             ModelType.MISTRAL_NEMO,
             ModelType.MISTRAL_PIXTRAL_12B,
@@ -680,6 +697,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_HAIKU,
             ModelType.CLAUDE_3_5_SONNET,
             ModelType.CLAUDE_3_5_HAIKU,
+            ModelType.CLAUDE_3_7_SONNET,
             ModelType.YI_MEDIUM_200K,
         }:
             return 200_000
@@ -883,6 +901,15 @@ class ModelPlatformType(Enum):
     MOONSHOT = "moonshot"
     SILICONFLOW = "siliconflow"
     AIML = "aiml"
+    VOLCANO = "volcano"
+
+    @classmethod
+    def from_name(cls, name):
+        r"""Returns the ModelPlatformType enum value from a string."""
+        for model_platfrom_type in cls:
+            if model_platfrom_type.value == name:
+                return model_platfrom_type
+        raise ValueError(f"Unknown ModelPlatformType name: {name}")
 
     @property
     def is_openai(self) -> bool:
@@ -1004,6 +1031,11 @@ class ModelPlatformType(Enum):
     def is_aiml(self) -> bool:
         r"""Returns whether this platform is AIML."""
         return self is ModelPlatformType.AIML
+
+    @property
+    def is_volcano(self) -> bool:
+        r"""Returns whether this platform is volcano."""
+        return self is ModelPlatformType.VOLCANO
 
 
 class AudioModelType(Enum):

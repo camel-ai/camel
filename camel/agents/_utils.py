@@ -37,7 +37,7 @@ def generate_tool_prompt(tool_schema_list: List[Dict[str, Any]]) -> str:
         tool_info = tool["function"]
         tool_name = tool_info["name"]
         tool_description = tool_info["description"]
-        tool_json = json.dumps(tool_info, indent=4)
+        tool_json = json.dumps(tool_info, indent=4, ensure_ascii=False)
 
         prompt = (
             f"Use the function '{tool_name}' to '{tool_description}':\n"
@@ -136,7 +136,7 @@ def get_info_dict(
     termination_reasons: List[str],
     num_tokens: int,
     tool_calls: List[ToolCallingRecord],
-    external_tool_call_request: Optional[ToolCallRequest] = None,
+    external_tool_call_requests: Optional[List[ToolCallRequest]] = None,
 ) -> Dict[str, Any]:
     r"""Returns a dictionary containing information about the chat session.
 
@@ -149,8 +149,8 @@ def get_info_dict(
         num_tokens (int): The number of tokens used in the chat session.
         tool_calls (List[ToolCallingRecord]): The list of function
             calling records, containing the information of called tools.
-        external_tool_call_request (Optional[ToolCallRequest]): The
-            request for external tool call.
+        external_tool_call_requests (Optional[List[ToolCallRequest]]): The
+            requests for external tool calls.
 
 
     Returns:
@@ -162,7 +162,7 @@ def get_info_dict(
         "termination_reasons": termination_reasons,
         "num_tokens": num_tokens,
         "tool_calls": tool_calls,
-        "external_tool_call_request": external_tool_call_request,
+        "external_tool_call_requests": external_tool_call_requests,
     }
 
 

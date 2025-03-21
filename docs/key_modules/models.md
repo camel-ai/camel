@@ -12,7 +12,7 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 
 | Model Platform | Model Type(s) |
 |---------------|--------------|
-| **OpenAI** | gpt-4o, gpt-4o-mini, o1, o1-preview, o1-mini, o3-mini, gpt-4-turbo, gpt-4, gpt-3.5-turbo |
+| **OpenAI** | gpt-4.5-preview, gpt-4o, gpt-4o-mini, o1, o1-preview, o1-mini, o3-mini, gpt-4-turbo, gpt-4, gpt-3.5-turbo |
 | **Azure OpenAI** | gpt-4o, gpt-4-turbo, gpt-4, gpt-3.5-turbo |
 | **Mistral AI** | mistral-large-latest, pixtral-12b-2409, ministral-8b-latest, ministral-3b-latest, open-mistral-nemo, codestral-latest, open-mistral-7b, open-mixtral-8x7b, open-mixtral-8x22b, open-codestral-mamba |
 | **Moonshot** | moonshot-v1-8k, moonshot-v1-32k, moonshot-v1-128k |
@@ -27,7 +27,7 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **COHERE** | command-r-plus, command-r, command-light, command, command-nightly |
 | **GROQ** | [supported models](https://console.groq.com/docs/models) |
 | **TOGETHER AI** | [supported models](https://docs.together.ai/docs/chat-models) |
-| **SambaNova** | [supported models](https://community.sambanova.ai/t/supported-models/193) |
+| **SambaNova** | [supported models](https://docs.sambanova.ai/cloud/docs/get-started/supported-models) |
 | **Ollama** |  [supported models](https://ollama.com/library) |
 | **LiteLLM** | [supported models](https://docs.litellm.ai/docs/providers) |
 | **vLLM** |  [supported models](https://docs.vllm.ai/en/latest/models/supported_models.html) |
@@ -68,8 +68,8 @@ ChatAgent(system_msg, model=model)
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
     model_type="a-string-representing-the-model-type",
-    api_key=os.environ.get("OPENAI_COMPATIBILIY_API_KEY"),
-    url=os.environ.get("OPENAI_COMPATIBILIY_API_BASE_URL"),
+    api_key=os.environ.get("OPENAI_COMPATIBILITY_API_KEY"),
+    url=os.environ.get("OPENAI_COMPATIBILITY_API_BASE_URL"),
     model_config_dict={"temperature": 0.4, "max_tokens": 4096},
 )
 ```
