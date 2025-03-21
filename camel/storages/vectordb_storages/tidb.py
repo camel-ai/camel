@@ -86,8 +86,9 @@ class TiDBStorage(BaseVectorStorage):
         self.collection_name = (
             collection_name or self._generate_collection_name()
         )
-        self._table = self._check_and_create_collection()
+        self._table = self._open_and_create_collection()
         self._table_model = self._table.table_model
+        self._check_collection()
 
     def _create_client(
         self,
@@ -124,23 +125,26 @@ class TiDBStorage(BaseVectorStorage):
             table=True,
         )
 
-    def _check_and_create_collection(self) -> "Table[Any]":
-        r"""Checks if the specified table exists in TiDB and creates it
-        if it doesn't, ensuring it matches the specified vector dimensionality.
-        """
+    def _open_and_create_collection(self) -> "Table[Any]":
+        """Opens an existing table or creates a new table in TiDB."""
         table = self._client.open_table(self.collection_name)
-        if table is not None:
-            in_dim = self._get_collection_info()["vector_dim"]
-            if in_dim != self.vector_dim:
-                raise ValueError(
-                    "Vector dimension of the existing table "
-                    f'"{self.collection_name}" ({in_dim}) is different from '
-                    f"the given embedding dim ({self.vector_dim})."
-                )
-        else:
-            self._table_model = self._get_table_model(self.collection_name)
-            table = self._client.create_table(schema=self._table_model)
+        if table is None:
+            table = self._client.create_table(
+                schema=self._get_table_model(self.collection_name)
+            )
         return table
+
+    def _check_collection(self):
+        r"""Ensuring the specified table matches the specified vector
+        dimensionality.
+        """
+        in_dim = self._get_collection_info()["vector_dim"]
+        if in_dim != self.vector_dim:
+            raise ValueError(
+                "Vector dimension of the existing table "
+                f'"{self.collection_name}" ({in_dim}) is different from '
+                f"the given embedding dim ({self.vector_dim})."
+            )
 
     def _delete_collection(
         self,

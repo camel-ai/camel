@@ -44,6 +44,12 @@ The Storage module is a comprehensive framework designed for handling various ty
 
 Reference: [Milvus](https://milvus.io/docs/overview.md/)
 
+**`TiDBStorage`**:
+
+- Description: A concrete implementation of `BaseVectorStorage`, tailored for interacting with TiDB, one database for all your AI ambitions: vector embeddings, knowledge graphs, and operational data.
+
+Reference: [TiDB](https://ai.pingcap.com/)
+
 **`QdrantStorage`**:
 
 - Description: A concrete implementation of `BaseVectorStorage`, tailored for interacting with Qdrant, a vector search engine.
@@ -154,7 +160,51 @@ milvus_storage.clear()
 >>> {'key2': 'value2'} 0.5669466853141785
 ```
 
-### 3.4. Using `QdrantStorage`
+### 3.4. Using `TiDBStorage`
+
+If you use TiDB Serverless, you can redirect to [TiDB Cloud Web Console](https://tidbcloud.com/console/clusters) to get the database URL. (Select Connect with "SQLAlchemy" > "PyMySQL" on the connection panel)
+
+```python
+import os
+from camel.storages import TiDBStorage, VectorDBQuery, VectorRecord
+
+os.environ["TIDB_DATABASE_URL"] = "The database url of your TiDB cluster."
+
+# Create an instance of TiDBStorage with dimension = 4
+tidb_storage = TiDBStorage(
+    url_and_api_key=(os.getenv("DATABASE_URL"), ''),
+    vector_dim=4,
+    collection_name="my_collection"
+)
+
+# Add two vector records
+tidb_storage.add([
+    VectorRecord(
+        vector=[-0.1, 0.1, -0.1, 0.1],
+        payload={'key1': 'value1'},
+    ),
+    VectorRecord(
+        vector=[-0.1, 0.1, 0.1, 0.1],
+        payload={'key2': 'value2'},
+    ),
+])
+
+# Load the remote collection
+tidb_storage.load()
+
+# Query similar vectors
+query_results = tidb_storage.query(VectorDBQuery(query_vector=[0.1, 0.2, 0.1, 0.1], top_k=1))
+for result in query_results:
+    print(result.record.payload, result.similarity)
+
+# Clear all vectors
+tidb_storage.clear()
+```
+```markdown
+>>> {'key2': 'value2'} 0.5669466755703252
+```
+
+### 3.5. Using `QdrantStorage`
 
 ```python
 from camel.storages import QdrantStorage, VectorDBQuery, VectorRecord
@@ -184,7 +234,7 @@ qdrant_storage.clear()
 >>> {'key2': 'value2'} 0.5669467095138407
 ```
 
-### 3.5. Using `NebulaGraph`
+### 3.6. Using `NebulaGraph`
 
 ```python
 from camel.storages.graph_storages import NebulaGraph
@@ -196,7 +246,7 @@ query = 'SHOW TAGS;'
 print(nebula_graph.query(query))
 ```
 
-### 3.5. Using `Neo4jGraph`
+### 3.7. Using `Neo4jGraph`
 
 ```python
 from camel.storages import Neo4jGraph
