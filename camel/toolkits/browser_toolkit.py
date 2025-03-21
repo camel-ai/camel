@@ -439,7 +439,7 @@ class BaseBrowser:
         self,
         headless=True,
         cache_dir: Optional[str] = None,
-        channel: str = AcceptedBrowserChannels.CHROMIUM.value,
+        channel: AcceptedBrowserChannels = AcceptedBrowserChannels.CHROMIUM,
     ):
         r"""Initialize the WebBrowser instance.
 
@@ -456,7 +456,7 @@ class BaseBrowser:
 
         self.history: list = []
         self.headless = headless
-        self.channel = channel
+        self.channel = channel.value
         self._ensure_browser_installed()
         self.playwright = sync_playwright().start()
         self.page_history: list = []  # stores the history of visited pages
