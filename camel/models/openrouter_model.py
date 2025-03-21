@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional, Type, Union
 from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
 from pydantic import BaseModel
 
-from camel.configs import GROQ_API_PARAMS, GroqConfig
+from camel.configs import OPENROUTER_API_PARAMS, OpenRouterConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.models._utils import try_modify_message_with_format
@@ -33,8 +33,8 @@ from camel.utils import (
 )
 
 
-class GroqModel(BaseModelBackend):
-    r"""LLM API served by Groq in a unified BaseModelBackend interface.
+class OpenRouterModel(BaseModelBackend):
+    r"""LLM API served by OpenRouter in a unified BaseModelBackend interface.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is
@@ -44,8 +44,8 @@ class GroqModel(BaseModelBackend):
             If:obj:`None`, :obj:`GroqConfig().as_dict()` will be used.
             (default: :obj:`None`)
         api_key (Optional[str], optional): The API key for authenticating
-            with the Groq service. (default: :obj:`None`).
-        url (Optional[str], optional): The url to the Groq service.
+            with the OpenRouter service. (default: :obj:`None`).
+        url (Optional[str], optional): The url to the OpenRouter service.
             (default: :obj:`None`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter(
@@ -53,7 +53,7 @@ class GroqModel(BaseModelBackend):
             (default: :obj:`None`)
     """
 
-    @api_keys_required([("api_key", "GROQ_API_KEY")])
+    @api_keys_required([("api_key", "OPENROUTER_API_KEY")])
     def __init__(
         self,
         model_type: Union[ModelType, str],
@@ -63,10 +63,10 @@ class GroqModel(BaseModelBackend):
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
         if model_config_dict is None:
-            model_config_dict = GroqConfig().as_dict()
-        api_key = api_key or os.environ.get("GROQ_API_KEY")
+            model_config_dict = OpenRouterConfig().as_dict()
+        api_key = api_key or os.environ.get("OPENROUTER_API_KEY")
         url = url or os.environ.get(
-            "GROQ_API_BASE_URL", "https://api.groq.com/openai/v1"
+            "OPENROUTER_API_BASE_URL", "https://openrouter.ai/api/v1"
         )
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
@@ -117,7 +117,7 @@ class GroqModel(BaseModelBackend):
         response_format: Optional[type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        r"""Runs inference of Groq chat completion.
+        r"""Runs inference of OpenAI chat completion.
 
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
@@ -150,7 +150,7 @@ class GroqModel(BaseModelBackend):
         response_format: Optional[type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-        r"""Runs inference of Groq chat completion asynchronously.
+        r"""Runs inference of OpenRouter chat completion asynchronously.
 
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
@@ -179,18 +179,18 @@ class GroqModel(BaseModelBackend):
 
     def check_model_config(self):
         r"""Check whether the model configuration contains any unexpected
-        arguments to Groq API. But Groq API does not have any additional
-        arguments to check.
+        arguments to OpenRouter API. But OpenRouter API does not have any
+        additional arguments to check.
 
         Raises:
             ValueError: If the model configuration dictionary contains any
-                unexpected arguments to Groq API.
+                unexpected arguments to OpenRouter API.
         """
         for param in self.model_config_dict:
-            if param not in GROQ_API_PARAMS:
+            if param not in OPENROUTER_API_PARAMS:
                 raise ValueError(
                     f"Unexpected argument `{param}` is "
-                    "input into Groq model backend."
+                    "input into OpenRouter model backend."
                 )
 
     @property

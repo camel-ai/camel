@@ -438,6 +438,7 @@ class BaseBrowser:
             sync_playwright,
         )
 
+        self._ensure_browser_installed()
         self.history: list = []
         self.headless = headless
         self.playwright = sync_playwright().start()
@@ -913,6 +914,48 @@ class BaseBrowser:
 
         markdown_content = html2text(html_content)
         return markdown_content
+
+    def _ensure_browser_installed(self) -> None:
+        r"""Ensure the browser is installed."""
+        import platform
+        import subprocess
+        import sys
+
+        try:
+            from playwright.sync_api import sync_playwright
+
+            with sync_playwright() as p:
+                browser = p.chromium.launch()
+                browser.close()
+        except Exception:
+            logger.info("Installing Chromium browser...")
+            try:
+                subprocess.run(
+                    [
+                        sys.executable,
+                        "-m",
+                        "playwright",
+                        "install",
+                        "chromium",
+                    ],
+                    check=True,
+                    capture_output=True,
+                )
+                if platform.system().lower() == "linux":
+                    subprocess.run(
+                        [
+                            sys.executable,
+                            "-m",
+                            "playwright",
+                            "install-deps",
+                            "chromium",
+                        ],
+                        check=True,
+                        capture_output=True,
+                    )
+                logger.info("Chromium browser installation completed")
+            except subprocess.CalledProcessError as e:
+                raise RuntimeError(f"Failed to install browser: {e.stderr}")
 
 
 class BrowserToolkit(BaseToolkit):

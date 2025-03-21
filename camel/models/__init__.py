@@ -33,6 +33,7 @@ from .ollama_model import OllamaModel
 from .openai_audio_models import OpenAIAudioModels
 from .openai_compatible_model import OpenAICompatibleModel
 from .openai_model import OpenAIModel
+from .openrouter_model import OpenRouterModel
 from .qwen_model import QwenModel
 from .reka_model import RekaModel
 from .samba_model import SambaModel
@@ -48,6 +49,7 @@ from .zhipuai_model import ZhipuAIModel
 __all__ = [
     'BaseModelBackend',
     'OpenAIModel',
+    'OpenRouterModel',
     'AzureOpenAIModel',
     'AnthropicModel',
     'MistralModel',
