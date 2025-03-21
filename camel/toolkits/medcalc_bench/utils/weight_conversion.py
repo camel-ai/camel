@@ -9,7 +9,7 @@ Modifications include:
 Date: March 2025
 """
 
-from rounding import round_number
+from .rounding import round_number
 
 
 def weight_conversion_explanation(weight_info):

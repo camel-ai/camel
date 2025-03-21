@@ -9,9 +9,9 @@ Modifications include:
 Date: March 2025
 """
 
-import weight_conversion
+from utils.weight_conversion import weight_conversion_explanation
+from utils.rounding import round_number
 import ideal_body_weight
-from rounding import round_number
 
 
 def abw_explanation(input_variables):
@@ -51,7 +51,7 @@ def abw_explanation(input_variables):
         patient's adjusted body weight is 66.778 kg.\n", 'Answer': 66.778}"
     """
 
-    weight_explanation, weight = weight_conversion.weight_conversion_explanation(input_variables["weight"])
+    weight_explanation, weight = weight_conversion_explanation(input_variables["weight"])
     ibw_explanation = ideal_body_weight.ibw_explanation(input_variables)
 
     explanation = f"{ibw_explanation['Explanation']}"
