@@ -11,6 +11,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from .base import BaseExtractor, BaseExtractorStrategy
+from . import general, python
+from .base import Extractor, ExtractorStrategy
+from .graph_math_strategies import (
+    GraphDictionaryStrategy,
+    GraphListStrategy,
+    GraphNodeListStrategy,
+    MathValueStrategy,
+)
 
-__all__ = ["BaseExtractor", "BaseExtractorStrategy"]
+__all__ = [
+    "Extractor",
+    "ExtractorStrategy",
+    "general",
+    "python",
+    "GraphDictionaryStrategy",
+    "GraphListStrategy",
+    "GraphNodeListStrategy",
+    "MathValueStrategy",
+]
