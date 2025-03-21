@@ -172,9 +172,17 @@ class TestMem0Storage(unittest.TestCase):
             }
         ]
 
-        result = self.storage.save(records)
-        self.assertIn("error", result)
-        self.assertEqual(result["error"], "API Error")
+        # The method doesn't return anything, it just logs the error
+        with self.assertLogs(level='ERROR') as log_context:
+            self.storage.save(records)
+
+        # Check that the error was logged
+        self.assertTrue(
+            any(
+                "Error adding memory: API Error" in message
+                for message in log_context.output
+            )
+        )
 
     def test_error_handling_load(self):
         r"""Test error handling for load method."""
@@ -187,9 +195,17 @@ class TestMem0Storage(unittest.TestCase):
         r"""Test error handling for clear method."""
         self.mock_mem0_client.delete_users.side_effect = Exception("API Error")
 
-        result = self.storage.clear()
-        self.assertIn("error", result)
-        self.assertEqual(result["error"], "API Error")
+        # The method doesn't return anything, it just logs the error
+        with self.assertLogs(level='ERROR') as log_context:
+            self.storage.clear()
+
+        # Check that the error was logged
+        self.assertTrue(
+            any(
+                "Error deleting memories: API Error" in message
+                for message in log_context.output
+            )
+        )
 
     def test_prepare_messages(self):
         r"""Test message preparation helper method."""
