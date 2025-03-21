@@ -49,6 +49,10 @@ class OllamaModel(BaseModelBackend):
             use for the model. If not provided, :obj:`OpenAITokenCounter(
             ModelType.GPT_4O_MINI)` will be used.
             (default: :obj:`None`)
+        timeout (Optional[float], optional): The timeout value in seconds for
+            API calls. If not provided, will fall back to the MODEL_TIMEOUT
+            environment variable or default to 180 seconds.
+            (default: :obj:`None`)
 
     References:
         https://github.com/ollama/ollama/blob/main/docs/openai.md
@@ -61,24 +65,26 @@ class OllamaModel(BaseModelBackend):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
+        timeout: Optional[float] = None,
     ) -> None:
         if model_config_dict is None:
             model_config_dict = OllamaConfig().as_dict()
         url = url or os.environ.get("OLLAMA_BASE_URL")
+        timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter
+            model_type, model_config_dict, api_key, url, token_counter, timeout
         )
         if not self._url:
             self._start_server()
         # Use OpenAI client as interface call Ollama
         self._client = OpenAI(
-            timeout=180,
+            timeout=self._timeout,
             max_retries=3,
             api_key="Set-but-ignored",  # required but ignored
             base_url=self._url,
         )
         self._async_client = AsyncOpenAI(
-            timeout=180,
+            timeout=self._timeout,
             max_retries=3,
             api_key="Set-but-ignored",  # required but ignored
             base_url=self._url,
