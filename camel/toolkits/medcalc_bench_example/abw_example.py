@@ -61,11 +61,6 @@ if __name__ == "__main__":
     # Iterate the test cases and print the results
     for i, input in enumerate(test_cases, 1):
         print(f"Test Case {i}: Input = {input}")
-        result = adjusted_body_weight(input[0],
-                                      input[1],
-                                      input[2],
-                                      input[3],
-                                      input[4],
-                                      input[5])
+        result = adjusted_body_weight(input[0], input[1], input[2], input[3], input[4], input[5])
         print(result)
         print("-" * 50)
