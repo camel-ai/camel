@@ -60,7 +60,6 @@ from .browser_toolkit import BrowserToolkit
 from .file_write_toolkit import FileWriteToolkit
 from .terminal_toolkit import TerminalToolkit
 from .pubmed_toolkit import PubMedToolkit
-from .thinking_toolkit import ThinkingToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -109,5 +108,4 @@ __all__ = [
     'FileWriteToolkit',
     'TerminalToolkit',
     'PubMedToolkit',
-    'ThinkingToolkit',
 ]

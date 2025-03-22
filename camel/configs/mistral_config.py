@@ -30,18 +30,18 @@ class MistralConfig(BaseConfig):
 
     Args:
         temperature (Optional[float], optional): temperature the temperature
-            to use for sampling, e.g. 0.5. (default: :obj:`None`)
+            to use for sampling, e.g. 0.5.
         top_p (Optional[float], optional): the cumulative probability of
-            tokens to generate, e.g. 0.9. (default: :obj:`None`)
+            tokens to generate, e.g. 0.9. Defaults to None.
         max_tokens (Optional[int], optional): the maximum number of tokens to
-            generate, e.g. 100. (default: :obj:`None`)
+            generate, e.g. 100. Defaults to None.
         stop (Optional[Union[str,list[str]]]): Stop generation if this token
             is detected. Or if one of these tokens is detected when providing
-            a string list. (default: :obj:`None`)
+            a string list.
         random_seed (Optional[int], optional): the random seed to use for
-            sampling, e.g. 42. (default: :obj:`None`)
+            sampling, e.g. 42. Defaults to None.
         safe_prompt (bool, optional): whether to use safe prompt, e.g. true.
-            (default: :obj:`None`)
+            Defaults to False.
         response_format (Union[Dict[str, str], ResponseFormat): format of the
             response.
         tool_choice (str, optional): Controls which (if
@@ -58,9 +58,9 @@ class MistralConfig(BaseConfig):
     max_tokens: Optional[int] = None
     stop: Optional[Union[str, list[str]]] = None
     random_seed: Optional[int] = None
-    safe_prompt: Optional[bool] = None
+    safe_prompt: bool = False
     response_format: Optional[Union[Dict[str, str], Any]] = None
-    tool_choice: Optional[str] = None
+    tool_choice: Optional[str] = "auto"
 
     @field_validator("response_format", mode="before")
     @classmethod

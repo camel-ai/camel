@@ -26,33 +26,32 @@ class RekaConfig(BaseConfig):
 
     Args:
         temperature (Optional[float], optional): temperature the temperature
-            to use for sampling, e.g. 0.5. (default: :obj:`None`)
+            to use for sampling, e.g. 0.5.
         top_p (Optional[float], optional): the cumulative probability of
-            tokens to generate, e.g. 0.9. (default: :obj:`None`)
+            tokens to generate, e.g. 0.9. Defaults to None.
         top_k (Optional[int], optional): Parameter which forces the model to
             only consider the tokens with the `top_k` highest probabilities at
-            the next step. (default: :obj:`None`)
+            the next step. Defaults to 1024.
         max_tokens (Optional[int], optional): the maximum number of tokens to
-            generate, e.g. 100. (default: :obj:`None`)
+            generate, e.g. 100. Defaults to None.
         stop (Optional[Union[str,list[str]]]): Stop generation if this token
             is detected. Or if one of these tokens is detected when providing
-            a string list. (default: :obj:`None`)
+            a string list.
         seed (Optional[int], optional): the random seed to use for sampling, e.
-            g. 42. (default: :obj:`None`)
+            g. 42. Defaults to None.
         presence_penalty (float, optional): Number between :obj:`-2.0` and
             :obj:`2.0`. Positive values penalize new tokens based on whether
             they appear in the text so far, increasing the model's likelihood
             to talk about new topics. See more information about frequency and
-            presence penalties. (default: :obj:`None`)
+            presence penalties. (default: :obj:`0.0`)
         frequency_penalty (float, optional): Number between :obj:`-2.0` and
             :obj:`2.0`. Positive values penalize new tokens based on their
             existing frequency in the text so far, decreasing the model's
             likelihood to repeat the same line verbatim. See more information
-            about frequency and presence penalties. (default: :obj:`None`)
+            about frequency and presence penalties. (default: :obj:`0.0`)
         use_search_engine (Optional[bool]): Whether to consider using search
             engine to complete the request. Note that even if this is set to
             `True`, the model might decide to not use search.
-            (default: :obj:`None`)
     """
 
     temperature: Optional[float] = None
@@ -61,9 +60,9 @@ class RekaConfig(BaseConfig):
     max_tokens: Optional[int] = None
     stop: Optional[Union[str, list[str]]] = None
     seed: Optional[int] = None
-    frequency_penalty: Optional[float] = None
-    presence_penalty: Optional[float] = None
-    use_search_engine: Optional[bool] = None
+    frequency_penalty: float = 0.0
+    presence_penalty: float = 0.0
+    use_search_engine: Optional[bool] = False
 
     def as_dict(self) -> dict[str, Any]:
         config_dict = super().as_dict()

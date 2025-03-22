@@ -29,7 +29,6 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **TOGETHER AI** | [supported models](https://docs.together.ai/docs/chat-models) |
 | **SambaNova** | [supported models](https://docs.sambanova.ai/cloud/docs/get-started/supported-models) |
 | **Ollama** |  [supported models](https://ollama.com/library) |
-| **OpenRouter** | [supported models](https://openrouter.ai/models) |
 | **LiteLLM** | [supported models](https://docs.litellm.ai/docs/providers) |
 | **vLLM** |  [supported models](https://docs.vllm.ai/en/latest/models/supported_models.html) |
 | **SGLANG** | [supported models](https://sgl-project.github.io/references/supported_models.html) |

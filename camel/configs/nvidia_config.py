@@ -18,7 +18,7 @@ from typing import List, Optional, Union
 from pydantic import Field
 
 from camel.configs.base_config import BaseConfig
-from camel.types import NotGiven
+from camel.types import NOT_GIVEN, NotGiven
 
 
 class NvidiaConfig(BaseConfig):
@@ -30,21 +30,21 @@ class NvidiaConfig(BaseConfig):
 
     Args:
         stream (bool, optional): Whether to stream the response.
-            (default: :obj:`None`)
+            (default: :obj:`False`)
         temperature (float, optional): Controls randomness in the response.
             Higher values make output more random, lower values make it more
-            deterministic. Range: [0.0, 2.0]. (default: :obj:`None`)
+            deterministic. Range: [0.0, 2.0]. (default: :obj:`0.7`)
         top_p (float, optional): Controls diversity via nucleus sampling.
-            Range: [0.0, 1.0]. (default: :obj:`None`)
+            Range: [0.0, 1.0]. (default: :obj:`0.95`)
         presence_penalty (float, optional): Penalizes new tokens based on
             whether they appear in the text so far. Range: [-2.0, 2.0].
-            (default: :obj:`None`)
+            (default: :obj:`0.0`)
         frequency_penalty (float, optional): Penalizes new tokens based on
             their frequency in the text so far. Range: [-2.0, 2.0].
-            (default: :obj:`None`)
+            (default: :obj:`0.0`)
         max_tokens (Union[int, NotGiven], optional): Maximum number of tokens
             to generate. If not provided, model will use its default maximum.
-            (default: :obj:`None`)
+            (default: :obj:`NOT_GIVEN`)
         seed (Optional[int], optional): Random seed for deterministic sampling.
             (default: :obj:`None`)
         tools (Optional[List[Dict]], optional): List of tools available to the
@@ -56,12 +56,12 @@ class NvidiaConfig(BaseConfig):
             (default: :obj:`None`)
     """
 
-    stream: Optional[bool] = Field(default=None)
-    temperature: Optional[float] = Field(default=None)
-    top_p: Optional[float] = Field(default=None)
-    presence_penalty: Optional[float] = Field(default=None)
-    frequency_penalty: Optional[float] = Field(default=None)
-    max_tokens: Optional[Union[int, NotGiven]] = Field(default=None)
+    stream: bool = Field(default=False)
+    temperature: float = Field(default=0.7)
+    top_p: float = Field(default=0.95)
+    presence_penalty: float = Field(default=0.0)
+    frequency_penalty: float = Field(default=0.0)
+    max_tokens: Union[int, NotGiven] = Field(default=NOT_GIVEN)
     seed: Optional[int] = Field(default=None)
     tool_choice: Optional[str] = Field(default=None)
     stop: Optional[List[str]] = Field(default=None)

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.36"
+version = "0.2.35"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -179,7 +179,6 @@ storage = [
     "azure-storage-blob>=12.21.0,<13",
     "google-cloud-storage>=2.18.0,<3",
     "botocore>=1.35.3,<2",
-    "mem0ai>=0.1.73"
 ]
 all = [
     "transformers>=4,<5",
@@ -281,7 +280,6 @@ all = [
     "fpdf>=1.7.2",
     "mcp>=1.3.0",
     "typer>=0.15.2",
-    "mem0ai>=0.1.67"
 ]
 
 [project.urls]
@@ -458,6 +456,5 @@ module = [
     "fpdf",
     "mcp",
     "typer",
-    "mem0",
 ]
 ignore_missing_imports = true

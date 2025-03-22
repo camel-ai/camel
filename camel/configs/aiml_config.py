@@ -13,12 +13,12 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Optional, Sequence, Union
+from typing import Sequence, Type, Union
 
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 from camel.configs.base_config import BaseConfig
-from camel.types import NotGiven
+from camel.types import NOT_GIVEN, NotGiven
 
 
 class AIMLConfig(BaseConfig):
@@ -27,16 +27,15 @@ class AIMLConfig(BaseConfig):
 
     Args:
         temperature (float, optional): Determines the degree of randomness
-            in the response. (default: :obj:`None`)
+            in the response. (default: :obj:`0.7`)
         top_p (float, optional): The top_p (nucleus) parameter is used to
             dynamically adjust the number of choices for each predicted token
-            based on the cumulative probabilities. (default: :obj:`None`)
-        n (int, optional): Number of generations to return.
-            (default: :obj:`None`)
+            based on the cumulative probabilities. (default: :obj:`0.7`)
+        n (int, optional): Number of generations to return. (default::obj:`1`)
         response_format (object, optional): An object specifying the format
             that the model must output.
         stream (bool, optional): If set, tokens are returned as Server-Sent
-            Events as they are made available. (default: :obj:`None`)
+            Events as they are made available. (default: :obj:`False`)
         stop (str or list, optional): Up to :obj:`4` sequences where the API
             will stop generating further tokens. (default: :obj:`None`)
         max_tokens (int, optional): The maximum number of tokens to generate.
@@ -49,33 +48,33 @@ class AIMLConfig(BaseConfig):
             The exact effect will vary per model, but values between:obj:` -1`
             and :obj:`1` should decrease or increase likelihood of selection;
             values like :obj:`-100` or :obj:`100` should result in a ban or
-            exclusive selection of the relevant token. (default: :obj:`None`)
+            exclusive selection of the relevant token. (default: :obj:`{}`)
         frequency_penalty (float, optional): Number between :obj:`-2.0` and
             :obj:`2.0`. Positive values penalize new tokens based on their
             existing frequency in the text so far, decreasing the model's
             likelihood to repeat the same line verbatim. See more information
-            about frequency and presence penalties. (default: :obj:`None`)
+            about frequency and presence penalties. (default: :obj:`0.0`)
         presence_penalty (float, optional): Number between :obj:`-2.0` and
             :obj:`2.0`. Positive values penalize new tokens based on whether
             they appear in the text so far, increasing the model's likelihood
             to talk about new topics. See more information about frequency and
-            presence penalties. (default: :obj:`None`)
+            presence penalties. (default: :obj:`0.0`)
         tools (list[FunctionTool], optional): A list of tools the model may
             call. Currently, only functions are supported as a tool. Use this
             to provide a list of functions the model may generate JSON inputs
             for. A max of 128 functions are supported.
     """
 
-    temperature: Optional[float] = None
-    top_p: Optional[float] = None
-    n: Optional[int] = None
-    stream: Optional[bool] = None
-    stop: Optional[Union[str, Sequence[str], NotGiven]] = None
-    max_tokens: Optional[Union[int, NotGiven]] = None
+    temperature: float = 0.7
+    top_p: float = 0.7
+    n: int = 1
+    stream: bool = False
+    stop: Union[str, Sequence[str], NotGiven] = NOT_GIVEN
+    max_tokens: Union[int, NotGiven] = NOT_GIVEN
     logit_bias: dict = Field(default_factory=dict)
-    response_format: Optional[Union[dict, NotGiven]] = None
-    presence_penalty: Optional[float] = None
-    frequency_penalty: Optional[float] = None
+    response_format: Union[Type[BaseModel], dict, NotGiven] = NOT_GIVEN
+    presence_penalty: float = 0.0
+    frequency_penalty: float = 0.0
 
 
 AIML_API_PARAMS = {param for param in AIMLConfig.model_fields.keys()}
