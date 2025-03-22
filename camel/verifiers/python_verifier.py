@@ -106,29 +106,25 @@ class PythonVerifier(BaseVerifier):
         self, solution: str, ground_truth: Optional[str]
     ) -> VerificationResult:
         r"""Executes the provided Python solution in an isolated environment
-        and verifies its output against an optional ground truth.
+        and verifies its output against an expected ground truth expression.
 
-        This method evaluates both the solution and the ground truth by running
-        each in a temporary script within the configured virtual environment.
-        It supports both full code blocks and standalone expressions by
-        automatically wrapping expressions in `print(...)`.
+        This method runs the solution in a subprocess inside a virtual environment.
+        The ground truth is assumed to be a pure Python expression and is evaluated
+        directly in the verifier process.
 
-        If both executions are successful, the outputs are compared using
-        Python semantics (via `eval`). If evaluation fails, a fallback to
-        raw string comparison is used.
+        If both executions are successful, the actual output is compared against
+        the evaluated ground truth using semantic equality. If evaluation fails,
+        string comparison is used as a fallback.
 
         Args:
-            solution (str): The Python code or expression to execute
-                and verify.
-            ground_truth (Optional[str]): The expected output as code or
-                expression for comparison. If None, execution is only checked
-                for success.
+            solution (str): The Python code or expression to execute and verify.
+            ground_truth (Optional[str]): The expected value as a Python expression.
+                If None, only execution success is verified.
 
         Returns:
-            VerificationResult: Structured result containing status, result,
-            and any error messages from execution or comparison.
+            VerificationResult: Result of the verification process.
         """
-
+        # Check for virtual environment setup
         if not self.venv_path:
             return VerificationResult(
                 status=VerificationOutcome.ERROR,
@@ -136,8 +132,46 @@ class PythonVerifier(BaseVerifier):
                 error_message="Virtual environment is not set up.",
             )
 
-        venv_python = os.path.join(self.venv_path, self.bin_dir, "python")
+        # If the solution is an expression, evaluate it directly
+        if self._is_expression(solution):
+            try:
+                sol_val = ast.literal_eval(solution)
+            except Exception as e:
+                return VerificationResult(
+                    status=VerificationOutcome.ERROR,
+                    result="",
+                    error_message=f"Expression evaluation error: {e}",
+                )
 
+            if ground_truth is not None:
+                try:
+                    gt_val = ast.literal_eval(ground_truth)
+                except Exception as e:
+                    return VerificationResult(
+                        status=VerificationOutcome.ERROR,
+                        result="",
+                        error_message=f"Ground truth evaluation error: {e}",
+                    )
+                if sol_val == gt_val:
+                    return VerificationResult(
+                        status=VerificationOutcome.SUCCESS,
+                        result=str(sol_val),
+                    )
+                else:
+                    return VerificationResult(
+                        status=VerificationOutcome.FAILURE,
+                        result=str(sol_val),
+                        error_message=f"Output mismatch: {sol_val} != {gt_val}",
+                    )
+            else:
+                return VerificationResult(
+                    status=VerificationOutcome.SUCCESS,
+                    result=str(sol_val),
+                )
+
+        # Otherwise, run the code block,
+        # which should already include a print(...) in the end
+        venv_python = os.path.join(self.venv_path, self.bin_dir, "python")
         if not os.path.exists(venv_python):
             return VerificationResult(
                 status=VerificationOutcome.ERROR,
@@ -146,16 +180,7 @@ class PythonVerifier(BaseVerifier):
             )
 
         try:
-            sol_out, sol_err, sol_code = await self._run_code_block(
-                solution, venv_python
-            )
-            if ground_truth is not None:
-                gt_out, gt_err, gt_code = await self._run_code_block(
-                    ground_truth, venv_python
-                )
-            else:
-                gt_out = None
-
+            sol_out, sol_err, sol_code = await self._run_code_block(solution, venv_python)
             if sol_code != 0:
                 return VerificationResult(
                     status=VerificationOutcome.ERROR,
@@ -163,18 +188,28 @@ class PythonVerifier(BaseVerifier):
                     error_message=f"Solution code error:\n{sol_err}",
                 )
 
-            if ground_truth is not None and gt_code != 0:
-                return VerificationResult(
-                    status=VerificationOutcome.ERROR,
-                    result=gt_out,
-                    error_message=f"Ground truth code error:\n{gt_err}",
-                )
-
-            # Compare outputs semantically if possible
             if ground_truth is not None:
                 try:
-                    sol_val = eval(sol_out, {}, {})
-                    gt_val = eval(gt_out, {}, {})
+                    # First, try to evaluate the output as-is.
+                    sol_val = ast.literal_eval(sol_out)
+                except Exception as e:
+                    logger.warning(f"Direct eval failed: {e}. Trying repr on output.")
+                    try:
+                        # Try to convert sol_out to a literal by wrapping it with repr.
+                        sol_val = ast.literal_eval(repr(sol_out))
+                    except Exception as e2:
+                        logger.warning(f"repr eval also failed: {e2}. Falling back to string comparison.")
+                        sol_val = None
+
+                if sol_val is not None:
+                    try:
+                        gt_val = ast.literal_eval(ground_truth)
+                    except Exception as e:
+                        return VerificationResult(
+                            status=VerificationOutcome.ERROR,
+                            result="",
+                            error_message=f"Ground truth evaluation error: {e}",
+                        )
                     if sol_val == gt_val:
                         return VerificationResult(
                             status=VerificationOutcome.SUCCESS,
@@ -184,12 +219,11 @@ class PythonVerifier(BaseVerifier):
                         return VerificationResult(
                             status=VerificationOutcome.FAILURE,
                             result=sol_out,
-                            error_message="Printed outputs differ.",
+                            error_message=f"Output mismatch: {sol_val} != {gt_val}",
                         )
-                except Exception:
-                    # Fallback to string comparison
-                    logger.warning("Fallback to String matching.")
-                    if sol_out == gt_out:
+                else:
+                    # Fallback: string comparison
+                    if sol_out.strip() == ground_truth.strip():
                         return VerificationResult(
                             status=VerificationOutcome.SUCCESS,
                             result=sol_out,
@@ -198,22 +232,19 @@ class PythonVerifier(BaseVerifier):
                         return VerificationResult(
                             status=VerificationOutcome.FAILURE,
                             result=sol_out,
-                            error_message="Fallback to string matching:"
-                            f"printed outputs {sol_out} and {gt_out} differ.",
+                            error_message=f"Fallback string mismatch: '{sol_out}' != '{ground_truth}'",
                         )
             else:
                 return VerificationResult(
                     status=VerificationOutcome.SUCCESS,
                     result=sol_out,
                 )
-
         except asyncio.TimeoutError:
             return VerificationResult(
                 status=VerificationOutcome.TIMEOUT,
                 result="",
                 error_message="Execution timed out.",
             )
-
         except Exception as e:
             return VerificationResult(
                 status=VerificationOutcome.ERROR,
@@ -221,34 +252,25 @@ class PythonVerifier(BaseVerifier):
                 error_message=f"Unexpected error: {e}",
             )
 
+
     async def _run_code_block(
         self, code: str, venv_path: str
     ) -> Tuple[str, str, int]:
-        r"""Executes a block of Python code or expression in the virtual
-         environment.
-
-        If the input is a single-line expression, it is automatically wrapped
-        in `print(...)` to ensure its result is captured via stdout. The code
-        is written to a temporary file, executed using the Python interpreter
-        from the specified virtual environment, and its output and
-        error streams are captured.
-
+        r"""Executes a block of Python code in the virtual environment.
+        
+        The code is written to a temporary file, executed using the Python interpreter
+        from the specified virtual environment, and its output and error streams are captured.
+        
         Args:
-            code (str): The Python code or expression to execute.
-            venv_path (str): The path to the virtual environment's
-                Python binary.
-
+            code (str): The Python code to execute.
+            venv_path (str): The path to the virtual environment's Python binary.
+        
         Returns:
-            Tuple[str, str, int]: A tuple containing the stdout output,
-            stderr output, and return code from the executed script.
+            Tuple[str, str, int]: A tuple containing the stdout output, stderr output,
+            and return code from the executed script.
         """
-
-        if self._is_expression(code):
-            code = f"print({code})"
-
-        with tempfile.NamedTemporaryFile(
-            "w+", suffix=".py", delete=False
-        ) as tmp:
+        # No longer checking for expressions since they're handled separately
+        with tempfile.NamedTemporaryFile("w+", suffix=".py", delete=False) as tmp:
             tmp.write(code)
             tmp_path = tmp.name
 
@@ -265,16 +287,14 @@ class PythonVerifier(BaseVerifier):
         return (
             stdout.decode().strip(),
             stderr.decode().strip(),
-            proc.returncode,
+            proc.returncode if proc.returncode is not None else -1,
         )
 
     def _is_expression(self, code: str) -> bool:
         r"""Determines whether a given string of code is a single expression.
 
         This utility uses Python's AST module to parse the code and checks if
-        it consists of a single expression node. This helps distinguish between
-        full code blocks (e.g., function definitions) and evaluatable
-        expressions (e.g., `2 + 2`, `[1, 2, 3]`).
+        it consists of a single expression node.
 
         Args:
             code (str): The Python code to analyze.
@@ -283,9 +303,7 @@ class PythonVerifier(BaseVerifier):
             bool: True if the code is a single expression, False otherwise.
         """
         try:
-            parsed = ast.parse(code)
-            return len(parsed.body) == 1 and isinstance(
-                parsed.body[0], ast.Expr
-            )
+            ast.literal_eval(code)
+            return True
         except Exception:
             return False
