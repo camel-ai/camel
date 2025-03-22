@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import random
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from camel.datasets import BaseGenerator, DataPoint, StaticDataset
 from camel.logger import get_logger
@@ -193,7 +193,9 @@ class SingleStepEnv:
         ground_truths: List[str] = [dp.final_answer for dp in datapoints]
         verification_results = await self.verifier.verify_batch(
             solutions=proposed_solutions,
-            ground_truths=ground_truths,
+            ground_truths=cast(
+                list[str | None], ground_truths
+            ),  # to satisfy mypy
             raise_on_error=True,
         )
 
@@ -224,7 +226,7 @@ class SingleStepEnv:
     # TODO: implement
     async def _compute_reward_batch(
         self, proposed_soltions, verification_results
-    ) -> List[Tuple[float, Dict[str, float]]]:
+    ) -> Tuple[List[float], List[Dict[str, float]]]:
         raise NotImplementedError
 
     async def _compute_reward(

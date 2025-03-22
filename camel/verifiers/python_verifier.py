@@ -108,18 +108,19 @@ class PythonVerifier(BaseVerifier):
         r"""Executes the provided Python solution in an isolated environment
         and verifies its output against an expected ground truth expression.
 
-        This method runs the solution in a subprocess inside a virtual environment.
-        The ground truth is assumed to be a pure Python expression and is evaluated
-        directly in the verifier process.
+        This method runs the solution in a subprocess inside a virtual
+        environment. The ground truth is assumed to be a pure Python
+        expression and is evaluated directly in the verifier process.
 
-        If both executions are successful, the actual output is compared against
-        the evaluated ground truth using semantic equality. If evaluation fails,
-        string comparison is used as a fallback.
+        If both executions are successful, the actual output is compared
+        against the evaluated ground truth using semantic equality. If
+        evaluation fails, string comparison is used as a fallback.
 
         Args:
-            solution (str): The Python code or expression to execute and verify.
-            ground_truth (Optional[str]): The expected value as a Python expression.
-                If None, only execution success is verified.
+            solution (str): The Python code or expression to execute and
+                verify.
+            ground_truth (Optional[str]): The expected value as a Python
+             expression. If None, only execution success is verified.
 
         Returns:
             VerificationResult: Result of the verification process.
@@ -161,7 +162,8 @@ class PythonVerifier(BaseVerifier):
                     return VerificationResult(
                         status=VerificationOutcome.FAILURE,
                         result=str(sol_val),
-                        error_message=f"Output mismatch: {sol_val} != {gt_val}",
+                        error_message="Output mismatch:"
+                        f"{sol_val} != {gt_val}",
                     )
             else:
                 return VerificationResult(
@@ -199,11 +201,14 @@ class PythonVerifier(BaseVerifier):
                         f"Direct eval failed: {e}. Trying repr on output."
                     )
                     try:
-                        # Try to convert sol_out to a literal by wrapping it with repr.
+                        # Try to convert sol_out to a literal
+                        # by wrapping it with repr.
+                        # FIXME: may be unnecessary
                         sol_val = ast.literal_eval(repr(sol_out))
                     except Exception as e2:
                         logger.warning(
-                            f"repr eval also failed: {e2}. Falling back to string comparison."
+                            f"repr eval also failed: {e2}."
+                            "Falling back to string comparison."
                         )
                         sol_val = None
 
@@ -214,7 +219,8 @@ class PythonVerifier(BaseVerifier):
                         return VerificationResult(
                             status=VerificationOutcome.ERROR,
                             result="",
-                            error_message=f"Ground truth evaluation error: {e}",
+                            error_message="Ground truth evaluation error:"
+                            f"{e}",
                         )
                     if sol_val == gt_val:
                         return VerificationResult(
@@ -225,7 +231,8 @@ class PythonVerifier(BaseVerifier):
                         return VerificationResult(
                             status=VerificationOutcome.FAILURE,
                             result=sol_out,
-                            error_message=f"Output mismatch: {sol_val} != {gt_val}",
+                            error_message="Output mismatch:"
+                            f"{sol_val} != {gt_val}",
                         )
                 else:
                     # Fallback: string comparison
@@ -238,7 +245,8 @@ class PythonVerifier(BaseVerifier):
                         return VerificationResult(
                             status=VerificationOutcome.FAILURE,
                             result=sol_out,
-                            error_message=f"Fallback string mismatch: '{sol_out}' != '{ground_truth}'",
+                            error_message="Fallback string mismatch: "
+                            f"'{sol_out}' != '{ground_truth}'",
                         )
             else:
                 return VerificationResult(
@@ -263,16 +271,18 @@ class PythonVerifier(BaseVerifier):
     ) -> Tuple[str, str, int]:
         r"""Executes a block of Python code in the virtual environment.
 
-        The code is written to a temporary file, executed using the Python interpreter
-        from the specified virtual environment, and its output and error streams are captured.
+        The code is written to a temporary file, executed using the Python
+        interpreter from the specified virtual environment, and
+        its output and error streams are captured.
 
         Args:
             code (str): The Python code to execute.
-            venv_path (str): The path to the virtual environment's Python binary.
+            venv_path (str): The path to the virtual environment's Python
+                binary.
 
         Returns:
-            Tuple[str, str, int]: A tuple containing the stdout output, stderr output,
-            and return code from the executed script.
+            Tuple[str, str, int]: A tuple containing the stdout output,
+            stderr output, and return code from the executed script.
         """
         # No longer checking for expressions since they're handled separately
         with tempfile.NamedTemporaryFile(
