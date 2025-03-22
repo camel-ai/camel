@@ -15,7 +15,7 @@ from utils.rounding import round_number
 
 def compute_anion_gap_explanation(input_parameters):
     """
-    Calculates the patient's BMI and generates a detailed explanatory text.
+    Calculates the patient's anion gap and generates a detailed explanatory text.
 
     Parameters:
         input_variables (dict): A dictionary containing the following key-value pairs:
@@ -35,8 +35,7 @@ def compute_anion_gap_explanation(input_parameters):
             - "Answer" (float): The patient's BMI.
 
     Notes:
-        - Uses the `height_conversion_explanation` function to convert height to inches.
-        - Uses the `weight_conversion_explanation` function to convert weight to kilogram.
+        - None
 
     Example:
         compute_anion_gap_explanation({'chloride': [106.0, 'mEq/L'],'bicarbonate': [20.0, 'mEq/L'],'sodium': [140.0, 'mEq/L']})
