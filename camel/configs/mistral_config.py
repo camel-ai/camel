@@ -30,18 +30,18 @@ class MistralConfig(BaseConfig):
 
     Args:
         temperature (Optional[float], optional): temperature the temperature
-            to use for sampling, e.g. 0.5. (default: None)
+            to use for sampling, e.g. 0.5. (default: :obj:None)
         top_p (Optional[float], optional): the cumulative probability of
-            tokens to generate, e.g. 0.9. (default: None)
+            tokens to generate, e.g. 0.9. (default: :obj:None)
         max_tokens (Optional[int], optional): the maximum number of tokens to
-            generate, e.g. 100. (default: None)
+            generate, e.g. 100. (default: :obj:None)
         stop (Optional[Union[str,list[str]]]): Stop generation if this token
             is detected. Or if one of these tokens is detected when providing
-            a string list. (default: None)
+            a string list. (default: :obj:None)
         random_seed (Optional[int], optional): the random seed to use for
-            sampling, e.g. 42. (default: None)
+            sampling, e.g. 42. (default: :obj:None)
         safe_prompt (bool, optional): whether to use safe prompt, e.g. true.
-            (default: None)
+            (default: :obj:None)
         response_format (Union[Dict[str, str], ResponseFormat): format of the
             response.
         tool_choice (str, optional): Controls which (if

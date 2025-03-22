@@ -32,19 +32,19 @@ class YiConfig(BaseConfig):
             specifying a particular tool via
             {"type": "function", "function": {"name": "some_function"}}
             can be used to guide the model to use tools more strongly.
-            (default: None)
+            (default: :obj:None)
         max_tokens (int, optional): Specifies the maximum number of tokens
             the model can generate. This sets an upper limit, but does not
             guarantee that this number will always be reached.
-            (default: None)
+            (default: :obj:None)
         top_p (float, optional): Controls the randomness of the generated
             results. Lower values lead to less randomness, while higher
-            values increase randomness. (default: None)
+            values increase randomness. (default: :obj:None)
         temperature (float, optional): Controls the diversity and focus of
             the generated results. Lower values make the output more focused,
             while higher values make it more diverse. (default: :obj:`0.3`)
         stream (bool, optional): If True, enables streaming output.
-            (default: None)
+            (default: :obj:None)
     """
 
     tool_choice: Optional[Union[dict[str, str], str]] = None
