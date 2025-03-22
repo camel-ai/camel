@@ -11,8 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from typing import Dict, Optional, Type, Union
 import json
+from typing import Dict, Optional, Type, Union
+
 import yaml
 
 from camel.models.aiml_model import AIMLModel
