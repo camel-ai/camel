@@ -53,7 +53,6 @@ class SingleStepEnv:
         self,
         dataset: Union[StaticDataset, BaseGenerator],
         verifier: BaseVerifier,
-        extractor: BaseExtractor,
         **kwargs,
     ) -> None:
         r"""Initialize the environment.
@@ -66,7 +65,6 @@ class SingleStepEnv:
         """
         self.dataset = dataset
         self.verifier = verifier
-        self.extractor = extractor
         self._metadata = kwargs
 
         # State tracking
@@ -89,7 +87,6 @@ class SingleStepEnv:
 
         try:
             await self.verifier.setup()
-            await self.extractor.setup()
 
             self._is_setup = True
             logger.info('Environment setup completed successfully')
@@ -113,7 +110,6 @@ class SingleStepEnv:
         try:
             self._is_setup = False
             await self.verifier.cleanup()
-            await self.extractor.cleanup()
             self._state = []
             self._episode_ended = False
             logger.info('Environment closed successfully')
@@ -174,6 +170,7 @@ class SingleStepEnv:
         else:
             raise TypeError(f"Unsupported dataset type: {type(self.dataset)}")
 
+    # TODO: improve batching
     async def step(
         self, action: Union[Action, List[Action]]
     ) -> Union[StepResult, List[StepResult]]:
@@ -193,40 +190,39 @@ class SingleStepEnv:
                 "Number of actions must match number of data points."
             )
 
+        proposed_solutions = [act.llm_response for act in actions]
+        ground_truths: List[str] = [dp.final_answer for dp in datapoints]
+        verification_results = await self.verifier.verify_batch(
+                solutions=proposed_solutions, ground_truths=ground_truths, raise_on_error=True
+            )
+
+        total_rewards, rewards_dicts = await self._compute_reward_batch(
+            proposed_solutions, verification_results
+        )
+        
         step_results = []
-        # TODO: batch this too!
-        for act, dp in zip(actions, datapoints):
-            # extract & verify
-            extraction_result = await self.extractor.extract(act.llm_response)
-            ground_truth = await self.extractor.extract(dp.final_answer)
-
-            if not extraction_result:
-                raise RuntimeError(f"Couldn't extract from {act.llm_response}")
-
-            verification_result = await self.verifier.verify(
-                solution=extraction_result, ground_truth=ground_truth
-            )
-
-            total_reward, rewards_dict = await self._compute_reward(
-                act, extraction_result, verification_result
-            )
-
+        
+        for i in range(len(actions)):
             step_results.append(
                 StepResult(
                     observation=self.PLACEHOLDER_OBS,
-                    reward=total_reward,
-                    rewards_dict=rewards_dict,
+                    reward=total_rewards[i],
+                    rewards_dict=rewards_dicts[i],
                     done=True,
                     info={
-                        "extraction_result": extraction_result,
-                        "verification_result": verification_result,
-                        "state": dp,
+                        "proposed_solution": proposed_solutions[i],
+                        "verification_result": verification_results[i],
+                        "state": self._state[i],
                     },
                 )
             )
 
         self._episode_ended = True
         return step_results[0] if len(step_results) == 1 else step_results
+
+    # TODO: implement
+    async def _compute_reward_batch(self, proposed_soltions, verification_results) -> List[Tuple[float, Dict[str, float]]]:
+        raise NotImplemented
 
     async def _compute_reward(
         self,

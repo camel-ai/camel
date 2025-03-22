@@ -289,6 +289,7 @@ class BaseVerifier(ABC):
             "Subclasses must implement _verify_implementation()"
         )
 
+    # TODO: check again
     async def verify_batch(
         self,
         solutions: List[str],
