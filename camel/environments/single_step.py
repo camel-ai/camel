@@ -64,9 +64,11 @@ class SingleStepEnv:
         Initialize the SingleStepEnv.
 
         Args:
-            dataset (StaticDataset | BaseGenerator): Dataset to sample problems from.
-            verifier (BaseVerifier): Verifier used to evaluate LLM responses against ground-truth answers.
-            **kwargs: Optional metadata or configuration values stored for downstream use.
+            dataset (StaticDataset | BaseGenerator): Dataset to sample
+                problems from.
+            verifier (BaseVerifier): Verifier used to evaluate LLM responses
+                against ground-truth answers.
+            **kwargs: Optional metadata or configuration values.
 
         Notes:
             This class assumes all interactions are single-step: one question,
@@ -175,7 +177,7 @@ class SingleStepEnv:
         if seed is not None:
             rng = random.Random(seed)
         else:
-            rng = random
+            rng = random.Random()
 
         if isinstance(self.dataset, StaticDataset):
             dataset_len = len(self.dataset)
