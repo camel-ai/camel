@@ -12,57 +12,63 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import List
-import logging
 import json
+import logging
+from typing import List
 
-from camel.toolkits import CodeExecutionToolkit, FunctionTool
+from camel.toolkits.code_execution import CodeExecutionToolkit
+from camel.toolkits.function_tool import FunctionTool
 
 logger = logging.getLogger(__name__)
 
+
 class UbuntuCodeExecutionToolkit(CodeExecutionToolkit):
     """A specialized code execution toolkit for Ubuntu environments.
-    
-    This toolkit extends the base CodeExecutionToolkit to provide Ubuntu-specific
-    configurations and Python path handling.
+
+    This toolkit extends the base CodeExecutionToolkit to provide
+    Ubuntu-specific configurations and Python path handling.
 
     Args:
-        python_path (str): Path to the Python interpreter in Ubuntu environment.
+        python_path (str): Path to the Python interpreter in Ubuntu
+            environment.
         verbose (bool): Whether to enable verbose logging.
     """
-    
+
     def __init__(
         self,
         python_path: str = "/usr/bin/python3",
-        verbose: bool = False
-    ) -> None:
-        logger.info("Initializing UbuntuCodeExecutionToolkit")
+        verbose: bool = False,
+    ):
         super().__init__(verbose=verbose)
         self.python_path = python_path
-        logger.info("Python path set to: %s", python_path)
+        logger.debug("Initialized with python_path: %s", python_path)
 
     def get_tools(self) -> List[FunctionTool]:
-        """Get the list of tools with Ubuntu-specific configuration.
-        
+        """Get the list of tools with Ubuntu-specific modifications.
+
         Returns:
             List[FunctionTool]: List of function tools configured for Ubuntu.
         """
-        logger.info("Getting tools from parent class")
         tools = super().get_tools()
-        
+
         for tool in tools:
             logger.debug("Processing tool: %s", tool.get_function_name())
-            logger.debug("Tool configuration: %s", json.dumps(tool.__dict__, default=str))
-            
+            logger.debug(
+                "Tool configuration: %s",
+                json.dumps(tool.__dict__, default=str),
+            )
+
             if hasattr(tool, 'command'):
-                logger.info("Original command: %s", tool.command)
+                logger.debug("Original command: %s", tool.command)
                 if isinstance(tool.command, list):
                     if 'python' in tool.command:
                         idx = tool.command.index('python')
                         tool.command[idx] = self.python_path
-                        logger.info("Modified command: %s", tool.command)
-            else:
-                logger.warning("No command attribute found for tool: %s", 
-                             tool.get_function_name())
-        
-        return tools 
+                        logger.debug("Modified command: %s", tool.command)
+                else:
+                    logger.debug(
+                        "Command is not a list: %s",
+                        str(tool.command),
+                    )
+
+        return tools
