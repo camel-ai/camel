@@ -50,14 +50,17 @@ class TiDBStorage(BaseVectorStorage):
 
     Args:
         vector_dim (int): The dimension of storing vectors.
-        url_and_api_key (Tuple[str, str] or str): Tuple containing
-           the database url and API key for connecting to a TiDB instance.
-           URL should be in the format "mysql://user:password@host:port/database".
-           TiDB will not use this API Key, but retains the definition as an
+        url_and_api_key (Tuple[str, str] or str): A tuple containing
+           the database url and API key for connecting to a TiDB cluster.
+           The URL should be in the format:
+           "mysql+pymysql://<username>:<password>@<host>:<port>/<db_name>".
+
+           TiDB will not use the API Key, but retains the definition for
            interface compatible.
-        collection_name (Optional[str], optional): Name for the table in
-            TiDB. If not provided, set it to the current time with iso
-            format. (default: :obj:`None`)
+        collection_name (Optional[str], optional): Name of the collection.
+            The collection name will be used as the table name in TiDB.
+
+            If not provided, set it to the current time with iso format.
         **kwargs (Any): Additional keyword arguments for initializing
             TiDB connection.
 
@@ -83,12 +86,10 @@ class TiDBStorage(BaseVectorStorage):
             database_url = url_and_api_key[0]
         self._create_client(database_url, **kwargs)
         self.vector_dim = vector_dim
-        self.collection_name = (
-            collection_name or self._generate_collection_name()
-        )
-        self._table = self._open_and_create_collection()
+        self.collection_name = collection_name or self._generate_table_name()
+        self._table = self._open_and_create_table()
         self._table_model = self._table.table_model
-        self._check_collection()
+        self._check_table()
 
     def _create_client(
         self,
@@ -118,6 +119,8 @@ class TiDBStorage(BaseVectorStorage):
             vector: list[float] = VectorField(self.vector_dim)
             payload: Optional[dict[str, Any]] = Field(None, sa_type=JSON)
 
+        # Notice: Avoid repeated definition warnings by dynamically generating
+        # class names.
         return type(
             f"VectorDBRecord_{collection_name}",
             (VectorDBRecord,),
@@ -125,7 +128,7 @@ class TiDBStorage(BaseVectorStorage):
             table=True,
         )
 
-    def _open_and_create_collection(self) -> "Table[Any]":
+    def _open_and_create_table(self) -> "Table[Any]":
         """Opens an existing table or creates a new table in TiDB."""
         table = self._client.open_table(self.collection_name)
         if table is None:
@@ -134,11 +137,11 @@ class TiDBStorage(BaseVectorStorage):
             )
         return table
 
-    def _check_collection(self):
+    def _check_table(self):
         r"""Ensuring the specified table matches the specified vector
         dimensionality.
         """
-        in_dim = self._get_collection_info()["vector_dim"]
+        in_dim = self._get_table_info()["vector_dim"]
         if in_dim != self.vector_dim:
             raise ValueError(
                 "Vector dimension of the existing table "
@@ -146,30 +149,7 @@ class TiDBStorage(BaseVectorStorage):
                 f"the given embedding dim ({self.vector_dim})."
             )
 
-    def _delete_collection(
-        self,
-        collection_name: str,
-    ) -> None:
-        r"""Drop an existing table from TiDB database.
-
-        Args:
-            collection_name (str): Name of the table to be deleted.
-        """
-        self._client.drop_table(collection_name)
-
-    def _collection_exists(self, collection_name: str) -> bool:
-        r"""Checks whether a table with the specified name exists in TiDB
-        database.
-
-        Args:
-            collection_name (str): The name of the table to check.
-
-        Returns:
-            bool: True if the table exists, False otherwise.
-        """
-        return collection_name in self._client.table_names()
-
-    def _generate_collection_name(self) -> str:
+    def _generate_table_name(self) -> str:
         r"""Generates a unique name for a new table based on the current
         timestamp. TiDB table names can only contain alphanumeric
         characters and underscores.
@@ -179,10 +159,10 @@ class TiDBStorage(BaseVectorStorage):
         """
         timestamp = datetime.now().isoformat()
         transformed_name = re.sub(r'[^a-zA-Z0-9_]', '_', timestamp)
-        valid_name = "chunks_" + transformed_name
+        valid_name = "vectors_" + transformed_name
         return valid_name
 
-    def _get_collection_info(self) -> Dict[str, Any]:
+    def _get_table_info(self) -> Dict[str, Any]:
         r"""Retrieves details of an existing table.
 
         Returns:
@@ -289,7 +269,7 @@ class TiDBStorage(BaseVectorStorage):
             VectorDBStatus: An object containing information about the
                 table's status.
         """
-        status = self._get_collection_info()
+        status = self._get_table_info()
         return VectorDBStatus(
             vector_dim=status["vector_dim"],
             vector_count=status["vector_count"],
