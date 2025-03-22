@@ -13,9 +13,9 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
-import requests
+from openai import OpenAI
 
 from camel.logger import get_logger
 from camel.models import BaseModelBackend, ModelFactory
@@ -49,10 +49,10 @@ class OpenAIAgentToolkit(BaseToolkit):
         r"""Initialize the OpenAI agent toolkit.
 
         Args:
-            model (BaseModelBackend, optional): The model to use for
+            model (BaseModelBackend): The model to use for
                 responses. If None, defaults to gpt-4o-mini.
                 (default: :obj:`None`)
-            api_key (str, optional): OpenAI API key. If not provided,
+            api_key (str): OpenAI API key. If not provided,
                 will attempt to use OPENAI_API_KEY environment variable.
                 (default: :obj:`None`)
         """
@@ -61,73 +61,11 @@ class OpenAIAgentToolkit(BaseToolkit):
         if not self.api_key:
             raise ValueError("OpenAI API key is required")
 
+        self.client = OpenAI(api_key=self.api_key)
         self.model = model or ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
             model_type=ModelType.GPT_4O_MINI,
         )
-
-    def _call_responses_api(
-        self,
-        query: str,
-        tools: List[Dict[str, Any]],
-        model: str = "gpt-4o-mini",
-    ) -> Dict[str, Any]:
-        r"""Call the OpenAI Responses API with the given query and tools.
-
-        Args:
-            query (str): The query to send to the API.
-            tools (List[Dict[str, Any]]): The tools to use for the query.
-            model (str, optional): The model to use for the query.
-                (default: :obj:`"gpt-4o-mini"`)
-
-        Returns:
-            Dict[str, Any]: The API response.
-
-        Raises:
-            ValueError: If the API call fails.
-        """
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.api_key}",
-        }
-
-        data = {"model": model, "tools": tools, "input": query}
-
-        try:
-            response = requests.post(
-                "https://api.openai.com/v1/responses",
-                headers=headers,
-                json=data,
-                timeout=60.0,
-            )
-
-            response.raise_for_status()
-            return response.json()
-
-        except Exception as e:
-            logger.error(f"API call failed: {e!s}")
-            raise ValueError(f"API call failed: {e!s}")
-
-    def _extract_output_text(self, response: Dict[str, Any]) -> str:
-        r"""Extract text output from the response.
-
-        Args:
-            response (Dict[str, Any]): The API response.
-
-        Returns:
-            str: The extracted text.
-
-        Raises:
-            ValueError: If no text output is found in the response.
-        """
-        for output in response.get("output", []):
-            if output.get("type") == "message":
-                for content in output.get("content", []):
-                    if content.get("type") == "output_text":
-                        return content.get("text", "")
-
-        logger.error("No text output found in API response")
-        raise ValueError("No text output found in API response")
 
     def web_search(self, query: str) -> str:
         r"""Perform a web search using OpenAI's web search tool.
@@ -139,11 +77,12 @@ class OpenAIAgentToolkit(BaseToolkit):
             str: The search result or error message.
         """
         try:
-            response = self._call_responses_api(
-                query=query, tools=[{"type": "web_search_preview"}]
+            response = self.client.responses.create(
+                model=str(self.model.model_type),
+                tools=[{"type": "web_search_preview"}],
+                input=query,
             )
-
-            return self._extract_output_text(response)
+            return response.output_text
 
         except Exception as e:
             logger.error(f"Web search failed: {e!s}")
@@ -167,19 +106,18 @@ class OpenAIAgentToolkit(BaseToolkit):
             logger.error("Empty vector store ID provided.")
             raise ValueError("Vector store ID cannot be empty.")
 
-        tool = {
-            "type": "file_search",
-            "vector_store_ids": [vector_store_id],
-        }
-
         try:
-            response = self._call_responses_api(
-                query=query,
-                tools=[tool],
-                model="gpt-4o-mini",
+            response = self.client.responses.create(
+                model=str(self.model.model_type),
+                tools=[
+                    {
+                        "type": "file_search",
+                        "vector_store_ids": [vector_store_id],
+                    }
+                ],
+                input=query,
             )
-
-            return self._extract_output_text(response)
+            return response.output_text
 
         except Exception as e:
             logger.error(f"File search failed: {e!s}")
