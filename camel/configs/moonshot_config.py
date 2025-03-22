@@ -25,28 +25,28 @@ class MoonshotConfig(BaseConfig):
     Args:
         temperature (float, optional): Controls randomness in the response.
             Lower values make the output more focused and deterministic.
-            (default: :obj:None)
+            (default: :obj:`None`)
         max_tokens (int, optional): The maximum number of tokens to generate.
-            (default: :obj:None)
+            (default: :obj:`None`)
         stream (bool, optional): Whether to stream the response.
             (default: :obj:`False`)
         tools (list, optional): List of tools that the model can use for
             function calling. Each tool should be a dictionary containing
             type, function name, description, and parameters.
-            (default: :obj:None)
+            (default: :obj:`None`)
         top_p (float, optional): Controls diversity via nucleus sampling.
-            (default: :obj:None)
+            (default: :obj:`None`)
         n (int, optional): How many chat completion choices to generate for
-            each input message.(default: :obj:None)
+            each input message.(default: :obj:`None`)
         presence_penalty (float, optional): Penalty for new tokens based on
             whether they appear in the text so far.
-            (default: :obj:None)
+            (default: :obj:`None`)
         frequency_penalty (float, optional): Penalty for new tokens based on
             their frequency in the text so far.
-            (default: :obj:None)
+            (default: :obj:`None`)
         stop (Optional[Union[str, List[str]]], optional): Up to 4 sequences
             where the API will stop generating further tokens.
-            (default: :obj:None)
+            (default: :obj:`None`)
     """
 
     temperature: Optional[float] = None

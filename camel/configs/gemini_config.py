@@ -29,14 +29,14 @@ class GeminiConfig(BaseConfig):
         temperature (float, optional): Sampling temperature to use, between
             :obj:`0` and :obj:`2`. Higher values make the output more random,
             while lower values make it more focused and deterministic.
-            (default: :obj:None)
+            (default: :obj:`None`)
         top_p (float, optional): An alternative to sampling with temperature,
             called nucleus sampling, where the model considers the results of
             the tokens with top_p probability mass. So :obj:`0.1` means only
             the tokens comprising the top 10% probability mass are considered.
-            (default: :obj:None)
+            (default: :obj:`None`)
         n (int, optional): How many chat completion choices to generate for
-            each input message. (default: :obj:None)
+            each input message. (default: :obj:`None`)
         response_format (object, optional): An object specifying the format
             that the model must output. Compatible with GPT-4 Turbo and all
             GPT-3.5 Turbo models newer than gpt-3.5-turbo-1106. Setting to
@@ -52,13 +52,13 @@ class GeminiConfig(BaseConfig):
             max context length.
         stream (bool, optional): If True, partial message deltas will be sent
             as data-only server-sent events as they become available.
-            (default: :obj:None)
+            (default: :obj:`None`)
         stop (str or list, optional): Up to :obj:`4` sequences where the API
-            will stop generating further tokens. (default: :obj:None)
+            will stop generating further tokens. (default: :obj:`None`)
         max_tokens (int, optional): The maximum number of tokens to generate
             in the chat completion. The total length of input tokens and
             generated tokens is limited by the model's context length.
-            (default: :obj:None)
+            (default: :obj:`None`)
         tools (list[FunctionTool], optional): A list of tools the model may
             call. Currently, only functions are supported as a tool. Use this
             to provide a list of functions the model may generate JSON inputs

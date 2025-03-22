@@ -24,20 +24,20 @@ class InternLMConfig(BaseConfig):
 
     Args:
         stream (bool, optional): Whether to stream the response.
-            (default: :obj:None)
+            (default: :obj:`None`)
         temperature (float, optional): Controls the diversity and focus of
             the generated results. Lower values make the output more focused,
-            while higher values make it more diverse. (default: :obj:None)
+            while higher values make it more diverse. (default: :obj:`None`)
         top_p (float, optional): Controls the diversity and focus of the
             generated results. Higher values make the output more diverse,
-            while lower values make it more focused. (default: :obj:None)
+            while lower values make it more focused. (default: :obj:`None`)
         max_tokens (int, optional): Allows the model to
             generate the maximum number of tokens.
-            (default: :obj:None)
+            (default: :obj:`None`)
         tools (list, optional): Specifies an array of tools that the model can
             call. It can contain one or more tool objects. During a function
             call process, the model will select one tool from the array.
-            (default: :obj:None)
+            (default: :obj:`None`)
         tool_choice (Union[dict[str, str], str], optional): Controls which (if
             any) tool is called by the model. :obj:`"none"` means the model
             will not call any tool and instead generates a message.
