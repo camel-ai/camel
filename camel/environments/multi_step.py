@@ -15,10 +15,9 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple
 
+from camel.environments.models import Action, Observation, StepResult
 from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
-
-from .models import Action, Observation, StepResult
 
 logger = get_logger(__name__)
 
