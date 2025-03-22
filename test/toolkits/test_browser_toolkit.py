@@ -24,6 +24,8 @@ from camel.toolkits.browser_toolkit import (
     ChromiumChannels,
 )
 
+TEST_URL = "https://example.com"
+
 
 @pytest.fixture(scope="function")
 def base_browser_fixture():
@@ -86,10 +88,9 @@ def test_browser_visit_page(base_browser_fixture):
     browser.page.goto = MagicMock()
     browser.page.wait_for_load_state = MagicMock()
 
-    test_url = "https://example.com"
-    browser.visit_page(test_url)
+    browser.visit_page(TEST_URL)
 
-    browser.page.goto.assert_called_once_with(test_url)
+    browser.page.goto.assert_called_once_with(TEST_URL)
     browser.page.wait_for_load_state.assert_called_once()
 
 
@@ -119,11 +120,11 @@ def test_browser_toolkit_browse_url(browser_toolkit_fixture):
     toolkit._get_final_answer = MagicMock(return_value="Task completed")
 
     result = toolkit.browse_url(
-        task_prompt="Test task", start_url="https://example.com", round_limit=1
+        task_prompt="Test task", start_url=TEST_URL, round_limit=1
     )
 
     assert result == "Task completed"
-    toolkit.browser.visit_page.assert_called_once_with("https://example.com")
+    toolkit.browser.visit_page.assert_called_once_with(TEST_URL)
 
 
 def test_browser_clean_cache(base_browser_fixture):
@@ -156,10 +157,9 @@ def test_browser_get_url(base_browser_fixture):
     browser = base_browser_fixture
     browser.init()
 
-    test_url = "https://example.com"
-    browser.page.url = test_url
+    browser.page.url = TEST_URL
 
-    assert browser.get_url() == test_url
+    assert browser.get_url() == TEST_URL
 
 
 def test_browser_back_navigation(base_browser_fixture):
