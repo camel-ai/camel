@@ -181,7 +181,7 @@ json_config_files = [
 @patch.dict(os.environ, {"OPENAI_API_KEY": "test_key"})
 @patch("camel.models.base_model.BaseModelBackend.run")
 def test_model_factory_json(mock_run, config_file):
-    """Test ModelFactory with JSON files without actual API calls."""
+    r"""Test ModelFactory with JSON files without actual API calls."""
 
     json_path = Path(config_file)
     if not json_path.exists():
