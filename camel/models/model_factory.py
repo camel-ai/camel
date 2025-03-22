@@ -170,14 +170,15 @@ class ModelFactory:
         Parses a string and returns the corresponding ModelPlatformType enum.
 
         Args:
-            model_platform_str (str): The platform name as a string. Can be in the
-            form "ModelPlatformType.<NAME>" or simply "<NAME>".
+            model_platform_str (str): The platform name as a string. Can be in
+            the form "ModelPlatformType.<NAME>" or simply "<NAME>".
 
         Returns:
             ModelPlatformType: The matching enum value.
 
         Raises:
-            ValueError: If the platform name is not a valid member of ModelPlatformType.
+            ValueError: If the platform name is not a valid member of
+            ModelPlatformType.
         """
 
         try:
@@ -241,13 +242,16 @@ class ModelFactory:
     @classmethod
     def create_from_yaml(cls, filepath: str) -> BaseModelBackend:
         r"""
-        Creates and returns a model base backend instance from a YAML configuration file.
+        Creates and returns a model base backend instance from a
+        YAML configuration file.
 
         Args:
-            filepath (str): Path to the YAML file containing model configuration.
+            filepath (str): Path to the YAML file containing model
+            configuration.
 
         Returns:
-            BaseModelBackend: An instance of the model backend based on the configuration.
+            BaseModelBackend: An instance of the model backend based on the
+            configuration.
         """
 
         config = cls.__load_yaml(filepath)
@@ -262,13 +266,16 @@ class ModelFactory:
     @classmethod
     def create_from_json(cls, filepath: str) -> BaseModelBackend:
         r"""
-        Creates and returns a base model backend instance from a JSON configuration file.
+        Creates and returns a base model backend instance from a
+        JSON configuration file.
 
         Args:
-            filepath (str): Path to the JSON file containing model configuration.
+            filepath (str): Path to the JSON file containing model
+            configuration.
 
         Returns:
-            BaseModelBackend: An instance of the model backend based on the configuration.
+            BaseModelBackend: An instance of the model backend based on the
+            configuration.
         """
 
         config = cls.__load_json(filepath)
