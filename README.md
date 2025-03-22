@@ -187,6 +187,27 @@ Installing CAMEL is a breeze thanks to its availability on PyPI. Simply open you
 pip install camel-ai
 ```
 
+```
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType, ModelType
+from camel.configs import ChatGPTConfig
+from camel.agents import ChatAgent
+from camel.toolkits import FunctionTool, SearchToolkit
+
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.OPENAI,
+    model_type=ModelType.GPT_4O,
+    model_config_dict=ChatGPTConfig().as_dict(),
+)
+
+search_tool = FunctionTool(SearchToolkit().search_duckduckgo)
+
+agent = ChatAgent(model=model, tools=[search_tool])
+
+response = agent.step("What is Camel AI")
+print(response.msgs[0].content)
+```
+
 For more detailed instructions and additional configuration options, check out the [installation section](https://github.com/camel-ai/camel/blob/master/docs/get_started/installation.md).
 
 After running, you can explore our CAMEL Tech Stack and Cookbooks at [www.docs.camel-ai.org](https://docs.camel-ai.org) to build powerful multi-agent systems.
