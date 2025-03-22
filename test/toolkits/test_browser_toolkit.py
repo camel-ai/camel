@@ -173,7 +173,3 @@ def test_browser_back_navigation(base_browser_fixture):
 
     browser.page.go_back.assert_called_once()
     browser.page.wait_for_load_state.assert_called_once()
-
-
-if __name__ == "__main__":
-    pytest.main([__file__])
