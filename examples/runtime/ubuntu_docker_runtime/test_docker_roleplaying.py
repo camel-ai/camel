@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
 import os
 
 from colorama import Fore
@@ -21,18 +22,35 @@ from camel.toolkits import TerminalToolkit
 from camel.types import ModelPlatformType
 from camel.utils import print_text_animated
 
+# Initialize terminal tools
 tools = [*TerminalToolkit().get_tools()]
 
+# Initialize the Qwen model with ModelScope API
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
     model_type="Qwen/Qwen2.5-72B-Instruct",
     url='https://api-inference.modelscope.cn/v1/',
-    api_key="api-key",
+    # Replace with your ModelScope API key
+    api_key="YOUR_MODELSCOPE_API_KEY_HERE",
 )
 
 
 def main(model=model, chat_turn_limit=50) -> None:
+    """
+    Main function to run the role-playing scenario.
+
+    Args:
+        model: The AI model instance to use for the conversation
+        chat_turn_limit (int): Maximum number of conversation turns
+                              (default: 50)
+
+    Returns:
+        None
+    """
+    # Define the task for the role-playing session
     task_prompt = "Develop a trading bot for the stock market"
+
+    # Initialize the role-playing session
     role_play_session = RolePlaying(
         assistant_role_name="Python Programmer",
         assistant_agent_kwargs=dict(model=model),
@@ -41,9 +59,10 @@ def main(model=model, chat_turn_limit=50) -> None:
         task_prompt=task_prompt,
         with_task_specify=True,
         task_specify_agent_kwargs=dict(model=model),
-        output_language='中文',
+        output_language='en',  # Set output language to English
     )
 
+    # Display initial system messages and prompts
     print(
         Fore.GREEN
         + f"AI Assistant sys message:\n{role_play_session.assistant_sys_msg}\n"
@@ -60,6 +79,7 @@ def main(model=model, chat_turn_limit=50) -> None:
     )
     print(Fore.RED + f"Final task prompt:\n{role_play_session.task_prompt}\n")
 
+    # Start the conversation loop
     n = 0
     input_msg = role_play_session.init_chat()
     while n < chat_turn_limit:
@@ -67,9 +87,10 @@ def main(model=model, chat_turn_limit=50) -> None:
         n += 1
         assistant_response, user_response = role_play_session.step(input_msg)
 
-        # 当前系统环境
+        # Display current system environment for debugging
         print(os.environ)
 
+        # Check for conversation termination
         if assistant_response.terminated:
             print(
                 Fore.GREEN
@@ -89,6 +110,7 @@ def main(model=model, chat_turn_limit=50) -> None:
             )
             break
 
+        # Display conversation messages
         print_text_animated(
             Fore.BLUE + f"AI User:\n\n{user_response.msg.content}\n"
         )
@@ -97,6 +119,7 @@ def main(model=model, chat_turn_limit=50) -> None:
             f"{assistant_response.msg.content}\n"
         )
 
+        # Check if task is completed
         if "CAMEL_TASK_DONE" in user_response.msg.content:
             break
 

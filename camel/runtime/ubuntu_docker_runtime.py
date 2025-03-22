@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
 import logging
 import sys
 import time
@@ -24,10 +25,16 @@ logger = logging.getLogger(__name__)
 
 
 class UbuntuDockerRuntime(DockerRuntime):
-    r"""A specialized Docker runtime for Ubuntu-based environments.
+    """A specialized Docker runtime for Ubuntu-based environments.
 
     This runtime includes specific configurations and setup for Ubuntu
-    containers,including proper Python path handling and environment setup.
+    containers, including proper Python path handling and environment setup.
+    It provides methods for executing Python files, managing the container
+    lifecycle, and handling file operations within the Ubuntu container.
+
+    Attributes:
+        python_path (str): Path to the Python interpreter in the container
+        docker_config (dict): Configuration dict for Docker container setup
     """
 
     def __init__(
@@ -38,6 +45,17 @@ class UbuntuDockerRuntime(DockerRuntime):
         python_path: str = "/usr/bin/python3",
         **kwargs,
     ):
+        """Initialize the Ubuntu Docker Runtime.
+
+        Args:
+            image (str): Docker image name to use
+            port (int, optional): Port to expose. Defaults to 0 (random port)
+            remove (bool, optional): Whether to remove container after use.
+                                   Defaults to True
+            python_path (str, optional): Path to Python interpreter.
+                                       Defaults to "/usr/bin/python3"
+            **kwargs: Additional arguments passed to DockerRuntime
+        """
         super().__init__(image=image, port=port, remove=remove, **kwargs)
 
         self.python_path = python_path
@@ -72,7 +90,17 @@ class UbuntuDockerRuntime(DockerRuntime):
         redirect_stdout: bool = False,
         arguments: Optional[dict] = None,
     ) -> "UbuntuDockerRuntime":
-        """Override add method to modify code execution command."""
+        """Add functions to the runtime with Ubuntu-specific modifications.
+
+        Args:
+            funcs: Function(s) to add to the runtime
+            entrypoint: Entry point for function execution
+            redirect_stdout: Whether to redirect stdout
+            arguments: Optional arguments for function execution
+
+        Returns:
+            Self for method chaining
+        """
         if not isinstance(funcs, list):
             funcs = [funcs]
 
@@ -88,21 +116,29 @@ class UbuntuDockerRuntime(DockerRuntime):
                         logger.info(f"Modified command: {func.command}")
             else:
                 logger.info(
-                    f"No command attribute found"
-                    f"for function {func.get_function_name()}"
+                    f"No command attribute found for function "
+                    f"{func.get_function_name()}"
                 )
 
         super().add(funcs, entrypoint, redirect_stdout, arguments)
-
         return self
 
     def _setup_default_mounts(self):
-        """Setup default volume mounts for the container."""
-        # Add any default mounts needed for Ubuntu environment
+        """Setup default volume mounts for the container.
+
+        This method can be extended to add Ubuntu-specific volume mounts.
+        """
         pass
 
     def build(self, time_out: int = 15) -> "UbuntuDockerRuntime":
-        """Build and initialize the Ubuntu container with proper setup."""
+        """Build and initialize the Ubuntu container with proper setup.
+
+        Args:
+            time_out (int): Timeout in seconds for build operation
+
+        Returns:
+            Self for method chaining
+        """
         logger.info("Starting container build...")
 
         super().build(time_out=time_out)
@@ -158,16 +194,20 @@ class UbuntuDockerRuntime(DockerRuntime):
         env: Optional[dict] = None,
         callback: Optional[Callable[[str], None]] = None,
     ) -> None:
-        r"""Execute a Python file inside the Docker container.
+        """Execute a Python file inside the Docker container.
 
         Args:
-            local_file_path: Path to the Python file on the local filesystem.
-            container_path: Path where the file should be copied
-            in the container.If None, the file will be copied to /tmp/
-            args: List of command-line arguments to pass to the Python script.
-            env: Additional environment variables to set for the execution.
-            callback: Optional function to process each line of output.
-                     If None, output is printed to stdout.
+            local_file_path: Path to the Python file on the local filesystem
+            container_path: Path where the file should be copied in the
+            container If None, the file will be copied to /tmp/
+            args: List of command-line arguments to pass to the Python script
+            env: Additional environment variables to set for the execution
+            callback: Optional function to process each line of output
+                     If None, output is printed to stdout
+
+        Raises:
+            RuntimeError: If container is not running
+            FileNotFoundError: If Python file is not found
         """
         if not self.container:
             raise RuntimeError("Container is not running. Call build() first.")
@@ -206,15 +246,15 @@ class UbuntuDockerRuntime(DockerRuntime):
 
         logger.info(f"Executing Python file with command: {cmd}")
 
-        # 始终使用流式输出
+        # Always use streaming output
         exec_result = self.container.exec_run(
             cmd,
             environment=execution_env,
             stream=True,
-            demux=True,  # 分离stdout和stderr
+            demux=True,  # Separate stdout and stderr
         )
 
-        # 处理输出流
+        # Handle output streams
         try:
             for stdout, stderr in exec_result[1]:
                 if stdout:
@@ -232,7 +272,7 @@ class UbuntuDockerRuntime(DockerRuntime):
                         print(f"ERROR: {error}", end='', file=sys.stderr)
         except KeyboardInterrupt:
             logger.info("Execution interrupted by user")
-            # 可以考虑添加停止容器内进程的逻辑
+            # Could add logic to stop container processes here
         except Exception as e:
             logger.error(f"Error during execution: {e}")
             raise
@@ -244,7 +284,7 @@ class UbuntuDockerRuntime(DockerRuntime):
             file_path: Path to the file to archive
 
         Returns:
-            Bytes of the tar archive
+            bytes: The tar archive as bytes
         """
         import io
         import tarfile
