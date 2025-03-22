@@ -46,9 +46,7 @@ async def test_python_verifier_execution_success(python_verifier):
     await python_verifier._setup()
 
     script = 'print("Hello, World!")'
-    result = await python_verifier.verify(
-        solution=script, ground_truth=None
-    )
+    result = await python_verifier.verify(solution=script, ground_truth=None)
     assert result.status == VerificationOutcome.SUCCESS
     assert result.result == "Hello, World!"
 
@@ -99,7 +97,10 @@ async def test_python_verifier_output_mismatch(python_verifier):
     )
 
     assert result.status == VerificationOutcome.FAILURE
-    assert result.error_message == "Output mismatch: Wrong output != Expected output"
+    assert (
+        result.error_message
+        == "Output mismatch: Wrong output != Expected output"
+    )
 
     await python_verifier._cleanup()
 

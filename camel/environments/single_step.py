@@ -16,7 +16,6 @@ import random
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from camel.datasets import BaseGenerator, DataPoint, StaticDataset
-from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
 from camel.verifiers.base import (
     BaseVerifier,
@@ -193,15 +192,17 @@ class SingleStepEnv:
         proposed_solutions = [act.llm_response for act in actions]
         ground_truths: List[str] = [dp.final_answer for dp in datapoints]
         verification_results = await self.verifier.verify_batch(
-                solutions=proposed_solutions, ground_truths=ground_truths, raise_on_error=True
-            )
+            solutions=proposed_solutions,
+            ground_truths=ground_truths,
+            raise_on_error=True,
+        )
 
         total_rewards, rewards_dicts = await self._compute_reward_batch(
             proposed_solutions, verification_results
         )
-        
+
         step_results = []
-        
+
         for i in range(len(actions)):
             step_results.append(
                 StepResult(
@@ -221,8 +222,10 @@ class SingleStepEnv:
         return step_results[0] if len(step_results) == 1 else step_results
 
     # TODO: implement
-    async def _compute_reward_batch(self, proposed_soltions, verification_results) -> List[Tuple[float, Dict[str, float]]]:
-        raise NotImplemented
+    async def _compute_reward_batch(
+        self, proposed_soltions, verification_results
+    ) -> List[Tuple[float, Dict[str, float]]]:
+        raise NotImplementedError
 
     async def _compute_reward(
         self,

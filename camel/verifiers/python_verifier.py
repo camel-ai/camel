@@ -180,7 +180,9 @@ class PythonVerifier(BaseVerifier):
             )
 
         try:
-            sol_out, sol_err, sol_code = await self._run_code_block(solution, venv_python)
+            sol_out, sol_err, sol_code = await self._run_code_block(
+                solution, venv_python
+            )
             if sol_code != 0:
                 return VerificationResult(
                     status=VerificationOutcome.ERROR,
@@ -193,12 +195,16 @@ class PythonVerifier(BaseVerifier):
                     # First, try to evaluate the output as-is.
                     sol_val = ast.literal_eval(sol_out)
                 except Exception as e:
-                    logger.warning(f"Direct eval failed: {e}. Trying repr on output.")
+                    logger.warning(
+                        f"Direct eval failed: {e}. Trying repr on output."
+                    )
                     try:
                         # Try to convert sol_out to a literal by wrapping it with repr.
                         sol_val = ast.literal_eval(repr(sol_out))
                     except Exception as e2:
-                        logger.warning(f"repr eval also failed: {e2}. Falling back to string comparison.")
+                        logger.warning(
+                            f"repr eval also failed: {e2}. Falling back to string comparison."
+                        )
                         sol_val = None
 
                 if sol_val is not None:
@@ -252,25 +258,26 @@ class PythonVerifier(BaseVerifier):
                 error_message=f"Unexpected error: {e}",
             )
 
-
     async def _run_code_block(
         self, code: str, venv_path: str
     ) -> Tuple[str, str, int]:
         r"""Executes a block of Python code in the virtual environment.
-        
+
         The code is written to a temporary file, executed using the Python interpreter
         from the specified virtual environment, and its output and error streams are captured.
-        
+
         Args:
             code (str): The Python code to execute.
             venv_path (str): The path to the virtual environment's Python binary.
-        
+
         Returns:
             Tuple[str, str, int]: A tuple containing the stdout output, stderr output,
             and return code from the executed script.
         """
         # No longer checking for expressions since they're handled separately
-        with tempfile.NamedTemporaryFile("w+", suffix=".py", delete=False) as tmp:
+        with tempfile.NamedTemporaryFile(
+            "w+", suffix=".py", delete=False
+        ) as tmp:
             tmp.write(code)
             tmp_path = tmp.name
 
