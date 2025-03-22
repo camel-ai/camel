@@ -26,5 +26,5 @@ runtime = UbuntuDockerRuntime(
 runtime.build()
 
 runtime.exec_python_file(
-    local_file_path="/Users/suntao/Documents/GitHub/camel/examples/runtime/test.py"
+    local_file_path="./test_docker_roleplaying.py"
 )
