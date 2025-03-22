@@ -1,0 +1,292 @@
+[
+    {
+        "0": [
+            [
+                "How far apart are the midpoints of two skew edges of a regular octahedron with edge length $a$?\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "original"
+            ],
+            [
+                "Determine the distance between the centroids of two non-parallel edges in a three-dimensional polyhedron with equal edge lengths. \n\nPresent the answer in LaTeX format: \\boxed{Your answer}",
+                "abstract"
+            ],
+            [
+                "In a geometric puzzle involving a regular octahedron with each edge measuring $a$, can you calculate the distance between the midpoints of two non-intersecting edges? Please provide your solution in LaTeX format: \\boxed{Your answer}",
+                "persona"
+            ]
+        ],
+        "1": [
+            [
+                "In a geometric puzzle involving a regular octahedron with each edge measuring $a$, can you calculate the distance between the midpoints of two non-intersecting edges? Please provide your solution in LaTeX format: \\boxed{Your answer}",
+                "original"
+            ],
+            [
+                "In a geometric challenge featuring a regular tetrahedron with each edge measuring $b$, can you determine the length of the line segment that connects the centroids of two non-adjacent faces? Please present your solution in LaTeX format: \\boxed{Your answer}",
+                "shift-in"
+            ],
+            [
+                "In a spatial reasoning challenge involving a polyhedron with equal edge lengths, can you determine the distance between the midpoints of two distinct, non-adjacent edges? Please present your solution in LaTeX format: \\boxed{Your answer}",
+                "abstract"
+            ]
+        ],
+        "2": [
+            [
+                "In a spatial reasoning challenge involving a polyhedron with equal edge lengths, can you determine the distance between the midpoints of two distinct, non-adjacent edges? Please present your solution in LaTeX format: \\boxed{Your answer}",
+                "original"
+            ],
+            [
+                "In a geometric analysis task focused on a regular tetrahedron, can you calculate the angle formed by the planes defined by two different faces? Please express your solution using trigonometric identities in LaTeX format: \\boxed{Your answer}",
+                "mix"
+            ],
+            [
+                "In a geometric reasoning task involving a regular polyhedral shape, can you calculate the distance between the midpoints of two non-adjacent edges? Please present your solution using LaTeX formatting: \\boxed{Your answer}",
+                "abstract"
+            ]
+        ],
+        "3": [
+            [
+                "In a geometric reasoning task involving a regular polyhedral shape, can you calculate the distance between the midpoints of two non-adjacent edges? Please present your solution using LaTeX formatting: \\boxed{Your answer}",
+                "original"
+            ],
+            [
+                "In a botanical study focused on the growth patterns of two distinct plant species, how would you determine the average height difference between the plants that are spaced a set distance apart in a garden bed? Please present your findings in a clear format: \\boxed{Your answer}",
+                "shift-out"
+            ],
+            [
+                "In a topological puzzle centered around a complex network of interconnected nodes, can you determine the shortest path between two nodes that are not directly linked? Please illustrate your solution using graph theory notations: \\boxed{Your answer}",
+                "mix"
+            ]
+        ]
+    },
+    {
+        "0": [
+            [
+                "For how many positive integers \\(n\\) is \\(\\frac{n}{42-n}\\) also a positive integer?\nA) 3\nB) 5\nC) 6\nD) 7\nE) 8\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "original"
+            ],
+            [
+                "In a certain town, the number of households is represented by \\(m\\), and the number of schools is given by \\(30 - m\\). For how many positive integers \\(m\\) is \\(\\frac{m}{30-m}\\) also a positive integer?  \nA) 4  \nB) 5  \nC) 6  \nD) 8  \nE) 9  \n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "shift-out"
+            ],
+            [
+                "For how many positive integers \\(x\\) does the expression \\(\\frac{x}{k-x}\\) yield a positive integer, given that \\(k\\) is a positive integer?  \nA) 2  \nB) 4  \nC) 5  \nD) 6  \nE) 7  \n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "abstract"
+            ]
+        ],
+        "1": [
+            [
+                "In a certain town, the number of households is represented by \\(m\\), and the number of schools is given by \\(30 - m\\). For how many positive integers \\(m\\) is \\(\\frac{m}{30-m}\\) also a positive integer?  \nA) 4  \nB) 5  \nC) 6  \nD) 8  \nE) 9  \n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "original"
+            ],
+            [
+                "In a particular city, the number of parks is denoted by \\(n\\), while the number of recreational centers is represented by \\(25 - n\\). Determine how many positive integers \\(n\\) result in \\(\\frac{n}{25-n}\\) being a positive integer as well.  \nA) 3  \nB) 4  \nC) 5  \nD) 7  \nE) 8  \n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "shift-in"
+            ],
+            [
+                "In a community, let \\(x\\) denote the number of parks, and let the number of recreational centers be expressed as \\(50 - x\\). Determine the number of positive integers \\(x\\) such that \\(\\frac{x}{50-x}\\) is also a positive integer.  \nA) 6  \nB) 7  \nC) 8  \nD) 9  \nE) 10  \n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "abstract"
+            ]
+        ],
+        "2": [
+            [
+                "In a community, let \\(x\\) denote the number of parks, and let the number of recreational centers be expressed as \\(50 - x\\). Determine the number of positive integers \\(x\\) such that \\(\\frac{x}{50-x}\\) is also a positive integer.  \nA) 6  \nB) 7  \nC) 8  \nD) 9  \nE) 10  \n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "original"
+            ],
+            [
+                "In a city, let \\(y\\) represent the number of libraries, and express the number of community centers as \\(30 - y\\). Find the count of positive integers \\(y\\) such that \\(\\frac{y}{30-y}\\) is also a positive integer.  \nA) 4  \nB) 5  \nC) 6  \nD) 7  \nE) 8  \n\nPresent the answer in LaTeX format: \\boxed{Your answer}",
+                "shift-in"
+            ],
+            [
+                "In a school, let \\(y\\) represent the number of classrooms, and express the number of laboratories as \\(30 - y\\). Find the number of positive integers \\(y\\) such that \\(\\frac{y}{30-y}\\) is also a positive integer.  \nA) 5  \nB) 6  \nC) 7  \nD) 8  \nE) 9  \n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "shift-out"
+            ]
+        ],
+        "3": [
+            [
+                "In a school, let \\(y\\) represent the number of classrooms, and express the number of laboratories as \\(30 - y\\). Find the number of positive integers \\(y\\) such that \\(\\frac{y}{30-y}\\) is also a positive integer.  \nA) 5  \nB) 6  \nC) 7  \nD) 8  \nE) 9  \n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "original"
+            ],
+            [
+                "In a community center, let \\(x\\) denote the number of activity rooms, and express the number of meeting spaces as \\(50 - x\\). Determine the number of positive integers \\(x\\) such that \\(\\frac{x}{50-x}\\) is also a positive integer.  \nA) 7  \nB) 8  \nC) 9  \nD) 10  \nE) 11  \n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "abstract"
+            ],
+            [
+                "In a community center, let \\(x\\) denote the number of activity rooms, and define the number of meeting spaces as \\(40 - x\\). Determine the count of positive integers \\(x\\) for which \\(\\frac{x}{40-x}\\) is also a positive integer.  \nA) 7  \nB) 8  \nC) 9  \nD) 10  \nE) 11  \n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "abstract"
+            ]
+        ]
+    },
+    {
+        "0": [
+            [
+                "Given vectors $\\overrightarrow {a}=(1,2)$ and $\\overrightarrow {b}=(4,3)$, and that $\\overrightarrow {a}$ is perpendicular to $(t \\overrightarrow {a}+ \\overrightarrow {b})$, find the real number $t$.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "original"
+            ],
+            [
+                "Consider two vectors $\\overrightarrow{x}=(x_1,y_1)$ and $\\overrightarrow{y}=(y_1,y_2)$, such that $\\overrightarrow{x}$ is orthogonal to the vector formed by a linear combination of $\\overrightarrow{x}$ and $\\overrightarrow{y}$ with a scalar parameter $k$. Determine the value of the real number $k$ that satisfies this condition.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "abstract"
+            ],
+            [
+                "Given vectors $\\overrightarrow {u}=(2,5)$ and $\\overrightarrow {v}=(3,1)$, and that $\\overrightarrow {u}$ is parallel to $(k \\overrightarrow {v} - \\overrightarrow {u})$, find the real number $k$.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "shift-in"
+            ]
+        ],
+        "1": [
+            [
+                "Consider two vectors $\\overrightarrow{x}=(x_1,y_1)$ and $\\overrightarrow{y}=(y_1,y_2)$, such that $\\overrightarrow{x}$ is orthogonal to the vector formed by a linear combination of $\\overrightarrow{x}$ and $\\overrightarrow{y}$ with a scalar parameter $k$. Determine the value of the real number $k$ that satisfies this condition.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "original"
+            ],
+            [
+                "Consider two vectors $\\overrightarrow{a}=(a_1,b_1)$ and $\\overrightarrow{b}=(b_1,b_2)$, where the vector $\\overrightarrow{a}$ is perpendicular to the vector resulting from the addition of $\\overrightarrow{a}$ and a scalar multiple of $\\overrightarrow{b}$ with a parameter $m$. Find the value of the real number $m$ that fulfills this requirement.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "shift-in"
+            ],
+            [
+                "Examine two arbitrary vectors $\\overrightarrow{a}=(a_1,b_1)$ and $\\overrightarrow{b}=(b_1,b_2)$, where $\\overrightarrow{a}$ is perpendicular to a vector resulting from a linear combination of $\\overrightarrow{a}$ and $\\overrightarrow{b}$ scaled by a parameter $m$. Find the scalar value of $m$ that fulfills this orthogonality condition.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "abstract"
+            ]
+        ],
+        "2": [
+            [
+                "Consider two vectors $\\overrightarrow{a}=(a_1,b_1)$ and $\\overrightarrow{b}=(b_1,b_2)$, where the vector $\\overrightarrow{a}$ is perpendicular to the vector resulting from the addition of $\\overrightarrow{a}$ and a scalar multiple of $\\overrightarrow{b}$ with a parameter $m$. Find the value of the real number $m$ that fulfills this requirement.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "original"
+            ],
+            [
+                "Examine two vectors $\\overrightarrow{u}=(u_1,u_2)$ and $\\overrightarrow{v}=(v_1,v_2)$, where the vector $\\overrightarrow{u}$ is orthogonal to the vector obtained by subtracting a scalar multiple of $\\overrightarrow{v}$ from $\\overrightarrow{u}$. Determine the scalar parameter $k$ that satisfies this condition. \n\nPresent your answer in LaTex format: \\boxed{Your answer}",
+                "shift-in"
+            ],
+            [
+                "Examine two generic vectors $\\vec{x}=(x_1,y_1)$ and $\\vec{y}=(y_1,y_2)$, where the vector $\\vec{x}$ is orthogonal to the vector obtained by the sum of $\\vec{x}$ and a scalar multiple of $\\vec{y}$ represented by a variable $k$. Determine the real number $k$ that satisfies this condition.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "abstract"
+            ]
+        ],
+        "3": [
+            [
+                "Examine two vectors $\\overrightarrow{u}=(u_1,u_2)$ and $\\overrightarrow{v}=(v_1,v_2)$, where the vector $\\overrightarrow{u}$ is orthogonal to the vector obtained by subtracting a scalar multiple of $\\overrightarrow{v}$ from $\\overrightarrow{u}$. Determine the scalar parameter $k$ that satisfies this condition. \n\nPresent your answer in LaTex format: \\boxed{Your answer}",
+                "original"
+            ],
+            [
+                "Consider two points in a two-dimensional space, represented by the coordinates \\( P_1 = (x_1, y_1) \\) and \\( P_2 = (x_2, y_2) \\). If the line segment connecting these points is perpendicular to a line that is generated by modifying the coordinates of \\( P_2 \\) by a factor of \\( m \\), find the value of the scalar \\( m \\) that fulfills this requirement.\n\nExpress your findings using LaTex: \\boxed{Your answer}",
+                "persona"
+            ],
+            [
+                "Analyze two points in a two-dimensional space, represented as coordinates \\(A=(a_1,a_2)\\) and \\(B=(b_1,b_2)\\), where point \\(A\\) is perpendicular to the point obtained by adding a scalar multiple of the vector from \\(A\\) to \\(B\\) with respect to \\(A\\). Identify the scalar parameter \\(m\\) that fulfills this condition.\n\nExpress your solution in LaTex format: \\boxed{Your answer}",
+                "mix"
+            ]
+        ]
+    },
+    {
+        "0": [
+            [
+                "The test consists of 5 sections, each containing an equal number of questions. Pavel correctly answered 32 questions. The percentage of his correct answers is more than 70% but less than 77%. How many questions were there in the test?\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "original"
+            ],
+            [
+                "A quiz is divided into 4 parts, each with the same number of questions. Maria answered 24 questions correctly. Her success rate falls between 60% and 65%. What is the total number of questions in the quiz?\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "shift-in"
+            ],
+            [
+                "During a recent trivia night at the community center, Leo participated in a quiz made up of 6 rounds, with each round featuring the same number of questions. He managed to score a total of 45 correct answers. His accuracy rate fell between 75% and 82%. Can you determine the total number of questions in the quiz?\n\nPlease provide your solution in LaTex format: \\boxed{Your answer}",
+                "persona"
+            ]
+        ],
+        "1": [
+            [
+                "A quiz is divided into 4 parts, each with the same number of questions. Maria answered 24 questions correctly. Her success rate falls between 60% and 65%. What is the total number of questions in the quiz?\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "original"
+            ],
+            [
+                "A cooking competition consists of 5 rounds, each featuring an equal number of dishes to prepare. Jamie successfully completed 30 dishes. His completion rate falls between 70% and 75%. What is the total number of dishes in the competition?\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "mix"
+            ],
+            [
+                "A standardized test consists of multiple sections, each containing an equal amount of questions. Alex managed to answer a total of 36 questions correctly, achieving a performance level that lies within a specified range of 70% to 75%. Determine the overall number of questions included in the test.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "abstract"
+            ]
+        ],
+        "2": [
+            [
+                "A standardized test consists of multiple sections, each containing an equal amount of questions. Alex managed to answer a total of 36 questions correctly, achieving a performance level that lies within a specified range of 70% to 75%. Determine the overall number of questions included in the test.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "original"
+            ],
+            [
+                "A certification exam includes various modules, each containing a different number of questions. Jamie successfully answered 48 questions correctly, which corresponds to a passing rate between 80% and 85%. Calculate the total number of questions that were part of the certification exam.\n\nPresent the answer in LaTeX format: \\boxed{Your answer}",
+                "shift-in"
+            ],
+            [
+                "During a recent academic competition, a student named Jamie excelled by answering 45 questions correctly across various categories, securing a score that falls between 80% and 85%. Can you calculate the total number of questions that were part of the competition? \n\nPlease provide your response in LaTex format: \\boxed{Your answer}",
+                "persona"
+            ]
+        ],
+        "3": [
+            [
+                "During a recent academic competition, a student named Jamie excelled by answering 45 questions correctly across various categories, securing a score that falls between 80% and 85%. Can you calculate the total number of questions that were part of the competition? \n\nPlease provide your response in LaTex format: \\boxed{Your answer}",
+                "original"
+            ],
+            [
+                "In a local science fair, a participant named Alex achieved remarkable success by presenting a project that received a score between 90% and 95%, based on a total of 60 evaluation points. If Alex earned 54 points for their project, can you determine the maximum possible score they could have received in the fair? \n\nPlease provide your response in LaTex format: \\boxed{Your answer}",
+                "shift-in"
+            ],
+            [
+                "In a recent science fair, a participant named Alex showcased a project that received a score between 75% and 90% by successfully completing 36 different experiments across multiple disciplines. Can you determine the total number of experiments that were evaluated in the fair? \n\nPlease provide your response in LaTex format: \\boxed{Your answer}",
+                "shift-in"
+            ]
+        ]
+    },
+    {
+        "0": [
+            [
+                "Circles with centers \\( O_1 \\) and \\( O_2 \\) and equal radii are inscribed in the angles at \\( B \\) and \\( C \\) of triangle \\( ABC \\) respectively. Point \\( O \\) is the center of the incircle of triangle \\( ABC \\). These circles touch side \\( BC \\) at points \\( K_1, K_2, \\) and \\( K \\) respectively, with \\( BK_1 = 4, CK_2 = 8, \\) and \\( BC = 18 \\).\n\na) Find the length of segment \\( CK \\).\n\nb) Suppose the circle with center \\( O_1 \\) touches side \\( AB \\) at point \\( K_3 \\). Find the angle \\( ABC \\), given that point \\( O_1 \\) is the center of the circumscribed circle around triangle \\( OK_1K_3 \\).\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "original"
+            ],
+            [
+                "Consider two identical circles inscribed in the angles of a triangle, each touching one side. The center of the triangle's incircle is also given. The points where these circles touch the side of the triangle create specific segments, and lengths of some segments are provided.\n\na) Determine the length of one of the segments formed by the points of tangency.\n\nb) If one of the circles also touches another side of the triangle at a specific point, calculate the angle at the vertex opposite to that side, using the center of the circle and the points of tangency to help in your calculations.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "abstract"
+            ],
+            [
+                "In a triangle \\( ABC \\), we have two identical circles centered at points \\( P \\) and \\( Q \\) that are inscribed within the angles at vertices \\( A \\) and \\( C \\). Let \\( R \\) denote the center of the triangle's incircle. The circles touch the base \\( AB \\) at points \\( M_1, M_2, \\) and \\( M \\), with the measurements \\( AM_1 = 5, CM_2 = 7, \\) and \\( AB = 20 \\).\n\na) Calculate the length of segment \\( AM \\).\n\nb) If the circle centered at \\( P \\) touches side \\( AC \\) at point \\( M_3 \\), determine the measure of angle \\( ACB \\), given that point \\( P \\) serves as the center of the circumcircle around triangle \\( RM_1M_3 \\).\n\nPresent your answer in LaTex format: \\boxed{Your answer}",
+                "persona"
+            ]
+        ],
+        "1": [
+            [
+                "Consider two identical circles inscribed in the angles of a triangle, each touching one side. The center of the triangle's incircle is also given. The points where these circles touch the side of the triangle create specific segments, and lengths of some segments are provided.\n\na) Determine the length of one of the segments formed by the points of tangency.\n\nb) If one of the circles also touches another side of the triangle at a specific point, calculate the angle at the vertex opposite to that side, using the center of the circle and the points of tangency to help in your calculations.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "original"
+            ],
+            [
+                "Consider two congruent shapes inscribed within the angles of a polygon, each interacting with one of its sides. The centroid of the polygon is also given. The points where these shapes make contact with the sides of the polygon create distinct segments, and the lengths of some of these segments are specified.\n\na) Calculate the length of one of the segments formed by the points of contact.\n\nb) If one of the shapes also interacts with another side of the polygon at a defined point, determine the angle at the vertex opposite that side, utilizing the centroid and the points of contact to assist in your calculations.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "abstract"
+            ],
+            [
+                "Imagine a large rectangular garden divided into four equal sections by two paths that intersect at the center, creating smaller rectangular plots. In each of these sections, there is a square flower bed at each corner, with some flower beds overlapping the paths. The total area of the garden and the dimensions of one of the paths are provided.\n\na) Calculate the area of one of the flower beds that is partially shaded by the path.\n\nb) If one of the flower beds also extends into the neighboring section, determine the angle formed at the intersection of the paths created by the overlapping flower beds and the edges of the garden, using the dimensions of the beds and paths to assist in your calculations.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "shift-out"
+            ]
+        ],
+        "2": [
+            [
+                "Imagine a large rectangular garden divided into four equal sections by two paths that intersect at the center, creating smaller rectangular plots. In each of these sections, there is a square flower bed at each corner, with some flower beds overlapping the paths. The total area of the garden and the dimensions of one of the paths are provided.\n\na) Calculate the area of one of the flower beds that is partially shaded by the path.\n\nb) If one of the flower beds also extends into the neighboring section, determine the angle formed at the intersection of the paths created by the overlapping flower beds and the edges of the garden, using the dimensions of the beds and paths to assist in your calculations.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "original"
+            ],
+            [
+                "Envision a spacious triangular park divided into three equal sections by walkways that converge at a central fountain, resulting in smaller triangular areas. In each of these sections, there is a circular seating area at each vertex, with some seating areas encroaching upon the walkways. The total area of the park and the dimensions of one of the walkways are provided.\n\na) Calculate the area of one of the seating areas that is partially shaded by the walkway.\n\nb) If one of the seating areas also extends into the adjacent section, determine the angle formed at the intersection of the walkways created by the overlapping seating areas and the edges of the park, using the dimensions of the seating areas and walkways to assist in your calculations.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "shift-out"
+            ],
+            [
+                "Consider a large circular park divided into four equal segments by two pathways that cross at the center, resulting in smaller pie-shaped areas. In each of these segments, there is a circular fountain positioned at the midpoint, with some fountains partially obstructed by the pathways. The total area of the park and the radius of one of the pathways are given.\n\na) Determine the area of one of the fountains that is partially shaded by the pathway.\n\nb) If one of the fountains also extends into the adjacent segment, calculate the angle formed at the intersection of the pathways created by the overlapping fountains and the boundaries of the park, using the measurements of the fountains and pathways to aid in your computations.\n\nPresent your answer in LaTex format: \\boxed{Your answer}",
+                "shift-out"
+            ]
+        ],
+        "3": [
+            [
+                "Envision a spacious triangular park divided into three equal sections by walkways that converge at a central fountain, resulting in smaller triangular areas. In each of these sections, there is a circular seating area at each vertex, with some seating areas encroaching upon the walkways. The total area of the park and the dimensions of one of the walkways are provided.\n\na) Calculate the area of one of the seating areas that is partially shaded by the walkway.\n\nb) If one of the seating areas also extends into the adjacent section, determine the angle formed at the intersection of the walkways created by the overlapping seating areas and the edges of the park, using the dimensions of the seating areas and walkways to assist in your calculations.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "original"
+            ],
+            [
+                "Imagine a vibrant circular community plaza that features four distinct zones, marked by colorful paths that radiate from a central sculpture. Each zone contains a unique type of garden, with benches placed at the corners of the gardens, some of which are positioned slightly on the paths. Given the total area of the plaza and the width of one of the paths:\n\na) Determine the area of one of the garden zones that is partially shaded by the path.\n\nb) If one of the garden zones overlaps with an adjacent zone, calculate the angle created between the paths at the point where the overlapping gardens meet, using the dimensions of the gardens and paths for your computations.\n\nPlease provide your findings in LaTex format: \\boxed{Your answer}",
+                "persona"
+            ],
+            [
+                "Imagine a bustling urban plaza shaped like a hexagon, segmented into six distinct zones by vibrant pathways that meet at a lively central stage, creating smaller hexagonal sections. In each zone, there are rectangular picnic spots at each corner, with some of these spots slightly overlapping the pathways. The overall dimensions of the plaza and the width of one of the pathways are specified.\n\na) Determine the area of one of the picnic spots that overlaps with the pathway.\n\nb) If one of the picnic spots also intrudes into a neighboring zone, calculate the angle formed at the intersection of the pathways created by the overlapping picnic spots and the borders of the plaza, using the given dimensions of the picnic spots and pathways to aid your calculations.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
+                "persona"
+            ]
+        ]
+    }
+]
