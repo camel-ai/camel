@@ -199,8 +199,8 @@ class CodePrompt(TextPrompt):
         else:
             execution_res = interpreter.run(self, self._code_type, **kwargs)
         return execution_res
-
-
+    
+    
 # flake8: noqa :E501
 class TextPromptDict(Dict[Any, TextPrompt]):
     r"""A dictionary class that maps from key to :obj:`TextPrompt` object."""
