@@ -29,39 +29,39 @@ class SambaVerseAPIConfig(BaseConfig):
         temperature (float, optional): Sampling temperature to use, between
             :obj:`0` and :obj:`2`. Higher values make the output more random,
             while lower values make it more focused and deterministic.
-            (default: :obj:`0.7`)
+            (default: :obj:`None`)
         top_p (float, optional): An alternative to sampling with temperature,
             called nucleus sampling, where the model considers the results of
             the tokens with top_p probability mass. So :obj:`0.1` means only
             the tokens comprising the top 10% probability mass are considered.
-            (default: :obj:`0.95`)
+            (default: :obj:`None`)
         top_k (int, optional): Only sample from the top K options for each
             subsequent token. Used to remove "long tail" low probability
             responses.
-            (default: :obj:`50`)
+            (default: :obj:`None`)
         max_tokens (Optional[int], optional): The maximum number of tokens to
             generate, e.g. 100.
-            (default: :obj:`2048`)
+            (default: :obj:`None`)
         repetition_penalty (Optional[float], optional): The parameter for
             repetition penalty. 1.0 means no penalty.
-            (default: :obj:`1.0`)
+            (default: :obj:`None`)
         stop (Optional[Union[str,list[str]]]): Stop generation if this token
             is detected. Or if one of these tokens is detected when providing
             a string list.
-            (default: :obj:`""`)
+            (default: :obj:`None`)
         stream (Optional[bool]): If True, partial message deltas will be sent
             as data-only server-sent events as they become available.
             Currently SambaVerse API doesn't support stream mode.
-            (default: :obj:`False`)
+            (default: :obj:`None`)
     """
 
-    temperature: Optional[float] = 0.7
-    top_p: Optional[float] = 0.95
-    top_k: Optional[int] = 50
-    max_tokens: Optional[int] = 2048
-    repetition_penalty: Optional[float] = 1.0
-    stop: Optional[Union[str, list[str]]] = ""
-    stream: Optional[bool] = False
+    temperature: Optional[float] = None
+    top_p: Optional[float] = None
+    top_k: Optional[int] = None
+    max_tokens: Optional[int] = None
+    repetition_penalty: Optional[float] = None
+    stop: Optional[Union[str, list[str]]] = None
+    stream: Optional[bool] = None
 
     def as_dict(self) -> dict[str, Any]:
         config_dict = super().as_dict()
