@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import asyncio
 import datetime
 import io
 import json
@@ -33,8 +34,7 @@ from typing import (
     Union,
     cast,
 )
-from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
-import asyncio
+
 from PIL import Image, ImageDraw, ImageFont
 
 if TYPE_CHECKING:
@@ -103,7 +103,6 @@ ASYNC_ACTIONS = [
 ]
 
 
-
 ACTION_WITH_FEEDBACK_LIST = [
     'ask_question_about_video',
     'download_file_id',
@@ -144,6 +143,7 @@ class InteractiveRegion(TypedDict):
     v_scrollable: bool
     rects: List[DOMRectangle]
 
+
 def extract_function_name(s: str) -> str:
     r"""Extract the pure function name from a string (without parameters or parentheses)
 
@@ -155,15 +155,15 @@ def extract_function_name(s: str) -> str:
     """
     # Preprocessing steps
     s = s.strip()  # Remove leading/trailing whitespace
-    
+
     # 1. Remove enclosing symbols (backticks, quotes)
     s = s.strip('`"\'')
-    
+
     # 2. Remove leading numbering (e.g., `12.` or `3.`)
     if '.' in s[:5]:  # Check for numbering prefix
         parts = s.split('.', 1)
         s = parts[1].strip()
-    
+
     # 3. Extract core function name (using regular expression)
     match = re.search(r'^(\w+)\s*\(', s)
     if match:
@@ -171,8 +171,6 @@ def extract_function_name(s: str) -> str:
     else:
         # If no parentheses detected, return part before first space or special character
         return s.split(' ')[0].split('(')[0].strip()
-
-
 
 
 def _get_str(d: Any, k: str) -> str:
@@ -963,6 +961,7 @@ class BaseBrowser:
         markdown_content = html2text(html_content)
         return markdown_content
 
+
 class AsyncBaseBrowser:
     def __init__(self, headless: bool = True, cache_dir: Optional[str] = None):
         r"""
@@ -971,22 +970,22 @@ class AsyncBaseBrowser:
         Args:
             headless (bool): Whether to run the browser in headless mode.
             cache_dir (Optional[str]): The directory to store cache files.
-        
+
         Returns:
             None
         """
         from playwright.async_api import (
             async_playwright,
         )
-        
+
         self.headless = headless
-        self.history: list = []            # Stores history of operations
-        self.page_history: list = []       # Stores the history of visited pages
-        
+        self.history: list = []  # Stores history of operations
+        self.page_history: list = []  # Stores the history of visited pages
+
         # Initialize Playwright based on the mode
         # Note: In async mode, must later await self.playwright.start()
         self.playwright = async_playwright()
-        
+
         # Set the cache directory
         self.cache_dir = "tmp/" if cache_dir is None else cache_dir
         os.makedirs(self.cache_dir, exist_ok=True)
@@ -994,7 +993,7 @@ class AsyncBaseBrowser:
         # Load the page script
         abs_dir_path = os.path.dirname(os.path.abspath(__file__))
         page_script_path = os.path.join(abs_dir_path, "page_script.js")
-        
+
         try:
             with open(page_script_path, "r", encoding='utf-8') as f:
                 self.page_script = f.read()
@@ -1003,6 +1002,7 @@ class AsyncBaseBrowser:
             raise FileNotFoundError(
                 f"Page script file not found at path: {page_script_path}"
             )
+
     async def async_init(self) -> None:
         r"""Asynchronously initialize the browser."""
         # Start Playwright asynchronously (only needed in async mode and only once).
@@ -1010,12 +1010,14 @@ class AsyncBaseBrowser:
             self.playwright = await self.playwright.start()
             self.playwright_started = True
         # Launch the browser asynchronously.
-        self.browser = await self.playwright.chromium.launch(headless=self.headless)
+        self.browser = await self.playwright.chromium.launch(
+            headless=self.headless
+        )
         # Create a new context asynchronously.
         self.context = await self.browser.new_context(accept_downloads=True)
         # Create a new page asynchronously.
         self.page = await self.context.new_page()
-    
+
     def init(self) -> None:
         r"""Initialize the browser asynchronously."""
         return self.async_init()
@@ -1024,7 +1026,7 @@ class AsyncBaseBrowser:
         r"""Delete the cache directory and its contents."""
         if os.path.exists(self.cache_dir):
             shutil.rmtree(self.cache_dir)
-    
+
     async def async_wait_for_load(self, timeout: int = 20) -> None:
         r"""
         Asynchronously Wait for a certain amount of time for the page to load.
@@ -1034,9 +1036,10 @@ class AsyncBaseBrowser:
         """
         timeout_ms = timeout * 1000
         await self.page.wait_for_load_state("load", timeout=timeout_ms)
-        
+
         # TODO: check if this is needed
         await asyncio.sleep(2)
+
     def wait_for_load(self, timeout: int = 20) -> None:
         r"""Wait for a certain amount of time for the page to load.
 
@@ -1044,19 +1047,21 @@ class AsyncBaseBrowser:
             timeout (int): Timeout in seconds.
         """
         return self.async_wait_for_load(timeout)
-        
-        
+
     async def async_click_blank_area(self) -> None:
         r"""Asynchronously click a blank area of the page to unfocus the current element."""
         await self.page.mouse.click(0, 0)
         await self.wait_for_load()
+
     def click_blank_area(self) -> None:
         r"""Click a blank area of the page to unfocus the current element."""
         return self.async_click_blank_area()
-    
-    async def async_visit_page(self, url: str, timeout: int = 30000, max_retries: int = 2) -> None:
+
+    async def async_visit_page(
+        self, url: str, timeout: int = 30000, max_retries: int = 2
+    ) -> None:
         r"""Asynchronously visit a page with the given URL, retrying with an increased timeout if necessary.
-        
+
         Raises:
             Exception: If the page cannot be accessed after the maximum retries.
         """
@@ -1067,7 +1072,9 @@ class AsyncBaseBrowser:
                 break
             except Exception as e:
                 current_timeout *= 2
-                logger.warning(f"Failed to visit page {url}. Retrying with increased timeout.")
+                logger.warning(
+                    f"Failed to visit page {url}. Retrying with increased timeout."
+                )
                 logger.warning(f"Error message: {e}")
         else:
             error_msg = f"Unable to access {url} even after {max_retries} attempts with increased timeouts."
@@ -1075,14 +1082,17 @@ class AsyncBaseBrowser:
             raise Exception(error_msg)
         await self.wait_for_load()
         self.page_url = url
-    def visit_page(self, url: str, timeout: int = 30000, max_retries: int = 2) -> None:
+
+    def visit_page(
+        self, url: str, timeout: int = 30000, max_retries: int = 2
+    ) -> None:
         r"""Visit a page with the given URL, retrying with an increased timeout if necessary.
-        
+
         Raises:
             Exception: If the page cannot be accessed after the maximum retries.
         """
         return self.async_visit_page(url, timeout, max_retries)
-    
+
     def ask_question_about_video(self, question: str) -> str:
         r"""Ask a question about the video on the current page,
         such as YouTube video.
@@ -1098,8 +1108,7 @@ class AsyncBaseBrowser:
             self.page_url, question
         )
         return result
-    
-    
+
     @retry_on_error()
     async def async_get_screenshot(
         self, save_image: bool = False
@@ -1124,7 +1133,7 @@ class AsyncBaseBrowser:
             url_name = self.page_url.split("/")[-1]
             for char in ['\\', '/', ':', '*', '?', '"', '<', '>', '|', '.']:
                 url_name = url_name.replace(char, "_")
-                
+
             # Get formatted time: mmddhhmmss
             timestamp = datetime.datetime.now().strftime("%m%d%H%M%S")
             file_path = os.path.join(
@@ -1132,15 +1141,15 @@ class AsyncBaseBrowser:
             )
             with open(file_path, "wb") as f:
                 image.save(f, "PNG")
-    
+
         return image, file_path
-    
+
     @retry_on_error()
     def get_screenshot(
         self, save_image: bool = False
     ) -> Tuple[Image.Image, Union[str, None]]:
         r"""Get a screenshot of the current page.
-        
+
         Args:
             save_image (bool): Whether to save the image to the cache
                 directory.
@@ -1151,15 +1160,15 @@ class AsyncBaseBrowser:
             :obj:`None`.
         """
         return self.async_get_screenshot(save_image)
-    
+
     async def async_capture_full_page_screenshots(
         self, scroll_ratio: float = 0.8
     ) -> List[str]:
         r"""Asynchronously capture full page screenshots by scrolling the page with a buffer zone.
-        
+
         Args:
             scroll_ratio (float): The ratio of viewport height to scroll each step (default: 0.8).
-        
+
         Returns:
             List[str]: A list of paths to the captured screenshots.
         """
@@ -1169,50 +1178,51 @@ class AsyncBaseBrowser:
         viewport_height = self.page.viewport_size["height"]
         current_scroll = 0
         screenshot_index = 1
-        
+
         max_height = scroll_height - viewport_height
         scroll_step = int(viewport_height * scroll_ratio)
 
         last_height = 0
-        
+
         while True:
             logger.debug(
                 f"Current scroll: {current_scroll}, max_height: "
                 f"{max_height}, step: {scroll_step}"
             )
-            
+
             _, file_path = await self.get_screenshot(save_image=True)
             screenshots.append(file_path)
-            
+
             await self.page.evaluate(f"window.scrollBy(0, {scroll_step})")
             # Allow time for content to load
             await asyncio.sleep(0.5)
-            
+
             current_scroll = await self.page.evaluate("window.scrollY")
             # Break if there is no significant scroll
             if abs(current_scroll - last_height) < viewport_height * 0.1:
                 break
-            
+
             last_height = current_scroll
             screenshot_index += 1
-            
+
         return screenshots
+
     def capture_full_page_screenshots(
         self, scroll_ratio: float = 0.8
     ) -> List[str]:
         r"""Capture full page screenshots by scrolling the page with a buffer zone.
-        
+
         Args:
             scroll_ratio (float): The ratio of viewport height to scroll each step (default: 0.8).
-            
+
         Returns:
             List[str]: A list of paths to the captured screenshots.
         """
         return self.async_capture_full_page_screenshots(scroll_ratio)
-        
+
     async def async_get_visual_viewport(self) -> VisualViewport:
         r"""Asynchronously get the visual viewport of the current page.
-        
+
         Returns:
             VisualViewport: The visual viewport of the current page.
         """
@@ -1220,19 +1230,22 @@ class AsyncBaseBrowser:
             await self.page.evaluate(self.page_script)
         except Exception as e:
             logger.warning(f"Error evaluating page script: {e}")
-            
+
         return visual_viewport_from_dict(
-            await self.page.evaluate("MultimodalWebSurfer.getVisualViewport();")
+            await self.page.evaluate(
+                "MultimodalWebSurfer.getVisualViewport();"
+            )
         )
-    
+
     def get_visual_viewport(self) -> VisualViewport:
         r"""Get the visual viewport of the current page."""
         return self.async_get_visual_viewport()
-            
-        
-    async def async_get_interactive_elements(self) -> Dict[str, InteractiveRegion]:
+
+    async def async_get_interactive_elements(
+        self,
+    ) -> Dict[str, InteractiveRegion]:
         r"""Asynchronously get the interactive elements of the current page.
-        
+
         Returns:
             Dict[str, InteractiveRegion]: A dictionary containing the
             interactive elements of the current page.
@@ -1241,44 +1254,46 @@ class AsyncBaseBrowser:
             await self.page.evaluate(self.page_script)
         except Exception as e:
             logger.warning(f"Error evaluating page script: {e}")
-            
+
         result = cast(
             Dict[str, Dict[str, Any]],
-            await self.page.evaluate("MultimodalWebSurfer.getInteractiveRects();"),
+            await self.page.evaluate(
+                "MultimodalWebSurfer.getInteractiveRects();"
+            ),
         )
-        
+
         typed_results: Dict[str, InteractiveRegion] = {}
         for k in result:
             typed_results[k] = interactive_region_from_dict(result[k])
-        
+
         return typed_results  # type: ignore[return-value]
-    
+
     def get_interactive_elements(self) -> Dict[str, InteractiveRegion]:
         r"""Get the interactive elements of the current page.
-        
+
         Returns:
             Dict[str, InteractiveRegion]: A dictionary of interactive elements.
         """
         return self.async_get_interactive_elements()
-    
+
     async def async_get_som_screenshot(
         self,
         save_image: bool = False,
     ) -> Tuple[Image.Image, Union[str, None]]:
         r"""Asynchronously get a screenshot of the current viewport with interactive elements marked.
-        
+
         Args:
             save_image (bool): Whether to save the image to the cache directory.
-        
+
         Returns:
             Tuple[Image.Image, str]: A tuple containing the screenshot image and the path to the image file.
-        
+
         """
-        
+
         await self.wait_for_load()
         screenshot, _ = await self.get_screenshot(save_image=False)
         rects = await self.get_interactive_elements()
-        
+
         file_path = None
         comp, visible_rects, rects_above, rects_below = add_set_of_mark(
             screenshot,
@@ -1294,44 +1309,46 @@ class AsyncBaseBrowser:
             )
             with open(file_path, "wb") as f:
                 comp.save(f, "PNG")
-            
+
         return comp, file_path
-    
+
     def get_som_screenshot(
         self,
         save_image: bool = False,
     ) -> Tuple[Image.Image, Union[str, None]]:
         r"""Get a screenshot of the current viewport with interactive elements marked.
-        
+
         Args:
             save_image (bool): Whether to save the image to the cache directory.
-        
+
         Returns:
             Tuple[Image.Image, str]: A tuple containing the screenshot image and the path to the image file.
         """
         return self.async_get_som_screenshot(save_image)
-    
+
     async def async_scroll_up(self) -> None:
         r"""Asynchronously scroll up the page."""
         await self.page.keyboard.press("PageUp")
+
     def scroll_up(self) -> None:
         r"""Scroll up the page."""
         return self.async_scroll_up()
-    
+
     async def async_scroll_down(self) -> None:
         r"""Asynchronously scroll down the page."""
         await self.page.keyboard.press("PageDown")
+
     def scroll_down(self) -> None:
         r"""Scroll down the page."""
         return self.async_scroll_down()
-    
+
     def get_url(self) -> str:
         r"""Get the URL of the current page."""
         return self.page.url
-    
+
     async def async_click_id(self, identifier: Union[str, int]) -> None:
         r"""Asynchronously click an element with the given ID.
-        
+
         Args:
             identifier (Union[str, int]): The ID of the element to click.
         """
@@ -1343,44 +1360,50 @@ class AsyncBaseBrowser:
         except (TimeoutError, Exception) as e:
             logger.debug(f"Error during click operation: {e}")
             raise ValueError("No such element.") from None
-        
+
         await target.scroll_into_view_if_needed()
-        
+
         new_page = None
         try:
-            async with self.page.expect_event("popup", timeout=1000) as page_info:
-                box = cast(Dict[str, Union[int, float]],await target.bounding_box())
+            async with self.page.expect_event(
+                "popup", timeout=1000
+            ) as page_info:
+                box = cast(
+                    Dict[str, Union[int, float]], await target.bounding_box()
+                )
                 await self.page.mouse.click(
                     box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
                 )
             new_page = await page_info.value
-                
-                # If a new page is opened, switch to it
+
+            # If a new page is opened, switch to it
             if new_page:
                 self.page_history.append(deepcopy(self.page.url))
                 self.page = new_page
         except (TimeoutError, Exception) as e:
             logger.debug(f"Error during click operation: {e}")
-        
+
         await self.wait_for_load()
+
     def click_id(self, identifier: Union[str, int]) -> None:
         r"""Click an element with the given identifier."""
         return self.async_click_id(identifier)
-        
+
     async def async_extract_url_content(self) -> str:
         r"""Asynchronously extract the content of the current page."""
         content = await self.page.content()
         return content
+
     def extract_url_content(self) -> str:
         r"""Extract the content of the current page."""
         return self.async_extract_url_content()
 
     async def async_download_file_id(self, identifier: Union[str, int]) -> str:
         r"""Asynchronously download a file with the given selector.
-        
+
         Args:
             identifier (Union[str, int]): The identifier of the file to download.
-            
+
         Returns:
             str: The path to the downloaded file.
         """
@@ -1390,16 +1413,20 @@ class AsyncBaseBrowser:
             target = self.page.locator(f"[__elementId='{identifier}']")
         except Exception as e:
             logger.debug(f"Error during download operation: {e}")
-            logger.warning(f"Element with identifier '{identifier}' not found.")
+            logger.warning(
+                f"Element with identifier '{identifier}' not found."
+            )
             return f"Element with identifier '{identifier}' not found."
-        
+
         await target.scroll_into_view_if_needed()
-        
+
         file_path = os.path.join(self.cache_dir)
         await self.wait_for_load()
-        
+
         try:
-            async with self.page.expect_download(timeout=5000) as download_info:
+            async with self.page.expect_download(
+                timeout=5000
+            ) as download_info:
                 await target.click()
                 download = await download_info.value
                 file_name = download.suggested_filename
@@ -1409,30 +1436,35 @@ class AsyncBaseBrowser:
         except Exception as e:
             logger.debug(f"Error during download operation: {e}")
             return f"Failed to download file with identifier '{identifier}'."
+
     def download_file_id(self, identifier: Union[str, int]) -> str:
         r"""Download a file with the given identifier."""
         return self.async_download_file_id(identifier)
-    
-    async def async_fill_input_id(self, identifier: Union[str, int], text: str) -> str:
+
+    async def async_fill_input_id(
+        self, identifier: Union[str, int], text: str
+    ) -> str:
         r"""Asynchronously fill an input field with the given text, and then press Enter.
-        
+
         Args:
             identifier (Union[str, int]): The identifier of the input field.
             text (str): The text to fill.
-            
+
         Returns:
             str: The result of the action.
         """
         if isinstance(identifier, int):
             identifier = str(identifier)
-        
+
         try:
             target = self.page.locator(f"[__elementId='{identifier}']")
         except Exception as e:
             logger.debug(f"Error during fill operation: {e}")
-            logger.warning(f"Element with identifier '{identifier}' not found.")
+            logger.warning(
+                f"Element with identifier '{identifier}' not found."
+            )
             return f"Element with identifier '{identifier}' not found."
-        
+
         await target.scroll_into_view_if_needed()
         await target.focus()
         try:
@@ -1440,43 +1472,46 @@ class AsyncBaseBrowser:
         except Exception as e:
             logger.debug(f"Error during fill operation: {e}")
             await target.press_sequentially(text)
-        
+
         await target.press("Enter")
         await self.wait_for_load()
         return (
             f"Filled input field '{identifier}' with text '{text}' "
             f"and pressed Enter."
         )
-    
+
     def fill_input_id(self, identifier: Union[str, int], text: str) -> str:
         r"""Fill an input field with the given text, and then press Enter."""
         return self.async_fill_input_id(identifier, text)
-    
+
     async def async_scroll_to_bottom(self) -> str:
         r"""Asynchronously scroll to the bottom of the page."""
-        await self.page.evaluate("window.scrollTo(0, document.body.scrollHeight);")
+        await self.page.evaluate(
+            "window.scrollTo(0, document.body.scrollHeight);"
+        )
         await self.wait_for_load()
         return "Scrolled to the bottom of the page."
-    
+
     def scroll_to_bottom(self) -> str:
         r"""Scroll to the bottom of the page."""
         return self.async_scroll_to_bottom()
-    
+
     async def async_scroll_to_top(self) -> str:
         r"""Asynchronously scroll to the top of the page."""
         await self.page.evaluate("window.scrollTo(0, 0);")
         await self.wait_for_load()
         return "Scrolled to the top of the page."
+
     def scroll_to_top(self) -> str:
         r"""Scroll to the top of the page."""
         return self.async_scroll_to_top()
-    
+
     async def async_hover_id(self, identifier: Union[str, int]) -> str:
         r"""Asynchronously hover over an element with the given identifier.
-        
+
         Args:
             identifier (Union[str, int]): The identifier of the element to hover over.
-            
+
         Returns:
             str: The result of the action.
         """
@@ -1494,17 +1529,17 @@ class AsyncBaseBrowser:
         await target.hover()
         await self.wait_for_load()
         return f"Hovered over element with identifier '{identifier}'."
-    
+
     def hover_id(self, identifier: Union[str, int]) -> str:
         r"""Hover over an element with the given identifier."""
         return self.async_hover_id(identifier)
-        
+
     async def async_find_text_on_page(self, search_text: str) -> str:
         r"""Asynchronously find the next given text on the page.It is equivalent to pressing Ctrl + F and searching for the text.
-        
+
         Args:
             search_text (str): The text to search for.
-            
+
         Returns:
             str: The result of the action.
         """
@@ -1533,51 +1568,52 @@ class AsyncBaseBrowser:
             return f"Found text '{search_text}' on the page."
         else:
             return f"Text '{search_text}' not found on the page."
+
     def find_text_on_page(self, search_text: str) -> str:
         r"""Find the next given text on the page, and scroll the page to the targeted text. It is equivalent to pressing Ctrl + F and searching for the text.
-        
+
         Args:
             search_text (str): The text to search for.
-            
+
         Returns:
             str: The result of the action.
         """
         return self.async_find_text_on_page(search_text)
-    
+
     async def async_back(self) -> str:
         r"""Asynchronously navigate back to the previous page.
-        
+
         Returns:
             str: The result of the action.
         """
         page_url_before = self.page.url
         await self.page.go_back()
-        
+
         page_url_after = self.page.url
-        
+
         if page_url_after == "about:blank":
             await self.visit_page(page_url_before)
-        
+
         if page_url_before == page_url_after:
             # If the page is not changed, try to use the history
             if len(self.page_history) > 0:
                 await self.visit_page(self.page_history.pop())
-        
+
         await asyncio.sleep(1)
         await self.wait_for_load()
-    
+
     def back(self) -> str:
         r"""Navigate back to the previous page."""
         return self.async_back()
-    
+
     async def async_close(self) -> None:
         r"""Asynchronously close the browser."""
         await self.browser.close()
-    
+
     def close(self) -> None:
         r"""Close the browser."""
         return self.async_close()
-    
+
     async def async_show_interactive_elements(self) -> None:
         r"""Asynchronously show simple interactive elements on the current page."""
         await self.page.evaluate(self.page_script)
@@ -1601,10 +1637,10 @@ class AsyncBaseBrowser:
     async def async_get_webpage_content(self) -> str:
         r"""Asynchronously extract the content of the current page and convert it to markdown."""
         from html2text import html2text
-        
+
         await self.wait_for_load()
         html_content = await self.page.content()
-        
+
         markdown_content = html2text(html_content)
         return markdown_content
 
@@ -2129,9 +2165,10 @@ Your output should be in json format, including the following fields:
     def get_tools(self) -> List[FunctionTool]:
         return [FunctionTool(self.browse_url)]
 
+
 class AsyncBrowserToolkit(BaseToolkit):
     r"""An asynchronous class for browsing the web and interacting with web pages."""
-     
+
     def __init__(
         self,
         headless: bool = False,
@@ -2141,7 +2178,6 @@ class AsyncBrowserToolkit(BaseToolkit):
         planning_agent_model: Optional[BaseModelBackend] = None,
         output_language: str = "en",
     ):
-        
         r"""Initialize the AsyncBrowserToolkit instance.
 
         Args:
@@ -2155,7 +2191,7 @@ class AsyncBrowserToolkit(BaseToolkit):
                 backend for the planning agent.
         """
         self.browser = AsyncBaseBrowser(headless=headless, cache_dir=cache_dir)
-        
+
         self.history_window = history_window
         self.web_agent_model = web_agent_model
         self.planning_agent_model = planning_agent_model
@@ -2163,13 +2199,13 @@ class AsyncBrowserToolkit(BaseToolkit):
 
         self.history: list = []
         self.web_agent, self.planning_agent = self._initialize_agent()
-        
+
     def _reset(self):
         self.web_agent.reset()
         self.planning_agent.reset()
         self.history = []
         os.makedirs(self.browser.cache_dir, exist_ok=True)
-    
+
     def _initialize_agent(self) -> Tuple["ChatAgent", "ChatAgent"]:
         r"""Initialize the agent."""
         from camel.agents import ChatAgent
@@ -2213,8 +2249,7 @@ class AsyncBrowserToolkit(BaseToolkit):
         )
 
         return web_agent, planning_agent
-    
-    
+
     async def async_observe(
         self, task_prompt: str, detailed_plan: Optional[str] = None
     ) -> Tuple[str, str, str]:
@@ -2311,7 +2346,9 @@ class AsyncBrowserToolkit(BaseToolkit):
         """
 
         # get current state
-        som_screenshot, _ = await self.browser.get_som_screenshot(save_image=True)
+        som_screenshot, _ = await self.browser.get_som_screenshot(
+            save_image=True
+        )
         img = _reload_image(som_screenshot)
         message = BaseMessage.make_user_message(
             role_name='user', content=observe_prompt, image_list=[img]
@@ -2345,8 +2382,7 @@ class AsyncBrowserToolkit(BaseToolkit):
         action_code = action_code.replace("`", "").strip()
 
         return observation_result, reasoning_result, action_code
-    
-    
+
     async def async_act(self, action_code: str) -> Tuple[bool, str]:
         r"""Let agent act based on the given action code.
         Args:
@@ -2365,6 +2401,7 @@ class AsyncBrowserToolkit(BaseToolkit):
                     return True
 
             return False
+
         def _fix_action_code(action_code: str) -> str:
             r"""Fix potential missing quotes in action code"""
 
@@ -2418,11 +2455,11 @@ class AsyncBrowserToolkit(BaseToolkit):
 
         action_code = _fix_action_code(action_code)
         prefix = "self.browser."
-                
+
         code = f"{prefix}{action_code}"
         async_flag = extract_function_name(action_code) in ASYNC_ACTIONS
         feedback_flag = _check_if_with_feedback(action_code)
-        
+
         try:
             result = "Action was successful."
             if async_flag:
@@ -2440,7 +2477,7 @@ class AsyncBrowserToolkit(BaseToolkit):
                     exec(code)
                 await asyncio.sleep(1)
                 return True, result
-        
+
         except Exception as e:
             await asyncio.sleep(1)
             return (
@@ -2469,7 +2506,7 @@ class AsyncBrowserToolkit(BaseToolkit):
 
         resp = self.web_agent.step(message)
         return resp.msgs[0].content
-    
+
     async def _make_reflection(self, task_prompt: str) -> str:
         r"""Make a reflection about the current state and the task prompt."""
 
@@ -2499,7 +2536,7 @@ class AsyncBrowserToolkit(BaseToolkit):
         resp = self.web_agent.step(message)
 
         return resp.msgs[0].content
-    
+
     def _task_planning(self, task_prompt: str, start_url: str) -> str:
         r"""Plan the task based on the given task prompt."""
 
@@ -2563,7 +2600,7 @@ class AsyncBrowserToolkit(BaseToolkit):
             return True, replanned_schema
         else:
             return False, replanned_schema
-    
+
     @dependencies_required("playwright")
     async def browse_url(
         self, task_prompt: str, start_url: str, round_limit: int = 12
@@ -2589,9 +2626,10 @@ class AsyncBrowserToolkit(BaseToolkit):
             await self.browser.visit_page(start_url)
         except Exception as e:
             await self.browser.close()
-            logger.warning(f"Error visiting the start URL: {start_url}. Exception: {e}")
+            logger.warning(
+                f"Error visiting the start URL: {start_url}. Exception: {e}"
+            )
             return None
-
 
         for i in range(round_limit):
             observation, reasoning, action_code = await self.async_observe(
@@ -2650,6 +2688,6 @@ class AsyncBrowserToolkit(BaseToolkit):
 
         await self.browser.close()
         return simulation_result
-    
+
     def get_tools(self) -> List[FunctionTool]:
         return [FunctionTool(self.browse_url)]
