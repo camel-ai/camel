@@ -72,29 +72,20 @@ def test_base_browser_initialization_order():
         assert hasattr(browser, 'browser')  # browser launched
         assert hasattr(browser, 'page')  # page created
 
-
-def test_browser_chrome_channel_selection():
+@pytest.mark.parametrize(
+    "channel",
+    [
+        AcceptedBrowserChannels.CHROME,
+        AcceptedBrowserChannels.MSEDGE,
+        AcceptedBrowserChannels.CHROMIUM,
+    ],
+)
+def test_browser_channel_selection(channel: AcceptedBrowserChannels):
     with patch('playwright.sync_api.sync_playwright'):
         browser = BaseBrowser(
-            headless=True, channel=AcceptedBrowserChannels.CHROME
+            headless=True, channel=channel
         )
-        assert browser.channel == AcceptedBrowserChannels.CHROME.value
-
-
-def test_browser_msedge_channel_selection():
-    with patch('playwright.sync_api.sync_playwright'):
-        browser = BaseBrowser(
-            headless=True, channel=AcceptedBrowserChannels.MSEDGE
-        )
-        assert browser.channel == AcceptedBrowserChannels.MSEDGE.value
-
-
-def test_browser_chromium_channel_selection():
-    with patch('playwright.sync_api.sync_playwright'):
-        browser = BaseBrowser(
-            headless=True, channel=AcceptedBrowserChannels.CHROMIUM
-        )
-        assert browser.channel == AcceptedBrowserChannels.CHROMIUM.value
+        assert browser.channel == channel.value
 
 
 def test_browser_visit_page(base_browser_fixture):
