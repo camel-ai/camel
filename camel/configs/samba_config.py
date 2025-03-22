@@ -29,30 +29,30 @@ class SambaVerseAPIConfig(BaseConfig):
         temperature (float, optional): Sampling temperature to use, between
             :obj:`0` and :obj:`2`. Higher values make the output more random,
             while lower values make it more focused and deterministic.
-            (default: :obj:`0.7`)
+            (default: None)
         top_p (float, optional): An alternative to sampling with temperature,
             called nucleus sampling, where the model considers the results of
             the tokens with top_p probability mass. So :obj:`0.1` means only
             the tokens comprising the top 10% probability mass are considered.
-            (default: :obj:`0.95`)
+            (default: None)
         top_k (int, optional): Only sample from the top K options for each
             subsequent token. Used to remove "long tail" low probability
             responses.
-            (default: :obj:`50`)
+            (default: None)
         max_tokens (Optional[int], optional): The maximum number of tokens to
             generate, e.g. 100.
-            (default: :obj:`2048`)
+            (default: None)
         repetition_penalty (Optional[float], optional): The parameter for
             repetition penalty. 1.0 means no penalty.
-            (default: :obj:`1.0`)
+            (default: None)
         stop (Optional[Union[str,list[str]]]): Stop generation if this token
             is detected. Or if one of these tokens is detected when providing
             a string list.
-            (default: :obj:`""`)
+            (default: None)
         stream (Optional[bool]): If True, partial message deltas will be sent
             as data-only server-sent events as they become available.
             Currently SambaVerse API doesn't support stream mode.
-            (default: :obj:`False`)
+            (default: None)
     """
 
     temperature: Optional[float] = None

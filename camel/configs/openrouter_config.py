@@ -29,14 +29,14 @@ class OpenRouterConfig(BaseConfig):
         temperature (float, optional): Sampling temperature to use, between
             :obj:`0` and :obj:`2`. Higher values make the output more random,
             while lower values make it more focused and deterministic.
-            (default: :obj: `None`)
+            (default: None)
         top_p (float, optional): An alternative to sampling with temperature,
             called nucleus sampling, where the model considers the results of
             the tokens with top_p probability mass. So :obj:`0.1` means only
             the tokens comprising the top 10% probability mass are considered.
-            (default: :obj: `None`)
+            (default: None)
         n (int, optional): How many chat completion choices to generate for
-            each input message. (default: :obj: `None`)
+            each input message. (default: None)
         response_format (object, optional): An object specifying the format
             that the model must output. Compatible with GPT-4 Turbo and all
             GPT-3.5 Turbo models newer than gpt-3.5-turbo-1106. Setting to
@@ -52,30 +52,30 @@ class OpenRouterConfig(BaseConfig):
             max context length.
         stream (bool, optional): If True, partial message deltas will be sent
             as data-only server-sent events as they become available.
-            (default: :obj: `None`)
+            (default: None)
         stop (str or list, optional): Up to :obj:`4` sequences where the API
-            will stop generating further tokens. (default: :obj:`None`)
+            will stop generating further tokens. (default: None)
         max_tokens (int, optional): The maximum number of tokens to generate
             in the chat completion. The total length of input tokens and
             generated tokens is limited by the model's context length.
-            (default: :obj:`None`)
+            (default: None)
         presence_penalty (float, optional): Number between :obj:`-2.0` and
             :obj:`2.0`. Positive values penalize new tokens based on whether
             they appear in the text so far, increasing the model's likelihood
             to talk about new topics. See more information about frequency and
-            presence penalties. (default: :obj: `None`)
+            presence penalties. (default: None)
         frequency_penalty (float, optional): Number between :obj:`-2.0` and
             :obj:`2.0`. Positive values penalize new tokens based on their
             existing frequency in the text so far, decreasing the model's
             likelihood to repeat the same line verbatim. See more information
-            about frequency and presence penalties. (default: :obj: `None`)
+            about frequency and presence penalties. (default: None)
         user (str, optional): A unique identifier representing your end-user,
             which can help OpenAI to monitor and detect abuse.
-            (default: :obj: `None`)
+            (default: None)
         tools (list[FunctionTool], optional): A list of tools the model may
             call. Currently, only functions are supported as a tool. Use this
             to provide a list of functions the model may generate JSON inputs
-            for. A max of 128 functions are supported. (default: :obj: `None`)
+            for. A max of 128 functions are supported. (default: None)
         tool_choice (Union[dict[str, str], str], optional): Controls which (if
             any) tool is called by the model. :obj:`"none"` means the model
             will not call any tool and instead generates a message.
@@ -85,7 +85,7 @@ class OpenRouterConfig(BaseConfig):
             via {"type": "function", "function": {"name": "my_function"}}
             forces the model to call that tool. :obj:`"none"` is the default
             when no tools are present. :obj:`"auto"` is the default if tools
-            are present. (default: :obj: `None`)
+            are present. (default: None)
     """
 
     temperature: Optional[float] = None

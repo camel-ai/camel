@@ -30,30 +30,30 @@ class NvidiaConfig(BaseConfig):
 
     Args:
         stream (bool, optional): Whether to stream the response.
-            (default: :obj:`False`)
+            (default: None)
         temperature (float, optional): Controls randomness in the response.
             Higher values make output more random, lower values make it more
-            deterministic. Range: [0.0, 2.0]. (default: :obj:`0.7`)
+            deterministic. Range: [0.0, 2.0]. (default: None)
         top_p (float, optional): Controls diversity via nucleus sampling.
-            Range: [0.0, 1.0]. (default: :obj:`0.95`)
+            Range: [0.0, 1.0]. (default: None)
         presence_penalty (float, optional): Penalizes new tokens based on
             whether they appear in the text so far. Range: [-2.0, 2.0].
-            (default: :obj:`0.0`)
+            (default: None)
         frequency_penalty (float, optional): Penalizes new tokens based on
             their frequency in the text so far. Range: [-2.0, 2.0].
-            (default: :obj:`0.0`)
+            (default: None)
         max_tokens (Union[int, NotGiven], optional): Maximum number of tokens
             to generate. If not provided, model will use its default maximum.
-            (default: :obj:`NOT_GIVEN`)
+            (default: None)
         seed (Optional[int], optional): Random seed for deterministic sampling.
-            (default: :obj:`None`)
+            (default: None)
         tools (Optional[List[Dict]], optional): List of tools available to the
             model. This includes tools such as a text editor, a calculator, or
-            a search engine. (default: :obj:`None`)
+            a search engine. (default: None)
         tool_choice (Optional[str], optional): Tool choice configuration.
-            (default: :obj:`None`)
+            (default: None)
         stop (Optional[List[str]], optional): List of stop sequences.
-            (default: :obj:`None`)
+            (default: None)
     """
 
     stream: Optional[bool] = Field(default=None)

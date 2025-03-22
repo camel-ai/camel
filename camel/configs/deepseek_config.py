@@ -29,38 +29,38 @@ class DeepSeekConfig(BaseConfig):
         temperature (float, optional): Sampling temperature to use, between
             :obj:`0` and :obj:`2`. Higher values make the output more random,
             while lower values make it more focused and deterministic.
-            (default: :obj:`1.0`)
+            (default: None)
         top_p (float, optional): Controls the diversity and focus of the
             generated results. Higher values make the output more diverse,
-            while lower values make it more focused. (default: :obj:`1.0`)
+            while lower values make it more focused. (default: None)
         response_format (object, optional): Specifies the format of the
             returned content. The available values are `{"type": "text"}` or
             `{"type": "json_object"}`. Setting it to `{"type": "json_object"}`
             will output a standard JSON string.
-            (default: :obj:`{"type": "text"}`)
+            (default: None)
         stream (bool, optional): If set, partial message deltas will be sent.
             Tokens will be sent as data-only server-sent events (SSE) as
             they become available, with the stream terminated by a
-            data: [DONE] message. (default: :obj:`False`)
+            data: [DONE] message. (default: None)
         stop (Union[str, list[str]], optional): Up to 16 sequences where
-            the API will stop generating further tokens. (default: :obj:`None`)
+            the API will stop generating further tokens. (default: None)
         max_tokens (int, optional): The maximum number of tokens that can
             be generated in the chat completion. The total length of input
             tokens and generated tokens is limited by the model's context
-            length. (default: :obj:`None`)
+            length. (default: None)
         presence_penalty (float, optional): Number between -2.0 and 2.0.
             Positive values penalize new tokens based on whether they
             appear in the text so far, increasing the model's likelihood
-            to talk about new topics. (default: :obj:`0.0`)
+            to talk about new topics. (default: None)
         frequency_penalty (float, optional): Number between -2.0 and 2.0.
             Positive values penalize new tokens based on their existing
             frequency in the text so far, decreasing the model's likelihood
-            to repeat the same line verbatim. (default: :obj:`0`)
+            to repeat the same line verbatim. (default: None)
         tools (list[FunctionTool], optional): A list of tools the model may
             call. Currently, only functions are supported as a tool. Use
             this to provide a list of functions the model may generate JSON
             inputs for. A max of 128 functions are supported.
-            (default: :obj:`None`)
+            (default: None)
         tool_choice (Union[dict[str, str], str], optional): Controls which
             (if any) tool is called by the model. "none" means the model
             will not call any tool and instead generates a message. "auto"
@@ -70,19 +70,18 @@ class DeepSeekConfig(BaseConfig):
             {"type": "function", "function": {"name": "my_function"}} forces
             the model to call that tool. "none" is the default when no tools
             are present. "auto" is the default if tools are present.
-            (default: :obj:`"auto"`)
+            (default: None)
         logprobs (bool, optional): Whether to return log probabilities of
             the output tokens or not. If true, returns the log probabilities
             of each output token returned in the content of message.
-            (default: :obj:`False`)
+            (default: None)
         top_logprobs (int, optional): An integer between 0 and 20 specifying
             the number of most likely tokens to return at each token
             position, each with an associated log probability. logprobs
             must be set to true if this parameter is used.
-            (default: :obj:`None`)
+            (default: None)
         include_usage (bool, optional): When streaming, specifies whether to
-            include usage information in `stream_options`. (default:
-            :obj:`True`)
+            include usage information in `stream_options`. (default: None)
     """
 
     temperature: Optional[float] = None  # deepseek default: 1.0

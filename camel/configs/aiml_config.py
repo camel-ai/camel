@@ -27,19 +27,20 @@ class AIMLConfig(BaseConfig):
 
     Args:
         temperature (float, optional): Determines the degree of randomness
-            in the response. (default: :obj:`0.7`)
+            in the response. (default: None)
         top_p (float, optional): The top_p (nucleus) parameter is used to
             dynamically adjust the number of choices for each predicted token
-            based on the cumulative probabilities. (default: :obj:`0.7`)
-        n (int, optional): Number of generations to return. (default::obj:`1`)
+            based on the cumulative probabilities. (default: None)
+        n (int, optional): Number of generations to return.
+            (default: None)
         response_format (object, optional): An object specifying the format
             that the model must output.
         stream (bool, optional): If set, tokens are returned as Server-Sent
-            Events as they are made available. (default: :obj:`False`)
+            Events as they are made available. (default: None)
         stop (str or list, optional): Up to :obj:`4` sequences where the API
-            will stop generating further tokens. (default: :obj:`None`)
+            will stop generating further tokens. (default: None)
         max_tokens (int, optional): The maximum number of tokens to generate.
-            (default: :obj:`None`)
+            (default: None)
         logit_bias (dict, optional): Modify the likelihood of specified tokens
             appearing in the completion. Accepts a json object that maps tokens
             (specified by their token ID in the tokenizer) to an associated
@@ -48,17 +49,17 @@ class AIMLConfig(BaseConfig):
             The exact effect will vary per model, but values between:obj:` -1`
             and :obj:`1` should decrease or increase likelihood of selection;
             values like :obj:`-100` or :obj:`100` should result in a ban or
-            exclusive selection of the relevant token. (default: :obj:`{}`)
+            exclusive selection of the relevant token. (default: None)
         frequency_penalty (float, optional): Number between :obj:`-2.0` and
             :obj:`2.0`. Positive values penalize new tokens based on their
             existing frequency in the text so far, decreasing the model's
             likelihood to repeat the same line verbatim. See more information
-            about frequency and presence penalties. (default: :obj:`0.0`)
+            about frequency and presence penalties. (default: None)
         presence_penalty (float, optional): Number between :obj:`-2.0` and
             :obj:`2.0`. Positive values penalize new tokens based on whether
             they appear in the text so far, increasing the model's likelihood
             to talk about new topics. See more information about frequency and
-            presence penalties. (default: :obj:`0.0`)
+            presence penalties. (default: None)
         tools (list[FunctionTool], optional): A list of tools the model may
             call. Currently, only functions are supported as a tool. Use this
             to provide a list of functions the model may generate JSON inputs

@@ -28,41 +28,41 @@ class AnthropicConfig(BaseConfig):
             generate before stopping. Note that Anthropic models may stop
             before reaching this maximum. This parameter only specifies the
             absolute maximum number of tokens to generate.
-            (default: :obj:`8192`)
+            (default: None)
         stop_sequences (List[str], optional): Custom text sequences that will
             cause the model to stop generating. The models will normally stop
             when they have naturally completed their turn. If the model
             encounters one of these custom sequences, the response will be
             terminated and the stop_reason will be "stop_sequence".
-            (default: :obj:`[]`)
+            (default: None)
         temperature (float, optional): Amount of randomness injected into the
             response. Defaults to 1. Ranges from 0 to 1. Use temp closer to 0
             for analytical / multiple choice, and closer to 1 for creative
             and generative tasks. Note that even with temperature of 0.0, the
-            results will not be fully deterministic. (default: :obj:`1`)
+            results will not be fully deterministic. (default: None)
         top_p (float, optional): Use nucleus sampling. In nucleus sampling, we
             compute the cumulative distribution over all the options for each
             subsequent token in decreasing probability order and cut it off
             once it reaches a particular probability specified by `top_p`.
             You should either alter `temperature` or `top_p`,
-            but not both. (default: :obj:`0.7`)
+            but not both. (default: None)
         top_k (int, optional): Only sample from the top K options for each
             subsequent token. Used to remove "long tail" low probability
-            responses. (default: :obj:`5`)
+            responses. (default: None)
         stream (bool, optional): Whether to incrementally stream the response
-            using server-sent events. (default: :obj:`False`)
-        metadata (Union[dict, NotGiven], optional): An object describing
+            using server-sent events. (default: None)
+        metadata (dict, optional): An object describing
             metadata about the request. Can include user_id as an external
             identifier for the user associated with the request.
-            (default: :obj:`NotGiven()`)
-        thinking (Union[dict, NotGiven], optional): Configuration for enabling
+            (default: None)
+        thinking (dict, optional): Configuration for enabling
             Claude's extended thinking. When enabled, responses include
             thinking content blocks showing Claude's thinking process.
-            (default: :obj:`NotGiven()`)
-        tool_choice (Union[dict, NotGiven], optional): How the model should
+            (default: None)
+        tool_choice (dict, optional): How the model should
             use the provided tools. The model can use a specific tool, any
             available tool, decide by itself, or not use tools at all.
-            (default: :obj:`NotGiven()`)
+            (default: None)
     """
 
     max_tokens: Optional[int] = None
