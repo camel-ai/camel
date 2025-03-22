@@ -69,9 +69,8 @@ class SingleStepEnv:
         # State tracking
         self._is_setup: bool = False
         self._states: List[DataPoint] = []
-        self._episode_ended: bool = True
-        self._states_finished: List[bool] = []
-        self._states_len: int = 0
+        self._states_done: List[bool] = []
+        self.current_batch_size: int = 0
 
     async def setup(self) -> None:
         r"""Set up the environment by initializing the verifier and extractor.
@@ -84,6 +83,7 @@ class SingleStepEnv:
         """
 
         if self._is_setup:
+            logger.warning("Environment has already been set up")
             return
 
         try:
@@ -106,21 +106,23 @@ class SingleStepEnv:
         """
 
         if not self._is_setup:
+            logger.warning(
+                "Not closing environment - has not been set up yet."
+            )
             return
 
         try:
             self._is_setup = False
             await self.verifier.cleanup()
             self._states = []
-            self._episode_ended = True
-            self._states_finished = []
+            self._states_done = []
             logger.info('Environment closed successfully')
         except Exception as e:
             logger.error(f'Failed to close environment: {e}')
             raise
 
     async def reset(
-        self, batch_size: int = 1, seed: Optional[int] = 42
+        self, batch_size: int = 1, seed: Optional[int] = None
     ) -> Union[Observation, List[Observation]]:
         r"""Reset the environment and start a new episode.
 
@@ -137,14 +139,19 @@ class SingleStepEnv:
         """
 
         if not self._is_setup:
+            logger.warning(
+                "reset() called on un-setup environment. Setting up..."
+            )
             await self.setup()
 
-        if not self._episode_ended:
-            logger.warning(
+        if self._batch_started() and not self._batch_done():
+            logger.error(
                 "Reset called before all states were processed. "
                 "Call step on remaining states first."
             )
-            return
+            raise RuntimeError(
+                "reset() called before all states in batch were processed."
+            )
 
         if seed is not None:
             random.seed(seed)
@@ -161,14 +168,13 @@ class SingleStepEnv:
             start_idx = random.randint(0, dataset_len - batch_size)
             idx_slice = slice(start_idx, start_idx + batch_size)
             self._states = self.dataset[idx_slice]
-            self._states_len = len(self._states)
-            self._states_finished = [False] * self._states_len
+            self.current_batch_size = len(self._states)
+            self._states_done = [False] * self.current_batch_size
 
             observations = [
                 Observation(question=sample.question, context={}, metadata={})
                 for sample in self._states
             ]
-            self._episode_ended = False
 
             return observations[0] if batch_size == 1 else observations
 
@@ -202,9 +208,11 @@ class SingleStepEnv:
         """
         if not self._is_setup:
             raise RuntimeError("Environment not set up. Call setup() first.")
-        if self._episode_ended:
-            raise RuntimeError("Episode has ended. Call reset() first.")
-        if self._states is None:
+        if self._batch_done():
+            raise RuntimeError(
+                "Episodes have ended for batch. Call reset() first."
+            )
+        if not self._states:
             raise RuntimeError("No current observation. Call reset() first.")
 
         # Normalize everything to list
@@ -216,19 +224,15 @@ class SingleStepEnv:
         for idx in indices:
             if idx < 0 or idx >= len(self._states):
                 raise ValueError(f"Invalid state index {idx}.")
-            if self._states_finished[idx]:
+            if self._states_done[idx]:
                 raise ValueError(f"State at index {idx} is already finished.")
 
         num_actions = len(actions)
 
-        if (
-            num_actions != self._states_len
-            and self._states_len % num_actions != 0
-        ):
+        if (self.current_batch_size % num_actions != 0):
             logger.warning(
-                f"Number of actions ({num_actions}) is not equal to "
-                f"total batch size ({self._states_len}) nor a divisor "
-                f"of it. Processing anyway."
+                f"Number of actions ({num_actions}) is not a divisor of"
+                f"total batch size ({self.current_batch_size})"
             )
 
         proposed_solutions = [act.llm_response for act in actions]
@@ -248,7 +252,7 @@ class SingleStepEnv:
         )
 
         step_results = []
-
+        # TODO: batch this
         for i, action in enumerate(actions):
             idx = action.index
             step_result = StepResult(
@@ -263,16 +267,13 @@ class SingleStepEnv:
                 },
             )
             step_results.append(step_result)
-            self._states_finished[idx] = True
-
-        if all(self._states_finished):
-            self._episode_ended = True
+            self._states_done[idx] = True
 
         return step_results[0] if len(step_results) == 1 else step_results
 
     # TODO: implement
     async def _compute_reward_batch(
-        self, proposed_soltions, verification_results
+        self, proposed_solutions, verification_results
     ) -> Tuple[List[float], List[Dict[str, float]]]:
         raise NotImplementedError
 
@@ -340,6 +341,12 @@ class SingleStepEnv:
                 to their values.
         """
         return {}
+
+    def _batch_done(self) -> bool:
+        return all(self._states_done)
+
+    def _batch_started(self) -> bool:
+        return any(self._states_done)
 
     @property
     def metadata(self) -> Dict[str, Any]:

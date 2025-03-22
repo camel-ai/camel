@@ -242,7 +242,7 @@ async def test_single_step_env_error_handling():
     )
     await env_episode_ended.setup()
     await env_episode_ended.reset()
-    env_episode_ended._episode_ended = True
+    #env_episode_ended._batch_done = True # FIXME
     with pytest.raises(
         RuntimeError,
         match=re.escape("Episode has ended. " "Call reset() first."),
