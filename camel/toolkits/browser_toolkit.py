@@ -1005,8 +1005,10 @@ class AsyncBaseBrowser:
             )
     async def async_init(self) -> None:
         r"""Asynchronously initialize the browser."""
-        # Start Playwright asynchronously (only needed in async mode)
-        self.playwright = await self.playwright.start()
+        # Start Playwright asynchronously (only needed in async mode and only once).
+        if not getattr(self, "playwright_started", False):
+            self.playwright = await self.playwright.start()
+            self.playwright_started = True
         # Launch the browser asynchronously.
         self.browser = await self.playwright.chromium.launch(headless=self.headless)
         # Create a new context asynchronously.
