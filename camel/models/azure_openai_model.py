@@ -49,6 +49,10 @@ class AzureOpenAIModel(BaseModelBackend):
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter`
             will be used. (default: :obj:`None`)
+        timeout (Optional[float], optional): The timeout value in seconds for
+            API calls. If not provided, will fall back to the MODEL_TIMEOUT
+            environment variable or default to 180 seconds.
+            (default: :obj:`None`)
 
     References:
         https://learn.microsoft.com/en-us/azure/ai-services/openai/
@@ -60,6 +64,7 @@ class AzureOpenAIModel(BaseModelBackend):
         model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        timeout: Optional[float] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         api_version: Optional[str] = None,
         azure_deployment_name: Optional[str] = None,
@@ -68,8 +73,9 @@ class AzureOpenAIModel(BaseModelBackend):
             model_config_dict = ChatGPTConfig().as_dict()
         api_key = api_key or os.environ.get("AZURE_OPENAI_API_KEY")
         url = url or os.environ.get("AZURE_OPENAI_BASE_URL")
+        timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter
+            model_type, model_config_dict, api_key, url, token_counter, timeout
         )
 
         self.api_version = api_version or os.environ.get("AZURE_API_VERSION")
@@ -92,7 +98,7 @@ class AzureOpenAIModel(BaseModelBackend):
             azure_deployment=self.azure_deployment_name,
             api_version=self.api_version,
             api_key=self._api_key,
-            timeout=180,
+            timeout=self._timeout,
             max_retries=3,
         )
 
@@ -101,7 +107,7 @@ class AzureOpenAIModel(BaseModelBackend):
             azure_deployment=self.azure_deployment_name,
             api_version=self.api_version,
             api_key=self._api_key,
-            timeout=180,
+            timeout=self._timeout,
             max_retries=3,
         )
 

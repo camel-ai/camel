@@ -51,6 +51,10 @@ class YiModel(BaseModelBackend):
             use for the model. If not provided, :obj:`OpenAITokenCounter(
             ModelType.GPT_4O_MINI)` will be used.
             (default: :obj:`None`)
+        timeout (Optional[float], optional): The timeout value in seconds for
+            API calls. If not provided, will fall back to the MODEL_TIMEOUT
+            environment variable or default to 180 seconds.
+            (default: :obj:`None`)
     """
 
     @api_keys_required(
@@ -65,6 +69,7 @@ class YiModel(BaseModelBackend):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
+        timeout: Optional[float] = None,
     ) -> None:
         if model_config_dict is None:
             model_config_dict = YiConfig().as_dict()
@@ -72,17 +77,18 @@ class YiModel(BaseModelBackend):
         url = url or os.environ.get(
             "YI_API_BASE_URL", "https://api.lingyiwanwu.com/v1"
         )
+        timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter
+            model_type, model_config_dict, api_key, url, token_counter, timeout
         )
         self._client = OpenAI(
-            timeout=180,
+            timeout=self._timeout,
             max_retries=3,
             api_key=self._api_key,
             base_url=self._url,
         )
         self._async_client = AsyncOpenAI(
-            timeout=180,
+            timeout=self._timeout,
             max_retries=3,
             api_key=self._api_key,
             base_url=self._url,

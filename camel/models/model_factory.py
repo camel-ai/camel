@@ -60,6 +60,7 @@ class ModelFactory:
         token_counter: Optional[BaseTokenCounter] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        timeout: Optional[int] = None,
     ) -> BaseModelBackend:
         r"""Creates an instance of `BaseModelBackend` of the specified type.
 
@@ -79,6 +80,8 @@ class ModelFactory:
                 with the model service. (default: :obj:`None`)
             url (Optional[str], optional): The url to the model service.
                 (default: :obj:`None`)
+            timeout (Optional[float], optional): The timeout value in seconds
+                for API calls. (default: :obj:`None`)
 
         Returns:
             BaseModelBackend: The initialized backend.
@@ -157,4 +160,5 @@ class ModelFactory:
             api_key=api_key,
             url=url,
             token_counter=token_counter,
+            timeout=timeout,
         )
