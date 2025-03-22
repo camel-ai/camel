@@ -78,11 +78,12 @@ class DockerInterpreter(BaseInterpreter):
         require_confirm: bool = True,
         print_stdout: bool = False,
         print_stderr: bool = True,
+        default_timeout: int = 60,
     ) -> None:
         self.require_confirm = require_confirm
         self.print_stdout = print_stdout
         self.print_stderr = print_stderr
-
+        self.default_timeout = default_timeout
         # lazy initialization of container
         self._container: Optional[Container] = None
 
@@ -152,6 +153,7 @@ class DockerInterpreter(BaseInterpreter):
         self,
         file: Path,
         code_type: str,
+        timeout: int = None,
     ) -> str:
         code_type = self._check_code_type(code_type)
         commands = shlex.split(
@@ -166,6 +168,7 @@ class DockerInterpreter(BaseInterpreter):
         stdout, stderr = self._container.exec_run(
             commands,
             demux=True,
+            timeout=timeout if timeout is not None else self.default_timeout,
         ).output
 
         if self.print_stdout and stdout:
@@ -184,6 +187,7 @@ class DockerInterpreter(BaseInterpreter):
         self,
         code: str,
         code_type: str,
+        timeout: int = None,
     ) -> str:
         r"""Executes the given code in the conatiner attached to the
         interpreter, and captures the stdout and stderr streams.
@@ -228,7 +232,7 @@ class DockerInterpreter(BaseInterpreter):
 
         try:
             temp_file_path = self._create_file_in_container(code)
-            result = self._run_file_in_container(temp_file_path, code_type)
+            result = self._run_file_in_container(temp_file_path, code_type,timeout=timeout)
         except docker.errors.APIError as e:
             raise InterpreterError(
                 f"Execution halted due to docker API error: {e.explanation}. "
