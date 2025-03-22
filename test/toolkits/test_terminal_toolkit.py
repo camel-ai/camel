@@ -22,8 +22,8 @@ from camel.toolkits import TerminalToolkit
 
 
 @pytest.fixture
-def terminal_toolkit():
-    return TerminalToolkit()
+def terminal_toolkit(temp_dir):
+    return TerminalToolkit(working_dir=temp_dir, safe_mode=False)
 
 
 @pytest.fixture
