@@ -271,74 +271,59 @@ class SingleStepEnv:
 
         return step_results[0] if len(step_results) == 1 else step_results
 
-    # TODO: implement
     async def _compute_reward_batch(
         self, proposed_solutions, verification_results
     ) -> Tuple[List[float], List[Dict[str, float]]]:
-        raise NotImplementedError
-
-    async def _compute_reward(
-        self,
-        action: Action,
-        extraction_result: str,
-        verification_result: VerificationResult,
-    ) -> Tuple[float, Dict[str, float]]:
-        r"""Compute reward scores based on verification results.
-
-        This method calculates the reward based on correctness and any
-        additional custom reward components.
+        r"""
+        Compute rewards for a batch of proposed solutions based on
+            verification results.
 
         Args:
-            action (Action): The action taken in the environment.
-            extraction_result (str): The extracted verifiable content from the
-                LLM response.
-            verification_result (VerificationResult): The result of verifying
-                the extracted response.
+            proposed_solutions: List of LLM-generated responses to evaluate.
+            verification_results: List of verification outcomes for each
+                solution.
 
         Returns:
-            Tuple[float, Dict[str, float]]: A tuple containing:
-                - Total reward (float)
-                - Dictionary of individual reward components.
-
-        Raises:
-            Exception: If an error occurs while computing rewards.
+            Tuple containing:
+                - List of total rewards for each solution.
+                - List of reward component dictionaries for each solution.
         """
+        total_rewards = []
+        rewards_dicts = []
 
-        rewards: Dict[str, float] = {}
+        for solution, verification_result in zip(
+            proposed_solutions, verification_results
+        ):
+            rewards: Dict[str, float] = {}
 
-        rewards["correctness"] = (
-            self.ACCURACY_REWARD if verification_result.status else 0.0
-        )
+            rewards["correctness"] = (
+                self.ACCURACY_REWARD if verification_result.status else 0.0
+            )
 
-        further_rewards = await self._compute_custom_reward(
-            action, extraction_result, verification_result
-        )
+            further_rewards = await self._compute_custom_reward(
+                solution, verification_result
+            )
+            rewards = rewards | further_rewards
 
-        rewards = rewards | further_rewards
+            total_reward = sum(rewards.values())
+            total_rewards.append(total_reward)
+            rewards_dicts.append(rewards)
 
-        return sum(rewards.values()), rewards
+        return total_rewards, rewards_dicts
 
     async def _compute_custom_reward(
-        self,
-        action: Action,
-        extraction_result: str,
-        verification_result: VerificationResult,
+        self, proposed_solution: str, verification_result: VerificationResult
     ) -> Dict[str, float]:
-        r"""Compute additional custom reward components.
+        r"""Compute additional custom reward components for a single solution.
 
-        This method should be implemented by subclasses to define
-        domain-specific reward calculations.
+        To be overridden by subclasses for domain-specific rewards.
 
         Args:
-            action (Action): The action taken in the environment.
-            extraction_result (str): The extracted verifiable content from the
-                LLM response.
-            verification_result (VerificationResult): The result of verifying
-                the extracted response.
+            proposed_solution: The LLM-generated response.
+            verification_result: The verification outcome.
 
         Returns:
-            Dict[str, float]: A dictionary mapping custom reward categories
-                to their values.
+            Dictionary of custom reward components.
         """
         return {}
 
