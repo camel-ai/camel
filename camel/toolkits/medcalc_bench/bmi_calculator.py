@@ -30,7 +30,7 @@ def bmi_calculator_explanation(input_variables):
     Returns:
         dict: Contains two key-value pairs:
             - "Explanation" (str): A detailed description of the calculation process.
-            - "Answer" (float): The patient's ideal body weight (in kilograms).
+            - "Answer" (float): The patient's BMI.
 
     Notes:
         - Uses the `height_conversion_explanation` function to convert height to inches.
