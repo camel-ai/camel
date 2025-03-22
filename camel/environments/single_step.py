@@ -184,18 +184,21 @@ class SingleStepEnv:
         self, action: Union[Action, List[Action]]
     ) -> Union[StepResult, List[StepResult]]:
         """
-        Process actions for a subset of states and update their finished status.
+        Process actions for a subset of states and update their
+            finished status.
 
         Args:
-            action: Single action or list of actions, where each action contains
-                    an index indicating which state it corresponds to
+            action: Single action or list of actions, where each action
+                contains an index indicating which state it corresponds to.
+
 
         Returns:
             StepResult or list of StepResults for the processed states
 
         Raises:
-            RuntimeError: If environment isn't set up or episode has ended
-            ValueError: If indices are invalid, duplicate, or correspond to finished states
+            RuntimeError: If environment isn't set up or episode has ended.
+            ValueError: If indices are invalid, duplicate, or correspond to
+                finished states.
         """
         if not self._is_setup:
             raise RuntimeError("Environment not set up. Call setup() first.")
@@ -218,14 +221,20 @@ class SingleStepEnv:
 
         num_actions = len(actions)
 
-        if num_actions != self._states_len and self._states_len % num_actions != 0:
+        if (
+            num_actions != self._states_len
+            and self._states_len % num_actions != 0
+        ):
             logger.warning(
-                f"Number of actions ({num_actions}) is not equal to total batch size "
-                f"({total_batch_size}) nor a divisor of it. Processing anyway."
+                f"Number of actions ({num_actions}) is not equal to "
+                f"total batch size ({self._states_len}) nor a divisor "
+                f"of it. Processing anyway."
             )
 
         proposed_solutions = [act.llm_response for act in actions]
-        ground_truths: List[str] = [self._states[idx].final_answer for idx in indices]
+        ground_truths: List[str] = [
+            self._states[idx].final_answer for idx in indices
+        ]
         verification_results = await self.verifier.verify_batch(
             solutions=proposed_solutions,
             ground_truths=cast(
@@ -242,23 +251,23 @@ class SingleStepEnv:
 
         for i, action in enumerate(actions):
             idx = action.index
-            step_result =StepResult(
-                        observation=self.PLACEHOLDER_OBS,
-                        reward=total_rewards[i],
-                        rewards_dict=rewards_dicts[i],
-                        done=True,
-                        info={
-                            "proposed_solution": proposed_solutions[i],
-                            "verification_result": verification_results[i],
-                            "state": self._states[idx],
-                        },
-                    )
+            step_result = StepResult(
+                observation=self.PLACEHOLDER_OBS,
+                reward=total_rewards[i],
+                rewards_dict=rewards_dicts[i],
+                done=True,
+                info={
+                    "proposed_solution": proposed_solutions[i],
+                    "verification_result": verification_results[i],
+                    "state": self._states[idx],
+                },
+            )
             step_results.append(step_result)
             self._states_finished[idx] = True
 
         if all(self._states_finished):
             self._episode_ended = True
-            
+
         return step_results[0] if len(step_results) == 1 else step_results
 
     # TODO: implement
