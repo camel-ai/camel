@@ -32,6 +32,7 @@ from camel.models.nvidia_model import NvidiaModel
 from camel.models.ollama_model import OllamaModel
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.models.openai_model import OpenAIModel
+from camel.models.openrouter_model import OpenRouterModel
 from camel.models.qwen_model import QwenModel
 from camel.models.reka_model import RekaModel
 from camel.models.samba_model import SambaModel
@@ -122,6 +123,8 @@ class ModelFactory:
             model_class = AnthropicModel
         elif model_platform.is_groq and model_type.is_groq:
             model_class = GroqModel
+        elif model_platform.is_openrouter and model_type.is_openrouter:
+            model_class = OpenRouterModel
         elif model_platform.is_zhipuai and model_type.is_zhipuai:
             model_class = ZhipuAIModel
         elif model_platform.is_gemini and model_type.is_gemini:

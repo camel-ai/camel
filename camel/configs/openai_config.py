@@ -79,7 +79,7 @@ class ChatGPTConfig(BaseConfig):
             exclusive selection of the relevant token. (default: :obj:`None`)
         user (str, optional): A unique identifier representing your end-user,
             which can help OpenAI to monitor and detect abuse.
-            (default: :obj:`""`)
+            (default: :obj:`None`)
         tools (list[FunctionTool], optional): A list of tools the model may
             call. Currently, only functions are supported as a tool. Use this
             to provide a list of functions the model may generate JSON inputs
@@ -102,8 +102,8 @@ class ChatGPTConfig(BaseConfig):
             or if the model type does not support it, this parameter is
             ignored. (default: :obj:`None`)
         parallel_tool_calls (bool, optional): A parameter specifying whether
-            the model should call tools in parallel or not. (default:
-            :obj:`None`)
+            the model should call tools in parallel or not.
+            (default: :obj:`None`)
     """
 
     temperature: Optional[float] = None
