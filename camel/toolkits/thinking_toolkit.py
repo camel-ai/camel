@@ -11,21 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ============================================================================
 
-
-from typing import List
+from typing import List, Optional
 
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
@@ -35,11 +22,23 @@ logger = get_logger(__name__)
 
 
 class ThinkingToolkit(BaseToolkit):
-    r"""A toolkit for recording thoughts during reasoning processes."""
+    r"""A toolkit for recording thoughts during reasoning processes.
 
-    def __init__(self):
-        r"""Initialize the ThinkingToolkit."""
-        super().__init__()
+    Attributes:
+        thoughts (List[str]): A list to store the recorded thoughts.
+    """
+
+    def __init__(
+        self,
+        timeout: Optional[float] = None,
+    ):
+        r"""Initialize the ThinkingToolkit.
+
+        Args:
+            timeout (Optional[float]): The timeout for the toolkit.
+                (default: :obj: `None`)
+        """
+        super().__init__(timeout=timeout)
         self.thoughts: List[str] = []
 
     def think(self, thought: str) -> str:
