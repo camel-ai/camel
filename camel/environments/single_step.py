@@ -124,18 +124,27 @@ class SingleStepEnv:
     async def reset(
         self, batch_size: int = 1, seed: Optional[int] = None
     ) -> Union[Observation, List[Observation]]:
-        r"""Reset the environment and start a new episode.
+        r"""Resets the environment and starts a new episode.
 
-        This method samples a new batch of data points from the dataset
-            and returns the initial observations.
-        If the batch size is 1, a single observation is returned.
+        This method samples a new batch of data points from the dataset and
+        returns the corresponding initial observations.
+
+        If a seed is provided, a local random number generator is initialized
+        for deterministic sampling. The global random state is not affected.
+
+        Args:
+            batch_size (int): Number of data points to sample. Defaults to 1.
+            seed (Optional[int]): Seed for deterministic sampling. If None,
+                sampling is non-deterministic.
 
         Returns:
-            Union[Observation, List[Observation]]:
-                One or more initial observations.
+            Observation or List[Observation]: Initial observation(s) for the
+                episode.
 
         Raises:
-            Exception: If the environment is not set up properly.
+            RuntimeError: If called before all previous states are processed.
+            ValueError: If batch size exceeds dataset size.
+            TypeError: If the dataset is of an unsupported type.
         """
 
         if not self._is_setup:
@@ -154,7 +163,9 @@ class SingleStepEnv:
             )
 
         if seed is not None:
-            random.seed(seed)
+            rng = random.Random(seed)
+        else:
+            rng = random
 
         if isinstance(self.dataset, StaticDataset):
             dataset_len = len(self.dataset)
@@ -165,7 +176,7 @@ class SingleStepEnv:
                     f"of size {dataset_len}"
                 )
 
-            start_idx = random.randint(0, dataset_len - batch_size)
+            start_idx = rng.randint(0, dataset_len - batch_size)
             idx_slice = slice(start_idx, start_idx + batch_size)
             self._states = self.dataset[idx_slice]
             self.current_batch_size = len(self._states)
@@ -229,7 +240,7 @@ class SingleStepEnv:
 
         num_actions = len(actions)
 
-        if (self.current_batch_size % num_actions != 0):
+        if self.current_batch_size % num_actions != 0:
             logger.warning(
                 f"Number of actions ({num_actions}) is not a divisor of"
                 f"total batch size ({self.current_batch_size})"
