@@ -879,6 +879,7 @@ class OpenAIVisionDetailType(Enum):
 class StorageType(Enum):
     MILVUS = "milvus"
     QDRANT = "qdrant"
+    TIDB = "tidb"
 
 
 class OpenAPIName(Enum):
