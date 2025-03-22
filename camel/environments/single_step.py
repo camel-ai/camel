@@ -60,13 +60,17 @@ class SingleStepEnv:
         verifier: BaseVerifier,
         **kwargs,
     ) -> None:
-        r"""Initialize the environment.
+        r"""
+        Initialize the SingleStepEnv.
 
         Args:
-            dataset: Dataset to sample questions from.
-            verifier: Verifier to check responses.
-            extractor: Extractor to process LLM responses.
-            **kwargs: Additional environment parameters.
+            dataset (StaticDataset | BaseGenerator): Dataset to sample problems from.
+            verifier (BaseVerifier): Verifier used to evaluate LLM responses against ground-truth answers.
+            **kwargs: Optional metadata or configuration values stored for downstream use.
+
+        Notes:
+            This class assumes all interactions are single-step: one question,
+            one LLM response, one reward.
         """
         self.dataset = dataset
         self.verifier = verifier
