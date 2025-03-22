@@ -554,6 +554,9 @@ class ChatAgent(BaseAgent):
         self,
         input_message: Union[BaseMessage, str],
         response_format: Optional[Type[BaseModel]] = None,
+        record_message_condition: Optional[
+            Callable[[BaseMessage, BaseMessage], bool]
+        ] = None,
     ) -> ChatAgentResponse:
         r"""Executes a single step in the chat session, generating a response
         to the input message.
@@ -566,6 +569,12 @@ class ChatAgent(BaseAgent):
                 model defining the expected structure of the response. Used to
                 generate a structured response if provided. (default:
                 :obj:`None`)
+            record_message_condition (Optional[Callable[[BaseMessage,
+                BaseMessage], bool]], optional): A callback function to
+                determine if messages should be recorded to memory.
+                Takes input and output messages as parameters and returns a
+                boolean. If True, messages are recorded.
+                If None, default recording behavior applies.
 
         Returns:
             ChatAgentResponse: Contains output messages, a termination status
@@ -578,15 +587,17 @@ class ChatAgent(BaseAgent):
                 role_name="User", content=input_message
             )
 
-        # Add user input to memory
-        self.update_memory(input_message, OpenAIBackendRole.USER)
-
         tool_call_records: List[ToolCallingRecord] = []
         external_tool_call_requests: Optional[List[ToolCallRequest]] = None
+        input_recorded = False  # Track if input has been recorded already
 
         while True:
             try:
                 openai_messages, num_tokens = self.memory.get_context()
+                if not input_recorded:
+                    openai_messages.append(
+                        input_message.to_openai_user_message()
+                    )
             except RuntimeError as e:
                 return self._step_token_exceed(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
@@ -598,6 +609,19 @@ class ChatAgent(BaseAgent):
                 response_format,
                 self._get_full_tool_schemas(),
             )
+
+            # if record_message_condition is None or True, record the message
+            should_record_messages = (
+                record_message_condition is None
+                or record_message_condition(
+                    input_message, response.output_messages[0]
+                )
+            )
+
+            if should_record_messages and not input_recorded:
+                # Add user input to memory (only once)
+                self.update_memory(input_message, OpenAIBackendRole.USER)
+                input_recorded = True
 
             if self.single_iteration:
                 break
@@ -613,9 +637,10 @@ class ChatAgent(BaseAgent):
                             external_tool_call_requests = []
                         external_tool_call_requests.append(tool_call_request)
                     else:
-                        tool_call_records.append(
-                            self._execute_tool(tool_call_request)
-                        )
+                        if tool_call_record := self._execute_tool(
+                            tool_call_request, should_record_messages
+                        ):
+                            tool_call_records.append(tool_call_record)
 
                 # If we found external tool calls, break the loop
                 if external_tool_call_requests:
@@ -627,7 +652,10 @@ class ChatAgent(BaseAgent):
             break
 
         self._format_response_if_needed(response, response_format)
-        self._record_final_output(response.output_messages)
+
+        if should_record_messages:
+            # Add agent output to memory
+            self._record_final_output(response.output_messages)
 
         return self._convert_to_chatagent_response(
             response,
@@ -645,6 +673,9 @@ class ChatAgent(BaseAgent):
         self,
         input_message: Union[BaseMessage, str],
         response_format: Optional[Type[BaseModel]] = None,
+        record_message_condition: Optional[
+            Callable[[BaseMessage, BaseMessage], bool]
+        ] = None,
     ) -> ChatAgentResponse:
         r"""Performs a single step in the chat session by generating a response
         to the input message. This agent step can call async function calls.
@@ -661,6 +692,12 @@ class ChatAgent(BaseAgent):
                 used to generate a structured response by LLM. This schema
                 helps in defining the expected output format. (default:
                 :obj:`None`)
+            record_message_condition (Optional[Callable[[BaseMessage,
+                BaseMessage], bool]], optional): A callback function to
+                determine if messages should be recorded to memory.
+                Takes input and output messages as parameters and returns a
+                boolean. If True, messages are recorded.
+                If None, default recording behavior applies.
 
         Returns:
             ChatAgentResponse: A struct containing the output messages,
@@ -672,13 +709,17 @@ class ChatAgent(BaseAgent):
                 role_name="User", content=input_message
             )
 
-        self.update_memory(input_message, OpenAIBackendRole.USER)
-
         tool_call_records: List[ToolCallingRecord] = []
         external_tool_call_requests: Optional[List[ToolCallRequest]] = None
+        input_recorded = False  # Track if input has been recorded already
+
         while True:
             try:
                 openai_messages, num_tokens = self.memory.get_context()
+                if not input_recorded:
+                    openai_messages.append(
+                        input_message.to_openai_user_message()
+                    )
             except RuntimeError as e:
                 return self._step_token_exceed(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
@@ -690,6 +731,19 @@ class ChatAgent(BaseAgent):
                 response_format,
                 self._get_full_tool_schemas(),
             )
+
+            # if record_message_condition is None or True, record the message
+            should_record_messages = (
+                record_message_condition is None
+                or record_message_condition(
+                    input_message, response.output_messages[0]
+                )
+            )
+
+            if should_record_messages and not input_recorded:
+                # Add user input to memory (only once)
+                self.update_memory(input_message, OpenAIBackendRole.USER)
+                input_recorded = True
 
             if self.single_iteration:
                 break
@@ -705,10 +759,10 @@ class ChatAgent(BaseAgent):
                             external_tool_call_requests = []
                         external_tool_call_requests.append(tool_call_request)
 
-                    tool_call_record = await self._aexecute_tool(
-                        tool_call_request
-                    )
-                    tool_call_records.append(tool_call_record)
+                    if tool_call_record := await self._aexecute_tool(
+                        tool_call_request, should_record_messages
+                    ):
+                        tool_call_records.append(tool_call_record)
 
                 # If we found an external tool call, break the loop
                 if external_tool_call_requests:
@@ -720,7 +774,10 @@ class ChatAgent(BaseAgent):
             break
 
         await self._aformat_response_if_needed(response, response_format)
-        self._record_final_output(response.output_messages)
+
+        if should_record_messages:
+            # Add agent output to memory
+            self._record_final_output(response.output_messages)
 
         return self._convert_to_chatagent_response(
             response,
@@ -1254,13 +1311,13 @@ class ChatAgent(BaseAgent):
         )
 
     def _execute_tool(
-        self,
-        tool_call_request: ToolCallRequest,
-    ) -> ToolCallingRecord:
+        self, tool_call_request: ToolCallRequest, should_record_messages: bool
+    ) -> Optional[ToolCallingRecord]:
         r"""Execute the tool with arguments following the model's response.
 
         Args:
             tool_call_request (_ToolCallRequest): The tool call request.
+            should_record_messages (bool): Whether to record messages.
 
         Returns:
             FunctionCallingRecord: A struct for logging information about this
@@ -1278,12 +1335,15 @@ class ChatAgent(BaseAgent):
             result = {"error": error_msg}
             logging.warning(error_msg)
 
-        return self._record_tool_calling(func_name, args, result, tool_call_id)
+        return (
+            self._record_tool_calling(func_name, args, result, tool_call_id)
+            if should_record_messages
+            else None
+        )
 
     async def _aexecute_tool(
-        self,
-        tool_call_request: ToolCallRequest,
-    ) -> ToolCallingRecord:
+        self, tool_call_request: ToolCallRequest, should_record_messages: bool
+    ) -> Optional[ToolCallingRecord]:
         func_name = tool_call_request.tool_name
         args = tool_call_request.args
         tool_call_id = tool_call_request.tool_call_id
@@ -1296,7 +1356,11 @@ class ChatAgent(BaseAgent):
             result = {"error": error_msg}
             logging.warning(error_msg)
 
-        return self._record_tool_calling(func_name, args, result, tool_call_id)
+        return (
+            self._record_tool_calling(func_name, args, result, tool_call_id)
+            if should_record_messages
+            else None
+        )
 
     def _record_tool_calling(
         self,
