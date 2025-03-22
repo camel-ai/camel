@@ -28,7 +28,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from camel.toolkits.browser_toolkit import (
-    AcceptedBrowserChannels,
+    ChromiumChannels,
     BaseBrowser,
     BrowserToolkit,
 )
@@ -75,12 +75,12 @@ def test_base_browser_initialization_order():
 @pytest.mark.parametrize(
     "channel",
     [
-        AcceptedBrowserChannels.CHROME,
-        AcceptedBrowserChannels.MSEDGE,
-        AcceptedBrowserChannels.CHROMIUM,
+        ChromiumChannels.CHROME,
+        ChromiumChannels.MSEDGE,
+        ChromiumChannels.CHROMIUM,
     ],
 )
-def test_browser_channel_selection(channel: AcceptedBrowserChannels):
+def test_browser_channel_selection(channel: ChromiumChannels):
     with patch('playwright.sync_api.sync_playwright'):
         browser = BaseBrowser(
             headless=True, channel=channel

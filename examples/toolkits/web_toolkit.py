@@ -16,7 +16,7 @@
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
-from camel.toolkits import AcceptedBrowserChannels, BrowserToolkit
+from camel.toolkits import ChromiumChannels, BrowserToolkit
 from camel.types import ModelPlatformType, ModelType
 
 model = ModelFactory.create(
@@ -47,7 +47,7 @@ web_toolkit = BrowserToolkit(
     headless=False,
     web_agent_model=web_agent_model,
     planning_agent_model=planning_agent_model,
-    channel=AcceptedBrowserChannels.CHROMIUM,
+    channel=ChromiumChannels.CHROMIUM,
 )
 
 agent = ChatAgent(

@@ -127,7 +127,7 @@ class InteractiveRegion(TypedDict):
     rects: List[DOMRectangle]
 
 
-class AcceptedBrowserChannels(Enum):
+class ChromiumChannels(Enum):
     """
     Enum for the accepted browser channels.
     """
@@ -439,7 +439,7 @@ class BaseBrowser:
         self,
         headless=True,
         cache_dir: Optional[str] = None,
-        channel: AcceptedBrowserChannels = AcceptedBrowserChannels.CHROMIUM,
+        channel: ChromiumChannels = ChromiumChannels.CHROMIUM,
     ):
         r"""Initialize the WebBrowser instance.
 
@@ -988,7 +988,7 @@ class BrowserToolkit(BaseToolkit):
         self,
         headless: bool = False,
         cache_dir: Optional[str] = None,
-        channel: AcceptedBrowserChannels = AcceptedBrowserChannels.CHROMIUM,
+        channel: ChromiumChannels = ChromiumChannels.CHROMIUM,
         history_window: int = 5,
         web_agent_model: Optional[BaseModelBackend] = None,
         planning_agent_model: Optional[BaseModelBackend] = None,
