@@ -24,49 +24,51 @@ class LiteLLMConfig(BaseConfig):
 
     Args:
         timeout (Optional[Union[float, str]], optional): Request timeout.
-            (default: None)
+            (default: :obj:`None`)
         temperature (Optional[float], optional): Temperature parameter for
-            controlling randomness. (default: None)
+            controlling randomness. (default: :obj:`None`)
         top_p (Optional[float], optional): Top-p parameter for nucleus
-            sampling. (default: None)
+            sampling. (default: :obj:`None`)
         n (Optional[int], optional): Number of completions to generate.
-            (default: None)
+            (default: :obj:`None`)
         stream (Optional[bool], optional): Whether to return a streaming
-            response. (default: None)
+            response. (default: :obj:`None`)
         stream_options (Optional[dict], optional): Options for the streaming
-            response. (default: None)
+            response. (default: :obj:`None`)
         stop (Optional[Union[str, List[str]]], optional): Sequences where the
-            API will stop generating further tokens. (default: None)
+            API will stop generating further tokens. (default: :obj:`None`)
         max_tokens (Optional[int], optional): Maximum number of tokens to
-            generate. (default: None)
+            generate. (default: :obj:`None`)
         presence_penalty (Optional[float], optional): Penalize new tokens
-            based on their existence in the text so far. (default: None)
+            based on their existence in the text so far. (default: :obj:`None`)
         frequency_penalty (Optional[float], optional): Penalize new tokens
-            based on their frequency in the text so far. (default: None)
+            based on their frequency in the text so far. (default: :obj:`None`)
         logit_bias (Optional[dict], optional): Modify the probability of
-            specific tokens appearing in the completion. (default: None)
+            specific tokens appearing in the completion. (default: :obj:`None`)
         user (Optional[str], optional): A unique identifier representing the
-            end-user. (default: None)
+            end-user. (default: :obj:`None`)
         response_format (Optional[dict], optional): Response format
-            parameters. (default: None)
-        seed (Optional[int], optional): Random seed. (default: None)
-        tools (Optional[List], optional): List of tools. (default: None)
+            parameters. (default: :obj:`None`)
+        seed (Optional[int], optional): Random seed. (default: :obj:`None`)
+        tools (Optional[List], optional): List of tools. (default: :obj:`None`)
         tool_choice (Optional[Union[str, dict]], optional): Tool choice
-            parameters. (default: None)
+            parameters. (default: :obj:`None`)
         logprobs (Optional[bool], optional): Whether to return log
-            probabilities of the output tokens. (default: None)
+            probabilities of the output tokens. (default: :obj:`None`)
         top_logprobs (Optional[int], optional): Number of most likely tokens
-            to return at each token position. (default: None)
-        deployment_id (Optional[str], optional): Deployment ID. (default: None)
+            to return at each token position. (default: :obj:`None`)
+        deployment_id (Optional[str], optional): Deployment ID.
+            (default: :obj:`None`)
         extra_headers (Optional[dict], optional): Additional headers for the
-            request. (default: None)
-        api_version (Optional[str], optional): API version. (default: None)
+            request. (default: :obj:`None`)
+        api_version (Optional[str], optional): API version.
+            (default: :obj:`None`)
         mock_response (Optional[str], optional): Mock completion response for
-            testing or debugging. (default: None)
+            testing or debugging. (default: :obj:`None`)
         custom_llm_provider (Optional[str], optional): Non-OpenAI LLM
-            provider. (default: None)
+            provider. (default: :obj:`None`)
         max_retries (Optional[int], optional): Maximum number of retries.
-            (default: None)
+            (default: :obj:`None`)
     """
 
     timeout: Optional[Union[float, str]] = None
