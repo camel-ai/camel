@@ -1,0 +1,9 @@
+model_platform: ANTHROPIC
+model_type: CLAUDE_2_0
+model_config_dict:
+  temperature: 0.7
+  top_p: 0.9
+  max_tokens: 1024
+token_counter: OpenAITokenCounter
+api_key: test_key
+url: null

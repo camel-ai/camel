@@ -1,0 +1,10 @@
+{
+    "model_platform": "openai_compatible_model",
+    "model_type": "stub",
+    "model_config_dict": {
+        "temperature": 0.5
+    },
+    "token_counter": null,
+    "api_key": null,
+    "url": null
+}

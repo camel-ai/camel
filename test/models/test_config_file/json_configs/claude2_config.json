@@ -1,0 +1,11 @@
+{
+    "model_platform": "anthropic",
+    "model_type": "claude-2.0",
+    "model_config_dict": {
+        "temperature": 0.6,
+        "max_tokens": 2000
+    },
+    "token_counter": null,
+    "api_key": "your_anthropic_api_key",
+    "url": "https://api.anthropic.com/v1"
+}

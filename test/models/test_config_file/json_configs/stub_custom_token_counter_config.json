@@ -1,0 +1,13 @@
+{
+    "model_platform": "openai_compatible_model",
+    "model_type": "stub",
+    "model_config_dict": {
+        "temperature": 0.5
+    },
+    "token_counter": {
+        "type": "OpenAITokenCounter",
+        "model_type": "gpt-4o-mini"
+    },
+    "api_key": null,
+    "url": null
+}

@@ -1,0 +1,8 @@
+{
+    "model_platform": "OPENAI",
+    "model_type": "GPT_3_5_TURBO",
+    "model_config_dict": {},
+    "token_counter": "OpenAITokenCounter",
+    "api_key": null,
+    "url": null
+}
