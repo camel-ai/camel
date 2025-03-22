@@ -409,7 +409,7 @@ class FunctionTool:
 
     @property
     def is_async(self) -> bool:
-        return inspect.iscoroutinefunction(self.func)
+        return inspect.iscoroutinefunction(inspect.unwrap(self.func))
 
     @staticmethod
     def validate_openai_tool_schema(
