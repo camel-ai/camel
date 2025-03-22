@@ -166,7 +166,6 @@ class ModelFactory:
     def __parse_model_platform(
         cls, model_platform_str: str
     ) -> ModelPlatformType:
-        
         r"""
         Parses a string and returns the corresponding ModelPlatformType enum.
 
@@ -250,7 +249,7 @@ class ModelFactory:
         Returns:
             BaseModelBackend: An instance of the model backend based on the configuration.
         """
-    
+
         config = cls.__load_yaml(filepath)
         config["model_platform"] = cls.__parse_model_platform(
             config["model_platform"]
@@ -270,7 +269,7 @@ class ModelFactory:
 
         Returns:
             BaseModelBackend: An instance of the model backend based on the configuration.
-        """ 
+        """
 
         config = cls.__load_json(filepath)
         config["model_platform"] = cls.__parse_model_platform(
