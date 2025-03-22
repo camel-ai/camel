@@ -68,8 +68,10 @@ class SingleStepEnv:
 
         # State tracking
         self._is_setup: bool = False
-        self._state: List[DataPoint] = []
-        self._episode_ended: bool = False
+        self._states: List[DataPoint] = []
+        self._episode_ended: bool = True
+        self._states_finished: List[bool] = []
+        self._states_len: int = 0
 
     async def setup(self) -> None:
         r"""Set up the environment by initializing the verifier and extractor.
@@ -109,8 +111,9 @@ class SingleStepEnv:
         try:
             self._is_setup = False
             await self.verifier.cleanup()
-            self._state = []
-            self._episode_ended = False
+            self._states = []
+            self._episode_ended = True
+            self._states_finished = []
             logger.info('Environment closed successfully')
         except Exception as e:
             logger.error(f'Failed to close environment: {e}')
@@ -136,7 +139,12 @@ class SingleStepEnv:
         if not self._is_setup:
             await self.setup()
 
-        self._episode_ended = False
+        if not self._episode_ended:
+            logger.warning(
+                "Reset called before all states were processed. "
+                "Call step on remaining states first."
+            )
+            return
 
         if seed is not None:
             random.seed(seed)
@@ -151,13 +159,16 @@ class SingleStepEnv:
                 )
 
             start_idx = random.randint(0, dataset_len - batch_size)
-            idx = slice(start_idx, start_idx + batch_size)
-            self._state = self.dataset[idx]
+            idx_slice = slice(start_idx, start_idx + batch_size)
+            self._states = self.dataset[idx_slice]
+            self._states_len = len(self._states)
+            self._states_finished = [False] * self._states_len
 
             observations = [
                 Observation(question=sample.question, context={}, metadata={})
-                for sample in self._state
+                for sample in self._states
             ]
+            self._episode_ended = False
 
             return observations[0] if batch_size == 1 else observations
 
@@ -169,28 +180,52 @@ class SingleStepEnv:
         else:
             raise TypeError(f"Unsupported dataset type: {type(self.dataset)}")
 
-    # TODO: improve batching
     async def step(
         self, action: Union[Action, List[Action]]
     ) -> Union[StepResult, List[StepResult]]:
+        """
+        Process actions for a subset of states and update their finished status.
+
+        Args:
+            action: Single action or list of actions, where each action contains
+                    an index indicating which state it corresponds to
+
+        Returns:
+            StepResult or list of StepResults for the processed states
+
+        Raises:
+            RuntimeError: If environment isn't set up or episode has ended
+            ValueError: If indices are invalid, duplicate, or correspond to finished states
+        """
         if not self._is_setup:
             raise RuntimeError("Environment not set up. Call setup() first.")
         if self._episode_ended:
             raise RuntimeError("Episode has ended. Call reset() first.")
-        if self._state is None:
+        if self._states is None:
             raise RuntimeError("No current observation. Call reset() first.")
 
         # Normalize everything to list
         actions = [action] if isinstance(action, Action) else action
-        datapoints = self._state
+        indices = [act.index for act in actions]
 
-        if len(actions) != len(datapoints):
-            raise ValueError(
-                "Number of actions must match number of data points."
+        if len(set(indices)) != len(indices):
+            raise ValueError("Duplicate state indices in actions.")
+        for idx in indices:
+            if idx < 0 or idx >= len(self._states):
+                raise ValueError(f"Invalid state index {idx}.")
+            if self._states_finished[idx]:
+                raise ValueError(f"State at index {idx} is already finished.")
+
+        num_actions = len(actions)
+
+        if num_actions != self._states_len and self._states_len % num_actions != 0:
+            logger.warning(
+                f"Number of actions ({num_actions}) is not equal to total batch size "
+                f"({total_batch_size}) nor a divisor of it. Processing anyway."
             )
 
         proposed_solutions = [act.llm_response for act in actions]
-        ground_truths: List[str] = [dp.final_answer for dp in datapoints]
+        ground_truths: List[str] = [self._states[idx].final_answer for idx in indices]
         verification_results = await self.verifier.verify_batch(
             solutions=proposed_solutions,
             ground_truths=cast(
@@ -205,22 +240,25 @@ class SingleStepEnv:
 
         step_results = []
 
-        for i in range(len(actions)):
-            step_results.append(
-                StepResult(
-                    observation=self.PLACEHOLDER_OBS,
-                    reward=total_rewards[i],
-                    rewards_dict=rewards_dicts[i],
-                    done=True,
-                    info={
-                        "proposed_solution": proposed_solutions[i],
-                        "verification_result": verification_results[i],
-                        "state": self._state[i],
-                    },
-                )
-            )
+        for i, action in enumerate(actions):
+            idx = action.index
+            step_result =StepResult(
+                        observation=self.PLACEHOLDER_OBS,
+                        reward=total_rewards[i],
+                        rewards_dict=rewards_dicts[i],
+                        done=True,
+                        info={
+                            "proposed_solution": proposed_solutions[i],
+                            "verification_result": verification_results[i],
+                            "state": self._states[idx],
+                        },
+                    )
+            step_results.append(step_result)
+            self._states_finished[idx] = True
 
-        self._episode_ended = True
+        if all(self._states_finished):
+            self._episode_ended = True
+            
         return step_results[0] if len(step_results) == 1 else step_results
 
     # TODO: implement

@@ -32,7 +32,7 @@ class Action(BaseModel):
         timestamp (datetime): The timestamp when the action was
             generated (UTC).
     """
-
+    index: int = Field(..., description="Index of the state this action is performed upon")
     llm_response: str = Field(description="Generated response from the LLM")
     metadata: Dict[str, Any] = Field(
         default_factory=dict,
