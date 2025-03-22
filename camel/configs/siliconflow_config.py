@@ -13,12 +13,12 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Any, Sequence, Type, Union
+from typing import Any, Optional, Sequence, Type, Union
 
 from pydantic import BaseModel
 
 from camel.configs.base_config import BaseConfig
-from camel.types import NOT_GIVEN, NotGiven
+from camel.types import NOT_GIVEN
 
 
 class SiliconFlowConfig(BaseConfig):
@@ -27,15 +27,16 @@ class SiliconFlowConfig(BaseConfig):
 
     Args:
         temperature (float, optional): Determines the degree of randomness
-            in the response. (default: :obj:`0.7`)
+            in the response. (default: :obj:`None`)
         top_p (float, optional): The top_p (nucleus) parameter is used to
             dynamically adjust the number of choices for each predicted token
-            based on the cumulative probabilities. (default: :obj:`0.7`)
-        n (int, optional): Number of generations to return. (default::obj:`1`)
+            based on the cumulative probabilities. (default: :obj:`None`)
+        n (int, optional): Number of generations to return.
+            (default: :obj:`None`)
         response_format (object, optional): An object specifying the format
-            that the model must output.
+            that the model must output. (default: :obj:`None`)
         stream (bool, optional): If set, tokens are returned as Server-Sent
-            Events as they are made available. (default: :obj:`False`)
+            Events as they are made available. (default: :obj:`None`)
         stop (str or list, optional): Up to :obj:`4` sequences where the API
             will stop generating further tokens. (default: :obj:`None`)
         max_tokens (int, optional): The maximum number of tokens to generate.
@@ -44,21 +45,21 @@ class SiliconFlowConfig(BaseConfig):
             :obj:`2.0`. Positive values penalize new tokens based on their
             existing frequency in the text so far, decreasing the model's
             likelihood to repeat the same line verbatim. See more information
-            about frequency and presence penalties. (default: :obj:`0.0`)
+            about frequency and presence penalties. (default: :obj:`None`)
         tools (list[FunctionTool], optional): A list of tools the model may
             call. Currently, only functions are supported as a tool. Use this
             to provide a list of functions the model may generate JSON inputs
-            for. A max of 128 functions are supported.
+            for. A max of 128 functions are supported. (default: :obj:`None`)
     """
 
-    temperature: float = 0.7
-    top_p: float = 0.7
-    n: int = 1
-    stream: bool = False
-    stop: Union[str, Sequence[str], NotGiven] = NOT_GIVEN
-    max_tokens: Union[int, NotGiven] = NOT_GIVEN
-    response_format: Union[Type[BaseModel], dict, NotGiven] = NOT_GIVEN
-    frequency_penalty: float = 0.0
+    temperature: Optional[float] = None
+    top_p: Optional[float] = None
+    n: Optional[int] = None
+    stream: Optional[bool] = None
+    stop: Optional[Union[str, Sequence[str]]] = None
+    max_tokens: Optional[int] = None
+    response_format: Optional[Union[Type[BaseModel], dict]] = None
+    frequency_penalty: Optional[float] = None
 
     def as_dict(self) -> dict[str, Any]:
         r"""Convert the current configuration to a dictionary.
