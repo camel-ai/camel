@@ -234,7 +234,7 @@ yaml_config_files = [
 @patch.dict(os.environ, {"OPENAI_API_KEY": "test_key"})
 @patch("camel.models.base_model.BaseModelBackend.run")
 def test_model_factory_yaml(mock_run, config_file):
-    """Test ModelFactory with YAML files without real API calls."""
+    r"""Test ModelFactory with YAML files without real API calls."""
 
     yaml_path = Path(config_file)
     if not yaml_path.exists():
