@@ -32,7 +32,7 @@ def compute_serum_osmolality_explanation(input_parameters):
     Returns:
         dict: Contains two key-value pairs:
             - "Explanation" (str): A detailed description of the calculation process.
-            - "Answer" (float): The patient's BMI.
+            - "Answer" (float): The patient's Serum Osmolality.
 
     Notes:
         - None
@@ -67,8 +67,6 @@ if __name__ == "__main__":
          'glucose': [599.0, 'mg/dL'],
          'sodium': [139.0, 'mEq/L']}
     ]
-
-    # {'Blood Urea Nitrogen (BUN)': [20.0, 'mg/dL'], 'Glucose': [599.0, 'mg/dL'], 'Sodium': [139.0, 'mEq/L']}
 
     # Iterate the test cases and print the results
     for i, input_variables in enumerate(test_cases, 1):
