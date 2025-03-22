@@ -76,16 +76,15 @@ def test_base_browser_initialization_order():
 def test_browser_chrome_channel_selection():
     with patch('playwright.sync_api.sync_playwright'):
         browser = BaseBrowser(
-            headless=True,
-            channel=AcceptedBrowserChannels.CHROME
+            headless=True, channel=AcceptedBrowserChannels.CHROME
         )
         assert browser.channel == AcceptedBrowserChannels.CHROME.value
+
 
 def test_browser_msedge_channel_selection():
     with patch('playwright.sync_api.sync_playwright'):
         browser = BaseBrowser(
-            headless=True,
-            channel=AcceptedBrowserChannels.MSEDGE
+            headless=True, channel=AcceptedBrowserChannels.MSEDGE
         )
         assert browser.channel == AcceptedBrowserChannels.MSEDGE.value
 
@@ -93,10 +92,10 @@ def test_browser_msedge_channel_selection():
 def test_browser_chromium_channel_selection():
     with patch('playwright.sync_api.sync_playwright'):
         browser = BaseBrowser(
-            headless=True,
-            channel=AcceptedBrowserChannels.CHROMIUM
+            headless=True, channel=AcceptedBrowserChannels.CHROMIUM
         )
         assert browser.channel == AcceptedBrowserChannels.CHROMIUM.value
+
 
 def test_browser_visit_page(base_browser_fixture):
     browser = base_browser_fixture
@@ -139,9 +138,7 @@ def test_browser_toolkit_browse_url(browser_toolkit_fixture):
     toolkit._get_final_answer = MagicMock(return_value="Task completed")
 
     result = toolkit.browse_url(
-        task_prompt="Test task",
-        start_url="https://example.com",
-        round_limit=1
+        task_prompt="Test task", start_url="https://example.com", round_limit=1
     )
 
     assert result == "Task completed"
