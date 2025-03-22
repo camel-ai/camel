@@ -153,17 +153,6 @@ class StaticDataset(Dataset):
                     return None
 
             rationale = item.get('rationale')
-            if not isinstance(rationale, str):
-                if self._strict:
-                    raise ValueError(
-                        f"Sample at index {idx} has invalid 'rationale': "
-                        f"expected str, got {type(rationale)}"
-                    )
-                else:
-                    logger.warning(
-                        f"Skipping sample at index {idx}: invalid 'rationale'"
-                    )
-                    return None
 
             final_answer = item.get('final_answer')
             if not isinstance(final_answer, str):
@@ -207,25 +196,31 @@ class StaticDataset(Dataset):
         r"""Return the size of the dataset."""
         return self._length
 
-    def __getitem__(self, idx: int) -> DataPoint:
-        r"""Retrieve a datapoint by index.
+    def __getitem__(self, idx: Union[int, slice]) -> List[DataPoint]:
+        r"""Retrieve a datapoint or a batch of datapoints by index or slice.
 
         Args:
-            idx (int): Index of the datapoint.
+            idx (Union[int, slice]): Index or slice of the datapoint(s).
 
         Returns:
-            DataPoint: The datapoint corresponding to the given index.
+            List[DataPoint]: A list of `DataPoint` objects.
 
         Raises:
-            IndexError: If :obj:`idx` is out of bounds (negative or greater
-                than dataset length - 1).
+            IndexError: If an integer `idx` is out of bounds.
         """
+        if isinstance(idx, int):
+            if idx < 0 or idx >= self._length:
+                raise IndexError(
+                    f"Index {idx} out of bounds for dataset "
+                    f"of size {self._length}"
+                )
+            return [self.data[idx]]
 
-        if idx < 0 or idx >= self._length:
-            raise IndexError(
-                f"Index {idx} out of bounds for dataset of size {self._length}"
-            )
-        return self.data[idx]
+        elif isinstance(idx, slice):
+            return self.data[idx.start : idx.stop : idx.step]
+
+        else:
+            raise TypeError(f"Indexing type {type(idx)} not supported.")
 
     def sample(self) -> DataPoint:
         r"""Sample a random datapoint from the dataset.
@@ -240,7 +235,9 @@ class StaticDataset(Dataset):
         if self._length == 0:
             raise RuntimeError("Dataset is empty, cannot sample.")
         idx = self._rng.randint(0, self._length - 1)
-        return self[idx]
+        sample = self[idx]
+        assert isinstance(sample, DataPoint)
+        return sample
 
     @property
     def metadata(self) -> Dict[str, Any]:

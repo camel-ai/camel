@@ -103,7 +103,12 @@ async def test_single_step_env_lifecycle():
     assert result.reward == 10.5  # correctness: 10.0 + custom_reward: 0.5
     assert result.done is True
     assert result.observation == SingleStepEnv.PLACEHOLDER_OBS
-    mock_extractor.extract.assert_awaited_once_with("Test response")
+    # Two steps since both ground_truth and llm result gets extracted
+    assert mock_extractor.extract.await_count == 2
+    assert any(
+        "Test response" in args[0]
+        for args in mock_extractor.extract.await_args_list
+    )
     mock_verifier.verify.assert_awaited_once()
 
     # Test close
@@ -257,3 +262,203 @@ async def test_single_step_env_error_handling():
         match=re.escape("No current observation. Call reset() first."),
     ):
         await env_no_state.step(action)
+
+
+@pytest.mark.asyncio
+async def test_single_step_env_batch_operations():
+    data = [
+        {
+            "question": "What is 3 + 5?",
+            "final_answer": "8",
+            "rationale": "Adding 3 and 5 gives 8.",
+            "metadata": {"difficulty": "easy"},
+        },
+        {
+            "question": "What is the capital of Brazil?",
+            "final_answer": "Brasilia",
+            "rationale": "Brasilia is the capital city of Brazil.",
+            "metadata": {"difficulty": "medium"},
+        },
+        {
+            "question": "What is the largest planet?",
+            "final_answer": "Jupiter",
+            "rationale": "Jupiter is the largest planet in our solar system.",
+            "metadata": {"difficulty": "easy"},
+        },
+        {
+            "question": "What is 10 * 2?",
+            "final_answer": "20",
+            "rationale": "Multiplying 10 by 2 gives 20.",
+            "metadata": {"difficulty": "easy"},
+        },
+    ]
+    dataset = StaticDataset(data)
+
+    mock_verifier = MagicMock()
+    mock_verifier.setup = AsyncMock()
+    mock_verifier.cleanup = AsyncMock()
+    mock_verifier.verify = AsyncMock(
+        return_value=VerificationResult(
+            status=VerificationOutcome.SUCCESS,
+            result="Verification successful",
+            feedback="Correct",
+            score=1.0,
+        )
+    )
+
+    mock_extractor = MagicMock()
+    mock_extractor.setup = AsyncMock()
+    mock_extractor.cleanup = AsyncMock()
+    mock_extractor.extract = AsyncMock(return_value="extracted_answer")
+
+    env = MockSingleStepEnv(
+        dataset=dataset,
+        verifier=mock_verifier,
+        extractor=mock_extractor,
+    )
+
+    # **1. Test Successful Batch Operation**
+    await env.setup()
+    observations = await env.reset(batch_size=3)
+    assert isinstance(observations, list), "Expected a list of observations"
+    assert len(observations) == 3, "Expected 3 observations"
+    assert all(
+        isinstance(obs, Observation) for obs in observations
+    ), "All items should be Observation objects"
+    questions = [obs.question for obs in observations]
+    assert all(
+        q in [d["question"] for d in data] for q in questions
+    ), "Questions should match dataset"
+
+    actions = [
+        Action(llm_response="Response 1"),
+        Action(llm_response="Response 2"),
+        Action(llm_response="Response 3"),
+    ]
+    results = await env.step(actions)
+    assert isinstance(results, list), "Expected a list of step results"
+    assert len(results) == 3, "Expected 3 step results"
+    assert all(
+        isinstance(res, StepResult) for res in results
+    ), "All items should be StepResult objects"
+    assert all(
+        res.reward == 10.5 for res in results
+    ), "Expected reward 10.5 (10 + 0.5) for each"
+    assert all(res.done for res in results), "All steps should be done"
+    assert all(
+        res.observation == SingleStepEnv.PLACEHOLDER_OBS for res in results
+    ), "Expected placeholder observation"
+    assert (
+        mock_extractor.extract.await_count == 6  # twice per item
+    ), "Extractor should be called 6 times"
+    assert (
+        mock_verifier.verify.await_count == 3
+    ), "Verifier should be called 3 times"
+
+    await env.close()
+    assert env._is_setup is False
+    mock_verifier.cleanup.assert_awaited_once()
+    mock_extractor.cleanup.assert_awaited_once()
+
+    # **2. Test Batch Size Too Large**
+    env_too_large = MockSingleStepEnv(
+        dataset=dataset,
+        verifier=mock_verifier,
+        extractor=mock_extractor,
+    )
+    await env_too_large.setup()
+    with pytest.raises(
+        ValueError, match="Batch size 5 is too large for dataset of size 4"
+    ):
+        await env_too_large.reset(batch_size=5)
+
+    # **3. Test Mismatched Actions**
+    await env_too_large.reset(batch_size=3)  # Reset with valid batch size
+    mismatched_actions = [
+        Action(llm_response="Response 1"),
+        Action(llm_response="Response 2"),  # Only 2 actions for batch_size=3
+    ]
+    with pytest.raises(
+        ValueError, match="Number of actions must match number of data points"
+    ):
+        await env_too_large.step(mismatched_actions)
+
+    # **4. Test Faulty Extractor in Batch**
+    mock_extractor_fail = MagicMock()
+    mock_extractor_fail.setup = AsyncMock()
+    mock_extractor_fail.cleanup = AsyncMock()
+    mock_extractor_fail.extract = AsyncMock(
+        return_value=None
+    )  # Fails extraction
+
+    env_fail_extractor = MockSingleStepEnv(
+        dataset=dataset,
+        verifier=mock_verifier,
+        extractor=mock_extractor_fail,
+    )
+    await env_fail_extractor.setup()
+    observations = await env_fail_extractor.reset(batch_size=3)
+    assert len(observations) == 3, "Reset should still work"
+    actions = [Action(llm_response=f"Response {i}") for i in range(1, 4)]
+    with pytest.raises(RuntimeError, match="Couldn't extract from"):
+        await env_fail_extractor.step(actions)
+
+    # **5. Test Faulty Verifier in Batch**
+    mock_verifier_fail = MagicMock()
+    mock_verifier_fail.setup = AsyncMock()
+    mock_verifier_fail.cleanup = AsyncMock()
+    mock_verifier_fail.verify = AsyncMock(
+        side_effect=Exception("Verifier batch error")
+    )
+
+    env_fail_verifier = MockSingleStepEnv(
+        dataset=dataset,
+        verifier=mock_verifier_fail,
+        extractor=mock_extractor,
+    )
+    await env_fail_verifier.setup()
+    observations = await env_fail_verifier.reset(batch_size=3)
+    assert len(observations) == 3, "Reset should still work"
+    actions = [Action(llm_response=f"Response {i}") for i in range(1, 4)]
+    with pytest.raises(Exception, match="Verifier batch error"):
+        await env_fail_verifier.step(actions)
+
+    # **6. Test Mixed Verification Outcomes**
+    mock_verifier_mixed = MagicMock()
+    mock_verifier_mixed.setup = AsyncMock()
+    mock_verifier_mixed.cleanup = AsyncMock()
+    mock_verifier_mixed.verify = AsyncMock(
+        side_effect=[
+            VerificationResult(
+                status=VerificationOutcome.SUCCESS,
+                result="Success",
+                feedback="Correct",
+                score=1.0,
+            ),
+            VerificationResult(
+                status=VerificationOutcome.FAILURE,
+                result="Failure",
+                feedback="Incorrect",
+                score=0.0,
+            ),
+            VerificationResult(
+                status=VerificationOutcome.SUCCESS,
+                result="Success",
+                feedback="Correct",
+                score=1.0,
+            ),
+        ]
+    )
+    env_mixed = MockSingleStepEnv(
+        dataset=dataset,
+        verifier=mock_verifier_mixed,
+        extractor=mock_extractor,
+    )
+    await env_mixed.setup()
+    observations = await env_mixed.reset(batch_size=3)
+    actions = [Action(llm_response=f"Response {i}") for i in range(1, 4)]
+    results = await env_mixed.step(actions)
+    assert len(results) == 3, "Expected 3 results"
+    assert results[0].reward == 10.5, "First should succeed (10 + 0.5)"
+    assert results[1].reward == 0.5, "Second should fail (0 + 0.5)"
+    assert results[2].reward == 10.5, "Third should succeed (10 + 0.5)"

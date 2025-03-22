@@ -168,13 +168,11 @@ def test_static_dataset_init_from_hf_dataset():
 
     # **Test 2: Initialization with invalid data**
     # Sub-test 2a: Missing required field with strict=True
-    invalid_data_missing = [
-        {"question": "What is 3 + 3?", "final_answer": "6"}
-    ]
+    invalid_data_missing = [{"question": "What is 3 + 3?"}]
     hf_invalid_missing = HFDataset.from_list(invalid_data_missing)
     with pytest.raises(
         ValueError,
-        match="Sample at index 0 has invalid 'rationale': "
+        match="Sample at index 0 has invalid 'final_answer': "
         "expected str, got <class 'NoneType'>",
     ):
         StaticDataset(data=hf_invalid_missing, min_samples=1, strict=True)
@@ -300,13 +298,12 @@ def test_static_dataset_init_from_pytorch_dataset():
     invalid_data_missing = [
         {
             "question": "What is 3 + 3?",
-            "final_answer": "6",
-        }  # Missing rationale
+        }  # Missing final_answer
     ]
     pytorch_invalid_missing = MockPyTorchDataset(invalid_data_missing)
     with pytest.raises(
         ValueError,
-        match="Sample at index 0 has invalid 'rationale': "
+        match="Sample at index 0 has invalid 'final_answer': "
         "expected str, got <class 'NoneType'>",
     ):
         StaticDataset(data=pytorch_invalid_missing, min_samples=1, strict=True)
@@ -567,15 +564,14 @@ def test_static_dataset_init_from_json_file():
         invalid_data = [
             {
                 "question": "What is 3 + 3?",
-                "final_answer": "6",
-            }  # Missing rationale
+            }  # Missing final answer
         ]
         json.dump(invalid_data, tmp_file)
         tmp_file_path = Path(tmp_file.name)
 
     with pytest.raises(
         ValueError,
-        match="Sample at index 0 has invalid 'rationale': "
+        match="Sample at index 0 has invalid 'final_answer': "
         "expected str, got <class 'NoneType'>",
     ):
         StaticDataset(data=tmp_file_path, min_samples=1, strict=True)
@@ -587,8 +583,7 @@ def test_static_dataset_init_from_json_file():
         invalid_data = [
             {
                 "question": "What is 3 + 3?",
-                "final_answer": "6",
-            }  # Missing rationale
+            }  # Missing final_answer
         ]
         json.dump(invalid_data, tmp_file)
         tmp_file_path = Path(tmp_file.name)
@@ -763,12 +758,11 @@ def test_static_dataset_init_from_jsonl_file():
     with tempfile.NamedTemporaryFile(
         mode='w', suffix='.jsonl', delete=False
     ) as tmp_file:
-        # Missing 'rationale' field.
+        # Missing 'final_answer' field.
         tmp_file.write(
             json.dumps(
                 {
                     "question": "What is 3 + 3?",
-                    "final_answer": "6",
                 }
             )
             + "\n"
@@ -777,7 +771,7 @@ def test_static_dataset_init_from_jsonl_file():
 
     with pytest.raises(
         ValueError,
-        match="Sample at index 0 has invalid 'rationale'",
+        match="Sample at index 0 has invalid 'final_answer'",
     ):
         StaticDataset(data=tmp_file_path, min_samples=1, strict=True)
 
@@ -790,7 +784,6 @@ def test_static_dataset_init_from_jsonl_file():
             json.dumps(
                 {
                     "question": "What is 3 + 3?",
-                    "final_answer": "6",
                 }
             )
             + "\n"
@@ -878,12 +871,11 @@ def test_static_dataset_init_from_list():
     invalid_data_missing = [
         {
             "question": "What is 3 + 3?",
-            "final_answer": "6",
-        }  # Missing rationale
+        }  # Missing final_answer
     ]
     with pytest.raises(
         ValueError,
-        match="Sample at index 0 has invalid 'rationale': "
+        match="Sample at index 0 has invalid 'final_answer': "
         "expected str, got <class 'NoneType'>",
     ):
         StaticDataset(data=invalid_data_missing, min_samples=1, strict=True)
@@ -937,9 +929,8 @@ def test_static_dataset_init_from_list():
             "final_answer": "Valid",
         },
         {
-            "question": "Invalid question",
-            "final_answer": "Invalid",
-        },  # Missing rationale
+            "question": "Question",
+        },  # Missing final_answer
     ]
     dataset_mixed = StaticDataset(data=mixed_data, min_samples=1, strict=False)
     assert (
@@ -1023,6 +1014,197 @@ def test_static_dataset_methods():
     assert len(empty_dataset) == 0, "Empty dataset should have length 0."
     with pytest.raises(RuntimeError, match="Dataset is empty, cannot sample."):
         empty_dataset.sample()
+
+
+def test_static_dataset_getitem_slice():
+    mock_data = [
+        {
+            "question": "What is 1+1?",
+            "rationale": "Basic addition.",
+            "final_answer": "2",
+        },
+        {
+            "question": "Is the Earth round?",
+            "rationale": "Scientific consensus.",
+            "final_answer": "yes",
+        },
+        {
+            "question": "What is the capital of Japan?",
+            "rationale": "Geography knowledge.",
+            "final_answer": "Tokyo",
+        },
+        {
+            "question": "How many sides does a triangle have?",
+            "rationale": "Definition of a triangle.",
+            "final_answer": "3",
+        },
+    ]
+    dataset = StaticDataset(data=mock_data, min_samples=1, strict=True)
+
+    sliced = dataset[1:4:2]
+    assert isinstance(sliced, list), "Slicing should return a list."
+    assert len(sliced) == 2, "Slice [1:4:2] should return 2 items."
+    assert all(
+        isinstance(item, DataPoint) for item in sliced
+    ), "All items should be DataPoint instances."
+    assert (
+        sliced[0].question == "Is the Earth round?"
+    ), "Index 1 question should match."
+    assert (
+        sliced[1].question == "How many sides does a triangle have?"
+    ), "Index 3 question should match."
+    assert (
+        sliced[0] is dataset[1]
+    ), "Slicing should return references to the same objects."
+
+    # Test slice with only start and stop
+    sliced = dataset[1:3]
+    assert len(sliced) == 2, "Slice [1:3] should return 2 items."
+    assert (
+        sliced[0].question == "Is the Earth round?"
+    ), "Index 1 question should match."
+    assert (
+        sliced[1].question == "What is the capital of Japan?"
+    ), "Index 2 question should match."
+
+    # Test slice with negative indices
+    sliced = dataset[-2:]
+    assert len(sliced) == 2, "Slice [-2:] should return 2 items."
+    assert (
+        sliced[0].question == "What is the capital of Japan?"
+    ), "Index -2 question should match."
+    assert (
+        sliced[1].question == "How many sides does a triangle have?"
+    ), "Index -1 question should match."
+
+    sliced = dataset[:-1]
+    assert len(sliced) == 3, "Slice [:-1] should return 3 items."
+    assert (
+        sliced[0].question == "What is 1+1?"
+    ), "Index 0 question should match."
+    assert (
+        sliced[2].question == "What is the capital of Japan?"
+    ), "Index 2 question should match."
+
+    # Test slice with step
+    sliced = dataset[::2]
+    assert len(sliced) == 2, "Slice [::2] should return 2 items."
+    assert (
+        sliced[0].question == "What is 1+1?"
+    ), "Index 0 question should match."
+    assert (
+        sliced[1].question == "What is the capital of Japan?"
+    ), "Index 2 question should match."
+
+    # Test slice with negative step
+    sliced = dataset[3:0:-1]
+    assert len(sliced) == 3, "Slice [3:0:-1] should return 3 items."
+    assert (
+        sliced[0].question == "How many sides does a triangle have?"
+    ), "Index 3 question should match."
+    assert (
+        sliced[2].question == "Is the Earth round?"
+    ), "Index 1 question should match."
+
+    sliced = dataset[::-1]
+    assert (
+        len(sliced) == 4
+    ), "Slice [::-1] should return all 4 items in reverse."
+    assert (
+        sliced[0].question == "How many sides does a triangle have?"
+    ), "Index 3 question should match."
+    assert (
+        sliced[3].question == "What is 1+1?"
+    ), "Index 0 question should match."
+
+    # Test slicing with out-of-bound indices
+    sliced = dataset[10:20]
+    assert (
+        sliced == []
+    ), "Slice [10:20] should return an empty list when out of bounds."
+
+    sliced = dataset[-10:10]
+    assert len(sliced) == 4, "Slice [-10:10] should return all items."
+    assert (
+        sliced[0].question == "What is 1+1?"
+    ), "Index 0 question should match."
+    assert (
+        sliced[3].question == "How many sides does a triangle have?"
+    ), "Index 3 question should match."
+
+    sliced = dataset[2:100]
+    assert (
+        len(sliced) == 2
+    ), "Slice [2:100] should return items from index 2 to end."
+    assert (
+        sliced[0].question == "What is the capital of Japan?"
+    ), "Index 2 question should match."
+    assert (
+        sliced[1].question == "How many sides does a triangle have?"
+    ), "Index 3 question should match."
+
+    # Test non-integer, non-slice inputs
+    with pytest.raises(
+        TypeError, match="Indexing type <class 'str'> not supported."
+    ):
+        dataset["invalid"]
+
+    with pytest.raises(
+        TypeError, match="Indexing type <class 'float'> not supported."
+    ):
+        dataset[1.5]
+
+    with pytest.raises(
+        TypeError, match="Indexing type <class 'NoneType'> not supported."
+    ):
+        dataset[None]
+
+    with pytest.raises(
+        TypeError, match="Indexing type <class 'list'> not supported."
+    ):
+        dataset[[1, 2]]
+
+    # Test slice with step=0
+    with pytest.raises(ValueError, match="slice step cannot be zero"):
+        dataset[::0]
+
+    # Test slice with non-integer start, stop, or step
+    invalid_slice = slice("a", 3, 1)
+    with pytest.raises(
+        TypeError,
+        match="slice indices must be integers or None or have "
+        "an __index__ method",
+    ):
+        dataset[invalid_slice]
+
+    invalid_slice = slice(0, "b", 1)
+    with pytest.raises(
+        TypeError,
+        match="slice indices must be integers or None "
+        "or have an __index__ method",
+    ):
+        dataset[invalid_slice]
+
+    invalid_slice = slice(0, 3, "a")
+    with pytest.raises(
+        TypeError,
+        match="slice indices must be integers or None "
+        "or have an __index__ method",
+    ):
+        dataset[invalid_slice]
+
+    # Test slicing an empty dataset
+    empty_dataset = StaticDataset(data=[], min_samples=0, strict=True)
+    assert len(empty_dataset) == 0, "Empty dataset should have length 0."
+    assert (
+        empty_dataset[:] == []
+    ), "Full slice of empty dataset should return empty list."
+    assert (
+        empty_dataset[0:0] == []
+    ), "Zero-length slice should return empty list."
+    assert (
+        empty_dataset[1:2] == []
+    ), "Out-of-bound slice should return empty list."
 
 
 @pytest.mark.asyncio

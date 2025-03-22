@@ -12,12 +12,10 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-
-from abc import abstractmethod
-from typing import Any, Dict, Optional, Tuple, Union
+import random
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from camel.datasets import BaseGenerator, DataPoint, StaticDataset
-from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
 from camel.verifiers.base import (
     BaseVerifier,
@@ -54,7 +52,6 @@ class SingleStepEnv:
         self,
         dataset: Union[StaticDataset, BaseGenerator],
         verifier: BaseVerifier,
-        extractor: BaseExtractor,
         **kwargs,
     ) -> None:
         r"""Initialize the environment.
@@ -67,13 +64,14 @@ class SingleStepEnv:
         """
         self.dataset = dataset
         self.verifier = verifier
-        self.extractor = extractor
         self._metadata = kwargs
 
         # State tracking
         self._is_setup: bool = False
-        self._state: Optional[DataPoint] = None
-        self._episode_ended: bool = False
+        self._states: List[DataPoint] = []
+        self._episode_ended: bool = True
+        self._states_finished: List[bool] = []
+        self._states_len: int = 0
 
     async def setup(self) -> None:
         r"""Set up the environment by initializing the verifier and extractor.
@@ -90,7 +88,6 @@ class SingleStepEnv:
 
         try:
             await self.verifier.setup()
-            await self.extractor.setup()
 
             self._is_setup = True
             logger.info('Environment setup completed successfully')
@@ -114,23 +111,26 @@ class SingleStepEnv:
         try:
             self._is_setup = False
             await self.verifier.cleanup()
-            await self.extractor.cleanup()
-            self._state = None
-            self._episode_ended = False
+            self._states = []
+            self._episode_ended = True
+            self._states_finished = []
             logger.info('Environment closed successfully')
         except Exception as e:
             logger.error(f'Failed to close environment: {e}')
             raise
 
-    async def reset(self) -> Observation:
+    async def reset(
+        self, batch_size: int = 1, seed: Optional[int] = 42
+    ) -> Union[Observation, List[Observation]]:
         r"""Reset the environment and start a new episode.
 
-        This method samples a new data point from the dataset and returns the
-        initial observation.
+        This method samples a new batch of data points from the dataset
+            and returns the initial observations.
+        If the batch size is 1, a single observation is returned.
 
         Returns:
-            Observation: The first observation of the new episode, including
-                the question.
+            Union[Observation, List[Observation]]:
+                One or more initial observations.
 
         Raises:
             Exception: If the environment is not set up properly.
@@ -139,74 +139,142 @@ class SingleStepEnv:
         if not self._is_setup:
             await self.setup()
 
-        self._episode_ended = False
+        if not self._episode_ended:
+            logger.warning(
+                "Reset called before all states were processed. "
+                "Call step on remaining states first."
+            )
+            return
 
-        # Sample a datapoint
+        if seed is not None:
+            random.seed(seed)
 
-        self._state = self.dataset.sample()
+        if isinstance(self.dataset, StaticDataset):
+            dataset_len = len(self.dataset)
 
-        observation = Observation(
-            question=self._state.question, context={}, metadata={}
-        )
+            if batch_size > dataset_len:
+                raise ValueError(
+                    f"Batch size {batch_size} is too large for dataset "
+                    f"of size {dataset_len}"
+                )
 
-        return observation
+            start_idx = random.randint(0, dataset_len - batch_size)
+            idx_slice = slice(start_idx, start_idx + batch_size)
+            self._states = self.dataset[idx_slice]
+            self._states_len = len(self._states)
+            self._states_finished = [False] * self._states_len
 
-    async def step(self, action: Action) -> StepResult:
-        r"""Take a step in the environment using the given action.
+            observations = [
+                Observation(question=sample.question, context={}, metadata={})
+                for sample in self._states
+            ]
+            self._episode_ended = False
 
-        This method processes the LLM response, extracts verifiable content,
-        verifies correctness, computes rewards, and ends the episode.
+            return observations[0] if batch_size == 1 else observations
+
+        elif isinstance(self.dataset, BaseGenerator):
+            raise NotImplementedError(
+                "Reset not yet implemented for BaseGenerator datasets."
+            )
+
+        else:
+            raise TypeError(f"Unsupported dataset type: {type(self.dataset)}")
+
+    async def step(
+        self, action: Union[Action, List[Action]]
+    ) -> Union[StepResult, List[StepResult]]:
+        """
+        Process actions for a subset of states and update their
+            finished status.
 
         Args:
-            action (Action): The action containing the LLM response to
-                evaluate.
+            action: Single action or list of actions, where each action
+                contains an index indicating which state it corresponds to.
+
 
         Returns:
-            StepResult: Contains the next observation (placeholder), total
-                reward, reward breakdown, completion flag, and additional
-                information.
+            StepResult or list of StepResults for the processed states
 
         Raises:
-            RuntimeError: If the environment is not set up, the episode has
-                ended, or there is no valid current observation.
+            RuntimeError: If environment isn't set up or episode has ended.
+            ValueError: If indices are invalid, duplicate, or correspond to
+                finished states.
         """
-
         if not self._is_setup:
             raise RuntimeError("Environment not set up. Call setup() first.")
         if self._episode_ended:
             raise RuntimeError("Episode has ended. Call reset() first.")
-        if self._state is None:
+        if self._states is None:
             raise RuntimeError("No current observation. Call reset() first.")
 
-        # extract verifiable part from llm response
-        extraction_result = await self.extractor.extract(action.llm_response)
+        # Normalize everything to list
+        actions = [action] if isinstance(action, Action) else action
+        indices = [act.index for act in actions]
 
-        if not extraction_result:
-            raise RuntimeError(f"Couldn't extract from {action.llm_response}")
+        if len(set(indices)) != len(indices):
+            raise ValueError("Duplicate state indices in actions.")
+        for idx in indices:
+            if idx < 0 or idx >= len(self._states):
+                raise ValueError(f"Invalid state index {idx}.")
+            if self._states_finished[idx]:
+                raise ValueError(f"State at index {idx} is already finished.")
 
-        # verify the extracted
-        verification_result = await self.verifier.verify(
-            solution=extraction_result, ground_truth=self._state.final_answer
+        num_actions = len(actions)
+
+        if (
+            num_actions != self._states_len
+            and self._states_len % num_actions != 0
+        ):
+            logger.warning(
+                f"Number of actions ({num_actions}) is not equal to "
+                f"total batch size ({self._states_len}) nor a divisor "
+                f"of it. Processing anyway."
+            )
+
+        proposed_solutions = [act.llm_response for act in actions]
+        ground_truths: List[str] = [
+            self._states[idx].final_answer for idx in indices
+        ]
+        verification_results = await self.verifier.verify_batch(
+            solutions=proposed_solutions,
+            ground_truths=cast(
+                list[str | None], ground_truths
+            ),  # to satisfy mypy
+            raise_on_error=True,
         )
 
-        # compute rewards
-        total_reward, rewards_dict = await self._compute_reward(
-            action, extraction_result, verification_result
+        total_rewards, rewards_dicts = await self._compute_reward_batch(
+            proposed_solutions, verification_results
         )
 
-        self._episode_ended = True
+        step_results = []
 
-        return StepResult(
-            observation=self.PLACEHOLDER_OBS,
-            reward=total_reward,
-            rewards_dict=rewards_dict,
-            done=True,
-            info={
-                "extraction_result": extraction_result,
-                "verification_result": verification_result,
-                "state": self._state,
-            },
-        )
+        for i, action in enumerate(actions):
+            idx = action.index
+            step_result = StepResult(
+                observation=self.PLACEHOLDER_OBS,
+                reward=total_rewards[i],
+                rewards_dict=rewards_dicts[i],
+                done=True,
+                info={
+                    "proposed_solution": proposed_solutions[i],
+                    "verification_result": verification_results[i],
+                    "state": self._states[idx],
+                },
+            )
+            step_results.append(step_result)
+            self._states_finished[idx] = True
+
+        if all(self._states_finished):
+            self._episode_ended = True
+
+        return step_results[0] if len(step_results) == 1 else step_results
+
+    # TODO: implement
+    async def _compute_reward_batch(
+        self, proposed_soltions, verification_results
+    ) -> Tuple[List[float], List[Dict[str, float]]]:
+        raise NotImplementedError
 
     async def _compute_reward(
         self,
@@ -249,7 +317,6 @@ class SingleStepEnv:
 
         return sum(rewards.values()), rewards
 
-    @abstractmethod
     async def _compute_custom_reward(
         self,
         action: Action,
@@ -272,7 +339,7 @@ class SingleStepEnv:
             Dict[str, float]: A dictionary mapping custom reward categories
                 to their values.
         """
-        pass
+        return {}
 
     @property
     def metadata(self) -> Dict[str, Any]:
