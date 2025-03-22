@@ -13,19 +13,10 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import io
 import os
-from typing import (
-    TYPE_CHECKING,
-)
-
-from PIL import Image
-
-if TYPE_CHECKING:
-    pass
-
-
 from unittest.mock import MagicMock, patch
 
 import pytest
+from PIL import Image
 
 from camel.toolkits.browser_toolkit import (
     BaseBrowser,
