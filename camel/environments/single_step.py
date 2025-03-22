@@ -28,18 +28,24 @@ logger = get_logger(__name__)
 
 
 class SingleStepEnv:
-    r"""A single-step environment for reinforcement learning with LLMs.
+    r"""
+    A lightweight environment for single-step RL with LLMs as policy.
+
+    This environment models a single interaction between an LLM-based agent
+    and a problem drawn from a dataset—such as a question-answering or
+    math problem—where the agent produces one response and receives feedback.
+
+    Core Flow:
+        - A question is sampled from a (possibly infinitely long) dataset.
+        - The LLM generates a single-step response (the action).
+        - The response is verified against the ground truth.
+        - A reward is computed based on correctness and optional custom logic.
 
     Key Features:
-    - Samples questions from a dataset and asks the LLM
-    - Extracts verifiable information from model responses.
-    - Verifies extracted responses against ground truth.
-    - Computes and assigns rewards based on correctness.
-    - Supports async setup, teardown, and cleanup of resources.
-
-    This class is intended as a foundation for RL experiments involving
-    LLM-based policies, ensuring structured interactions between model
-    actions and verification mechanisms.
+        - Batched evaluation with per-sample state tracking.
+        - Async setup and teardown for verifiers and related resources.
+        - Supports deterministic sampling via local RNG (optional seed).
+        - Extensible reward computation via subclassing.
     """
 
     PLACEHOLDER_OBS = Observation(
