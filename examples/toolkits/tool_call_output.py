@@ -15,7 +15,7 @@ def add(a: float, b: float) -> float:
         Returns:
             float: The sum of the two numbers.
         """
-        raise Exception("故意设置错误，来模仿工具调用失败")
+        raise Exception("故意设置错误,来模仿工具调用失败")
 
 
 def multiply(a: float, b: float, decimal_places: int = 2) -> float:
@@ -36,7 +36,7 @@ add_tool = FunctionTool(add)
 multiply_tool = FunctionTool(multiply)
 
 # 定义系统消息
-sys_msg = "你是一个数学大师，擅长各种数学问题。"
+sys_msg = "你是一个数学大师,擅长各种数学问题。"
 
 toollist = [add_tool, multiply_tool]
 
@@ -46,10 +46,14 @@ model = ModelFactory.create(
     model_type=ModelType.DEFAULT,
     model_config_dict=model_config_dict,
 )
-agent = ChatAgent(system_message=sys_msg, model=model,tools=toollist,output_language='中文')
+agent = ChatAgent(
+    system_message=sys_msg, 
+    model=model,tools=toollist,
+    output_language='中文'
+)
 
 # 定义用户消息
-usr_msg = "19987+2133之后再平方是多少？"
+usr_msg = "19987+2133之后再平方是多少?"
 
 response = agent.step(usr_msg)
 
@@ -59,13 +63,13 @@ print(response.info['tool_calls'])
 ===============================================================================
 2025-03-23 12:22:43,919 - camel.toolkits.function_tool - ERROR - Execution of
 function add failed with arguments () and {'a': 19987, 'b': 2133}. 
-Error: 故意设置错误，来模仿工具调用失败
+Error: 故意设置错误,来模仿工具调用失败
 ...
 2025-03-23 12:22:43,919 - root - ERROR - Tool 'add' failed after 3 attempts. 
 Final error: Execution of function add failed with arguments () 
-and {'a': 19987, 'b': 2133}. Error: 故意设置错误，来模仿工具调用失败
+and {'a': 19987, 'b': 2133}. Error: 故意设置错误,来模仿工具调用失败
 
-19987 加上 2133 得到 22120。22120 的平方（即 22120 乘以 22120）等于 489,294,400。
+19987 加上 2133 得到 22120。22120 的平方(即 22120 乘以 22120)等于 489,294,400。
 [ToolCallingRecord(tool_name='add', args={'a': 19987, 'b': 2133}, 
 result='tool call failed', tool_call_id='call_db0bc43bf0f74a6fb5767b'), 
 ToolCallingRecord(tool_name='multiply', 

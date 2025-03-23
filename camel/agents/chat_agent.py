@@ -1333,7 +1333,7 @@ class ChatAgent(BaseAgent):
         self,
         tool_call_request: ToolCallRequest,
     ) -> ToolCallingRecord:
-        r"""Execute the tool asynchronously with arguments following the model's response.
+        r"""Execute the tool asynchronously.
         Includes retry logic for failed tool calls (up to 3 attempts).
 
         Args:
