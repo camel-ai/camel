@@ -2,7 +2,7 @@ from camel.agents import ChatAgent
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType
 from camel.toolkits import FunctionTool
-from camel.models.chatgpt import ChatGPTConfig
+from camel.configs import ChatGPTConfig
 from camel.types import ModelType
 
 def add(a: float, b: float) -> float:
@@ -38,7 +38,6 @@ multiply_tool = FunctionTool(multiply)
 # 定义系统消息
 sys_msg = "你是一个数学大师，擅长各种数学问题。"
 
-# 初始化agent 调用在线Qwen/Qwen2.5-72B-Instruct
 toollist = [add_tool, multiply_tool]
 
 model_config_dict = ChatGPTConfig(temperature=0.0).as_dict()
@@ -58,14 +57,19 @@ print(response.msg.content)
 print(response.info['tool_calls'])
 """
 ===============================================================================
-2025-03-23 12:22:43,919 - camel.toolkits.function_tool - ERROR - Execution of function add failed with arguments () and {'a': 19987, 'b': 2133}. Error: 故意设置错误，来模仿工具调用失败
-2025-03-23 12:22:43,919 - root - WARNING - Tool 'add' failed: Execution of function add failed with arguments () and {'a': 19987, 'b': 2133}. Error: 故意设置错误，来模仿工具调用失败
-2025-03-23 12:22:43,919 - camel.toolkits.function_tool - ERROR - Execution of function add failed with arguments () and {'a': 19987, 'b': 2133}. Error: 故意设置错误，来模仿工具调用失败
-2025-03-23 12:22:43,919 - root - WARNING - Tool 'add' failed: Execution of function add failed with arguments () and {'a': 19987, 'b': 2133}. Error: 故意设置错误，来模仿工具调用失败
-2025-03-23 12:22:43,919 - camel.toolkits.function_tool - ERROR - Execution of function add failed with arguments () and {'a': 19987, 'b': 2133}. Error: 故意设置错误，来模仿工具调用失败
-2025-03-23 12:22:43,919 - root - WARNING - Tool 'add' failed: Execution of function add failed with arguments () and {'a': 19987, 'b': 2133}. Error: 故意设置错误，来模仿工具调用失败
-2025-03-23 12:22:43,919 - root - ERROR - Tool 'add' failed after 3 attempts. Final error: Execution of function add failed with arguments () and {'a': 19987, 'b': 2133}. Error: 故意设置错误，来模仿工具调用失败
+2025-03-23 12:22:43,919 - camel.toolkits.function_tool - ERROR - Execution of
+function add failed with arguments () and {'a': 19987, 'b': 2133}. 
+Error: 故意设置错误，来模仿工具调用失败
+...
+2025-03-23 12:22:43,919 - root - ERROR - Tool 'add' failed after 3 attempts. 
+Final error: Execution of function add failed with arguments () 
+and {'a': 19987, 'b': 2133}. Error: 故意设置错误，来模仿工具调用失败
+
 19987 加上 2133 得到 22120。22120 的平方（即 22120 乘以 22120）等于 489,294,400。
-[ToolCallingRecord(tool_name='add', args={'a': 19987, 'b': 2133}, result='tool call failed', tool_call_id='call_db0bc43bf0f74a6fb5767b'), ToolCallingRecord(tool_name='multiply', args={'a': 22120, 'b': 22120, 'decimal_places': 2}, result=489294400, tool_call_id='call_c1577a0313d542789f54c3')]
+[ToolCallingRecord(tool_name='add', args={'a': 19987, 'b': 2133}, 
+result='tool call failed', tool_call_id='call_db0bc43bf0f74a6fb5767b'), 
+ToolCallingRecord(tool_name='multiply', 
+args={'a': 22120, 'b': 22120, 'decimal_places': 2}, 
+result=489294400, tool_call_id='call_c1577a0313d542789f54c3')]
 ===============================================================================
 """

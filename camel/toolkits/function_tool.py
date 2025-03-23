@@ -445,8 +445,9 @@ class FunctionTool:
                 return self._success_output(result)
             except Exception as e:
                 error_msg = (
-                    f"Async execution of synthetic function {self.func.__name__} "
-                    f"failed with arguments {args} and {kwargs}. Error: {e}"
+                    f"Async execution of synthetic function "
+                    f"{self.func.__name__} failed with arguments "
+                    f"{args} and {kwargs}. Error: {e}"
                 )
                 logger.error(error_msg)
                 return self._fail_output(error_msg)
@@ -460,8 +461,9 @@ class FunctionTool:
                     return self._success_output(result)
             except Exception as e:
                 error_msg = (
-                    f"Async execution of function {self.func.__name__} failed with "
-                    f"arguments {args} and {kwargs}. Error: {e}"
+                    f"Async execution of function {self.func.__name__} "
+                    f"failed with arguments {args} and {kwargs}. "
+                    f"Error: {e}"
                 )
                 logger.error(error_msg)
                 return self._fail_output(error_msg)
