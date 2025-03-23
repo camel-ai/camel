@@ -44,7 +44,7 @@ class MockSolver(BaseSolver):
 
 # Mock implementation of a verifier for testing
 class MockVerifier(BaseVerifier):
-    async def _setup(self) -> None:
+    async def _setup(self, **kwargs) -> None:
         pass
 
     async def _cleanup(self) -> None:
