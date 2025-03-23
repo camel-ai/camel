@@ -12,14 +12,14 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
 from camel.memories.base import MemoryBlock
 from camel.memories.records import ContextRecord, MemoryRecord
 from camel.storages.vectordb_storages import (
     BaseVectorStorage,
-    QdrantStorage,
+    MilvusStorage,
     VectorDBQuery,
     VectorRecord,
 )
@@ -43,10 +43,16 @@ class VectorDBBlock(MemoryBlock):
         self,
         storage: Optional[BaseVectorStorage] = None,
         embedding: Optional[BaseEmbedding] = None,
+        **kwargs: Any,
     ) -> None:
         self.embedding = embedding or OpenAIEmbedding()
         self.vector_dim = self.embedding.get_output_dim()
-        self.storage = storage or QdrantStorage(vector_dim=self.vector_dim)
+        if storage is None:
+            self.storage: BaseVectorStorage = MilvusStorage(
+                vector_dim=self.vector_dim, **kwargs
+            )
+        else:
+            self.storage: BaseVectorStorage = storage
 
     def retrieve(
         self,
@@ -68,7 +74,11 @@ class VectorDBBlock(MemoryBlock):
         """
         query_vector = self.embedding.embed(keyword)
         results = self.storage.query(
-            VectorDBQuery(query_vector=query_vector, top_k=limit)
+            VectorDBQuery(
+                query_vector=query_vector,
+                top_k=limit,
+                query_text=keyword
+            )
         )
         return [
             ContextRecord(
