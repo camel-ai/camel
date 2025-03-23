@@ -22,6 +22,7 @@ import tempfile
 import venv
 from typing import List, Optional, Tuple
 
+from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
 from camel.verifiers import BaseVerifier
 
@@ -47,8 +48,10 @@ class PythonVerifier(BaseVerifier):
 
     def __init__(
         self,
+        extractor: Optional[BaseExtractor]= None,
         timeout: Optional[float] = 30.0,
         required_packages: Optional[List[str]] = None,
+        **kwargs
     ):
         r"""Initializes the PythonVerifier.
 
@@ -60,7 +63,7 @@ class PythonVerifier(BaseVerifier):
                 (default: :obj:`None`)
         """
         # TODO: Use CAMEL's Interpreter to execute the code
-        super().__init__(timeout=timeout)
+        super().__init__(extractor=extractor, timeout=timeout, **kwargs)
         self.venv_path: Optional[str] = None
         self.required_packages = required_packages or []
 
