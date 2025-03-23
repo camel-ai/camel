@@ -238,7 +238,10 @@ class StaticDataset(Dataset):
             raise RuntimeError("Dataset is empty, cannot sample.")
         idx = self._rng.randint(0, self._length - 1)
         sample = self[idx]
-        assert isinstance(sample, DataPoint)
+        if not isinstance(sample, DataPoint):
+            raise TypeError(
+                f"Expected DataPoint instance, got {type(sample).__name__}"
+            )
         return sample
 
     @property

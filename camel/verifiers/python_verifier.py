@@ -83,16 +83,22 @@ class PythonVerifier(BaseVerifier):
             logger.info(f"Virtual environment created at {self.venv_path}")
         except Exception as e:
             logger.error(f"Failed to create virtual environment: {e}")
+            # Clean up resources before re-raising
+            if self.venv_path and os.path.exists(self.venv_path):
+                shutil.rmtree(self.venv_path)
+                self.venv_path = None
             raise
 
         venv_pip = os.path.join(self.venv_path, self.bin_dir, "pip")
 
         if self.required_packages:
             try:
+                # Add timeout to subprocess call
                 subprocess.run(
                     [venv_pip, "install", *self.required_packages],
                     check=True,
                     capture_output=True,
+                    timeout=self._timeout,
                 )
                 logger.info(
                     "Installed required packages: "
@@ -103,6 +109,19 @@ class PythonVerifier(BaseVerifier):
                     "Failed to install required packages: "
                     f"{e.stderr.decode().strip()}"
                 )
+                # Clean up resources before re-raising
+                if self.venv_path and os.path.exists(self.venv_path):
+                    shutil.rmtree(self.venv_path)
+                    self.venv_path = None
+                raise
+            except subprocess.TimeoutExpired:
+                logger.error(
+                    f"Package installation timed out "
+                    f"after {self._timeout} seconds"
+                )
+                if self.venv_path and os.path.exists(self.venv_path):
+                    shutil.rmtree(self.venv_path)
+                    self.venv_path = None
                 raise
 
     def _is_uv_environment(self) -> bool:
@@ -117,6 +136,7 @@ class PythonVerifier(BaseVerifier):
                 ["uv", "venv", self.venv_path],
                 check=True,
                 capture_output=True,
+                timeout=self._timeout,
             )
             logger.info(
                 f"[UV] Virtual environment created at {self.venv_path}"
@@ -126,6 +146,19 @@ class PythonVerifier(BaseVerifier):
                 "[UV] Failed to create virtual environment:\n"
                 f"{e.stderr.decode().strip()}"
             )
+            # Clean up resources before re-raising
+            if self.venv_path and os.path.exists(self.venv_path):
+                shutil.rmtree(self.venv_path)
+                self.venv_path = None
+            raise
+        except subprocess.TimeoutExpired:
+            logger.error(
+                f"[UV] Virtual environment creation timed "
+                f"out after {self._timeout} seconds"
+            )
+            if self.venv_path and os.path.exists(self.venv_path):
+                shutil.rmtree(self.venv_path)
+                self.venv_path = None
             raise
 
         if self.required_packages:
@@ -142,6 +175,7 @@ class PythonVerifier(BaseVerifier):
                     ],
                     check=True,
                     capture_output=True,
+                    timeout=self._timeout,
                 )
                 logger.info(
                     "[UV] Installed required packages via uv: "
@@ -152,6 +186,19 @@ class PythonVerifier(BaseVerifier):
                     "[UV] Failed to install required packages via uv:\n"
                     f"{e.stderr.decode().strip()}"
                 )
+                # Clean up resources before re-raising
+                if self.venv_path and os.path.exists(self.venv_path):
+                    shutil.rmtree(self.venv_path)
+                    self.venv_path = None
+                raise
+            except subprocess.TimeoutExpired:
+                logger.error(
+                    f"[UV] Package installation timed "
+                    f"out after {self._timeout} seconds"
+                )
+                if self.venv_path and os.path.exists(self.venv_path):
+                    shutil.rmtree(self.venv_path)
+                    self.venv_path = None
                 raise
 
     async def _cleanup(self) -> None:
@@ -378,8 +425,29 @@ class PythonVerifier(BaseVerifier):
         Returns:
             bool: True if the code is a single expression, False otherwise.
         """
-        try:
-            ast.literal_eval(code)
-            return True
-        except Exception:
+        # Skip empty or whitespace-only strings
+        if not code or code.isspace():
             return False
+
+        try:
+            # First try parsing as an expression - this is more reliable than
+            # starting with literal_eval
+            tree = ast.parse(code.strip(), mode='eval')
+            # Check if it's a function call (like print()) - these should not
+            # be treated as expressions
+            if isinstance(tree.body, ast.Call):
+                return False
+            # If parsing succeeds in 'eval' mode and it's not a function call,
+            # it's a valid expression
+            return True
+        except SyntaxError:
+            # If parsing as expression fails, it's not a valid expression
+            return False
+        except Exception:
+            # For any other parsing errors, try literal_eval as fallback for
+            # simple literals
+            try:
+                ast.literal_eval(code)
+                return True
+            except Exception:
+                return False
