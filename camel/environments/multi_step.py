@@ -15,7 +15,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple
 
-from camel.extractors.base import BaseExtractor
+from camel.extractors import Extractor
 from camel.logger import get_logger
 
 from .models import Action, Observation, StepResult
@@ -28,7 +28,7 @@ class MultiStepEnv(ABC):
 
     def __init__(
         self,
-        extractor: BaseExtractor,
+        extractor: Extractor,
         max_steps: Optional[int] = None,
         **kwargs,
     ) -> None:

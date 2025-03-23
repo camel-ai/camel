@@ -14,12 +14,9 @@
 import ast
 import asyncio
 
-from camel.extractors.base import BaseExtractor
-from camel.extractors.python_strategies import (
-    BoxedStrategy,
-    PythonDictStrategy,
-    PythonListStrategy,
-)
+from camel.extractors import Extractor
+from camel.extractors.general import BoxedStrategy
+from camel.extractors.python import PythonDictStrategy, PythonListStrategy
 from camel.logger import get_logger
 
 logger = get_logger(__name__)
@@ -33,7 +30,7 @@ def create_list_extractor(
     _monitoring_interval=10.0,
     _cpu_threshold=90.0,
     _memory_threshold=90.0,
-) -> "BaseExtractor":
+) -> Extractor:
     r"""Create an extractor for Python lists."""
     # Create a pipeline with two stages
     pipeline = [
@@ -41,7 +38,7 @@ def create_list_extractor(
         [PythonListStrategy()],  # Stage 2: Extract and normalize Python list
     ]
 
-    return BaseExtractor(
+    return Extractor(
         pipeline=pipeline,
         cache_templates=_cache_templates,
         max_cache_size=max_cache_size,
@@ -62,7 +59,7 @@ def create_dict_extractor(
     _monitoring_interval=10.0,
     _cpu_threshold=90.0,
     _memory_threshold=90.0,
-) -> "BaseExtractor":
+) -> Extractor:
     r"""Create an extractor for Python dictionaries."""
     # Create a pipeline with two stages
     pipeline = [
@@ -70,7 +67,7 @@ def create_dict_extractor(
         [PythonDictStrategy()],  # Stage 2: Extract and normalize Python dict
     ]
 
-    return BaseExtractor(
+    return Extractor(
         pipeline=pipeline,
         cache_templates=_cache_templates,
         max_cache_size=max_cache_size,
@@ -159,21 +156,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-"""
-===============================================================================
-=== Python Strategies Examples ===
-
-=== Example 1: List extraction ===
-LLM Response: \boxed{[3, 1, 2, 'apple']}
-Extracted list string: [1, 2, 3, 'apple']
-Parsed list: [1, 2, 3, 'apple']
-
-=== Example 2: Dictionary extraction ===
-LLM Response: \boxed{{'apple': 5, 'banana': 3, 'cherry': 8}}
-Extracted dictionary string: {'apple': 5, 'banana': 3, 'cherry': 8}
-Parsed dictionary: {'apple': 5, 'banana': 3, 'cherry': 8}
-
-All examples completed.
-===============================================================================
-"""
