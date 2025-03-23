@@ -103,7 +103,8 @@ class SiliconFlowModel(BaseModelBackend):
             is_reasoning_model
             and os.environ.get("GET_REASONING_CONTENT", "false").lower() == "true"
         ):
-            reasoning_content = response.choices[0].message.reasoning_content  # type: ignore[attr-defined]
+            # get reasoning content from response safely
+            reasoning_content = getattr(response.choices[0].message, "reasoning_content", None)
             combined_content = (  # type: ignore[operator]
                 f"<think>\n{reasoning_content}\n</think>\n"
                 if reasoning_content
