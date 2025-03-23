@@ -190,7 +190,9 @@ class SingleStepEnv:
 
             start_idx = rng.randint(0, dataset_len - batch_size)
             idx_slice = slice(start_idx, start_idx + batch_size)
-            self._states = self.dataset[idx_slice]
+            val = self.dataset[idx_slice]
+            self._states = [val] if isinstance(val, DataPoint) else val
+
             self.current_batch_size = len(self._states)
             self._states_done = [False] * self.current_batch_size
 
