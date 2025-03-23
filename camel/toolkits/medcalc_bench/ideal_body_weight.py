@@ -9,8 +9,8 @@ Modifications include:
 Date: March 2025
 """
 
-from utils.height_conversion import height_conversion_explanation_in
-from utils.rounding import round_number
+from camel.toolkits.medcalc_bench.utils.height_conversion import height_conversion_explanation_in
+from camel.toolkits.medcalc_bench.utils.rounding import round_number
 
 
 def ibw_explanation(input_variables):

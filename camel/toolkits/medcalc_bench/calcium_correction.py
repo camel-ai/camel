@@ -9,8 +9,8 @@ Modifications include:
 Date: March 2025
 """
 
-from utils.unit_converter_new import conversion_explanation
-from utils.rounding import round_number
+from camel.toolkits.medcalc_bench.utils.unit_converter_new import conversion_explanation
+from camel.toolkits.medcalc_bench.utils.rounding import round_number
 
 
 def calculate_corrected_calcium_explanation(params):
@@ -75,8 +75,8 @@ if __name__ == "__main__":
     # Defining test cases
     test_cases = [
         {
-            "albumin": [4, "g/dL"],
-            "calcium": [40, "mg/L"],
+            "albumin": (4, "g/dL"),
+            "calcium": (40, "mg/L"),
         }
     ]
 

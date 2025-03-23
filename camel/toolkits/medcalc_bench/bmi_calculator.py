@@ -9,9 +9,9 @@ Modifications include:
 Date: March 2025
 """
 
-from utils.height_conversion import height_conversion_explanation
-from utils.weight_conversion import weight_conversion_explanation
-from utils.rounding import round_number
+from camel.toolkits.medcalc_bench.utils.height_conversion import height_conversion_explanation
+from camel.toolkits.medcalc_bench.utils.weight_conversion import weight_conversion_explanation
+from camel.toolkits.medcalc_bench.utils.rounding import round_number
 
 
 def bmi_calculator_explanation(input_variables):

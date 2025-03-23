@@ -10,9 +10,9 @@ Date: March 2025
 """
 
 import math
-from utils.height_conversion import height_conversion_explanation_cm
-from utils.weight_conversion import weight_conversion_explanation
-from utils.rounding import round_number
+from camel.toolkits.medcalc_bench.utils.height_conversion import height_conversion_explanation_cm
+from camel.toolkits.medcalc_bench.utils.weight_conversion import weight_conversion_explanation
+from camel.toolkits.medcalc_bench.utils.rounding import round_number
 
 
 def bsa_calculator_explaination(input_variables):

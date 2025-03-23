@@ -9,7 +9,7 @@ Modifications include:
 Date: March 2025
 """
 
-from utils.age_conversion import age_conversion_explanation
+from camel.toolkits.medcalc_bench.utils.age_conversion import age_conversion_explanation
 
 
 def compute_heart_score_explanation(input_parameters):

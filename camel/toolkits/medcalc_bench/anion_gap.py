@@ -9,8 +9,8 @@ Modifications include:
 Date: March 2025
 """
 
-from utils.unit_converter_new import conversion_explanation
-from utils.rounding import round_number
+from camel.toolkits.medcalc_bench.utils.unit_converter_new import conversion_explanation
+from camel.toolkits.medcalc_bench.utils.rounding import round_number
 
 
 def compute_anion_gap_explanation(input_parameters):

@@ -8,7 +8,7 @@ Modifications include:
 Date: March 2025
 """
 
-from utils.rounding import round_number
+from camel.toolkits.medcalc_bench.utils.rounding import round_number
 
 
 def mean_arterial_pressure_explanation(input_variables):

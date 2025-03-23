@@ -23,111 +23,6 @@ from typing import Dict, Any
 logger = get_logger(__name__)
 
 
-# class MedCalcToolkit(BaseToolkit):
-#     r"""
-#     A toolkit for performing medical calculations using various clinical formulas.
-#     This toolkit provides methods to compute specific medical values such as adjusted body weight (ABW),
-#     albumin-corrected anion gap, and more. Each method includes a step-by-step explanation of the calculation.
-
-#     The toolkit is designed to integrate with agent frameworks and expose its methods as tools that can be used
-#     by agents to perform medical computations in a structured manner.
-#     """
-
-#     def __init__(
-#         self,
-#         default_variable: str = 'x',
-#         timeout: Optional[float] = None,
-#     ):
-#         r"""
-#         Initializes the toolkit with a default variable and optional timeout.
-
-#         Args:
-#             default_variable (str): The default variable used in symbolic computations (default: :obj:`x`).
-#             timeout (Optional[float]): The maximum time allowed for each computation (in seconds). If `None`,
-#                 no timeout is enforced.
-#         """
-#         super().__init__(timeout=timeout)
-#         self.default_variable = default_variable
-#         logger.info(f"Default variable set to: {self.default_variable}")
-    
-#     def adjusted_body_weight(self, input_variables) -> str:
-#         print(input_variables)
-#         """
-#         计算患者的调整体重（Adjusted Body Weight, ABW），并生成详细的解释性文本。
-
-#         参数:
-#             input_variables (dict): 一个包含以下键值对的字典：
-#                 - "weight" (tuple): 患者的体重信息，格式为 (数值, 单位)。
-#                     - 数值 (float): 体重的具体数值。
-#                     - 单位 (str): 体重的单位，可以是以下之一：
-#                         - "lbs" 表示磅（pounds）。
-#                         - "g" 表示克（grams）。
-#                         - "kg" 表示千克（kilograms）。
-#                 - "height" (tuple): 患者的身高信息，格式为 (数值, 单位)。
-#                     - 数值 (float): 身高的具体数值。
-#                     - 单位 (str): 身高的单位，可以是以下之一：
-#                         - "cm" 表示厘米（centimeters）。
-#                         - "in" 表示英寸（inches）。
-#                 - "sex" (str): 患者的性别，可以是以下之一：
-#                     - "Male" 表示男性。
-#                     - "Female" 表示女性。
-
-#         返回值:
-#             dict: 包含三个键值对：
-#                 - "Explanation" (str): 详细的计算过程和解释性文本，包括 IBW 和 ABW 的计算。
-#                 - "ABW" (str): ABW 的具体计算公式和结果。
-#                 - "Answer" (float): 患者的调整体重量（以千克为单位）。
-
-#         注意:
-#             - 使用 `weight_conversion.weight_conversion_explanation` 函数将体重转换为千克。
-#             - 使用 `ideal_body_weight.ibw_explanation` 函数计算理想体重（IBW）。
-#             - 使用 `round_number` 函数对结果进行四舍五入处理。
-#             - 如果输入的性别不是 "Male" 或 "Female"，函数不会计算 IBW 和 ABW。
-#             - 如果输入的单位无效，默认将体重视为千克，身高视为英寸。
-#         """
-#         from camel.toolkits.medcalc.adjusted_body_weight import abw_explanation
-#         try:
-#             result = abw_explanation(input_variables)
-#             return json.dumps({
-#                 "rationale": result['Explanation'],
-#                 "final_answer": str(result['Answer'])
-#             })
-#         except Exception as e:
-#             return self.handle_exception("abw_explanation", e)
-    
-#     def handle_exception(self, func_name: str, error: Exception) -> str:
-#         r"""
-#         Handles exceptions by logging the error and returning a standardized error message.
-
-#         Args:
-#             func_name (str): The name of the function where the exception occurred.
-#             error (Exception): The exception object containing details about the error.
-
-#         Returns:
-#             str: A JSON string containing the following fields:
-#                 - "status" (str): Always set to `"error"`.
-#                 - "message" (str): A human-readable description of the error.
-#         """
-#         logger.error(f"Error in {func_name}: {error}")
-#         return json.dumps(
-#             {"status": "error", "message": f"Error in {func_name}: {error}"},
-#             ensure_ascii=False,
-#         )
-        
-#     def get_tools(self) -> List[FunctionTool]:
-#         r"""Exposes the tool's methods to the agent framework.
-
-#         Returns:
-#             List[FunctionTool]: A list of `FunctionTool` objects representing
-#                 the toolkit's methods, making them accessible to the agent.
-#         """
-#         return [
-#             FunctionTool(self.adjusted_body_weight),
-#             # FunctionTool(self.albumin_corrected_anion),
-#         ]
-
-
-
 class MedCalcToolkit(BaseToolkit):
     def __init__(
         self,
@@ -194,7 +89,8 @@ class MedCalcToolkit(BaseToolkit):
             "age": int(age)                       # Age
         }
         print(input_variables)
-        from camel.toolkits.medcalc.adjusted_body_weight import abw_explanation
+        
+        from camel.toolkits.medcalc_bench.adjusted_body_weight import abw_explanation
 
         try:
             # Call the ABW calculation function
@@ -209,7 +105,621 @@ class MedCalcToolkit(BaseToolkit):
         except Exception as e:
             # Catch exceptions and return an error message
             return self.handle_exception("abw_explanation", e)
-            
+        
+    def anion_gap(
+            self,
+            sodium_value: float,      # Numeric part of the sodium level (e.g., 140.0)
+            sodium_unit: str,         # Unit of the sodium level (e.g., "mEq/L")
+            chloride_value: float,    # Numeric part of the chloride level (e.g., 106.0)
+            chloride_unit: str,       # Unit of the chloride level (e.g., "mEq/L")
+            bicarbonate_value: float, # Numeric part of the bicarbonate level (e.g., 20.0)
+            bicarbonate_unit: str    # Unit of the bicarbonate level (e.g., "mEq/L")
+        ) -> str:
+        """
+        Calculate the patient's Anion Gap and generate a detailed explanatory text.
+
+        Parameters:
+            sodium_value (float): The numeric value of the patient's sodium level.
+            sodium_unit (str): The unit of the patient's sodium level, one of the following:
+                - "mmol/L" for millimoles per liter.
+                - "mEq/L" for milliequivalents per liter.
+            chloride_value (float): The numeric value of the patient's chloride level.
+            chloride_unit (str): The unit of the patient's chloride level, one of the following:
+                - "mmol/L" for millimoles per liter.
+                - "mEq/L" for milliequivalents per liter.
+            bicarbonate_value (float): The numeric value of the patient's bicarbonate level.
+            bicarbonate_unit (str): The unit of the patient's bicarbonate level, one of the following:
+                - "mmol/L" for millimoles per liter.
+                - "mEq/L" for milliequivalents per liter.
+
+        Returns:
+            str: A JSON string containing the calculation process and result, formatted as follows:
+                {
+                    "rationale": "Detailed calculation process and explanatory text",
+                    "final_answer": "Anion gap in mEq/L (string format)"
+                }
+                If an exception occurs, return an error message generated by the `handle_exception` method.
+
+        Notes:
+            - The `compute_anion_gap_explanation` function is used to calculate the anion gap.
+            - The `json.dumps` function is used to serialize the result into a JSON string.
+        """
+        # Construct the input variables dictionary
+        input_variables = {
+            "sodium": (float(sodium_value), str(sodium_unit)),  # Sodium: (value, unit)
+            "chloride": (float(chloride_value), str(chloride_unit)),  # Chloride: (value, unit)
+            "bicarbonate": (float(bicarbonate_value), str(bicarbonate_unit))  # Bicarbonate: (value, unit)
+        }
+        print(input_variables)
+        
+        from camel.toolkits.medcalc_bench.anion_gap import compute_anion_gap_explanation
+
+        try:
+            # Call the Anion Gap calculation function
+            result = compute_anion_gap_explanation(input_variables)
+
+            # Return the result as a JSON string
+            return json.dumps({
+                "rationale": result['Explanation'],       # Detailed explanation
+                "final_answer": str(result['Answer'])     # Final answer (string format)
+            })
+
+        except Exception as e:
+            # Catch exceptions and return an error message
+            return self.handle_exception("compute_anion_gap_explanation", e)
+        
+
+    def bmi_calculator(
+            self,
+            weight_value: float,  # Numeric part of the weight (e.g., 150)
+            weight_unit: str,      # Unit of the weight (e.g., "lbs")
+            height_value: float,   # Numeric part of the height (e.g., 170)
+            height_unit: str       # Unit of the height (e.g., "cm")
+        ) -> str:
+        """
+        Calculate the patient's Body Mass Index (BMI) and generate a detailed explanatory text.
+
+        Parameters:
+            weight_value (float): The numeric value of the patient's weight.
+            weight_unit (str): The unit of the patient's weight, one of the following:
+                - "lbs" for pounds.
+                - "g" for grams.
+                - "kg" for kilograms.
+            height_value (float): The numeric value of the patient's height.
+            height_unit (str): The unit of the patient's height, one of the following:
+                - "cm" for centimeters.
+                - "in" for inches.
+
+        Returns:
+            str: A JSON string containing the calculation process and result, formatted as follows:
+                {
+                    "rationale": "Detailed calculation process and explanatory text",
+                    "final_answer": "BMI value (string format)"
+                }
+                If an exception occurs, return an error message generated by the `handle_exception` method.
+
+        Notes:
+            - The `bmi_calculator_explanation` function is used to calculate the BMI.
+            - The `json.dumps` function is used to serialize the result into a JSON string.
+        """
+        # Construct the input variables dictionary
+        input_variables = {
+            "weight": (float(weight_value), str(weight_unit)),  # Weight: (value, unit)
+            "height": (float(height_value), str(height_unit))   # Height: (value, unit)
+        }
+        print(input_variables)
+        
+        from camel.toolkits.medcalc_bench.bmi_calculator import bmi_calculator_explanation
+
+        try:
+            # Call the BMI calculation function
+            result = bmi_calculator_explanation(input_variables)
+
+            # Return the result as a JSON string
+            return json.dumps({
+                "rationale": result['Explanation'],       # Detailed explanation
+                "final_answer": str(result['Answer'])     # Final answer (string format)
+            })
+
+        except Exception as e:
+            # Catch exceptions and return an error message
+            return self.handle_exception("bmi_calculator_explanation", e)
+
+    def bsa_calculator(
+            self,
+            weight_value: float,  # Numeric part of the weight (e.g., 58.0)
+            weight_unit: str,      # Unit of the weight (e.g., "kg")
+            height_value: float,  # Numeric part of the height (e.g., 179.0)
+            height_unit: str       # Unit of the height (e.g., "cm")
+        ) -> str:
+        """
+        Calculate the patient's Body Surface Area (BSA) and generate a detailed explanatory text.
+
+        Parameters:
+            weight_value (float): The numeric value of the patient's weight.
+            weight_unit (str): The unit of the patient's weight, one of the following:
+                - "lbs" for pounds.
+                - "g" for grams.
+                - "kg" for kilograms.
+            height_value (float): The numeric value of the patient's height.
+            height_unit (str): The unit of the patient's height, one of the following:
+                - "cm" for centimeters.
+                - "in" for inches.
+
+        Returns:
+            str: A JSON string containing the calculation process and result, formatted as follows:
+                {
+                    "rationale": "Detailed calculation process and explanatory text",
+                    "final_answer": "Body Surface Area in square meters (string format)"
+                }
+                If an exception occurs, return an error message generated by the `handle_exception` method.
+
+        Notes:
+            - The `bsa_calculator_explaination` function is used to calculate the body surface area.
+            - The `json.dumps` function is used to serialize the result into a JSON string.
+        """
+        # Construct the input variables dictionary
+        input_variables = {
+            "weight": (float(weight_value), str(weight_unit)),  # Weight: (value, unit)
+            "height": (float(height_value), str(height_unit))   # Height: (value, unit)
+        }
+        print(input_variables)
+        
+        from camel.toolkits.medcalc_bench.bsa_calculator import bsa_calculator_explaination
+
+        try:
+            # Call the BSA calculation function
+            result = bsa_calculator_explaination(input_variables)
+
+            # Return the result as a JSON string
+            return json.dumps({
+                "rationale": result['Explanation'],       # Detailed explanation
+                "final_answer": str(result['Answer'])     # Final answer (string format)
+            })
+
+        except Exception as e:
+            # Catch exceptions and return an error message
+            return self.handle_exception("bsa_calculator_explaination", e)
+
+    def calcium_correction(
+            self,
+            albumin_value: float,  # Numeric part of the albumin concentration (e.g., 4.0)
+            albumin_unit: str,     # Unit of the albumin concentration (e.g., "g/dL")
+            calcium_value: float, # Numeric part of the calcium concentration (e.g., 40)
+            calcium_unit: str     # Unit of the calcium concentration (e.g., "mg/L")
+        ) -> str:
+        """
+        Calculate the patient's corrected calcium concentration and generate a detailed explanatory text.
+
+        Parameters:
+            albumin_value (float): The numeric value of the patient's albumin concentration.
+            albumin_unit (str): The unit of the patient's albumin concentration, one of the following:
+                - "g/L" for grams per liter.
+                - "mg/dL" for milligrams per deciliter.
+                - "g/mL" for grams per milliliter.
+            calcium_value (float): The numeric value of the patient's calcium concentration.
+            calcium_unit (str): The unit of the patient's calcium concentration, one of the following:
+                - "g/L" for grams per liter.
+                - "mg/dL" for milligrams per deciliter.
+                - "g/mL" for grams per milliliter.
+
+        Returns:
+            str: A JSON string containing the calculation process and result, formatted as follows:
+                {
+                    "rationale": "Detailed calculation process and explanatory text",
+                    "final_answer": "Corrected calcium concentration in mg/dL (string format)"
+                }
+                If an exception occurs, return an error message generated by the `handle_exception` method.
+
+        Notes:
+            - The `calculate_corrected_calcium_explanation` function is used to calculate the corrected calcium concentration.
+            - The `json.dumps` function is used to serialize the result into a JSON string.
+        """
+        # Construct the input variables dictionary
+        input_variables = {
+            "albumin": (float(albumin_value), str(albumin_unit)),  # Albumin: (value, unit)
+            "calcium": (float(calcium_value), str(calcium_unit))   # Calcium: (value, unit)
+        }
+        print(input_variables)
+        
+        from camel.toolkits.medcalc_bench.calcium_correction import calculate_corrected_calcium_explanation
+
+        try:
+            # Call the corrected calcium calculation function
+            result = calculate_corrected_calcium_explanation(input_variables)
+
+            # Return the result as a JSON string
+            return json.dumps({
+                "rationale": result['Explanation'],       # Detailed explanation
+                "final_answer": str(result['Answer'])     # Final answer (string format)
+            })
+
+        except Exception as e:
+            # Catch exceptions and return an error message
+            return self.handle_exception("calculate_corrected_calcium_explanation", e)
+              
+    def feverpain(
+            self,
+            symptom_onset: Optional[bool],          # Whether the patient has a symptom onset ≤3 days
+            purulent_tonsils: Optional[bool],        # Presence of pus on the tonsils
+            fever_24_hours: Optional[bool],         # Whether the patient has had a fever in the past 24 hours
+            severe_tonsil_inflammation: Optional[bool],  # Presence of severe tonsil inflammation
+            cough_coryza_absent: Optional[bool]     # Absence of cough or coryza
+        ) -> str:
+        """
+        Calculate the patient's FeverPAIN score and generate a detailed explanatory text.
+
+        Parameters:
+            symptom_onset (Optional[bool]): Whether the patient has a symptom onset ≤3 days.
+            purulent_tonsils (Optional[bool]): Presence of pus on the tonsils.
+            fever_24_hours (Optional[bool]): Whether the patient has had a fever in the past 24 hours.
+            severe_tonsil_inflammation (Optional[bool]): Presence of severe tonsil inflammation.
+            cough_coryza_absent (Optional[bool]): Absence of cough or coryza.
+
+        Returns:
+            str: A JSON string containing the calculation process and result, formatted as follows:
+                {
+                    "rationale": "Detailed calculation process and explanatory text",
+                    "final_answer": "FeverPAIN score (string format)"
+                }
+                If an exception occurs, return an error message generated by the `handle_exception` method.
+
+        Notes:
+            - The `compute_fever_pain_explanation` function is used to calculate the FeverPAIN score.
+            - The `json.dumps` function is used to serialize the result into a JSON string.
+            - If any of the input parameters are not provided, the function assumes the condition is absent.
+        """
+        # Construct the input variables dictionary
+        input_variables = {
+            "symptom_onset": symptom_onset,
+            "purulent_tonsils": purulent_tonsils,
+            "fever_24_hours": fever_24_hours,
+            "severe_tonsil_inflammation": severe_tonsil_inflammation,
+            "cough_coryza_absent": cough_coryza_absent
+        }
+        print(input_variables)
+        
+        try:
+            # Call the FeverPAIN score calculation function
+            from camel.toolkits.medcalc_bench.feverpain import compute_fever_pain_explanation
+
+            result = compute_fever_pain_explanation(input_variables)
+
+            # Return the result as a JSON string
+            return json.dumps({
+                "rationale": result['Explanation'],       # Detailed explanation
+                "final_answer": str(result['Answer'])    # Final answer (string format)
+            })
+
+        except Exception as e:
+            # Catch exceptions and return an error message
+            return self.handle_exception("compute_fever_pain_explanation", e)
+      
+
+    def heart_score(
+            self,
+            age_value: float,                  # Numeric part of the age (e.g., 60)
+            age_unit: str,                      # Unit of the age (e.g., "years")
+            hypertension: bool,                 # History of hypertension (True/False)
+            history: str,                       # History of chest pain: "Slightly suspicious", "Moderately suspicious", or "Highly suspicious"
+            diabetes_mellitus: bool,            # Diabetes status (True/False)
+            smoking: bool,                      # Smoking history (True/False)
+            family_with_cvd: bool,              # Family history of cardiovascular disease (True/False)
+            atherosclerotic_disease: bool,      # History of atherosclerotic disease (True/False)
+            initial_troponin: str,              # Initial troponin level: "less than or equal to normal limit", "between the normal limit or up to three times the normal limit", or "greater than three times normal limit"
+            electrocardiogram: str,             # Electrocardiogram status: "Normal", "Non-specific repolarization disturbance", or "Significant ST deviation"
+            hypercholesterolemia: bool,         # Hypercholesterolemia status (True/False)
+            obesity: bool,                      # Obesity status (BMI > 30 kg/m²) (True/False)
+        ) -> str:
+        """
+        Calculate the patient's HEART Score and generate a detailed explanatory text.
+
+        Parameters:
+            age_value (float): The numeric value of the patient's age.
+            age_unit (str): The unit of the patient's age, one of the following:
+                - "years" for years.
+                - "months" for months.
+            hypertension (bool): The patient's history of hypertension (True/False).
+            history (str): The patient's history of chest pain, one of the following:
+                - "Slightly suspicious".
+                - "Moderately suspicious".
+                - "Highly suspicious".
+            diabetes_mellitus (bool): The patient's diabetes status (True/False).
+            smoking (bool): The patient's smoking history (True/False).
+            family_with_cvd (bool): The patient's family history of cardiovascular disease (True/False).
+            atherosclerotic_disease (bool): The patient's history of atherosclerotic disease (True/False).
+            initial_troponin (str): The patient's initial troponin level, one of the following:
+                - "less than or equal to normal limit".
+                - "between the normal limit or up to three times the normal limit".
+                - "greater than three times normal limit".
+            electrocardiogram (str): The patient's electrocardiogram status, one of the following:
+                - "Normal".
+                - "Non-specific repolarization disturbance".
+                - "Significant ST deviation".
+            hypercholesterolemia (bool): The patient's hypercholesterolemia status (True/False).
+            obesity (bool): The patient's obesity status (BMI > 30 kg/m²) (True/False).
+
+        Returns:
+            str: A JSON string containing the calculation process and result, formatted as follows:
+                {
+                    "rationale": "Detailed calculation process and explanatory text",
+                    "final_answer": "HEART Score (integer)"
+                }
+                If an exception occurs, return an error message generated by the `handle_exception` method.
+
+        Notes:
+            - The `compute_heart_score_explanation` function is used to calculate the HEART Score.
+            - The `json.dumps` function is used to serialize the result into a JSON string.
+        """
+        # Construct the input variables dictionary
+        input_variables = {
+            "age": [float(age_value), str(age_unit)],  # Age: [value, unit]
+            "hypertension": bool(hypertension),        # Hypertension status
+            "history": str(history),                   # History of chest pain
+            "diabetes_mellitus": bool(diabetes_mellitus),  # Diabetes status
+            "smoking": bool(smoking),                  # Smoking history
+            "family_with_cvd": bool(family_with_cvd),  # Family history of cardiovascular disease
+            "atherosclerotic_disease": bool(atherosclerotic_disease),  # Atherosclerotic disease status
+            "initial_troponin": str(initial_troponin),  # Initial troponin level
+            "electrocardiogram": str(electrocardiogram),  # Electrocardiogram status
+            "hypercholesterolemia": bool(hypercholesterolemia),  # Hypercholesterolemia status
+            "obesity": bool(obesity),                  # Obesity status
+            "risk_factors": {}                        # Risk factors dictionary
+        }
+
+        try:
+            # Call the HEART Score calculation function
+            from camel.toolkits.medcalc_bench.heart_score import compute_heart_score_explanation
+
+            result = compute_heart_score_explanation(input_variables)
+
+            # Return the result as a JSON string
+            return json.dumps({
+                "rationale": result['Explanation'],       # Detailed explanation
+                "final_answer": str(result['Answer'])     # Final answer (HEART Score)
+            })
+
+        except Exception as e:
+            # Catch exceptions and return an error message
+            return self.handle_exception("compute_heart_score_explanation", e)
+        
+    def homa_ir(
+            self,
+            insulin_value: float,  # Numeric part of the insulin level (e.g., 756.0)
+            insulin_unit: str,      # Unit of the insulin level (e.g., "pmol/L")
+            glucose_value: float,   # Numeric part of the glucose level (e.g., 97.3)
+            glucose_unit: str      # Unit of the glucose level (e.g., "mg/dL")
+        ) -> str:
+        """
+        Calculate the patient's Homeostatic Model Assessment for Insulin Resistance (HOMA-IR) and generate a detailed explanatory text.
+
+        Parameters:
+            insulin_value (float): The numeric value of the patient's insulin level.
+            insulin_unit (str): The unit of the patient's insulin level, one of the following:
+                - "µIU/mL" for micro-international units per milliliter.
+                - "pmol/L" for picomoles per liter.
+                - "ng/mL" for nanograms per milliliter.
+            glucose_value (float): The numeric value of the patient's glucose level.
+            glucose_unit (str): The unit of the patient's glucose level, one of the following:
+                - "mmol/L" for millimoles per liter.
+                - "mg/dL" for milligrams per deciliter.
+                - "mEq/L" for milliequivalents per liter.
+
+        Returns:
+            str: A JSON string containing the calculation process and result, formatted as follows:
+                {
+                    "rationale": "Detailed calculation process and explanatory text",
+                    "final_answer": "HOMA-IR score (string format)"
+                }
+                If an exception occurs, return an error message generated by the `handle_exception` method.
+
+        Notes:
+            - The `compute_homa_ir_explanation` function is used to calculate the HOMA-IR score.
+            - The `json.dumps` function is used to serialize the result into a JSON string.
+            - If the input units are not supported, the function will not calculate HOMA-IR.
+        """
+        # Construct the input variables dictionary
+        input_variables = {
+            "insulin": (float(insulin_value), str(insulin_unit)),  # Insulin: (value, unit)
+            "glucose": (float(glucose_value), str(glucose_unit))   # Glucose: (value, unit)
+        }
+        print(input_variables)
+        
+        from camel.toolkits.medcalc_bench.utils.unit_converter_new import conversion_explanation
+        from camel.toolkits.medcalc_bench.utils.rounding import round_number
+
+        try:
+            # Call the HOMA-IR calculation function
+            from camel.toolkits.medcalc_bench.homa_ir import compute_homa_ir_explanation
+
+            result = compute_homa_ir_explanation(input_variables)
+
+            # Return the result as a JSON string
+            return json.dumps({
+                "rationale": result['Explanation'],       # Detailed explanation
+                "final_answer": str(result['Answer'])   # Final answer (string format)
+            })
+
+        except Exception as e:
+            # Catch exceptions and return an error message
+            return self.handle_exception("compute_homa_ir_explanation", e)
+        
+
+    def ideal_body_weight(
+            self,
+            height_value: float,  # Numeric part of the height (e.g., 170)
+            height_unit: str,     # Unit of the height (e.g., "cm")
+            sex: str,             # Gender ("male"/"female")
+            age: int              # Age (currently unused but may be used for future extensions)
+        ) -> str:
+        """
+        Calculate the patient's Ideal Body Weight (IBW) and generate a detailed explanatory text.
+
+        Parameters:
+            height_value (float): The numeric value of the patient's height.
+            height_unit (str): The unit of the patient's height, one of the following:
+                - "cm" for centimeters.
+                - "in" for inches.
+            sex (str): The patient's gender, one of the following:
+                - "Male" for male.
+                - "Female" for female.
+            age (int): The patient's age (integer). Currently unused but may be used for future extensions.
+
+        Returns:
+            str: A JSON string containing the calculation process and result, formatted as follows:
+                {
+                    "rationale": "Detailed calculation process and explanatory text",
+                    "final_answer": "Ideal body weight in kilograms (string format)"
+                }
+                If an exception occurs, return an error message generated by the `handle_exception` method.
+
+        Notes:
+            - The `ibw_explanation` function is used to calculate the ideal body weight.
+            - The `json.dumps` function is used to serialize the result into a JSON string.
+            - If the input gender is not "male" or "female", the function will not calculate IBW.
+        """
+        # Construct the input variables dictionary
+        input_variables = {
+            "height": (float(height_value), str(height_unit)),  # Height: (value, unit)
+            "sex": str(sex),                      # Gender
+            "age": int(age)                       # Age
+        }
+        print(input_variables)
+        
+        from camel.toolkits.medcalc_bench.ideal_body_weight import ibw_explanation
+
+        try:
+            # Call the IBW calculation function
+            result = ibw_explanation(input_variables)
+
+            # Return the result as a JSON string
+            return json.dumps({
+                "rationale": result['Explanation'],       # Detailed explanation
+                "final_answer": str(result['Answer'])     # Final answer (string format)
+            })
+
+        except Exception as e:
+            # Catch exceptions and return an error message
+            return self.handle_exception("ibw_explanation", e)
+        
+    def mean_arterial_pressure(
+            self,
+            sys_bp_value: float,  # Numeric part of the systolic blood pressure (e.g., 120.0)
+            sys_bp_unit: str,      # Unit of the systolic blood pressure (e.g., "mm hg")
+            dia_bp_value: float,  # Numeric part of the diastolic blood pressure (e.g., 80.0)
+            dia_bp_unit: str       # Unit of the diastolic blood pressure (e.g., "mm hg")
+        ) -> str:
+        """
+        Calculate the patient's Mean Arterial Pressure (MAP) and generate a detailed explanatory text.
+
+        Parameters:
+            sys_bp_value (float): The numeric value of the patient's systolic blood pressure.
+            sys_bp_unit (str): The unit of the patient's systolic blood pressure, one of the following:
+                - "mm hg" for millimeters of mercury.
+            dia_bp_value (float): The numeric value of the patient's diastolic blood pressure.
+            dia_bp_unit (str): The unit of the patient's diastolic blood pressure, one of the following:
+                - "mm hg" for millimeters of mercury.
+
+        Returns:
+            str: A JSON string containing the calculation process and result, formatted as follows:
+                {
+                    "rationale": "Detailed calculation process and explanatory text",
+                    "final_answer": "Mean arterial pressure in millimeters of mercury (string format)"
+                }
+                If an exception occurs, return an error message generated by the `handle_exception` method.
+
+        Notes:
+            - The `mean_arterial_pressure_explanation` function is used to calculate the mean arterial pressure.
+            - The `json.dumps` function is used to serialize the result into a JSON string.
+            - If the input units are not "mm hg", the function will not calculate MAP.
+        """
+        # Construct the input variables dictionary
+        input_variables = {
+            "sys_bp": (float(sys_bp_value), str(sys_bp_unit)),  # Systolic Blood Pressure: (value, unit)
+            "dia_bp": (float(dia_bp_value), str(dia_bp_unit))  # Diastolic Blood Pressure: (value, unit)
+        }
+        print(input_variables)
+        
+        from camel.toolkits.medcalc_bench.mean_arterial_pressure import mean_arterial_pressure_explanation
+
+        try:
+            # Call the MAP calculation function
+            result = mean_arterial_pressure_explanation(input_variables)
+
+            # Return the result as a JSON string
+            return json.dumps({
+                "rationale": result['Explanation'],       # Detailed explanation
+                "final_answer": str(result['Answer'])   # Final answer (string format)
+            })
+
+        except Exception as e:
+            # Catch exceptions and return an error message
+            return self.handle_exception("mean_arterial_pressure_explanation", e)
+
+    def sOsm(
+            self,
+            bun_value: float,        # Numeric part of the blood urea nitrogen level (e.g., 20.0)
+            bun_unit: str,           # Unit of the blood urea nitrogen level (e.g., "mg/dL")
+            glucose_value: float,    # Numeric part of the blood glucose level (e.g., 599.0)
+            glucose_unit: str,       # Unit of the blood glucose level (e.g., "mg/dL")
+            sodium_value: float,     # Numeric part of the sodium level (e.g., 139.0)
+            sodium_unit: str          # Unit of the sodium level (e.g., "mEq/L")
+        ) -> str:
+        """
+        Calculate the patient's Serum Osmolality and generate a detailed explanatory text.
+
+        Parameters:
+            bun_value (float): The numeric value of the patient's blood urea nitrogen level.
+            bun_unit (str): The unit of the patient's blood urea nitrogen level, one of the following:
+                - "mg/dL" for milligrams per deciliter.
+                - "mmol/L" for millimoles per liter.
+            glucose_value (float): The numeric value of the patient's blood glucose level.
+            glucose_unit (str): The unit of the patient's blood glucose level, one of the following:
+                - "mg/dL" for milligrams per deciliter.
+                - "mmol/L" for millimoles per liter.
+            sodium_value (float): The numeric value of the patient's sodium level.
+            sodium_unit (str): The unit of the patient's sodium level, one of the following:
+                - "mEq/L" for milliequivalents per liter.
+                - "mmol/L" for millimoles per liter.
+
+        Returns:
+            str: A JSON string containing the calculation process and result, formatted as follows:
+                {
+                    "rationale": "Detailed calculation process and explanatory text",
+                    "final_answer": "Serum osmolality in mmol/L (string format)"
+                }
+                If an exception occurs, return an error message generated by the `handle_exception` method.
+
+        Notes:
+            - The `compute_serum_osmolality_explanation` function is used to calculate the serum osmolality.
+            - The `json.dumps` function is used to serialize the result into a JSON string.
+        """
+        # Construct the input variables dictionary
+        input_variables = {
+            "bun": (float(bun_value), str(bun_unit)),        # BUN: (value, unit)
+            "glucose": (float(glucose_value), str(glucose_unit)),  # Glucose: (value, unit)
+            "sodium": (float(sodium_value), str(sodium_unit))      # Sodium: (value, unit)
+        }
+        print(input_variables)
+        
+        from camel.toolkits.medcalc_bench.utils.unit_converter_new import conversion_explanation
+        from camel.toolkits.medcalc_bench.utils.rounding import round_number
+
+        try:
+            from camel.toolkits.medcalc_bench.sOsm import compute_serum_osmolality_explanation
+            # Call the serum osmolality calculation function
+            result = compute_serum_osmolality_explanation(input_variables)
+
+            # Return the result as a JSON string
+            return json.dumps({
+                "rationale": result['Explanation'],       # Detailed explanation
+                "final_answer": str(result['Answer'])     # Final answer (string format)
+            })
+
+        except Exception as e:
+            # Catch exceptions and return an error message
+            return self.handle_exception("compute_serum_osmolality_explanation", e)
+        
     def handle_exception(self, func_name: str, error: Exception) -> str:
         r"""
         Handles exceptions by logging the error and returning a standardized error message.
@@ -228,44 +738,8 @@ class MedCalcToolkit(BaseToolkit):
             {"status": "error", "message": f"Error in {func_name}: {error}"},
             ensure_ascii=False,
         )
+
     
-    # def get_tools(self) -> List[FunctionTool]:
-    #     return [
-    #         FunctionTool(
-    #             func=self.adjusted_body_weight,
-    #             openai_tool_schema={
-    #                 "type": "function",  # 必须明确指定类型
-    #                 "function": {
-    #                     "name": "adjusted_body_weight",
-    #                     "description": "使用调整体重公式计算校正体重",
-    #                     "parameters": {
-    #                         "type": "object",
-    #                         "properties": {
-    #                             "weight": {
-    #                                 "type": "tuple",
-    #                                 "description": "带单位的实际体重（如 '(89, kg)'）"
-    #                             },
-    #                             "height": {
-    #                                 "type": "tuple",
-    #                                 "description": "带单位的身高（如 '163, cm'）"
-    #                             },
-    #                             "gender": {
-    #                                 "type": "string",
-    #                                 "enum": ["male", "female"]
-    #                             },
-    #                             "age": {
-    #                                 "type": "integer"
-    #                             }
-    #                         },
-    #                         "required": ["weight", "height", "gender", "age"],
-    #                         "additionalProperties": False
-    #                     }
-    #                 }
-    #             }
-    #         ),
-    #         # 其他工具...
-    #     ]
-        
     def get_tools(self) -> List[FunctionTool]:
         r"""Exposes the tool's methods to the agent framework.
 
@@ -275,4 +749,14 @@ class MedCalcToolkit(BaseToolkit):
         """
         return [
             FunctionTool(self.adjusted_body_weight),
+            FunctionTool(self.anion_gap),
+            FunctionTool(self.bmi_calculator),
+            FunctionTool(self.bsa_calculator),
+            FunctionTool(self.calcium_correction),
+            FunctionTool(self.feverpain),
+            FunctionTool(self.heart_score),
+            FunctionTool(self.homa_ir),
+            FunctionTool(self.ideal_body_weight),
+            FunctionTool(self.mean_arterial_pressure),
+            FunctionTool(self.sOsm),
         ]
