@@ -28,8 +28,7 @@ logger = get_logger(__name__)
 
 
 class SingleStepEnv:
-    r"""
-    A lightweight environment for single-step RL with LLMs as policy.
+    r"""A lightweight environment for single-step RL with LLMs as policy.
 
     This environment models a single interaction between an LLM-based agent
     and a problem drawn from a dataset—such as a question-answering or
@@ -60,11 +59,10 @@ class SingleStepEnv:
         verifier: BaseVerifier,
         **kwargs,
     ) -> None:
-        r"""
-        Initialize the SingleStepEnv.
+        r"""Initialize the SingleStepEnv.
 
         Args:
-            dataset (StaticDataset | BaseGenerator): Dataset to sample
+            dataset (Union[StaticDataset, BaseGenerator]): Dataset to sample
                 problems from.
             verifier (BaseVerifier): Verifier used to evaluate LLM responses
                 against ground-truth answers.
@@ -85,10 +83,10 @@ class SingleStepEnv:
         self.current_batch_size: int = 0
 
     async def setup(self) -> None:
-        r"""Set up the environment by initializing the verifier and extractor.
+        r"""Set up the environment by initializing the verifier.
 
         This method ensures that the environment is ready for interaction.
-        It sets up necessary components, including the verifier and extractor.
+        It sets up necessary components, including the verifier.
 
         Raises:
             Exception: If setup fails due to an internal error.
@@ -110,7 +108,7 @@ class SingleStepEnv:
     async def close(self) -> None:
         r"""Clean up and close all resources used by the environment.
 
-        This method shuts down the verifier and extractor, resets the internal
+        This method shuts down the verifier, resets the internal
         state, and ensures that the environment is properly closed.
 
         Raises:
@@ -145,9 +143,10 @@ class SingleStepEnv:
         for deterministic sampling. The global random state is not affected.
 
         Args:
-            batch_size (int): Number of data points to sample. Defaults to 1.
+            batch_size (int): Number of data points to sample.
+                (default: :obj:`1`)
             seed (Optional[int]): Seed for deterministic sampling. If None,
-                sampling is non-deterministic.
+                sampling is non-deterministic. (default: :obj:`None`)
 
         Returns:
             Observation or List[Observation]: Initial observation(s) for the
@@ -214,17 +213,19 @@ class SingleStepEnv:
     async def step(
         self, action: Union[Action, List[Action]]
     ) -> Union[StepResult, List[StepResult]]:
-        """
-        Process actions for a subset of states and update their
-            finished status.
+        r"""Process actions for a subset of states and update their
+        finished status.
 
         Args:
             action: Single action or list of actions, where each action
                 contains an index indicating which state it corresponds to.
+                The index must be a valid position in the internal _states list
+                that was populated during the reset() call.
 
 
         Returns:
-            StepResult or list of StepResults for the processed states
+            Union[StepResult, List[StepResult]]: StepResult or list of
+                StepResults for the processed states.
 
         Raises:
             RuntimeError: If environment isn't set up or episode has ended.
@@ -256,7 +257,7 @@ class SingleStepEnv:
 
         if self.current_batch_size % num_actions != 0:
             logger.warning(
-                f"Number of actions ({num_actions}) is not a divisor of"
+                f"Number of actions ({num_actions}) is not a divisor of "
                 f"total batch size ({self.current_batch_size})"
             )
 
@@ -297,16 +298,18 @@ class SingleStepEnv:
         return step_results[0] if len(step_results) == 1 else step_results
 
     async def _compute_reward_batch(
-        self, proposed_solutions, verification_results
+        self,
+        proposed_solutions: List[str],
+        verification_results: List[VerificationResult],
     ) -> Tuple[List[float], List[Dict[str, float]]]:
-        r"""
-        Compute rewards for a batch of proposed solutions based on
-            verification results.
+        r"""Compute rewards for a batch of proposed solutions based on
+        verification results.
 
         Args:
-            proposed_solutions: List of LLM-generated responses to evaluate.
-            verification_results: List of verification outcomes for each
-                solution.
+            proposed_solutions (List[str]): List of LLM-generated responses to
+                evaluate.
+            verification_results (List[VerificationResult]): List of
+                verification outcomes for each solution.
 
         Returns:
             Tuple containing:
@@ -328,7 +331,7 @@ class SingleStepEnv:
             further_rewards = await self._compute_custom_reward(
                 solution, verification_result
             )
-            rewards = rewards | further_rewards
+            rewards = {**rewards, **further_rewards}
 
             total_reward = sum(rewards.values())
             total_rewards.append(total_reward)
@@ -344,11 +347,11 @@ class SingleStepEnv:
         To be overridden by subclasses for domain-specific rewards.
 
         Args:
-            proposed_solution: The LLM-generated response.
-            verification_result: The verification outcome.
+            proposed_solution (str): The LLM-generated response.
+            verification_result (VerificationResult): The verification outcome.
 
         Returns:
-            Dictionary of custom reward components.
+            Dict[str, float]: Dictionary of custom reward components.
         """
         return {}
 
