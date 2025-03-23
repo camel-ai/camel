@@ -382,30 +382,89 @@ class FunctionTool:
                     f"{self.func.__name__}."
                 )
 
+    def _success_output(self, output: Any) -> Dict[str, Any]:
+        r"""Creates a successful toolkit output.
+
+        Args:
+            output (Any): The successful result of the tool call.
+
+        Returns:
+            Dict[str, Any]: A standardized success output dictionary.
+        """
+        return {
+            "status": "success",
+            "tool_call_output": output
+        }
+
+    def _fail_output(self, error_message: str) -> Dict[str, Any]:
+        r"""Creates a failed toolkit output.
+
+        Args:
+            error_message (str): The error message explaining the failure.
+
+        Returns:
+            Dict[str, Any]: A standardized failure output dictionary.
+        """
+        return {
+            "status": "fail",
+            "tool_call_output": "tool call failed",
+            "error_message": error_message
+        }
+
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         if self.synthesize_output:
-            result = self.synthesize_execution_output(args, kwargs)
-            return result
+            try:
+                result = self.synthesize_execution_output(args, kwargs)
+                return self._success_output(result)
+            except Exception as e:
+                error_msg = (
+                    f"Execution of synthetic function {self.func.__name__} "
+                    f"failed with arguments {args} and {kwargs}. "
+                    f"Error: {e}"
+                )
+                logger.error(error_msg)
+                return self._fail_output(error_msg)
         else:
             # Pass the extracted arguments to the indicated function
             try:
                 result = self.func(*args, **kwargs)
-                return result
+                return self._success_output(result)
             except Exception as e:
-                raise ValueError(
+                error_msg = (
                     f"Execution of function {self.func.__name__} failed with "
                     f"arguments {args} and {kwargs}. "
                     f"Error: {e}"
                 )
+                logger.error(error_msg)
+                return self._fail_output(error_msg)
 
     async def async_call(self, *args: Any, **kwargs: Any) -> Any:
         if self.synthesize_output:
-            result = self.synthesize_execution_output(args, kwargs)
-            return result
-        if self.is_async:
-            return await self.func(*args, **kwargs)
+            try:
+                result = self.synthesize_execution_output(args, kwargs)
+                return self._success_output(result)
+            except Exception as e:
+                error_msg = (
+                    f"Async execution of synthetic function {self.func.__name__} "
+                    f"failed with arguments {args} and {kwargs}. Error: {e}"
+                )
+                logger.error(error_msg)
+                return self._fail_output(error_msg)
         else:
-            return self.func(*args, **kwargs)
+            try:
+                if inspect.iscoroutinefunction(self.func):
+                    result = await self.func(*args, **kwargs)
+                    return self._success_output(result)
+                else:
+                    result = self.func(*args, **kwargs)
+                    return self._success_output(result)
+            except Exception as e:
+                error_msg = (
+                    f"Async execution of function {self.func.__name__} failed with "
+                    f"arguments {args} and {kwargs}. Error: {e}"
+                )
+                logger.error(error_msg)
+                return self._fail_output(error_msg)
 
     @property
     def is_async(self) -> bool:

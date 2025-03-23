@@ -1258,6 +1258,7 @@ class ChatAgent(BaseAgent):
         tool_call_request: ToolCallRequest,
     ) -> ToolCallingRecord:
         r"""Execute the tool with arguments following the model's response.
+        Includes retry logic for failed tool calls (up to 3 attempts).
 
         Args:
             tool_call_request (_ToolCallRequest): The tool call request.
@@ -1270,13 +1271,45 @@ class ChatAgent(BaseAgent):
         args = tool_call_request.args
         tool_call_id = tool_call_request.tool_call_id
         tool = self._internal_tools[func_name]
-        try:
-            result = tool(**args)
-        except Exception as e:
-            # Capture the error message to prevent framework crash
-            error_msg = f"Error executing tool '{func_name}': {e!s}"
-            result = {"error": error_msg}
-            logging.warning(error_msg)
+        
+        max_retries = 3
+        retries = 0
+        last_error = None
+        result = None
+        
+        while retries < max_retries:
+            try:
+                result_with_status = tool(**args)
+                
+                if isinstance(result_with_status, dict) and "status" in result_with_status:
+                    if result_with_status["status"] == "success":
+                        result = result_with_status["tool_call_output"]
+                        break
+                    else:
+                        last_error = result_with_status.get("error_message", "Unknown error")
+                        logging.warning(f"Tool '{func_name}' failed: {last_error}")
+                        retries += 1
+                        if retries < max_retries:
+                            logging.info(f"Retrying tool '{func_name}' (attempt {retries}/{max_retries})")
+                            continue
+                        else:
+                            result = result_with_status["tool_call_output"]
+                            break
+                else:
+                    result = result_with_status
+                    break
+                
+            except Exception as e:
+                last_error = f"Error executing tool '{func_name}': {e!s}"
+                logging.warning(last_error)
+                retries += 1
+                if retries >= max_retries:
+                    result = {"error": last_error}
+                    break
+                logging.info(f"Retrying tool '{func_name}' (attempt {retries}/{max_retries})")
+        
+        if retries == max_retries:
+            logging.error(f"Tool '{func_name}' failed after {max_retries} attempts. Final error: {last_error}")
 
         return self._record_tool_calling(func_name, args, result, tool_call_id)
 
@@ -1284,17 +1317,59 @@ class ChatAgent(BaseAgent):
         self,
         tool_call_request: ToolCallRequest,
     ) -> ToolCallingRecord:
+        r"""Execute the tool asynchronously with arguments following the model's response.
+        Includes retry logic for failed tool calls (up to 3 attempts).
+
+        Args:
+            tool_call_request (_ToolCallRequest): The tool call request.
+
+        Returns:
+            FunctionCallingRecord: A struct for logging information about this
+                function call.
+        """
         func_name = tool_call_request.tool_name
         args = tool_call_request.args
         tool_call_id = tool_call_request.tool_call_id
         tool = self._internal_tools[func_name]
-        try:
-            result = await tool.async_call(**args)
-        except Exception as e:
-            # Capture the error message to prevent framework crash
-            error_msg = f"Error executing async tool '{func_name}': {e!s}"
-            result = {"error": error_msg}
-            logging.warning(error_msg)
+        
+        max_retries = 3
+        retries = 0
+        last_error = None
+        result = None
+        
+        while retries < max_retries:
+            try:
+                result_with_status = await tool.async_call(**args)
+                
+                if isinstance(result_with_status, dict) and "status" in result_with_status:
+                    if result_with_status["status"] == "success":
+                        result = result_with_status["tool_call_output"]
+                        break
+                    else:
+                        last_error = result_with_status.get("error_message", "Unknown error")
+                        logging.warning(f"Tool '{func_name}' failed: {last_error}")
+                        retries += 1
+                        if retries < max_retries:
+                            logging.info(f"Retrying tool '{func_name}' (attempt {retries}/{max_retries})")
+                            continue
+                        else:
+                            result = result_with_status["tool_call_output"]
+                            break
+                else:
+                    result = result_with_status
+                    break
+                
+            except Exception as e:
+                last_error = f"Error executing async tool '{func_name}': {e!s}"
+                logging.warning(last_error)
+                retries += 1
+                if retries >= max_retries:
+                    result = {"error": last_error}
+                    break
+                logging.info(f"Retrying async tool '{func_name}' (attempt {retries}/{max_retries})")
+        
+        if retries == max_retries:
+            logging.error(f"Tool '{func_name}' failed after {max_retries} attempts. Final error: {last_error}")
 
         return self._record_tool_calling(func_name, args, result, tool_call_id)
 
