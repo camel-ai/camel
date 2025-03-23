@@ -89,7 +89,7 @@ async def test_multi_step_env_lifecycle():
     mock_extractor.extract.assert_called_once_with("Response 1")
 
     # Test second step
-    action2 = Action(index=0, llm_response="Response 2") 
+    action2 = Action(index=0, llm_response="Response 2")
     # FIXME: index set to 0 temporarily until we have batched MultiStep
     result2 = await env.step(action2)
     assert isinstance(result2, StepResult)
