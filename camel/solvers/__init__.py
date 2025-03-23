@@ -11,16 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from .base_generator import BaseGenerator
-from .few_shot_generator import FewShotGenerator
-from .generator_with_solver import GeneratorWithSolver
-from .models import DataPoint
-from .static_dataset import StaticDataset
+from .base import BaseSolver
+from .models import Puzzle, PuzzleDataLoader, SolverResult
 
 __all__ = [
-    "BaseGenerator",
-    "DataPoint",
-    "FewShotGenerator",
-    "StaticDataset",
-    "GeneratorWithSolver",
+    'Puzzle',
+    'PuzzleDataLoader',
+    'SolverResult',
+    'BaseSolver',
 ]
