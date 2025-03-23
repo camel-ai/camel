@@ -87,7 +87,7 @@ class BaseVerifier(ABC):
         self._memory_threshold: float = memory_threshold
         self._batch_processor: BatchProcessor = BatchProcessor()
 
-    async def setup(self) -> None:
+    async def setup(self, **kwargs) -> None:
         r"""Set up the verifier with necessary resources.
 
         Initializes:
@@ -113,7 +113,7 @@ class BaseVerifier(ABC):
                 f"batch_size={batch_size}, max_parallel={max_parallel}"
             )
 
-            await self._setup()
+            await self._setup(**kwargs)
             self._is_setup = True
 
         except Exception as e:
@@ -125,7 +125,7 @@ class BaseVerifier(ABC):
             raise RuntimeError(error_msg) from e
 
     @abstractmethod
-    async def _setup(self) -> None:
+    async def _setup(self, **kwargs) -> None:
         r"""Implement verifier-specific setup logic."""
         pass
 

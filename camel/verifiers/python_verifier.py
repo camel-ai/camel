@@ -17,6 +17,7 @@ import asyncio
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import venv
 from typing import List, Optional, Tuple
@@ -68,13 +69,21 @@ class PythonVerifier(BaseVerifier):
         else:  # Unix-like systems
             self.bin_dir = 'bin'
 
-    async def _setup(self) -> None:
-        r"""Set up a virtual environment for execution
-        and install required packages.
-        """
+    async def _setup(self, **kwargs) -> None:
+        r"""Set up a virtual environment and install required packages."""
+        uv = kwargs.get('uv', False)
+        if uv or self._is_uv_environment():
+            logger.info("[UV] Detected uv environment. Using uv for setup.")
+            self._setup_with_uv()
+            return
+
         self.venv_path = tempfile.mkdtemp()
-        venv.create(self.venv_path, with_pip=True)
-        logger.info(f"Virtual environment created at {self.venv_path}")
+        try:
+            venv.create(self.venv_path, with_pip=True)
+            logger.info(f"Virtual environment created at {self.venv_path}")
+        except Exception as e:
+            logger.error(f"Failed to create virtual environment: {e}")
+            raise
 
         venv_pip = os.path.join(self.venv_path, self.bin_dir, "pip")
 
@@ -86,7 +95,7 @@ class PythonVerifier(BaseVerifier):
                     capture_output=True,
                 )
                 logger.info(
-                    "Installed required packages:"
+                    "Installed required packages: "
                     f"{', '.join(self.required_packages)}"
                 )
             except subprocess.CalledProcessError as e:
@@ -94,6 +103,56 @@ class PythonVerifier(BaseVerifier):
                     "Failed to install required packages: "
                     f"{e.stderr.decode().strip()}"
                 )
+                raise
+
+    def _is_uv_environment(self) -> bool:
+        r"""Detect whether the current Python runtime is managed by uv."""
+        return "UV_CACHE_DIR" in os.environ or "uv" in sys.executable
+
+    def _setup_with_uv(self) -> None:
+        r"""Create virtual environment and install packages using uv."""
+        self.venv_path = tempfile.mkdtemp()
+        try:
+            subprocess.run(
+                ["uv", "venv", self.venv_path],
+                check=True,
+                capture_output=True,
+            )
+            logger.info(
+                f"[UV] Virtual environment created at {self.venv_path}"
+            )
+        except subprocess.CalledProcessError as e:
+            logger.error(
+                "[UV] Failed to create virtual environment:\n"
+                f"{e.stderr.decode().strip()}"
+            )
+            raise
+
+        if self.required_packages:
+            venv_python = os.path.join(self.venv_path, self.bin_dir, "python")
+            try:
+                subprocess.run(
+                    [
+                        "uv",
+                        "pip",
+                        "install",
+                        "--python",
+                        venv_python,
+                        *self.required_packages,
+                    ],
+                    check=True,
+                    capture_output=True,
+                )
+                logger.info(
+                    "[UV] Installed required packages via uv: "
+                    f"{', '.join(self.required_packages)}"
+                )
+            except subprocess.CalledProcessError as e:
+                logger.error(
+                    "[UV] Failed to install required packages via uv:\n"
+                    f"{e.stderr.decode().strip()}"
+                )
+                raise
 
     async def _cleanup(self) -> None:
         r"""Clean up the virtual environment."""
@@ -162,7 +221,7 @@ class PythonVerifier(BaseVerifier):
                     return VerificationResult(
                         status=VerificationOutcome.FAILURE,
                         result=str(sol_val),
-                        error_message="Output mismatch:"
+                        error_message="Output mismatch: "
                         f"{sol_val} != {gt_val}",
                     )
             else:
@@ -231,7 +290,7 @@ class PythonVerifier(BaseVerifier):
                         return VerificationResult(
                             status=VerificationOutcome.FAILURE,
                             result=sol_out,
-                            error_message="Output mismatch:"
+                            error_message="Output mismatch: "
                             f"{sol_val} != {gt_val}",
                         )
                 else:

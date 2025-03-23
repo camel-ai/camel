@@ -16,7 +16,7 @@ import asyncio
 from camel.verifiers import PythonVerifier
 
 verifier = PythonVerifier(required_packages=["numpy"])
-asyncio.run(verifier.setup())
+asyncio.run(verifier.setup(uv=True))
 
 numpy_test_code = """
 import numpy as np
