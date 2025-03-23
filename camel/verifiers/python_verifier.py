@@ -48,10 +48,10 @@ class PythonVerifier(BaseVerifier):
 
     def __init__(
         self,
-        extractor: Optional[BaseExtractor]= None,
+        extractor: Optional[BaseExtractor] = None,
         timeout: Optional[float] = 30.0,
         required_packages: Optional[List[str]] = None,
-        **kwargs
+        **kwargs,
     ):
         r"""Initializes the PythonVerifier.
 
