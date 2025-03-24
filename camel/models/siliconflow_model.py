@@ -90,19 +90,21 @@ class SiliconFlowModel(BaseModelBackend):
         Returns:
             bool: Whether the current model supports reasoning.
         """
-        model_str = (
-            str(self.model_type)
-            .lower()
-            .replace("-", "")
-            .replace("_", "")
-            .replace("/", "")
-        )
-        return "qwq" in model_str or "deepseekr1" in model_str
+        REASONING_MODELS = [
+            ModelType.SILICONFLOW_QWQ_32B,
+            ModelType.SILICONFLOW_DEEPSEEK_R1,
+            ModelType.SILICONFLOW_PRO_DEEPSEEK_R1,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_32B,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_14B,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_7B,
+        ]
+        return self.model_type in REASONING_MODELS
 
     def _post_handle_response(
         self, response: ChatCompletion
     ) -> ChatCompletion:
         r"""Handle reasoning content with <think> tags at the beginning."""
+        # Check if the model is a reasoning-capable model
         is_reasoning_model = self._is_reasoning_model()
 
         if (
