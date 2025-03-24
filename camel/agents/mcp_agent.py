@@ -61,9 +61,6 @@ TOOLS_PROMPT = """
 ## Available Tools:
 
 {tools}
-## Task:
-
-{task}
 """
 
 FINAL_RESPONSE_PROMPT = """
@@ -89,11 +86,16 @@ class MCPAgent(ChatAgent):
                 (default: :obj:`False`)
 
         """
+        if model_fc_available:
+            sys_prompt = "You are a helpful assitant."
+        else:
+            sys_prompt = SYS_PROMPT
+
         system_message = BaseMessage(
             role_name="MPCRouter",
             role_type=RoleType.ASSISTANT,
             meta_dict=None,
-            content=SYS_PROMPT,
+            content=sys_prompt,
         )
 
         super().__init__(system_message, model=model)
@@ -101,32 +103,40 @@ class MCPAgent(ChatAgent):
         self._mcp_toolkit = MCPToolkit(config_path=config_path)
         self._model_fc_available = model_fc_available
         self._text_tools = None
-
-    async def add_mcp_tools(self):
+    
+    async def connect(self):
         await self._mcp_toolkit.connect()
+
+    async def close(self):
+        await self._mcp_toolkit.disconnect()
+
+    def add_mcp_tools(self):
+        assert self._mcp_toolkit.is_connected, "Server is not connected." 
+        prompt = TextPrompt(TOOLS_PROMPT)
+        self._text_tools = prompt.format(
+            tools=self._mcp_toolkit.get_text_tools()
+        )
         if self._model_fc_available:
             tools = self._mcp_toolkit.get_tools()
             for tool in tools:
                 self.add_tool(tool)
-        else:
-            prompt = TextPrompt(TOOLS_PROMPT)
-            self._text_tools = prompt.format(
-                tools=self._mcp_toolkit.get_text_tools()
-            )
-
-    async def close(self):
-        await self._mcp_toolkit.disconnect()
+        
+    async def get_text_tools(self):
+        assert self._mcp_toolkit.is_connected, "Server is not connected." 
+        await self.add_mcp_tools()
+        return self._text_tools
 
     async def run(
         self,
         prompt: str,
     ):
-        if self._text_tools is None:
+        assert self._mcp_toolkit.is_connected, "Server is not connected." 
+        if self._model_fc_available:
             response = await self.astep(prompt)
             return response
         else:
-            task = self._text_tools.replace("{task}", prompt)
-            response = await self.astep(task)
+            task = f"## Task:\n  {prompt}"
+            response = await self.astep(self._text_tools + task) 
             content = response.msgs[0].content.lower()
 
             tool_calls = []

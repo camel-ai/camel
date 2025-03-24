@@ -31,7 +31,8 @@ async def main():
     mcp_agent = MCPAgent(
         config_path=str(config_path), model=model, model_fc_available=False
     )
-    await mcp_agent.add_mcp_tools()
+    await mcp_agent.connect()
+    mcp_agent.add_mcp_tools()
 
     user_msg = (
         "I have 5 boxes, each of them contiaining 50 apples, "
