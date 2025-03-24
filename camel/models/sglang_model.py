@@ -97,9 +97,16 @@ class SGLangModel(BaseModelBackend):
     def _start_server(self) -> None:
         try:
             if not self._url:
+                tool_call_flag = self.model_config_dict.get("tools")
+                tool_call_arg = (
+                    f"--tool-call-parser {self._api_key} "
+                    if tool_call_flag
+                    else ""
+                )
                 cmd = (
                     f"python -m sglang.launch_server "
                     f"--model-path {self.model_type} "
+                    f"{tool_call_arg}"
                     f"--port 30000 "
                     f"--host 0.0.0.0"
                 )
@@ -265,6 +272,19 @@ class SGLangModel(BaseModelBackend):
         """
         return self.model_config_dict.get('stream', False)
 
+    def __del__(self):
+        r"""Properly clean up resources when the model is destroyed."""
+        self.cleanup()
+
+    def cleanup(self):
+        r"""Terminate the server process and clean up resources."""
+        with self._lock:
+            if self.server_process:
+                _terminate_process(self.server_process)
+                self.server_process = None
+                self._client = None
+                logging.info("Server process terminated during cleanup.")
+
 
 # Below are helper functions from sglang.utils
 def _terminate_process(process):
@@ -304,7 +324,10 @@ def _kill_process_tree(
 
             # Sometime processes cannot be killed with SIGKILL
             # so we send an additional signal to kill them.
-            itself.send_signal(signal.SIGQUIT)
+            if hasattr(signal, "SIGQUIT"):
+                itself.send_signal(signal.SIGQUIT)
+            else:
+                itself.send_signal(signal.SIGTERM)
         except psutil.NoSuchProcess:
             pass
 
@@ -326,14 +349,18 @@ def _execute_shell_command(command: str) -> subprocess.Popen:
     return subprocess.Popen(parts, text=True, stderr=subprocess.STDOUT)
 
 
-def _wait_for_server(base_url: str, timeout: Optional[int] = None) -> None:
+def _wait_for_server(base_url: str, timeout: Optional[int] = 30) -> None:
     r"""Wait for the server to be ready by polling the /v1/models endpoint.
 
     Args:
-        base_url: The base URL of the server
-        timeout: Maximum time to wait in seconds. None means wait forever.
+        base_url (str): The base URL of the server
+        timeout (Optional[int]): Maximum time to wait in seconds.
+            (default: :obj:`30`)
     """
     import requests
+
+    # Set a default value if timeout is None
+    actual_timeout = 30 if timeout is None else timeout
 
     start_time = time.time()
     while True:
@@ -341,6 +368,7 @@ def _wait_for_server(base_url: str, timeout: Optional[int] = None) -> None:
             response = requests.get(
                 f"{base_url}/v1/models",
                 headers={"Authorization": "Bearer None"},
+                timeout=5,  # Add a timeout for the request itself
             )
             if response.status_code == 200:
                 time.sleep(5)
@@ -356,9 +384,15 @@ def _wait_for_server(base_url: str, timeout: Optional[int] = None) -> None:
                 )
                 break
 
-            if timeout and time.time() - start_time > timeout:
+            if time.time() - start_time > actual_timeout:
                 raise TimeoutError(
-                    "Server did not become ready within timeout period"
+                    f"Server did not become ready within "
+                    f"{actual_timeout} seconds"
                 )
-        except requests.exceptions.RequestException:
+        except (requests.exceptions.RequestException, TimeoutError) as e:
+            if time.time() - start_time > actual_timeout:
+                raise TimeoutError(
+                    f"Server did not become ready within "
+                    f"{actual_timeout} seconds: {e}"
+                )
             time.sleep(1)

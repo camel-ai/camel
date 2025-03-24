@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import List, Union
+from typing import List, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -45,6 +45,7 @@ class Relationship(BaseModel):
         subj (Node): The subject/source node of the relationship.
         obj (Node): The object/target node of the relationship.
         type (str):  The type of the relationship.
+        timestamp (str, optional): The timestamp of the relationship.
         properties (dict): Additional properties associated with the
             relationship.
     """
@@ -52,6 +53,7 @@ class Relationship(BaseModel):
     subj: Node
     obj: Node
     type: str = "Relationship"
+    timestamp: Optional[str] = None
     properties: dict = Field(default_factory=dict)
 
 

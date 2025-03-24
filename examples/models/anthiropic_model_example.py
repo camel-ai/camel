@@ -136,3 +136,47 @@ The script works by:
 3. Creating the transpose by iterating through columns first, then rows
 4. Formatting the result with proper brackets and commas
 '''  # noqa: E501
+
+# Tool calling
+from camel.agents import ChatAgent  # noqa: E402
+from camel.configs import AnthropicConfig  # noqa: E402
+from camel.models import ModelFactory  # noqa: E402
+from camel.toolkits import FunctionTool  # noqa: E402
+from camel.types import ModelPlatformType, ModelType  # noqa: E402
+
+
+def my_add(a: int, b: int) -> int:
+    """Add two numbers together and return the result."""
+    return a + b
+
+
+anthropic_model = ModelFactory.create(
+    model_platform=ModelPlatformType.ANTHROPIC,
+    model_type=ModelType.CLAUDE_3_5_SONNET,
+    model_config_dict=AnthropicConfig(temperature=0.2).as_dict(),
+)
+
+anthropic_agent = ChatAgent(
+    model=anthropic_model,
+    tools=[FunctionTool(my_add)],
+)
+
+print("Testing Anthropic agent with tool calling:")
+user_msg = "Use the tool my_add to calculate 2 + 2"
+response = anthropic_agent.step(user_msg)
+print(response.msgs[0].content)
+"""
+The result of adding 2 + 2 is 4.
+"""
+
+# Check if tool was called
+if response.info and response.info.get("tool_calls"):
+    print("Tool was called successfully!")
+    print(f"Tool calls: {response.info['tool_calls']}")
+else:
+    print("No tool calls were made.")
+
+"""
+Tool was called successfully!
+Tool calls: [ToolCallingRecord(tool_name='my_add', args={'a': 2, 'b': 2}, result=4, tool_call_id='toolu_01L1KV8GZtMEyHUGTudpMg5g')]
+"""  # noqa: E501

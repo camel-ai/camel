@@ -33,19 +33,23 @@ from .ollama_model import OllamaModel
 from .openai_audio_models import OpenAIAudioModels
 from .openai_compatible_model import OpenAICompatibleModel
 from .openai_model import OpenAIModel
+from .openrouter_model import OpenRouterModel
 from .qwen_model import QwenModel
 from .reka_model import RekaModel
 from .samba_model import SambaModel
 from .sglang_model import SGLangModel
+from .siliconflow_model import SiliconFlowModel
 from .stub_model import StubModel
 from .togetherai_model import TogetherAIModel
 from .vllm_model import VLLMModel
+from .volcano_model import VolcanoModel
 from .yi_model import YiModel
 from .zhipuai_model import ZhipuAIModel
 
 __all__ = [
     'BaseModelBackend',
     'OpenAIModel',
+    'OpenRouterModel',
     'AzureOpenAIModel',
     'AnthropicModel',
     'MistralModel',
@@ -76,4 +80,6 @@ __all__ = [
     'MoonshotModel',
     'AIMLModel',
     'BaseAudioModel',
+    'SiliconFlowModel',
+    'VolcanoModel',
 ]

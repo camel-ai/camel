@@ -62,6 +62,8 @@ jobs:
         MOONSHOT_API_KEY: "${{ secrets.MOONSHOT_API_KEY }}"
         SILICONFLOW_API_KEY: "${{ secrets.SILICONFLOW_API_KEY }}"
         AIML_API_KEY: "${{ secrets.AIML_API_KEY }}"
+        VOLCANO_API_KEY: "${{ secrets.VOLCANO_API_KEY }}"
+        OPENROUTER_API_KEY: "${{ secrets.OPENROUTER_API_KEY }}"
       run: |
         source .venv/bin/activate
         uv pip install -e ".[all, dev, docs]"
@@ -116,6 +118,8 @@ jobs:
         MOONSHOT_API_KEY: "${{ secrets.MOONSHOT_API_KEY }}"
         SILICONFLOW_API_KEY: "${{ secrets.SILICONFLOW_API_KEY }}"
         AIML_API_KEY: "${{ secrets.AIML_API_KEY }}"
+        VOLCANO_API_KEY: "${{ secrets.VOLCANO_API_KEY }}"
+        OPENROUTER_API_KEY: "${{ secrets.OPENROUTER_API_KEY }}"
       run: |
         source .venv/bin/activate
         uv pip install -e ".[all, dev, docs]"
@@ -168,6 +172,8 @@ jobs:
         INTERNLM_API_KEY: "${{ secrets.INTERNLM_API_KEY }}"
         JINA_API_KEY: "${{ secrets.JINA_API_KEY }}"
         MOONSHOT_API_KEY: "${{ secrets.MOONSHOT_API_KEY }}"
+        VOLCANO_API_KEY: "${{ secrets.VOLCANO_API_KEY }}"
+        OPENROUTER_API_KEY: "${{ secrets.OPENROUTER_API_KEY }}"
       run: |
         source .venv/bin/activate
         uv pip install -e ".[all, dev, docs]"
