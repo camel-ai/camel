@@ -86,27 +86,28 @@ class SiliconFlowModel(BaseModelBackend):
     def _is_reasoning_model(self) -> bool:
         r"""Check if the current model_type is a reasoning-capable model.
         Currently supports QwQ and DeepSeek-R1 series models.
-        
+
         Returns:
             bool: Whether the current model supports reasoning.
         """
         model_str = (
-            str(self.model_type).lower()
+            str(self.model_type)
+            .lower()
             .replace("-", "")
             .replace("_", "")
             .replace("/", "")
         )
         return "qwq" in model_str or "deepseekr1" in model_str
-        
+
     def _post_handle_response(
         self, response: ChatCompletion
     ) -> ChatCompletion:
         r"""Handle reasoning content with <think> tags at the beginning."""
         is_reasoning_model = self._is_reasoning_model()
-        
+
         if (
             is_reasoning_model
-            and os.environ.get("GET_REASONING_CONTENT", "false").lower() 
+            and os.environ.get("GET_REASONING_CONTENT", "false").lower()
             == "true"
         ):
             # get reasoning content from response safely
@@ -163,7 +164,7 @@ class SiliconFlowModel(BaseModelBackend):
             model=self.model_type,
             **self.model_config_dict,
         )
-        
+
         return self._post_handle_response(response)
 
     async def _arun(
