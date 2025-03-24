@@ -170,7 +170,7 @@ class ChatAgent(BaseAgent):
         # Handle single enum model or string model specification
         # e.g. ModelType.GPT_4O_MINI or "gpt-4o-mini"
         if isinstance(model, (ModelType, str)):
-            # Default to OpenAI platform
+            # Use the default model platform
             model_platform = ModelPlatformType.DEFAULT
             model_type = model
             model = ModelFactory.create(
