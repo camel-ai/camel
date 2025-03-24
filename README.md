@@ -194,7 +194,7 @@ This example demonstrates how to create a `ChatAgent` using the CAMEL framework 
 1. **Install the tools package:**
 
   ```bash
-  pip install 'camel-ai[tools]'
+  pip install 'camel-ai[web_tools]'
   ```
 
 2. **Set up your OpenAI API key:**
@@ -208,17 +208,17 @@ This example demonstrates how to create a `ChatAgent` using the CAMEL framework 
   ```python
   from camel.models import ModelFactory
   from camel.types import ModelPlatformType, ModelType
-  from camel.configs import ChatGPTConfig
+  from camel.configs import BaseConfig
   from camel.agents import ChatAgent
-  from camel.toolkits import FunctionTool, SearchToolkit
+  from camel.toolkits import SearchToolkit
 
   model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
     model_type=ModelType.GPT_4O,
-    model_config_dict=ChatGPTConfig().as_dict(),
+    model_config_dict=BaseConfig().as_dict(),
   )
 
-  search_tool = FunctionTool(SearchToolkit().search_duckduckgo)
+  search_tool = SearchToolkit().search_duckduckgo
 
   agent = ChatAgent(model=model, tools=[search_tool])
 
