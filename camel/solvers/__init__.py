@@ -12,11 +12,11 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from .base import BaseSolver
-from .models import Puzzle, PuzzleDataLoader, SolverResult
+from .models import Puzzle, PuzzleDataLoader, PuzzleSolverResult
 
 __all__ = [
     'Puzzle',
     'PuzzleDataLoader',
-    'SolverResult',
+    'PuzzleSolverResult',
     'BaseSolver',
 ]

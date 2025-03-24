@@ -15,6 +15,7 @@
 import asyncio
 import os
 import tempfile
+from pathlib import Path
 from typing import Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -23,20 +24,20 @@ import pytest
 from camel.datasets.generator_with_solver import GeneratorWithSolver
 from camel.datasets.models import DataPoint
 from camel.solvers.base import BaseSolver
-from camel.solvers.models import Puzzle, SolverResult
+from camel.solvers.models import Puzzle, PuzzleSolverResult
 from camel.verifiers.base import BaseVerifier
 from camel.verifiers.models import VerificationOutcome, VerificationResult
 
 
 # Mock implementation of a solver for testing
 class MockSolver(BaseSolver):
-    def solve_puzzle(self, puzzle: Puzzle) -> SolverResult:
-        return SolverResult(
-            puzzle_id=puzzle.id,
-            puzzle=puzzle,
-            puzzle_hash="mock_hash",
+    def solve(self, input_data: Puzzle) -> PuzzleSolverResult:
+        return PuzzleSolverResult(
+            input_id=input_data.id,
+            input_data=input_data,
+            input_hash="mock_hash",
             code="mock_code",
-            execution_result="mock_solution",
+            output_data="mock_solution",
             success=True,
             metadata={"mock_key": "mock_value"},
         )
@@ -63,7 +64,7 @@ class MockVerifier(BaseVerifier):
 
 # Mock implementation of a generator with solver for testing
 class MockGeneratorWithSolver(GeneratorWithSolver):
-    async def generate_puzzle(self, **kwargs) -> Puzzle:
+    async def generate_input(self, **kwargs) -> Puzzle:
         return Puzzle(
             id="mock_id",
             title="Mock Puzzle",
@@ -72,6 +73,26 @@ class MockGeneratorWithSolver(GeneratorWithSolver):
             metadata={"difficulty": "easy"},
             ground_truth_solution="mock_ground_truth",
         )
+
+
+# Mock implementation that raises an exception during input generation
+class ErrorGeneratorWithSolver(GeneratorWithSolver):
+    async def generate_input(self, **kwargs) -> Puzzle:
+        raise ValueError("Mock error during input generation")
+
+
+# Mock implementation that raises an exception during verification
+class MockVerifierWithError(BaseVerifier):
+    async def _setup(self, **kwargs) -> None:
+        pass
+
+    async def _cleanup(self) -> None:
+        pass
+
+    async def _verify_implementation(
+        self, solution: str, ground_truth: Optional[str]
+    ) -> VerificationResult:
+        raise ValueError("Mock error during verification")
 
 
 @pytest.mark.asyncio
@@ -138,12 +159,12 @@ async def test_process_solution():
         ground_truth_solution="expected_solution",
     )
 
-    solver_result = SolverResult(
-        puzzle_id=puzzle.id,
-        puzzle=puzzle,
-        puzzle_hash="test_hash",
+    solver_result = PuzzleSolverResult(
+        input_id=puzzle.id,
+        input_data=puzzle,
+        input_hash="test_hash",
         code="test_code",
-        execution_result="actual_solution",
+        output_data="actual_solution",
         success=True,
         metadata={"solver_key": "solver_value"},
     )
@@ -154,13 +175,49 @@ async def test_process_solution():
     assert data_point.question == puzzle.problem
     assert data_point.final_answer == "actual_solution"
     assert data_point.rationale == puzzle.ground_truth_solution
-    assert data_point.metadata["puzzle_id"] == puzzle.id
-    assert data_point.metadata["puzzle_title"] == puzzle.title
-    assert data_point.metadata["puzzle_source"] == puzzle.source
+    assert data_point.metadata["input_id"] == puzzle.id
+    assert data_point.metadata["input_title"] == puzzle.title
+    assert data_point.metadata["input_source"] == puzzle.source
     assert data_point.metadata["solver_success"] is True
     assert data_point.metadata["test_key"] == "test_value"
     assert data_point.metadata["solver_key"] == "solver_value"
     assert data_point.metadata["solution_code"] == "test_code"
+
+    # Test with a non-puzzle input (more general case)
+    custom_input = Puzzle(
+        id="custom_id",
+        title="Custom Puzzle",
+        problem="Custom problem",
+        source="custom_source",
+        metadata={"custom_key": "custom_value"},
+    )
+
+    custom_result = PuzzleSolverResult(
+        input_id="custom_id",
+        input_data=custom_input,  # Using a Puzzle object
+        input_hash="custom_hash",
+        code="custom_code",
+        output_data="custom_solution",
+        success=True,
+        metadata={"solver_custom_key": "solver_custom_value"},
+    )
+
+    custom_data_point = await generator._process_solution(custom_result)
+
+    assert isinstance(custom_data_point, DataPoint)
+    assert custom_data_point.question == custom_input.problem
+    assert custom_data_point.final_answer == "custom_solution"
+    assert custom_data_point.rationale is None
+    assert custom_data_point.metadata["input_id"] == "custom_id"
+    assert custom_data_point.metadata["input_title"] == "Custom Puzzle"
+    assert custom_data_point.metadata["input_source"] == "custom_source"
+    assert custom_data_point.metadata["solver_success"] is True
+    assert custom_data_point.metadata["custom_key"] == "custom_value"
+    assert (
+        custom_data_point.metadata["solver_custom_key"]
+        == "solver_custom_value"
+    )
+    assert custom_data_point.metadata["solution_code"] == "custom_code"
 
 
 @pytest.mark.asyncio
@@ -235,19 +292,63 @@ async def test_generate_new_with_verification_failure():
 
 
 @pytest.mark.asyncio
+async def test_generate_new_with_verification_error():
+    r"""Test generation with verification error."""
+    solver = MockSolver()
+    verifier = MockVerifier()
+
+    # Patch the verify method to raise an exception
+    async def verify_with_error(*args, **kwargs):
+        raise ValueError("Mock verification error")
+
+    verifier.verify = verify_with_error
+
+    generator = MockGeneratorWithSolver(solver=solver, verifier=verifier)
+
+    data_points = await generator.generate_new(1)
+
+    assert len(data_points) == 1
+    assert "verification_error" in data_points[0].metadata
+    assert data_points[0].metadata["solver_success"] is False
+
+
+@pytest.mark.asyncio
+async def test_generate_new_with_input_error():
+    r"""Test generation with input generation error."""
+    solver = MockSolver()
+    generator = ErrorGeneratorWithSolver(solver=solver)
+
+    data_points = await generator.generate_new(1)
+
+    assert len(data_points) == 0
+
+
+@pytest.mark.asyncio
 async def test_cleanup():
     r"""Test proper cleanup of resources."""
     solver = MockSolver()
     verifier = MockVerifier()
     verifier.cleanup = AsyncMock()
 
-    generator = GeneratorWithSolver(solver=solver, verifier=verifier)
-    generator._verifier_setup = True
+    # Create a temporary file to test cache cleanup
+    with tempfile.TemporaryDirectory() as temp_dir:
+        cache_path = Path(os.path.join(temp_dir, "cache.jsonl"))
 
-    await generator.cleanup()
+        generator = GeneratorWithSolver(
+            solver=solver, verifier=verifier, cache=cache_path
+        )
+        generator._verifier_setup = True
 
-    verifier.cleanup.assert_called_once()
-    assert generator._verifier_setup is False
+        # Create a temp file to simulate a partial write
+        temp_file = cache_path.with_suffix('.tmp')
+        with open(temp_file, 'w') as f:
+            f.write("test")
+
+        await generator.cleanup()
+
+        verifier.cleanup.assert_called_once()
+        assert generator._verifier_setup is False
+        assert not temp_file.exists()  # Temp file should be cleaned up
 
     # Test cleanup when verifier is not set up
     verifier.cleanup.reset_mock()
@@ -262,7 +363,7 @@ async def test_cleanup():
 async def test_cache_functionality():
     r"""Test that caching works correctly."""
     with tempfile.TemporaryDirectory() as temp_dir:
-        cache_path = os.path.join(temp_dir, "cache.jsonl")
+        cache_path = Path(os.path.join(temp_dir, "cache.jsonl"))
 
         solver = MockSolver()
         generator = MockGeneratorWithSolver(solver=solver, cache=cache_path)
@@ -271,7 +372,7 @@ async def test_cache_functionality():
         await generator.generate_new(2)
 
         # Check that the cache file exists
-        assert os.path.exists(cache_path)
+        assert cache_path.exists()
 
         # Create a new generator with the same cache
         new_generator = MockGeneratorWithSolver(
@@ -283,30 +384,57 @@ async def test_cache_functionality():
 
 
 @pytest.mark.asyncio
+async def test_cache_error_handling():
+    r"""Test that cache errors are handled gracefully."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        cache_path = Path(os.path.join(temp_dir, "cache.jsonl"))
+
+        # Make the directory read-only after creation
+        os.chmod(temp_dir, 0o555)
+
+        try:
+            solver = MockSolver()
+            generator = MockGeneratorWithSolver(
+                solver=solver, cache=cache_path
+            )
+
+            # This should not raise an exception even though writing to cache
+            # will fail
+            data_points = await generator.generate_new(1)
+
+            assert len(data_points) == 1
+            # Cache file should not exist due to permissions
+            assert not cache_path.exists()
+        finally:
+            # Restore permissions to allow cleanup
+            os.chmod(temp_dir, 0o755)
+
+
+@pytest.mark.asyncio
 async def test_abstract_method_implementation():
     r"""Test that abstract methods must be implemented."""
     solver = MockSolver()
     generator = GeneratorWithSolver(solver=solver)
 
     with pytest.raises(NotImplementedError):
-        await generator.generate_puzzle()
+        await generator.generate_input()
 
 
 @pytest.mark.asyncio
 async def test_run_in_executor():
-    r"""Test that solve_puzzle is run in an executor."""
+    r"""Test that solve method is run in an executor."""
     solver = MockSolver()
-    solver.solve_puzzle = MagicMock(
-        return_value=SolverResult(
-            puzzle_id="test_id",
-            puzzle=Puzzle(
+    solver.solve = MagicMock(
+        return_value=PuzzleSolverResult(
+            input_id="test_id",
+            input_data=Puzzle(
                 id="test_id",
                 title="Test Puzzle",
                 problem="Test Problem",
                 source="test_source",
                 metadata={},
             ),
-            puzzle_hash="test_hash",
+            input_hash="test_hash",
             success=True,
         )
     )
@@ -318,16 +446,16 @@ async def test_run_in_executor():
         mock_get_loop.return_value = mock_loop
         mock_loop.run_in_executor.return_value = asyncio.Future()
         mock_loop.run_in_executor.return_value.set_result(
-            SolverResult(
-                puzzle_id="test_id",
-                puzzle=Puzzle(
+            PuzzleSolverResult(
+                input_id="test_id",
+                input_data=Puzzle(
                     id="test_id",
                     title="Test Puzzle",
                     problem="Test Problem",
                     source="test_source",
                     metadata={},
                 ),
-                puzzle_hash="test_hash",
+                input_hash="test_hash",
                 success=True,
             )
         )

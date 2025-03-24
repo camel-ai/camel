@@ -14,27 +14,32 @@
 
 import asyncio
 import json
+import os
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import Generic, List, Optional, TypeVar, Union
 
 from camel.logger import get_logger
 from camel.solvers.base import BaseSolver
-from camel.solvers.models import Puzzle, SolverResult
+from camel.solvers.models import BaseSolverResult
 from camel.verifiers.base import BaseVerifier
+from camel.verifiers.models import VerificationOutcome
 
 from .base_generator import BaseGenerator
 from .models import DataPoint
 
 logger = get_logger(__name__)
 
+InputType = TypeVar('InputType')
+OutputType = TypeVar('OutputType')
 
-class GeneratorWithSolver(BaseGenerator):
+
+class GeneratorWithSolver(BaseGenerator, Generic[InputType, OutputType]):
     r"""A generator that uses a solver to generate data points.
 
-    This generator leverages a puzzle solver to generate data points. It can
+    This generator leverages a solver to generate data points. It can
     optionally use a verifier to validate the solutions produced by the solver.
 
-    The generator creates puzzles, solves them using the provided solver, and
+    The generator creates inputs, solves them using the provided solver, and
     optionally verifies the solutions using the provided verifier.
     """
 
@@ -80,59 +85,72 @@ class GeneratorWithSolver(BaseGenerator):
             await self.verifier.setup()
             self._verifier_setup = True
 
-    async def generate_puzzle(self, **kwargs) -> Puzzle:
-        r"""Generate a puzzle to be solved.
+    async def generate_input(self, **kwargs) -> InputType:
+        r"""Generate an input to be solved.
 
-        This method should be implemented by subclasses to generate puzzles
+        This method should be implemented by subclasses to generate inputs
         appropriate for the specific solver being used.
 
         Args:
             **kwargs: Additional generation parameters.
 
         Returns:
-            Puzzle: A newly generated puzzle.
+            InputType: A newly generated input.
 
         Raises:
             NotImplementedError: This method must be implemented by subclasses.
         """
-        raise NotImplementedError(
-            "Subclasses must implement generate_puzzle()"
-        )
+        raise NotImplementedError("Subclasses must implement generate_input()")
 
     async def _process_solution(
-        self, solver_result: SolverResult
+        self, solver_result: BaseSolverResult
     ) -> DataPoint:
         r"""Process a solver result into a data point.
 
         Args:
-            solver_result (SolverResult): The result from the solver.
+            solver_result (BaseSolverResult): The result from the solver.
 
         Returns:
             DataPoint: A data point created from the solver result.
         """
-        # Extract the puzzle and solution from the solver result
-        puzzle = solver_result.puzzle
-        solution = solver_result.execution_result or ""
+        # Extract the input and solution from the solver result
+        input_data = solver_result.input_data
+        solution = solver_result.output_data or ""
 
-        # Create metadata combining puzzle metadata and solver metadata
+        # Create metadata combining input metadata and solver metadata
         metadata = {
-            "puzzle_id": puzzle.id,
-            "puzzle_title": puzzle.title,
-            "puzzle_source": puzzle.source,
             "solver_success": solver_result.success,
-            **puzzle.metadata,
             **solver_result.metadata,
         }
+
+        # Add input-related metadata if available
+        if hasattr(input_data, "metadata") and input_data.metadata:
+            metadata.update(input_data.metadata or {})
+
+        # Add input ID if available
+        if hasattr(input_data, "id"):
+            metadata["input_id"] = input_data.id
+
+        # Add any additional attributes from input_data that might be useful
+        for attr in ["title", "source"]:
+            if hasattr(input_data, attr):
+                value = getattr(input_data, attr)
+                if value is not None:
+                    metadata[f"input_{attr}"] = value
 
         # If code is available, add it to metadata
         if solver_result.code:
             metadata["solution_code"] = solver_result.code
 
+        # Get the problem statement and ground truth if available
+        question = getattr(input_data, "problem", str(input_data))
+        rationale = getattr(input_data, "ground_truth_solution", "")
+
         # Create the data point
         return DataPoint(
-            question=puzzle.problem,
+            question=question,
             final_answer=solution,
-            rationale=puzzle.ground_truth_solution,
+            rationale=rationale,
             metadata=metadata,
         )
 
@@ -151,43 +169,93 @@ class GeneratorWithSolver(BaseGenerator):
 
         data_points = []
         for _ in range(n):
-            # Generate a puzzle
-            puzzle = await self.generate_puzzle(**kwargs)
+            try:
+                # Generate an input
+                input_data = await self.generate_input(**kwargs)
 
-            # Solve the puzzle using a thread pool to avoid blocking the event
-            # loop
-            loop = asyncio.get_event_loop()
-            solver_result = await loop.run_in_executor(
-                None, self.solver.solve_puzzle, puzzle
-            )
-
-            # Verify the solution if a verifier is available
-            if self.verifier and solver_result.execution_result:
-                verification_result = await self.verifier.verify(
-                    solver_result.execution_result,
-                    puzzle.ground_truth_solution,
+                # Solve the input using a thread pool to avoid blocking the
+                # event loop
+                loop = asyncio.get_event_loop()
+                solver_result = await loop.run_in_executor(
+                    None, self.solver.solve, input_data
                 )
 
-                # Update solver result metadata with verification results
-                solver_result.metadata["verification"] = {
-                    "status": verification_result.status.name.upper(),
-                    "duration": verification_result.duration,
-                }
+                # Verify the solution if a verifier is available
+                if self.verifier and solver_result.output_data:
+                    # Get the ground truth if available, otherwise pass None
+                    ground_truth = getattr(
+                        input_data, "ground_truth_solution", None
+                    )
 
-                # Update success flag based on verification
-                solver_result.success = (
-                    verification_result.status.name.upper() == "SUCCESS"
-                )
+                    try:
+                        verification_result = await self.verifier.verify(
+                            solver_result.output_data,
+                            ground_truth,
+                        )
 
-            # Process the solver result into a data point
-            data_point = await self._process_solution(solver_result)
-            data_points.append(data_point)
+                        # Update solver result metadata with verification
+                        # results
+                        solver_result.metadata["verification"] = {
+                            "status": verification_result.status.name.upper(),
+                            "duration": verification_result.duration,
+                        }
 
-            # Save to cache if cache path is provided
-            if self.cache:
-                with self.cache.open("a", encoding="utf-8") as f:
-                    json.dump(data_point.to_dict(), f, ensure_ascii=False)
-                    f.write("\n")
+                        # Update success flag based on verification
+                        solver_result.success = (
+                            verification_result.status
+                            == VerificationOutcome.SUCCESS
+                        )
+                    except Exception as e:
+                        logger.error(f"Verification failed with error: {e!s}")
+                        solver_result.metadata["verification_error"] = str(e)
+                        solver_result.success = False
+
+                # Process the solver result into a data point
+                data_point = await self._process_solution(solver_result)
+                data_points.append(data_point)
+
+                # Save to cache if cache path is provided
+                if self.cache:
+                    # Use file locking to prevent race conditions
+                    cache_file = self.cache
+                    temp_file = cache_file.with_suffix('.tmp')
+                    try:
+                        with temp_file.open("w", encoding="utf-8") as f:
+                            json.dump(
+                                data_point.to_dict(), f, ensure_ascii=False
+                            )
+                            f.write("\n")
+                        # Atomic rename operation to avoid partial writes
+                        if os.name == 'nt':  # Windows
+                            if cache_file.exists():
+                                with cache_file.open(
+                                    "a", encoding="utf-8"
+                                ) as f:
+                                    with temp_file.open(
+                                        "r", encoding="utf-8"
+                                    ) as temp:
+                                        f.write(temp.read())
+                            else:
+                                temp_file.rename(cache_file)
+                        else:  # Unix-like systems
+                            temp_file.rename(
+                                cache_file
+                            ) if not cache_file.exists() else temp_file.open(
+                                "r"
+                            ).read() and cache_file.open("a").write(
+                                temp_file.open("r").read()
+                            )
+                    except Exception as e:
+                        logger.error(f"Failed to write to cache: {e!s}")
+                    finally:
+                        if temp_file.exists():
+                            try:
+                                temp_file.unlink()
+                            except Exception:
+                                pass
+
+            except Exception as e:
+                logger.error(f"Data point generation failed with error: {e!s}")
 
         return data_points
 
@@ -196,3 +264,12 @@ class GeneratorWithSolver(BaseGenerator):
         if self.verifier and self._verifier_setup:
             await self.verifier.cleanup()
             self._verifier_setup = False
+
+        # Clean up any temporary files that might have been created
+        if self.cache:
+            temp_file = self.cache.with_suffix('.tmp')
+            if temp_file.exists():
+                try:
+                    temp_file.unlink()
+                except Exception:
+                    pass

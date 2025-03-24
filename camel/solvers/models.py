@@ -15,14 +15,19 @@
 from typing import (
     Any,
     Dict,
+    Generic,
     Iterator,
     List,
     Optional,
     Protocol,
+    TypeVar,
     runtime_checkable,
 )
 
 from pydantic import BaseModel, Field
+
+InputType = TypeVar('InputType')
+OutputType = TypeVar('OutputType')
 
 
 class Puzzle(BaseModel):
@@ -116,37 +121,43 @@ class PuzzleDataLoader(Protocol):
         ...
 
 
-class SolverResult(BaseModel):
-    r"""Result of a puzzle solving operation.
+class BaseSolverResult(BaseModel, Generic[InputType, OutputType]):
+    r"""Base model for all solver results.
+
+    This generic class provides a standardized structure for results from any
+    solver, regardless of the specific domain (puzzles, math problems, code
+    generation, etc.).
 
     Attributes:
-        puzzle_id (str): Unique identifier for the puzzle being solved.
-        puzzle (Puzzle): The puzzle object being solved.
-        puzzle_hash (str): Hash of the puzzle for verification purposes.
-        code (Optional[str]): The code or solution approach used to solve the
-            puzzle. (default: :obj:`None`)
-        execution_result (Optional[str]): The result of executing the solution
-            code. (default: :obj:`None`)
+        input_id (str): Unique identifier for the input being processed.
+        input_data (InputType): The input data that was processed.
+        input_hash (str): Hash of the input for verification purposes.
+        code (Optional[str]): The code or approach used to solve the problem.
+            (default: :obj:`None`)
+        output_data (Optional[OutputType]): The result of executing the
+            solution. (default: :obj:`None`)
         success (bool): Whether the solution was successful. (default:
             :obj:`False`)
         metadata (Dict[str, Any]): Additional metadata about the solving
             process. (default: empty dict)
     """
 
-    puzzle_id: str = Field(
-        ..., description="Unique identifier for the puzzle being solved."
+    input_id: str = Field(
+        ..., description="Unique identifier for the input being processed."
     )
-    puzzle: Puzzle = Field(..., description="The puzzle object being solved.")
-    puzzle_hash: str = Field(
-        ..., description="Hash of the puzzle for verification purposes."
+    input_data: InputType = Field(
+        ..., description="The input data that was processed."
+    )
+    input_hash: str = Field(
+        ..., description="Hash of the input for verification purposes."
     )
 
     code: Optional[str] = Field(
         default=None,
-        description="The code or solution approach used to solve the puzzle.",
+        description="The code or approach used to solve the problem.",
     )
-    execution_result: Optional[str] = Field(
-        default=None, description="The result of executing the solution code."
+    output_data: Optional[OutputType] = Field(
+        default=None, description="The result of executing the solution."
     )
     success: bool = Field(
         default=False, description="Whether the solution was successful."
@@ -155,3 +166,61 @@ class SolverResult(BaseModel):
         default_factory=dict,
         description="Additional metadata about the solving process.",
     )
+
+
+class PuzzleSolverResult(BaseSolverResult[Puzzle, str]):
+    r"""Result of a puzzle solving operation.
+
+    This class extends BaseSolverResult with puzzle-specific functionality
+    while maintaining backward compatibility with existing code.
+
+    Attributes:
+        input_id (str): Unique identifier for the puzzle being solved.
+        input_data (Puzzle): The puzzle object being solved.
+        input_hash (str): Hash of the puzzle for verification purposes.
+        code (Optional[str]): The code or solution approach used to solve the
+            puzzle. (default: :obj:`None`)
+        output_data (Optional[str]): The result of executing the solution code.
+            (default: :obj:`None`)
+        success (bool): Whether the solution was successful. (default:
+            :obj:`False`)
+        metadata (Dict[str, Any]): Additional metadata about the solving
+            process. (default: empty dict)
+    """
+
+    # For backward compatibility
+    @property
+    def puzzle_id(self) -> str:
+        r"""Get the puzzle ID (alias for input_id).
+
+        Returns:
+            str: The puzzle ID.
+        """
+        return self.input_id
+
+    @property
+    def puzzle(self) -> Puzzle:
+        r"""Get the puzzle object (alias for input_data).
+
+        Returns:
+            Puzzle: The puzzle object.
+        """
+        return self.input_data
+
+    @property
+    def puzzle_hash(self) -> str:
+        r"""Get the puzzle hash (alias for input_hash).
+
+        Returns:
+            str: The puzzle hash.
+        """
+        return self.input_hash
+
+    @property
+    def execution_result(self) -> Optional[str]:
+        r"""Get the execution result (alias for output_data).
+
+        Returns:
+            Optional[str]: The execution result.
+        """
+        return self.output_data

@@ -14,34 +14,62 @@
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Optional, Protocol, runtime_checkable
+from typing import Any, Dict, Generic, Optional, TypeVar
 
-from .models import Puzzle, PuzzleDataLoader, SolverResult
+from .models import Puzzle, PuzzleDataLoader, PuzzleSolverResult
+
+InputType = TypeVar('InputType')
+OutputType = TypeVar('OutputType')
 
 
-@runtime_checkable
-class PuzzleSolver(Protocol):
-    r"""Protocol for puzzle solvers.
+class BaseSolver(ABC, Generic[InputType, OutputType]):
+    r"""Abstract base class for general solvers.
 
-    This protocol defines the interface that all puzzle solvers must implement,
-    providing a standard way to solve puzzles regardless of the underlying
-    implementation.
+    This class provides a foundation for implementing solvers with
+    common functionality such as data loading and result storage.
     """
 
-    def solve_puzzle(self, puzzle: Puzzle) -> SolverResult:
-        r"""Solve a single puzzle.
+    def __init__(
+        self,
+        data_loader: Optional[Any] = None,
+        model_name: Optional[str] = None,
+        output_dir: Optional[str] = None,
+        **kwargs: Dict[str, Any],
+    ):
+        r"""Initialize the solver.
 
         Args:
-            puzzle (Puzzle): The puzzle to solve.
+            data_loader (Optional[Any]): Data loader to use for
+                loading input data. (default: :obj:`None`)
+            model_name (Optional[str]): Name of the model to use (if
+                applicable). (default: :obj:`None`)
+            output_dir (Optional[str]): Directory to save results to.
+                (default: :obj:`"output"`)
+            **kwargs: Additional keyword arguments for specific solver
+                implementations.
+        """
+        self.data_loader = data_loader
+        self.model_name = model_name
+        self.output_dir = Path(output_dir) if output_dir else Path("output")
+        self.output_dir.mkdir(exist_ok=True)
+
+        # Store additional configuration parameters
+        self.config = kwargs
+
+    @abstractmethod
+    def solve(self, input_data: InputType) -> OutputType:
+        r"""Solve a problem.
+
+        Args:
+            input_data (InputType): The input data for the problem.
 
         Returns:
-            SolverResult: Solution result containing puzzle data, code,
-                execution result, and success status.
+            OutputType: The solution result.
         """
-        ...
+        pass
 
 
-class BaseSolver(ABC, PuzzleSolver):
+class BasePuzzleSolver(BaseSolver[Puzzle, PuzzleSolverResult]):
     r"""Abstract base class for puzzle solvers.
 
     This class provides a foundation for implementing puzzle solvers with
@@ -53,8 +81,9 @@ class BaseSolver(ABC, PuzzleSolver):
         data_loader: Optional[PuzzleDataLoader] = None,
         model_name: Optional[str] = None,
         output_dir: Optional[str] = None,
+        **kwargs: Dict[str, Any],
     ):
-        r"""Initialize the solver.
+        r"""Initialize the puzzle solver.
 
         Args:
             data_loader (Optional[PuzzleDataLoader]): Data loader to use for
@@ -63,21 +92,19 @@ class BaseSolver(ABC, PuzzleSolver):
                 applicable). (default: :obj:`None`)
             output_dir (Optional[str]): Directory to save results to.
                 (default: :obj:`"output"`)
+            **kwargs: Additional keyword arguments for specific puzzle solver
+                implementations.
         """
-        self.data_loader = data_loader
-        self.model_name = model_name
-        self.output_dir = Path(output_dir) if output_dir else Path("output")
-        self.output_dir.mkdir(exist_ok=True)
+        super().__init__(data_loader, model_name, output_dir, **kwargs)
 
     @abstractmethod
-    def solve_puzzle(self, puzzle: Puzzle) -> SolverResult:
-        r"""Solve a single puzzle.
+    def solve(self, input_data: Puzzle) -> PuzzleSolverResult:
+        r"""Solve a puzzle (implementation of the generic solve method).
 
         Args:
-            puzzle (Puzzle): The puzzle to solve.
+            input_data (Puzzle): The puzzle to solve.
 
         Returns:
-            SolverResult: Solution result containing puzzle data, code,
-                execution result, and success status.
+            PuzzleSolverResult: The solution result.
         """
         pass
