@@ -90,7 +90,12 @@ class SiliconFlowModel(BaseModelBackend):
         Returns:
             bool: Whether the current model supports reasoning.
         """
-        model_str = str(self.model_type).lower().replace("-", "").replace("_", "").replace("/", "")
+        model_str = (
+            str(self.model_type).lower()
+            .replace("-", "")
+            .replace("_", "")
+            .replace("/", "")
+        )
         return "qwq" in model_str or "deepseekr1" in model_str
         
     def _post_handle_response(
@@ -101,10 +106,13 @@ class SiliconFlowModel(BaseModelBackend):
         
         if (
             is_reasoning_model
-            and os.environ.get("GET_REASONING_CONTENT", "false").lower() == "true"
+            and os.environ.get("GET_REASONING_CONTENT", "false").lower() 
+            == "true"
         ):
             # get reasoning content from response safely
-            reasoning_content = getattr(response.choices[0].message, "reasoning_content", None)
+            reasoning_content = getattr(
+                response.choices[0].message, "reasoning_content", None
+            )
             combined_content = (  # type: ignore[operator]
                 f"<think>\n{reasoning_content}\n</think>\n"
                 if reasoning_content
