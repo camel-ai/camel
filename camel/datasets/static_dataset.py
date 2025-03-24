@@ -60,7 +60,7 @@ class StaticDataset(Dataset):
                 Input data, which can be one of the following:
                 - A Hugging Face Dataset (:obj:`HFDataset`).
                 - A PyTorch Dataset (:obj:`torch.utils.data.Dataset`).
-                - A :obj:`Path` object representing a JSON file.
+                - A :obj:`Path` object representing a JSON or JSONL file.
                 - A list of dictionaries with :obj:`DataPoint`-compatible
                   fields.
             seed (int): Random seed for reproducibility.
@@ -112,6 +112,7 @@ class StaticDataset(Dataset):
 
         Raises:
             TypeError: If the input data type is unsupported.
+            ValueError: If the Path has an unsupported file extension.
         """
 
         if isinstance(data, HFDataset):
@@ -119,7 +120,16 @@ class StaticDataset(Dataset):
         elif isinstance(data, Dataset):
             raw_data = self._init_from_pytorch_dataset(data)
         elif isinstance(data, Path):
-            raw_data = self._init_from_json_path(data)
+            if data.suffix == ".jsonl":
+                raw_data = self._init_from_jsonl_path(data)
+            elif data.suffix == ".json":
+                raw_data = self._init_from_json_path(data)
+            else:
+                raise ValueError(
+                    f"Unsupported file extension: {data.suffix}."
+                    " Please enter a .json or .jsonl object."
+                )
+
         elif isinstance(data, list):
             raw_data = self._init_from_list(data)
         else:
@@ -143,17 +153,6 @@ class StaticDataset(Dataset):
                     return None
 
             rationale = item.get('rationale')
-            if not isinstance(rationale, str):
-                if self._strict:
-                    raise ValueError(
-                        f"Sample at index {idx} has invalid 'rationale': "
-                        f"expected str, got {type(rationale)}"
-                    )
-                else:
-                    logger.warning(
-                        f"Skipping sample at index {idx}: invalid 'rationale'"
-                    )
-                    return None
 
             final_answer = item.get('final_answer')
             if not isinstance(final_answer, str):
@@ -197,25 +196,33 @@ class StaticDataset(Dataset):
         r"""Return the size of the dataset."""
         return self._length
 
-    def __getitem__(self, idx: int) -> DataPoint:
-        r"""Retrieve a datapoint by index.
+    def __getitem__(
+        self, idx: Union[int, slice]
+    ) -> Union[DataPoint, List[DataPoint]]:
+        r"""Retrieve a datapoint or a batch of datapoints by index or slice.
 
         Args:
-            idx (int): Index of the datapoint.
+            idx (Union[int, slice]): Index or slice of the datapoint(s).
 
         Returns:
-            DataPoint: The datapoint corresponding to the given index.
+            List[DataPoint]: A list of `DataPoint` objects.
 
         Raises:
-            IndexError: If :obj:`idx` is out of bounds (negative or greater
-                than dataset length - 1).
+            IndexError: If an integer `idx` is out of bounds.
         """
+        if isinstance(idx, int):
+            if idx < 0 or idx >= self._length:
+                raise IndexError(
+                    f"Index {idx} out of bounds for dataset "
+                    f"of size {self._length}"
+                )
+            return self.data[idx]
 
-        if idx < 0 or idx >= self._length:
-            raise IndexError(
-                f"Index {idx} out of bounds for dataset of size {self._length}"
-            )
-        return self.data[idx]
+        elif isinstance(idx, slice):
+            return self.data[idx.start : idx.stop : idx.step]
+
+        else:
+            raise TypeError(f"Indexing type {type(idx)} not supported.")
 
     def sample(self) -> DataPoint:
         r"""Sample a random datapoint from the dataset.
@@ -230,7 +237,12 @@ class StaticDataset(Dataset):
         if self._length == 0:
             raise RuntimeError("Dataset is empty, cannot sample.")
         idx = self._rng.randint(0, self._length - 1)
-        return self[idx]
+        sample = self[idx]
+        if not isinstance(sample, DataPoint):
+            raise TypeError(
+                f"Expected DataPoint instance, got {type(sample).__name__}"
+            )
+        return sample
 
     @property
     def metadata(self) -> Dict[str, Any]:
@@ -321,6 +333,48 @@ class StaticDataset(Dataset):
                     f"got {type(item).__name__}"
                 )
         return loaded_data
+
+    def _init_from_jsonl_path(self, data: Path) -> List[Dict[str, Any]]:
+        r"""Load and parse a dataset from a JSONL file.
+
+        Args:
+            data (Path): Path to the JSONL file.
+
+        Returns:
+            List[Dict[str, Any]]: A list of datapoint dictionaries.
+
+        Raises:
+            FileNotFoundError: If the specified JSONL file does not exist.
+            ValueError: If a line in the file contains invalid JSON or
+                is not a dictionary.
+        """
+        if not data.exists():
+            raise FileNotFoundError(f"JSONL file not found: {data}")
+
+        raw_data = []
+        logger.debug(f"Loading JSONL from {data}")
+        with data.open('r', encoding='utf-8') as f:
+            for line_number, line in enumerate(f, start=1):
+                line = line.strip()
+                if not line:
+                    continue  # Skip blank lines if any exist.
+                try:
+                    record = json.loads(line)
+                except json.JSONDecodeError as e:
+                    raise ValueError(
+                        f"Invalid JSON on line {line_number} in file "
+                        f"{data}: {e}"
+                    )
+                raw_data.append(record)
+        logger.info(f"Successfully loaded {len(raw_data)} items from {data}")
+
+        for i, item in enumerate(raw_data):
+            if not isinstance(item, dict):
+                raise ValueError(
+                    f"Expected a dictionary at record {i+1} (line {i+1}), "
+                    f"got {type(item).__name__}"
+                )
+        return raw_data
 
     def _init_from_list(
         self, data: List[Dict[str, Any]]
