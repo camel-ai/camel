@@ -324,6 +324,33 @@ class _MCPServer(BaseToolkit):
             for mcp_tool in self._mcp_tools
         ]
 
+    def get_text_tools(self) -> str:
+        r"""Returns a string containing the descriptions of the tools
+        in the toolkit.
+
+        Returns:
+            str: A string containing the descriptions of the tools
+            in the toolkit.
+        """
+        return "\n".join(
+            f"tool_name: {tool.name}\n"
+            + f"description: {tool.description or 'No description'}\n"
+            + f"input Schema: {tool.inputSchema}\n"
+            for tool in self._mcp_tools
+        )
+
+    async def call_tool(
+        self, tool_name: str, tool_args: Dict[str, Any]
+    ) -> Any:
+        r"""Calls the specified tool with the provided arguments.
+
+        Args:
+            tool_name (str): Name of the tool to call.
+            tool_args (Dict[str, Any]): Arguments to pass to the tool
+            (default: :obj:`{}`) .
+        """
+        return await self._session.call_tool(tool_name, tool_args)
+
 
 class MCPToolkit(BaseToolkit):
     r"""MCPToolkit provides a unified interface for managing multiple
@@ -444,6 +471,7 @@ class MCPToolkit(BaseToolkit):
                 timeout=cfg.get("timeout", None),
             )
             all_servers.append(server)
+        assert len(all_servers) > 0, "No servers found in the configuration"
 
         return all_servers
 
@@ -511,3 +539,17 @@ class MCPToolkit(BaseToolkit):
         for server in self.servers:
             all_tools.extend(server.get_tools())
         return all_tools
+
+    def get_text_tools(self) -> str:
+        r"""Aggregates all tools from the managed MCP server instances.
+
+        Returns:
+            str: A string containing the descriptions of the tools
+            in the toolkit.
+        """
+        all_tools = []
+        for idx, server in enumerate(self.servers):
+            all_tools.append(
+                f"server_idx: {idx}\n\n" + server.get_text_tools()
+            )
+        return "\n".join(all_tools)
