@@ -31,16 +31,16 @@ logger = logging.getLogger(__name__)
 
 
 class MilvusPointAdapter:
-    """An adapter class for converting VectorRecord objects into a format suitable
-    for Milvus storage.
+    """An adapter class for converting VectorRecord objects into a format
+    suitable for Milvus storage.
 
-    This class handles the conversion of VectorRecord objects into a dictionary
-    format that can be stored in Milvus, including handling of message content
-    and payload serialization.
+    This class handles the conversion of VectorRecord objects into a
+    dictionary format that can be stored in Milvus, including handling of
+    message content and payload serialization.
 
     Args:
-        record (VectorRecord): The vector record to be converted into a Milvus
-            compatible format.
+        record (VectorRecord): The vector record to be converted into a
+            Milvus compatible format.
     """
 
     def __init__(self, record: VectorRecord):
@@ -118,7 +118,7 @@ class MilvusStorage(BaseVectorStorage):
         collection_name (Optional[str], optional): Name for the collection in
             the Milvus. If not provided, set it to the current time with iso
             format. (default: :obj:`None`)
-        hybrid_search_config (Optional[Dict[str, Any]]): Configuration for 
+        hybrid_search_config (Optional[Dict[str, Any]]): Configuration for
             hybrid search. Supported keys:
             - 'enable': Whether to enable hybrid search (default: False)
             - 'vector_weight': Weight for vector similarity (default: 0.5)
