@@ -103,7 +103,7 @@ class MCPAgent(ChatAgent):
         self._mcp_toolkit = MCPToolkit(config_path=config_path)
         self._model_fc_available = model_fc_available
         self._text_tools = None
-    
+
     async def connect(self):
         await self._mcp_toolkit.connect()
 
@@ -111,7 +111,7 @@ class MCPAgent(ChatAgent):
         await self._mcp_toolkit.disconnect()
 
     def add_mcp_tools(self):
-        assert self._mcp_toolkit.is_connected, "Server is not connected." 
+        assert self._mcp_toolkit.is_connected(), "Server is not connected."
         prompt = TextPrompt(TOOLS_PROMPT)
         self._text_tools = prompt.format(
             tools=self._mcp_toolkit.get_text_tools()
@@ -120,9 +120,9 @@ class MCPAgent(ChatAgent):
             tools = self._mcp_toolkit.get_tools()
             for tool in tools:
                 self.add_tool(tool)
-        
+
     async def get_text_tools(self):
-        assert self._mcp_toolkit.is_connected, "Server is not connected." 
+        assert self._mcp_toolkit.is_connected(), "Server is not connected."
         await self.add_mcp_tools()
         return self._text_tools
 
@@ -130,13 +130,13 @@ class MCPAgent(ChatAgent):
         self,
         prompt: str,
     ):
-        assert self._mcp_toolkit.is_connected, "Server is not connected." 
+        assert self._mcp_toolkit.is_connected(), "Server is not connected."
         if self._model_fc_available:
             response = await self.astep(prompt)
             return response
         else:
             task = f"## Task:\n  {prompt}"
-            response = await self.astep(self._text_tools + task) 
+            response = await self.astep(self._text_tools + task)
             content = response.msgs[0].content.lower()
 
             tool_calls = []
