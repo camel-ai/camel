@@ -270,11 +270,13 @@ class SingleStepEnv:
         ground_truths: List[str] = [
             self._states[idx].final_answer for idx in indices
         ]
+
+        # for mypy
+        ground_truths_casted = cast(list[str | None], ground_truths)
+
         verification_results = await self.verifier.verify_batch(
             solutions=proposed_solutions,
-            ground_truths=cast(
-                list[str | None], ground_truths
-            ),  # to satisfy mypy
+            ground_truths=ground_truths_casted,
             raise_on_error=True,
         )
 
