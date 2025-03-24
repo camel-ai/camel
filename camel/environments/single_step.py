@@ -216,9 +216,7 @@ class SingleStepEnv:
         self, action: Union[Action, List[Action]]
     ) -> Union[
         Tuple[Observation, float, bool, Dict[str, Any]],
-        List[
-            Tuple[Observation, float, bool, Dict[str, Any]]
-        ],
+        List[Tuple[Observation, float, bool, Dict[str, Any]]],
     ]:
         r"""Process actions for a subset of states and update their finished
             status.
@@ -293,7 +291,9 @@ class SingleStepEnv:
         indices = [act.index for act in actions]
         if len(set(indices)) != len(indices):
             raise ValueError("Duplicate state indices in actions.")
-        for idx in indices:
+        for unvalidated_idx in indices:
+            assert unvalidated_idx is not None
+            idx: int = unvalidated_idx
             if idx < 0 or idx >= len(self._states):
                 raise ValueError(f"Invalid state index {idx}.")
             if self._states_done[idx]:
@@ -307,9 +307,10 @@ class SingleStepEnv:
             )
 
         proposed_solutions = [act.llm_response for act in actions]
-        ground_truths: List[str] = [
-            self._states[idx].final_answer for idx in indices
-        ]
+        ground_truths: List[str] = []
+        for idx in indices:
+            assert idx is not None
+            ground_truths.append(self._states[idx].final_answer)
 
         verification_results = await self.verifier.verify_batch(
             solutions=proposed_solutions,
@@ -324,6 +325,7 @@ class SingleStepEnv:
         step_results = []
         for i, action in enumerate(actions):
             idx = action.index
+            assert idx is not None
             step_result = StepResult(
                 observation=self.PLACEHOLDER_OBS,
                 reward=total_rewards[i],
