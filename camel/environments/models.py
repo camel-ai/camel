@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional, Protocol
+from typing import Any, Dict, Optional, Protocol, Tuple
 
 from pydantic import BaseModel, Field
 
@@ -86,6 +86,19 @@ class StepResult(BaseModel):
         default_factory=dict,
         description="Additional information about the step",
     )
+
+    def as_tuple(
+        self,
+    ) -> Tuple[Observation, float, Dict[str, float], bool, Dict[str, Any]]:
+        r"""Returns all fields of the model as a tuple, in
+        declaration order."""
+        return (
+            self.observation,
+            self.reward,
+            self.rewards_dict,
+            self.done,
+            self.info,
+        )
 
 
 class Environment(Protocol):
