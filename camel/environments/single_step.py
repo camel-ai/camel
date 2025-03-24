@@ -288,7 +288,10 @@ class SingleStepEnv:
                 )
 
         # Validate indices
-        indices = [act.index for act in actions]
+        indices: List[int] = []
+        for act in actions:
+            assert act.index is not None
+            indices.append(act.index)
         if len(set(indices)) != len(indices):
             raise ValueError("Duplicate state indices in actions.")
         for unvalidated_idx in indices:
@@ -309,7 +312,6 @@ class SingleStepEnv:
         proposed_solutions = [act.llm_response for act in actions]
         ground_truths: List[str] = []
         for idx in indices:
-            assert idx is not None
             ground_truths.append(self._states[idx].final_answer)
 
         verification_results = await self.verifier.verify_batch(
@@ -324,8 +326,8 @@ class SingleStepEnv:
 
         step_results = []
         for i, action in enumerate(actions):
+            assert action.index is not None
             idx = action.index
-            assert idx is not None
             step_result = StepResult(
                 observation=self.PLACEHOLDER_OBS,
                 reward=total_rewards[i],
