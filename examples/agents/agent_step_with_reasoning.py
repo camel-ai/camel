@@ -85,7 +85,7 @@ LeBron continues to play at a high level, consistently being a key player for hi
 
 # 3rd run: the response with thinking (agent fails to choose the best candidate above the threshold, let the user decide)
 
-response_with_think2 = openai_agent.step(
+response_with_think_2 = openai_agent.step(
     usr_msg,
     reason_params=dict(
         choices=3,
@@ -93,7 +93,7 @@ response_with_think2 = openai_agent.step(
     ),
 )
 
-print(response_with_think2.msgs[0].content)
+print(response_with_think_2.msgs[0].content)
 # flake8: noqa: E501
 """
 ===============================================================================

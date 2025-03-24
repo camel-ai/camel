@@ -74,33 +74,33 @@ from camel.types import ModelPlatformType, ModelType
 agent_1 = ChatAgent("You are a helpful assistant.", model="gpt-4o-mini")
 
 # Method 2: Using a ModelType enum (default model platform is used)
-agent2 = ChatAgent("You are a helpful assistant.", model=ModelType.GPT_4O_MINI)
+agent_2 = ChatAgent("You are a helpful assistant.", model=ModelType.GPT_4O_MINI)
 
 # Method 3: Using a tuple of strings (platform, model)
-agent3 = ChatAgent("You are a helpful assistant.", model=("openai", "gpt-4o-mini"))
+agent_3 = ChatAgent("You are a helpful assistant.", model=("openai", "gpt-4o-mini"))
 
 # Method 4: Using a tuple of enums
-agent4 = ChatAgent(
+agent_4 = ChatAgent(
     "You are a helpful assistant.",
     model=(ModelPlatformType.ANTHROPIC, ModelType.CLAUDE_3_5_SONNET),
 )
 
 # Method 5: Using default model platform and default model type when none is specified
-agent5 = ChatAgent("You are a helpful assistant.")
+agent_5 = ChatAgent("You are a helpful assistant.")
 
 # Method 6: Using a pre-created model with ModelFactory (original approach)
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,  # Using enum
     model_type=ModelType.GPT_4O_MINI,         # Using enum
 )
-agent6 = ChatAgent("You are a helpful assistant.", model=model)
+agent_6 = ChatAgent("You are a helpful assistant.", model=model)
 
 # Method 7: Using ModelFactory with string parameters
 model = ModelFactory.create(
     model_platform="openai",     # Using string
     model_type="gpt-4o-mini",    # Using string
 )
-agent7 = ChatAgent("You are a helpful assistant.", model=model)
+agent_7 = ChatAgent("You are a helpful assistant.", model=model)
 ```
 
 ### 3.3. Using Tools with Chat Agent

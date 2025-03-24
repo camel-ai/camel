@@ -1156,41 +1156,41 @@ def test_chat_agent_vision(step_call_count=3):
 def test_chat_agent_creation_methods():
     """Test different ways to create a ChatAgent with various model specifications."""  # noqa: E501
     # Method 1: Initialize with just a string (model name)
-    agent1 = ChatAgent("You are a helpful assistant.", model="gpt-4o-mini")
-    assert agent1.model_type.value == "gpt-4o-mini"
-    assert isinstance(agent1.model_backend.models[0], OpenAIModel)
+    agent_1 = ChatAgent("You are a helpful assistant.", model="gpt-4o-mini")
+    assert agent_1.model_type.value == "gpt-4o-mini"
+    assert isinstance(agent_1.model_backend.models[0], OpenAIModel)
 
     # Method 2: Initialize with just a ModelType enum
-    agent2 = ChatAgent(
+    agent_2 = ChatAgent(
         "You are a helpful assistant.", model=ModelType.GPT_4O_MINI
     )
-    assert agent2.model_type.value == "gpt-4o-mini"
-    assert isinstance(agent2.model_backend.models[0], OpenAIModel)
+    assert agent_2.model_type.value == "gpt-4o-mini"
+    assert isinstance(agent_2.model_backend.models[0], OpenAIModel)
 
     # Method 3: Initialize with a tuple of strings (platform, model)
-    agent3 = ChatAgent(
+    agent_3 = ChatAgent(
         "You are a helpful assistant.",
         model=("anthropic", "claude-3-5-sonnet-latest"),
     )
-    assert agent3.model_type.value == "claude-3-5-sonnet-latest"
+    assert agent_3.model_type.value == "claude-3-5-sonnet-latest"
     assert (
-        agent3.model_backend.models[0].model_type.value
+        agent_3.model_backend.models[0].model_type.value
         == "claude-3-5-sonnet-latest"
     )
-    assert isinstance(agent3.model_backend.models[0], AnthropicModel)
+    assert isinstance(agent_3.model_backend.models[0], AnthropicModel)
 
     # Method 4: Initialize with a tuple of enums
-    agent4 = ChatAgent(
+    agent_4 = ChatAgent(
         "You are a helpful assistant.",
         model=(ModelPlatformType.ANTHROPIC, ModelType.CLAUDE_3_5_SONNET),
     )
-    assert agent4.model_type.value == "claude-3-5-sonnet-latest"
-    assert isinstance(agent4.model_backend.models[0], AnthropicModel)
+    assert agent_4.model_type.value == "claude-3-5-sonnet-latest"
+    assert isinstance(agent_4.model_backend.models[0], AnthropicModel)
 
     # Method 5: Default model when none is specified
-    agent5 = ChatAgent("You are a helpful assistant.")
-    assert agent5.model_type.value == ModelType.DEFAULT.value
+    agent_5 = ChatAgent("You are a helpful assistant.")
+    assert agent_5.model_type.value == ModelType.DEFAULT.value
 
     # All agents should have the same system message
-    for agent in [agent1, agent2, agent3, agent4, agent5]:
+    for agent in [agent_1, agent_2, agent_3, agent_4, agent_5]:
         assert "You are a helpful assistant." in agent.system_message.content
