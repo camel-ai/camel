@@ -48,11 +48,11 @@ class VectorDBBlock(MemoryBlock):
         self.embedding = embedding or OpenAIEmbedding()
         self.vector_dim = self.embedding.get_output_dim()
         if storage is None:
-            self.storage: BaseVectorStorage = MilvusStorage(
+            self.storage = MilvusStorage(
                 vector_dim=self.vector_dim, **kwargs
             )
         else:
-            self.storage: BaseVectorStorage = storage
+            self.storage = storage
 
     def retrieve(
         self,

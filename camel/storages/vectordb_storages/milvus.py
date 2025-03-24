@@ -137,6 +137,10 @@ class MilvusStorage(BaseVectorStorage):
             **kwargs: Additional keyword arguments passed to the Milvus client.
         """
         from pymilvus import MilvusClient
+        
+        # Ensure url_and_api_key is not None
+        assert url_and_api_key is not None, "url_and_api_key cannot be None"
+        
         self._client = MilvusClient(
             uri=url_and_api_key[0],
             token=url_and_api_key[1],
@@ -409,8 +413,8 @@ class MilvusStorage(BaseVectorStorage):
             return d
 
     def _process_enum_values(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Process dictionary to convert any "__enum__" entries to their proper 
-        enum values.
+        """Process dictionary to convert any "__enum__" entries to their 
+        proper enum values.
         
         Args:
             data (Dict[str, Any]): Dictionary potentially containing 
