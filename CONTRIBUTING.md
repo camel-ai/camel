@@ -5,8 +5,8 @@ Thank you for your interest in contributing to the CAMEL project! 🎉 We're exc
 ## Join Our Community 🌍
 
 ### Schedule an Introduction Call 📞 
-- English speakers: [here](https://calendly.com/roman-georgio/camel-ai-introduction-call?month=2024-05)
-- Chinese speakers: [here](https://calendly.com/sisi-qu/welcome-to-camel-onboarding-meeting?month=2024-05)
+- English speakers: [here](https://cal.com/wendong-fan-5yu7x5/30min)
+- Chinese speakers: [here](https://cal.com/wendong-fan-5yu7x5/30min)
 
 ### Developer Meeting Time & Link 💻
 - English speakers: Mondays at 5 PM GMT+1. Join via Discord: [Meeting Link](https://discord.gg/FFe4nB8MJj?event=1313319275708289034)
@@ -278,11 +278,21 @@ git clone https://github.com/camel-ai/camel.git
 # Change directory into project directory
 cd camel
 
-# Activate camel virtual environment
-poetry shell
+# Install uv if you don't have it already
+pip install uv
 
-# Install camel from source
-poetry install --with dev,docs -E all  # (Suggested for developers, needed to pass all tests)
+# Create a virtual environment and install dependencies
+# We support using Python 3.10, 3.11, 3.12
+uv venv .venv --python=3.10
+
+# Activate the virtual environment
+# For macOS/Linux
+source .venv/bin/activate
+# For Windows
+.venv\Scripts\activate
+
+# Install CAMEL with all dependencies
+uv pip install -e ".[all, dev, docs]"
 
 # The following command installs a pre-commit hook into the local git repo,
 # so every commit gets auto-formatted and linted.
@@ -291,11 +301,8 @@ pre-commit install
 # Run camel's pre-commit before push
 pre-commit run --all-files
 
-# Run camel's unit tests
-pytest test
-
 # Exit the virtual environment
-exit
+deactivate
 ```
 
 These commands will install all the necessary dependencies for running the package, examples, linting, formatting, tests, and coverage.
@@ -309,23 +316,7 @@ To verify that everything is set up correctly, run `pytest .` This will ensure t
 
 ### Update dependencies
 
-Whenever you add, update, or delete any dependencies in `pyproject.toml`, please run `poetry lock` to synchronize the dependencies with the lock file.
-
-### Linting & Formatting ✨
-
-```bash
-poetry run ruff check .
-poetry run ruff format .
-```
-
-For extra validation of type hints:
-
-```bash
-mypy --namespace-packages -p camel
-mypy --namespace-packages -p test
-mypy --namespace-packages -p examples
-mypy --namespace-packages -p apps
-```
+Whenever you add, update, or delete any dependencies in `pyproject.toml`, please run `uv lock` to synchronize the dependencies with the lock file.
 
 ### Coverage 📊
 

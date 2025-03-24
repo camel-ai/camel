@@ -100,4 +100,5 @@ class Persona(BaseModel):
                 ",",
                 ": ",
             ),  # Fine-tune separators for better readability
+            ensure_ascii=False,
         )

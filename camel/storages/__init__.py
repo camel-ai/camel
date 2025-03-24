@@ -18,6 +18,7 @@ from .graph_storages.neo4j_graph import Neo4jGraph
 from .key_value_storages.base import BaseKeyValueStorage
 from .key_value_storages.in_memory import InMemoryKeyValueStorage
 from .key_value_storages.json import JsonStorage
+from .key_value_storages.mem0_cloud import Mem0Storage
 from .key_value_storages.redis import RedisStorage
 from .vectordb_storages.base import (
     BaseVectorStorage,
@@ -42,4 +43,5 @@ __all__ = [
     'BaseGraphStorage',
     'Neo4jGraph',
     'NebulaGraph',
+    'Mem0Storage',
 ]

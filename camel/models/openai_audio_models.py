@@ -11,15 +11,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import base64
 import os
 from typing import Any, List, Optional, Union
 
 from openai import AsyncOpenAI, OpenAI, _legacy_response
 
+from camel.models.base_audio_model import BaseAudioModel
 from camel.types import AudioModelType, VoiceType
 
 
-class OpenAIAudioModels:
+class OpenAIAudioModels(BaseAudioModel):
     r"""Provides access to OpenAI's Text-to-Speech (TTS) and Speech_to_Text
     (STT) models."""
 
@@ -29,6 +31,7 @@ class OpenAIAudioModels:
         url: Optional[str] = None,
     ) -> None:
         r"""Initialize an instance of OpenAI."""
+        super().__init__(api_key, url)
         self._url = url or os.environ.get("OPENAI_API_BASE_URL")
         self._api_key = api_key or os.environ.get("OPENAI_API_KEY")
         self._client = OpenAI(
@@ -47,6 +50,7 @@ class OpenAIAudioModels:
     def text_to_speech(
         self,
         input: str,
+        *,
         model_type: AudioModelType = AudioModelType.TTS_1,
         voice: VoiceType = VoiceType.ALLOY,
         storage_path: Optional[str] = None,
@@ -111,6 +115,8 @@ class OpenAIAudioModels:
                             new_storage_path = (
                                 f"{file_name}_{chunk_index}{file_extension}"
                             )
+                            # Ensure directory exists
+                            self._ensure_directory_exists(new_storage_path)
                             response.write_to_file(new_storage_path)
                             chunk_index += 1
                         except Exception as e:
@@ -131,6 +137,8 @@ class OpenAIAudioModels:
 
             if storage_path:
                 try:
+                    # Ensure directory exists
+                    self._ensure_directory_exists(storage_path)
                     response.write_to_file(storage_path)
                 except Exception as e:
                     raise Exception("Error during write the file") from e
@@ -263,3 +271,74 @@ class OpenAIAudioModels:
                     return transcription.text
         except Exception as e:
             raise Exception("Error during STT API call") from e
+
+    def audio_question_answering(
+        self,
+        audio_file_path: str,
+        question: str,
+        model: str = "gpt-4o-mini-audio-preview",
+        **kwargs: Any,
+    ) -> str:
+        r"""Answer a question directly using the audio content.
+
+        Args:
+            audio_file_path (str): The path to the audio file.
+            question (str): The question to ask about the audio content.
+            model (str, optional): The model to use for audio question
+                answering. (default: :obj:`"gpt-4o-mini-audio-preview"`)
+            **kwargs (Any): Extra keyword arguments passed to the chat
+                completions API.
+
+        Returns:
+            str: The model's response to the question.
+
+        Raises:
+            Exception: If there's an error during the API call.
+        """
+        try:
+            # Read and encode the audio file
+            with open(audio_file_path, "rb") as audio_file:
+                audio_data = audio_file.read()
+
+            encoded_string = base64.b64encode(audio_data).decode('utf-8')
+
+            # Get file format
+            file_suffix = os.path.splitext(audio_file_path)[1]
+            file_format = file_suffix[1:].lower()
+
+            # Prepare the prompt
+            text_prompt = "Answer the following question based on the "
+            f"given audio information:\n\n{question}"
+
+            # Call the OpenAI API
+            completion = self._client.chat.completions.create(
+                model=model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are a helpful assistant "
+                        "specializing in audio analysis.",
+                    },
+                    {  # type: ignore[misc, list-item]
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": text_prompt},
+                            {
+                                "type": "input_audio",
+                                "input_audio": {
+                                    "data": encoded_string,
+                                    "format": file_format,
+                                },
+                            },
+                        ],
+                    },
+                ],
+                **kwargs,
+            )
+
+            response = str(completion.choices[0].message.content)
+            return response
+        except Exception as e:
+            raise Exception(
+                "Error during audio question answering API call"
+            ) from e

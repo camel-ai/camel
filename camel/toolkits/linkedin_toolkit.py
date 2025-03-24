@@ -75,7 +75,9 @@ class LinkedInToolkit(BaseToolkit):
         }
 
         response = requests.post(
-            url, headers=headers, data=json.dumps(post_data)
+            url,
+            headers=headers,
+            data=json.dumps(post_data, ensure_ascii=False),
         )
         if response.status_code == 201:
             post_response = response.json()

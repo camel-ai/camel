@@ -78,12 +78,11 @@ echo $(undefined_command)
 
 
 def test_run_file_not_found(subprocess_interpreter):
-    with pytest.raises(RuntimeError) as exc_info:
-        subprocess_interpreter.run_file(
-            Path("/path/to/nonexistent/file"),
-            "python",
-        )
-    assert "/path/to/nonexistent/file is not a file." in str(exc_info.value)
+    result = subprocess_interpreter.run_file(
+        Path("/path/to/nonexistent/file"),
+        "python",
+    )
+    assert "/path/to/nonexistent/file is not a file." in result
 
 
 def test_run_unsupported_code_type(subprocess_interpreter):

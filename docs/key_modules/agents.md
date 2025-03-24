@@ -106,7 +106,7 @@ agent7 = ChatAgent("You are a helpful assistant.", model=model)
 ### 3.3. Using Tools with Chat Agent
 ```python
 from camel.agents import ChatAgent
-from camel.functions import FunctionTool
+from camel.toolkits import FunctionTool
 
 # Define a tool
 def calculator(a: int, b: int) -> int:

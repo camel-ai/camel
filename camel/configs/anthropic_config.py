@@ -13,58 +13,89 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Any, ClassVar, List, Union
+from typing import Any, List, Optional
 
 from camel.configs.base_config import BaseConfig
-from camel.types import NotGiven
 
 
 class AnthropicConfig(BaseConfig):
     r"""Defines the parameters for generating chat completions using the
     Anthropic API.
 
-    See: https://docs.anthropic.com/claude/reference/complete_post
+    See: https://docs.anthropic.com/en/api/messages
     Args:
         max_tokens (int, optional): The maximum number of tokens to
             generate before stopping. Note that Anthropic models may stop
             before reaching this maximum. This parameter only specifies the
             absolute maximum number of tokens to generate.
-            (default: :obj:`8192`)
-        stop_sequences (List[str], optional): Sequences that will cause the
-            model to stop generating completion text. Anthropic models stop
-            on "\n\nHuman:", and may include additional built-in stop sequences
-            in the future. By providing the stop_sequences parameter, you may
-            include additional strings that will cause the model to stop
-            generating. (default: :obj:`[]`)
+            (default: :obj:`None`)
+        stop_sequences (List[str], optional): Custom text sequences that will
+            cause the model to stop generating. The models will normally stop
+            when they have naturally completed their turn. If the model
+            encounters one of these custom sequences, the response will be
+            terminated and the stop_reason will be "stop_sequence".
+            (default: :obj:`None`)
         temperature (float, optional): Amount of randomness injected into the
             response. Defaults to 1. Ranges from 0 to 1. Use temp closer to 0
             for analytical / multiple choice, and closer to 1 for creative
-            and generative tasks. (default: :obj:`1`)
+            and generative tasks. Note that even with temperature of 0.0, the
+            results will not be fully deterministic. (default: :obj:`None`)
         top_p (float, optional): Use nucleus sampling. In nucleus sampling, we
             compute the cumulative distribution over all the options for each
             subsequent token in decreasing probability order and cut it off
             once it reaches a particular probability specified by `top_p`.
             You should either alter `temperature` or `top_p`,
-            but not both. (default: :obj:`0.7`)
+            but not both. (default: :obj:`None`)
         top_k (int, optional): Only sample from the top K options for each
             subsequent token. Used to remove "long tail" low probability
-            responses. (default: :obj:`5`)
-        metadata: An object describing metadata about the request.
+            responses. (default: :obj:`None`)
         stream (bool, optional): Whether to incrementally stream the response
-            using server-sent events. (default: :obj:`False`)
+            using server-sent events. (default: :obj:`None`)
+        metadata (dict, optional): An object describing
+            metadata about the request. Can include user_id as an external
+            identifier for the user associated with the request.
+            (default: :obj:`None`)
+        thinking (dict, optional): Configuration for enabling
+            Claude's extended thinking. When enabled, responses include
+            thinking content blocks showing Claude's thinking process.
+            (default: :obj:`None`)
+        tool_choice (dict, optional): How the model should
+            use the provided tools. The model can use a specific tool, any
+            available tool, decide by itself, or not use tools at all.
+            (default: :obj:`None`)
     """
 
-    max_tokens: int = 8192
-    stop_sequences: ClassVar[Union[List[str], NotGiven]] = []
-    temperature: float = 1
-    top_p: Union[float, NotGiven] = 0.7
-    top_k: Union[int, NotGiven] = 5
-    stream: bool = False
+    max_tokens: Optional[int] = None
+    stop_sequences: Optional[List[str]] = None
+    temperature: Optional[float] = None
+    top_p: Optional[float] = None
+    top_k: Optional[int] = None
+    stream: Optional[bool] = None
+    metadata: Optional[dict] = None
+    thinking: Optional[dict] = None
+    tool_choice: Optional[dict] = None
 
     def as_dict(self) -> dict[str, Any]:
         config_dict = super().as_dict()
-        if "tools" in config_dict:
-            del config_dict["tools"]  # TODO: Support tool calling.
+        # Create a list of keys to remove to avoid modifying dict
+        keys_to_remove = [
+            key for key, value in config_dict.items() if value is None
+        ]
+
+        for key in keys_to_remove:
+            del config_dict[key]
+
+        # remove some keys if thinking is enabled
+        thinking_enabled = (
+            self.thinking is not None
+            and self.thinking.get("type") == "enabled"
+        )
+        if thinking_enabled:
+            # `top_p`, `top_k`, `temperature` must be unset when thinking is
+            # enabled.
+            config_dict.pop("top_k", None)
+            config_dict.pop("top_p", None)
+            config_dict.pop("temperature", None)
         return config_dict
 
 

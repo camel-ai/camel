@@ -26,7 +26,7 @@ from camel.types import (
 )
 
 
-class _CamelJSONEncoder(json.JSONEncoder):
+class CamelJSONEncoder(json.JSONEncoder):
     r"""A custom JSON encoder for serializing specifically enumerated types.
     Ensures enumerated types can be stored in and retrieved from JSON format.
     """
@@ -62,7 +62,7 @@ class JsonStorage(BaseKeyValueStorage):
     def _json_object_hook(self, d) -> Any:
         if "__enum__" in d:
             name, member = d["__enum__"].split(".")
-            return getattr(_CamelJSONEncoder.CAMEL_ENUMS[name], member)
+            return getattr(CamelJSONEncoder.CAMEL_ENUMS[name], member)
         else:
             return d
 
@@ -75,7 +75,7 @@ class JsonStorage(BaseKeyValueStorage):
         """
         with self.json_path.open("a") as f:
             f.writelines(
-                [json.dumps(r, cls=_CamelJSONEncoder) + "\n" for r in records]
+                [json.dumps(r, cls=CamelJSONEncoder) + "\n" for r in records]
             )
 
     def load(self) -> List[Dict[str, Any]]:

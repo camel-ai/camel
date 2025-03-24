@@ -56,8 +56,8 @@ class OpenAICompatibleModel(BaseModelBackend):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        self.api_key = api_key or os.environ.get("OPENAI_COMPATIBILIY_API_KEY")
-        self.url = url or os.environ.get("OPENAI_COMPATIBILIY_API_BASE_URL")
+        api_key = api_key or os.environ.get("OPENAI_COMPATIBILITY_API_KEY")
+        url = url or os.environ.get("OPENAI_COMPATIBILITY_API_BASE_URL")
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
@@ -86,18 +86,23 @@ class OpenAICompatibleModel(BaseModelBackend):
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
+            response_format (Optional[Type[BaseModel]]): The format of the
+                response.
+            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
+                use for the request.
 
         Returns:
             Union[ChatCompletion, Stream[ChatCompletionChunk]]:
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        response = self._client.chat.completions.create(
-            messages=messages,
-            model=self.model_type,
-            **self.model_config_dict,
+        response_format = response_format or self.model_config_dict.get(
+            "response_format", None
         )
-        return response
+        if response_format:
+            return self._request_parse(messages, response_format, tools)
+        else:
+            return self._request_chat_completion(messages, tools)
 
     async def _arun(
         self,
@@ -110,18 +115,93 @@ class OpenAICompatibleModel(BaseModelBackend):
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
+            response_format (Optional[Type[BaseModel]]): The format of the
+                response.
+            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
+                use for the request.
 
         Returns:
             Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
-        response = await self._async_client.chat.completions.create(
+        response_format = response_format or self.model_config_dict.get(
+            "response_format", None
+        )
+        if response_format:
+            return await self._arequest_parse(messages, response_format, tools)
+        else:
+            return await self._arequest_chat_completion(messages, tools)
+
+    def _request_chat_completion(
+        self,
+        messages: List[OpenAIMessage],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+        request_config = self.model_config_dict.copy()
+
+        if tools:
+            request_config["tools"] = tools
+
+        return self._client.chat.completions.create(
             messages=messages,
             model=self.model_type,
-            **self.model_config_dict,
+            **request_config,
         )
-        return response
+
+    async def _arequest_chat_completion(
+        self,
+        messages: List[OpenAIMessage],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+        request_config = self.model_config_dict.copy()
+
+        if tools:
+            request_config["tools"] = tools
+
+        return await self._async_client.chat.completions.create(
+            messages=messages,
+            model=self.model_type,
+            **request_config,
+        )
+
+    def _request_parse(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ChatCompletion:
+        request_config = self.model_config_dict.copy()
+
+        request_config["response_format"] = response_format
+        request_config.pop("stream", None)
+        if tools is not None:
+            request_config["tools"] = tools
+
+        return self._client.beta.chat.completions.parse(
+            messages=messages,
+            model=self.model_type,
+            **request_config,
+        )
+
+    async def _arequest_parse(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ChatCompletion:
+        request_config = self.model_config_dict.copy()
+
+        request_config["response_format"] = response_format
+        request_config.pop("stream", None)
+        if tools is not None:
+            request_config["tools"] = tools
+
+        return await self._async_client.beta.chat.completions.parse(
+            messages=messages,
+            model=self.model_type,
+            **request_config,
+        )
 
     @property
     def token_counter(self) -> BaseTokenCounter:
