@@ -31,40 +31,70 @@ logger = logging.getLogger(__name__)
 
 
 class MilvusPointAdapter:
+    """An adapter class for converting VectorRecord objects into a format suitable
+    for Milvus storage.
+
+    This class handles the conversion of VectorRecord objects into a dictionary
+    format that can be stored in Milvus, including handling of message content
+    and payload serialization.
+
+    Args:
+        record (VectorRecord): The vector record to be converted into a Milvus
+            compatible format.
+    """
+
     def __init__(self, record: VectorRecord):
+        """Initialize the adapter with a VectorRecord.
+
+        Args:
+            record (VectorRecord): The vector record to be converted.
+        """
         self.id = record.id
         self.payload = (
             json.dumps(record.payload, cls=CamelJSONEncoder)
             if record.payload
             else ''
         )
-        self.dense = record.vector
+        self.dense_vector = record.vector
 
         self.text = ""
         if record.payload:
             try:
+                message = record.payload.get("message")
                 if (
-                    "message" in record.payload
-                    and record.payload["message"] is not None
+                    message is not None
+                    and isinstance(message, dict)
+                    and "content" in message
                 ):
-                    if (
-                        isinstance(record.payload["message"], dict)
-                        and "content" in record.payload["message"]
-                    ):
-                        self.text = record.payload["message"]["content"]
+                    self.text = message["content"]
             except Exception as e:
                 logger.warning(
                     f"Failed to extract content from message: {e!s}"
                 )
 
-        if not self.text and record.payload and "content" in record.payload:
-            self.text = record.payload["content"]
+            if not self.text and "content" in record.payload:
+                self.text = record.payload["content"]
+
+            if not self.text:
+                logger.warning(
+                    "No text content found in either message or direct content"
+                )
 
     def to_dict(self) -> Dict[str, Any]:
+        """Convert the adapter's data into a dictionary format suitable for
+        Milvus storage.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing:
+                - id: The unique identifier
+                - payload: The serialized payload
+                - dense_vector: The dense vector representation
+                - text: The text content extracted from the payload
+        """
         return {
             "id": self.id,
             "payload": self.payload,
-            "dense": self.dense,
+            "dense": self.dense_vector,
             "text": self.text,
         }
 
@@ -87,9 +117,11 @@ class MilvusStorage(BaseVectorStorage):
         collection_name (Optional[str], optional): Name for the collection in
             the Milvus. If not provided, set it to the current time with iso
             format. (default: :obj:`None`)
-        enable_hybrid_search (bool, optional): Whether to enable hybrid search.
-            Hybrid search is not supported in Milvus Lite.
-            (default: :obj:`False`)
+        hybrid_search_config (Optional[Dict[str, Any]]): Configuration for hybrid search.
+            Supported keys:
+            - 'enable': Whether to enable hybrid search (default: False)
+            - 'vector_weight': Weight for vector similarity (default: 0.5)
+            - 'text_weight': Weight for text similarity (default: 0.5)
         **kwargs (Any): Additional keyword arguments for initializing
             the Milvus.
 
@@ -103,7 +135,7 @@ class MilvusStorage(BaseVectorStorage):
         vector_dim: int,
         url_and_api_key: Optional[Tuple[str, str]] = None,
         collection_name: Optional[str] = None,
-        enable_hybrid_search: bool = False,
+        hybrid_search_config: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         from pymilvus import MilvusClient
@@ -116,7 +148,18 @@ class MilvusStorage(BaseVectorStorage):
 
         self._create_client(url_and_api_key, **kwargs)
 
-        self.enable_hybrid_search = enable_hybrid_search
+        # Set default hybrid search configuration
+        default_config = {
+            'enable': False,
+            'vector_weight': 0.5,
+            'text_weight': 0.5,
+        }
+
+        # Merge provided config with defaults
+        self.hybrid_search_config = default_config.copy()
+        if hybrid_search_config:
+            self.hybrid_search_config.update(hybrid_search_config)
+
         self.vector_dim = vector_dim
         self.collection_name = (
             collection_name or self._generate_collection_name()
@@ -125,7 +168,7 @@ class MilvusStorage(BaseVectorStorage):
 
     def _create_client(
         self,
-        url_and_api_key: Optional[Tuple[str, str]] = None,
+        url_and_api_key: Tuple[str, str] = None,
         **kwargs: Any,
     ) -> None:
         r"""Initializes the Milvus client with the provided connection details.
@@ -220,7 +263,7 @@ class MilvusStorage(BaseVectorStorage):
             max_length=65535,
         )
 
-        if self.enable_hybrid_search:
+        if self.hybrid_search_config['enable']:
             schema.add_field(
                 field_name="sparse",
                 datatype=DataType.SPARSE_FLOAT_VECTOR,
@@ -246,7 +289,7 @@ class MilvusStorage(BaseVectorStorage):
             params={"nlist": 128},
         )
 
-        if self.enable_hybrid_search:
+        if self.hybrid_search_config['enable']:
             index_params.add_index(
                 field_name="sparse",
                 index_name="sparse_index",
@@ -473,8 +516,9 @@ class MilvusStorage(BaseVectorStorage):
 
         from pymilvus import AnnSearchRequest, WeightedRanker
 
+        # Use hybrid search if enabled and query_text is provided
         if (
-            self.enable_hybrid_search
+            self.hybrid_search_config['enable']
             and hasattr(query, 'query_text')
             and query.query_text
         ):
@@ -498,9 +542,13 @@ class MilvusStorage(BaseVectorStorage):
             }
             text_request = AnnSearchRequest(**text_search_param)
 
-            # Combine both search requests with equal weights
+            # Get weights from instance configuration
+            vector_weight = self.hybrid_search_config['vector_weight']
+            text_weight = self.hybrid_search_config['text_weight']
+
+            # Combine both search requests with the weights from configuration
             requests = [vector_request, text_request]
-            ranker = WeightedRanker(0.5, 0.5)
+            ranker = WeightedRanker(vector_weight, text_weight)
 
             # Execute hybrid search
             search_result = self._client.hybrid_search(
