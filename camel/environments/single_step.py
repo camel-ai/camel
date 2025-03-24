@@ -12,19 +12,14 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-
-from abc import abstractmethod
-from typing import Any, Dict, Optional, Tuple, Union
+import random
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from camel.datasets import BaseGenerator, DataPoint, StaticDataset
-from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
 from camel.verifiers.base import (
     BaseVerifier,
     VerificationResult,
-)
-from camel.verifiers.models import (
-    VerifierInput,
 )
 
 from .models import Action, Observation, StepResult
@@ -33,18 +28,23 @@ logger = get_logger(__name__)
 
 
 class SingleStepEnv:
-    r"""A single-step environment for reinforcement learning with LLMs.
+    r"""A lightweight environment for single-step RL with LLMs as policy.
+
+    This environment models a single interaction between an LLM-based agent
+    and a problem drawn from a dataset—such as a question-answering or
+    math problem—where the agent produces one response and receives feedback.
+
+    Core Flow:
+        - A question is sampled from a (possibly infinitely long) dataset.
+        - The LLM generates a single-step response (the action).
+        - The response is verified against the ground truth.
+        - A reward is computed based on correctness and optional custom logic.
 
     Key Features:
-    - Samples questions from a dataset and asks the LLM
-    - Extracts verifiable information from model responses.
-    - Verifies extracted responses against ground truth.
-    - Computes and assigns rewards based on correctness.
-    - Supports async setup, teardown, and cleanup of resources.
-
-    This class is intended as a foundation for RL experiments involving
-    LLM-based policies, ensuring structured interactions between model
-    actions and verification mechanisms.
+        - Batched evaluation with per-sample state tracking.
+        - Async setup and teardown for verifiers and related resources.
+        - Supports deterministic sampling via local RNG (optional seed).
+        - Extensible reward computation via subclassing.
     """
 
     PLACEHOLDER_OBS = Observation(
@@ -57,43 +57,47 @@ class SingleStepEnv:
         self,
         dataset: Union[StaticDataset, BaseGenerator],
         verifier: BaseVerifier,
-        extractor: BaseExtractor,
         **kwargs,
     ) -> None:
-        r"""Initialize the environment.
+        r"""Initialize the SingleStepEnv.
 
         Args:
-            dataset: Dataset to sample questions from.
-            verifier: Verifier to check responses.
-            extractor: Extractor to process LLM responses.
-            **kwargs: Additional environment parameters.
+            dataset (Union[StaticDataset, BaseGenerator]): Dataset to sample
+                problems from.
+            verifier (BaseVerifier): Verifier used to evaluate LLM responses
+                against ground-truth answers.
+            **kwargs: Optional metadata or configuration values.
+
+        Notes:
+            This class assumes all interactions are single-step: one question,
+            one LLM response, one reward.
         """
         self.dataset = dataset
         self.verifier = verifier
-        self.extractor = extractor
         self._metadata = kwargs
 
         # State tracking
         self._is_setup: bool = False
-        self._state: Optional[DataPoint] = None
-        self._episode_ended: bool = False
+        self._states: List[DataPoint] = []
+        self._states_done: List[bool] = []
+        self.current_batch_size: int = 0
 
     async def setup(self) -> None:
-        r"""Set up the environment by initializing the verifier and extractor.
+        r"""Set up the environment by initializing the verifier.
 
         This method ensures that the environment is ready for interaction.
-        It sets up necessary components, including the verifier and extractor.
+        It sets up necessary components, including the verifier.
 
         Raises:
             Exception: If setup fails due to an internal error.
         """
 
         if self._is_setup:
+            logger.warning("Environment has already been set up")
             return
 
         try:
             await self.verifier.setup()
-            await self.extractor.setup()
 
             self._is_setup = True
             logger.info('Environment setup completed successfully')
@@ -104,7 +108,7 @@ class SingleStepEnv:
     async def close(self) -> None:
         r"""Clean up and close all resources used by the environment.
 
-        This method shuts down the verifier and extractor, resets the internal
+        This method shuts down the verifier, resets the internal
         state, and ensures that the environment is properly closed.
 
         Raises:
@@ -112,173 +116,250 @@ class SingleStepEnv:
         """
 
         if not self._is_setup:
+            logger.warning(
+                "Not closing environment - has not been set up yet."
+            )
             return
 
         try:
             self._is_setup = False
             await self.verifier.cleanup()
-            await self.extractor.cleanup()
-            self._state = None
-            self._episode_ended = False
+            self._states = []
+            self._states_done = []
             logger.info('Environment closed successfully')
         except Exception as e:
             logger.error(f'Failed to close environment: {e}')
             raise
 
-    async def reset(self) -> Observation:
-        r"""Reset the environment and start a new episode.
+    async def reset(
+        self, batch_size: int = 1, seed: Optional[int] = None
+    ) -> Union[Observation, List[Observation]]:
+        r"""Resets the environment and starts a new episode.
 
-        This method samples a new data point from the dataset and returns the
-        initial observation.
+        This method samples a new batch of data points from the dataset and
+        returns the corresponding initial observations.
+
+        If a seed is provided, a local random number generator is initialized
+        for deterministic sampling. The global random state is not affected.
+
+        Args:
+            batch_size (int): Number of data points to sample.
+                (default: :obj:`1`)
+            seed (Optional[int]): Seed for deterministic sampling. If None,
+                sampling is non-deterministic. (default: :obj:`None`)
 
         Returns:
-            Observation: The first observation of the new episode, including
-                the question.
+            Observation or List[Observation]: Initial observation(s) for the
+                episode.
 
         Raises:
-            Exception: If the environment is not set up properly.
+            RuntimeError: If called before all previous states are processed.
+            ValueError: If batch size exceeds dataset size.
+            TypeError: If the dataset is of an unsupported type.
         """
 
         if not self._is_setup:
+            logger.warning(
+                "reset() called on un-setup environment. Setting up..."
+            )
             await self.setup()
 
-        self._episode_ended = False
+        if self._batch_started() and not self._batch_done():
+            logger.error(
+                "Reset called before all states were processed. "
+                "Call step on remaining states first."
+            )
+            raise RuntimeError(
+                "reset() called before all states in batch were processed."
+            )
 
-        # Sample a datapoint
+        if seed is not None:
+            rng = random.Random(seed)
+        else:
+            rng = random.Random()
 
-        self._state = self.dataset.sample()
+        if isinstance(self.dataset, StaticDataset):
+            dataset_len = len(self.dataset)
 
-        observation = Observation(
-            question=self._state.question, context={}, metadata={}
-        )
+            if batch_size > dataset_len:
+                raise ValueError(
+                    f"Batch size {batch_size} is too large for dataset "
+                    f"of size {dataset_len}"
+                )
 
-        return observation
+            start_idx = rng.randint(0, dataset_len - batch_size)
+            idx_slice = slice(start_idx, start_idx + batch_size)
+            val = self.dataset[idx_slice]
+            self._states = [val] if isinstance(val, DataPoint) else val
 
-    async def step(self, action: Action) -> StepResult:
-        r"""Take a step in the environment using the given action.
+            self.current_batch_size = len(self._states)
+            self._states_done = [False] * self.current_batch_size
 
-        This method processes the LLM response, extracts verifiable content,
-        verifies correctness, computes rewards, and ends the episode.
+            observations = [
+                Observation(question=sample.question, context={}, metadata={})
+                for sample in self._states
+            ]
+
+            return observations[0] if batch_size == 1 else observations
+
+        elif isinstance(self.dataset, BaseGenerator):
+            raise NotImplementedError(
+                "Reset not yet implemented for BaseGenerator datasets."
+            )
+
+        else:
+            raise TypeError(f"Unsupported dataset type: {type(self.dataset)}")
+
+    async def step(
+        self, action: Union[Action, List[Action]]
+    ) -> Union[StepResult, List[StepResult]]:
+        r"""Process actions for a subset of states and update their
+        finished status.
 
         Args:
-            action (Action): The action containing the LLM response to
-                evaluate.
+            action: Single action or list of actions, where each action
+                contains an index indicating which state it corresponds to.
+                The index must be a valid position in the internal _states list
+                that was populated during the reset() call.
+
 
         Returns:
-            StepResult: Contains the next observation (placeholder), total
-                reward, reward breakdown, completion flag, and additional
-                information.
+            Union[StepResult, List[StepResult]]: StepResult or list of
+                StepResults for the processed states.
 
         Raises:
-            RuntimeError: If the environment is not set up, the episode has
-                ended, or there is no valid current observation.
+            RuntimeError: If environment isn't set up or episode has ended.
+            ValueError: If indices are invalid, duplicate, or correspond to
+                finished states.
         """
-
         if not self._is_setup:
             raise RuntimeError("Environment not set up. Call setup() first.")
-        if self._episode_ended:
-            raise RuntimeError("Episode has ended. Call reset() first.")
-        if self._state is None:
+        if self._batch_done():
+            raise RuntimeError(
+                "Episodes have ended for batch. Call reset() first."
+            )
+        if not self._states:
             raise RuntimeError("No current observation. Call reset() first.")
 
-        # extract verifiable part from llm response
-        extraction_result = await self.extractor.extract(action.llm_response)
+        # Normalize everything to list
+        actions = [action] if isinstance(action, Action) else action
+        indices = [act.index for act in actions]
 
-        if not extraction_result:
-            raise RuntimeError(f"Couldn't extract from {action.llm_response}")
+        if len(set(indices)) != len(indices):
+            raise ValueError("Duplicate state indices in actions.")
+        for idx in indices:
+            if idx < 0 or idx >= len(self._states):
+                raise ValueError(f"Invalid state index {idx}.")
+            if self._states_done[idx]:
+                raise ValueError(f"State at index {idx} is already finished.")
 
-        # verify the extracted
-        verification_result = await self.verifier.verify(
-            VerifierInput(
-                llm_response=extraction_result,
-                ground_truth=self._state.final_answer,
+        num_actions = len(actions)
+
+        if self.current_batch_size % num_actions != 0:
+            logger.warning(
+                f"Number of actions ({num_actions}) is not a divisor of "
+                f"total batch size ({self.current_batch_size})"
             )
+
+        proposed_solutions = [act.llm_response for act in actions]
+        ground_truths: List[str] = [
+            self._states[idx].final_answer for idx in indices
+        ]
+        verification_results = await self.verifier.verify_batch(
+            solutions=proposed_solutions,
+            ground_truths=cast(
+                list[str | None], ground_truths
+            ),  # to satisfy mypy
+            raise_on_error=True,
         )
 
-        # compute rewards
-        total_reward, rewards_dict = await self._compute_reward(
-            action, extraction_result, verification_result
+        total_rewards, rewards_dicts = await self._compute_reward_batch(
+            proposed_solutions, verification_results
         )
 
-        self._episode_ended = True
+        step_results = []
+        # TODO: batch this
+        for i, action in enumerate(actions):
+            idx = action.index
+            step_result = StepResult(
+                observation=self.PLACEHOLDER_OBS,
+                reward=total_rewards[i],
+                rewards_dict=rewards_dicts[i],
+                done=True,
+                info={
+                    "proposed_solution": proposed_solutions[i],
+                    "verification_result": verification_results[i],
+                    "state": self._states[idx],
+                },
+            )
+            step_results.append(step_result)
+            self._states_done[idx] = True
 
-        return StepResult(
-            observation=self.PLACEHOLDER_OBS,
-            reward=total_reward,
-            rewards_dict=rewards_dict,
-            done=True,
-            info={
-                "extraction_result": extraction_result,
-                "verification_result": verification_result,
-                "state": self._state,
-            },
-        )
+        return step_results[0] if len(step_results) == 1 else step_results
 
-    async def _compute_reward(
+    async def _compute_reward_batch(
         self,
-        action: Action,
-        extraction_result: str,
-        verification_result: VerificationResult,
-    ) -> Tuple[float, Dict[str, float]]:
-        r"""Compute reward scores based on verification results.
-
-        This method calculates the reward based on correctness and any
-        additional custom reward components.
+        proposed_solutions: List[str],
+        verification_results: List[VerificationResult],
+    ) -> Tuple[List[float], List[Dict[str, float]]]:
+        r"""Compute rewards for a batch of proposed solutions based on
+        verification results.
 
         Args:
-            action (Action): The action taken in the environment.
-            extraction_result (str): The extracted verifiable content from the
-                LLM response.
-            verification_result (VerificationResult): The result of verifying
-                the extracted response.
+            proposed_solutions (List[str]): List of LLM-generated responses to
+                evaluate.
+            verification_results (List[VerificationResult]): List of
+                verification outcomes for each solution.
 
         Returns:
-            Tuple[float, Dict[str, float]]: A tuple containing:
-                - Total reward (float)
-                - Dictionary of individual reward components.
-
-        Raises:
-            Exception: If an error occurs while computing rewards.
+            Tuple containing:
+                - List of total rewards for each solution.
+                - List of reward component dictionaries for each solution.
         """
+        total_rewards = []
+        rewards_dicts = []
 
-        rewards: Dict[str, float] = {}
+        for solution, verification_result in zip(
+            proposed_solutions, verification_results
+        ):
+            rewards: Dict[str, float] = {}
 
-        rewards["correctness"] = (
-            self.ACCURACY_REWARD if verification_result.status else 0.0
-        )
+            rewards["correctness"] = (
+                self.ACCURACY_REWARD if verification_result.status else 0.0
+            )
 
-        further_rewards = await self._compute_custom_reward(
-            action, extraction_result, verification_result
-        )
+            further_rewards = await self._compute_custom_reward(
+                solution, verification_result
+            )
+            rewards = {**rewards, **further_rewards}
 
-        rewards = rewards | further_rewards
+            total_reward = sum(rewards.values())
+            total_rewards.append(total_reward)
+            rewards_dicts.append(rewards)
 
-        return sum(rewards.values()), rewards
+        return total_rewards, rewards_dicts
 
-    @abstractmethod
     async def _compute_custom_reward(
-        self,
-        action: Action,
-        extraction_result: str,
-        verification_result: VerificationResult,
+        self, proposed_solution: str, verification_result: VerificationResult
     ) -> Dict[str, float]:
-        r"""Compute additional custom reward components.
+        r"""Compute additional custom reward components for a single solution.
 
-        This method should be implemented by subclasses to define
-        domain-specific reward calculations.
+        To be overridden by subclasses for domain-specific rewards.
 
         Args:
-            action (Action): The action taken in the environment.
-            extraction_result (str): The extracted verifiable content from the
-                LLM response.
-            verification_result (VerificationResult): The result of verifying
-                the extracted response.
+            proposed_solution (str): The LLM-generated response.
+            verification_result (VerificationResult): The verification outcome.
 
         Returns:
-            Dict[str, float]: A dictionary mapping custom reward categories
-                to their values.
+            Dict[str, float]: Dictionary of custom reward components.
         """
-        pass
+        return {}
+
+    def _batch_done(self) -> bool:
+        return all(self._states_done)
+
+    def _batch_started(self) -> bool:
+        return any(self._states_done)
 
     @property
     def metadata(self) -> Dict[str, Any]:

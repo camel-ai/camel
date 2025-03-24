@@ -79,6 +79,11 @@ class UnifiedModelType(str):
         return True
 
     @property
+    def is_openrouter(self) -> bool:
+        r"""Returns whether the model is a OpenRouter served model."""
+        return True
+
+    @property
     def is_zhipuai(self) -> bool:
         r"""Returns whether the model is a Zhipuai model."""
         return True

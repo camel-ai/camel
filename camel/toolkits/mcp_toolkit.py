@@ -56,6 +56,8 @@ class _MCPServer(BaseToolkit):
         env (Dict[str, str]): Environment variables for the stdio mode command.
             (default: :obj:`'None'`)
         timeout (Optional[float]): Connection timeout. (default: :obj:`'None'`)
+        headers (Dict[str, str]): Headers for the HTTP request.
+            (default: :obj:`'None'`)
     """
 
     def __init__(
@@ -64,6 +66,7 @@ class _MCPServer(BaseToolkit):
         args: Optional[List[str]] = None,
         env: Optional[Dict[str, str]] = None,
         timeout: Optional[float] = None,
+        headers: Optional[Dict[str, str]] = None,
     ):
         from mcp import Tool
         from mcp.client.session import ClientSession
@@ -73,6 +76,7 @@ class _MCPServer(BaseToolkit):
         self.command_or_url = command_or_url
         self.args = args or []
         self.env = env or {}
+        self.headers = headers or {}
 
         self._mcp_tools: List[Tool] = []
         self._session: Optional['ClientSession'] = None
@@ -99,7 +103,10 @@ class _MCPServer(BaseToolkit):
                     read_stream,
                     write_stream,
                 ) = await self._exit_stack.enter_async_context(
-                    sse_client(self.command_or_url)
+                    sse_client(
+                        self.command_or_url,
+                        headers=self.headers,
+                    )
                 )
             else:
                 command = self.command_or_url
@@ -370,6 +377,27 @@ class MCPToolkit(BaseToolkit):
         Either `servers` or `config_path` must be provided. If both are
         provided, servers from both sources will be combined.
 
+        For web servers in the config file, you can specify authorization
+        headers using the "headers" field to connect to protected MCP server
+        endpoints.
+
+        Example configuration:
+
+        .. code-block:: json
+
+            {
+              "mcpWebServers": {
+                "protected-server": {
+                  "url": "https://example.com/mcp",
+                  "timeout": 30,
+                  "headers": {
+                    "Authorization": "Bearer YOUR_TOKEN",
+                    "X-API-Key": "YOUR_API_KEY"
+                  }
+                }
+              }
+            }
+
     Attributes:
         servers (List[_MCPServer]): List of _MCPServer instances being managed.
     """
@@ -469,6 +497,7 @@ class MCPToolkit(BaseToolkit):
             server = _MCPServer(
                 command_or_url=cfg["url"],
                 timeout=cfg.get("timeout", None),
+                headers=cfg.get("headers", {}),
             )
             all_servers.append(server)
         assert len(all_servers) > 0, "No servers found in the configuration"
