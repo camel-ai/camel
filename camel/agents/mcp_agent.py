@@ -136,7 +136,7 @@ class MCPAgent(ChatAgent):
             return response
         else:
             task = f"## Task:\n  {prompt}"
-            response = await self.astep(self._text_tools + task)
+            response = await self.astep(str(self._text_tools) + task)
             content = response.msgs[0].content.lower()
 
             tool_calls = []
