@@ -15,7 +15,6 @@ import json
 import logging
 import re
 from datetime import datetime
-from enum import Enum, EnumMeta
 from typing import Any, Dict, List, Optional, Tuple
 
 from camel.storages.key_value_storages.json import CamelJSONEncoder
@@ -25,12 +24,6 @@ from camel.storages.vectordb_storages import (
     VectorDBQueryResult,
     VectorDBStatus,
     VectorRecord,
-)
-from camel.types import (
-    ModelType,
-    OpenAIBackendRole,
-    RoleType,
-    TaskType,
 )
 from camel.utils import dependencies_required
 

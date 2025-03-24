@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
 from camel.memories.base import MemoryBlock
@@ -47,6 +47,8 @@ class VectorDBBlock(MemoryBlock):
     ) -> None:
         self.embedding = embedding or OpenAIEmbedding()
         self.vector_dim = self.embedding.get_output_dim()
+        self.storage: BaseVectorStorage
+        
         if storage is None:
             self.storage = MilvusStorage(
                 vector_dim=self.vector_dim, **kwargs
