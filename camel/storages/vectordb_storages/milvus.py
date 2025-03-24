@@ -108,17 +108,18 @@ class MilvusStorage(BaseVectorStorage):
 
     Args:
         vector_dim (int): The dimenstion of storing vectors.
-        url_and_api_key (Tuple[str, str]): Tuple containing
+        url_and_api_key (Optional[Tuple[str, str]], optional): Tuple containing
            the URL and API key for connecting to a remote Milvus instance.
            URL maps to Milvus uri concept, typically "endpoint:port".
            API key maps to Milvus token concept, for self-hosted it's
            "username:pwd", for Zilliz Cloud (fully-managed Milvus) it's API
-           Key.
+           Key. If not provided, uses "./milvus.db" as a local database.
+           (default: :obj:`None`)
         collection_name (Optional[str], optional): Name for the collection in
             the Milvus. If not provided, set it to the current time with iso
             format. (default: :obj:`None`)
-        hybrid_search_config (Optional[Dict[str, Any]]): Configuration for hybrid search.
-            Supported keys:
+        hybrid_search_config (Optional[Dict[str, Any]]): Configuration for 
+            hybrid search. Supported keys:
             - 'enable': Whether to enable hybrid search (default: False)
             - 'vector_weight': Weight for vector similarity (default: 0.5)
             - 'text_weight': Weight for text similarity (default: 0.5)
@@ -168,7 +169,7 @@ class MilvusStorage(BaseVectorStorage):
 
     def _create_client(
         self,
-        url_and_api_key: Tuple[str, str] = None,
+        url_and_api_key: Tuple[str, str],
         **kwargs: Any,
     ) -> None:
         r"""Initializes the Milvus client with the provided connection details.
