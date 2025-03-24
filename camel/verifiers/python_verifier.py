@@ -56,6 +56,8 @@ class PythonVerifier(BaseVerifier):
         r"""Initializes the PythonVerifier.
 
         Args:
+            extractor (Optional[BaseExtractor], optional): The extractor to use
+                for extracting code from the solution. (default: :obj:`None`)
             timeout (Optional[float], optional): The execution timeout in
                 seconds. (default: :obj:`30.0`)
             required_packages (Optional[List[str]], optional): A list of

@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import random
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from camel.datasets import BaseGenerator, DataPoint, StaticDataset
 from camel.logger import get_logger
@@ -266,12 +266,9 @@ class SingleStepEnv:
             self._states[idx].final_answer for idx in indices
         ]
 
-        # for mypy
-        ground_truths_casted = cast(list[str | None], ground_truths)
-
         verification_results = await self.verifier.verify_batch(
             solutions=proposed_solutions,
-            ground_truths=ground_truths_casted,
+            ground_truths=ground_truths,  # type: ignore [arg-type]
             raise_on_error=True,
         )
 
