@@ -49,6 +49,7 @@ def ibw_explanation(input_variables):
     height_explanation, height = height_conversion_explanation_in(height)
 
     explanation = f"The patient's gender is {gender}.\n" + f"{height_explanation}\n"
+    ibw = 0.0
 
     if gender == "Male":
         ibw = round_number(50 + 2.3 * (height - 60))
