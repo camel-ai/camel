@@ -34,33 +34,38 @@ class MilvusPointAdapter:
     def __init__(self, record: VectorRecord):
         self.id = record.id
         self.payload = (
-            json.dumps(record.payload, cls=CamelJSONEncoder) 
-            if record.payload else ''
+            json.dumps(record.payload, cls=CamelJSONEncoder)
+            if record.payload
+            else ''
         )
-        self.dense = record.vector  
-        
+        self.dense = record.vector
+
         self.text = ""
         if record.payload:
             try:
-                if ("message" in record.payload and 
-                        record.payload["message"] is not None):
-                    if (isinstance(record.payload["message"], dict) and 
-                            "content" in record.payload["message"]):
+                if (
+                    "message" in record.payload
+                    and record.payload["message"] is not None
+                ):
+                    if (
+                        isinstance(record.payload["message"], dict)
+                        and "content" in record.payload["message"]
+                    ):
                         self.text = record.payload["message"]["content"]
             except Exception as e:
                 logger.warning(
                     f"Failed to extract content from message: {e!s}"
                 )
-        
+
         if not self.text and record.payload and "content" in record.payload:
             self.text = record.payload["content"]
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            "id": self.id, 
-            "payload": self.payload, 
-            "dense": self.dense,  
-            "text": self.text    
+            "id": self.id,
+            "payload": self.payload,
+            "dense": self.dense,
+            "text": self.text,
         }
 
 
@@ -79,14 +84,14 @@ class MilvusStorage(BaseVectorStorage):
            API key maps to Milvus token concept, for self-hosted it's
            "username:pwd", for Zilliz Cloud (fully-managed Milvus) it's API
            Key.
-        collection_name (Optional[str], optional): Name for the collection in 
+        collection_name (Optional[str], optional): Name for the collection in
             the Milvus. If not provided, set it to the current time with iso
             format. (default: :obj:`None`)
         enable_hybrid_search (bool, optional): Whether to enable hybrid search.
             Hybrid search is not supported in Milvus Lite.
             (default: :obj:`False`)
         **kwargs (Any): Additional keyword arguments for initializing
-            the Milvus. 
+            the Milvus.
 
     Raises:
         ImportError: If `pymilvus` package is not installed.
@@ -108,13 +113,14 @@ class MilvusStorage(BaseVectorStorage):
         if not url_and_api_key:
             url_and_api_key = ("./milvus.db", "")
             logger.warning("Using local Milvus Lite database: ./milvus.db")
-        
+
         self._create_client(url_and_api_key, **kwargs)
 
         self.enable_hybrid_search = enable_hybrid_search
         self.vector_dim = vector_dim
-        self.collection_name = (collection_name or 
-                               self._generate_collection_name())
+        self.collection_name = (
+            collection_name or self._generate_collection_name()
+        )
         self._check_and_create_collection()
 
     def _create_client(
@@ -130,10 +136,10 @@ class MilvusStorage(BaseVectorStorage):
             **kwargs: Additional keyword arguments passed to the Milvus client.
         """
         from pymilvus import MilvusClient
-        
+
         # Ensure url_and_api_key is not None
         assert url_and_api_key is not None, "url_and_api_key cannot be None"
-        
+
         self._client = MilvusClient(
             uri=url_and_api_key[0],
             token=url_and_api_key[1],
@@ -191,19 +197,19 @@ class MilvusStorage(BaseVectorStorage):
             is_primary=True,
             max_length=65535,
         )
-        
+
         schema.add_field(
             field_name="dense",
             datatype=DataType.FLOAT_VECTOR,
             description='The numerical representation of the vector',
             dim=self.vector_dim,
         )
-        
+
         schema.add_field(
             field_name="payload",
             datatype=DataType.JSON,
             description='Any additional metadata or information related to '
-                       'the vector',
+            'the vector',
         )
 
         schema.add_field(
@@ -220,7 +226,7 @@ class MilvusStorage(BaseVectorStorage):
                 datatype=DataType.SPARSE_FLOAT_VECTOR,
                 description='The sparse representation of the vector',
             )
-        
+
             bm25_function = Function(
                 name="text_bm25_emb",
                 input_field_names=["text"],
@@ -236,7 +242,7 @@ class MilvusStorage(BaseVectorStorage):
             field_name="dense",
             index_name="dense_index",
             metric_type="IP",
-            index_type="FLAT", 
+            index_type="FLAT",
             params={"nlist": 128},
         )
 
@@ -248,7 +254,7 @@ class MilvusStorage(BaseVectorStorage):
                 index_type="SPARSE_INVERTED_INDEX",
                 metric_type="BM25",
                 params={"inverted_index_algo": "DAAT_MAXSCORE"},
-                # The ratio of small vector values to be dropped 
+                # The ratio of small vector values to be dropped
                 # during indexing
             )
 
@@ -406,19 +412,19 @@ class MilvusStorage(BaseVectorStorage):
             return d
 
     def _process_enum_values(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Process dictionary to convert any "__enum__" entries to their 
+        """Process dictionary to convert any "__enum__" entries to their
         proper enum values.
-        
+
         Args:
-            data (Dict[str, Any]): Dictionary potentially containing 
+            data (Dict[str, Any]): Dictionary potentially containing
                 "__enum__" entries
-            
+
         Returns:
             Dict[str, Any]: Processed dictionary with enum values
         """
         if not isinstance(data, dict):
             return data
-            
+
         result = {}
         for key, value in data.items():
             if isinstance(value, dict):
@@ -426,8 +432,7 @@ class MilvusStorage(BaseVectorStorage):
                     # Convert "__enum__" format to actual enum values
                     name, member = value["__enum__"].split(".")
                     result[key] = getattr(
-                        CamelJSONEncoder.CAMEL_ENUMS[name], 
-                        member
+                        CamelJSONEncoder.CAMEL_ENUMS[name], member
                     )
                 else:
                     # Process nested dictionaries
@@ -435,8 +440,9 @@ class MilvusStorage(BaseVectorStorage):
             elif isinstance(value, list):
                 # Process lists of dictionaries
                 result[key] = [
-                    self._process_enum_values(item) 
-                    if isinstance(item, dict) else item
+                    self._process_enum_values(item)
+                    if isinstance(item, dict)
+                    else item
                     for item in value
                 ]
             else:
@@ -464,23 +470,23 @@ class MilvusStorage(BaseVectorStorage):
             List[VectorDBQueryResult]: A list of vectors retrieved from the
                 storage based on similarity to the query vector and/or text.
         """
-        
+
         from pymilvus import AnnSearchRequest, WeightedRanker
-        
-        if (self.enable_hybrid_search and hasattr(query, 'query_text') 
-                and query.query_text):
+
+        if (
+            self.enable_hybrid_search
+            and hasattr(query, 'query_text')
+            and query.query_text
+        ):
             # Create search parameters for vector search
             vector_search_param = {
                 "data": [query.query_vector],
                 "anns_field": "dense",
-                "param": {
-                    "metric_type": "IP",
-                    "params": {"nprobe": 10}
-                },
-                "limit": query.top_k
+                "param": {"metric_type": "IP", "params": {"nprobe": 10}},
+                "limit": query.top_k,
             }
             vector_request = AnnSearchRequest(**vector_search_param)
-            
+
             # Create search parameters for text search
             text_search_param = {
                 "data": [query.query_text],
@@ -488,14 +494,14 @@ class MilvusStorage(BaseVectorStorage):
                 "param": {
                     "metric_type": "BM25",
                 },
-                "limit": query.top_k
+                "limit": query.top_k,
             }
             text_request = AnnSearchRequest(**text_search_param)
-            
+
             # Combine both search requests with equal weights
             requests = [vector_request, text_request]
             ranker = WeightedRanker(0.5, 0.5)
-            
+
             # Execute hybrid search
             search_result = self._client.hybrid_search(
                 collection_name=self.collection_name,
@@ -503,18 +509,18 @@ class MilvusStorage(BaseVectorStorage):
                 ranker=ranker,
                 limit=query.top_k,
                 output_fields=['dense', 'payload'],
-                **kwargs
+                **kwargs,
             )
 
         else:
             search_result = self._client.search(
-            collection_name=self.collection_name,
-            data=[query.query_vector],
-            limit=query.top_k,
-            output_fields=['dense', 'payload'],
-            **kwargs,
-        )        
-            
+                collection_name=self.collection_name,
+                data=[query.query_vector],
+                limit=query.top_k,
+                output_fields=['dense', 'payload'],
+                **kwargs,
+            )
+
         query_results = []
         for point in search_result:
             entry = point[0]
@@ -522,27 +528,26 @@ class MilvusStorage(BaseVectorStorage):
             distance = entry['distance']
             payload = entry['entity'].get('payload', '')
             vector = entry['entity'].get('dense')
-            
+
             try:
                 if isinstance(payload, str) and payload:
                     payload_dict = json.loads(
-                        payload, 
-                        object_hook=self._json_object_hook
+                        payload, object_hook=self._json_object_hook
                     )
                 elif isinstance(payload, dict):
                     payload_dict = payload
                 else:
                     payload_dict = {"payload": str(payload) if payload else ""}
-                
+
                 # Process enum values that might be in dictionary format
                 payload_dict = self._process_enum_values(payload_dict)
-                
+
                 # Process role fields for backward compatibility
                 self._process_role_fields(payload_dict)
-                
+
             except Exception as e:
                 payload_dict = {"error": str(e), "raw": str(payload)}
-            
+
             query_results.append(
                 VectorDBQueryResult.create(
                     similarity=distance,
@@ -551,10 +556,8 @@ class MilvusStorage(BaseVectorStorage):
                     vector=vector,
                 )
             )
-        
+
         return query_results
-        
-            
 
     def _process_role_fields(
         self, payload_dict: Dict[str, Any], key_prefix: str = ""
@@ -646,7 +649,7 @@ class MilvusStorage(BaseVectorStorage):
                             ]
                         )
                     ):
-                        # Convert string values in lists if they match 
+                        # Convert string values in lists if they match
                         # enum field patterns
                         value[i] = item.lower()
 

@@ -45,7 +45,7 @@ class VectorDBQuery(BaseModel):
             vector.
         top_k (int, optional): The number of top similar vectors to retrieve
             from the database. (default: :obj:`1`)
-        query_text (Optional[str], optional): The original text query for 
+        query_text (Optional[str], optional): The original text query for
             hybrid search. (default: :obj:`None`)
     """
 

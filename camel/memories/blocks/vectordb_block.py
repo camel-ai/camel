@@ -48,11 +48,9 @@ class VectorDBBlock(MemoryBlock):
         self.embedding = embedding or OpenAIEmbedding()
         self.vector_dim = self.embedding.get_output_dim()
         self.storage: BaseVectorStorage
-        
+
         if storage is None:
-            self.storage = MilvusStorage(
-                vector_dim=self.vector_dim, **kwargs
-            )
+            self.storage = MilvusStorage(vector_dim=self.vector_dim, **kwargs)
         else:
             self.storage = storage
 
@@ -77,9 +75,7 @@ class VectorDBBlock(MemoryBlock):
         query_vector = self.embedding.embed(keyword)
         results = self.storage.query(
             VectorDBQuery(
-                query_vector=query_vector,
-                top_k=limit,
-                query_text=keyword
+                query_vector=query_vector, top_k=limit, query_text=keyword
             )
         )
         return [
