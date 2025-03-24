@@ -25,7 +25,7 @@ from camel.verifiers.models import VerificationOutcome, VerificationResult
 class TestVerifier(BaseVerifier):
     r"""Concrete implementation of BaseVerifier for testing."""
 
-    async def _setup(self) -> None:
+    async def _setup(self, **kwargs) -> None:
         self.setup_called = True
 
     async def _cleanup(self) -> None:
@@ -103,7 +103,7 @@ async def test_verifier_setup_error():
     r"""Test handling of errors during setup."""
 
     class ErrorVerifier(TestVerifier):
-        async def _setup(self) -> None:
+        async def _setup(self, **kwargs) -> None:
             raise RuntimeError("Simulated setup error")
 
     verifier = ErrorVerifier()
@@ -251,8 +251,6 @@ async def test_verify_batch(test_verifier):
         )
 
     with patch.object(test_verifier, "verify", side_effect=mock_verify):
-        from camel.verifiers.base import BaseVerifier
-
         test_verifier.verify_batch = (
             lambda *args, **kwargs: BaseVerifier.verify_batch(
                 test_verifier, *args, **kwargs
@@ -293,8 +291,6 @@ async def test_verify_batch_with_error_handling(test_verifier):
         )
 
     with patch.object(test_verifier, "verify", side_effect=mock_verify):
-        from camel.verifiers.base import BaseVerifier
-
         test_verifier.verify_batch = (
             lambda *args, **kwargs: BaseVerifier.verify_batch(
                 test_verifier, *args, **kwargs
