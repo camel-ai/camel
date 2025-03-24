@@ -122,12 +122,12 @@ class MilvusStorage(BaseVectorStorage):
             hybrid search. Supported keys:
             - 'enable': Whether to enable hybrid search (default: False)
             - 'vector_weight': Weight for vector similarity (default: 0.5)
-              Must be in range [0,1], with values closer to 1 indicating 
+              Must be in range [0,1], with values closer to 1 indicating
               greater importance of vector search results
             - 'text_weight': Weight for text similarity (default: 0.5)
               Must be in range [0,1], with values closer to 1 indicating
               greater importance of text search results
-        
+
         **kwargs (Any): Additional keyword arguments for initializing
             the Milvus.
 
@@ -165,18 +165,19 @@ class MilvusStorage(BaseVectorStorage):
         self.hybrid_search_config = default_config.copy()
         if hybrid_search_config:
             self.hybrid_search_config.update(hybrid_search_config)
-            
+
         # Validate weights for hybrid search
         if self.hybrid_search_config['enable']:
             # Ensure weights are in the valid range [0,1]
             vector_weight = self.hybrid_search_config['vector_weight']
             text_weight = self.hybrid_search_config['text_weight']
-            
+
             # Check if either weight is invalid
             if not (0 <= vector_weight <= 1) or not (0 <= text_weight <= 1):
                 # If any weight is invalid, reset both to default values
                 logger.warning(
-                    f"Invalid weights detected: vector_weight={vector_weight}, "
+                    f"Invalid weights detected: "
+                    f"vector_weight={vector_weight}, "
                     f"text_weight={text_weight}. Both weights must be in "
                     f"range [0,1]. Resetting to default values (0.5, 0.5)."
                 )
