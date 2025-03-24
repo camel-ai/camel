@@ -215,9 +215,9 @@ class SingleStepEnv:
     async def step(
         self, action: Union[Action, List[Action]]
     ) -> Union[
-        Tuple[Observation, float, Dict[str, float], bool, Dict[str, Any]],
+        Tuple[Observation, float, bool, Dict[str, Any]],
         List[
-            Tuple[Observation, float, Dict[str, float], bool, Dict[str, Any]]
+            Tuple[Observation, float, bool, Dict[str, Any]]
         ],
     ]:
         r"""Process actions for a subset of states and update their finished
