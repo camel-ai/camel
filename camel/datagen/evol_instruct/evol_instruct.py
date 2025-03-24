@@ -27,8 +27,7 @@ logger = get_logger(__name__)
 
 
 class EvolInstructPipeline:
-    r"""
-    A pipeline for evolving prompts using the Evol-Instruct methodology.
+    r"""A pipeline for evolving prompts using the Evol-Instruct methodology.
 
     Args:
         agent (ChatAgent): The agent used to interact and generate
@@ -39,27 +38,25 @@ class EvolInstructPipeline:
         self, 
         agent: ChatAgent,
     ):
-        r"""
-        Initializes the EvolInstructPipeline with an LLM agent.
+        r"""Initializes the EvolInstructPipeline with an LLM agent.
         
         Args:
-            agent (ChatAgent): The language model agent used for prompt evolution.
+            agent (ChatAgent): The agent used for prompt evolution.
         """
-        self.agent = agent
+        self.agent = agent if agent else ChatAgent()
     
     def _set_method(
         self, 
         method: Optional[Union[str, List[str]]] = "uniform",
         num_generations: int = 1,
     ) -> List[str]:
-        r"""
-        Sets the evolution method to use for generating prompts for one iteration.
+        r"""Sets the method to use for generating prompts for one iteration.
         
         Args:
         method (Optional[Union[str, List[str]]]): 
             The method(s) to use for evolving the prompt. Can be:
-                - (list) a list of methods with length equal to num_generations.
-                - (str) a single method defined in EvolInstructTemplates, or "uniform".
+            - (list) a list of methods with length equal to num_generations.
+            - (str) a single method in EvolInstructTemplates, or "uniform".
         num_generations: The number of variations to generate in one iteration.
         
         Returns:
@@ -78,7 +75,7 @@ class EvolInstructPipeline:
                 methods = ["uniform"] * num_generations
                 logger.info("methods length not match; use uniform instead.")
         
-        # Case 2: user provides a single method - broadcast with random selection    
+        # Case 2: user provides a single method - broadcast w/ random selection    
         elif isinstance(method, str):
             if method in EvolInstructTemplates.EVOL_METHODS:  
                 methods = [method] * num_generations
@@ -108,9 +105,9 @@ class EvolInstructPipeline:
         prompt: str,  # for a single prompt
         method: str = "uniform",
         return_method: bool = False,
-    ) -> str:
-        r"""
-        Generates a single new prompt for a single seed prompt using a specified method.
+    ) -> Union[str, Tuple[str, str]]:
+        r"""Generates a single new prompt for a single seed prompt 
+        using a specified method.
         
         Args:
             prompt (str): The input prompt to evolve.
@@ -124,7 +121,9 @@ class EvolInstructPipeline:
         """
         # Handle the case when using this method externally
         if method == "uniform":
-            method = random.choice(list(EvolInstructTemplates.EVOL_METHODS.keys()))
+            method = random.choice(
+                list(EvolInstructTemplates.EVOL_METHODS.keys())
+            )
         elif method == "in-depth":
             method = random.choice(EvolInstructTemplates.IN_DEPTH_KEYS)
         elif method == "in-breadth":
@@ -138,7 +137,9 @@ class EvolInstructPipeline:
         ).format(
             method=EvolInstructTemplates.EVOL_METHODS.get(
                 method, 
-                random.choice(list(EvolInstructTemplates.EVOL_METHODS.values()))
+                random.choice(
+                    list(EvolInstructTemplates.EVOL_METHODS.values())
+                )
             ),
             prompt=prompt,
         )
@@ -157,13 +158,12 @@ class EvolInstructPipeline:
         self, 
         prompt: str,  # for a single prompt
         method: Union[str, List[str]] = "uniform", 
-        num_generations: int = 1, 
+        num_generations: int = 2, 
         keep_original: bool = True,
     ) -> List[Tuple[str, str]]:
-        r"""
-        Generates multiple variations of a single seed prompt x.
+        r"""Generates multiple variations of a single seed prompt x.
         Note those variations are directly generated from the same seed,
-        that is, [x_1, x_2, ..., x_N] <- LLM( | x, method), where N is the width.
+        that is, [x_1, x_2, ..., x_N] <- LLM( | x, method), where N is width.
         
         Args:
             prompt (str): The input prompt to evolve.
@@ -173,7 +173,7 @@ class EvolInstructPipeline:
                 - A list of methods with length equal to num_generations.
                 - "uniform" for random selection.
             num_generations (int): Number of variations to generate.
-            keep_original (bool): Whether to include the original prompt in output.
+            keep_original (bool): Whether to include the original in output.
         
         Returns:
             A list of tuples (evolved_prompt, method).
@@ -203,20 +203,21 @@ class EvolInstructPipeline:
     def _generate_iter(
         self,
         prompt: str,  # for a single prompt
-        method: Union[str, Dict[int, List[str]]] = "uniform",  # allowing dict for multiple methods
+        method: Union[str, Dict[int, List[str]]] = "uniform", 
         num_generations: int = 1,
         num_evolutions: int = 1,
         keep_original: bool = True,
         scorer: str = "uniform"
     ) -> Dict[int, List[Tuple[str, str]]]:
-        r"""
-        Iteratively evolve a prompt over multiple generations.
-        Note those variations are iteratively generated from the previous prompt,
-        that is, [x_11, x_12, ..., x_1N] <- LLM( | x, method), where N is the width.
-        We then use a scorer to select one of the seed prompt for the next iteration, say x_12,
+        r"""Iteratively evolve a prompt over multiple generations.
+        Note variations are iteratively generated from the previous prompt,
+        i.e., [x_11, x_12, ..., x_1N] <- LLM( | x, method), where N is width.
+        We then use a scorer to select one of the seed prompt 
+        for the next iteration, say x_12,
         then, [x_21, x_22, ..., x_2W] <- LLM( | x_12, method), and so on.
         Here, the num_evolutions can be seen as the depth of the evolution. 
-        We can call this as "TreeBoN", if we choose the best of N prompts in each iteration.
+        We can call this as "TreeBoN", if we choose the best of N prompts 
+        in each iteration.
         When N is 1, that is the default EvolInstruct setting.
 
         Args:
@@ -230,9 +231,11 @@ class EvolInstructPipeline:
             num_evolutions (int): 
                 The number of iterations to perform.
             keep_original (bool): 
-                Whether to include the original prompt in the output of each iteration.
+                Whether to include the original prompt in the output of 
+                each iteration.
             scorer: 
-                The scoring method to select the best prompt for the next iteration.
+                The scoring method to select the best prompt 
+                for the next iteration.
                 For now, "uniform" assigns random scores.
         
         Returns:
@@ -242,7 +245,8 @@ class EvolInstructPipeline:
 
         References:
             - eva: Evolving Alignment via Asymmetric Self-Play
-              https://ziyu-deep.github.io/files/eva-arxiv.pdf see appendix for details.
+              https://ziyu-deep.github.io/files/eva-arxiv.pdf 
+              see appendix for details.
         """
         results = {}
 
@@ -269,14 +273,26 @@ class EvolInstructPipeline:
             # assign scores and select the best prompt for the next iteration
             if scorer == "uniform":
                 # simulate random scores in range (1, 10) for now
-                scores = [random.randint(1, 10) for _ in batch_results[1:]] if keep_original else [random.randint(1, 10) for _ in batch_results]
+                scores = (
+                    [random.randint(1, 10) for _ in batch_results[1:]] 
+                    if keep_original 
+                    else [random.randint(1, 10) for _ in batch_results]
+                )
             else:
-                # TODO: implement instruction scoring module, e.g., complexity/quality scorer or by reward advantage
-                raise NotImplementedError(f"Scorer '{scorer}' is not implemented.")
+                # TODO: implement instruction scoring module,
+                # e.g., complexity/quality scorer or by reward advantage
+                raise NotImplementedError(
+                    f"Scorer '{scorer}' is not implemented."
+                )
 
             # select the prompt with the highest score
             best_index = scores.index(max(scores))
-            current_prompt = batch_results[best_index + 1][0] if keep_original else batch_results[best_index][0]
+            current_prompt = (
+                batch_results[best_index + 1][0]
+                if keep_original
+                else batch_results[best_index][0]
+            )
+
 
         return results
 
@@ -292,8 +308,7 @@ class EvolInstructPipeline:
         retry_limit: int = 3,
         retry_delay: float = 30,  # in seconds
     ) -> List[Dict[int, List[Tuple[str, str]]]]:
-        r"""
-        Divide the list of prompts into chunks,
+        r"""Divide the list of prompts into chunks,
         iterate through each chunk sequentially,
         then process the prompts within each chunk in parallel
 
@@ -304,21 +319,27 @@ class EvolInstructPipeline:
                 - "uniform" for random selection.
                 - A dictionary mapping iteration numbers to lists of methods,
                   where each list has length equal to num_generations.
-            num_generations (int): The number of variations to generate in each iteration.
-            num_evolutions (int): The number of iterations to perform.
+            num_generations (int): 
+                The number of variations to generate in each iteration.
+            num_evolutions (int): 
+                The number of iterations to perform.
             keep_original (bool): 
-                Whether to include the original prompt in the output of each iteration.
-            scorer (str): 
-                The scoring method to select the best prompt for the next iteration.
+                Whether to include the original prompt in the output of 
+                each iteration.
+            scorer (str): s
+                The scoring method to select the best prompt for 
+                the next iteration.
             num_chunks (int): 
                 The number of chunks to process batch of prompts.
-                specify a larger number of chunks to avoid hitting RPM limits for API requests.
-            retry_limit (int): The maximum number of retries for failed requests.
+                specify a larger number of chunks to avoid hitting RPM limits 
+                for API requests.
+            retry_limit (int): maximum number of retries for failed requests.
             retry_delay (float): The delay between retries in seconds.
 
         Returns:
             List[Dict[int, List[Tuple[str, str]]]]:
-            A list of dictionaries, where each dict corresponds to results of one prompt.
+            A list of dictionaries, where each dict corresponds to 
+            results of one prompt.
         """
         from concurrent.futures import ThreadPoolExecutor
         from math import ceil
@@ -337,22 +358,33 @@ class EvolInstructPipeline:
                     )
                 except Exception as e:
                     if retries < retry_limit:
-                        logger.info(f"Error: {e}. Retry in {retry_delay}s... (Attempt {retries + 1}/{retry_limit})")
+                        logger.info(
+                            f"Error: {e}. Retry in {retry_delay}s... "
+                            f"(Attempt {retries + 1}/{retry_limit})"
+                        )
                         time.sleep(retry_delay)
                         retries += 1
                     else:
-                        logger.info(f"Failed to process prompt after {retry_limit} attempts: {e}")
-                        return {}
+                        logger.info(
+                            f"Failed after {retry_limit} attempts: {e}"
+                        )
+                        return {i: [] for i in range(num_evolutions)}
 
         # split prompts into chunks
         num_chunks = max(1, min(num_chunks, len(prompts)))
         chunk_size = ceil(len(prompts) / num_chunks)
-        chunks = [prompts[i: i + chunk_size] for i in range(0, len(prompts), chunk_size)]
+        chunks = [
+            prompts[i: i + chunk_size] 
+            for i in range(0, len(prompts), chunk_size)
+        ]
 
         # generate prompts
         results = []
         for i, chunk in enumerate(chunks):
-            logger.critical(f"Processing chunk {i + 1}/{num_chunks} with {len(chunk)} prompts...")
+            logger.info(
+                f"Processing chunk {i + 1}/{num_chunks} "
+                f"with {len(chunk)} prompts..."
+            )
             with ThreadPoolExecutor() as executor:
                 chunk_results = list(executor.map(process_prompt, chunk))
                 results.extend(chunk_results)
