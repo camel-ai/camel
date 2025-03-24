@@ -33,9 +33,8 @@ class Action(BaseModel):
             generated (UTC).
     """
 
-    index: int = Field(
-        ..., description="Index of the state this action is performed upon"
-    )
+    index: Optional[int] = Field(default=None, description="...")
+
     llm_response: str = Field(description="Generated response from the LLM")
     metadata: Dict[str, Any] = Field(
         default_factory=dict,
@@ -89,16 +88,11 @@ class StepResult(BaseModel):
 
     def as_tuple(
         self,
-    ) -> Tuple[Observation, float, Dict[str, float], bool, Dict[str, Any]]:
+    ) -> Tuple[Observation, float, bool, Dict[str, Any]]:
         r"""Returns all fields of the model as a tuple, in
         declaration order."""
-        return (
-            self.observation,
-            self.reward,
-            self.rewards_dict,
-            self.done,
-            self.info,
-        )
+        self.info["rewards_dict"] = self.rewards_dict
+        return (self.observation, self.reward, self.done, self.info)
 
 
 class Environment(Protocol):

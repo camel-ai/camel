@@ -21,7 +21,6 @@ from camel.datasets import StaticDataset
 from camel.environments import (
     Action,
     Observation,
-    StepResult,
 )
 from camel.environments.single_step import SingleStepEnv
 from camel.verifiers.models import VerificationOutcome, VerificationResult
@@ -134,11 +133,12 @@ async def test_single_step_env_lifecycle():
     results = await env.step(actions)
     assert isinstance(results, list)
     assert len(results) == 2
-    for result in results:
-        assert isinstance(result, StepResult)
-        assert result.reward == 15
-        assert result.done is True
-        assert result.observation == MockSingleStepEnv.PLACEHOLDER_OBS
+    for next_obs, reward, done, info in results:
+        assert next_obs == env.PLACEHOLDER_OBS
+        assert reward == env.ACCURACY_REWARD + 5  # 5 is custom reward
+        assert done
+        assert isinstance(info, dict)
+        assert info["rewards_dict"].get("custom_reward", None) == 5
 
     # Test step with remaining two actions
     actions = [
@@ -152,11 +152,12 @@ async def test_single_step_env_lifecycle():
     results = await env.step(actions)
     assert isinstance(results, list)
     assert len(results) == 2
-    for result in results:
-        assert isinstance(result, StepResult)
-        assert result.reward == 15
-        assert result.done is True
-        assert result.observation == MockSingleStepEnv.PLACEHOLDER_OBS
+    for next_obs, reward, done, info in results:
+        assert next_obs == env.PLACEHOLDER_OBS
+        assert reward == env.ACCURACY_REWARD + 5  # 5 is custom reward
+        assert done
+        assert isinstance(info, dict)
+        assert info["rewards_dict"].get("custom_reward", None) == 5
 
     assert env._batch_done()
     await env.close()

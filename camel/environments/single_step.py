@@ -246,8 +246,34 @@ class SingleStepEnv:
         if not self._states:
             raise RuntimeError("No current observation. Call reset() first.")
 
-        # Normalize everything to list
-        actions = [action] if isinstance(action, Action) else action
+        if self.current_batch_size == 1:
+            if isinstance(action, Action):
+                if action.index is None:
+                    action.index = 0
+                elif action.index != 0:
+                    raise ValueError(
+                        "For batch_size=1, index must be None or 0"
+                    )
+                actions = [action]
+            else:
+                raise ValueError(
+                    "For batch_size=1, expect a single Action, not a list"
+                )
+        else:
+            if not isinstance(action, list):
+                raise ValueError("For batch_size>=2, expect a list of Actions")
+            actions = action
+            for act in actions:
+                if act.index is None:
+                    raise ValueError(
+                        "For batch_size>=2, each Action must have an index"
+                    )
+                if not isinstance(act.index, int):
+                    raise ValueError("Index must be an integer")
+        # to make mypy happy
+        assert all(
+            act.index is not None for act in actions
+        ), "All actions must have a non-None index"
         indices = [act.index for act in actions]
 
         if len(set(indices)) != len(indices):
