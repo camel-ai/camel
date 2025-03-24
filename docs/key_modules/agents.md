@@ -71,7 +71,7 @@ from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
 # Method 1: Using just a string for the model name (default model platform is used)
-agent1 = ChatAgent("You are a helpful assistant.", model="gpt-4o-mini")
+agent_1 = ChatAgent("You are a helpful assistant.", model="gpt-4o-mini")
 
 # Method 2: Using a ModelType enum (default model platform is used)
 agent2 = ChatAgent("You are a helpful assistant.", model=ModelType.GPT_4O_MINI)
