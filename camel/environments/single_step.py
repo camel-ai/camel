@@ -157,6 +157,8 @@ class SingleStepEnv:
             ValueError: If batch size exceeds dataset size.
             TypeError: If the dataset is of an unsupported type.
         """
+        if batch_size <= 0:
+            raise ValueError("Batch size must be positive")
 
         if not self._is_setup:
             logger.warning(

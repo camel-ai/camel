@@ -36,7 +36,99 @@ class MockSingleStepEnv(SingleStepEnv):
 
 
 @pytest.mark.asyncio
-async def test_single_step_env_lifecycle():
+async def test_single_step_env_lifecycle_single():
+    # Define a sample dataset
+    data = [
+        {
+            "question": "What is 2 + 2?",
+            "final_answer": "4",
+            "rationale": "Adding 2 and 2 gives 4.",
+            "metadata": {"difficulty": "easy"},
+        },
+        {
+            "question": "What is the capital of France?",
+            "final_answer": "Paris",
+            "rationale": "Paris is known as the capital city of France.",
+            "metadata": {"difficulty": "easy"},
+        },
+    ]
+    dataset = StaticDataset(data)
+
+    # Create a mock verifier
+    mock_verifier = MagicMock()
+    mock_verifier.setup = AsyncMock()
+    mock_verifier.cleanup = AsyncMock()
+    mock_verifier.verify_batch = AsyncMock(
+        side_effect=lambda solutions, ground_truths, **kwargs: [
+            VerificationResult(
+                status=VerificationOutcome.SUCCESS,
+                result="Verification successful",
+                feedback="Correct",
+                score=1.0,
+            )
+            for _ in solutions
+        ]
+    )
+
+    # Initialize the environment
+    env = MockSingleStepEnv(dataset=dataset, verifier=mock_verifier)
+
+    # Test setup
+    await env.setup()
+    assert env._is_setup is True
+    mock_verifier.setup.assert_awaited_once()
+
+    # Test reset with batch_size=1
+    observation = await env.reset(batch_size=1)
+    assert isinstance(
+        observation, Observation
+    )  # Single Observation, not a list
+    assert observation.question in [dp["question"] for dp in data]
+
+    # Test step with a single action (index=0)
+    action = Action(index=0, llm_response="4")  # Assuming first question
+    result = await env.step(action)
+    assert isinstance(result, tuple)  # Single result tuple, not a list
+    next_obs, reward, done, info = result
+    assert next_obs == env.PLACEHOLDER_OBS
+    assert reward == env.ACCURACY_REWARD + 5  # Accuracy + custom reward
+    assert done is True  # Single step should end the episode
+    assert isinstance(info, dict)
+    assert info["rewards_dict"].get("custom_reward", None) == 5
+
+    # Test that stepping again without reset fails
+    with pytest.raises(
+        RuntimeError,
+        match=re.escape("Episodes have ended for batch. Call reset() first."),
+    ):
+        await env.step(action)
+
+    # Test reset and step again with index=None (should default to 0)
+    observation2 = await env.reset(batch_size=1)
+    assert isinstance(observation2, Observation)
+    action2 = Action(
+        index=None, llm_response="Paris"
+    )  # Assuming second question
+    result2 = await env.step(action2)
+    next_obs2, reward2, done2, info2 = result2
+    assert next_obs2 == env.PLACEHOLDER_OBS
+    assert reward2 == env.ACCURACY_REWARD + 5
+    assert done2 is True
+    assert info2["rewards_dict"].get("custom_reward", None) == 5
+
+    # Test deterministic sampling with seed
+    obs1 = await env.reset(batch_size=1, seed=42)
+    obs2 = await env.reset(batch_size=1, seed=42)
+    assert obs1.question == obs2.question  # Same seed, same question
+
+    # Test close
+    await env.close()
+    assert env._is_setup is False
+    mock_verifier.cleanup.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_batched_single_step_env_lifecycle():
     data = [
         {
             "question": "What is 2 + 2?",
@@ -184,7 +276,151 @@ def create_mock_verifier():
 
 
 @pytest.mark.asyncio
-async def test_single_step_env_error_handling():
+async def test_single_step_env_error_handling_single():
+    # Define a valid dataset
+    data = [
+        {
+            "question": "What is 2 + 2?",
+            "final_answer": "4",
+            "rationale": "Adding 2 and 2 gives 4.",
+            "metadata": {"difficulty": "easy"},
+        },
+        {
+            "question": "What is the capital of France?",
+            "final_answer": "Paris",
+            "rationale": "Paris is known as the capital city of France.",
+            "metadata": {"difficulty": "easy"},
+        },
+    ]
+    dataset = StaticDataset(data)
+
+    # **1. Test Faulty Dataset**
+    faulty_data = [
+        {
+            "question": "What is 2 + 2?",
+            # Missing "final_answer"
+            "rationale": "Adding 2 and 2 gives 4.",
+            "metadata": {"difficulty": "easy"},
+        },
+    ]
+    with pytest.raises(ValueError):
+        StaticDataset(faulty_data, strict=True)
+
+    # **2. Test Faulty Verifier**
+    mock_verifier_exception = MagicMock()
+    mock_verifier_exception.setup = AsyncMock()
+    mock_verifier_exception.cleanup = AsyncMock()
+    mock_verifier_exception.verify_batch = AsyncMock(
+        side_effect=Exception("Verifier error")
+    )
+    env_fail_verifier = SingleStepEnv(
+        dataset=dataset,
+        verifier=mock_verifier_exception,
+    )
+    await env_fail_verifier.setup()
+    await env_fail_verifier.reset(batch_size=1)
+    action = Action(index=0, llm_response="4")
+    with pytest.raises(Exception, match="Verifier error"):
+        await env_fail_verifier.step(action)
+
+    # **3. Test State Mismanagement Scenarios**
+    # a) Step without setup
+    env_not_setup = SingleStepEnv(
+        dataset=dataset,
+        verifier=create_mock_verifier(),
+    )
+    with pytest.raises(
+        RuntimeError,
+        match=re.escape("Environment not set up. Call setup() first."),
+    ):
+        await env_not_setup.step(Action(index=0, llm_response="4"))
+
+    # b) Step after episode is done
+    env_episode_ended = SingleStepEnv(
+        dataset=dataset,
+        verifier=create_mock_verifier(),
+    )
+    await env_episode_ended.setup()
+    await env_episode_ended.reset(batch_size=1)
+    await env_episode_ended.step(Action(index=0, llm_response="4"))
+    with pytest.raises(
+        RuntimeError,
+        match=re.escape("Episodes have ended for batch. Call reset() first."),
+    ):
+        await env_episode_ended.step(Action(index=0, llm_response="4"))
+
+    # c) Step without reset
+    env_no_reset = SingleStepEnv(
+        dataset=dataset,
+        verifier=create_mock_verifier(),
+    )
+    await env_no_reset.setup()
+    with pytest.raises(
+        RuntimeError,
+        match=re.escape("Episodes have ended for batch. Call reset() first."),
+    ):
+        await env_no_reset.step(Action(index=0, llm_response="4"))
+
+    # **4. Test Invalid Actions**
+    env_invalid_actions = SingleStepEnv(
+        dataset=dataset,
+        verifier=create_mock_verifier(),
+    )
+    await env_invalid_actions.setup()
+    await env_invalid_actions.reset(batch_size=1)
+
+    # a) Action with invalid index
+    with pytest.raises(
+        ValueError, match="For batch_size=1, index must be None or 0"
+    ):
+        await env_invalid_actions.step(Action(index=1, llm_response="4"))
+
+    # b) Providing a list of actions
+    with pytest.raises(
+        ValueError,
+        match="For batch_size=1, expect a single Action, not a list",
+    ):
+        await env_invalid_actions.step([Action(index=0, llm_response="4")])
+
+    # **5. Test Batch Size Issues**
+    env_batch_size = SingleStepEnv(
+        dataset=dataset,
+        verifier=create_mock_verifier(),
+    )
+    await env_batch_size.setup()
+    with pytest.raises(ValueError, match="Batch size must be positive"):
+        await env_batch_size.reset(batch_size=0)
+
+    # **6. Test Setup and Close Failures**
+    # a) Setup failure
+    mock_verifier_setup_fail = MagicMock()
+    mock_verifier_setup_fail.setup = AsyncMock(
+        side_effect=Exception("Setup failed")
+    )
+    env_setup_fail = SingleStepEnv(
+        dataset=dataset,
+        verifier=mock_verifier_setup_fail,
+    )
+    with pytest.raises(Exception, match="Setup failed"):
+        await env_setup_fail.setup()
+
+    # b) Close failure
+    mock_verifier_close_fail = MagicMock()
+    mock_verifier_close_fail.setup = AsyncMock()
+    mock_verifier_close_fail.cleanup = AsyncMock(
+        side_effect=Exception("Cleanup failed")
+    )
+    env_close_fail = SingleStepEnv(
+        dataset=dataset,
+        verifier=mock_verifier_close_fail,
+    )
+    await env_close_fail.setup()
+    with pytest.raises(Exception, match="Cleanup failed"):
+        await env_close_fail.close()
+
+
+@pytest.mark.asyncio
+async def test_batched_single_step_env_error_handling():
     # **1. Test Faulty Dataset**
     # Ensure we don't silently handle the error
     faulty_data = [
