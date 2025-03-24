@@ -120,7 +120,8 @@ class MilvusStorage(BaseVectorStorage):
 
         self.enable_hybrid_search = enable_hybrid_search
         self.vector_dim = vector_dim
-        self.collection_name = collection_name or self._generate_collection_name()
+        self.collection_name = (collection_name or 
+                               self._generate_collection_name())
         self._check_and_create_collection()
 
     def _create_client(
@@ -246,10 +247,12 @@ class MilvusStorage(BaseVectorStorage):
             index_params.add_index(
                 field_name="sparse",
                 index_name="sparse_index",
-                index_type="SPARSE_INVERTED_INDEX",  # Index type for sparse vectors
+                # Index type for sparse vectors
+                index_type="SPARSE_INVERTED_INDEX",
                 metric_type="BM25",
-                params={"inverted_index_algo": "DAAT_MAXSCORE"},  
-                # The ratio of small vector values to be dropped during indexing
+                params={"inverted_index_algo": "DAAT_MAXSCORE"},
+                # The ratio of small vector values to be dropped 
+                # during indexing
             )
 
         self._client.create_collection(
@@ -406,10 +409,12 @@ class MilvusStorage(BaseVectorStorage):
             return d
 
     def _process_enum_values(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Process dictionary to convert any "__enum__" entries to their proper enum values.
+        """Process dictionary to convert any "__enum__" entries to their proper 
+        enum values.
         
         Args:
-            data (Dict[str, Any]): Dictionary potentially containing "__enum__" entries
+            data (Dict[str, Any]): Dictionary potentially containing 
+                "__enum__" entries
             
         Returns:
             Dict[str, Any]: Processed dictionary with enum values
@@ -423,14 +428,18 @@ class MilvusStorage(BaseVectorStorage):
                 if "__enum__" in value:
                     # Convert "__enum__" format to actual enum values
                     name, member = value["__enum__"].split(".")
-                    result[key] = getattr(CamelJSONEncoder.CAMEL_ENUMS[name], member)
+                    result[key] = getattr(
+                        CamelJSONEncoder.CAMEL_ENUMS[name], 
+                        member
+                    )
                 else:
                     # Process nested dictionaries
                     result[key] = self._process_enum_values(value)
             elif isinstance(value, list):
                 # Process lists of dictionaries
                 result[key] = [
-                    self._process_enum_values(item) if isinstance(item, dict) else item
+                    self._process_enum_values(item) 
+                    if isinstance(item, dict) else item
                     for item in value
                 ]
             else:
@@ -461,7 +470,8 @@ class MilvusStorage(BaseVectorStorage):
         
         from pymilvus import AnnSearchRequest, WeightedRanker
         
-        if self.enable_hybrid_search and hasattr(query, 'query_text') and query.query_text:
+        if (self.enable_hybrid_search and hasattr(query, 'query_text') 
+                and query.query_text):
             # Create search parameters for vector search
             vector_search_param = {
                 "data": [query.query_vector],
@@ -518,7 +528,10 @@ class MilvusStorage(BaseVectorStorage):
             
             try:
                 if isinstance(payload, str) and payload:
-                    payload_dict = json.loads(payload, object_hook=self._json_object_hook)
+                    payload_dict = json.loads(
+                        payload, 
+                        object_hook=self._json_object_hook
+                    )
                 elif isinstance(payload, dict):
                     payload_dict = payload
                 else:
@@ -636,7 +649,8 @@ class MilvusStorage(BaseVectorStorage):
                             ]
                         )
                     ):
-                        # Convert string values in lists if they match enum field patterns
+                        # Convert string values in lists if they match 
+                        # enum field patterns
                         value[i] = item.lower()
 
     def clear(self) -> None:
