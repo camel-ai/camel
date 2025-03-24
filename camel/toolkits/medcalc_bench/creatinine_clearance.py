@@ -24,12 +24,19 @@ def generate_cockcroft_gault_explanation(params):
 
     Parameters:
         params (dict): A dictionary containing the following key-value pairs:
+            - "sex" (str): The patient's gender, which can be either "Male" or "Female".
             - "weight" (tuple): The patient's weight information in the format (value, unit).
                 - Value (float): The numerical weight measurement.
                 - Unit (str): The unit of weight, which can be "lbs" (pounds), "g" (grams), or "kg" (kilograms).
             - "height" (tuple): The patient's height information in the format (value, unit).
                 - Value (float): The numerical height measurement.
                 - Unit (str): The unit of height, which can be "cm" (centimeters) or "in" (inches).
+            - "creatinine" (tuple): The patient's height information in the format (value, unit).
+                - Value (float): The numerical height measurement.
+                - Unit (str): The unit of height, which can be "cm" (centimeters) or "in" (inches).
+            - "age" (array): The patient's albumin concentration in the format (value, unit).
+                - Value (float): Age.
+                - Unit (str): The unit can be "months", "years".
 
     Returns:
         dict: Contains two key-value pairs:
@@ -42,8 +49,8 @@ def generate_cockcroft_gault_explanation(params):
         - Use the `ideal_body_weight` function to calculate Ideal Body Weight (IBW)
 
     Example:
-        generate_cockcroft_gault_explanation({"weight": (150, "lbs"), "height": (170, "cm")})
-        output: ""
+        generate_cockcroft_gault_explanation({"sex": "Female","weight": (55.0, "kg"),"height": (162.8, "cm"),"creatinine": (0.57, "mg/dL"),"age": (16, "years")})
+        output: "{'Explanation': "The formula for computing Cockcroft-Gault is given by CrCl = ((140 - age) * adjusted weight * (gender_coefficient)) / (serum creatinine * 72), where the gender_coefficient is 1 if male, and 0.85 if female. The serum creatinine concentration is in mg/dL.\nThe patient's gender is female, which means that the gender coefficient is 0.85.\nThe patient is 16 years old. \nThe concentration of creatinine is 0.57 mg/dL. \nThe formula for computing the patient's BMI is (weight)/(height * height), where weight is the patient's weight in kg and height is the patient's height in m.\nThe patient's height is 162.8 cm, which is 162.8 cm * 1 m / 100 cm = 1.628 m. The patient's weight is 55.0 kg. The patient's bmi is therefore 55.0 kg / (1.628 m * 1.628 m) = 20.752 kg/m^2.The patient's BMI is 20.8, indicating they are normal weight.\nBecause the patient is normal, we take take minimum of the ideal body weight and the patient's body as the patient's adjusted weight for the Cockroft-Gault Equation. Hence, the adjusted body weight is the minimum of the two giving us an adjusted body weight of 54.918 kg.\n\nUsing the Cockcroft-Gault equation:\nCrCl = ((140 - age) * adjusted weight * gender_coefficient) / (serum creatinine * 72).\nPlugging the patient's values gives us ((140 - 16) * 54.918 * 0.85) / (0.57 * 72) = 141.042 mL/min. Hence, the patient's creatinine clearance is 141.042 mL/min.\n", 'Answer': 141.042}"
     """
 
     weight_exp, weight = weight_conversion_explanation(params["weight"])
