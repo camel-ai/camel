@@ -85,7 +85,7 @@ agent4 = ChatAgent(
     model=(ModelPlatformType.ANTHROPIC, ModelType.CLAUDE_3_5_SONNET),
 )
 
-# Method 5: Using default model when none is specified
+# Method 5: Using default model platform and default model type when none is specified
 agent5 = ChatAgent("You are a helpful assistant.")
 
 # Method 6: Using a pre-created model with ModelFactory (original approach)
