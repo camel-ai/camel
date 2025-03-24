@@ -83,6 +83,56 @@ class SiliconFlowModel(BaseModelBackend):
             base_url=self._url,
         )
 
+    def _is_reasoning_model(self) -> bool:
+        r"""Check if the current model_type is a reasoning-capable model.
+        Currently supports QwQ and DeepSeek-R1 series models.
+        
+        Returns:
+            bool: Whether the current model supports reasoning.
+        """
+        model_str = str(self.model_type).lower().replace("-", "").replace("_", "").replace("/", "")
+        return "qwq" in model_str or "deepseekr1" in model_str
+        
+    def _post_handle_response(
+        self, response: ChatCompletion
+    ) -> ChatCompletion:
+        r"""Handle reasoning content with <think> tags at the beginning."""
+        is_reasoning_model = self._is_reasoning_model()
+        
+        if (
+            is_reasoning_model
+            and os.environ.get("GET_REASONING_CONTENT", "false").lower() == "true"
+        ):
+            # get reasoning content from response safely
+            reasoning_content = getattr(response.choices[0].message, "reasoning_content", None)
+            combined_content = (  # type: ignore[operator]
+                f"<think>\n{reasoning_content}\n</think>\n"
+                if reasoning_content
+                else ""
+            ) + response.choices[0].message.content
+
+            response = ChatCompletion.construct(
+                id=response.id,
+                choices=[
+                    dict(
+                        index=response.choices[0].index,
+                        message={
+                            "role": response.choices[0].message.role,
+                            "content": combined_content,
+                            "tool_calls": None,
+                        },
+                        finish_reason=response.choices[0].finish_reason
+                        if response.choices[0].finish_reason
+                        else None,
+                    )
+                ],
+                created=response.created,
+                model=response.model,
+                object="chat.completion",
+                usage=response.usage,
+            )
+        return response
+
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -105,7 +155,8 @@ class SiliconFlowModel(BaseModelBackend):
             model=self.model_type,
             **self.model_config_dict,
         )
-        return response
+        
+        return self._post_handle_response(response)
 
     async def _arun(
         self,
