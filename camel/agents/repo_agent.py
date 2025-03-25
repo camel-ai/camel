@@ -31,7 +31,7 @@ from camel.types import (
     OpenAIBackendRole,
     RoleType,
 )
-from camel.utils import BaseTokenCounter, track_agent
+from camel.utils import track_agent
 from camel.utils.chunker import CodeChunker
 
 # mypy: disable-error-code=union-attr
@@ -102,9 +102,6 @@ class RepoAgent(ChatAgent):
             :obj:`None`)
         chunk_size (Optional[int]): Maximum number of characters per code chunk
             when indexing files for RAG. (default: :obj:`8192`)
-        token_counter (Optional[BaseModelBackend]): Token counter utility used
-            to estimate token usage during chunking and message preparation. (
-            default: :obj:`None`)
         top_k (int): Number of top-matching chunks to retrieve from the vector
             store in RAG mode. (default: :obj:`5`)
         similarity (Optional[float]): Minimum similarity score required to
@@ -112,6 +109,7 @@ class RepoAgent(ChatAgent):
         collection_name (Optional[str]): Name of the vector database
             collection to use for storing and retrieving chunks. (default:
             :obj:`None`)
+        **kwargs: Inherited from ChatAgent
     """
 
     def __init__(
@@ -125,7 +123,6 @@ class RepoAgent(ChatAgent):
         vector_retriever: Optional[VectorRetriever] = None,
         github_auth_token: Optional[str] = None,
         chunk_size: Optional[int] = 8192,
-        token_counter: Optional[BaseTokenCounter] = None,
         top_k: Optional[int] = 5,
         similarity: Optional[float] = 0.6,
         collection_name: Optional[str] = None,
@@ -167,9 +164,7 @@ class RepoAgent(ChatAgent):
             "required code."
         )
         self.full_text = ""
-        self.chunker = CodeChunker(
-            chunk_size=chunk_size or 8192, token_counter=token_counter
-        )
+        self.chunker = CodeChunker(chunk_size=chunk_size or 8192)
         self.repo: List[RepositoryInfo] = []
         if repo_paths:
             self.repos = self.load_repositories(repo_paths)
@@ -281,14 +276,35 @@ class RepoAgent(ChatAgent):
                         ".7z",
                         ".rar",
                         ".iso",
+                        ".gif",
+                        ".docx",
                     ]
                 ):
                     logger.info(f"Skipping binary file: {file.path}")
                     continue
                 try:
-                    file_content = repo.get_contents(
-                        file.path
-                    ).decoded_content.decode("utf-8")
+                    file_obj = repo.get_contents(file.path)
+
+                    if getattr(file_obj, "encoding", None) != "base64":
+                        logger.warning(
+                            f"Skipping file with unsupported "
+                            f"encoding: {file.path}"
+                        )
+                        continue
+
+                    try:
+                        content_bytes = file_obj.decoded_content
+                        file_content = content_bytes.decode("utf-8")
+                    except UnicodeDecodeError:
+                        logger.warning(f"Skipping non-UTF-8 file: {file.path}")
+                        continue
+                    except Exception as e:
+                        logger.error(
+                            f"Failed to decode file content at "
+                            f"{file.path}: {e}"
+                        )
+                        continue
+
                     github_file = GitHubFile(
                         content=file_content,
                         file_path=f"{owner}/{repo_name}/{file.path}",
