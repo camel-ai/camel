@@ -29,8 +29,7 @@ class BaseScorer(ABC):
     def score(
         self, reference_prompt: str, candidate_prompt: str
     ) -> Dict[str, int]:
-        """
-        Compare a candidate prompt against a reference prompt and
+        r"""Compare a candidate prompt against a reference prompt and
         return a tuple of scores. The higher the score, the better.
         For example, (diversity, difficulty, feasibility).
         """
@@ -82,8 +81,8 @@ class MathScorer(BaseScorer):
     def score(
         self, reference_problem: str, new_problem: str
     ) -> Dict[str, int]:
-        """
-        Evaluates the new math problem relative to the reference math problem.
+        r"""Evaluates the new math problem relative to the reference math
+        problem.
 
         Args:
             reference_problem (str): The reference math problem.
@@ -144,8 +143,7 @@ class GeneralScorer(BaseScorer):
     def score(
         self, reference_problem: str, new_problem: str
     ) -> Dict[str, int]:
-        """
-        Evaluates the new problem against the reference problem using
+        r"""Evaluates the new problem against the reference problem using
         structured scoring.
 
         Args:
@@ -154,7 +152,7 @@ class GeneralScorer(BaseScorer):
 
         Returns:
             Dict[str, int]: A dictionary with scores for diversity, complexity,
-            and validity.
+                and validity.
         """
         query = (
             f"Reference problem:\n{reference_problem}\n\n"

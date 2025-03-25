@@ -20,8 +20,7 @@ from typing import Dict, List, Union
 # flake8: noqa
 @dataclass(frozen=True)
 class BaseEvolInstructTemplates(ABC):
-    r"""
-    Abstract base class for evolution instruction templates.
+    r"""Abstract base class for evolution instruction templates.
 
     This class defines a required structure for prompt transformation templates
     - `EVOL_METHODS`: A dictionary mapping method keys to their descriptions.
@@ -33,21 +32,20 @@ class BaseEvolInstructTemplates(ABC):
     @property
     @abstractmethod
     def EVOL_METHODS(self) -> Dict[str, str]:
-        """A dictionary mapping evolution method keys to their descriptions."""
+        r"""A dictionary mapping evolution method keys to their descriptions."""
         pass
 
     @property
     @abstractmethod
     def STRATEGY(self) -> Dict[str, Dict[str, Union[str, List[str]]]]:
-        """A dictionary defining strategies and their corresponding methods."""
+        r"""A dictionary defining strategies and their corresponding methods."""
         pass
 
 
 # flake8: noqa
 @dataclass(frozen=True)
 class EvolInstructTemplates(BaseEvolInstructTemplates):
-    r"""
-    Contains templates for EvolInstruct prompt transformations.
+    r"""Contains templates for EvolInstruct prompt transformations.
 
     References:
       - WizardLM: Empowering Large Language Models to Follow Complex
@@ -207,9 +205,7 @@ class EvolInstructTemplates(BaseEvolInstructTemplates):
 # flake8: noqa
 @dataclass(frozen=True)
 class MathEvolInstructTemplates(BaseEvolInstructTemplates):
-    r"""
-    Contains templates for MathEvolInstruct prompt transformations.
-    """
+    r"""Contains templates for MathEvolInstruct prompt transformations."""
 
     # Meta-instructions for in-depth evolving
     INST_IN_DEPTH = (

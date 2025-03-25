@@ -250,8 +250,8 @@ class EvolInstructPipeline:
 
         Returns:
             Dict[int, List[Dict[str, Any]]]: Evolution results per iteration,
-            where each candidate is represented as a dict with keys:
-            "instruction", "method", and "scores".
+                where each candidate is represented as a dict with keys:
+                "instruction", "method", and "scores".
         """
         if num_iterations is None:
             if isinstance(evolution_spec, list):

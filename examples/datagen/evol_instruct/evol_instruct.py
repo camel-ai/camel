@@ -28,8 +28,8 @@ os.environ["CAMEL_LOGGING_DISABLED"] = "false"
 
 
 def main():
-    """
-    Example usage of EvolInstructPipeline for iterative and parallel evolution.
+    r"""Example usage of EvolInstructPipeline for iterative and parallel
+    evolution.
     """
     # Load data
     file_path = "./examples/datagen/evol_instruct/input.json"
