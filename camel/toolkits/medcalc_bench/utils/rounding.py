@@ -12,7 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 """
-This code is borrowed and modified based on the source code from the 'MedCalc-Bench' repository.
+This code is borrowed and modified based on the source code from the
+    'MedCalc-Bench' repository.
 Original repository: https://github.com/ncbi-nlp/MedCalc-Bench
 
 Modifications include:

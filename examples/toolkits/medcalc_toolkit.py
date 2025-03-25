@@ -59,7 +59,7 @@ with open(file_path, "r") as file:
 # calcium_correction, homa_ir, mean_arterial_pressure, sOsm,
 # estimated_conception_date,
 # delta_gap, mdrd_gfr, target_weight, creatinine_clearance
-calculator_name = "creatinine_clearance"
+calculator_name = "ldl_calculated"
 
 # Extract the "usr_msg" and "Ground Truth Answer" that match the criteria
 target_entry = None
