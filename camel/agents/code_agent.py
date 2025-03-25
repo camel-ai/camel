@@ -344,8 +344,9 @@ class CodeAgent(ChatAgent):
 
         super().__init__(tools=tools, **kwargs)
 
+        tool_schemas = self._get_full_tool_schemas()
         tools_str = ""
-        for item in tools:
+        for item in tool_schemas:
             tools_str += str(item) + "\n"
         self.default_system_message = SYSTEM_MESSAGE.format(tools=tools_str)
         
