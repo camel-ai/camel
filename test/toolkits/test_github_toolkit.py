@@ -14,8 +14,9 @@
 
 from unittest.mock import MagicMock, patch
 
-from github import Auth, Github
+from github import Auth
 from github.ContentFile import ContentFile
+from github.MainClass import Github
 
 from camel.toolkits.github_toolkit import GithubToolkit
 
@@ -49,35 +50,38 @@ def test_create_pull_request(monkeypatch):
     # Call the constructor of the GithubToolkit class
     github_toolkit = GithubToolkit("repo_name", "token")
 
-    # Mock the create_pull method of the github_toolkit instance to return a
-    # value
+    # Mock the create_pull method to return a value
     mock_pr_response = MagicMock()
-    mock_pr_response.title = """[GitHub Agent] Solved issue: Time complexity 
+    mock_pr_response.title = """[GitHub Agent] Solved issue: Time complexity
     for product_of_array_except_self.py"""
     mock_pr_response.body = "Fixes #1"
     github_toolkit.repo.create_pull.return_value = mock_pr_response
 
-    # Create a MagicMock that mimics ContentFile
+    # Create a mock ContentFile that will pass isinstance check
     mock_content_file = MagicMock(spec=ContentFile)
     mock_content_file.path = "path/to/file"
     mock_content_file.sha = "dummy_sha"
 
-    # Ensure get_contents returns the mocked ContentFile
+    # Important: Return the single mock file
     github_toolkit.repo.get_contents.return_value = mock_content_file
+
+    # Mock the branch
+    mock_branch = MagicMock()
+    mock_branch.commit.sha = "some_sha"
+    github_toolkit.repo.get_branch.return_value = mock_branch
 
     # Create a pull request
     pr = github_toolkit.create_pull_request(
         file_path="path/to/file",
         branch_name="branch_name",
         new_content="This is the content of the file",
-        pr_title="""[GitHub Agent] Solved issue: Time complexity for 
-        product_of_array_except_self.py""",
+        pr_title="""[GitHub Agent] Solved issue: Time complexity 
+        for product_of_array_except_self.py""",
         body="Fixes #1",
     )
 
     expected_response = """Title: [GitHub Agent] Solved issue: Time complexity 
     for product_of_array_except_self.py\nBody: Fixes #1\n"""
-
     assert (
         pr == expected_response
     ), f"Expected {expected_response}, but got {pr}"
