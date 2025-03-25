@@ -31,7 +31,7 @@ from camel.types import (
     OpenAIBackendRole,
     RoleType,
 )
-from camel.utils import BaseTokenCounter
+from camel.utils import BaseTokenCounter, track_agent
 from camel.utils.chunker import CodeChunker
 
 # mypy: disable-error-code=union-attr
@@ -71,7 +71,49 @@ class RepositoryInfo(BaseModel):
     contents: List[GitHubFile] = []
 
 
+@track_agent(name="RepoAgent")
 class RepoAgent(ChatAgent):
+    r"""A specialized agent designed to interact with GitHub repositories for
+        code generation tasks.
+        The RepoAgent enhances a base ChatAgent by integrating context from
+        one or more GitHub repositories. It supports two processing modes:
+        - FULL_CONTEXT: loads and injects full repository content into the
+            prompt.
+        - RAG (Retrieval-Augmented Generation): retrieves relevant
+            code/documentation chunks using a vector store when context
+            length exceeds a specified token limit.
+
+    Attributes:
+        system_message (Optional[str]): The system message
+            for the chat agent. (default: :str:`"You are a code assistant
+            with repo context."`)
+        repo_paths (Optional[List[str]]): List of GitHub repository URLs to
+            load during initialization. (default: :obj:`None`)
+        model (BaseModelBackend): The model backend to use for generating
+            responses. (default: :obj:`ModelPlatformType.DEFAULT`
+            with `ModelType.DEFAULT`)
+        max_context_tokens (Optional[int]): Maximum number of tokens allowed
+            before switching to RAG mode. (default: :obj:`2000`)
+        vector_retriever (Optional[VectorRetriever]): Retriever used to
+            perform semantic search in RAG mode. Required if repo content
+            exceeds context limit. (default: :obj:`None`)
+        github_auth_token (Optional[str]): GitHub personal access token
+            for accessing private or rate-limited repositories. (default:
+            :obj:`None`)
+        chunk_size (Optional[int]): Maximum number of characters per code chunk
+            when indexing files for RAG. (default: :obj:`8192`)
+        token_counter (Optional[BaseModelBackend]): Token counter utility used
+            to estimate token usage during chunking and message preparation. (
+            default: :obj:`None`)
+        top_k (int): Number of top-matching chunks to retrieve from the vector
+            store in RAG mode. (default: :obj:`5`)
+        similarity (Optional[float]): Minimum similarity score required to
+            include a chunk in the RAG context. (default: :obj:`0.6`)
+        collection_name (Optional[str]): Name of the vector database
+            collection to use for storing and retrieving chunks. (default:
+            :obj:`None`)
+    """
+
     def __init__(
         self,
         system_message: Optional[
