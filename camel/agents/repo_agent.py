@@ -14,9 +14,10 @@
 import time
 from enum import Enum, auto
 from string import Template
-from typing import List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, List, Optional, Tuple, Union
 
-from github import Github
+if TYPE_CHECKING:
+    from github import Github
 from pydantic import BaseModel
 
 from camel.agents import ChatAgent
@@ -34,7 +35,6 @@ from camel.types import (
 from camel.utils import track_agent
 from camel.utils.chunker import CodeChunker
 
-# mypy: disable-error-code=union-attr
 logger = get_logger(__name__)
 
 
@@ -74,16 +74,19 @@ class RepositoryInfo(BaseModel):
 @track_agent(name="RepoAgent")
 class RepoAgent(ChatAgent):
     r"""A specialized agent designed to interact with GitHub repositories for
-        code generation tasks.
-        The RepoAgent enhances a base ChatAgent by integrating context from
-        one or more GitHub repositories. It supports two processing modes:
-        - FULL_CONTEXT: loads and injects full repository content into the
-            prompt.
-        - RAG (Retrieval-Augmented Generation): retrieves relevant
-            code/documentation chunks using a vector store when context
-            length exceeds a specified token limit.
+    code generation tasks.
+    The RepoAgent enhances a base ChatAgent by integrating context from
+    one or more GitHub repositories. It supports two processing modes:
+    - FULL_CONTEXT: loads and injects full repository content into the
+        prompt.
+    - RAG (Retrieval-Augmented Generation): retrieves relevant
+        code/documentation chunks using a vector store when context
+        length exceeds a specified token limit.
 
     Attributes:
+        vector_retriever (VectorRetriever): Retriever used to
+            perform semantic search in RAG mode. Required if repo content
+            exceeds context limit.
         system_message (Optional[str]): The system message
             for the chat agent. (default: :str:`"You are a code assistant
             with repo context."`)
@@ -94,9 +97,6 @@ class RepoAgent(ChatAgent):
             with `ModelType.DEFAULT`)
         max_context_tokens (Optional[int]): Maximum number of tokens allowed
             before switching to RAG mode. (default: :obj:`2000`)
-        vector_retriever (Optional[VectorRetriever]): Retriever used to
-            perform semantic search in RAG mode. Required if repo content
-            exceeds context limit. (default: :obj:`None`)
         github_auth_token (Optional[str]): GitHub personal access token
             for accessing private or rate-limited repositories. (default:
             :obj:`None`)
@@ -110,17 +110,23 @@ class RepoAgent(ChatAgent):
             collection to use for storing and retrieving chunks. (default:
             :obj:`None`)
         **kwargs: Inherited from ChatAgent
+
+    Note:
+        The current implementation of RAG mode requires using Qdrant as the
+        vector storage backend. The VectorRetriever defaults to QdrantStorage
+        if no storage is explicitly provided. Other vector storage backends
+        are not currently supported for the RepoAgent's RAG functionality.
     """
 
     def __init__(
         self,
+        vector_retriever: VectorRetriever,
         system_message: Optional[
             str
         ] = "You are a code assistant with repo context.",
         repo_paths: Optional[List[str]] = None,
         model: Optional[BaseModelBackend] = None,
         max_context_tokens: int = 2000,
-        vector_retriever: Optional[VectorRetriever] = None,
         github_auth_token: Optional[str] = None,
         chunk_size: Optional[int] = 8192,
         top_k: Optional[int] = 5,
@@ -165,7 +171,7 @@ class RepoAgent(ChatAgent):
         )
         self.full_text = ""
         self.chunker = CodeChunker(chunk_size=chunk_size or 8192)
-        self.repo: List[RepositoryInfo] = []
+        self.repos: List[RepositoryInfo] = []
         if repo_paths:
             self.repos = self.load_repositories(repo_paths)
         if len(self.repos) > 0:
@@ -213,6 +219,8 @@ class RepoAgent(ChatAgent):
             List[RepositoryInfo]: A list of objects containing information
                 about the all repositories, including the contents.
         """
+        from github import Github
+
         github_client = Github(self.github_auth_token)
         res = []
 
@@ -229,7 +237,7 @@ class RepoAgent(ChatAgent):
     def load_repository(
         self,
         repo_url: str,
-        github_client: Github,
+        github_client: "Github",
     ) -> RepositoryInfo:
         r"""Load the content of a GitHub repository.
 
@@ -241,10 +249,12 @@ class RepoAgent(ChatAgent):
             RepositoryInfo: The object containing information
                 about the repository, including the contents.
         """
+        from github.ContentFile import ContentFile
+
         try:
             owner, repo_name = self.parse_url(repo_url)
             repo = github_client.get_repo(f"{owner}/{repo_name}")
-            contents = repo.get_contents("")  # type: ignore[attr-defined]
+            contents = repo.get_contents("")
         except Exception as e:
             logger.error(f"Error loading repository: {e}")
             raise Exception(e)
@@ -255,8 +265,16 @@ class RepoAgent(ChatAgent):
             contents=[],
         )
 
-        while contents:
-            file = contents.pop(0)
+        # Create a list to process repository contents
+        content_list: List[ContentFile] = []
+        if isinstance(contents, list):
+            content_list = contents
+        else:
+            # Handle single ContentFile case
+            content_list = [contents]
+
+        while content_list:
+            file = content_list.pop(0)
             if file.type == "file":
                 if any(
                     file.path.endswith(ext)
@@ -284,6 +302,15 @@ class RepoAgent(ChatAgent):
                     continue
                 try:
                     file_obj = repo.get_contents(file.path)
+
+                    # Handle file_obj which could be a single ContentFile or a
+                    # list
+                    if isinstance(file_obj, list):
+                        if not file_obj:  # Skip empty lists
+                            continue
+                        file_obj = file_obj[
+                            0
+                        ]  # Take the first item if it's a list
 
                     if getattr(file_obj, "encoding", None) != "base64":
                         logger.warning(
@@ -316,7 +343,13 @@ class RepoAgent(ChatAgent):
                     raise Exception(e)
                 logger.info(f"Successfully loaded file: {file.path}")
             elif file.type == "dir":
-                contents.extend(repo.get_contents(file.path))  # type: ignore[arg-type]
+                dir_contents = repo.get_contents(file.path)
+                # Handle dir_contents which could be a single ContentFile or a
+                # list
+                if isinstance(dir_contents, list):
+                    content_list.extend(dir_contents)
+                else:
+                    content_list.append(dir_contents)
         return info
 
     def count_tokens(self) -> int:
@@ -374,10 +407,10 @@ class RepoAgent(ChatAgent):
 
     def check_switch_mode(self) -> bool:
         r"""Check if the current context exceeds the context window; if so,
-            switch to RAG mode.
+        switch to RAG mode.
 
         Returns:
-            bool: True if the mode was switched, False otherwise
+            bool: True if the mode was switched, False otherwise.
         """
         if self.processing_mode == ProcessingMode.RAG:
             return False
