@@ -156,7 +156,7 @@ class RepoAgent(ChatAgent):
             url_path = url.replace("https://github.com/", "")
             parts = url_path.split("/")
             if len(parts) != 2:
-                raise Exception("Incorrect GitHub repo URL format.")
+                raise ValueError("Incorrect GitHub repo URL format.")
             else:
                 return parts[0], parts[1]
         except Exception as e:
@@ -174,7 +174,7 @@ class RepoAgent(ChatAgent):
 
         Returns:
             List[RepositoryInfo]: A list of objects containing information
-            about the all repositories, including the contents.
+                about the all repositories, including the contents.
         """
         github_client = Github(self.github_auth_token)
         res = []
@@ -223,7 +223,23 @@ class RepoAgent(ChatAgent):
             if file.type == "file":
                 if any(
                     file.path.endswith(ext)
-                    for ext in [".png", ".jpg", ".pdf", ".zip", ".gitignore"]
+                    for ext in [
+                        ".png",
+                        ".jpg",
+                        ".pdf",
+                        ".zip",
+                        ".gitignore",
+                        ".mp4",
+                        ".avi",
+                        ".mov",
+                        ".mp3",
+                        ".wav",
+                        ".tar",
+                        ".gz",
+                        ".7z",
+                        ".rar",
+                        ".iso",
+                    ]
                 ):
                     logger.info(f"Skipping binary file: {file.path}")
                     continue
@@ -456,7 +472,7 @@ class RepoAgent(ChatAgent):
             logger.error(
                 f"Error during database initialization or scroll: {e}"
             )
-            raise
+            raise Exception(e)
 
         results = []
         for point in source_data:
