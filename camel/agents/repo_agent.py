@@ -18,7 +18,6 @@ from typing import List, Optional, Tuple, Union
 
 from github import Github
 from pydantic import BaseModel
-from qdrant_client.models import FieldCondition, Filter, MatchValue
 
 from camel.agents import ChatAgent
 from camel.logger import get_logger
@@ -32,6 +31,7 @@ from camel.types import (
     OpenAIBackendRole,
     RoleType,
 )
+from camel.utils import BaseTokenCounter
 from camel.utils.chunker import CodeChunker
 
 # mypy: disable-error-code=union-attr
@@ -49,7 +49,7 @@ class GitHubFile(BaseModel):
     Attributes:
         content (str): The content of the GitHub text.
         file_path (str): The path of the file.
-        html_url (str): The ContentFile object.
+        html_url (str): The actual url of the file.
     """
 
     content: str
@@ -83,6 +83,7 @@ class RepoAgent(ChatAgent):
         vector_retriever: Optional[VectorRetriever] = None,
         github_auth_token: Optional[str] = None,
         chunk_size: Optional[int] = 8192,
+        token_counter: Optional[BaseTokenCounter] = None,
         top_k: Optional[int] = 5,
         similarity: Optional[float] = 0.6,
         collection_name: Optional[str] = None,
@@ -90,8 +91,8 @@ class RepoAgent(ChatAgent):
     ):
         if model is None:
             model = ModelFactory.create(
-                model_platform=ModelPlatformType.OPENAI,
-                model_type=ModelType.GPT_4O_MINI,
+                model_platform=ModelPlatformType.DEFAULT,
+                model_type=ModelType.DEFAULT,
             )
 
         super().__init__(system_message=system_message, model=model, **kwargs)
@@ -124,8 +125,10 @@ class RepoAgent(ChatAgent):
             "required code."
         )
         self.full_text = ""
-        assert chunk_size is not None
-        self.chunker = CodeChunker(chunk_size=chunk_size)
+        self.chunker = CodeChunker(
+            chunk_size=chunk_size or 8192, token_counter=token_counter
+        )
+        self.repo: List[RepositoryInfo] = []
         if repo_paths:
             self.repos = self.load_repositories(repo_paths)
         if len(self.repos) > 0:
@@ -286,7 +289,6 @@ class RepoAgent(ChatAgent):
         if self.processing_mode == ProcessingMode.RAG:
             for repo in new_repos:
                 for f in repo.contents:
-                    assert self.vector_retriever is not None
                     self.vector_retriever.process(
                         content=f.content,
                         should_chunk=True,
@@ -429,8 +431,9 @@ class RepoAgent(ChatAgent):
             str: A concatenated string of the `text` fields sorted by
                 `piece_num`.
         """
+        from qdrant_client.models import FieldCondition, Filter, MatchValue
+
         try:
-            assert self.vector_retriever is not None
             storage_instance = self.vector_retriever.storage
             collection_name = (
                 self.collection_name or storage_instance.collection_name  # type: ignore[attr-defined]
