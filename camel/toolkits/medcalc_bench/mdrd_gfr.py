@@ -57,7 +57,14 @@ def mrdr_gfr_explanation(input_variables):
 
     Example:
         mrdr_gfr_explanation({"age": (49, 'years'),"creatinine": (10.6, 'mg/dL'),"sex": "Male"})
-        output: "{'Explanation': "The patient is 49 years old. The concentration of Creatinine is 10.6 mg/dL. \nThe race of the patient is not provided, so the default value of the race coefficient is 1.0.\nThe patient is male, so the gender coefficient is 1.\nThe patient's estimated GFR is calculated using the MDRD equation as:\nGFR = 175 * creatinine^(-1.154) * age^(-0.203) * race_coefficient * gender_coefficient. The creatinine concentration is mg/dL.\nPlugging in these values will give us: 175 * 10.6^(-1.154) * 49^(-0.203) * 1 * 1=5.209.\nHence, the patient's GFR is 5.209 mL/min/1.73m².\n", 'Answer': 5.209}"
+        output: "{'Explanation': "The patient is 49 years old. The concentration of Creatinine is 10.6 mg/dL.
+        \nThe race of the patient is not provided, so the default value of the race coefficient is 1.0.
+        \nThe patient is male, so the gender coefficient is 1.\nThe patient's estimated GFR is calculated
+        using the MDRD equation as:
+        \nGFR = 175 * creatinine^(-1.154) * age^(-0.203) * race_coefficient * gender_coefficient.
+        The creatinine concentration is mg/dL.\nPlugging in these values will give us:
+        175 * 10.6^(-1.154) * 49^(-0.203) * 1 * 1=5.209.\nHence, the patient's GFR is 5.209 mL/min/1.73m².\n",
+        'Answer': 5.209}"
     """
 
     gender = input_variables["sex"]
@@ -109,8 +116,10 @@ def mrdr_gfr_explanation(input_variables):
 
     explanation += (
         f"The patient's estimated GFR is calculated using the MDRD equation as:\n"
-        f"GFR = 175 * creatinine^(-1.154) * age^(-0.203) * race_coefficient * gender_coefficient. The creatinine concentration is mg/dL.\n"
-        f"Plugging in these values will give us: 175 * {creatinine_conc}^(-1.154) * {age}^(-0.203) * {race_coefficient} * {gender_coefficient}={gfr}.\n"
+        f"GFR = 175 * creatinine^(-1.154) * age^(-0.203) * race_coefficient * gender_coefficient. "
+        f"The creatinine concentration is mg/dL.\n"
+        f"Plugging in these values will give us: "
+        f"175 * {creatinine_conc}^(-1.154) * {age}^(-0.203) * {race_coefficient} * {gender_coefficient}={gfr}.\n"
         f"Hence, the patient's GFR is {gfr} mL/min/1.73m².\n"
     )
 
