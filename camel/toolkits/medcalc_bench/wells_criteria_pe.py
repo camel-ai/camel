@@ -1,3 +1,16 @@
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 r"""
 This code is borrowed and modified based on the source code from the 'MedCalc-Bench' repository.
 Original repository: https://github.com/ncbi-nlp/MedCalc-Bench
@@ -94,31 +107,43 @@ def calculate_pe_wells_explanation(variables):
         explanation += f'The heart rate is less than 100 bpm, and so the score remains unchanged, keeping the total score at {score}.\n'
 
     if 'immobilization_for_3days' not in variables:
-        explanation += f"The report does not give an indication on whether the patient has had an immobilization for at least 3 days and so we assume this to be false."
+        explanation += "The report does not give an indication on whether the patient has had an immobilization for at least 3 days and so we assume this to be false."
         variables['immobilization_for_3days'] = False
 
     if 'surgery_in_past4weeks' not in variables:
-        explanation += f"The report does not give an indication on whether the patient has had a surgery for the past 4 weeks and so we assume this to be false."
+        explanation += "The report does not give an indication on whether the patient has had a surgery for the past 4 weeks and so we assume this to be false."
         variables['surgery_in_past4weeks'] = False
 
-    if not variables['immobilization_for_3days'] and not variables['surgery_in_past4weeks']:
+    if (
+        not variables['immobilization_for_3days']
+        and not variables['surgery_in_past4weeks']
+    ):
         explanation += f"Because the patient has not had an immobilization for at least 3 days, and the patient did not have a surgery in the past 4 weeks, the score remains at {score}.\n"
-    elif not variables['immobilization_for_3days'] and variables['surgery_in_past4weeks']:
+    elif (
+        not variables['immobilization_for_3days']
+        and variables['surgery_in_past4weeks']
+    ):
         explanation += f'Because the patient did not have an immobilization for at least 3 days but the patient had a surgery in the past 4 weeks, the score increases to {score} + 1.5 = {score + 1.5}.\n'
         score += 1.5
-    elif variables['immobilization_for_3days'] and not variables['surgery_in_past4weeks']:
+    elif (
+        variables['immobilization_for_3days']
+        and not variables['surgery_in_past4weeks']
+    ):
         explanation += f'Because the patient has had an immobilization for at least 3 days but the patient did not have a surgery in the past 4 weeks, the score increases to {score} + 1.5 = {score + 1.5}.\n'
         score += 1.5
-    elif variables['immobilization_for_3days'] and variables['surgery_in_past4weeks']:
+    elif (
+        variables['immobilization_for_3days']
+        and variables['surgery_in_past4weeks']
+    ):
         explanation += f'Because the patient has had an immobilization for at least 3 days and the patient had a surgery in the past 4 weeks, the score increases to {score} + 1.5 =  {score + 1.5}.\n'
         score += 1.5
 
     if 'previous_pe' not in variables:
-        explanation += f"The report does not give an indication on if the patient has previously had pulmonary embolism diagnosed and so we assume this to be false."
+        explanation += "The report does not give an indication on if the patient has previously had pulmonary embolism diagnosed and so we assume this to be false."
         variables['previous_pe'] = False
 
     if 'previous_dvt' not in variables:
-        explanation += f"The report does not give an indication on if the patient has previously been diagnosed with deep vein thrombosis and so we assume this to be false."
+        explanation += "The report does not give an indication on if the patient has previously been diagnosed with deep vein thrombosis and so we assume this to be false."
         variables['previous_dvt'] = False
 
     if not variables['previous_pe'] and not variables['previous_dvt']:
@@ -151,7 +176,9 @@ def calculate_pe_wells_explanation(variables):
     else:
         explanation += f'Malignany with treatment within 6 months or palliative is not reported in the patient note and so we assume that this is absent for the patient, keeping the score at {score}.\n'
 
-    explanation += f"The patient's Well's score for pulmonary embolism is {score}.\n"
+    explanation += (
+        f"The patient's Well's score for pulmonary embolism is {score}.\n"
+    )
 
     return {"Explanation": explanation, "Answer": score}
 
@@ -167,7 +194,7 @@ if __name__ == "__main__":
             "surgery_in_past4weeks": False,
             "malignancy_with_treatment": False,
             "pe_number_one": False,
-            "previous_dvt": False
+            "previous_dvt": False,
         },
         {
             "previous_pe": False,
@@ -177,7 +204,7 @@ if __name__ == "__main__":
             "surgery_in_past4weeks": True,
             "malignancy_with_treatment": False,
             "pe_number_one": False,
-            "previous_dvt": False
+            "previous_dvt": False,
         },
         {
             "previous_pe": False,
@@ -187,8 +214,8 @@ if __name__ == "__main__":
             "clinical_dvt": True,
             "malignancy_with_treatment": False,
             "pe_number_one": True,
-            "previous_dvt": False
-        }
+            "previous_dvt": False,
+        },
     ]
     # {'Previously Documented Pulmonary Embolism': False, 'Heart Rate or Pulse': [78.0, 'beats per minute'], 'Immobilization for at least 3 days': False, 'Hemoptysis': False, 'Surgery in the previous 4 weeks': False, 'Malignancy with treatment within 6 months or palliative': False, 'Pulmonary Embolism is #1 diagnosis OR equally likely': False, 'Previously documented Deep Vein Thrombosis': False}
 

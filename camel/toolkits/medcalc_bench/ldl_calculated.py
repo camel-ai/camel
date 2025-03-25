@@ -1,3 +1,16 @@
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 r"""
 This code is borrowed and modified based on the source code from the 'MedCalc-Bench' repository.
 Original repository: https://github.com/ncbi-nlp/MedCalc-Bench
@@ -9,8 +22,10 @@ Modifications include:
 Date: March 2025
 """
 
-from camel.toolkits.medcalc_bench.utils.unit_converter_new import conversion_explanation
 from camel.toolkits.medcalc_bench.utils.rounding import round_number
+from camel.toolkits.medcalc_bench.utils.unit_converter_new import (
+    conversion_explanation,
+)
 
 
 def compute_ldl_explanation(input_parameters):
@@ -45,19 +60,44 @@ def compute_ldl_explanation(input_parameters):
 
     explanation = "To compute the patient's LDL cholestrol, apply the following formula: LDL cholesterol = total cholesterol - HDL - (triglycerides / 5), where the units for total cholestrol, HDL cholestrol, and triglycerides are all mg/dL.\n"
 
-    total_cholestrol_exp, total_cholestrol = conversion_explanation(input_parameters["total_cholestrol"][0], "total cholestrol", 386.654, None, input_parameters["total_cholestrol"][1], "mg/dL")
-    hdl_cholestrol_exp, hdl_cholestrol = conversion_explanation(input_parameters["hdl_cholestrol"][0], "hdl cholestrol", 386.654, None, input_parameters["hdl_cholestrol"][1], "mg/dL")
-    triglycerides_exp, triglycerides = conversion_explanation(input_parameters["triglycerides"][0], "triglycerides", 861.338, None, input_parameters["triglycerides"][1], "mg/dL")
+    total_cholestrol_exp, total_cholestrol = conversion_explanation(
+        input_parameters["total_cholestrol"][0],
+        "total cholestrol",
+        386.654,
+        None,
+        input_parameters["total_cholestrol"][1],
+        "mg/dL",
+    )
+    hdl_cholestrol_exp, hdl_cholestrol = conversion_explanation(
+        input_parameters["hdl_cholestrol"][0],
+        "hdl cholestrol",
+        386.654,
+        None,
+        input_parameters["hdl_cholestrol"][1],
+        "mg/dL",
+    )
+    triglycerides_exp, triglycerides = conversion_explanation(
+        input_parameters["triglycerides"][0],
+        "triglycerides",
+        861.338,
+        None,
+        input_parameters["triglycerides"][1],
+        "mg/dL",
+    )
 
     explanation += total_cholestrol_exp + '\n'
     explanation += hdl_cholestrol_exp + '\n'
     explanation += triglycerides_exp + '\n'
 
-    answer = round_number(total_cholestrol - hdl_cholestrol - (triglycerides/5))
+    answer = round_number(
+        total_cholestrol - hdl_cholestrol - (triglycerides / 5)
+    )
 
     explanation += f"Plugging in these values will give us {total_cholestrol} mg/dL - {hdl_cholestrol} mg/dL - ({triglycerides}/5) mg/dL = {answer} mg/dL.\n"
 
-    explanation += f"The patients concentration of LDL cholestrol is {answer} mg/dL.\n"
+    explanation += (
+        f"The patients concentration of LDL cholestrol is {answer} mg/dL.\n"
+    )
 
     return {"Explanation": explanation, "Answer": answer}
 
@@ -68,13 +108,13 @@ if __name__ == "__main__":
         {
             "hdl_cholestrol": (37.0, 'mg/dL'),
             "triglycerides": (205.0, 'mg/dL'),
-            "total_cholestrol": (210.0, 'mg/dL')
+            "total_cholestrol": (210.0, 'mg/dL'),
         },
         {
             "total_cholestrol": (165.0, 'mg/dL'),
             "triglycerides": (104.0, 'mg/dL'),
-            "hdl_cholestrol": (50.0, 'mg/dL')
-        }
+            "hdl_cholestrol": (50.0, 'mg/dL'),
+        },
     ]
     # {'high-density lipoprotein cholesterol': [37.0, 'mg/dL'], 'Triglycerides': [205.0, 'mg/dL'], 'Total cholesterol': [210.0, 'mg/dL']}
     # {'Total cholesterol': [165.0, 'mg/dL'], 'Triglycerides': [104.0, 'mg/dL'], 'high-density lipoprotein cholesterol': [50.0, 'mg/dL']}

@@ -48,15 +48,16 @@ camel_agent = ChatAgent(
 camel_agent.reset()
 
 # Specify the file path
-file_path = './examples/toolkits/medcalc_samples.json'
+file_path = "./examples/toolkits/medcalc_samples.json"
 
 # Load the JSON file
-with open(file_path, 'r') as file:
+with open(file_path, "r") as file:
     data = json.load(file)
 
 # Specify the Calculator in camel/toolkits/medcalc_bench
-# OPTION(eg): adjusted_body_weight, anion_gap, bmi_calculator, calcium_correction,
-# homa_ir, mean_arterial_pressure, sOsm, estimated_conception_date,
+# OPTION(eg): adjusted_body_weight, anion_gap, bmi_calculator,
+# calcium_correction, homa_ir, mean_arterial_pressure, sOsm,
+# estimated_conception_date,
 # delta_gap, mdrd_gfr, target_weight, creatinine_clearance
 calculator_name = "creatinine_clearance"
 
@@ -76,21 +77,23 @@ gt = target_entry["Ground Truth Answer"]
 
 # Get response information
 response = camel_agent.step(usr_msg)
-print(response.info['tool_calls'])
+print(response.info["tool_calls"])
 print("Ground Truth", gt)
-'''
+"""
 ===============================================================================
-[ToolCallingRecord(tool_name='adjusted_body_weight', args={'weight_value': 89, 
-'weight_unit': 'kg', 'height_value': 163, 'height_unit': 'cm', 'sex': 'Female', 
+[ToolCallingRecord(tool_name='adjusted_body_weight', args={'weight_value': 89,
+'weight_unit': 'kg', 'height_value': 163, 'height_unit': 'cm', 'sex': 'Female',
 'age': 30}, result='{"rationale": "The patient\'s gender is Female.\\n
-The patient\'s height is 163.0 cm, which is 163.0 cm * 0.393701 in/cm = 64.173 in. 
+The patient\'s height is 163.0 cm,
+which is 163.0 cm * 0.393701 in/cm = 64.173 in.
 \\nFor females, the ideal body weight (IBW) is calculated as follows:\\n
-IBW = 45.5 kg + 2.3 kg * (height (in inches) - 60)\\nPlugging in the values 
-gives us 45.5 kg + 2.3 kg * (64.173 (in inches) - 60) = 55.098 kg.\\nHence, 
-the patient\'s IBW is 55.098 kg.The patient\'s weight is 89.0 kg. 
-To compute the ABW value, apply the following formula: 
-ABW = IBW + 0.4 * (weight (in kg) - IBW (in kg)). ABW = 55.098 kg + 0.4 * (89.0 kg  - 55.098 kg) = 68.659 kg. 
+IBW = 45.5 kg + 2.3 kg * (height (in inches) - 60)\\nPlugging in the values
+gives us 45.5 kg + 2.3 kg * (64.173 (in inches) - 60) = 55.098 kg.\\nHence,
+the patient\'s IBW is 55.098 kg.The patient\'s weight is 89.0 kg.
+To compute the ABW value, apply the following formula:
+ABW = IBW + 0.4 * (weight (in kg) - IBW (in kg)). ABW = 55.098 kg
++ 0.4 * (89.0 kg  - 55.098 kg) = 68.659 kg.
 The patient\'s adjusted body weight is 68.659 kg.\\n", "final_answer": "68.659"
 }', tool_call_id='call_5IJD6Us7RfkVP21zx9G5JGyf')]
 ===============================================================================
-'''
+"""
