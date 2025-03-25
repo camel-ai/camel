@@ -11,43 +11,49 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import functools
 import inspect
-from typing import Literal, Optional
+from typing import Callable, Any
 
 from mcp.server.fastmcp import FastMCP
 
 
-class MCPServerMixin:
-    _mcp_instance: Optional[FastMCP] = None
-
-    @staticmethod
-    def _register_mcp_tools(cls):
-        r"""Register all public methods in the class as MCP tools."""
-        assert (
-            cls._mcp_instance is not None
-        ), "_mcp_instance must be initialized before registering tools"
-
-        for name, method in inspect.getmembers(
-            cls, predicate=inspect.isfunction
-        ):
-            if not name.startswith("_"):
-                cls._mcp_instance.tool()(method)
-                print(f"Registered {cls.__name__}.{name} as MCP tool.")
-
-    @classmethod
-    def start_mcp_server(
-        cls,
-        transport: Literal["stdio", "sse"] = "stdio",
-        **kwargs,
+class MCPServer:
+    def __init__(
+        self, function_names: list[str],
+        server_name: str = "MCPServer",
     ):
-        r"""Initialize the MCP server, register public methods as MCP tools,
-        and start the MCP server.
+        self.function_names = function_names
+        self.server_name = server_name
 
-        Args:
-            transport (Literal["stdio", "sse"], optional): The transport
-                protocol to use. Defaults to "stdio".
-        """
-        if cls._mcp_instance is None:
-            cls._mcp_instance = FastMCP(name=cls.__name__, **kwargs)
-        cls._register_mcp_tools(cls)
-        cls._mcp_instance.run(transport)
+    def make_wrapper(self, func: Callable[..., Any]) -> Callable[..., Any]:
+        if inspect.iscoroutinefunction(func):
+            @functools.wraps(func)
+            async def wrapper(*args, **kwargs):
+                return await func(*args, **kwargs)
+        else:
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                return func(*args, **kwargs)
+
+        wrapper.__signature__ = inspect.signature(func)
+        return wrapper
+
+    def __call__(self, cls):
+        original_init = cls.__init__
+
+        def new_init(instance, *args, **kwargs):
+            original_init(instance, *args, **kwargs)
+            instance.mcp = FastMCP(self.server_name)
+            for name in self.function_names:
+                func = getattr(instance, name, None)
+                if func is None or not callable(func):
+                    raise ValueError(
+                        f"Method {name} not found in class {cls.__name} or "
+                        "cannot be called."
+                    )
+                wrapper = self.make_wrapper(func)
+                instance.mcp.tool(name=name)(wrapper)
+
+        cls.__init__ = new_init
+        return cls

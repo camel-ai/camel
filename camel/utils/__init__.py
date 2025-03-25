@@ -41,7 +41,7 @@ from .commons import (
 )
 from .constants import Constants
 from .deduplication import DeduplicationResult, deduplicate_internally
-from .mcp import MCPServerMixin
+from .mcp import MCPServer
 from .response_format import get_pydantic_model
 from .token_counting import (
     AnthropicTokenCounter,
@@ -89,5 +89,5 @@ __all__ = [
     "retry_on_error",
     "BatchProcessor",
     "with_timeout",
-    "MCPServerMixin",
+    "MCPServer",
 ]

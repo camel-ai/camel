@@ -11,8 +11,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
+import sys
+from typing import TYPE_CHECKING
+
+import asyncio
 
 from camel.toolkits import GithubToolkit
+from camel.toolkits.mcp_toolkit import _MCPServer
+
+if TYPE_CHECKING:
+    from mcp import ClientSession
+
 
 gt = GithubToolkit(repo_name="camel-ai/camel")
 
@@ -72,3 +82,38 @@ from openai.types.chat import ChatCompletionMessageToolCall
 f
 ===============================================================================
 """
+
+
+async def run_example():
+    server = _MCPServer(
+        command_or_url=sys.executable,
+        args=[__file__, "--server"],
+        env={"GITHUB_ACCESS_TOKEN": os.environ.get("GITHUB_ACCESS_TOKEN")}
+    )
+    await server.connect()
+
+    session: "ClientSession" = server._session
+
+    issue_list_result = await session.call_tool(
+        name="get_issue_list",
+        arguments={"state": "open"},
+    )
+    print("Open Issues (via MCP):")
+    print(issue_list_result.content[0].text[:500])
+
+    # 通过 MCP 调用工具包中的 retrieve_file_content 方法
+    file_content_result = await session.call_tool(
+        name="retrieve_file_content",
+        arguments={"file_path": "README.md"},
+    )
+    print("\nContent of README.md (via MCP):")
+    print(file_content_result.content[0].text[:500])
+
+    await server.disconnect()
+
+
+if __name__ == "__main__":
+    if "--server" in sys.argv:
+        gt.mcp.run("stdio")
+    else:
+        asyncio.run(run_example())

@@ -16,13 +16,29 @@ import logging
 import os
 from typing import Dict, List, Literal, Optional, Union
 
+from mcp.server import FastMCP
+
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import dependencies_required
+from camel.utils import MCPServer, dependencies_required
 
 logger = logging.getLogger(__name__)
 
 
+@MCPServer(
+    server_name="GithubToolkit",
+    function_names=[
+        "get_github_access_token",
+        "get_issue_list",
+        "create_pull_request",
+        "get_issue_content",
+        "get_pull_request_list",
+        "get_pull_request_code",
+        "get_pull_request_comments",
+        "get_all_file_paths",
+        "retrieve_file_content",
+    ]
+)
 class GithubToolkit(BaseToolkit):
     r"""A class representing a toolkit for interacting with GitHub
     repositories.
@@ -36,6 +52,8 @@ class GithubToolkit(BaseToolkit):
             GitHub. If not provided, it will be obtained using the
             `get_github_access_token` method.
     """
+
+    mcp: FastMCP
 
     @dependencies_required('github')
     def __init__(
