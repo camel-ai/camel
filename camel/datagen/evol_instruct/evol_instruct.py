@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,383 +10,415 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import json
-import os
 import random
 import time
-from typing import Any, Dict, List, Optional, Tuple, Union
+from concurrent.futures import ThreadPoolExecutor
+from math import ceil
+from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast
+
+from tqdm import tqdm
 
 from camel.agents import ChatAgent
+from camel.datagen.evol_instruct.scorer import BaseScorer, GeneralScorer
+from camel.datagen.evol_instruct.templates import EvolInstructTemplates
 from camel.logger import get_logger
-
-from .templates import EvolInstructTemplates
 
 logger = get_logger(__name__)
 
 
 class EvolInstructPipeline:
-    r"""A pipeline for evolving prompts using the Evol-Instruct methodology.
+    r"""Pipeline for evolving prompts using the Evol-Instruct methodology.
+
+    Supports custom templates defining evolution strategies and methods. The
+    pipeline leverages language models to iteratively refine prompts through
+    specified evolution strategies.
 
     Args:
-        agent (ChatAgent): The agent used to interact and generate
-            instructions.
+        templates (Type[EvolInstructTemplates]): Template class containing
+            evolution strategy and method definitions. Must provide
+            `EVOL_METHODS` and `STRATEGY` attributes.
+            (default: :obj:`EvolInstructTemplates`)
+        agent (Optional[ChatAgent]): Chat agent instance for LLM interaction.
+            If :obj:`None`, initializes with a default ChatAgent.
+            (default: :obj:`None`)
     """
-    
-    def __init__(
-        self, 
-        agent: ChatAgent,
-    ):
-        r"""Initializes the EvolInstructPipeline with an LLM agent.
-        
-        Args:
-            agent (ChatAgent): The agent used for prompt evolution.
-        """
-        self.agent = agent if agent else ChatAgent()
-    
-    def _set_method(
-        self, 
-        method: Optional[Union[str, List[str]]] = "uniform",
-        num_generations: int = 1,
-    ) -> List[str]:
-        r"""Sets the method to use for generating prompts for one iteration.
-        
-        Args:
-        method (Optional[Union[str, List[str]]]): 
-            The method(s) to use for evolving the prompt. Can be:
-            - (list) a list of methods with length equal to num_generations.
-            - (str) a single method in EvolInstructTemplates, or "uniform".
-        num_generations: The number of variations to generate in one iteration.
-        
-        Returns:
-            methods (list) The list of method to use for generating prompts.
-        """
-        # Case 1: user provides a list of methods
-        if isinstance(method, list):
-            
-            if len(method) == num_generations:
-                methods = [
-                    i if i in EvolInstructTemplates.EVOL_METHODS else "uniform"
-                    for i in method
-                ]
-                
-            else:
-                methods = ["uniform"] * num_generations
-                logger.info("methods length not match; use uniform instead.")
-        
-        # Case 2: user provides a single method - broadcast w/ random selection    
-        elif isinstance(method, str):
-            if method in EvolInstructTemplates.EVOL_METHODS:  
-                methods = [method] * num_generations
-            
-            elif method in ["in-breadth", "in-depth", "uniform"]:
-                method_mapping = {
-                    "in-breadth": EvolInstructTemplates.IN_BREADTH_KEYS,
-                    "in-depth": EvolInstructTemplates.IN_DEPTH_KEYS,
-                    "uniform": list(EvolInstructTemplates.EVOL_METHODS.keys()),
-                }
-                methods = [
-                    random.choice(method_mapping[method]) 
-                    for _ in range(num_generations)
-                ]
-                     
-            else:
-                logger.info(f"Invalid method: {method}. Set as uniform.")
-                methods = ["uniform"] * num_generations
 
+    def __init__(
+        self,
+        templates: Type = EvolInstructTemplates,
+        agent: Optional[ChatAgent] = None,
+    ) -> None:
+        r"""Initialize pipeline with templates and language model agent.
+
+        Args:
+            templates (Type[EvolInstructTemplates]): Template class containing
+                evolution strategy configurations.
+                (default: :obj:`EvolInstructTemplates`)
+            agent (Optional[ChatAgent]): Preconfigured chat agent instance.
+                Creates a default ChatAgent if not provided.
+                (default: :obj:`None`)
+        """
+        self.templates = templates
+        self.agent = agent or ChatAgent()
+
+    def _resolve_evolution_method(self, method_key: str) -> str:
+        r"""Resolve evolution method key to concrete implementation.
+
+        Args:
+            method_key (str): Input method identifier. Can be:
+                - Direct method key from templates.EVOL_METHODS
+                - Strategy name from templates.STRATEGY keys
+
+        Returns:
+            str: Resolved method key from EVOL_METHODS
+        """
+        if method_key in self.templates.EVOL_METHODS:
+            return method_key
+        if method_key.upper() in self.templates.STRATEGY:
+            strategy = self.templates.STRATEGY[method_key.upper()]
+            strategy_methods = strategy["methods"]
+            return random.choice(strategy_methods)
+
+        logger.warning(
+            f"Invalid evolution method: {method_key}. "
+            f"Using random selection."
+        )
+        return random.choice(list(self.templates.EVOL_METHODS))
+
+    def _get_evolution_methods(
+        self,
+        method: Union[str, List[str]],
+        num_generations: int = 2,
+    ) -> List[str]:
+        r"""Get list of evolution methods based on input specification.
+
+        Args:
+            method (Union[str, List[str]]): Specification for method selection.
+                Can be:
+                - Strategy name for methods from that strategy
+                - Specific method name
+                - List of method specifications
+            num_generations (int): Number of methods to return.
+
+        Returns:
+            List[str]: List of resolved method names
+        """
+        candidate_methods = []
+
+        if isinstance(method, list):
+            for method_spec in method:
+                candidate_methods.append(
+                    self._resolve_evolution_method(method_spec)
+                )
+        elif isinstance(method, str):
+            if method.upper() in self.templates.STRATEGY:
+                strategy = self.templates.STRATEGY[method.upper()]
+                candidate_methods = strategy["methods"]
+            else:
+                candidate_methods = [self._resolve_evolution_method(method)]
+
+        # Remove duplicates while preserving order
+        unique_candidates = []
+        for method_name in candidate_methods:
+            if method_name not in unique_candidates:
+                unique_candidates.append(method_name)
+
+        if len(unique_candidates) >= num_generations:
+            methods = random.sample(unique_candidates, num_generations)
         else:
-            raise ValueError("method must be a string or a list of methods.")
-        
+            methods = unique_candidates.copy()
+            while len(methods) < num_generations:
+                methods.append(random.choice(unique_candidates))
+
         return methods
 
-    def _generate_single(
-        self, 
-        prompt: str,  # for a single prompt
-        method: str = "uniform",
+    def _generate_single_evolution(
+        self,
+        prompt: str,
+        method: str,
         return_method: bool = False,
-    ) -> Union[str, Tuple[str, str]]:
-        r"""Generates a single new prompt for a single seed prompt 
-        using a specified method.
-        
-        Args:
-            prompt (str): The input prompt to evolve.
-            method (str): 
-                The method(s) to use for evolving the prompt. Can be:
-                - (str) a single method defined in EvolInstructTemplates.
-                - (str) "uniform" for random selection.
-        
-        Returns:
-            The evolved prompt as a string, optionally with the method
-        """
-        # Handle the case when using this method externally
-        if method == "uniform":
-            method = random.choice(
-                list(EvolInstructTemplates.EVOL_METHODS.keys())
-            )
-        elif method == "in-depth":
-            method = random.choice(EvolInstructTemplates.IN_DEPTH_KEYS)
-        elif method == "in-breadth":
-            method = random.choice(EvolInstructTemplates.IN_BREADTH_KEYS)
+    ) -> Tuple[str, str]:
+        r"""Generate a single evolved prompt from a seed prompt.
 
-        # Choose the instruction template based on the method
-        instruction = (
-            EvolInstructTemplates.INST_IN_BREADTH 
-            if method in EvolInstructTemplates.IN_BREADTH_KEYS
-            else EvolInstructTemplates.INST_IN_DEPTH
-        ).format(
-            method=EvolInstructTemplates.EVOL_METHODS.get(
-                method, 
-                random.choice(
-                    list(EvolInstructTemplates.EVOL_METHODS.values())
-                )
+        Args:
+            prompt (str): The seed prompt to evolve.
+            method (str): The evolution method key to use.
+            return_method (bool): If True, returns method along with prompt.
+
+        Returns:
+            Tuple[str, str]: Evolved prompt and method
+        """
+        resolved_method = self._resolve_evolution_method(method)
+
+        # Find strategy containing the resolved method
+        strategy_key = None
+        for strategy, group in self.templates.STRATEGY.items():
+            if resolved_method in group["methods"]:
+                strategy_key = strategy
+                break
+
+        if strategy_key is None:
+            strategy_key = random.choice(list(self.templates.STRATEGY.keys()))
+
+        strategy = self.templates.STRATEGY[strategy_key]
+        instruction_template = strategy["meta_instruction"]
+        instruction = instruction_template.format(
+            method=self.templates.EVOL_METHODS.get(
+                resolved_method,
+                random.choice(list(self.templates.EVOL_METHODS.values())),
             ),
             prompt=prompt,
         )
-        
-        # Generate new prompt using the agent
+
         self.agent.reset()
         response = self.agent.step(instruction)
-        generated_prompt = response.msgs[0].content.strip()
-        
-        if not return_method:
-            return generated_prompt
+        evolved_prompt = response.msgs[0].content.strip()
+
+        if return_method:
+            return (evolved_prompt, resolved_method)
         else:
-            return generated_prompt, method
+            return (evolved_prompt, "")
 
-    def _generate_multiple(
-        self, 
-        prompt: str,  # for a single prompt
-        method: Union[str, List[str]] = "uniform", 
-        num_generations: int = 2, 
-        keep_original: bool = True,
-    ) -> List[Tuple[str, str]]:
-        r"""Generates multiple variations of a single seed prompt x.
-        Note those variations are directly generated from the same seed,
-        that is, [x_1, x_2, ..., x_N] <- LLM( | x, method), where N is width.
-        
-        Args:
-            prompt (str): The input prompt to evolve.
-            method (Union[str, List[str]]): 
-                The method(s) to use for evolving the prompt. Can be:
-                - A single method (str).
-                - A list of methods with length equal to num_generations.
-                - "uniform" for random selection.
-            num_generations (int): Number of variations to generate.
-            keep_original (bool): Whether to include the original in output.
-        
-        Returns:
-            A list of tuples (evolved_prompt, method).
-        """
-        from concurrent.futures import ThreadPoolExecutor
-        
-        # initialize the results list for generated prompts
-        results = [(prompt, "original")] if keep_original else []
-        
-        # set the method
-        methods = self._set_method(
-            method=method, 
-            num_generations=num_generations,
-        )
-
-        # generate prompts concurrently
-        def process_single(method):
-            return self._generate_single(prompt, method), method
-        
-        with ThreadPoolExecutor() as executor:
-            generated_results = list(executor.map(process_single, methods))
-
-        results.extend(generated_results)
-        
-        return results
-    
-    def _generate_iter(
+    def _generate_multiple_evolutions(
         self,
-        prompt: str,  # for a single prompt
-        method: Union[str, Dict[int, List[str]]] = "uniform", 
-        num_generations: int = 1,
-        num_evolutions: int = 1,
+        prompt: str,
+        method: Union[str, List[str]],
+        num_generations: int = 2,
         keep_original: bool = True,
-        scorer: str = "uniform"
-    ) -> Dict[int, List[Tuple[str, str]]]:
-        r"""Iteratively evolve a prompt over multiple generations.
-        Note variations are iteratively generated from the previous prompt,
-        i.e., [x_11, x_12, ..., x_1N] <- LLM( | x, method), where N is width.
-        We then use a scorer to select one of the seed prompt 
-        for the next iteration, say x_12,
-        then, [x_21, x_22, ..., x_2W] <- LLM( | x_12, method), and so on.
-        Here, the num_evolutions can be seen as the depth of the evolution. 
-        We can call this as "TreeBoN", if we choose the best of N prompts 
-        in each iteration.
-        When N is 1, that is the default EvolInstruct setting.
+        num_threads: int = 10,
+    ) -> List[Tuple[str, str]]:
+        r"""Generate multiple evolved versions of a prompt.
 
         Args:
-            prompt (str): The input prompt to evolve.
-            method (Union[str, Dict[int, List[str]]]): 
-                The method(s) to use for evolving the prompt. Can be:
-                - "uniform" for random selection.
-                - A dictionary mapping iteration numbers to lists of methods.
-            num_generations (int): 
-                The number of variations to generate in each iteration.
-            num_evolutions (int): 
-                The number of iterations to perform.
-            keep_original (bool): 
-                Whether to include the original prompt in the output of 
-                each iteration.
-            scorer: 
-                The scoring method to select the best prompt 
-                for the next iteration.
-                For now, "uniform" assigns random scores.
-        
+            prompt (str): Seed prompt to evolve.
+            method (Union[str, List[str]]): Evolution method specification.
+            num_generations (int): Candidates to generate per iteration.
+            keep_original (bool): Whether to keep the original prompt.
+            num_threads (int): Number of threads for parallel processing.
+
         Returns:
-            Dict[int, List[Tuple[str, str]]]:
-                A dictionary where keys are iteration numbers,
-                and values are lists of tuples (prompt, method).
-
-        References:
-            - eva: Evolving Alignment via Asymmetric Self-Play
-              https://ziyu-deep.github.io/files/eva-arxiv.pdf 
-              see appendix for details.
+            List[Tuple[str, str]]: List of (evolved_prompt, method) pairs
         """
+        results = [(prompt, "original")] if keep_original else []
+
+        if isinstance(method, list) and len(method) == num_generations:
+            candidate_methods = method
+        else:
+            candidate_methods = self._get_evolution_methods(
+                method=method, num_generations=num_generations
+            )
+
+        def _process_single_method(method_name: str) -> Tuple[str, str]:
+            return self._generate_single_evolution(
+                prompt, method_name, return_method=True
+            )
+
+        with ThreadPoolExecutor(max_workers=num_threads) as executor:
+            evolved_results = list(
+                executor.map(_process_single_method, candidate_methods)
+            )
+
+        results.extend(evolved_results)
+        return results
+
+    def _generate_iterative_evolutions(
+        self,
+        prompt: str,
+        evolution_spec: Union[str, List[Union[str, List[str]]]],
+        num_generations: int = 2,
+        num_iterations: Optional[int] = None,
+        keep_original: bool = True,
+        scorer: Optional[BaseScorer] = None,
+        num_threads: int = 10,
+    ) -> Dict[int, List[Dict[str, Any]]]:
+        r"""Generate iterative evolutions of a prompt with scoring.
+
+        Args:
+            prompt (str): Seed prompt to evolve.
+            evolution_spec (Union[str, List[Union[str, List[str]]]]):
+                Evolution method specification.
+                If a list is provided and num_iterations is None, then
+                num_iterations is set to the length of the list.
+            num_generations (int): Candidates to generate per iteration.
+            num_iterations (Optional[int]): Number of evolution iterations.
+                Defaults to the length of evolution_spec.
+            keep_original (bool): Include original prompt in results.
+            scorer (Optional[BaseScorer]): Scoring model for candidate.
+            num_threads (int): Number of threads for parallel processing.
+
+        Returns:
+            Dict[int, List[Dict[str, Any]]]: Evolution results per iteration,
+            where each candidate is represented as a dict with keys:
+            "instruction", "method", and "scores".
+        """
+        if num_iterations is None:
+            if isinstance(evolution_spec, list):
+                num_iterations = len(evolution_spec)
+            else:
+                num_iterations = 1
+
         results = {}
-
         current_prompt = prompt
+        scorer = scorer or GeneralScorer()
 
-        for iteration in range(num_evolutions):
-            # set the method for the current iteration
-            if isinstance(method, dict):
-                method = method.get(iteration, "uniform")
+        for iteration in range(num_iterations):
+            if isinstance(evolution_spec, list):
+                if iteration < len(evolution_spec):
+                    iteration_spec = evolution_spec[iteration]
+                else:
+                    iteration_spec = evolution_spec[-1]
+            else:
+                iteration_spec = evolution_spec
 
-            # generate the batch for the current iteration
-            batch_results = self._generate_multiple(
+            batch_results = self._generate_multiple_evolutions(
                 prompt=current_prompt,
-                method=method,
+                method=iteration_spec,
                 num_generations=num_generations,
                 keep_original=False,
+                num_threads=num_threads,
+            )
+
+            scored_results = []
+            for candidate, method_used in batch_results:
+                scores = scorer.score(current_prompt, candidate)
+                scored_results.append(
+                    {
+                        "instruction": candidate,
+                        "method": method_used,
+                        "scores": scores,
+                    }
+                )
+
+            best_index = max(
+                range(len(scored_results)),
+                key=lambda i: sum(
+                    cast(Dict[str, int], scored_results[i]["scores"]).values()
+                ),
+            )
+
+            best_candidate = cast(
+                str, scored_results[best_index]["instruction"]
             )
 
             if keep_original:
-                batch_results.insert(0, (current_prompt, "original"))
-
-            results[iteration] = batch_results
-
-            # assign scores and select the best prompt for the next iteration
-            if scorer == "uniform":
-                # simulate random scores in range (1, 10) for now
-                scores = (
-                    [random.randint(1, 10) for _ in batch_results[1:]] 
-                    if keep_original 
-                    else [random.randint(1, 10) for _ in batch_results]
-                )
+                results[iteration] = [
+                    {
+                        "instruction": current_prompt,
+                        "method": "original",
+                        "scores": {},
+                    },
+                    *scored_results,
+                ]
             else:
-                # TODO: implement instruction scoring module,
-                # e.g., complexity/quality scorer or by reward advantage
-                raise NotImplementedError(
-                    f"Scorer '{scorer}' is not implemented."
-                )
+                results[iteration] = scored_results
 
-            # select the prompt with the highest score
-            best_index = scores.index(max(scores))
-            current_prompt = (
-                batch_results[best_index + 1][0]
-                if keep_original
-                else batch_results[best_index][0]
-            )
-
+            current_prompt = best_candidate
 
         return results
 
     def generate(
         self,
         prompts: List[str],
-        method: Union[str, Dict[int, List[str]]] = "uniform",
-        num_generations: int = 1,
-        num_evolutions: int = 1,
+        evolution_spec: Union[str, List[Union[str, List[str]]]],
+        num_generations: int = 2,
+        num_iterations: Optional[int] = None,
         keep_original: bool = True,
-        scorer: str = "uniform",
-        num_chunks: int = 1, 
+        scorer: Optional[BaseScorer] = None,
+        num_chunks: int = 1,
         retry_limit: int = 3,
-        retry_delay: float = 30,  # in seconds
-    ) -> List[Dict[int, List[Tuple[str, str]]]]:
-        r"""Divide the list of prompts into chunks,
-        iterate through each chunk sequentially,
-        then process the prompts within each chunk in parallel
+        retry_delay: float = 1.0,
+        num_threads: int = 10,
+    ) -> List[Dict[int, List[Dict[str, Any]]]]:
+        r"""Evolve a batch of prompts through iterative refinement.
 
         Args:
-            prompts (List[str]): A list of prompts to evolve.
-            method (Union[str, Dict[int, List[str]]]):
-                The method(s) to use for evolving the prompt. Can be:
-                - "uniform" for random selection.
-                - A dictionary mapping iteration numbers to lists of methods,
-                  where each list has length equal to num_generations.
-            num_generations (int): 
-                The number of variations to generate in each iteration.
-            num_evolutions (int): 
-                The number of iterations to perform.
-            keep_original (bool): 
-                Whether to include the original prompt in the output of 
-                each iteration.
-            scorer (str): s
-                The scoring method to select the best prompt for 
-                the next iteration.
-            num_chunks (int): 
-                The number of chunks to process batch of prompts.
-                specify a larger number of chunks to avoid hitting RPM limits 
-                for API requests.
-            retry_limit (int): maximum number of retries for failed requests.
-            retry_delay (float): The delay between retries in seconds.
+            prompts (List[str]): Seed prompts to evolve.
+            evolution_spec (Union[str, List[Union[str, List[str]]]]):
+                Evolution method specification.
+                If a list is provided and num_iterations is None, then
+                num_iterations is set to the length of the list.
+            num_generations (int): Candidates to generate per iteration.
+            num_iterations (Optional[int]): Number of evolution iterations.
+                Defaults to the length of evolution_spec.
+            keep_original (bool): Include original prompts in results.
+            scorer (Optional[BaseScorer]): Scoring model for candidate.
+            num_chunks (int): Number of parallel processing chunks.
+            retry_limit (int): Max retries for failed generations.
+            retry_delay (float): Delay between retries in seconds.
+            num_threads (int): Number of threads for parallel processing.
 
         Returns:
-            List[Dict[int, List[Tuple[str, str]]]]:
-            A list of dictionaries, where each dict corresponds to 
-            results of one prompt.
+            List[Dict[int, List[Dict[str, Any]]]]: Evolution results.
         """
-        from concurrent.futures import ThreadPoolExecutor
-        from math import ceil
+        if num_iterations is None:
+            if isinstance(evolution_spec, list):
+                num_iterations = len(evolution_spec)
+            else:
+                num_iterations = 1
 
-        def process_prompt(prompt):
+        evolution_plan: List[List[List[str]]] = []
+        for _ in prompts:
+            prompt_plan = []
+            for iteration in range(num_iterations):
+                if isinstance(evolution_spec, list):
+                    if iteration < len(evolution_spec):
+                        raw_spec = evolution_spec[iteration]
+                    else:
+                        raw_spec = evolution_spec[-1]
+                else:
+                    raw_spec = evolution_spec
+                prompt_plan.append(
+                    self._get_evolution_methods(raw_spec, num_generations)
+                )
+            evolution_plan.append(prompt_plan)
+
+        def _process_prompt(
+            args: Tuple[str, List[List[str]]],
+        ) -> Dict[int, List[Dict[str, Any]]]:
+            prompt, methods = args
             retries = 0
             while retries <= retry_limit:
                 try:
-                    return self._generate_iter(
+                    return self._generate_iterative_evolutions(
                         prompt=prompt,
-                        method=method,
+                        evolution_spec=evolution_spec,
                         num_generations=num_generations,
-                        num_evolutions=num_evolutions,
+                        num_iterations=num_iterations,
                         keep_original=keep_original,
                         scorer=scorer,
+                        num_threads=num_threads,
                     )
                 except Exception as e:
-                    if retries < retry_limit:
-                        logger.info(
-                            f"Error: {e}. Retry in {retry_delay}s... "
-                            f"(Attempt {retries + 1}/{retry_limit})"
+                    retries += 1
+                    if retries <= retry_limit:
+                        logger.warning(
+                            f"Error processing prompt "
+                            f"(attempt {retries}/{retry_limit}): {e!s}"
                         )
                         time.sleep(retry_delay)
-                        retries += 1
                     else:
-                        logger.info(
-                            f"Failed after {retry_limit} attempts: {e}"
-                        )
-                        return {i: [] for i in range(num_evolutions)}
+                        logger.error("Failed to process prompt.")
+                        return {}
 
-        # split prompts into chunks
+            raise RuntimeError("_process_prompt() did not return.")
+
         num_chunks = max(1, min(num_chunks, len(prompts)))
         chunk_size = ceil(len(prompts) / num_chunks)
-        chunks = [
-            prompts[i: i + chunk_size] 
-            for i in range(0, len(prompts), chunk_size)
-        ]
-
-        # generate prompts
         results = []
-        for i, chunk in enumerate(chunks):
-            logger.info(
-                f"Processing chunk {i + 1}/{num_chunks} "
-                f"with {len(chunk)} prompts..."
-            )
-            with ThreadPoolExecutor() as executor:
-                chunk_results = list(executor.map(process_prompt, chunk))
+
+        for chunk_idx in range(0, len(prompts), chunk_size):
+            chunk = prompts[chunk_idx : chunk_idx + chunk_size]
+            plan_chunk = evolution_plan[chunk_idx : chunk_idx + chunk_size]
+
+            with ThreadPoolExecutor(max_workers=num_threads) as executor:
+                chunk_results = list(
+                    tqdm(
+                        executor.map(_process_prompt, zip(chunk, plan_chunk)),
+                        total=len(chunk),
+                    )
+                )
                 results.extend(chunk_results)
 
         return results

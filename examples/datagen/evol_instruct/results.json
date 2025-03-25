@@ -1,292 +1,552 @@
 [
     {
         "0": [
-            [
-                "How far apart are the midpoints of two skew edges of a regular octahedron with edge length $a$?\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "original"
-            ],
-            [
-                "Determine the distance between the centroids of two non-parallel edges in a three-dimensional polyhedron with equal edge lengths. \n\nPresent the answer in LaTeX format: \\boxed{Your answer}",
-                "abstract"
-            ],
-            [
-                "In a geometric puzzle involving a regular octahedron with each edge measuring $a$, can you calculate the distance between the midpoints of two non-intersecting edges? Please provide your solution in LaTeX format: \\boxed{Your answer}",
-                "persona"
-            ]
+            {
+                "instruction": "Let \\[f(x) = \\left\\{\n\\begin{array}{cl} ax+3, &\\text{ if }x>2, \\\\\nx-5 &\\text{ if } -2 \\le x \\le 2, \\\\\n2x-b &\\text{ if } x <-2.\n\\end{array}\n\\right.\\]Find $a+b$ if the piecewise function is continuous (which means that its graph can be drawn without lifting your pencil from the paper).",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "Let \\[ f(x) = \\left\\{\n\\begin{array}{cl} ax + 3, & \\text{if } x > 3, \\\\\nx^2 - 4, & \\text{if } -3 \\le x \\le 3, \\\\\nbx + 1, & \\text{if } x < -3.\n\\end{array}\n\\right.\\]\nDetermine the values of \\( a \\) and \\( b \\) such that the function \\( f(x) \\) is continuous across its entire domain, and compute the value of \\( a^2 + b^2 \\).",
+                "method": "expansion",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 3,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "Let \\[ f(x) = \\left\\{\n\\begin{array}{cl} ax + 4, & \\text{ if } x > 3, \\\\\n2x - c, & \\text{ if } -3 \\leq x \\leq 3, \\\\\nbx + 1, & \\text{ if } x < -3.\n\\end{array}\n\\right. \\] \nDetermine the values of \\( a \\), \\( b \\), and \\( c \\) such that the piecewise function is continuous at the transition points \\( x = 3 \\) and \\( x = -3 \\). Then, calculate the value of \\( a + b + c \\).",
+                "method": "constraints",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 5,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
         ],
         "1": [
-            [
-                "In a geometric puzzle involving a regular octahedron with each edge measuring $a$, can you calculate the distance between the midpoints of two non-intersecting edges? Please provide your solution in LaTeX format: \\boxed{Your answer}",
-                "original"
-            ],
-            [
-                "In a geometric challenge featuring a regular tetrahedron with each edge measuring $b$, can you determine the length of the line segment that connects the centroids of two non-adjacent faces? Please present your solution in LaTeX format: \\boxed{Your answer}",
-                "shift-in"
-            ],
-            [
-                "In a spatial reasoning challenge involving a polyhedron with equal edge lengths, can you determine the distance between the midpoints of two distinct, non-adjacent edges? Please present your solution in LaTeX format: \\boxed{Your answer}",
-                "abstract"
-            ]
+            {
+                "instruction": "Let \\[ f(x) = \\left\\{\n\\begin{array}{cl} ax + 4, & \\text{ if } x > 3, \\\\\n2x - c, & \\text{ if } -3 \\leq x \\leq 3, \\\\\nbx + 1, & \\text{ if } x < -3.\n\\end{array}\n\\right. \\] \nDetermine the values of \\( a \\), \\( b \\), and \\( c \\) such that the piecewise function is continuous at the transition points \\( x = 3 \\) and \\( x = -3 \\). Then, calculate the value of \\( a + b + c \\).",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "Let \\[ f(x) = \\left\\{\n\\begin{array}{cl} ax + 4, & \\text{ if } x > 4, \\\\\nkx^2 - 2, & \\text{ if } -4 \\leq x \\leq 4, \\\\\nbx + 1, & \\text{ if } x < -4.\n\\end{array}\n\\right. \\] \nDetermine the values of \\( a \\), \\( b \\), and \\( k \\) such that the piecewise function is continuous at the transition points \\( x = 4 \\) and \\( x = -4 \\). Additionally, evaluate the expression \\( a^2 + b^2 + k^2 \\).",
+                "method": "constraints",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "Let \\[ f(x) = \\left\\{\n\\begin{array}{cl} ax^2 + 4, & \\text{ if } x > 3, \\\\\n2x + d, & \\text{ if } -3 \\leq x \\leq 3, \\\\\nbx - 5, & \\text{ if } x < -3.\n\\end{array}\n\\right. \\] \n\nDetermine the values of \\( a \\), \\( b \\), and \\( d \\) such that the piecewise function is continuous at the transition points \\( x = 3 \\) and \\( x = -3 \\). Additionally, find the value of \\( a^2 + b^2 + d \\).",
+                "method": "deepening",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
         ],
         "2": [
-            [
-                "In a spatial reasoning challenge involving a polyhedron with equal edge lengths, can you determine the distance between the midpoints of two distinct, non-adjacent edges? Please present your solution in LaTeX format: \\boxed{Your answer}",
-                "original"
-            ],
-            [
-                "In a geometric analysis task focused on a regular tetrahedron, can you calculate the angle formed by the planes defined by two different faces? Please express your solution using trigonometric identities in LaTeX format: \\boxed{Your answer}",
-                "mix"
-            ],
-            [
-                "In a geometric reasoning task involving a regular polyhedral shape, can you calculate the distance between the midpoints of two non-adjacent edges? Please present your solution using LaTeX formatting: \\boxed{Your answer}",
-                "abstract"
-            ]
+            {
+                "instruction": "Let \\[ f(x) = \\left\\{\n\\begin{array}{cl} ax + 4, & \\text{ if } x > 4, \\\\\nkx^2 - 2, & \\text{ if } -4 \\leq x \\leq 4, \\\\\nbx + 1, & \\text{ if } x < -4.\n\\end{array}\n\\right. \\] \nDetermine the values of \\( a \\), \\( b \\), and \\( k \\) such that the piecewise function is continuous at the transition points \\( x = 4 \\) and \\( x = -4 \\). Additionally, evaluate the expression \\( a^2 + b^2 + k^2 \\).",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "Let \n\\[\nf(x) = \\left\\{\n\\begin{array}{cl} \nax + 4, & \\text{ if } x > 4, \\\\\nkx^2 - 2, & \\text{ if } -4 \\leq x \\leq 4, \\\\\nbx + 1, & \\text{ if } x < -4.\n\\end{array}\n\\right. \n\\]\nDetermine the values of \\( a \\), \\( b \\), and \\( k \\) such that the piecewise function is continuous at the transition points \\( x = 4 \\) and \\( x = -4 \\), and additionally, ensure that the derivative \\( f'(x) \\) is also continuous at these points. Finally, compute the value of the expression \\( (a + b + k)^2 - (ab + ak + bk) \\).",
+                "method": "expansion",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 5,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "Let \n\n\\[\nf(x) = \\begin{cases} \nax + 4, & \\text{ if } x > 4, \\\\\nkx^2 - 2, & \\text{ if } -4 \\leq x \\leq 4, \\\\\nbx + 1, & \\text{ if } x < -4.\n\\end{cases}\n\\]\n\nTo ensure the continuity of the piecewise function at the transition points \\( x = 4 \\) and \\( x = -4 \\), derive the conditions on the coefficients \\( a \\), \\( b \\), and \\( k \\) such that:\n\n1. The limit from the left at \\( x = 4 \\) equals the limit from the right at \\( x = 4 \\).\n2. The limit from the left at \\( x = -4 \\) equals the limit from the right at \\( x = -4 \\).\n\nFurthermore, compute the value of the expression \\( (a + b + k)^2 + (a - b)^2 + (k - 4)^2 \\) given these continuity conditions.",
+                "method": "deepening",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
         ],
         "3": [
-            [
-                "In a geometric reasoning task involving a regular polyhedral shape, can you calculate the distance between the midpoints of two non-adjacent edges? Please present your solution using LaTeX formatting: \\boxed{Your answer}",
-                "original"
-            ],
-            [
-                "In a botanical study focused on the growth patterns of two distinct plant species, how would you determine the average height difference between the plants that are spaced a set distance apart in a garden bed? Please present your findings in a clear format: \\boxed{Your answer}",
-                "shift-out"
-            ],
-            [
-                "In a topological puzzle centered around a complex network of interconnected nodes, can you determine the shortest path between two nodes that are not directly linked? Please illustrate your solution using graph theory notations: \\boxed{Your answer}",
-                "mix"
-            ]
+            {
+                "instruction": "Let \n\\[\nf(x) = \\left\\{\n\\begin{array}{cl} \nax + 4, & \\text{ if } x > 4, \\\\\nkx^2 - 2, & \\text{ if } -4 \\leq x \\leq 4, \\\\\nbx + 1, & \\text{ if } x < -4.\n\\end{array}\n\\right. \n\\]\nDetermine the values of \\( a \\), \\( b \\), and \\( k \\) such that the piecewise function is continuous at the transition points \\( x = 4 \\) and \\( x = -4 \\), and additionally, ensure that the derivative \\( f'(x) \\) is also continuous at these points. Finally, compute the value of the expression \\( (a + b + k)^2 - (ab + ak + bk) \\).",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "Let \n\\[\nf(x) = \\left\\{\n\\begin{array}{cl} \nax + 4, & \\text{ if } x > 4, \\\\\nkx^2 - 2, & \\text{ if } -4 \\leq x \\leq 4, \\\\\nbx + 1, & \\text{ if } x < -4.\n\\end{array}\n\\right. \n\\]\nDetermine the values of \\( a \\), \\( b \\), and \\( k \\) such that the piecewise function is both continuous and differentiable at the transition points \\( x = 4 \\) and \\( x = -4 \\). Specifically, ensure that the function and its first derivative \\( f'(x) \\) are equal at these points. Finally, calculate the value of the expression \\( (a + b + k)^3 - 3(a + b + k)(ab + ak + bk) + 3(ab + ak + bk)^2 \\).",
+                "method": "condense",
+                "scores": {
+                    "diversity": 4,
+                    "difficulty": 5,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "Let \n\\[\nf(x) = \\left\\{\n\\begin{array}{cl} \nax + 6, & \\text{ if } x > 5, \\\\\nkx^3 - 3x, & \\text{ if } -5 \\leq x \\leq 5, \\\\\nbx + 2, & \\text{ if } x < -5.\n\\end{array}\n\\right. \n\\]\nDetermine the values of \\( a \\), \\( b \\), and \\( k \\) such that the piecewise function is continuous at the transition points \\( x = 5 \\) and \\( x = -5 \\), and ensure that both the first derivative \\( f'(x) \\) and the second derivative \\( f''(x) \\) are continuous at these points. Finally, compute the value of the expression \\( (a + b + k)^3 - 3(a + b + k)(ab + ak + bk) \\).",
+                "method": "condense",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 5,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
         ]
     },
     {
         "0": [
-            [
-                "For how many positive integers \\(n\\) is \\(\\frac{n}{42-n}\\) also a positive integer?\nA) 3\nB) 5\nC) 6\nD) 7\nE) 8\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "original"
-            ],
-            [
-                "In a certain town, the number of households is represented by \\(m\\), and the number of schools is given by \\(30 - m\\). For how many positive integers \\(m\\) is \\(\\frac{m}{30-m}\\) also a positive integer?  \nA) 4  \nB) 5  \nC) 6  \nD) 8  \nE) 9  \n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "shift-out"
-            ],
-            [
-                "For how many positive integers \\(x\\) does the expression \\(\\frac{x}{k-x}\\) yield a positive integer, given that \\(k\\) is a positive integer?  \nA) 2  \nB) 4  \nC) 5  \nD) 6  \nE) 7  \n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "abstract"
-            ]
+            {
+                "instruction": "A rectangular band formation is a formation with $m$ band members in each of $r$ rows, where $m$ and $r$ are integers. A particular band has less than 100 band members. The director arranges them in a rectangular formation and finds that he has two members left over. If he increases the number of members in each row by 1 and reduces the number of rows by 2, there are exactly enough places in the new formation for each band member. What is the largest number of members the band could have?",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "A band consists of a total of \\(N\\) members, where \\(N\\) is a positive integer less than 100. The director initially arranges the band members in a rectangular formation with \\(m\\) members in each of \\(r\\) rows, leaving 3 members unassigned. When he increases the number of members per row by 2 and decreases the number of rows by 1, the new arrangement accommodates exactly all the band members without any leftover. \n\nDetermine the largest possible value of \\(N\\) that satisfies these conditions, and express your solution in terms of \\(N\\) as a quadratic equation in \\(m\\) and \\(r\\).",
+                "method": "expansion",
+                "scores": {
+                    "diversity": 4,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "A rectangular band formation consists of \\( m \\) band members in each of \\( r \\) rows, where \\( m \\) and \\( r \\) are positive integers and the total number of band members \\( N \\) satisfies \\( N < 100 \\). Initially, the director finds that when arranged in this rectangular formation, there are 2 members left over, leading to the equation:\n\n\\[\nN = mr + 2\n\\]\n\nWhen the director increases the number of members in each row by 2 and reduces the number of rows by 3, the new arrangement perfectly accommodates all band members. This gives the equation:\n\n\\[\nN = (m + 2)(r - 3)\n\\]\n\nDetermine the largest possible value of \\( N \\) that satisfies both conditions.",
+                "method": "deepening",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
         ],
         "1": [
-            [
-                "In a certain town, the number of households is represented by \\(m\\), and the number of schools is given by \\(30 - m\\). For how many positive integers \\(m\\) is \\(\\frac{m}{30-m}\\) also a positive integer?  \nA) 4  \nB) 5  \nC) 6  \nD) 8  \nE) 9  \n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "original"
-            ],
-            [
-                "In a particular city, the number of parks is denoted by \\(n\\), while the number of recreational centers is represented by \\(25 - n\\). Determine how many positive integers \\(n\\) result in \\(\\frac{n}{25-n}\\) being a positive integer as well.  \nA) 3  \nB) 4  \nC) 5  \nD) 7  \nE) 8  \n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "shift-in"
-            ],
-            [
-                "In a community, let \\(x\\) denote the number of parks, and let the number of recreational centers be expressed as \\(50 - x\\). Determine the number of positive integers \\(x\\) such that \\(\\frac{x}{50-x}\\) is also a positive integer.  \nA) 6  \nB) 7  \nC) 8  \nD) 9  \nE) 10  \n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "abstract"
-            ]
+            {
+                "instruction": "A band consists of a total of \\(N\\) members, where \\(N\\) is a positive integer less than 100. The director initially arranges the band members in a rectangular formation with \\(m\\) members in each of \\(r\\) rows, leaving 3 members unassigned. When he increases the number of members per row by 2 and decreases the number of rows by 1, the new arrangement accommodates exactly all the band members without any leftover. \n\nDetermine the largest possible value of \\(N\\) that satisfies these conditions, and express your solution in terms of \\(N\\) as a quadratic equation in \\(m\\) and \\(r\\).",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "A musical ensemble consists of \\(N\\) members, where \\(N\\) is a positive integer constrained by \\(1 \\leq N < 100\\). Initially, the ensemble is arranged in a rectangular grid of \\(m\\) members per row and \\(r\\) rows, with 3 members remaining unassigned. When the arrangement is modified by increasing the number of members per row by 3 and reducing the number of rows by 2, the new configuration accommodates all members precisely.\n\nGiven this scenario, derive the maximum feasible value of \\(N\\) that meets these criteria, and express your findings as a quadratic equation in terms of \\(m\\) and \\(r\\). Additionally, provide a detailed solution for \\(N\\) in terms of \\(m\\) and \\(r\\).",
+                "method": "constraints",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 3,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "A music ensemble consists of \\(N\\) members, where \\(N\\) is a positive integer less than 100. The conductor initially arranges the members in a rectangular formation of \\(m\\) members in each of \\(r\\) rows, resulting in 3 members remaining unassigned. Upon increasing the number of members per row by 3 and decreasing the number of rows by 2, the new arrangement perfectly accommodates all \\(N\\) members without any leftover.\n\nFormulate a quadratic equation involving \\(m\\) and \\(r\\) that represents the conditions given, and subsequently determine the largest possible value of \\(N\\) that meets these criteria.",
+                "method": "deepening",
+                "scores": {
+                    "diversity": 2,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
         ],
         "2": [
-            [
-                "In a community, let \\(x\\) denote the number of parks, and let the number of recreational centers be expressed as \\(50 - x\\). Determine the number of positive integers \\(x\\) such that \\(\\frac{x}{50-x}\\) is also a positive integer.  \nA) 6  \nB) 7  \nC) 8  \nD) 9  \nE) 10  \n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "original"
-            ],
-            [
-                "In a city, let \\(y\\) represent the number of libraries, and express the number of community centers as \\(30 - y\\). Find the count of positive integers \\(y\\) such that \\(\\frac{y}{30-y}\\) is also a positive integer.  \nA) 4  \nB) 5  \nC) 6  \nD) 7  \nE) 8  \n\nPresent the answer in LaTeX format: \\boxed{Your answer}",
-                "shift-in"
-            ],
-            [
-                "In a school, let \\(y\\) represent the number of classrooms, and express the number of laboratories as \\(30 - y\\). Find the number of positive integers \\(y\\) such that \\(\\frac{y}{30-y}\\) is also a positive integer.  \nA) 5  \nB) 6  \nC) 7  \nD) 8  \nE) 9  \n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "shift-out"
-            ]
+            {
+                "instruction": "A musical ensemble consists of \\(N\\) members, where \\(N\\) is a positive integer constrained by \\(1 \\leq N < 100\\). Initially, the ensemble is arranged in a rectangular grid of \\(m\\) members per row and \\(r\\) rows, with 3 members remaining unassigned. When the arrangement is modified by increasing the number of members per row by 3 and reducing the number of rows by 2, the new configuration accommodates all members precisely.\n\nGiven this scenario, derive the maximum feasible value of \\(N\\) that meets these criteria, and express your findings as a quadratic equation in terms of \\(m\\) and \\(r\\). Additionally, provide a detailed solution for \\(N\\) in terms of \\(m\\) and \\(r\\).",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "A musical ensemble consists of \\(N\\) members, where \\(N\\) is a positive integer constrained by \\(1 \\leq N < 100\\). The ensemble is initially arranged in a rectangular grid of \\(m\\) members per row and \\(r\\) rows, with \\(k\\) members remaining unassigned, where \\(k\\) is a positive integer less than \\(m\\). Upon modifying the configuration by increasing the number of members per row by \\(p\\) and reducing the number of rows by \\(q\\), the new arrangement accommodates all members exactly.\n\nGiven this scenario, derive the maximum feasible value of \\(N\\) that satisfies these conditions, and express your findings as a quadratic equation in terms of \\(m\\), \\(r\\), \\(k\\), \\(p\\), and \\(q\\). Furthermore, provide a detailed solution for \\(N\\) in terms of \\(m\\) and \\(r\\), while incorporating the parameters \\(k\\), \\(p\\), and \\(q\\).",
+                "method": "expansion",
+                "scores": {
+                    "diversity": 4,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "A musical ensemble consists of \\(N\\) members, where \\(N\\) is a positive integer constrained by \\(1 \\leq N < 100\\). Initially, the ensemble is arranged in a rectangular grid of \\(m\\) members per row and \\(r\\) rows, with a certain number \\(k\\) of members remaining unassigned. When the arrangement is modified by increasing the number of members per row by \\(p\\) and reducing the number of rows by \\(q\\), the new configuration accommodates all members precisely.\n\nGiven this scenario, formulate the relationship between \\(N\\), \\(m\\), \\(r\\), \\(k\\), \\(p\\), and \\(q\\) leading to a quadratic equation. Specifically, derive the maximum feasible value of \\(N\\) under these constraints, and express your findings as a function of \\(m\\) and \\(r\\) in terms of \\(k\\), \\(p\\), and \\(q\\). Please provide a detailed solution for \\(N\\) in terms of \\(m\\) and \\(r\\), including the parameters \\(k\\), \\(p\\), and \\(q\\).",
+                "method": "constraints",
+                "scores": {
+                    "diversity": 4,
+                    "difficulty": 5,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
         ],
         "3": [
-            [
-                "In a school, let \\(y\\) represent the number of classrooms, and express the number of laboratories as \\(30 - y\\). Find the number of positive integers \\(y\\) such that \\(\\frac{y}{30-y}\\) is also a positive integer.  \nA) 5  \nB) 6  \nC) 7  \nD) 8  \nE) 9  \n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "original"
-            ],
-            [
-                "In a community center, let \\(x\\) denote the number of activity rooms, and express the number of meeting spaces as \\(50 - x\\). Determine the number of positive integers \\(x\\) such that \\(\\frac{x}{50-x}\\) is also a positive integer.  \nA) 7  \nB) 8  \nC) 9  \nD) 10  \nE) 11  \n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "abstract"
-            ],
-            [
-                "In a community center, let \\(x\\) denote the number of activity rooms, and define the number of meeting spaces as \\(40 - x\\). Determine the count of positive integers \\(x\\) for which \\(\\frac{x}{40-x}\\) is also a positive integer.  \nA) 7  \nB) 8  \nC) 9  \nD) 10  \nE) 11  \n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "abstract"
-            ]
+            {
+                "instruction": "A musical ensemble consists of \\(N\\) members, where \\(N\\) is a positive integer constrained by \\(1 \\leq N < 100\\). Initially, the ensemble is arranged in a rectangular grid of \\(m\\) members per row and \\(r\\) rows, with a certain number \\(k\\) of members remaining unassigned. When the arrangement is modified by increasing the number of members per row by \\(p\\) and reducing the number of rows by \\(q\\), the new configuration accommodates all members precisely.\n\nGiven this scenario, formulate the relationship between \\(N\\), \\(m\\), \\(r\\), \\(k\\), \\(p\\), and \\(q\\) leading to a quadratic equation. Specifically, derive the maximum feasible value of \\(N\\) under these constraints, and express your findings as a function of \\(m\\) and \\(r\\) in terms of \\(k\\), \\(p\\), and \\(q\\). Please provide a detailed solution for \\(N\\) in terms of \\(m\\) and \\(r\\), including the parameters \\(k\\), \\(p\\), and \\(q\\).",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "A musical ensemble consists of \\(N\\) members, where \\(N\\) is a positive integer constrained by \\(1 \\leq N < 100\\). The members are initially arranged in a rectangular grid of \\(m\\) members per row and \\(r\\) rows, with \\(k\\) members remaining unassigned, such that \\(N = mr + k\\). \n\nWhen the arrangement is modified by increasing the number of members per row by \\(p\\) and reducing the number of rows by \\(q\\), the new configuration accommodates all members precisely, leading to the equation \\(N = (m + p)(r - q)\\).\n\nGiven these configurations, derive the quadratic equation that relates \\(N\\), \\(m\\), \\(r\\), \\(k\\), \\(p\\), and \\(q\\). Furthermore, determine the maximum feasible value of \\(N\\) under these constraints and express \\(N\\) as a function of \\(m\\), \\(r\\), \\(k\\), \\(p\\), and \\(q\\). Provide a thorough solution detailing the steps taken to arrive at this function and confirm the conditions under which it holds.",
+                "method": "condense",
+                "scores": {
+                    "diversity": 4,
+                    "difficulty": 5,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "Consider a musical ensemble consisting of \\( N \\) members, where \\( N \\) is a positive integer constrained by \\( 1 \\leq N < 100 \\). The ensemble is initially arranged in a rectangular grid with \\( m \\) members per row and \\( r \\) rows, leaving \\( k \\) members unassigned such that \\( k < m \\) and \\( k \\) is a non-negative integer. When the arrangement changes by increasing the number of members per row by \\( p \\) (where \\( p \\) is a positive integer) and decreasing the number of rows by \\( q \\) (where \\( q \\) is a positive integer), the new configuration accommodates all members exactly.\n\nYour task is to formulate a relationship that connects \\( N \\), \\( m \\), \\( r \\), \\( k \\), \\( p \\), and \\( q \\) leading to a quadratic equation. Specifically, derive the maximum feasible value of \\( N \\) given these constraints. Express \\( N \\) as a function of \\( m \\) and \\( r \\) in terms of \\( k \\), \\( p \\), and \\( q \\), and provide a detailed solution that includes:\n\n1. The initial arrangement equation: \\( N = m \\cdot r + k \\)\n2. The modified arrangement equation: \\( N = (m + p)(r - q) \\)\n3. A quadratic equation derived from equating the two expressions for \\( N \\).\n4. The explicit form of \\( N \\) in terms of \\( m \\), \\( r \\), \\( k \\), \\( p \\), and \\( q \\).\n\nFind the maximum \\( N \\) under the specified constraints, and prove that your derived function is valid for the given range of \\( N \\).",
+                "method": "condense",
+                "scores": {
+                    "diversity": 4,
+                    "difficulty": 5,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
         ]
     },
     {
         "0": [
-            [
-                "Given vectors $\\overrightarrow {a}=(1,2)$ and $\\overrightarrow {b}=(4,3)$, and that $\\overrightarrow {a}$ is perpendicular to $(t \\overrightarrow {a}+ \\overrightarrow {b})$, find the real number $t$.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "original"
-            ],
-            [
-                "Consider two vectors $\\overrightarrow{x}=(x_1,y_1)$ and $\\overrightarrow{y}=(y_1,y_2)$, such that $\\overrightarrow{x}$ is orthogonal to the vector formed by a linear combination of $\\overrightarrow{x}$ and $\\overrightarrow{y}$ with a scalar parameter $k$. Determine the value of the real number $k$ that satisfies this condition.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "abstract"
-            ],
-            [
-                "Given vectors $\\overrightarrow {u}=(2,5)$ and $\\overrightarrow {v}=(3,1)$, and that $\\overrightarrow {u}$ is parallel to $(k \\overrightarrow {v} - \\overrightarrow {u})$, find the real number $k$.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "shift-in"
-            ]
+            {
+                "instruction": "Find the center of the circle with equation $x^2 - 6x + y^2 + 2y = 9$.",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "Determine the coordinates of the center of the circle defined by the equation \\( 4(x^2 - 3x) + 4(y^2 + y) = 36 \\), and express your answer in simplified form.",
+                "method": "deepening",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 3,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "Determine the coordinates of the center of the circle defined by the equation \\( 3x^2 + 3y^2 - 18x + 12y - 27 = 0 \\) by rewriting the equation in standard form and identifying the center directly from it.",
+                "method": "expansion",
+                "scores": {
+                    "diversity": 2,
+                    "difficulty": 3,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
         ],
         "1": [
-            [
-                "Consider two vectors $\\overrightarrow{x}=(x_1,y_1)$ and $\\overrightarrow{y}=(y_1,y_2)$, such that $\\overrightarrow{x}$ is orthogonal to the vector formed by a linear combination of $\\overrightarrow{x}$ and $\\overrightarrow{y}$ with a scalar parameter $k$. Determine the value of the real number $k$ that satisfies this condition.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "original"
-            ],
-            [
-                "Consider two vectors $\\overrightarrow{a}=(a_1,b_1)$ and $\\overrightarrow{b}=(b_1,b_2)$, where the vector $\\overrightarrow{a}$ is perpendicular to the vector resulting from the addition of $\\overrightarrow{a}$ and a scalar multiple of $\\overrightarrow{b}$ with a parameter $m$. Find the value of the real number $m$ that fulfills this requirement.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "shift-in"
-            ],
-            [
-                "Examine two arbitrary vectors $\\overrightarrow{a}=(a_1,b_1)$ and $\\overrightarrow{b}=(b_1,b_2)$, where $\\overrightarrow{a}$ is perpendicular to a vector resulting from a linear combination of $\\overrightarrow{a}$ and $\\overrightarrow{b}$ scaled by a parameter $m$. Find the scalar value of $m$ that fulfills this orthogonality condition.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "abstract"
-            ]
+            {
+                "instruction": "Determine the coordinates of the center of the circle defined by the equation \\( 4(x^2 - 3x) + 4(y^2 + y) = 36 \\), and express your answer in simplified form.",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "Given the equation of a circle in the form \\( 4(x^2 - 3x) + 4(y^2 + y) = 36 \\), first transform this equation into standard form by completing the square for both the \\(x\\) and \\(y\\) variables. After finding the center of the circle, express the coordinates of the center as a function of the parameters \\(a\\) and \\(b\\) defined by \\(a = -\\frac{b}{2}\\) for the \\(x\\) component and \\(b = -\\frac{c}{2}\\) for the \\(y\\) component. Finally, compute the exact coordinates of the center and represent your answer as a simplified ordered pair \\((h, k)\\).",
+                "method": "expansion",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "Given the equation of the circle \\( 4(x^2 - 3x) + 4(y^2 + y) = 36 \\), transform it into standard form by completing the square for both \\( x \\) and \\( y \\). Then, calculate the coordinates of the center of the circle, and express your answer as an ordered pair, \\((h, k)\\), where \\( h \\) and \\( k \\) are in their simplest form.",
+                "method": "constraints",
+                "scores": {
+                    "diversity": 2,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
         ],
         "2": [
-            [
-                "Consider two vectors $\\overrightarrow{a}=(a_1,b_1)$ and $\\overrightarrow{b}=(b_1,b_2)$, where the vector $\\overrightarrow{a}$ is perpendicular to the vector resulting from the addition of $\\overrightarrow{a}$ and a scalar multiple of $\\overrightarrow{b}$ with a parameter $m$. Find the value of the real number $m$ that fulfills this requirement.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "original"
-            ],
-            [
-                "Examine two vectors $\\overrightarrow{u}=(u_1,u_2)$ and $\\overrightarrow{v}=(v_1,v_2)$, where the vector $\\overrightarrow{u}$ is orthogonal to the vector obtained by subtracting a scalar multiple of $\\overrightarrow{v}$ from $\\overrightarrow{u}$. Determine the scalar parameter $k$ that satisfies this condition. \n\nPresent your answer in LaTex format: \\boxed{Your answer}",
-                "shift-in"
-            ],
-            [
-                "Examine two generic vectors $\\vec{x}=(x_1,y_1)$ and $\\vec{y}=(y_1,y_2)$, where the vector $\\vec{x}$ is orthogonal to the vector obtained by the sum of $\\vec{x}$ and a scalar multiple of $\\vec{y}$ represented by a variable $k$. Determine the real number $k$ that satisfies this condition.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "abstract"
-            ]
+            {
+                "instruction": "Given the equation of a circle in the form \\( 4(x^2 - 3x) + 4(y^2 + y) = 36 \\), first transform this equation into standard form by completing the square for both the \\(x\\) and \\(y\\) variables. After finding the center of the circle, express the coordinates of the center as a function of the parameters \\(a\\) and \\(b\\) defined by \\(a = -\\frac{b}{2}\\) for the \\(x\\) component and \\(b = -\\frac{c}{2}\\) for the \\(y\\) component. Finally, compute the exact coordinates of the center and represent your answer as a simplified ordered pair \\((h, k)\\).",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "Given the equation of a circle in the form \\( 9(x^2 + 4x) + 9(y^2 - 2y) = 81 \\), first transform this equation into standard form by completing the square for both the \\(x\\) and \\(y\\) variables. After deriving the center of the circle, express the coordinates of the center as functions of the parameters \\(a\\) and \\(b\\), where \\(a = -\\frac{b}{2}\\) for the \\(x\\) coordinate and \\(b = -\\frac{c}{2}\\) for the \\(y\\) coordinate, with \\(c\\) being the constant term after completing the square. Finally, compute the exact coordinates of the center in terms of \\(a\\) and \\(b\\), and provide your answer as a simplified ordered pair \\((h, k)\\) where \\(h\\) and \\(k\\) are explicitly defined in terms of \\(a\\) and \\(b\\).",
+                "method": "expansion",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "Given the equation of a circle in the form \\( 9(x^2 - \\frac{8}{3}x) + 9(y^2 + 4y) = 81 \\), transform this equation into standard form by completing the square for both the \\(x\\) and \\(y\\) variables. Define the center of the circle as \\((h, k)\\) and express \\(h\\) and \\(k\\) in terms of the parameters \\(p\\) and \\(q\\) defined by \\(p = -\\frac{b}{2}\\) for the \\(x\\) component and \\(q = -\\frac{c}{2}\\) for the \\(y\\) component. Finally, calculate the exact coordinates of the center and represent your answer as a simplified ordered pair \\((h, k)\\). Additionally, determine the radius of the circle and provide your answer as \\(r = \\sqrt{R}\\), where \\(R\\) is the squared radius obtained from the standard form equation.",
+                "method": "constraints",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
         ],
         "3": [
-            [
-                "Examine two vectors $\\overrightarrow{u}=(u_1,u_2)$ and $\\overrightarrow{v}=(v_1,v_2)$, where the vector $\\overrightarrow{u}$ is orthogonal to the vector obtained by subtracting a scalar multiple of $\\overrightarrow{v}$ from $\\overrightarrow{u}$. Determine the scalar parameter $k$ that satisfies this condition. \n\nPresent your answer in LaTex format: \\boxed{Your answer}",
-                "original"
-            ],
-            [
-                "Consider two points in a two-dimensional space, represented by the coordinates \\( P_1 = (x_1, y_1) \\) and \\( P_2 = (x_2, y_2) \\). If the line segment connecting these points is perpendicular to a line that is generated by modifying the coordinates of \\( P_2 \\) by a factor of \\( m \\), find the value of the scalar \\( m \\) that fulfills this requirement.\n\nExpress your findings using LaTex: \\boxed{Your answer}",
-                "persona"
-            ],
-            [
-                "Analyze two points in a two-dimensional space, represented as coordinates \\(A=(a_1,a_2)\\) and \\(B=(b_1,b_2)\\), where point \\(A\\) is perpendicular to the point obtained by adding a scalar multiple of the vector from \\(A\\) to \\(B\\) with respect to \\(A\\). Identify the scalar parameter \\(m\\) that fulfills this condition.\n\nExpress your solution in LaTex format: \\boxed{Your answer}",
-                "mix"
-            ]
+            {
+                "instruction": "Given the equation of a circle in the form \\( 9(x^2 + 4x) + 9(y^2 - 2y) = 81 \\), first transform this equation into standard form by completing the square for both the \\(x\\) and \\(y\\) variables. After deriving the center of the circle, express the coordinates of the center as functions of the parameters \\(a\\) and \\(b\\), where \\(a = -\\frac{b}{2}\\) for the \\(x\\) coordinate and \\(b = -\\frac{c}{2}\\) for the \\(y\\) coordinate, with \\(c\\) being the constant term after completing the square. Finally, compute the exact coordinates of the center in terms of \\(a\\) and \\(b\\), and provide your answer as a simplified ordered pair \\((h, k)\\) where \\(h\\) and \\(k\\) are explicitly defined in terms of \\(a\\) and \\(b\\).",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "Given the equation of a circle represented as \\( 4(x^2 + 6x) + 4(y^2 - 8y) = 64 \\), transform this equation into standard form by completing the square for both the \\(x\\) and \\(y\\) variables. Derive the center coordinates of the circle and express these coordinates as functions of the parameters \\(a\\) and \\(b\\), defined as \\(a = -\\frac{d}{2}\\) for the \\(x\\) coordinate and \\(b = -\\frac{e}{2}\\) for the \\(y\\) coordinate, where \\(d\\) and \\(e\\) are the linear coefficients from the completed square form of the \\(x\\) and \\(y\\) terms, respectively. Finally, calculate the exact coordinates of the center in terms of \\(a\\) and \\(b\\), and provide your answer as a simplified ordered pair \\((h, k)\\), where \\(h\\) and \\(k\\) are expressed explicitly in terms of \\(a\\) and \\(b\\).",
+                "method": "condense",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 5,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "Given the equation of a circle represented as \\( 4(x^2 - 6x) + 4(y^2 + 8y) = 64 \\), first transform this equation into its standard form by completing the square for both the \\( x \\) and \\( y \\) variables. After identifying the center of the circle, express the coordinates of the center as functions of the parameters \\( p \\) and \\( q \\), where \\( p = -\\frac{b}{2} \\) for the \\( x \\) coordinate and \\( q = -\\frac{d}{2} \\) for the \\( y \\) coordinate, with \\( b \\) and \\( d \\) being the coefficients of the linear terms in the completed square expressions. Finally, compute the exact coordinates of the center in terms of \\( p \\) and \\( q \\), and present your answer as a simplified ordered pair \\((h, k)\\) where \\( h \\) and \\( k \\) are explicitly defined in terms of \\( p \\) and \\( q \\).",
+                "method": "condense",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
         ]
     },
     {
         "0": [
-            [
-                "The test consists of 5 sections, each containing an equal number of questions. Pavel correctly answered 32 questions. The percentage of his correct answers is more than 70% but less than 77%. How many questions were there in the test?\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "original"
-            ],
-            [
-                "A quiz is divided into 4 parts, each with the same number of questions. Maria answered 24 questions correctly. Her success rate falls between 60% and 65%. What is the total number of questions in the quiz?\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "shift-in"
-            ],
-            [
-                "During a recent trivia night at the community center, Leo participated in a quiz made up of 6 rounds, with each round featuring the same number of questions. He managed to score a total of 45 correct answers. His accuracy rate fell between 75% and 82%. Can you determine the total number of questions in the quiz?\n\nPlease provide your solution in LaTex format: \\boxed{Your answer}",
-                "persona"
-            ]
+            {
+                "instruction": "What are all values of $p$ such that for every $q>0$, we have   $$\\frac{3(pq^2+p^2q+3q^2+3pq)}{p+q}>2p^2q?$$ Express your answer in interval notation in decimal form.",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "Determine all values of \\( p \\) such that the inequality \n\n\\[\n\\frac{3(pq^2 + p^2q + 3q^2 + 3pq)}{p + q} > 2p^2q\n\\]\n\nholds for all \\( q > 0 \\). Additionally, find the conditions under which this inequality simplifies to a quadratic in \\( q \\) that is positive for all \\( q > 0 \\) and express your answer in interval notation in decimal form.",
+                "method": "deepening",
+                "scores": {
+                    "diversity": 2,
+                    "difficulty": 3,
+                    "validity": 5,
+                    "solvability": 4
+                }
+            },
+            {
+                "instruction": "Determine all values of \\( p \\) such that for every \\( q > 0 \\), the following inequality holds:\n\n\\[\n\\frac{3(pq^2 + p^2 q + 3q^2 + 3pq)}{p + q} > 2p^2q + 5q^2.\n\\]\n\nExpress your answer in interval notation in decimal form.",
+                "method": "expansion",
+                "scores": {
+                    "diversity": 2,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
         ],
         "1": [
-            [
-                "A quiz is divided into 4 parts, each with the same number of questions. Maria answered 24 questions correctly. Her success rate falls between 60% and 65%. What is the total number of questions in the quiz?\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "original"
-            ],
-            [
-                "A cooking competition consists of 5 rounds, each featuring an equal number of dishes to prepare. Jamie successfully completed 30 dishes. His completion rate falls between 70% and 75%. What is the total number of dishes in the competition?\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "mix"
-            ],
-            [
-                "A standardized test consists of multiple sections, each containing an equal amount of questions. Alex managed to answer a total of 36 questions correctly, achieving a performance level that lies within a specified range of 70% to 75%. Determine the overall number of questions included in the test.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "abstract"
-            ]
+            {
+                "instruction": "Determine all values of \\( p \\) such that for every \\( q > 0 \\), the following inequality holds:\n\n\\[\n\\frac{3(pq^2 + p^2 q + 3q^2 + 3pq)}{p + q} > 2p^2q + 5q^2.\n\\]\n\nExpress your answer in interval notation in decimal form.",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "Determine all values of \\( p \\) such that for every \\( q > 0 \\), the following inequality is satisfied:\n\n\\[\n\\frac{3(pq^2 + p^2 q + 3q^2 + 3pq)}{p + q} \\geq 2p^2q + 5q^2 - \\frac{(p^2 + 3p + 2)q^3}{(p + q)^2}.\n\\]\n\nExpress your answer in interval notation in decimal form.",
+                "method": "deepening",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "Determine all values of \\( p \\) such that for every \\( q > 0 \\), the following inequality is satisfied:\n\n\\[\n\\frac{3(pq^2 + p^2 q + 3q^2 + 3pq)}{p + q} \\geq 2p^2q + 5q^2 + \\frac{1}{q},\n\\]\n\nand identify if there exists any \\( p \\) for which the inequality holds true as \\( q \\) approaches infinity. Express your answer in interval notation in decimal form.",
+                "method": "constraints",
+                "scores": {
+                    "diversity": 2,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
         ],
         "2": [
-            [
-                "A standardized test consists of multiple sections, each containing an equal amount of questions. Alex managed to answer a total of 36 questions correctly, achieving a performance level that lies within a specified range of 70% to 75%. Determine the overall number of questions included in the test.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "original"
-            ],
-            [
-                "A certification exam includes various modules, each containing a different number of questions. Jamie successfully answered 48 questions correctly, which corresponds to a passing rate between 80% and 85%. Calculate the total number of questions that were part of the certification exam.\n\nPresent the answer in LaTeX format: \\boxed{Your answer}",
-                "shift-in"
-            ],
-            [
-                "During a recent academic competition, a student named Jamie excelled by answering 45 questions correctly across various categories, securing a score that falls between 80% and 85%. Can you calculate the total number of questions that were part of the competition? \n\nPlease provide your response in LaTex format: \\boxed{Your answer}",
-                "persona"
-            ]
+            {
+                "instruction": "Determine all values of \\( p \\) such that for every \\( q > 0 \\), the following inequality is satisfied:\n\n\\[\n\\frac{3(pq^2 + p^2 q + 3q^2 + 3pq)}{p + q} \\geq 2p^2q + 5q^2 - \\frac{(p^2 + 3p + 2)q^3}{(p + q)^2}.\n\\]\n\nExpress your answer in interval notation in decimal form.",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "Determine all values of \\( p \\) such that for every \\( q > 0 \\), the following inequality holds true:\n\n\\[\n\\frac{3(pq^2 + p^2 q + 3q^2 + 3pq)}{p + q} - 2p^2q - 5q^2 + \\frac{(p^2 + 3p + 2)q^3}{(p + q)^2} \\geq 0.\n\\]\n\nFurthermore, find the values of \\( p \\) for which the minimum of the left-hand side expression, as a function of \\( q \\), is non-negative for all \\( q > 0 \\). Express your answer in interval notation in decimal form.",
+                "method": "deepening",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "Determine all values of \\( p \\) such that for every \\( q > 0 \\), the following inequality holds:\n\n\\[\n\\frac{3(pq^2 + p^2 q + 3q^2 + 3pq) + (p + q)^2}{p + q} \\geq 2p^2q + 5q^2 - \\frac{(p^2 + 3p + 2)q^3}{(p + q)^2} + \\frac{3pq^3}{(p + q)^3}.\n\\]\n\nExpress your answer in interval notation in decimal form.",
+                "method": "constraints",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
         ],
         "3": [
-            [
-                "During a recent academic competition, a student named Jamie excelled by answering 45 questions correctly across various categories, securing a score that falls between 80% and 85%. Can you calculate the total number of questions that were part of the competition? \n\nPlease provide your response in LaTex format: \\boxed{Your answer}",
-                "original"
-            ],
-            [
-                "In a local science fair, a participant named Alex achieved remarkable success by presenting a project that received a score between 90% and 95%, based on a total of 60 evaluation points. If Alex earned 54 points for their project, can you determine the maximum possible score they could have received in the fair? \n\nPlease provide your response in LaTex format: \\boxed{Your answer}",
-                "shift-in"
-            ],
-            [
-                "In a recent science fair, a participant named Alex showcased a project that received a score between 75% and 90% by successfully completing 36 different experiments across multiple disciplines. Can you determine the total number of experiments that were evaluated in the fair? \n\nPlease provide your response in LaTex format: \\boxed{Your answer}",
-                "shift-in"
-            ]
+            {
+                "instruction": "Determine all values of \\( p \\) such that for every \\( q > 0 \\), the following inequality holds true:\n\n\\[\n\\frac{3(pq^2 + p^2 q + 3q^2 + 3pq)}{p + q} - 2p^2q - 5q^2 + \\frac{(p^2 + 3p + 2)q^3}{(p + q)^2} \\geq 0.\n\\]\n\nFurthermore, find the values of \\( p \\) for which the minimum of the left-hand side expression, as a function of \\( q \\), is non-negative for all \\( q > 0 \\). Express your answer in interval notation in decimal form.",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "Determine all values of \\( p \\) such that for every \\( q > 0 \\), the following inequality is satisfied:\n\n\\[\n\\frac{3(pq^2 + p^2 q + 3q^2 + 3pq) + (p^2 + 3p + 2)q^3}{(p + q)^2} - 2p^2q - 5q^2 \\geq 0.\n\\]\n\nIn addition, identify the values of \\( p \\) for which the minimum of the left-hand side expression, viewed as a function of \\( q \\), remains non-negative for all \\( q > 0 \\). Present your answer in interval notation with two decimal points.",
+                "method": "condense",
+                "scores": {
+                    "diversity": 4,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "Determine all values of \\( p \\) such that for every \\( q > 0 \\), the following inequality holds true:\n\n\\[\n\\frac{3(pq^3 + p^2 q^2 + 3q^3 + 3pq^2)}{p + q} - 2p^3q^2 - 5q^3 + \\frac{(p^2 + 3p + 4)q^4}{(p + q)^3} \\geq 0.\n\\]\n\nAdditionally, find the values of \\( p \\) for which the minimum of the left-hand side expression, treated as a function of \\( q \\), is non-negative for all \\( q > 0 \\). Present your answer in interval notation in decimal form.",
+                "method": "condense",
+                "scores": {
+                    "diversity": 4,
+                    "difficulty": 5,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
         ]
     },
     {
         "0": [
-            [
-                "Circles with centers \\( O_1 \\) and \\( O_2 \\) and equal radii are inscribed in the angles at \\( B \\) and \\( C \\) of triangle \\( ABC \\) respectively. Point \\( O \\) is the center of the incircle of triangle \\( ABC \\). These circles touch side \\( BC \\) at points \\( K_1, K_2, \\) and \\( K \\) respectively, with \\( BK_1 = 4, CK_2 = 8, \\) and \\( BC = 18 \\).\n\na) Find the length of segment \\( CK \\).\n\nb) Suppose the circle with center \\( O_1 \\) touches side \\( AB \\) at point \\( K_3 \\). Find the angle \\( ABC \\), given that point \\( O_1 \\) is the center of the circumscribed circle around triangle \\( OK_1K_3 \\).\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "original"
-            ],
-            [
-                "Consider two identical circles inscribed in the angles of a triangle, each touching one side. The center of the triangle's incircle is also given. The points where these circles touch the side of the triangle create specific segments, and lengths of some segments are provided.\n\na) Determine the length of one of the segments formed by the points of tangency.\n\nb) If one of the circles also touches another side of the triangle at a specific point, calculate the angle at the vertex opposite to that side, using the center of the circle and the points of tangency to help in your calculations.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "abstract"
-            ],
-            [
-                "In a triangle \\( ABC \\), we have two identical circles centered at points \\( P \\) and \\( Q \\) that are inscribed within the angles at vertices \\( A \\) and \\( C \\). Let \\( R \\) denote the center of the triangle's incircle. The circles touch the base \\( AB \\) at points \\( M_1, M_2, \\) and \\( M \\), with the measurements \\( AM_1 = 5, CM_2 = 7, \\) and \\( AB = 20 \\).\n\na) Calculate the length of segment \\( AM \\).\n\nb) If the circle centered at \\( P \\) touches side \\( AC \\) at point \\( M_3 \\), determine the measure of angle \\( ACB \\), given that point \\( P \\) serves as the center of the circumcircle around triangle \\( RM_1M_3 \\).\n\nPresent your answer in LaTex format: \\boxed{Your answer}",
-                "persona"
-            ]
+            {
+                "instruction": "Tim wants to invest some money in a bank which compounds quarterly with an annual interest rate of $7\\%$. To the nearest dollar, how much money should he invest if he wants a total of $\\$60,\\!000$ at the end of $5$ years?",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "Tim plans to invest an amount \\( P \\) in a bank that compounds interest quarterly at an annual rate of \\( 7\\% \\). If he aims to accumulate a total of \\( \\$60,000 \\) after \\( 5 \\) years, determine the required principal \\( P \\) to the nearest dollar. Additionally, express \\( P \\) in terms of the compound interest formula \\( A = P \\left(1 + \\frac{r}{n}\\right)^{nt} \\) where \\( A \\) is the final amount, \\( r \\) is the annual interest rate, \\( n \\) is the number of times interest is compounded per year, and \\( t \\) is the number of years.",
+                "method": "deepening",
+                "scores": {
+                    "diversity": 2,
+                    "difficulty": 2,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "Let \\( P \\) be the principal amount that Tim needs to invest, compounded quarterly at an annual interest rate of \\( r = 7\\% = 0.07 \\), over a period of \\( t = 5 \\) years. The formula for the future value \\( A \\) of an investment compounded quarterly is given by:\n\n\\[\nA = P \\left(1 + \\frac{r}{n}\\right)^{nt}\n\\]\n\nwhere \\( n \\) is the number of compounding periods per year. In this case, \\( n = 4 \\). \n\nTim desires a future value of \\( A = 60,000 \\). \n\nReformulate the problem to find the minimum principal \\( P \\) that satisfies the following equation:\n\n\\[\n60,000 = P \\left(1 + \\frac{0.07}{4}\\right)^{4 \\times 5}\n\\]\n\nWhat is the exact amount Tim should invest, rounded to the nearest dollar?",
+                "method": "constraints",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
         ],
         "1": [
-            [
-                "Consider two identical circles inscribed in the angles of a triangle, each touching one side. The center of the triangle's incircle is also given. The points where these circles touch the side of the triangle create specific segments, and lengths of some segments are provided.\n\na) Determine the length of one of the segments formed by the points of tangency.\n\nb) If one of the circles also touches another side of the triangle at a specific point, calculate the angle at the vertex opposite to that side, using the center of the circle and the points of tangency to help in your calculations.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "original"
-            ],
-            [
-                "Consider two congruent shapes inscribed within the angles of a polygon, each interacting with one of its sides. The centroid of the polygon is also given. The points where these shapes make contact with the sides of the polygon create distinct segments, and the lengths of some of these segments are specified.\n\na) Calculate the length of one of the segments formed by the points of contact.\n\nb) If one of the shapes also interacts with another side of the polygon at a defined point, determine the angle at the vertex opposite that side, utilizing the centroid and the points of contact to assist in your calculations.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "abstract"
-            ],
-            [
-                "Imagine a large rectangular garden divided into four equal sections by two paths that intersect at the center, creating smaller rectangular plots. In each of these sections, there is a square flower bed at each corner, with some flower beds overlapping the paths. The total area of the garden and the dimensions of one of the paths are provided.\n\na) Calculate the area of one of the flower beds that is partially shaded by the path.\n\nb) If one of the flower beds also extends into the neighboring section, determine the angle formed at the intersection of the paths created by the overlapping flower beds and the edges of the garden, using the dimensions of the beds and paths to assist in your calculations.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "shift-out"
-            ]
+            {
+                "instruction": "Let \\( P \\) be the principal amount that Tim needs to invest, compounded quarterly at an annual interest rate of \\( r = 7\\% = 0.07 \\), over a period of \\( t = 5 \\) years. The formula for the future value \\( A \\) of an investment compounded quarterly is given by:\n\n\\[\nA = P \\left(1 + \\frac{r}{n}\\right)^{nt}\n\\]\n\nwhere \\( n \\) is the number of compounding periods per year. In this case, \\( n = 4 \\). \n\nTim desires a future value of \\( A = 60,000 \\). \n\nReformulate the problem to find the minimum principal \\( P \\) that satisfies the following equation:\n\n\\[\n60,000 = P \\left(1 + \\frac{0.07}{4}\\right)^{4 \\times 5}\n\\]\n\nWhat is the exact amount Tim should invest, rounded to the nearest dollar?",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "Let \\( P \\) represent the principal amount that Tim invests, compounded continuously at an annual interest rate of \\( r = 7\\% = 0.07 \\), over a period of \\( t = 5 \\) years. The formula for the future value \\( A \\) of an investment compounded continuously is given by:\n\n\\[\nA = Pe^{rt}\n\\]\n\nwhere \\( e \\) is the base of the natural logarithm. Tim requires a future value of \\( A = 60,000 \\).\n\nReformulate the problem to determine the minimum principal \\( P \\) that satisfies the following equation:\n\n\\[\n60,000 = Pe^{0.07 \\times 5}\n\\]\n\nWhat is the exact amount Tim should invest, rounded to the nearest dollar?",
+                "method": "expansion",
+                "scores": {
+                    "diversity": 4,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "Let \\( P \\) represent the principal amount that Tim must invest to achieve a future value of \\( A = 60,000 \\) after \\( t = 5 \\) years, compounded quarterly at an annual interest rate of \\( r = 7\\% = 0.07 \\). The formula for the future value \\( A \\) when compounded \\( n \\) times per year is described by:\n\n\\[\nA = P \\left(1 + \\frac{r}{n}\\right)^{nt}\n\\]\n\nTo further explore the dynamics of investment growth, consider an additional complication where Tim is required to make a one-time additional contribution of \\( C = 5,000 \\) at the end of the second year. The future value \\( A' \\) with this additional contribution can be expressed as:\n\n\\[\nA' = P \\left(1 + \\frac{0.07}{4}\\right)^{4 \\cdot 5} + 5,000 \\left(1 + \\frac{0.07}{4}\\right)^{4 \\cdot 3}\n\\]\n\nDetermine the minimum principal \\( P \\) such that:\n\n\\[\n60,000 = P \\left(1 + \\frac{0.07}{4}\\right)^{20} + 5,000 \\left(1 + \\frac{0.07}{4}\\right)^{12}\n\\]\n\nWhat is the exact amount Tim should invest, rounded to the nearest dollar?",
+                "method": "constraints",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 5,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
         ],
         "2": [
-            [
-                "Imagine a large rectangular garden divided into four equal sections by two paths that intersect at the center, creating smaller rectangular plots. In each of these sections, there is a square flower bed at each corner, with some flower beds overlapping the paths. The total area of the garden and the dimensions of one of the paths are provided.\n\na) Calculate the area of one of the flower beds that is partially shaded by the path.\n\nb) If one of the flower beds also extends into the neighboring section, determine the angle formed at the intersection of the paths created by the overlapping flower beds and the edges of the garden, using the dimensions of the beds and paths to assist in your calculations.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "original"
-            ],
-            [
-                "Envision a spacious triangular park divided into three equal sections by walkways that converge at a central fountain, resulting in smaller triangular areas. In each of these sections, there is a circular seating area at each vertex, with some seating areas encroaching upon the walkways. The total area of the park and the dimensions of one of the walkways are provided.\n\na) Calculate the area of one of the seating areas that is partially shaded by the walkway.\n\nb) If one of the seating areas also extends into the adjacent section, determine the angle formed at the intersection of the walkways created by the overlapping seating areas and the edges of the park, using the dimensions of the seating areas and walkways to assist in your calculations.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "shift-out"
-            ],
-            [
-                "Consider a large circular park divided into four equal segments by two pathways that cross at the center, resulting in smaller pie-shaped areas. In each of these segments, there is a circular fountain positioned at the midpoint, with some fountains partially obstructed by the pathways. The total area of the park and the radius of one of the pathways are given.\n\na) Determine the area of one of the fountains that is partially shaded by the pathway.\n\nb) If one of the fountains also extends into the adjacent segment, calculate the angle formed at the intersection of the pathways created by the overlapping fountains and the boundaries of the park, using the measurements of the fountains and pathways to aid in your computations.\n\nPresent your answer in LaTex format: \\boxed{Your answer}",
-                "shift-out"
-            ]
+            {
+                "instruction": "Let \\( P \\) represent the principal amount that Tim invests, compounded continuously at an annual interest rate of \\( r = 7\\% = 0.07 \\), over a period of \\( t = 5 \\) years. The formula for the future value \\( A \\) of an investment compounded continuously is given by:\n\n\\[\nA = Pe^{rt}\n\\]\n\nwhere \\( e \\) is the base of the natural logarithm. Tim requires a future value of \\( A = 60,000 \\).\n\nReformulate the problem to determine the minimum principal \\( P \\) that satisfies the following equation:\n\n\\[\n60,000 = Pe^{0.07 \\times 5}\n\\]\n\nWhat is the exact amount Tim should invest, rounded to the nearest dollar?",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "Let \\( P \\) be the principal amount Tim invests, compounded continuously at an annual interest rate of \\( r = 7\\% = 0.07 \\), over a variable period \\( t \\) years. The desired future value \\( A \\) is given as \\( A = 60,000 \\). The relationship governing the growth of this investment is expressed by the formula:\n\n\\[\nA = Pe^{rt}\n\\]\n\nTim aims to achieve this future value under the condition that \\( t \\) follows an exponential growth model, specifically: \\( t = 2n \\) for some integer \\( n \\). Reformulate the problem to derive the minimum principal \\( P \\) that satisfies the following equation for the smallest integer \\( n \\) such that \\( t \\geq 5 \\):\n\n\\[\n60,000 = Pe^{0.07(2n)}\n\\]\n\nDetermine the exact principal amount \\( P \\) that Tim must invest, rounded to the nearest dollar, when \\( n \\) is at its minimum value.",
+                "method": "expansion",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "Let \\( P \\) denote the principal amount that Tim invests, compounded continuously at an annual interest rate of \\( r = 7\\% = 0.07 \\), over a period of \\( t \\) years, where \\( t \\) is a variable representing the number of years. The relationship for the future value \\( A \\) of the investment compounded continuously is expressed as:\n\n\\[\nA = Pe^{rt}\n\\]\n\nTim desires a future value of \\( A = 60,000 \\) and needs to determine the minimum principal \\( P \\) that allows for a desired investment horizon of \\( t \\) years, given by the equation:\n\n\\[\n60,000 = Pe^{0.07t}\n\\]\n\nTo challenge the complexity further, solve for \\( P \\) in terms of \\( t \\) and determine the minimum principal \\( P \\) required when \\( t \\) is set to 10 years. What is the exact amount Tim should invest, rounded to the nearest dollar?",
+                "method": "constraints",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
         ],
         "3": [
-            [
-                "Envision a spacious triangular park divided into three equal sections by walkways that converge at a central fountain, resulting in smaller triangular areas. In each of these sections, there is a circular seating area at each vertex, with some seating areas encroaching upon the walkways. The total area of the park and the dimensions of one of the walkways are provided.\n\na) Calculate the area of one of the seating areas that is partially shaded by the walkway.\n\nb) If one of the seating areas also extends into the adjacent section, determine the angle formed at the intersection of the walkways created by the overlapping seating areas and the edges of the park, using the dimensions of the seating areas and walkways to assist in your calculations.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "original"
-            ],
-            [
-                "Imagine a vibrant circular community plaza that features four distinct zones, marked by colorful paths that radiate from a central sculpture. Each zone contains a unique type of garden, with benches placed at the corners of the gardens, some of which are positioned slightly on the paths. Given the total area of the plaza and the width of one of the paths:\n\na) Determine the area of one of the garden zones that is partially shaded by the path.\n\nb) If one of the garden zones overlaps with an adjacent zone, calculate the angle created between the paths at the point where the overlapping gardens meet, using the dimensions of the gardens and paths for your computations.\n\nPlease provide your findings in LaTex format: \\boxed{Your answer}",
-                "persona"
-            ],
-            [
-                "Imagine a bustling urban plaza shaped like a hexagon, segmented into six distinct zones by vibrant pathways that meet at a lively central stage, creating smaller hexagonal sections. In each zone, there are rectangular picnic spots at each corner, with some of these spots slightly overlapping the pathways. The overall dimensions of the plaza and the width of one of the pathways are specified.\n\na) Determine the area of one of the picnic spots that overlaps with the pathway.\n\nb) If one of the picnic spots also intrudes into a neighboring zone, calculate the angle formed at the intersection of the pathways created by the overlapping picnic spots and the borders of the plaza, using the given dimensions of the picnic spots and pathways to aid your calculations.\n\nPresent the answer in LaTex format: \\boxed{Your answer}",
-                "persona"
-            ]
+            {
+                "instruction": "Let \\( P \\) be the principal amount Tim invests, compounded continuously at an annual interest rate of \\( r = 7\\% = 0.07 \\), over a variable period \\( t \\) years. The desired future value \\( A \\) is given as \\( A = 60,000 \\). The relationship governing the growth of this investment is expressed by the formula:\n\n\\[\nA = Pe^{rt}\n\\]\n\nTim aims to achieve this future value under the condition that \\( t \\) follows an exponential growth model, specifically: \\( t = 2n \\) for some integer \\( n \\). Reformulate the problem to derive the minimum principal \\( P \\) that satisfies the following equation for the smallest integer \\( n \\) such that \\( t \\geq 5 \\):\n\n\\[\n60,000 = Pe^{0.07(2n)}\n\\]\n\nDetermine the exact principal amount \\( P \\) that Tim must invest, rounded to the nearest dollar, when \\( n \\) is at its minimum value.",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "Let \\( P \\) represent the principal amount that Tim invests, compounded continuously at an annual interest rate of \\( r = 7\\% = 0.07 \\). The future value \\( A \\) is given as \\( A = 60,000 \\). The relationship governing the growth of this investment is expressed by the formula:\n\n\\[\nA = Pe^{rt}\n\\]\n\nHowever, Tim faces a constraint where the time \\( t \\) is modeled as a quadratic function of an integer \\( n \\), specifically given by \\( t = n^2 + 2n \\). Your task is to reformulate the problem to find the minimum principal \\( P \\) such that \\( t \\) satisfies the condition \\( t \\geq 5 \\).\n\nSet up the equation:\n\n\\[\n60,000 = Pe^{0.07(n^2 + 2n)}\n\\]\n\nDetermine the minimum principal amount \\( P \\), rounded to the nearest dollar, when \\( n \\) is the smallest integer such that \\( t \\geq 5 \\).",
+                "method": "condense",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 5,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "Let \\( P \\) be the principal amount Tim invests, compounded continuously at an annual interest rate of \\( r = 7\\% = 0.07 \\). The desired future value \\( A \\) is \\( A = 60,000 \\). The growth of this investment is described by the equation:\n\n\\[\nA = Pe^{rt}\n\\]\n\nTim aims to achieve this future value under the condition that \\( t \\) is a piecewise function defined as follows: \n\n\\[\nt = \n\\begin{cases} \n3n & \\text{if } n \\text{ is even} \\\\\n3n + 1 & \\text{if } n \\text{ is odd}\n\\end{cases}\n\\]\n\nfor some integer \\( n \\). Reformulate the problem to derive the minimum principal \\( P \\) needed to satisfy the equation for the smallest integer \\( n \\) such that \\( t \\geq 5 \\).\n\nSpecifically, determine \\( P \\) when \\( n \\) is the smallest integer that meets this condition, ensuring that \\( A = 60,000 \\) holds true in the equation:\n\n\\[\n60,000 = Pe^{0.07t}\n\\]\n\nCalculate the exact principal amount \\( P \\) needed, rounded to the nearest dollar, based on the minimum qualifying value of \\( n \\).",
+                "method": "condense",
+                "scores": {
+                    "diversity": 4,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
         ]
     }
 ]
