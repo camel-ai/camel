@@ -20,6 +20,7 @@ from camel.types import ModelPlatformType
 
 
 async def main():
+    # TODO: modify the tool path in json file to your own path
     config_path = Path(__file__).parent / "mcp_servers_config.json"
 
     model = ModelFactory.create(
