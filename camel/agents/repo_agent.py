@@ -17,7 +17,7 @@ from string import Template
 from typing import TYPE_CHECKING, List, Optional, Tuple, Union
 
 if TYPE_CHECKING:
-    from github import Github
+    from github.MainClass import Github
 from pydantic import BaseModel
 
 from camel.agents import ChatAgent
@@ -219,7 +219,7 @@ class RepoAgent(ChatAgent):
             List[RepositoryInfo]: A list of objects containing information
                 about the all repositories, including the contents.
         """
-        from github import Github
+        from github.MainClass import Github
 
         github_client = Github(self.github_auth_token)
         res = []

@@ -53,7 +53,8 @@ class GithubToolkit(BaseToolkit):
                 `get_github_access_token` method.
         """
         super().__init__(timeout=timeout)
-        from github import Auth, Github
+        from github import Auth
+        from github.MainClass import Github
 
         if access_token is None:
             access_token = self.get_github_access_token()
@@ -110,7 +111,7 @@ class GithubToolkit(BaseToolkit):
                 successfully or not.
         """
         sb = self.repo.get_branch(self.repo.default_branch)
-        from github import GithubException
+        from github.GithubException import GithubException
 
         try:
             self.repo.create_git_ref(

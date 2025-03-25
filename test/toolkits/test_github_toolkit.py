@@ -18,8 +18,9 @@ import pytest
 
 # Skip the entire module if github package is not available
 try:
-    from github import Auth, Github
+    from github import Auth
     from github.ContentFile import ContentFile
+    from github.MainClass import Github
 
     GITHUB_AVAILABLE = True
 except ImportError:
