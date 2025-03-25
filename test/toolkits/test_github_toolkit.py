@@ -15,178 +15,179 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from github import Auth, Github
-from github.ContentFile import ContentFile
 
-from camel.toolkits.github_toolkit import GithubToolkit
+# Skip the entire module if github package is not available
+try:
+    from github import Auth, Github
+    from github.ContentFile import ContentFile
 
-# Skip the entire test module due to GitHub dependency issues
-pytestmark = pytest.mark.skip(
-    reason="GitHub dependency issues need to be fixed"
+    GITHUB_AVAILABLE = True
+except ImportError:
+    GITHUB_AVAILABLE = False
+
+# Skip reason for when github is not available
+pytestmark = pytest.mark.skipif(
+    not GITHUB_AVAILABLE,
+    reason="GitHub package not installed or dependency issues "
+    "need to be fixed",
 )
 
+if GITHUB_AVAILABLE:
+    from camel.toolkits.github_toolkit import GithubToolkit
 
-@patch.object(Github, '__init__', lambda self, *args, **kwargs: None)
-@patch.object(Github, 'get_repo', return_value=MagicMock())
-@patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
-def test_init(mock_get_repo):
-    # Call the constructor of the GithubToolkit class
-    github_toolkit = GithubToolkit("repo_name", "token")
+    @patch.object(Github, '__init__', lambda self, *args, **kwargs: None)
+    @patch.object(Github, 'get_repo', return_value=MagicMock())
+    @patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
+    def test_init(mock_get_repo):
+        # Call the constructor of the GithubToolkit class
+        github_toolkit = GithubToolkit("repo_name", "token")
 
-    # Assert that the get_repo method was called with the correct argument
-    github_toolkit.github.get_repo.assert_called_once_with("repo_name")
+        # Assert that the get_repo method was called with the correct argument
+        github_toolkit.github.get_repo.assert_called_once_with("repo_name")
 
+    @patch.object(Github, '__init__', lambda self, *args, **kwargs: None)
+    @patch.object(Github, 'get_repo', return_value=MagicMock())
+    @patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
+    def test_get_tools(mock_get_repo):
+        # Call the constructor of the GithubToolkit class
+        github_toolkit = GithubToolkit("repo_name", "token")
 
-@patch.object(Github, '__init__', lambda self, *args, **kwargs: None)
-@patch.object(Github, 'get_repo', return_value=MagicMock())
-@patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
-def test_get_tools(mock_get_repo):
-    # Call the constructor of the GithubToolkit class
-    github_toolkit = GithubToolkit("repo_name", "token")
+        tools = github_toolkit.get_tools()
+        assert isinstance(tools, list)
+        assert len(tools) > 0
 
-    tools = github_toolkit.get_tools()
-    assert isinstance(tools, list)
-    assert len(tools) > 0
+    @patch.object(Github, 'get_repo', return_value=MagicMock())
+    @patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
+    def test_create_pull_request(monkeypatch):
+        # Call the constructor of the GithubToolkit class
+        github_toolkit = GithubToolkit("repo_name", "token")
 
+        # Mock the create_pull method of the github_toolkit instance to return
+        # a value
+        mock_pr_response = MagicMock()
+        mock_pr_response.title = """[GitHub Agent] Solved issue: Time 
+        complexity for product_of_array_except_self.py"""
+        mock_pr_response.body = "Fixes #1"
+        github_toolkit.repo.create_pull.return_value = mock_pr_response
 
-@patch.object(Github, 'get_repo', return_value=MagicMock())
-@patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
-def test_create_pull_request(monkeypatch):
-    # Call the constructor of the GithubToolkit class
-    github_toolkit = GithubToolkit("repo_name", "token")
+        # Create a MagicMock that mimics ContentFile
+        mock_content_file = MagicMock(spec=ContentFile)
+        mock_content_file.path = "path/to/file"
+        mock_content_file.sha = "dummy_sha"
 
-    # Mock the create_pull method of the github_toolkit instance to return a
-    # value
-    mock_pr_response = MagicMock()
-    mock_pr_response.title = """[GitHub Agent] Solved issue: Time complexity 
-    for product_of_array_except_self.py"""
-    mock_pr_response.body = "Fixes #1"
-    github_toolkit.repo.create_pull.return_value = mock_pr_response
+        # Ensure get_contents returns the mocked ContentFile
+        github_toolkit.repo.get_contents.return_value = mock_content_file
 
-    # Create a MagicMock that mimics ContentFile
-    mock_content_file = MagicMock(spec=ContentFile)
-    mock_content_file.path = "path/to/file"
-    mock_content_file.sha = "dummy_sha"
+        # Create a pull request
+        pr = github_toolkit.create_pull_request(
+            file_path="path/to/file",
+            branch_name="branch_name",
+            new_content="This is the content of the file",
+            pr_title="""[GitHub Agent] Solved issue: Time complexity for 
+            product_of_array_except_self.py""",
+            body="Fixes #1",
+        )
 
-    # Ensure get_contents returns the mocked ContentFile
-    github_toolkit.repo.get_contents.return_value = mock_content_file
+        expected_response = """Title: [GitHub Agent] Solved issue: Time 
+        complexity for product_of_array_except_self.py\nBody: Fixes #1\n"""
 
-    # Create a pull request
-    pr = github_toolkit.create_pull_request(
-        file_path="path/to/file",
-        branch_name="branch_name",
-        new_content="This is the content of the file",
-        pr_title="""[GitHub Agent] Solved issue: Time complexity for 
-        product_of_array_except_self.py""",
-        body="Fixes #1",
-    )
+        assert (
+            pr == expected_response
+        ), f"Expected {expected_response}, but got {pr}"
 
-    expected_response = """Title: [GitHub Agent] Solved issue: Time complexity 
-    for product_of_array_except_self.py\nBody: Fixes #1\n"""
+    @patch.object(Github, 'get_repo', return_value=MagicMock())
+    @patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
+    def test_get_all_issues(monkeypatch):
+        github_toolkit = GithubToolkit("repo_name", "token")
+        mock_issue = MagicMock()
+        mock_issue.number = 1
+        mock_issue.title = "Test Issue"
+        github_toolkit.repo.get_issues.return_value = [mock_issue]
 
-    assert (
-        pr == expected_response
-    ), f"Expected {expected_response}, but got {pr}"
+        issues = github_toolkit.get_issue_list()
 
+        expected_issues = [{"number": 1, "title": "Test Issue"}]
+        assert (
+            issues == expected_issues
+        ), f"Expected {expected_issues}, but got {issues}"
 
-@patch.object(Github, 'get_repo', return_value=MagicMock())
-@patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
-def test_get_all_issues(monkeypatch):
-    github_toolkit = GithubToolkit("repo_name", "token")
-    mock_issue = MagicMock()
-    mock_issue.number = 1
-    mock_issue.title = "Test Issue"
-    github_toolkit.repo.get_issues.return_value = [mock_issue]
+    @patch.object(Github, 'get_repo', return_value=MagicMock())
+    @patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
+    def test_get_issue_content(monkeypatch):
+        github_toolkit = GithubToolkit("repo_name", "token")
+        mock_issue = MagicMock()
+        mock_issue.body = "Issue content"
+        github_toolkit.repo.get_issue.return_value = mock_issue
 
-    issues = github_toolkit.get_issue_list()
+        content = github_toolkit.get_issue_content(1)
+        expected_content = "Issue content"
 
-    expected_issues = [{"number": 1, "title": "Test Issue"}]
-    assert (
-        issues == expected_issues
-    ), f"Expected {expected_issues}, but got {issues}"
+        assert (
+            content == expected_content
+        ), f"Expected {expected_content}, but got {content}"
 
+    @patch.object(Github, 'get_repo', return_value=MagicMock())
+    @patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
+    def test_get_all_pull_requests(monkeypatch):
+        github_toolkit = GithubToolkit("repo_name", "token")
+        mock_pr = MagicMock()
+        mock_pr.number = 1
+        mock_pr.title = "Test PR"
+        github_toolkit.repo.get_pulls.return_value = [mock_pr]
 
-@patch.object(Github, 'get_repo', return_value=MagicMock())
-@patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
-def test_get_issue_content(monkeypatch):
-    github_toolkit = GithubToolkit("repo_name", "token")
-    mock_issue = MagicMock()
-    mock_issue.body = "Issue content"
-    github_toolkit.repo.get_issue.return_value = mock_issue
+        prs = github_toolkit.get_pull_request_list()
+        expected_prs = [{"number": 1, "title": "Test PR"}]
 
-    content = github_toolkit.get_issue_content(1)
-    expected_content = "Issue content"
+        assert prs == expected_prs, f"Expected {expected_prs}, but got {prs}"
 
-    assert (
-        content == expected_content
-    ), f"Expected {expected_content}, but got {content}"
+    @patch.object(Github, 'get_repo', return_value=MagicMock())
+    @patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
+    def test_get_pull_request_code(monkeypatch):
+        github_toolkit = GithubToolkit("repo_name", "token")
+        mock_file = MagicMock()
+        mock_file.filename = "file1.py"
+        mock_file.patch = "code changes"
+        github_toolkit.repo.get_pull.return_value.get_files.return_value = [
+            mock_file
+        ]
 
+        files_changed = github_toolkit.get_pull_request_code(1)
+        expected_files = [{"filename": "file1.py", "patch": "code changes"}]
 
-@patch.object(Github, 'get_repo', return_value=MagicMock())
-@patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
-def test_get_all_pull_requests(monkeypatch):
-    github_toolkit = GithubToolkit("repo_name", "token")
-    mock_pr = MagicMock()
-    mock_pr.number = 1
-    mock_pr.title = "Test PR"
-    github_toolkit.repo.get_pulls.return_value = [mock_pr]
+        assert (
+            files_changed == expected_files
+        ), f"Expected {expected_files}, but got {files_changed}"
 
-    prs = github_toolkit.get_pull_request_list()
-    expected_prs = [{"number": 1, "title": "Test PR"}]
+    @patch.object(Github, 'get_repo', return_value=MagicMock())
+    @patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
+    def test_get_pull_request_comments(monkeypatch):
+        github_toolkit = GithubToolkit("repo_name", "token")
+        mock_comment = MagicMock()
+        mock_comment.user.login = "user1"
+        mock_comment.body = "Test comment"
+        github_toolkit.repo.get_pull.return_value.get_comments.return_value = [
+            mock_comment
+        ]
 
-    assert prs == expected_prs, f"Expected {expected_prs}, but got {prs}"
+        comments = github_toolkit.get_pull_request_comments(1)
+        expected_comments = [{"user": "user1", "body": "Test comment"}]
 
+        assert (
+            comments == expected_comments
+        ), f"Expected {expected_comments}, but got {comments}"
 
-@patch.object(Github, 'get_repo', return_value=MagicMock())
-@patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
-def test_get_pull_request_code(monkeypatch):
-    github_toolkit = GithubToolkit("repo_name", "token")
-    mock_file = MagicMock()
-    mock_file.filename = "file1.py"
-    mock_file.patch = "code changes"
-    github_toolkit.repo.get_pull.return_value.get_files.return_value = [
-        mock_file
-    ]
+    @patch.object(Github, 'get_repo', return_value=MagicMock())
+    @patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
+    def test_get_all_file_paths(monkeypatch):
+        github_toolkit = GithubToolkit("repo_name", "token")
+        mock_content = MagicMock()
+        mock_content.type = "file"
+        mock_content.path = "path/to/file.py"
+        github_toolkit.repo.get_contents.return_value = [mock_content]
 
-    files_changed = github_toolkit.get_pull_request_code(1)
-    expected_files = [{"filename": "file1.py", "patch": "code changes"}]
+        files = github_toolkit.get_all_file_paths()
+        expected_files = ["path/to/file.py"]
 
-    assert (
-        files_changed == expected_files
-    ), f"Expected {expected_files}, but got {files_changed}"
-
-
-@patch.object(Github, 'get_repo', return_value=MagicMock())
-@patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
-def test_get_pull_request_comments(monkeypatch):
-    github_toolkit = GithubToolkit("repo_name", "token")
-    mock_comment = MagicMock()
-    mock_comment.user.login = "user1"
-    mock_comment.body = "Test comment"
-    github_toolkit.repo.get_pull.return_value.get_comments.return_value = [
-        mock_comment
-    ]
-
-    comments = github_toolkit.get_pull_request_comments(1)
-    expected_comments = [{"user": "user1", "body": "Test comment"}]
-
-    assert (
-        comments == expected_comments
-    ), f"Expected {expected_comments}, but got {comments}"
-
-
-@patch.object(Github, 'get_repo', return_value=MagicMock())
-@patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
-def test_get_all_file_paths(monkeypatch):
-    github_toolkit = GithubToolkit("repo_name", "token")
-    mock_content = MagicMock()
-    mock_content.type = "file"
-    mock_content.path = "path/to/file.py"
-    github_toolkit.repo.get_contents.return_value = [mock_content]
-
-    files = github_toolkit.get_all_file_paths()
-    expected_files = ["path/to/file.py"]
-
-    assert (
-        files == expected_files
-    ), f"Expected {expected_files}, but got {files}"
+        assert (
+            files == expected_files
+        ), f"Expected {expected_files}, but got {files}"
