@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.36"
+version = "0.2.37"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -120,7 +120,7 @@ media_tools = [
 communication_tools = [
     "slack-sdk>=3.27.2,<4",
     "slack-bolt>=1.20.1,<2",
-    "pygithub>=2.3.0,<3",
+    "pygithub>=2.6.0,<3",
     "pyTelegramBotAPI>=4.18.0,<5",
     "discord.py>=2.3.2,<3",
     "notion-client>=2.2.1,<3",
@@ -219,7 +219,7 @@ all = [
     "slack-sdk>=3.27.2,<4",
     "slack-bolt>=1.20.1,<2",
     "pydub>=0.25.1,<0.26",
-    "pygithub>=2.3.0,<3",
+    "pygithub>=2.6.0,<3",
     "pyTelegramBotAPI>=4.18.0,<5",
     "discord.py>=2.3.2,<3",
     "docker>=7.1.0,<8",
