@@ -235,7 +235,7 @@ class RepoAgent(ChatAgent):
 
         Args:
             repo_urls (str): The Repo URL to be loaded.
-            github_client (str): The established GitHub client.
+            github_client (GitHub): The established GitHub client.
 
         Returns:
             RepositoryInfo: The object containing information
