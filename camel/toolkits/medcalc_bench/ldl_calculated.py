@@ -53,12 +53,20 @@ def compute_ldl_explanation(input_parameters):
         - None
 
     Example:
-        compute_homa_ir_explanation({"hdl_cholestrol": (37.0, 'mg/dL'),"triglycerides": (205.0, 'mg/dL'),"total_cholestrol": (210.0, 'mg/dL')})
+        compute_homa_ir_explanation({"hdl_cholestrol": (37.0, 'mg/dL'),"triglycerides": (205.0, 'mg/dL'),
+        "total_cholestrol": (210.0, 'mg/dL')})
 
-        output: "{'Explanation': "To compute the patient's LDL cholestrol, apply the following formula: LDL cholesterol = total cholesterol - HDL - (triglycerides / 5), where the units for total cholestrol, HDL cholestrol, and triglycerides are all mg/dL.\nThe concentration of total cholestrol is 210.0 mg/dL. \nThe concentration of hdl cholestrol is 37.0 mg/dL. \nThe concentration of triglycerides is 205.0 mg/dL. \nPlugging in these values will give us 210.0 mg/dL - 37.0 mg/dL - (205.0/5) mg/dL = 132.0 mg/dL.\nThe patients concentration of LDL cholestrol is 132.0 mg/dL.\n", 'Answer': 132.0}"
+        output: "{'Explanation': "To compute the patient's LDL cholestrol, apply the following formula:
+        LDL cholesterol = total cholesterol - HDL - (triglycerides / 5), where the units for total cholestrol,
+        HDL cholestrol, and triglycerides are all mg/dL.\nThe concentration of total cholestrol is 210.0 mg/dL.
+        \nThe concentration of hdl cholestrol is 37.0 mg/dL. \nThe concentration of triglycerides is 205.0 mg/dL.
+        \nPlugging in these values will give us 210.0 mg/dL - 37.0 mg/dL - (205.0/5) mg/dL = 132.0 mg/dL.
+        \nThe patients concentration of LDL cholestrol is 132.0 mg/dL.\n", 'Answer': 132.0}"
     """
 
-    explanation = "To compute the patient's LDL cholestrol, apply the following formula: LDL cholesterol = total cholesterol - HDL - (triglycerides / 5), where the units for total cholestrol, HDL cholestrol, and triglycerides are all mg/dL.\n"
+    explanation = "To compute the patient's LDL cholestrol, apply the following formula: " \
+                  "LDL cholesterol = total cholesterol - HDL - (triglycerides / 5), " \
+                  "where the units for total cholestrol, HDL cholestrol, and triglycerides are all mg/dL.\n"
 
     total_cholestrol_exp, total_cholestrol = conversion_explanation(
         input_parameters["total_cholestrol"][0],
@@ -93,7 +101,8 @@ def compute_ldl_explanation(input_parameters):
         total_cholestrol - hdl_cholestrol - (triglycerides / 5)
     )
 
-    explanation += f"Plugging in these values will give us {total_cholestrol} mg/dL - {hdl_cholestrol} mg/dL - ({triglycerides}/5) mg/dL = {answer} mg/dL.\n"
+    explanation += f"Plugging in these values will give us {total_cholestrol} mg/dL - " \
+                   f"{hdl_cholestrol} mg/dL - ({triglycerides}/5) mg/dL = {answer} mg/dL.\n"
 
     explanation += (
         f"The patients concentration of LDL cholestrol is {answer} mg/dL.\n"
@@ -116,8 +125,11 @@ if __name__ == "__main__":
             "hdl_cholestrol": (50.0, 'mg/dL'),
         },
     ]
-    # {'high-density lipoprotein cholesterol': [37.0, 'mg/dL'], 'Triglycerides': [205.0, 'mg/dL'], 'Total cholesterol': [210.0, 'mg/dL']}
-    # {'Total cholesterol': [165.0, 'mg/dL'], 'Triglycerides': [104.0, 'mg/dL'], 'high-density lipoprotein cholesterol': [50.0, 'mg/dL']}
+    # {'high-density lipoprotein cholesterol': [37.0, 'mg/dL'], 'Triglycerides': [205.0, 'mg/dL'],
+    # 'Total cholesterol': [210.0, 'mg/dL']}
+
+    # {'Total cholesterol': [165.0, 'mg/dL'], 'Triglycerides': [104.0, 'mg/dL'],
+    # 'high-density lipoprotein cholesterol': [50.0, 'mg/dL']}
 
     # Iterate the test cases and print the results
     for i, input_variables in enumerate(test_cases, 1):

@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-"""
+r"""
 This code is borrowed and modified based on the source code from the 'MedCalc-Bench' repository.
 Original repository: https://github.com/ncbi-nlp/MedCalc-Bench
 
@@ -34,7 +34,7 @@ from camel.toolkits.medcalc_bench.utils.unit_converter_new import (
 
 
 def mrdr_gfr_explanation(input_variables):
-    """
+    r"""
     Calculates the patient's Glomerular Filtration Rate (GFR) and generates a detailed explanatory text.
 
     Parameters:

@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-"""
+r"""
 This code is borrowed and modified based on the source code from the 'MedCalc-Bench' repository.
 Original repository: https://github.com/ncbi-nlp/MedCalc-Bench
 
@@ -29,14 +29,15 @@ from camel.toolkits.medcalc_bench.utils.rounding import round_number
 
 
 def ibw_explanation(input_variables):
-    """
+    r"""
     Calculates the patient's Ideal Body Weight (IBW) and generates a detailed explanatory text.
 
     Parameters:
         input_variables (dict): A dictionary containing the following key-value pairs:
             - "height" (tuple): The patient's height information in the format (value, unit).
                 - Value (float): The numerical height measurement.
-                - Unit (str): The unit of height, which can be "cm" (centimeters), "in" (inches), or other supported units.
+                - Unit (str): The unit of height, which can be "cm" (centimeters), 
+                "in" (inches), or other supported units.
             - "sex" (str): The patient's gender, which can be either "Male" or "Female".
 
     Returns:

@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-"""
+r"""
 This code is borrowed and modified based on the source code from the 'MedCalc-Bench' repository.
 Original repository: https://github.com/ncbi-nlp/MedCalc-Bench
 
@@ -29,7 +29,7 @@ from camel.toolkits.medcalc_bench.utils.rounding import round_number
 
 
 def targetweight_explanation(input_variables):
-    """
+    r"""
     Calculates the patient's delta gap and generates a detailed explanatory text.
 
     Parameters:
@@ -51,7 +51,9 @@ def targetweight_explanation(input_variables):
 
     Example:
         targetweight_explanation({"body_mass_index": (20.1, "kg/m^2"),"height": (72, "in"),})
-        output: "{'Explanation': "The patient's target bmi is 20.1 kg/m^2. The patient's height is 72 in, which is 72 in * 0.0254 m / in = 1.829 m. From this, the patient's target weight is 20.1 kg/m^2 * 1.829 m * 1.829 m = 67.239 kg. ", 'Answer': 67.239}"
+        output: "{'Explanation': "The patient's target bmi is 20.1 kg/m^2. The patient's height is 72 in,
+        which is 72 in * 0.0254 m / in = 1.829 m. From this,
+        the patient's target weight is 20.1 kg/m^2 * 1.829 m * 1.829 m = 67.239 kg. ", 'Answer': 67.239}"
     """
 
     bmi = input_variables["body_mass_index"][0]

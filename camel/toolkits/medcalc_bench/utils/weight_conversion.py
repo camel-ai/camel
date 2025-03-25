@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-"""
+r"""
 This code is borrowed and modified based on the source code from the 'MedCalc-Bench' repository.
 Original repository: https://github.com/ncbi-nlp/MedCalc-Bench
 
@@ -26,8 +26,9 @@ from camel.toolkits.medcalc_bench.utils.rounding import round_number
 
 
 def weight_conversion_explanation(weight_info):
-    """
-    Converts a patient's weight from different units (pounds, grams, or kilograms) to kilograms and generates an explanatory text.
+    r"""
+    Converts a patient's weight from different units (pounds, grams, or kilograms) to kilograms
+    and generates an explanatory text.
 
     Parameters:
         weight_info (tuple): A tuple containing two elements:
@@ -63,7 +64,8 @@ def weight_conversion_explanation(weight_info):
         )
     elif weight_label == "g":
         return (
-            f"The patient's weight is {weight} g so this converts to {weight} lbs * kg/1000 g = {round_number(weight / 1000)} kg. ",
+            f"The patient's weight is {weight} g so this converts to {weight} lbs * kg/1000 g = "
+            f"{round_number(weight / 1000)} kg. ",
             weight / 1000,
         )
     else:
