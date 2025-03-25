@@ -25,11 +25,11 @@ logger = get_logger(__name__)
 class MedCalcToolkit(BaseToolkit):
     def __init__(
         self,
-        default_variable: str = "x",
+        default_variable: str = 'x',
         timeout: Optional[float] = None,
     ):
-        r"""Initializes the toolkit with a default variable and optional
-        timeout.
+        r"""
+        Initializes the toolkit with a default variable and optional timeout.
 
         Args:
             default_variable (str): The default variable used in symbolic computations (default: :obj:`x`).
@@ -49,8 +49,8 @@ class MedCalcToolkit(BaseToolkit):
         sex: str,  # Gender ("male"/"female")
         age: int,  # Age
     ) -> str:
-        r"""Calculate the patient's Adjusted Body Weight (ABW) and generate a
-        detailed explanatory text.
+        r"""
+        Calculate the patient's Adjusted Body Weight (ABW) and generate a detailed explanatory text.
 
         Parameters:
             weight_value (float): The numeric value of the patient's weight.
@@ -106,9 +106,9 @@ class MedCalcToolkit(BaseToolkit):
             # Return the result as a JSON string
             return json.dumps(
                 {
-                    "rationale": result["Explanation"],  # Detailed explanation
+                    "rationale": result['Explanation'],  # Detailed explanation
                     "final_answer": str(
-                        result["Answer"]
+                        result['Answer']
                     ),  # Final answer (string format)
                 }
             )
@@ -121,15 +121,13 @@ class MedCalcToolkit(BaseToolkit):
         self,
         sodium_value: float,  # Numeric part of the sodium level (e.g., 140.0)
         sodium_unit: str,  # Unit of the sodium level (e.g., "mEq/L")
-        # Numeric part of the chloride level (e.g., 106.0)
-        chloride_value: float,
+        chloride_value: float,  # Numeric part of the chloride level (e.g., 106.0)
         chloride_unit: str,  # Unit of the chloride level (e.g., "mEq/L")
-        # Numeric part of the bicarbonate level (e.g., 20.0)
-        bicarbonate_value: float,
+        bicarbonate_value: float,  # Numeric part of the bicarbonate level (e.g., 20.0)
         bicarbonate_unit: str,  # Unit of the bicarbonate level (e.g., "mEq/L")
     ) -> str:
-        r"""Calculate the patient's Anion Gap and generate a detailed
-        explanatory text.
+        r"""
+        Calculate the patient's Anion Gap and generate a detailed explanatory text.
 
         Parameters:
             sodium_value (float): The numeric value of the patient's sodium level.
@@ -185,9 +183,9 @@ class MedCalcToolkit(BaseToolkit):
             # Return the result as a JSON string
             return json.dumps(
                 {
-                    "rationale": result["Explanation"],  # Detailed explanation
+                    "rationale": result['Explanation'],  # Detailed explanation
                     "final_answer": str(
-                        result["Answer"]
+                        result['Answer']
                     ),  # Final answer (string format)
                 }
             )
@@ -203,8 +201,8 @@ class MedCalcToolkit(BaseToolkit):
         height_value: float,  # Numeric part of the height (e.g., 170)
         height_unit: str,  # Unit of the height (e.g., "cm")
     ) -> str:
-        r"""Calculate the patient's Body Mass Index (BMI) and generate a
-        detailed explanatory text.
+        r"""
+        Calculate the patient's Body Mass Index (BMI) and generate a detailed explanatory text.
 
         Parameters:
             weight_value (float): The numeric value of the patient's weight.
@@ -253,9 +251,9 @@ class MedCalcToolkit(BaseToolkit):
             # Return the result as a JSON string
             return json.dumps(
                 {
-                    "rationale": result["Explanation"],  # Detailed explanation
+                    "rationale": result['Explanation'],  # Detailed explanation
                     "final_answer": str(
-                        result["Answer"]
+                        result['Answer']
                     ),  # Final answer (string format)
                 }
             )
@@ -271,8 +269,8 @@ class MedCalcToolkit(BaseToolkit):
         height_value: float,  # Numeric part of the height (e.g., 179.0)
         height_unit: str,  # Unit of the height (e.g., "cm")
     ) -> str:
-        r"""Calculate the patient's Body Surface Area (BSA) and generate a
-        detailed explanatory text.
+        r"""
+        Calculate the patient's Body Surface Area (BSA) and generate a detailed explanatory text.
 
         Parameters:
             weight_value (float): The numeric value of the patient's weight.
@@ -321,9 +319,9 @@ class MedCalcToolkit(BaseToolkit):
             # Return the result as a JSON string
             return json.dumps(
                 {
-                    "rationale": result["Explanation"],  # Detailed explanation
+                    "rationale": result['Explanation'],  # Detailed explanation
                     "final_answer": str(
-                        result["Answer"]
+                        result['Answer']
                     ),  # Final answer (string format)
                 }
             )
@@ -334,15 +332,13 @@ class MedCalcToolkit(BaseToolkit):
 
     def calcium_correction(
         self,
-        # Numeric part of the albumin concentration (e.g., 4.0)
-        albumin_value: float,
+        albumin_value: float,  # Numeric part of the albumin concentration (e.g., 4.0)
         albumin_unit: str,  # Unit of the albumin concentration (e.g., "g/dL")
-        # Numeric part of the calcium concentration (e.g., 40)
-        calcium_value: float,
+        calcium_value: float,  # Numeric part of the calcium concentration (e.g., 40)
         calcium_unit: str,  # Unit of the calcium concentration (e.g., "mg/L")
     ) -> str:
-        r"""Calculate the patient's corrected calcium concentration and generate
-        a detailed explanatory text.
+        r"""
+        Calculate the patient's corrected calcium concentration and generate a detailed explanatory text.
 
         Parameters:
             albumin_value (float): The numeric value of the patient's albumin concentration.
@@ -392,9 +388,9 @@ class MedCalcToolkit(BaseToolkit):
             # Return the result as a JSON string
             return json.dumps(
                 {
-                    "rationale": result["Explanation"],  # Detailed explanation
+                    "rationale": result['Explanation'],  # Detailed explanation
                     "final_answer": str(
-                        result["Answer"]
+                        result['Answer']
                     ),  # Final answer (string format)
                 }
             )
@@ -419,8 +415,8 @@ class MedCalcToolkit(BaseToolkit):
         ],  # Presence of severe tonsil inflammation
         cough_coryza_absent: Optional[bool],  # Absence of cough or coryza
     ) -> str:
-        r"""Calculate the patient's FeverPAIN score and generate a detailed
-        explanatory text.
+        r"""
+        Calculate the patient's FeverPAIN score and generate a detailed explanatory text.
 
         Parameters:
             symptom_onset (Optional[bool]): Whether the patient has a symptom onset ≤3 days.
@@ -463,9 +459,9 @@ class MedCalcToolkit(BaseToolkit):
             # Return the result as a JSON string
             return json.dumps(
                 {
-                    "rationale": result["Explanation"],  # Detailed explanation
+                    "rationale": result['Explanation'],  # Detailed explanation
                     "final_answer": str(
-                        result["Answer"]
+                        result['Answer']
                     ),  # Final answer (string format)
                 }
             )
@@ -482,19 +478,15 @@ class MedCalcToolkit(BaseToolkit):
         history: str,  # History of chest pain: "Slightly suspicious", "Moderately suspicious", or "Highly suspicious"
         diabetes_mellitus: bool,  # Diabetes status (True/False)
         smoking: bool,  # Smoking history (True/False)
-        # Family history of cardiovascular disease (True/False)
-        family_with_cvd: bool,
-        # History of atherosclerotic disease (True/False)
-        atherosclerotic_disease: bool,
+        family_with_cvd: bool,  # Family history of cardiovascular disease (True/False)
+        atherosclerotic_disease: bool,  # History of atherosclerotic disease (True/False)
         initial_troponin: str,  # Initial troponin level: "less than or equal to normal limit", "between the normal limit or up to three times the normal limit", or "greater than three times normal limit"
-        # Electrocardiogram status: "Normal", "Non-specific repolarization
-        # disturbance", or "Significant ST deviation"
-        electrocardiogram: str,
+        electrocardiogram: str,  # Electrocardiogram status: "Normal", "Non-specific repolarization disturbance", or "Significant ST deviation"
         hypercholesterolemia: bool,  # Hypercholesterolemia status (True/False)
         obesity: bool,  # Obesity status (BMI > 30 kg/m²) (True/False)
     ) -> str:
-        r"""Calculate the patient's HEART Score and generate a detailed
-        explanatory text.
+        r"""
+        Calculate the patient's HEART Score and generate a detailed explanatory text.
 
         Parameters:
             age_value (float): The numeric value of the patient's age.
@@ -570,9 +562,9 @@ class MedCalcToolkit(BaseToolkit):
             # Return the result as a JSON string
             return json.dumps(
                 {
-                    "rationale": result["Explanation"],  # Detailed explanation
+                    "rationale": result['Explanation'],  # Detailed explanation
                     "final_answer": str(
-                        result["Answer"]
+                        result['Answer']
                     ),  # Final answer (HEART Score)
                 }
             )
@@ -583,14 +575,13 @@ class MedCalcToolkit(BaseToolkit):
 
     def homa_ir(
         self,
-        # Numeric part of the insulin level (e.g., 756.0)
-        insulin_value: float,
+        insulin_value: float,  # Numeric part of the insulin level (e.g., 756.0)
         insulin_unit: str,  # Unit of the insulin level (e.g., "pmol/L")
         glucose_value: float,  # Numeric part of the glucose level (e.g., 97.3)
         glucose_unit: str,  # Unit of the glucose level (e.g., "mg/dL")
     ) -> str:
-        r"""Calculate the patient's Homeostatic Model Assessment for Insulin
-        Resistance (HOMA-IR) and generate a detailed explanatory text.
+        r"""
+        Calculate the patient's Homeostatic Model Assessment for Insulin Resistance (HOMA-IR) and generate a detailed explanatory text.
 
         Parameters:
             insulin_value (float): The numeric value of the patient's insulin level.
@@ -641,9 +632,9 @@ class MedCalcToolkit(BaseToolkit):
             # Return the result as a JSON string
             return json.dumps(
                 {
-                    "rationale": result["Explanation"],  # Detailed explanation
+                    "rationale": result['Explanation'],  # Detailed explanation
                     "final_answer": str(
-                        result["Answer"]
+                        result['Answer']
                     ),  # Final answer (string format)
                 }
             )
@@ -657,11 +648,10 @@ class MedCalcToolkit(BaseToolkit):
         height_value: float,  # Numeric part of the height (e.g., 170)
         height_unit: str,  # Unit of the height (e.g., "cm")
         sex: str,  # Gender ("male"/"female")
-        # Age (currently unused but may be used for future extensions)
-        age: int,
+        age: int,  # Age (currently unused but may be used for future extensions)
     ) -> str:
-        r"""Calculate the patient's Ideal Body Weight (IBW) and generate a
-        detailed explanatory text.
+        r"""
+        Calculate the patient's Ideal Body Weight (IBW) and generate a detailed explanatory text.
 
         Parameters:
             height_value (float): The numeric value of the patient's height.
@@ -708,9 +698,9 @@ class MedCalcToolkit(BaseToolkit):
             # Return the result as a JSON string
             return json.dumps(
                 {
-                    "rationale": result["Explanation"],  # Detailed explanation
+                    "rationale": result['Explanation'],  # Detailed explanation
                     "final_answer": str(
-                        result["Answer"]
+                        result['Answer']
                     ),  # Final answer (string format)
                 }
             )
@@ -721,17 +711,13 @@ class MedCalcToolkit(BaseToolkit):
 
     def mean_arterial_pressure(
         self,
-        # Numeric part of the systolic blood pressure (e.g., 120.0)
-        sys_bp_value: float,
-        # Unit of the systolic blood pressure (e.g., "mm hg")
-        sys_bp_unit: str,
-        # Numeric part of the diastolic blood pressure (e.g., 80.0)
-        dia_bp_value: float,
-        # Unit of the diastolic blood pressure (e.g., "mm hg")
-        dia_bp_unit: str,
+        sys_bp_value: float,  # Numeric part of the systolic blood pressure (e.g., 120.0)
+        sys_bp_unit: str,  # Unit of the systolic blood pressure (e.g., "mm hg")
+        dia_bp_value: float,  # Numeric part of the diastolic blood pressure (e.g., 80.0)
+        dia_bp_unit: str,  # Unit of the diastolic blood pressure (e.g., "mm hg")
     ) -> str:
-        r"""Calculate the patient's Mean Arterial Pressure (MAP) and generate a
-        detailed explanatory text.
+        r"""
+        Calculate the patient's Mean Arterial Pressure (MAP) and generate a detailed explanatory text.
 
         Parameters:
             sys_bp_value (float): The numeric value of the patient's systolic blood pressure.
@@ -778,9 +764,9 @@ class MedCalcToolkit(BaseToolkit):
             # Return the result as a JSON string
             return json.dumps(
                 {
-                    "rationale": result["Explanation"],  # Detailed explanation
+                    "rationale": result['Explanation'],  # Detailed explanation
                     "final_answer": str(
-                        result["Answer"]
+                        result['Answer']
                     ),  # Final answer (string format)
                 }
             )
@@ -793,17 +779,15 @@ class MedCalcToolkit(BaseToolkit):
 
     def sOsm(
         self,
-        # Numeric part of the blood urea nitrogen level (e.g., 20.0)
-        bun_value: float,
+        bun_value: float,  # Numeric part of the blood urea nitrogen level (e.g., 20.0)
         bun_unit: str,  # Unit of the blood urea nitrogen level (e.g., "mg/dL")
-        # Numeric part of the blood glucose level (e.g., 599.0)
-        glucose_value: float,
+        glucose_value: float,  # Numeric part of the blood glucose level (e.g., 599.0)
         glucose_unit: str,  # Unit of the blood glucose level (e.g., "mg/dL")
         sodium_value: float,  # Numeric part of the sodium level (e.g., 139.0)
         sodium_unit: str,  # Unit of the sodium level (e.g., "mEq/L")
     ) -> str:
-        r"""Calculate the patient's Serum Osmolality and generate a detailed
-        explanatory text.
+        r"""
+        Calculate the patient's Serum Osmolality and generate a detailed explanatory text.
 
         Parameters:
             bun_value (float): The numeric value of the patient's blood urea nitrogen level.
@@ -856,9 +840,9 @@ class MedCalcToolkit(BaseToolkit):
             # Return the result as a JSON string
             return json.dumps(
                 {
-                    "rationale": result["Explanation"],  # Detailed explanation
+                    "rationale": result['Explanation'],  # Detailed explanation
                     "final_answer": str(
-                        result["Answer"]
+                        result['Answer']
                     ),  # Final answer (string format)
                 }
             )
@@ -873,15 +857,13 @@ class MedCalcToolkit(BaseToolkit):
         self,
         sodium_value: float,  # Numeric part of the sodium level (e.g., 135.0)
         sodium_unit: str,  # Unit of the sodium level (e.g., "mEq/L")
-        # Numeric part of the chloride level (e.g., 100.0)
-        chloride_value: float,
+        chloride_value: float,  # Numeric part of the chloride level (e.g., 100.0)
         chloride_unit: str,  # Unit of the chloride level (e.g., "mEq/L")
-        # Numeric part of the bicarbonate level (e.g., 19.0)
-        bicarbonate_value: float,
+        bicarbonate_value: float,  # Numeric part of the bicarbonate level (e.g., 19.0)
         bicarbonate_unit: str,  # Unit of the bicarbonate level (e.g., "mEq/L")
     ) -> str:
-        r"""Calculate the patient's Delta Gap and generate a detailed
-        explanatory text.
+        r"""
+        Calculate the patient's Delta Gap and generate a detailed explanatory text.
 
         Parameters:
             sodium_value (float): The numeric value of the patient's sodium level.
@@ -937,9 +919,9 @@ class MedCalcToolkit(BaseToolkit):
             # Return the result as a JSON string
             return json.dumps(
                 {
-                    "rationale": result["Explanation"],  # Detailed explanation
+                    "rationale": result['Explanation'],  # Detailed explanation
                     "final_answer": str(
-                        result["Answer"]
+                        result['Answer']
                     ),  # Final answer (string format)
                 }
             )
@@ -950,13 +932,11 @@ class MedCalcToolkit(BaseToolkit):
 
     def estimated_conception_date(
         self,
-        # Length of the patient's menstrual cycle (e.g., 28)
-        cycle_length: int,
-        # Date of the patient's last menstrual period (e.g., "01/21/2004")
-        menstrual_date: str,
+        cycle_length: int,  # Length of the patient's menstrual cycle (e.g., 28)
+        menstrual_date: str,  # Date of the patient's last menstrual period (e.g., "01/21/2004")
     ) -> str:
-        r"""Calculate the patient's estimated conception date and generate a
-        detailed explanatory text.
+        r"""
+        Calculate the patient's estimated conception date and generate a detailed explanatory text.
 
         Parameters:
             cycle_length (int): The length of the patient's menstrual cycle in days.
@@ -994,9 +974,9 @@ class MedCalcToolkit(BaseToolkit):
             # Return the result as a JSON string
             return json.dumps(
                 {
-                    "rationale": result["Explanation"],  # Detailed explanation
+                    "rationale": result['Explanation'],  # Detailed explanation
                     "final_answer": str(
-                        result["Answer"]
+                        result['Answer']
                     ),  # Final answer (string format)
                 }
             )
@@ -1007,14 +987,11 @@ class MedCalcToolkit(BaseToolkit):
 
     def estimated_gestational_age(
         self,
-        # Current date in the format "%m/%d/%Y" (e.g., "04/29/2022")
-        current_date: str,
-        # Patient's last menstrual date in the format "%m/%d/%Y" (e.g.,
-        # "01/06/2022")
-        menstrual_date: str,
+        current_date: str,  # Current date in the format "%m/%d/%Y" (e.g., "04/29/2022")
+        menstrual_date: str,  # Patient's last menstrual date in the format "%m/%d/%Y" (e.g., "01/06/2022")
     ) -> str:
-        r"""Calculate the patient's gestational age and generate a detailed
-        explanatory text.
+        r"""
+        Calculate the patient's gestational age and generate a detailed explanatory text.
 
         Parameters:
             current_date (str): The current date in the format "%m/%d/%Y".
@@ -1050,9 +1027,8 @@ class MedCalcToolkit(BaseToolkit):
             # Return the result as a JSON string
             return json.dumps(
                 {
-                    "rationale": result["Explanation"],  # Detailed explanation
-                    # Final answer (string format)
-                    "final_answer": f"{result['Answer'][0]} and {result['Answer'][1]}",
+                    "rationale": result['Explanation'],  # Detailed explanation
+                    "final_answer": f"{result['Answer'][0]} and {result['Answer'][1]}",  # Final answer (string format)
                 }
             )
 
@@ -1066,14 +1042,13 @@ class MedCalcToolkit(BaseToolkit):
         self,
         age_value: float,  # Numeric part of the age (e.g., 49)
         age_unit: str,  # Unit of the age (e.g., "years")
-        # Numeric part of the creatinine level (e.g., 10.6)
-        creatinine_value: float,
+        creatinine_value: float,  # Numeric part of the creatinine level (e.g., 10.6)
         creatinine_unit: str,  # Unit of the creatinine level (e.g., "mg/dL")
         sex: str,  # Gender ("male"/"female")
         race: str = None,  # Race (optional, e.g., "Black")
     ) -> str:
-        r"""Calculate the patient's Glomerular Filtration Rate (GFR) using the
-        MDRD equation and generate a detailed explanatory text.
+        r"""
+        Calculate the patient's Glomerular Filtration Rate (GFR) using the MDRD equation and generate a detailed explanatory text.
 
         Parameters:
             age_value (float): The numeric value of the patient's age.
@@ -1124,9 +1099,9 @@ class MedCalcToolkit(BaseToolkit):
             # Return the result as a JSON string
             return json.dumps(
                 {
-                    "rationale": result["Explanation"],  # Detailed explanation
+                    "rationale": result['Explanation'],  # Detailed explanation
                     "final_answer": str(
-                        result["Answer"]
+                        result['Answer']
                     ),  # Final answer (string format)
                 }
             )
@@ -1142,8 +1117,8 @@ class MedCalcToolkit(BaseToolkit):
         height_value: float,  # Numeric part of the height (e.g., 72)
         height_unit: str,  # Unit of the height (e.g., "in")
     ) -> str:
-        r"""Calculate the patient's Target Weight (TW) and generate a detailed
-        explanatory text.
+        r"""
+        Calculate the patient's Target Weight (TW) and generate a detailed explanatory text.
 
         Parameters:
             bmi_value (float): The numeric value of the patient's BMI.
@@ -1190,9 +1165,9 @@ class MedCalcToolkit(BaseToolkit):
             # Return the result as a JSON string
             return json.dumps(
                 {
-                    "rationale": result["Explanation"],  # Detailed explanation
+                    "rationale": result['Explanation'],  # Detailed explanation
                     "final_answer": str(
-                        result["Answer"]
+                        result['Answer']
                     ),  # Final answer (string format)
                 }
             )
@@ -1213,8 +1188,8 @@ class MedCalcToolkit(BaseToolkit):
         age_value: float,  # Numeric part of age (e.g., 16)
         age_unit: str,  # Unit of age ("years" or "months")
     ) -> str:
-        r"""Calculate the patient's Creatinine Clearance using Cockcroft-Gault
-        formula and generate a detailed explanatory text.
+        r"""
+        Calculate the patient's Creatinine Clearance using Cockcroft-Gault formula and generate a detailed explanatory text.
 
         Parameters:
             weight_value (float): The numeric value of the patient's weight.
@@ -1269,9 +1244,9 @@ class MedCalcToolkit(BaseToolkit):
             # Return the result as a JSON string
             return json.dumps(
                 {
-                    "rationale": result["Explanation"],  # Detailed explanation
+                    "rationale": result['Explanation'],  # Detailed explanation
                     "final_answer": str(
-                        result["Answer"]
+                        result['Answer']
                     ),  # Final answer (string format)
                 }
             )
@@ -1283,8 +1258,8 @@ class MedCalcToolkit(BaseToolkit):
             )
 
     def handle_exception(self, func_name: str, error: Exception) -> str:
-        r"""Handles exceptions by logging the error and returning a standardized
-        error message.
+        r"""
+        Handles exceptions by logging the error and returning a standardized error message.
 
         Args:
             func_name (str): The name of the function where the exception occurred.

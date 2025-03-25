@@ -1,3 +1,16 @@
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 """
 This code is borrowed and modified based on the source code from the 'MedCalc-Bench' repository.
 Original repository: https://github.com/ncbi-nlp/MedCalc-Bench
@@ -9,9 +22,11 @@ Modifications include:
 Date: March 2025
 """
 
-from camel.toolkits.medcalc_bench.utils.weight_conversion import weight_conversion_explanation
-from camel.toolkits.medcalc_bench.utils.rounding import round_number
 from camel.toolkits.medcalc_bench import ideal_body_weight
+from camel.toolkits.medcalc_bench.utils.rounding import round_number
+from camel.toolkits.medcalc_bench.utils.weight_conversion import (
+    weight_conversion_explanation,
+)
 
 
 def abw_explanation(input_variables):
@@ -51,7 +66,9 @@ def abw_explanation(input_variables):
         patient's adjusted body weight is 66.778 kg.\n", 'Answer': 66.778}"
     """
 
-    weight_explanation, weight = weight_conversion_explanation(input_variables["weight"])
+    weight_explanation, weight = weight_conversion_explanation(
+        input_variables["weight"]
+    )
     ibw_explanation = ideal_body_weight.ibw_explanation(input_variables)
 
     explanation = f"{ibw_explanation['Explanation']}"
@@ -61,14 +78,26 @@ def abw_explanation(input_variables):
 
     abw = round_number(ibw + 0.4 * (weight - ibw))
     abw_explanation_string = ""
-    abw_explanation_string += f"To compute the ABW value, apply the following formula: "
-    abw_explanation_string += f"ABW = IBW + 0.4 * (weight (in kg) - IBW (in kg)). "
-    abw_explanation_string += f"ABW = {ibw} kg + 0.4 * ({weight} kg  - {ibw} kg) = {abw} kg. "
-    abw_explanation_string += f"The patient's adjusted body weight is {abw} kg.\n"
+    abw_explanation_string += (
+        "To compute the ABW value, apply the following formula: "
+    )
+    abw_explanation_string += (
+        "ABW = IBW + 0.4 * (weight (in kg) - IBW (in kg)). "
+    )
+    abw_explanation_string += (
+        f"ABW = {ibw} kg + 0.4 * ({weight} kg  - {ibw} kg) = {abw} kg. "
+    )
+    abw_explanation_string += (
+        f"The patient's adjusted body weight is {abw} kg.\n"
+    )
 
     explanation += abw_explanation_string
 
-    return {"Explanation": explanation, "ABW": abw_explanation_string, "Answer": abw}
+    return {
+        "Explanation": explanation,
+        "ABW": abw_explanation_string,
+        "Answer": abw,
+    }
 
 
 if __name__ == "__main__":
@@ -77,7 +106,7 @@ if __name__ == "__main__":
         {
             "weight": (150, "lbs"),  # weight 150 lbs
             "height": (170, "cm"),  # height 170 cm
-            "sex": "Male"  # Male
+            "sex": "Male",  # Male
         }
     ]
 

@@ -1,3 +1,16 @@
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 """
 This code is borrowed and modified based on the source code from the 'MedCalc-Bench' repository.
 Original repository: https://github.com/ncbi-nlp/MedCalc-Bench
@@ -9,9 +22,13 @@ Modifications include:
 Date: March 2025
 """
 
-from camel.toolkits.medcalc_bench.utils.height_conversion import height_conversion_explanation
-from camel.toolkits.medcalc_bench.utils.weight_conversion import weight_conversion_explanation
+from camel.toolkits.medcalc_bench.utils.height_conversion import (
+    height_conversion_explanation,
+)
 from camel.toolkits.medcalc_bench.utils.rounding import round_number
+from camel.toolkits.medcalc_bench.utils.weight_conversion import (
+    weight_conversion_explanation,
+)
 
 
 def bmi_calculator_explanation(input_variables):
@@ -41,14 +58,18 @@ def bmi_calculator_explanation(input_variables):
         output: "{'Explanation': "The formula for computing the patient's BMI is (weight)/(height * height), where weight is the patient's weight in kg and height is the patient's height in m.\nThe patient's height is 170 cm, which is 170 cm * 1 m / 100 cm = 1.7 m. The patient's weight is 150 lbs so this converts to 150 lbs * 0.453592 kg/lbs = 68.039 kg. The patient's bmi is therefore 68.039 kg / (1.7 m * 1.7 m) = 23.543 kg/m^2.", 'Answer': 23.543}"
     """
 
-    height_explanation, height = height_conversion_explanation(input_variables["height"])
-    weight_explanation, weight = weight_conversion_explanation(input_variables["weight"])
+    height_explanation, height = height_conversion_explanation(
+        input_variables["height"]
+    )
+    weight_explanation, weight = weight_conversion_explanation(
+        input_variables["weight"]
+    )
 
     output = "The formula for computing the patient's BMI is (weight)/(height * height), where weight is the patient's weight in kg and height is the patient's height in m.\n"
 
     output += height_explanation
     output += weight_explanation
-    ans = round_number(weight/(height * height))
+    ans = round_number(weight / (height * height))
     output += f"The patient's bmi is therefore {weight} kg / ({height} m * {height} m) = {ans} kg/m^2."
 
     return {"Explanation": output, "Answer": ans}

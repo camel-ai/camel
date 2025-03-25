@@ -1,3 +1,16 @@
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 """
 This code is borrowed and modified based on the source code from the 'MedCalc-Bench' repository.
 Original repository: https://github.com/ncbi-nlp/MedCalc-Bench
@@ -44,8 +57,14 @@ def weight_conversion_explanation(weight_info):
     answer = round_number(weight * 0.453592)
 
     if weight_label == "lbs":
-        return f"The patient's weight is {weight} lbs so this converts to {weight} lbs * 0.453592 kg/lbs = {answer} kg. ", answer
+        return (
+            f"The patient's weight is {weight} lbs so this converts to {weight} lbs * 0.453592 kg/lbs = {answer} kg. ",
+            answer,
+        )
     elif weight_label == "g":
-        return f"The patient's weight is {weight} g so this converts to {weight} lbs * kg/1000 g = {round_number(weight / 1000)} kg. ", weight / 1000
+        return (
+            f"The patient's weight is {weight} g so this converts to {weight} lbs * kg/1000 g = {round_number(weight / 1000)} kg. ",
+            weight / 1000,
+        )
     else:
         return f"The patient's weight is {weight} kg. ", weight

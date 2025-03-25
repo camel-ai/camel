@@ -1,3 +1,16 @@
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 """
 This code is borrowed and modified based on the source code from the 'MedCalc-Bench' repository.
 Original repository: https://github.com/ncbi-nlp/MedCalc-Bench
@@ -9,7 +22,9 @@ Modifications include:
 Date: March 2025
 """
 
-from camel.toolkits.medcalc_bench.utils.height_conversion import height_conversion_explanation_in
+from camel.toolkits.medcalc_bench.utils.height_conversion import (
+    height_conversion_explanation_in,
+)
 from camel.toolkits.medcalc_bench.utils.rounding import round_number
 
 
@@ -48,23 +63,29 @@ def ibw_explanation(input_variables):
 
     height_explanation, height = height_conversion_explanation_in(height)
 
-    explanation = f"The patient's gender is {gender}.\n" + f"{height_explanation}\n"
+    explanation = (
+        f"The patient's gender is {gender}.\n" + f"{height_explanation}\n"
+    )
     ibw = 0.0
 
     if gender == "Male":
         ibw = round_number(50 + 2.3 * (height - 60))
-        explanation += (f"For males, the ideal body weight (IBW) is calculated as follows:\n"
-                       f"IBW = 50 kg + 2.3 kg * (height (in inches) - 60)\n"
-                       f"Plugging in the values gives us 50 kg + 2.3 kg * ({height} (in inches) - 60) = {ibw} kg.\n")
-                   
+        explanation += (
+            f"For males, the ideal body weight (IBW) is calculated as follows:\n"
+            f"IBW = 50 kg + 2.3 kg * (height (in inches) - 60)\n"
+            f"Plugging in the values gives us 50 kg + 2.3 kg * ({height} (in inches) - 60) = {ibw} kg.\n"
+        )
+
     elif gender == "Female":
         ibw = round_number(45.5 + 2.3 * (height - 60))
-        explanation += (f"For females, the ideal body weight (IBW) is calculated as follows:\n"
-                       f"IBW = 45.5 kg + 2.3 kg * (height (in inches) - 60)\n"
-                       f"Plugging in the values gives us 45.5 kg + 2.3 kg * ({height} (in inches) - 60) = {ibw} kg.\n")
-        
+        explanation += (
+            f"For females, the ideal body weight (IBW) is calculated as follows:\n"
+            f"IBW = 45.5 kg + 2.3 kg * (height (in inches) - 60)\n"
+            f"Plugging in the values gives us 45.5 kg + 2.3 kg * ({height} (in inches) - 60) = {ibw} kg.\n"
+        )
+
     explanation += f"Hence, the patient's IBW is {ibw} kg."
-    
+
     return {"Explanation": explanation, "Answer": ibw}
 
 
@@ -73,7 +94,7 @@ if __name__ == "__main__":
     test_cases = [
         {
             "height": (72, 'in'),  # weight 150 lbs
-            "sex": "Male"  # Male
+            "sex": "Male",  # Male
         }
     ]
 

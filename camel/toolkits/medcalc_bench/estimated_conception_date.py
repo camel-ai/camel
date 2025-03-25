@@ -1,3 +1,16 @@
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 """
 This code is borrowed and modified based on the source code from the 'MedCalc-Bench' repository.
 Original repository: https://github.com/ncbi-nlp/MedCalc-Bench
@@ -36,16 +49,21 @@ def add_2_weeks_explanation(input_data):
 
     input_date_str = input_data["menstrual_date"]
     cycle_length = input_data["cycle_length"]
-    
+
     explanation = "The patient's estimated date of conception based on their last period is computed by adding to 2 weeks to the patient's last menstrual period date. "
-    explanation += f"The patient's last menstrual period was {input_date_str}. \n"
+    explanation += (
+        f"The patient's last menstrual period was {input_date_str}. \n"
+    )
 
     input_date = datetime.strptime(input_date_str, "%m/%d/%Y")
     future_date = input_date + timedelta(weeks=2)
 
     explanation += f"Hence, the estimated date of conception after adding 2 weeks to the patient's last menstrual period date is {future_date.strftime('%m/%d/%Y')}. \n"
 
-    return {"Explanation": explanation, "Answer": future_date.strftime('%m/%d/%Y')}
+    return {
+        "Explanation": explanation,
+        "Answer": future_date.strftime('%m/%d/%Y'),
+    }
 
 
 if __name__ == "__main__":

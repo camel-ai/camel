@@ -61,6 +61,7 @@ from .file_write_toolkit import FileWriteToolkit
 from .terminal_toolkit import TerminalToolkit
 from .pubmed_toolkit import PubMedToolkit
 from .thinking_toolkit import ThinkingToolkit
+from .medcalc_toolkit import MedCalcToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -110,4 +111,5 @@ __all__ = [
     'TerminalToolkit',
     'PubMedToolkit',
     'ThinkingToolkit',
+    'MedCalcToolkit',
 ]

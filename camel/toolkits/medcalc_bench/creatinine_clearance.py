@@ -1,3 +1,16 @@
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 """
 This code is borrowed and modified based on the source code from the 'MedCalc-Bench' repository.
 Original repository: https://github.com/ncbi-nlp/MedCalc-Bench
@@ -9,13 +22,21 @@ Modifications include:
 Date: March 2025
 """
 
-from camel.toolkits.medcalc_bench.utils.weight_conversion import weight_conversion_explanation
-from camel.toolkits.medcalc_bench.utils.unit_converter_new import conversion_explanation
-from camel.toolkits.medcalc_bench.utils.age_conversion import age_conversion_explanation
+from camel.toolkits.medcalc_bench import (
+    adjusted_body_weight,
+    bmi_calculator,
+    ideal_body_weight,
+)
+from camel.toolkits.medcalc_bench.utils.age_conversion import (
+    age_conversion_explanation,
+)
 from camel.toolkits.medcalc_bench.utils.rounding import round_number
-import ideal_body_weight
-import adjusted_body_weight
-import bmi_calculator
+from camel.toolkits.medcalc_bench.utils.unit_converter_new import (
+    conversion_explanation,
+)
+from camel.toolkits.medcalc_bench.utils.weight_conversion import (
+    weight_conversion_explanation,
+)
 
 
 def generate_cockcroft_gault_explanation(params):
@@ -58,7 +79,9 @@ def generate_cockcroft_gault_explanation(params):
     output = "The formula for computing Cockcroft-Gault is given by CrCl = ((140 - age) * adjusted weight * (gender_coefficient)) / (serum creatinine * 72), where the gender_coefficient is 1 if male, and 0.85 if female. The serum creatinine concentration is in mg/dL.\n"
     output += f"The patient's gender is {params['sex'].lower()}, "
     gender_coefficient = 1 if params["sex"] == "Male" else 0.85
-    output += f"which means that the gender coefficient is {gender_coefficient}.\n" 
+    output += (
+        f"which means that the gender coefficient is {gender_coefficient}.\n"
+    )
     age_explanation, age = age_conversion_explanation(params["age"])
 
     output += f"{age_explanation}\n"
@@ -76,13 +99,20 @@ def generate_cockcroft_gault_explanation(params):
         weight_status = "normal weight"
     else:
         weight_status = "overweight/obese"
-    
+
     ideal_weight_response = ideal_body_weight.ibw_explanation(params)
     adjusted_weight_response = adjusted_body_weight.abw_explanation(params)
-    serum_creatinine_explanation, serum_creatinine = conversion_explanation(serum_creatinine_value, "creatinine", 113.12, None, serum_creatinine_units, "mg/dL")
-    
-    output += serum_creatinine_explanation + "\n"         
-    
+    serum_creatinine_explanation, serum_creatinine = conversion_explanation(
+        serum_creatinine_value,
+        "creatinine",
+        113.12,
+        None,
+        serum_creatinine_units,
+        "mg/dL",
+    )
+
+    output += serum_creatinine_explanation + "\n"
+
     output += f"{bmi_response['Explanation']}"
     output += f"The patient's BMI is {bmi:.1f}, indicating they are {weight_status}.\n"
 
@@ -93,28 +123,34 @@ def generate_cockcroft_gault_explanation(params):
         adjusted_weight = weight
     elif 18.5 <= bmi <= 24.9:
         adjusted_weight = min(ideal_weight_response["Answer"], weight)
-        output += f"Because the patient is normal, we take take minimum of the ideal body weight and the patient's body as the patient's adjusted weight for the Cockroft-Gault Equation. "
+        output += "Because the patient is normal, we take take minimum of the ideal body weight and the patient's body as the patient's adjusted weight for the Cockroft-Gault Equation. "
         output += f"Hence, the adjusted body weight is the minimum of the two giving us an adjusted body weight of {adjusted_weight} kg.\n"
-    
+
     else:
-        output += f"Because the patient is overweight/obese, we use the adjusted body weight formula to get the adjusted weight used for Cockroft-Gault Equation. "
-        output += f"Shown below is the computation for IBW (ideal body weight).\n"
+        output += "Because the patient is overweight/obese, we use the adjusted body weight formula to get the adjusted weight used for Cockroft-Gault Equation. "
+        output += (
+            "Shown below is the computation for IBW (ideal body weight).\n"
+        )
         output += f"{ideal_weight_response['Explanation']}"
-        output += f"Shown below is the computation for ABW (adjusted body weight).\n"
+        output += (
+            "Shown below is the computation for ABW (adjusted body weight).\n"
+        )
         output += f"{adjusted_weight_response['ABW']}"
         adjusted_weight = adjusted_weight_response["Answer"]
-    
+
     # Calculate creatinine clearance
     if is_male:
         constant = 1
     else:
         constant = 0.85
 
-    creatinine_clearance = round_number(((140 - age) * adjusted_weight * constant) / (serum_creatinine * 72))
+    creatinine_clearance = round_number(
+        ((140 - age) * adjusted_weight * constant) / (serum_creatinine * 72)
+    )
 
     # Explanation of Cockcroft-Gault equation and result
-    output += f"\nUsing the Cockcroft-Gault equation:\n"
-    output += f"CrCl = ((140 - age) * adjusted weight * gender_coefficient) / (serum creatinine * 72).\n"
+    output += "\nUsing the Cockcroft-Gault equation:\n"
+    output += "CrCl = ((140 - age) * adjusted weight * gender_coefficient) / (serum creatinine * 72).\n"
     output += f"Plugging the patient's values gives us ((140 - {age}) * {adjusted_weight} * {gender_coefficient}) / ({serum_creatinine} * 72) = {creatinine_clearance} mL/min. "
     output += f"Hence, the patient's creatinine clearance is {creatinine_clearance} mL/min.\n"
 
@@ -129,14 +165,14 @@ if __name__ == "__main__":
             "weight": (55.0, "kg"),
             "height": (162.8, "cm"),
             "creatinine": (0.57, "mg/dL"),
-            "age": (16, "years")
+            "age": (16, "years"),
         },
         {
             "sex": "Male",
             "weight": (68.0, "kg"),
             "height": (176.0, "cm"),
             "creatinine": (1.0, "mg/dL"),
-            "age": (56, "years")
+            "age": (56, "years"),
         },
     ]
     # {'sex': 'Female', 'weight': [55.0, 'kg'], 'height': [162.8, 'cm'], 'creatinine': [0.57, 'mg/dL'], 'age': [16, 'years']}

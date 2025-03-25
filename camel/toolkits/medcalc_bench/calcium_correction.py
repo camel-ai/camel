@@ -1,3 +1,16 @@
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 """
 This code is borrowed and modified based on the source code from the 'MedCalc-Bench' repository.
 Original repository: https://github.com/ncbi-nlp/MedCalc-Bench
@@ -9,8 +22,10 @@ Modifications include:
 Date: March 2025
 """
 
-from camel.toolkits.medcalc_bench.utils.unit_converter_new import conversion_explanation
 from camel.toolkits.medcalc_bench.utils.rounding import round_number
+from camel.toolkits.medcalc_bench.utils.unit_converter_new import (
+    conversion_explanation,
+)
 
 
 def calculate_corrected_calcium_explanation(params):
@@ -42,7 +57,7 @@ def calculate_corrected_calcium_explanation(params):
 
     # Extract parameters from the input dictionary
     normal_albumin = 4.0  # Normal albumin level in g/dL
-    
+
     albumin = params.get('albumin')
     albumin_val = albumin[0]
     albumin_units = albumin[1]
@@ -51,19 +66,25 @@ def calculate_corrected_calcium_explanation(params):
     calcium_val = calcium[0]
     calcium_units = calcium[1]
 
-    output = f"To compute the patient's correct calcium level in mg/dL, the formula is  (0.8 * (Normal Albumin (in g/dL) - Patient's Albumin (in g/dL))) + Serum Calcium (in mg/dL).\n"
+    output = "To compute the patient's correct calcium level in mg/dL, the formula is  (0.8 * (Normal Albumin (in g/dL) - Patient's Albumin (in g/dL))) + Serum Calcium (in mg/dL).\n"
 
     # Generate explanation
     output += "The patient's normal albumin level is 4.0 g/dL.\n"
-    albumin_explanation, albumin = conversion_explanation(albumin_val, "Albmumin", 66500, None, albumin_units, "g/dL")
-    calcium_explanation, calcium = conversion_explanation(calcium_val, "Calcium", 40.08, 2, calcium_units, "mg/dL")
+    albumin_explanation, albumin = conversion_explanation(
+        albumin_val, "Albmumin", 66500, None, albumin_units, "g/dL"
+    )
+    calcium_explanation, calcium = conversion_explanation(
+        calcium_val, "Calcium", 40.08, 2, calcium_units, "mg/dL"
+    )
 
     output += f"{albumin_explanation}\n"
     output += f"{calcium_explanation}\n"
 
-    corrected_calcium = round_number(0.8 * (normal_albumin - albumin) + calcium)
+    corrected_calcium = round_number(
+        0.8 * (normal_albumin - albumin) + calcium
+    )
 
-    output += f"Plugging these values into the formula, we get "
+    output += "Plugging these values into the formula, we get "
     output += f"(0.8 * ({normal_albumin} g/dL - {albumin} g/dL)) + {calcium} mg/dL = {corrected_calcium} mg/dL.\n"
 
     output += f"The patient's corrected calcium concentration {corrected_calcium} mg/dL.\n"

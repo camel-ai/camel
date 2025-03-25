@@ -12,14 +12,14 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import json
+import os
+
 from camel.agents import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
 from camel.models import ModelFactory
 from camel.toolkits import MedCalcToolkit
 from camel.types import ModelPlatformType, ModelType
-
-import json
-import os
 
 os.environ["OPENAI_API_KEY"] = ""
 
@@ -55,26 +55,29 @@ with open(file_path, 'r') as file:
     data = json.load(file)
 
 # Specify the Calculator in camel/toolkits/medcalc_bench
-# OPTION(eg): adjusted_body_weight, anion_gap, bmi_calculator, calcium_correction, homa_ir, mean_arterial_pressure, sOsm, estimated_conception_date, delta_gap, mdrd_gfr, target_weight
-calculator_name = "target_weight"
+# OPTION(eg): adjusted_body_weight, anion_gap, bmi_calculator, calcium_correction,
+# homa_ir, mean_arterial_pressure, sOsm, estimated_conception_date,
+# delta_gap, mdrd_gfr, target_weight, creatinine_clearance
+calculator_name = "creatinine_clearance"
 
 # Extract the "usr_msg" and "Ground Truth Answer" that match the criteria
-target_entry = None 
+target_entry = None
 for entry in data:
     if "File Path" in entry:
-        file_name = os.path.basename(entry["File Path"]).split(".")[0]  # Extract the file name (remove path and extension)
+        file_name = os.path.basename(entry["File Path"]).split(".")[
+            0
+        ]  # Extract the file name (remove path and extension)
         if file_name == calculator_name:
             target_entry = entry
             break
-        
+
 usr_msg = target_entry["Usr Msg"]
-gt =  target_entry["Ground Truth Answer"]
+gt = target_entry["Ground Truth Answer"]
 
 # Get response information
 response = camel_agent.step(usr_msg)
 print(response.info['tool_calls'])
 print("Ground Truth", gt)
-
 '''
 ===============================================================================
 [ToolCallingRecord(tool_name='adjusted_body_weight', args={'weight_value': 89, 
@@ -87,6 +90,7 @@ gives us 45.5 kg + 2.3 kg * (64.173 (in inches) - 60) = 55.098 kg.\\nHence,
 the patient\'s IBW is 55.098 kg.The patient\'s weight is 89.0 kg. 
 To compute the ABW value, apply the following formula: 
 ABW = IBW + 0.4 * (weight (in kg) - IBW (in kg)). ABW = 55.098 kg + 0.4 * (89.0 kg  - 55.098 kg) = 68.659 kg. 
-The patient\'s adjusted body weight is 68.659 kg.\\n", "final_answer": "68.659"}', tool_call_id='call_5IJD6Us7RfkVP21zx9G5JGyf')]
+The patient\'s adjusted body weight is 68.659 kg.\\n", "final_answer": "68.659"
+}', tool_call_id='call_5IJD6Us7RfkVP21zx9G5JGyf')]
 ===============================================================================
 '''
