@@ -16,6 +16,7 @@ import time
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
+from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
 from camel.utils import BatchProcessor
 
@@ -44,6 +45,7 @@ class BaseVerifier(ABC):
 
     def __init__(
         self,
+        extractor: Optional[BaseExtractor] = None,
         max_parallel: Optional[int] = None,
         timeout: Optional[float] = None,
         max_retries: int = 3,
@@ -72,6 +74,9 @@ class BaseVerifier(ABC):
                 down. (default: :obj:`85.0`)
             **kwargs: Additional verifier parameters.
         """
+
+        self.extractor = extractor
+
         self._is_setup: bool = False
         self._max_parallel: Optional[int] = max_parallel
         self._timeout: Optional[float] = timeout
@@ -82,7 +87,7 @@ class BaseVerifier(ABC):
         self._memory_threshold: float = memory_threshold
         self._batch_processor: BatchProcessor = BatchProcessor()
 
-    async def setup(self) -> None:
+    async def setup(self, **kwargs) -> None:
         r"""Set up the verifier with necessary resources.
 
         Initializes:
@@ -97,6 +102,8 @@ class BaseVerifier(ABC):
             return
 
         try:
+            if self.extractor:
+                await self.extractor.setup()
             batch_size = max(1, self._initial_batch_size or 10)
             max_parallel = max(1, self._max_parallel or 1)
             self._batch_processor = BatchProcessor()
@@ -106,7 +113,7 @@ class BaseVerifier(ABC):
                 f"batch_size={batch_size}, max_parallel={max_parallel}"
             )
 
-            await self._setup()
+            await self._setup(**kwargs)
             self._is_setup = True
 
         except Exception as e:
@@ -118,7 +125,7 @@ class BaseVerifier(ABC):
             raise RuntimeError(error_msg) from e
 
     @abstractmethod
-    async def _setup(self) -> None:
+    async def _setup(self, **kwargs) -> None:
         r"""Implement verifier-specific setup logic."""
         pass
 
@@ -136,6 +143,8 @@ class BaseVerifier(ABC):
             return
 
         try:
+            if self.extractor:
+                await self.extractor.cleanup()
             self._batch_processor = BatchProcessor()
             await self._cleanup()
             logger.info(f"{self.__class__.__name__} cleaned up successfully")
@@ -191,15 +200,28 @@ class BaseVerifier(ABC):
         start_time = time.time()
 
         while attempt < self._max_retries:
+            # Extract verifiable part of the proposed solution,
+            # if verifier has been initialized with extractor.
+            verifiable_solution = (
+                await self.extractor.extract(solution)
+                if self.extractor
+                else solution
+            )
+
+            if not verifiable_solution:
+                continue
+
             try:
                 verification_result = (
                     await asyncio.wait_for(
-                        self._verify_implementation(solution, ground_truth),
+                        self._verify_implementation(
+                            verifiable_solution, ground_truth
+                        ),
                         timeout=self._timeout,
                     )
                     if self._timeout
                     else await self._verify_implementation(
-                        solution, ground_truth
+                        verifiable_solution, ground_truth
                     )
                 )
 
@@ -267,6 +289,7 @@ class BaseVerifier(ABC):
             "Subclasses must implement _verify_implementation()"
         )
 
+    # TODO: check again
     async def verify_batch(
         self,
         solutions: List[str],
