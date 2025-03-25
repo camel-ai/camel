@@ -31,7 +31,7 @@
 [Paper](https://arxiv.org/abs/2303.17760) |
 [Citation](https://github.com/camel-ai/camel#citation) |
 [Contributing](https://github.com/camel-ai/camel#contributing-to-camel-) |
-[CAMEL-AI](https://www.camel-ai.org/)
+[CAMEL-AI](https://camel-ai.org/)
 
 </h4>
 
@@ -236,7 +236,7 @@ This example demonstrates how to create a `ChatAgent` using the CAMEL framework 
 
 For more detailed instructions and additional configuration options, check out the [installation section](https://github.com/camel-ai/camel/blob/master/docs/get_started/installation.md).
 
-After running, you can explore our CAMEL Tech Stack and Cookbooks at [www.docs.camel-ai.org](https://docs.camel-ai.org) to build powerful multi-agent systems.
+After running, you can explore our CAMEL Tech Stack and Cookbooks at [docs.camel-ai.org](https://docs.camel-ai.org) to build powerful multi-agent systems.
 
 We provide a [![Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1AzP33O8rnMW__7ocWJhVBXjKziJXPtim?usp=sharing) demo showcasing a conversation between two ChatGPT agents playing roles as a python programmer and a stock trader collaborating on developing a trading bot for stock market.
 
@@ -294,7 +294,7 @@ We believe that studying these agents on a large scale offers valuable insights 
 </div>
 
 <div align="center">
-  <a href="https://www.agent-trust.camel-ai.org/">
+  <a href="https://agent-trust.camel-ai.org/">
     <img src="docs/images/agent_trust.png" alt="Agent Trust">
   </a>
 </div>
