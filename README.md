@@ -31,7 +31,7 @@
 [Paper](https://arxiv.org/abs/2303.17760) |
 [Citation](https://github.com/camel-ai/camel#citation) |
 [Contributing](https://github.com/camel-ai/camel#contributing-to-camel-) |
-[CAMEL-AI](https://camel-ai.org/)
+[CAMEL-AI](https://www.camel-ai.org/)
 
 </h4>
 
