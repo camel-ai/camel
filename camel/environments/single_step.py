@@ -248,16 +248,25 @@ class SingleStepEnv:
         # Normalize actions into a list for uniform processing
         if self.current_batch_size == 1:
             if isinstance(action, list):
+                if len(action) != 1 or not isinstance(action[0], Action):
+                    raise ValueError(
+                        "For batch_size=1, expect a single Action or a "
+                        "list containing exactly one Action"
+                    )
+            elif not isinstance(action, Action):
                 raise ValueError(
-                    "For batch_size=1, expect a single Action, not a list"
+                    "For batch_size=1, expect a single Action or a "
+                    "list containing exactly one Action"
                 )
-            if not isinstance(action, Action):
-                raise ValueError("For batch_size=1, expect a single Action")
-            if action.index is None:
-                action.index = 0
-            elif action.index != 0:
+            if isinstance(action, Action):
+                actions = [action]
+            else:
+                actions = action
+            if actions[0].index is None:
+                actions[0].index = 0
+            if actions[0].index != 0:
                 raise ValueError("For batch_size=1, index must be None or 0")
-            actions = [action]
+
         else:  # batch_size >= 2
             if isinstance(action, Action):
                 if action.index is None:
@@ -324,6 +333,7 @@ class SingleStepEnv:
             proposed_solutions, verification_results
         )
 
+        # TODO Batch this
         step_results = []
         for i, action in enumerate(actions):
             assert action.index is not None

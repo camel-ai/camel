@@ -375,12 +375,18 @@ async def test_single_step_env_error_handling_single():
     ):
         await env_invalid_actions.step(Action(index=1, llm_response="4"))
 
-    # b) Providing a list of actions
+    # b) Providing a list of 2 actions for batch size == 1
     with pytest.raises(
         ValueError,
-        match="For batch_size=1, expect a single Action, not a list",
+        match="For batch_size=1, expect a single Action or a list containing "
+        "exactly one Action",
     ):
-        await env_invalid_actions.step([Action(index=0, llm_response="4")])
+        await env_invalid_actions.step(
+            [
+                Action(index=0, llm_response="4"),
+                Action(index=1, llm_response="3"),
+            ]
+        )
 
     # **5. Test Batch Size Issues**
     env_batch_size = SingleStepEnv(
