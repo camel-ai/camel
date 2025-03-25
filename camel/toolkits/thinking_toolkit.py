@@ -22,11 +22,7 @@ logger = get_logger(__name__)
 
 
 class ThinkingToolkit(BaseToolkit):
-    r"""A toolkit for recording thoughts during reasoning processes.
-
-    Attributes:
-        thoughts (List[str]): A list to store the recorded thoughts.
-    """
+    r"""A toolkit for recording thoughts during reasoning processes."""
 
     def __init__(
         self,
@@ -39,29 +35,81 @@ class ThinkingToolkit(BaseToolkit):
                 (default: :obj: `None`)
         """
         super().__init__(timeout=timeout)
+        self.plans: List[str] = []
         self.thoughts: List[str] = []
+
+    def plan(self, plan: str) -> str:
+        r"""Use the tool to create a plan or strategy.
+        This tool is for outlining the approach or steps to be taken before
+        starting the actual thinking process. It helps in organizing the
+        thought process beforehand.
+
+        Args:
+            plan (str): A forward-looking plan or strategy.
+
+        Returns:
+            str: The recorded plan.
+        """
+        try:
+            logger.debug(f"Plan: {plan}")
+            self.plans.append(plan)
+            return f"Plan: {plan}"
+
+        except Exception as e:
+            error_msg = f"Error recording plan: {e}"
+            logger.error(error_msg)
+            return error_msg
 
     def think(self, thought: str) -> str:
         r"""Use the tool to think about something.
         It will not obtain new information or change the database, but just
-        append the thought to the log. Use it when complex reasoning or some
-        cache memory is needed.
+        append the thought to the log. Use it when executing the planned
+        steps and reasoning through the process.
 
         Args:
             thought (str): A thought to think about.
 
         Returns:
-            str: The full log of thoughts including the new thought.
+            str: The recorded thought.
         """
         try:
             logger.debug(f"Thought: {thought}")
+            if not self.plans:
+                return (
+                    "Consider creating a plan before thinking "
+                    "through the process."
+                )
             self.thoughts.append(thought)
-
-            thoughts = "\n".join([f"- {t}" for t in self.thoughts])
-            return f"Thoughts:\n{thoughts}"
+            return f"Thought: {thought}"
 
         except Exception as e:
             error_msg = f"Error recording thought: {e}"
+            logger.error(error_msg)
+            return error_msg
+
+    def reflect(self, reflection: str) -> str:
+        r"""Use the tool to reflect on previous thoughts and actions.
+        This tool is for evaluating the thinking process after execution,
+        analyzing what worked, what didn't, and what was learned.
+
+        Args:
+            reflection (str): An insight or analysis based on the executed plan
+                and recorded thoughts.
+
+        Returns:
+            str: The recorded reflection.
+        """
+        try:
+            logger.debug(f"Reflection: {reflection}")
+            if not self.thoughts:
+                return (
+                    "No thoughts to reflect upon yet. Consider thinking "
+                    "through the plan first."
+                )
+            return f"Reflection: {reflection}"
+
+        except Exception as e:
+            error_msg = f"Error recording reflection: {e}"
             logger.error(error_msg)
             return error_msg
 
@@ -71,4 +119,8 @@ class ThinkingToolkit(BaseToolkit):
         Returns:
             List[FunctionTool]: A list of tools.
         """
-        return [FunctionTool(self.think)]
+        return [
+            FunctionTool(self.plan),
+            FunctionTool(self.think),
+            FunctionTool(self.reflect),
+        ]
