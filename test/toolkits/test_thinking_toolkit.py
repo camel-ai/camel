@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
 import pytest
 
 from camel.toolkits import ThinkingToolkit
@@ -24,45 +25,173 @@ def thinking_toolkit():
 
 def test_toolkit_initialization(thinking_toolkit):
     r"""Test if the toolkit is initialized correctly."""
+    assert hasattr(thinking_toolkit, 'plans')
+    assert hasattr(thinking_toolkit, 'hypotheses')
     assert hasattr(thinking_toolkit, 'thoughts')
-    assert isinstance(thinking_toolkit.thoughts, list)
-    assert len(thinking_toolkit.thoughts) == 0
+    assert hasattr(thinking_toolkit, 'contemplations')
+    assert hasattr(thinking_toolkit, 'critiques')
+    assert hasattr(thinking_toolkit, 'syntheses')
+
+    assert all(
+        isinstance(attr, list)
+        for attr in [
+            thinking_toolkit.plans,
+            thinking_toolkit.hypotheses,
+            thinking_toolkit.thoughts,
+            thinking_toolkit.contemplations,
+            thinking_toolkit.critiques,
+            thinking_toolkit.syntheses,
+        ]
+    )
+
+    assert all(
+        len(attr) == 0
+        for attr in [
+            thinking_toolkit.plans,
+            thinking_toolkit.hypotheses,
+            thinking_toolkit.thoughts,
+            thinking_toolkit.contemplations,
+            thinking_toolkit.critiques,
+            thinking_toolkit.syntheses,
+        ]
+    )
 
 
 def test_get_tools(thinking_toolkit):
     r"""Test getting available tools from ThinkingToolkit."""
     tools = thinking_toolkit.get_tools()
-    assert len(tools) == 1
-    assert tools[0].get_function_name() == "think"
+    assert len(tools) == 7
+    tool_names = {tool.get_function_name() for tool in tools}
+    assert tool_names == {
+        "plan",
+        "hypothesize",
+        "think",
+        "contemplate",
+        "critique",
+        "synthesize",
+        "reflect",
+    }
+
+
+def test_plan_method(thinking_toolkit):
+    r"""Test the plan method."""
+    plan = "This is a test plan"
+    result = thinking_toolkit.plan(plan)
+
+    assert isinstance(result, str)
+    assert "Plan:" in result
+    assert plan in result
+    assert len(thinking_toolkit.plans) == 1
+    assert thinking_toolkit.plans[0] == plan
+
+
+def test_hypothesize_method(thinking_toolkit):
+    r"""Test the hypothesize method."""
+    # Should suggest making a plan first
+    hypothesis = "Test hypothesis"
+    result = thinking_toolkit.hypothesize(hypothesis)
+    assert "plan" in result.lower()
+
+    # After making a plan
+    thinking_toolkit.plan("Test plan")
+    result = thinking_toolkit.hypothesize(hypothesis)
+    assert "Hypothesis:" in result
+    assert hypothesis in result
+    assert len(thinking_toolkit.hypotheses) == 1
+    assert thinking_toolkit.hypotheses[0] == hypothesis
 
 
 def test_think_method(thinking_toolkit):
     r"""Test the think method."""
-    thought = "This is a test thought"
+    # Should suggest making a plan first
+    thought = "Test thought"
     result = thinking_toolkit.think(thought)
+    assert "plan" in result.lower()
 
-    assert isinstance(result, str)
-    assert "Thoughts:" in result
+    # After making a plan
+    thinking_toolkit.plan("Test plan")
+    result = thinking_toolkit.think(thought)
+    assert "Thought:" in result
     assert thought in result
     assert len(thinking_toolkit.thoughts) == 1
     assert thinking_toolkit.thoughts[0] == thought
 
 
-def test_multiple_thoughts(thinking_toolkit):
-    r"""Test recording multiple thoughts."""
-    thoughts = ["First thought", "Second thought", "Third thought"]
+def test_contemplate_method(thinking_toolkit):
+    r"""Test the contemplate method."""
+    # Should suggest thinking first
+    contemplation = "Test contemplation"
+    result = thinking_toolkit.contemplate(contemplation)
+    assert "think" in result.lower()
 
-    for thought in thoughts:
-        result = thinking_toolkit.think(thought)
-        assert thought in result
+    # After planning and thinking
+    thinking_toolkit.plan("Test plan")
+    thinking_toolkit.think("Test thought")
+    result = thinking_toolkit.contemplate(contemplation)
+    assert "Contemplation:" in result
+    assert contemplation in result
+    assert len(thinking_toolkit.contemplations) == 1
+    assert thinking_toolkit.contemplations[0] == contemplation
 
-    assert len(thinking_toolkit.thoughts) == len(thoughts)
-    for thought in thoughts:
-        assert thought in thinking_toolkit.thoughts
+
+def test_critique_method(thinking_toolkit):
+    r"""Test the critique method."""
+    critique = "Test critique"
+    result = thinking_toolkit.critique(critique)
+    assert "contemplat" in result.lower()
+
+    # After proper setup
+    thinking_toolkit.plan("Test plan")
+    thinking_toolkit.think("Test thought")
+    thinking_toolkit.contemplate("Test contemplation")
+    result = thinking_toolkit.critique(critique)
+    assert "Critique:" in result
+    assert critique in result
+    assert len(thinking_toolkit.critiques) == 1
+    assert thinking_toolkit.critiques[0] == critique
 
 
-def test_empty_thought(thinking_toolkit):
-    r"""Test handling of empty thought."""
+def test_synthesize_method(thinking_toolkit):
+    r"""Test the synthesize method."""
+    # Should suggest critiquing first
+    synthesis = "Test synthesis"
+    result = thinking_toolkit.synthesize(synthesis)
+    assert "critiquing" in result.lower()
+
+    # After proper setup
+    thinking_toolkit.plan("Test plan")
+    thinking_toolkit.think("Test thought")
+    thinking_toolkit.contemplate("Test contemplation")
+    thinking_toolkit.critique("Test critique")
+    result = thinking_toolkit.synthesize(synthesis)
+    assert "Synthesis:" in result
+    assert synthesis in result
+    assert len(thinking_toolkit.syntheses) == 1
+    assert thinking_toolkit.syntheses[0] == synthesis
+
+
+def test_reflect_method(thinking_toolkit):
+    r"""Test the reflect method."""
+    # Should suggest synthesizing first
+    reflection = "Test reflection"
+    result = thinking_toolkit.reflect(reflection)
+    assert "synthesiz" in result.lower()
+
+    # After proper setup
+    thinking_toolkit.plan("Test plan")
+    thinking_toolkit.think("Test thought")
+    thinking_toolkit.contemplate("Test contemplation")
+    thinking_toolkit.critique("Test critique")
+    thinking_toolkit.synthesize("Test synthesis")
+    result = thinking_toolkit.reflect(reflection)
+    assert "Reflection:" in result
+    assert reflection in result
+
+
+def test_empty_inputs(thinking_toolkit):
+    r"""Test handling of empty inputs."""
+    thinking_toolkit.plan("Test plan")  # Setup prerequisite
+
     result = thinking_toolkit.think("")
     assert isinstance(result, str)
     assert len(thinking_toolkit.thoughts) == 1
