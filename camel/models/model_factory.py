@@ -19,6 +19,7 @@ from camel.models.azure_openai_model import AzureOpenAIModel
 from camel.models.base_model import BaseModelBackend
 from camel.models.cohere_model import CohereModel
 from camel.models.deepseek_model import DeepSeekModel
+from camel.models.ppio_model import PPIOModel
 from camel.models.gemini_model import GeminiModel
 from camel.models.groq_model import GroqModel
 from camel.models.internlm_model import InternLMModel
@@ -138,6 +139,8 @@ class ModelFactory:
             model_class = QwenModel
         elif model_platform.is_deepseek:
             model_class = DeepSeekModel
+        elif model_platform.is_ppio:
+            model_class = PPIOModel
         elif model_platform.is_internlm and model_type.is_internlm:
             model_class = InternLMModel
         elif model_platform.is_moonshot and model_type.is_moonshot:
