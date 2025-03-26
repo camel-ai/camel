@@ -628,6 +628,11 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.SAMBA_LLAMA_3_1_405B,
             ModelType.GLM_4V_PLUS_0111,
             ModelType.GLM_ZERO_PREVIEW,
+            ModelType.SILICONFLOW_DEEPSEEK_R1,
+            ModelType.SILICONFLOW_PRO_DEEPSEEK_R1,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_32B,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_14B,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_7B,
         }:
             return 16_384
         elif self in {
@@ -654,9 +659,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MOONSHOT_V1_32K,
             ModelType.AIML_MIXTRAL_8X7B,
             ModelType.AIML_MISTRAL_7B_INSTRUCT,
-            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_32B,
-            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_14B,
-            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_7B,
             ModelType.SILICONFLOW_QWQ_32B,
         }:
             return 32_768
@@ -664,8 +666,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_MIXTRAL_8x22B,
             ModelType.DEEPSEEK_CHAT,
             ModelType.DEEPSEEK_REASONER,
-            ModelType.SILICONFLOW_DEEPSEEK_R1,
-            ModelType.SILICONFLOW_PRO_DEEPSEEK_R1,
         }:
             return 64_000
         elif self in {
