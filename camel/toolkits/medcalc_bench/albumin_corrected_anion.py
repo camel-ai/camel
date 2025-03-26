@@ -44,6 +44,9 @@ def compute_albumin_corrected_anion_explanation(input_parameters):
             - "bicarbonate" (array): The patient's bicarbonate level in the format (value, unit).
                 - Value (float): The value of bicarbonate level.
                 - Unit (str): The unit of bicarbonate level, eg. "mmol/L", "mEq/L", and so on.
+            - "albumin" (array): The patient's albumin concentration in the format (value, unit).
+                - Value (float): The numerical albumin concentration value.
+                - Unit (str): The unit of albumin concentration, eg. "g/L", "mg/dL", "g/mL" and so on.
 
     Returns:
         dict: Contains two key-value pairs:
@@ -108,16 +111,16 @@ if __name__ == "__main__":
     # Defining test cases
     test_cases = [
         {
-            "chloride": [100.0, 'mmol/L'],
+            "chloride": (100.0, "mmol/L"),
             "bicarbonate": (19.0, "mmol/L"),
-            "albumin": [4.4, 'g/dL'],
-            'sodium': [134.0, 'mmol/L'],
+            "albumin": (4.4, "g/dL"),
+            "sodium": (134.0, "mmol/L"),
         },
         {
-            "chloride": [89.0, 'mmol/L'],
+            "chloride": (89.0, "mmol/L"),
             "bicarbonate": (23.7, "mEq/L"),
-            "albumin": [2.1, 'g/dL'],
-            'sodium': [133.0, 'mmol/L'],
+            "albumin": (2.1, "g/dL"),
+            "sodium": (133.0, "mmol/L"),
         },
     ]
 
