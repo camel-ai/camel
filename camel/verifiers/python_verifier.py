@@ -76,7 +76,7 @@ class PythonVerifier(BaseVerifier):
 
     async def _setup(self, **kwargs) -> None:
         r"""Set up a virtual environment and install required packages."""
-        uv = kwargs.get('uv', False)
+        uv = kwargs.get('uv', True)
         if uv and self._is_uv_environment():
             logger.info("[UV] Detected uv environment. Using uv for setup.")
             self._setup_with_uv()
