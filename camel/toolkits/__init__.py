@@ -52,7 +52,7 @@ from .sympy_toolkit import SymPyToolkit
 from .mineru_toolkit import MinerUToolkit
 from .memory_toolkit import MemoryToolkit
 from .audio_analysis_toolkit import AudioAnalysisToolkit
-from .excel_toolkit import ExcelToolkit
+from .document_toolkit import DocumentProcessingToolkit
 from .video_analysis_toolkit import VideoAnalysisToolkit
 from .image_analysis_toolkit import ImageAnalysisToolkit
 from .mcp_toolkit import MCPToolkit
@@ -102,7 +102,7 @@ __all__ = [
     'MCPToolkit',
     'MCPToolkitManager',
     'AudioAnalysisToolkit',
-    'ExcelToolkit',
+    'DocumentProcessingToolkit',
     'VideoAnalysisToolkit',
     'ImageAnalysisToolkit',
     'BrowserToolkit',

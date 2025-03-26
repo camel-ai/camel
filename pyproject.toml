@@ -97,7 +97,9 @@ web_tools = [
 ]
 document_tools = [
     "beautifulsoup4>=4,<5",
+    "chunkr-ai>=0.0.41",
     "docx2txt>=0.8,<0.9",
+    "docx2markdown>=0.1.1",
     "PyMuPDF>=1.22.5,<2",
     "unstructured==0.16.20",
     "pandasai>=2.3.0,<3",
@@ -459,5 +461,9 @@ module = [
     "mcp",
     "typer",
     "mem0",
+    "nest_asyncio",
+    "chunkr_ai",
+    "docx2markdown._docx_to_markdown"
+
 ]
 ignore_missing_imports = true
