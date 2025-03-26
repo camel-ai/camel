@@ -15,7 +15,6 @@ import json
 from typing import TYPE_CHECKING, Optional
 
 from camel.memories import (
-    ChatHistoryMemory,
     MemoryRecord,
     ScoreBasedContextCreator,
 )
@@ -69,6 +68,8 @@ class MemoryToolkit(BaseToolkit):
             str: Confirmation or error message.
         """
         try:
+            from camel.memories import ChatHistoryMemory
+
             data = json.loads(memory_json.strip())
             if not isinstance(data, list):
                 return "[ERROR] Memory data should be a list of records."

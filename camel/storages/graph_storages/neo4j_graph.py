@@ -518,6 +518,7 @@ class Neo4jGraph(BaseGraphStorage):
         graph_elements: List[GraphElement],
         include_source: bool = False,
         base_entity_label: bool = False,
+        **kwargs: Any,
     ) -> None:
         r"""Adds nodes and relationships from a list of GraphElement objects
         to the graph storage.
