@@ -144,18 +144,17 @@ class SelfInstructGenerator(BaseGenerator):
         question_template = f"Question: {prompt}"
         agent = ChatAgent(INSTRUCTION_SYSTEM_PROMPT)
         response = agent.step(question_template, response_format=QuestionSchema).msgs[0].parsed
-        new_instruction = response.question
-        new_rationale = self.generate_rationale(new_instruction)
-        self.machine_instructions.append(new_instruction)
-        return new_instruction, new_rationale
+        return response.question
 
     def generate_rationale(self, question: str) -> str:
         agent = ChatAgent(RATIONALE_SYSTEM_PROMPT)
         rationale = agent.step(question).msgs[0].content
         if rationale.startswith("```"):
-            rationale = rationale[1:].strip()
+            rationale = rationale[3:].strip()
+        if rationale.startswith("python"):
+            rationale = rationale[6:].strip()
         if rationale.endswith("```"):
-            rationale = rationale[:-1].strip()
+            rationale = rationale[:-3].strip()
         return rationale
 
     def _validate_seed_dataset(self) -> None:
@@ -172,7 +171,8 @@ class SelfInstructGenerator(BaseGenerator):
 
         while len(valid_data_points) < n and retries < max_retries:
             try:
-                new_question, rationale = await self.generate_new_instruction()
+                question = await self.generate_new_instruction()
+                rationale = self.generate_rationale(question)
                 if not isinstance(rationale, str):
                     raise TypeError(f"Rationale {rationale} is not a string.")
 
@@ -195,7 +195,7 @@ class SelfInstructGenerator(BaseGenerator):
                     continue
                 try:
                     new_datapoint = DataPoint(
-                        question=new_question,
+                        question=question,
                         rationale=rationale,
                         final_answer=verifier_response.result,
                         metadata={
@@ -212,6 +212,7 @@ class SelfInstructGenerator(BaseGenerator):
                     retries += 1
                     continue
                 valid_data_points.append(new_datapoint)
+                self.machine_instructions.append(question)
             except Exception as e:
                 logger.warning(
                     f"Unexpected error: {e}, retrying..."
@@ -234,7 +235,7 @@ generator = SelfInstructGenerator(
     seed_dataset=seed_dataset, verifier=verifier
 )
 
-new_data = asyncio.run(generator.generate_new(n=2, max_retries=5))
+new_data = asyncio.run(generator.generate_new(n=5, max_retries=5))
 
 for dp in new_data:
     print(dp)
