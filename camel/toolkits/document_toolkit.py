@@ -72,7 +72,10 @@ class DocumentProcessingToolkit(BaseToolkit):
         return str(md_table)
 
     def extract_excel_content(
-        self, document_path: str, header_only: bool, max_rows=None
+        self,
+        document_path: str,
+        header_only: bool,
+        max_rows: Optional[int] = None,
     ) -> str:
         r"""Extract detailed cell information from an Excel file, including
         multiple sheets.
