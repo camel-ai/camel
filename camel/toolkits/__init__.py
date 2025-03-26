@@ -64,7 +64,6 @@ from .thinking_toolkit import ThinkingToolkit
 from .searxng_toolkit import SearxNGToolkit
 
 
-
 __all__ = [
     'BaseToolkit',
     'FunctionTool',
@@ -114,5 +113,4 @@ __all__ = [
     'PubMedToolkit',
     'ThinkingToolkit',
     'SearxNGToolkit',
-
 ]
