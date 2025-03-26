@@ -21,7 +21,6 @@ from PIL import Image
 from camel.toolkits.browser_toolkit import (
     BaseBrowser,
     BrowserToolkit,
-    ChromiumChannels,
 )
 
 TEST_URL = "https://example.com"
@@ -69,15 +68,15 @@ def test_base_browser_initialization_order():
 @pytest.mark.parametrize(
     "channel",
     [
-        ChromiumChannels.CHROME,
-        ChromiumChannels.MSEDGE,
-        ChromiumChannels.CHROMIUM,
+        "chrome",
+        "msedge",
+        "chromium",
     ],
 )
-def test_browser_channel_selection(channel: ChromiumChannels):
+def test_browser_channel_selection(channel):
     with patch('playwright.sync_api.sync_playwright'):
         browser = BaseBrowser(headless=True, channel=channel)
-        assert browser.channel == channel.value
+        assert browser.channel == channel
 
 
 def test_browser_visit_page(base_browser_fixture):

@@ -56,7 +56,7 @@ from .excel_toolkit import ExcelToolkit
 from .video_analysis_toolkit import VideoAnalysisToolkit
 from .image_analysis_toolkit import ImageAnalysisToolkit
 from .mcp_toolkit import MCPToolkit
-from .browser_toolkit import BrowserToolkit, ChromiumChannels
+from .browser_toolkit import BrowserToolkit
 from .file_write_toolkit import FileWriteToolkit
 from .terminal_toolkit import TerminalToolkit
 from .pubmed_toolkit import PubMedToolkit
@@ -106,7 +106,6 @@ __all__ = [
     'VideoAnalysisToolkit',
     'ImageAnalysisToolkit',
     'BrowserToolkit',
-    'ChromiumChannels',
     'FileWriteToolkit',
     'TerminalToolkit',
     'PubMedToolkit',
