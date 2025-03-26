@@ -88,16 +88,13 @@ async def test_single_step_env_lifecycle_single():
     # Test step with a single action (index=0)
     action = Action(index=0, llm_response="4")  # Assuming first question
     result = await env.step(action)
-    assert isinstance(result, list)  # Now returns a list of StepResult objects
-    assert len(result) == 1
-    step_result = result[0]
-    assert step_result.observation == env.PLACEHOLDER_OBS
-    assert (
-        step_result.reward == env.ACCURACY_REWARD + 5
-    )  # Accuracy + custom reward
-    assert step_result.done is True  # Single step should end the episode
-    assert isinstance(step_result.rewards_dict, dict)
-    assert step_result.rewards_dict.get("custom_reward", None) == 5
+    assert isinstance(result, tuple)  # Single result tuple, not a list
+    next_obs, reward, done, info = result
+    assert next_obs == env.PLACEHOLDER_OBS
+    assert reward == env.ACCURACY_REWARD + 5  # Accuracy + custom reward
+    assert done is True  # Single step should end the episode
+    assert isinstance(info, dict)
+    assert info["rewards_dict"].get("custom_reward", None) == 5
 
     # Test that stepping again without reset fails
     with pytest.raises(
@@ -113,11 +110,11 @@ async def test_single_step_env_lifecycle_single():
         index=None, llm_response="Paris"
     )  # Assuming second question
     result2 = await env.step(action2)
-    step_result2 = result2[0]
-    assert step_result2.observation == env.PLACEHOLDER_OBS
-    assert step_result2.reward == env.ACCURACY_REWARD + 5
-    assert step_result2.done is True
-    assert step_result2.rewards_dict.get("custom_reward", None) == 5
+    next_obs2, reward2, done2, info2 = result2
+    assert next_obs2 == env.PLACEHOLDER_OBS
+    assert reward2 == env.ACCURACY_REWARD + 5
+    assert done2 is True
+    assert info2["rewards_dict"].get("custom_reward", None) == 5
 
     # Test deterministic sampling with seed
     obs1 = await env.reset(batch_size=1, seed=42)
@@ -228,14 +225,12 @@ async def test_batched_single_step_env_lifecycle():
     results = await env.step(actions)
     assert isinstance(results, list)
     assert len(results) == 2
-    for step_result in results:
-        assert step_result.observation == env.PLACEHOLDER_OBS
-        assert (
-            step_result.reward == env.ACCURACY_REWARD + 5
-        )  # 5 is custom reward
-        assert step_result.done
-        assert isinstance(step_result.rewards_dict, dict)
-        assert step_result.rewards_dict.get("custom_reward", None) == 5
+    for next_obs, reward, done, info in results:
+        assert next_obs == env.PLACEHOLDER_OBS
+        assert reward == env.ACCURACY_REWARD + 5  # 5 is custom reward
+        assert done
+        assert isinstance(info, dict)
+        assert info["rewards_dict"].get("custom_reward", None) == 5
 
     # Test step with remaining two actions
     actions = [
@@ -249,14 +244,12 @@ async def test_batched_single_step_env_lifecycle():
     results = await env.step(actions)
     assert isinstance(results, list)
     assert len(results) == 2
-    for step_result in results:
-        assert step_result.observation == env.PLACEHOLDER_OBS
-        assert (
-            step_result.reward == env.ACCURACY_REWARD + 5
-        )  # 5 is custom reward
-        assert step_result.done
-        assert isinstance(step_result.rewards_dict, dict)
-        assert step_result.rewards_dict.get("custom_reward", None) == 5
+    for next_obs, reward, done, info in results:
+        assert next_obs == env.PLACEHOLDER_OBS
+        assert reward == env.ACCURACY_REWARD + 5  # 5 is custom reward
+        assert done
+        assert isinstance(info, dict)
+        assert info["rewards_dict"].get("custom_reward", None) == 5
 
     assert env._batch_done()
     await env.close()

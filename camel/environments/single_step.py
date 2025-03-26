@@ -215,7 +215,10 @@ class SingleStepEnv:
 
     async def step(
         self, action: Union[Action, List[Action]]
-    ) -> List[StepResult]:
+    ) -> Union[
+        Tuple[Observation, float, bool, Dict[str, Any]],
+        List[Tuple[Observation, float, bool, Dict[str, Any]]],
+    ]:
         r"""Process actions for a subset of states and update their finished
         status.
 
@@ -226,7 +229,8 @@ class SingleStepEnv:
                 which state it corresponds to.
 
         Returns:
-            List[StepResult]: List of StepResults for the processed states.
+            Union[StepResult, List[StepResult]]: StepResult or list of
+                StepResults for the processed states.
 
         Raises:
             RuntimeError: If environment isn't set up or episode has ended.
@@ -344,10 +348,10 @@ class SingleStepEnv:
                     "state": self._states[idx],
                 },
             )
-            step_results.append(step_result)
+            step_results.append(step_result.as_tuple())
             self._states_done[idx] = True
 
-        return step_results
+        return step_results[0] if len(step_results) == 1 else step_results
 
     async def _compute_reward_batch(
         self,
