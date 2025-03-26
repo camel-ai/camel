@@ -19,7 +19,7 @@ Available extras:
 - `all`: Includes all features below
 - `model_platforms`: OpenAI, Google, Mistral, Anthropic Claude, Cohere etc.
 - `huggingface`: Transformers, Diffusers, Accelerate, Datasets, PyTorch etc.
-- `rag`: Sentence Transformers, Qdrant, Milvus, BM25 etc.
+- `rag`: Sentence Transformers, Qdrant, Milvus, TiDB, BM25 etc.
 - `storage`: Neo4j, Redis, Azure Blob, Google Cloud Storage, AWS S3  etc.
 - `web_tools`: DuckDuckGo, Wikipedia, WolframAlpha, Google Maps, Weather API etc.
 - `document_tools`: PDF, Word, OpenAPI, BeautifulSoup, Unstructured etc.
