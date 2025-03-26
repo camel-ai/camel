@@ -23,6 +23,14 @@ camel.storages.vectordb\_storages.milvus module
 camel.storages.vectordb\_storages.qdrant module
 -----------------------------------------------
 
+.. automodule:: camel.storages.vectordb_storages.tidb
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+camel.storages.vectordb\_storages.tidb module
+-----------------------------------------------
+
 .. automodule:: camel.storages.vectordb_storages.qdrant
    :members:
    :undoc-members:
