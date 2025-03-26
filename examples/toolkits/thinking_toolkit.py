@@ -60,7 +60,7 @@ print(response.info['tool_calls'])
 
 """
 Example: Problem Solving with Thinking Toolkit
-================================================================================
+===============================================================================
 The train's total journey time for traveling 300 miles at 60 mph, with 
 3 stops of 15 minutes each, is 5.75 hours. This consists of 5 hours of 
 travel time and 0.75 hours (or 45 minutes) of stop time. The conversion 
@@ -144,4 +144,5 @@ Tool Calls:
         tool_call_id='call_9AHg54snm17XN7Mj1UzgSV04'
     )
 ]
+===============================================================================
 """
