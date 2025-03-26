@@ -11,11 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import asyncio
 import os
 import sys
 from typing import TYPE_CHECKING
-
-import asyncio
 
 from camel.toolkits import GithubToolkit
 from camel.toolkits.mcp_toolkit import _MCPServer
@@ -88,7 +87,7 @@ async def run_example():
     server = _MCPServer(
         command_or_url=sys.executable,
         args=[__file__, "--server"],
-        env={"GITHUB_ACCESS_TOKEN": os.environ.get("GITHUB_ACCESS_TOKEN")}
+        env={"GITHUB_ACCESS_TOKEN": os.environ.get("GITHUB_ACCESS_TOKEN")},
     )
     await server.connect()
 

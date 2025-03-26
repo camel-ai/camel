@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
         "get_pull_request_comments",
         "get_all_file_paths",
         "retrieve_file_content",
-    ]
+    ],
 )
 class GithubToolkit(BaseToolkit):
     r"""A class representing a toolkit for interacting with GitHub

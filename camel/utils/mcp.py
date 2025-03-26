@@ -13,14 +13,15 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import functools
 import inspect
-from typing import Callable, Any
+from typing import Any, Callable
 
 from mcp.server.fastmcp import FastMCP
 
 
 class MCPServer:
     def __init__(
-        self, function_names: list[str],
+        self,
+        function_names: list[str],
         server_name: str = "MCPServer",
     ):
         self.function_names = function_names
@@ -28,15 +29,17 @@ class MCPServer:
 
     def make_wrapper(self, func: Callable[..., Any]) -> Callable[..., Any]:
         if inspect.iscoroutinefunction(func):
+
             @functools.wraps(func)
             async def wrapper(*args, **kwargs):
                 return await func(*args, **kwargs)
         else:
+
             @functools.wraps(func)
             def wrapper(*args, **kwargs):
                 return func(*args, **kwargs)
 
-        wrapper.__signature__ = inspect.signature(func)
+        wrapper.__signature__ = inspect.signature(func)  # type: ignore[attr-defined]
         return wrapper
 
     def __call__(self, cls):
