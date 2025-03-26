@@ -96,14 +96,14 @@ if __name__ == "__main__":
     # Defining test cases
     test_cases = [
         {
-            "sodium": [134.0, 'mmol/L'],
-            "chloride": [109.0, 'mmol/L'],
-            "bicarbonate": [21.0, 'mmol/L'],
+            "sodium": (134.0, 'mmol/L'),
+            "chloride": (109.0, 'mmol/L'),
+            "bicarbonate": (21.0, 'mmol/L'),
         },
         {
-            'chloride': [106.0, 'mEq/L'],
-            'bicarbonate': [20.0, 'mEq/L'],
-            'sodium': [140.0, 'mEq/L'],
+            'chloride': (106.0, 'mEq/L'),
+            'bicarbonate': (20.0, 'mEq/L'),
+            'sodium': (140.0, 'mEq/L'),
         },
     ]
 
