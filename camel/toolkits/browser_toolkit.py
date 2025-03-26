@@ -21,13 +21,13 @@ import re
 import shutil
 import time
 from copy import deepcopy
-from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
     BinaryIO,
     Dict,
     List,
+    Literal,
     Optional,
     Tuple,
     TypedDict,
@@ -125,16 +125,6 @@ class InteractiveRegion(TypedDict):
     aria_name: str
     v_scrollable: bool
     rects: List[DOMRectangle]
-
-
-class ChromiumChannels(Enum):
-    """
-    Enum for the accepted browser channels.
-    """
-
-    CHROME = "chrome"
-    MSEDGE = "msedge"
-    CHROMIUM = "chromium"
 
 
 def _get_str(d: Any, k: str) -> str:
@@ -439,13 +429,16 @@ class BaseBrowser:
         self,
         headless=True,
         cache_dir: Optional[str] = None,
-        channel: ChromiumChannels = ChromiumChannels.CHROMIUM,
+        channel: Literal["chrome", "msedge", "chromium"] = "chromium",
     ):
         r"""Initialize the WebBrowser instance.
 
         Args:
             headless (bool): Whether to run the browser in headless mode.
             cache_dir (Union[str, None]): The directory to store cache files.
+            channel (Literal["chrome", "msedge", "chromium"]): The browser
+                channel to use. Must be one of "chrome", "msedge", or
+                "chromium".
 
         Returns:
             None
@@ -456,7 +449,7 @@ class BaseBrowser:
 
         self.history: list = []
         self.headless = headless
-        self.channel = channel.value
+        self.channel = channel
         self._ensure_browser_installed()
         self.playwright = sync_playwright().start()
         self.page_history: list = []  # stores the history of visited pages
@@ -577,7 +570,7 @@ class BaseBrowser:
 
         Args:
             scroll_ratio (float): The ratio of viewport height to scroll each
-                step (default: 0.8).
+                step. (default: :obj:`0.8`)
 
         Returns:
             List[str]: A list of paths to the screenshot files.
@@ -988,7 +981,7 @@ class BrowserToolkit(BaseToolkit):
         self,
         headless: bool = False,
         cache_dir: Optional[str] = None,
-        channel: ChromiumChannels = ChromiumChannels.CHROMIUM,
+        channel: Literal["chrome", "msedge", "chromium"] = "chromium",
         history_window: int = 5,
         web_agent_model: Optional[BaseModelBackend] = None,
         planning_agent_model: Optional[BaseModelBackend] = None,
@@ -999,12 +992,17 @@ class BrowserToolkit(BaseToolkit):
         Args:
             headless (bool): Whether to run the browser in headless mode.
             cache_dir (Union[str, None]): The directory to store cache files.
+            channel (Literal["chrome", "msedge", "chromium"]): The browser
+                channel to use. Must be one of "chrome", "msedge", or
+                "chromium".
             history_window (int): The window size for storing the history of
                 actions.
             web_agent_model (Optional[BaseModelBackend]): The model backend
                 for the web agent.
             planning_agent_model (Optional[BaseModelBackend]): The model
                 backend for the planning agent.
+            output_language (str): The language to use for output.
+                (default: :obj:`"en`")
         """
 
         self.browser = BaseBrowser(
@@ -1422,7 +1420,8 @@ Your output should be in json format, including the following fields:
         Args:
             task_prompt (str): The task prompt to solve.
             start_url (str): The start URL to visit.
-            round_limit (int): The round limit to solve the task (default: 12).
+            round_limit (int): The round limit to solve the task.
+                (default: :obj:`12`).
 
         Returns:
             str: The simulation result to the task.
