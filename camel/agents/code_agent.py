@@ -12,6 +12,7 @@ import logging
 
 from rich.text import Text
 from rich.console import Group
+
 logger = logging.getLogger(__name__)
 
 SYSTEM_MESSAGE = """
@@ -264,6 +265,94 @@ def _fix_final_answer_code(code: str) -> str:
     code = re.sub(variable_regex, "final_answer_variable", code)
     return code
 
+def _get_global_imports(file_path):
+    """获取Python文件中所有全局import语句"""
+    with open(file_path, 'r', encoding='utf-8') as f:
+        tree = ast.parse(f.read())
+    
+    imports = []
+    for node in ast.walk(tree):
+        # 获取import ... 形式的导入
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                imports.append(f"import {alias.name}")
+        # 获取from ... import ... 形式的导入
+        elif isinstance(node, ast.ImportFrom):
+            module = node.module
+            for alias in node.names:
+                imports.append(f"from {module} import {alias.name}")
+    
+    return imports
+
+def _generate_tools_file(self, tools: List[Union[FunctionTool, Callable]]) -> None:
+    """生成包含所有工具函数的Python文件。
+
+    Args:
+        tools: 工具函数列表
+    """
+    import os
+    import inspect
+    from pathlib import Path
+
+    # 创建tools目录（如果不存在）
+    tools_dir = Path(__file__).parent / "generated_tools"
+    tools_dir.mkdir(exist_ok=True)
+    
+    # 生成工具函数文件
+    tools_file = tools_dir / "generated_tools.py"
+
+    # 导入的模块集合
+    imports = set()
+    source_code_set = set()
+    
+    with open(tools_file, "w") as f:
+        # 写入文件头部
+        f.write("# Generated tool functions\n\n")
+        
+        # 处理每个工具
+        for tool in tools:
+            if isinstance(tool, FunctionTool):
+                func = tool.func
+            else:
+                func = tool
+            
+            # 获取函数源文件和模块信息
+            module_name = func.__module__
+            module_name = module_name.split(".")[-1]
+            user_path = os.path.dirname(os.path.abspath(os.path.dirname(__file__)))
+            file_path = user_path + "/toolkits/" + module_name + ".py"
+            source_code = inspect.getsource(func)
+            
+            source_lines = source_code.splitlines()
+            if source_lines:
+
+                for line in source_lines:
+                    if line.strip():
+                        indent = len(line) - len(line.lstrip())
+                        break
+
+                source_code = '\n'.join(line[indent:] if line.strip() else '' 
+                                      for line in source_lines)
+
+            imports.update(_get_global_imports(file_path))
+            source_code_set.add(source_code)
+
+        for import_item in imports:
+            f.write(import_item + "\n")
+        #设置log
+        f.write("from camel.logger import get_logger\n")
+        f.write("logger = get_logger(__name__)\n")
+        for source_item in source_code_set:
+            f.write("\n" + source_item + "\n")
+
+        # 最后写一个main函数
+        f.write("\n\n")
+        f.write("def main():\n")
+        f.write("    pass\n")
+        f.write("if __name__ == '__main__':\n")
+        f.write("    main()\n")
+        
+
 
 class CodeExecutionEnvironment:
     """Environment for executing Python code with tools."""
@@ -343,6 +432,8 @@ class CodeAgent(ChatAgent):
     ) -> None:
 
         super().__init__(tools=tools, **kwargs)
+
+        _generate_tools_file(self, tools)
 
         tool_schemas = self._get_full_tool_schemas()
         tools_str = ""
