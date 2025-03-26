@@ -86,6 +86,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         self._api_key = api_key
         self._url = url
         self._token_counter = token_counter
+        self._last_response = None
         self.check_model_config()
 
     @property
@@ -188,7 +189,10 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         # Empty -> use no tools
         elif not tools:
             tools = None
-        return self._run(messages, response_format, tools)
+
+        response = self._run(messages, response_format, tools)
+        self._last_response = response  # type: ignore[assignment]
+        return response
 
     async def arun(
         self,
@@ -217,7 +221,10 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
             tools = self.model_config_dict.get("tools", None)
         elif not tools:
             tools = None
-        return await self._arun(messages, response_format, tools)
+
+        response = await self._arun(messages, response_format, tools)
+        self._last_response = response  # type: ignore[assignment]
+        return response
 
     @abstractmethod
     def check_model_config(self):
@@ -294,3 +301,22 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
             bool: Whether the model is in stream mode.
         """
         return False
+
+    def get_token_last_response(self) -> Optional[dict]:
+        r"""Get the number of tokens from the response.
+
+        Args:
+            response (ChatCompletion): The response from the model.
+        """
+        if self._last_response is not None:
+            try:
+                d = {
+                    "total_tokens": self._last_response.usage.total_tokens,
+                    "prompt_tokens": self._last_response.usage.prompt_tokens,
+                    "completion_tokens": self._last_response.usage.completion_tokens,  # noqa: E501
+                }
+                return d
+            except AttributeError:
+                return None
+        else:
+            return None
