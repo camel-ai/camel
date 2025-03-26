@@ -41,6 +41,7 @@ class ThinkingToolkit(BaseToolkit):
         self.contemplations: List[str] = []
         self.critiques: List[str] = []
         self.syntheses: List[str] = []
+        self.reflections: List[str] = []
 
     def plan(self, plan: str) -> str:
         r"""Use the tool to create a plan or strategy.
@@ -204,6 +205,7 @@ class ThinkingToolkit(BaseToolkit):
                 return (
                     "Consider synthesizing insights before final reflection."
                 )
+            self.reflections.append(reflection)
             return f"Reflection: {reflection}"
 
         except Exception as e:

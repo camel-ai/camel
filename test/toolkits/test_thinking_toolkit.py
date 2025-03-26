@@ -31,6 +31,7 @@ def test_toolkit_initialization(thinking_toolkit):
     assert hasattr(thinking_toolkit, 'contemplations')
     assert hasattr(thinking_toolkit, 'critiques')
     assert hasattr(thinking_toolkit, 'syntheses')
+    assert hasattr(thinking_toolkit, 'reflections')
 
     assert all(
         isinstance(attr, list)
@@ -41,6 +42,7 @@ def test_toolkit_initialization(thinking_toolkit):
             thinking_toolkit.contemplations,
             thinking_toolkit.critiques,
             thinking_toolkit.syntheses,
+            thinking_toolkit.reflections,
         ]
     )
 
@@ -53,6 +55,7 @@ def test_toolkit_initialization(thinking_toolkit):
             thinking_toolkit.contemplations,
             thinking_toolkit.critiques,
             thinking_toolkit.syntheses,
+            thinking_toolkit.reflections,
         ]
     )
 
@@ -186,6 +189,8 @@ def test_reflect_method(thinking_toolkit):
     result = thinking_toolkit.reflect(reflection)
     assert "Reflection:" in result
     assert reflection in result
+    assert len(thinking_toolkit.reflections) == 1
+    assert thinking_toolkit.reflections[0] == reflection
 
 
 def test_empty_inputs(thinking_toolkit):
