@@ -47,6 +47,7 @@ web_toolkit = BrowserToolkit(
     headless=False,
     web_agent_model=web_agent_model,
     planning_agent_model=planning_agent_model,
+    channel="chromium",
 )
 
 agent = ChatAgent(

@@ -11,26 +11,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
 from camel.toolkits import ThinkingToolkit
 from camel.types import ModelPlatformType, ModelType
 
-# Initialize model and toolkit
+# Create a Model
+model_config_dict = ChatGPTConfig(temperature=0.0).as_dict()
 model = ModelFactory.create(
     model_platform=ModelPlatformType.DEFAULT,
     model_type=ModelType.DEFAULT,
-    model_config_dict=ChatGPTConfig().as_dict(),
+    model_config_dict=model_config_dict,
 )
 
+# Initialize the ThinkingToolkit
 thinking_toolkit = ThinkingToolkit()
 tools = thinking_toolkit.get_tools()
 
-# Create an agent with the thinking toolkit
+# Set up the ChatAgent with thinking capabilities
 sys_msg = (
-    "You are a helpful assistant that can think through problems "
-    "step by step."
+    "You are an assistant that can break down complex problems and think "
+    "through solutions step by step. Use the thinking toolkit to organize "
+    "your thoughts, reflect on the problem, and create plans."
 )
 
 agent = ChatAgent(
@@ -39,11 +43,15 @@ agent = ChatAgent(
     tools=tools,
 )
 
-# Example usage
-usr_msg = (
-    "Help me solve: If a train travels at 60 mph, how long to"
-    "cover 180 miles?"
-)
+# Example: Problem solving with thinking toolkit
+print("\nExample: Problem solving with thinking toolkit")
+print("=" * 80)
+
+usr_msg = """
+Help me solve this math problem:
+If a train travels at 60 mph and needs to cover 300 miles, 
+with 3 stops of 15 minutes each, how long will the journey take?
+"""
 
 response = agent.step(usr_msg)
 print(response.msgs[0].content)
@@ -51,56 +59,89 @@ print("\nTool calls:")
 print(response.info['tool_calls'])
 
 """
+Example: Problem Solving with Thinking Toolkit
 ===============================================================================
-The train will take 3 hours to cover 180 miles at a speed of 60 mph.
+The train's total journey time for traveling 300 miles at 60 mph, with 
+3 stops of 15 minutes each, is 5.75 hours. This consists of 5 hours of 
+travel time and 0.75 hours (or 45 minutes) of stop time. The conversion 
+of stop time from minutes to hours was explicitly noted for clarity.
 
-Tool calls:
+Tool Calls:
 [
     ToolCallingRecord(
-        tool_name='think',
+        tool_name='plan',
         args={
-            'thought': ('To find the time taken to cover a certain distance at'
-                      'a constant speed, we can use the formula: time = '
-                      'distance / speed. In this case, the distance is 180 '
-                      'miles and the speed is 60 mph.')
+            'plan': '1. Compute the travel time for 300 miles at 60 mph '
+                    'without stops.\n'
+                    '2. Determine the total stop time.\n'
+                    '3. Sum the travel time and stop time to get the total '
+                    'journey duration.'
         },
-        result=('Thoughts:\n- To find the time taken to cover a certain '
-               'distance at a constant speed, we can use the formula: time = '
-               'distance / speed. In this case, the distance is 180 miles and '
-               'the speed is 60 mph.'),
-        tool_call_id='call_M6QQ0ymwpVNtpXaacWLhWtqA'
-    ),
-    ToolCallingRecord(
-        tool_name='think', 
-        args={
-            'thought': ('Now, substituting the values into the formula: time ='
-                      '180 miles / 60 mph. This can be calculated to find the '
-                      'time in hours.')
-        },
-        result=('Thoughts:\n- To find the time taken to cover a certain '
-               'distance at a constant speed, we can use the formula: time = '
-               'distance / speed. In this case, the distance is 180 miles and '
-               'the speed is 60 mph.\n- Now, substituting the values into the '
-               'formula: time = 180 miles / 60 mph. This can be calculated to '
-               'find the time in hours.'),
-        tool_call_id='call_7CXZctOm3BbBaSq1YeCNql45'
+        result='Plan: 1. Compute the travel time for 300 miles at 60 mph '
+               'without stops.\n'
+               '2. Determine the total stop time.\n'
+               '3. Sum the travel time and stop time to get the total journey '
+               'duration.',
+        tool_call_id='call_kKYeTFLMGPf0mhimAZ8hapFk'
     ),
     ToolCallingRecord(
         tool_name='think',
         args={
-            'thought': ('Calculating: time = 180 / 60 = 3 hours. Therefore, it'
-                      'will take the train 3 hours to cover 180 miles at a '
-                      'speed of 60 mph.')
+            'thought': 'Using the formula time = distance / speed, where '
+                       'distance = 300 miles and speed = 60 mph, we can '
+                       'determine the travel time.'
         },
-        result=('Thoughts:\n- To find the time taken to cover a certain '
-               'distance at a constant speed, we can use the formula: time = '
-               'distance / speed. In this case, the distance is 180 miles and '
-               'the speed is 60 mph.\n- Now, substituting the values into the '
-               'formula: time = 180 miles / 60 mph. This can be calculated to '
-               'find the time in hours.\n- Calculating: time = 180 / 60 = 3 '
-               'hours. Therefore, it will take the train 3 hours to cover 180 '
-               'miles at a speed of 60 mph.'),
-        tool_call_id='call_n1SOosiFYvl2pO6yuq9dLhQb'
+        result='Thought: Using the formula time = distance / speed, where '
+               'distance = 300 miles and speed = 60 mph, we can determine '
+               'the travel time.',
+        tool_call_id='call_t3DXWahikwhc8ps0y2GTE9ko'
+    ),
+    ToolCallingRecord(
+        tool_name='think',
+        args={
+            'thought': 'The total stop time is calculated as: number of '
+                       'stops * time per stop, which is 3 * 15 minutes.'
+        },
+        result='Thought: The total stop time is calculated as: number of '
+               'stops * time per stop, which is 3 * 15 minutes.',
+        tool_call_id='call_MM1YlTPmiMhhiy6HWqraKh8E'
+    ),
+    ToolCallingRecord(
+        tool_name='hypothesize',
+        args={
+            'hypothesis': 'The travel time for 300 miles at 60 mph should '
+                          'be 5 hours.'
+        },
+        result='Hypothesis: The travel time for 300 miles at 60 mph should '
+               'be 5 hours.',
+        tool_call_id='call_F16dfESrJmUDwieYDA2aCheB'
+    ),
+    ToolCallingRecord(
+        tool_name='hypothesize',
+        args={
+            'hypothesis': 'The total stop time for 3 stops of 15 minutes '
+                          'each should be 45 minutes.'
+        },
+        result='Hypothesis: The total stop time for 3 stops of 15 minutes '
+               'each should be 45 minutes.',
+        tool_call_id='call_coxWcLPATfKNdiqQDz853pm4'
+    ),
+    ToolCallingRecord(
+        tool_name='synthesize',
+        args={
+            'synthesis': 'The total journey time for the train traveling '
+                         '300 miles at 60 mph, with 3 stops of 15 minutes '
+                         'each, is 5.75 hours. This includes 5 hours of '
+                         'travel time and 0.75 hours (or 45 minutes) of '
+                         'stop time. The conversion of stop time from '
+                         'minutes to hours was explicitly noted for clarity.'
+        },
+        result='Synthesis: The total journey time for the train traveling '
+               '300 miles at 60 mph, with 3 stops of 15 minutes each, is '
+               '5.75 hours. This includes 5 hours of travel time and 0.75 '
+               'hours (or 45 minutes) of stop time. The conversion of stop '
+               'time from minutes to hours was explicitly noted for clarity.',
+        tool_call_id='call_9AHg54snm17XN7Mj1UzgSV04'
     )
 ]
 ===============================================================================
