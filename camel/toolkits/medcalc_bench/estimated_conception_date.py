@@ -44,7 +44,12 @@ def add_2_weeks_explanation(input_data):
 
     Example:
         add_2_weeks_explanation({"cycle_length": 20, "menstrual_date": "01/21/2004"})
-        output: ""
+
+        output: "{'Explanation': "The patient's estimated date of conception based on their last period is computed by
+        adding to 2 weeks to the patient's last menstrual period date.
+        The patient's last menstrual period was 01/21/2004.
+        \nHence, the estimated date of conception after adding 2 weeks to
+        the patient's last menstrual period date is 02/04/2004. \n", 'Answer': '02/04/2004'}"
     """
 
     input_date_str = input_data["menstrual_date"]
