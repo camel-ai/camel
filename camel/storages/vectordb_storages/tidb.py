@@ -16,9 +16,7 @@ import logging
 import re
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
-
-from pytidb import Table
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 from camel.storages.vectordb_storages import (
     BaseVectorStorage,
@@ -30,7 +28,7 @@ from camel.storages.vectordb_storages import (
 from camel.utils import dependencies_required
 
 if TYPE_CHECKING:
-    from pytidb import TiDBClient
+    from pytidb import Table, TiDBClient
 
 logger = logging.getLogger(__name__)
 
@@ -50,17 +48,15 @@ class TiDBStorage(BaseVectorStorage):
 
     Args:
         vector_dim (int): The dimension of storing vectors.
-        url_and_api_key (Tuple[str, str] or str): A tuple containing
-           the database url and API key for connecting to a TiDB cluster.
-           The URL should be in the format:
+        url_and_api_key (Optional[Union[Tuple[str, str], str]]): A tuple
+            containing the database url and API key for connecting to a TiDB
+            cluster. The URL should be in the format:
            "mysql+pymysql://<username>:<password>@<host>:<port>/<db_name>".
-
            TiDB will not use the API Key, but retains the definition for
            interface compatible.
-        collection_name (Optional[str], optional): Name of the collection.
-            The collection name will be used as the table name in TiDB.
-
-            If not provided, set it to the current time with iso format.
+        collection_name (Optional[str]): Name of the collection.
+            The collection name will be used as the table name in TiDB. If not
+            provided, set it to the current time with iso format.
         **kwargs (Any): Additional keyword arguments for initializing
             TiDB connection.
 
@@ -73,7 +69,7 @@ class TiDBStorage(BaseVectorStorage):
         self,
         vector_dim: int,
         collection_name: Optional[str] = None,
-        url_and_api_key: Optional[Tuple[str, str] | str] = None,
+        url_and_api_key: Optional[Union[Tuple[str, str], str]] = None,
         **kwargs: Any,
     ) -> None:
         from pytidb import TiDBClient
@@ -99,8 +95,8 @@ class TiDBStorage(BaseVectorStorage):
         r"""Initializes the TiDB client with the provided connection details.
 
         Args:
-            database_url (str): The database connection string for the TiDB
-            server.
+            database_url (Optional[str]): The database connection string for
+                the TiDB server.
             **kwargs: Additional keyword arguments passed to the TiDB client.
         """
         from pytidb import TiDBClient
@@ -129,7 +125,7 @@ class TiDBStorage(BaseVectorStorage):
         )
 
     def _open_and_create_table(self) -> "Table[Any]":
-        """Opens an existing table or creates a new table in TiDB."""
+        r"""Opens an existing table or creates a new table in TiDB."""
         table = self._client.open_table(self.collection_name)
         if table is None:
             table = self._client.create_table(
@@ -179,6 +175,13 @@ class TiDBStorage(BaseVectorStorage):
                 dim_value = int(match.group(1))
                 break
 
+        # If no vector column found, log a warning
+        if dim_value is None:
+            logger.warning(
+                f"No vector column found in table {self.collection_name}. "
+                "This may indicate an incompatible table schema."
+            )
+
         return {
             "vector_count": vector_count,
             "vector_dim": dim_value,
@@ -192,7 +195,7 @@ class TiDBStorage(BaseVectorStorage):
 
         Args:
             records (List[VectorRecord]): List of vector records to validate
-            and convert.
+                and convert.
 
         Returns:
             List[VectorDBRecord]: A list of VectorDBRecord instances.
