@@ -25,6 +25,7 @@ from typing import (
     Optional,
     Set,
     Union,
+    cast,
 )
 from urllib.parse import urlparse
 
@@ -440,7 +441,7 @@ class MCPToolkit(BaseToolkit):
                 continue
 
             server = _MCPServer(
-                command_or_url=cfg.get("command") or cfg.get("url"),
+                command_or_url=cast(str, cfg.get("command") or cfg.get("url")),
                 args=cfg.get("args", []),
                 env={**os.environ, **cfg.get("env", {})},
                 timeout=cfg.get("timeout", None),
