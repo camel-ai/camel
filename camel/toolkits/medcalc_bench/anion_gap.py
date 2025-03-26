@@ -47,7 +47,7 @@ def compute_anion_gap_explanation(input_parameters):
     Returns:
         dict: Contains two key-value pairs:
             - "Explanation" (str): A detailed description of the calculation process.
-            - "Answer" (float): The patient's BMI.
+            - "Answer" (float): The patient's anion gap.
 
     Notes:
         - None

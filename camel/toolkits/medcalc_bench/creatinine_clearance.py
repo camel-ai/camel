@@ -92,7 +92,10 @@ def generate_cockcroft_gault_explanation(params):
 
     weight_exp, weight = weight_conversion_explanation(params["weight"])
 
-    output = "The formula for computing Cockcroft-Gault is given by CrCl = ((140 - age) * adjusted weight * (gender_coefficient)) / (serum creatinine * 72), where the gender_coefficient is 1 if male, and 0.85 if female. The serum creatinine concentration is in mg/dL.\n"
+    output = "The formula for computing Cockcroft-Gault is given by " \
+             "CrCl = ((140 - age) * adjusted weight * (gender_coefficient)) / (serum creatinine * 72), " \
+             "where the gender_coefficient is 1 if male, and 0.85 if female. " \
+             "The serum creatinine concentration is in mg/dL.\n"
     output += f"The patient's gender is {params['sex'].lower()}, "
     gender_coefficient = 1 if params["sex"] == "Male" else 0.85
     output += (
