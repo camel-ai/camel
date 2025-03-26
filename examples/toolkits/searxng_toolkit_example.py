@@ -26,47 +26,36 @@ logger = get_logger(__name__)
 
 
 def get_searxng_instance() -> Optional[str]:
-    """Get SearxNG instance URL from environment variable."""
+    r"""Get SearxNG instance URL from environment variable.
+
+    Returns:
+        Optional[str]: The SearxNG instance URL if set, None otherwise.
+    """
     instance_url = os.getenv('SEARXNG_URL')
     if not instance_url:
         logger.warning(
             "SEARXNG_URL environment variable not set. "
             "Please set it to your SearxNG instance URL."
         )
-        return None
     return instance_url
 
 
-def demonstrate_search(toolkit: SearxNGToolkit, agent: ChatAgent) -> None:
-    """Demonstrate basic search functionality."""
-    logger.info("Demonstrating basic search...")
-    query = "CAMEL AI framework"
-    response = agent.step(f"Search for information about {query}")
-    logger.info(f"Search results for '{query}':")
-    logger.info(str(response.info['tool_calls'])[:1000])
-
-
-def demonstrate_category_search(
-    toolkit: SearxNGToolkit, agent: ChatAgent
-) -> None:
-    """Demonstrate category-specific search."""
-    logger.info("Demonstrating category-specific search...")
-    query = "artificial intelligence"
-    response = agent.step(
-        f"Search for recent news about {query} in the news category"
-    )
-    logger.info(f"Category search results for '{query}':")
-    logger.info(str(response.info['tool_calls'])[:1000])
-
-
-def main():
-    """Run the SearxNG toolkit examples."""
+def main() -> None:
+    r"""Run the SearxNG toolkit example."""
+    # Get SearxNG instance URL
     instance_url = get_searxng_instance()
     if not instance_url:
+        logger.error(
+            "\nTo run this example:"
+            "\n1. Find a SearxNG instance (self-host or use public instance)"
+            "\n2. Set the SEARXNG_URL environment variable:"
+            "\n   export SEARXNG_URL='https://your-searxng-instance.com'"
+            "\n\nPublic instances can be found at: https://searx.space"
+        )
         return
 
     # Initialize the toolkit
-    toolkit = SearxNGToolkit(
+    searxng_toolkit = SearxNGToolkit(
         searxng_host=instance_url,
         language="en",
         categories=["general", "news"],
@@ -75,28 +64,33 @@ def main():
     )
 
     # Initialize the model
-    model_config = ChatGPTConfig(temperature=0.0).as_dict()
     model = ModelFactory.create(
-        model_platform=ModelPlatformType.DEFAULT,
         model_type=ModelType.DEFAULT,
-        model_config_dict=model_config,
+        model_platform=ModelPlatformType.DEFAULT,
+        model_config_dict=ChatGPTConfig(temperature=0.0).as_dict(),
     )
 
-    # Set up the agent
+    # Create chat agent
     system_message = (
-        "You are a helpful assistant that can perform web searches using "
-        "SearxNG. Use the provided tools to search for information and "
-        "retrieve results."
+        "You are a helpful assistant that can search the web using SearxNG."
     )
     agent = ChatAgent(
         system_message=system_message,
         model=model,
-        tools=toolkit.get_tools(),
+        tools=[*searxng_toolkit.get_tools()],
     )
 
-    # Run demonstrations
-    demonstrate_search(toolkit, agent)
-    demonstrate_category_search(toolkit, agent)
+    # Example search query
+    query = "Tell me about the CAMEL AI framework"
+    response = agent.step(query)
+
+    # Print the response message content
+    print("\nAgent Response:")
+    print(response.msgs[0].content)
+
+    # Print tool calls if needed
+    print("\nTool Calls:")
+    print(response.info['tool_calls'])
 
 
 if __name__ == "__main__":
