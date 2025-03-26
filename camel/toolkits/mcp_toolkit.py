@@ -359,7 +359,7 @@ class MCPToolkit(BaseToolkit):
         .. code-block:: json
 
             {
-              "mcpWebServers": {
+              "mcpServers": {
                 "protected-server": {
                   "url": "https://example.com/mcp",
                   "timeout": 30,
@@ -388,7 +388,7 @@ class MCPToolkit(BaseToolkit):
                 "Servers from both sources will be combined."
             )
 
-        self.servers = servers or []
+        self.servers: List[_MCPServer] = servers or []
 
         if config_path:
             self.servers.extend(self._load_servers_from_config(config_path))
@@ -420,7 +420,6 @@ class MCPToolkit(BaseToolkit):
 
         all_servers = []
 
-        # Process local MCP servers
         mcp_servers = data.get("mcpServers", {})
         if not isinstance(mcp_servers, dict):
             logger.warning("'mcpServers' is not a dictionary, skipping...")
@@ -433,44 +432,18 @@ class MCPToolkit(BaseToolkit):
                 )
                 continue
 
-            if "command" not in cfg:
+            if "command" not in cfg and "url" not in cfg:
                 logger.warning(
-                    f"Missing required 'command' field for server '{name}'"
+                    f"Missing required 'command' or 'url' field for server "
+                    f"'{name}'"
                 )
                 continue
 
             server = _MCPServer(
-                command_or_url=cfg["command"],
+                command_or_url=cfg.get("command") or cfg.get("url"),
                 args=cfg.get("args", []),
                 env={**os.environ, **cfg.get("env", {})},
                 timeout=cfg.get("timeout", None),
-            )
-            all_servers.append(server)
-
-        # Process remote MCP web servers
-        mcp_web_servers = data.get("mcpWebServers", {})
-        if not isinstance(mcp_web_servers, dict):
-            logger.warning("'mcpWebServers' is not a dictionary, skipping...")
-            mcp_web_servers = {}
-
-        for name, cfg in mcp_web_servers.items():
-            if not isinstance(cfg, dict):
-                logger.warning(
-                    f"Configuration for web server '{name}' must"
-                    "be a dictionary"
-                )
-                continue
-
-            if "url" not in cfg:
-                logger.warning(
-                    f"Missing required 'url' field for web server '{name}'"
-                )
-                continue
-
-            server = _MCPServer(
-                command_or_url=cfg["url"],
-                timeout=cfg.get("timeout", None),
-                headers=cfg.get("headers", {}),
             )
             all_servers.append(server)
 
