@@ -168,7 +168,9 @@ class PythonVerifier(BaseVerifier):
 
         if self.required_packages:
             venv_python = os.path.join(
-                self.venv_path, self.bin_dir, "python.exe"
+                self.venv_path,
+                self.bin_dir,
+                "python.exe" if os.name == 'nt' else "python",
             )
             try:
                 subprocess.run(
@@ -286,7 +288,11 @@ class PythonVerifier(BaseVerifier):
 
         # Otherwise, run the code block,
         # which should already include a print(...) in the end
-        venv_python = os.path.join(self.venv_path, self.bin_dir, "python.exe")
+        venv_python = os.path.join(
+            self.venv_path,
+            self.bin_dir,
+            "python.exe" if os.name == 'nt' else "python",
+        )
         if not os.path.exists(venv_python):
             return VerificationResult(
                 status=VerificationOutcome.ERROR,
