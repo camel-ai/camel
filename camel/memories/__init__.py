@@ -14,6 +14,7 @@
 
 from .agent_memories import (
     ChatHistoryMemory,
+    GraphDBMemory,
     LongtermAgentMemory,
     VectorDBMemory,
 )
@@ -37,4 +38,5 @@ __all__ = [
     'VectorDBBlock',
     'LongtermAgentMemory',
     'GraphDBBlock',
+    'GraphDBMemory',
 ]

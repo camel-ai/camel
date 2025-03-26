@@ -40,7 +40,10 @@ def main():
     except Exception as e:
         print(f"Operation failed: {e}")
     finally:
-        if block is not None:  # Check if block was initialized
+        # You can comment this and
+        # open http://localhost:7474/browser/ in your browser and go to
+        # the Database Information tab on the left hand side to check the graph
+        if block is not None:
             print("Clearing the database...")
             block.clear()
             print("Database cleared successfully!")

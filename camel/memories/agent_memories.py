@@ -16,7 +16,7 @@ import warnings
 from typing import List, Optional
 
 from camel.memories.base import AgentMemory, BaseContextCreator
-from camel.memories.blocks import ChatHistoryBlock, VectorDBBlock
+from camel.memories.blocks import ChatHistoryBlock, GraphDBBlock, VectorDBBlock
 from camel.memories.records import ContextRecord, MemoryRecord
 from camel.storages.key_value_storages.base import BaseKeyValueStorage
 from camel.storages.vectordb_storages.base import BaseVectorStorage
@@ -151,6 +151,82 @@ class VectorDBMemory(AgentMemory):
     def clear(self) -> None:
         r"""Removes all records from the vector database memory."""
         self._vectordb_block.clear()
+
+
+class GraphDBMemory(AgentMemory):
+    r"""An agent memory wrapper of :obj:`GraphDBBlock`. This memory queries
+    messages stored in the graph database using similarity search or retrieves
+    recent messages if no query is provided.
+
+    Args:
+        context_creator (BaseContextCreator): A model context creator.
+        graph_db_block (GraphDBBlock): A graph database block instance.
+        retrieve_limit (int, optional): The maximum number of messages
+            to retrieve. Defaults to 25.
+        agent_id (str, optional): The ID of the agent associated with the
+            messages stored in the graph database.
+    """
+
+    def __init__(
+        self,
+        context_creator: BaseContextCreator,
+        graph_db_block: GraphDBBlock,
+        retrieve_limit: int = 25,
+        agent_id: Optional[str] = None,
+    ) -> None:
+        self._context_creator = context_creator
+        self._graph_db_block = graph_db_block
+        self._retrieve_limit = retrieve_limit
+        self._agent_id = agent_id
+        self._current_query: Optional[str] = None
+
+    @property
+    def agent_id(self) -> Optional[str]:
+        return self._agent_id
+
+    @agent_id.setter
+    def agent_id(self, val: Optional[str]) -> None:
+        self._agent_id = val
+
+    def retrieve(self) -> List[ContextRecord]:
+        r"""Retrieves context records from the graph database.
+
+        If a current query is set (based on the last user message), it performs
+        a similarity search. Otherwise, it retrieves recent records.
+
+        Returns:
+            List[ContextRecord]: A list of context records.
+        """
+        return self._graph_db_block.retrieve(
+            query=self._current_query,
+            numberOfNearestNeighbours=self._retrieve_limit,
+        )
+
+    def write_records(self, records: List[MemoryRecord]) -> None:
+        r"""Writes records to the graph database and updates the current query
+        based on the last user message.
+
+        Args:
+            records (List[MemoryRecord]): List of memory records to write.
+        """
+        for record in records:
+            if record.role_at_backend == OpenAIBackendRole.USER:
+                self._current_query = record.message.content
+            if record.agent_id == "" and self.agent_id is not None:
+                record.agent_id = self.agent_id
+        self._graph_db_block.write_records(records)
+
+    def get_context_creator(self) -> BaseContextCreator:
+        r"""Returns the context creator used by the memory.
+
+        Returns:
+            BaseContextCreator: The context creator.
+        """
+        return self._context_creator
+
+    def clear(self) -> None:
+        r"""Clears all records from the graph database."""
+        self._graph_db_block.clear()
 
 
 class LongtermAgentMemory(AgentMemory):
