@@ -126,6 +126,7 @@ class SingleStepEnv:
             await self.verifier.cleanup()
             self._states = []
             self._states_done = []
+            self.current_batch_size = 0
             logger.info('Environment closed successfully')
         except Exception as e:
             logger.error(f'Failed to close environment: {e}')
@@ -214,12 +215,9 @@ class SingleStepEnv:
 
     async def step(
         self, action: Union[Action, List[Action]]
-    ) -> Union[
-        Tuple[Observation, float, bool, Dict[str, Any]],
-        List[Tuple[Observation, float, bool, Dict[str, Any]]],
-    ]:
+    ) -> List[StepResult]:
         r"""Process actions for a subset of states and update their finished
-            status.
+        status.
 
         Args:
             action: Single action (for batch_size=1 or micro-batch of size 1)
@@ -228,8 +226,7 @@ class SingleStepEnv:
                 which state it corresponds to.
 
         Returns:
-            Union[StepResult, List[StepResult]]: StepResult or list of
-                StepResults for the processed states.
+            List[StepResult]: List of StepResults for the processed states.
 
         Raises:
             RuntimeError: If environment isn't set up or episode has ended.
@@ -303,9 +300,7 @@ class SingleStepEnv:
             indices.append(act.index)
         if len(set(indices)) != len(indices):
             raise ValueError("Duplicate state indices in actions.")
-        for unvalidated_idx in indices:
-            assert unvalidated_idx is not None
-            idx: int = unvalidated_idx
+        for idx in indices:
             if idx < 0 or idx >= len(self._states):
                 raise ValueError(f"Invalid state index {idx}.")
             if self._states_done[idx]:
@@ -349,10 +344,10 @@ class SingleStepEnv:
                     "state": self._states[idx],
                 },
             )
-            step_results.append(step_result.as_tuple())
+            step_results.append(step_result)
             self._states_done[idx] = True
 
-        return step_results[0] if len(step_results) == 1 else step_results
+        return step_results
 
     async def _compute_reward_batch(
         self,
@@ -373,6 +368,12 @@ class SingleStepEnv:
                 - List of total rewards for each solution.
                 - List of reward component dictionaries for each solution.
         """
+        if len(proposed_solutions) != len(verification_results):
+            raise ValueError(
+                f"Length mismatch: {len(proposed_solutions)} solutions vs "
+                f"{len(verification_results)} verification results"
+            )
+
         total_rewards = []
         rewards_dicts = []
 
@@ -413,9 +414,20 @@ class SingleStepEnv:
         return {}
 
     def _batch_done(self) -> bool:
+        r"""Check if all states in the current batch are done.
+
+        Returns:
+            bool: True if all states are marked as done, False otherwise.
+        """
         return all(self._states_done)
 
     def _batch_started(self) -> bool:
+        r"""Check if any state in the current batch is done.
+
+        Returns:
+            bool: True if at least one state is marked as done, False
+                otherwise.
+        """
         return any(self._states_done)
 
     @property

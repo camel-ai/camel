@@ -89,8 +89,7 @@ class StepResult(BaseModel):
     def as_tuple(
         self,
     ) -> Tuple[Observation, float, bool, Dict[str, Any]]:
-        r"""Returns all fields of the model as a tuple, in
-        declaration order."""
+        r"""Returns all fields of the model as a tuple, in declaration order"""
         self.info["rewards_dict"] = self.rewards_dict
         return (self.observation, self.reward, self.done, self.info)
 
