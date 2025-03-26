@@ -150,20 +150,22 @@ def test_create_pull_request(mock_github):
 
     try:
         # Call the function
+        pr_title = """[GitHub Agent] Solved issue: Time complexity
+    for product_of_array_except_self.py"""
+        body = "Fixes #1"
+
         pr = github_toolkit.create_pull_request(
             file_path="path/to/file",
             branch_name="branch_name",
             new_content="This is the content of the file",
-            pr_title="""[GitHub Agent] Solved issue: Time complexity
-            for product_of_array_except_self.py""",
-            body="Fixes #1",
+            pr_title=pr_title,
+            body=body,
         )
     finally:
         # Restore the original method
         github_toolkit.create_pull_request = original_method
 
-    expected_response = """Title: [GitHub Agent] Solved issue: Time complexity 
-    for product_of_array_except_self.py\nBody: Fixes #1\n"""
+    expected_response = f"Title: {pr_title}\nBody: {body}\n"
     assert pr == expected_response, f"Expected {expected_response}, got {pr}"
 
 
