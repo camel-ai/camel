@@ -65,7 +65,7 @@ class ScoreBasedContextCreator(BaseContextCreator):
         self,
         records: List[ContextRecord],
     ) -> Tuple[List[OpenAIMessage], int]:
-        """Constructs conversation context from chat history while respecting
+        r"""Constructs conversation context from chat history while respecting
             token limits.
 
         Key strategies:
