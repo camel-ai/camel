@@ -534,7 +534,7 @@ wheels = [
 
 [[package]]
 name = "camel-ai"
-version = "0.2.36"
+version = "0.2.37"
 source = { editable = "." }
 dependencies = [
     { name = "colorama" },
@@ -934,8 +934,8 @@ requires-dist = [
     { name = "pydantic", specifier = ">=1.9,<2.10" },
     { name = "pydub", marker = "extra == 'all'", specifier = ">=0.25.1,<0.26" },
     { name = "pydub", marker = "extra == 'media-tools'", specifier = ">=0.25.1,<0.26" },
-    { name = "pygithub", marker = "extra == 'all'", specifier = ">=2.3.0,<3" },
-    { name = "pygithub", marker = "extra == 'communication-tools'", specifier = ">=2.3.0,<3" },
+    { name = "pygithub", marker = "extra == 'all'", specifier = ">=2.6.0,<3" },
+    { name = "pygithub", marker = "extra == 'communication-tools'", specifier = ">=2.6.0,<3" },
     { name = "pymilvus", marker = "extra == 'all'", specifier = ">=2.4.0,<3" },
     { name = "pymilvus", marker = "extra == 'rag'", specifier = ">=2.4.0,<3" },
     { name = "pymilvus", marker = "extra == 'storage'", specifier = ">=2.4.0,<3" },
