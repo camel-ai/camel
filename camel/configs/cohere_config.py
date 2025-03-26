@@ -26,7 +26,7 @@ class CohereConfig(BaseConfig):
         temperature (float, optional): Sampling temperature to use, between
             :obj:`0` and :obj:`2`. Higher values make the output more random,
             while lower values make it more focused and deterministic.
-            (default: :obj:`0.3`)
+            (default: :obj:`None`)
         documents (list, optional): A list of relevant documents that the
             model can cite to generate a more accurate reply. Each document is
             either a string or document object with content and metadata.
@@ -47,30 +47,31 @@ class CohereConfig(BaseConfig):
             `1.0`. Used to reduce repetitiveness of generated tokens. The
             higher the value, the stronger a penalty is applied to previously
             present tokens, proportional to how many times they have already
-            appeared in the prompt or prior generation. (default: :obj:`0.0`)
+            appeared in the prompt or prior generation.
+            (default: :obj:`None`)
         presence_penalty (float, optional): Min value of `0.0`, max value of
             `1.0`. Used to reduce repetitiveness of generated tokens. Similar
             to `frequency_penalty`, except that this penalty is applied
             equally to all tokens that have already appeared, regardless of
-            their exact frequencies. (default: :obj:`0.0`)
+            their exact frequencies. (default: :obj:`None`)
         k (int, optional): Ensures only the top k most likely tokens are
             considered for generation at each step. Min value of `0`, max
-            value of `500`. (default: :obj:`0`)
+            value of `500`. (default: :obj:`None`)
         p (float, optional): Ensures that only the most likely tokens, with
             total probability mass of `p`, are considered for generation at
             each step. If both k and p are enabled, `p` acts after `k`. Min
-            value of `0.01`, max value of `0.99`. (default: :obj:`0.75`)
+            value of `0.01`, max value of `0.99`. (default: :obj:`None`)
     """
 
-    temperature: Optional[float] = 0.2
+    temperature: Optional[float] = None
     documents: Optional[list] = None
     max_tokens: Optional[int] = None
     stop_sequences: Optional[List[str]] = None
     seed: Optional[int] = None
-    frequency_penalty: Optional[float] = 0.0
-    presence_penalty: Optional[float] = 0.0
-    k: Optional[int] = 0
-    p: Optional[float] = 0.75
+    frequency_penalty: Optional[float] = None
+    presence_penalty: Optional[float] = None
+    k: Optional[int] = None
+    p: Optional[float] = None
 
 
 COHERE_API_PARAMS = {param for param in CohereConfig().model_fields.keys()}
