@@ -14,24 +14,31 @@
 
 from camel.agents import ChatAgent
 from camel.memories import GraphDBBlock, GraphDBMemory
-from camel.memories.context_creators.score_based import ScoreBasedContextCreator
+from camel.memories.context_creators.score_based import (
+    ScoreBasedContextCreator,
+)
 from camel.models.model_factory import ModelFactory
 from camel.storages.graph_storages import Neo4jGraph
 from camel.types import ModelPlatformType, ModelType
 from camel.utils import OpenAITokenCounter
 
+
 def main():
     # --- Setup Instructions ---
-    # 1. Ensure Neo4j is installed and running locally (e.g., via Neo4j Desktop or Docker).
+    # 1. Ensure Neo4j is installed and running locally (e.g., via Neo4j
+    # Desktop or Docker).
     # 2. Install the Neo4j Python driver: `pip install neo4j`.
-    # 3. Set your OpenAI API key if using OpenAIEmbedding (default for GraphDBBlock):
+    # 3. Set your OpenAI API key if using OpenAIEmbedding
+    #    (default for GraphDBBlock):
     #    export OPENAI_API_KEY='your-api-key-here'
     # 4. Update the Neo4j connection details below to match your instance.
 
     # Neo4j connection details
-    url = "neo4j://localhost:7687"  # Default Bolt URL for a local Neo4j instance
-    username = "neo4j"              # Default username
-    password = "u4CQDJCKVs@4-LW" # Replace with your Neo4j password
+    url = (
+        "neo4j://localhost:7687"  # Default Bolt URL for a local Neo4j instance
+    )
+    username = "neo4j"  # Default username
+    password = "u4CQDJCKVs@4-LW"  # Replace with your Neo4j password
 
     # Initialize Neo4jGraph storage
     storage = Neo4jGraph(url=url, username=username, password=password)
@@ -56,7 +63,7 @@ def main():
         context_creator=context_creator,
         graph_db_block=graph_db_block,
         retrieve_limit=5,  # Limit retrieval to 5 records
-        agent_id="example_agent"  # Unique identifier for the agent
+        agent_id="example_agent",  # Unique identifier for the agent
     )
 
     # Create a ChatAgent with GraphDBMemory
@@ -92,8 +99,9 @@ def main():
         print(f"""Role: {record.memory_record.message.role_name}, 
               Content: {record.memory_record.message.content}""")
 
-    # Open http://localhost:7474/browser/ in your browser and go to 
+    # Open http://localhost:7474/browser/ in your browser and go to
     # the Database Information tab on the left hand side to check the graph
-    
+
+
 if __name__ == "__main__":
     main()
