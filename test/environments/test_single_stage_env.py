@@ -54,7 +54,6 @@ class MockGenerator(BaseGenerator):
 
 @pytest.mark.asyncio
 async def test_single_step_env_lifecycle_single_generator():
-
     predefined_data = [
         {
             "question": "What is 2 + 2?",
@@ -70,7 +69,6 @@ async def test_single_step_env_lifecycle_single_generator():
         },
     ]
     dataset = MockGenerator(predefined_data, seed=42)
-
 
     mock_verifier = MagicMock()
     mock_verifier.setup = AsyncMock()
@@ -129,7 +127,8 @@ async def test_single_step_env_lifecycle_single_generator():
     assert done2 is True
     assert info2["rewards_dict"].get("custom_reward", None) == 5
 
-    # Note: Skipping deterministic sampling test as BaseGenerator doesn't use seed in the same way
+    # Note: Skipping deterministic sampling test as BaseGenerator
+    # doesn't use seed in the same way
     # Test close
     await env.close()
     assert env._is_setup is False
@@ -357,9 +356,9 @@ async def test_batched_single_step_env_lifecycle():
     assert env._is_setup is False
     mock_verifier.cleanup.assert_awaited_once()
 
+
 @pytest.mark.asyncio
 async def test_batched_single_step_env_lifecycle_generator():
-
     predefined_data = [
         {
             "question": "What is 2 + 2?",
@@ -376,13 +375,15 @@ async def test_batched_single_step_env_lifecycle_generator():
         {
             "question": "Who wrote 'Romeo and Juliet'?",
             "final_answer": "Shakespeare",
-            "rationale": "William Shakespeare is the author of 'Romeo and Juliet'.",
+            "rationale": "William Shakespeare is the author of 'Romeo and "
+            "Juliet'.",
             "metadata": {"difficulty": "medium"},
         },
         {
             "question": "What is the boiling point of water in Celsius?",
             "final_answer": "100",
-            "rationale": "Water boils at 100 degrees Celsius at standard pressure.",
+            "rationale": "Water boils at 100 degrees Celsius at standard "
+            "pressure.",
             "metadata": {"difficulty": "easy"},
         },
     ]
@@ -423,8 +424,8 @@ async def test_batched_single_step_env_lifecycle_generator():
 
     # Test step with 2 actions
     actions = [
-        Action(index=0, llm_response="4"),           # First question
-        Action(index=2, llm_response="Shakespeare"), # Third question
+        Action(index=0, llm_response="4"),  # First question
+        Action(index=2, llm_response="Shakespeare"),  # Third question
     ]
     results = await env.step(actions)
     assert isinstance(results, list)
@@ -437,8 +438,8 @@ async def test_batched_single_step_env_lifecycle_generator():
 
     # Test step with remaining 2 actions
     actions = [
-        Action(index=1, llm_response="Paris"), # Second question
-        Action(index=3, llm_response="100"),   # Fourth question
+        Action(index=1, llm_response="Paris"),  # Second question
+        Action(index=3, llm_response="100"),  # Fourth question
     ]
     results = await env.step(actions)
     assert isinstance(results, list)
@@ -454,6 +455,7 @@ async def test_batched_single_step_env_lifecycle_generator():
     await env.close()
     assert env._is_setup is False
     mock_verifier.cleanup.assert_awaited_once()
+
 
 def create_mock_verifier():
     verifier = MagicMock()
