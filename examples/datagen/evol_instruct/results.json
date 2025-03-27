@@ -1,0 +1,552 @@
+[
+    {
+        "0": [
+            {
+                "instruction": "Let \\[f(x) = \\left\\{\n\\begin{array}{cl} ax+3, &\\text{ if }x>2, \\\\\nx-5 &\\text{ if } -2 \\le x \\le 2, \\\\\n2x-b &\\text{ if } x <-2.\n\\end{array}\n\\right.\\]Find $a+b$ if the piecewise function is continuous (which means that its graph can be drawn without lifting your pencil from the paper).",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "Let \\[ f(x) = \\left\\{\n\\begin{array}{cl} ax + 3, & \\text{if } x > 3, \\\\\nx^2 - 4, & \\text{if } -3 \\le x \\le 3, \\\\\nbx + 1, & \\text{if } x < -3.\n\\end{array}\n\\right.\\]\nDetermine the values of \\( a \\) and \\( b \\) such that the function \\( f(x) \\) is continuous across its entire domain, and compute the value of \\( a^2 + b^2 \\).",
+                "method": "expansion",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 3,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "Let \\[ f(x) = \\left\\{\n\\begin{array}{cl} ax + 4, & \\text{ if } x > 3, \\\\\n2x - c, & \\text{ if } -3 \\leq x \\leq 3, \\\\\nbx + 1, & \\text{ if } x < -3.\n\\end{array}\n\\right. \\] \nDetermine the values of \\( a \\), \\( b \\), and \\( c \\) such that the piecewise function is continuous at the transition points \\( x = 3 \\) and \\( x = -3 \\). Then, calculate the value of \\( a + b + c \\).",
+                "method": "constraints",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 5,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
+        ],
+        "1": [
+            {
+                "instruction": "Let \\[ f(x) = \\left\\{\n\\begin{array}{cl} ax + 4, & \\text{ if } x > 3, \\\\\n2x - c, & \\text{ if } -3 \\leq x \\leq 3, \\\\\nbx + 1, & \\text{ if } x < -3.\n\\end{array}\n\\right. \\] \nDetermine the values of \\( a \\), \\( b \\), and \\( c \\) such that the piecewise function is continuous at the transition points \\( x = 3 \\) and \\( x = -3 \\). Then, calculate the value of \\( a + b + c \\).",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "Let \\[ f(x) = \\left\\{\n\\begin{array}{cl} ax + 4, & \\text{ if } x > 4, \\\\\nkx^2 - 2, & \\text{ if } -4 \\leq x \\leq 4, \\\\\nbx + 1, & \\text{ if } x < -4.\n\\end{array}\n\\right. \\] \nDetermine the values of \\( a \\), \\( b \\), and \\( k \\) such that the piecewise function is continuous at the transition points \\( x = 4 \\) and \\( x = -4 \\). Additionally, evaluate the expression \\( a^2 + b^2 + k^2 \\).",
+                "method": "constraints",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "Let \\[ f(x) = \\left\\{\n\\begin{array}{cl} ax^2 + 4, & \\text{ if } x > 3, \\\\\n2x + d, & \\text{ if } -3 \\leq x \\leq 3, \\\\\nbx - 5, & \\text{ if } x < -3.\n\\end{array}\n\\right. \\] \n\nDetermine the values of \\( a \\), \\( b \\), and \\( d \\) such that the piecewise function is continuous at the transition points \\( x = 3 \\) and \\( x = -3 \\). Additionally, find the value of \\( a^2 + b^2 + d \\).",
+                "method": "deepening",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
+        ],
+        "2": [
+            {
+                "instruction": "Let \\[ f(x) = \\left\\{\n\\begin{array}{cl} ax + 4, & \\text{ if } x > 4, \\\\\nkx^2 - 2, & \\text{ if } -4 \\leq x \\leq 4, \\\\\nbx + 1, & \\text{ if } x < -4.\n\\end{array}\n\\right. \\] \nDetermine the values of \\( a \\), \\( b \\), and \\( k \\) such that the piecewise function is continuous at the transition points \\( x = 4 \\) and \\( x = -4 \\). Additionally, evaluate the expression \\( a^2 + b^2 + k^2 \\).",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "Let \n\\[\nf(x) = \\left\\{\n\\begin{array}{cl} \nax + 4, & \\text{ if } x > 4, \\\\\nkx^2 - 2, & \\text{ if } -4 \\leq x \\leq 4, \\\\\nbx + 1, & \\text{ if } x < -4.\n\\end{array}\n\\right. \n\\]\nDetermine the values of \\( a \\), \\( b \\), and \\( k \\) such that the piecewise function is continuous at the transition points \\( x = 4 \\) and \\( x = -4 \\), and additionally, ensure that the derivative \\( f'(x) \\) is also continuous at these points. Finally, compute the value of the expression \\( (a + b + k)^2 - (ab + ak + bk) \\).",
+                "method": "expansion",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 5,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "Let \n\n\\[\nf(x) = \\begin{cases} \nax + 4, & \\text{ if } x > 4, \\\\\nkx^2 - 2, & \\text{ if } -4 \\leq x \\leq 4, \\\\\nbx + 1, & \\text{ if } x < -4.\n\\end{cases}\n\\]\n\nTo ensure the continuity of the piecewise function at the transition points \\( x = 4 \\) and \\( x = -4 \\), derive the conditions on the coefficients \\( a \\), \\( b \\), and \\( k \\) such that:\n\n1. The limit from the left at \\( x = 4 \\) equals the limit from the right at \\( x = 4 \\).\n2. The limit from the left at \\( x = -4 \\) equals the limit from the right at \\( x = -4 \\).\n\nFurthermore, compute the value of the expression \\( (a + b + k)^2 + (a - b)^2 + (k - 4)^2 \\) given these continuity conditions.",
+                "method": "deepening",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
+        ],
+        "3": [
+            {
+                "instruction": "Let \n\\[\nf(x) = \\left\\{\n\\begin{array}{cl} \nax + 4, & \\text{ if } x > 4, \\\\\nkx^2 - 2, & \\text{ if } -4 \\leq x \\leq 4, \\\\\nbx + 1, & \\text{ if } x < -4.\n\\end{array}\n\\right. \n\\]\nDetermine the values of \\( a \\), \\( b \\), and \\( k \\) such that the piecewise function is continuous at the transition points \\( x = 4 \\) and \\( x = -4 \\), and additionally, ensure that the derivative \\( f'(x) \\) is also continuous at these points. Finally, compute the value of the expression \\( (a + b + k)^2 - (ab + ak + bk) \\).",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "Let \n\\[\nf(x) = \\left\\{\n\\begin{array}{cl} \nax + 4, & \\text{ if } x > 4, \\\\\nkx^2 - 2, & \\text{ if } -4 \\leq x \\leq 4, \\\\\nbx + 1, & \\text{ if } x < -4.\n\\end{array}\n\\right. \n\\]\nDetermine the values of \\( a \\), \\( b \\), and \\( k \\) such that the piecewise function is both continuous and differentiable at the transition points \\( x = 4 \\) and \\( x = -4 \\). Specifically, ensure that the function and its first derivative \\( f'(x) \\) are equal at these points. Finally, calculate the value of the expression \\( (a + b + k)^3 - 3(a + b + k)(ab + ak + bk) + 3(ab + ak + bk)^2 \\).",
+                "method": "condense",
+                "scores": {
+                    "diversity": 4,
+                    "difficulty": 5,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "Let \n\\[\nf(x) = \\left\\{\n\\begin{array}{cl} \nax + 6, & \\text{ if } x > 5, \\\\\nkx^3 - 3x, & \\text{ if } -5 \\leq x \\leq 5, \\\\\nbx + 2, & \\text{ if } x < -5.\n\\end{array}\n\\right. \n\\]\nDetermine the values of \\( a \\), \\( b \\), and \\( k \\) such that the piecewise function is continuous at the transition points \\( x = 5 \\) and \\( x = -5 \\), and ensure that both the first derivative \\( f'(x) \\) and the second derivative \\( f''(x) \\) are continuous at these points. Finally, compute the value of the expression \\( (a + b + k)^3 - 3(a + b + k)(ab + ak + bk) \\).",
+                "method": "condense",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 5,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
+        ]
+    },
+    {
+        "0": [
+            {
+                "instruction": "A rectangular band formation is a formation with $m$ band members in each of $r$ rows, where $m$ and $r$ are integers. A particular band has less than 100 band members. The director arranges them in a rectangular formation and finds that he has two members left over. If he increases the number of members in each row by 1 and reduces the number of rows by 2, there are exactly enough places in the new formation for each band member. What is the largest number of members the band could have?",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "A band consists of a total of \\(N\\) members, where \\(N\\) is a positive integer less than 100. The director initially arranges the band members in a rectangular formation with \\(m\\) members in each of \\(r\\) rows, leaving 3 members unassigned. When he increases the number of members per row by 2 and decreases the number of rows by 1, the new arrangement accommodates exactly all the band members without any leftover. \n\nDetermine the largest possible value of \\(N\\) that satisfies these conditions, and express your solution in terms of \\(N\\) as a quadratic equation in \\(m\\) and \\(r\\).",
+                "method": "expansion",
+                "scores": {
+                    "diversity": 4,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "A rectangular band formation consists of \\( m \\) band members in each of \\( r \\) rows, where \\( m \\) and \\( r \\) are positive integers and the total number of band members \\( N \\) satisfies \\( N < 100 \\). Initially, the director finds that when arranged in this rectangular formation, there are 2 members left over, leading to the equation:\n\n\\[\nN = mr + 2\n\\]\n\nWhen the director increases the number of members in each row by 2 and reduces the number of rows by 3, the new arrangement perfectly accommodates all band members. This gives the equation:\n\n\\[\nN = (m + 2)(r - 3)\n\\]\n\nDetermine the largest possible value of \\( N \\) that satisfies both conditions.",
+                "method": "deepening",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
+        ],
+        "1": [
+            {
+                "instruction": "A band consists of a total of \\(N\\) members, where \\(N\\) is a positive integer less than 100. The director initially arranges the band members in a rectangular formation with \\(m\\) members in each of \\(r\\) rows, leaving 3 members unassigned. When he increases the number of members per row by 2 and decreases the number of rows by 1, the new arrangement accommodates exactly all the band members without any leftover. \n\nDetermine the largest possible value of \\(N\\) that satisfies these conditions, and express your solution in terms of \\(N\\) as a quadratic equation in \\(m\\) and \\(r\\).",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "A musical ensemble consists of \\(N\\) members, where \\(N\\) is a positive integer constrained by \\(1 \\leq N < 100\\). Initially, the ensemble is arranged in a rectangular grid of \\(m\\) members per row and \\(r\\) rows, with 3 members remaining unassigned. When the arrangement is modified by increasing the number of members per row by 3 and reducing the number of rows by 2, the new configuration accommodates all members precisely.\n\nGiven this scenario, derive the maximum feasible value of \\(N\\) that meets these criteria, and express your findings as a quadratic equation in terms of \\(m\\) and \\(r\\). Additionally, provide a detailed solution for \\(N\\) in terms of \\(m\\) and \\(r\\).",
+                "method": "constraints",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 3,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "A music ensemble consists of \\(N\\) members, where \\(N\\) is a positive integer less than 100. The conductor initially arranges the members in a rectangular formation of \\(m\\) members in each of \\(r\\) rows, resulting in 3 members remaining unassigned. Upon increasing the number of members per row by 3 and decreasing the number of rows by 2, the new arrangement perfectly accommodates all \\(N\\) members without any leftover.\n\nFormulate a quadratic equation involving \\(m\\) and \\(r\\) that represents the conditions given, and subsequently determine the largest possible value of \\(N\\) that meets these criteria.",
+                "method": "deepening",
+                "scores": {
+                    "diversity": 2,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
+        ],
+        "2": [
+            {
+                "instruction": "A musical ensemble consists of \\(N\\) members, where \\(N\\) is a positive integer constrained by \\(1 \\leq N < 100\\). Initially, the ensemble is arranged in a rectangular grid of \\(m\\) members per row and \\(r\\) rows, with 3 members remaining unassigned. When the arrangement is modified by increasing the number of members per row by 3 and reducing the number of rows by 2, the new configuration accommodates all members precisely.\n\nGiven this scenario, derive the maximum feasible value of \\(N\\) that meets these criteria, and express your findings as a quadratic equation in terms of \\(m\\) and \\(r\\). Additionally, provide a detailed solution for \\(N\\) in terms of \\(m\\) and \\(r\\).",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "A musical ensemble consists of \\(N\\) members, where \\(N\\) is a positive integer constrained by \\(1 \\leq N < 100\\). The ensemble is initially arranged in a rectangular grid of \\(m\\) members per row and \\(r\\) rows, with \\(k\\) members remaining unassigned, where \\(k\\) is a positive integer less than \\(m\\). Upon modifying the configuration by increasing the number of members per row by \\(p\\) and reducing the number of rows by \\(q\\), the new arrangement accommodates all members exactly.\n\nGiven this scenario, derive the maximum feasible value of \\(N\\) that satisfies these conditions, and express your findings as a quadratic equation in terms of \\(m\\), \\(r\\), \\(k\\), \\(p\\), and \\(q\\). Furthermore, provide a detailed solution for \\(N\\) in terms of \\(m\\) and \\(r\\), while incorporating the parameters \\(k\\), \\(p\\), and \\(q\\).",
+                "method": "expansion",
+                "scores": {
+                    "diversity": 4,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "A musical ensemble consists of \\(N\\) members, where \\(N\\) is a positive integer constrained by \\(1 \\leq N < 100\\). Initially, the ensemble is arranged in a rectangular grid of \\(m\\) members per row and \\(r\\) rows, with a certain number \\(k\\) of members remaining unassigned. When the arrangement is modified by increasing the number of members per row by \\(p\\) and reducing the number of rows by \\(q\\), the new configuration accommodates all members precisely.\n\nGiven this scenario, formulate the relationship between \\(N\\), \\(m\\), \\(r\\), \\(k\\), \\(p\\), and \\(q\\) leading to a quadratic equation. Specifically, derive the maximum feasible value of \\(N\\) under these constraints, and express your findings as a function of \\(m\\) and \\(r\\) in terms of \\(k\\), \\(p\\), and \\(q\\). Please provide a detailed solution for \\(N\\) in terms of \\(m\\) and \\(r\\), including the parameters \\(k\\), \\(p\\), and \\(q\\).",
+                "method": "constraints",
+                "scores": {
+                    "diversity": 4,
+                    "difficulty": 5,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
+        ],
+        "3": [
+            {
+                "instruction": "A musical ensemble consists of \\(N\\) members, where \\(N\\) is a positive integer constrained by \\(1 \\leq N < 100\\). Initially, the ensemble is arranged in a rectangular grid of \\(m\\) members per row and \\(r\\) rows, with a certain number \\(k\\) of members remaining unassigned. When the arrangement is modified by increasing the number of members per row by \\(p\\) and reducing the number of rows by \\(q\\), the new configuration accommodates all members precisely.\n\nGiven this scenario, formulate the relationship between \\(N\\), \\(m\\), \\(r\\), \\(k\\), \\(p\\), and \\(q\\) leading to a quadratic equation. Specifically, derive the maximum feasible value of \\(N\\) under these constraints, and express your findings as a function of \\(m\\) and \\(r\\) in terms of \\(k\\), \\(p\\), and \\(q\\). Please provide a detailed solution for \\(N\\) in terms of \\(m\\) and \\(r\\), including the parameters \\(k\\), \\(p\\), and \\(q\\).",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "A musical ensemble consists of \\(N\\) members, where \\(N\\) is a positive integer constrained by \\(1 \\leq N < 100\\). The members are initially arranged in a rectangular grid of \\(m\\) members per row and \\(r\\) rows, with \\(k\\) members remaining unassigned, such that \\(N = mr + k\\). \n\nWhen the arrangement is modified by increasing the number of members per row by \\(p\\) and reducing the number of rows by \\(q\\), the new configuration accommodates all members precisely, leading to the equation \\(N = (m + p)(r - q)\\).\n\nGiven these configurations, derive the quadratic equation that relates \\(N\\), \\(m\\), \\(r\\), \\(k\\), \\(p\\), and \\(q\\). Furthermore, determine the maximum feasible value of \\(N\\) under these constraints and express \\(N\\) as a function of \\(m\\), \\(r\\), \\(k\\), \\(p\\), and \\(q\\). Provide a thorough solution detailing the steps taken to arrive at this function and confirm the conditions under which it holds.",
+                "method": "condense",
+                "scores": {
+                    "diversity": 4,
+                    "difficulty": 5,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "Consider a musical ensemble consisting of \\( N \\) members, where \\( N \\) is a positive integer constrained by \\( 1 \\leq N < 100 \\). The ensemble is initially arranged in a rectangular grid with \\( m \\) members per row and \\( r \\) rows, leaving \\( k \\) members unassigned such that \\( k < m \\) and \\( k \\) is a non-negative integer. When the arrangement changes by increasing the number of members per row by \\( p \\) (where \\( p \\) is a positive integer) and decreasing the number of rows by \\( q \\) (where \\( q \\) is a positive integer), the new configuration accommodates all members exactly.\n\nYour task is to formulate a relationship that connects \\( N \\), \\( m \\), \\( r \\), \\( k \\), \\( p \\), and \\( q \\) leading to a quadratic equation. Specifically, derive the maximum feasible value of \\( N \\) given these constraints. Express \\( N \\) as a function of \\( m \\) and \\( r \\) in terms of \\( k \\), \\( p \\), and \\( q \\), and provide a detailed solution that includes:\n\n1. The initial arrangement equation: \\( N = m \\cdot r + k \\)\n2. The modified arrangement equation: \\( N = (m + p)(r - q) \\)\n3. A quadratic equation derived from equating the two expressions for \\( N \\).\n4. The explicit form of \\( N \\) in terms of \\( m \\), \\( r \\), \\( k \\), \\( p \\), and \\( q \\).\n\nFind the maximum \\( N \\) under the specified constraints, and prove that your derived function is valid for the given range of \\( N \\).",
+                "method": "condense",
+                "scores": {
+                    "diversity": 4,
+                    "difficulty": 5,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
+        ]
+    },
+    {
+        "0": [
+            {
+                "instruction": "Find the center of the circle with equation $x^2 - 6x + y^2 + 2y = 9$.",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "Determine the coordinates of the center of the circle defined by the equation \\( 4(x^2 - 3x) + 4(y^2 + y) = 36 \\), and express your answer in simplified form.",
+                "method": "deepening",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 3,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "Determine the coordinates of the center of the circle defined by the equation \\( 3x^2 + 3y^2 - 18x + 12y - 27 = 0 \\) by rewriting the equation in standard form and identifying the center directly from it.",
+                "method": "expansion",
+                "scores": {
+                    "diversity": 2,
+                    "difficulty": 3,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
+        ],
+        "1": [
+            {
+                "instruction": "Determine the coordinates of the center of the circle defined by the equation \\( 4(x^2 - 3x) + 4(y^2 + y) = 36 \\), and express your answer in simplified form.",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "Given the equation of a circle in the form \\( 4(x^2 - 3x) + 4(y^2 + y) = 36 \\), first transform this equation into standard form by completing the square for both the \\(x\\) and \\(y\\) variables. After finding the center of the circle, express the coordinates of the center as a function of the parameters \\(a\\) and \\(b\\) defined by \\(a = -\\frac{b}{2}\\) for the \\(x\\) component and \\(b = -\\frac{c}{2}\\) for the \\(y\\) component. Finally, compute the exact coordinates of the center and represent your answer as a simplified ordered pair \\((h, k)\\).",
+                "method": "expansion",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "Given the equation of the circle \\( 4(x^2 - 3x) + 4(y^2 + y) = 36 \\), transform it into standard form by completing the square for both \\( x \\) and \\( y \\). Then, calculate the coordinates of the center of the circle, and express your answer as an ordered pair, \\((h, k)\\), where \\( h \\) and \\( k \\) are in their simplest form.",
+                "method": "constraints",
+                "scores": {
+                    "diversity": 2,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
+        ],
+        "2": [
+            {
+                "instruction": "Given the equation of a circle in the form \\( 4(x^2 - 3x) + 4(y^2 + y) = 36 \\), first transform this equation into standard form by completing the square for both the \\(x\\) and \\(y\\) variables. After finding the center of the circle, express the coordinates of the center as a function of the parameters \\(a\\) and \\(b\\) defined by \\(a = -\\frac{b}{2}\\) for the \\(x\\) component and \\(b = -\\frac{c}{2}\\) for the \\(y\\) component. Finally, compute the exact coordinates of the center and represent your answer as a simplified ordered pair \\((h, k)\\).",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "Given the equation of a circle in the form \\( 9(x^2 + 4x) + 9(y^2 - 2y) = 81 \\), first transform this equation into standard form by completing the square for both the \\(x\\) and \\(y\\) variables. After deriving the center of the circle, express the coordinates of the center as functions of the parameters \\(a\\) and \\(b\\), where \\(a = -\\frac{b}{2}\\) for the \\(x\\) coordinate and \\(b = -\\frac{c}{2}\\) for the \\(y\\) coordinate, with \\(c\\) being the constant term after completing the square. Finally, compute the exact coordinates of the center in terms of \\(a\\) and \\(b\\), and provide your answer as a simplified ordered pair \\((h, k)\\) where \\(h\\) and \\(k\\) are explicitly defined in terms of \\(a\\) and \\(b\\).",
+                "method": "expansion",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "Given the equation of a circle in the form \\( 9(x^2 - \\frac{8}{3}x) + 9(y^2 + 4y) = 81 \\), transform this equation into standard form by completing the square for both the \\(x\\) and \\(y\\) variables. Define the center of the circle as \\((h, k)\\) and express \\(h\\) and \\(k\\) in terms of the parameters \\(p\\) and \\(q\\) defined by \\(p = -\\frac{b}{2}\\) for the \\(x\\) component and \\(q = -\\frac{c}{2}\\) for the \\(y\\) component. Finally, calculate the exact coordinates of the center and represent your answer as a simplified ordered pair \\((h, k)\\). Additionally, determine the radius of the circle and provide your answer as \\(r = \\sqrt{R}\\), where \\(R\\) is the squared radius obtained from the standard form equation.",
+                "method": "constraints",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
+        ],
+        "3": [
+            {
+                "instruction": "Given the equation of a circle in the form \\( 9(x^2 + 4x) + 9(y^2 - 2y) = 81 \\), first transform this equation into standard form by completing the square for both the \\(x\\) and \\(y\\) variables. After deriving the center of the circle, express the coordinates of the center as functions of the parameters \\(a\\) and \\(b\\), where \\(a = -\\frac{b}{2}\\) for the \\(x\\) coordinate and \\(b = -\\frac{c}{2}\\) for the \\(y\\) coordinate, with \\(c\\) being the constant term after completing the square. Finally, compute the exact coordinates of the center in terms of \\(a\\) and \\(b\\), and provide your answer as a simplified ordered pair \\((h, k)\\) where \\(h\\) and \\(k\\) are explicitly defined in terms of \\(a\\) and \\(b\\).",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "Given the equation of a circle represented as \\( 4(x^2 + 6x) + 4(y^2 - 8y) = 64 \\), transform this equation into standard form by completing the square for both the \\(x\\) and \\(y\\) variables. Derive the center coordinates of the circle and express these coordinates as functions of the parameters \\(a\\) and \\(b\\), defined as \\(a = -\\frac{d}{2}\\) for the \\(x\\) coordinate and \\(b = -\\frac{e}{2}\\) for the \\(y\\) coordinate, where \\(d\\) and \\(e\\) are the linear coefficients from the completed square form of the \\(x\\) and \\(y\\) terms, respectively. Finally, calculate the exact coordinates of the center in terms of \\(a\\) and \\(b\\), and provide your answer as a simplified ordered pair \\((h, k)\\), where \\(h\\) and \\(k\\) are expressed explicitly in terms of \\(a\\) and \\(b\\).",
+                "method": "condense",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 5,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "Given the equation of a circle represented as \\( 4(x^2 - 6x) + 4(y^2 + 8y) = 64 \\), first transform this equation into its standard form by completing the square for both the \\( x \\) and \\( y \\) variables. After identifying the center of the circle, express the coordinates of the center as functions of the parameters \\( p \\) and \\( q \\), where \\( p = -\\frac{b}{2} \\) for the \\( x \\) coordinate and \\( q = -\\frac{d}{2} \\) for the \\( y \\) coordinate, with \\( b \\) and \\( d \\) being the coefficients of the linear terms in the completed square expressions. Finally, compute the exact coordinates of the center in terms of \\( p \\) and \\( q \\), and present your answer as a simplified ordered pair \\((h, k)\\) where \\( h \\) and \\( k \\) are explicitly defined in terms of \\( p \\) and \\( q \\).",
+                "method": "condense",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
+        ]
+    },
+    {
+        "0": [
+            {
+                "instruction": "What are all values of $p$ such that for every $q>0$, we have   $$\\frac{3(pq^2+p^2q+3q^2+3pq)}{p+q}>2p^2q?$$ Express your answer in interval notation in decimal form.",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "Determine all values of \\( p \\) such that the inequality \n\n\\[\n\\frac{3(pq^2 + p^2q + 3q^2 + 3pq)}{p + q} > 2p^2q\n\\]\n\nholds for all \\( q > 0 \\). Additionally, find the conditions under which this inequality simplifies to a quadratic in \\( q \\) that is positive for all \\( q > 0 \\) and express your answer in interval notation in decimal form.",
+                "method": "deepening",
+                "scores": {
+                    "diversity": 2,
+                    "difficulty": 3,
+                    "validity": 5,
+                    "solvability": 4
+                }
+            },
+            {
+                "instruction": "Determine all values of \\( p \\) such that for every \\( q > 0 \\), the following inequality holds:\n\n\\[\n\\frac{3(pq^2 + p^2 q + 3q^2 + 3pq)}{p + q} > 2p^2q + 5q^2.\n\\]\n\nExpress your answer in interval notation in decimal form.",
+                "method": "expansion",
+                "scores": {
+                    "diversity": 2,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
+        ],
+        "1": [
+            {
+                "instruction": "Determine all values of \\( p \\) such that for every \\( q > 0 \\), the following inequality holds:\n\n\\[\n\\frac{3(pq^2 + p^2 q + 3q^2 + 3pq)}{p + q} > 2p^2q + 5q^2.\n\\]\n\nExpress your answer in interval notation in decimal form.",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "Determine all values of \\( p \\) such that for every \\( q > 0 \\), the following inequality is satisfied:\n\n\\[\n\\frac{3(pq^2 + p^2 q + 3q^2 + 3pq)}{p + q} \\geq 2p^2q + 5q^2 - \\frac{(p^2 + 3p + 2)q^3}{(p + q)^2}.\n\\]\n\nExpress your answer in interval notation in decimal form.",
+                "method": "deepening",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "Determine all values of \\( p \\) such that for every \\( q > 0 \\), the following inequality is satisfied:\n\n\\[\n\\frac{3(pq^2 + p^2 q + 3q^2 + 3pq)}{p + q} \\geq 2p^2q + 5q^2 + \\frac{1}{q},\n\\]\n\nand identify if there exists any \\( p \\) for which the inequality holds true as \\( q \\) approaches infinity. Express your answer in interval notation in decimal form.",
+                "method": "constraints",
+                "scores": {
+                    "diversity": 2,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
+        ],
+        "2": [
+            {
+                "instruction": "Determine all values of \\( p \\) such that for every \\( q > 0 \\), the following inequality is satisfied:\n\n\\[\n\\frac{3(pq^2 + p^2 q + 3q^2 + 3pq)}{p + q} \\geq 2p^2q + 5q^2 - \\frac{(p^2 + 3p + 2)q^3}{(p + q)^2}.\n\\]\n\nExpress your answer in interval notation in decimal form.",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "Determine all values of \\( p \\) such that for every \\( q > 0 \\), the following inequality holds true:\n\n\\[\n\\frac{3(pq^2 + p^2 q + 3q^2 + 3pq)}{p + q} - 2p^2q - 5q^2 + \\frac{(p^2 + 3p + 2)q^3}{(p + q)^2} \\geq 0.\n\\]\n\nFurthermore, find the values of \\( p \\) for which the minimum of the left-hand side expression, as a function of \\( q \\), is non-negative for all \\( q > 0 \\). Express your answer in interval notation in decimal form.",
+                "method": "deepening",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "Determine all values of \\( p \\) such that for every \\( q > 0 \\), the following inequality holds:\n\n\\[\n\\frac{3(pq^2 + p^2 q + 3q^2 + 3pq) + (p + q)^2}{p + q} \\geq 2p^2q + 5q^2 - \\frac{(p^2 + 3p + 2)q^3}{(p + q)^2} + \\frac{3pq^3}{(p + q)^3}.\n\\]\n\nExpress your answer in interval notation in decimal form.",
+                "method": "constraints",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
+        ],
+        "3": [
+            {
+                "instruction": "Determine all values of \\( p \\) such that for every \\( q > 0 \\), the following inequality holds true:\n\n\\[\n\\frac{3(pq^2 + p^2 q + 3q^2 + 3pq)}{p + q} - 2p^2q - 5q^2 + \\frac{(p^2 + 3p + 2)q^3}{(p + q)^2} \\geq 0.\n\\]\n\nFurthermore, find the values of \\( p \\) for which the minimum of the left-hand side expression, as a function of \\( q \\), is non-negative for all \\( q > 0 \\). Express your answer in interval notation in decimal form.",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "Determine all values of \\( p \\) such that for every \\( q > 0 \\), the following inequality is satisfied:\n\n\\[\n\\frac{3(pq^2 + p^2 q + 3q^2 + 3pq) + (p^2 + 3p + 2)q^3}{(p + q)^2} - 2p^2q - 5q^2 \\geq 0.\n\\]\n\nIn addition, identify the values of \\( p \\) for which the minimum of the left-hand side expression, viewed as a function of \\( q \\), remains non-negative for all \\( q > 0 \\). Present your answer in interval notation with two decimal points.",
+                "method": "condense",
+                "scores": {
+                    "diversity": 4,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "Determine all values of \\( p \\) such that for every \\( q > 0 \\), the following inequality holds true:\n\n\\[\n\\frac{3(pq^3 + p^2 q^2 + 3q^3 + 3pq^2)}{p + q} - 2p^3q^2 - 5q^3 + \\frac{(p^2 + 3p + 4)q^4}{(p + q)^3} \\geq 0.\n\\]\n\nAdditionally, find the values of \\( p \\) for which the minimum of the left-hand side expression, treated as a function of \\( q \\), is non-negative for all \\( q > 0 \\). Present your answer in interval notation in decimal form.",
+                "method": "condense",
+                "scores": {
+                    "diversity": 4,
+                    "difficulty": 5,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
+        ]
+    },
+    {
+        "0": [
+            {
+                "instruction": "Tim wants to invest some money in a bank which compounds quarterly with an annual interest rate of $7\\%$. To the nearest dollar, how much money should he invest if he wants a total of $\\$60,\\!000$ at the end of $5$ years?",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "Tim plans to invest an amount \\( P \\) in a bank that compounds interest quarterly at an annual rate of \\( 7\\% \\). If he aims to accumulate a total of \\( \\$60,000 \\) after \\( 5 \\) years, determine the required principal \\( P \\) to the nearest dollar. Additionally, express \\( P \\) in terms of the compound interest formula \\( A = P \\left(1 + \\frac{r}{n}\\right)^{nt} \\) where \\( A \\) is the final amount, \\( r \\) is the annual interest rate, \\( n \\) is the number of times interest is compounded per year, and \\( t \\) is the number of years.",
+                "method": "deepening",
+                "scores": {
+                    "diversity": 2,
+                    "difficulty": 2,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "Let \\( P \\) be the principal amount that Tim needs to invest, compounded quarterly at an annual interest rate of \\( r = 7\\% = 0.07 \\), over a period of \\( t = 5 \\) years. The formula for the future value \\( A \\) of an investment compounded quarterly is given by:\n\n\\[\nA = P \\left(1 + \\frac{r}{n}\\right)^{nt}\n\\]\n\nwhere \\( n \\) is the number of compounding periods per year. In this case, \\( n = 4 \\). \n\nTim desires a future value of \\( A = 60,000 \\). \n\nReformulate the problem to find the minimum principal \\( P \\) that satisfies the following equation:\n\n\\[\n60,000 = P \\left(1 + \\frac{0.07}{4}\\right)^{4 \\times 5}\n\\]\n\nWhat is the exact amount Tim should invest, rounded to the nearest dollar?",
+                "method": "constraints",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
+        ],
+        "1": [
+            {
+                "instruction": "Let \\( P \\) be the principal amount that Tim needs to invest, compounded quarterly at an annual interest rate of \\( r = 7\\% = 0.07 \\), over a period of \\( t = 5 \\) years. The formula for the future value \\( A \\) of an investment compounded quarterly is given by:\n\n\\[\nA = P \\left(1 + \\frac{r}{n}\\right)^{nt}\n\\]\n\nwhere \\( n \\) is the number of compounding periods per year. In this case, \\( n = 4 \\). \n\nTim desires a future value of \\( A = 60,000 \\). \n\nReformulate the problem to find the minimum principal \\( P \\) that satisfies the following equation:\n\n\\[\n60,000 = P \\left(1 + \\frac{0.07}{4}\\right)^{4 \\times 5}\n\\]\n\nWhat is the exact amount Tim should invest, rounded to the nearest dollar?",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "Let \\( P \\) represent the principal amount that Tim invests, compounded continuously at an annual interest rate of \\( r = 7\\% = 0.07 \\), over a period of \\( t = 5 \\) years. The formula for the future value \\( A \\) of an investment compounded continuously is given by:\n\n\\[\nA = Pe^{rt}\n\\]\n\nwhere \\( e \\) is the base of the natural logarithm. Tim requires a future value of \\( A = 60,000 \\).\n\nReformulate the problem to determine the minimum principal \\( P \\) that satisfies the following equation:\n\n\\[\n60,000 = Pe^{0.07 \\times 5}\n\\]\n\nWhat is the exact amount Tim should invest, rounded to the nearest dollar?",
+                "method": "expansion",
+                "scores": {
+                    "diversity": 4,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "Let \\( P \\) represent the principal amount that Tim must invest to achieve a future value of \\( A = 60,000 \\) after \\( t = 5 \\) years, compounded quarterly at an annual interest rate of \\( r = 7\\% = 0.07 \\). The formula for the future value \\( A \\) when compounded \\( n \\) times per year is described by:\n\n\\[\nA = P \\left(1 + \\frac{r}{n}\\right)^{nt}\n\\]\n\nTo further explore the dynamics of investment growth, consider an additional complication where Tim is required to make a one-time additional contribution of \\( C = 5,000 \\) at the end of the second year. The future value \\( A' \\) with this additional contribution can be expressed as:\n\n\\[\nA' = P \\left(1 + \\frac{0.07}{4}\\right)^{4 \\cdot 5} + 5,000 \\left(1 + \\frac{0.07}{4}\\right)^{4 \\cdot 3}\n\\]\n\nDetermine the minimum principal \\( P \\) such that:\n\n\\[\n60,000 = P \\left(1 + \\frac{0.07}{4}\\right)^{20} + 5,000 \\left(1 + \\frac{0.07}{4}\\right)^{12}\n\\]\n\nWhat is the exact amount Tim should invest, rounded to the nearest dollar?",
+                "method": "constraints",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 5,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
+        ],
+        "2": [
+            {
+                "instruction": "Let \\( P \\) represent the principal amount that Tim invests, compounded continuously at an annual interest rate of \\( r = 7\\% = 0.07 \\), over a period of \\( t = 5 \\) years. The formula for the future value \\( A \\) of an investment compounded continuously is given by:\n\n\\[\nA = Pe^{rt}\n\\]\n\nwhere \\( e \\) is the base of the natural logarithm. Tim requires a future value of \\( A = 60,000 \\).\n\nReformulate the problem to determine the minimum principal \\( P \\) that satisfies the following equation:\n\n\\[\n60,000 = Pe^{0.07 \\times 5}\n\\]\n\nWhat is the exact amount Tim should invest, rounded to the nearest dollar?",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "Let \\( P \\) be the principal amount Tim invests, compounded continuously at an annual interest rate of \\( r = 7\\% = 0.07 \\), over a variable period \\( t \\) years. The desired future value \\( A \\) is given as \\( A = 60,000 \\). The relationship governing the growth of this investment is expressed by the formula:\n\n\\[\nA = Pe^{rt}\n\\]\n\nTim aims to achieve this future value under the condition that \\( t \\) follows an exponential growth model, specifically: \\( t = 2n \\) for some integer \\( n \\). Reformulate the problem to derive the minimum principal \\( P \\) that satisfies the following equation for the smallest integer \\( n \\) such that \\( t \\geq 5 \\):\n\n\\[\n60,000 = Pe^{0.07(2n)}\n\\]\n\nDetermine the exact principal amount \\( P \\) that Tim must invest, rounded to the nearest dollar, when \\( n \\) is at its minimum value.",
+                "method": "expansion",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "Let \\( P \\) denote the principal amount that Tim invests, compounded continuously at an annual interest rate of \\( r = 7\\% = 0.07 \\), over a period of \\( t \\) years, where \\( t \\) is a variable representing the number of years. The relationship for the future value \\( A \\) of the investment compounded continuously is expressed as:\n\n\\[\nA = Pe^{rt}\n\\]\n\nTim desires a future value of \\( A = 60,000 \\) and needs to determine the minimum principal \\( P \\) that allows for a desired investment horizon of \\( t \\) years, given by the equation:\n\n\\[\n60,000 = Pe^{0.07t}\n\\]\n\nTo challenge the complexity further, solve for \\( P \\) in terms of \\( t \\) and determine the minimum principal \\( P \\) required when \\( t \\) is set to 10 years. What is the exact amount Tim should invest, rounded to the nearest dollar?",
+                "method": "constraints",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
+        ],
+        "3": [
+            {
+                "instruction": "Let \\( P \\) be the principal amount Tim invests, compounded continuously at an annual interest rate of \\( r = 7\\% = 0.07 \\), over a variable period \\( t \\) years. The desired future value \\( A \\) is given as \\( A = 60,000 \\). The relationship governing the growth of this investment is expressed by the formula:\n\n\\[\nA = Pe^{rt}\n\\]\n\nTim aims to achieve this future value under the condition that \\( t \\) follows an exponential growth model, specifically: \\( t = 2n \\) for some integer \\( n \\). Reformulate the problem to derive the minimum principal \\( P \\) that satisfies the following equation for the smallest integer \\( n \\) such that \\( t \\geq 5 \\):\n\n\\[\n60,000 = Pe^{0.07(2n)}\n\\]\n\nDetermine the exact principal amount \\( P \\) that Tim must invest, rounded to the nearest dollar, when \\( n \\) is at its minimum value.",
+                "method": "original",
+                "scores": {}
+            },
+            {
+                "instruction": "Let \\( P \\) represent the principal amount that Tim invests, compounded continuously at an annual interest rate of \\( r = 7\\% = 0.07 \\). The future value \\( A \\) is given as \\( A = 60,000 \\). The relationship governing the growth of this investment is expressed by the formula:\n\n\\[\nA = Pe^{rt}\n\\]\n\nHowever, Tim faces a constraint where the time \\( t \\) is modeled as a quadratic function of an integer \\( n \\), specifically given by \\( t = n^2 + 2n \\). Your task is to reformulate the problem to find the minimum principal \\( P \\) such that \\( t \\) satisfies the condition \\( t \\geq 5 \\).\n\nSet up the equation:\n\n\\[\n60,000 = Pe^{0.07(n^2 + 2n)}\n\\]\n\nDetermine the minimum principal amount \\( P \\), rounded to the nearest dollar, when \\( n \\) is the smallest integer such that \\( t \\geq 5 \\).",
+                "method": "condense",
+                "scores": {
+                    "diversity": 3,
+                    "difficulty": 5,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            },
+            {
+                "instruction": "Let \\( P \\) be the principal amount Tim invests, compounded continuously at an annual interest rate of \\( r = 7\\% = 0.07 \\). The desired future value \\( A \\) is \\( A = 60,000 \\). The growth of this investment is described by the equation:\n\n\\[\nA = Pe^{rt}\n\\]\n\nTim aims to achieve this future value under the condition that \\( t \\) is a piecewise function defined as follows: \n\n\\[\nt = \n\\begin{cases} \n3n & \\text{if } n \\text{ is even} \\\\\n3n + 1 & \\text{if } n \\text{ is odd}\n\\end{cases}\n\\]\n\nfor some integer \\( n \\). Reformulate the problem to derive the minimum principal \\( P \\) needed to satisfy the equation for the smallest integer \\( n \\) such that \\( t \\geq 5 \\).\n\nSpecifically, determine \\( P \\) when \\( n \\) is the smallest integer that meets this condition, ensuring that \\( A = 60,000 \\) holds true in the equation:\n\n\\[\n60,000 = Pe^{0.07t}\n\\]\n\nCalculate the exact principal amount \\( P \\) needed, rounded to the nearest dollar, based on the minimum qualifying value of \\( n \\).",
+                "method": "condense",
+                "scores": {
+                    "diversity": 4,
+                    "difficulty": 4,
+                    "validity": 5,
+                    "solvability": 5
+                }
+            }
+        ]
+    }
+]

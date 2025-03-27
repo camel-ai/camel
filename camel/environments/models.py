@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional, Protocol
+from typing import Any, Dict, Optional, Protocol, Tuple
 
 from pydantic import BaseModel, Field
 
@@ -32,6 +32,8 @@ class Action(BaseModel):
         timestamp (datetime): The timestamp when the action was
             generated (UTC).
     """
+
+    index: Optional[int] = Field(default=None, description="...")
 
     llm_response: str = Field(description="Generated response from the LLM")
     metadata: Dict[str, Any] = Field(
@@ -83,6 +85,13 @@ class StepResult(BaseModel):
         default_factory=dict,
         description="Additional information about the step",
     )
+
+    def as_tuple(
+        self,
+    ) -> Tuple[Observation, float, bool, Dict[str, Any]]:
+        r"""Returns all fields of the model as a tuple, in declaration order"""
+        self.info["rewards_dict"] = self.rewards_dict
+        return (self.observation, self.reward, self.done, self.info)
 
 
 class Environment(Protocol):
