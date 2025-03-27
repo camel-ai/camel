@@ -92,6 +92,10 @@ class VideoAnalysisToolkit(BaseToolkit):
             transcription using OpenAI's audio models. Requires a valid OpenAI
             API key. When disabled, video analysis will be based solely on
             visual content. (default: :obj:`False`)
+        frame_interval (float, optional): The interval in seconds between frames
+            to extract from the video. (default: :obj:`4.0`)
+        output_language (str, optional): The language for output responses.
+            (default: :obj:`"English"`)
     """
 
     @dependencies_required("ffmpeg", "scenedetect")
@@ -100,12 +104,14 @@ class VideoAnalysisToolkit(BaseToolkit):
         download_directory: Optional[str] = None,
         model: Optional[BaseModelBackend] = None,
         use_audio_transcription: bool = False,
+        frame_interval: float = 4.0,
         output_language: str = "English",
     ) -> None:
         self._cleanup = download_directory is None
         self._temp_files: list[str] = []  # Track temporary files for cleanup
         self._use_audio_transcription = use_audio_transcription
         self.output_language = output_language
+        self.frame_interval = frame_interval
 
         self._download_directory = Path(
             download_directory or tempfile.mkdtemp()
@@ -274,8 +280,8 @@ class VideoAnalysisToolkit(BaseToolkit):
         duration = total_frames / fps if fps > 0 else 0
         cap.release()
 
-        # Extract one frame every 4 seconds
-        frame_interval = 4.0  # seconds
+        # Use the instance's frame_interval instead of hardcoded value
+        frame_interval = self.frame_interval  # seconds
 
         # Calculate the total number of frames to extract
         if duration <= 0 or fps <= 0:
