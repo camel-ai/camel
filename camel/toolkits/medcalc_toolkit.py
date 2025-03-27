@@ -1118,7 +1118,9 @@ class MedCalcToolkit(BaseToolkit):
         print(input_variables)
 
         try:
-            from camel.toolkits.medcalc_bench.estimated_conception_date import add_2_weeks_explanation
+            from camel.toolkits.medcalc_bench.estimated_conception_date import (
+                add_2_weeks_explanation,
+            )
 
             # Call the conception date calculation function
             result = add_2_weeks_explanation(input_variables)
@@ -1191,8 +1193,7 @@ class MedCalcToolkit(BaseToolkit):
                 {
                     "rationale": result["Explanation"],  # Detailed explanation
                     # Final answer (string format)
-                    "final_answer":
-                        f"{result['Answer'][0]} and {result['Answer'][1]}",
+                    "final_answer": f"{result['Answer'][0]} and {result['Answer'][1]}",
                 }
             )
 
@@ -1449,18 +1450,18 @@ class MedCalcToolkit(BaseToolkit):
             )
 
     def wells_criteria_pe(
-            self,
-            clinical_dvt: bool,
-            previous_pe: bool,
-            previous_dvt: bool,
-            heart_rate_value: float,
-            heart_rate_unit: str,
-            immobilization_for_3days: bool,
-            hemoptysis: bool,
-            surgery_in_past4weeks: bool,
-            malignancy_with_treatment: bool,
-            pe_number_one: bool
-            ) -> str:
+        self,
+        clinical_dvt: bool,
+        previous_pe: bool,
+        previous_dvt: bool,
+        heart_rate_value: float,
+        heart_rate_unit: str,
+        immobilization_for_3days: bool,
+        hemoptysis: bool,
+        surgery_in_past4weeks: bool,
+        malignancy_with_treatment: bool,
+        pe_number_one: bool,
+    ) -> str:
         r"""
         Calculate the patient's Wells' Criteria for Pulmonary Embolism score
             and generate a detailed explanatory text.
@@ -1508,34 +1509,37 @@ class MedCalcToolkit(BaseToolkit):
             "hemoptysis": bool(hemoptysis),
             "surgery_in_past4weeks": bool(surgery_in_past4weeks),
             "malignancy_with_treatment": bool(malignancy_with_treatment),
-            "pe_number_one": bool(pe_number_one)
+            "pe_number_one": bool(pe_number_one),
         }
         try:
             from camel.toolkits.medcalc_bench.wells_criteria_pe import (
                 calculate_pe_wells_explanation,
             )
+
             # Call the Wells' score calculation function
             result = calculate_pe_wells_explanation(input_variables)
 
             # Return the result as a JSON string
-            return json.dumps({
-                "rationale": result['Explanation'],
-                "final_answer": str(result['Answer'])
-            })
+            return json.dumps(
+                {
+                    "rationale": result['Explanation'],
+                    "final_answer": str(result['Answer']),
+                }
+            )
 
         except Exception as e:
             # Catch exceptions and return an error message
             return self.handle_exception("calculate_pe_wells_explanation", e)
-        
+
     def ldl_calculated(
-            self,
-            hdl_value: float,          # Numeric part of HDL cholesterol (e.g., 37.0)
-            hdl_unit: str,              # Unit of HDL cholesterol (e.g., "mg/dL")
-            triglycerides_value: float, # Numeric part of triglycerides (e.g., 205.0)
-            triglycerides_unit: str,    # Unit of triglycerides (e.g., "mg/dL")
-            total_value: float,         # Numeric part of total cholesterol (e.g., 210.0)
-            total_unit: str             # Unit of total cholesterol (e.g., "mg/dL")
-        ) -> str:
+        self,
+        hdl_value: float,  # Numeric part of HDL cholesterol (e.g., 37.0)
+        hdl_unit: str,  # Unit of HDL cholesterol (e.g., "mg/dL")
+        triglycerides_value: float,  # Numeric part of triglycerides (e.g., 205.0)
+        triglycerides_unit: str,  # Unit of triglycerides (e.g., "mg/dL")
+        total_value: float,  # Numeric part of total cholesterol (e.g., 210.0)
+        total_unit: str,  # Unit of total cholesterol (e.g., "mg/dL")
+    ) -> str:
         """
         Calculate the patient's LDL cholesterol concentration and generate a detailed explanatory text.
 
@@ -1573,28 +1577,994 @@ class MedCalcToolkit(BaseToolkit):
         # Construct the input variables dictionary
         input_variables = {
             "hdl_cholestrol": (float(hdl_value), str(hdl_unit)),
-            "triglycerides": (float(triglycerides_value), str(triglycerides_unit)),
-            "total_cholestrol": (float(total_value), str(total_unit))
+            "triglycerides": (
+                float(triglycerides_value),
+                str(triglycerides_unit),
+            ),
+            "total_cholestrol": (float(total_value), str(total_unit)),
         }
         print(input_variables)
-        
+
         from camel.toolkits.medcalc_bench.ldl_calculated import (
-                compute_ldl_explanation,
-            )
+            compute_ldl_explanation,
+        )
 
         try:
             # Call the LDL calculation function
             result = compute_ldl_explanation(input_variables)
 
             # Return the result as a JSON string
-            return json.dumps({
-                "rationale": result['Explanation'],       # Detailed explanation
-                "final_answer": str(result['Answer'])     # Final answer (string format)
-            })
+            return json.dumps(
+                {
+                    "rationale": result['Explanation'],  # Detailed explanation
+                    "final_answer": str(
+                        result['Answer']
+                    ),  # Final answer (string format)
+                }
+            )
 
         except Exception as e:
             # Catch exceptions and return an error message
             return self.handle_exception("compute_ldl_explanation", e)
+
+    def albumin_corrected_anion(
+        self,
+        sodium_value: float,  # Numeric part of sodium level (e.g., 134.0)
+        sodium_unit: str,  # Unit of sodium level (e.g., "mmol/L")
+        chloride_value: float,  # Numeric part of chloride level (e.g., 100.0)
+        chloride_unit: str,  # Unit of chloride level (e.g., "mmol/L")
+        bicarbonate_value: float,  # Numeric part of bicarbonate (e.g., 19.0)
+        bicarbonate_unit: str,  # Unit of bicarbonate (e.g., "mmol/L")
+        albumin_value: float,  # Numeric part of albumin (e.g., 4.4)
+        albumin_unit: str,  # Unit of albumin (e.g., "g/dL")
+    ) -> str:
+        r"""Calculate the patient's Albumin Corrected Anion Gap (ACAG) and generate
+        a detailed explanatory text.
+
+        Args:
+            sodium_value (float): The numeric value of sodium level.
+            sodium_unit (str): The unit of sodium level, one of:
+                - "mmol/L" for millimoles per liter
+                - "mEq/L" for milliequivalents per liter
+            chloride_value (float): The numeric value of chloride level.
+            chloride_unit (str): The unit of chloride level, one of:
+                - "mmol/L" for millimoles per liter
+                - "mEq/L" for milliequivalents per liter
+            bicarbonate_value (float): The numeric value of bicarbonate level.
+            bicarbonate_unit (str): The unit of bicarbonate level, one of:
+                - "mmol/L" for millimoles per liter
+                - "mEq/L" for milliequivalents per liter
+            albumin_value (float): The numeric value of albumin concentration.
+            albumin_unit (str): The unit of albumin concentration, one of:
+                - "g/dL" for grams per deciliter
+                - "g/L" for grams per liter
+                - "mg/dL" for milligrams per deciliter
+
+        Returns:
+            str: A JSON string containing the calculation process and result,
+                formatted as follows:
+                {
+                    "rationale": "Detailed calculation process and explanatory text",
+                    "final_answer": "Albumin corrected anion gap (string format)"
+                }
+                If an exception occurs, return an error message generated by
+                    the `handle_exception` method.
+
+        Notes:
+            - The `compute_albumin_corrected_anion_explanation` function is used
+                for calculation.
+            - The `json.dumps` function is used to serialize the result into a
+                JSON string.
+        """
+        # Construct the input variables dictionary
+        input_variables = {
+            "sodium": (float(sodium_value), str(sodium_unit)),
+            "chloride": (float(chloride_value), str(chloride_unit)),
+            "bicarbonate": (float(bicarbonate_value), str(bicarbonate_unit)),
+            "albumin": (float(albumin_value), str(albumin_unit)),
+        }
+
+        from camel.toolkits.medcalc_bench.albumin_corrected_anion import (
+            compute_albumin_corrected_anion_explanation,
+        )
+
+        try:
+            # Call the ACAG calculation function
+            result = \
+                compute_albumin_corrected_anion_explanation(input_variables)
+
+            # Return the result as a JSON string
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],  # Detailed explanation
+                    "final_answer": str(result["Answer"]),  # Final answer
+                }
+            )
+
+        except Exception as e:
+            # Catch exceptions and return an error message
+            return self.handle_exception(
+                "compute_albumin_corrected_anion_explanation", e
+            )
+        
+    def albumin_corrected_delta_gap(
+        self,
+        sodium_value: float,  # Numeric part of sodium level (e.g., 141.0)
+        sodium_unit: str,  # Unit of sodium level (e.g., "mEq/L")
+        chloride_value: float,  # Numeric part of chloride level (e.g., 104.0)
+        chloride_unit: str,  # Unit of chloride level (e.g., "mEq/L")
+        bicarbonate_value: float,  # Numeric part of bicarbonate (e.g., 29.0)
+        bicarbonate_unit: str,  # Unit of bicarbonate level (e.g., "mEq/L")
+        albumin_value: float,  # Numeric part of albumin (e.g., 43.0)
+        albumin_unit: str,  # Unit of albumin level (e.g., "g/L")
+    ) -> str:
+        r"""Calculate the patient's Albumin Corrected Delta Gap and generate a
+        detailed explanatory text.
+
+        Args:
+            sodium_value (float): The numeric value of sodium level.
+            sodium_unit (str): The unit of sodium level, one of:
+                - "mEq/L" for milliequivalents per liter
+                - "mmol/L" for millimoles per liter
+            chloride_value (float): The numeric value of chloride level.
+            chloride_unit (str): The unit of chloride level, one of:
+                - "mEq/L" for milliequivalents per liter
+                - "mmol/L" for millimoles per liter
+            bicarbonate_value (float): The numeric value of bicarbonate level.
+            bicarbonate_unit (str): The unit of bicarbonate level, one of:
+                - "mEq/L" for milliequivalents per liter
+                - "mmol/L" for millimoles per liter
+            albumin_value (float): The numeric value of albumin level.
+            albumin_unit (str): The unit of albumin level, one of:
+                - "g/L" for grams per liter
+                - "g/dL" for grams per deciliter
+                - "mg/dL" for milligrams per deciliter
+
+        Returns:
+            str: A JSON string containing the calculation process and result,
+                formatted as follows:
+                {
+                    "rationale": "Detailed calculation process and explanatory
+                        text",
+                    "final_answer": "Albumin corrected delta gap
+                        (string format)"
+                }
+                If an exception occurs, return an error message generated by
+                    the `handle_exception` method.
+
+        Notes:
+            - The `compute_albumin_corrected_delta_gap_explanation` function is
+                used for calculation.
+            - The `json.dumps` function is used to serialize the result into a
+                JSON string.
+        """
+        # Construct the input variables dictionary
+        input_variables = {
+            "sodium": (float(sodium_value), str(sodium_unit)),
+            "chloride": (float(chloride_value), str(chloride_unit)),
+            "bicarbonate": (float(bicarbonate_value), str(bicarbonate_unit)),
+            "albumin": (float(albumin_value), str(albumin_unit)),
+        }
+
+        from camel.toolkits.medcalc_bench.albumin_corrected_delta_gap import (
+            compute_albumin_corrected_delta_gap_explanation,
+        )
+
+        try:
+            # Call the calculation function
+            result = compute_albumin_corrected_delta_gap_explanation(
+                input_variables
+            )
+
+            # Return the result as a JSON string
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],  # Detailed explanation
+                    "final_answer": str(  # Final answer (string format)
+                        result["Answer"]
+                    ),
+                }
+            )
+
+        except Exception as e:
+            # Catch exceptions and return an error message
+            return self.handle_exception(
+                "compute_albumin_corrected_delta_gap_explanation", e
+            )
+
+    def albumin_delta_ratio(
+        self,
+        sodium_value: float,  # Numeric part of sodium level (e.g., 140.0)
+        sodium_unit: str,  # Unit of sodium level (e.g., "mEq/L")
+        chloride_value: float,  # Numeric part of chloride level (e.g., 105.0)
+        chloride_unit: str,  # Unit of chloride level (e.g., "mEq/L")
+        bicarbonate_value: float,  # Numeric part of bicarbonate (e.g., 28.0)
+        bicarbonate_unit: str,  # Unit of bicarbonate (e.g., "mEq/L")
+        albumin_value: float,  # Numeric part of albumin (e.g., 3.9)
+        albumin_unit: str,  # Unit of albumin (e.g., "g/dL")
+    ) -> str:
+        r"""Calculate the patient's albumin delta ratio and generate a detailed
+        explanatory text.
+
+        Args:
+            sodium_value (float): The numeric value of sodium level.
+            sodium_unit (str): The unit of sodium level, one of:
+                - "mmol/L"
+                - "mEq/L"
+            chloride_value (float): The numeric value of chloride level.
+            chloride_unit (str): The unit of chloride level, one of:
+                - "mmol/L"
+                - "mEq/L"
+            bicarbonate_value (float): The numeric value of bicarbonate level.
+            bicarbonate_unit (str): The unit of bicarbonate level, one of:
+                - "mmol/L"
+                - "mEq/L"
+            albumin_value (float): The numeric value of albumin concentration.
+            albumin_unit (str): The unit of albumin concentration, one of:
+                - "g/dL"
+                - "g/L"
+                - "mg/dL"
+                - "g/mL"
+
+        Returns:
+            str: A JSON string containing the calculation process and result,
+                formatted as follows:
+                {
+                    "rationale": "Detailed calculation process and explanatory
+                        text",
+                    "final_answer": "Albumin delta ratio (string format)"
+                }
+                If an exception occurs, return an error message generated by
+                    the `handle_exception` method.
+
+        Notes:
+            - The `compute_albumin_delta_ratio_explanation` function is used for
+                the calculation.
+            - The `json.dumps` function is used to serialize the result into a
+                JSON string.
+        """
+        # Construct the input variables dictionary
+        input_variables = {
+            "sodium": (float(sodium_value), str(sodium_unit)),
+            "chloride": (float(chloride_value), str(chloride_unit)),
+            "bicarbonate": (float(bicarbonate_value), str(bicarbonate_unit)),
+            "albumin": (float(albumin_value), str(albumin_unit)),
+        }
+
+        from camel.toolkits.medcalc_bench.albumin_delta_ratio import (
+            compute_albumin_delta_ratio_explanation,
+        )
+
+        try:
+            # Call the calculation function
+            result = compute_albumin_delta_ratio_explanation(input_variables)
+
+            # Return the result as a JSON string
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],  # Detailed explanation
+                    "final_answer": str(  # Final answer (string format)
+                        result["Answer"]
+                    ),
+                }
+            )
+
+        except Exception as e:
+            # Catch exceptions and return an error message
+            return self.handle_exception("albumin_delta_ratio", e)
+
+    def estimated_due_date(
+        self,
+        cycle_length: int,  # Patient's menstrual cycle length in days
+        menstrual_date: str,  # Last menstrual date in format "%m/%d/%Y"
+    ) -> str:
+        r"""Calculate the patient's estimated due date and generate a detailed
+        explanatory text using Naegele's Rule.
+
+        Args:
+            cycle_length (int): The length of the patient's menstrual cycle in
+                days (e.g., 28).
+            menstrual_date (str): The patient's last menstrual date in the
+                format "MM/DD/YYYY" (e.g., "09/17/2011").
+
+        Returns:
+            str: A JSON string containing the calculation process and result,
+                formatted as follows:
+                {
+                    "rationale": "Detailed calculation process and explanatory
+                        text",
+                    "final_answer": "Estimated due date in MM/DD/YYYY format"
+                }
+                If an exception occurs, return an error message generated by
+                    the `handle_exception` method.
+
+        Notes:
+            - Uses Naegele's Rule: adds 40 weeks to menstrual date and adjusts
+                based on cycle length difference from 28 days.
+            - The `json.dumps` function is used to serialize the result into a
+                JSON string.
+        """
+        # Construct the input variables dictionary
+        input_variables = {
+            "cycle_length": int(cycle_length),
+            "menstrual_date": str(menstrual_date),
+        }
+
+        try:
+            from camel.toolkits.medcalc_bench.estimated_due_date import (
+                add_40_weeks_explanation
+            )
+
+            # Call the due date calculation function
+            result = add_40_weeks_explanation(input_variables)
+
+            # Return the result as a JSON string
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],  # Detailed explanation
+                    "final_answer": str(result["Answer"]),  # Final answer
+                }
+            )
+
+        except Exception as e:
+            # Catch exceptions and return an error message
+            return self.handle_exception("estimated_due_date", e)
+
+    def free_water_deficit(
+        self,
+        weight_value: float,  # Numeric part of weight (e.g., 33.0)
+        weight_unit: str,  # Unit of weight ("lbs", "g", "kg")
+        height_value: float,  # Numeric part of height (unused in calculation)
+        height_unit: str,  # Unit of height (unused in calculation)
+        sex: str,  # Gender ("male"/"female")
+        age_value: float,  # Numeric part of age (e.g., 32)
+        age_unit: str,  # Unit of age ("years"/"months")
+        sodium_value: float,  # Numeric sodium level (e.g., 134.0)
+        sodium_unit: str,  # Sodium unit ("mmol/L", "mEq/L")
+    ) -> str:
+        r"""Calculate the patient's Free Water Deficit (FWD) and generate a
+        detailed explanatory text.
+
+        Args:
+            weight_value (float): The numeric value of the patient's weight.
+            weight_unit (str): The unit of the patient's weight, one of:
+                - "lbs" for pounds
+                - "g" for grams
+                - "kg" for kilograms
+            height_value (float): The numeric value of height (unused).
+            height_unit (str): The unit of height (unused).
+            sex (str): The patient's gender, one of:
+                - "Male" for male
+                - "Female" for female
+            age_value (float): The numeric value of the patient's age.
+            age_unit (str): The unit of the patient's age, one of:
+                - "months"
+                - "years"
+            sodium_value (float): The numeric value of sodium level.
+            sodium_unit (str): The unit of sodium level, one of:
+                - "mmol/L"
+                - "mEq/L"
+
+        Returns:
+            str: A JSON string containing the calculation process and result,
+                formatted as:
+                {
+                    "rationale": "Detailed calculation process text",
+                    "final_answer": "Free water deficit in liters (string)"
+                }
+                If an exception occurs, returns an error message generated by
+                the `handle_exception` method.
+
+        Notes:
+            - The `free_water_deficit_explanation` function is used for calculation.
+            - The `json.dumps` function serializes the result into JSON string.
+            - If input gender is not "male" or "female", function won't calculate.
+        """
+        # Construct input variables dictionary
+        input_variables = {
+            "weight": (float(weight_value), str(weight_unit)),
+            "height": (float(height_value), str(height_unit)),
+            "sex": str(sex),
+            "age": (float(age_value), str(age_unit)),
+            "sodium": (float(sodium_value), str(sodium_unit)),
+        }
+
+        from camel.toolkits.medcalc_bench.free_water_deficit import (
+            free_water_deficit_explanation,
+        )
+
+        try:
+            # Call the FWD calculation function
+            result = free_water_deficit_explanation(input_variables)
+
+            # Return result as JSON string
+            return json.dumps({
+                "rationale": result["Explanation"],
+                "final_answer": str(result["Answer"]),
+            })
+
+        except Exception as e:
+            # Catch exceptions and return error message
+            return self.handle_exception("free_water_deficit_explanation", e)
+
+    def glasgow_coma_score(
+        self,
+        best_eye_response: str,  # Patient's best eye response
+        best_verbal_response: str,  # Patient's best verbal response
+        best_motor_response: str,  # Patient's best motor response
+    ) -> str:
+        r"""Calculate the patient's Glasgow Coma Score (GCS) and generate a
+        detailed explanatory text.
+
+        Args:
+            best_eye_response (str): The patient's best eye response, one of:
+                - "eyes open spontaneously"
+                - "eye opening to verbal command"
+                - "eye opening to pain"
+                - "no eye opening"
+                - "not testable"
+            best_verbal_response (str): The patient's best verbal
+                response, one of:
+                - "oriented"
+                - "confused"
+                - "inappropriate words"
+                - "incomprehensible sounds"
+                - "no verbal response"
+                - "not testable"
+            best_motor_response (str): The patient's best motor response,
+                one of:
+                - "obeys commands"
+                - "localizes pain"
+                - "withdrawal from pain"
+                - "flexion to pain"
+                - "extension to pain"
+                - "no motor response"
+
+        Returns:
+            str: A JSON string containing the calculation process and result,
+                formatted as follows:
+                {
+                    "rationale": "Detailed calculation process and
+                        explanatory text",
+                    "final_answer": "Glasgow Coma Score (string format)"
+                }
+                If an exception occurs, return an error message generated by
+                the `handle_exception` method.
+
+        Notes:
+            - The `compute_glasgow_coma_score_explanation` function is used to
+                calculate the score.
+            - The `json.dumps` function is used to serialize the result into a
+                JSON string.
+        """
+        # Construct the input variables dictionary
+        input_variables = {
+            "best_eye_response": str(best_eye_response),
+            "best_verbal_response": str(best_verbal_response),
+            "best_motor_response": str(best_motor_response),
+        }
+
+        try:
+            from camel.toolkits.medcalc_bench.glasgow_coma_score import (
+                compute_glasgow_coma_score_explanation,
+            )
+            # Call the GCS calculation function
+            result = compute_glasgow_coma_score_explanation(input_variables)
+
+            # Return the result as a JSON string
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],  # Detailed explanation
+                    "final_answer": str(  # Final answer (string format)
+                        result["Answer"]
+                    ),
+                }
+            )
+
+        except Exception as e:
+            # Catch exceptions and return an error message
+            return self.handle_exception("compute_glasgow_coma_score", e)
+
+    def qt_calculator_bazett(
+        self,
+        heart_rate_value: float,  # Numeric part of heart rate (e.g., 176)
+        heart_rate_unit: str,  # Unit of heart rate ("beats per minute")
+        qt_interval_value: float,  # Numeric part of QT interval (e.g., 330)
+        qt_interval_unit: str,  # Unit of QT interval ("msec")
+    ) -> str:
+        r"""Calculate the patient's corrected QT interval using
+            Bazett Formula and generate a detailed explanatory text.
+
+        Args:
+            heart_rate_value (float): The numeric value of heart rate.
+            heart_rate_unit (str): The unit of heart rate, must be:
+                - "beats per minute"
+            qt_interval_value (float): The numeric value of QT interval.
+            qt_interval_unit (str): The unit of QT interval, must be:
+                - "msec" for milliseconds
+
+        Returns:
+            str: A JSON string containing the calculation process and result,
+                formatted as follows:
+                {
+                    "rationale": "Detailed calculation process and
+                        explanatory text",
+                    "final_answer": "Corrected QT interval in
+                        msec (string format)"
+                }
+                If an exception occurs, return an error message generated by
+                the `handle_exception` method.
+
+        Notes:
+            - The `bazett_calculator_explanation` function is
+                used for calculation.
+            - The `json.dumps` function serializes
+                the result into a JSON string.
+        """
+        # Construct the input variables dictionary
+        input_variables = {
+            "heart_rate": (
+                float(heart_rate_value),
+                str(heart_rate_unit),
+            ),  # Heart rate: (value, unit)
+            "qt_interval": (
+                float(qt_interval_value),
+                str(qt_interval_unit),
+            ),  # QT interval: (value, unit)
+        }
+
+        from camel.toolkits.medcalc_bench.qt_calculator_bazett import (
+            bazett_calculator_explanation,
+        )
+
+        try:
+            # Call the Bazett calculation function
+            result = bazett_calculator_explanation(input_variables)
+
+            # Return the result as a JSON string
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],  # Detailed explanation
+                    "final_answer": str(
+                        result["Answer"]
+                    ),  # Final answer (string format)
+                }
+            )
+
+        except Exception as e:
+            # Catch exceptions and return an error message
+            return self.handle_exception("bazett_calculator_explanation", e)
+        
+    def qt_calculator_framingham(
+        self,
+        heart_rate_value: float,  # Numeric part of heart rate (e.g., 81)
+        heart_rate_unit: str,  # Unit of heart rate ("beats per minute")
+        qt_interval_value: float,  # Numeric part of QT interval (e.g., 330)
+        qt_interval_unit: str,  # Unit of QT interval ("msec")
+    ) -> str:
+        r"""Calculate patient's corrected QT interval using Framingham Formula and
+        generate detailed explanatory text.
+
+        Args:
+            heart_rate_value (float): Numeric value of patient's heart rate.
+            heart_rate_unit (str): Unit of heart rate, must be:
+                - "beats per minute"
+            qt_interval_value (float): Numeric value of QT interval.
+            qt_interval_unit (str): Unit of QT interval, must be:
+                - "msec" for milliseconds.
+
+        Returns:
+            str: JSON string containing calculation process and result,
+                formatted as:
+                {
+                    "rationale": "Detailed calculation process text",
+                    "final_answer": "Corrected QT interval (string format)"
+                }
+                If exception occurs, returns error message from handle_exception.
+
+        Notes:
+            - Uses framingham_calculator_explanation for calculation.
+            - Uses json.dumps to serialize result into JSON string.
+        """
+        # Construct input variables dictionary
+        input_variables = {
+            "heart_rate": (
+                float(heart_rate_value),
+                str(heart_rate_unit),
+            ),  # Heart rate: (value, unit)
+            "qt_interval": (
+                float(qt_interval_value),
+                str(qt_interval_unit),
+            ),  # QT interval: (value, unit)
+        }
+
+        from camel.toolkits.medcalc_bench.qt_calculator_framingham import (
+            framingham_calculator_explanation,
+        )
+
+        try:
+            # Call the Framingham calculation function
+            result = framingham_calculator_explanation(input_variables)
+
+            # Return result as JSON string
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],  # Detailed explanation
+                    "final_answer": str(
+                        result["Answer"]
+                    ),  # Final answer (string format)
+                }
+            )
+
+        except Exception as e:
+            # Catch exceptions and return error message
+            return self.handle_exception("qt_calculator_framingham", e)
+
+    def qt_calculator_fredericia(
+        self,
+        heart_rate_value: float,  # Numeric part of heart rate (e.g., 70)
+        heart_rate_unit: str,  # Unit of heart rate ("beats per minute")
+        qt_value: float,  # Numeric part of QT interval (e.g., 330)
+        qt_unit: str,  # Unit of QT interval ("msec")
+    ) -> str:
+        r"""Calculate the patient's corrected QT interval using
+        Fridericia Formula and generate a detailed explanatory text.
+
+        Args:
+            heart_rate_value (float): The numeric value of heart rate.
+            heart_rate_unit (str): The unit of heart rate, should be:
+                - "beats per minute"
+            qt_value (float): The numeric value of QT interval.
+            qt_unit (str): The unit of QT interval, should be:
+                - "msec" for milliseconds.
+
+        Returns:
+            str: A JSON string containing the calculation process and result,
+                formatted as follows:
+                {
+                    "rationale": "Detailed calculation process and explanatory
+                        text",
+                    "final_answer": "Corrected QT interval
+                        in msec (string format)"
+                }
+                If an exception occurs, return an error message generated by
+                    the `handle_exception` method.
+
+        Notes:
+            - The `fredericia_calculator_explanation` function is used for the
+                calculation.
+            - The `json.dumps` function is used to serialize the result into a
+                JSON string.
+        """
+        # Construct the input variables dictionary
+        input_variables = {
+            "heart_rate": (
+                float(heart_rate_value),
+                str(heart_rate_unit),
+            ),  # Heart rate: (value, unit)
+            "qt_interval": (
+                float(qt_value),
+                str(qt_unit),
+            ),  # QT interval: (value, unit)
+        }
+
+        from camel.toolkits.medcalc_bench.qt_calculator_fredericia import (
+            fredericia_calculator_explanation,
+        )
+
+        try:
+            # Call the QT correction calculation function
+            result = fredericia_calculator_explanation(input_variables)
+
+            # Return the result as a JSON string
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],  # Detailed explanation
+                    "final_answer": str(
+                        result["Answer"]
+                    ),  # Final answer (string)
+                }
+            )
+
+        except Exception as e:
+            # Catch exceptions and return an error message
+            return self.handle_exception("qt_calculator_fredericia", e)
+        
+    def qt_calculator_hodges(
+        self,
+        heart_rate_value: float,  # Numeric part of heart rate (e.g., 52)
+        heart_rate_unit: str,  # Unit of heart rate ("beats per minute")
+        qt_interval_value: float,  # Numeric part of QT interval (e.g., 330)
+        qt_interval_unit: str,  # Unit of QT interval ("msec")
+    ) -> str:
+        r"""Calculate the patient's corrected QT interval (QTc) using Hodges formula
+        and generate a detailed explanatory text.
+
+        Args:
+            heart_rate_value (float): The numeric value of patient's heart rate.
+            heart_rate_unit (str): The unit of heart rate, must be:
+                - "beats per minute"
+            qt_interval_value (float): The numeric value of QT interval.
+            qt_interval_unit (str): The unit of QT interval, must be:
+                - "msec" for milliseconds.
+
+        Returns:
+            str: A JSON string containing the calculation process and result,
+                formatted as follows:
+                {
+                    "rationale": "Detailed calculation process and explanatory
+                        text",
+                    "final_answer": "Corrected QT interval in msec (string format)"
+                }
+                If an exception occurs, return an error message generated by
+                    the `handle_exception` method.
+
+        Notes:
+            - The `hodges_calculator_explanation` function is used to calculate the
+                corrected QT interval.
+            - The `json.dumps` function is used to serialize the result into a
+                JSON string.
+        """
+        # Construct the input variables dictionary
+        input_variables = {
+            "heart_rate": (
+                float(heart_rate_value),
+                str(heart_rate_unit),
+            ),  # Heart rate: (value, unit)
+            "qt_interval": (
+                float(qt_interval_value),
+                str(qt_interval_unit),
+            ),  # QT interval: (value, unit)
+        }
+
+        from camel.toolkits.medcalc_bench.qt_calculator_hodges import (
+            hodges_calculator_explanation,
+        )
+
+        try:
+            # Call the QTc calculation function
+            result = hodges_calculator_explanation(input_variables)
+
+            # Return the result as a JSON string
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],  # Detailed explanation
+                    "final_answer": str(
+                        result["Answer"]
+                    ),  # Final answer (string format)
+                }
+            )
+
+        except Exception as e:
+            # Catch exceptions and return an error message
+            return self.handle_exception("hodges_calculator_explanation", e)
+
+    def qt_calculator_rautaharju(
+        self,
+        heart_rate_value: float,  # Numeric part of heart rate (e.g., 110)
+        heart_rate_unit: str,  # Unit of heart rate ("beats per minute")
+        qt_interval_value: float,  # Numeric part of QT interval (e.g., 330)
+        qt_interval_unit: str,  # Unit of QT interval ("msec")
+    ) -> str:
+        r"""Calculate patient's corrected QT interval
+            using Rautaharju formula and generate detailed explanatory text.
+
+        Args:
+            heart_rate_value (float): Numeric value of patient's heart rate.
+            heart_rate_unit (str): Unit of heart rate, must be:
+                - "beats per minute"
+            qt_interval_value (float): Numeric value of QT interval.
+            qt_interval_unit (str): Unit of QT interval, must be:
+                - "msec"
+
+        Returns:
+            str: JSON string containing calculation process and result,
+                formatted as:
+                {
+                    "rationale": "Detailed calculation process and explanatory
+                        text",
+                    "final_answer": "Corrected QT interval in msec (string)"
+                }
+                If exception occurs, returns error message
+                    from handle_exception.
+
+        Notes:
+            - Uses Rautaharju formula: QTc = QT × (120 + HR) / 180
+            - The `json.dumps` function serializes result into JSON string.
+            - Units must match expected values or calculation will fail.
+        """
+        # Construct input variables dictionary
+        input_variables = {
+            "heart_rate": (
+                float(heart_rate_value),
+                str(heart_rate_unit),
+            ),  # (value, unit)
+            "qt_interval": (
+                float(qt_interval_value),
+                str(qt_interval_unit),
+            ),  # (value, unit)
+        }
+
+        from camel.toolkits.medcalc_bench.qt_calculator_rautaharju import (
+            rautaharju_calculator_explanation,
+        )
+
+        try:
+            # Call QT calculation function
+            result = rautaharju_calculator_explanation(input_variables)
+
+            # Return result as JSON string
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],  # Detailed explanation
+                    "final_answer": str(
+                        result["Answer"]
+                    ),  # Final answer (string format)
+                }
+            )
+
+        except Exception as e:
+            # Catch exceptions and return error message
+            return self.handle_exception("rautaharju_calculator_explanation", e)
+
+    def steroid_conversion_calculator(
+        self,
+        input_steroid: str,  # Input steroid with route (e.g., "Hydrocortisone PO")
+        input_value: float,  # Numeric value of input steroid (e.g., 190.936)
+        input_unit: str,  # Unit of input steroid (e.g., "mg")
+        target_steroid: str,  # Target steroid with route (e.g., "MethylPrednisoLONE IV")
+    ) -> str:
+        r"""Calculate equivalent dosage of target steroid and generate explanatory
+        text.
+
+        Args:
+            input_steroid (str): Input steroid name with route, one of:
+                - "Betamethasone IV"
+                - "Cortisone PO"
+                - "Dexamethasone IV"
+                - "Dexamethasone PO"
+                - "Hydrocortisone IV"
+                - "Hydrocortisone PO"
+                - "MethylPrednisoLONE IV"
+                - "MethylPrednisoLONE PO"
+                - "PrednisoLONE PO"
+                - "PredniSONE PO"
+                - "Triamcinolone IV"
+            input_value (float): Numeric value of input steroid dose.
+            input_unit (str): Unit of input steroid dose (e.g., "mg").
+            target_steroid (str): Target steroid name with route, one of:
+                - "Betamethasone IV"
+                - "Cortisone PO"
+                - "Dexamethasone IV"
+                - "Dexamethasone PO"
+                - "Hydrocortisone IV"
+                - "Hydrocortisone PO"
+                - "MethylPrednisoLONE IV"
+                - "MethylPrednisoLONE PO"
+                - "PrednisoLONE PO"
+                - "PredniSONE PO"
+                - "Triamcinolone IV"
+
+        Returns:
+            str: A JSON string containing calculation process and result, formatted:
+                {
+                    "rationale": "Detailed calculation process and explanation",
+                    "final_answer": "Equivalent dosage in mg (string format)"
+                }
+                If an exception occurs, returns error message from
+                `handle_exception` method.
+
+        Notes:
+            - Uses `compute_steroid_conversion_explanation` for calculation.
+            - Uses `json.dumps` to serialize result into JSON string.
+            - Both input and target steroids must include route (IV/PO).
+        """
+        input_variables = {
+            "input steroid": [str(input_steroid), float(input_value), str(input_unit)],
+            "target steroid": str(target_steroid),
+        }
+
+        from camel.toolkits.medcalc_bench.steroid_conversion_calculator import (
+            compute_steroid_conversion_explanation,
+        )
+
+        try:
+            result = compute_steroid_conversion_explanation(input_variables)
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],
+                    "final_answer": str(result["Answer"]),
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("steroid_conversion", e)
+        
+    def wells_criteria_dvt(
+        active_cancer: bool,  # Active cancer treatment within 6 months
+        bedridden_for_atleast_3_days: bool,  # Bedridden >3 days recently
+        major_surgery_in_last_12_weeks: bool,  # Major surgery within 12 weeks
+        calf_swelling_3cm: bool,  # Calf swelling >3 cm vs other leg
+        collateral_superficial_veins: bool,  # Collateral superficial veins
+        leg_swollen: bool,  # Entire leg swollen
+        localized_tenderness_on_deep_venuous_system: bool,  # Tenderness
+        pitting_edema_on_symptomatic_leg: bool,  # Pitting edema in symptomatic leg
+        paralysis_paresis_immobilization_in_lower_extreme: bool,  # Immobilization
+        previous_dvt: bool,  # Previously documented DVT
+        alternative_to_dvt_diagnosis: bool,  # Alternative diagnosis more likely
+    ) -> str:
+        r"""Calculate the patient's Wells' Criteria for DVT score and generate a
+        detailed explanatory text.
+
+        Args:
+            active_cancer (bool): Active cancer treatment within 6 months.
+            bedridden_for_atleast_3_days (bool): Bedridden >3 days recently.
+            major_surgery_in_last_12_weeks (bool): Major surgery within 12 weeks.
+            calf_swelling_3cm (bool): Calf swelling >3 cm vs other leg.
+            collateral_superficial_veins (bool): Collateral superficial veins.
+            leg_swollen (bool): Entire leg swollen.
+            localized_tenderness_on_deep_venuous_system (bool): Tenderness.
+            pitting_edema_on_symptomatic_leg (bool): Pitting edema in symptomatic leg.
+            paralysis_paresis_immobilization_in_lower_extreme (bool): Immobilization.
+            previous_dvt (bool): Previously documented DVT.
+            alternative_to_dvt_diagnosis (bool): Alternative diagnosis more likely.
+
+        Returns:
+            str: A JSON string containing the calculation process and result,
+                formatted as follows:
+                {
+                    "rationale": "Detailed calculation process and explanatory text",
+                    "final_answer": "Wells' Criteria for DVT score (string format)"
+                }
+                If an exception occurs, return an error message generated by
+                the `handle_exception` method.
+
+        Notes:
+            - The `compute_wells_criteria_dvt_explanation` function is used for
+            the actual calculation.
+            - The `json.dumps` function is used to serialize the result into JSON.
+        """
+        # Construct the input variables dictionary
+        input_variables = {
+            "active_cancer": bool(active_cancer),
+            "bedridden_for_atleast_3_days": bool(bedridden_for_atleast_3_days),
+            "major_surgery_in_last_12_weeks": bool(major_surgery_in_last_12_weeks),
+            "calf_swelling_3cm": bool(calf_swelling_3cm),
+            "collateral_superficial_veins": bool(collateral_superficial_veins),
+            "leg_swollen": bool(leg_swollen),
+            "localized_tenderness_on_deep_venuous_system": bool(
+                localized_tenderness_on_deep_venuous_system
+            ),
+            "pitting_edema_on_symptomatic_leg": bool(
+                pitting_edema_on_symptomatic_leg
+            ),
+            "paralysis_paresis_immobilization_in_lower_extreme": bool(
+                paralysis_paresis_immobilization_in_lower_extreme
+            ),
+            "previous_dvt": bool(previous_dvt),
+            "alternative_to_dvt_diagnosis": bool(alternative_to_dvt_diagnosis),
+        }
+
+        from camel.toolkits.medcalc_bench.wells_criteria_dvt import (
+            compute_wells_criteria_dvt_explanation,
+        )
+
+        try:
+            # Call the Wells' Criteria calculation function
+            result = compute_wells_criteria_dvt_explanation(input_variables)
+
+            # Return the result as a JSON string
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],  # Detailed explanation
+                    "final_answer": str(
+                        result["Answer"]
+                    ),  # Final answer (string format)
+                }
+            )
+
+        except Exception as e:
+            # Catch exceptions and return an error message
+            return self.handle_exception("compute_wells_criteria_dvt_explanation", e)
 
     def handle_exception(self, func_name: str, error: Exception) -> str:
         r"""Handles exceptions by logging the error and returning
@@ -1644,4 +2614,17 @@ class MedCalcToolkit(BaseToolkit):
             FunctionTool(self.creatinine_clearance),
             FunctionTool(self.wells_criteria_pe),
             FunctionTool(self.ldl_calculated),
+            FunctionTool(self.albumin_corrected_anion),
+            FunctionTool(self.albumin_corrected_delta_gap),
+            FunctionTool(self.albumin_delta_ratio),
+            FunctionTool(self.estimated_due_date),
+            FunctionTool(self.free_water_deficit),
+            FunctionTool(self.glasgow_coma_score),
+            FunctionTool(self.qt_calculator_bazett),
+            FunctionTool(self.qt_calculator_framingham),
+            FunctionTool(self.qt_calculator_fredericia),
+            FunctionTool(self.qt_calculator_hodges),
+            FunctionTool(self.qt_calculator_rautaharju),
+            FunctionTool(self.steroid_conversion_calculator),
+            FunctionTool(self.wells_criteria_dvt)
         ]
