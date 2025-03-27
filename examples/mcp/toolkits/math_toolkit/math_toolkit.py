@@ -12,13 +12,14 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import argparse
+import sys
 
 from camel.toolkits import MathToolkit
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Run Math Toolkit with MCP server mode.",
-        usage="python math_toolkit.py [--mode MODE]",
+        usage=f"python {sys.argv[0]} [--mode MODE]",
     )
     parser.add_argument(
         "--mode",
