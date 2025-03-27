@@ -126,7 +126,7 @@ class FewShotGenerator(BaseGenerator):
         max_retries: int = 10,
         num_examples: int = 3,
         **kwargs,
-    ) -> List[DataPoint]:
+    ) -> None:
         r"""Generates and validates `n` new datapoints through
         few-shot prompting, with a retry limit.
 
@@ -255,4 +255,4 @@ class FewShotGenerator(BaseGenerator):
         # Thread-safe way to extend the data list
         async with asyncio.Lock():
             self._data.extend(valid_data_points)
-        return valid_data_points
+        return None
