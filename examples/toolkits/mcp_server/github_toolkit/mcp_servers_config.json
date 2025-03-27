@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "github_toolkit": {
+      "command": "python",
+      "args": [
+        "-m",
+        "github_toolkit",
+        "camel-ai/camel"
+      ]
+    }
+  }
+}
