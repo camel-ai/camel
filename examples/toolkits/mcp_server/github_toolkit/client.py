@@ -3,10 +3,11 @@ from typing import TYPE_CHECKING, Union
 
 from mcp.types import CallToolResult
 
-from camel.toolkits.mcp_toolkit import _MCPServer, MCPToolkit
+from camel.toolkits.mcp_toolkit import MCPToolkit, _MCPServer
 
 if TYPE_CHECKING:
     from mcp import ListToolsResult
+
 
 async def run_example():
     mcp_toolkit = MCPToolkit(config_path="./mcp_servers_config.json")
@@ -37,8 +38,11 @@ async def run_example():
 ===============================================================================
 ### Required prerequisites
 
-- [x] I have searched the [Issue Tracker](https://github.com/camel-ai/camel/issues) and [Discussions](https://github.com/camel-ai/camel/discussions) that this hasn't already been reported. (+1 or comment there if it has.)
-- [ ] Consider asking first in a [Discussion](https://github.com/camel-ai/camel/discussions/new).
+- [x] I have searched the [Issue Tracker](https://github.com/camel-ai/camel/iss
+ues) and [Discussions](https://github.com/camel-ai/camel/discussions) that this
+ hasn't already been reported. (+1 or comment there if it has.)
+- [ ] Consider asking first in a [Discussion](https://github.com/camel-ai/camel
+/discussions/new).
 
 ### Motivation
 
