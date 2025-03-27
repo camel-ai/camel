@@ -29,19 +29,21 @@ class OpenAIAudioModels(BaseAudioModel):
         self,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        timeout: Optional[float] = None,
     ) -> None:
         r"""Initialize an instance of OpenAI."""
-        super().__init__(api_key, url)
+        super().__init__(api_key, url, timeout)
         self._url = url or os.environ.get("OPENAI_API_BASE_URL")
         self._api_key = api_key or os.environ.get("OPENAI_API_KEY")
+        self._timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         self._client = OpenAI(
-            timeout=120,
+            timeout=self._timeout,
             max_retries=3,
             base_url=self._url,
             api_key=self._api_key,
         )
         self._async_client = AsyncOpenAI(
-            timeout=120,
+            timeout=self._timeout,
             max_retries=3,
             base_url=self._url,
             api_key=self._api_key,

@@ -61,6 +61,8 @@ from .file_write_toolkit import FileWriteToolkit
 from .terminal_toolkit import TerminalToolkit
 from .pubmed_toolkit import PubMedToolkit
 from .thinking_toolkit import ThinkingToolkit
+from .searxng_toolkit import SearxNGToolkit
+
 
 __all__ = [
     'BaseToolkit',
@@ -110,4 +112,5 @@ __all__ = [
     'TerminalToolkit',
     'PubMedToolkit',
     'ThinkingToolkit',
+    'SearxNGToolkit',
 ]
