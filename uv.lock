@@ -560,6 +560,7 @@ all = [
     { name = "beautifulsoup4" },
     { name = "botocore" },
     { name = "cohere" },
+    { name = "crawl4ai" },
     { name = "dappier" },
     { name = "datacommons" },
     { name = "datacommons-pandas" },
@@ -832,6 +833,7 @@ test = [
 web-tools = [
     { name = "apify-client" },
     { name = "beautifulsoup4" },
+    { name = "crawl4ai" },
     { name = "dappier" },
     { name = "duckduckgo-search" },
     { name = "fastapi" },
@@ -879,6 +881,8 @@ requires-dist = [
     { name = "cohere", marker = "extra == 'model-platforms'", specifier = ">=5.11.0,<6" },
     { name = "cohere", marker = "extra == 'rag'", specifier = ">=5.11.0,<6" },
     { name = "colorama", specifier = ">=0.4.6,<0.5" },
+    { name = "crawl4ai", marker = "extra == 'all'", specifier = ">=0.5.0" },
+    { name = "crawl4ai", marker = "extra == 'web-tools'", specifier = ">=0.5.0" },
     { name = "dappier", marker = "extra == 'all'", specifier = ">=0.3.3,<0.4" },
     { name = "dappier", marker = "extra == 'web-tools'", specifier = ">=0.3.3,<0.4" },
     { name = "datacommons", marker = "extra == 'all'", specifier = ">=1.4.3,<2" },
@@ -1416,6 +1420,44 @@ wheels = [
 [package.optional-dependencies]
 toml = [
     { name = "tomli", marker = "python_full_version <= '3.11'" },
+]
+
+[[package]]
+name = "crawl4ai"
+version = "0.5.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "aiofiles" },
+    { name = "aiosqlite" },
+    { name = "beautifulsoup4" },
+    { name = "click" },
+    { name = "colorama" },
+    { name = "cssselect" },
+    { name = "fake-useragent" },
+    { name = "faust-cchardet" },
+    { name = "httpx" },
+    { name = "humanize" },
+    { name = "litellm" },
+    { name = "lxml" },
+    { name = "nltk" },
+    { name = "numpy" },
+    { name = "pillow" },
+    { name = "playwright" },
+    { name = "psutil" },
+    { name = "pydantic" },
+    { name = "pyOpenSSL" },
+    { name = "pyperclip" },
+    { name = "python-dotenv" },
+    { name = "rank-bm25" },
+    { name = "requests" },
+    { name = "rich" },
+    { name = "snowballstemmer" },
+    { name = "tf-playwright-stealth" },
+    { name = "xxhash" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/9d/f7/7dc822100f46e06df53683bd24030ffe90bc916ca800cdcd9615ee2aecc1/crawl4ai-0.5.0.tar.gz", hash = "sha256:2218ce780c31a5d1a9df4bee674cc7299004022460c89b4b223557ad3131ca25", size = 253563 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5c/f0/c70158c64c6bcc4ae46764e56e66986e13cd779031f6f113e5694fc0c6de/crawl4ai-0.5.0-py3-none-any.whl", hash = "sha256:d9007273244563c41de04950abc4e7227c8fd64c2bffe28d016a9617665b68d7", size = 250416 },
 ]
 
 [[package]]
