@@ -169,7 +169,7 @@ class ScoreBasedContextCreator(BaseContextCreator):
 
         # Incase system message is the only message in memory when sorted units
         # are empty, raise an error
-        if system_unit and len(remaining_units) == 0 and len(records) > 2:
+        if system_unit and len(remaining_units) == 0 and len(records) > 1:
             raise RuntimeError(
                 "System message and current message exceeds token limit ",
                 total_tokens,
