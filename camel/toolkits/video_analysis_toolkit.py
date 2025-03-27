@@ -280,7 +280,6 @@ class VideoAnalysisToolkit(BaseToolkit):
         duration = total_frames / fps if fps > 0 else 0
         cap.release()
 
-        # Use the instance's frame_interval instead of hardcoded value
         frame_interval = self.frame_interval  # seconds
 
         # Calculate the total number of frames to extract
