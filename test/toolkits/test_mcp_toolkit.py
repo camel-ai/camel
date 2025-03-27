@@ -506,9 +506,7 @@ class TestMCPToolkit:
                         "args": ["--arg1"],
                         "env": {"TEST_ENV": "value"},
                     },
-                    "server2": {
-                        "url": "https://test.com/sse"
-                    }
+                    "server2": {"url": "https://test.com/sse"},
                 }
             }
             config_path.write_text(json.dumps(config_data))
@@ -574,7 +572,6 @@ class TestMCPToolkit:
                 mock_logger.warning.assert_called_with(
                     "'mcpServers' is not a dictionary, skipping..."
                 )
-
 
     @pytest.mark.asyncio
     async def test_connection(self):
