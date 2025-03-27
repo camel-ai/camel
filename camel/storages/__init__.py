@@ -28,6 +28,7 @@ from .vectordb_storages.base import (
 )
 from .vectordb_storages.milvus import MilvusStorage
 from .vectordb_storages.qdrant import QdrantStorage
+from .vectordb_storages.tidb import TiDBStorage
 
 __all__ = [
     'BaseKeyValueStorage',
@@ -40,6 +41,7 @@ __all__ = [
     'VectorDBQueryResult',
     'QdrantStorage',
     'MilvusStorage',
+    "TiDBStorage",
     'BaseGraphStorage',
     'Neo4jGraph',
     'NebulaGraph',
