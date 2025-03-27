@@ -33,7 +33,6 @@ from typing import (
     Union,
     cast,
 )
-from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 import asyncio
 from PIL import Image, ImageDraw, ImageFont
 
@@ -45,7 +44,7 @@ from camel.models import BaseModelBackend, ModelFactory
 from camel.toolkits import FunctionTool, VideoAnalysisToolkit
 from camel.toolkits.base import BaseToolkit
 from camel.types import ModelPlatformType, ModelType
-from camel.utils import dependencies_required, retry_on_error
+from camel.utils import dependencies_required, retry_on_error,with_timeout
 
 logger = get_logger(__name__)
 
@@ -103,8 +102,6 @@ ASYNC_ACTIONS = [
     "visit_page",
     "click_blank_area",
 ]
-
-
 
 ACTION_WITH_FEEDBACK_LIST = [
     'ask_question_about_video',
@@ -539,6 +536,8 @@ class BaseBrowser:
         self.page.mouse.click(0, 0)
         self._wait_for_load()
 
+    @retry_on_error()
+    @with_timeout(timeout=5)
     def visit_page(self, url: str) -> None:
         r"""Visit a page with the given URL."""
 
@@ -1076,34 +1075,20 @@ class AsyncBaseBrowser:
         r"""Click a blank area of the page to unfocus the current element."""
         return self.async_click_blank_area()
     
-    async def async_visit_page(self, url: str, timeout: int = 30000, max_retries: int = 2) -> None:
-        r"""Asynchronously visit a page with the given URL, retrying with an increased timeout if necessary.
+    
+    @retry_on_error()
+    @with_timeout(timeout=5)
+    async def async_visit_page(self, url: str) -> None:
+        r"""Visit a page with the given URL."""
         
-        Raises:
-            Exception: If the page cannot be accessed after the maximum retries.
-        """
-        current_timeout = timeout
-        for _ in range(max_retries):
-            try:
-                await self.page.goto(url, timeout=current_timeout)
-                break
-            except Exception as e:
-                current_timeout *= 2
-                logger.warning(f"Failed to visit page {url}. Retrying with increased timeout.")
-                logger.warning(f"Error message: {e}")
-        else:
-            error_msg = f"Unable to access {url} even after {max_retries} attempts with increased timeouts."
-            logger.warning(error_msg)
-            raise Exception(error_msg)
+        await self.page.goto(url)
         await self.wait_for_load()
         self.page_url = url
-    def visit_page(self, url: str, timeout: int = 30000, max_retries: int = 2) -> None:
-        r"""Visit a page with the given URL, retrying with an increased timeout if necessary.
+            
+    def visit_page(self, url: str) -> None:
+        r"""Visit a page with the given URL."""
         
-        Raises:
-            Exception: If the page cannot be accessed after the maximum retries.
-        """
-        return self.async_visit_page(url, timeout, max_retries)
+        return self.async_visit_page(url)
     
     def ask_question_about_video(self, question: str) -> str:
         r"""Ask a question about the video on the current page,
@@ -2629,12 +2614,7 @@ class AsyncBrowserToolkit(BaseToolkit):
         logger.debug(f"Detailed plan: {detailed_plan}")
 
         await self.browser.async_init()
-        try:
-            await self.browser.visit_page(start_url)
-        except Exception as e:
-            await self.browser.close()
-            logger.warning(f"Error visiting the start URL: {start_url}. Exception: {e}")
-            return None
+        await self.browser.visit_page(start_url)
 
 
         for i in range(round_limit):
