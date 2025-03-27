@@ -332,6 +332,10 @@ class _MCPServer(BaseToolkit):
             for mcp_tool in self._mcp_tools
         ]
 
+    @property
+    def session(self):
+        return self._session
+
 
 class MCPToolkit(BaseToolkit):
     r"""MCPToolkit provides a unified interface for managing multiple
