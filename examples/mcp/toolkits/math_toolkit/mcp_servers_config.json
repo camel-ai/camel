@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "github_toolkit": {
+    "math_toolkit": {
       "command": "python",
       "args": [
         "-m",
