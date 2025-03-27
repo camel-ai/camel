@@ -62,6 +62,9 @@ from .terminal_toolkit import TerminalToolkit
 from .pubmed_toolkit import PubMedToolkit
 from .thinking_toolkit import ThinkingToolkit
 from .pyautogui_toolkit import PyAutoGUIToolkit
+from .openai_agent_toolkit import OpenAIAgentToolkit
+from .searxng_toolkit import SearxNGToolkit
+
 
 
 __all__ = [
