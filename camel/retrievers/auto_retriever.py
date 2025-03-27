@@ -29,6 +29,7 @@ from camel.storages import (
     BaseVectorStorage,
     MilvusStorage,
     QdrantStorage,
+    TiDBStorage,
 )
 from camel.types import StorageType
 from camel.utils import Constants
@@ -85,6 +86,19 @@ class AutoRetriever:
                     "provided."
                 )
             return MilvusStorage(
+                vector_dim=self.embedding_model.get_output_dim(),
+                collection_name=collection_name,
+                url_and_api_key=self.url_and_api_key,
+            )
+
+        if self.storage_type == StorageType.TIDB:
+            if self.url_and_api_key is None:
+                raise ValueError(
+                    "URL (database url) and API key required for TiDB storage "
+                    "are not provided. Format: "
+                    "mysql+pymysql://<username>:<password>@<host>:4000/test"
+                )
+            return TiDBStorage(
                 vector_dim=self.embedding_model.get_output_dim(),
                 collection_name=collection_name,
                 url_and_api_key=self.url_and_api_key,

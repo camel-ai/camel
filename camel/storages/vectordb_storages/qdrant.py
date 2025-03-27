@@ -450,9 +450,9 @@ class QdrantStorage(BaseVectorStorage):
             search_filter = Filter(must=cast(List[Condition], must_conditions))
 
         # Execute the search with optional filter
-        search_result = self._client.search(
+        search_result = self._client.query_points(
             collection_name=self.collection_name,
-            query_vector=query.query_vector,
+            query=query.query_vector,
             with_payload=True,
             with_vectors=True,
             limit=query.top_k,
@@ -467,7 +467,7 @@ class QdrantStorage(BaseVectorStorage):
                 payload=point.payload,
                 vector=point.vector,  # type: ignore[arg-type]
             )
-            for point in search_result
+            for point in search_result.points
         ]
 
         return query_results

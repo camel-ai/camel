@@ -19,7 +19,7 @@ from .crawl4ai_loader import Crawl4AI
 from .firecrawl_reader import Firecrawl
 from .jina_url_reader import JinaURLReader
 from .mineru_extractor import MinerU
-from .panda_reader import PandaReader
+from .pandas_reader import PandasReader
 from .unstructured_io import UnstructuredIO
 
 __all__ = [
@@ -31,7 +31,7 @@ __all__ = [
     'Firecrawl',
     'Apify',
     'ChunkrReader',
-    'PandaReader',
+    'PandasReader',
     'MinerU',
     'Crawl4AI',
 ]
