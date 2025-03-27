@@ -15,10 +15,10 @@
 import json
 import mimetypes
 import os
-import subprocess
 from typing import List, Literal, Optional, Tuple
 from urllib.parse import urlparse
 
+import chardet
 import nest_asyncio
 import pandas as pd
 import requests
@@ -53,9 +53,8 @@ class DocumentProcessingToolkit(BaseToolkit):
         model: Optional[BaseModelBackend] = None,
     ):
         self.image_tool = ImageAnalysisToolkit(model=model)
-        self.cache_dir = "tmp/"
-        if cache_dir:
-            self.cache_dir = cache_dir
+        self.cache_dir = os.path.abspath(cache_dir or "tmp/")
+        os.makedirs(self.cache_dir, exist_ok=True)
 
     def _convert_to_markdown(self, df: pd.DataFrame) -> str:
         r"""Convert DataFrame to Markdown format table.
@@ -71,126 +70,146 @@ class DocumentProcessingToolkit(BaseToolkit):
         md_table = tabulate(df, headers='keys', tablefmt='pipe')
         return str(md_table)
 
+    def _detect_file_encoding(
+        self, document_path: str, default_encoding: str = "utf-8"
+    ) -> str:
+        r"""Detects the encoding of a file using chardet.
+
+        Args:
+            document_path (str): The path of the file.
+
+        Returns:
+            str: The detected encoding type.
+        """
+        try:
+            with open(document_path, "rb") as f:
+                detected_encoding = chardet.detect(f.read())["encoding"]
+                return detected_encoding or default_encoding
+        except Exception as e:
+            logger.warning(
+                f"Encoding detection failed for {document_path}, "
+                f"falling back to {default_encoding}. Error: {e}"
+            )
+            return default_encoding
+
     def extract_excel_content(
         self,
         document_path: str,
         header_only: bool,
-        max_rows: Optional[int] = None,
+        max_rows: Optional[int] = 100,
     ) -> str:
         r"""Extract detailed cell information from an Excel file, including
         multiple sheets.
-
         Args:
             document_path (str): The path of the Excel file.
             header_only (bool): Whether to return only headers or full content.
-            max_rows (int): The maximum number of rows to process.
-
+            max_rows (int, Optional): The maximum number of rows to process.
+            (default: 100)
         Returns:
             str: Extracted excel information, including details of each sheet.
         """
 
         logger.debug(
-            f"Calling extract_excel_content with document_path"
-            f": {document_path}"
+            f"Calling extract_excel_content with document_path:{document_path}"
         )
 
-        if not (
-            document_path.endswith("xls")
-            or document_path.endswith("xlsx")
-            or document_path.endswith("csv")
-        ):
+        if not document_path.endswith(("xls", "xlsx", "csv")):
             logger.error("Only xls, xlsx, csv files are supported.")
-            return (
-                f"Failed to process file {document_path}: "
-                f"It is not excel format. Please try other ways."
-            )
+            return f"Failed to process file {document_path}"
 
-        if document_path.endswith("csv"):
-            try:
-                if header_only:
-                    df = pd.read_csv(document_path, nrows=1)
-                    headers = df.columns.tolist()
-                    return f"CSV File Processed:\nHeaders: {headers}"
+        try:
+            if document_path.endswith("csv"):
+                return self._process_csv(document_path, header_only, max_rows)
 
-                if max_rows:
-                    df = pd.read_csv(document_path, nrows=max_rows)
-                else:
-                    df = pd.read_csv(document_path)
+            return self._process_xlsx(document_path, header_only, max_rows)
+        except Exception as e:
+            logger.error(f"Error occurred while processing Excel file: {e}")
+            return f"Failed to process file {document_path}: {e}"
 
-                md_table = self._convert_to_markdown(df)
-                return f"CSV File Processed:\n{md_table}"
+    def _process_csv(
+        self, document_path: str, header_only: bool, max_rows: Optional[int]
+    ) -> str:
+        r"""Handles processing csv files.
+        Args:
+            document_path (str): The path of the Excel file.
+            header_only (bool): Whether to return only headers or full content.
+            max_rows (int, Optional): The maximum number of rows to process.
+        Returns:
+            str: Extracted excel information, including details of each sheet.
+        """
+        encoding = self._detect_file_encoding(document_path)
+        df = pd.read_csv(
+            document_path,
+            encoding=encoding,
+            nrows=1 if header_only else max_rows,
+        )
+        df = df.dropna(how="all", axis=0).dropna(how="all", axis=1)
 
-            except Exception as e:
-                return f"Failed to process CSV file {document_path}: {e}"
+        headers = df.columns.tolist()
+        if header_only:
+            return f"CSV File Processed:\nHeaders: {headers}"
 
+        md_table = self._convert_to_markdown(df)
+        return f"CSV File Processed:\n{md_table}"
+
+    def _process_xlsx(
+        self, document_path: str, header_only: bool, max_rows: Optional[int]
+    ) -> str:
+        r"""Handles processing XLSX files.
+        Args:
+            document_path (str): The path of the Excel file.
+            header_only (bool): Whether to return only headers or full content.
+            max_rows (int, Optional): The maximum number of rows to process.
+        Returns:
+            str: Extracted excel information, including details of each sheet.
+        """
         if document_path.endswith("xls"):
             output_path = document_path.replace(".xls", ".xlsx")
-            x2x = XLS2XLSX(document_path)
-            x2x.to_xlsx(output_path)
+            XLS2XLSX(document_path).to_xlsx(output_path)
             document_path = output_path
 
-        # Load the Excel workbook
         wb = load_workbook(document_path, data_only=True)
         sheet_info_list = []
 
-        # Iterate through all sheets
         for sheet in wb.sheetnames:
             ws = wb[sheet]
-            cell_info_list = []
+            cell_info_list = [
+                {
+                    "index": f"{cell.row}{cell.column_letter}",
+                    "value": cell.value,
+                    "font_color": cell.font.color.rgb
+                    if cell.font
+                    and cell.font.color
+                    and "rgb=None" not in str(cell.font.color)
+                    else None,
+                    "fill_color": cell.fill.fgColor.rgb
+                    if cell.fill
+                    and cell.fill.fgColor
+                    and "rgb=None" not in str(cell.fill.fgColor)
+                    else None,
+                }
+                for row in ws.iter_rows()
+                for cell in row
+            ]
 
-            for row in ws.iter_rows():
-                for cell in row:
-                    row_num = cell.row
-                    col_letter = cell.column_letter
-
-                    cell_value = cell.value
-
-                    font_color = None
-                    if (
-                        cell.font
-                        and cell.font.color
-                        and "rgb=None" not in str(cell.font.color)
-                    ):  # Handle font color
-                        font_color = cell.font.color.rgb
-
-                    fill_color = None
-                    if (
-                        cell.fill
-                        and cell.fill.fgColor
-                        and "rgb=None" not in str(cell.fill.fgColor)
-                    ):  # Handle fill color
-                        fill_color = cell.fill.fgColor.rgb
-
-                    cell_info_list.append(
-                        {
-                            "index": f"{row_num}{col_letter}",
-                            "value": cell_value,
-                            "font_color": font_color,
-                            "fill_color": fill_color,
-                        }
-                    )
-
-            # Convert the sheet to a DataFrame and then to markdown
             sheet_df = pd.read_excel(
                 document_path, sheet_name=sheet, engine='openpyxl'
             )
-            # If header_only is True, just get the headers
+            sheet_df.dropna(how='all', inplace=True)
+            sheet_df.dropna(axis=1, how='all', inplace=True)
             if header_only:
                 sheet_df = sheet_df.head(0)
-
-            # If max_rows is provided, slice the dataframe
             if max_rows:
                 sheet_df = sheet_df.head(max_rows)
 
             markdown_content = self._convert_to_markdown(sheet_df)
-
-            # Collect all information for the sheet
-            sheet_info = {
-                "sheet_name": sheet,
-                "cell_info_list": cell_info_list,
-                "markdown_content": markdown_content,
-            }
-            sheet_info_list.append(sheet_info)
+            sheet_info_list.append(
+                {
+                    "sheet_name": sheet,
+                    "cell_info_list": cell_info_list,
+                    "markdown_content": markdown_content,
+                }
+            )
 
         result_str = ""
         for sheet_info in sheet_info_list:
@@ -204,7 +223,6 @@ class DocumentProcessingToolkit(BaseToolkit):
             
             {'-'*40}
             """
-
         return result_str
 
     @retry_on_error()
@@ -249,22 +267,22 @@ class DocumentProcessingToolkit(BaseToolkit):
         if any(
             document_path.endswith(ext) for ext in ["json", "jsonl", "jsonld"]
         ):
-            with open(document_path, "r", encoding="utf-8") as f:
+            encoding = self._detect_file_encoding(document_path)
+            with open(document_path, "r", encoding=encoding) as f:
                 content = json.load(f)
-            f.close()
             return True, content
 
         if any(document_path.endswith(ext) for ext in ["py"]):
-            with open(document_path, "r", encoding="utf-8") as f:
+            encoding = self._detect_file_encoding(document_path)
+            with open(document_path, "r", encoding=encoding) as f:
                 content = f.read()
-            f.close()
             return True, content
 
         if any(document_path.endswith(ext) for ext in ["xml"]):
             data = None
-            with open(document_path, "r", encoding="utf-8") as f:
+            encoding = self._detect_file_encoding(document_path)
+            with open(document_path, "r", encoding=encoding) as f:
                 content = f.read()
-            f.close()
 
             try:
                 data = xmltodict.parse(content)
@@ -304,7 +322,6 @@ class DocumentProcessingToolkit(BaseToolkit):
                 # load content of md file
                 with open(md_file_path, "r") as f:
                     extracted_text = f.read()
-                f.close()
                 return True, extracted_text
             try:
                 result = asyncio.run(
@@ -327,12 +344,11 @@ class DocumentProcessingToolkit(BaseToolkit):
                             document_path = tmp_path
 
                         # Open file in binary mode for PdfReader
-                        f = open(document_path, "r")
-                        reader = PdfReader(f)
-                        extracted_text = ""
-                        for page in reader.pages:
-                            extracted_text += page.extract_text()
-                        f.close()
+                        with open(document_path, "rb") as f:
+                            reader = PdfReader(f)
+                            extracted_text = ""
+                            for page in reader.pages:
+                                extracted_text += page.extract_text()
 
                         return True, extracted_text
 
@@ -459,26 +475,22 @@ class DocumentProcessingToolkit(BaseToolkit):
         return time.strftime("%m%d%H%M")
 
     def _unzip_file(self, zip_path: str) -> List[str]:
-        if not zip_path.endswith(".zip"):
-            raise ValueError("Only .zip files are supported")
+        import zipfile
+
+        if not zipfile.is_zipfile(zip_path):
+            raise ValueError("File is not a valid ZIP archive")
 
         zip_name = os.path.splitext(os.path.basename(zip_path))[0]
         extract_path = os.path.join(self.cache_dir, zip_name)
-        os.makedirs(extract_path, exist_ok=True)
 
-        try:
-            subprocess.run(
-                ["unzip", "-o", zip_path, "-d", extract_path], check=True
-            )
-        except subprocess.CalledProcessError as e:
-            raise RuntimeError(f"Failed to unzip file: {e}")
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(extract_path)
 
-        extracted_files = []
-        for root, _, files in os.walk(extract_path):
-            for file in files:
-                extracted_files.append(os.path.join(root, file))
-
-        return extracted_files
+        return [
+            os.path.join(root, f)
+            for root, _, files in os.walk(extract_path)
+            for f in files
+        ]
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
