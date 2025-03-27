@@ -126,6 +126,7 @@ class SingleStepEnv:
             await self.verifier.cleanup()
             self._states = []
             self._states_done = []
+            self.current_batch_size = 0
             logger.info('Environment closed successfully')
         except Exception as e:
             logger.error(f'Failed to close environment: {e}')
@@ -157,6 +158,8 @@ class SingleStepEnv:
             ValueError: If batch size exceeds dataset size.
             TypeError: If the dataset is of an unsupported type.
         """
+        if batch_size <= 0:
+            raise ValueError("Batch size must be positive")
 
         if not self._is_setup:
             logger.warning(
@@ -212,16 +215,18 @@ class SingleStepEnv:
 
     async def step(
         self, action: Union[Action, List[Action]]
-    ) -> Union[StepResult, List[StepResult]]:
-        r"""Process actions for a subset of states and update their
-        finished status.
+    ) -> Union[
+        Tuple[Observation, float, bool, Dict[str, Any]],
+        List[Tuple[Observation, float, bool, Dict[str, Any]]],
+    ]:
+        r"""Process actions for a subset of states and update their finished
+        status.
 
         Args:
-            action: Single action or list of actions, where each action
-                contains an index indicating which state it corresponds to.
-                The index must be a valid position in the internal _states list
-                that was populated during the reset() call.
-
+            action: Single action (for batch_size=1 or micro-batch of size 1)
+                or list of actions (for batch_size>=2 with multiple actions).
+                Each action must have an index for batch_size>=2, indicating
+                which state it corresponds to.
 
         Returns:
             Union[StepResult, List[StepResult]]: StepResult or list of
@@ -241,10 +246,62 @@ class SingleStepEnv:
         if not self._states:
             raise RuntimeError("No current observation. Call reset() first.")
 
-        # Normalize everything to list
-        actions = [action] if isinstance(action, Action) else action
-        indices = [act.index for act in actions]
+        # Normalize actions into a list for uniform processing
+        if self.current_batch_size == 1:
+            if isinstance(action, list):
+                if len(action) != 1 or not isinstance(action[0], Action):
+                    raise ValueError(
+                        "For batch_size=1, expect a single Action or a "
+                        "list containing exactly one Action"
+                    )
+            elif not isinstance(action, Action):
+                raise ValueError(
+                    "For batch_size=1, expect a single Action or a "
+                    "list containing exactly one Action"
+                )
+            if isinstance(action, Action):
+                actions = [action]
+            else:
+                actions = action
+            if actions[0].index is None:
+                actions[0].index = 0
+            if actions[0].index != 0:
+                raise ValueError("For batch_size=1, index must be None or 0")
 
+        else:  # batch_size >= 2
+            if isinstance(action, Action):
+                if action.index is None:
+                    raise ValueError(
+                        "For batch_size>=2, each Action must have an index"
+                    )
+                if not isinstance(action.index, int):
+                    raise ValueError("Index must be an integer")
+                actions = [action]
+            elif isinstance(action, list):
+                if not action:  # Empty list
+                    raise ValueError("Action list cannot be empty")
+                actions = action
+                for act in actions:
+                    if not isinstance(act, Action):
+                        raise ValueError(
+                            "All elements in list must be Action objects"
+                        )
+                    if act.index is None:
+                        raise ValueError(
+                            "For batch_size>=2, each Action must have an index"
+                        )
+                    if not isinstance(act.index, int):
+                        raise ValueError("Index must be an integer")
+            else:
+                raise ValueError(
+                    "For batch_size>=2, expect an Action or list of Actions"
+                )
+
+        # Validate indices
+        indices: List[int] = []
+        for act in actions:
+            assert act.index is not None
+            indices.append(act.index)
         if len(set(indices)) != len(indices):
             raise ValueError("Duplicate state indices in actions.")
         for idx in indices:
@@ -254,7 +311,6 @@ class SingleStepEnv:
                 raise ValueError(f"State at index {idx} is already finished.")
 
         num_actions = len(actions)
-
         if self.current_batch_size % num_actions != 0:
             logger.warning(
                 f"Number of actions ({num_actions}) is not a divisor of "
@@ -262,9 +318,9 @@ class SingleStepEnv:
             )
 
         proposed_solutions = [act.llm_response for act in actions]
-        ground_truths: List[str] = [
-            self._states[idx].final_answer for idx in indices
-        ]
+        ground_truths: List[str] = []
+        for idx in indices:
+            ground_truths.append(self._states[idx].final_answer)
 
         verification_results = await self.verifier.verify_batch(
             solutions=proposed_solutions,
@@ -276,9 +332,10 @@ class SingleStepEnv:
             proposed_solutions, verification_results
         )
 
+        # TODO Batch this
         step_results = []
-        # TODO: batch this
         for i, action in enumerate(actions):
+            assert action.index is not None
             idx = action.index
             step_result = StepResult(
                 observation=self.PLACEHOLDER_OBS,
@@ -291,7 +348,7 @@ class SingleStepEnv:
                     "state": self._states[idx],
                 },
             )
-            step_results.append(step_result)
+            step_results.append(step_result.as_tuple())
             self._states_done[idx] = True
 
         return step_results[0] if len(step_results) == 1 else step_results
@@ -315,6 +372,12 @@ class SingleStepEnv:
                 - List of total rewards for each solution.
                 - List of reward component dictionaries for each solution.
         """
+        if len(proposed_solutions) != len(verification_results):
+            raise ValueError(
+                f"Length mismatch: {len(proposed_solutions)} solutions vs "
+                f"{len(verification_results)} verification results"
+            )
+
         total_rewards = []
         rewards_dicts = []
 
@@ -355,9 +418,20 @@ class SingleStepEnv:
         return {}
 
     def _batch_done(self) -> bool:
+        r"""Check if all states in the current batch are done.
+
+        Returns:
+            bool: True if all states are marked as done, False otherwise.
+        """
         return all(self._states_done)
 
     def _batch_started(self) -> bool:
+        r"""Check if any state in the current batch is done.
+
+        Returns:
+            bool: True if at least one state is marked as done, False
+                otherwise.
+        """
         return any(self._states_done)
 
     @property

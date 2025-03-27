@@ -76,8 +76,8 @@ class PythonVerifier(BaseVerifier):
 
     async def _setup(self, **kwargs) -> None:
         r"""Set up a virtual environment and install required packages."""
-        uv = kwargs.get('uv', False)
-        if uv or self._is_uv_environment():
+        uv = kwargs.get('uv', True)
+        if uv and self._is_uv_environment():
             logger.info("[UV] Detected uv environment. Using uv for setup.")
             self._setup_with_uv()
             return
@@ -167,7 +167,11 @@ class PythonVerifier(BaseVerifier):
             raise
 
         if self.required_packages:
-            venv_python = os.path.join(self.venv_path, self.bin_dir, "python")
+            venv_python = os.path.join(
+                self.venv_path,
+                self.bin_dir,
+                "python.exe" if os.name == 'nt' else "python",
+            )
             try:
                 subprocess.run(
                     [
@@ -284,7 +288,11 @@ class PythonVerifier(BaseVerifier):
 
         # Otherwise, run the code block,
         # which should already include a print(...) in the end
-        venv_python = os.path.join(self.venv_path, self.bin_dir, "python")
+        venv_python = os.path.join(
+            self.venv_path,
+            self.bin_dir,
+            "python.exe" if os.name == 'nt' else "python",
+        )
         if not os.path.exists(venv_python):
             return VerificationResult(
                 status=VerificationOutcome.ERROR,

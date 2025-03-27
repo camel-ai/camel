@@ -617,6 +617,7 @@ all = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
+    { name = "pytidb-experimental" },
     { name = "qdrant-client" },
     { name = "rank-bm25" },
     { name = "redis" },
@@ -754,6 +755,7 @@ rag = [
     { name = "neo4j" },
     { name = "pandasai" },
     { name = "pymilvus" },
+    { name = "pytidb-experimental" },
     { name = "qdrant-client" },
     { name = "rank-bm25" },
     { name = "sentence-transformers" },
@@ -772,6 +774,7 @@ storage = [
     { name = "nebula3-python" },
     { name = "neo4j" },
     { name = "pymilvus" },
+    { name = "pytidb-experimental" },
     { name = "qdrant-client" },
     { name = "redis" },
 ]
@@ -953,6 +956,9 @@ requires-dist = [
     { name = "pytest-asyncio", marker = "extra == 'test'", specifier = ">=0.23.0,<0.24" },
     { name = "pytest-cov", marker = "extra == 'all'", specifier = ">=4,<5" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4,<5" },
+    { name = "pytidb-experimental", marker = "extra == 'all'", specifier = "==0.0.1.dev4" },
+    { name = "pytidb-experimental", marker = "extra == 'rag'", specifier = "==0.0.1.dev4" },
+    { name = "pytidb-experimental", marker = "extra == 'storage'", specifier = "==0.0.1.dev4" },
     { name = "pyyaml", specifier = ">=6.0.2,<7" },
     { name = "qdrant-client", marker = "extra == 'all'", specifier = ">=1.9.0,<2" },
     { name = "qdrant-client", marker = "extra == 'rag'", specifier = ">=1.9.0,<2" },
@@ -4861,6 +4867,15 @@ wheels = [
 ]
 
 [[package]]
+name = "pymysql"
+version = "1.1.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/b3/8f/ce59b5e5ed4ce8512f879ff1fa5ab699d211ae2495f1adaa5fbba2a1eada/pymysql-1.1.1.tar.gz", hash = "sha256:e127611aaf2b417403c60bf4dc570124aeb4a57f5f37b8e95ae399a42f904cd0", size = 47678 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0c/94/e4181a1f6286f545507528c78016e00065ea913276888db2262507693ce5/PyMySQL-1.1.1-py3-none-any.whl", hash = "sha256:4de15da4c61dc132f4fb9ab763063e693d521a80fd0e87943b9a453dd4c19d6c", size = 44972 },
+]
+
+[[package]]
 name = "pynacl"
 version = "1.5.0"
 source = { registry = "https://pypi.org/simple" }
@@ -5047,6 +5062,20 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/a2/4e/869f34faedbc968796d2c7e9837dede079c9cb9750917356b1f1eda926e9/python_oxmsg-0.0.2.tar.gz", hash = "sha256:a6aff4deb1b5975d44d49dab1d9384089ffeec819e19c6940bc7ffbc84775fad", size = 34713 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/53/67/f56c69a98c7eb244025845506387d0f961681657c9fcd8b2d2edd148f9d2/python_oxmsg-0.0.2-py3-none-any.whl", hash = "sha256:22be29b14c46016bcd05e34abddfd8e05ee82082f53b82753d115da3fc7d0355", size = 31455 },
+]
+
+[[package]]
+name = "pytidb-experimental"
+version = "0.0.1.dev4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pymysql" },
+    { name = "sqlmodel" },
+    { name = "tidb-vector" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/32/b9/11fdb74a0cf645cb02ccff7a1f163333eedd461e364425caede13dba5d6b/pytidb_experimental-0.0.1.dev4.tar.gz", hash = "sha256:0161b77758af363a6d3f0c16df010effae2cea3b0f98ca08b6d0b9eb07760923", size = 15079 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8b/71/a531e6648455fd8a936530c67c619a33726f55331bacdac74aa6742d0baf/pytidb_experimental-0.0.1.dev4-py3-none-any.whl", hash = "sha256:5ba3f5bb533927b0f82421df4c6f379dafd4f2afe8cfaf15ec0f00833794f1d0", size = 17824 },
 ]
 
 [[package]]
@@ -6134,6 +6163,19 @@ wheels = [
 ]
 
 [[package]]
+name = "sqlmodel"
+version = "0.0.22"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pydantic" },
+    { name = "sqlalchemy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b5/39/8641040ab0d5e1d8a1c2325ae89a01ae659fc96c61a43d158fb71c9a0bf0/sqlmodel-0.0.22.tar.gz", hash = "sha256:7d37c882a30c43464d143e35e9ecaf945d88035e20117bf5ec2834a23cbe505e", size = 116392 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/dd/b1/3af5104b716c420e40a6ea1b09886cae3a1b9f4538343875f637755cae5b/sqlmodel-0.0.22-py3-none-any.whl", hash = "sha256:a1ed13e28a1f4057cbf4ff6cdb4fc09e85702621d3259ba17b3c230bfb2f941b", size = 28276 },
+]
+
+[[package]]
 name = "sse-starlette"
 version = "2.2.1"
 source = { registry = "https://pypi.org/simple" }
@@ -6254,6 +6296,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/b7/4d/08c89e34946fce2aec4fbb45c9016efd5f4d7f24af8e5d93296e935631d8/threadpoolctl-3.6.0.tar.gz", hash = "sha256:8ab8b4aa3491d812b623328249fab5302a68d2d71745c8a4c719a2fcaba9f44e", size = 21274 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/32/d5/f9a850d79b0851d1d4ef6456097579a9005b31fea68726a4ae5f2d82ddd9/threadpoolctl-3.6.0-py3-none-any.whl", hash = "sha256:43a0b8fd5a2928500110039e43a5eed8480b918967083ea48dc3ab9f13c4a7fb", size = 18638 },
+]
+
+[[package]]
+name = "tidb-vector"
+version = "0.0.14"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d8/fc/039b05b6b9002e49e004958bc3fc9b4424bb5b44783da17ceae7d158d0dc/tidb_vector-0.0.14.tar.gz", hash = "sha256:a63f4af54bb91aea51ae55d8cb9528b7bd2d3838181d7978cf5fcadfa8ab2887", size = 20805 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/28/83/41a82d7248f213ea800e65ab1733405070a8d13825f5756f1784e6553c3c/tidb_vector-0.0.14-py3-none-any.whl", hash = "sha256:19f25d5c3fd024d4dbabac54d4f2920c19235a678b832f7a1c46a00b1bc990a3", size = 21914 },
 ]
 
 [[package]]
