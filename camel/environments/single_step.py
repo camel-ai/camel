@@ -206,9 +206,20 @@ class SingleStepEnv:
             return observations[0] if batch_size == 1 else observations
 
         elif isinstance(self.dataset, BaseGenerator):
-            raise NotImplementedError(
-                "Reset not yet implemented for BaseGenerator datasets."
-            )
+            await self.dataset.generate_new(batch_size)
+
+            self._states = [
+                await self.dataset.async_sample() for _ in range(batch_size)
+            ]
+            self.current_batch_size = batch_size
+            self._states_done = [False] * batch_size
+
+            observations = [
+                Observation(question=sample.question, context={}, metadata={})
+                for sample in self._states
+            ]
+
+            return observations[0] if batch_size == 1 else observations
 
         else:
             raise TypeError(f"Unsupported dataset type: {type(self.dataset)}")
