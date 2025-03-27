@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class UbuntuDockerRuntime(DockerRuntime):
-    """A specialized Docker runtime for Ubuntu-based environments.
+    r"""A specialized Docker runtime for Ubuntu-based environments.
 
     This runtime includes specific configurations and setup for Ubuntu
     containers, including proper Python path handling and environment setup.
