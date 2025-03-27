@@ -143,9 +143,9 @@ class ScoreBasedContextCreator(BaseContextCreator):
         # 5. Truncation Logic
         # ======================
         logger.warning(
-            f"Context truncation required ({total_tokens} > \
-            {self.token_limit}), "
-            "pruning low-score messages."
+            f"Context truncation required "
+            f"({total_tokens} > {self.token_limit}), "
+            f"pruning low-score messages."
         )
 
         # Sort for truncation: high scores first, older messages first at same
