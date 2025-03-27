@@ -30,7 +30,6 @@ dependencies = [
     "pydantic>=1.9,<2.10",
     "httpx>=0.28.0,<1.0.0dev",
     "psutil>=5.9.8,<6",
-    "pyyaml>=6.0.2,<7",
 ]
 
 [project.optional-dependencies]
@@ -185,14 +184,11 @@ storage = [
 ]
 owl = [
     "chunkr-ai>=0.0.41",
-    "docx2markdown>=0.1.1",
     "mcp-simple-arxiv==0.2.2",
     "mcp-server-fetch==2025.1.17",
     "outlines>=0.1.7,<0.2",
-    "gradio>=3.50.2",
     "python-dotenv>=1.0.0,<2",
     "transformers>=4,<5",
-    "torch",
     "sentencepiece>=0.2,<0.3",
     "anthropic>=0.47.0,<0.50.0",
     "datasets>=3,<4",
@@ -263,10 +259,6 @@ all = [
     "arxiv>=2.1.3,<3",
     "arxiv2text>=0.1.14,<0.2",
     "chunkr-ai>=0.0.41",
-    "docx2markdown>=0.1.1",
-    "mcp-simple-arxiv==0.2.2",
-    "mcp-server-fetch==2025.1.17",
-    "xmltodict>=0.13.0,<0.14",
     "imageio[pyav]>=2.34.2,<3",
     "pillow>=10.1.0,<11.0.0",
     "slack-sdk>=3.27.2,<4",
