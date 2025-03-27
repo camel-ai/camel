@@ -15,9 +15,8 @@ This example demonstrates how to use the CAMEL framework with Docker runtime in 
 ubuntu_docker_runtime/
 ├── README.md
 ├── manage_camel_docker.sh
-├── test_camel_docker.py
-├── test_ubuntu_docker.py
-└── test_docker_roleplaying.py
+├── Dockerfile
+└── ubuntu_docker_example.py
 ```
 
 ## Setup and Running
@@ -52,7 +51,7 @@ This test will:
 
 ### 3. Configure ModelScope API Key
 
-Before running the role-playing test, you need to set up your ModelScope API key in `test_docker_roleplaying.py`:
+Before running the role-playing test, you need to set up your ModelScope API key in `docker_roleplaying.py`:
 
 ```python
 model = ModelFactory.create(
@@ -67,66 +66,10 @@ model = ModelFactory.create(
 
 After setting up the API key, run the role-playing test:
 ```bash
-python test_ubuntu_docker.py
+python ubuntu_docker_example.py
 ```
 
 This will:
 - Use the Docker container to run a role-playing scenario
 - Initialize the Qwen model for AI interactions
 - Execute a sample task with AI agents communication
-
-## Expected Output
-
-For `test_camel_docker.py`:
-```
-Waiting for runtime to start...
-Docker environment test completed successfully.
-```
-
-For `test_ubuntu_docker.py`:
-```
-AI Assistant sys message: [System message content]
-AI User sys message: [System message content]
-[Role-playing interaction content]
-```
-
-## Troubleshooting
-
-If you encounter issues:
-
-1. Docker Related:
-```bash
-# Check Docker status
-docker ps -a
-
-# Check container logs
-docker logs <container_id>
-
-# Clean up and rebuild
-./manage_camel_docker.sh clean
-./manage_camel_docker.sh build
-```
-
-2. API Key Issues:
-- Verify your ModelScope API key is valid
-- Check network connectivity to ModelScope API
-- Ensure the API key is correctly set in `test_docker_roleplaying.py`
-
-3. Common Problems:
-- If the script hangs: Check Docker logs and network connectivity
-- If model initialization fails: Verify API key and internet access
-- If container fails to start: Check Docker daemon status and port availability
-
-## Additional Commands
-
-- Stop all containers: `./manage_camel_docker.sh stop`
-- Remove all containers: `./manage_camel_docker.sh clean`
-- Rebuild image: `./manage_camel_docker.sh rebuild`
-
-## Notes
-
-- The container uses port 8000 by default
-- Python path is set to `/usr/bin/python3`
-- The Qwen model requires a valid ModelScope API key
-- Role-playing functionality requires successful Docker environment setup
-- Make sure to have stable internet connection for model API calls 
