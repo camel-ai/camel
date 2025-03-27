@@ -12,9 +12,10 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from colorama import Fore
 import logging
 import time
+
+from colorama import Fore
 
 from camel.runtime.ubuntu_docker_runtime import UbuntuDockerRuntime
 from camel.toolkits import MathToolkit
@@ -23,9 +24,10 @@ from camel.utils import print_text_animated
 # Set logging level to debug for more detailed information
 logging.basicConfig(
     level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
 )
 logger = logging.getLogger(__name__)
+
 
 def check_api_server(container):
     """Check API server status and configuration."""
@@ -39,24 +41,19 @@ def check_api_server(container):
     _, curl_result = container.exec_run("curl -v http://localhost:8000/docs")
     logger.info("API documentation:\n%s", curl_result.decode())
 
+
 def main():
     # Initialize runtime environment
     logger.info("Setting up Docker runtime...")
     runtime = UbuntuDockerRuntime(
         "my-camel:latest",
         ports={'8000/tcp': 8000},
-        environment={
-            "HOST": "0.0.0.0",
-            "PORT": "8000"
-        }
+        environment={"HOST": "0.0.0.0", "PORT": "8000"},
     )
 
     # Add math tools
     logger.info("Adding math tools...")
-    runtime.add(
-        MathToolkit().get_tools(),
-        "camel.toolkits.MathToolkit"
-    )
+    runtime.add(MathToolkit().get_tools(), "camel.toolkits.MathToolkit")
 
     # Run test with context manager
     logger.info("Starting runtime context...")
@@ -102,8 +99,9 @@ def main():
             if hasattr(r, 'container') and r.container:
                 check_api_server(r.container)
 
+
 if __name__ == "__main__":
     try:
         main()
-    except Exception as e:
-        logger.exception("Unexpected error occurred") 
+    except Exception:
+        logger.exception("Unexpected error occurred")
