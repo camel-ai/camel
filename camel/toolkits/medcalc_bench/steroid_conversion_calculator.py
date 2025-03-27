@@ -12,7 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 r"""
-This code is borrowed and modified based on the source code from the 'MedCalc-Bench' repository.
+This code is borrowed and modified based on the source code from the
+'MedCalc-Bench' repository.
 Original repository: https://github.com/ncbi-nlp/MedCalc-Bench
 
 Modifications include:
@@ -30,17 +31,22 @@ from camel.toolkits.medcalc_bench.utils.unit_converter_new import (
 
 def compute_steroid_conversion_explanation(input_parameters):
     r"""
-    Calculates the patient's equivalent dosage of MethylPrednisoLONE IV and generates a detailed explanatory text.
+    Calculates the patient's equivalent dosage of MethylPrednisoLONE IV and
+    generates a detailed explanatory text.
 
     Parameters:
-        input_parameters (dict): A dictionary containing the following key-value pairs:
-            - "input steroid" (tuple): The patient's blood sodium level in the format (value, unit).
-                - Steroid name (str): The various corticosteroids are listed below:
+        input_parameters (dict): A dictionary containing the following
+        key-value pairs:
+            - "input steroid" (tuple): The patient's blood sodium level in
+            the format (value, unit).
+                - Steroid name (str): The various corticosteroids are below:
                     - Betamethasone: Route = IV, Equivalent Dose = 0.75 mg
                     - Cortisone: Route = PO, Equivalent Dose = 25 mg
-                    - Dexamethasone (Decadron): Route = IV or PO, Equivalent Dose = 0.75 mg
+                    - Dexamethasone (Decadron): Route = IV or PO,
+                    Equivalent Dose = 0.75 mg
                     - Hydrocortisone: Route = IV or PO, Equivalent Dose = 20 mg
-                    - MethylPrednisoLONE: Route = IV or PO, Equivalent Dose = 4 mg
+                    - MethylPrednisoLONE: Route = IV or PO,
+                    Equivalent Dose = 4 mg
                     - PrednisoLONE: Route = PO, Equivalent Dose = 5 mg
                     - PredniSONE: Route = PO, Equivalent Dose = 5 mg
                     - Triamcinolone: Route = IV, Equivalent Dose = 4 mg
@@ -61,8 +67,10 @@ def compute_steroid_conversion_explanation(input_parameters):
 
     Returns:
         dict: Contains two key-value pairs:
-            - "Explanation" (str): A detailed description of the calculation process.
-            - "Answer" (float): The patient's equivalent dosage of MethylPrednisoLONE IV.
+            - "Explanation" (str): A detailed description of
+            the calculation process.
+            - "Answer" (float): The patient's equivalent dosage of
+            MethylPrednisoLONE IV.
 
     Notes:
         - None
@@ -72,25 +80,28 @@ def compute_steroid_conversion_explanation(input_parameters):
             'input steroid': ['Hydrocortisone PO', 190.936, 'mg'],
             'target steroid': 'MethylPrednisoLONE IV'})
 
-        output: "{'Explanation': '\n
-        The Steroid Conversions providing equivalent doses for various corticosteroids are listed below:\n
-        1. Betamethasone: Route = IV, Equivalent Dose = 0.75 mg\n
-        2. Cortisone: Route = PO, Equivalent Dose = 25 mg\n
-        3. Dexamethasone (Decadron): Route = IV or PO, Equivalent Dose = 0.75 mg\n
-        4. Hydrocortisone: Route = IV or PO, Equivalent Dose = 20 mg\n
-        5. MethylPrednisoLONE: Route = IV or PO, Equivalent Dose = 4 mg\n
-        6. PrednisoLONE: Route = PO, Equivalent Dose = 5 mg\n
-        7. PredniSONE: Route = PO, Equivalent Dose = 5 mg\n
-        8. Triamcinolone: Route = IV, Equivalent Dose = 4 mg \n
-        \n\nThe mass of Hydrocortisone PO is 190.936 mg. To convert from the Hydrocortisone PO to MethylPrednisoLONE IV,
-         multiply by the conversion factor, 0.2 mg MethylPrednisoLONE IV/Hydrocortisone PO,
-         giving us 190.936 mg Hydrocortisone PO * 0.2 mg
-         MethylPrednisoLONE IV/mg Hydrocortisone PO = 38.187 mg MethylPrednisoLONE IV. 190.936 mg of
-         Hydrocortisone PO is equal to 38.187 mg of MethylPrednisoLONE IV.\n', 'Answer': 38.187}"
+        output: "{'Explanation': '\n The Steroid Conversions providing
+        equivalent doses for various corticosteroids are listed below:\n 1.
+        Betamethasone: Route = IV, Equivalent Dose = 0.75 mg\n 2.
+        Cortisone: Route = PO, Equivalent Dose = 25 mg\n 3. Dexamethasone
+        (Decadron): Route = IV or PO, Equivalent Dose = 0.75 mg\n 4.
+        Hydrocortisone: Route = IV or PO, Equivalent Dose = 20 mg\n 5.
+        MethylPrednisoLONE: Route = IV or PO, Equivalent Dose = 4 mg\n 6.
+        PrednisoLONE: Route = PO, Equivalent Dose = 5 mg\n 7. PredniSONE:
+        Route = PO, Equivalent Dose = 5 mg\n 8. Triamcinolone: Route = IV,
+        Equivalent Dose = 4 mg \n \n\nThe mass of Hydrocortisone PO is
+        190.936 mg. To convert from the Hydrocortisone PO to
+        MethylPrednisoLONE IV, multiply by the conversion factor, 0.2 mg
+        MethylPrednisoLONE IV/Hydrocortisone PO, giving us 190.936 mg
+        Hydrocortisone PO * 0.2 mg MethylPrednisoLONE IV/mg Hydrocortisone
+        PO = 38.187 mg MethylPrednisoLONE IV. 190.936 mg of Hydrocortisone
+        PO is equal to 38.187 mg of MethylPrednisoLONE IV.\n', 'Answer':
+        38.187}"
     """
 
     explanation = """
-        The Steroid Conversions providing equivalent doses for various corticosteroids are listed below:
+        The Steroid Conversions providing equivalent doses for various 
+        corticosteroids are listed below:
             1. Betamethasone: Route = IV, Equivalent Dose = 0.75 mg
             2. Cortisone: Route = PO, Equivalent Dose = 25 mg
             3. Dexamethasone (Decadron): Route = IV or PO, Equivalent Dose = 0.75 mg
@@ -100,26 +111,29 @@ def compute_steroid_conversion_explanation(input_parameters):
             7. PredniSONE: Route = PO, Equivalent Dose = 5 mg
             8. Triamcinolone: Route = IV, Equivalent Dose = 4 mg 
         """
-    conversion_dict = {"Betamethasone IV": 1,
-                       "Cortisone PO": 33.33,
-                       "Dexamethasone IV": 1,
-                       "Dexamethasone PO": 1,
-                       "Hydrocortisone IV": 26.67,
-                       "Hydrocortisone PO": 26.67,
-                       "MethylPrednisoLONE IV": 5.33,
-                       "MethylPrednisoLONE PO": 5.33,
-                       "PrednisoLONE PO": 6.67,
-                       "PredniSONE PO": 6.67,
-                       "Triamcinolone IV": 5.33
-                       }
+    conversion_dict = {
+        "Betamethasone IV": 1,
+        "Cortisone PO": 33.33,
+        "Dexamethasone IV": 1,
+        "Dexamethasone PO": 1,
+        "Hydrocortisone IV": 26.67,
+        "Hydrocortisone PO": 26.67,
+        "MethylPrednisoLONE IV": 5.33,
+        "MethylPrednisoLONE PO": 5.33,
+        "PrednisoLONE PO": 6.67,
+        "PredniSONE PO": 6.67,
+        "Triamcinolone IV": 5.33,
+    }
 
     explanation += "\n\n"
-    input_drug_mass_exp, input_drug_mass = conversion_explanation(input_parameters["input steroid"][1],
-                                                                  input_parameters["input steroid"][0],
-                                                                  None,
-                                                                  None,
-                                                                  input_parameters["input steroid"][2],
-                                                                  "mg")
+    input_drug_mass_exp, input_drug_mass = conversion_explanation(
+        input_parameters["input steroid"][1],
+        input_parameters["input steroid"][0],
+        None,
+        None,
+        input_parameters["input steroid"][2],
+        "mg",
+    )
     explanation += input_drug_mass_exp
 
     target_drug_name = input_parameters["target steroid"]
@@ -133,13 +147,20 @@ def compute_steroid_conversion_explanation(input_parameters):
     converted_amount = round_number(input_drug_mass * conversion_factor)
     input_drug_mass = round_number(input_drug_mass)
 
-    explanation += f"To convert from the {input_drug_name} to {target_drug_name}, multiply by the conversion factor, " \
-                   f"{conversion_factor} mg {target_drug_name}/{input_drug_name}, " \
-                   f"giving us {input_drug_mass} mg {input_drug_name} * {conversion_factor} mg " \
-                   f"{target_drug_name}/mg {input_drug_name} = {converted_amount} mg {target_drug_name}. "
+    explanation += (
+        f"To convert from the {input_drug_name} to {target_drug_name}, "
+        f"multiply by the conversion factor, "
+        f"{conversion_factor} mg {target_drug_name}/{input_drug_name}, "
+        f"giving us {input_drug_mass} mg {input_drug_name} * "
+        f"{conversion_factor} mg "
+        f"{target_drug_name}/mg {input_drug_name} = {converted_amount} mg "
+        f"{target_drug_name}. "
+    )
 
-    explanation += f"{input_drug_mass} {input_unit} of {input_drug_name} is equal to " \
-                   f"{converted_amount} mg of {target_drug_name}.\n"
+    explanation += (
+        f"{input_drug_mass} {input_unit} of {input_drug_name} is equal to "
+        f"{converted_amount} mg of {target_drug_name}.\n"
+    )
 
     return {"Explanation": explanation, "Answer": converted_amount}
 
@@ -147,12 +168,15 @@ def compute_steroid_conversion_explanation(input_parameters):
 if __name__ == "__main__":
     # Defining test cases
     test_cases = [
-        {'input steroid': ['Hydrocortisone PO', 190.936, 'mg'], 'target steroid': 'MethylPrednisoLONE IV'},
-        {'input steroid': ['Dexamethasone PO', 8.58, 'mg'], 'target steroid': 'Dexamethasone IV'},
+        {
+            'input steroid': ['Hydrocortisone PO', 190.936, 'mg'],
+            'target steroid': 'MethylPrednisoLONE IV',
+        },
+        {
+            'input steroid': ['Dexamethasone PO', 8.58, 'mg'],
+            'target steroid': 'Dexamethasone IV',
+        },
     ]
-
-    # {'input steroid': ['Hydrocortisone PO', 190.936, 'mg'], 'target steroid': 'MethylPrednisoLONE IV'}
-    # {'input steroid': ['Dexamethasone PO', 8.58, 'mg'], 'target steroid': 'Dexamethasone IV'}
 
     # Iterate the test cases and print the results
     for i, input_variables in enumerate(test_cases, 1):

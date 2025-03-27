@@ -12,7 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 r"""
-This code is borrowed and modified based on the source code from the 'MedCalc-Bench' repository.
+This code is borrowed and modified based on the source code from the
+'MedCalc-Bench' repository.
 Original repository: https://github.com/ncbi-nlp/MedCalc-Bench
 
 Modifications include:
@@ -30,7 +31,8 @@ from camel.toolkits.medcalc_bench.utils.unit_converter_new import (
 
 def compute_anion_gap_explanation(input_parameters):
     r"""
-    Calculates the patient's anion gap and generates a detailed explanatory text.
+    Calculates the patient's anion gap and generates a detailed explanatory
+    text.
 
     Parameters:
         input_parameters (dict): A dictionary containing the following
@@ -52,7 +54,8 @@ def compute_anion_gap_explanation(input_parameters):
 
     Returns:
         dict: Contains two key-value pairs:
-            - "Explanation" (str): A detailed description of the calculation process.
+            - "Explanation" (str): A detailed description of
+            the calculation process.
             - "Answer" (float): The patient's anion gap.
 
     Notes:
@@ -72,8 +75,10 @@ def compute_anion_gap_explanation(input_parameters):
     """
 
     explanation = ""
-    explanation += "The formula for computing a patient's anion gap is: " \
-                   "sodium (mEq/L) - (chloride (mEq/L)+ bicarbonate (mEq/L)).\n"
+    explanation += (
+        "The formula for computing a patient's anion gap is: "
+        "sodium (mEq/L) - (chloride (mEq/L)+ bicarbonate (mEq/L)).\n"
+    )
 
     sodium = input_parameters["sodium"]
     chloride = input_parameters["chloride"]
@@ -95,8 +100,11 @@ def compute_anion_gap_explanation(input_parameters):
 
     answer = round_number(sodium - (chloride + bicarbonate))
 
-    explanation += f"Plugging in these values into the anion gap formula gives us " \
-                   f"{sodium} mEq/L - ({chloride} mEq/L + {bicarbonate} mEq/L) = {answer} mEq/L. "
+    explanation += (
+        f"Plugging in these values into the anion gap formula gives us "
+        f"{sodium} mEq/L - ({chloride} mEq/L + "
+        f"{bicarbonate} mEq/L) = {answer} mEq/L. "
+    )
     explanation += f"Hence, The patient's anion gap is {answer} mEq/L.\n"
 
     return {"Explanation": explanation, "Answer": answer}

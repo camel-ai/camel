@@ -27,36 +27,47 @@ from datetime import datetime, timedelta
 
 def add_2_weeks_explanation(input_data):
     r"""
-    Calculates the patient's estimated conception date and generates a detailed explanatory text.
+    Calculates the patient's estimated conception date and generates a
+    detailed explanatory text.
 
     Parameters:
-        input_data (dict): A dictionary containing the following key-value pairs:
-            - "cycle_length" (int): The cycle length of the patient's menstrual period.
-            - "menstrual_date" (date): The patient's menstrual date in the format "%m/%d/%Y".
+        input_data (dict): A dictionary containing the following key-value
+        pairs:
+            - "cycle_length" (int): The cycle length of the patient's
+            menstrual period.
+            - "menstrual_date" (date): The patient's menstrual date in the
+            format "%m/%d/%Y".
 
     Returns:
         dict: Contains two key-value pairs:
-            - "Explanation" (str): A detailed description of the calculation process.
+            - "Explanation" (str): A detailed description of
+            the calculation process.
             - "Answer" (float): The patient's estimated conception date.
 
     Notes:
         - None
 
     Example:
-        add_2_weeks_explanation({"cycle_length": 20, "menstrual_date": "01/21/2004"})
+        add_2_weeks_explanation({"cycle_length": 20, "menstrual_date":
+        "01/21/2004"})
 
-        output: "{'Explanation': "The patient's estimated date of conception based on their last period is computed by
-        adding to 2 weeks to the patient's last menstrual period date.
-        The patient's last menstrual period was 01/21/2004.
+        output: "{'Explanation': "The patient's estimated date of
+        conception based on their last period is computed by adding to 2
+        weeks to the patient's last menstrual period date. The patient's
+        last menstrual period was 01/21/2004.
         \nHence, the estimated date of conception after adding 2 weeks to
-        the patient's last menstrual period date is 02/04/2004. \n", 'Answer': '02/04/2004'}"
+        the patient's last menstrual period date is 02/04/2004. \n",
+        'Answer': '02/04/2004'}"
     """
 
     input_date_str = input_data["menstrual_date"]
     cycle_length = input_data["cycle_length"]
 
-    explanation = "The patient's estimated date of conception based on their last period is computed " \
-                  "by adding to 2 weeks to the patient's last menstrual period date. "
+    explanation = (
+        "The patient's estimated date of conception based on their last "
+        "period is computed by adding to 2 weeks to the patient's last "
+        "menstrual period date. "
+    )
     explanation += (
         f"The patient's last menstrual period was {input_date_str}. \n"
     )
@@ -64,8 +75,11 @@ def add_2_weeks_explanation(input_data):
     input_date = datetime.strptime(input_date_str, "%m/%d/%Y")
     future_date = input_date + timedelta(weeks=2)
 
-    explanation += f"Hence, the estimated date of conception after adding 2 weeks " \
-                   f"to the patient's last menstrual period date is {future_date.strftime('%m/%d/%Y')}. \n"
+    explanation += (
+        f"Hence, the estimated date of conception after adding 2 weeks "
+        f"to the patient's last menstrual period date is "
+        f"{future_date.strftime('%m/%d/%Y')}. \n"
+    )
 
     return {
         "Explanation": explanation,

@@ -12,7 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 r"""
-This code is borrowed and modified based on the source code from the 'MedCalc-Bench' repository.
+This code is borrowed and modified based on the source code from the
+'MedCalc-Bench' repository.
 Original repository: https://github.com/ncbi-nlp/MedCalc-Bench
 
 Modifications include:
@@ -30,30 +31,40 @@ from camel.toolkits.medcalc_bench.utils.rounding import round_number
 
 def targetweight_explanation(input_variables):
     r"""
-    Calculates the patient's delta gap and generates a detailed explanatory text.
+    Calculates the patient's delta gap and generates a detailed explanatory
+    text.
 
     Parameters:
-        input_variables (dict): A dictionary containing the following key-value pairs:
-            - "body_mass_index" (tuple): The patient's BMI in the format (value, unit).
+        input_variables (dict): A dictionary containing the following
+        key-value pairs:
+            - "body_mass_index" (tuple): The patient's BMI in the
+            format (value, unit).
                 - Value (float): The patient's BMI value.
                 - Unit (str): The unit of BMI.
-            - "height" (tuple): The patient's height information in the format (value, unit).
+            - "height" (tuple): The patient's height information in the
+            format (value, unit).
                 - Value (float): The numerical height measurement.
-                - Unit (str): The unit of height, which can be "cm" (centimeters) or "in" (inches).
+                - Unit (str): The unit of height, which can be "cm"
+                (centimeters) or "in" (inches).
 
     Returns:
         dict: Contains two key-value pairs:
-            - "Explanation" (str): A detailed description of the calculation process.
+            - "Explanation" (str): A detailed description of
+            the calculation process.
             - "Answer" (float): The patient's target weight.
 
     Notes:
-        - Uses the `height_conversion_explanation` function to convert height to meters.
+        - Uses the `height_conversion_explanation` function to convert
+        height to meters.
 
     Example:
-        targetweight_explanation({"body_mass_index": (20.1, "kg/m^2"),"height": (72, "in"),})
-        output: "{'Explanation': "The patient's target bmi is 20.1 kg/m^2. The patient's height is 72 in,
-        which is 72 in * 0.0254 m / in = 1.829 m. From this,
-        the patient's target weight is 20.1 kg/m^2 * 1.829 m * 1.829 m = 67.239 kg. ", 'Answer': 67.239}"
+        targetweight_explanation({"body_mass_index": (20.1, "kg/m^2"),
+        "height": (72, "in"),})
+
+        output: "{'Explanation': "The patient's target bmi is 20.1 kg/m^2.
+        The patient's height is 72 in, which is 72 in * 0.0254 m / in =
+        1.829 m. From this, the patient's target weight is 20.1 kg/m^2 *
+        1.829 m * 1.829 m = 67.239 kg. ", 'Answer': 67.239}"
     """
 
     bmi = input_variables["body_mass_index"][0]
@@ -68,7 +79,10 @@ def targetweight_explanation(input_variables):
 
     explanation += f"{height_exp}"
 
-    explanation += f"From this, the patient's target weight is {bmi} kg/m^2 * {height} m * {height} m = {target_weight_val} kg. "
+    explanation += (
+        f"From this, the patient's target weight is {bmi} kg/m^2 "
+        f"* {height} m * {height} m = {target_weight_val} kg. "
+    )
 
     return {"Explanation": explanation, "Answer": target_weight_val}
 
