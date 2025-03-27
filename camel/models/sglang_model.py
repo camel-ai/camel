@@ -130,7 +130,7 @@ class SGLangModel(BaseModelBackend):
             self.last_run_time = time.time()
             # Initialize the client after the server starts
             self._client = OpenAI(
-                timeout=180,
+                timeout=self._timeout,
                 max_retries=3,
                 api_key="Set-but-ignored",  # required but ignored
                 base_url=self._url,

@@ -70,7 +70,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
             counter to use for the model. If not provided,
             :obj:`OpenAITokenCounter` will be used. (default: :obj:`None`)
         timeout (Optional[float], optional): The timeout value in seconds for
-        API calls. (default: :obj:`None`)
+            API calls. (default: :obj:`None`)
     """
 
     def __init__(

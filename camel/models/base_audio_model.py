@@ -38,9 +38,9 @@ class BaseAudioModel(ABC):
                 will use a default URL or look for an environment variable
                 specific to the implementation.
             timeout (Optional[float], optional): The timeout value in seconds
-            for API calls. If not provided, will fall back to the
-            MODEL_TIMEOUT environment variable or default to 180 seconds.
-            (default: :obj:`None`)
+                for API calls. If not provided, will fall back to the
+                MODEL_TIMEOUT environment variable or default to 180 seconds.
+                (default: :obj:`None`)
         """
         self._api_key = api_key
         self._url = url
