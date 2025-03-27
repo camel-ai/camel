@@ -22,7 +22,7 @@ keywords = [
 ]
 dependencies = [
     "numpy~=1.26",
-    "openai>=1.59.7,<2",
+    "openai>=1.68.0,<2",
     "tiktoken>=0.7.0,<0.8",
     "colorama>=0.4.6,<0.5",
     "jsonschema>=4,<5",
