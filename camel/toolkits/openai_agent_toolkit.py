@@ -29,7 +29,7 @@ logger = get_logger(__name__)
 
 class OpenAIAgentToolkit(BaseToolkit):
     r"""Toolkit for accessing OpenAI's agent tools including web search and
-        file search.
+    file search.
 
     Provides access to OpenAI's web search and file search capabilities
     through the Responses API, allowing agents to retrieve information from
@@ -49,18 +49,13 @@ class OpenAIAgentToolkit(BaseToolkit):
         r"""Initialize the OpenAI agent toolkit.
 
         Args:
-            model (BaseModelBackend): The model to use for
-                responses. If None, defaults to gpt-4o-mini.
-                (default: :obj:`None`)
-            api_key (str): OpenAI API key. If not provided,
-                will attempt to use OPENAI_API_KEY environment variable.
-                (default: :obj:`None`)
+            model (BaseModelBackend): The OpenAI model to use for responses.
+                If None, defaults to gpt-4o-mini. (default: :obj:`None`)
+            api_key (str): OpenAI API key. If not provided, will attempt to
+                use OPENAI_API_KEY environment variable. (default: :obj:`None`)
         """
         super().__init__()
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
-        if not self.api_key:
-            raise ValueError("OpenAI API key is required")
-
         self.client = OpenAI(api_key=self.api_key)
         self.model = model or ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
@@ -104,7 +99,7 @@ class OpenAIAgentToolkit(BaseToolkit):
         """
         if not vector_store_id.strip():
             logger.error("Empty vector store ID provided.")
-            raise ValueError("Vector store ID cannot be empty.")
+            return "Empty vector store ID provided, it cannot be empty."
 
         try:
             response = self.client.responses.create(
