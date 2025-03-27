@@ -33,7 +33,7 @@ class SearxNGToolkit(BaseToolkit):
 
     Args:
         searxng_host (str): The URL of the SearxNG instance to use for
-        searches. Must be a valid HTTP/HTTPS URL.
+            searches. Must be a valid HTTP/HTTPS URL.
         language (str, optional): Search language code for results.
             (default: :obj:`"en"`)
         categories (List[str], optional): List of search categories to use.
@@ -153,7 +153,7 @@ class SearxNGToolkit(BaseToolkit):
                 (default: :obj:`None`)
 
         Returns:
-            List[Dict[str, str]]: List of search results, where each result is 
+            List[Dict[str, str]]: List of search results, where each result is
                 dictionary containing 'title', 'link', and 'snippet' keys.
         """
         params: Dict[str, Union[str, int]] = {
