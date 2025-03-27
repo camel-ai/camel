@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "search_toolkit": {
+      "command": "python",
+      "args": [
+        "-m",
+        "search_toolkit"
+      ]
+    }
+  }
+}
