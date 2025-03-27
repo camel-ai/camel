@@ -23,7 +23,7 @@ Date: March 2025
 """
 
 from camel.toolkits.medcalc_bench.utils.rounding import round_number
-from albumin_corrected_anion import (
+from camel.toolkits.medcalc_bench.albumin_corrected_anion import (
     compute_albumin_corrected_anion_explanation,
 )
 
