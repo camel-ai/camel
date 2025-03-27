@@ -21,7 +21,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Run GitHub Toolkit with MCP server mode.",
         usage=f"python {sys.argv[0]} <repo_name> [--mode MODE] [--token "
-              "TOKEN]",
+        "TOKEN]",
     )
     parser.add_argument(
         "repo_name", help="GitHub repository name (e.g., 'camel-ai/camel')"
