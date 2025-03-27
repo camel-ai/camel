@@ -109,10 +109,6 @@ class ScoreBasedContextCreator(BaseContextCreator):
 
         # Process non-system messages with deduplication
         for idx, record in enumerate(records):
-            # Skip the first record if it's already processed as system message
-            if idx == 0 and system_unit:
-                continue
-
             if record.memory_record.uuid in seen_uuids:
                 continue
             seen_uuids.add(record.memory_record.uuid)
