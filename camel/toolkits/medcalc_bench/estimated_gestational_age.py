@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-"""
+r"""
 This code is borrowed and modified based on the source code from the 'MedCalc-Bench' repository.
 Original repository: https://github.com/ncbi-nlp/MedCalc-Bench
 
@@ -26,7 +26,7 @@ from datetime import datetime
 
 
 def compute_gestational_age_explanation(input_parameters):
-    """
+    r"""
     Calculates the patient's gestational age and generates a detailed explanatory text.
 
     Parameters:
@@ -44,13 +44,18 @@ def compute_gestational_age_explanation(input_parameters):
 
     Example:
         compute_gestational_age_explanation({"current_date": "04/29/2022", "menstrual_date": "01/06/2022"})
-        output: "{'Explanation': "To compute the estimated gestational age, we compute the number of weeks and days apart today's date is from the patient's last menstrual period date. The current date is 04/29/2022 and the patient's last menstrual period date was 01/06/2022. The gap between these two dates is 16 weeks and 1 days. Hence, the estimated gestational age is 16 weeks and 1 days. ", 'Answer': ('16 weeks', '1 days')}"
+        output: "{'Explanation': "To compute the estimated gestational age,
+        we compute the number of weeks and days apart today's date is from the patient's last menstrual period date.
+        The current date is 04/29/2022 and the patient's last menstrual period date was 01/06/2022.
+        The gap between these two dates is 16 weeks and 1 days. Hence,
+        the estimated gestational age is 16 weeks and 1 days. ", 'Answer': ('16 weeks', '1 days')}"
     """
 
     date2 = input_parameters["current_date"]
     date1 = input_parameters["menstrual_date"]
 
-    explanation = "To compute the estimated gestational age, we compute the number of weeks and days apart today's date is from the patient's last menstrual period date. "
+    explanation = "To compute the estimated gestational age, we compute the number of weeks and days " \
+                  "apart today's date is from the patient's last menstrual period date. "
     explanation += f"The current date is {date2} and the patient's last menstrual period date was {date1}. "
 
     datetime1 = datetime.strptime(date1, "%m/%d/%Y")
@@ -62,11 +67,14 @@ def compute_gestational_age_explanation(input_parameters):
     days = delta.days % 7
 
     if weeks == 0:
-        explanation += f"The gap between these two dates is {days} days. Hence, the estimated gestational age is {days} days. "
+        explanation += f"The gap between these two dates is {days} days. " \
+                       f"Hence, the estimated gestational age is {days} days. "
     elif days == 0:
-        explanation += f"The gap between these two dates is {weeks} weeks. Hence, the estimated gestational age is {weeks} weeks. "
+        explanation += f"The gap between these two dates is {weeks} weeks. " \
+                       f"Hence, the estimated gestational age is {weeks} weeks. "
     else:
-        explanation += f"The gap between these two dates is {weeks} weeks and {days} days. Hence, the estimated gestational age is {weeks} weeks and {days} days. "
+        explanation += f"The gap between these two dates is {weeks} weeks and {days} days. " \
+                       f"Hence, the estimated gestational age is {weeks} weeks and {days} days. "
 
     return {
         "Explanation": explanation,

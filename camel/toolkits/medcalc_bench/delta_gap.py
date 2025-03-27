@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-"""
+r"""
 This code is borrowed and modified based on the source code from the 'MedCalc-Bench' repository.
 Original repository: https://github.com/ncbi-nlp/MedCalc-Bench
 
@@ -29,7 +29,7 @@ from camel.toolkits.medcalc_bench.utils.rounding import round_number
 
 
 def compute_delta_gap_explanation(input_parameters):
-    """
+    r"""
     Calculates the patient's delta gap and generates a detailed explanatory text.
 
     Parameters:
@@ -54,10 +54,17 @@ def compute_delta_gap_explanation(input_parameters):
 
     Example:
         compute_delta_gap_explanation({"chloride": (100.0, "mEq/L"),"bicarbonate": (19.0, "mEq/L"),"sodium": (135.0, "mEq/L")})
-        output: "{'Explanation': "To compute the formula of the delta gap, the formula is anion gap (in mEq/L) - 12. The first step is to compute the patient's anion gap.\nThe formula for computing a patient's anion gap is: sodium (mEq/L) - (chloride (mEq/L)+ bicarbonate (mEq/L)).\nThe concentration of sodium is 135.0 mEq/L. \nThe concentration of chloride is 100.0 mEq/L. \nThe concentration of bicarbonate is 19.0 mEq/L. \nPlugging in these values into the anion gap formula gives us 135.0 mEq/L - (100.0 mEq/L + 19.0 mEq/L) = 16.0 mEq/L. Hence, The patient's anion gap is 16.0 mEq/L.\nPlugging in 16.0 mEq/L for the delta gap formula, we get 16.0 - 12 = 4.0 mEq/L. Hence, the patient's delta gap is 4.0 mEq/L.\n", 'Answer': 4.0}"
+        output: "{'Explanation': "To compute the formula of the delta gap, the formula is anion gap (in mEq/L) - 12.
+        The first step is to compute the patient's anion gap.\nThe formula for computing a patient's anion gap is:
+        sodium (mEq/L) - (chloride (mEq/L)+ bicarbonate (mEq/L)).\nThe concentration of sodium is 135.0 mEq/L.
+        \nThe concentration of chloride is 100.0 mEq/L. \nThe concentration of bicarbonate is 19.0 mEq/L.
+        \nPlugging in these values into the anion gap formula gives us 135.0 mEq/L - (100.0 mEq/L + 19.0 mEq/L) = 16.0 mEq/L.
+        Hence, The patient's anion gap is 16.0 mEq/L.\nPlugging in 16.0 mEq/L for the delta gap formula,
+        we get 16.0 - 12 = 4.0 mEq/L. Hence, the patient's delta gap is 4.0 mEq/L.\n", 'Answer': 4.0}"
     """
 
-    explanation = "To compute the formula of the delta gap, the formula is anion gap (in mEq/L) - 12. The first step is to compute the patient's anion gap.\n"
+    explanation = "To compute the formula of the delta gap, the formula is anion gap (in mEq/L) - 12. " \
+                  "The first step is to compute the patient's anion gap.\n"
 
     anion_gap_resp = compute_anion_gap_explanation(input_parameters)
 

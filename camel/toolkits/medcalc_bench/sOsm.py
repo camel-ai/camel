@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-"""
+r"""
 This code is borrowed and modified based on the source code from the 'MedCalc-Bench' repository.
 Original repository: https://github.com/ncbi-nlp/MedCalc-Bench
 
@@ -29,7 +29,7 @@ from camel.toolkits.medcalc_bench.utils.unit_converter_new import (
 
 
 def compute_serum_osmolality_explanation(input_parameters):
-    """
+    r"""
     Calculates the patient's Serum Osmolality and generates a detailed explanatory text.
 
     Parameters:
@@ -54,10 +54,23 @@ def compute_serum_osmolality_explanation(input_parameters):
 
     Example:
         compute_serum_osmolality_explanation({'bun': [20.0, 'mg/dL'],'glucose': [599.0, 'mg/dL'],'sodium': [139.0, 'mEq/L']})
-        output: "{'Explanation': "The formula for computing serum osmolality is 2 * Na + (BUN / 2.8) + (glucose / 18), where Na is the concentration of sodium in mmol/L, the concentration of BUN is in mg/dL, and the concentration of glucose is in mg/dL.\nThe concentration of sodium is 139.0 mEq/L. We need to convert the concentration to mmol/L. Let's first convert the mass of sodium from mEq to mmol. The mass of sodium is 139.0 mEq. To convert from 139.0 mEq to mmol, convert from mEq to mmol. The compound 139.0 has a valence of 1, and so divide the valence by the value of mEq to get, 139.0 mEq/(1 mEq/mmol) = 139.0 mmol sodium. The volume units is L so no volume conversion is needed. Hence, the concentration value of 139.0 mEq sodium/L converts to 139.0 mmol sodium/L. \nThe concentration of bun is 20.0 mg/dL. \nThe concentration of glucose is 599.0 mg/dL. \nPlugging these values into the equation, we get 2 * 139.0 + (20.0 / 2.8) + (20.0 / 18) = 318.421 mmol/L.The patient's calculated serum osmolality concentration is 318.421 mmol/L. This is equalivalent to 318.421 mOsm/kg.\n", 'Answer': 318.421}"
+        output: "{'Explanation': "The formula for computing serum osmolality is 2 * Na + (BUN / 2.8) + (glucose / 18),
+        where Na is the concentration of sodium in mmol/L, the concentration of BUN is in mg/dL,
+        and the concentration of glucose is in mg/dL.\nThe concentration of sodium is 139.0 mEq/L.
+        We need to convert the concentration to mmol/L. Let's first convert the mass of sodium from mEq to mmol.
+        The mass of sodium is 139.0 mEq. To convert from 139.0 mEq to mmol, convert from mEq to mmol.
+        The compound 139.0 has a valence of 1, and so divide the valence by the value of mEq to
+        get, 139.0 mEq/(1 mEq/mmol) = 139.0 mmol sodium. The volume units is L so no volume conversion is needed.
+        Hence, the concentration value of 139.0 mEq sodium/L converts to 139.0 mmol sodium/L.
+        \nThe concentration of bun is 20.0 mg/dL. \nThe concentration of glucose is 599.0 mg/dL.
+        \nPlugging these values into the equation, we get 2 * 139.0 + (20.0 / 2.8) + (20.0 / 18) = 318.421 mmol/L.
+        The patient's calculated serum osmolality concentration is 318.421 mmol/L.
+        This is equalivalent to 318.421 mOsm/kg.\n", 'Answer': 318.421}"
     """
 
-    explanation = "The formula for computing serum osmolality is 2 * Na + (BUN / 2.8) + (glucose / 18), where Na is the concentration of sodium in mmol/L, the concentration of BUN is in mg/dL, and the concentration of glucose is in mg/dL.\n"
+    explanation = "The formula for computing serum osmolality is 2 * Na + (BUN / 2.8) + (glucose / 18), " \
+                  "where Na is the concentration of sodium in mmol/L, " \
+                  "the concentration of BUN is in mg/dL, and the concentration of glucose is in mg/dL.\n"
 
     sodium_exp, sodium = conversion_explanation(
         input_parameters["sodium"][0],
@@ -90,8 +103,10 @@ def compute_serum_osmolality_explanation(input_parameters):
 
     serum_os = round_number(2 * sodium + (bun / 2.8) + (glucose / 18))
 
-    explanation += f"Plugging these values into the equation, we get 2 * {sodium} + ({bun} / 2.8) + ({bun} / 18) = {serum_os} mmol/L."
-    explanation += f"The patient's calculated serum osmolality concentration is {serum_os} mmol/L. This is equalivalent to {serum_os} mOsm/kg.\n"
+    explanation += f"Plugging these values into the equation, " \
+                   f"we get 2 * {sodium} + ({bun} / 2.8) + ({bun} / 18) = {serum_os} mmol/L."
+    explanation += f"The patient's calculated serum osmolality concentration is {serum_os} mmol/L. " \
+                   f"This is equalivalent to {serum_os} mOsm/kg.\n"
 
     return {"Explanation": explanation, "Answer": serum_os}
 

@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-"""
+r"""
 This code is borrowed and modified based on the source code from the 'MedCalc-Bench' repository.
 Original repository: https://github.com/ncbi-nlp/MedCalc-Bench
 
@@ -28,7 +28,7 @@ from camel.toolkits.medcalc_bench.utils.age_conversion import (
 
 
 def compute_heart_score_explanation(input_parameters):
-    """
+    r"""
     Calculates the patient's heart score and generates a detailed explanatory text.
 
     Parameters:
@@ -42,7 +42,9 @@ def compute_heart_score_explanation(input_parameters):
             - "smoking" (boolean): The patient's history of smoking.
             - "family_with_cvd" (boolean): The patient's parent or sibling with Cardiovascular disease before age 65.
             - "atherosclerotic_disease" (boolean): The patient's atherosclerotic disease.
-            - "initial_troponin" (str): The patient's initial troponin: "less than or equal to normal limit", "between the normal limit or up to three times the normal limit", or "greater than three times normal limit".
+            - "initial_troponin" (str): The patient's initial troponin: "less than or equal to normal limit",
+                "between the normal limit or up to three times the normal limit",
+                or "greater than three times normal limit".
             - "electrocardiogram" (str): The patient's electrocardiogram status: "Normal", "Non-specific
             repolarization disturbance", or "Significant ST deviation".
             - "hypercholesterolemia" (boolean): The patient's hypercholesterolemia status.
@@ -73,7 +75,30 @@ def compute_heart_score_explanation(input_parameters):
             'risk_factors': {'family_with_cvd'}
          }
         compute_heart_score_explanation(test_case)
-        output: "{'Explanation': "\n       The HEART Score for risk stratification in patients with chest pain is shown below:\n    \n       1. History: Slightly suspicious = 0 points, Moderately suspicious = +1 point, Highly suspicious = +2 points\n       2. EKG: Normal = 0 points, Non-specific repolarization disturbance = +1 point, Significant ST deviation = +2 points\n       3. Age: <45 years = 0 points, 45-64 years = +1 point, ≥65 years = +2 points\n       4. Risk factors (HTN, hypercholesterolemia, DM, obesity (BMI >30 kg/m²), smoking (current or cessation within 3 months), positive family history of cardiovascular disease before age 65, atherosclerotic disease such as prior MI, PCI/CABG, CVA/TIA, or peripheral arterial disease): No known risk factors = 0 points, 1-2 risk factors = +1 point, ≥3 risk factors or history of atherosclerotic disease = +2 points\n       5. Initial troponin level: ≤normal limit = 0 points, 1–3× normal limit = +1 point, >3× normal limit = +2 points\n    \n       The total score is calculated by summing the points for each criterion.\n\n\n    The current HEART Score is 0.\nThe value of 'history' in the patient's note is determined to be 'Slightly suspicious'. Based on the HEART Score criteria, 0 points are added for 'history', keeping the current total at 0.\nThe value of 'electrocardiogram' in the patient's note is determined to be 'Normal'. Based on the HEART Score criteria, 0 points are added for 'electrocardiogram', keeping the current total at 0.\nThe patient is 60 years old. The patient's age is between 45 and 65 years and so we increment the current total by 1, making the current total 0 + 1 = 1.\nThe following risk factor(s) are present based on the patient's note: family with cvd. The following risk factor(s) are mentioned in the patient's note, but these risk factors are noted to be absent from the patient: hypertension, hypercholesterolemia, diabetes mellitus, obesity, smoking, atherosclerotic disease. Based on the HEART Score risk factors criteria, 1 risk factors are present and so 1 point is added for the risk factors criteria, making the current total, 1 + 1 = 2.\nThe value of 'initial troponin' in the patient's note is determined to be 'less than or equal to normal limit'. Based on the HEART Score criteria, 0 points are added for 'initial troponin', keeping the current total at 2.\nBased on the patient's data, the HEART Score is 2.\n", 'Answer': 2}"
+        output: "{'Explanation': "\nThe HEART Score for risk stratification in patients with chest pain is shown below:
+        \n    \n       1. History: Slightly suspicious = 0 points, Moderately suspicious = +1 point, Highly suspicious = +2 points\n
+        2. EKG: Normal = 0 points, Non-specific repolarization disturbance = +1 point, Significant ST deviation = +2 points\n
+        3. Age: <45 years = 0 points, 45-64 years = +1 point, ≥65 years = +2 points\n
+        4. Risk factors (HTN, hypercholesterolemia, DM, obesity (BMI >30 kg/m²), smoking (current or cessation within 3 months),
+        positive family history of cardiovascular disease before age 65, atherosclerotic disease such as prior MI,
+        PCI/CABG, CVA/TIA, or peripheral arterial disease): No known risk factors = 0 points,
+        1-2 risk factors = +1 point, ≥3 risk factors or history of atherosclerotic disease = +2 points\n
+        5. Initial troponin level: ≤normal limit = 0 points, 1–3× normal limit = +1 point, >3× normal limit = +2 points
+        \n    \n       The total score is calculated by summing the points for each criterion.\n\n\n
+        The current HEART Score is 0.\nThe value of 'history' in the patient's note is determined to be
+        'Slightly suspicious'. Based on the HEART Score criteria, 0 points are added for 'history',
+        keeping the current total at 0.\nThe value of 'electrocardiogram' in the patient's note is determined to be 'Normal'.
+        Based on the HEART Score criteria, 0 points are added for 'electrocardiogram',
+        keeping the current total at 0.\nThe patient is 60 years old. The patient's age is between 45 and 65 years
+        and so we increment the current total by 1, making the current total 0 + 1 = 1.\nThe following risk factor(s)
+        are present based on the patient's note: family with cvd. The following risk factor(s)
+        are mentioned in the patient's note, but these risk factors are noted to be absent from the patient:
+        hypertension, hypercholesterolemia, diabetes mellitus, obesity, smoking, atherosclerotic disease.
+        Based on the HEART Score risk factors criteria, 1 risk factors are present and so 1 point is added
+        for the risk factors criteria, making the current total, 1 + 1 = 2.\nThe value of 'initial troponin'
+        in the patient's note is determined to be 'less than or equal to normal limit'.
+        Based on the HEART Score criteria, 0 points are added for 'initial troponin', keeping the current total at
+        2.\nBased on the patient's data, the HEART Score is 2.\n", 'Answer': 2}"
     """
 
     explanation = """
@@ -82,7 +107,11 @@ def compute_heart_score_explanation(input_parameters):
        1. History: Slightly suspicious = 0 points, Moderately suspicious = +1 point, Highly suspicious = +2 points
        2. EKG: Normal = 0 points, Non-specific repolarization disturbance = +1 point, Significant ST deviation = +2 points
        3. Age: <45 years = 0 points, 45-64 years = +1 point, ≥65 years = +2 points
-       4. Risk factors (HTN, hypercholesterolemia, DM, obesity (BMI >30 kg/m²), smoking (current or cessation within 3 months), positive family history of cardiovascular disease before age 65, atherosclerotic disease such as prior MI, PCI/CABG, CVA/TIA, or peripheral arterial disease): No known risk factors = 0 points, 1-2 risk factors = +1 point, ≥3 risk factors or history of atherosclerotic disease = +2 points
+       4. Risk factors (HTN, hypercholesterolemia, DM, obesity (BMI >30 kg/m²), 
+       smoking (current or cessation within 3 months), positive family history of cardiovascular disease before age 65, 
+       atherosclerotic disease such as prior MI, PCI/CABG, CVA/TIA, or peripheral arterial disease): 
+       No known risk factors = 0 points, 1-2 risk factors = +1 point, 
+       ≥3 risk factors or history of atherosclerotic disease = +2 points
        5. Initial troponin level: ≤normal limit = 0 points, 1–3× normal limit = +1 point, >3× normal limit = +2 points
     
        The total score is calculated by summing the points for each criterion.\n\n
@@ -154,7 +183,8 @@ def compute_heart_score_explanation(input_parameters):
             ]
 
             if present_factors:
-                explanation += f"The following risk factor(s) are present based on the patient's note: {', '.join(present_factors_names)}. "
+                explanation += f"The following risk factor(s) are present based on the patient's note: " \
+                               f"{', '.join(present_factors_names)}. "
 
             present_but_false = [
                 factor
@@ -168,7 +198,9 @@ def compute_heart_score_explanation(input_parameters):
             ]
 
             if present_but_false:
-                explanation += f"The following risk factor(s) are mentioned in the patient's note, but these risk factors are noted to be absent from the patient: {', '.join(present_but_false_names)}. "
+                explanation += f"The following risk factor(s) are mentioned in the patient's note, " \
+                               f"but these risk factors are noted to be absent from the patient: " \
+                               f"{', '.join(present_but_false_names)}. "
                 for item in present_but_false:
                     input_parameters[item] = False
 
@@ -184,7 +216,9 @@ def compute_heart_score_explanation(input_parameters):
             ]
 
             if missing_factors:
-                explanation += f"The following risk factor(s) are missing from the patient's data: {', '.join(missing_factors_names)}. We will assume that these are all absent from the patient. "
+                explanation += f"The following risk factor(s) are missing from the patient's data: " \
+                               f"{', '.join(missing_factors_names)}. " \
+                               f"We will assume that these are all absent from the patient. "
 
             for factor in missing_factors:
                 input_parameters[factor] = False
@@ -198,7 +232,8 @@ def compute_heart_score_explanation(input_parameters):
                 param_name = param
 
             if param not in input_parameters:
-                explanation += f"'{param_name}' is missing from the patient's data and so we assume it's value is {default_value[param]}."
+                explanation += f"'{param_name}' is missing from the patient's data and " \
+                               f"so we assume it's value is {default_value[param]}."
                 input_parameters[param] = default_value[param]
             else:
                 explanation += f"The value of '{param_name}' in the patient's note is determined to be '{param_value}'. "
@@ -215,31 +250,40 @@ def compute_heart_score_explanation(input_parameters):
             risk_factors_count = sum(
                 1 for factor in factors if input_parameters[factor]
             )
-            explanation += f"Based on the HEART Score risk factors criteria, {risk_factors_count} risk factors are present and so "
+            explanation += f"Based on the HEART Score risk factors criteria, " \
+                           f"{risk_factors_count} risk factors are present and so "
 
             if risk_factors_count == 0:
-                explanation += f"0 points are added for the risk factors criteria, keeping the current total at {total_score}.\n"
+                explanation += f"0 points are added for the risk factors criteria, " \
+                               f"keeping the current total at {total_score}.\n"
             elif 1 <= risk_factors_count <= 2:
-                explanation += f"1 point is added for the risk factors criteria, making the current total, {total_score} + 1 = {total_score + 1}.\n"
+                explanation += f"1 point is added for the risk factors criteria, " \
+                               f"making the current total, {total_score} + 1 = {total_score + 1}.\n"
                 total_score += 1
             elif (
                 risk_factors_count < 3
                 and input_parameters['atherosclerotic_disease']
             ):
-                explanation += f"2 points are added for the risk factors criteria as atherosclerotic disease is present, making the current total {total_score} + 2 = {total_score + 2}.\n"
+                explanation += f"2 points are added for the risk factors criteria as atherosclerotic disease is present," \
+                               f" making the current total {total_score} + 2 = {total_score + 2}.\n"
                 total_score += 2
             elif risk_factors_count >= 3:
-                explanation += f"2 points are added as 3 or more risk factors are present, making the current total {total_score} + 2 = {total_score + 2}.\n"
+                explanation += f"2 points are added as 3 or more risk factors are present, " \
+                               f"making the current total {total_score} + 2 = {total_score + 2}.\n"
                 total_score += 2
 
         elif param == "age":
             if age < 45:
                 explanation += f"The patient's age is less than 45 years and so keep the current total at {total_score}.\n"
             elif 45 <= age < 65:
-                explanation += f"The patient's age is between 45 and 65 years and so we increment the current total by 1, making the current total {total_score} + 1 = {total_score + 1}.\n"
+                explanation += f"The patient's age is between 45 and 65 years " \
+                               f"and so we increment the current total by 1, " \
+                               f"making the current total {total_score} + 1 = {total_score + 1}.\n"
                 total_score += 1
             else:
-                explanation += f"The patient's age is greater than 65 years and so we increment the current total by 2, making the current total {total_score} + 2 = {total_score + 2}.\n"
+                explanation += f"The patient's age is greater than 65 years " \
+                               f"and so we increment the current total by 2, " \
+                               f"making the current total {total_score} + 2 = {total_score + 2}.\n"
                 total_score += 2
         else:
             points = options[input_parameters[param]]
@@ -248,12 +292,15 @@ def compute_heart_score_explanation(input_parameters):
                 param = 'initial troponin'
 
             if points == 0:
-                explanation += f"Based on the HEART Score criteria, 0 points are added for '{param}', keeping the current total at {total_score}.\n"
+                explanation += f"Based on the HEART Score criteria, 0 points are added for '{param}', " \
+                               f"keeping the current total at {total_score}.\n"
             elif points == 1:
-                explanation += f"Based on the HEART Score criteria, 1 point is added for '{param}', increasing the current total to {total_score} + 1 = {total_score + 1}.\n"
+                explanation += f"Based on the HEART Score criteria, 1 point is added for '{param}', " \
+                               f"increasing the current total to {total_score} + 1 = {total_score + 1}.\n"
                 total_score += 1
             else:
-                explanation += f"Based on the HEART Score criteria, 2 points are added for '{param}', increasing the current total to {total_score} + 2 = {total_score + 2}.\n"
+                explanation += f"Based on the HEART Score criteria, 2 points are added for '{param}', " \
+                               f"increasing the current total to {total_score} + 2 = {total_score + 2}.\n"
                 total_score += 2
 
     explanation += (
