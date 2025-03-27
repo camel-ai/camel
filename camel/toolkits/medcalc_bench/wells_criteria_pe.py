@@ -25,28 +25,38 @@ Date: March 2025
 
 def calculate_pe_wells_explanation(variables):
     r"""
-    Calculates the patient's score of Wells' criteria for Pulmonary Embolism and generates a detailed explanatory text.
+    Calculates the patient's score of Wells' criteria for Pulmonary Embolism
+    and generates a detailed explanatory text.
 
     Parameters:
         variables (dict): A dictionary containing the following key-value pairs:
-            - "clinical_dvt" (boolean): Clinical signs and symptoms of DVT: No = 0 points, Yes = +3 points.
-            - "previous_pe" (boolean): Previous, objectively diagnosed PE: No = 0 points, Yes = +1.5 points.
-            - "previous_dvt" (boolean): Previous, objectively diagnosed DVT: No = 0 points, Yes = +1.5 points.
-            - "heart_rate" (tuple): The patient's heart rate in the format (value, unit).
+            - "clinical_dvt" (boolean): Clinical signs and symptoms of DVT:
+            No = 0 points, Yes = +3 points.
+            - "previous_pe" (boolean): Previous, objectively diagnosed PE:
+            No = 0 points, Yes = +1.5 points.
+            - "previous_dvt" (boolean): Previous, objectively diagnosed DVT:
+            No = 0 points, Yes = +1.5 points.
+            - "heart_rate" (tuple): The patient's heart rate in the format (
+            value, unit).
                 - Value (float): The value of the patient's heart rate.
                 - Unit (str): The unit of heart rate should be "beats per minute".
-            - "immobilization_for_3days" (boolean): Immobilization at least 3 days OR surgery in the previous 4 weeks:
-                No = 0 points, Yes = +1.5 points.
+            - "immobilization_for_3days" (boolean): Immobilization at least
+            3 days OR surgery in the previous 4 weeks:
+                - No = 0 points, Yes = +1.5 points.
             - "hemoptysis" (boolean): No = 0 points, Yes = +1 point.
-            - "surgery_in_past4weeks" (boolean): Whether the patient has had a surgery for the past 4 weeks.
-            - "malignancy_with_treatment" (boolean): Malignancy with treatment within 6 months or palliative:
+            - "surgery_in_past4weeks" (boolean): Whether the patient has
+            had a surgery for the past 4 weeks.
+            - "malignancy_with_treatment" (boolean): Malignancy with
+            treatment within 6 months or palliative:
                 No = 0 points, Yes = +1 point.
-            - "pe_number_one" (boolean): Hemoptysis: PE is #1 diagnosis OR equally likely: No = 0 points, Yes = +3 points.
+            - "pe_number_one" (boolean): Hemoptysis: PE is #1 diagnosis OR
+            equally likely: No = 0 points, Yes = +3 points.
 
     Returns:
         dict: Contains two key-value pairs:
             - "Explanation" (str): A detailed description of the calculation process.
-            - "Answer" (float): The patient's score of Wells' criteria for Pulmonary Embolism.
+            - "Answer" (float): The patient's score of Wells' criteria for
+            Pulmonary Embolism.
 
     Notes:
         - None.
@@ -62,28 +72,44 @@ def calculate_pe_wells_explanation(variables):
             "pe_number_one": False,
             "previous_dvt": False
         })
-        output: "{'Explanation': "\n    The criteria for the Wells' Criteria for Pulmonary Embolism score are listed below:
-        \n\n        1. Clinical signs and symptoms of DVT: No = 0 points, Yes = +3 points\n
-        2. PE is #1 diagnosis OR equally likely: No = 0 points, Yes = +3 points\n
+        output: "{'Explanation': "\n    The criteria for the Wells' Criteria
+        for Pulmonary Embolism score are listed below:
+        \n\n        1. Clinical signs and symptoms of DVT:
+        No = 0 points, Yes = +3 points\n
+        2. PE is #1 diagnosis OR equally likely: No = 0 points, Yes = +3
+        points\n
         3. Heart rate > 100: No = 0 points, Yes = +1.5 points\n
-        4. Immobilization at least 3 days OR surgery in the previous 4 weeks: No = 0 points, Yes = +1.5 points\n
-        5. Previous, objectively diagnosed PE or DVT: No = 0 points, Yes = +1.5 points\n
+        4. Immobilization at least 3 days OR surgery in the previous 4
+        weeks: No = 0 points, Yes = +1.5 points\n
+        5. Previous, objectively diagnosed PE or DVT: No = 0 points,
+        Yes = +1.5 points\n
         6. Hemoptysis: No = 0 points, Yes = +1 point\n
-        7. Malignancy with treatment within 6 months or palliative: No = 0 points, Yes = +1 point\n\n
-        The total score is calculated by summing the points for each criterion.\\n\\n\n
-        The Well's score for pulmonary embolism is currently 0.\nClinical signs and symptoms of DVT are not reported
-        and so we assume that this is missing from the patient, keeping the current total at 0.
-        Pulmonary Embolism is not reported to be the #1 diagnosis and so the total score remains unchanged,
-        keeping the total score at 0.\nThe patient's heart rate is 78.0 beats per minute.
+        7. Malignancy with treatment within 6 months or palliative: No = 0
+        points, Yes = +1 point\n\n
+        The total score is calculated by summing the points for each
+        criterion.\\n\\n\n
+        The Well's score for pulmonary embolism is currently 0.\nClinical
+        signs and symptoms of DVT are not reported
+        and so we assume that this is missing from the patient, keeping the
+        current total at 0.
+        Pulmonary Embolism is not reported to be the #1 diagnosis
+        and so the total score remains unchanged,
+        keeping the total score at 0.\nThe patient's heart rate is 78.0
+        beats per minute.
         The heart rate is less than 100 bpm, and so the score remains unchanged,
-        keeping the total score at 0.\nBecause the patient has not had an immobilization for at least 3 days,
-        and the patient did not have a surgery in the past 4 weeks, the score remains at 0.
-        \nBecause the patient has no previous diagnosis of pulmonary embolism (PE) or deep vein thrombosis (DVT),
+        keeping the total score at 0.\nBecause the patient has not had an
+        immobilization for at least 3 days,
+        and the patient did not have a surgery in the past 4 weeks,
+        the score remains at 0.
+        \nBecause the patient has no previous diagnosis of pulmonary
+        embolism (PE) or deep vein thrombosis (DVT),
         the score remains at 0.\nHemoptysis is reported to be absent
         and so the total score remains unchanged, keeping the total score at 0.
-        \nMalignany with treatment within 6 months or palliative is reported to be absent
+        \nMalignany with treatment within 6 months or
+        palliative is reported to be absent
         and so the total score remains unchanged, keeping the total score at 0.
-        \nThe patient's Well's score for pulmonary embolism is 0.\n", 'Answer': 0}"
+        \nThe patient's Well's score for pulmonary embolism is 0.\n",
+        'Answer': 0}"
     """
 
     explanation = r"""
@@ -276,23 +302,6 @@ if __name__ == "__main__":
             "previous_dvt": False,
         },
     ]
-    # {'Previously Documented Pulmonary Embolism': False, 'Heart Rate or Pulse': [78.0, 'beats per minute'],
-    # 'Immobilization for at least 3 days': False, 'Hemoptysis': False, 'Surgery in the previous 4 weeks': False,
-    # 'Malignancy with treatment within 6 months or palliative': False,
-    # 'Pulmonary Embolism is #1 diagnosis OR equally likely': False,
-    # 'Previously documented Deep Vein Thrombosis': False}
-
-    # {'Heart Rate or Pulse': [106.0, 'beats per minute'], 'Immobilization for at least 3 days': False,
-    # 'Hemoptysis': False, 'Surgery in the previous 4 weeks': True,
-    # 'Malignancy with treatment within 6 months or palliative': False,
-    # 'Pulmonary Embolism is #1 diagnosis OR equally likely': False,
-    # 'Previously Documented Pulmonary Embolism': False, 'Previously documented Deep Vein Thrombosis': False}
-
-    # {'Heart Rate or Pulse': [129.0, 'beats per minute'], 'Immobilization for at least 3 days': False,
-    # 'Surgery in the previous 4 weeks': False, 'Clinical signs and symptoms of Deep Vein Thrombosis': True,
-    # 'Malignancy with treatment within 6 months or palliative': False,
-    # 'Pulmonary Embolism is #1 diagnosis OR equally likely': True,
-    # 'Previously Documented Pulmonary Embolism': False, 'Previously documented Deep Vein Thrombosis': False}
 
     # Iterate the test cases and print the results
     for i, input_variables in enumerate(test_cases, 1):
