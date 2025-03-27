@@ -1,6 +1,6 @@
 # Retrievers
 
-For more detailed usage information, please refer to our cookbook: [RAG Cookbook](../cookbooks/agents_with_rag.ipynb)
+For more detailed usage information, please refer to our cookbook: [RAG Cookbook](../cookbooks/advanced_features/agents_with_rag.ipynb)
 
 ## 1. Concept
 The Retrievers module is essentially a search engine. It's designed to help you find specific pieces of information by searching through large volumes of text. Imagine you have a huge library of books and you want to find where certain topics or keywords are mentioned, this module is like a librarian that helps you do just that.
@@ -38,21 +38,12 @@ Here's a brief overview of how it works:
 ### 3.1. Using Vector Retriever
 
 **Initialize VectorRetrieve:**
-To get started, we need to initialize the `VectorRetriever` with an optional embedding model. If we don't provide an embedding model, it will use the default `OpenAIEmbedding`. Here's how to do it:
+To get started, we need to initialize the `VectorRetriever` with an optional embedding model and storage. If we don't provide an embedding model, it will use the default `OpenAIEmbedding`. Here's how to do it:
 ```python
 from camel.embeddings import OpenAIEmbedding
 from camel.retrievers import VectorRetriever
 
 # Initialize the VectorRetriever with an embedding model
-vr = VectorRetriever(embedding_model=OpenAIEmbedding())
-```
-
-**Embed and Store Data:**
-Before we can retrieve information, we need to prepare the data and store it in vector storage. The `process` method takes care of this for us. It processes content from a file or URL, divides it into chunks, and stores their embeddings in the specified vector storage.
-```python
-# Provide the path to our content input (can be a file or URL)
-content_input_path = "https://www.camel-ai.org/"
-
 # Create or initialize a vector storage (e.g., QdrantStorage)
 from camel.storages.vectordb_storages import QdrantStorage
 
@@ -62,8 +53,17 @@ vector_storage = QdrantStorage(
     path="storage_customized_run",
 )
 
+vr = VectorRetriever(embedding_model=OpenAIEmbedding(), storage=vector_storage)
+```
+
+**Embed and Store Data:**
+Before we can retrieve information, we need to prepare the data and store it in vector storage. The `process` method takes care of this for us. It processes content from a file or URL, divides it into chunks, and stores their embeddings in the specified vector storage.
+```python
+# Provide the path to our content input (can be a file or URL)
+content_input_path = "https://www.camel-ai.org/"
+
 # Embed and store chunks of data in the vector storage
-vr.process(content_input_path, vector_storage)
+vr.process(content=content_input_path)
 ```
 
 **Execute a Query:**
@@ -73,7 +73,7 @@ Now that our data is stored, we can execute a query to retrieve information base
 query = "What is CAMEL"
 
 # Execute the query and retrieve results
-results = vr.query(query, vector_storage)
+results = vr.query(query=query, similarity_threshold=0)
 print(results)
 ```
 ```markdown

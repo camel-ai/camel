@@ -25,7 +25,7 @@ class MoonshotConfig(BaseConfig):
     Args:
         temperature (float, optional): Controls randomness in the response.
             Lower values make the output more focused and deterministic.
-            (default: :obj:`0.3`)
+            (default: :obj:`None`)
         max_tokens (int, optional): The maximum number of tokens to generate.
             (default: :obj:`None`)
         stream (bool, optional): Whether to stream the response.
@@ -35,28 +35,28 @@ class MoonshotConfig(BaseConfig):
             type, function name, description, and parameters.
             (default: :obj:`None`)
         top_p (float, optional): Controls diversity via nucleus sampling.
-            (default: :obj:`1.0`)
+            (default: :obj:`None`)
         n (int, optional): How many chat completion choices to generate for
-            each input message. (default: :obj:`1`)
+            each input message.(default: :obj:`None`)
         presence_penalty (float, optional): Penalty for new tokens based on
             whether they appear in the text so far.
-            (default: :obj:`0.0`)
+            (default: :obj:`None`)
         frequency_penalty (float, optional): Penalty for new tokens based on
             their frequency in the text so far.
-            (default: :obj:`0.0`)
+            (default: :obj:`None`)
         stop (Optional[Union[str, List[str]]], optional): Up to 4 sequences
             where the API will stop generating further tokens.
             (default: :obj:`None`)
     """
 
-    temperature: float = 0.3
+    temperature: Optional[float] = None
     max_tokens: Optional[int] = None
-    stream: bool = False
+    stream: Optional[bool] = None
     tools: Optional[list] = None
-    top_p: float = 1.0
-    n: int = 1
-    presence_penalty: float = 0.0
-    frequency_penalty: float = 0.0
+    top_p: Optional[float] = None
+    n: Optional[int] = None
+    presence_penalty: Optional[float] = None
+    frequency_penalty: Optional[float] = None
     stop: Optional[Union[str, List[str]]] = None
 
 

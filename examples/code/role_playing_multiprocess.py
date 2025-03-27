@@ -225,7 +225,7 @@ def generate_data(
     with open(
         f"./camel_data/code/{message_dict['id']}.json", "w"
     ) as json_file:
-        json.dump(message_dict, json_file)
+        json.dump(message_dict, json_file, ensure_ascii=False)
 
 
 def main() -> None:

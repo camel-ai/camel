@@ -29,6 +29,7 @@ from camel.models.nvidia_model import NvidiaModel
 from camel.models.ollama_model import OllamaModel
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.models.openai_model import OpenAIModel
+from camel.models.openrouter_model import OpenRouterModel
 from camel.models.qwen_model import QwenModel
 from camel.models.reka_model import RekaModel
 from camel.models.samba_model import SambaModel
@@ -37,6 +38,7 @@ from camel.models.siliconflow_model import SiliconFlowModel
 from camel.models.stub_model import StubModel
 from camel.models.togetherai_model import TogetherAIModel
 from camel.models.vllm_model import VLLMModel
+from camel.models.volcano_model import VolcanoModel
 from camel.models.yi_model import YiModel
 from camel.models.zhipuai_model import ZhipuAIModel
 from camel.types import ModelPlatformType, ModelType, UnifiedModelType
@@ -58,6 +60,7 @@ class ModelFactory:
         token_counter: Optional[BaseTokenCounter] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        timeout: Optional[int] = None,
     ) -> BaseModelBackend:
         r"""Creates an instance of `BaseModelBackend` of the specified type.
 
@@ -77,6 +80,8 @@ class ModelFactory:
                 with the model service. (default: :obj:`None`)
             url (Optional[str], optional): The url to the model service.
                 (default: :obj:`None`)
+            timeout (Optional[float], optional): The timeout value in seconds
+                for API calls. (default: :obj:`None`)
 
         Returns:
             BaseModelBackend: The initialized backend.
@@ -107,6 +112,8 @@ class ModelFactory:
             model_class = SiliconFlowModel
         elif model_platform.is_aiml:
             model_class = AIMLModel
+        elif model_platform.is_volcano:
+            model_class = VolcanoModel
 
         elif model_platform.is_openai and model_type.is_openai:
             model_class = OpenAIModel
@@ -116,6 +123,8 @@ class ModelFactory:
             model_class = AnthropicModel
         elif model_platform.is_groq and model_type.is_groq:
             model_class = GroqModel
+        elif model_platform.is_openrouter and model_type.is_openrouter:
+            model_class = OpenRouterModel
         elif model_platform.is_zhipuai and model_type.is_zhipuai:
             model_class = ZhipuAIModel
         elif model_platform.is_gemini and model_type.is_gemini:
@@ -151,4 +160,5 @@ class ModelFactory:
             api_key=api_key,
             url=url,
             token_counter=token_counter,
+            timeout=timeout,
         )

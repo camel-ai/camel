@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.23"
+version = "0.2.37"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -22,15 +22,12 @@ keywords = [
 ]
 dependencies = [
     "numpy~=1.26",
-    "openai>=1.59.7,<2",
+    "openai>=1.68.0,<2",
     "tiktoken>=0.7.0,<0.8",
     "colorama>=0.4.6,<0.5",
     "jsonschema>=4,<5",
-    "protobuf>=5,<6",
     "docstring-parser>=0.15,<0.16",
     "pydantic>=1.9,<2.10",
-    "eval-type-backport==0.2.0",
-    "curl_cffi==0.6.2",
     "httpx>=0.28.0,<1.0.0dev",
     "psutil>=5.9.8,<6",
     "pyyaml>=6.0.2,<7",
@@ -58,6 +55,7 @@ dev = [
     "types-tqdm>=4.66.0,<5",
     "types-requests>=2.31.0,<3",
     "types-setuptools>=69.2.0,<70",
+    "uv==0.6.5",
 ]
 docs = [
     "sphinx>=7,<8",
@@ -71,6 +69,7 @@ rag = [
     "sentence-transformers>=3.0.1,<4",
     "qdrant-client>=1.9.0,<2",
     "pymilvus>=2.4.0,<3",
+    "pytidb-experimental==0.0.1.dev4",
     "neo4j>=5.18.0,<6",
     "nebula3-python==3.8.2",
     "rank-bm25>=0.2.2,<0.3",
@@ -95,6 +94,7 @@ web_tools = [
     "fastapi>=0.115.11",
     "playwright>=1.50.0",
     "html2text>=2024.2.26",
+    "beautifulsoup4>=4,<5",
 ]
 document_tools = [
     "beautifulsoup4>=4,<5",
@@ -107,6 +107,8 @@ document_tools = [
     "xls2xlsx>=0.2.0",
     "tabulate>=0.9.0",
     "openpyxl>=3.1.5",
+    "docx>=0.2.4",
+    "fpdf>=1.7.2",
 ]
 media_tools = [
     "imageio[pyav]>=2.34.2,<3",
@@ -119,7 +121,7 @@ media_tools = [
 communication_tools = [
     "slack-sdk>=3.27.2,<4",
     "slack-bolt>=1.20.1,<2",
-    "pygithub>=2.3.0,<3",
+    "pygithub>=2.6.0,<3",
     "pyTelegramBotAPI>=4.18.0,<5",
     "discord.py>=2.3.2,<3",
     "notion-client>=2.2.1,<3",
@@ -148,12 +150,14 @@ dev_tools = [
     "e2b-code-interpreter>=1.0.3,<2",
     "tree-sitter-python>=0.23.6,<0.24",
     "tree-sitter>=0.23.2,<0.24",
+    "typer>=0.15.2",
+    "mcp>=1.3.0",
 ]
 model_platforms = [
     "litellm>=1.38.1,<2",
     "mistralai>=1.1.0,<2",
     "reka-api>=3.0.8,<4",
-    "anthropic>=0.42.0,<0.43",
+    "anthropic>=0.47.0,<0.50.0",
     "cohere>=5.11.0,<6",
     "fish-audio-sdk>=2024.12.5,<2025",
 ]
@@ -170,12 +174,14 @@ huggingface = [
 storage = [
     "qdrant-client>=1.9.0,<2",
     "pymilvus>=2.4.0,<3",
+    "pytidb-experimental==0.0.1.dev4",
     "neo4j>=5.18.0,<6",
     "nebula3-python==3.8.2",
     "redis>=5.0.6,<6",
     "azure-storage-blob>=12.21.0,<13",
     "google-cloud-storage>=2.18.0,<3",
     "botocore>=1.35.3,<2",
+    "mem0ai>=0.1.73"
 ]
 all = [
     "transformers>=4,<5",
@@ -215,7 +221,7 @@ all = [
     "slack-sdk>=3.27.2,<4",
     "slack-bolt>=1.20.1,<2",
     "pydub>=0.25.1,<0.26",
-    "pygithub>=2.3.0,<3",
+    "pygithub>=2.6.0,<3",
     "pyTelegramBotAPI>=4.18.0,<5",
     "discord.py>=2.3.2,<3",
     "docker>=7.1.0,<8",
@@ -239,6 +245,7 @@ all = [
     "networkx>=3.4.2,<4",
     "qdrant-client>=1.9.0,<2",
     "pymilvus>=2.4.0,<3",
+    "pytidb-experimental==0.0.1.dev4",
     "cohere>=5.11.0,<6",
     "sentence-transformers>=3.0.1,<4",
     "neo4j>=5.18.0,<6",
@@ -247,7 +254,7 @@ all = [
     "litellm>=1.38.1,<2",
     "mistralai>=1.1.0,<2",
     "fish-audio-sdk>=2024.12.5,<2025",
-    "anthropic>=0.42.0,<0.43",
+    "anthropic>=0.47.0,<0.50.0",
     "reka-api>=3.0.8,<4",
     "redis>=5.0.6,<6",
     "azure-storage-blob>=12.21.0,<13",
@@ -273,6 +280,11 @@ all = [
     "scenedetect>=0.6.5.2",
     "playwright>=1.50.0",
     "html2text>=2024.2.26",
+    "docx>=0.2.4",
+    "fpdf>=1.7.2",
+    "mcp>=1.3.0",
+    "typer>=0.15.2",
+    "mem0ai>=0.1.67"
 ]
 
 [project.urls]
@@ -295,7 +307,7 @@ include = ["camel"]
 [tool.ruff]
 line-length = 79
 fix = true
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.format]
 quote-style = "preserve"
@@ -395,6 +407,7 @@ module = [
     "fish_audio_sdk",
     "sentence_transformers.*",
     "pymilvus",
+    "pytidb",
     "pillow",
     "slack-sdk",
     "slack-bolt",
@@ -442,7 +455,13 @@ module = [
     "tabulate",
     "openpyxl",
     "scenedetect",
+    "scenedetect.detectors",
     "playwright",
     "html2text",
+    "docx",
+    "fpdf",
+    "mcp",
+    "typer",
+    "mem0",
 ]
 ignore_missing_imports = true
