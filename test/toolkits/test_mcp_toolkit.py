@@ -505,9 +505,11 @@ class TestMCPToolkit:
                         "command": "test-command",
                         "args": ["--arg1"],
                         "env": {"TEST_ENV": "value"},
+                    },
+                    "server2": {
+                        "url": "https://test.com/sse"
                     }
-                },
-                "mcpWebServers": {"server2": {"url": "https://test.com/sse"}},
+                }
             }
             config_path.write_text(json.dumps(config_data))
 
@@ -543,7 +545,7 @@ class TestMCPToolkit:
                 mock_logger.reset_mock()
 
                 # Missing url field
-                config_data = {"mcpWebServers": {"server1": {"timeout": 30}}}
+                config_data = {"mcpServers": {"server1": {"timeout": 30}}}
                 config_path.write_text(json.dumps(config_data))
 
                 servers = mcp_toolkit._load_servers_from_config(
@@ -573,20 +575,6 @@ class TestMCPToolkit:
                     "'mcpServers' is not a dictionary, skipping..."
                 )
 
-                mock_logger.reset_mock()
-
-                # mcpWebServers is not a dictionary
-                config_data = {"mcpWebServers": "not a dictionary"}
-                config_path.write_text(json.dumps(config_data))
-
-                servers = mcp_toolkit._load_servers_from_config(
-                    str(config_path)
-                )
-                # Should return an empty list and log a warning
-                assert servers == []
-                mock_logger.warning.assert_called_with(
-                    "'mcpWebServers' is not a dictionary, skipping..."
-                )
 
     @pytest.mark.asyncio
     async def test_connection(self):
