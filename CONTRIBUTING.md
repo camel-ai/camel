@@ -5,8 +5,8 @@ Thank you for your interest in contributing to the CAMEL project! 🎉 We're exc
 ## Join Our Community 🌍
 
 ### Schedule an Introduction Call 📞 
-- English speakers: [here](https://calendly.com/roman-georgio/camel-ai-introduction-call?month=2024-05)
-- Chinese speakers: [here](https://calendly.com/sisi-qu/welcome-to-camel-onboarding-meeting?month=2024-05)
+- English speakers: [here](https://cal.com/wendong-fan-5yu7x5/30min)
+- Chinese speakers: [here](https://cal.com/wendong-fan-5yu7x5/30min)
 
 ### Developer Meeting Time & Link 💻
 - English speakers: Mondays at 5 PM GMT+1. Join via Discord: [Meeting Link](https://discord.gg/FFe4nB8MJj?event=1313319275708289034)

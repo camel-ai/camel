@@ -176,7 +176,9 @@ class CohereModel(BaseModelBackend):
                 else:
                     arguments = function_call.get("arguments")  # type: ignore[attr-defined]
                     arguments_dict = ast.literal_eval(arguments)
-                    arguments_json = json.dumps(arguments_dict)
+                    arguments_json = json.dumps(
+                        arguments_dict, ensure_ascii=False
+                    )
 
                     assis_tool_call_id = str(uuid.uuid4())
                     tool_call_id = assis_tool_call_id

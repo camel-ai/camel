@@ -13,45 +13,63 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import abc
+import asyncio
 import json
 import random
-from datetime import datetime
 from pathlib import Path
-from typing import (
-    List,
-    Union,
-)
+from typing import Any, Dict, List, Union
 
 from pydantic import ValidationError
+from torch.utils.data import IterableDataset
 
-from camel.agents import ChatAgent
 from camel.logger import get_logger
-from camel.verifiers import BaseVerifier
-from camel.verifiers.models import VerifierInput
 
 from .models import DataPoint
-from .static_dataset import StaticDataset
 
 logger = get_logger(__name__)
 
 
-class BaseGenerator(abc.ABC):
+class BaseGenerator(abc.ABC, IterableDataset):
     r"""Abstract base class for data generators.
 
     This class defines the interface for generating synthetic datapoints.
     Concrete implementations should provide specific generation strategies.
     """
 
-    def __init__(self, seed: int = 42, **kwargs):
+    def __init__(
+        self,
+        seed: int = 42,
+        cache: Union[str, Path, None] = None,
+        data_path: Union[str, Path, None] = None,
+        **kwargs,
+    ):
         r"""Initialize the base generator.
 
         Args:
             seed (int): Random seed for reproducibility. (default: :obj:`42`)
+            cache (Union[str, Path, None]): Optional path to save generated
+                datapoints during iteration. If None is provided, datapoints
+                will be discarded every 100 generations.
+            data_path (Union[str, Path, None]): Optional path to a JSONL file
+                to initialize the dataset from.
             **kwargs: Additional generator parameters.
         """
         self._rng = random.Random(seed)
+        self.cache = Path(cache) if cache else None
 
         self._data: List[DataPoint] = []
+        self._batch_to_save: List[DataPoint] = []
+
+        if data_path:
+            file_path = Path(data_path)
+            raw_data = self._init_from_jsonl(file_path)
+            try:
+                data_points = [DataPoint(**item) for item in raw_data]
+                self._data.extend(data_points)
+            except ValidationError as e:
+                raise ValueError(
+                    f"Failed to create DataPoint from JSONL data: {e}"
+                )
 
     @abc.abstractmethod
     async def generate_new(self, n: int, **kwargs) -> List[DataPoint]:
@@ -66,34 +84,112 @@ class BaseGenerator(abc.ABC):
         """
         pass
 
-    def __len__(self) -> int:
-        r"""Return the size of the generated dataset."""
-        return len(self._data)
+    def __aiter__(self):
+        r"""Async iterator that yields datapoints dynamically.
 
-    def __getitem__(self, idx: int) -> DataPoint:
-        r"""Retrieve a datapoint by index.
+        If a `data_path` was provided during initialization, those datapoints
+        are yielded first. When self._data is empty, 20 new datapoints
+        are generated. Every 100 yields, the batch is appended to the
+        JSONL file or discarded if `cache` is None.
 
-        Args:
-            idx (int): Index of the datapoint.
-
-        Returns:
-            DataPoint: The datapoint corresponding to the given index.
-
-        Raises:
-            IndexError: If idx is out of bounds.
+        Yields:
+            DataPoint: A single datapoint.
         """
-        if idx < 0 or idx >= len(self._data):
-            raise IndexError(
-                f"Index {idx} out of bounds for dataset of "
-                f"size {len(self._data)}"
-            )
-        return self._data[idx]
+
+        async def generator():
+            while True:
+                if not self._data:
+                    new_datapoints = await self.generate_new(20)
+                    self._data.extend(new_datapoints)
+                datapoint = self._data.pop(0)
+                yield datapoint
+                self._batch_to_save.append(datapoint)
+                if len(self._batch_to_save) == 100:
+                    if self.cache:
+                        with self.cache.open("a", encoding="utf-8") as f:
+                            for dp in self._batch_to_save:
+                                json.dump(dp.to_dict(), f, ensure_ascii=False)
+                                f.write("\n")
+                    self._batch_to_save = []
+
+        return generator()
+
+    def __iter__(self):
+        r"""Synchronous iterator for PyTorch IterableDataset compatibility.
+
+        If a `data_path` was provided during initialization, those datapoints
+        are yielded first. When self._data is empty, 20 new datapoints
+        are generated. Every 100 yields, the batch is appended to the
+        JSONL file or discarded if `cache` is None.
+
+        Yields:
+            DataPoint: A single datapoint.
+        """
+        try:
+            if asyncio.get_event_loop().is_running():
+                raise RuntimeError(
+                    "Cannot use synchronous iteration (__iter__) in an async "
+                    "context; use 'async for' with __aiter__ instead"
+                )
+        except RuntimeError as e:
+            if "no running event loop" not in str(e):
+                raise
+
+        while True:
+            if not self._data:
+                new_datapoints = asyncio.run(self.generate_new(20))
+                self._data.extend(new_datapoints)
+            datapoint = self._data.pop(0)
+            yield datapoint
+            self._batch_to_save.append(datapoint)
+            if len(self._batch_to_save) == 100:
+                if self.cache:
+                    with self.cache.open("a", encoding="utf-8") as f:
+                        for dp in self._batch_to_save:
+                            json.dump(dp.to_dict(), f, ensure_ascii=False)
+                            f.write("\n")
+                self._batch_to_save = []
 
     def sample(self) -> DataPoint:
-        if len(self._data) == 0:
-            raise RuntimeError("Dataset is empty, cannot sample.")
-        idx = self._rng.randint(0, len(self._data) - 1)
-        return self[idx]
+        r"""Returns the next datapoint from the current dataset
+        synchronously.
+
+        Raises:
+            RuntimeError: If called in an async context.
+
+        Returns:
+            DataPoint: The next DataPoint.
+
+        Note:
+            This method is intended for synchronous contexts.
+            Use 'async_sample' in asynchronous contexts to
+            avoid blocking or runtime errors.
+        """
+        try:
+            if asyncio.get_event_loop().is_running():
+                raise RuntimeError(
+                    "Cannot use synchronous sampling (sample) "
+                    "in an async context; use async_sample instead"
+                )
+        except RuntimeError as e:
+            if "no running event loop" not in str(e):
+                raise
+
+        return next(iter(self))
+
+    async def async_sample(self) -> DataPoint:
+        r"""Returns the next datapoint from the current dataset asynchronously.
+
+        Returns:
+            DataPoint: The next datapoint.
+
+        Note:
+            This method is intended for asynchronous contexts. Use 'sample'
+            in synchronous contexts.
+        """
+
+        async_iter = self.__aiter__()
+        return await async_iter.__anext__()
 
     def save_to_jsonl(self, file_path: Union[str, Path]) -> None:
         r"""Saves the generated datapoints to a JSONL (JSON Lines) file.
@@ -109,7 +205,7 @@ class BaseGenerator(abc.ABC):
 
         Notes:
             - Uses `self._data`, which contains the generated datapoints.
-            - Overwrites the file if it already exists.
+            - Appends to the file if it already exists.
             - Ensures compatibility with large datasets by using JSONL format.
         """
         if not self._data:
@@ -118,218 +214,66 @@ class BaseGenerator(abc.ABC):
         file_path = Path(file_path)
 
         try:
-            with file_path.open("w", encoding="utf-8") as f:
+            with file_path.open("a", encoding="utf-8") as f:
                 for datapoint in self._data:
-                    json.dump(datapoint.to_dict(), f)
-                    f.write("\n")  # Ensure each entry is on a new line
+                    json.dump(datapoint.to_dict(), f, ensure_ascii=False)
+                    f.write("\n")
             logger.info(f"Dataset saved successfully to {file_path}")
         except IOError as e:
             logger.error(f"Error writing to file {file_path}: {e}")
             raise
 
-
-class FewShotGenerator(BaseGenerator):
-    r"""A generator for creating synthetic datapoints using few-shot learning.
-
-    This class leverages a seed dataset, an agent, and a verifier to generate
-    new synthetic datapoints on demand through few-shot prompting.
-    """
-
-    def __init__(
-        self,
-        seed_dataset: StaticDataset,
-        verifier: BaseVerifier,
-        agent: ChatAgent,
-        seed: int = 42,
-        **kwargs,
-    ):
-        r"""Initialize the few-shot generator.
+    def flush(self, file_path: Union[str, Path]) -> None:
+        r"""Flush the current data to a JSONL file and clear the data.
 
         Args:
-            seed_dataset (StaticDataset): Validated static dataset to
-                use for examples.
-            verifier (BaseVerifier): Verifier to validate generated content.
-            agent (ChatAgent): Agent to generate new datapoints.
-            seed (int): Random seed for reproducibility. (default: :obj:`42`)
-            **kwargs: Additional generator parameters.
-        """
-        super().__init__(seed=seed, **kwargs)
-        self.seed_dataset = seed_dataset
-        try:
-            self._validate_seed_dataset()
-        except Exception:
-            raise RuntimeError("Seed Data does not follow Datapoint format")
-        self.verifier = verifier
-        self.agent = agent
-
-    # TODO: Validate that seed dataset contains rationale
-    def _validate_seed_dataset(self) -> None:
-        pass
-
-    def _construct_prompt(self, examples: List[DataPoint]) -> str:
-        r"""Construct a prompt for generating new datapoints
-        using a fixed sample of examples from the seed dataset.
-
-        Args:
-            examples (List[DataPoint]): Examples to include in the prompt.
-
-        Returns:
-            str: Formatted prompt with examples.
-        """
-        prompt = (
-            "Generate a new datapoint similar to the following examples:\n\n"
-        )
-        for i, example in enumerate(examples, 1):
-            prompt += f"Example {i}:\n"
-            prompt += f"Question: {example.question}\n"
-            if example.rationale is not None:
-                prompt += f"Rationale: {example.rationale}\n"
-            else:
-                prompt += "Rationale: None\n"
-            prompt += f"Final Answer: {example.final_answer}\n\n"
-        prompt += "New datapoint:"
-        return prompt
-
-    async def generate_new(
-        self,
-        n: int,
-        max_retries: int = 10,
-        num_examples: int = 3,
-        **kwargs,
-    ) -> List[DataPoint]:
-        r"""Generates and validates `n` new datapoints through
-        few-shot prompting, with a retry limit.
-
-        Steps:
-            1. Samples examples from the seed dataset.
-            2. Constructs a prompt using the selected examples.
-            3. Uses an agent to generate a new datapoint,
-            consisting of a question and code to solve the question.
-            4. Executes code using a verifier to get pseudo ground truth.
-            5. Stores valid datapoints in memory.
-
-        Args:
-            n (int): Number of valid datapoints to generate.
-            max_retries (int): Maximum number of retries before stopping.
-                (default: :obj:`10`)
-            num_examples (int): Number of examples to sample from the
-            seed dataset for few shot prompting.
-                (default: :obj:`3`)
-            **kwargs: Additional generation parameters.
-
-        Returns:
-            List[DataPoint]: A list of newly generated valid datapoints.
-
-        Raises:
-            TypeError: If the agent's output is not a dictionary (or does not
-                match the expected format).
-            KeyError: If required keys are missing from the response.
-            AttributeError: If the verifier response lacks attributes.
-            ValidationError: If a datapoint fails schema validation.
-            RuntimeError: If retries are exhausted before `n` valid datapoints
-                are generated.
+            file_path (Union[str, Path]): Path to save the JSONL file.
 
         Notes:
-            - Retries on validation failures until `n` valid datapoints exist
-                or `max_retries` is reached, whichever comes first.
-            - If retries are exhausted before reaching `n`, a `RuntimeError`
-                is raised.
-            - Metadata includes a timestamp for tracking datapoint creation.
+            - Uses `save_to_jsonl` to save `self._data`.
         """
-        valid_data_points: List[DataPoint] = []
-        retries = 0
 
-        while len(valid_data_points) < n and retries < max_retries:
-            try:
-                examples = [
-                    self.seed_dataset.sample() for _ in range(num_examples)
-                ]
-                prompt = self._construct_prompt(examples)
+        self.save_to_jsonl(file_path)
+        self._data = []
+        logger.info(f"Data flushed to {file_path} and cleared from the memory")
 
+    def _init_from_jsonl(self, file_path: Path) -> List[Dict[str, Any]]:
+        r"""Load and parse a dataset from a JSONL file.
+
+        Args:
+            file_path (Path): Path to the JSONL file.
+
+        Returns:
+            List[Dict[str, Any]]: A list of datapoint dictionaries.
+
+        Raises:
+            FileNotFoundError: If the specified JSONL file does not exist.
+            ValueError: If a line contains invalid JSON or is not a dictionary.
+        """
+        if not file_path.exists():
+            raise FileNotFoundError(f"JSONL file not found: {file_path}")
+
+        raw_data = []
+        logger.debug(f"Loading JSONL from {file_path}")
+        with file_path.open('r', encoding='utf-8') as f:
+            for line_number, line in enumerate(f, start=1):
+                line = line.strip()
+                if not line:
+                    continue  # Skip blank lines
                 try:
-                    agent_output = (
-                        self.agent.step(prompt, response_format=DataPoint)
-                        .msgs[0]
-                        .parsed
+                    record = json.loads(line)
+                except json.JSONDecodeError as e:
+                    raise ValueError(
+                        f"Invalid JSON on line {line_number} "
+                        f"in file {file_path}: {e}"
                     )
-                    if not isinstance(agent_output, dict):
-                        raise TypeError("Agent output must be a dictionary")
-                    if "question" not in agent_output:
-                        raise KeyError(
-                            "Missing 'question' in agent"
-                            f"output {agent_output}"
-                        )
-                    if "rationale" not in agent_output:
-                        raise KeyError(
-                            "Missing 'rationale' in agent"
-                            f"output {agent_output}"
-                        )
-                except (TypeError, KeyError) as e:
-                    logger.warning(
-                        f"Agent output issue: {e}, retrying... "
-                        f"({retries + 1}/{max_retries})"
+                if not isinstance(record, dict):
+                    raise ValueError(
+                        f"Expected a dictionary at line {line_number}, "
+                        f"got {type(record).__name__}"
                     )
-                    retries += 1
-                    continue
-
-                rationale = agent_output.get("rationale")
-
-                if not isinstance(rationale, str):
-                    raise TypeError(f"Rationale {rationale} is not a string.")
-
-                try:
-                    verifier_response = await self.verifier.verify(
-                        VerifierInput(
-                            llm_response=rationale,
-                            ground_truth=None,
-                        )
-                    )
-                    if not verifier_response or not verifier_response.result:
-                        raise ValueError(
-                            "Verifier unsuccessful, response: "
-                            f"{verifier_response}"
-                        )
-                except (ValueError, AttributeError) as e:
-                    logger.warning(
-                        f"Verifier issue: {e}, "
-                        f"retrying... ({retries + 1}/{max_retries})"
-                    )
-                    retries += 1
-                    continue
-
-                try:
-                    new_datapoint = DataPoint(
-                        question=agent_output["question"],
-                        rationale=rationale,
-                        final_answer=verifier_response.result,
-                        metadata={
-                            "synthetic": str(True),
-                            "created": datetime.now().isoformat(),
-                            "generator": "few_shot",
-                        },
-                    )
-                except ValidationError as e:
-                    logger.warning(
-                        f"Datapoint validation failed: {e}, "
-                        f"retrying... ({retries + 1}/{max_retries})"
-                    )
-                    retries += 1
-                    continue
-
-                valid_data_points.append(new_datapoint)
-
-            except Exception as e:
-                logger.warning(
-                    f"Unexpected error: {e}, retrying..."
-                    f" ({retries + 1}/{max_retries})"
-                )
-                retries += 1
-
-        if len(valid_data_points) < n:
-            raise RuntimeError(
-                f"Failed to generate {n} valid datapoints "
-                f"after {max_retries} retries."
-            )
-
-        self._data.extend(valid_data_points)
-        return valid_data_points
+                raw_data.append(record)
+        logger.info(
+            f"Successfully loaded {len(raw_data)} items from {file_path}"
+        )
+        return raw_data

@@ -75,7 +75,7 @@ def generate_questions(
 
         with open(f"{folder_path}/{save_file_name}.jsonl", "w") as f:
             for item in parsed_assistant_msg:
-                json.dump(item, f)
+                json.dump(item, f, ensure_ascii=False)
                 f.write('\n')
 
 

@@ -11,10 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from .base_generator import (
-    BaseGenerator,
-    FewShotGenerator,
-)
+from .base_generator import BaseGenerator
+from .few_shot_generator import FewShotGenerator
 from .models import DataPoint
 from .static_dataset import StaticDataset
 

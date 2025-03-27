@@ -16,7 +16,10 @@ from __future__ import annotations
 import json
 import logging
 import textwrap
+import uuid
 from collections import defaultdict
+from datetime import datetime
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -59,6 +62,7 @@ from camel.models import (
 )
 from camel.prompts import TextPrompt
 from camel.responses import ChatAgentResponse
+from camel.storages import JsonStorage
 from camel.toolkits import FunctionTool
 from camel.types import (
     ChatCompletion,
@@ -138,6 +142,8 @@ class ChatAgent(BaseAgent):
             the next model in ModelManager. (default: :str:`round_robin`)
         single_iteration (bool): Whether to let the agent perform only one
             model calling at each step. (default: :obj:`False`)
+        agent_id (str, optional): The ID of the agent. If not provided, a
+            random UUID will be generated. (default: :obj:`None`)
     """
 
     def __init__(
@@ -157,6 +163,7 @@ class ChatAgent(BaseAgent):
         response_terminators: Optional[List[ResponseTerminator]] = None,
         scheduling_strategy: str = "round_robin",
         single_iteration: bool = False,
+        agent_id: Optional[str] = None,
     ) -> None:
         # Set up model backend
         self.model_backend = ModelManager(
@@ -171,15 +178,24 @@ class ChatAgent(BaseAgent):
             scheduling_strategy=scheduling_strategy,
         )
         self.model_type = self.model_backend.model_type
+        # Assign unique ID
+        self.agent_id = agent_id if agent_id else str(uuid.uuid4())
 
         # Set up memory
         context_creator = ScoreBasedContextCreator(
             self.model_backend.token_counter,
             token_limit or self.model_backend.token_limit,
         )
+
         self.memory: AgentMemory = memory or ChatHistoryMemory(
-            context_creator, window_size=message_window_size
+            context_creator,
+            window_size=message_window_size,
+            agent_id=self.agent_id,
         )
+
+        # So we don't have to pass agent_id when we define memory
+        if memory is not None:
+            memory.agent_id = self.agent_id
 
         # Set up system message and initialize messages
         self._original_system_message = (
@@ -321,8 +337,100 @@ class ChatAgent(BaseAgent):
             role (OpenAIBackendRole): The backend role type.
         """
         self.memory.write_record(
-            MemoryRecord(message=message, role_at_backend=role)
+            MemoryRecord(
+                message=message,
+                role_at_backend=role,
+                timestamp=datetime.now().timestamp(),
+                agent_id=self.agent_id,
+            )
         )
+
+    def load_memory(self, memory: AgentMemory) -> None:
+        r"""Load the provided memory into the agent.
+
+        Args:
+            memory (AgentMemory): The memory to load into the agent.
+
+        Returns:
+            None
+        """
+
+        for context_record in memory.retrieve():
+            self.memory.write_record(context_record.memory_record)
+        logger.info(f"Memory loaded from {memory}")
+
+    def load_memory_from_path(self, path: str) -> None:
+        r"""Loads memory records from a JSON file filtered by this agent's ID.
+
+        Args:
+            path (str): The file path to a JSON memory file that uses
+                JsonStorage.
+
+        Raises:
+            ValueError: If no matching records for the agent_id are found
+                (optional check; commented out below).
+        """
+        json_store = JsonStorage(Path(path))
+        all_records = json_store.load()
+
+        if not all_records:
+            raise ValueError(
+                f"No records found for agent_id={self.agent_id} in {path}"
+            )
+
+        for record_dict in all_records:
+            # Validate the record dictionary before conversion
+            required_keys = ['message', 'role_at_backend', 'agent_id']
+            if not all(key in record_dict for key in required_keys):
+                logger.warning(
+                    f"Skipping invalid record: missing required "
+                    f"keys in {record_dict}"
+                )
+                continue
+
+            # Validate message structure in the record
+            if (
+                not isinstance(record_dict['message'], dict)
+                or '__class__' not in record_dict['message']
+            ):
+                logger.warning(
+                    f"Skipping invalid record: malformed message "
+                    f"structure in {record_dict}"
+                )
+                continue
+
+            try:
+                record = MemoryRecord.from_dict(record_dict)
+                self.memory.write_records([record])
+            except Exception as e:
+                logger.warning(
+                    f"Error converting record to MemoryRecord: {e}. "
+                    f"Record: {record_dict}"
+                )
+        logger.info(f"Memory loaded from {path}")
+
+    def save_memory(self, path: str) -> None:
+        r"""Retrieves the current conversation data from memory and writes it
+        into a JSON file using JsonStorage.
+
+        Args:
+            path (str): Target file path to store JSON data.
+        """
+        json_store = JsonStorage(Path(path))
+        context_records = self.memory.retrieve()
+        to_save = [cr.memory_record.to_dict() for cr in context_records]
+        json_store.save(to_save)
+        logger.info(f"Memory saved to {path}")
+
+    def clear_memory(self) -> None:
+        r"""Clear the agent's memory and reset to initial state.
+
+        Returns:
+            None
+        """
+        self.memory.clear()
+        if self.system_message is not None:
+            self.update_memory(self.system_message, OpenAIBackendRole.SYSTEM)
 
     def _generate_system_message_for_output_language(
         self,
@@ -446,7 +554,6 @@ class ChatAgent(BaseAgent):
         self,
         input_message: Union[BaseMessage, str],
         response_format: Optional[Type[BaseModel]] = None,
-        reason_params: Optional[Dict[str, Any]] = None,
     ) -> ChatAgentResponse:
         r"""Executes a single step in the chat session, generating a response
         to the input message.
@@ -459,13 +566,6 @@ class ChatAgent(BaseAgent):
                 model defining the expected structure of the response. Used to
                 generate a structured response if provided. (default:
                 :obj:`None`)
-            reason_params (Optional[Dict[str, Any]], optional): A dictionary
-                containing the parameters for the reasoning step.
-                Argument `choices` is the number of choices/candidates to
-                consider.
-                Argument `threshold` is the threshold for the probability of
-                the choices.
-                (default: :obj:`None`)
 
         Returns:
             ChatAgentResponse: Contains output messages, a termination status
@@ -478,14 +578,11 @@ class ChatAgent(BaseAgent):
                 role_name="User", content=input_message
             )
 
-        # Inject thinking steps
-        input_message = self._update_reasoning(input_message, reason_params)
-
         # Add user input to memory
         self.update_memory(input_message, OpenAIBackendRole.USER)
 
         tool_call_records: List[ToolCallingRecord] = []
-        external_tool_call_request: Optional[ToolCallRequest] = None
+        external_tool_call_requests: Optional[List[ToolCallRequest]] = None
 
         while True:
             try:
@@ -505,12 +602,26 @@ class ChatAgent(BaseAgent):
             if self.single_iteration:
                 break
 
-            if tool_call_request := response.tool_call_request:
-                if tool_call_request.tool_name in self._external_tool_schemas:
-                    external_tool_call_request = tool_call_request
+            if tool_call_requests := response.tool_call_requests:
+                # Process all tool calls
+                for tool_call_request in tool_call_requests:
+                    if (
+                        tool_call_request.tool_name
+                        in self._external_tool_schemas
+                    ):
+                        if external_tool_call_requests is None:
+                            external_tool_call_requests = []
+                        external_tool_call_requests.append(tool_call_request)
+                    else:
+                        tool_call_records.append(
+                            self._execute_tool(tool_call_request)
+                        )
+
+                # If we found external tool calls, break the loop
+                if external_tool_call_requests:
                     break
 
-                tool_call_records.append(self._execute_tool(tool_call_request))
+                # If we're still here, continue the loop
                 continue
 
             break
@@ -519,49 +630,11 @@ class ChatAgent(BaseAgent):
         self._record_final_output(response.output_messages)
 
         return self._convert_to_chatagent_response(
-            response, tool_call_records, num_tokens, external_tool_call_request
+            response,
+            tool_call_records,
+            num_tokens,
+            external_tool_call_requests,
         )
-
-    def _update_reasoning(
-        self,
-        input_message: BaseMessage,
-        reason_params: Optional[Dict[str, Any]] = None,
-    ) -> BaseMessage:
-        r"""Updates the input message to include reasoning instructions and
-        adds human interaction capability.
-
-        Args:
-            input_message (BaseMessage): The message to be updated with
-                reasoning instructions.
-            reason_params (Optional[Dict[str, Any]], optional): Parameters for
-                the reasoning process.
-
-        Returns:
-            BaseMessage: The updated message with reasoning instructions.
-        """
-        if reason_params is None:
-            return input_message
-        choices = reason_params.get("choices", 3)
-        threshold = reason_params.get("threshold", 0.5)
-
-        input_message.content += f"""First, come up with potential {choices} 
-        choices/candidates. 
-        Next, assign a probability/credibility between 0 and 1 to each choice 
-        (make sure they add up to 1). 
-        Finally, if only one choice has a probability/credibility greater than
-        {threshold}, continue with that choice.
-        Otherwise, call tool `ask_human_via_console` to ask the user to decide 
-        which one to continue with, give user the probability/credibility of 
-        all choices, and the reason for each choice.
-        """
-
-        # Add tools to agent
-        from camel.toolkits.human_toolkit import HumanToolkit
-
-        human_toolkit = HumanToolkit()
-        self.add_tool(human_toolkit.ask_human_via_console)
-
-        return input_message
 
     @property
     def chat_history(self) -> List[OpenAIMessage]:
@@ -602,7 +675,7 @@ class ChatAgent(BaseAgent):
         self.update_memory(input_message, OpenAIBackendRole.USER)
 
         tool_call_records: List[ToolCallingRecord] = []
-        external_tool_call_request: Optional[ToolCallRequest] = None
+        external_tool_call_requests: Optional[List[ToolCallRequest]] = None
         while True:
             try:
                 openai_messages, num_tokens = self.memory.get_context()
@@ -621,13 +694,27 @@ class ChatAgent(BaseAgent):
             if self.single_iteration:
                 break
 
-            if tool_call_request := response.tool_call_request:
-                if tool_call_request.tool_name in self._external_tool_schemas:
-                    external_tool_call_request = tool_call_request
+            if tool_call_requests := response.tool_call_requests:
+                # Process all tool calls
+                for tool_call_request in tool_call_requests:
+                    if (
+                        tool_call_request.tool_name
+                        in self._external_tool_schemas
+                    ):
+                        if external_tool_call_requests is None:
+                            external_tool_call_requests = []
+                        external_tool_call_requests.append(tool_call_request)
+
+                    tool_call_record = await self._aexecute_tool(
+                        tool_call_request
+                    )
+                    tool_call_records.append(tool_call_record)
+
+                # If we found an external tool call, break the loop
+                if external_tool_call_requests:
                     break
 
-                tool_call_record = await self._aexecute_tool(tool_call_request)
-                tool_call_records.append(tool_call_record)
+                # If we're still here, continue the loop
                 continue
 
             break
@@ -636,7 +723,10 @@ class ChatAgent(BaseAgent):
         self._record_final_output(response.output_messages)
 
         return self._convert_to_chatagent_response(
-            response, tool_call_records, num_tokens, external_tool_call_request
+            response,
+            tool_call_records,
+            num_tokens,
+            external_tool_call_requests,
         )
 
     def _convert_to_chatagent_response(
@@ -644,7 +734,7 @@ class ChatAgent(BaseAgent):
         response: ModelResponse,
         tool_call_records: List[ToolCallingRecord],
         num_tokens: int,
-        external_tool_call_request: Optional[ToolCallRequest],
+        external_tool_call_requests: Optional[List[ToolCallRequest]],
     ) -> ChatAgentResponse:
         r"""Parse the final model response into the chat agent response."""
         info = self._step_get_info(
@@ -654,7 +744,7 @@ class ChatAgent(BaseAgent):
             response.response_id,
             tool_call_records,
             num_tokens,
-            external_tool_call_request,
+            external_tool_call_requests,
         )
 
         return ChatAgentResponse(
@@ -905,7 +995,7 @@ class ChatAgent(BaseAgent):
         response_id: str,
         tool_calls: List[ToolCallingRecord],
         num_tokens: int,
-        external_tool_call_request: Optional[ToolCallRequest] = None,
+        external_tool_call_requests: Optional[List[ToolCallRequest]] = None,
     ) -> Dict[str, Any]:
         r"""Process the output of a chat step and gather information about the
         step.
@@ -962,7 +1052,7 @@ class ChatAgent(BaseAgent):
             finish_reasons,
             num_tokens,
             tool_calls,
-            external_tool_call_request,
+            external_tool_call_requests,
         )
 
     def _handle_batch_response(
@@ -1001,18 +1091,21 @@ class ChatAgent(BaseAgent):
         if response.usage is not None:
             usage = safe_model_dump(response.usage)
 
-        tool_call_request: Optional[ToolCallRequest] = None
+        tool_call_requests: Optional[List[ToolCallRequest]] = None
         if tool_calls := response.choices[0].message.tool_calls:
-            tool_name = tool_calls[0].function.name
-            tool_call_id = tool_calls[0].id
-            args = json.loads(tool_calls[0].function.arguments)
-            tool_call_request = ToolCallRequest(
-                tool_name=tool_name, args=args, tool_call_id=tool_call_id
-            )
+            tool_call_requests = []
+            for tool_call in tool_calls:
+                tool_name = tool_call.function.name
+                tool_call_id = tool_call.id
+                args = json.loads(tool_call.function.arguments)
+                tool_call_request = ToolCallRequest(
+                    tool_name=tool_name, args=args, tool_call_id=tool_call_id
+                )
+                tool_call_requests.append(tool_call_request)
 
         return ModelResponse(
             response=response,
-            tool_call_request=tool_call_request,
+            tool_call_requests=tool_call_requests,
             output_messages=output_messages,
             finish_reasons=finish_reasons,
             usage_dict=usage,
@@ -1052,7 +1145,7 @@ class ChatAgent(BaseAgent):
         # TODO: Handle tool calls
         return ModelResponse(
             response=response,
-            tool_call_request=None,
+            tool_call_requests=None,
             output_messages=output_messages,
             finish_reasons=finish_reasons,
             usage_dict=usage_dict,
@@ -1092,7 +1185,7 @@ class ChatAgent(BaseAgent):
         # TODO: Handle tool calls
         return ModelResponse(
             response=response,
-            tool_call_request=None,
+            tool_call_requests=None,
             output_messages=output_messages,
             finish_reasons=finish_reasons,
             usage_dict=usage_dict,

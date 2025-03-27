@@ -87,7 +87,11 @@ class VectorDBQueryResult(BaseModel):
     ) -> "VectorDBQueryResult":
         r"""A class method to construct a `VectorDBQueryResult` instance."""
         return cls(
-            record=VectorRecord(vector=vector, id=id, payload=payload),
+            record=VectorRecord(
+                vector=vector,
+                id=id,
+                payload=payload,
+            ),
             similarity=similarity,
         )
 

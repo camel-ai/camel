@@ -81,7 +81,7 @@ def main() -> None:
             data = json.loads(content)
             os.makedirs("./text_embedding_data/tasks/", exist_ok=True)
             with open(f"./text_embedding_data/tasks/{i}.json", "w") as f:
-                json.dump(data, f, indent=4)
+                json.dump(data, f, indent=4, ensure_ascii=False)
         except Exception as e:
             print(f"Error raised during generation of task {task}", e)
 

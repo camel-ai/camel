@@ -187,9 +187,56 @@ Installing CAMEL is a breeze thanks to its availability on PyPI. Simply open you
 pip install camel-ai
 ```
 
+### Starting with ChatAgent
+
+This example demonstrates how to create a `ChatAgent` using the CAMEL framework and perform a search query using DuckDuckGo.
+
+1. **Install the tools package:**
+
+  ```bash
+  pip install 'camel-ai[web_tools]'
+  ```
+
+2. **Set up your OpenAI API key:**
+
+  ```bash
+  export OPENAI_API_KEY='your_openai_api_key'
+  ```
+
+3. **Run the following Python code:**
+
+  ```python
+  from camel.models import ModelFactory
+  from camel.types import ModelPlatformType, ModelType
+  from camel.agents import ChatAgent
+  from camel.toolkits import SearchToolkit
+
+  model = ModelFactory.create(
+    model_platform=ModelPlatformType.OPENAI,
+    model_type=ModelType.GPT_4O,
+    model_config_dict={"temperature": 0.0},
+  )
+
+  search_tool = SearchToolkit().search_duckduckgo
+
+  agent = ChatAgent(model=model, tools=[search_tool])
+
+  response_1 = agent.step("What is CAMEL-AI?")
+  print(response_1.msgs[0].content)
+  # CAMEL-AI is the first LLM (Large Language Model) multi-agent framework
+  # and an open-source community focused on finding the scaling laws of agents.
+  # ...
+
+  response_2 = agent.step("What is the Github link to CAMEL framework?")
+  print(response_2.msgs[0].content)
+  # The GitHub link to the CAMEL framework is
+  # [https://github.com/camel-ai/camel](https://github.com/camel-ai/camel).
+  ```
+
+
 For more detailed instructions and additional configuration options, check out the [installation section](https://github.com/camel-ai/camel/blob/master/docs/get_started/installation.md).
 
-After running, you can explore our CAMEL Tech Stack and Cookbooks at [www.docs.camel-ai.org](https://docs.camel-ai.org) to build powerful multi-agent systems.
+After running, you can explore our CAMEL Tech Stack and Cookbooks at [docs.camel-ai.org](https://docs.camel-ai.org) to build powerful multi-agent systems.
 
 We provide a [![Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1AzP33O8rnMW__7ocWJhVBXjKziJXPtim?usp=sharing) demo showcasing a conversation between two ChatGPT agents playing roles as a python programmer and a stock trader collaborating on developing a trading bot for stock market.
 
@@ -202,7 +249,7 @@ Explore different types of agents, their roles, and their applications.
 
 ### Seeking Help
 
-Please reachout to us on [CAMEL discord](https://discord.camel-ai.org/) if you encounter any issue set up CAMEL.
+Please reach out to us on [CAMEL discord](https://discord.camel-ai.org/) if you encounter any issue set up CAMEL.
 
 <br>
 
@@ -247,7 +294,7 @@ We believe that studying these agents on a large scale offers valuable insights 
 </div>
 
 <div align="center">
-  <a href="https://www.agent-trust.camel-ai.org/">
+  <a href="https://agent-trust.camel-ai.org/">
     <img src="docs/images/agent_trust.png" alt="Agent Trust">
   </a>
 </div>
@@ -276,7 +323,7 @@ We believe that studying these agents on a large scale offers valuable insights 
 
 <br>
 
-## Syenthetic Datasets
+## Synthetic Datasets
 
 ### 1. Utilize Various LLMs as Backends
 
