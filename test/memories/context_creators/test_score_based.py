@@ -75,3 +75,69 @@ def test_score_based_context_creator():
     ]
     output, _ = context_creator.create_context(records=context_records)
     assert expected_output == output
+
+
+def test_score_based_context_creator_with_system_message():
+    context_creator = ScoreBasedContextCreator(
+        OpenAITokenCounter(ModelType.GPT_4), 40
+    )
+    context_records = [
+        ContextRecord(
+            memory_record=MemoryRecord(
+                message=BaseMessage(
+                    "test",
+                    RoleType.ASSISTANT,
+                    meta_dict=None,
+                    content="You are a helpful assistant.",  # 12
+                ),
+                role_at_backend=OpenAIBackendRole.SYSTEM,
+            ),
+            timestamp=datetime.now().timestamp(),
+            score=1,
+        ),
+        ContextRecord(
+            memory_record=MemoryRecord(
+                message=BaseMessage(
+                    "test",
+                    RoleType.ASSISTANT,
+                    meta_dict=None,
+                    content="Nice to meet you.",  # 12
+                ),
+                role_at_backend=OpenAIBackendRole.ASSISTANT,
+            ),
+            timestamp=datetime.now().timestamp(),
+            score=0.3,
+        ),
+        ContextRecord(
+            memory_record=MemoryRecord(
+                message=BaseMessage(
+                    "test",
+                    RoleType.ASSISTANT,
+                    meta_dict=None,
+                    content="Hello world!",  # 10
+                ),
+                role_at_backend=OpenAIBackendRole.ASSISTANT,
+            ),
+            timestamp=datetime.now().timestamp() + 1,
+            score=0.7,
+        ),
+        ContextRecord(
+            memory_record=MemoryRecord(
+                message=BaseMessage(
+                    "test",
+                    RoleType.ASSISTANT,
+                    meta_dict=None,
+                    content="How are you?",  # 11
+                ),
+                role_at_backend=OpenAIBackendRole.ASSISTANT,
+            ),
+            timestamp=datetime.now().timestamp() + 2,
+            score=0.9,
+        ),
+    ]
+    expected_output = [
+        r.memory_record.to_openai_message()
+        for r in [context_records[0], context_records[2], context_records[3]]
+    ]
+    output, _ = context_creator.create_context(records=context_records)
+    assert expected_output == output
