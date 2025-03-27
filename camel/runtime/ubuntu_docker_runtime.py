@@ -45,7 +45,7 @@ class UbuntuDockerRuntime(DockerRuntime):
         python_path: str = "/usr/bin/python3",
         **kwargs,
     ):
-        """Initialize the Ubuntu Docker Runtime.
+        r"""Initialize the Ubuntu Docker Runtime.
 
         Args:
             image (str): Docker image name to use
@@ -90,7 +90,7 @@ class UbuntuDockerRuntime(DockerRuntime):
         redirect_stdout: bool = False,
         arguments: Optional[dict] = None,
     ) -> "UbuntuDockerRuntime":
-        """Add functions to the runtime with Ubuntu-specific modifications.
+        r"""Add functions to the runtime with Ubuntu-specific modifications.
 
         Args:
             funcs: Function(s) to add to the runtime
@@ -124,14 +124,14 @@ class UbuntuDockerRuntime(DockerRuntime):
         return self
 
     def _setup_default_mounts(self):
-        """Setup default volume mounts for the container.
+        r"""Setup default volume mounts for the container.
 
         This method can be extended to add Ubuntu-specific volume mounts.
         """
         pass
 
     def build(self, time_out: int = 15) -> "UbuntuDockerRuntime":
-        """Build and initialize the Ubuntu container with proper setup.
+        r"""Build and initialize the Ubuntu container with proper setup.
 
         Args:
             time_out (int): Timeout in seconds for build operation
@@ -194,7 +194,7 @@ class UbuntuDockerRuntime(DockerRuntime):
         env: Optional[dict] = None,
         callback: Optional[Callable[[str], None]] = None,
     ) -> None:
-        """Execute a Python file inside the Docker container.
+        r"""Execute a Python file inside the Docker container.
 
         Args:
             local_file_path: Path to the Python file on the local filesystem
@@ -278,7 +278,7 @@ class UbuntuDockerRuntime(DockerRuntime):
             raise
 
     def _create_archive_from_file(self, file_path: Union[str, Path]) -> bytes:
-        """Create a tar archive from a single file for docker.put_archive().
+        r"""Create a tar archive from a single file for docker.put_archive().
 
         Args:
             file_path: Path to the file to archive

@@ -36,7 +36,7 @@ model = ModelFactory.create(
 
 
 def main(model=model, chat_turn_limit=50) -> None:
-    """
+    r"""
     Main function to run the role-playing scenario.
 
     Args:

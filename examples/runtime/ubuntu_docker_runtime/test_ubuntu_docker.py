@@ -25,7 +25,7 @@ init()
 def print_status(
     message: str, status: str = "INFO", color: str = Fore.BLUE
 ) -> None:
-    """Print a formatted status message.
+    r"""Print a formatted status message.
 
     Args:
         message: The message to display
@@ -37,7 +37,7 @@ def print_status(
 
 
 def main():
-    """Main function to run the Ubuntu Docker runtime test."""
+    r"""Main function to run the Ubuntu Docker runtime test."""
     try:
         # Step 1: Initialize runtime
         print_status(
