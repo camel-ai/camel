@@ -66,7 +66,7 @@ class ScoreBasedContextCreator(BaseContextCreator):
         records: List[ContextRecord],
     ) -> Tuple[List[OpenAIMessage], int]:
         r"""Constructs conversation context from chat history while respecting
-            token limits.
+        token limits.
 
         Key strategies:
         1. System message is always prioritized and preserved
@@ -76,10 +76,11 @@ class ScoreBasedContextCreator(BaseContextCreator):
            newer the message, the higher the score.
 
         Args:
-            records: List of context records with scores and timestamps
+            records (List[ContextRecord]): List of context records with scores
+                and timestamps.
 
         Returns:
-            Tuple containing:
+            Tuple[List[OpenAIMessage], int]:
             - Ordered list of OpenAI messages
             - Total token count of the final context
 
@@ -91,6 +92,14 @@ class ScoreBasedContextCreator(BaseContextCreator):
         # ======================
         system_unit, regular_units = self._extract_system_message(records)
         system_tokens = system_unit.num_tokens if system_unit else 0
+
+        # Check early if system message alone exceeds token limit
+        if system_tokens > self.token_limit:
+            raise RuntimeError(
+                f"System message alone exceeds token limit"
+                f": {system_tokens} > {self.token_limit}",
+                system_tokens,
+            )
 
         # ======================
         # 2. Deduplication & Initial Processing
@@ -156,21 +165,12 @@ class ScoreBasedContextCreator(BaseContextCreator):
                 current_total = potential_total
 
         # ======================
-        # 6. Final Validation
-        # ======================
-        # Handle edge case where system message alone exceeds limit
-        if not remaining_units and system_tokens > self.token_limit:
-            raise RuntimeError(
-                "Cannot create context: exceed token limit.", total_tokens
-            )
-
-        # ======================
-        # 7. Output Assembly
+        # 6. Output Assembly
         # ======================
 
         # Incase system message is the only message in memory when sorted units
         # are empty, raise an error
-        if system_unit and len(remaining_units) == 0 and len(records) > 2:
+        if system_unit and len(remaining_units) == 0 and len(records) > 1:
             raise RuntimeError(
                 "System message and current message exceeds token limit ",
                 total_tokens,
@@ -183,13 +183,14 @@ class ScoreBasedContextCreator(BaseContextCreator):
     def _extract_system_message(
         self, records: List[ContextRecord]
     ) -> Tuple[Optional[_ContextUnit], List[_ContextUnit]]:
-        """Extracts the system message from records and validates it.
+        r"""Extracts the system message from records and validates it.
 
         Args:
-            records: List of context records representing conversation history.
+            records (List[ContextRecord]): List of context records
+                representing conversation history.
 
         Returns:
-            Tuple containing:
+            Tuple[Optional[_ContextUnit], List[_ContextUnit]]: containing:
             - The system message as a `_ContextUnit`, if valid; otherwise,
                 `None`.
             - An empty list, serving as the initial container for regular
@@ -215,7 +216,7 @@ class ScoreBasedContextCreator(BaseContextCreator):
         return system_message_unit, []
 
     def _truncation_sort_key(self, unit: _ContextUnit) -> Tuple[float, float]:
-        """Defines the sorting key for the truncation phase.
+        r"""Defines the sorting key for the truncation phase.
 
         Sorting priority:
         - Primary: Sort by score in descending order (higher scores first).
@@ -223,10 +224,11 @@ class ScoreBasedContextCreator(BaseContextCreator):
             first when scores are equal).
 
         Args:
-            unit: A `_ContextUnit` representing a conversation record.
+            unit (_ContextUnit): A `_ContextUnit` representing a conversation
+                record.
 
         Returns:
-            A tuple containing:
+            Tuple[float, float]:
             - Negative score for descending order sorting.
             - Timestamp for ascending order sorting.
         """
@@ -235,7 +237,7 @@ class ScoreBasedContextCreator(BaseContextCreator):
     def _conversation_sort_key(
         self, unit: _ContextUnit
     ) -> Tuple[float, float]:
-        """Defines the sorting key for assembling the final output.
+        r"""Defines the sorting key for assembling the final output.
 
         Sorting priority:
         - Primary: Sort by timestamp in ascending order (chronological order).
@@ -243,10 +245,11 @@ class ScoreBasedContextCreator(BaseContextCreator):
             when timestamps are equal).
 
         Args:
-            unit: A `_ContextUnit` representing a conversation record.
+            unit (_ContextUnit): A `_ContextUnit` representing a conversation
+                record.
 
         Returns:
-            A tuple containing:
+            Tuple[float, float]:
             - Timestamp for chronological sorting.
             - Negative score for descending order sorting.
         """
@@ -257,14 +260,17 @@ class ScoreBasedContextCreator(BaseContextCreator):
         context_units: List[_ContextUnit],
         system_unit: Optional[_ContextUnit],
     ) -> Tuple[List[OpenAIMessage], int]:
-        """Assembles final message list with proper ordering and token count.
+        r"""Assembles final message list with proper ordering and token count.
 
         Args:
-            context_units: Sorted list of regular message units
-            system_unit: System message unit (if present)
+            context_units (List[_ContextUnit]): Sorted list of regular message
+                units.
+            system_unit (Optional[_ContextUnit]): System message unit (if
+                present).
 
         Returns:
-            Tuple of (ordered messages, total tokens)
+            Tuple[List[OpenAIMessage], int]: Tuple of (ordered messages, total
+                tokens)
         """
         messages = []
         total_tokens = 0
