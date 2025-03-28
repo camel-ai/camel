@@ -218,9 +218,6 @@ if __name__ == "__main__":
             "cough_absent": False,
         }
     ]
-    # {'age': [48, 'years'], 'Exudate or swelling on tonsils': False,
-    #  'Tender/swollen anterior cervical lymph nodes': False,
-    #  'Temperature': [99.0, 'degrees fahreinheit'], 'Cough Absent': False}
 
     # Iterate the test cases and print the results
     for i, input_variables in enumerate(test_cases, 1):
