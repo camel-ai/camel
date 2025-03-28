@@ -1118,8 +1118,9 @@ class MedCalcToolkit(BaseToolkit):
         print(input_variables)
 
         try:
-            from camel.toolkits.medcalc_bench.\
-                estimated_conception_date import add_2_weeks_explanation
+            from camel.toolkits.medcalc_bench.estimated_conception_date import (
+                add_2_weeks_explanation,
+            )
 
             # Call the conception date calculation function
             result = add_2_weeks_explanation(input_variables)
@@ -1180,9 +1181,9 @@ class MedCalcToolkit(BaseToolkit):
         print(input_variables)
 
         try:
-            from camel.toolkits.medcalc_bench.\
-                estimated_gestational_age\
-                import compute_gestational_age_explanation
+            from camel.toolkits.medcalc_bench.estimated_gestational_age import (
+                compute_gestational_age_explanation,
+            )
 
             # Call the gestational age calculation function
             result = compute_gestational_age_explanation(input_variables)
@@ -2500,9 +2501,9 @@ class MedCalcToolkit(BaseToolkit):
             "target steroid": str(target_steroid),
         }
 
-        from camel.toolkits.medcalc_bench.\
-            steroid_conversion_calculator\
-            import compute_steroid_conversion_explanation
+        from camel.toolkits.medcalc_bench.steroid_conversion_calculator import (
+            compute_steroid_conversion_explanation,
+        )
 
         try:
             result = compute_steroid_conversion_explanation(input_variables)
