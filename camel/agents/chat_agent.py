@@ -582,7 +582,7 @@ class ChatAgent(BaseAgent):
         self.update_memory(input_message, OpenAIBackendRole.USER)
 
         tool_call_records: List[ToolCallingRecord] = []
-        external_tool_call_request: Optional[ToolCallRequest] = None
+        external_tool_call_requests: Optional[List[ToolCallRequest]] = None
 
         while True:
             try:
@@ -602,12 +602,26 @@ class ChatAgent(BaseAgent):
             if self.single_iteration:
                 break
 
-            if tool_call_request := response.tool_call_request:
-                if tool_call_request.tool_name in self._external_tool_schemas:
-                    external_tool_call_request = tool_call_request
+            if tool_call_requests := response.tool_call_requests:
+                # Process all tool calls
+                for tool_call_request in tool_call_requests:
+                    if (
+                        tool_call_request.tool_name
+                        in self._external_tool_schemas
+                    ):
+                        if external_tool_call_requests is None:
+                            external_tool_call_requests = []
+                        external_tool_call_requests.append(tool_call_request)
+                    else:
+                        tool_call_records.append(
+                            self._execute_tool(tool_call_request)
+                        )
+
+                # If we found external tool calls, break the loop
+                if external_tool_call_requests:
                     break
 
-                tool_call_records.append(self._execute_tool(tool_call_request))
+                # If we're still here, continue the loop
                 continue
 
             break
@@ -616,7 +630,10 @@ class ChatAgent(BaseAgent):
         self._record_final_output(response.output_messages)
 
         return self._convert_to_chatagent_response(
-            response, tool_call_records, num_tokens, external_tool_call_request
+            response,
+            tool_call_records,
+            num_tokens,
+            external_tool_call_requests,
         )
 
     @property
@@ -658,7 +675,7 @@ class ChatAgent(BaseAgent):
         self.update_memory(input_message, OpenAIBackendRole.USER)
 
         tool_call_records: List[ToolCallingRecord] = []
-        external_tool_call_request: Optional[ToolCallRequest] = None
+        external_tool_call_requests: Optional[List[ToolCallRequest]] = None
         while True:
             try:
                 openai_messages, num_tokens = self.memory.get_context()
@@ -677,13 +694,27 @@ class ChatAgent(BaseAgent):
             if self.single_iteration:
                 break
 
-            if tool_call_request := response.tool_call_request:
-                if tool_call_request.tool_name in self._external_tool_schemas:
-                    external_tool_call_request = tool_call_request
+            if tool_call_requests := response.tool_call_requests:
+                # Process all tool calls
+                for tool_call_request in tool_call_requests:
+                    if (
+                        tool_call_request.tool_name
+                        in self._external_tool_schemas
+                    ):
+                        if external_tool_call_requests is None:
+                            external_tool_call_requests = []
+                        external_tool_call_requests.append(tool_call_request)
+
+                    tool_call_record = await self._aexecute_tool(
+                        tool_call_request
+                    )
+                    tool_call_records.append(tool_call_record)
+
+                # If we found an external tool call, break the loop
+                if external_tool_call_requests:
                     break
 
-                tool_call_record = await self._aexecute_tool(tool_call_request)
-                tool_call_records.append(tool_call_record)
+                # If we're still here, continue the loop
                 continue
 
             break
@@ -692,7 +723,10 @@ class ChatAgent(BaseAgent):
         self._record_final_output(response.output_messages)
 
         return self._convert_to_chatagent_response(
-            response, tool_call_records, num_tokens, external_tool_call_request
+            response,
+            tool_call_records,
+            num_tokens,
+            external_tool_call_requests,
         )
 
     def _convert_to_chatagent_response(
@@ -700,7 +734,7 @@ class ChatAgent(BaseAgent):
         response: ModelResponse,
         tool_call_records: List[ToolCallingRecord],
         num_tokens: int,
-        external_tool_call_request: Optional[ToolCallRequest],
+        external_tool_call_requests: Optional[List[ToolCallRequest]],
     ) -> ChatAgentResponse:
         r"""Parse the final model response into the chat agent response."""
         info = self._step_get_info(
@@ -710,7 +744,7 @@ class ChatAgent(BaseAgent):
             response.response_id,
             tool_call_records,
             num_tokens,
-            external_tool_call_request,
+            external_tool_call_requests,
         )
 
         return ChatAgentResponse(
@@ -961,7 +995,7 @@ class ChatAgent(BaseAgent):
         response_id: str,
         tool_calls: List[ToolCallingRecord],
         num_tokens: int,
-        external_tool_call_request: Optional[ToolCallRequest] = None,
+        external_tool_call_requests: Optional[List[ToolCallRequest]] = None,
     ) -> Dict[str, Any]:
         r"""Process the output of a chat step and gather information about the
         step.
@@ -1018,7 +1052,7 @@ class ChatAgent(BaseAgent):
             finish_reasons,
             num_tokens,
             tool_calls,
-            external_tool_call_request,
+            external_tool_call_requests,
         )
 
     def _handle_batch_response(
@@ -1057,18 +1091,21 @@ class ChatAgent(BaseAgent):
         if response.usage is not None:
             usage = safe_model_dump(response.usage)
 
-        tool_call_request: Optional[ToolCallRequest] = None
+        tool_call_requests: Optional[List[ToolCallRequest]] = None
         if tool_calls := response.choices[0].message.tool_calls:
-            tool_name = tool_calls[0].function.name
-            tool_call_id = tool_calls[0].id
-            args = json.loads(tool_calls[0].function.arguments)
-            tool_call_request = ToolCallRequest(
-                tool_name=tool_name, args=args, tool_call_id=tool_call_id
-            )
+            tool_call_requests = []
+            for tool_call in tool_calls:
+                tool_name = tool_call.function.name
+                tool_call_id = tool_call.id
+                args = json.loads(tool_call.function.arguments)
+                tool_call_request = ToolCallRequest(
+                    tool_name=tool_name, args=args, tool_call_id=tool_call_id
+                )
+                tool_call_requests.append(tool_call_request)
 
         return ModelResponse(
             response=response,
-            tool_call_request=tool_call_request,
+            tool_call_requests=tool_call_requests,
             output_messages=output_messages,
             finish_reasons=finish_reasons,
             usage_dict=usage,
@@ -1108,7 +1145,7 @@ class ChatAgent(BaseAgent):
         # TODO: Handle tool calls
         return ModelResponse(
             response=response,
-            tool_call_request=None,
+            tool_call_requests=None,
             output_messages=output_messages,
             finish_reasons=finish_reasons,
             usage_dict=usage_dict,
@@ -1148,7 +1185,7 @@ class ChatAgent(BaseAgent):
         # TODO: Handle tool calls
         return ModelResponse(
             response=response,
-            tool_call_request=None,
+            tool_call_requests=None,
             output_messages=output_messages,
             finish_reasons=finish_reasons,
             usage_dict=usage_dict,

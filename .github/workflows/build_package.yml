@@ -98,6 +98,7 @@ jobs:
           AIML_API_KEY: "${{ secrets.AIML_API_KEY }}"
           NVIDIA_API_KEY: "${{ secrets.NVIDIA_API_KEY }}"
           VOLCANO_API_KEY: "${{ secrets.VOLCANO_API_KEY }}"
+          OPENROUTER_API_KEY: "${{ secrets.OPENROUTER_API_KEY }}"
         run: |
           source test_venv/bin/activate
           pytest --fast-test-mode ./test
