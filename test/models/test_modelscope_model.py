@@ -42,16 +42,17 @@ from camel.types import ModelType
         ModelType.MODELSCOPE_DEEPSEEK_V3_0324,
     ],
 )
-def test_qwen_model(model_type: ModelType):
+def test_modelscope_model(model_type: ModelType):
     model = ModelScopeModel(model_type)
     assert model.model_type == model_type
     assert model.model_config_dict == ModelScopeConfig().as_dict()
+    assert isinstance(model.token_counter, OpenAITokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
 
 
 @pytest.mark.model_backend
-def test_qwen_model_unexpected_argument():
+def test_modelscope_model_unexpected_argument():
     model_type = ModelType.MODELSCOPE_QWEN_2_5_32B_INSTRUCT
     model_config_dict = {"model_path": "qwen-32b-instruct"}
 
