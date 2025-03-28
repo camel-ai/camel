@@ -26,6 +26,7 @@ class BaseAudioModel(ABC):
         self,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        timeout: Optional[float] = None,
     ) -> None:
         r"""Initialize an instance of BaseAudioModel.
 
@@ -36,9 +37,14 @@ class BaseAudioModel(ABC):
             url (Optional[str]): Base URL for the audio API. If not provided,
                 will use a default URL or look for an environment variable
                 specific to the implementation.
+            timeout (Optional[float], optional): The timeout value in seconds
+                for API calls. If not provided, will fall back to the
+                MODEL_TIMEOUT environment variable or default to 180 seconds.
+                (default: :obj:`None`)
         """
         self._api_key = api_key
         self._url = url
+        self._timeout = timeout
 
     @abstractmethod
     def text_to_speech(
