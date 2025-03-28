@@ -19,6 +19,7 @@ import pytest
 from camel.configs import ModelScopeConfig
 from camel.models import ModelScopeModel
 from camel.types import ModelType
+from camel.utils import OpenAITokenCounter
 
 
 @pytest.mark.model_backend
