@@ -53,13 +53,13 @@ class GithubToolkit(BaseToolkit):
                 `get_github_access_token` method.
         """
         super().__init__(timeout=timeout)
-        from github import Auth
+        from github.Auth import Token
         from github.MainClass import Github
 
         if access_token is None:
             access_token = self.get_github_access_token()
 
-        self.github = Github(auth=Auth.Token(access_token))
+        self.github = Github(auth=Token(access_token))
         self.repo = self.github.get_repo(repo_name)
 
     def get_github_access_token(self) -> str:
