@@ -238,6 +238,7 @@ class ModelType(UnifiedModelType, Enum):
     )
     MODELSCOPE_LLAMA_3_3_70B_INSTRUCT = "LLM-Research/Llama-3.3-70B-Instruct"
     MODELSCOPE_MINISTRAL_8B_INSTRUCT = "mistralai/Ministral-8B-Instruct-2410"
+    MODELSCOPE_DEEPSEEK_V3_0324 = "deepseek-ai/DeepSeek-V3-0324"
 
     def __str__(self):
         return self.value
@@ -555,6 +556,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MODELSCOPE_LLAMA_3_1_405B_INSTRUCT,
             ModelType.MODELSCOPE_LLAMA_3_3_70B_INSTRUCT,
             ModelType.MODELSCOPE_MINISTRAL_8B_INSTRUCT,
+            ModelType.MODELSCOPE_DEEPSEEK_V3_0324,
         }
 
     @property
@@ -694,6 +696,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MODELSCOPE_LLAMA_3_1_405B_INSTRUCT,
             ModelType.MODELSCOPE_LLAMA_3_3_70B_INSTRUCT,
             ModelType.MODELSCOPE_MINISTRAL_8B_INSTRUCT,
+            ModelType.MODELSCOPE_DEEPSEEK_V3_0324,
         }:
             return 32_768
         elif self in {

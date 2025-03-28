@@ -39,6 +39,7 @@ from camel.types import ModelType
         ModelType.MODELSCOPE_LLAMA_3_1_405B_INSTRUCT,
         ModelType.MODELSCOPE_LLAMA_3_3_70B_INSTRUCT,
         ModelType.MODELSCOPE_MINISTRAL_8B_INSTRUCT,
+        ModelType.MODELSCOPE_DEEPSEEK_V3_0324,
     ],
 )
 def test_qwen_model(model_type: ModelType):
