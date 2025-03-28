@@ -172,8 +172,6 @@ json_config_files = [
     "test_config_file/json_configs/ollama_openai_token_counter.json",
     "test_config_file/json_configs/openai3.5_turbo_config.json",
     "test_config_file/json_configs/openai4o_config.json",
-    "test_config_file/json_configs/stub_config.json",
-    "test_config_file/json_configs/stub_custom_token_counter_config.json",
 ]
 
 
@@ -183,7 +181,9 @@ json_config_files = [
 def test_model_factory_json(mock_run, config_file):
     r"""Test ModelFactory with JSON files without actual API calls."""
 
-    json_path = Path(config_file)
+    # Get the directory of the current test file
+    test_dir = Path(__file__).parent
+    json_path = test_dir / config_file
     if not json_path.exists():
         pytest.skip(f"Skipping file {json_path}")
 
@@ -225,8 +225,6 @@ yaml_config_files = [
     "test_config_file/yaml_configs/ollama_openai_config.yaml",
     "test_config_file/yaml_configs/openai3.5_turbo_config.yaml",
     "test_config_file/yaml_configs/openai4o_config.yaml",
-    "test_config_file/yaml_configs/stub_config.yaml",
-    "test_config_file/yaml_configs/stub_custom_token_counter.yaml",
 ]
 
 
@@ -236,7 +234,9 @@ yaml_config_files = [
 def test_model_factory_yaml(mock_run, config_file):
     r"""Test ModelFactory with YAML files without real API calls."""
 
-    yaml_path = Path(config_file)
+    # Get the directory of the current test file
+    test_dir = Path(__file__).parent
+    yaml_path = test_dir / config_file
     if not yaml_path.exists():
         pytest.skip(f"Skipping file {yaml_path}")
 

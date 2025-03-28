@@ -1,6 +1,6 @@
 {
     "model_platform": "ollama",
-    "model_type": "gpt-3.5-turbo",
+    "model_type": "llama3.2",
     "model_config_dict": {
         "temperature": 0.5,
         "top_p": 0.9
