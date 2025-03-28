@@ -124,6 +124,11 @@ class UnifiedModelType(str):
         return True
 
     @property
+    def is_modelscope(self) -> bool:
+        r"""Returns whether the model is a ModelScope serverd model."""
+        return True
+
+    @property
     def is_moonshot(self) -> bool:
         r"""Returns whether this platform is Moonshot model."""
         return True
