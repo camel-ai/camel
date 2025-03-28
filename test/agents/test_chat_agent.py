@@ -52,6 +52,7 @@ from camel.types import (
     UnifiedModelType,
 )
 from camel.utils.async_func import sync_funcs_to_async
+from test.utils.mock_openai import mock_chat_completion
 
 model_backend_rsp_base = ChatCompletion(
     id="mock_response_id",
@@ -1080,8 +1081,6 @@ def test_response_words_termination(step_call_count=3):
         ), f"Error in calling round {i+1}"
 
 
-from test.utils.mock_openai import mock_chat_completion
-
 def test_chat_agent_vision(openai_mock, step_call_count=3):
     system_message = BaseMessage(
         role_name="assistant",
@@ -1116,7 +1115,7 @@ def test_chat_agent_vision(openai_mock, step_call_count=3):
         image_list=image_list,
         image_detail="low",
     )
-    
+
     # Configure mock to return "Yes." response
     openai_mock.run.return_value = mock_chat_completion(content="Yes.")
     agent.model_backend.run = openai_mock.run

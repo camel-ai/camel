@@ -11,16 +11,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+from unittest.mock import MagicMock
+
+import pytest
+
 from camel.agents import KnowledgeGraphAgent
 from camel.storages.graph_storages.graph_element import Node, Relationship
 
-import pytest
 
 @pytest.fixture
 def mock_model(openai_mock):
     model = MagicMock()
     model.run = MagicMock(return_value=MagicMock())
     return model
+
 
 @pytest.fixture
 def agent(mock_model):

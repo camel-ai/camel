@@ -1,50 +1,30 @@
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
+from typing import Any, Dict
 from unittest.mock import MagicMock
-from typing import Optional, List, Dict, Any, Literal
-
-from openai.types.chat import (
-    ChatCompletion,
-    ChatCompletionMessage,
-    ChatCompletionMessageToolCall,
-)
-from openai.types.chat.chat_completion import Choice
-from openai.types.completion_usage import CompletionUsage
 
 
-def mock_chat_completion(
-    content: str = "Mock response",
-    role: Literal['assistant'] = "assistant",
-    tool_calls: Optional[List[Dict[str, Any]]] = None,
-    usage: Optional[CompletionUsage] = None,
-) -> ChatCompletion:
-    """Create a mock ChatCompletion object."""
-    message = ChatCompletionMessage(
-        role=role,
-        content=content,
-        tool_calls=[
-            ChatCompletionMessageToolCall(**tc) for tc in tool_calls or []
-        ],
-    )
-    
-    return ChatCompletion(
-        id="mock_id",
-        choices=[Choice(finish_reason="stop", index=0, message=message)],
-        created=1234567890,
-        model="gpt-4",
-        object="chat.completion",
-        usage=usage if usage else CompletionUsage(
-            completion_tokens=10,
-            prompt_tokens=5,
-            total_tokens=15
-        ),
-    )
-
-
-def mock_openai_backend(
-    content: str = "Mock response",
-    role: Literal['assistant'] = "assistant",
-    **kwargs
-) -> MagicMock:
-    """Create a mock OpenAI backend that returns a ChatCompletion."""
-    mock = MagicMock()
-    mock.run.return_value = mock_chat_completion(content, role, **kwargs)
-    return mock
+def mock_chat_completion(*args: Any, **kwargs: Any) -> Dict:
+    """Mock function for OpenAI chat completion"""
+    mock_response = MagicMock()
+    mock_response.choices = [
+        {
+            "message": {
+                "content": "This is a mock response",
+                "role": "assistant",
+            }
+        }
+    ]
+    return mock_response

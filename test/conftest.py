@@ -83,4 +83,5 @@ def pytest_collection_modifyitems(config: Config, items: List[Item]) -> None:
 def openai_mock():
     """Fixture that provides a mock OpenAI backend."""
     from test.utils.mock_openai import mock_openai_backend
+
     return mock_openai_backend()

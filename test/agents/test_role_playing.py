@@ -21,43 +21,48 @@ from openai.types.completion_usage import CompletionUsage
 from camel.agents import ChatAgent, CriticAgent
 from camel.human import Human
 from camel.messages import BaseMessage
-from camel.models import ModelFactory
 from camel.societies import RolePlaying
 from camel.toolkits import MathToolkit
 from camel.types import (
     ChatCompletion,
-    ModelPlatformType,
     ModelType,
     RoleType,
     TaskType,
 )
 
+
+@pytest.fixture
+def model():
+    mock_model = MagicMock()
+    return mock_model
+
+
 @pytest.fixture
 def model_backend_rsp():
     return ChatCompletion(
-    id="mock_response_id",
-    choices=[
-        Choice(
-            finish_reason="stop",
-            index=0,
-            logprobs=None,
-            message=ChatCompletionMessage(
-                content="This is a mock response content.",
-                role="assistant",
-                function_call=None,
-                tool_calls=None,
-            ),
-        )
-    ],
-    created=123456789,
-    model="gpt-4o-2024-05-13",
-    object="chat.completion",
-    usage=CompletionUsage(
-        completion_tokens=32,
-        prompt_tokens=15,
-        total_tokens=47,
-    ),
-)
+        id="mock_response_id",
+        choices=[
+            Choice(
+                finish_reason="stop",
+                index=0,
+                logprobs=None,
+                message=ChatCompletionMessage(
+                    content="This is a mock response content.",
+                    role="assistant",
+                    function_call=None,
+                    tool_calls=None,
+                ),
+            )
+        ],
+        created=123456789,
+        model="gpt-4o-2024-05-13",
+        object="chat.completion",
+        usage=CompletionUsage(
+            completion_tokens=32,
+            prompt_tokens=15,
+            total_tokens=47,
+        ),
+    )
 
 
 @pytest.mark.parametrize("model", [None])
@@ -139,6 +144,7 @@ def test_role_playing_init(model, critic_role_name, with_critic_in_the_loop):
     ],
 )
 def test_role_playing_step(
+    model,
     task_type,
     extend_sys_msg_meta_dicts,
     extend_task_specify_meta_dict,
@@ -205,6 +211,7 @@ def test_role_playing_step(
     ],
 )
 async def test_role_playing_astep(
+    model,
     task_type,
     extend_sys_msg_meta_dicts,
     extend_task_specify_meta_dict,
@@ -257,7 +264,7 @@ async def test_role_playing_astep(
 
 
 @pytest.mark.model_backend
-def test_role_playing_with_function(step_call_count=3):
+def test_role_playing_with_function(model, step_call_count=3):
     if model is not None:
         model.run = MagicMock(return_value=model_backend_rsp)
 
@@ -290,7 +297,7 @@ def test_role_playing_with_function(step_call_count=3):
 @pytest.mark.model_backend
 @pytest.mark.asyncio
 @pytest.mark.parametrize("init_msg_content", [None, "Custom init message"])
-async def test_role_playing_ainit_chat(init_msg_content):
+async def test_role_playing_ainit_chat(model, init_msg_content):
     if model is not None:
         model.run = MagicMock(return_value=model_backend_rsp)
 
