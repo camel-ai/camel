@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.37"
+version = "0.2.38"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -21,8 +21,7 @@ keywords = [
     "large-language-models",
 ]
 dependencies = [
-    "numpy~=1.26",
-    "openai>=1.59.7,<2",
+    "openai>=1.68.0,<2",
     "tiktoken>=0.7.0,<0.8",
     "colorama>=0.4.6,<0.5",
     "jsonschema>=4,<5",
@@ -30,7 +29,6 @@ dependencies = [
     "pydantic>=1.9,<2.10",
     "httpx>=0.28.0,<1.0.0dev",
     "psutil>=5.9.8,<6",
-    "pyyaml>=6.0.2,<7",
 ]
 
 [project.optional-dependencies]
@@ -66,6 +64,7 @@ docs = [
     "sphinxext-rediraffe>=0.2.7,<0.3",
 ]
 rag = [
+    "numpy~=1.26",
     "sentence-transformers>=3.0.1,<4",
     "qdrant-client>=1.9.0,<2",
     "pymilvus>=2.4.0,<3",
@@ -97,6 +96,7 @@ web_tools = [
     "beautifulsoup4>=4,<5",
 ]
 document_tools = [
+    "numpy~=1.26",
     "beautifulsoup4>=4,<5",
     "docx2txt>=0.8,<0.9",
     "PyMuPDF>=1.22.5,<2",
@@ -128,6 +128,7 @@ communication_tools = [
     "praw>=7.7.1,<8",
 ]
 data_tools = [
+    "numpy~=1.26",
     "pandas>=1.5.3,<2",
     "textblob>=0.17.1,<0.18",
     "datacommons>=1.4.3,<2",
@@ -183,7 +184,52 @@ storage = [
     "botocore>=1.35.3,<2",
     "mem0ai>=0.1.73"
 ]
+owl = [
+    "numpy~=1.26",
+    "chunkr-ai>=0.0.41",
+    "mcp-simple-arxiv==0.2.2",
+    "mcp-server-fetch==2025.1.17",
+    "outlines>=0.1.7,<0.2",
+    "python-dotenv>=1.0.0,<2",
+    "transformers>=4,<5",
+    "sentencepiece>=0.2,<0.3",
+    "anthropic>=0.47.0,<0.50.0",
+    "datasets>=3,<4",
+    "soundfile>=0.13,<0.14",
+    "pydub>=0.25.1,<0.26",
+    "ffmpeg-python>=0.2.0,<0.3",
+    "pillow>=10.1.0,<11.0.0",
+    "opencv-python>=4,<5",
+    "imageio[pyav]>=2.34.2,<3",
+    "yt-dlp>=2024.11.4,<2025",
+    "scenedetect>=0.6.5.2",
+    "beautifulsoup4>=4,<5",
+    "docx2txt>=0.8,<0.9",
+    "PyMuPDF>=1.22.5,<2",
+    "unstructured==0.16.20",
+    "pandasai>=2.3.0,<3",
+    "prance>=23.6.21.0,<24",
+    "openapi-spec-validator>=0.7.1,<0.8",
+    "xls2xlsx>=0.2.0",
+    "tabulate>=0.9.0",
+    "openpyxl>=3.1.5",
+    "docx>=0.2.4",
+    "fpdf>=1.7.2",
+    "duckduckgo-search>=6.3.5,<7",
+    "wikipedia>=1,<2",
+    "newspaper3k>=0.2.8,<0.3",
+    "playwright>=1.50.0",
+    "html2text>=2024.2.26",
+    "requests_oauthlib>=1.3.1,<2",
+    "e2b-code-interpreter>=1.0.3,<2",
+    "typer>=0.15.2",
+    "tree-sitter-python>=0.23.6,<0.24",
+    "tree-sitter>=0.23.2,<0.24",
+    "pandas>=1.5.3,<2",
+    "rouge>=1.0.1,<2",
+]
 all = [
+    "numpy~=1.26",
     "transformers>=4,<5",
     "diffusers>=0.25.0,<0.26",
     "accelerate>=0.26.0,<0.27",
