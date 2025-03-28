@@ -14,20 +14,30 @@
 from camel.agents import KnowledgeGraphAgent
 from camel.storages.graph_storages.graph_element import Node, Relationship
 
-agent = KnowledgeGraphAgent()
+import pytest
+
+@pytest.fixture
+def mock_model(openai_mock):
+    model = MagicMock()
+    model.run = MagicMock(return_value=MagicMock())
+    return model
+
+@pytest.fixture
+def agent(mock_model):
+    return KnowledgeGraphAgent(model=mock_model)
 
 
-def test_validate_node_valid():
+def test_validate_node_valid(agent):
     valid_node = Node(id='test_id', type='test_type', properties={})
     assert agent._validate_node(valid_node)
 
 
-def test_validate_node_invalid():
+def test_validate_node_invalid(agent):
     invalid_node = "not a Node object"
     assert not agent._validate_node(invalid_node)
 
 
-def test_validate_relationship_valid():
+def test_validate_relationship_valid(agent):
     valid_relationship = Relationship(
         subj=Node(id='subj_id', type='subj_type', properties={}),
         obj=Node(id='obj_id', type='obj_type', properties={}),
@@ -37,7 +47,7 @@ def test_validate_relationship_valid():
     assert agent._validate_relationship(valid_relationship)
 
 
-def test_validate_relationship_invalid():
+def test_validate_relationship_invalid(agent):
     invalid_relationship = "not a Relationship object"
     assert not agent._validate_relationship(invalid_relationship)
 

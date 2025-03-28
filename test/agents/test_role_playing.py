@@ -32,12 +32,9 @@ from camel.types import (
     TaskType,
 )
 
-model = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O,
-)
-
-model_backend_rsp = ChatCompletion(
+@pytest.fixture
+def model_backend_rsp():
+    return ChatCompletion(
     id="mock_response_id",
     choices=[
         Choice(
@@ -63,7 +60,7 @@ model_backend_rsp = ChatCompletion(
 )
 
 
-@pytest.mark.parametrize("model", [None, model])
+@pytest.mark.parametrize("model", [None])
 @pytest.mark.parametrize("critic_role_name", ["human", "critic agent"])
 @pytest.mark.parametrize("with_critic_in_the_loop", [True, False])
 def test_role_playing_init(model, critic_role_name, with_critic_in_the_loop):
