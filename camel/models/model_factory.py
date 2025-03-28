@@ -27,6 +27,7 @@ from camel.models.groq_model import GroqModel
 from camel.models.internlm_model import InternLMModel
 from camel.models.litellm_model import LiteLLMModel
 from camel.models.mistral_model import MistralModel
+from camel.models.modelscope_model import ModelScopeModel
 from camel.models.moonshot_model import MoonshotModel
 from camel.models.nvidia_model import NvidiaModel
 from camel.models.ollama_model import OllamaModel
@@ -63,6 +64,7 @@ class ModelFactory:
         token_counter: Optional[BaseTokenCounter] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        timeout: Optional[int] = None,
     ) -> BaseModelBackend:
         r"""Creates an instance of `BaseModelBackend` of the specified type.
 
@@ -82,6 +84,8 @@ class ModelFactory:
                 with the model service. (default: :obj:`None`)
             url (Optional[str], optional): The url to the model service.
                 (default: :obj:`None`)
+            timeout (Optional[float], optional): The timeout value in seconds
+                for API calls. (default: :obj:`None`)
 
         Returns:
             BaseModelBackend: The initialized backend.
@@ -145,6 +149,8 @@ class ModelFactory:
             model_class = InternLMModel
         elif model_platform.is_moonshot and model_type.is_moonshot:
             model_class = MoonshotModel
+        elif model_platform.is_modelscope:
+            model_class = ModelScopeModel
         elif model_type == ModelType.STUB:
             model_class = StubModel
 
@@ -160,6 +166,7 @@ class ModelFactory:
             api_key=api_key,
             url=url,
             token_counter=token_counter,
+            timeout=timeout,
         )
 
     @classmethod
