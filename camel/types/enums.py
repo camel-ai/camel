@@ -519,6 +519,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.SGLANG_QWEN_2_5_7B,
             ModelType.SGLANG_QWEN_2_5_32B,
             ModelType.SGLANG_QWEN_2_5_72B,
+            ModelType.SGLANG_OPEN_R1_OLYMPIC_CODER_32B
         }
 
     @property
