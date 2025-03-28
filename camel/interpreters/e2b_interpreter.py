@@ -99,7 +99,7 @@ class E2BInterpreter(BaseInterpreter):
         if self.require_confirm:
             logger.info(
                 f"The following {code_type} code will run on your "
-                "e2b sandbox: {code}"
+                f"e2b sandbox: {code}"
             )
             while True:
                 choice = input("Running code? [Y/n]:").lower()

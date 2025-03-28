@@ -25,18 +25,18 @@ class QwenConfig(BaseConfig):
 
     Args:
         stream (bool, optional): Whether to stream the response.
-            (default: :obj:`False`)
+            (default: :obj:`None`)
         temperature (float, optional): Controls the diversity and
             focus of the generated results. Lower values make the output more
             focused, while higher values make it more diverse.
-            (default: :obj:`0.3`)
+            (default: :obj:`None`)
         top_p (float, optional): Controls the diversity and focus of
             the generated results. Higher values make the output more diverse,
             while lower values make it more focused. (default: :obj:`0.9`)
         presence_penalty (float, optional): Controls the repetition
             content in the generated results. Positive values reduce the
             repetition of content, while negative values increase it.
-            (default: :obj:`0.0`)
+            (default: :obj:`None`)
         response_format (Optional[Dict[str, str]], optional): Specifies the
             format of the returned content. The available values are
             `{"type": "text"}` or `{"type": "json_object"}`. Setting it to
@@ -67,13 +67,13 @@ class QwenConfig(BaseConfig):
             (default: :obj:`None`)
         include_usage (bool, optional): When streaming, specifies whether to
             include usage information in `stream_options`.
-            (default: :obj:`True`)
+            (default: :obj:`None`)
     """
 
-    stream: bool = False
-    temperature: float = 0.3
-    top_p: float = 0.9
-    presence_penalty: float = 0.0
+    stream: Optional[bool] = None
+    temperature: Optional[float] = None
+    top_p: Optional[float] = None
+    presence_penalty: Optional[float] = None
     response_format: Optional[Dict[str, str]] = None
     max_tokens: Optional[int] = None
     seed: Optional[int] = None
