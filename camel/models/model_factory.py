@@ -200,7 +200,7 @@ class ModelFactory:
             return ModelPlatformType[platform_name]
 
         except KeyError:
-            raise ValueError(f"Invalid model platform: {model_platform_str}")
+            raise KeyError(f"Invalid model platform: {model_platform_str}")
 
     @classmethod
     def __load_yaml(cls, filepath: str) -> Dict:
