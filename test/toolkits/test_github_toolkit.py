@@ -14,7 +14,7 @@
 
 from unittest.mock import MagicMock, patch
 
-from github.Auth import Auth
+from github.Auth import Auth, Token
 from github.ContentFile import ContentFile
 from github.MainClass import Github
 
