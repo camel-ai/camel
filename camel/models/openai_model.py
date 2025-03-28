@@ -98,7 +98,7 @@ class OpenAIModel(BaseModelBackend):
         )
 
     def _sanitize_config(self, config_dict: Dict[str, Any]) -> Dict[str, Any]:
-        """Sanitize the model configuration for O1 models."""
+        r"""Sanitize the model configuration for O1 models."""
 
         if self.model_type in [
             ModelType.O1,
@@ -107,7 +107,7 @@ class OpenAIModel(BaseModelBackend):
             ModelType.O3_MINI,
         ]:
             warnings.warn(
-                "Warning: You are using an O1 model (O1_MINI or O1_PREVIEW), "
+                "Warning: You are using an reasoning model (O1 or O3), "
                 "which has certain limitations, reference: "
                 "`https://platform.openai.com/docs/guides/reasoning`.",
                 UserWarning,
@@ -123,14 +123,15 @@ class OpenAIModel(BaseModelBackend):
         self, messages: List[OpenAIMessage]
     ) -> List[OpenAIMessage]:
         r"""Adjust message roles to comply with O1 model requirements by
-            converting 'system' or 'developer' to 'user' role.
+        converting 'system' or 'developer' to 'user' role.
 
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
+
         Returns:
             processed_messages (List[OpenAIMessage]): Return a new list of
-            messages to avoid mutating input.
+                messages to avoid mutating input.
         """
 
         # Define supported O1 model types as a class constant would be better
