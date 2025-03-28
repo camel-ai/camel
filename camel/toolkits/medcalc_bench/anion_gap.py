@@ -12,7 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 r"""
-This code is borrowed and modified based on the source code from the 'MedCalc-Bench' repository.
+This code is borrowed and modified based on the source code from the
+'MedCalc-Bench' repository.
 Original repository: https://github.com/ncbi-nlp/MedCalc-Bench
 
 Modifications include:
@@ -30,40 +31,54 @@ from camel.toolkits.medcalc_bench.utils.unit_converter_new import (
 
 def compute_anion_gap_explanation(input_parameters):
     r"""
-    Calculates the patient's anion gap and generates a detailed explanatory text.
+    Calculates the patient's anion gap and generates a detailed explanatory
+    text.
 
     Parameters:
-        input_parameters (dict): A dictionary containing the following key-value pairs:
-            - "sodium" (array): The patient's blood sodium level in the format (value, unit).
+        input_parameters (dict): A dictionary containing the following
+        key-value pairs:
+            - "sodium" (array): The patient's blood sodium level in the
+            format (value, unit).
                 - Value (float): The blood sodium level.
                 - Unit (str): The unit of blood sodium level.
-            - "chloride" (array): The patient's chloride level in the format (value, unit).
+            - "chloride" (array): The patient's chloride level in the
+            format (value, unit).
                 - Value (float): The value of chloride level.
-                - Unit (str): The unit of chloride level, eg. "mmol/L", "mEq/L", and so on.
-            - "bicarbonate" (array): The patient's bicarbonate level in the format (value, unit).
+                - Unit (str): The unit of chloride level, eg. "mmol/L",
+                "mEq/L", and so on.
+            - "bicarbonate" (array): The patient's bicarbonate level in the
+            format (value, unit).
                 - Value (float): The value of bicarbonate level.
-                - Unit (str): The unit of bicarbonate level, eg. "mmol/L", "mEq/L", and so on.
+                - Unit (str): The unit of bicarbonate level, eg. "mmol/L",
+                "mEq/L", and so on.
 
     Returns:
         dict: Contains two key-value pairs:
-            - "Explanation" (str): A detailed description of the calculation process.
+            - "Explanation" (str): A detailed description of
+            the calculation process.
             - "Answer" (float): The patient's anion gap.
 
     Notes:
         - None
 
     Example:
-        compute_anion_gap_explanation({'chloride': [106.0, 'mEq/L'],'bicarbonate': [20.0, 'mEq/L'],'sodium': [140.0, 'mEq/L']})
-        output: "{'Explanation': "The formula for computing a patient's anion gap is:
-        sodium (mEq/L) - (chloride (mEq/L)+ bicarbonate (mEq/L)).\nThe concentration of sodium is 140.0 mEq/L.
-        \nThe concentration of chloride is 106.0 mEq/L. \nThe concentration of bicarbonate is 20.0 mEq/L.
-        \nPlugging in these values into the anion gap formula gives us 140.0 mEq/L - (106.0 mEq/L + 20.0 mEq/L) = 14.0 mEq/L.
-        Hence, The patient's anion gap is 14.0 mEq/L.\n", 'Answer': 14.0}"
+        compute_anion_gap_explanation({'chloride': [106.0, 'mEq/L'],
+        'bicarbonate': [20.0, 'mEq/L'],'sodium': [140.0, 'mEq/L']})
+        output: "{'Explanation': "The formula for computing a patient's
+        anion gap is: sodium (mEq/L) - (chloride (mEq/L)+ bicarbonate
+        (mEq/L)).\nThe concentration of sodium is 140.0 mEq/L.
+        \nThe concentration of chloride is 106.0 mEq/L. \nThe concentration
+        of bicarbonate is 20.0 mEq/L. \nPlugging in these values into the
+        anion gap formula gives us 140.0 mEq/L - (106.0 mEq/L + 20.0 mEq/L)
+        = 14.0 mEq/L. Hence, The patient's anion gap is 14.0 mEq/L.\n",
+        'Answer': 14.0}"
     """
 
     explanation = ""
-    explanation += "The formula for computing a patient's anion gap is: " \
-                   "sodium (mEq/L) - (chloride (mEq/L)+ bicarbonate (mEq/L)).\n"
+    explanation += (
+        "The formula for computing a patient's anion gap is: "
+        "sodium (mEq/L) - (chloride (mEq/L)+ bicarbonate (mEq/L)).\n"
+    )
 
     sodium = input_parameters["sodium"]
     chloride = input_parameters["chloride"]
@@ -85,8 +100,11 @@ def compute_anion_gap_explanation(input_parameters):
 
     answer = round_number(sodium - (chloride + bicarbonate))
 
-    explanation += f"Plugging in these values into the anion gap formula gives us " \
-                   f"{sodium} mEq/L - ({chloride} mEq/L + {bicarbonate} mEq/L) = {answer} mEq/L. "
+    explanation += (
+        f"Plugging in these values into the anion gap formula gives us "
+        f"{sodium} mEq/L - ({chloride} mEq/L + "
+        f"{bicarbonate} mEq/L) = {answer} mEq/L. "
+    )
     explanation += f"Hence, The patient's anion gap is {answer} mEq/L.\n"
 
     return {"Explanation": explanation, "Answer": answer}

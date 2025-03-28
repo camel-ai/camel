@@ -51,7 +51,8 @@ def age_conversion_explanation(input):
                 add_s = ""
 
             return (
-                f"This means that the patient is {years} year{add_s} and {months} old",
+                f"This means that the patient is {years} year{add_s} and "
+                f"{months} old",
                 input[0] // 12,
             )
 

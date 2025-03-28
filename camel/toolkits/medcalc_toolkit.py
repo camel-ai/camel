@@ -1211,7 +1211,7 @@ class MedCalcToolkit(BaseToolkit):
         creatinine_value: float,
         creatinine_unit: str,  # Unit of the creatinine level (e.g., "mg/dL")
         sex: str,  # Gender ("male"/"female")
-        race: str = None,  # Race (optional, e.g., "Black")
+        race: Optional[str] = None,  # Race (optional, e.g., "Black")
     ) -> str:
         r"""Calculate the patient's Glomerular Filtration Rate (GFR) using the
         MDRD equation and generate a detailed explanatory text.
@@ -1670,8 +1670,9 @@ class MedCalcToolkit(BaseToolkit):
 
         try:
             # Call the ACAG calculation function
-            result = \
-                compute_albumin_corrected_anion_explanation(input_variables)
+            result = compute_albumin_corrected_anion_explanation(
+                input_variables
+            )
 
             # Return the result as a JSON string
             return json.dumps(
@@ -1686,7 +1687,7 @@ class MedCalcToolkit(BaseToolkit):
             return self.handle_exception(
                 "compute_albumin_corrected_anion_explanation", e
             )
-        
+
     def albumin_corrected_delta_gap(
         self,
         sodium_value: float,  # Numeric part of sodium level (e.g., 141.0)
@@ -1892,7 +1893,7 @@ class MedCalcToolkit(BaseToolkit):
 
         try:
             from camel.toolkits.medcalc_bench.estimated_due_date import (
-                add_40_weeks_explanation
+                add_40_weeks_explanation,
             )
 
             # Call the due date calculation function
@@ -1978,10 +1979,12 @@ class MedCalcToolkit(BaseToolkit):
             result = free_water_deficit_explanation(input_variables)
 
             # Return result as JSON string
-            return json.dumps({
-                "rationale": result["Explanation"],
-                "final_answer": str(result["Answer"]),
-            })
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],
+                    "final_answer": str(result["Answer"]),
+                }
+            )
 
         except Exception as e:
             # Catch exceptions and return error message
@@ -2048,6 +2051,7 @@ class MedCalcToolkit(BaseToolkit):
             from camel.toolkits.medcalc_bench.glasgow_coma_score import (
                 compute_glasgow_coma_score_explanation,
             )
+
             # Call the GCS calculation function
             result = compute_glasgow_coma_score_explanation(input_variables)
 
@@ -2134,7 +2138,7 @@ class MedCalcToolkit(BaseToolkit):
         except Exception as e:
             # Catch exceptions and return an error message
             return self.handle_exception("bazett_calculator_explanation", e)
-        
+
     def qt_calculator_framingham(
         self,
         heart_rate_value: float,  # Numeric part of heart rate (e.g., 81)
@@ -2269,7 +2273,7 @@ class MedCalcToolkit(BaseToolkit):
         except Exception as e:
             # Catch exceptions and return an error message
             return self.handle_exception("qt_calculator_fredericia", e)
-        
+
     def qt_calculator_hodges(
         self,
         heart_rate_value: float,  # Numeric part of heart rate (e.g., 52)
@@ -2405,7 +2409,9 @@ class MedCalcToolkit(BaseToolkit):
 
         except Exception as e:
             # Catch exceptions and return error message
-            return self.handle_exception("rautaharju_calculator_explanation", e)
+            return self.handle_exception(
+                "rautaharju_calculator_explanation", e
+            )
 
     def steroid_conversion_calculator(
         self,
@@ -2460,7 +2466,11 @@ class MedCalcToolkit(BaseToolkit):
             - Both input and target steroids must include route (IV/PO).
         """
         input_variables = {
-            "input steroid": [str(input_steroid), float(input_value), str(input_unit)],
+            "input steroid": [
+                str(input_steroid),
+                float(input_value),
+                str(input_unit),
+            ],
             "target steroid": str(target_steroid),
         }
 
@@ -2478,8 +2488,9 @@ class MedCalcToolkit(BaseToolkit):
             )
         except Exception as e:
             return self.handle_exception("steroid_conversion", e)
-        
+
     def wells_criteria_dvt(
+        self,
         active_cancer: bool,  # Active cancer treatment within 6 months
         bedridden_for_atleast_3_days: bool,  # Bedridden >3 days recently
         major_surgery_in_last_12_weeks: bool,  # Major surgery within 12 weeks
@@ -2527,7 +2538,9 @@ class MedCalcToolkit(BaseToolkit):
         input_variables = {
             "active_cancer": bool(active_cancer),
             "bedridden_for_atleast_3_days": bool(bedridden_for_atleast_3_days),
-            "major_surgery_in_last_12_weeks": bool(major_surgery_in_last_12_weeks),
+            "major_surgery_in_last_12_weeks": bool(
+                major_surgery_in_last_12_weeks
+            ),
             "calf_swelling_3cm": bool(calf_swelling_3cm),
             "collateral_superficial_veins": bool(collateral_superficial_veins),
             "leg_swollen": bool(leg_swollen),
@@ -2564,7 +2577,9 @@ class MedCalcToolkit(BaseToolkit):
 
         except Exception as e:
             # Catch exceptions and return an error message
-            return self.handle_exception("compute_wells_criteria_dvt_explanation", e)
+            return self.handle_exception(
+                "compute_wells_criteria_dvt_explanation", e
+            )
 
     def handle_exception(self, func_name: str, error: Exception) -> str:
         r"""Handles exceptions by logging the error and returning
@@ -2626,5 +2641,5 @@ class MedCalcToolkit(BaseToolkit):
             FunctionTool(self.qt_calculator_hodges),
             FunctionTool(self.qt_calculator_rautaharju),
             FunctionTool(self.steroid_conversion_calculator),
-            FunctionTool(self.wells_criteria_dvt)
+            FunctionTool(self.wells_criteria_dvt),
         ]

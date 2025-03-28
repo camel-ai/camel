@@ -31,7 +31,10 @@ def height_conversion_explanation(height_info):
         meters = round_number(inches * 0.0254)
 
         return (
-            f"The patient's height is {height_info[0]} ft {height_info[2]} in which converts to {height_info[0]} ft * 12 in/ft + {height_info[2]} in = {inches} in. Hence, the patient's height is {inches} in * 0.0254 m/in = {meters} m. ",
+            f"The patient's height is {height_info[0]} ft {height_info[2]} "
+            f"in which converts to {height_info[0]} ft * 12 in/ft + "
+            f"{height_info[2]} in = {inches} in. Hence, the patient's "
+            f"height is {inches} in * 0.0254 m/in = {meters} m. ",
             meters,
         )
 
@@ -40,19 +43,22 @@ def height_conversion_explanation(height_info):
     elif height_info[-1] == "cm":
         height = round_number(height_info[0] / 100)
         return (
-            f"The patient's height is {height_info[0]} cm, which is {height_info[0]} cm * 1 m / 100 cm = {height} m. ",
+            f"The patient's height is {height_info[0]} cm, which is "
+            f"{height_info[0]} cm * 1 m / 100 cm = {height} m. ",
             height,
         )
     elif height_info[-1] == "ft":
         height = round_number(height_info[0] * 0.3048)
         return (
-            f"The patient's height is {height_info[0]} ft, which is {height_info[0]} ft * 0.3048 m / ft = {height} m. ",
+            f"The patient's height is {height_info[0]} ft, which is "
+            f"{height_info[0]} ft * 0.3048 m / ft = {height} m. ",
             height,
         )
     elif height_info[-1] == "in":
         height = round_number(height_info[0] * 0.0254)
         return (
-            f"The patient's height is {height_info[0]} in, which is {height_info[0]} in * 0.0254 m / in = {height} m. ",
+            f"The patient's height is {height_info[0]} in, which is "
+            f"{height_info[0]} in * 0.0254 m / in = {height} m. ",
             height,
         )
 
@@ -66,14 +72,18 @@ def height_conversion_explanation_cm(height_info):
         explanation = (
             f"The patient's height is {feet} ft {inches} in which converts to "
             f"{feet} ft * 12 in/ft + {inches} in = {total_inches} in. "
-            f"Hence, the patient's height is {total_inches} in * 2.54 cm/in = {centimeters} cm. "
+            f"Hence, the patient's height is {total_inches} in * 2.54 cm/in "
+            f"= {centimeters} cm. "
         )
         return explanation, centimeters
 
     elif height_info[-1] == "m":
         height_meters = height_info[0]
         centimeters = round_number(height_meters * 100)
-        explanation = f"The patient's height is {height_meters} m, which is {height_meters} m * 100 cm/m = {centimeters} cm. "
+        explanation = (
+            f"The patient's height is {height_meters} m, which is "
+            f"{height_meters} m * 100 cm/m = {centimeters} cm. "
+        )
         return explanation, centimeters
 
     elif height_info[-1] == "cm":
@@ -84,13 +94,19 @@ def height_conversion_explanation_cm(height_info):
     elif height_info[-1] == "ft":
         height_ft = height_info[0]
         centimeters = round_number(height_ft * 30.48)
-        explanation = f"The patient's height is {height_ft} ft, which is {height_ft} ft * 30.48 cm/ft = {centimeters} cm. "
+        explanation = (
+            f"The patient's height is {height_ft} ft, which is "
+            f"{height_ft} ft * 30.48 cm/ft = {centimeters} cm. "
+        )
         return explanation, centimeters
 
     elif height_info[-1] == "in":
         height_in = height_info[0]
         centimeters = round_number(height_in * 2.54)
-        explanation = f"The patient's height is {height_in} in, which is {height_in} in * 2.54 cm/in = {centimeters} cm. "
+        explanation = (
+            f"The patient's height is {height_in} in, which is "
+            f"{height_in} in * 2.54 cm/in = {centimeters} cm. "
+        )
         return explanation, centimeters
 
 
@@ -109,19 +125,28 @@ def height_conversion_explanation_in(height_info):
     elif height_info[-1] == "m":
         height_meters = height_info[0]
         inches = round_number(height_meters * 39.3701)
-        explanation = f"The patient's height is {height_meters} m, which is {height_meters} m * 39.3701 in/m = {inches} in. "
+        explanation = (
+            f"The patient's height is {height_meters} m, which is "
+            f"{height_meters} m * 39.3701 in/m = {inches} in. "
+        )
         return explanation, inches
 
     elif height_info[-1] == "cm":
         height_cm = height_info[0]
         inches = round_number(height_cm * 0.393701)
-        explanation = f"The patient's height is {height_cm} cm, which is {height_cm} cm * 0.393701 in/cm = {inches} in. "
+        explanation = (
+            f"The patient's height is {height_cm} cm, which is "
+            f"{height_cm} cm * 0.393701 in/cm = {inches} in. "
+        )
         return explanation, inches
 
     elif height_info[-1] == "ft":
         height_ft = height_info[0]
         inches = round_number(height_ft * 12)
-        explanation = f"The patient's height is {height_ft} ft, which is {height_ft} ft * 12 in/ft = {inches} in. "
+        explanation = (
+            f"The patient's height is {height_ft} ft, which is "
+            f"{height_ft} ft * 12 in/ft = {inches} in. "
+        )
         return explanation, inches
 
     elif height_info[-1] == "in":

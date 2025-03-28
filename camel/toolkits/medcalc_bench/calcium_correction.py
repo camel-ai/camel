@@ -12,7 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 r"""
-This code is borrowed and modified based on the source code from the 'MedCalc-Bench' repository.
+This code is borrowed and modified based on the source code from the
+'MedCalc-Bench' repository.
 Original repository: https://github.com/ncbi-nlp/MedCalc-Bench
 
 Modifications include:
@@ -30,39 +31,55 @@ from camel.toolkits.medcalc_bench.utils.unit_converter_new import (
 
 def calculate_corrected_calcium_explanation(params):
     r"""
-    Calculates the patient's corrected calcium concentration and generates a detailed explanatory text.
+    Calculates the patient's corrected calcium concentration and
+    generates a detailed explanatory text.
 
     Parameters:
-        input_variables (dict): A dictionary containing the following key-value pairs:
-            - "albumin" (array): The patient's albumin concentration in the format (value, unit).
+        params (dict): A dictionary containing the following key-value pairs:
+            - "albumin" (array): The patient's albumin concentration in the
+            format (value, unit).
                 - Value (float): The numerical albumin concentration value.
-                - Unit (str): The unit of albumin concentration, eg. "g/L", "mg/dL", "g/mL" and so on.
-            - "calcium" (array): The patient's calcium concentration in the format (value, unit).
+                - Unit (str): The unit of albumin concentration, eg. "g/L",
+                "mg/dL", "g/mL" and so on.
+            - "calcium" (array): The patient's calcium concentration in the
+            format (value, unit).
                 - Value (float): The numerical calcium concentration value.
-                - Unit (str): The unit of calcium concentration, eg. "g/L", "mg/dL", "g/mL" and so on.
+                - Unit (str): The unit of calcium concentration, eg. "g/L",
+                "mg/dL", "g/mL" and so on.
 
     Returns:
         dict: Contains two key-value pairs:
-            - "Explanation" (str): A detailed description of the calculation process.
-            - "Answer" (float): The patient's corrected calcium concentration (in mg/dL).
+            - "Explanation" (str): A detailed description of
+            the calculation process.
+            - "Answer" (float): The patient's corrected calcium
+            concentration (in mg/dL).
 
     Notes:
-        - Uses the `conversion_explanation` function to convert Albumin level to standard unit g/dL.
-        - Uses the `conversion_explanation` function to convert Calcium level to standard unit mg/dL.
+        - Uses the `conversion_explanation` function to convert Albumin
+        level to standard unit g/dL.
+        - Uses the `conversion_explanation` function to convert Calcium
+        level to standard unit mg/dL.
 
     Example:
-        calculate_corrected_calcium_explanation({"albumin": [4, "mg/dL"], "calcium": [40, "mg/L"]})
-        output: "{'Explanation': "To compute the patient's correct calcium level in mg/dL,
-        the formula is  (0.8 * (Normal Albumin (in g/dL) - Patient's Albumin (in g/dL))) + Serum Calcium (in mg/dL).
-        \nThe patient's normal albumin level is 4.0 g/dL.\nThe concentration of Albmumin is 4 g/dL.
-        \nThe concentration of Calcium is 40 mg/L. We need to convert the concentration to mg/dL.
-        The mass units of the source and target are the same so no conversion is needed.
-        The current volume unit is L and the target volume unit is dL. The conversion factor is 10.0 dL for every unit of L.
-        Our next step will be to divide the mass by the volume conversion factor of 10.0
-        to get the final concentration in terms of mg/dL. This will result to 40 mg Calcium/10.0 dL = 4.0 mg Calcium/dL.
-         The concentration value of 40 mg Calcium/L converts to 4.0 mg Calcium/dL.
-         \nPlugging these values into the formula, we get (0.8 * (4.0 g/dL - 4 g/dL)) + 4.0 mg/dL = 4.0 mg/dL.
-         \nThe patient's corrected calcium concentration 4.0 mg/dL.\n", 'Answer': 4.0}"
+        calculate_corrected_calcium_explanation({"albumin": [4, "mg/dL"],
+        "calcium": [40, "mg/L"]})
+
+        output: "{'Explanation': "To compute the patient's correct calcium
+        level in mg/dL, the formula is  (0.8 * (Normal Albumin (in g/dL) -
+        Patient's Albumin (in g/dL))) + Serum Calcium (in mg/dL). \nThe
+        patient's normal albumin level is 4.0 g/dL.\nThe concentration of
+        Albmumin is 4 g/dL. \nThe concentration of Calcium is 40 mg/L. We
+        need to convert the concentration to mg/dL. The mass units of the
+        source and target are the same so no conversion is needed. The
+        current volume unit is L and the target volume unit is dL. The
+        conversion factor is 10.0 dL for every unit of L.
+        Our next step will be to divide the mass by the volume conversion
+        factor of 10.0 to get the final concentration in terms of mg/dL.
+        This will result to 40 mg Calcium/10.0 dL = 4.0 mg Calcium/dL. The
+        concentration value of 40 mg Calcium/L converts to 4.0 mg
+        Calcium/dL. \nPlugging these values into the formula, we get (0.8 *
+        (4.0 g/dL - 4 g/dL)) + 4.0 mg/dL = 4.0 mg/dL. \nThe patient's
+        corrected calcium concentration 4.0 mg/dL.\n", 'Answer': 4.0}"
     """
 
     # Extract parameters from the input dictionary
@@ -76,8 +93,12 @@ def calculate_corrected_calcium_explanation(params):
     calcium_val = calcium[0]
     calcium_units = calcium[1]
 
-    output = "To compute the patient's correct calcium level in mg/dL, the formula is  " \
-             "(0.8 * (Normal Albumin (in g/dL) - Patient's Albumin (in g/dL))) + Serum Calcium (in mg/dL).\n"
+    output = (
+        "To compute the patient's correct calcium level in mg/dL, "
+        "the formula is "
+        "(0.8 * (Normal Albumin (in g/dL) - Patient's Albumin (in g/dL))) + "
+        "Serum Calcium (in mg/dL).\n"
+    )
 
     # Generate explanation
     output += "The patient's normal albumin level is 4.0 g/dL.\n"
@@ -96,9 +117,15 @@ def calculate_corrected_calcium_explanation(params):
     )
 
     output += "Plugging these values into the formula, we get "
-    output += f"(0.8 * ({normal_albumin} g/dL - {albumin} g/dL)) + {calcium} mg/dL = {corrected_calcium} mg/dL.\n"
+    output += (
+        f"(0.8 * ({normal_albumin} g/dL - {albumin} g/dL)) + "
+        f"{calcium} mg/dL = {corrected_calcium} mg/dL.\n"
+    )
 
-    output += f"The patient's corrected calcium concentration {corrected_calcium} mg/dL.\n"
+    output += (
+        f"The patient's corrected calcium concentration "
+        f"{corrected_calcium} mg/dL.\n"
+    )
 
     return {"Explanation": output, "Answer": corrected_calcium}
 
