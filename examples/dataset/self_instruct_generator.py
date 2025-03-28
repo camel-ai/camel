@@ -17,6 +17,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.datasets import SelfInstructGenerator, StaticDataset
 from camel.logger import get_logger
@@ -78,11 +79,71 @@ model = ModelFactory.create(
     model_config_dict=ChatGPTConfig().as_dict(),
 )
 
+INSTRUCTION_SYSTEM_PROMPT = """
+You are a high-capacity instruction generation assistant.
+
+Your task is to generate a **new, creative, and challenging question** based on
+several examples.
+These examples may cover different domains or styles, but your goal is to:
+- **Understand their specific patterns** in structure, and complexity;
+- **Combine and synthesize** ideas from multiple examples, rather than copying
+  or lightly editing any single one;
+- **Intelligently integrate** multiple reasoning steps, constraints, or
+  concepts into a single, coherent question;
+- Ensure the new question is **non-trivial** and requires deep thinking or
+  multi-step reasoning.
+
+**Guidelines:**
+- Use the examples as inspiration for format, depth, and tone.
+- Your new question should be self-contained, logically sound, and answerable.
+- Do not repeat exact phrasings or create shallow combinations; instead,
+  produce something meaningfully new.
+- Avoid open-ended or subjective questions that depend on personal opinions or
+  discussion.
+- The generated question must have a **clear, objective, and verifiable
+  answer**.
+- Aim for increased depth or novelty through subtle combination or
+  transformation.
+- Keep the final output to a **single unified question** with one clear answer,
+  not a multi-part task.
+
+**Output Format (strict):**
+```
+Question: [Generated question]
+```
+"""
+
+instruction_agent = ChatAgent(INSTRUCTION_SYSTEM_PROMPT, model=model)
+
+RATIONALE_SYSTEM_PROMPT = """You are an advanced Python code assistant.
+
+Your task is to **solve the given question by writing Python code only**,
+without any explanation or natural language output.
+The code must compute the answer **programmatically**, not by hardcoding or
+guessing the result.
+
+**Rules:**
+- Use Python code to perform the actual computation.
+- Use sympy to solve the problem. Do not import any other libraries.
+- **Do not hardcode the final answer** (e.g., avoid writing `print(1/2)` unless
+  that value is computed).
+- The result must be obtained through valid computation logic in code.
+- Do not include explanations. Output code only.
+- The entire code must be wrapped in triple backticks:
+```
+[Your Python code here]
+```
+
+Now, solve the following question using Python. Only output the code:
+"""
+
+rationale_agent = ChatAgent(RATIONALE_SYSTEM_PROMPT, model=model)
+
 generator = SelfInstructGenerator(
     seed_dataset=seed_dataset,
     verifier=verifier,
-    instruction_model=model,
-    rationale_model=model,
+    instruction_agent=instruction_agent,
+    rationale_agent=rationale_agent,
 )
 
 new_data = asyncio.run(generator.generate_new(n=3, max_retries=5))
