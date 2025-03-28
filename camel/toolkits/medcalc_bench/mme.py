@@ -23,10 +23,10 @@ Modifications include:
 Date: March 2025
 """
 
+from camel.toolkits.medcalc_bench.utils.rounding import round_number
 from camel.toolkits.medcalc_bench.utils.unit_converter_new import (
     conversion_explanation,
 )
-from camel.toolkits.medcalc_bench.utils.rounding import round_number
 
 
 def mme_explanation(input_parameters):
@@ -46,21 +46,25 @@ def mme_explanation(input_parameters):
        11. Buprenorphine: MME conversion factor = 10
     """
 
-    explanation += "\n\nThe curent Morphine Milligram Equivalents " \
-                   "(MME) is 0 MME per day.\n"
+    explanation += (
+        "\n\nThe curent Morphine Milligram Equivalents "
+        "(MME) is 0 MME per day.\n"
+    )
 
-    mme_drug = {"Codeine": 0.15,
-                "FentaNYL buccal": 0.13,
-                "FentANYL patch": 2.4,
-                "HYDROcodone": 1,
-                "HYDROmorphone": 5,
-                "Methadone": 4.7,
-                "Morphine": 1,
-                "OxyCODONE": 1.5,
-                "OxyMORphone": 3,
-                "Tapentadol": 0.4,
-                "TraMADol": 0.2,
-                "Buprenorphine": 10}
+    mme_drug = {
+        "Codeine": 0.15,
+        "FentaNYL buccal": 0.13,
+        "FentANYL patch": 2.4,
+        "HYDROcodone": 1,
+        "HYDROmorphone": 5,
+        "Methadone": 4.7,
+        "Morphine": 1,
+        "OxyCODONE": 1.5,
+        "OxyMORphone": 3,
+        "Tapentadol": 0.4,
+        "TraMADol": 0.2,
+        "Buprenorphine": 10,
+    }
 
     mme_equivalent = 0
 
@@ -74,29 +78,48 @@ def mme_explanation(input_parameters):
 
         if name != "FentaNYL buccal" and name != "FentaNYL patch":
             drug_mg_exp, drug_mg = conversion_explanation(
-                input_parameters[name + " Dose"][0], name, None, None, units,
-                "mg")
+                input_parameters[name + " Dose"][0],
+                name,
+                None,
+                None,
+                units,
+                "mg",
+            )
             if units == "mg":
-                explanation += f"The patient's dose of {name} is {drug_mg} " \
-                               f"mg. "
+                explanation += (
+                    f"The patient's dose of {name} is {drug_mg} " f"mg. "
+                )
             else:
-                explanation += f"The patient's dose of {name} is measured " \
-                               f"in {units}. We need to convert this to mg. "
+                explanation += (
+                    f"The patient's dose of {name} is measured "
+                    f"in {units}. We need to convert this to mg. "
+                )
                 explanation += drug_mg_exp + "\n"
         else:
             drug_mg_exp, drug_mg = conversion_explanation(
-                input_parameters[name + " Dose"][0], name, None, None, units,
-                "µg")
+                input_parameters[name + " Dose"][0],
+                name,
+                None,
+                None,
+                units,
+                "µg",
+            )
             if units == "µg":
-                explanation += f"The patient's dose of {name} is {drug_mg} " \
-                               f"µg.\n"
+                explanation += (
+                    f"The patient's dose of {name} is {drug_mg} " f"µg.\n"
+                )
             else:
-                explanation += f"The patient's dose of {name} is measured " \
-                               f"in {units}. We need to convert this to µg. "
+                explanation += (
+                    f"The patient's dose of {name} is measured "
+                    f"in {units}. We need to convert this to µg. "
+                )
                 explanation += drug_mg_exp + "\n"
 
-        target_unit = "mg" if name != "FentaNYL buccal" and \
-                              name != "FentaNYL patch" else "µg"
+        target_unit = (
+            "mg"
+            if name != "FentaNYL buccal" and name != "FentaNYL patch"
+            else "µg"
+        )
 
         dose_per_day_key = name + " Dose Per Day"
 
@@ -104,24 +127,30 @@ def mme_explanation(input_parameters):
 
         total_per_day = round_number(drug_mg * dose_per_day)
 
-        explanation += f"The patient takes {dose_per_day} doses/day of " \
-                       f"{name}. This means that the patient takes " \
-                       f"{round_number(drug_mg)} {target_unit}/dose " \
-                       f"{name} * {dose_per_day} dose/day = " \
-                       f"{total_per_day} {target_unit}/day. "
+        explanation += (
+            f"The patient takes {dose_per_day} doses/day of "
+            f"{name}. This means that the patient takes "
+            f"{round_number(drug_mg)} {target_unit}/dose "
+            f"{name} * {dose_per_day} dose/day = "
+            f"{total_per_day} {target_unit}/day. "
+        )
 
-        explanation += f"To convert to mme/day of {name}, multiply the " \
-                       f"{total_per_day} {target_unit}/day by the mme " \
-                       f"conversion factor, {mme_drug[name]} mme/" \
-                       f"{target_unit}, giving us " \
-                       f"{round_number(mme_drug[name] * total_per_day)} " \
-                       f"mme/day. "
+        explanation += (
+            f"To convert to mme/day of {name}, multiply the "
+            f"{total_per_day} {target_unit}/day by the mme "
+            f"conversion factor, {mme_drug[name]} mme/"
+            f"{target_unit}, giving us "
+            f"{round_number(mme_drug[name] * total_per_day)} "
+            f"mme/day. "
+        )
 
-        explanation += f"Adding the mme/day of {name} to the total mme/day " \
-                       f"gives us {round_number(mme_equivalent)} + " \
-                       f"{round_number(mme_drug[name] * total_per_day)} = " \
-                       f"{round_number(mme_equivalent + mme_drug[name] * total_per_day)} " \
-                       f"mme/day.\n"
+        explanation += (
+            f"Adding the mme/day of {name} to the total mme/day "
+            f"gives us {round_number(mme_equivalent)} + "
+            f"{round_number(mme_drug[name] * total_per_day)} = "
+            f"{round_number(mme_equivalent + mme_drug[name] * total_per_day)} "
+            f"mme/day.\n"
+        )
 
         mme_equivalent += dose_per_day * mme_drug[name] * drug_mg
 
@@ -135,12 +164,14 @@ def mme_explanation(input_parameters):
 if __name__ == "__main__":
     # Defining test cases
     test_cases = [
-        {'Tapentadol Dose': (10, 'mg'),
-         'Tapentadol Dose Per Day': (2, 'per day'),
-         'HYDROcodone Dose': (30, 'mg'),
-         'HYDROcodone Dose Per Day': (2, 'per day'),
-         'FentANYL patch Dose': (70, 'mg'),
-         'FentANYL patch Dose Per Day': (2, 'per day')}
+        {
+            'Tapentadol Dose': (10, 'mg'),
+            'Tapentadol Dose Per Day': (2, 'per day'),
+            'HYDROcodone Dose': (30, 'mg'),
+            'HYDROcodone Dose Per Day': (2, 'per day'),
+            'FentANYL patch Dose': (70, 'mg'),
+            'FentANYL patch Dose Per Day': (2, 'per day'),
+        }
     ]
 
     # Iterate the test cases and print the results

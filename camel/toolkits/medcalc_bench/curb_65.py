@@ -148,93 +148,122 @@ def curb_65_explanation(input_parameters):
     explanation += "The CURB-65 score is current at 0 points.\n"
 
     bun_exp, bun = conversion_explanation(
-        input_parameters["bun"][0], "BUN",
-        28.02, None,
-        input_parameters["bun"][1], "mg/dL")
-    
+        input_parameters["bun"][0],
+        "BUN",
+        28.02,
+        None,
+        input_parameters["bun"][1],
+        "mg/dL",
+    )
+
     respiratory_rate = int(input_parameters["respiratory_rate"][0])
     sys_bp = int(input_parameters["sys_bp"][0])
     dia_bp = int(input_parameters["dia_bp"][0])
-    age_exp, age = age_conversion_explanation(
-        input_parameters["age"])
+    age_exp, age = age_conversion_explanation(input_parameters["age"])
 
     explanation += age_exp
 
     if age >= 65:
-        explanation += f"The patient's age is greater than or equal to 65 " \
-                       f"years, and so we add 1 point to the score, making " \
-                       f"the current total {curb_65_score} + 1 = " \
-                       f"{curb_65_score + 1}.\n"
+        explanation += (
+            f"The patient's age is greater than or equal to 65 "
+            f"years, and so we add 1 point to the score, making "
+            f"the current total {curb_65_score} + 1 = "
+            f"{curb_65_score + 1}.\n"
+        )
         curb_65_score += 1
     else:
-        explanation += f"The patient's age is less than 65 years, and so we " \
-                       f"add 0 points to the score, keeping the current " \
-                       f"total at {curb_65_score}.\n"
+        explanation += (
+            f"The patient's age is less than 65 years, and so we "
+            f"add 0 points to the score, keeping the current "
+            f"total at {curb_65_score}.\n"
+        )
 
     if 'confusion' not in input_parameters:
-        explanation += f"Whether the patient has confusion is not reported " \
-                       f"in the note. Hence, we assume this to be false, " \
-                       f"and so 0 points are added to the score, making the " \
-                       f"current total {curb_65_score}.\n"
+        explanation += (
+            f"Whether the patient has confusion is not reported "
+            f"in the note. Hence, we assume this to be false, "
+            f"and so 0 points are added to the score, making the "
+            f"current total {curb_65_score}.\n"
+        )
     elif input_parameters["confusion"]:
-        explanation += f"Because the patient has confusion, " \
-                       f"1 point is added to score making the current " \
-                       f"total {curb_65_score} + 1 = {curb_65_score + 1}.\n"
+        explanation += (
+            f"Because the patient has confusion, "
+            f"1 point is added to score making the current "
+            f"total {curb_65_score} + 1 = {curb_65_score + 1}.\n"
+        )
         curb_65_score += 1
     else:
-        explanation += f"Because the patient does not have confusion, " \
-                       f"0 points are added to the score, keeping the score " \
-                       f"at {curb_65_score}.\n"
+        explanation += (
+            f"Because the patient does not have confusion, "
+            f"0 points are added to the score, keeping the score "
+            f"at {curb_65_score}.\n"
+        )
 
     explanation += bun_exp
 
     if bun > 19:
-        explanation += f"The patient's BUN concentration is greater than 19 " \
-                       f"mg/dL and so we add 1 point to score making the " \
-                       f"current total {curb_65_score} + 1 = " \
-                       f"{curb_65_score + 1}.\n"
+        explanation += (
+            f"The patient's BUN concentration is greater than 19 "
+            f"mg/dL and so we add 1 point to score making the "
+            f"current total {curb_65_score} + 1 = "
+            f"{curb_65_score + 1}.\n"
+        )
         curb_65_score += 1
     else:
-        explanation += f"The patient's BUN concentration is less than or " \
-                       f"equal to 19 mg/dL and so 0 points are added to " \
-                       f"score, keeping the current total at " \
-                       f"{curb_65_score}.\n"
+        explanation += (
+            f"The patient's BUN concentration is less than or "
+            f"equal to 19 mg/dL and so 0 points are added to "
+            f"score, keeping the current total at "
+            f"{curb_65_score}.\n"
+        )
 
-    explanation += f"The patient's respiratory rate is {respiratory_rate} " \
-                   f"breaths per minute. "
+    explanation += (
+        f"The patient's respiratory rate is {respiratory_rate} "
+        f"breaths per minute. "
+    )
 
     if respiratory_rate >= 30:
-        explanation += f"Because the respiratory rate is greater than 30 " \
-                       f"breaths per minute, 1 point is added to the score, " \
-                       f"making the current total {curb_65_score} + 1 = " \
-                       f"{curb_65_score + 1}.\n"
+        explanation += (
+            f"Because the respiratory rate is greater than 30 "
+            f"breaths per minute, 1 point is added to the score, "
+            f"making the current total {curb_65_score} + 1 = "
+            f"{curb_65_score + 1}.\n"
+        )
         curb_65_score += 1
     else:
-        explanation += f"Because the respiratory rate is greater than 30 " \
-                       f"breaths per minute, 0 points are added to the " \
-                       f"score, keeping the current total at " \
-                       f"{curb_65_score}.\n"
+        explanation += (
+            f"Because the respiratory rate is greater than 30 "
+            f"breaths per minute, 0 points are added to the "
+            f"score, keeping the current total at "
+            f"{curb_65_score}.\n"
+        )
 
-    explanation += f"The patient's systiolic blood pressure is {sys_bp} mm " \
-                   f"Hg. The patient's diastolic blood pressure is {dia_bp} " \
-                   f"mm Hg. "
+    explanation += (
+        f"The patient's systiolic blood pressure is {sys_bp} mm "
+        f"Hg. The patient's diastolic blood pressure is {dia_bp} "
+        f"mm Hg. "
+    )
 
     if sys_bp < 90 or dia_bp <= 60:
-        explanation += f"For a point to be added, the systiolic " \
-                       f"blood pressure must be less than 90 mm Hg or the " \
-                       f"diastolic blood pressure must be less than or " \
-                       f"equal to 60 mm Hg. Because at least one of these " \
-                       f"statements is true, 1 point is added to score, " \
-                       f"making the current total {curb_65_score} + 1 = " \
-                       f"{curb_65_score + 1}.\n"
+        explanation += (
+            f"For a point to be added, the systiolic "
+            f"blood pressure must be less than 90 mm Hg or the "
+            f"diastolic blood pressure must be less than or "
+            f"equal to 60 mm Hg. Because at least one of these "
+            f"statements is true, 1 point is added to score, "
+            f"making the current total {curb_65_score} + 1 = "
+            f"{curb_65_score + 1}.\n"
+        )
         curb_65_score += 1
     else:
-        explanation += f"For a point to be added, the systiolic " \
-                       f"blood pressure must be less than 90 mm Hg or the " \
-                       f"diastolic blood pressure must be less than or " \
-                       f"equal to 60 mm Hg. Because neither of these " \
-                       f"statements are true, 0 points are added to score, " \
-                       f"keeping the current total to {curb_65_score}.\n"
+        explanation += (
+            f"For a point to be added, the systiolic "
+            f"blood pressure must be less than 90 mm Hg or the "
+            f"diastolic blood pressure must be less than or "
+            f"equal to 60 mm Hg. Because neither of these "
+            f"statements are true, 0 points are added to score, "
+            f"keeping the current total to {curb_65_score}.\n"
+        )
 
     explanation += f"The patient's CURB-65 score is {curb_65_score}.\n"
 
@@ -244,11 +273,13 @@ def curb_65_explanation(input_parameters):
 if __name__ == "__main__":
     # Defining test cases
     test_cases = [
-        {'age': (37, 'years'),
-         'sys_bp': (90.0, 'mm hg'),
-         'dia_bp': (50.0, 'mm hg'),
-         'respiratory_rate': (30.0, 'breaths per minute'),
-         'bun': (3.5, 'mmol/L')}
+        {
+            'age': (37, 'years'),
+            'sys_bp': (90.0, 'mm hg'),
+            'dia_bp': (50.0, 'mm hg'),
+            'respiratory_rate': (30.0, 'breaths per minute'),
+            'bun': (3.5, 'mmol/L'),
+        }
     ]
 
     # Iterate the test cases and print the results
