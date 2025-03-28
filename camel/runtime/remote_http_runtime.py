@@ -100,7 +100,7 @@ class RemoteHttpRuntime(BaseRuntime):
         if not isinstance(funcs, list):
             funcs = [funcs]
         if arguments is not None:
-            entrypoint += json.dumps(arguments)
+            entrypoint += json.dumps(arguments, ensure_ascii=False)
 
         for func in funcs:
             inner_func = func.func

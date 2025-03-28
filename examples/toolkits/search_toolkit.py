@@ -78,7 +78,8 @@ usr_msg = "What is the temperature in Tokyo?"
 response = agent.step(input_message=usr_msg, response_format=None)
 
 print(response.msgs[0].content)
-'''
+"""
+===============================================================================
 The current temperature in Tokyo can be found on various weather websites. 
 Here are a couple of reliable sources where you can check the latest weather 
 conditions:
@@ -88,8 +89,8 @@ conditions:
 
 You can visit these links to get the most up-to-date temperature and weather 
 conditions in Tokyo.
-'''
-
+===============================================================================
+"""
 search_linkup_response = SearchToolkit().search_linkup(
     query="Can you tell me which women were awared the Physics Nobel Prize",
     depth="standard",
@@ -98,6 +99,7 @@ search_linkup_response = SearchToolkit().search_linkup(
 
 print(search_linkup_response)
 """
+===============================================================================
 {'results': [{'type': 'text', 'name': 'Physics Nobel Prizes awarded to women | 
 Scientia News', 'url': 'https://www.scientianews.org/
 physics-nobel-prize-winners', 'content': 'The next female Nobel Prize in 
@@ -163,6 +165,7 @@ the only person who has received the Nobel Prize in Physics twice, year 1956
 and 1972 . Marie Curie was awarded the Nobel Prize twice, once in physics 1903 
 and once in chemistry 1911.. See the list of multiple Nobel Prize laureates 
 within other Nobel Prize categories here'}]}
+===============================================================================
 """
 
 search_linkup_response = SearchToolkit().search_linkup(
@@ -173,6 +176,7 @@ search_linkup_response = SearchToolkit().search_linkup(
 
 print(search_linkup_response)
 """
+===============================================================================
 {'answer': "The women who have been awarded the Nobel Prize in Physics are: 1. 
 Marie Curie - 1903 2. Maria Goeppert Mayer - 1963 3. Donna Strickland - 2018 
 4. Anne L'Huillier - 2023", 'sources': [{'name': 'Nobel Prize awarded women - 
@@ -188,7 +192,7 @@ Strickland.'}, {'name': 'List of female Nobel laureates - Wikipedia', 'url':
 "The most recent women to be awarded a Nobel Prize were Han Kang in Literature 
 (2024), Claudia Goldin in Economics, Narges Mohammadi for Peace, Anne 
 L'Huillier in Physics and Katalin Karikó in Physiology or Medicine (2023)."}]}
-(camel-ai-py3.10) ruihan@RuideMac-mini camel % 
+===============================================================================
 """
 
 
@@ -207,9 +211,111 @@ search_linkup_response = SearchToolkit().search_linkup(
 print(search_linkup_response)
 
 """
+===============================================================================
 {'name': 'Female Nobel Prize Winners in Physics', 'description': 'The women 
 awarded the Nobel Prize in Physics include: 1. Marie Curie (1903) 2. Maria 
 Goeppert-Mayer (1963) 3. Donna Strickland (2018) 4. (4th winner not mentioned 
 in the provided data) 5. (5th winner not mentioned in the provided data). Less 
 than 5 women have won the Nobel Prize in Physics out of 225 total laureates.'}
+===============================================================================
+"""
+
+search_bocha_response = SearchToolkit().search_bocha(
+    query="阿里巴巴2024年的esg报告",
+    freshness="noLimit",
+    summary=False,
+    count=10,
+)
+print(search_bocha_response)
+
+"""
+===============================================================================
+{"_type":"SearchResponse","queryContext":{"originalQuery":"阿里巴巴2024年的esg报
+告"},"webPages":{"webSearchUrl":"","totalEstimatedMatches":8912791,"value":[
+{"id":None,"name":"阿里巴巴发布2024年ESG报告持续推进减碳与数字化普惠","url":"ht
+tps://www.alibabagroup.com/document-1752073403914780672","displayUrl":"htt
+ps://www.alibabagroup.com/document-1752073403914780672","snippet":"阿里巴巴
+集团发布《2024财年环境、社会和治理(ESG)报告》(下称"报告"),详细分享过去一年在ESG各方面取
+得的进展。报告显示,阿里巴巴扎实推进减碳举措,全集团自身运营净碳排放和价值链碳...","siteName"
+:"www.alibabagroup.com","siteIcon":"https://th.bochaai.com/favicon?domain_url=
+https://www.alibabagroup.com/document-1752073403914780672","dateLastCrawled":
+"2024-07-22T00:00:00Z","cachedPageUrl":None,"language":None,"isFamilyFriendly"
+:None,"isNavigational":None},],"someResultsRemoved":true},"images":{"id":None,
+"readLink":None,"webSearchUrl":None,"value":[{"webSearchUrl":None,"name":None,
+"thumbnailUrl":"http://q7.itc.cn/q_70/images01/20240726/ee26d6fa8658472d8b4c5
+e7236b1640a.png","datePublished":None,"contentUrl":"http://q7.itc.cn/q_70/im
+ages01/20240726/ee26d6fa8658472d8b4c5e7236b1640a.png","hostPageUrl":"https://
+m.sohu.com/a/796245119_121713887/?pvid=000115_3w_a","contentSize":None,"enco
+dingFormat":None,"hostPageDisplayUrl":"https://m.sohu.com/a/796245119_121713887
+/?pvid=000115_3w_a","width":1285,"height":722,"thumbnail":None}],"isFamilyFrien
+dly":None},"videos":None}
+===============================================================================
+"""
+
+
+agent = ChatAgent(
+    system_message="""You are a helpful assistant that can use baidu search 
+        engine to answer questions.""",
+    tools=[FunctionTool(SearchToolkit().search_baidu)],
+)
+
+usr_msg = "今天北京的天气如何"
+
+response = agent.step(input_message=usr_msg, response_format=None)
+
+print(response.msgs[0].content)
+
+"""
+===============================================================================
+今天北京的天气信息可以通过以下链接查看:
+
+1. [中国天气网 - 北京天气预报](http://www.baidu.com/link?
+url=AJhE9PhEO3TmkJ70CUcRsR3NVB3m6wxN5Imdp0ZVsEBK1t8YhtM6YMxrQy3_vRN6dJv4FLHkBCe
+fZURnzHTm9gio-dS4-4MwGVgJe40m7prOoggce2eB0h-3DsllbKMm)
+2. [中国天气网 - 北京天气预报](http://www.baidu.com/link?
+url=1vhNOfl9tV65_104GMQbDnU_fdCZPXDV2BtTJelxdd6isdSZjAHvtoXqOWG3n7D1N-m9zAmOhQG
+c-jEGqiXe9K)
+3. [中国天气网 - 北京天气预报](http://www.baidu.com/link?
+url=Q0URfpodXDpUe1TKBPpToKIyIuCcjSGUR5jorx81g8Pni5XH-Tbc6AXMa7EwCWjBG3jysTZb43S
+6ZCsJOKvPw2EbIlQ_bMu42-5sCraqXlS)
+4. [中国天气网 - 北京天气预报一周](http://www.baidu.com/link?
+url=TtFe8QryJFuwX1kx50YF5WijRcd2TMJRhPudDQvqW7TG4siah68gUZd_frsVWPi1xkYvrxoYL87
+QMH0wSjDYOq)
+
+请点击链接查看详细的天气预报信息。
+===============================================================================
+"""
+
+bing_call_agent = ChatAgent(
+    system_message="""You are a helpful assistant that can use baidu search 
+        engine to answer questions.""",
+    tools=[FunctionTool(SearchToolkit().search_bing)],
+)
+
+bing_usr_msg = "帮忙查询巴黎圣母院最新修复进展"
+
+response = bing_call_agent.step(
+    input_message=bing_usr_msg, response_format=None
+)
+
+print(response.msgs[0].content)
+
+"""
+===============================================================================
+以下是关于巴黎圣母院最新修复进展的一些信息:
+
+1. **时隔4年,灾后余生的巴黎圣母院即将重生** -
+[知乎](https://zhuanlan.zhihu.com/p/619405504)
+   
+2. **历时4年,耗资70亿,被烧塌的巴黎圣母院修好了!!** -
+[腾讯网](https://news.qq.com/rain/a/20231018A0329F00)
+
+3. **一票难求!巴黎圣母院重新开放!5年修复离不开来自东方的支持** -
+[新浪财经](https://finance.sina.com.cn/wm/2024-12-08/doc-incyumnp3384392.shtml)
+
+4. **巴黎圣母院浴火重生!建筑学者:勘探报告近3000页,修复工作复杂** -
+[腾讯网](https://news.qq.com/rain/a/20241208A05Q9K00)
+
+这些链接提供了关于巴黎圣母院修复的详细信息和最新进展。
+===============================================================================
 """

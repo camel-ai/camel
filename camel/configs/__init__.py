@@ -21,10 +21,12 @@ from .groq_config import GROQ_API_PARAMS, GroqConfig
 from .internlm_config import INTERNLM_API_PARAMS, InternLMConfig
 from .litellm_config import LITELLM_API_PARAMS, LiteLLMConfig
 from .mistral_config import MISTRAL_API_PARAMS, MistralConfig
+from .modelscope_config import MODELSCOPE_API_PARAMS, ModelScopeConfig
 from .moonshot_config import MOONSHOT_API_PARAMS, MoonshotConfig
 from .nvidia_config import NVIDIA_API_PARAMS, NvidiaConfig
 from .ollama_config import OLLAMA_API_PARAMS, OllamaConfig
 from .openai_config import OPENAI_API_PARAMS, ChatGPTConfig
+from .openrouter_config import OPENROUTER_API_PARAMS, OpenRouterConfig
 from .qwen_config import QWEN_API_PARAMS, QwenConfig
 from .reka_config import REKA_API_PARAMS, RekaConfig
 from .samba_config import (
@@ -84,8 +86,12 @@ __all__ = [
     'INTERNLM_API_PARAMS',
     'MoonshotConfig',
     "MOONSHOT_API_PARAMS",
+    'ModelScopeConfig',
+    'MODELSCOPE_API_PARAMS',
     'SiliconFlowConfig',
     'SILICONFLOW_API_PARAMS',
     'AIMLConfig',
     'AIML_API_PARAMS',
+    'OpenRouterConfig',
+    'OPENROUTER_API_PARAMS',
 ]

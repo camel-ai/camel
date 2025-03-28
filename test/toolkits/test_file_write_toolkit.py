@@ -307,3 +307,24 @@ def test_get_tools(file_write_toolkit):
 
     # Check that the tool has the correct function name
     assert tools[0].get_function_name() == "write_to_file"
+
+
+def test_sanitize_and_resolve_filepath(file_write_toolkit):
+    r"""Test that _resolve_filepath sanitizes filenames
+    with spaces and special characters.
+    """
+    # Filename with spaces and special characters
+    unsafe_filename = "My Video: How to Fix! File @ Name?.md"
+    # Expected sanitized filename (all disallowed characters replaced by
+    # underscores)
+    expected_sanitized = file_write_toolkit._sanitize_filename(unsafe_filename)
+
+    # Resolve the filepath using the toolkit
+    resolved_path = file_write_toolkit._resolve_filepath(unsafe_filename)
+    # Expected path is in the toolkit's output_dir with the sanitized filename
+    expected_path = file_write_toolkit.output_dir / expected_sanitized
+
+    # Check that the resolved path matches the expected path
+    assert (
+        resolved_path == expected_path.resolve()
+    ), "The resolved file path does not match the expected sanitized path."

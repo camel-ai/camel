@@ -27,13 +27,15 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **COHERE** | command-r-plus, command-r, command-light, command, command-nightly |
 | **GROQ** | [supported models](https://console.groq.com/docs/models) |
 | **TOGETHER AI** | [supported models](https://docs.together.ai/docs/chat-models) |
-| **SambaNova** | [supported models](https://community.sambanova.ai/t/supported-models/193) |
+| **SambaNova** | [supported models](https://docs.sambanova.ai/cloud/docs/get-started/supported-models) |
 | **Ollama** |  [supported models](https://ollama.com/library) |
+| **OpenRouter** | [supported models](https://openrouter.ai/models) |
 | **LiteLLM** | [supported models](https://docs.litellm.ai/docs/providers) |
 | **vLLM** |  [supported models](https://docs.vllm.ai/en/latest/models/supported_models.html) |
 | **SGLANG** | [supported models](https://sgl-project.github.io/references/supported_models.html) |
 | **NVIDIA** | [supported models](https://docs.api.nvidia.com/nim/reference/llm-apis) |
 | **AIML** | [supported models](https://docs.aimlapi.com/api-overview/model-database/text-models) |
+| **ModelScope** | [supported models](https://www.modelscope.cn/docs/model-service/API-Inference/intro) |
 
 ## 3. How to Use Models via API Calls
 
@@ -68,8 +70,8 @@ ChatAgent(system_msg, model=model)
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
     model_type="a-string-representing-the-model-type",
-    api_key=os.environ.get("OPENAI_COMPATIBILIY_API_KEY"),
-    url=os.environ.get("OPENAI_COMPATIBILIY_API_BASE_URL"),
+    api_key=os.environ.get("OPENAI_COMPATIBILITY_API_KEY"),
+    url=os.environ.get("OPENAI_COMPATIBILITY_API_BASE_URL"),
     model_config_dict={"temperature": 0.4, "max_tokens": 4096},
 )
 ```

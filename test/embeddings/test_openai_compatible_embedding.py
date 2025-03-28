@@ -23,8 +23,8 @@ class TestOpenAICompatibleEmbedding(unittest.TestCase):
     @patch.dict(
         "os.environ",
         {
-            "OPENAI_COMPATIBILIY_API_KEY": "test_api_key",
-            "OPENAI_COMPATIBILIY_API_BASE_URL": "http://test-url.com",
+            "OPENAI_COMPATIBILITY_API_KEY": "test_api_key",
+            "OPENAI_COMPATIBILITY_API_BASE_URL": "http://test-url.com",
         },
     )
     def test_embed_list(self, MockOpenAI):
@@ -58,8 +58,8 @@ class TestOpenAICompatibleEmbedding(unittest.TestCase):
     @patch.dict(
         "os.environ",
         {
-            "OPENAI_COMPATIBILIY_API_KEY": "test_api_key",
-            "OPENAI_COMPATIBILIY_API_BASE_URL": "http://test-url.com",
+            "OPENAI_COMPATIBILITY_API_KEY": "test_api_key",
+            "OPENAI_COMPATIBILITY_API_BASE_URL": "http://test-url.com",
         },
     )
     def test_get_output_dim(self, MockOpenAI):

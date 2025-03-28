@@ -27,6 +27,7 @@ from typing import (
     BinaryIO,
     Dict,
     List,
+    Literal,
     Optional,
     Tuple,
     TypedDict,
@@ -51,37 +52,37 @@ logger = get_logger(__name__)
 TOP_NO_LABEL_ZONE = 20
 
 AVAILABLE_ACTIONS_PROMPT = """
-1. `fill_input_id(identifier: Union[str, int], text: str)`: Fill an input 
+1. `fill_input_id(identifier: Union[str, int], text: str)`: Fill an input
 field (e.g. search box) with the given text and press Enter.
 2. `click_id(identifier: Union[str, int])`: Click an element with the given ID.
-3. `hover_id(identifier: Union[str, int])`: Hover over an element with the 
+3. `hover_id(identifier: Union[str, int])`: Hover over an element with the
 given ID.
-4. `download_file_id(identifier: Union[str, int])`: Download a file with the 
-given ID. It returns the path to the downloaded file. If the file is 
-successfully downloaded, you can stop the simulation and report the path to 
+4. `download_file_id(identifier: Union[str, int])`: Download a file with the
+given ID. It returns the path to the downloaded file. If the file is
+successfully downloaded, you can stop the simulation and report the path to
 the downloaded file for further processing.
 5. `scroll_to_bottom()`: Scroll to the bottom of the page.
 6. `scroll_to_top()`: Scroll to the top of the page.
-7. `scroll_up()`: Scroll up the page. It is suitable when you want to see the 
+7. `scroll_up()`: Scroll up the page. It is suitable when you want to see the
 elements above the current viewport.
-8. `scroll_down()`: Scroll down the page. It is suitable when you want to see 
-the elements below the current viewport. If the webpage does not change, It 
+8. `scroll_down()`: Scroll down the page. It is suitable when you want to see
+the elements below the current viewport. If the webpage does not change, It
 means that the webpage has scrolled to the bottom.
-9. `back()`: Navigate back to the previous page. This is useful when you want 
+9. `back()`: Navigate back to the previous page. This is useful when you want
 to go back to the previous page, as current page is not useful.
-10. `stop()`: Stop the action process, because the task is completed or failed 
-(impossible to find the answer). In this situation, you should provide your 
+10. `stop()`: Stop the action process, because the task is completed or failed
+(impossible to find the answer). In this situation, you should provide your
 answer in your output.
 11. `get_url()`: Get the current URL of the current page.
-12. `find_text_on_page(search_text: str)`: Find the next given text on the 
-current whole page, and scroll the page to the targeted text. It is equivalent 
-to pressing Ctrl + F and searching for the text, and is powerful when you want 
+12. `find_text_on_page(search_text: str)`: Find the next given text on the
+current whole page, and scroll the page to the targeted text. It is equivalent
+to pressing Ctrl + F and searching for the text, and is powerful when you want
 to fast-check whether the current page contains some specific text.
 13. `visit_page(url: str)`: Go to the specific url page.
-14. `click_blank_area()`: Click a blank area of the page to unfocus the 
-current element. It is useful when you have clicked an element but it cannot 
+14. `click_blank_area()`: Click a blank area of the page to unfocus the
+current element. It is useful when you have clicked an element but it cannot
 unfocus itself (e.g. Menu bar) to automatically render the updated webpage.
-15. `ask_question_about_video(question: str)`: Ask a question about the 
+15. `ask_question_about_video(question: str)`: Ask a question about the
 current webpage which contains video, e.g. youtube websites.
 """
 
@@ -92,7 +93,7 @@ ACTION_WITH_FEEDBACK_LIST = [
 ]
 
 
-# codes from magentic-one
+# Code from magentic-one
 class DOMRectangle(TypedDict):
     x: Union[int, float]
     y: Union[int, float]
@@ -127,21 +128,36 @@ class InteractiveRegion(TypedDict):
 
 
 def _get_str(d: Any, k: str) -> str:
+    r"""Safely retrieve a string value from a dictionary."""
+    if k not in d:
+        raise KeyError(f"Missing required key: '{k}'")
     val = d[k]
-    assert isinstance(val, str)
-    return val
+    if isinstance(val, str):
+        return val
+    raise TypeError(
+        f"Expected a string for key '{k}', " f"but got {type(val).__name__}"
+    )
 
 
 def _get_number(d: Any, k: str) -> Union[int, float]:
+    r"""Safely retrieve a number (int or float) from a dictionary"""
     val = d[k]
-    assert isinstance(val, int) or isinstance(val, float)
-    return val
+    if isinstance(val, (int, float)):
+        return val
+    raise TypeError(
+        f"Expected a number (int/float) for key "
+        f"'{k}', but got {type(val).__name__}"
+    )
 
 
 def _get_bool(d: Any, k: str) -> bool:
+    r"""Safely retrieve a boolean value from a dictionary."""
     val = d[k]
-    assert isinstance(val, bool)
-    return val
+    if isinstance(val, bool):
+        return val
+    raise TypeError(
+        f"Expected a boolean for key '{k}', " f"but got {type(val).__name__}"
+    )
 
 
 def _parse_json_output(text: str) -> Dict[str, Any]:
@@ -208,7 +224,8 @@ def _reload_image(image: Image.Image):
     return Image.open(buffer)
 
 
-def domrectangle_from_dict(rect: Dict[str, Any]) -> DOMRectangle:
+def dom_rectangle_from_dict(rect: Dict[str, Any]) -> DOMRectangle:
+    r"""Create a DOMRectangle object from a dictionary."""
     return DOMRectangle(
         x=_get_number(rect, "x"),
         y=_get_number(rect, "y"),
@@ -221,10 +238,11 @@ def domrectangle_from_dict(rect: Dict[str, Any]) -> DOMRectangle:
     )
 
 
-def interactiveregion_from_dict(region: Dict[str, Any]) -> InteractiveRegion:
+def interactive_region_from_dict(region: Dict[str, Any]) -> InteractiveRegion:
+    r"""Create an :class:`InteractiveRegion` object from a dictionary."""
     typed_rects: List[DOMRectangle] = []
     for rect in region["rects"]:
-        typed_rects.append(domrectangle_from_dict(rect))
+        typed_rects.append(dom_rectangle_from_dict(rect))
 
     return InteractiveRegion(
         tag_name=_get_str(region, "tag_name"),
@@ -235,7 +253,8 @@ def interactiveregion_from_dict(region: Dict[str, Any]) -> InteractiveRegion:
     )
 
 
-def visualviewport_from_dict(viewport: Dict[str, Any]) -> VisualViewport:
+def visual_viewport_from_dict(viewport: Dict[str, Any]) -> VisualViewport:
+    r"""Create a :class:`VisualViewport` object from a dictionary."""
     return VisualViewport(
         height=_get_number(viewport, "height"),
         width=_get_number(viewport, "width"),
@@ -252,7 +271,7 @@ def visualviewport_from_dict(viewport: Dict[str, Any]) -> VisualViewport:
 
 
 def add_set_of_mark(
-    screenshot: bytes | Image.Image | io.BufferedIOBase,
+    screenshot: Union[bytes, Image.Image, io.BufferedIOBase],
     ROIs: Dict[str, InteractiveRegion],
 ) -> Tuple[Image.Image, List[str], List[str], List[str]]:
     if isinstance(screenshot, Image.Image):
@@ -272,6 +291,18 @@ def add_set_of_mark(
 def _add_set_of_mark(
     screenshot: Image.Image, ROIs: Dict[str, InteractiveRegion]
 ) -> Tuple[Image.Image, List[str], List[str], List[str]]:
+    r"""Add a set of marks to the screenshot.
+
+    Args:
+        screenshot (Image.Image): The screenshot to add marks to.
+        ROIs (Dict[str, InteractiveRegion]): The regions to add marks to.
+
+    Returns:
+        Tuple[Image.Image, List[str], List[str], List[str]]: A tuple
+        containing the screenshot with marked ROIs, ROIs fully within the
+        images, ROIs located above the visible area, and ROIs located below
+        the visible area.
+    """
     visible_rects: List[str] = list()
     rects_above: List[str] = list()  # Scroll up to see
     rects_below: List[str] = list()  # Scroll down to see
@@ -284,22 +315,22 @@ def _add_set_of_mark(
     for r in ROIs:
         for rect in ROIs[r]["rects"]:
             # Empty rectangles
-            if not rect:
-                continue
-            if rect["width"] * rect["height"] == 0:
+            if not rect or rect["width"] == 0 or rect["height"] == 0:
                 continue
 
-            mid = (
-                (rect["right"] + rect["left"]) / 2.0,
-                (rect["top"] + rect["bottom"]) / 2.0,
-            )
+            # TODO: add scroll left and right?
+            horizontal_center = (rect["right"] + rect["left"]) / 2.0
+            vertical_center = (rect["top"] + rect["bottom"]) / 2.0
+            is_within_horizon = 0 <= horizontal_center < base.size[0]
+            is_above_viewport = vertical_center < 0
+            is_below_viewport = vertical_center >= base.size[1]
 
-            if 0 <= mid[0] and mid[0] < base.size[0]:
-                if mid[1] < 0:
+            if is_within_horizon:
+                if is_above_viewport:
                     rects_above.append(r)
-                elif mid[1] >= base.size[1]:
+                elif is_below_viewport:
                     rects_below.append(r)
-                else:
+                else:  # Fully visible
                     visible_rects.append(r)
                     _draw_roi(draw, int(r), fnt, rect)
 
@@ -314,9 +345,16 @@ def _draw_roi(
     font: ImageFont.FreeTypeFont | ImageFont.ImageFont,
     rect: DOMRectangle,
 ) -> None:
-    color = _color(idx)
-    luminance = color[0] * 0.3 + color[1] * 0.59 + color[2] * 0.11
-    text_color = (0, 0, 0, 255) if luminance > 90 else (255, 255, 255, 255)
+    r"""Draw a ROI on the image.
+
+    Args:
+        draw (ImageDraw.ImageDraw): The draw object.
+        idx (int): The index of the ROI.
+        font (ImageFont.FreeTypeFont | ImageFont.ImageFont): The font.
+        rect (DOMRectangle): The DOM rectangle.
+    """
+    color = _get_random_color(idx)
+    text_color = _get_text_color(color)
 
     roi = ((rect["left"], rect["top"]), (rect["right"], rect["bottom"]))
 
@@ -351,21 +389,56 @@ def _draw_roi(
     )
 
 
-def _color(identifier: int) -> Tuple[int, int, int, int]:
+def _get_text_color(
+    bg_color: Tuple[int, int, int, int],
+) -> Tuple[int, int, int, int]:
+    r"""Determine the ideal text color (black or white) for contrast.
+
+    Args:
+        bg_color: The background color (R, G, B, A).
+
+    Returns:
+        A tuple representing black or white color for text.
+    """
+    luminance = bg_color[0] * 0.3 + bg_color[1] * 0.59 + bg_color[2] * 0.11
+    return (0, 0, 0, 255) if luminance > 120 else (255, 255, 255, 255)
+
+
+def _get_random_color(identifier: int) -> Tuple[int, int, int, int]:
+    r"""Generate a consistent random RGBA color based on the identifier.
+
+    Args:
+        identifier: The ID used as a seed to ensure color consistency.
+
+    Returns:
+        A tuple representing (R, G, B, A) values.
+    """
     rnd = random.Random(int(identifier))
-    color = [rnd.randint(0, 255), rnd.randint(125, 255), rnd.randint(0, 50)]
+    r = rnd.randint(0, 255)
+    g = rnd.randint(125, 255)
+    b = rnd.randint(0, 50)
+    color = [r, g, b]
+    # TODO: check why shuffle is needed?
     rnd.shuffle(color)
     color.append(255)
     return cast(Tuple[int, int, int, int], tuple(color))
 
 
 class BaseBrowser:
-    def __init__(self, headless=True, cache_dir: Optional[str] = None):
-        r"""Initialize the WebBrowserToolkit instance.
+    def __init__(
+        self,
+        headless=True,
+        cache_dir: Optional[str] = None,
+        channel: Literal["chrome", "msedge", "chromium"] = "chromium",
+    ):
+        r"""Initialize the WebBrowser instance.
 
         Args:
             headless (bool): Whether to run the browser in headless mode.
             cache_dir (Union[str, None]): The directory to store cache files.
+            channel (Literal["chrome", "msedge", "chromium"]): The browser
+                channel to use. Must be one of "chrome", "msedge", or
+                "chromium".
 
         Returns:
             None
@@ -376,16 +449,16 @@ class BaseBrowser:
 
         self.history: list = []
         self.headless = headless
+        self.channel = channel
+        self._ensure_browser_installed()
         self.playwright = sync_playwright().start()
         self.page_history: list = []  # stores the history of visited pages
 
-        # set the cache directory
-        self.cache_dir = "tmp/"
+        # Set the cache directory
+        self.cache_dir = "tmp/" if cache_dir is None else cache_dir
         os.makedirs(self.cache_dir, exist_ok=True)
-        if cache_dir is not None:
-            self.cache_dir = cache_dir
 
-        # load the page script
+        # Load the page script
         abs_dir_path = os.path.dirname(os.path.abspath(__file__))
         page_script_path = os.path.join(abs_dir_path, "page_script.js")
 
@@ -398,34 +471,37 @@ class BaseBrowser:
                 f"Page script file not found at path: {page_script_path}"
             )
 
-    def init(self):
+    def init(self) -> None:
         r"""Initialize the browser."""
+        # Launch the browser, if headless is False, the browser will display
         self.browser = self.playwright.chromium.launch(
-            headless=self.headless
-        )  # Launch the browser, if headless is False, the browser will display
-        self.context = self.browser.new_context(
-            accept_downloads=True
-        )  # create a new context
-        self.page = self.context.new_page()  # create a new page
+            headless=self.headless, channel=self.channel
+        )
+        # Create a new context
+        self.context = self.browser.new_context(accept_downloads=True)
+        # Create a new page
+        self.page = self.context.new_page()
 
-    def clean_cache(self):
-        r"""delete the cache directory and its contents."""
+    def clean_cache(self) -> None:
+        r"""Delete the cache directory and its contents."""
         if os.path.exists(self.cache_dir):
             shutil.rmtree(self.cache_dir)
 
-    def _wait_for_load(self, timeout: int = 20):
+    def _wait_for_load(self, timeout: int = 20) -> None:
         r"""Wait for a certain amount of time for the page to load."""
         timeout_ms = timeout * 1000
 
         self.page.wait_for_load_state("load", timeout=timeout_ms)
+
+        # TODO: check if this is needed
         time.sleep(2)
 
-    def click_blank_area(self):
+    def click_blank_area(self) -> None:
         r"""Click a blank area of the page to unfocus the current element."""
         self.page.mouse.click(0, 0)
         self._wait_for_load()
 
-    def visit_page(self, url: str):
+    def visit_page(self, url: str) -> None:
         r"""Visit a page with the given URL."""
 
         self.page.goto(url)
@@ -433,8 +509,8 @@ class BaseBrowser:
         self.page_url = url
 
     def ask_question_about_video(self, question: str) -> str:
-        r"""Ask a question about the video on the current page. It is suitable
-        to process youtube video.
+        r"""Ask a question about the video on the current page,
+        such as YouTube video.
 
         Args:
             question (str): The question to ask.
@@ -459,8 +535,9 @@ class BaseBrowser:
                 directory.
 
         Returns:
-            Tuple[Image.Image, str]: A tuple containing the screenshot image
-                and the path to the image file.
+            Tuple[Image.Image, str]: A tuple containing the screenshot
+            image and the path to the image file if saved, otherwise
+            :obj:`None`.
         """
 
         image_data = self.page.screenshot(timeout=60000)
@@ -468,12 +545,13 @@ class BaseBrowser:
 
         file_path = None
         if save_image:
-            # get url name to form a file name
+            # Get url name to form a file name
+            # TODO: Use a safer way for the url name
             url_name = self.page_url.split("/")[-1]
             for char in ['\\', '/', ':', '*', '?', '"', '<', '>', '|', '.']:
                 url_name = url_name.replace(char, "_")
 
-            # get formatted time: mmddhhmmss
+            # Get formatted time: mmddhhmmss
             timestamp = datetime.datetime.now().strftime("%m%d%H%M%S")
             file_path = os.path.join(
                 self.cache_dir, f"{url_name}_{timestamp}.png"
@@ -492,22 +570,17 @@ class BaseBrowser:
 
         Args:
             scroll_ratio (float): The ratio of viewport height to scroll each
-                step (default: 0.7).
+                step. (default: :obj:`0.8`)
 
         Returns:
             List[str]: A list of paths to the screenshot files.
         """
         screenshots = []
         scroll_height = self.page.evaluate("document.body.scrollHeight")
+        assert self.page.viewport_size is not None
         viewport_height = self.page.viewport_size["height"]
         current_scroll = 0
         screenshot_index = 1
-
-        url_name = self.page.url.split("/")[-1].replace(".", "_")
-        timestamp = datetime.datetime.now().strftime("%m%d%H%M%S")
-        base_file_path = os.path.join(
-            self.cache_dir, f"{url_name}_{timestamp}"
-        )
 
         max_height = scroll_height - viewport_height
         scroll_step = int(viewport_height * scroll_ratio)
@@ -520,14 +593,15 @@ class BaseBrowser:
                 f"{max_height}, step: {scroll_step}"
             )
 
-            file_path = f"{base_file_path}_{screenshot_index}.png"
             _, file_path = self.get_screenshot(save_image=True)
             screenshots.append(file_path)
 
             self.page.evaluate(f"window.scrollBy(0, {scroll_step})")
+            # Allow time for content to load
             time.sleep(0.5)
 
             current_scroll = self.page.evaluate("window.scrollY")
+            # Break if there is no significant scroll
             if abs(current_scroll - last_height) < viewport_height * 0.1:
                 break
 
@@ -547,12 +621,16 @@ class BaseBrowser:
         except Exception as e:
             logger.warning(f"Error evaluating page script: {e}")
 
-        return visualviewport_from_dict(
+        return visual_viewport_from_dict(
             self.page.evaluate("MultimodalWebSurfer.getVisualViewport();")
         )
 
-    def get_interactive_elements(self) -> List[Dict[str, Any]]:
-        # codes from magentic-one
+    def get_interactive_elements(self) -> Dict[str, InteractiveRegion]:
+        r"""Get the interactive elements of the current page.
+
+        Returns:
+            Dict[str, InteractiveRegion]: A dictionary of interactive elements.
+        """
         try:
             self.page.evaluate(self.page_script)
         except Exception as e:
@@ -565,12 +643,13 @@ class BaseBrowser:
 
         typed_results: Dict[str, InteractiveRegion] = {}
         for k in result:
-            typed_results[k] = interactiveregion_from_dict(result[k])
+            typed_results[k] = interactive_region_from_dict(result[k])
 
         return typed_results  # type: ignore[return-value]
 
     def get_som_screenshot(
-        self, save_image: bool = False
+        self,
+        save_image: bool = False,
     ) -> Tuple[Image.Image, Union[str, None]]:
         r"""Get a screenshot of the current viewport with interactive elements
         marked.
@@ -608,15 +687,19 @@ class BaseBrowser:
         return comp, file_path
 
     def scroll_up(self) -> None:
+        r"""Scroll up the page."""
         self.page.keyboard.press("PageUp")
 
     def scroll_down(self) -> None:
+        r"""Scroll down the page."""
         self.page.keyboard.press("PageDown")
 
     def get_url(self) -> str:
+        r"""Get the URL of the current page."""
         return self.page.url
 
-    def click_id(self, identifier: Union[str, int]):
+    def click_id(self, identifier: Union[str, int]) -> None:
+        r"""Click an element with the given identifier."""
         if isinstance(identifier, int):
             identifier = str(identifier)
         target = self.page.locator(f"[__elementId='{identifier}']")
@@ -649,7 +732,7 @@ class BaseBrowser:
 
         self._wait_for_load()
 
-    def extract_url_content(self):
+    def extract_url_content(self) -> str:
         r"""Extract the content of the current page."""
         content = self.page.content()
         return content
@@ -821,7 +904,6 @@ class BaseBrowser:
 
     def close(self):
         self.browser.close()
-        self.playwright.stop()
 
     # ruff: noqa: E501
     def show_interactive_elements(self):
@@ -845,8 +927,50 @@ class BaseBrowser:
         markdown_content = html2text(html_content)
         return markdown_content
 
+    def _ensure_browser_installed(self) -> None:
+        r"""Ensure the browser is installed."""
+        import platform
+        import subprocess
+        import sys
 
-class WebToolkit(BaseToolkit):
+        try:
+            from playwright.sync_api import sync_playwright
+
+            with sync_playwright() as p:
+                browser = p.chromium.launch(channel=self.channel)
+                browser.close()
+        except Exception:
+            logger.info("Installing Chromium browser...")
+            try:
+                subprocess.run(
+                    [
+                        sys.executable,
+                        "-m",
+                        "playwright",
+                        "install",
+                        self.channel,
+                    ],
+                    check=True,
+                    capture_output=True,
+                )
+                if platform.system().lower() == "linux":
+                    subprocess.run(
+                        [
+                            sys.executable,
+                            "-m",
+                            "playwright",
+                            "install-deps",
+                            self.channel,
+                        ],
+                        check=True,
+                        capture_output=True,
+                    )
+                logger.info("Chromium browser installation completed")
+            except subprocess.CalledProcessError as e:
+                raise RuntimeError(f"Failed to install browser: {e.stderr}")
+
+
+class BrowserToolkit(BaseToolkit):
     r"""A class for browsing the web and interacting with web pages.
 
     This class provides methods for browsing the web and interacting with web
@@ -857,25 +981,35 @@ class WebToolkit(BaseToolkit):
         self,
         headless: bool = False,
         cache_dir: Optional[str] = None,
+        channel: Literal["chrome", "msedge", "chromium"] = "chromium",
         history_window: int = 5,
         web_agent_model: Optional[BaseModelBackend] = None,
         planning_agent_model: Optional[BaseModelBackend] = None,
         output_language: str = "en",
     ):
-        r"""Initialize the WebToolkit instance.
+        r"""Initialize the BrowserToolkit instance.
 
         Args:
             headless (bool): Whether to run the browser in headless mode.
             cache_dir (Union[str, None]): The directory to store cache files.
+            channel (Literal["chrome", "msedge", "chromium"]): The browser
+                channel to use. Must be one of "chrome", "msedge", or
+                "chromium".
             history_window (int): The window size for storing the history of
                 actions.
             web_agent_model (Optional[BaseModelBackend]): The model backend
                 for the web agent.
             planning_agent_model (Optional[BaseModelBackend]): The model
                 backend for the planning agent.
+            output_language (str): The language to use for output.
+                (default: :obj:`"en`")
         """
 
-        self.browser = BaseBrowser(headless=headless, cache_dir=cache_dir)
+        self.browser = BaseBrowser(
+            headless=headless, cache_dir=cache_dir, channel=channel
+        )
+        # This needs to be called explicitly
+        self.browser.init()
 
         self.history_window = history_window
         self.web_agent_model = web_agent_model
@@ -914,7 +1048,7 @@ class WebToolkit(BaseToolkit):
 
         system_prompt = """
 You are a helpful web agent that can assist users in browsing the web.
-Given a high-level task, you can leverage predefined browser tools to help 
+Given a high-level task, you can leverage predefined browser tools to help
 users achieve their goals.
         """
 
@@ -925,7 +1059,7 @@ users achieve their goals.
         )
 
         planning_system_prompt = """
-You are a helpful planning agent that can assist users in planning complex 
+You are a helpful planning agent that can assist users in planning complex
 tasks which need multi-step browser interaction.
         """
 
@@ -946,17 +1080,17 @@ tasks which need multi-step browser interaction.
 
         if detailed_plan is not None:
             detailed_plan_prompt = f"""
-Here is a plan about how to solve the task step-by-step which you must follow: 
+Here is a plan about how to solve the task step-by-step which you must follow:
 <detailed_plan>{detailed_plan}<detailed_plan>
         """
 
         observe_prompt = f"""
-Please act as a web agent to help me complete the following high-level task: 
+Please act as a web agent to help me complete the following high-level task:
 <task>{task_prompt}</task>
-Now, I have made screenshot (only the current viewport, not the full webpage) 
-based on the current browser state, and marked interactive elements in the 
+Now, I have made screenshot (only the current viewport, not the full webpage)
+based on the current browser state, and marked interactive elements in the
 webpage.
-Please carefully examine the requirements of the task, and current state of 
+Please carefully examine the requirements of the task, and current state of
 the browser, and provide the next appropriate action to take.
 
 {detailed_plan_prompt}
@@ -970,17 +1104,17 @@ Here are the latest {self.history_window} trajectory (at most) you have taken:
 </history>
 
 Your output should be in json format, including the following fields:
-- `observation`: The detailed image description about the current viewport. Do 
-not over-confident about the correctness of the history actions. You should 
-always check the current viewport to make sure the correctness of the next 
+- `observation`: The detailed image description about the current viewport. Do
+not over-confident about the correctness of the history actions. You should
+always check the current viewport to make sure the correctness of the next
 action.
-- `reasoning`: The reasoning about the next action you want to take, and the 
-possible obstacles you may encounter, and how to solve them. Do not forget to 
+- `reasoning`: The reasoning about the next action you want to take, and the
+possible obstacles you may encounter, and how to solve them. Do not forget to
 check the history actions to avoid the same mistakes.
-- `action_code`: The action code you want to take. It is only one step action 
+- `action_code`: The action code you want to take. It is only one step action
 code, without any other texts (such as annotation)
 
-Here are an example of the output:
+Here is two example of the output:
 ```json
 {{
     "observation": [IMAGE_DESCRIPTION],
@@ -988,47 +1122,51 @@ Here are an example of the output:
     "action_code": "fill_input_id([ID], [TEXT])"
 }}
 
+{{
+    "observation":  "The current page is a CAPTCHA verification page on Amazon. It asks the user to ..",
+    "reasoning": "To proceed with the task of searching for products, I need to complete..",
+    "action_code": "fill_input_id(3, 'AUXPMR')"
+}}
+
 Here are some tips for you:
 - Never forget the overall question: **{task_prompt}**
-- Maybe after a certain operation (e.g. click_id), the page content has not 
-changed. You can check whether the action step is successful by looking at the 
-`success` of the action step in the history. If successful, it means that the 
+- Maybe after a certain operation (e.g. click_id), the page content has not
+changed. You can check whether the action step is successful by looking at the
+`success` of the action step in the history. If successful, it means that the
 page content is indeed the same after the click. You need to try other methods.
-- If using one way to solve the problem is not successful, try other ways. 
+- If using one way to solve the problem is not successful, try other ways.
 Make sure your provided ID is correct!
-- Some cases are very complex and need to be achieve by an iterative process. 
-You can use the `back()` function to go back to the previous page to try other 
+- Some cases are very complex and need to be achieve by an iterative process.
+You can use the `back()` function to go back to the previous page to try other
 methods.
-- There are many links on the page, which may be useful for solving the 
-problem. You can use the `click_id()` function to click on the link to see if 
+- There are many links on the page, which may be useful for solving the
+problem. You can use the `click_id()` function to click on the link to see if
 it is useful.
-- Always keep in mind that your action must be based on the ID shown in the 
+- Always keep in mind that your action must be based on the ID shown in the
 current image or viewport, not the ID shown in the history.
-- Do not use `stop()` lightly. Always remind yourself that the image only 
-shows a part of the full page. If you cannot find the answer, try to use 
-functions like `scroll_up()` and `scroll_down()` to check the full content of 
-the webpage before doing anything else, because the answer or next key step 
+- Do not use `stop()` lightly. Always remind yourself that the image only
+shows a part of the full page. If you cannot find the answer, try to use
+functions like `scroll_up()` and `scroll_down()` to check the full content of
+the webpage before doing anything else, because the answer or next key step
 may be hidden in the content below.
-- If the webpage needs human verification, you must avoid processing it. 
+- If the webpage needs human verification, you must avoid processing it.
 Please use `back()` to go back to the previous page, and try other ways.
-- If you have tried everything and still cannot resolve the issue, please stop 
+- If you have tried everything and still cannot resolve the issue, please stop
 the simulation, and report issues you have encountered.
-- Check the history actions carefully, detect whether you have repeatedly made 
+- Check the history actions carefully, detect whether you have repeatedly made
 the same actions or not.
-- When dealing with wikipedia revision history related tasks, you need to 
-think about the solution flexibly. First, adjust the browsing history 
-displayed on a single page to the maximum, and then make use of the 
-find_text_on_page function. This is extremely useful which can quickly locate 
+- When dealing with wikipedia revision history related tasks, you need to
+think about the solution flexibly. First, adjust the browsing history
+displayed on a single page to the maximum, and then make use of the
+find_text_on_page function. This is extremely useful which can quickly locate
 the text you want to find and skip massive amount of useless information.
-- Flexibly use interactive elements like slide down selection bar to filter 
+- Flexibly use interactive elements like slide down selection bar to filter
 out the information you need. Sometimes they are extremely useful.
 ```
         """
 
         # get current state
-        som_screenshot, som_screenshot_path = self.browser.get_som_screenshot(
-            save_image=True
-        )
+        som_screenshot, _ = self.browser.get_som_screenshot(save_image=True)
         img = _reload_image(som_screenshot)
         message = BaseMessage.make_user_message(
             role_name='user', content=observe_prompt, image_list=[img]
@@ -1083,6 +1221,58 @@ out the information you need. Sometimes they are extremely useful.
 
             return False
 
+        def _fix_action_code(action_code: str) -> str:
+            r"""Fix potential missing quotes in action code"""
+
+            match = re.match(r'(\w+)\((.*)\)', action_code)
+            if not match:
+                return action_code
+
+            func_name, args_str = match.groups()
+
+            args = []
+            current_arg = ""
+            in_quotes = False
+            quote_char = None
+
+            for char in args_str:
+                if char in ['"', "'"]:
+                    if not in_quotes:
+                        in_quotes = True
+                        quote_char = char
+                        current_arg += char
+                    elif char == quote_char:
+                        in_quotes = False
+                        quote_char = None
+                        current_arg += char
+                    else:
+                        current_arg += char
+                elif char == ',' and not in_quotes:
+                    args.append(current_arg.strip())
+                    current_arg = ""
+                else:
+                    current_arg += char
+
+            if current_arg:
+                args.append(current_arg.strip())
+
+            fixed_args = []
+            for arg in args:
+                if (
+                    (arg.startswith('"') and arg.endswith('"'))
+                    or (arg.startswith("'") and arg.endswith("'"))
+                    or re.match(r'^-?\d+(\.\d+)?$', arg)
+                    or re.match(r'^-?\d+\.?\d*[eE][-+]?\d+$', arg)
+                    or re.match(r'^0[xX][0-9a-fA-F]+$', arg)
+                ):
+                    fixed_args.append(arg)
+
+                else:
+                    fixed_args.append(f"'{arg}'")
+
+            return f"{func_name}({', '.join(fixed_args)})"
+
+        action_code = _fix_action_code(action_code)
         prefix = "self.browser."
         code = f"{prefix}{action_code}"
 
@@ -1222,7 +1412,7 @@ Your output should be in json format, including the following fields:
             return False, replanned_schema
 
     @dependencies_required("playwright")
-    def browser_simulation(
+    def browse_url(
         self, task_prompt: str, start_url: str, round_limit: int = 12
     ) -> str:
         r"""A powerful toolkit which can simulate the browser interaction to solve the task which needs multi-step actions.
@@ -1230,7 +1420,8 @@ Your output should be in json format, including the following fields:
         Args:
             task_prompt (str): The task prompt to solve.
             start_url (str): The start URL to visit.
-            round_limit (int): The round limit to solve the task (default: 12).
+            round_limit (int): The round limit to solve the task.
+                (default: :obj:`12`).
 
         Returns:
             str: The simulation result to the task.
@@ -1303,4 +1494,4 @@ Your output should be in json format, including the following fields:
         return simulation_result
 
     def get_tools(self) -> List[FunctionTool]:
-        return [FunctionTool(self.browser_simulation)]
+        return [FunctionTool(self.browse_url)]
