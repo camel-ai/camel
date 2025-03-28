@@ -16,7 +16,7 @@ import difflib
 import importlib
 import typing
 from typing import Any, ClassVar, Dict, List, Optional
-
+import concurrent.futures
 from camel.interpreters.base import BaseInterpreter
 from camel.interpreters.interpreter_error import InterpreterError
 
@@ -87,6 +87,7 @@ class InternalPythonInterpreter(BaseInterpreter):
         import_white_list: Optional[List[str]] = None,
         unsafe_mode: bool = False,
         raise_error: bool = False,
+        default_timeout:int = 60
     ) -> None:
         self.action_space = action_space or dict()
         self.state = self.action_space.copy()
@@ -94,8 +95,9 @@ class InternalPythonInterpreter(BaseInterpreter):
         self.import_white_list = import_white_list or list()
         self.raise_error = raise_error
         self.unsafe_mode = unsafe_mode
+        self.default_timeout = default_timeout
 
-    def run(self, code: str, code_type: str) -> str:
+    def run(self, code: str, code_type: str, timeout:int =None) -> str:
         r"""Executes the given code with specified code type in the
         interpreter.
 
@@ -145,7 +147,13 @@ class InternalPythonInterpreter(BaseInterpreter):
 
             return result
         else:
-            return str(self.execute(code))
+            try:
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                        future = executor.submit(self._execute_ast)
+                        line_result = future.result(timeout=timeout or self.default_timeout)
+                        return str(line_result)
+            except concurrent.futures.TimeoutError:
+                raise InterpreterError("Code execution timed out.")
 
     def update_action_space(self, action_space: Dict[str, Any]) -> None:
         r"""Updates action space for *python* interpreter."""
