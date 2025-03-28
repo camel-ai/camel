@@ -27,6 +27,7 @@ from camel.storages.vectordb_storages import (
 )
 from camel.types import VectorDistance
 from camel.utils import dependencies_required
+
 from .utils import collection_exists
 
 _qdrant_local_client_map: Dict[str, Tuple[Any, int]] = {}
