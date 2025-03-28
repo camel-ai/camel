@@ -123,7 +123,6 @@ class ModelType(UnifiedModelType, Enum):
     NVIDIA_LLAMA3_3_70B_INSTRUCT = "meta/llama-3.3-70b-instruct"
 
     # Gemini models
-    GEMINI_2_5_PRO_EXP = "gemini-2.5-pro-exp-03-25"
     GEMINI_2_0_FLASH = "gemini-2.0-flash-exp"
     GEMINI_2_0_FLASH_THINKING = "gemini-2.0-flash-thinking-exp"
     GEMINI_2_0_PRO_EXP = "gemini-2.0-pro-exp-02-05"
@@ -421,7 +420,6 @@ class ModelType(UnifiedModelType, Enum):
             bool: Whether this type of models is gemini.
         """
         return self in {
-            ModelType.GEMINI_2_5_PRO_EXP,
             ModelType.GEMINI_2_0_FLASH,
             ModelType.GEMINI_1_5_FLASH,
             ModelType.GEMINI_1_5_PRO,
@@ -726,7 +724,6 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 256_000
         elif self in {
-            ModelType.GEMINI_2_5_PRO_EXP,
             ModelType.GEMINI_2_0_FLASH,
             ModelType.GEMINI_1_5_FLASH,
             ModelType.GEMINI_1_5_PRO,
@@ -882,7 +879,6 @@ class OpenAIVisionDetailType(Enum):
 class StorageType(Enum):
     MILVUS = "milvus"
     QDRANT = "qdrant"
-    TIDB = "tidb"
 
 
 class OpenAPIName(Enum):

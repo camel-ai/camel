@@ -77,8 +77,7 @@ async def test_multi_step_env_lifecycle():
     assert observation.question == "Step 0"
 
     # Test first step
-    action1 = Action(index=0, llm_response="Response 1")
-    # FIXME: index set to 0 temporarily until we have batched MultiStep
+    action1 = Action(llm_response="Response 1")
     result1 = await env.step(action1)
     assert isinstance(result1, StepResult)
     assert result1.reward == 1.0
@@ -89,8 +88,7 @@ async def test_multi_step_env_lifecycle():
     mock_extractor.extract.assert_called_once_with("Response 1")
 
     # Test second step
-    action2 = Action(index=0, llm_response="Response 2")
-    # FIXME: index set to 0 temporarily until we have batched MultiStep
+    action2 = Action(llm_response="Response 2")
     result2 = await env.step(action2)
     assert isinstance(result2, StepResult)
     assert result2.reward == 1.0
@@ -114,8 +112,7 @@ async def test_multi_step_env_error_handling():
     mock_extractor.extract = MagicMock(return_value="extracted_answer")
 
     env = MockMultiStepEnv(extractor=mock_extractor, max_steps=3)
-    action = Action(index=0, llm_response="Test response")
-    # FIXME: index set to 0 temporarily until we have batched MultiStep
+    action = Action(llm_response="Test response")
 
     # **Test Case 1: Environment not set up**
     # Attempt to step without setup, expect RuntimeError
