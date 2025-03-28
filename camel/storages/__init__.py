@@ -43,6 +43,7 @@ __all__ = [
     'QdrantStorage',
     'MilvusStorage',
     "TiDBStorage",
+    "FaissStorage",
     'BaseGraphStorage',
     'Neo4jGraph',
     'NebulaGraph',
