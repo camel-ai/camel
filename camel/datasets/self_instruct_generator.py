@@ -20,7 +20,10 @@ from typing import Iterable, List, Optional, cast
 from pydantic import BaseModel, Field, ValidationError
 
 from camel.agents import ChatAgent
+from camel.configs import ChatGPTConfig
 from camel.logger import get_logger
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType, ModelType
 from camel.verifiers import BaseVerifier
 
 from .base_generator import BaseGenerator
@@ -28,6 +31,62 @@ from .models import DataPoint
 from .static_dataset import StaticDataset
 
 logger = get_logger(__name__)
+
+INSTRUCTION_SYSTEM_PROMPT = """
+You are a high-capacity instruction generation assistant.
+
+Your task is to generate a **new, creative, and challenging question** based on
+several examples.
+These examples may cover different domains or styles, but your goal is to:
+- **Understand their specific patterns** in structure, and complexity;
+- **Combine and synthesize** ideas from multiple examples, rather than copying
+  or lightly editing any single one;
+- **Intelligently integrate** multiple reasoning steps, constraints, or
+  concepts into a single, coherent question;
+- Ensure the new question is **non-trivial** and requires deep thinking or
+  multi-step reasoning.
+
+**Guidelines:**
+- Use the examples as inspiration for format, depth, and tone.
+- Your new question should be self-contained, logically sound, and answerable.
+- Do not repeat exact phrasings or create shallow combinations; instead,
+  produce something meaningfully new.
+- Avoid open-ended or subjective questions that depend on personal opinions or
+  discussion.
+- The generated question must have a **clear, objective, and verifiable
+  answer**.
+- Aim for increased depth or novelty through subtle combination or
+  transformation.
+- Keep the final output to a **single unified question** with one clear answer,
+  not a multi-part task.
+
+**Output Format (strict):**
+```
+Question: [Generated question]
+```
+"""
+
+RATIONALE_SYSTEM_PROMPT = """You are an advanced Python code assistant.
+
+Your task is to **solve the given question by writing Python code only**,
+without any explanation or natural language output.
+The code must compute the answer **programmatically**, not by hardcoding or
+guessing the result.
+
+**Rules:**
+- Use Python code to perform the actual computation.
+- Use {package_list} to solve the problem. Do not import any other libraries.
+- **Do not hardcode the final answer** (e.g., avoid writing `print(1/2)` unless
+  that value is computed).
+- The result must be obtained through valid computation logic in code.
+- Do not include explanations. Output code only.
+- The entire code must be wrapped in triple backticks:
+```
+[Your Python code here]
+```
+
+Now, solve the following question using Python. Only output the code:
+"""
 
 
 class SelfInstructGenerator(BaseGenerator):
@@ -43,8 +102,8 @@ class SelfInstructGenerator(BaseGenerator):
         self,
         seed_dataset: StaticDataset,
         verifier: BaseVerifier,
-        instruction_agent: ChatAgent,
-        rationale_agent: ChatAgent,
+        instruction_agent: Optional[ChatAgent] = None,
+        rationale_agent: Optional[ChatAgent] = None,
         seed: int = 42,
         **kwargs,
     ):
@@ -54,16 +113,28 @@ class SelfInstructGenerator(BaseGenerator):
             seed_dataset (StaticDataset): Dataset containing seed instructions.
             verifier (BaseVerifier): Verifier instance to validate generated
                 solutions.
-            instruction_agent (ChatAgent): Agent for generating instructions.
-            rationale_agent (ChatAgent): Agent for generating rationales.
+            instruction_agent (Optional[ChatAgent]): Agent for generating
+                instructions. If not provided, a default agent will be created.
+            rationale_agent (Optional[ChatAgent]): Agent for generating
+                rationales. If not provided, a default agent will be created.
             seed (int): Random seed for reproducibility. (default: :obj:`42`)
             **kwargs: Additional keyword arguments passed to the BaseGenerator.
         """
         super().__init__(seed=seed, **kwargs)
         self.seed_dataset = seed_dataset
         self.verifier = verifier
-        self.instruction_agent = instruction_agent
-        self.rationale_agent = rationale_agent
+        # extract packages from verifier
+        self.packages: List[str] = getattr(
+            self.verifier, "required_packages", []
+        )
+        # create default agents if not provided
+        self.instruction_agent = (
+            instruction_agent or self.default_instruction_agent()
+        )
+        self.rationale_agent = (
+            rationale_agent or self.default_rationale_agent()
+        )
+
         # Extract questions from the seed dataset as human_instructions
         self.human_instructions: List[str] = [
             dp.question
@@ -73,6 +144,45 @@ class SelfInstructGenerator(BaseGenerator):
         # Create an instance-level lock for thread-safe updates to _data
         self._lock = asyncio.Lock()
         self._data = []  # Storage for generated DataPoint instances
+
+    def default_instruction_agent(self) -> ChatAgent:
+        r"""Create the default instruction generation agent.
+
+        This agent is configured with a moderate temperature setting to
+        encourage creative and diverse instruction generation behavior.
+
+        Returns:
+            ChatAgent: An agent with the default instruction prompt.
+        """
+        model = ModelFactory.create(
+            model_platform=ModelPlatformType.OPENAI,
+            model_type=ModelType.GPT_4O_MINI,
+            model_config_dict=ChatGPTConfig(temperature=0.7).as_dict(),
+        )
+        return ChatAgent(
+            INSTRUCTION_SYSTEM_PROMPT,
+            model=model,
+        )
+
+    def default_rationale_agent(self) -> ChatAgent:
+        r"""Create the default rationale generation agent.
+
+        This agent is configured with a deterministic (zero temperature)
+        setting to ensure consistent and precise rationale generation based on
+        a given instruction and package list.
+
+        Returns:
+            ChatAgent: An agent with the rationale prompt
+        """
+        model = ModelFactory.create(
+            model_platform=ModelPlatformType.OPENAI,
+            model_type=ModelType.GPT_4O_MINI,
+            model_config_dict=ChatGPTConfig(temperature=0.2).as_dict(),
+        )
+        return ChatAgent(
+            RATIONALE_SYSTEM_PROMPT.format(package_list=self.packages),
+            model=model,
+        )
 
     class QuestionSchema(BaseModel):
         r"""Schema for the generated question.
