@@ -92,7 +92,7 @@ class VideoAnalysisToolkit(BaseToolkit):
             transcription using OpenAI's audio models. Requires a valid OpenAI
             API key. When disabled, video analysis will be based solely on
             visual content. (default: :obj:`False`)
-        frame_interval (float, optional): The interval in seconds between frames
+        frame_interval (float, optional): Interval in seconds between frames
             to extract from the video. (default: :obj:`4.0`)
         output_language (str, optional): The language for output responses.
             (default: :obj:`"English"`)
