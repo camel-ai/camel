@@ -12,7 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 r"""
-This code is borrowed and modified based on the source code from the 'MedCalc-Bench' repository.
+This code is borrowed and modified based on the source code from the
+'MedCalc-Bench' repository.
 Original repository: https://github.com/ncbi-nlp/MedCalc-Bench
 
 Modifications include:
@@ -61,7 +62,7 @@ def add_2_weeks_explanation(input_data):
     """
 
     input_date_str = input_data["menstrual_date"]
-    cycle_length = input_data["cycle_length"]
+    # cycle_length = input_data["cycle_length"]
 
     explanation = (
         "The patient's estimated date of conception based on their last "

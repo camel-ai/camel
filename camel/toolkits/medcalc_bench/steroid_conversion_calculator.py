@@ -100,16 +100,17 @@ def compute_steroid_conversion_explanation(input_parameters):
     """
 
     explanation = """
-        The Steroid Conversions providing equivalent doses for various 
+        The Steroid Conversions providing equivalent doses for various
         corticosteroids are listed below:
             1. Betamethasone: Route = IV, Equivalent Dose = 0.75 mg
             2. Cortisone: Route = PO, Equivalent Dose = 25 mg
-            3. Dexamethasone (Decadron): Route = IV or PO, Equivalent Dose = 0.75 mg
+            3. Dexamethasone (Decadron): Route = IV or PO, Equivalent Dose
+                = 0.75 mg
             4. Hydrocortisone: Route = IV or PO, Equivalent Dose = 20 mg
             5. MethylPrednisoLONE: Route = IV or PO, Equivalent Dose = 4 mg
             6. PrednisoLONE: Route = PO, Equivalent Dose = 5 mg
             7. PredniSONE: Route = PO, Equivalent Dose = 5 mg
-            8. Triamcinolone: Route = IV, Equivalent Dose = 4 mg 
+            8. Triamcinolone: Route = IV, Equivalent Dose = 4 mg
         """
     conversion_dict = {
         "Betamethasone IV": 1,

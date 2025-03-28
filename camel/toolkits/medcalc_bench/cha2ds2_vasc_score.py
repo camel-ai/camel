@@ -34,15 +34,19 @@ def generate_cha2ds2_vasc_explanation(params):
     output = """
     The criteria for the CHA2DS2-VASc score are listed below:
 
-    1. Age: < 65 years = 0 points, 65-74 years = +1 point, ≥ 75 years = +2 points
+    1. Age: < 65 years = 0 points, 65-74 years = +1 point, ≥ 75 years
+        = +2 points
     2. Sex: Female = +1 point, Male = 0 points
     3. Congestive Heart Failure (CHF) history: No = 0 points, Yes = +1 point
     4. Hypertension history: No = 0 points, Yes = +1 point
-    5. Stroke, Transient Ischemic Attack (TIA), or Thromboembolism history: No = 0 points, Yes = +2 points
-    6. Vascular disease history (previous myocardial infarction, peripheral artery disease, or aortic plaque): No = 0 points, Yes = +1 point
+    5. Stroke, Transient Ischemic Attack (TIA), or Thromboembolism history:
+        No = 0 points, Yes = +2 points
+    6. Vascular disease history (previous myocardial infarction, peripheral
+        artery disease, or aortic plaque): No = 0 points, Yes = +1 point
     7. Diabetes history: No = 0 points, Yes = +1 point
 
-    The CHA2DS2-VASc score is calculated by summing the points for each criterion.\n\n
+    The CHA2DS2-VASc score is calculated by summing the points for each
+        criterion.\n\n
     """
 
     output += "The current CHA2DS2-VASc score is 0.\n"

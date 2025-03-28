@@ -132,15 +132,26 @@ def compute_heart_score_explanation(input_parameters):
     """
 
     explanation = """
-       The HEART Score for risk stratification in patients with chest pain is shown below:
-    
-       1. History: Slightly suspicious = 0 points, Moderately suspicious = +1 point, Highly suspicious = +2 points
-       2. EKG: Normal = 0 points, Non-specific repolarization disturbance = +1 point, Significant ST deviation = +2 points
-       3. Age: <45 years = 0 points, 45-64 years = +1 point, ≥65 years = +2 points
-       4. Risk factors (HTN, hypercholesterolemia, DM, obesity (BMI >30 kg/m²), smoking (current or cessation within 3 months), positive family history of cardiovascular disease before age 65, atherosclerotic disease such as prior MI, PCI/CABG, CVA/TIA, or peripheral arterial disease): No known risk factors = 0 points, 1-2 risk factors = +1 point, ≥3 risk factors or history of atherosclerotic disease = +2 points
-       5. Initial troponin level: ≤normal limit = 0 points, 1–3x normal limit = +1 point, >3x normal limit = +2 points
-    
-       The total score is calculated by summing the points for each criterion.\n\n
+       The HEART Score for risk stratification in patients with
+       chest pain is shown below:
+
+       1. History: Slightly suspicious = 0 points, Moderately suspicious =
+        +1 point, Highly suspicious = +2 points
+       2. EKG: Normal = 0 points, Non-specific repolarization disturbance =
+        +1 point, Significant ST deviation = +2 points
+       3. Age: <45 years = 0 points, 45-64 years = +1 point, ≥65 years =
+        +2 points
+       4. Risk factors (HTN, hypercholesterolemia, DM, obesity (BMI >30 kg/m²),
+        smoking (current or cessation within 3 months), positive family
+        history of cardiovascular disease before age 65, atherosclerotic
+        disease such as prior MI, PCI/CABG, CVA/TIA, or peripheral arterial
+        disease): No known risk factors = 0 points, 1-2 risk factors = +1
+        point, ≥3 risk factors or history of atherosclerotic disease = +2
+        points
+       5. Initial troponin level: ≤normal limit = 0 points, 1~3x normal limit
+        = +1 point, >3x normal limit = +2 points
+
+       The total score is calculated by summing the points for each criterion.
     """
 
     # Define parameters and their default values
@@ -167,7 +178,8 @@ def compute_heart_score_explanation(input_parameters):
         },
         'initial_troponin': {
             'less than or equal to normal limit': 0,
-            'between the normal limit or up to three times the normal limit': 1,
+            'between the normal limit or up to '
+            'three times the normal limit': 1,
             'greater than three times normal limit': 2,
         },
     }

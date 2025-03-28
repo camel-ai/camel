@@ -30,7 +30,8 @@ def calculate_pe_wells_explanation(variables):
     and generates a detailed explanatory text.
 
     Parameters:
-        variables (dict): A dictionary containing the following key-value pairs:
+        variables (dict): A dictionary containing the following
+            key-value pairs:
             - "clinical_dvt" (boolean): Clinical signs and symptoms of DVT:
             No = 0 points, Yes = +3 points.
             - "previous_pe" (boolean): Previous, objectively diagnosed PE:
@@ -40,7 +41,8 @@ def calculate_pe_wells_explanation(variables):
             - "heart_rate" (tuple): The patient's heart rate in the format (
             value, unit).
                 - Value (float): The value of the patient's heart rate.
-                - Unit (str): The unit of heart rate should be "beats per minute".
+                - Unit (str): The unit of heart rate should be
+                    "beats per minute".
             - "immobilization_for_3days" (boolean): Immobilization at least
             3 days OR surgery in the previous 4 weeks:
                 - No = 0 points, Yes = +1.5 points.
@@ -98,7 +100,8 @@ def calculate_pe_wells_explanation(variables):
         and so the total score remains unchanged,
         keeping the total score at 0.\nThe patient's heart rate is 78.0
         beats per minute.
-        The heart rate is less than 100 bpm, and so the score remains unchanged,
+        The heart rate is less than 100 bpm, and so the score
+        remains unchanged,
         keeping the total score at 0.\nBecause the patient has not had an
         immobilization for at least 3 days,
         and the patient did not have a surgery in the past 4 weeks,
@@ -115,15 +118,19 @@ def calculate_pe_wells_explanation(variables):
     """
 
     explanation = r"""
-    The criteria for the Wells' Criteria for Pulmonary Embolism score are listed below:
+    The criteria for the Wells' Criteria for Pulmonary Embolism score
+        are listed below:
 
         1. Clinical signs and symptoms of DVT: No = 0 points, Yes = +3 points
         2. PE is #1 diagnosis OR equally likely: No = 0 points, Yes = +3 points
         3. Heart rate > 100: No = 0 points, Yes = +1.5 points
-        4. Immobilization at least 3 days OR surgery in the previous 4 weeks: No = 0 points, Yes = +1.5 points
-        5. Previous, objectively diagnosed PE or DVT: No = 0 points, Yes = +1.5 points
+        4. Immobilization at least 3 days OR surgery in the previous 4 weeks:
+            No = 0 points, Yes = +1.5 points
+        5. Previous, objectively diagnosed PE or DVT: No = 0 points,
+            Yes = +1.5 points
         6. Hemoptysis: No = 0 points, Yes = +1 point
-        7. Malignancy with treatment within 6 months or palliative: No = 0 points, Yes = +1 point
+        7. Malignancy with treatment within 6 months or palliative:
+            No = 0 points, Yes = +1 point
 
     The total score is calculated by summing the points for each criterion.\n\n
     """

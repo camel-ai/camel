@@ -42,24 +42,27 @@ def compute_cci_explanation(input_parameters):
                     - Unit (str): The unit can be "mg/dL", "µmol/L", and so on.
                 - "mi" (boolean): Myocardial infarction (history of definite or
                 probable MI with EKG changes and/or enzyme changes)
-                - "chf" (boolean): Congestive heart failure (CHF) (exertional or
-                paroxysmal nocturnal dyspnea, responsive to digitalis,
+                - "chf" (boolean): Congestive heart failure (CHF) (exertional
+                or paroxysmal nocturnal dyspnea, responsive to digitalis,
                 diuretics, or afterload reducing agents)
                 - "peripheral_vascular_disease" (boolean): Peripheral vascular
                 disease
                 - "cva" (boolean): Cerebrovascular accident (CVA)
                 - "tia" (boolean): transient ischemic attack (TIA)
-                - "connective_tissue_disease" (boolean): Connective tissue disease
+                - "connective_tissue_disease" (boolean): Connective tissue
+                    disease
                 - "dementia" (boolean): Dementia
                 - "copd" (boolean): Chronic obstructive pulmonary disease
-                - "connective_tissue_disease" (boolean): Connective tissue disease
+                - "connective_tissue_disease" (boolean): Connective tissue
+                    disease
                 - "peptic_ucler_disease" (boolean): Peptic ulcer disease (any
                 history of treatment for ulcer disease or ulcer bleeding)
                 - "liver_disease" (str): Liver disease: None, Mild,
                 Moderate to severe
                 - "moderate_to_severe_ckd" (boolean): Moderate to severe
                 chronic kidney disease
-                - "diabetes_mellitus" (str): None, diet-controlled, Uncomplicated,
+                - "diabetes_mellitus" (str): None, diet-controlled,
+                    Uncomplicated,
                 End-organ damage
                 - "hemiplegia" (boolean): Hemiplegia
                 - "solid_tumor" (str): None, Localized, Metastatic
@@ -72,7 +75,8 @@ def compute_cci_explanation(input_parameters):
             dict: Contains two key-value pairs:
                 - "Explanation" (str): A detailed description of the
                 calculation process.
-                - "Answer" (float): The patient's Glomerular Filtration Rate (GFR).
+                - "Answer" (float): The patient's Glomerular
+                    Filtration Rate (GFR).
 
         Notes:
             - Uses the `conversion_explanation` function to convert source unit
@@ -100,7 +104,8 @@ def compute_cci_explanation(input_parameters):
                 "liver_disease": "Mild",
             })
 
-            output: "{'Explanation': "\n    The Charlson Comorbidity Index (CCI)
+            output: "{'Explanation': "\n    The Charlson Comorbidity Index
+            (CCI)
             are listed below:\n    \n       1. Age: <50 years = 0 points,
             50-59 years = +1 point, 60-69 years = +2 points, 70-79 years = +3
             points, ≥80 years = +4 points\n       2. Myocardial infarction (
@@ -132,55 +137,76 @@ def compute_cci_explanation(input_parameters):
             0 points, Yes = +6 points\n    \n    The total score is calculated
             by summing the points for each criterion.\\n\\n\n    The current
             CCI is value is 0.\nThe patient is 45 years old. Because the
-            patient's age is less than 50, we do not add any points to the score,
-            keeping the current total at 0.\nThe issue, 'Myocardial infarction,'
+            patient's age is less than 50, we do not add any points to the
+            score,
+            keeping the current total at 0.\nThe issue,
+            'Myocardial infarction,'
             is reported to be absent for the patient and so we do not add any
             points to the score, keeping the current total at 0.\nThe patient's
             CCI score is 0 points.\nThe issue, 'Congestive heart failure,' is
-            reported to be absent for the patient and so we do not add any points
+            reported to be absent for the patient and so we do not add any
+            points
             to the score, keeping the current total at 0.\nThe patient's CCI
             score is 0 points.\nThe issue, 'Peripheral vascular disease,' is
             reported to be absent for the patient and so we do not add any
             points to the score, keeping the current total at 0.\nThe patient's
-            CCI score is 0 points.\nAt least one of transient ischemic attack or
-            cerebral vascular accident must be present in the patient for a point
+            CCI score is 0 points.\nAt least one of transient ischemic attack
+            or
+            cerebral vascular accident must be present in the patient for a
+            point
             to be added to the current total.\nTransient ischemic attacks is
-            reported to be absent for the patient.\nCerebral vascular accident is
+            reported to be absent for the patient.\nCerebral vascular accident
+            is
             reported to be absent for the patient.\nNeither of the issues are
             reported to be present for the patient and so we add 0 point to the
-            score, keeping the current total at 0.\nThe issue, 'Connective tissue
+            score, keeping the current total at 0.\nThe issue, 'Connective
+            tissue
             diease,' is reported to be absent for the patient and so we do not
             add any points to the score, keeping the current total at 0.\nThe
             patient's CCI score is 0 points.\n The issue,'Dementia,' is present
-            for the patient and so we add 1 point to the score, making the current
+            for the patient and so we add 1 point to the score, making the
+            current
             total 0 + 1 = 1.\nThe patient's CCI score is 1 points.\n The issue,
             'Chronic obstructive pulmonary disease,' is present for the patient
-            and so we add 1 point to the score, making the current total 1 + 1 =
+            and so we add 1 point to the score, making the current total
+            1 + 1 =
             2.\nThe patient's CCI score is 2 points.\nThe issue, 'Hemiplegia,'
             is reported to be absent for the patient and so we do not add any
             points to the score, keeping the current total at 2.\nThe patient's
-            CCI score is 2 points.\nThe issue, 'Peptic ulcer disease,' is reported
+            CCI score is 2 points.\nThe issue, 'Peptic ulcer disease,' is
+            reported
             to be absent for the patient and so we do not add any points to the
             score, keeping the current total at 2.\nThe patient's CCI score is
-            2 points.\n The issue,'Diabetes mellitus,' is present for the patient
-            and so we add 1 point to the score, making the current total 2 + 1 = 3.
-            \nThe patient's CCI score is 3 points.\nThe issue, 'Moderate to severe
-            chronic kidney disease,' is reported to be absent for the patient and
+            2 points.\n The issue,'Diabetes mellitus,' is present for the
+            patient
+            and so we add 1 point to the score, making the current total
+            2 + 1 = 3.
+            \nThe patient's CCI score is 3 points.\nThe issue, 'Moderate to
+            severe
+            chronic kidney disease,' is reported to be absent for the patient
+            and
             so we do not add any points to the score, keeping the current total
-            at 3.\nThe patient's CCI score is 3 points.\n The issue,'Solid tumor,'
-            is present for the patient and so we add 1 point to the score, making
-            the current total 3 + 1 = 4.\nThe patient's CCI score is 4 points.\nThe
-             issue, 'Leukemia,' is reported to be absent for the patient and so we
-             do not add any points to the score, keeping the current total at 4.
-             \nThe patient's CCI score is 4 points.\nThe issue, 'Lymphoma,' is
-             reported to be absent for the patient and so we do not add any points
-             to the score, keeping the current total at 4.\nThe patient's CCI score
-              is 4 points.\nThe issue, 'AIDS,' is reported to be absent for the
-              patient and so we do not add any points to the score, keeping the
-              current total at 4.\nThe patient's CCI score is 4 points.\n The
-              issue,'Liver Disease,' is present for the patient and so we add 1
-              point to the score, making the current total 4 + 1 = 5.\nThe
-              patient's CCI score is 5 points.\n", 'Answer': 5}
+            at 3.\nThe patient's CCI score is 3 points.\n The issue,'Solid
+            tumor,'
+            is present for the patient and so we add 1 point to the score,
+            making
+            the current total 3 + 1 = 4.\nThe patient's CCI score is 4 points.
+            \nThe
+            issue, 'Leukemia,' is reported to be absent for the patient and
+            so we
+            do not add any points to the score, keeping
+            the current total at 4.
+            \nThe patient's CCI score is 4 points.\nThe issue, 'Lymphoma,' is
+            reported to be absent for the patient and so we do not add any
+            points
+            to the score, keeping the current total at 4.\nThe patient's
+            CCI score
+            is 4 points.\nThe issue, 'AIDS,' is reported to be absent for the
+            patient and so we do not add any points to the score, keeping the
+            current total at 4.\nThe patient's CCI score is 4 points.\n The
+            issue,'Liver Disease,' is present for the patient and so we add 1
+            point to the score, making the current total 4 + 1 = 5.\nThe
+            patient's CCI score is 5 points.\n", 'Answer': 5}
     "
     """
 
@@ -213,25 +239,38 @@ def compute_cci_explanation(input_parameters):
 
     explanation = r"""
     The Charlson Comorbidity Index (CCI) are listed below:
-    
-       1. Age: <50 years = 0 points, 50-59 years = +1 point, 60-69 years = +2 points, 70-79 years = +3 points, ≥80 years = +4 points
-       2. Myocardial infarction (history of definite or probable MI with EKG changes and/or enzyme changes): No = 0 points, Yes = +1 point
-       3. Congestive heart failure (CHF) (exertional or paroxysmal nocturnal dyspnea, responsive to digitalis, diuretics, or afterload reducing agents): No = 0 points, Yes = +1 point
-       4. Peripheral vascular disease (intermittent claudication, past bypass for chronic arterial insufficiency, history of gangrene or acute arterial insufficiency, untreated thoracic or abdominal aneurysm ≥6 cm): No = 0 points, Yes = +1 point
-       5. Cerebrovascular accident (CVA) or transient ischemic attack (TIA) (history with minor or no residuals): No = 0 points, Yes = +1 point
+       1. Age: <50 years = 0 points, 50-59 years = +1 point, 60-69 years = +2
+        points, 70-79 years = +3 points, ≥80 years = +4 points
+       2. Myocardial infarction (history of definite or probable MI with EKG
+        changes and/or enzyme changes): No = 0 points, Yes = +1 point
+       3. Congestive heart failure (CHF) (exertional or paroxysmal nocturnal
+        dyspnea, responsive to digitalis, diuretics, or afterload reducing
+        agents): No = 0 points, Yes = +1 point
+       4. Peripheral vascular disease (intermittent claudication, past bypass
+        for chronic arterial insufficiency, history of gangrene or acute
+        arterial insufficiency, untreated thoracic or abdominal
+        aneurysm ≥6 cm): No = 0 points, Yes = +1 point
+       5. Cerebrovascular accident (CVA) or transient ischemic attack (TIA)
+        (history with minor or no residuals): No = 0 points, Yes = +1 point
        6. Dementia (chronic cognitive deficit): No = 0 points, Yes = +1 point
-       7. Chronic obstructive pulmonary disease (COPD): No = 0 points, Yes = +1 point
+       7. Chronic obstructive pulmonary disease (COPD): No = 0 points,
+        Yes = +1 point
        8. Connective tissue disease: No = 0 points, Yes = +1 point
-       9. Peptic ulcer disease (any history of treatment for ulcer disease or ulcer bleeding): No = 0 points, Yes = +1 point
-       10. Liver disease: None = 0 points, Mild = +1 point, Moderate to severe = +3 points
-       11. Diabetes mellitus: None or diet-controlled = 0 points, Uncomplicated = +1 point, End-organ damage = +2 points
+       9. Peptic ulcer disease (any history of treatment for ulcer
+        disease or ulcer bleeding): No = 0 points, Yes = +1 point
+       10. Liver disease: None = 0 points, Mild = +1 point,
+        Moderate to severe = +3 points
+       11. Diabetes mellitus: None or diet-controlled = 0 points,
+        Uncomplicated = +1 point, End-organ damage = +2 points
        12. Hemiplegia: No = 0 points, Yes = +2 points
-       13. Moderate to severe chronic kidney disease (CKD): No = 0 points, Yes = +2 points
-       14. Solid tumor: None = 0 points, Localized = +2 points, Metastatic = +6 points
+       13. Moderate to severe chronic kidney disease (CKD):
+        No = 0 points, Yes = +2 points
+       14. Solid tumor: None = 0 points, Localized = +2 points,
+        Metastatic = +6 points
        15. Leukemia: No = 0 points, Yes = +2 points
        16. Lymphoma: No = 0 points, Yes = +2 points
        17. AIDS: No = 0 points, Yes = +6 points
-    
+
     The total score is calculated by summing the points for each criterion.\n\n
     """
 

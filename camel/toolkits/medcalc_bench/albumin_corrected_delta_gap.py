@@ -12,7 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 r"""
-This code is borrowed and modified based on the source code from the 'MedCalc-Bench' repository.
+This code is borrowed and modified based on the source code from the
+'MedCalc-Bench' repository.
 Original repository: https://github.com/ncbi-nlp/MedCalc-Bench
 
 Modifications include:
@@ -30,26 +31,36 @@ from camel.toolkits.medcalc_bench.utils.rounding import round_number
 
 def compute_albumin_corrected_delta_gap_explanation(input_parameters):
     r"""
-    Calculates the patient's albumin corrected delta gap and generates a detailed explanatory text.
+    Calculates the patient's albumin corrected delta gap and generates a
+    detailed explanatory text.
 
     Parameters:
-        input_parameters (dict): A dictionary containing the following key-value pairs:
-            - "sodium" (array): The patient's blood sodium level in the format (value, unit).
+        input_parameters (dict): A dictionary containing the following
+        key-value pairs:
+            - "sodium" (array): The patient's blood sodium level in the
+                format (value, unit).
                 - Value (float): The blood sodium level.
                 - Unit (str): The unit of blood sodium level.
-            - "chloride" (array): The patient's chloride level in the format (value, unit).
+            - "chloride" (array): The patient's chloride level in the
+                format (value, unit).
                 - Value (float): The value of chloride level.
-                - Unit (str): The unit of chloride level, eg. "mmol/L", "mEq/L", and so on.
-            - "bicarbonate" (array): The patient's bicarbonate level in the format (value, unit).
+                - Unit (str): The unit of chloride level, eg. "mmol/L",
+                    "mEq/L", and so on.
+            - "bicarbonate" (array): The patient's bicarbonate level in
+                the format (value, unit).
                 - Value (float): The value of bicarbonate level.
-                - Unit (str): The unit of bicarbonate level, eg. "mmol/L", "mEq/L", and so on.
-            - "albumin" (array): The patient's albumin concentration in the format (value, unit).
+                - Unit (str): The unit of bicarbonate level, eg. "mmol/L",
+                    "mEq/L", and so on.
+            - "albumin" (array): The patient's albumin concentration in the
+                format (value, unit).
                 - Value (float): The numerical albumin concentration value.
-                - Unit (str): The unit of albumin concentration, eg. "g/L", "mg/dL", "g/mL" and so on.
+                - Unit (str): The unit of albumin concentration, eg. "g/L",
+                    "mg/dL", "g/mL" and so on.
 
     Returns:
         dict: Contains two key-value pairs:
-            - "Explanation" (str): A detailed description of the calculation process.
+            - "Explanation" (str): A detailed description of
+                the calculation process.
             - "Answer" (float): The patient's albumin corrected delta gap.
 
     Notes:

@@ -170,19 +170,28 @@ def compute_wells_criteria_dvt_explanation(input_parameters):
     ]
 
     output = r"""
-    The criteria for the Wells' Criteria for Deep Vein Thrombosis (DVT) score are listed below:
+    The criteria for the Wells' Criteria for Deep Vein Thrombosis (DVT)
+        score are listed below:
 
-       1. Active cancer (treatment or palliation within 6 months): No = 0 points, Yes = +1 point
-       2. Bedridden recently >3 days or major surgery within 12 weeks: No = 0 points, Yes = +1 point
-       3. Calf swelling >3 cm compared to the other leg (measured 10 cm below tibial tuberosity): No = 0 points, Yes = +1 point
-       4. Collateral (nonvaricose) superficial veins present: No = 0 points, Yes = +1 point
+       1. Active cancer (treatment or palliation within 6 months): No = 0
+        points, Yes = +1 point
+       2. Bedridden recently >3 days or major surgery within 12 weeks: No = 0
+        points, Yes = +1 point
+       3. Calf swelling >3 cm compared to the other leg (measured 10 cm below
+        tibial tuberosity): No = 0 points, Yes = +1 point
+       4. Collateral (nonvaricose) superficial veins present: No = 0 points,
+        Yes = +1 point
        5. Entire leg swollen: No = 0 points, Yes = +1 point
-       6. Localized tenderness along the deep venous system: No = 0 points, Yes = +1 point
-       7. Pitting edema, confined to symptomatic leg: No = 0 points, Yes = +1 point
-       8. Paralysis, paresis, or recent plaster immobilization of the lower extremity: No = 0 points, Yes = +1 point
+       6. Localized tenderness along the deep venous system: No = 0 points,
+        Yes = +1 point
+       7. Pitting edema, confined to symptomatic leg: No = 0 points,
+        Yes = +1 point
+       8. Paralysis, paresis, or recent plaster immobilization of
+        the lower extremity: No = 0 points, Yes = +1 point
        9. Previously documented DVT: No = 0 points, Yes = +1 point
-       10. Alternative diagnosis to DVT as likely or more likely: No = 0 points, Yes = -2 points
-    
+       10. Alternative diagnosis to DVT as likely or more likely:
+        No = 0 points, Yes = -2 points
+
     The total score is calculated by summing the points for each criterion.\n\n
     """
 

@@ -1118,9 +1118,8 @@ class MedCalcToolkit(BaseToolkit):
         print(input_variables)
 
         try:
-            from camel.toolkits.medcalc_bench.estimated_conception_date import (
-                add_2_weeks_explanation,
-            )
+            from camel.toolkits.medcalc_bench.\
+                estimated_conception_date import add_2_weeks_explanation
 
             # Call the conception date calculation function
             result = add_2_weeks_explanation(input_variables)
@@ -1181,9 +1180,9 @@ class MedCalcToolkit(BaseToolkit):
         print(input_variables)
 
         try:
-            from camel.toolkits.medcalc_bench.estimated_gestational_age import (
-                compute_gestational_age_explanation,
-            )
+            from camel.toolkits.medcalc_bench.\
+                estimated_gestational_age\
+                import compute_gestational_age_explanation
 
             # Call the gestational age calculation function
             result = compute_gestational_age_explanation(input_variables)
@@ -1191,9 +1190,10 @@ class MedCalcToolkit(BaseToolkit):
             # Return the result as a JSON string
             return json.dumps(
                 {
-                    "rationale": result["Explanation"],  # Detailed explanation
-                    # Final answer (string format)
-                    "final_answer": f"{result['Answer'][0]} and {result['Answer'][1]}",
+                    "rationale": result["Explanation"],
+                    "final_answer": (
+                        f"{result['Answer'][0]} and " f"{result['Answer'][1]}"
+                    ),
                 }
             )
 
@@ -1535,43 +1535,58 @@ class MedCalcToolkit(BaseToolkit):
         self,
         hdl_value: float,  # Numeric part of HDL cholesterol (e.g., 37.0)
         hdl_unit: str,  # Unit of HDL cholesterol (e.g., "mg/dL")
-        triglycerides_value: float,  # Numeric part of triglycerides (e.g., 205.0)
+        triglycerides_value: float,  # Numeric part of triglycerides
+        # (e.g., 205.0)
         triglycerides_unit: str,  # Unit of triglycerides (e.g., "mg/dL")
         total_value: float,  # Numeric part of total cholesterol (e.g., 210.0)
         total_unit: str,  # Unit of total cholesterol (e.g., "mg/dL")
     ) -> str:
         """
-        Calculate the patient's LDL cholesterol concentration and generate a detailed explanatory text.
+        Calculate the patient's LDL cholesterol concentration and generate
+            a detailed explanatory text.
 
         Parameters:
-            hdl_value (float): The numeric value of the patient's HDL cholesterol.
-            hdl_unit (str): The unit of the patient's HDL cholesterol, one of the following:
+            hdl_value (float): The numeric value of the patient's
+                HDL cholesterol.
+            hdl_unit (str): The unit of the patient's HDL cholesterol, one
+                of the following:
                 - "mg/dL" for milligrams per deciliter
                 - "mmol/L" for millimoles per liter
                 - Other supported cholesterol concentration units
-            triglycerides_value (float): The numeric value of the patient's triglycerides.
-            triglycerides_unit (str): The unit of the patient's triglycerides, one of the following:
+            triglycerides_value (float): The numeric value of
+                the patient's triglycerides.
+            triglycerides_unit (str): The unit of the patient's triglycerides,
+                one of the following:
                 - "mg/dL" for milligrams per deciliter
                 - "mmol/L" for millimoles per liter
                 - Other supported triglyceride concentration units
-            total_value (float): The numeric value of the patient's total cholesterol.
-            total_unit (str): The unit of the patient's total cholesterol, one of the following:
+            total_value (float): The numeric value of the patient's
+                total cholesterol.
+            total_unit (str): The unit of the patient's total cholesterol,
+                one of the following:
                 - "mg/dL" for milligrams per deciliter
                 - "mmol/L" for millimoles per liter
                 - Other supported cholesterol concentration units
 
         Returns:
-            str: A JSON string containing the calculation process and result, formatted as follows:
+            str: A JSON string containing the calculation process and result,
+                formatted as follows:
                 {
-                    "rationale": "Detailed calculation process and explanatory text",
-                    "final_answer": "LDL cholesterol concentration in mg/dL (string format)"
+                    "rationale": "Detailed calculation process and
+                        explanatory text",
+                    "final_answer": "LDL cholesterol concentration in mg/dL
+                        (string format)"
                 }
-                If an exception occurs, return an error message generated by the `handle_exception` method.
+                If an exception occurs, return an error message generated by
+                the `handle_exception` method.
 
         Notes:
-            - The `compute_ldl_explanation` function is used to calculate the LDL cholesterol.
-            - The `json.dumps` function is used to serialize the result into a JSON string.
-            - The calculation uses the formula: LDL = total cholesterol - HDL - (triglycerides / 5)
+            - The `compute_ldl_explanation` function is used to calculate
+                the LDL cholesterol.
+            - The `json.dumps` function is used to serialize the result
+                into a JSON string.
+            - The calculation uses the formula: LDL = total cholesterol - HDL
+                - (triglycerides / 5)
             - All values are converted to mg/dL for the calculation.
         """
         # Construct the input variables dictionary
@@ -1618,8 +1633,8 @@ class MedCalcToolkit(BaseToolkit):
         albumin_value: float,  # Numeric part of albumin (e.g., 4.4)
         albumin_unit: str,  # Unit of albumin (e.g., "g/dL")
     ) -> str:
-        r"""Calculate the patient's Albumin Corrected Anion Gap (ACAG) and generate
-        a detailed explanatory text.
+        r"""Calculate the patient's Albumin Corrected Anion Gap (ACAG)
+        and generate a detailed explanatory text.
 
         Args:
             sodium_value (float): The numeric value of sodium level.
@@ -1644,15 +1659,17 @@ class MedCalcToolkit(BaseToolkit):
             str: A JSON string containing the calculation process and result,
                 formatted as follows:
                 {
-                    "rationale": "Detailed calculation process and explanatory text",
-                    "final_answer": "Albumin corrected anion gap (string format)"
+                    "rationale": "Detailed calculation process
+                        and explanatory text",
+                    "final_answer": "Albumin corrected anion gap
+                        (string format)"
                 }
                 If an exception occurs, return an error message generated by
                     the `handle_exception` method.
 
         Notes:
-            - The `compute_albumin_corrected_anion_explanation` function is used
-                for calculation.
+            - The `compute_albumin_corrected_anion_explanation`
+                function is used for calculation.
             - The `json.dumps` function is used to serialize the result into a
                 JSON string.
         """
@@ -1819,8 +1836,8 @@ class MedCalcToolkit(BaseToolkit):
                     the `handle_exception` method.
 
         Notes:
-            - The `compute_albumin_delta_ratio_explanation` function is used for
-                the calculation.
+            - The `compute_albumin_delta_ratio_explanation` function
+                is used for the calculation.
             - The `json.dumps` function is used to serialize the result into a
                 JSON string.
         """
@@ -1957,9 +1974,11 @@ class MedCalcToolkit(BaseToolkit):
                 the `handle_exception` method.
 
         Notes:
-            - The `free_water_deficit_explanation` function is used for calculation.
+            - The `free_water_deficit_explanation` function is
+                used for calculation.
             - The `json.dumps` function serializes the result into JSON string.
-            - If input gender is not "male" or "female", function won't calculate.
+            - If input gender is not "male" or "female", function
+                won't calculate.
         """
         # Construct input variables dictionary
         input_variables = {
@@ -2146,8 +2165,8 @@ class MedCalcToolkit(BaseToolkit):
         qt_interval_value: float,  # Numeric part of QT interval (e.g., 330)
         qt_interval_unit: str,  # Unit of QT interval ("msec")
     ) -> str:
-        r"""Calculate patient's corrected QT interval using Framingham Formula and
-        generate detailed explanatory text.
+        r"""Calculate patient's corrected QT interval using Framingham
+        Formula and generate detailed explanatory text.
 
         Args:
             heart_rate_value (float): Numeric value of patient's heart rate.
@@ -2164,7 +2183,8 @@ class MedCalcToolkit(BaseToolkit):
                     "rationale": "Detailed calculation process text",
                     "final_answer": "Corrected QT interval (string format)"
                 }
-                If exception occurs, returns error message from handle_exception.
+                If exception occurs, returns error message
+                    from handle_exception.
 
         Notes:
             - Uses framingham_calculator_explanation for calculation.
@@ -2281,11 +2301,12 @@ class MedCalcToolkit(BaseToolkit):
         qt_interval_value: float,  # Numeric part of QT interval (e.g., 330)
         qt_interval_unit: str,  # Unit of QT interval ("msec")
     ) -> str:
-        r"""Calculate the patient's corrected QT interval (QTc) using Hodges formula
-        and generate a detailed explanatory text.
+        r"""Calculate the patient's corrected QT interval (QTc) using
+        Hodges formula and generate a detailed explanatory text.
 
         Args:
-            heart_rate_value (float): The numeric value of patient's heart rate.
+            heart_rate_value (float): The numeric value of patient's
+                heart rate.
             heart_rate_unit (str): The unit of heart rate, must be:
                 - "beats per minute"
             qt_interval_value (float): The numeric value of QT interval.
@@ -2298,14 +2319,15 @@ class MedCalcToolkit(BaseToolkit):
                 {
                     "rationale": "Detailed calculation process and explanatory
                         text",
-                    "final_answer": "Corrected QT interval in msec (string format)"
+                    "final_answer": "Corrected QT interval in msec
+                        (string format)"
                 }
                 If an exception occurs, return an error message generated by
                     the `handle_exception` method.
 
         Notes:
-            - The `hodges_calculator_explanation` function is used to calculate the
-                corrected QT interval.
+            - The `hodges_calculator_explanation` function is used
+                to calculate the corrected QT interval.
             - The `json.dumps` function is used to serialize the result into a
                 JSON string.
         """
@@ -2373,7 +2395,7 @@ class MedCalcToolkit(BaseToolkit):
                     from handle_exception.
 
         Notes:
-            - Uses Rautaharju formula: QTc = QT × (120 + HR) / 180
+            - Uses Rautaharju formula: QTc = QT * (120 + HR) / 180
             - The `json.dumps` function serializes result into JSON string.
             - Units must match expected values or calculation will fail.
         """
@@ -2415,13 +2437,15 @@ class MedCalcToolkit(BaseToolkit):
 
     def steroid_conversion_calculator(
         self,
-        input_steroid: str,  # Input steroid with route (e.g., "Hydrocortisone PO")
+        input_steroid: str,  # Input steroid with route
+        # (e.g., "Hydrocortisone PO")
         input_value: float,  # Numeric value of input steroid (e.g., 190.936)
         input_unit: str,  # Unit of input steroid (e.g., "mg")
-        target_steroid: str,  # Target steroid with route (e.g., "MethylPrednisoLONE IV")
+        target_steroid: str,  # Target steroid with route
+        # (e.g., "MethylPrednisoLONE IV")
     ) -> str:
-        r"""Calculate equivalent dosage of target steroid and generate explanatory
-        text.
+        r"""Calculate equivalent dosage of target steroid and
+        generate explanatory text.
 
         Args:
             input_steroid (str): Input steroid name with route, one of:
@@ -2452,9 +2476,11 @@ class MedCalcToolkit(BaseToolkit):
                 - "Triamcinolone IV"
 
         Returns:
-            str: A JSON string containing calculation process and result, formatted:
+            str: A JSON string containing calculation process and result,
+                formatted:
                 {
-                    "rationale": "Detailed calculation process and explanation",
+                    "rationale": "Detailed calculation process
+                        and explanation",
                     "final_answer": "Equivalent dosage in mg (string format)"
                 }
                 If an exception occurs, returns error message from
@@ -2474,9 +2500,9 @@ class MedCalcToolkit(BaseToolkit):
             "target steroid": str(target_steroid),
         }
 
-        from camel.toolkits.medcalc_bench.steroid_conversion_calculator import (
-            compute_steroid_conversion_explanation,
-        )
+        from camel.toolkits.medcalc_bench.\
+            steroid_conversion_calculator\
+            import compute_steroid_conversion_explanation
 
         try:
             result = compute_steroid_conversion_explanation(input_variables)
@@ -2498,33 +2524,42 @@ class MedCalcToolkit(BaseToolkit):
         collateral_superficial_veins: bool,  # Collateral superficial veins
         leg_swollen: bool,  # Entire leg swollen
         localized_tenderness_on_deep_venuous_system: bool,  # Tenderness
-        pitting_edema_on_symptomatic_leg: bool,  # Pitting edema in symptomatic leg
-        paralysis_paresis_immobilization_in_lower_extreme: bool,  # Immobilization
+        pitting_edema_on_symptomatic_leg: bool,
+        # Pitting edema in symptomatic leg
+        paralysis_paresis_immobilization_in_lower_extreme: bool,
+        # Immobilization
         previous_dvt: bool,  # Previously documented DVT
-        alternative_to_dvt_diagnosis: bool,  # Alternative diagnosis more likely
+        alternative_to_dvt_diagnosis: bool,
+        # Alternative diagnosis more likely
     ) -> str:
-        r"""Calculate the patient's Wells' Criteria for DVT score and generate a
-        detailed explanatory text.
+        r"""Calculate the patient's Wells' Criteria for DVT score and
+        generate a detailed explanatory text.
 
         Args:
             active_cancer (bool): Active cancer treatment within 6 months.
             bedridden_for_atleast_3_days (bool): Bedridden >3 days recently.
-            major_surgery_in_last_12_weeks (bool): Major surgery within 12 weeks.
+            major_surgery_in_last_12_weeks (bool):
+            Major surgery within 12 weeks.
             calf_swelling_3cm (bool): Calf swelling >3 cm vs other leg.
             collateral_superficial_veins (bool): Collateral superficial veins.
             leg_swollen (bool): Entire leg swollen.
             localized_tenderness_on_deep_venuous_system (bool): Tenderness.
-            pitting_edema_on_symptomatic_leg (bool): Pitting edema in symptomatic leg.
-            paralysis_paresis_immobilization_in_lower_extreme (bool): Immobilization.
+            pitting_edema_on_symptomatic_leg (bool): Pitting edema
+            in symptomatic leg.
+            paralysis_paresis_immobilization_in_lower_extreme (bool):
+            Immobilization.
             previous_dvt (bool): Previously documented DVT.
-            alternative_to_dvt_diagnosis (bool): Alternative diagnosis more likely.
+            alternative_to_dvt_diagnosis (bool): Alternative diagnosis
+            more likely.
 
         Returns:
             str: A JSON string containing the calculation process and result,
                 formatted as follows:
                 {
-                    "rationale": "Detailed calculation process and explanatory text",
-                    "final_answer": "Wells' Criteria for DVT score (string format)"
+                    "rationale": "Detailed calculation process and
+                        explanatory text",
+                    "final_answer": "Wells' Criteria for DVT score
+                        (string format)"
                 }
                 If an exception occurs, return an error message generated by
                 the `handle_exception` method.
@@ -2532,7 +2567,8 @@ class MedCalcToolkit(BaseToolkit):
         Notes:
             - The `compute_wells_criteria_dvt_explanation` function is used for
             the actual calculation.
-            - The `json.dumps` function is used to serialize the result into JSON.
+            - The `json.dumps` function is used to serialize
+                the result into JSON.
         """
         # Construct the input variables dictionary
         input_variables = {
@@ -2580,6 +2616,498 @@ class MedCalcToolkit(BaseToolkit):
             return self.handle_exception(
                 "compute_wells_criteria_dvt_explanation", e
             )
+
+    def cci(
+        self,
+        age_value: float,  # Numeric part of age (e.g., 45)
+        age_unit: str,  # Unit of age (e.g., "years")
+        mi: bool,  # Myocardial infarction history
+        chf: bool,  # Congestive heart failure
+        peripheral_vascular_disease: bool,  # Peripheral vascular disease
+        cva: bool,  # Cerebrovascular accident
+        tia: bool,  # Transient ischemic attack
+        connective_tissue_disease: bool,  # Connective tissue disease
+        dementia: bool,  # Dementia
+        copd: bool,  # Chronic obstructive pulmonary disease
+        hemiplegia: bool,  # Hemiplegia
+        peptic_ucler_disease: bool,  # Peptic ulcer disease
+        diabetes_mellitus: str,  # Diabetes status
+        moderate_to_severe_ckd: bool,  # Moderate/severe kidney disease
+        solid_tumor: str,  # Solid tumor status
+        leukemia: bool,  # Leukemia
+        lymphoma: bool,  # Lymphoma
+        aids: bool,  # AIDS status
+        liver_disease: str,  # Liver disease severity
+    ) -> str:
+        r"""Calculate the patient's Charlson Comorbidity Index (CCI)
+        and generate a detailed explanatory text.
+
+        Args:
+            age_value (float): The numeric value of the patient's age.
+            age_unit (str): The unit of the patient's age ("years").
+            mi (bool): Myocardial infarction history (True/False).
+            chf (bool): Congestive heart failure (True/False).
+            peripheral_vascular_disease (bool): Peripheral vascular disease.
+            cva (bool): Cerebrovascular accident (True/False).
+            tia (bool): Transient ischemic attack (True/False).
+            connective_tissue_disease (bool): Connective tissue disease.
+            dementia (bool): Dementia status (True/False).
+            copd (bool): Chronic obstructive pulmonary disease.
+            hemiplegia (bool): Hemiplegia status (True/False).
+            peptic_ucler_disease (bool): Peptic ulcer disease.
+            diabetes_mellitus (str): Diabetes status, one of:
+                - "none or diet-controlled"
+                - "uncomplicated"
+                - "end-organ damage"
+            moderate_to_severe_ckd (bool): Moderate/severe kidney disease.
+            solid_tumor (str): Solid tumor status, one of:
+                - "none"
+                - "localized"
+                - "metastatic"
+            leukemia (bool): Leukemia status (True/False).
+            lymphoma (bool): Lymphoma status (True/False).
+            aids (bool): AIDS status (True/False).
+            liver_disease (str): Liver disease severity, one of:
+                - "none"
+                - "mild"
+                - "moderate to severe"
+
+        Returns:
+            str: A JSON string containing the calculation process and result,
+                formatted as follows:
+                {
+                    "rationale": "Detailed calculation process
+                        and explanatory text",
+                    "final_answer": "CCI score (string format)"
+                }
+                If an exception occurs, return an error message generated by
+                the `handle_exception` method.
+
+        Notes:
+            - The `compute_cci_explanation` function is used to calculate CCI.
+            - The `json.dumps` function is used to serialize
+                the result into JSON.
+        """
+        # Construct the input variables dictionary
+        input_variables = {
+            "age": (float(age_value), str(age_unit)),
+            "mi": bool(mi),
+            "chf": bool(chf),
+            "peripheral_vascular_disease": bool(peripheral_vascular_disease),
+            "cva": bool(cva),
+            "tia": bool(tia),
+            "connective_tissue_disease": bool(connective_tissue_disease),
+            "dementia": bool(dementia),
+            "copd": bool(copd),
+            "hemiplegia": bool(hemiplegia),
+            "peptic_ucler_disease": bool(peptic_ucler_disease),
+            "diabetes_mellitus": str(diabetes_mellitus),
+            "moderate_to_severe_ckd": bool(moderate_to_severe_ckd),
+            "solid_tumor": str(solid_tumor),
+            "leukemia": bool(leukemia),
+            "lymphoma": bool(lymphoma),
+            "aids": bool(aids),
+            "liver_disease": str(liver_disease),
+        }
+
+        from camel.toolkits.medcalc_bench.cci import (
+            compute_cci_explanation,
+        )
+
+        try:
+            # Call the CCI calculation function
+            result = compute_cci_explanation(input_variables)
+
+            # Return the result as a JSON string
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],  # Detailed explanation
+                    "final_answer": str(result["Answer"]),  # Final answer
+                }
+            )
+
+        except Exception as e:
+            # Catch exceptions and return an error message
+            return self.handle_exception("compute_cci_explanation", e)
+
+    def cha2ds2_vasc_score(
+        self,
+        age_value: float,  # Numeric part of age (e.g., 65)
+        age_unit: str,  # Unit of age (e.g., "years")
+        sex: str,  # Gender ("male"/"female")
+        chf: bool = False,  # Congestive heart failure history
+        hypertension: bool = False,  # Hypertension history
+        stroke: bool = False,  # Stroke history
+        tia: bool = False,  # Transient ischemic attack history
+        thromboembolism: bool = False,  # Thromboembolism history
+        vascular_disease: bool = False,  # Vascular disease history
+        diabetes: bool = False,  # Diabetes history
+    ) -> str:
+        r"""Calculate the patient's CHA2DS2-VASc score and generate a detailed
+        explanatory text.
+
+        Args:
+            age_value (float): The numeric value of the patient's age.
+            age_unit (str): The unit of the patient's age, one of:
+                - "years" for years.
+            sex (str): The patient's gender, one of:
+                - "male" for male.
+                - "female" for female.
+            chf (bool, optional): Congestive heart failure history.
+                Defaults to False.
+            hypertension (bool, optional): Hypertension history.
+                Defaults to False.
+            stroke (bool, optional): Stroke history. Defaults to False.
+            tia (bool, optional): Transient ischemic attack history.
+                Defaults to False.
+            thromboembolism (bool, optional): Thromboembolism history.
+                Defaults to False.
+            vascular_disease (bool, optional): Vascular disease history.
+                Defaults to False.
+            diabetes (bool, optional): Diabetes history. Defaults to False.
+
+        Returns:
+            str: A JSON string containing the calculation process and result,
+                formatted as follows:
+                {
+                    "rationale": "Detailed calculation process and explanatory
+                        text",
+                    "final_answer": "CHA2DS2-VASc score (string format)"
+                }
+                If an exception occurs, return an error message generated by
+                    the `handle_exception` method.
+
+        Notes:
+            - The `generate_cha2ds2_vasc_explanation` function is used for the
+                calculation.
+            - The `json.dumps` function is used to serialize the result into a
+                JSON string.
+            - If the input gender is not "male" or "female", the function will
+                still calculate but with default sex points.
+        """
+        # Construct the input variables dictionary
+        input_variables = {
+            "age": (float(age_value), str(age_unit)),  # Age: (value, unit)
+            "sex": str(sex),  # Gender
+            "chf": bool(chf),  # Congestive heart failure
+            "hypertension": bool(hypertension),  # Hypertension
+            "stroke": bool(stroke),  # Stroke
+            "tia": bool(tia),  # Transient ischemic attack
+            "thromboembolism": bool(thromboembolism),  # Thromboembolism
+            "vascular_disease": bool(vascular_disease),  # Vascular disease
+            "diabetes": bool(diabetes),  # Diabetes
+        }
+
+        from camel.toolkits.medcalc_bench.cha2ds2_vasc_score import (
+            generate_cha2ds2_vasc_explanation,
+        )
+
+        try:
+            # Call the CHA2DS2-VASc calculation function
+            result = generate_cha2ds2_vasc_explanation(input_variables)
+
+            # Return the result as a JSON string
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],  # Detailed explanation
+                    "final_answer": str(result["Answer"]),  # Final answer
+                }
+            )
+        except Exception as e:
+            return self.handle_exception(
+                "generate_cha2ds2_vasc_explanation",
+                e,
+            )
+
+    def child_pugh_score(
+        self,
+        inr: float,  # International Normalised Ratio (float)
+        albumin_value: float,  # Numeric part of albumin (e.g., 2.1)
+        albumin_unit: str,  # Unit of albumin (e.g., "g/dL")
+        bilirubin_value: float,  # Numeric part of bilirubin (e.g., 2.8)
+        bilirubin_unit: str,  # Unit of bilirubin (e.g., "mg/dL")
+        ascites: str,  # Ascites level ("Absent"/"Slight"/"Moderate")
+        encephalopathy: str,  # Encephalopathy state
+    ) -> str:
+        r"""Calculate the patient's Child-Pugh Score and generate a detailed
+        explanatory text.
+
+        Args:
+            inr (float): The patient's international normalised ratio.
+            albumin_value (float): The numeric value of albumin concentration.
+            albumin_unit (str): The unit of albumin concentration, one of:
+                - "g/L" for grams per liter
+                - "mg/dL" for milligrams per deciliter
+                - "g/dL" for grams per deciliter
+                - "g/mL" for grams per milliliter
+            bilirubin_value (float): The numeric value of bilirubin level.
+            bilirubin_unit (str): The unit of bilirubin level, one of:
+                - "mmol/L" for millimoles per liter
+                - "mEq/L" for milliequivalents per liter
+                - "mg/dL" for milligrams per deciliter
+            ascites (str): The patient's ascites level, one of:
+                - "Absent" for absent
+                - "Slight" for slight
+                - "Moderate" for moderate
+            encephalopathy (str): The patient's encephalopathy state, one of:
+                - "No Encephalopathy" for none
+                - "Grade 1-2" for grade 1-2
+                - "Grade 3-4" for grade 3-4
+
+        Returns:
+            str: A JSON string containing the calculation process and result,
+                formatted as follows:
+                {
+                    "rationale": "Detailed calculation process and explanatory
+                        text",
+                    "final_answer": "Child-Pugh Score (string format)"
+                }
+                If an exception occurs, return an error message generated by
+                    the `handle_exception` method.
+
+        Notes:
+            - The `compute_child_pugh_score_explanation` function is used for
+                the calculation.
+            - The `json.dumps` function is used to serialize the result into a
+                JSON string.
+            - If input values are invalid, the function will return an error.
+        """
+        # Construct the input variables dictionary
+        input_variables = {
+            "inr": float(inr),
+            "albumin": (float(albumin_value), str(albumin_unit)),
+            "bilirubin": (float(bilirubin_value), str(bilirubin_unit)),
+            "ascites": str(ascites),
+            "encephalopathy": str(encephalopathy),
+        }
+
+        from camel.toolkits.medcalc_bench.child_pugh_score import (
+            compute_child_pugh_score_explanation,
+        )
+
+        try:
+            # Call the Child-Pugh Score calculation function
+            result = compute_child_pugh_score_explanation(input_variables)
+
+            # Return the result as a JSON string
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],  # Detailed explanation
+                    "final_answer": str(
+                        result["Answer"]
+                    ),  # Final answer (string)
+                }
+            )
+
+        except Exception as e:
+            # Catch exceptions and return an error message
+            return self.handle_exception(
+                "compute_child_pugh_score_explanation", e
+            )
+
+    def ckd_epi_2021_creatinine(
+        self,
+        creatinine_value: float,  # Numeric part of creatinine (e.g., 3.7)
+        creatinine_unit: str,  # Unit of creatinine (e.g., "mg/dL")
+        age_value: float,  # Numeric part of age (e.g., 17)
+        age_unit: str,  # Unit of age (e.g., "years")
+        sex: str,  # Gender ("male"/"female")
+    ) -> str:
+        r"""Calculate the patient's Glomerular Filtration Rate (GFR)
+        and generate a detailed explanatory text using CKD-EPI 2021 formula.
+
+        Args:
+            creatinine_value (float): The numeric value of serum creatinine.
+            creatinine_unit (str): The unit of creatinine, one of:
+                - "mg/dL" for milligrams per deciliter
+                - "μmol/L" for micromoles per liter
+            age_value (float): The numeric value of the patient's age.
+            age_unit (str): The unit of age, one of:
+                - "years" for years
+                - "months" for months
+            sex (str): The patient's gender, one of:
+                - "Male" for male
+                - "Female" for female
+
+        Returns:
+            str: A JSON string containing the calculation process and result,
+                formatted as:
+                {
+                    "rationale": "Detailed calculation process and explanatory
+                        text",
+                    "final_answer": "GFR in ml/min/1.73 m² (string format)"
+                }
+                If an exception occurs, return an error message generated by
+                    the `handle_exception` method.
+
+        Notes:
+            - The `ckd_epi_2021_explanation` function is used for calculation.
+            - The `json.dumps` function serializes the result into JSON string.
+            - Gender must be "Male" or "Female" for calculation to proceed.
+        """
+        # Construct input variables dictionary
+        input_variables = {
+            "creatinine": (
+                float(creatinine_value),
+                str(creatinine_unit),
+            ),  # Creatinine: (value, unit)
+            "age": (
+                float(age_value),
+                str(age_unit),
+            ),  # Age: (value, unit)
+            "sex": str(sex),  # Gender
+        }
+
+        from camel.toolkits.medcalc_bench.ckd_epi_2021_creatinine import (
+            ckd_epi_2021_explanation,
+        )
+
+        try:
+            # Call the GFR calculation function
+            result = ckd_epi_2021_explanation(input_variables)
+
+            # Return result as JSON string
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],  # Detailed explanation
+                    "final_answer": str(
+                        result["Answer"]
+                    ),  # Final answer (string format)
+                }
+            )
+
+        except Exception as e:
+            # Catch exceptions and return error message
+            return self.handle_exception("ckd_epi_2021_creatinine", e)
+
+    def sofa(
+        self,
+        partial_pressure_oxygen_value: float,
+        partial_pressure_oxygen_unit: str,
+        fio2_value: float,
+        fio2_unit: str,
+        platelet_count_value: float,
+        platelet_count_unit: str,
+        gcs_value: int,
+        dopamine_value: float,
+        dopamine_unit: str,
+        dobutamine_value: float,
+        dobutamine_unit: str,
+        epinephrine_value: float,
+        epinephrine_unit: str,
+        norepinephrine_value: float,
+        norepinephrine_unit: str,
+        cpap: bool,
+        sys_bp_value: float,
+        sys_bp_unit: str,
+        dia_bp_value: float,
+        dia_bp_unit: str,
+        bilirubin_value: float,
+        bilirubin_unit: str,
+        creatinine_value: float,
+        creatinine_unit: str,
+        mechanical_ventilation: bool = False,
+        urine_output_value: Optional[float] = None,
+        urine_output_unit: Optional[str] = None,
+    ) -> str:
+        r"""Calculate the patient's SOFA Score and generate
+        detailed explanatory text.
+
+        Args:
+            partial_pressure_oxygen_value (float): Numeric value of PaO₂
+                (e.g., 80).
+            partial_pressure_oxygen_unit (str): Unit of PaO₂ (e.g., "mm").
+            fio2_value (float): Numeric value of FiO₂ (e.g., 0.2).
+            fio2_unit (str): Unit of FiO₂ (e.g., "Hg").
+            platelet_count_value (float): Numeric platelet count
+                (e.g., 150000).
+            platelet_count_unit (str): Unit of platelet count (e.g., "µL").
+            gcs_value (int): Glasgow Coma Scale value 3-15 (e.g., 15).
+            dopamine_value (float): Numeric dopamine value (e.g., 97.2).
+            dopamine_unit (str): Unit of dopamine (e.g., "pg/mL").
+            dobutamine_value (float): Numeric dobutamine value (e.g., 15).
+            dobutamine_unit (str): Unit of dobutamine (e.g., "µg/kg/min").
+            epinephrine_value (float): Numeric epinephrine value (e.g., 19).
+            epinephrine_unit (str): Unit of epinephrine (e.g., "pg/mL").
+            norepinephrine_value (float): Numeric norepinephrine value
+                (e.g., 200).
+            norepinephrine_unit (str): Unit of norepinephrine (e.g., "pg/mL").
+            cpap (bool): CPAP status (True/False).
+            sys_bp_value (float): Numeric systolic BP value (e.g., 70).
+            sys_bp_unit (str): Unit of systolic BP (e.g., "mm").
+            dia_bp_value (float): Numeric diastolic BP value (e.g., 12).
+            dia_bp_unit (str): Unit of diastolic BP (e.g., "Hg").
+            bilirubin_value (float): Numeric bilirubin value (e.g., 2.8).
+            bilirubin_unit (str): Unit of bilirubin (e.g., "mg/dL").
+            creatinine_value (float): Numeric creatinine value (e.g., 3.7).
+            creatinine_unit (str): Unit of creatinine (e.g., "mg/dL").
+            mechanical_ventilation (bool): Mechanical ventilation status.
+            urine_output_value (float): Numeric urine output (e.g., 500).
+            urine_output_unit (str): Unit of urine output (e.g., "mL/day").
+
+        Returns:
+            str: A JSON string containing calculation process and result:
+                {
+                    "rationale": "Detailed calculation explanation",
+                    "final_answer": "SOFA Score (string format)"
+                }
+                If exception occurs, returns error message
+                from handle_exception.
+
+        Notes:
+            - The `compute_sofa_explanation` function is used for
+                core calculations.
+            - The `json.dumps` function serializes the result into JSON string.
+            - Missing optional parameters will use default values:
+                - mechanical_ventilation defaults to False
+                - urine_output defaults to None (not considered in calculation)
+        """
+        # Construct input variables dictionary
+        input_variables = {
+            "partial_pressure_oxygen": (
+                float(partial_pressure_oxygen_value),
+                str(partial_pressure_oxygen_unit),
+            ),
+            "fio2": (float(fio2_value), str(fio2_unit)),
+            "platelet_count": (
+                float(platelet_count_value),
+                str(platelet_count_unit),
+            ),
+            "gcs": int(gcs_value),
+            "dopamine": (float(dopamine_value), str(dopamine_unit)),
+            "dobutamine": (float(dobutamine_value), str(dobutamine_unit)),
+            "epinephrine": (float(epinephrine_value), str(epinephrine_unit)),
+            "norepinephrine": (
+                float(norepinephrine_value),
+                str(norepinephrine_unit),
+            ),
+            "cpap": bool(cpap),
+            "sys_bp": (float(sys_bp_value), str(sys_bp_unit)),
+            "dia_bp": (float(dia_bp_value), str(dia_bp_unit)),
+            "bilirubin": (float(bilirubin_value), str(bilirubin_unit)),
+            "creatinine": (float(creatinine_value), str(creatinine_unit)),
+            "mechanical_ventilation": bool(mechanical_ventilation),
+        }
+
+        if urine_output_value is not None and urine_output_unit is not None:
+            input_variables["urine_output"] = (
+                float(urine_output_value),
+                str(urine_output_unit),
+            )
+
+        from camel.toolkits.medcalc_bench.sofa import compute_sofa_explanation
+
+        try:
+            result = compute_sofa_explanation(input_variables)
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],
+                    "final_answer": str(result["Answer"]),
+                }
+            )
+
+        except Exception as e:
+            return self.handle_exception("compute_sofa_explanation", e)
 
     def handle_exception(self, func_name: str, error: Exception) -> str:
         r"""Handles exceptions by logging the error and returning
@@ -2642,4 +3170,9 @@ class MedCalcToolkit(BaseToolkit):
             FunctionTool(self.qt_calculator_rautaharju),
             FunctionTool(self.steroid_conversion_calculator),
             FunctionTool(self.wells_criteria_dvt),
+            FunctionTool(self.cci),
+            FunctionTool(self.cha2ds2_vasc_score),
+            FunctionTool(self.child_pugh_score),
+            FunctionTool(self.ckd_epi_2021_creatinine),
+            FunctionTool(self.sofa),
         ]

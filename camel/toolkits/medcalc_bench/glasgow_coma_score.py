@@ -58,7 +58,7 @@ def compute_glasgow_coma_score_explanation(input_variables):
         'glucose': [97.3, 'mg/dL']})
 
         output: "{'Explanation': "\n    The Glasgow Coma Scale (GCS) for
-        assessing a patient’s level of consciousness is shown below:\n
+        assessing a patient's level of consciousness is shown below:\n
         \n       1. Best Eye Response: Spontaneously = +4 points, To verbal
         command = +3 points, To pain = +2 points, \n       No eye opening =
         +1 point\n       2. Best Verbal Response: Oriented = +5 points,
@@ -131,13 +131,22 @@ def compute_glasgow_coma_score_explanation(input_variables):
     motor_point = "points" if motor_score == 0 or motor_score > 1 else "point"
 
     explanation = """
-    The Glasgow Coma Scale (GCS) for assessing a patient’s level of consciousness is shown below:
-    
-       1. Best Eye Response: Spontaneously = +4 points, To verbal command = +3 points, To pain = +2 points, No eye opening = +1 point
-       2. Best Verbal Response: Oriented = +5 points, Confused = +4 points, Inappropriate words = +3 points, Incomprehensible sounds = +2 points, No verbal response = +1 point
-       3. Best Motor Response: Obeys commands = +6 points, Localizes pain = +5 points, Withdrawal from pain = +4 points, Flexion to pain = +3 points, Extension to pain = +2 points, No motor response = +1 point
+    The Glasgow Coma Scale (GCS) for assessing a patient's level
+    of consciousness is shown below:
 
-    For each criteria, if a patient's value is not mentioned/not testable in the note, we assume that it gets the full score for that attribute. The total GCS score is calculated by summing the points for each of the three components.\n\n
+       1. Best Eye Response: Spontaneously = +4 points, To verbal command =
+        +3 points, To pain = +2 points, No eye opening = +1 point
+       2. Best Verbal Response: Oriented = +5 points, Confused = +4 points,
+        Inappropriate words = +3 points, Incomprehensible sounds = +2 points,
+        No verbal response = +1 point
+       3. Best Motor Response: Obeys commands = +6 points, Localizes pain = +5
+        points, Withdrawal from pain = +4 points, Flexion to pain = +3 points,
+        Extension to pain = +2 points, No motor response = +1 point
+
+    For each criteria, if a patient's value is not mentioned/not testable in
+    the note, we assume that it gets the full score for that attribute.
+    The total GCS score is calculated by summing the points for each of
+    the three components.\n\n
     """
 
     explanation += "The current glasgow coma score is 0.\n"

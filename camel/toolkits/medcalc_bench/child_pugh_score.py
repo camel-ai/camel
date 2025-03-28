@@ -98,13 +98,17 @@ def compute_child_pugh_score_explanation(input_variables):
     explanation = r"""
     The criteria for the Child-Pugh Score are listed below:
 
-    1. Bilirubin (Total): <2 mg/dL (<34.2 μmol/L) = +1 point, 2-3 mg/dL (34.2-51.3 μmol/L) = +2 points, >3 mg/dL (>51.3 μmol/L) = +3 points
-    2. Albumin: >3.5 g/dL (>35 g/L) = +1 point, 2.8-3.5 g/dL (28-35 g/L) = +2 points, <2.8 g/dL (<28 g/L) = +3 points
+    1. Bilirubin (Total): <2 mg/dL (<34.2 μmol/L) = +1 point, 2-3 mg/dL
+        (34.2-51.3 μmol/L) = +2 points, >3 mg/dL (>51.3 μmol/L) = +3 points
+    2. Albumin: >3.5 g/dL (>35 g/L) = +1 point, 2.8-3.5 g/dL (28-35 g/L)
+        = +2 points, <2.8 g/dL (<28 g/L) = +3 points
     3. INR: <1.7 = +1 point, 1.7-2.3 = +2 points, >2.3 = +3 points
     4. Ascites: Absent = +1 point, Slight = +2 points, Moderate = +3 points
-    5. Encephalopathy: No Encephalopathy = +1 point, Grade 1-2 = +2 points, Grade 3-4 = +3 points
+    5. Encephalopathy: No Encephalopathy = +1 point, Grade 1-2 = +2 points,
+        Grade 3-4 = +3 points
 
-    The Child-Pugh Score is calculated by summing the points for each criterion.\n\n
+    The Child-Pugh Score is calculated by summing
+    the points for each criterion.\n\n
     """
 
     explanation += "The current child pugh score is 0.\n"
