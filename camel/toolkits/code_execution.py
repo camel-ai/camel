@@ -13,6 +13,8 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import List, Literal, Optional, Union
 
+from mcp.server import FastMCP
+
 from camel.interpreters import (
     DockerInterpreter,
     E2BInterpreter,
@@ -22,8 +24,10 @@ from camel.interpreters import (
 )
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
+from camel.utils import MCPServer
 
 
+@MCPServer(server_name="CodeExecutionToolkit", function_names=["execute_code"])
 class CodeExecutionToolkit(BaseToolkit):
     r"""A tookit for code execution.
 
@@ -39,6 +43,8 @@ class CodeExecutionToolkit(BaseToolkit):
         require_confirm (bool): Whether to require confirmation before executing code.
             (default: :obj:`False`)
     """
+
+    mcp: FastMCP
 
     def __init__(
         self,
