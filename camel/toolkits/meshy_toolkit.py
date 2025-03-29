@@ -16,11 +16,22 @@ import os
 from typing import Any, Dict, Optional
 
 import requests
+from mcp.server import FastMCP
 
 from camel.toolkits.base import BaseToolkit
-from camel.utils import api_keys_required
+from camel.utils import MCPServer, api_keys_required
 
 
+@MCPServer(
+    server_name="MeshyToolkit",
+    function_names=[
+        "generate_3d_preview",
+        "refine_3d_model",
+        "get_task_status",
+        "wait_for_task_completion",
+        "generate_3d_model_complete",
+    ],
+)
 class MeshyToolkit(BaseToolkit):
     r"""A class representing a toolkit for 3D model generation using Meshy.
 
@@ -32,6 +43,8 @@ class MeshyToolkit(BaseToolkit):
     Ref:
     https://docs.meshy.ai/api-text-to-3d-beta#create-a-text-to-3d-preview-task
     """
+
+    mcp: FastMCP
 
     @api_keys_required(
         [

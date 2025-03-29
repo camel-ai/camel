@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "meshy_toolkit": {
+      "command": "python",
+      "args": [
+        "-m",
+        "meshy_toolkit"
+      ]
+    }
+  }
+}
