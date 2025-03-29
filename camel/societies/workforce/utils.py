@@ -44,7 +44,7 @@ class TaskResult(BaseModel):
 class TaskAssignResult(BaseModel):
     r"""The result of task assignment."""
 
-    assignee_id: int = Field(
+    assignee_id: str = Field(
         description="The ID of the workforce that is assigned to the task."
     )
 
