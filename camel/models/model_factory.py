@@ -34,6 +34,7 @@ from camel.models.ollama_model import OllamaModel
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.models.openai_model import OpenAIModel
 from camel.models.openrouter_model import OpenRouterModel
+from camel.models.ppio_model import PPIOModel
 from camel.models.qwen_model import QwenModel
 from camel.models.reka_model import RekaModel
 from camel.models.samba_model import SambaModel
@@ -145,6 +146,8 @@ class ModelFactory:
             model_class = QwenModel
         elif model_platform.is_deepseek:
             model_class = DeepSeekModel
+        elif model_platform.is_ppio:
+            model_class = PPIOModel
         elif model_platform.is_internlm and model_type.is_internlm:
             model_class = InternLMModel
         elif model_platform.is_moonshot and model_type.is_moonshot:
