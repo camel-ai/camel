@@ -14,12 +14,6 @@
 
 from typing import Optional
 
-from math_verify import parse, verify
-from math_verify.parser import (
-    ExprExtractionConfig,
-    LatexExtractionConfig,
-)
-
 from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
 from camel.verifiers import BaseVerifier
@@ -46,6 +40,18 @@ class MathVerifier(BaseVerifier):
         numeric_precision: int = 15,
         **kwargs,
     ):
+        r"""Initializes the MathVerifier.
+
+        Args:
+            extractor (Optional[BaseExtractor], optional): The extractor to use
+                for extracting code from the solution. (default: :obj:`None`)
+            timeout (Optional[float], optional): The execution timeout in
+                seconds. (default: :obj:`30.0`)
+            float_rounding (int, optional): The number of decimal places to
+                round floating-point numbers. (default: :obj:`6`)
+            numeric_precision (int, optional): The numeric precision for
+                floating-point comparisons. (default: :obj:`15`)
+        """
         super().__init__(extractor=extractor, timeout=timeout, **kwargs)
         self.float_rounding = float_rounding
         self.numeric_precision = numeric_precision
@@ -70,12 +76,18 @@ class MathVerifier(BaseVerifier):
         Returns:
             VerificationResult containing the verification status and details
         """
+        from math_verify import parse, verify
+        from math_verify.parser import (
+            ExprExtractionConfig,
+            LatexExtractionConfig,
+        )
+
         if ground_truth is None:
             return VerificationResult(
                 status=VerificationOutcome.ERROR,
                 result="",
                 error_message=(
-                    "Ground truth is required for" "mathematical verification"
+                    "Ground truth is required for " "mathematical verification"
                 ),
             )
 

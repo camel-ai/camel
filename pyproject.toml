@@ -29,7 +29,6 @@ dependencies = [
     "pydantic>=1.9,<2.10",
     "httpx>=0.28.0,<1.0.0dev",
     "psutil>=5.9.8,<6",
-    "math-verify>=0.7.0,<0.8", 
 ]
 
 [project.optional-dependencies]
@@ -138,6 +137,7 @@ data_tools = [
     "aiosqlite>=0.20.0,<0.21",
     "stripe>=11.3.0,<12",
     "networkx>=3.4.2,<4",
+    "math-verify>=0.7.0,<0.8", 
 ]
 research_tools = [
     "arxiv>=2.1.3,<3",
@@ -331,7 +331,8 @@ all = [
     "fpdf>=1.7.2",
     "mcp>=1.3.0",
     "typer>=0.15.2",
-    "mem0ai>=0.1.67"
+    "mem0ai>=0.1.67",
+    "math-verify>=0.7.0,<0.8",
 ]
 
 [project.urls]
