@@ -534,18 +534,16 @@ wheels = [
 
 [[package]]
 name = "camel-ai"
-version = "0.2.37"
+version = "0.2.38"
 source = { editable = "." }
 dependencies = [
     { name = "colorama" },
     { name = "docstring-parser" },
     { name = "httpx" },
     { name = "jsonschema" },
-    { name = "numpy" },
     { name = "openai" },
     { name = "psutil" },
     { name = "pydantic" },
-    { name = "pyyaml" },
     { name = "tiktoken" },
 ]
 
@@ -597,6 +595,7 @@ all = [
     { name = "networkx" },
     { name = "newspaper3k" },
     { name = "notion-client" },
+    { name = "numpy" },
     { name = "openapi-spec-validator" },
     { name = "opencv-python" },
     { name = "openpyxl" },
@@ -667,6 +666,7 @@ data-tools = [
     { name = "datacommons" },
     { name = "datacommons-pandas" },
     { name = "networkx" },
+    { name = "numpy" },
     { name = "pandas" },
     { name = "rouge" },
     { name = "stripe" },
@@ -714,6 +714,7 @@ document-tools = [
     { name = "docx" },
     { name = "docx2txt" },
     { name = "fpdf" },
+    { name = "numpy" },
     { name = "openapi-spec-validator" },
     { name = "openpyxl" },
     { name = "pandasai" },
@@ -749,10 +750,55 @@ model-platforms = [
     { name = "mistralai" },
     { name = "reka-api" },
 ]
+owl = [
+    { name = "anthropic" },
+    { name = "beautifulsoup4" },
+    { name = "chunkr-ai" },
+    { name = "datasets" },
+    { name = "docx" },
+    { name = "docx2txt" },
+    { name = "duckduckgo-search" },
+    { name = "e2b-code-interpreter" },
+    { name = "ffmpeg-python" },
+    { name = "fpdf" },
+    { name = "html2text" },
+    { name = "imageio", extra = ["pyav"] },
+    { name = "mcp-server-fetch" },
+    { name = "mcp-simple-arxiv" },
+    { name = "newspaper3k" },
+    { name = "numpy" },
+    { name = "openapi-spec-validator" },
+    { name = "opencv-python" },
+    { name = "openpyxl" },
+    { name = "outlines" },
+    { name = "pandas" },
+    { name = "pandasai" },
+    { name = "pillow" },
+    { name = "playwright" },
+    { name = "prance" },
+    { name = "pydub" },
+    { name = "pymupdf" },
+    { name = "python-dotenv" },
+    { name = "requests-oauthlib" },
+    { name = "rouge" },
+    { name = "scenedetect" },
+    { name = "sentencepiece" },
+    { name = "soundfile" },
+    { name = "tabulate" },
+    { name = "transformers" },
+    { name = "tree-sitter" },
+    { name = "tree-sitter-python" },
+    { name = "typer" },
+    { name = "unstructured" },
+    { name = "wikipedia" },
+    { name = "xls2xlsx" },
+    { name = "yt-dlp" },
+]
 rag = [
     { name = "cohere" },
     { name = "nebula3-python" },
     { name = "neo4j" },
+    { name = "numpy" },
     { name = "pandasai" },
     { name = "pymilvus" },
     { name = "pytidb-experimental" },
@@ -813,6 +859,7 @@ requires-dist = [
     { name = "aiosqlite", marker = "extra == 'data-tools'", specifier = ">=0.20.0,<0.21" },
     { name = "anthropic", marker = "extra == 'all'", specifier = ">=0.47.0,<0.50.0" },
     { name = "anthropic", marker = "extra == 'model-platforms'", specifier = ">=0.47.0,<0.50.0" },
+    { name = "anthropic", marker = "extra == 'owl'", specifier = ">=0.47.0,<0.50.0" },
     { name = "apify-client", marker = "extra == 'all'", specifier = ">=1.8.1,<2" },
     { name = "apify-client", marker = "extra == 'web-tools'", specifier = ">=1.8.1,<2" },
     { name = "arxiv", marker = "extra == 'all'", specifier = ">=2.1.3,<3" },
@@ -823,9 +870,11 @@ requires-dist = [
     { name = "azure-storage-blob", marker = "extra == 'storage'", specifier = ">=12.21.0,<13" },
     { name = "beautifulsoup4", marker = "extra == 'all'", specifier = ">=4,<5" },
     { name = "beautifulsoup4", marker = "extra == 'document-tools'", specifier = ">=4,<5" },
+    { name = "beautifulsoup4", marker = "extra == 'owl'", specifier = ">=4,<5" },
     { name = "beautifulsoup4", marker = "extra == 'web-tools'", specifier = ">=4,<5" },
     { name = "botocore", marker = "extra == 'all'", specifier = ">=1.35.3,<2" },
     { name = "botocore", marker = "extra == 'storage'", specifier = ">=1.35.3,<2" },
+    { name = "chunkr-ai", marker = "extra == 'owl'", specifier = ">=0.0.41" },
     { name = "cohere", marker = "extra == 'all'", specifier = ">=5.11.0,<6" },
     { name = "cohere", marker = "extra == 'model-platforms'", specifier = ">=5.11.0,<6" },
     { name = "cohere", marker = "extra == 'rag'", specifier = ">=5.11.0,<6" },
@@ -838,6 +887,7 @@ requires-dist = [
     { name = "datacommons-pandas", marker = "extra == 'data-tools'", specifier = ">=0.0.3,<0.0.4" },
     { name = "datasets", marker = "extra == 'all'", specifier = ">=3,<4" },
     { name = "datasets", marker = "extra == 'huggingface'", specifier = ">=3,<4" },
+    { name = "datasets", marker = "extra == 'owl'", specifier = ">=3,<4" },
     { name = "diffusers", marker = "extra == 'all'", specifier = ">=0.25.0,<0.26" },
     { name = "diffusers", marker = "extra == 'huggingface'", specifier = ">=0.25.0,<0.26" },
     { name = "discord-py", marker = "extra == 'all'", specifier = ">=2.3.2,<3" },
@@ -848,22 +898,28 @@ requires-dist = [
     { name = "docutils", marker = "extra == 'docs'", specifier = "<0.20.0" },
     { name = "docx", marker = "extra == 'all'", specifier = ">=0.2.4" },
     { name = "docx", marker = "extra == 'document-tools'", specifier = ">=0.2.4" },
+    { name = "docx", marker = "extra == 'owl'", specifier = ">=0.2.4" },
     { name = "docx2txt", marker = "extra == 'all'", specifier = ">=0.8,<0.9" },
     { name = "docx2txt", marker = "extra == 'document-tools'", specifier = ">=0.8,<0.9" },
+    { name = "docx2txt", marker = "extra == 'owl'", specifier = ">=0.8,<0.9" },
     { name = "duckduckgo-search", marker = "extra == 'all'", specifier = ">=6.3.5,<7" },
+    { name = "duckduckgo-search", marker = "extra == 'owl'", specifier = ">=6.3.5,<7" },
     { name = "duckduckgo-search", marker = "extra == 'web-tools'", specifier = ">=6.3.5,<7" },
     { name = "e2b-code-interpreter", marker = "extra == 'all'", specifier = ">=1.0.3,<2" },
     { name = "e2b-code-interpreter", marker = "extra == 'dev-tools'", specifier = ">=1.0.3,<2" },
+    { name = "e2b-code-interpreter", marker = "extra == 'owl'", specifier = ">=1.0.3,<2" },
     { name = "fastapi", marker = "extra == 'all'", specifier = ">=0.115.11" },
     { name = "fastapi", marker = "extra == 'web-tools'", specifier = ">=0.115.11" },
     { name = "ffmpeg-python", marker = "extra == 'all'", specifier = ">=0.2.0,<0.3" },
     { name = "ffmpeg-python", marker = "extra == 'media-tools'", specifier = ">=0.2.0,<0.3" },
+    { name = "ffmpeg-python", marker = "extra == 'owl'", specifier = ">=0.2.0,<0.3" },
     { name = "firecrawl-py", marker = "extra == 'all'", specifier = ">=1.0.0,<2" },
     { name = "firecrawl-py", marker = "extra == 'web-tools'", specifier = ">=1.0.0,<2" },
     { name = "fish-audio-sdk", marker = "extra == 'all'", specifier = ">=2024.12.5,<2025" },
     { name = "fish-audio-sdk", marker = "extra == 'model-platforms'", specifier = ">=2024.12.5,<2025" },
     { name = "fpdf", marker = "extra == 'all'", specifier = ">=1.7.2" },
     { name = "fpdf", marker = "extra == 'document-tools'", specifier = ">=1.7.2" },
+    { name = "fpdf", marker = "extra == 'owl'", specifier = ">=1.7.2" },
     { name = "google-cloud-storage", marker = "extra == 'all'", specifier = ">=2.18.0,<3" },
     { name = "google-cloud-storage", marker = "extra == 'storage'", specifier = ">=2.18.0,<3" },
     { name = "googlemaps", marker = "extra == 'all'", specifier = ">=4.10.0,<5" },
@@ -871,10 +927,12 @@ requires-dist = [
     { name = "gradio", marker = "extra == 'all'", specifier = ">=3,<4" },
     { name = "gradio", marker = "extra == 'dev'", specifier = ">=3,<4" },
     { name = "html2text", marker = "extra == 'all'", specifier = ">=2024.2.26" },
+    { name = "html2text", marker = "extra == 'owl'", specifier = ">=2024.2.26" },
     { name = "html2text", marker = "extra == 'web-tools'", specifier = ">=2024.2.26" },
     { name = "httpx", specifier = ">=0.28.0,<1.0.0.dev0" },
     { name = "imageio", extras = ["pyav"], marker = "extra == 'all'", specifier = ">=2.34.2,<3" },
     { name = "imageio", extras = ["pyav"], marker = "extra == 'media-tools'", specifier = ">=2.34.2,<3" },
+    { name = "imageio", extras = ["pyav"], marker = "extra == 'owl'", specifier = ">=2.34.2,<3" },
     { name = "ipykernel", marker = "extra == 'all'", specifier = ">=6.0.0,<7" },
     { name = "ipykernel", marker = "extra == 'dev-tools'", specifier = ">=6.0.0,<7" },
     { name = "jsonschema", specifier = ">=4,<5" },
@@ -886,6 +944,8 @@ requires-dist = [
     { name = "litellm", marker = "extra == 'model-platforms'", specifier = ">=1.38.1,<2" },
     { name = "mcp", marker = "extra == 'all'", specifier = ">=1.3.0" },
     { name = "mcp", marker = "extra == 'dev-tools'", specifier = ">=1.3.0" },
+    { name = "mcp-server-fetch", marker = "extra == 'owl'", specifier = "==2025.1.17" },
+    { name = "mcp-simple-arxiv", marker = "extra == 'owl'", specifier = "==0.2.2" },
     { name = "mem0ai", marker = "extra == 'all'", specifier = ">=0.1.67" },
     { name = "mem0ai", marker = "extra == 'storage'", specifier = ">=0.1.73" },
     { name = "mistralai", marker = "extra == 'all'", specifier = ">=1.1.0,<2" },
@@ -906,29 +966,43 @@ requires-dist = [
     { name = "networkx", marker = "extra == 'all'", specifier = ">=3.4.2,<4" },
     { name = "networkx", marker = "extra == 'data-tools'", specifier = ">=3.4.2,<4" },
     { name = "newspaper3k", marker = "extra == 'all'", specifier = ">=0.2.8,<0.3" },
+    { name = "newspaper3k", marker = "extra == 'owl'", specifier = ">=0.2.8,<0.3" },
     { name = "newspaper3k", marker = "extra == 'web-tools'", specifier = ">=0.2.8,<0.3" },
     { name = "notion-client", marker = "extra == 'all'", specifier = ">=2.2.1,<3" },
     { name = "notion-client", marker = "extra == 'communication-tools'", specifier = ">=2.2.1,<3" },
-    { name = "numpy", specifier = "~=1.26" },
-    { name = "openai", specifier = ">=1.59.7,<2" },
+    { name = "numpy", marker = "extra == 'all'", specifier = "~=1.26" },
+    { name = "numpy", marker = "extra == 'data-tools'", specifier = "~=1.26" },
+    { name = "numpy", marker = "extra == 'document-tools'", specifier = "~=1.26" },
+    { name = "numpy", marker = "extra == 'owl'", specifier = "~=1.26" },
+    { name = "numpy", marker = "extra == 'rag'", specifier = "~=1.26" },
+    { name = "openai", specifier = ">=1.68.0,<2" },
     { name = "openapi-spec-validator", marker = "extra == 'all'", specifier = ">=0.7.1,<0.8" },
     { name = "openapi-spec-validator", marker = "extra == 'document-tools'", specifier = ">=0.7.1,<0.8" },
+    { name = "openapi-spec-validator", marker = "extra == 'owl'", specifier = ">=0.7.1,<0.8" },
     { name = "opencv-python", marker = "extra == 'all'", specifier = ">=4,<5" },
     { name = "opencv-python", marker = "extra == 'huggingface'", specifier = ">=4,<5" },
+    { name = "opencv-python", marker = "extra == 'owl'", specifier = ">=4,<5" },
     { name = "openpyxl", marker = "extra == 'all'", specifier = ">=3.1.5" },
     { name = "openpyxl", marker = "extra == 'document-tools'", specifier = ">=3.1.5" },
+    { name = "openpyxl", marker = "extra == 'owl'", specifier = ">=3.1.5" },
     { name = "outlines", marker = "extra == 'all'", specifier = ">=0.1.7,<0.2" },
+    { name = "outlines", marker = "extra == 'owl'", specifier = ">=0.1.7,<0.2" },
     { name = "pandas", marker = "extra == 'all'", specifier = ">=1.5.3,<2" },
     { name = "pandas", marker = "extra == 'data-tools'", specifier = ">=1.5.3,<2" },
+    { name = "pandas", marker = "extra == 'owl'", specifier = ">=1.5.3,<2" },
     { name = "pandasai", marker = "extra == 'all'", specifier = ">=2.3.0,<3" },
     { name = "pandasai", marker = "extra == 'document-tools'", specifier = ">=2.3.0,<3" },
+    { name = "pandasai", marker = "extra == 'owl'", specifier = ">=2.3.0,<3" },
     { name = "pandasai", marker = "extra == 'rag'", specifier = ">=2.3.0,<3" },
     { name = "pillow", marker = "extra == 'all'", specifier = ">=10.1.0,<11.0.0" },
     { name = "pillow", marker = "extra == 'media-tools'", specifier = ">=10.1.0,<11.0.0" },
+    { name = "pillow", marker = "extra == 'owl'", specifier = ">=10.1.0,<11.0.0" },
     { name = "playwright", marker = "extra == 'all'", specifier = ">=1.50.0" },
+    { name = "playwright", marker = "extra == 'owl'", specifier = ">=1.50.0" },
     { name = "playwright", marker = "extra == 'web-tools'", specifier = ">=1.50.0" },
     { name = "prance", marker = "extra == 'all'", specifier = ">=23.6.21.0,<24" },
     { name = "prance", marker = "extra == 'document-tools'", specifier = ">=23.6.21.0,<24" },
+    { name = "prance", marker = "extra == 'owl'", specifier = ">=23.6.21.0,<24" },
     { name = "praw", marker = "extra == 'all'", specifier = ">=7.7.1,<8" },
     { name = "praw", marker = "extra == 'communication-tools'", specifier = ">=7.7.1,<8" },
     { name = "pre-commit", marker = "extra == 'all'", specifier = ">=3,<4" },
@@ -937,6 +1011,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=1.9,<2.10" },
     { name = "pydub", marker = "extra == 'all'", specifier = ">=0.25.1,<0.26" },
     { name = "pydub", marker = "extra == 'media-tools'", specifier = ">=0.25.1,<0.26" },
+    { name = "pydub", marker = "extra == 'owl'", specifier = ">=0.25.1,<0.26" },
     { name = "pygithub", marker = "extra == 'all'", specifier = ">=2.6.0,<3" },
     { name = "pygithub", marker = "extra == 'communication-tools'", specifier = ">=2.6.0,<3" },
     { name = "pymilvus", marker = "extra == 'all'", specifier = ">=2.4.0,<3" },
@@ -944,6 +1019,7 @@ requires-dist = [
     { name = "pymilvus", marker = "extra == 'storage'", specifier = ">=2.4.0,<3" },
     { name = "pymupdf", marker = "extra == 'all'", specifier = ">=1.22.5,<2" },
     { name = "pymupdf", marker = "extra == 'document-tools'", specifier = ">=1.22.5,<2" },
+    { name = "pymupdf", marker = "extra == 'owl'", specifier = ">=1.22.5,<2" },
     { name = "pyowm", marker = "extra == 'all'", specifier = ">=3.3.0,<4" },
     { name = "pyowm", marker = "extra == 'web-tools'", specifier = ">=3.3.0,<4" },
     { name = "pytelegrambotapi", marker = "extra == 'all'", specifier = ">=4.18.0,<5" },
@@ -956,10 +1032,10 @@ requires-dist = [
     { name = "pytest-asyncio", marker = "extra == 'test'", specifier = ">=0.23.0,<0.24" },
     { name = "pytest-cov", marker = "extra == 'all'", specifier = ">=4,<5" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4,<5" },
+    { name = "python-dotenv", marker = "extra == 'owl'", specifier = ">=1.0.0,<2" },
     { name = "pytidb-experimental", marker = "extra == 'all'", specifier = "==0.0.1.dev4" },
     { name = "pytidb-experimental", marker = "extra == 'rag'", specifier = "==0.0.1.dev4" },
     { name = "pytidb-experimental", marker = "extra == 'storage'", specifier = "==0.0.1.dev4" },
-    { name = "pyyaml", specifier = ">=6.0.2,<7" },
     { name = "qdrant-client", marker = "extra == 'all'", specifier = ">=1.9.0,<2" },
     { name = "qdrant-client", marker = "extra == 'rag'", specifier = ">=1.9.0,<2" },
     { name = "qdrant-client", marker = "extra == 'storage'", specifier = ">=1.9.0,<2" },
@@ -970,24 +1046,29 @@ requires-dist = [
     { name = "reka-api", marker = "extra == 'all'", specifier = ">=3.0.8,<4" },
     { name = "reka-api", marker = "extra == 'model-platforms'", specifier = ">=3.0.8,<4" },
     { name = "requests-oauthlib", marker = "extra == 'all'", specifier = ">=1.3.1,<2" },
+    { name = "requests-oauthlib", marker = "extra == 'owl'", specifier = ">=1.3.1,<2" },
     { name = "requests-oauthlib", marker = "extra == 'web-tools'", specifier = ">=1.3.1,<2" },
     { name = "rouge", marker = "extra == 'all'", specifier = ">=1.0.1,<2" },
     { name = "rouge", marker = "extra == 'data-tools'", specifier = ">=1.0.1,<2" },
+    { name = "rouge", marker = "extra == 'owl'", specifier = ">=1.0.1,<2" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.7,<0.8" },
     { name = "scenedetect", marker = "extra == 'all'", specifier = ">=0.6.5.2" },
     { name = "scenedetect", marker = "extra == 'media-tools'", specifier = ">=0.6.5.2" },
+    { name = "scenedetect", marker = "extra == 'owl'", specifier = ">=0.6.5.2" },
     { name = "scholarly", extras = ["tor"], marker = "extra == 'all'", specifier = "==1.7.11" },
     { name = "scholarly", extras = ["tor"], marker = "extra == 'research-tools'", specifier = "==1.7.11" },
     { name = "sentence-transformers", marker = "extra == 'all'", specifier = ">=3.0.1,<4" },
     { name = "sentence-transformers", marker = "extra == 'rag'", specifier = ">=3.0.1,<4" },
     { name = "sentencepiece", marker = "extra == 'all'", specifier = ">=0.2,<0.3" },
     { name = "sentencepiece", marker = "extra == 'huggingface'", specifier = ">=0.2,<0.3" },
+    { name = "sentencepiece", marker = "extra == 'owl'", specifier = ">=0.2,<0.3" },
     { name = "slack-bolt", marker = "extra == 'all'", specifier = ">=1.20.1,<2" },
     { name = "slack-bolt", marker = "extra == 'communication-tools'", specifier = ">=1.20.1,<2" },
     { name = "slack-sdk", marker = "extra == 'all'", specifier = ">=3.27.2,<4" },
     { name = "slack-sdk", marker = "extra == 'communication-tools'", specifier = ">=3.27.2,<4" },
     { name = "soundfile", marker = "extra == 'all'", specifier = ">=0.13,<0.14" },
     { name = "soundfile", marker = "extra == 'huggingface'", specifier = ">=0.13,<0.14" },
+    { name = "soundfile", marker = "extra == 'owl'", specifier = ">=0.13,<0.14" },
     { name = "sphinx", marker = "extra == 'docs'", specifier = ">=7,<8" },
     { name = "sphinx-book-theme", marker = "extra == 'docs'" },
     { name = "sphinxext-rediraffe", marker = "extra == 'docs'", specifier = ">=0.2.7,<0.3" },
@@ -997,6 +1078,7 @@ requires-dist = [
     { name = "sympy", marker = "extra == 'web-tools'", specifier = ">=1.13.3,<2" },
     { name = "tabulate", marker = "extra == 'all'", specifier = ">=0.9.0" },
     { name = "tabulate", marker = "extra == 'document-tools'", specifier = ">=0.9.0" },
+    { name = "tabulate", marker = "extra == 'owl'", specifier = ">=0.9.0" },
     { name = "tavily-python", marker = "extra == 'all'", specifier = ">=0.5.0,<0.6" },
     { name = "tavily-python", marker = "extra == 'web-tools'", specifier = ">=0.5.0,<0.6" },
     { name = "textblob", marker = "extra == 'all'", specifier = ">=0.17.1,<0.18" },
@@ -1007,12 +1089,16 @@ requires-dist = [
     { name = "torch", marker = "extra == 'huggingface'" },
     { name = "transformers", marker = "extra == 'all'", specifier = ">=4,<5" },
     { name = "transformers", marker = "extra == 'huggingface'", specifier = ">=4,<5" },
+    { name = "transformers", marker = "extra == 'owl'", specifier = ">=4,<5" },
     { name = "tree-sitter", marker = "extra == 'all'", specifier = ">=0.23.2,<0.24" },
     { name = "tree-sitter", marker = "extra == 'dev-tools'", specifier = ">=0.23.2,<0.24" },
+    { name = "tree-sitter", marker = "extra == 'owl'", specifier = ">=0.23.2,<0.24" },
     { name = "tree-sitter-python", marker = "extra == 'all'", specifier = ">=0.23.6,<0.24" },
     { name = "tree-sitter-python", marker = "extra == 'dev-tools'", specifier = ">=0.23.6,<0.24" },
+    { name = "tree-sitter-python", marker = "extra == 'owl'", specifier = ">=0.23.6,<0.24" },
     { name = "typer", marker = "extra == 'all'", specifier = ">=0.15.2" },
     { name = "typer", marker = "extra == 'dev-tools'", specifier = ">=0.15.2" },
+    { name = "typer", marker = "extra == 'owl'", specifier = ">=0.15.2" },
     { name = "types-colorama", marker = "extra == 'all'", specifier = ">=0.4.15,<0.5" },
     { name = "types-colorama", marker = "extra == 'dev'", specifier = ">=0.4.15,<0.5" },
     { name = "types-mock", marker = "extra == 'all'", specifier = ">=5.1.0,<6" },
@@ -1027,18 +1113,22 @@ requires-dist = [
     { name = "types-tqdm", marker = "extra == 'dev'", specifier = ">=4.66.0,<5" },
     { name = "unstructured", marker = "extra == 'all'", specifier = "==0.16.20" },
     { name = "unstructured", marker = "extra == 'document-tools'", specifier = "==0.16.20" },
+    { name = "unstructured", marker = "extra == 'owl'", specifier = "==0.16.20" },
     { name = "unstructured", marker = "extra == 'rag'", specifier = "==0.16.20" },
     { name = "uv", marker = "extra == 'dev'", specifier = "==0.6.5" },
     { name = "wikipedia", marker = "extra == 'all'", specifier = ">=1,<2" },
+    { name = "wikipedia", marker = "extra == 'owl'", specifier = ">=1,<2" },
     { name = "wikipedia", marker = "extra == 'web-tools'", specifier = ">=1,<2" },
     { name = "wolframalpha", marker = "extra == 'all'", specifier = ">=5.0.0,<6" },
     { name = "wolframalpha", marker = "extra == 'web-tools'", specifier = ">=5.0.0,<6" },
     { name = "xls2xlsx", marker = "extra == 'all'", specifier = ">=0.2.0" },
     { name = "xls2xlsx", marker = "extra == 'document-tools'", specifier = ">=0.2.0" },
+    { name = "xls2xlsx", marker = "extra == 'owl'", specifier = ">=0.2.0" },
     { name = "yt-dlp", marker = "extra == 'all'", specifier = ">=2024.11.4,<2025" },
     { name = "yt-dlp", marker = "extra == 'media-tools'", specifier = ">=2024.11.4,<2025" },
+    { name = "yt-dlp", marker = "extra == 'owl'", specifier = ">=2024.11.4,<2025" },
 ]
-provides-extras = ["test", "dev", "docs", "rag", "web-tools", "document-tools", "media-tools", "communication-tools", "data-tools", "research-tools", "dev-tools", "model-platforms", "huggingface", "storage", "all"]
+provides-extras = ["test", "dev", "docs", "rag", "web-tools", "document-tools", "media-tools", "communication-tools", "data-tools", "research-tools", "dev-tools", "model-platforms", "huggingface", "storage", "owl", "all"]
 
 [[package]]
 name = "certifi"
@@ -1159,6 +1249,22 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/b2/21/2b6b5b860781a0b49427309cb8670785aa543fb2178de875b87b9cc97746/charset_normalizer-3.4.1-cp312-cp312-win32.whl", hash = "sha256:9b23ca7ef998bc739bf6ffc077c2116917eabcc901f88da1b9856b210ef63f35", size = 95550 },
     { url = "https://files.pythonhosted.org/packages/21/5b/1b390b03b1d16c7e382b561c5329f83cc06623916aab983e8ab9239c7d5c/charset_normalizer-3.4.1-cp312-cp312-win_amd64.whl", hash = "sha256:6ff8a4a60c227ad87030d76e99cd1698345d4491638dfa6673027c48b3cd395f", size = 102785 },
     { url = "https://files.pythonhosted.org/packages/0e/f6/65ecc6878a89bb1c23a086ea335ad4bf21a588990c3f535a227b9eea9108/charset_normalizer-3.4.1-py3-none-any.whl", hash = "sha256:d98b1668f06378c6dbefec3b92299716b931cd4e6061f3c875a71ced1780ab85", size = 49767 },
+]
+
+[[package]]
+name = "chunkr-ai"
+version = "0.0.43"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "httpx" },
+    { name = "nest-asyncio" },
+    { name = "pillow" },
+    { name = "pydantic" },
+    { name = "python-dotenv" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/3a/d0/9f502ea383de415db258fbde9bda7388e89866ace523b521cbc66fb505fb/chunkr_ai-0.0.43.tar.gz", hash = "sha256:a2ab0a3c2c6d9abbd693bf22bb5e74993d6a427ead02998105d2b1d029da068c", size = 14791 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b6/2b/ead2d9a40050fbdc7d00b100177c077f8d35b9cfdd7d54d7926fbb084334/chunkr_ai-0.0.43-py3-none-any.whl", hash = "sha256:558e1831b94c954fd6d1ef94b4b180fdb2aca45ab7d22755d3ae66c55f4d69db", size = 14600 },
 ]
 
 [[package]]
@@ -3109,6 +3215,19 @@ wheels = [
 ]
 
 [[package]]
+name = "markdownify"
+version = "1.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "beautifulsoup4" },
+    { name = "six" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/2f/78/c48fed23c7aebc2c16049062e72de1da3220c274de59d28c942acdc9ffb2/markdownify-1.1.0.tar.gz", hash = "sha256:449c0bbbf1401c5112379619524f33b63490a8fa479456d41de9dc9e37560ebd", size = 17127 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/64/11/b751af7ad41b254a802cf52f7bc1fca7cabe2388132f2ce60a1a6b9b9622/markdownify-1.1.0-py3-none-any.whl", hash = "sha256:32a5a08e9af02c8a6528942224c91b933b4bd2c7d078f9012943776fc313eeef", size = 13901 },
+]
+
+[[package]]
 name = "markupsafe"
 version = "2.1.5"
 source = { registry = "https://pypi.org/simple" }
@@ -3227,6 +3346,38 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/50/cc/5c5bb19f1a0f8f89a95e25cb608b0b07009e81fd4b031e519335404e1422/mcp-1.4.1.tar.gz", hash = "sha256:b9655d2de6313f9d55a7d1df62b3c3fe27a530100cc85bf23729145b0dba4c7a", size = 154942 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e8/0e/885f156ade60108e67bf044fada5269da68e29d758a10b0c513f4d85dd76/mcp-1.4.1-py3-none-any.whl", hash = "sha256:a7716b1ec1c054e76f49806f7d96113b99fc1166fc9244c2c6f19867cb75b593", size = 72448 },
+]
+
+[[package]]
+name = "mcp-server-fetch"
+version = "2025.1.17"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "markdownify" },
+    { name = "mcp" },
+    { name = "protego" },
+    { name = "pydantic" },
+    { name = "readabilipy" },
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/99/76/204ac83afe2000b1513b4741229586128361f376fab03832695e0179104d/mcp_server_fetch-2025.1.17.tar.gz", hash = "sha256:aa3a5dee358651103477bc121b98ada18a5c35840c56e4016cc3b40e7df1aa7d", size = 43468 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d7/34/c0dce3415b627f763a9b7a0202a6a0672446b49f5ca04827340c28d75c63/mcp_server_fetch-2025.1.17-py3-none-any.whl", hash = "sha256:53c4967572464c6329824c9b05cdfa5fe214004d577ae8700fdb04203844be52", size = 7991 },
+]
+
+[[package]]
+name = "mcp-simple-arxiv"
+version = "0.2.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "beautifulsoup4" },
+    { name = "feedparser" },
+    { name = "httpx" },
+    { name = "mcp" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/20/d3/d47bfce067ea85bc73154d8299549f84455e601f699fcff513f9d44cef0d/mcp_simple_arxiv-0.2.2.tar.gz", hash = "sha256:e27cfd58a470dcec7d733bd09b4219daddbdc3475a6d256e246a114e5b94e817", size = 12100 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/07/4e/6646a0004fc85b0c1df6e662db42f76fe5a0412179b7f65c066d7804370a/mcp_simple_arxiv-0.2.2-py3-none-any.whl", hash = "sha256:fcf607303c074ae5e88337b5bf3ea52cd781081f49ddf8fa0898eb3b8420dccb", size = 13686 },
 ]
 
 [[package]]
@@ -3827,7 +3978,7 @@ wheels = [
 
 [[package]]
 name = "openai"
-version = "1.66.3"
+version = "1.68.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -3839,9 +3990,9 @@ dependencies = [
     { name = "tqdm" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a3/77/5172104ca1df35ed2ed8fb26dbc787f721c39498fc51d666c4db07756a0c/openai-1.66.3.tar.gz", hash = "sha256:8dde3aebe2d081258d4159c4cb27bdc13b5bb3f7ea2201d9bd940b9a89faf0c9", size = 397244 }
+sdist = { url = "https://files.pythonhosted.org/packages/3f/6b/6b002d5d38794645437ae3ddb42083059d556558493408d39a0fcea608bc/openai-1.68.2.tar.gz", hash = "sha256:b720f0a95a1dbe1429c0d9bb62096a0d98057bcda82516f6e8af10284bdd5b19", size = 413429 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/78/5a/e20182f7b6171642d759c548daa0ba20a1d3ac10d2bd0a13fd75704a9ac3/openai-1.66.3-py3-none-any.whl", hash = "sha256:a427c920f727711877ab17c11b95f1230b27767ba7a01e5b66102945141ceca9", size = 567400 },
+    { url = "https://files.pythonhosted.org/packages/fd/34/cebce15f64eb4a3d609a83ac3568d43005cc9a1cba9d7fde5590fd415423/openai-1.68.2-py3-none-any.whl", hash = "sha256:24484cb5c9a33b58576fdc5acf0e5f92603024a4e39d0b99793dfa1eb14c2b36", size = 606073 },
 ]
 
 [[package]]
@@ -4499,6 +4650,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/5a/11/bee5439de1307d06fad176f7143fec906e499c33d7aff863ea8428b8e98b/propcache-0.3.0-cp312-cp312-win32.whl", hash = "sha256:6b5b7fd6ee7b54e01759f2044f936dcf7dea6e7585f35490f7ca0420fe723c0d", size = 40337 },
     { url = "https://files.pythonhosted.org/packages/e4/17/e5789a54a0455a61cb9efc4ca6071829d992220c2998a27c59aeba749f6f/propcache-0.3.0-cp312-cp312-win_amd64.whl", hash = "sha256:2d15bc27163cd4df433e75f546b9ac31c1ba7b0b128bfb1b90df19082466ff57", size = 44404 },
     { url = "https://files.pythonhosted.org/packages/b5/35/6c4c6fc8774a9e3629cd750dc24a7a4fb090a25ccd5c3246d127b70f9e22/propcache-0.3.0-py3-none-any.whl", hash = "sha256:67dda3c7325691c2081510e92c561f465ba61b975f481735aefdfc845d2cd043", size = 12101 },
+]
+
+[[package]]
+name = "protego"
+version = "0.4.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/4e/6b/84e878d0567dfc11538bad6ce2595cee7ae0c47cf6bf7293683c9ec78ef8/protego-0.4.0.tar.gz", hash = "sha256:93a5e662b61399a0e1f208a324f2c6ea95b23ee39e6cbf2c96246da4a656c2f6", size = 3246425 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d9/fd/8d84d75832b0983cecf3aff7ae48362fe96fc8ab6ebca9dcf3cefd87e79c/Protego-0.4.0-py2.py3-none-any.whl", hash = "sha256:37640bc0ebe37572d624453a21381d05e9d86e44f89ff1e81794d185a0491666", size = 8553 },
 ]
 
 [[package]]
@@ -5285,6 +5445,21 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/dd/48/170c37cfdf04efa34e7cafc688a8517c9098c1d27e1513393ad71bf3165c/rapidfuzz-3.12.2-pp311-pypy311_pp73-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:b3745c6443890265513a3c8777f2de4cb897aeb906a406f97741019be8ad5bcc", size = 5481251 },
     { url = "https://files.pythonhosted.org/packages/4e/2d/107c489443f6438780d2e40747d5880c8d9374a64e17487eb4085fe7f1f5/rapidfuzz-3.12.2-pp311-pypy311_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:36d3ef4f047ed1bc96fa29289f9e67a637ddca5e4f4d3dc7cb7f50eb33ec1664", size = 3060633 },
     { url = "https://files.pythonhosted.org/packages/09/f6/fa777f336629aee8938f3d5c95c09df38459d4eadbdbe34642889857fb6a/rapidfuzz-3.12.2-pp311-pypy311_pp73-win_amd64.whl", hash = "sha256:54bb69ebe5ca0bd7527357e348f16a4c0c52fe0c2fcc8a041010467dcb8385f7", size = 1555000 },
+]
+
+[[package]]
+name = "readabilipy"
+version = "0.3.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "beautifulsoup4" },
+    { name = "html5lib" },
+    { name = "lxml" },
+    { name = "regex" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b8/e4/260a202516886c2e0cc6e6ae96d1f491792d829098886d9529a2439fbe8e/readabilipy-0.3.0.tar.gz", hash = "sha256:e13313771216953935ac031db4234bdb9725413534bfb3c19dbd6caab0887ae0", size = 35491 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/dd/46/8a640c6de1a6c6af971f858b2fb178ca5e1db91f223d8ba5f40efe1491e5/readabilipy-0.3.0-py3-none-any.whl", hash = "sha256:d106da0fad11d5fdfcde21f5c5385556bfa8ff0258483037d39ea6b1d6db3943", size = 22158 },
 ]
 
 [[package]]
