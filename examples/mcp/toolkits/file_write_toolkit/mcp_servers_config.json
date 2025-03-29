@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "file_write_toolkit": {
+      "command": "python",
+      "args": [
+        "-m",
+        "file_write_toolkit"
+      ]
+    }
+  }
+}

@@ -18,9 +18,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Union
 
+from mcp.server import FastMCP
+
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
+from camel.utils import MCPServer
 
 logger = get_logger(__name__)
 
@@ -28,6 +31,7 @@ logger = get_logger(__name__)
 DEFAULT_FORMAT = '.md'
 
 
+@MCPServer(server_name="FileWriteToolkit", function_names=["write_to_file"])
 class FileWriteToolkit(BaseToolkit):
     r"""A toolkit for creating, writing, and modifying text in files.
 
@@ -36,6 +40,8 @@ class FileWriteToolkit(BaseToolkit):
     replacing text in existing files, automatic backups, custom encoding,
     and enhanced formatting options for specialized formats.
     """
+
+    mcp: FastMCP
 
     def __init__(
         self,
