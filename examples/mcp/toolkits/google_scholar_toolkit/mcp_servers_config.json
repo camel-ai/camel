@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "google_scholar_toolkit": {
+      "command": "python",
+      "args": [
+        "-m",
+        "google_scholar_toolkit",
+        "https://scholar.google.com/citations?user=JicYPdAAAAAJ&hl=en&oi=ao"
+      ]
+    }
+  }
+}

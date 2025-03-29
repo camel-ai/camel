@@ -14,10 +14,22 @@
 import re
 from typing import Any, Dict, List, Optional
 
+from mcp.server import FastMCP
+
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
+from camel.utils import MCPServer
 
 
+@MCPServer(
+    server_name="GoogleScholarToolkit",
+    function_names=[
+        "get_author_detailed_info",
+        "get_author_publications",
+        "get_publication_by_title",
+        "get_full_paper_content_by_link",
+    ],
+)
 class GoogleScholarToolkit(BaseToolkit):
     r"""A toolkit for retrieving information about authors and their
     publications from Google Scholar.
@@ -31,6 +43,8 @@ class GoogleScholarToolkit(BaseToolkit):
         author (Optional[Dict[str, Any]]): Cached author details, allowing
             manual assignment if desired.
     """
+
+    mcp: FastMCP
 
     def __init__(
         self,
