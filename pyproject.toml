@@ -29,6 +29,7 @@ dependencies = [
     "pydantic>=1.9,<2.10",
     "httpx>=0.28.0,<1.0.0dev",
     "psutil>=5.9.8,<6",
+    "math-verify>=0.7.0,<0.8", 
 ]
 
 [project.optional-dependencies]
@@ -509,5 +510,6 @@ module = [
     "mcp",
     "typer",
     "mem0",
+    "math_verify.*"
 ]
 ignore_missing_imports = true
