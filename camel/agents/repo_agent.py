@@ -219,7 +219,7 @@ class RepoAgent(ChatAgent):
             List[RepositoryInfo]: A list of objects containing information
                 about the all repositories, including the contents.
         """
-        from github import Github  # type: ignore[attr-defined]
+        from github.MainClass import Github
 
         github_client = Github(self.github_auth_token)
         res = []
