@@ -14,11 +14,20 @@
 import os
 from typing import Dict, List, Literal, Optional, Union
 
+from mcp.server import FastMCP
+
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import api_keys_required, dependencies_required
+from camel.utils import api_keys_required, dependencies_required, MCPServer
 
 
+@MCPServer(
+    server_name="DappierToolkit",
+    function_names=[
+        "search_real_time_data",
+        "get_ai_recommendations",
+    ]
+)
 class DappierToolkit(BaseToolkit):
     r"""A class representing a toolkit for interacting with the Dappier API.
 
@@ -26,6 +35,8 @@ class DappierToolkit(BaseToolkit):
     ai recommendations across key verticals like News, Finance, Stock Market,
     Sports, Weather and more.
     """
+
+    mcp: FastMCP
 
     @dependencies_required("dappier")
     @api_keys_required(
