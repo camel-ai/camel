@@ -46,7 +46,7 @@ collaboration, you're empowering researchers and developers to tackle
 challenges like agent coordination, ethical alignment, and real-world 
 deployment—critical steps toward responsible AI advancement.
 
-If anyone’s curious, CAMEL AI’s projects often dive into simulations where AI 
+If anyone's curious, CAMEL AI's projects often dive into simulations where AI 
 agents role-play scenarios (like a negotiation between a "seller" and "buyer" 
 bot), testing how they communicate, adapt, and solve problems autonomously. 
  This hands-on approach helps uncover insights into emergent behaviors and 
