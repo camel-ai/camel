@@ -70,10 +70,33 @@ def free_water_deficit_explanation(input_variables):
         - None
 
     Example:
-        free_water_deficit_explanation()
+        free_water_deficit_explanation({'sex': 'Female',
+        'age': [17, 'years'],
+        'weight': [63.0, 'kg'],
+        'sodium': [141.0, 'mEq/L']})
 
-        output: ""
+        output: "{'Explanation': "The formula for computing the free water
+        deficit is (total body water percentage) * (weight) * (sodium/140 -
+        1), where the total body water percentage is a percentage expressed
+        as a decimal, weight is in kg, and the sodium concentration is in
+        mmol/L.\nThe patient's total body weight percentage is based on the
+        patient's age and gender.\nThe patient is 17 years old. The
+        patient's is a Female.\nThe patient is less than 18 years old and
+        so the patient is a child. This means total body water percentage
+        value is 0.6.\nThe patient's weight is 63.0 kg. The concentration
+        of sodium is 141.0 mEq/L. We need to convert the concentration to
+        mmol/L. Let's first convert the mass of sodium from mEq to mmol.
+        The mass of sodium is 141.0 mEq. To convert from 141.0 mEq to mmol,
+        convert from mEq to mmol. The compound 141.0 has a valence of 1,
+        and so divide the valence by the value of mEq to get, 141.0 mEq/(1
+        mEq/mmol) = 141.0 mmol sodium. The volume units is L so no volume
+        conversion is needed. Hence, the concentration value of 141.0 mEq
+        sodium/L converts to 141.0 mmol sodium/L. Plugging in these values
+        into the equation, we get 0.6 * 63.0 * (141.0/140 - 1) = 0.27 L.
+        The patient's free body water deficit is 0.27 L.\n",
+        'Answer': 0.27}"
     """
+
     explanation = ""
 
     explanation += (

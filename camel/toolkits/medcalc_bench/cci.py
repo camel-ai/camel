@@ -36,10 +36,10 @@ def compute_cci_explanation(input_parameters):
         Parameters:
             input_parameters (dict): A dictionary containing the following
             key-value pairs:
-                - "age" (tuple): The patient's blood creatinine level in the
+                - "age" (tuple): The patient's albumin concentration in the
                 format (value, unit).
-                    - Value (float): blood creatinine level.
-                    - Unit (str): The unit can be "mg/dL", "µmol/L", and so on.
+                    - Value (float): Age.
+                    - Unit (str): The unit can be "months", "years".
                 - "mi" (boolean): Myocardial infarction (history of definite or
                 probable MI with EKG changes and/or enzyme changes)
                 - "chf" (boolean): Congestive heart failure (CHF) (exertional
