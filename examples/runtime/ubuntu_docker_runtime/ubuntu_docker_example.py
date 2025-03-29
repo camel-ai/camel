@@ -17,27 +17,35 @@ import sys
 
 from camel.runtime import UbuntuDockerRuntime
 
-def main():
 
+def main():
+    r"""Main function to demonstrate Ubuntu Docker Runtime."""
     try:
+        # Get OpenAI API key from environment
+        openai_api_key = os.environ.get("OPENAI_API_KEY")
+
+        # Initialize the runtime
         runtime = UbuntuDockerRuntime(
             image="my-camel:latest",
             python_path="/usr/bin/python3",
             ports=0,
-            environment={"HOST": "0.0.0.0"},
-            )
+            environment={
+                "HOST": "0.0.0.0",
+                "OPENAI_API_KEY": openai_api_key,  # Pass API key to container
+            },
+        )
 
         runtime.build()
         script_dir = os.path.dirname(
-            os.path.dirname(
-                os.path.dirname(
-                    os.path.abspath(__file__))))
-        script_path = script_dir +"/ai_society/role_playing.py"
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        )
+        script_path = script_dir + "/ai_society/role_playing.py"
         runtime.exec_python_file(local_file_path=script_path)
 
     except Exception as e:
         print(f"Error: {e}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()
