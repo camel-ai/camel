@@ -13,14 +13,10 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
 import json
-from typing import TYPE_CHECKING, Union
 
 from mcp.types import CallToolResult
 
 from camel.toolkits.mcp_toolkit import MCPToolkit, _MCPServer
-
-if TYPE_CHECKING:
-    from mcp import ListToolsResult
 
 
 async def run_example():
@@ -50,7 +46,6 @@ async def run_example():
     print(res1.content[0].text)
     """
 ===============================================================================
-
 Shanghai is a direct-administered municipality and the most populous urban 
 area in China. The city is located on the Chinese shoreline on the southern 
 estuary of the Yangtze River, with the Huangpu River flowing through it. The 
