@@ -67,7 +67,7 @@ Following is the information of the existing worker nodes. The format is <ID>:<d
 {child_nodes_info}
 ==============================
 
-You must return the ID of the worker node that you think is most capable of doing the task.
+You must return the ID of the worker node that you think is most capable of doing the task, i.e. {{'assignee_id': <ID>}}.
 """
 )
 
