@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-
 import os
 import tempfile
 from unittest.mock import MagicMock, patch
@@ -19,17 +18,17 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import pytest
 
-from camel.toolkits import ExcelToolkit
+from camel.toolkits import DocumentProcessingToolkit
 
 
 @pytest.fixture
-def excel_toolkit():
-    return ExcelToolkit()
+def document_processing_toolkit():
+    return DocumentProcessingToolkit()
 
 
 @pytest.fixture
 def sample_csv_file():
-    r"""Create a temporary CSV file for testing."""
+    """Create a temporary CSV file for testing."""
     with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as temp_file:
         df = pd.DataFrame(
             {
@@ -48,9 +47,13 @@ def sample_csv_file():
         os.remove(temp_path)
 
 
-def test_extract_excel_content_csv(excel_toolkit, sample_csv_file):
-    r"""Test extracting content from a CSV file."""
-    result = excel_toolkit.extract_excel_content(sample_csv_file)
+def test_extract_excel_content_csv(
+    document_processing_toolkit, sample_csv_file
+):
+    """Test extracting content from a CSV file."""
+    result = document_processing_toolkit.extract_excel_content(
+        sample_csv_file, header_only=False
+    )
 
     # Check that the result contains expected content
     assert "CSV File Processed" in result
@@ -62,14 +65,16 @@ def test_extract_excel_content_csv(excel_toolkit, sample_csv_file):
     assert "Charlie" in result
 
 
-def test_extract_excel_content_unsupported_format(excel_toolkit):
-    r"""Test handling of unsupported file formats."""
+def test_extract_excel_content_unsupported_format(document_processing_toolkit):
+    """Test handling of unsupported file formats."""
     with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as temp_file:
         temp_file.write(b"This is a text file, not an Excel file.")
         temp_path = temp_file.name
 
     try:
-        result = excel_toolkit.extract_excel_content(temp_path)
+        result = document_processing_toolkit.extract_excel_content(
+            temp_path, header_only=False
+        )
         assert "Failed to process file" in result
         assert "It is not excel format" in result
     finally:
@@ -77,8 +82,8 @@ def test_extract_excel_content_unsupported_format(excel_toolkit):
             os.remove(temp_path)
 
 
-def test_extract_excel_content_xlsx(excel_toolkit):
-    r"""Test extracting content from an XLSX file using mocks."""
+def test_extract_excel_content_xlsx(document_processing_toolkit):
+    """Test extracting content from an XLSX file using mocks."""
     with (
         patch('openpyxl.load_workbook') as mock_load_workbook,
         patch('pandas.read_excel') as mock_read_excel,
@@ -108,7 +113,9 @@ def test_extract_excel_content_xlsx(excel_toolkit):
         mock_read_excel.return_value = df
 
         # Call the function with a fake xlsx path
-        result = excel_toolkit.extract_excel_content("test.xlsx")
+        result = document_processing_toolkit.extract_excel_content(
+            "test.xlsx", header_only=False
+        )
 
         # Verify the function was called correctly
         mock_load_workbook.assert_called_once_with("test.xlsx", data_only=True)
@@ -120,53 +127,59 @@ def test_extract_excel_content_xlsx(excel_toolkit):
         assert "Markdown View of the content" in result
 
 
-def test_extract_excel_content_xls(excel_toolkit):
-    r"""Test extracting content from an XLS file using mocks."""
-    with (
-        patch('xls2xlsx.XLS2XLSX') as mock_xls2xlsx,
-        patch('openpyxl.load_workbook') as mock_load_workbook,
-        patch('pandas.read_excel') as mock_read_excel,
-    ):
-        # Mock the XLS2XLSX conversion
-        mock_xls_converter = MagicMock()
-        mock_xls2xlsx.return_value = mock_xls_converter
+def test_extract_document_content_docx(document_processing_toolkit):
+    """Test extracting content from a DOCX file."""
+    with patch('docx2markdown._docx_to_markdown') as mock_docx_to_markdown:
+        mock_docx_to_markdown.return_value = "This is a test markdown content."
 
-        # Mock the workbook and sheet
-        mock_workbook = MagicMock()
-        mock_sheet = MagicMock()
+        result = document_processing_toolkit.extract_document_content(
+            "test.docx"
+        )
 
-        # Configure the mocks
-        mock_load_workbook.return_value = mock_workbook
-        mock_workbook.sheetnames = ['Sheet1']
-        mock_workbook.__getitem__.return_value = mock_sheet
-
-        # Set up the sheet to return an empty list of cells
-        mock_sheet.iter_rows.return_value = []
-
-        # Mock pandas read_excel to return a sample DataFrame
-        df = pd.DataFrame({'Column1': ['XLS Value'], 'Column2': [100]})
-        mock_read_excel.return_value = df
-
-        # Call the function with a fake xls path
-        result = excel_toolkit.extract_excel_content("test.xls")
-
-        # Verify the XLS conversion was called
-        mock_xls2xlsx.assert_called_once_with("test.xls")
-        mock_xls_converter.to_xlsx.assert_called_once()
-
-        # Verify the workbook was loaded
-        mock_load_workbook.assert_called_once()
-
-        # Check the result contains expected content
-        assert "Sheet Name: Sheet1" in result
-        assert "Markdown View of the content" in result
+        # Check if the DOCX file was processed and converted to markdown
+        mock_docx_to_markdown.assert_called_once_with(
+            "test.docx", "test.docx.md"
+        )
+        assert "This is a test markdown content." in result
 
 
-def test_convert_to_markdown(excel_toolkit):
-    r"""Test the _convert_to_markdown method."""
+def test_extract_document_content_unsupported_type(
+    document_processing_toolkit,
+):
+    """Test handling unsupported file types."""
+    with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as temp_file:
+        temp_path = temp_file.name
+
+    try:
+        result = document_processing_toolkit.extract_document_content(
+            temp_path
+        )
+        assert "Please make a detailed caption about the image." in result
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+
+def test_extract_document_content_zip(document_processing_toolkit):
+    """Test extracting content from a ZIP file."""
+    with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as temp_file:
+        temp_path = temp_file.name
+
+    try:
+        result = document_processing_toolkit.extract_document_content(
+            temp_path
+        )
+        assert "The extracted files are" in result
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+
+def test_convert_to_markdown(document_processing_toolkit):
+    """Test the _convert_to_markdown method."""
     df = pd.DataFrame({'Name': ['Alice', 'Bob'], 'Age': [25, 30]})
 
-    result = excel_toolkit._convert_to_markdown(df)
+    result = document_processing_toolkit._convert_to_markdown(df)
 
     # Check that the result contains expected markdown table format
     assert "|" in result  # Table separator
@@ -178,12 +191,13 @@ def test_convert_to_markdown(excel_toolkit):
     assert "30" in result
 
 
-def test_get_tools(excel_toolkit):
-    r"""Test the get_tools method returns the correct tools."""
-    tools = excel_toolkit.get_tools()
+def test_get_tools(document_processing_toolkit):
+    """Test the get_tools method returns the correct tools."""
+    tools = document_processing_toolkit.get_tools()
 
     # Check that we have the expected number of tools
-    assert len(tools) == 1
+    assert len(tools) == 2
 
     # Check that the tool has the correct function name
-    assert tools[0].get_function_name() == "extract_excel_content"
+    assert tools[0].get_function_name() == "extract_document_content"
+    assert tools[1].get_function_name() == "extract_excel_content"

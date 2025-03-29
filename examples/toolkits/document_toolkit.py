@@ -20,7 +20,7 @@ import pandas as pd
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
-from camel.toolkits import ExcelToolkit
+from camel.toolkits import DocumentProcessingToolkit
 from camel.types import ModelPlatformType, ModelType
 
 # Create a sample Excel file for demonstration
@@ -42,7 +42,7 @@ df.to_csv(sample_file_path, index=False)
 print(f"Created sample Excel file at: {sample_file_path}")
 
 # Initialize the Excel toolkit
-excel_toolkit = ExcelToolkit()
+document_toolkit = DocumentProcessingToolkit()
 
 # Create a model using OpenAI
 model = ModelFactory.create(
@@ -60,7 +60,7 @@ agent = ChatAgent(
         "Use the provided Excel toolkit to extract and analyze data."
     ),
     model=model,
-    tools=[*excel_toolkit.get_tools()],
+    tools=[*document_toolkit.get_tools()],
 )
 
 # Example: Ask the agent to analyze the Excel file

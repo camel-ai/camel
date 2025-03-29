@@ -157,7 +157,7 @@ CAMEL provides a variety of built-in toolkits that you can use right away. Here'
 | DalleToolkit | A toolkit for image generation using OpenAI's DALL-E model. |
 | DappierToolkit | A toolkit for searching real-time data and fetching AI recommendations across key verticals like News, Finance, Stock Market, Sports, Weather and more using the Dappier API. |
 | DataCommonsToolkit | A toolkit for querying and retrieving data from the Data Commons knowledge graph, including SPARQL queries, statistical time series data, and property analysis. |
-| ExcelToolkit | A toolkit for extracting and processing content from Excel files, including conversion to markdown tables. |
+| DocumentProcessingToolkit | A toolkit for extracting and processing content docx, pdf, pptx, excel, csv files, including conversion to markdown tables. |
 | FunctionTool | A base toolkit for creating function-based tools that OpenAI chat models can call, with support for schema parsing and synthesis. |
 | FileWriteTool | A toolkit for creating, writing, and modifying text in files. |
 | GitHubToolkit | A toolkit for interacting with GitHub repositories, including retrieving issues and creating pull requests. |
