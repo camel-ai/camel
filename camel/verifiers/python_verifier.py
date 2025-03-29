@@ -317,19 +317,9 @@ class PythonVerifier(BaseVerifier):
                     sol_val = ast.literal_eval(sol_out)
                 except Exception as e:
                     logger.warning(
-                        f"Direct eval failed: {e}. Trying repr on output."
+                        f"Direct eval failed: {e}."
                     )
-                    try:
-                        # Try to convert sol_out to a literal
-                        # by wrapping it with repr.
-                        # FIXME: may be unnecessary
-                        sol_val = ast.literal_eval(repr(sol_out))
-                    except Exception as e2:
-                        logger.warning(
-                            f"repr eval also failed: {e2}."
-                            "Falling back to string comparison."
-                        )
-                        sol_val = None
+                    sol_val = None
 
                 if sol_val is not None:
                     try:
