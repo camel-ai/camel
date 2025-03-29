@@ -17,6 +17,7 @@ from typing import List, Optional
 from urllib.parse import urlparse
 
 import requests
+from mcp.server import FastMCP
 from PIL import Image
 
 from camel.logger import get_logger
@@ -25,14 +26,24 @@ from camel.models import BaseModelBackend, ModelFactory
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 from camel.types import ModelPlatformType, ModelType
+from camel.utils import MCPServer
 
 logger = get_logger(__name__)
 
 
+@MCPServer(
+    server_name="ImageAnalysisToolkit",
+    function_names=[
+        "image_to_text",
+        "ask_question_about_image",
+    ],
+)
 class ImageAnalysisToolkit(BaseToolkit):
     r"""A toolkit for comprehensive image analysis and understanding.
     The toolkit uses vision-capable language models to perform these tasks.
     """
+
+    mcp: FastMCP
 
     def __init__(self, model: Optional[BaseModelBackend] = None):
         r"""Initialize the ImageAnalysisToolkit.

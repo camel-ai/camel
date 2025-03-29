@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "image_analysis_toolkit": {
+      "command": "python",
+      "args": [
+        "-m",
+        "image_analysis_toolkit"
+      ]
+    }
+  }
+}
