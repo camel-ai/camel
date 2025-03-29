@@ -31,7 +31,7 @@ logger = get_logger(__name__)
 DEFAULT_FORMAT = '.md'
 
 
-@MCPServer(server_name="FileWriteToolkit", function_names=["write_to_file"])
+@MCPServer()
 class FileWriteToolkit(BaseToolkit):
     r"""A toolkit for creating, writing, and modifying text in files.
 
@@ -40,8 +40,6 @@ class FileWriteToolkit(BaseToolkit):
     replacing text in existing files, automatic backups, custom encoding,
     and enhanced formatting options for specialized formats.
     """
-
-    mcp: FastMCP
 
     def __init__(
         self,

@@ -31,19 +31,11 @@ from camel.utils import MCPServer
 logger = get_logger(__name__)
 
 
-@MCPServer(
-    server_name="ImageAnalysisToolkit",
-    function_names=[
-        "image_to_text",
-        "ask_question_about_image",
-    ],
-)
+@MCPServer()
 class ImageAnalysisToolkit(BaseToolkit):
     r"""A toolkit for comprehensive image analysis and understanding.
     The toolkit uses vision-capable language models to perform these tasks.
     """
-
-    mcp: FastMCP
 
     def __init__(self, model: Optional[BaseModelBackend] = None):
         r"""Initialize the ImageAnalysisToolkit.

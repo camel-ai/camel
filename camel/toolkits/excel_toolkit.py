@@ -25,9 +25,7 @@ from camel.utils import MCPServer
 logger = get_logger(__name__)
 
 
-@MCPServer(
-    server_name="ExcelToolkit", function_names=["extract_excel_content"]
-)
+@MCPServer()
 class ExcelToolkit(BaseToolkit):
     r"""A class representing a toolkit for extract detailed cell information
     from an Excel file.
@@ -35,8 +33,6 @@ class ExcelToolkit(BaseToolkit):
     This class provides method for processing docx, pdf, pptx, etc. It cannot
     process excel files.
     """
-
-    mcp: FastMCP
 
     def _convert_to_markdown(self, df: pd.DataFrame) -> str:
         r"""Convert DataFrame to Markdown format table.

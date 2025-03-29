@@ -23,29 +23,13 @@ from camel.toolkits.function_tool import FunctionTool
 from camel.utils import MCPServer, api_keys_required, dependencies_required
 
 
-@MCPServer(
-    server_name="SearchToolkit",
-    function_names=[
-        "search_wiki",
-        "search_linkup",
-        "search_duckduckgo",
-        "search_brave",
-        "search_google",
-        "query_wolfram_alpha",
-        "tavily_search",
-        "search_bocha",
-        "search_baidu",
-        "search_bing",
-    ],
-)
+@MCPServer()
 class SearchToolkit(BaseToolkit):
     r"""A class representing a toolkit for web search.
 
     This class provides methods for searching information on the web using
     search engines like Google, DuckDuckGo, Wikipedia and Wolfram Alpha, Brave.
     """
-
-    mcp: FastMCP
 
     @dependencies_required("wikipedia")
     def search_wiki(self, entity: str) -> str:

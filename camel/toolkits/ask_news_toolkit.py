@@ -61,24 +61,13 @@ def _process_response(
 @api_keys_required(
     [(None, "ASKNEWS_CLIENT_ID"), (None, "ASKNEWS_CLIENT_SECRET")]
 )
-@MCPServer(
-    server_name="AskNewsToolkit",
-    function_names=[
-        "get_news",
-        "get_stories",
-        "get_web_search",
-        "search_reddit",
-        "query_finance",
-    ],
-)
+@MCPServer()
 class AskNewsToolkit(BaseToolkit):
     r"""A class representing a toolkit for interacting with the AskNews API.
 
     This class provides methods for fetching news, stories, and other content
     based on user queries using the AskNews API.
     """
-
-    mcp: FastMCP
 
     def __init__(
         self,

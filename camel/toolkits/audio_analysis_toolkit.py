@@ -82,13 +82,7 @@ def download_file(url: str, cache_dir: str) -> str:
     return local_path
 
 
-@MCPServer(
-    server_name="AudioAnalysisToolkit",
-    function_names=[
-        "audio2text",
-        "ask_question_about_audio",
-    ],
-)
+@MCPServer()
 class AudioAnalysisToolkit(BaseToolkit):
     r"""A toolkit for audio processing and analysis.
 
@@ -106,8 +100,6 @@ class AudioAnalysisToolkit(BaseToolkit):
             audio reasoning and question answering. If not provided, uses the
             default model from ChatAgent. (default: :obj:`None`)
     """
-
-    mcp: FastMCP
 
     def __init__(
         self,

@@ -27,7 +27,7 @@ from camel.toolkits.base import BaseToolkit
 from camel.utils import MCPServer
 
 
-@MCPServer(server_name="CodeExecutionToolkit", function_names=["execute_code"])
+@MCPServer()
 class CodeExecutionToolkit(BaseToolkit):
     r"""A tookit for code execution.
 
@@ -43,8 +43,6 @@ class CodeExecutionToolkit(BaseToolkit):
         require_confirm (bool): Whether to require confirmation before executing code.
             (default: :obj:`False`)
     """
-
-    mcp: FastMCP
 
     def __init__(
         self,

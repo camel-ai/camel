@@ -24,19 +24,11 @@ from camel.utils import MCPServer, dependencies_required
 logger = get_logger(__name__)
 
 
-@MCPServer(
-    server_name="ArxivToolkit",
-    function_names=[
-        "search_papers",
-        "download_papers",
-    ],
-)
+@MCPServer()
 class ArxivToolkit(BaseToolkit):
     r"""A toolkit for interacting with the arXiv API to search and download
     academic papers.
     """
-
-    mcp: FastMCP
 
     @dependencies_required('arxiv')
     def __init__(self, timeout: Optional[float] = None) -> None:
