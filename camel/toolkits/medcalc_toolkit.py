@@ -104,7 +104,6 @@ class MedCalcToolkit(BaseToolkit):
             "sex": str(sex),  # Gender
             "age": int(age),  # Age
         }
-        print(input_variables)
 
         from camel.toolkits.medcalc_bench.adjusted_body_weight import (
             abw_explanation,
@@ -194,7 +193,6 @@ class MedCalcToolkit(BaseToolkit):
                 str(bicarbonate_unit),
             ),  # Bicarbonate: (value, unit)
         }
-        print(input_variables)
 
         from camel.toolkits.medcalc_bench.anion_gap import (
             compute_anion_gap_explanation,
@@ -269,7 +267,6 @@ class MedCalcToolkit(BaseToolkit):
                 str(height_unit),
             ),  # Height: (value, unit)
         }
-        print(input_variables)
 
         from camel.toolkits.medcalc_bench.bmi_calculator import (
             bmi_calculator_explanation,
@@ -345,7 +342,6 @@ class MedCalcToolkit(BaseToolkit):
                 str(height_unit),
             ),  # Height: (value, unit)
         }
-        print(input_variables)
 
         from camel.toolkits.medcalc_bench.bsa_calculator import (
             bsa_calculator_explaination,
@@ -426,7 +422,6 @@ class MedCalcToolkit(BaseToolkit):
                 str(calcium_unit),
             ),  # Calcium: (value, unit)
         }
-        print(input_variables)
 
         from camel.toolkits.medcalc_bench.calcium_correction import (
             calculate_corrected_calcium_explanation,
@@ -506,7 +501,6 @@ class MedCalcToolkit(BaseToolkit):
             "severe_tonsil_inflammation": severe_tonsil_inflammation,
             "cough_coryza_absent": cough_coryza_absent,
         }
-        print(input_variables)
 
         try:
             # Call the FeverPAIN score calculation function
@@ -711,7 +705,6 @@ class MedCalcToolkit(BaseToolkit):
                 str(glucose_unit),
             ),  # Glucose: (value, unit)
         }
-        print(input_variables)
 
         try:
             # Call the HOMA-IR calculation function
@@ -787,7 +780,6 @@ class MedCalcToolkit(BaseToolkit):
             "sex": str(sex),  # Gender
             "age": int(age),  # Age
         }
-        print(input_variables)
 
         from camel.toolkits.medcalc_bench.ideal_body_weight import (
             ibw_explanation,
@@ -868,7 +860,6 @@ class MedCalcToolkit(BaseToolkit):
                 str(dia_bp_unit),
             ),  # Diastolic Blood Pressure: (value, unit)
         }
-        print(input_variables)
 
         from camel.toolkits.medcalc_bench.mean_arterial_pressure import (
             mean_arterial_pressure_explanation,
@@ -958,7 +949,6 @@ class MedCalcToolkit(BaseToolkit):
                 str(sodium_unit),
             ),  # Sodium: (value, unit)
         }
-        print(input_variables)
 
         try:
             from camel.toolkits.medcalc_bench.sOsm import (
@@ -1050,7 +1040,6 @@ class MedCalcToolkit(BaseToolkit):
                 str(bicarbonate_unit),
             ),  # Bicarbonate: (value, unit)
         }
-        print(input_variables)
 
         from camel.toolkits.medcalc_bench.delta_gap import (
             compute_delta_gap_explanation,
@@ -1115,12 +1104,10 @@ class MedCalcToolkit(BaseToolkit):
                 menstrual_date
             ),  # Last menstrual date in the format "%m/%d/%Y"
         }
-        print(input_variables)
 
         try:
-            from camel.toolkits.medcalc_bench.estimated_conception_date \
-                import add_2_weeks_explanation
-
+            from camel.toolkits.medcalc_bench.\
+                estimated_conception_date import add_2_weeks_explanation
             # Call the conception date calculation function
             result = add_2_weeks_explanation(input_variables)
 
@@ -1177,11 +1164,11 @@ class MedCalcToolkit(BaseToolkit):
             "current_date": str(current_date),  # Current date
             "menstrual_date": str(menstrual_date),  # Last menstrual date
         }
-        print(input_variables)
 
         try:
-            from camel.toolkits.medcalc_bench.estimated_gestational_age \
-                import compute_gestational_age_explanation
+            from camel.toolkits.medcalc_bench.estimated_gestational_age import (
+                compute_gestational_age_explanation,
+            )
 
             # Call the gestational age calculation function
             result = compute_gestational_age_explanation(input_variables)
@@ -1263,7 +1250,6 @@ class MedCalcToolkit(BaseToolkit):
             "sex": str(sex),  # Gender
             "race": str(race) if race else None,  # Race (optional)
         }
-        print(input_variables)
 
         from camel.toolkits.medcalc_bench.mdrd_gfr import mrdr_gfr_explanation
 
@@ -1335,7 +1321,6 @@ class MedCalcToolkit(BaseToolkit):
                 str(height_unit),
             ),  # Height: (value, unit)
         }
-        print(input_variables)
 
         from camel.toolkits.medcalc_bench.target_weight import (
             targetweight_explanation,
@@ -1597,7 +1582,6 @@ class MedCalcToolkit(BaseToolkit):
             ),
             "total_cholestrol": (float(total_value), str(total_unit)),
         }
-        print(input_variables)
 
         from camel.toolkits.medcalc_bench.ldl_calculated import (
             compute_ldl_explanation,
@@ -2499,8 +2483,9 @@ class MedCalcToolkit(BaseToolkit):
             "target steroid": str(target_steroid),
         }
 
-        from camel.toolkits.medcalc_bench.steroid_conversion_calculator \
-            import compute_steroid_conversion_explanation
+        from camel.toolkits.medcalc_bench.steroid_conversion_calculator import (
+            compute_steroid_conversion_explanation,
+        )
 
         try:
             result = compute_steroid_conversion_explanation(input_variables)
@@ -3156,15 +3141,17 @@ class MedCalcToolkit(BaseToolkit):
 
         try:
             from camel.toolkits.medcalc_bench.centor_score import (
-                compute_centor_score_explanation
+                compute_centor_score_explanation,
             )
 
             result = compute_centor_score_explanation(input_variables)
 
-            return json.dumps({
-                "rationale": result["Explanation"],
-                "final_answer": str(result["Answer"]),
-            })
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],
+                    "final_answer": str(result["Answer"]),
+                }
+            )
 
         except Exception as e:
             return self.handle_exception("compute_centor_score_explanation", e)
@@ -3228,7 +3215,7 @@ class MedCalcToolkit(BaseToolkit):
             "dia_bp": (float(dia_bp_value), str(dia_bp_unit)),
             "respiratory_rate": (
                 float(respiratory_rate_value),
-                str(respiratory_rate_unit)
+                str(respiratory_rate_unit),
             ),
             "bun": (float(bun_value), str(bun_unit)),
         }
@@ -3239,13 +3226,15 @@ class MedCalcToolkit(BaseToolkit):
 
         try:
             result = curb_65_explanation(input_variables)
-            return json.dumps({
-                "rationale": result["Explanation"],
-                "final_answer": str(result["Answer"])
-            })
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],
+                    "final_answer": str(result["Answer"]),
+                }
+            )
         except Exception as e:
             return self.handle_exception("curb_65_explanation", e)
-        
+
     def fibrosis_4(
         self,
         age_value: float,  # Numeric part of age (e.g., 17)
@@ -3294,15 +3283,17 @@ class MedCalcToolkit(BaseToolkit):
         }
 
         from camel.toolkits.medcalc_bench.fibrosis_4 import (
-            compute_fib4_explanation
+            compute_fib4_explanation,
         )
 
         try:
             result = compute_fib4_explanation(input_variables)
-            return json.dumps({
-                "rationale": result["Explanation"],
-                "final_answer": str(result["Answer"])
-            })
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],
+                    "final_answer": str(result["Answer"]),
+                }
+            )
         except Exception as e:
             return self.handle_exception("compute_fib4_explanation", e)
 
@@ -3350,7 +3341,7 @@ class MedCalcToolkit(BaseToolkit):
         }
 
         from camel.toolkits.medcalc_bench.maintenance_fluid_calc import (
-            maintenance_fluid_explanation
+            maintenance_fluid_explanation,
         )
 
         try:
@@ -3436,24 +3427,30 @@ class MedCalcToolkit(BaseToolkit):
         """
         # Construct the input variables dictionary for mme_explanation
         input_variables = {
-            "Tapentadol Dose":
-                (float(tapentadol_dose_value),
-                    str(tapentadol_dose_unit)),
-            "Tapentadol Dose Per Day":
-                (float(tapentadol_dose_per_day_value),
-                    str(tapentadol_dose_per_day_unit)),
-            "HYDROcodone Dose":
-                (float(hydrocodone_dose_value),
-                    str(hydrocodone_dose_unit)),
-            "HYDROcodone Dose Per Day":
-                (float(hydrocodone_dose_per_day_value),
-                    str(hydrocodone_dose_per_day_unit)),
-            "FentANYL patch Dose":
-                (float(fentanyl_patch_dose_value),
-                    str(fentanyl_patch_dose_unit)),
-            "FentANYL patch Dose Per Day":
-                (float(fentanyl_patch_dose_per_day_value),
-                    str(fentanyl_patch_dose_per_day_unit)),
+            "Tapentadol Dose": (
+                float(tapentadol_dose_value),
+                str(tapentadol_dose_unit),
+            ),
+            "Tapentadol Dose Per Day": (
+                float(tapentadol_dose_per_day_value),
+                str(tapentadol_dose_per_day_unit),
+            ),
+            "HYDROcodone Dose": (
+                float(hydrocodone_dose_value),
+                str(hydrocodone_dose_unit),
+            ),
+            "HYDROcodone Dose Per Day": (
+                float(hydrocodone_dose_per_day_value),
+                str(hydrocodone_dose_per_day_unit),
+            ),
+            "FentANYL patch Dose": (
+                float(fentanyl_patch_dose_value),
+                str(fentanyl_patch_dose_unit),
+            ),
+            "FentANYL patch Dose Per Day": (
+                float(fentanyl_patch_dose_per_day_value),
+                str(fentanyl_patch_dose_per_day_unit),
+            ),
         }
 
         from camel.toolkits.medcalc_bench.mme import (
@@ -3544,10 +3541,10 @@ class MedCalcToolkit(BaseToolkit):
         }
 
         try:
-
             from camel.toolkits.medcalc_bench.perc_rule import (
                 compute_perc_rule_explanation,
             )
+
             # Call the PERC Rule calculation function
             result = compute_perc_rule_explanation(input_parameters)
 
@@ -3573,11 +3570,13 @@ class MedCalcToolkit(BaseToolkit):
         heart_rate_unit: str,  # Unit of heart rate (e.g., "beats per minute")
         wbc_value: float,  # Numeric part of WBC count (e.g., 15760.0)
         wbc_unit: str,  # Unit of WBC count (e.g., "mL")
-        respiratory_rate_value: float = None, 
+        respiratory_rate_value: Optional[float] = None,
         # Optional respiratory rate value
-        respiratory_rate_unit: str = None,  # Optional respiratory rate unit
-        paco2_value: float = None,  # Optional PaCO₂ value
-        paco2_unit: str = None,  # Optional PaCO₂ unit
+        respiratory_rate_unit: Optional[
+            str
+        ] = None,  # Optional respiratory rate unit
+        paco2_value: Optional[float] = None,  # Optional PaCO₂ value
+        paco2_unit: Optional[str] = None,  # Optional PaCO₂ unit
     ) -> str:
         r"""Calculate the patient's SIRS Criteria score and generate a detailed
         explanatory text.
@@ -3636,10 +3635,12 @@ class MedCalcToolkit(BaseToolkit):
             result = sirs_criteria_explanation(input_variables)
 
             # Return result as JSON string
-            return json.dumps({
-                "rationale": result["Explanation"],
-                "final_answer": str(result["Answer"]),
-            })
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],
+                    "final_answer": str(result["Answer"]),
+                }
+            )
 
         except Exception as e:
             # Catch exceptions and return error message
@@ -3694,8 +3695,9 @@ class MedCalcToolkit(BaseToolkit):
             "glucose": (float(glucose_value), str(glucose_unit)),
         }
 
-        from camel.toolkits.medcalc_bench.sodium_correction_hyperglycemia \
-            import compute_sodium_correction_hyperglycemia_explanation
+        from camel.toolkits.medcalc_bench.sodium_correction_hyperglycemia import (
+            compute_sodium_correction_hyperglycemia_explanation,
+        )
 
         try:
             # Call the sodium correction calculation function
