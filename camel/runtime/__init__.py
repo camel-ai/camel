@@ -16,6 +16,7 @@ from .configs import TaskConfig
 from .docker_runtime import DockerRuntime
 from .llm_guard_runtime import LLMGuardRuntime
 from .remote_http_runtime import RemoteHttpRuntime
+from .ubuntu_docker_runtime import UbuntuDockerRuntime
 
 # TODO: Add Celery Runtime to support distributed computing,
 # Rate Limiting, Load Balancing, etc.
@@ -26,4 +27,5 @@ __all__ = [
     "RemoteHttpRuntime",
     "LLMGuardRuntime",
     "TaskConfig",
+    "UbuntuDockerRuntime",
 ]
