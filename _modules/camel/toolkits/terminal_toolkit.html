@@ -1,0 +1,960 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>camel.toolkits.terminal_toolkit &#8212; CAMEL 0.2.38 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=3c972f42" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../../_static/documentation_options.js?v=6c336dfe"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/camel/toolkits/terminal_toolkit';</script>
+    <link rel="icon" href="https://raw.githubusercontent.com/camel-ai/camel/master/misc/favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png" class="logo__image only-light" alt=""/>
+    <script>document.write(`<img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png" class="logo__image only-dark" alt=""/>`);</script>
+  
+  
+    <p class="title logo__title">CAMEL 0.2.38</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Get Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../get_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../get_started/setup.html">API Setup</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Key Modules</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/agents.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/datagen.html">Data Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/messages.html">Message</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/memory.html">Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/tools.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/prompts.html">Prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/tasks.html">Task</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/loaders.html">Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/storages.html">Storages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/society.html">Society</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/embeddings.html">Embeddings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/retrievers.html">Retrievers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/workforce.html">Workforce</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Cookbooks</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/basic_concepts/index.html">Basic Concepts</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/create_your_first_agent.html">Creating Your First Agent</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/create_your_first_agents_society.html">Creating Your First Agent Society</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/agents_message.html">Message Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/agents_prompting.html">Prompting Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/model_speed_comparison.html">Model Speed Comparison Cookbook</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/advanced_features/index.html">Advanced Features</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_tools.html">Tools Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_tools_from_Composio.html">Using Tools from Composio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_human_in_loop_and_tool_approval.html">Agents with Human-in-loop and Tool Approval from HumanLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_memory.html">Memory Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_rag.html">RAG Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_graph_rag.html">Graph RAG Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_tracking.html">Track CAMEL Agents with AgentOps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/critic_agents_and_tree_search.html">Critic Agents and Tree Search</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/embodied_agents.html">Embodied Agents</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/multi_agent_society/index.html">Multi-agent Society</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/multi_agent_society/agents_society.html">Develop Trading Bot with Role Playing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/multi_agent_society/workforce_judge_committee.html">Create A Hackathon Judge Committee with Workforce</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/multi_agent_society/task_generation.html">Task Generation Cookbook</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/data_generation/index.html">Agentic Data Generation</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_mistral_7b_instruct.html">Agenetic SFT Data generation with CAMEL and finetuning Mistral models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B.html">Agenetic Data generation with CAMEL and finetuning Qwen models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_tinyllama.html">Agenetic SFT Data generation with CAMEL and finetuning Meta models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/data_gen_with_real_function_calls_and_hermes_format.html">Real Function Calls and Hermes Format Data Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/self_instruct_data_generation.html">Self-instruct Data Generation Using Qwen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/cot_data_gen_sft_qwen_unsolth_upload_huggingface.html">CoT Data Generation and SFT Qwen With Unsloth</a></li>
+
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/synthetic_dataevaluation%26filter_with_reward_model.html">Agentic Data Generation, Evaluation &amp; Filtering with Reward Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/data_model_generation_and_structured_output_with_qwen.html">Agentic Data Model Generation and Structured Output Powered by CAMEL &amp; Qwen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/distill_math_reasoning_data_from_deepseek_r1.html">Distill Math Reasoning Data from DeepSeek R1 with CAMEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/self_improving_math_reasoning_data_distillation_from_deepSeek_r1.html">Self-Improving Math Reasoning Data Distillation from DeepSeek R1 with CAMEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/self_improving_cot_generation.html">Deep Dive into CAMEL’s Practices for Self-Improving CoT Generation 🚀</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/applications/index.html">Applications</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/roleplaying_scraper.html">Role-Playing Scraper for Report &amp; Knowledge Graph Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/dynamic_travel_planner.html">Dynamic Travel Planner Role-Playing: Multi-Agent System with Real-Time Insights Powered by Dappier</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/customer_service_Discord_bot_with_agentic_RAG.html">Customer Service Discord Bot with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/customer_service_Discord_bot_using_SambaNova_with_agentic_RAG.html">Customer Service Discord Bot Using SambaNova with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/customer_service_Discord_bot_using_local_model_with_agentic_RAG.html">Customer Service Discord Bot Using Local Models with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/finance_discord_bot.html">Customer Service Discord Bot for Finance with OpenBB</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/data_processing/index.html">Data Processing and Analysis</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_processing/video_analysis.html">Video Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_processing/agent_with_chunkr_for_pdf_parsing.html">Create AI Agents that work with your PDFs using Chunkr &amp; Mistral AI</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_processing/ingest_data_from_websites_with_Firecrawl.html">3 ways to ingest data from websites with Firecrawl</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../modules.html">camel</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../camel.html">camel package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.agents.html">camel.agents package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.agents.tool_agents.html">camel.agents.tool_agents package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.configs.html">camel.configs package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.datagen.html">camel.datagen package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.datagen.self_instruct.html">camel.datagen.self_instruct package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.datagen.source2synth.html">camel.datagen.source2synth package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.embeddings.html">camel.embeddings package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.interpreters.html">camel.interpreters package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.loaders.html">camel.loaders package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.memories.html">camel.memories package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.memories.blocks.html">camel.memories.blocks package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.memories.context_creators.html">camel.memories.context_creators package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.messages.html">camel.messages package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.models.html">camel.models package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.prompts.html">camel.prompts package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.responses.html">camel.responses package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.retrievers.html">camel.retrievers package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.societies.html">camel.societies package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.societies.workforce.html">camel.societies.workforce package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.storages.html">camel.storages package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.graph_storages.html">camel.storages.graph_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.key_value_storages.html">camel.storages.key_value_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.object_storages.html">camel.storages.object_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.vectordb_storages.html">camel.storages.vectordb_storages package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.tasks.html">camel.tasks package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.terminators.html">camel.terminators package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.toolkits.html">camel.toolkits package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.types.html">camel.types package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.utils.html">camel.utils package</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/camel-ai/camel" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/camel-ai/camel/issues/new?title=Issue%20on%20page%20%2F_modules/camel/toolkits/terminal_toolkit.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for camel.toolkits.terminal_toolkit</h1><div class="highlight"><pre>
+<span></span><span class="c1"># ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1"># ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.toolkits.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseToolkit</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.toolkits.function_tool</span><span class="w"> </span><span class="kn">import</span> <span class="n">FunctionTool</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="TerminalToolkit">
+<a class="viewcode-back" href="../../../camel.toolkits.html#camel.toolkits.TerminalToolkit">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TerminalToolkit</span><span class="p">(</span><span class="n">BaseToolkit</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;A toolkit for terminal operations across multiple operating systems.</span>
+
+<span class="sd">    This toolkit provides a set of functions for terminal operations such as</span>
+<span class="sd">    searching for files by name or content, executing shell commands, and</span>
+<span class="sd">    managing terminal sessions.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        timeout (Optional[float]): The timeout for terminal operations.</span>
+<span class="sd">        shell_sessions (Optional[Dict[str, Any]]): A dictionary to store</span>
+<span class="sd">            shell session information. If None, an empty dictionary will be</span>
+<span class="sd">            used.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        Most functions are compatible with Unix-based systems (macOS, Linux).</span>
+<span class="sd">        For Windows compatibility, additional implementation details are</span>
+<span class="sd">        needed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">shell_sessions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">platform</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shell_sessions</span> <span class="o">=</span> <span class="n">shell_sessions</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">os_type</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span>
+        <span class="p">)</span>  <span class="c1"># &#39;Windows&#39;, &#39;Darwin&#39; (macOS), &#39;Linux&#39;</span>
+
+<div class="viewcode-block" id="TerminalToolkit.file_find_in_content">
+<a class="viewcode-back" href="../../../camel.toolkits.html#camel.toolkits.TerminalToolkit.file_find_in_content">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">file_find_in_content</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">regex</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">sudo</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Search for matching text within file content.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            file (str): Absolute path of the file to search within.</span>
+<span class="sd">            regex (str): Regular expression pattern to match.</span>
+<span class="sd">            sudo (bool, optional): Whether to use sudo privileges. Defaults to</span>
+<span class="sd">                False. Note: Using sudo requires the process to have</span>
+<span class="sd">                appropriate permissions.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Matching content found in the file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;File not found: </span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;The path provided is not a file: </span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="n">command</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">sudo</span><span class="p">:</span>
+            <span class="n">command</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;sudo&quot;</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">os_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;Darwin&#39;</span><span class="p">,</span> <span class="s1">&#39;Linux&#39;</span><span class="p">]:</span>  <span class="c1"># macOS or Linux</span>
+            <span class="n">command</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;grep&quot;</span><span class="p">,</span> <span class="s2">&quot;-E&quot;</span><span class="p">,</span> <span class="n">regex</span><span class="p">,</span> <span class="n">file</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># Windows</span>
+            <span class="c1"># For Windows, we could use PowerShell or findstr</span>
+            <span class="n">command</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;findstr&quot;</span><span class="p">,</span> <span class="s2">&quot;/R&quot;</span><span class="p">,</span> <span class="n">regex</span><span class="p">,</span> <span class="n">file</span><span class="p">])</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+                <span class="n">command</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">SubprocessError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error searching in file content: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Error: </span><span class="si">{</span><span class="n">e</span><span class="si">!s}</span><span class="s2">&quot;</span></div>
+
+
+<div class="viewcode-block" id="TerminalToolkit.file_find_by_name">
+<a class="viewcode-back" href="../../../camel.toolkits.html#camel.toolkits.TerminalToolkit.file_find_by_name">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">file_find_by_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">glob</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Find files by name pattern in specified directory.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            path (str): Absolute path of directory to search.</span>
+<span class="sd">            glob (str): Filename pattern using glob syntax wildcards.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: List of files matching the pattern.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Directory not found: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;The path provided is not a directory: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="n">command</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">os_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;Darwin&#39;</span><span class="p">,</span> <span class="s1">&#39;Linux&#39;</span><span class="p">]:</span>  <span class="c1"># macOS or Linux</span>
+            <span class="n">command</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;find&quot;</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="s2">&quot;-name&quot;</span><span class="p">,</span> <span class="n">glob</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># Windows</span>
+            <span class="c1"># For Windows, we use dir command with /s for recursive search</span>
+            <span class="c1"># and /b for bare format</span>
+            <span class="n">pattern</span> <span class="o">=</span> <span class="n">glob</span>
+            <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">pattern</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">command</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;cmd&quot;</span><span class="p">,</span> <span class="s2">&quot;/c&quot;</span><span class="p">,</span> <span class="s2">&quot;dir&quot;</span><span class="p">,</span> <span class="s2">&quot;/s&quot;</span><span class="p">,</span> <span class="s2">&quot;/b&quot;</span><span class="p">,</span> <span class="n">file_path</span><span class="p">])</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+                <span class="n">command</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">SubprocessError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error finding files by name: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Error: </span><span class="si">{</span><span class="n">e</span><span class="si">!s}</span><span class="s2">&quot;</span></div>
+
+
+<div class="viewcode-block" id="TerminalToolkit.shell_exec">
+<a class="viewcode-back" href="../../../camel.toolkits.html#camel.toolkits.TerminalToolkit.shell_exec">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">shell_exec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">exec_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">command</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Execute commands in a specified shell session.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            id (str): Unique identifier of the target shell session.</span>
+<span class="sd">            exec_dir (str): Working directory for command execution (must use</span>
+<span class="sd">                absolute path).</span>
+<span class="sd">            command (str): Shell command to execute.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Output of the command execution or error message.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isabs</span><span class="p">(</span><span class="n">exec_dir</span><span class="p">):</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;exec_dir must be an absolute path: </span><span class="si">{</span><span class="n">exec_dir</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">exec_dir</span><span class="p">):</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Directory not found: </span><span class="si">{</span><span class="n">exec_dir</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="c1"># If the session doesn&#39;t exist, create a new one</span>
+        <span class="k">if</span> <span class="nb">id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell_sessions</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shell_sessions</span><span class="p">[</span><span class="nb">id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;process&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="s2">&quot;output&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;running&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="p">}</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Execute the command in the specified directory</span>
+            <span class="n">process</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span>
+                <span class="n">command</span><span class="p">,</span>
+                <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">cwd</span><span class="o">=</span><span class="n">exec_dir</span><span class="p">,</span>
+                <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span>
+                <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span>
+                <span class="n">stdin</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span>
+                <span class="n">text</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Store the process and mark as running</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shell_sessions</span><span class="p">[</span><span class="nb">id</span><span class="p">][</span><span class="s2">&quot;process&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">process</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shell_sessions</span><span class="p">[</span><span class="nb">id</span><span class="p">][</span><span class="s2">&quot;running&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shell_sessions</span><span class="p">[</span><span class="nb">id</span><span class="p">][</span><span class="s2">&quot;output&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+            <span class="c1"># Get initial output (non-blocking)</span>
+            <span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">process</span><span class="o">.</span><span class="n">stdout</span><span class="p">:</span>
+                    <span class="n">stdout</span> <span class="o">=</span> <span class="n">process</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">process</span><span class="o">.</span><span class="n">stderr</span><span class="p">:</span>
+                    <span class="n">stderr</span> <span class="o">=</span> <span class="n">process</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error reading initial output: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Error: </span><span class="si">{</span><span class="n">e</span><span class="si">!s}</span><span class="s2">&quot;</span>
+
+            <span class="n">output</span> <span class="o">=</span> <span class="n">stdout</span>
+            <span class="k">if</span> <span class="n">stderr</span><span class="p">:</span>
+                <span class="n">output</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Errors:</span><span class="se">\n</span><span class="si">{</span><span class="n">stderr</span><span class="si">}</span><span class="s2">&quot;</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">shell_sessions</span><span class="p">[</span><span class="nb">id</span><span class="p">][</span><span class="s2">&quot;output&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">output</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Command started in session &#39;</span><span class="si">{</span><span class="nb">id</span><span class="si">}</span><span class="s2">&#39;. Initial output: </span><span class="si">{</span><span class="n">output</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">SubprocessError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shell_sessions</span><span class="p">[</span><span class="nb">id</span><span class="p">][</span><span class="s2">&quot;running&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">error_msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Error executing command: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shell_sessions</span><span class="p">[</span><span class="nb">id</span><span class="p">][</span><span class="s2">&quot;output&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">error_msg</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">error_msg</span></div>
+
+
+<div class="viewcode-block" id="TerminalToolkit.shell_view">
+<a class="viewcode-back" href="../../../camel.toolkits.html#camel.toolkits.TerminalToolkit.shell_view">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">shell_view</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;View the content of a specified shell session.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            id (str): Unique identifier of the target shell session.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Current output content of the shell session.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell_sessions</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Shell session not found: </span><span class="si">{</span><span class="nb">id</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="n">session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell_sessions</span><span class="p">[</span><span class="nb">id</span><span class="p">]</span>
+        <span class="n">process</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;process&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">process</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;No active process in session &#39;</span><span class="si">{</span><span class="nb">id</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+
+        <span class="c1"># Try to get any new output</span>
+        <span class="k">if</span> <span class="n">session</span><span class="p">[</span><span class="s2">&quot;running&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">process</span><span class="o">.</span><span class="n">poll</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># Non-blocking read from stdout/stderr</span>
+                <span class="n">stdout_data</span><span class="p">,</span> <span class="n">stderr_data</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span>
+                <span class="k">if</span> <span class="n">process</span><span class="o">.</span><span class="n">stdout</span> <span class="ow">and</span> <span class="n">process</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">readable</span><span class="p">():</span>
+                    <span class="n">stdout_data</span> <span class="o">=</span> <span class="n">process</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">read1</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">process</span><span class="o">.</span><span class="n">stderr</span> <span class="ow">and</span> <span class="n">process</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">readable</span><span class="p">():</span>
+                    <span class="n">stderr_data</span> <span class="o">=</span> <span class="n">process</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">read1</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">stdout_data</span><span class="p">:</span>
+                    <span class="n">session</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">stdout_data</span>
+                <span class="k">if</span> <span class="n">stderr_data</span><span class="p">:</span>
+                    <span class="n">session</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Errors:</span><span class="se">\n</span><span class="si">{</span><span class="n">stderr_data</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error getting process output: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Error: </span><span class="si">{</span><span class="n">e</span><span class="si">!s}</span><span class="s2">&quot;</span>
+
+        <span class="c1"># Check if the process has completed</span>
+        <span class="k">if</span> <span class="n">process</span><span class="o">.</span><span class="n">poll</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">session</span><span class="p">[</span><span class="s2">&quot;running&quot;</span><span class="p">]:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># Get remaining output if any</span>
+                <span class="n">stdout_data</span><span class="p">,</span> <span class="n">stderr_data</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span>
+                <span class="k">if</span> <span class="n">process</span><span class="o">.</span><span class="n">stdout</span> <span class="ow">and</span> <span class="n">process</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">readable</span><span class="p">():</span>
+                    <span class="n">stdout_data</span> <span class="o">=</span> <span class="n">process</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">process</span><span class="o">.</span><span class="n">stderr</span> <span class="ow">and</span> <span class="n">process</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">readable</span><span class="p">():</span>
+                    <span class="n">stderr_data</span> <span class="o">=</span> <span class="n">process</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">stdout_data</span><span class="p">:</span>
+                    <span class="n">session</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">stdout_data</span>
+                <span class="k">if</span> <span class="n">stderr_data</span><span class="p">:</span>
+                    <span class="n">session</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Errors:</span><span class="se">\n</span><span class="si">{</span><span class="n">stderr_data</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error getting final process output: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Error: </span><span class="si">{</span><span class="n">e</span><span class="si">!s}</span><span class="s2">&quot;</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="n">session</span><span class="p">[</span><span class="s2">&quot;running&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">return</span> <span class="n">session</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="TerminalToolkit.shell_wait">
+<a class="viewcode-back" href="../../../camel.toolkits.html#camel.toolkits.TerminalToolkit.shell_wait">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">shell_wait</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">seconds</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Wait for the running process in a specified shell session to</span>
+<span class="sd">        return.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            id (str): Unique identifier of the target shell session.</span>
+<span class="sd">            seconds (Optional[int], optional): Wait duration in seconds.</span>
+<span class="sd">                If None, wait indefinitely. Defaults to None.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Final output content after waiting.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell_sessions</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Shell session not found: </span><span class="si">{</span><span class="nb">id</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="n">session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell_sessions</span><span class="p">[</span><span class="nb">id</span><span class="p">]</span>
+        <span class="n">process</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;process&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">process</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;No active process in session &#39;</span><span class="si">{</span><span class="nb">id</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="p">[</span><span class="s2">&quot;running&quot;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Process in session &#39;</span><span class="si">{</span><span class="nb">id</span><span class="si">}</span><span class="s2">&#39; is not running&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Use communicate with timeout</span>
+            <span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span> <span class="o">=</span> <span class="n">process</span><span class="o">.</span><span class="n">communicate</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="n">seconds</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">stdout</span><span class="p">:</span>
+                <span class="n">stdout_str</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">stdout</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">stdout</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">)</span>
+                    <span class="k">else</span> <span class="n">stdout</span>
+                <span class="p">)</span>
+                <span class="n">session</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">stdout_str</span>
+            <span class="k">if</span> <span class="n">stderr</span><span class="p">:</span>
+                <span class="n">stderr_str</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">stderr</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">)</span>
+                    <span class="k">else</span> <span class="n">stderr</span>
+                <span class="p">)</span>
+                <span class="n">session</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Errors:</span><span class="se">\n</span><span class="si">{</span><span class="n">stderr_str</span><span class="si">}</span><span class="s2">&quot;</span>
+
+            <span class="n">session</span><span class="p">[</span><span class="s2">&quot;running&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Process completed in session &#39;</span><span class="si">{</span><span class="nb">id</span><span class="si">}</span><span class="s2">&#39;. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Output: </span><span class="si">{</span><span class="n">session</span><span class="p">[</span><span class="s1">&#39;output&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">TimeoutExpired</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Process in session &#39;</span><span class="si">{</span><span class="nb">id</span><span class="si">}</span><span class="s2">&#39; is still running &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;after </span><span class="si">{</span><span class="n">seconds</span><span class="si">}</span><span class="s2"> seconds&quot;</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error waiting for process: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Error waiting for process: </span><span class="si">{</span><span class="n">e</span><span class="si">!s}</span><span class="s2">&quot;</span></div>
+
+
+<div class="viewcode-block" id="TerminalToolkit.shell_write_to_process">
+<a class="viewcode-back" href="../../../camel.toolkits.html#camel.toolkits.TerminalToolkit.shell_write_to_process">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">shell_write_to_process</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">press_enter</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Write input to a running process in a specified shell session.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            id (str): Unique identifier of the target shell session.</span>
+<span class="sd">            input (str): Input content to write to the process.</span>
+<span class="sd">            press_enter (bool): Whether to press Enter key after input.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Status message indicating whether the input was sent.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell_sessions</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Shell session not found: </span><span class="si">{</span><span class="nb">id</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="n">session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell_sessions</span><span class="p">[</span><span class="nb">id</span><span class="p">]</span>
+        <span class="n">process</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;process&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">process</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;No active process in session &#39;</span><span class="si">{</span><span class="nb">id</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="p">[</span><span class="s2">&quot;running&quot;</span><span class="p">]</span> <span class="ow">or</span> <span class="n">process</span><span class="o">.</span><span class="n">poll</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Process in session &#39;</span><span class="si">{</span><span class="nb">id</span><span class="si">}</span><span class="s2">&#39; is not running&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">process</span><span class="o">.</span><span class="n">stdin</span> <span class="ow">or</span> <span class="n">process</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">closed</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Cannot write to process in session &#39;</span><span class="si">{</span><span class="nb">id</span><span class="si">}</span><span class="s2">&#39;: &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;stdin is closed&quot;</span>
+                <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">press_enter</span><span class="p">:</span>
+                <span class="nb">input</span> <span class="o">=</span> <span class="nb">input</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+
+            <span class="c1"># Write bytes to stdin</span>
+            <span class="n">process</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">input</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
+            <span class="n">process</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Input sent to process in session &#39;</span><span class="si">{</span><span class="nb">id</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error writing to process: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Error writing to process: </span><span class="si">{</span><span class="n">e</span><span class="si">!s}</span><span class="s2">&quot;</span></div>
+
+
+<div class="viewcode-block" id="TerminalToolkit.shell_kill_process">
+<a class="viewcode-back" href="../../../camel.toolkits.html#camel.toolkits.TerminalToolkit.shell_kill_process">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">shell_kill_process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Terminate a running process in a specified shell session.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            id (str): Unique identifier of the target shell session.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Status message indicating whether the process was terminated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell_sessions</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Shell session not found: </span><span class="si">{</span><span class="nb">id</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="n">session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shell_sessions</span><span class="p">[</span><span class="nb">id</span><span class="p">]</span>
+        <span class="n">process</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;process&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">process</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;No active process in session &#39;</span><span class="si">{</span><span class="nb">id</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="p">[</span><span class="s2">&quot;running&quot;</span><span class="p">]</span> <span class="ow">or</span> <span class="n">process</span><span class="o">.</span><span class="n">poll</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Process in session &#39;</span><span class="si">{</span><span class="nb">id</span><span class="si">}</span><span class="s2">&#39; is not running&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Clean up process resources before termination</span>
+            <span class="k">if</span> <span class="n">process</span><span class="o">.</span><span class="n">stdin</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">process</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">closed</span><span class="p">:</span>
+                <span class="n">process</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+            <span class="n">process</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">process</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">TimeoutExpired</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Process in session &#39;</span><span class="si">{</span><span class="nb">id</span><span class="si">}</span><span class="s2">&#39; did not terminate gracefully&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;, forcing kill&quot;</span>
+                <span class="p">)</span>
+                <span class="n">process</span><span class="o">.</span><span class="n">kill</span><span class="p">()</span>
+
+            <span class="n">session</span><span class="p">[</span><span class="s2">&quot;running&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Process in session &#39;</span><span class="si">{</span><span class="nb">id</span><span class="si">}</span><span class="s2">&#39; has been terminated&quot;</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error killing process: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Error killing process: </span><span class="si">{</span><span class="n">e</span><span class="si">!s}</span><span class="s2">&quot;</span></div>
+
+
+<div class="viewcode-block" id="TerminalToolkit.get_tools">
+<a class="viewcode-back" href="../../../camel.toolkits.html#camel.toolkits.TerminalToolkit.get_tools">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_tools</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">FunctionTool</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Returns a list of FunctionTool objects representing the functions</span>
+<span class="sd">        in the toolkit.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[FunctionTool]: A list of FunctionTool objects representing the</span>
+<span class="sd">                functions in the toolkit.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="n">FunctionTool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_find_in_content</span><span class="p">),</span>
+            <span class="n">FunctionTool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_find_by_name</span><span class="p">),</span>
+            <span class="n">FunctionTool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shell_exec</span><span class="p">),</span>
+            <span class="n">FunctionTool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shell_view</span><span class="p">),</span>
+            <span class="n">FunctionTool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shell_wait</span><span class="p">),</span>
+            <span class="n">FunctionTool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shell_write_to_process</span><span class="p">),</span>
+            <span class="n">FunctionTool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shell_kill_process</span><span class="p">),</span>
+        <span class="p">]</span></div>
+</div>
+
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By CAMEL-AI.org
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, CAMEL-AI.org.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

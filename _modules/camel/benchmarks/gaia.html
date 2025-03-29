@@ -1,0 +1,1039 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>camel.benchmarks.gaia &#8212; CAMEL 0.2.38 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=3c972f42" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../../_static/documentation_options.js?v=6c336dfe"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/camel/benchmarks/gaia';</script>
+    <link rel="icon" href="https://raw.githubusercontent.com/camel-ai/camel/master/misc/favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png" class="logo__image only-light" alt=""/>
+    <script>document.write(`<img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png" class="logo__image only-dark" alt=""/>`);</script>
+  
+  
+    <p class="title logo__title">CAMEL 0.2.38</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Get Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../get_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../get_started/setup.html">API Setup</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Key Modules</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/agents.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/datagen.html">Data Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/messages.html">Message</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/memory.html">Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/tools.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/prompts.html">Prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/tasks.html">Task</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/loaders.html">Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/storages.html">Storages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/society.html">Society</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/embeddings.html">Embeddings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/retrievers.html">Retrievers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/workforce.html">Workforce</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Cookbooks</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/basic_concepts/index.html">Basic Concepts</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/create_your_first_agent.html">Creating Your First Agent</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/create_your_first_agents_society.html">Creating Your First Agent Society</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/agents_message.html">Message Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/agents_prompting.html">Prompting Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/model_speed_comparison.html">Model Speed Comparison Cookbook</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/advanced_features/index.html">Advanced Features</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_tools.html">Tools Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_tools_from_Composio.html">Using Tools from Composio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_human_in_loop_and_tool_approval.html">Agents with Human-in-loop and Tool Approval from HumanLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_memory.html">Memory Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_rag.html">RAG Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_graph_rag.html">Graph RAG Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_tracking.html">Track CAMEL Agents with AgentOps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/critic_agents_and_tree_search.html">Critic Agents and Tree Search</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/embodied_agents.html">Embodied Agents</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/multi_agent_society/index.html">Multi-agent Society</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/multi_agent_society/agents_society.html">Develop Trading Bot with Role Playing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/multi_agent_society/workforce_judge_committee.html">Create A Hackathon Judge Committee with Workforce</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/multi_agent_society/task_generation.html">Task Generation Cookbook</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/data_generation/index.html">Agentic Data Generation</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_mistral_7b_instruct.html">Agenetic SFT Data generation with CAMEL and finetuning Mistral models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B.html">Agenetic Data generation with CAMEL and finetuning Qwen models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_tinyllama.html">Agenetic SFT Data generation with CAMEL and finetuning Meta models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/data_gen_with_real_function_calls_and_hermes_format.html">Real Function Calls and Hermes Format Data Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/self_instruct_data_generation.html">Self-instruct Data Generation Using Qwen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/cot_data_gen_sft_qwen_unsolth_upload_huggingface.html">CoT Data Generation and SFT Qwen With Unsloth</a></li>
+
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/synthetic_dataevaluation%26filter_with_reward_model.html">Agentic Data Generation, Evaluation &amp; Filtering with Reward Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/data_model_generation_and_structured_output_with_qwen.html">Agentic Data Model Generation and Structured Output Powered by CAMEL &amp; Qwen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/distill_math_reasoning_data_from_deepseek_r1.html">Distill Math Reasoning Data from DeepSeek R1 with CAMEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/self_improving_math_reasoning_data_distillation_from_deepSeek_r1.html">Self-Improving Math Reasoning Data Distillation from DeepSeek R1 with CAMEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/self_improving_cot_generation.html">Deep Dive into CAMEL’s Practices for Self-Improving CoT Generation 🚀</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/applications/index.html">Applications</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/roleplaying_scraper.html">Role-Playing Scraper for Report &amp; Knowledge Graph Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/dynamic_travel_planner.html">Dynamic Travel Planner Role-Playing: Multi-Agent System with Real-Time Insights Powered by Dappier</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/customer_service_Discord_bot_with_agentic_RAG.html">Customer Service Discord Bot with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/customer_service_Discord_bot_using_SambaNova_with_agentic_RAG.html">Customer Service Discord Bot Using SambaNova with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/customer_service_Discord_bot_using_local_model_with_agentic_RAG.html">Customer Service Discord Bot Using Local Models with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/finance_discord_bot.html">Customer Service Discord Bot for Finance with OpenBB</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/data_processing/index.html">Data Processing and Analysis</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_processing/video_analysis.html">Video Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_processing/agent_with_chunkr_for_pdf_parsing.html">Create AI Agents that work with your PDFs using Chunkr &amp; Mistral AI</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_processing/ingest_data_from_websites_with_Firecrawl.html">3 ways to ingest data from websites with Firecrawl</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../modules.html">camel</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../camel.html">camel package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.agents.html">camel.agents package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.agents.tool_agents.html">camel.agents.tool_agents package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.configs.html">camel.configs package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.datagen.html">camel.datagen package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.datagen.self_instruct.html">camel.datagen.self_instruct package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.datagen.source2synth.html">camel.datagen.source2synth package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.embeddings.html">camel.embeddings package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.interpreters.html">camel.interpreters package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.loaders.html">camel.loaders package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.memories.html">camel.memories package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.memories.blocks.html">camel.memories.blocks package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.memories.context_creators.html">camel.memories.context_creators package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.messages.html">camel.messages package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.models.html">camel.models package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.prompts.html">camel.prompts package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.responses.html">camel.responses package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.retrievers.html">camel.retrievers package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.societies.html">camel.societies package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.societies.workforce.html">camel.societies.workforce package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.storages.html">camel.storages package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.graph_storages.html">camel.storages.graph_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.key_value_storages.html">camel.storages.key_value_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.object_storages.html">camel.storages.object_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.vectordb_storages.html">camel.storages.vectordb_storages package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.tasks.html">camel.tasks package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.terminators.html">camel.terminators package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.toolkits.html">camel.toolkits package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.types.html">camel.types package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.utils.html">camel.utils package</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/camel-ai/camel" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/camel-ai/camel/issues/new?title=Issue%20on%20page%20%2F_modules/camel/benchmarks/gaia.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for camel.benchmarks.gaia</h1><div class="highlight"><pre>
+<span></span><span class="c1"># ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1"># ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">string</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Protocol</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.agents</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatAgent</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.benchmarks.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseBenchmark</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.messages</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseMessage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.retrievers.auto_retriever</span><span class="w"> </span><span class="kn">import</span> <span class="n">AutoRetriever</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="RetrieverProtocol">
+<a class="viewcode-back" href="../../../camel.benchmarks.html#camel.benchmarks.gaia.RetrieverProtocol">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RetrieverProtocol</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Protocol for the retriever class. Any retriever class implementing</span>
+<span class="sd">    this protocol can be used in the benchmark class.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="RetrieverProtocol.retrieve">
+<a class="viewcode-back" href="../../../camel.benchmarks.html#camel.benchmarks.gaia.RetrieverProtocol.retrieve">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">retrieve</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">contents</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Retrieve the relevant content for the query.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            query (str): The query to retrieve the content for.</span>
+<span class="sd">            contents (List[str]): The list of contents to search in.</span>
+<span class="sd">            **kwargs (Dict[str, Any]): Additional keyword arguments.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dict[str, Any]: The relevant content for the query.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="o">...</span></div>
+
+
+<div class="viewcode-block" id="RetrieverProtocol.reset">
+<a class="viewcode-back" href="../../../camel.benchmarks.html#camel.benchmarks.gaia.RetrieverProtocol.reset">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Reset the retriever.</span>
+<span class="sd">        Some benchmarks may require resetting the retriever</span>
+<span class="sd">        after each query.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            **kwargs: Additional keyword arguments.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the reset was successful, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="o">...</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="DefaultGAIARetriever">
+<a class="viewcode-back" href="../../../camel.benchmarks.html#camel.benchmarks.gaia.DefaultGAIARetriever">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DefaultGAIARetriever</span><span class="p">(</span><span class="n">AutoRetriever</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Default retriever for the GAIA benchmark.</span>
+<span class="sd">    This retriever uses AutoRetriever in camel to retrieve the content based on</span>
+<span class="sd">    the query.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="DefaultGAIARetriever.retrieve">
+<a class="viewcode-back" href="../../../camel.benchmarks.html#camel.benchmarks.gaia.DefaultGAIARetriever.retrieve">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">retrieve</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">contents</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Retrieve the content based on the query.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            query (str): The query to search for.</span>
+<span class="sd">            contents (List[str]): The list of contents to search from.</span>
+<span class="sd">            **kwargs (Any): The keyword arguments to pass to the</span>
+<span class="sd">                retriever.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dict[str, Any]: The retrieved content.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_vector_retriever</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">contents</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>  <span class="c1"># type: ignore[arg-type]</span></div>
+
+
+<div class="viewcode-block" id="DefaultGAIARetriever.reset">
+<a class="viewcode-back" href="../../../camel.benchmarks.html#camel.benchmarks.gaia.DefaultGAIARetriever.reset">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Reset the retriever.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            **kwargs (Any): The keyword arguments to pass to the</span>
+<span class="sd">                retriever.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: Whether the reset was successful.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vector_storage_local_path</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">())</span>
+        <span class="n">task_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;task_id&quot;</span><span class="p">,</span> <span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()))</span>
+        <span class="n">retriever_dir</span> <span class="o">=</span> <span class="n">path</span> <span class="o">/</span> <span class="n">task_id</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">retriever_dir</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">retriever_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                    <span class="s2">&quot;Error in creating directory: &quot;</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">retriever_dir</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">!s}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vector_storage_local_path</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">retriever_dir</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="GAIABenchmark">
+<a class="viewcode-back" href="../../../camel.benchmarks.html#camel.benchmarks.gaia.GAIABenchmark">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">GAIABenchmark</span><span class="p">(</span><span class="n">BaseBenchmark</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;GAIA Benchmark adapted from `&quot;GAIA: a benchmark for General AI</span>
+<span class="sd">    Assistants&quot;</span>
+<span class="sd">    &lt;https://huggingface.co/datasets/gaia-benchmark/GAIA&gt;`_.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        data_dir (str): The directory to save the data.</span>
+<span class="sd">        save_to (str): The file to save the results.</span>
+<span class="sd">        retriever (Optional[RetrieverProtocol]): The retriever to use.</span>
+<span class="sd">            (default: :obj:`None`)</span>
+<span class="sd">        processes (int, optional): The number of processes to use.</span>
+<span class="sd">            (default: :obj:`1`)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">data_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">save_to</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">retriever</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RetrieverProtocol</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">processes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Initialize the GAIA benchmark.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data_dir (str): The directory to save the data.</span>
+<span class="sd">            save_to (str): The file to save the results.</span>
+<span class="sd">            retriever (Optional[RetrieverProtocol], optional): The retriever to</span>
+<span class="sd">                use. (default: :obj:`None`)</span>
+<span class="sd">            processes (int, optional): The number of processes to use for</span>
+<span class="sd">                parallel processing. (default: :obj:`1`)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;gaia&quot;</span><span class="p">,</span> <span class="n">data_dir</span><span class="p">,</span> <span class="n">save_to</span><span class="p">,</span> <span class="n">processes</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">retriever</span> <span class="o">=</span> <span class="n">retriever</span> <span class="ow">or</span> <span class="n">DefaultGAIARetriever</span><span class="p">()</span>
+
+<div class="viewcode-block" id="GAIABenchmark.download">
+<a class="viewcode-back" href="../../../camel.benchmarks.html#camel.benchmarks.gaia.GAIABenchmark.download">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">download</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Download the GAIA dataset.&quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">huggingface_hub</span><span class="w"> </span><span class="kn">import</span> <span class="n">snapshot_download</span>
+
+        <span class="n">snapshot_download</span><span class="p">(</span>
+            <span class="n">repo_id</span><span class="o">=</span><span class="s2">&quot;gaia-benchmark/GAIA&quot;</span><span class="p">,</span>
+            <span class="n">repo_type</span><span class="o">=</span><span class="s2">&quot;dataset&quot;</span><span class="p">,</span>
+            <span class="n">local_dir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data_dir</span><span class="p">,</span>
+            <span class="n">local_dir_use_symlinks</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="GAIABenchmark.load">
+<a class="viewcode-back" href="../../../camel.benchmarks.html#camel.benchmarks.gaia.GAIABenchmark.load">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">force_download</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Load the GAIA dataset.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            force_download (bool, optional): Whether to</span>
+<span class="sd">                force download the data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">force_download</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Force downloading data.&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">download</span><span class="p">()</span>
+
+        <span class="c1"># Define validation and test directories</span>
+        <span class="n">valid_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_dir</span> <span class="o">/</span> <span class="s2">&quot;2023/validation&quot;</span>
+        <span class="n">test_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_dir</span> <span class="o">/</span> <span class="s2">&quot;2023/test&quot;</span>
+
+        <span class="c1"># Check if directories exist; if not, download the data</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">valid_dir</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">test_dir</span><span class="o">.</span><span class="n">is_dir</span><span class="p">():</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Data not found. Downloading data.&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">download</span><span class="p">()</span>
+
+        <span class="c1"># Load metadata for both validation and test datasets</span>
+        <span class="k">for</span> <span class="n">path</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">([</span><span class="n">valid_dir</span><span class="p">,</span> <span class="n">test_dir</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;valid&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">]):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span> <span class="o">/</span> <span class="s2">&quot;metadata.jsonl&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">lines</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+                    <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;task_id&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;0-0-0-0-0&quot;</span><span class="p">:</span>
+                        <span class="k">continue</span>
+                    <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;file_name&quot;</span><span class="p">]:</span>
+                        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;file_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">path</span> <span class="o">/</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;file_name&quot;</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Get the training set.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;GAIA does not have a training set.&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="GAIABenchmark.run">
+<a class="viewcode-back" href="../../../camel.benchmarks.html#camel.benchmarks.gaia.GAIABenchmark.run">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span>  <span class="c1"># type: ignore[override]</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">agent</span><span class="p">:</span> <span class="n">ChatAgent</span><span class="p">,</span>
+        <span class="n">on</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;valid&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">],</span>
+        <span class="n">level</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;all&quot;</span><span class="p">]],</span>
+        <span class="n">randomize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">subset</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Run the benchmark.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            agent (ChatAgent): The agent to run the benchmark.</span>
+<span class="sd">            on (Literal[&quot;valid&quot;, &quot;test&quot;]): The set to run the benchmark.</span>
+<span class="sd">            level (Union[int, List[int], Literal[&quot;all&quot;]]): The level to run</span>
+<span class="sd">                the benchmark.</span>
+<span class="sd">            randomize (bool, optional): Whether to randomize the data.</span>
+<span class="sd">                (default: :obj:`False`)</span>
+<span class="sd">            subset (Optional[int], optional): The subset of data to run.</span>
+<span class="sd">                (default: :obj:`None`)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dict[str, Any]: The results of the benchmark.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Validate inputs</span>
+        <span class="k">if</span> <span class="n">on</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;valid&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Invalid value for `on`: </span><span class="si">{</span><span class="n">on</span><span class="si">}</span><span class="s2">, expected &#39;valid&#39; or &#39;test&#39;.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">levels</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">level</span> <span class="o">==</span> <span class="s2">&quot;all&quot;</span>
+            <span class="k">else</span> <span class="p">[</span><span class="n">level</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">level</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+            <span class="k">else</span> <span class="n">level</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="n">level</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">level</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span> <span class="k">for</span> <span class="n">level</span> <span class="ow">in</span> <span class="n">levels</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Invalid value for `level`: </span><span class="si">{</span><span class="n">level</span><span class="si">}</span><span class="s2">, expected 1, 2, 3 &quot;</span>
+                <span class="s2">&quot;or &#39;all&#39;.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Running benchmark on </span><span class="si">{</span><span class="n">on</span><span class="si">}</span><span class="s2"> set at levels </span><span class="si">{</span><span class="n">levels</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="n">datas</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span> <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">on</span><span class="p">]</span> <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;Level&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">levels</span><span class="p">]</span>
+
+        <span class="c1"># Shuffle and subset data if necessary</span>
+        <span class="k">if</span> <span class="n">randomize</span><span class="p">:</span>
+            <span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">datas</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">subset</span><span class="p">:</span>
+            <span class="n">datas</span> <span class="o">=</span> <span class="n">datas</span><span class="p">[:</span><span class="n">subset</span><span class="p">]</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of tasks: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">datas</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Initialize results storage</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_results</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Process tasks</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save_to</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">task</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">datas</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Running&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_task</span><span class="p">(</span><span class="n">task</span><span class="p">):</span>
+                    <span class="k">continue</span>
+
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">result</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_create_user_message</span><span class="p">(</span><span class="n">task</span><span class="p">))</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_process_result</span><span class="p">(</span><span class="n">agent</span><span class="p">,</span> <span class="n">task</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_handle_error</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+                <span class="k">finally</span><span class="p">:</span>
+                    <span class="n">agent</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_summary</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_prepare_task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Prepare the task by validating and enriching its data.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">task</span><span class="p">[</span><span class="s2">&quot;file_name&quot;</span><span class="p">]:</span>
+            <span class="n">file_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">task</span><span class="p">[</span><span class="s2">&quot;file_name&quot;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">file_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Skipping task because file not found: </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            <span class="k">if</span> <span class="n">file_path</span><span class="o">.</span><span class="n">suffix</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;.pdf&quot;</span><span class="p">,</span> <span class="s2">&quot;.docx&quot;</span><span class="p">,</span> <span class="s2">&quot;.doc&quot;</span><span class="p">,</span> <span class="s2">&quot;.txt&quot;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">retriever</span><span class="o">.</span><span class="n">reset</span><span class="p">(</span><span class="n">task_id</span><span class="o">=</span><span class="n">task</span><span class="p">[</span><span class="s2">&quot;task_id&quot;</span><span class="p">]):</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+                <span class="n">retrieved_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">retriever</span><span class="o">.</span><span class="n">retrieve</span><span class="p">(</span>
+                    <span class="n">query</span><span class="o">=</span><span class="n">task</span><span class="p">[</span><span class="s2">&quot;Question&quot;</span><span class="p">],</span> <span class="n">contents</span><span class="o">=</span><span class="p">[</span><span class="n">task</span><span class="p">[</span><span class="s2">&quot;file_name&quot;</span><span class="p">]]</span>
+                <span class="p">)</span>
+                <span class="n">retrieved_content</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="n">item</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">]</span>
+                    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">retrieved_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Retrieved Context&quot;</span><span class="p">,</span> <span class="p">[])</span>
+                <span class="p">]</span>
+                <span class="k">if</span> <span class="n">retrieved_content</span><span class="p">:</span>
+                    <span class="n">task</span><span class="p">[</span><span class="s2">&quot;Question&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">retrieved_content</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Skipping task due to unsupported file &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;format: </span><span class="si">{</span><span class="n">file_path</span><span class="o">.</span><span class="n">suffix</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_user_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">BaseMessage</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Create a user message from a task.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">BaseMessage</span><span class="o">.</span><span class="n">make_user_message</span><span class="p">(</span>
+            <span class="n">role_name</span><span class="o">=</span><span class="s2">&quot;User&quot;</span><span class="p">,</span>
+            <span class="n">content</span><span class="o">=</span><span class="n">task</span><span class="p">[</span><span class="s2">&quot;Question&quot;</span><span class="p">],</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_process_result</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">agent</span><span class="p">:</span> <span class="n">ChatAgent</span><span class="p">,</span>
+        <span class="n">task</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="n">result</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">file_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Process and store the result of a task.&quot;&quot;&quot;</span>
+        <span class="n">model_answer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_final_answer</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">msgs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+        <span class="n">final_answer</span> <span class="o">=</span> <span class="n">task</span><span class="p">[</span><span class="s2">&quot;Final answer&quot;</span><span class="p">]</span>
+        <span class="n">score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">question_scorer</span><span class="p">(</span><span class="n">model_answer</span><span class="p">,</span> <span class="n">final_answer</span><span class="p">)</span>
+        <span class="n">tool_calls</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tool_calls&quot;</span><span class="p">,</span> <span class="p">[])</span>
+
+        <span class="n">result_data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;task_id&quot;</span><span class="p">:</span> <span class="n">task</span><span class="p">[</span><span class="s2">&quot;task_id&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;question&quot;</span><span class="p">:</span> <span class="n">task</span><span class="p">[</span><span class="s2">&quot;Question&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;level&quot;</span><span class="p">:</span> <span class="n">task</span><span class="p">[</span><span class="s2">&quot;Level&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;model_answer&quot;</span><span class="p">:</span> <span class="n">model_answer</span><span class="p">,</span>
+            <span class="s2">&quot;ground_truth&quot;</span><span class="p">:</span> <span class="n">final_answer</span><span class="p">,</span>
+            <span class="s2">&quot;tool_calls&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">tool</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="k">for</span> <span class="n">tool</span> <span class="ow">in</span> <span class="n">tool_calls</span><span class="p">],</span>
+            <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">score</span><span class="p">),</span>
+            <span class="s2">&quot;history&quot;</span><span class="p">:</span> <span class="n">agent</span><span class="o">.</span><span class="n">memory</span><span class="o">.</span><span class="n">get_context</span><span class="p">(),</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result_data</span><span class="p">)</span>
+        <span class="n">file_obj</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">result_data</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
+        <span class="n">file_obj</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_error</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">error</span><span class="p">:</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Handle errors encountered during task processing.&quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error processing task </span><span class="si">{</span><span class="n">task</span><span class="p">[</span><span class="s1">&#39;task_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">error_data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;task_id&quot;</span><span class="p">:</span> <span class="n">task</span><span class="p">[</span><span class="s2">&quot;task_id&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;question&quot;</span><span class="p">:</span> <span class="n">task</span><span class="p">[</span><span class="s2">&quot;Question&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;level&quot;</span><span class="p">:</span> <span class="n">task</span><span class="p">[</span><span class="s2">&quot;Level&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;model_answer&quot;</span><span class="p">:</span> <span class="s2">&quot;ERROR&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;ground_truth&quot;</span><span class="p">:</span> <span class="n">task</span><span class="p">[</span><span class="s2">&quot;Final answer&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;tool_calls&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">error</span><span class="p">),</span>
+            <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">error_data</span><span class="p">)</span>
+        <span class="n">file_obj</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">error_data</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
+        <span class="n">file_obj</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_generate_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Generate and return a summary of the benchmark results.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;total&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_results</span><span class="p">),</span>
+            <span class="s2">&quot;correct&quot;</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;score&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_results</span><span class="p">),</span>
+            <span class="s2">&quot;results&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_results</span><span class="p">,</span>
+        <span class="p">}</span>
+
+<div class="viewcode-block" id="GAIABenchmark.question_scorer">
+<a class="viewcode-back" href="../../../camel.benchmarks.html#camel.benchmarks.gaia.GAIABenchmark.question_scorer">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">question_scorer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_answer</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">ground_truth</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Scorer for the GAIA benchmark.</span>
+<span class="sd">        https://huggingface.co/spaces/gaia-benchmark/leaderboard/blob/main/</span>
+<span class="sd">        scorer.py</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            model_answer (str): The model answer.</span>
+<span class="sd">            ground_truth (str): The ground truth answer.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: The score of the model</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">is_float</span><span class="p">(</span><span class="n">element</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="nb">float</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="n">is_float</span><span class="p">(</span><span class="n">ground_truth</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Evaluating </span><span class="si">{</span><span class="n">model_answer</span><span class="si">}</span><span class="s2"> as a number.&quot;</span><span class="p">)</span>
+            <span class="n">normalized_answer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize_number_str</span><span class="p">(</span><span class="n">model_answer</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">normalized_answer</span> <span class="o">==</span> <span class="nb">float</span><span class="p">(</span><span class="n">ground_truth</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="nb">any</span><span class="p">(</span><span class="n">char</span> <span class="ow">in</span> <span class="n">ground_truth</span> <span class="k">for</span> <span class="n">char</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;,&quot;</span><span class="p">,</span> <span class="s2">&quot;;&quot;</span><span class="p">]):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Evaluating </span><span class="si">{</span><span class="n">model_answer</span><span class="si">}</span><span class="s2"> as a comma separated list.&quot;</span>
+            <span class="p">)</span>
+            <span class="n">gt_elems</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_string</span><span class="p">(</span><span class="n">ground_truth</span><span class="p">)</span>
+            <span class="n">ma_elems</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_string</span><span class="p">(</span><span class="n">model_answer</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">gt_elems</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ma_elems</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;Answer lists have different lengths, returning False.&quot;</span><span class="p">,</span>
+                    <span class="ne">UserWarning</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="k">return</span> <span class="kc">False</span>
+
+            <span class="n">comparisons</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">ma_elem</span><span class="p">,</span> <span class="n">gt_elem</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">ma_elems</span><span class="p">,</span> <span class="n">gt_elems</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">is_float</span><span class="p">(</span><span class="n">gt_elem</span><span class="p">):</span>
+                    <span class="n">normalized_ma_elem</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize_number_str</span><span class="p">(</span><span class="n">ma_elem</span><span class="p">)</span>
+                    <span class="n">comparisons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">normalized_ma_elem</span> <span class="o">==</span> <span class="nb">float</span><span class="p">(</span><span class="n">gt_elem</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">ma_elem</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize_str</span><span class="p">(</span><span class="n">ma_elem</span><span class="p">,</span> <span class="n">remove_punct</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                    <span class="n">gt_elem</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize_str</span><span class="p">(</span><span class="n">gt_elem</span><span class="p">,</span> <span class="n">remove_punct</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                    <span class="n">comparisons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ma_elem</span> <span class="o">==</span> <span class="n">gt_elem</span><span class="p">)</span>
+            <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="n">comparisons</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Evaluating </span><span class="si">{</span><span class="n">model_answer</span><span class="si">}</span><span class="s2"> as a string.&quot;</span><span class="p">)</span>
+            <span class="n">ma_elem</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize_str</span><span class="p">(</span><span class="n">model_answer</span><span class="p">)</span>
+            <span class="n">gt_elem</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize_str</span><span class="p">(</span><span class="n">ground_truth</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">ma_elem</span> <span class="o">==</span> <span class="n">gt_elem</span></div>
+
+
+<div class="viewcode-block" id="GAIABenchmark.normalize_number_str">
+<a class="viewcode-back" href="../../../camel.benchmarks.html#camel.benchmarks.gaia.GAIABenchmark.normalize_number_str">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">normalize_number_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">number_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">char</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;$&quot;</span><span class="p">,</span> <span class="s2">&quot;%&quot;</span><span class="p">,</span> <span class="s2">&quot;,&quot;</span><span class="p">]:</span>
+            <span class="n">number_str</span> <span class="o">=</span> <span class="n">number_str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">char</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">number_str</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;String </span><span class="si">{</span><span class="n">number_str</span><span class="si">}</span><span class="s2"> cannot be normalized to number str.&quot;</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="GAIABenchmark.split_string">
+<a class="viewcode-back" href="../../../camel.benchmarks.html#camel.benchmarks.gaia.GAIABenchmark.split_string">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">split_string</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">char_list</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Split a string based on a list of characters.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            s (str): The string to split.</span>
+<span class="sd">            char_list (Optional[List[str]], optional): T</span>
+<span class="sd">                he list of characters to split on.</span>
+<span class="sd">                (default: :obj:`None`)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">char_list</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">char_list</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;,&quot;</span><span class="p">,</span> <span class="s2">&quot;;&quot;</span><span class="p">]</span>
+        <span class="n">pattern</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">char_list</span><span class="p">)</span><span class="si">}</span><span class="s2">]&quot;</span>
+        <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="GAIABenchmark.normalize_str">
+<a class="viewcode-back" href="../../../camel.benchmarks.html#camel.benchmarks.gaia.GAIABenchmark.normalize_str">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">normalize_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_str</span><span class="p">,</span> <span class="n">remove_punct</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Normalize a string.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            input_str: The input string to normalize.</span>
+<span class="sd">            remove_punct: Whether to remove punctuation.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The normalized string.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">no_spaces</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\s&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">input_str</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">remove_punct</span><span class="p">:</span>
+            <span class="n">translator</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="n">maketrans</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">string</span><span class="o">.</span><span class="n">punctuation</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">no_spaces</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">translator</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">no_spaces</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="GAIABenchmark.get_final_answer">
+<a class="viewcode-back" href="../../../camel.benchmarks.html#camel.benchmarks.gaia.GAIABenchmark.get_final_answer">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_final_answer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Get the final answer from the content.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            content (str): The content to extract the final answer from.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The final answer.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">final_answer_index</span> <span class="o">=</span> <span class="n">content</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;FINAL ANSWER&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">final_answer_index</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;FINAL ANSWER not found&quot;</span>
+        <span class="n">start_index</span> <span class="o">=</span> <span class="n">final_answer_index</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="s2">&quot;FINAL ANSWER: &quot;</span><span class="p">)</span>
+        <span class="n">final_answer_content</span> <span class="o">=</span> <span class="n">content</span><span class="p">[</span><span class="n">start_index</span><span class="p">:]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">final_answer_content</span></div>
+</div>
+
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By CAMEL-AI.org
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, CAMEL-AI.org.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,1124 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>camel.agents.repo_agent &#8212; CAMEL 0.2.38 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=3c972f42" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../../_static/documentation_options.js?v=6c336dfe"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/camel/agents/repo_agent';</script>
+    <link rel="icon" href="https://raw.githubusercontent.com/camel-ai/camel/master/misc/favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png" class="logo__image only-light" alt=""/>
+    <script>document.write(`<img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png" class="logo__image only-dark" alt=""/>`);</script>
+  
+  
+    <p class="title logo__title">CAMEL 0.2.38</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Get Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../get_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../get_started/setup.html">API Setup</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Key Modules</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/agents.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/datagen.html">Data Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/messages.html">Message</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/memory.html">Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/tools.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/prompts.html">Prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/tasks.html">Task</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/loaders.html">Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/storages.html">Storages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/society.html">Society</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/embeddings.html">Embeddings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/retrievers.html">Retrievers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/workforce.html">Workforce</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Cookbooks</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/basic_concepts/index.html">Basic Concepts</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/create_your_first_agent.html">Creating Your First Agent</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/create_your_first_agents_society.html">Creating Your First Agent Society</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/agents_message.html">Message Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/agents_prompting.html">Prompting Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/model_speed_comparison.html">Model Speed Comparison Cookbook</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/advanced_features/index.html">Advanced Features</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_tools.html">Tools Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_tools_from_Composio.html">Using Tools from Composio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_human_in_loop_and_tool_approval.html">Agents with Human-in-loop and Tool Approval from HumanLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_memory.html">Memory Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_rag.html">RAG Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_graph_rag.html">Graph RAG Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_tracking.html">Track CAMEL Agents with AgentOps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/critic_agents_and_tree_search.html">Critic Agents and Tree Search</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/embodied_agents.html">Embodied Agents</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/multi_agent_society/index.html">Multi-agent Society</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/multi_agent_society/agents_society.html">Develop Trading Bot with Role Playing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/multi_agent_society/workforce_judge_committee.html">Create A Hackathon Judge Committee with Workforce</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/multi_agent_society/task_generation.html">Task Generation Cookbook</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/data_generation/index.html">Agentic Data Generation</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_mistral_7b_instruct.html">Agenetic SFT Data generation with CAMEL and finetuning Mistral models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B.html">Agenetic Data generation with CAMEL and finetuning Qwen models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_tinyllama.html">Agenetic SFT Data generation with CAMEL and finetuning Meta models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/data_gen_with_real_function_calls_and_hermes_format.html">Real Function Calls and Hermes Format Data Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/self_instruct_data_generation.html">Self-instruct Data Generation Using Qwen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/cot_data_gen_sft_qwen_unsolth_upload_huggingface.html">CoT Data Generation and SFT Qwen With Unsloth</a></li>
+
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/synthetic_dataevaluation%26filter_with_reward_model.html">Agentic Data Generation, Evaluation &amp; Filtering with Reward Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/data_model_generation_and_structured_output_with_qwen.html">Agentic Data Model Generation and Structured Output Powered by CAMEL &amp; Qwen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/distill_math_reasoning_data_from_deepseek_r1.html">Distill Math Reasoning Data from DeepSeek R1 with CAMEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/self_improving_math_reasoning_data_distillation_from_deepSeek_r1.html">Self-Improving Math Reasoning Data Distillation from DeepSeek R1 with CAMEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/self_improving_cot_generation.html">Deep Dive into CAMEL’s Practices for Self-Improving CoT Generation 🚀</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/applications/index.html">Applications</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/roleplaying_scraper.html">Role-Playing Scraper for Report &amp; Knowledge Graph Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/dynamic_travel_planner.html">Dynamic Travel Planner Role-Playing: Multi-Agent System with Real-Time Insights Powered by Dappier</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/customer_service_Discord_bot_with_agentic_RAG.html">Customer Service Discord Bot with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/customer_service_Discord_bot_using_SambaNova_with_agentic_RAG.html">Customer Service Discord Bot Using SambaNova with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/customer_service_Discord_bot_using_local_model_with_agentic_RAG.html">Customer Service Discord Bot Using Local Models with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/finance_discord_bot.html">Customer Service Discord Bot for Finance with OpenBB</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/data_processing/index.html">Data Processing and Analysis</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_processing/video_analysis.html">Video Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_processing/agent_with_chunkr_for_pdf_parsing.html">Create AI Agents that work with your PDFs using Chunkr &amp; Mistral AI</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_processing/ingest_data_from_websites_with_Firecrawl.html">3 ways to ingest data from websites with Firecrawl</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../modules.html">camel</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../camel.html">camel package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.agents.html">camel.agents package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.agents.tool_agents.html">camel.agents.tool_agents package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.configs.html">camel.configs package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.datagen.html">camel.datagen package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.datagen.self_instruct.html">camel.datagen.self_instruct package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.datagen.source2synth.html">camel.datagen.source2synth package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.embeddings.html">camel.embeddings package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.interpreters.html">camel.interpreters package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.loaders.html">camel.loaders package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.memories.html">camel.memories package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.memories.blocks.html">camel.memories.blocks package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.memories.context_creators.html">camel.memories.context_creators package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.messages.html">camel.messages package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.models.html">camel.models package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.prompts.html">camel.prompts package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.responses.html">camel.responses package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.retrievers.html">camel.retrievers package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.societies.html">camel.societies package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.societies.workforce.html">camel.societies.workforce package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.storages.html">camel.storages package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.graph_storages.html">camel.storages.graph_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.key_value_storages.html">camel.storages.key_value_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.object_storages.html">camel.storages.object_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.vectordb_storages.html">camel.storages.vectordb_storages package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.tasks.html">camel.tasks package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.terminators.html">camel.terminators package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.toolkits.html">camel.toolkits package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.types.html">camel.types package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.utils.html">camel.utils package</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/camel-ai/camel" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/camel-ai/camel/issues/new?title=Issue%20on%20page%20%2F_modules/camel/agents/repo_agent.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for camel.agents.repo_agent</h1><div class="highlight"><pre>
+<span></span><span class="c1"># ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1"># ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">auto</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">string</span><span class="w"> </span><span class="kn">import</span> <span class="n">Template</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">github.MainClass</span><span class="w"> </span><span class="kn">import</span> <span class="n">Github</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.agents</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatAgent</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.messages</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseMessage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModelBackend</span><span class="p">,</span> <span class="n">ModelFactory</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.responses</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatAgentResponse</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.retrievers</span><span class="w"> </span><span class="kn">import</span> <span class="n">VectorRetriever</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.types</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ModelPlatformType</span><span class="p">,</span>
+    <span class="n">ModelType</span><span class="p">,</span>
+    <span class="n">OpenAIBackendRole</span><span class="p">,</span>
+    <span class="n">RoleType</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">track_agent</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.utils.chunker</span><span class="w"> </span><span class="kn">import</span> <span class="n">CodeChunker</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">ProcessingMode</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="n">FULL_CONTEXT</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">RAG</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">GitHubFile</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Model to hold GitHub file information.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        content (str): The content of the GitHub text.</span>
+<span class="sd">        file_path (str): The path of the file.</span>
+<span class="sd">        html_url (str): The actual url of the file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">content</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">html_url</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">RepositoryInfo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Model to hold GitHub repository information.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        repo_name (str): The full name of the repository.</span>
+<span class="sd">        repo_url (str): The URL of the repository.</span>
+<span class="sd">        contents (list): A list to hold the repository contents.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">repo_name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">repo_url</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">contents</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">GitHubFile</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+
+<div class="viewcode-block" id="RepoAgent">
+<a class="viewcode-back" href="../../../camel.agents.html#camel.agents.RepoAgent">[docs]</a>
+<span class="nd">@track_agent</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;RepoAgent&quot;</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">RepoAgent</span><span class="p">(</span><span class="n">ChatAgent</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;A specialized agent designed to interact with GitHub repositories for</span>
+<span class="sd">    code generation tasks.</span>
+<span class="sd">    The RepoAgent enhances a base ChatAgent by integrating context from</span>
+<span class="sd">    one or more GitHub repositories. It supports two processing modes:</span>
+<span class="sd">    - FULL_CONTEXT: loads and injects full repository content into the</span>
+<span class="sd">        prompt.</span>
+<span class="sd">    - RAG (Retrieval-Augmented Generation): retrieves relevant</span>
+<span class="sd">        code/documentation chunks using a vector store when context</span>
+<span class="sd">        length exceeds a specified token limit.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        vector_retriever (VectorRetriever): Retriever used to</span>
+<span class="sd">            perform semantic search in RAG mode. Required if repo content</span>
+<span class="sd">            exceeds context limit.</span>
+<span class="sd">        system_message (Optional[str]): The system message</span>
+<span class="sd">            for the chat agent. (default: :str:`&quot;You are a code assistant</span>
+<span class="sd">            with repo context.&quot;`)</span>
+<span class="sd">        repo_paths (Optional[List[str]]): List of GitHub repository URLs to</span>
+<span class="sd">            load during initialization. (default: :obj:`None`)</span>
+<span class="sd">        model (BaseModelBackend): The model backend to use for generating</span>
+<span class="sd">            responses. (default: :obj:`ModelPlatformType.DEFAULT`</span>
+<span class="sd">            with `ModelType.DEFAULT`)</span>
+<span class="sd">        max_context_tokens (Optional[int]): Maximum number of tokens allowed</span>
+<span class="sd">            before switching to RAG mode. (default: :obj:`2000`)</span>
+<span class="sd">        github_auth_token (Optional[str]): GitHub personal access token</span>
+<span class="sd">            for accessing private or rate-limited repositories. (default:</span>
+<span class="sd">            :obj:`None`)</span>
+<span class="sd">        chunk_size (Optional[int]): Maximum number of characters per code chunk</span>
+<span class="sd">            when indexing files for RAG. (default: :obj:`8192`)</span>
+<span class="sd">        top_k (int): Number of top-matching chunks to retrieve from the vector</span>
+<span class="sd">            store in RAG mode. (default: :obj:`5`)</span>
+<span class="sd">        similarity (Optional[float]): Minimum similarity score required to</span>
+<span class="sd">            include a chunk in the RAG context. (default: :obj:`0.6`)</span>
+<span class="sd">        collection_name (Optional[str]): Name of the vector database</span>
+<span class="sd">            collection to use for storing and retrieving chunks. (default:</span>
+<span class="sd">            :obj:`None`)</span>
+<span class="sd">        **kwargs: Inherited from ChatAgent</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        The current implementation of RAG mode requires using Qdrant as the</span>
+<span class="sd">        vector storage backend. The VectorRetriever defaults to QdrantStorage</span>
+<span class="sd">        if no storage is explicitly provided. Other vector storage backends</span>
+<span class="sd">        are not currently supported for the RepoAgent&#39;s RAG functionality.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">vector_retriever</span><span class="p">:</span> <span class="n">VectorRetriever</span><span class="p">,</span>
+        <span class="n">system_message</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span>
+            <span class="nb">str</span>
+        <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;You are a code assistant with repo context.&quot;</span><span class="p">,</span>
+        <span class="n">repo_paths</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">BaseModelBackend</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">max_context_tokens</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2000</span><span class="p">,</span>
+        <span class="n">github_auth_token</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">chunk_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">8192</span><span class="p">,</span>
+        <span class="n">top_k</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+        <span class="n">similarity</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.6</span><span class="p">,</span>
+        <span class="n">collection_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="n">model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">ModelFactory</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+                <span class="n">model_platform</span><span class="o">=</span><span class="n">ModelPlatformType</span><span class="o">.</span><span class="n">DEFAULT</span><span class="p">,</span>
+                <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">DEFAULT</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">system_message</span><span class="o">=</span><span class="n">system_message</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_context_tokens</span> <span class="o">=</span> <span class="n">max_context_tokens</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vector_retriever</span> <span class="o">=</span> <span class="n">vector_retriever</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">github_auth_token</span> <span class="o">=</span> <span class="n">github_auth_token</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chunk_size</span> <span class="o">=</span> <span class="n">chunk_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_tokens</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">processing_mode</span> <span class="o">=</span> <span class="n">ProcessingMode</span><span class="o">.</span><span class="n">FULL_CONTEXT</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">top_k</span> <span class="o">=</span> <span class="n">top_k</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">similarity</span> <span class="o">=</span> <span class="n">similarity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">collection_name</span> <span class="o">=</span> <span class="n">collection_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prompt_template</span> <span class="o">=</span> <span class="n">Template</span><span class="p">(</span>
+            <span class="s2">&quot;$type: $repo</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;You are an AI coding assistant. &quot;</span>
+            <span class="s2">&quot;Your task is to generate code based on provided GitHub &quot;</span>
+            <span class="s2">&quot;repositories. </span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;### Instructions: </span><span class="se">\n</span><span class="s2">1. **Analyze the Repositories**: &quot;</span>
+            <span class="s2">&quot;Identify which repositories contain relevant &quot;</span>
+            <span class="s2">&quot;information for the user&#39;s request. Ignore unrelated ones.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;2. **Extract Context**: Use code, documentation, &quot;</span>
+            <span class="s2">&quot;dependencies, and tests to understand functionality.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;3. **Generate Code**: Create clean, efficient, and &quot;</span>
+            <span class="s2">&quot;well-structured code that aligns with relevant repositories. </span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;4. **Justify Output**: Explain which repositories &quot;</span>
+            <span class="s2">&quot;influenced your solution and why others were ignored.&quot;</span>
+            <span class="s2">&quot;</span><span class="se">\n</span><span class="s2"> If the repositories lack necessary details, &quot;</span>
+            <span class="s2">&quot;infer best practices and suggest improvements.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;Now, analyze the repositories and generate the &quot;</span>
+            <span class="s2">&quot;required code.&quot;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">full_text</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chunker</span> <span class="o">=</span> <span class="n">CodeChunker</span><span class="p">(</span><span class="n">chunk_size</span><span class="o">=</span><span class="n">chunk_size</span> <span class="ow">or</span> <span class="mi">8192</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">repos</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">RepositoryInfo</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">repo_paths</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">repos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_repositories</span><span class="p">(</span><span class="n">repo_paths</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">repos</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">construct_full_text</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_tokens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">count_tokens</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_switch_mode</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">update_memory</span><span class="p">(</span>
+                    <span class="n">message</span><span class="o">=</span><span class="n">BaseMessage</span><span class="o">.</span><span class="n">make_user_message</span><span class="p">(</span>
+                        <span class="n">role_name</span><span class="o">=</span><span class="n">RoleType</span><span class="o">.</span><span class="n">USER</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+                        <span class="n">content</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">full_text</span><span class="p">,</span>
+                    <span class="p">),</span>
+                    <span class="n">role</span><span class="o">=</span><span class="n">OpenAIBackendRole</span><span class="o">.</span><span class="n">SYSTEM</span><span class="p">,</span>
+                <span class="p">)</span>
+
+<div class="viewcode-block" id="RepoAgent.parse_url">
+<a class="viewcode-back" href="../../../camel.agents.html#camel.agents.RepoAgent.parse_url">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_url</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Parse the GitHub URL and return the (owner, repo_name) tuple.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            url (str): The URL to be parsed.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tuple[str, str]: The (owner, repo_name) tuple.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">url_path</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;https://github.com/&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="n">parts</span> <span class="o">=</span> <span class="n">url_path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Incorrect GitHub repo URL format.&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error parsing URL: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RepoAgent.load_repositories">
+<a class="viewcode-back" href="../../../camel.agents.html#camel.agents.RepoAgent.load_repositories">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_repositories</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">repo_urls</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">RepositoryInfo</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Load the content of a GitHub repository.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            repo_urls (str): The list of Repo URLs.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[RepositoryInfo]: A list of objects containing information</span>
+<span class="sd">                about the all repositories, including the contents.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">github.MainClass</span><span class="w"> </span><span class="kn">import</span> <span class="n">Github</span>
+
+        <span class="n">github_client</span> <span class="o">=</span> <span class="n">Github</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">github_auth_token</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">repo_url</span> <span class="ow">in</span> <span class="n">repo_urls</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">load_repository</span><span class="p">(</span><span class="n">repo_url</span><span class="p">,</span> <span class="n">github_client</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error loading repository: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Successfully loaded </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">)</span><span class="si">}</span><span class="s2"> repositories.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span></div>
+
+
+<div class="viewcode-block" id="RepoAgent.load_repository">
+<a class="viewcode-back" href="../../../camel.agents.html#camel.agents.RepoAgent.load_repository">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_repository</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">repo_url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">github_client</span><span class="p">:</span> <span class="s2">&quot;Github&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RepositoryInfo</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Load the content of a GitHub repository.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            repo_urls (str): The Repo URL to be loaded.</span>
+<span class="sd">            github_client (GitHub): The established GitHub client.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            RepositoryInfo: The object containing information</span>
+<span class="sd">                about the repository, including the contents.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">github.ContentFile</span><span class="w"> </span><span class="kn">import</span> <span class="n">ContentFile</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">owner</span><span class="p">,</span> <span class="n">repo_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_url</span><span class="p">(</span><span class="n">repo_url</span><span class="p">)</span>
+            <span class="n">repo</span> <span class="o">=</span> <span class="n">github_client</span><span class="o">.</span><span class="n">get_repo</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">owner</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">repo_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">contents</span> <span class="o">=</span> <span class="n">repo</span><span class="o">.</span><span class="n">get_contents</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error loading repository: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+        <span class="n">info</span> <span class="o">=</span> <span class="n">RepositoryInfo</span><span class="p">(</span>
+            <span class="n">repo_name</span><span class="o">=</span><span class="n">repo</span><span class="o">.</span><span class="n">full_name</span><span class="p">,</span>
+            <span class="n">repo_url</span><span class="o">=</span><span class="n">repo</span><span class="o">.</span><span class="n">html_url</span><span class="p">,</span>
+            <span class="n">contents</span><span class="o">=</span><span class="p">[],</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Create a list to process repository contents</span>
+        <span class="n">content_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ContentFile</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">contents</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">content_list</span> <span class="o">=</span> <span class="n">contents</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Handle single ContentFile case</span>
+            <span class="n">content_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">contents</span><span class="p">]</span>
+
+        <span class="k">while</span> <span class="n">content_list</span><span class="p">:</span>
+            <span class="n">file</span> <span class="o">=</span> <span class="n">content_list</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">file</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;file&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">any</span><span class="p">(</span>
+                    <span class="n">file</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">ext</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="p">[</span>
+                        <span class="s2">&quot;.png&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;.jpg&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;.pdf&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;.zip&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;.gitignore&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;.mp4&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;.avi&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;.mov&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;.mp3&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;.wav&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;.tar&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;.gz&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;.7z&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;.rar&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;.iso&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;.gif&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;.docx&quot;</span><span class="p">,</span>
+                    <span class="p">]</span>
+                <span class="p">):</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Skipping binary file: </span><span class="si">{</span><span class="n">file</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">continue</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">file_obj</span> <span class="o">=</span> <span class="n">repo</span><span class="o">.</span><span class="n">get_contents</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+
+                    <span class="c1"># Handle file_obj which could be a single ContentFile or a</span>
+                    <span class="c1"># list</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">file_obj</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">file_obj</span><span class="p">:</span>  <span class="c1"># Skip empty lists</span>
+                            <span class="k">continue</span>
+                        <span class="n">file_obj</span> <span class="o">=</span> <span class="n">file_obj</span><span class="p">[</span>
+                            <span class="mi">0</span>
+                        <span class="p">]</span>  <span class="c1"># Take the first item if it&#39;s a list</span>
+
+                    <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">file_obj</span><span class="p">,</span> <span class="s2">&quot;encoding&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;base64&quot;</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;Skipping file with unsupported &quot;</span>
+                            <span class="sa">f</span><span class="s2">&quot;encoding: </span><span class="si">{</span><span class="n">file</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="p">)</span>
+                        <span class="k">continue</span>
+
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">content_bytes</span> <span class="o">=</span> <span class="n">file_obj</span><span class="o">.</span><span class="n">decoded_content</span>
+                        <span class="n">file_content</span> <span class="o">=</span> <span class="n">content_bytes</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">UnicodeDecodeError</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Skipping non-UTF-8 file: </span><span class="si">{</span><span class="n">file</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="k">continue</span>
+                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;Failed to decode file content at &quot;</span>
+                            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">file</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="p">)</span>
+                        <span class="k">continue</span>
+
+                    <span class="n">github_file</span> <span class="o">=</span> <span class="n">GitHubFile</span><span class="p">(</span>
+                        <span class="n">content</span><span class="o">=</span><span class="n">file_content</span><span class="p">,</span>
+                        <span class="n">file_path</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">owner</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">repo_name</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">file</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                        <span class="n">html_url</span><span class="o">=</span><span class="n">file</span><span class="o">.</span><span class="n">html_url</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="n">info</span><span class="o">.</span><span class="n">contents</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">github_file</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error loading file: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Successfully loaded file: </span><span class="si">{</span><span class="n">file</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">file</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;dir&quot;</span><span class="p">:</span>
+                <span class="n">dir_contents</span> <span class="o">=</span> <span class="n">repo</span><span class="o">.</span><span class="n">get_contents</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+                <span class="c1"># Handle dir_contents which could be a single ContentFile or a</span>
+                <span class="c1"># list</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dir_contents</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                    <span class="n">content_list</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">dir_contents</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">content_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dir_contents</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">info</span></div>
+
+
+<div class="viewcode-block" id="RepoAgent.count_tokens">
+<a class="viewcode-back" href="../../../camel.agents.html#camel.agents.RepoAgent.count_tokens">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">count_tokens</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;To count the tokens that&#39;s currently in the memory</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The number of tokens</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">counter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_backend</span><span class="o">.</span><span class="n">token_counter</span>
+        <span class="n">content_token_count</span> <span class="o">=</span> <span class="n">counter</span><span class="o">.</span><span class="n">count_tokens_from_messages</span><span class="p">(</span>
+            <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
+                <span class="n">BaseMessage</span><span class="o">.</span><span class="n">make_user_message</span><span class="p">(</span>
+                    <span class="n">role_name</span><span class="o">=</span><span class="n">RoleType</span><span class="o">.</span><span class="n">USER</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+                    <span class="n">content</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">full_text</span><span class="p">,</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">to_openai_message</span><span class="p">(</span><span class="n">OpenAIBackendRole</span><span class="o">.</span><span class="n">USER</span><span class="p">)</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">content_token_count</span></div>
+
+
+<div class="viewcode-block" id="RepoAgent.construct_full_text">
+<a class="viewcode-back" href="../../../camel.agents.html#camel.agents.RepoAgent.construct_full_text">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">construct_full_text</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Construct full context text from repositories by concatenation.&quot;&quot;&quot;</span>
+        <span class="n">repo_texts</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">f</span><span class="o">.</span><span class="n">content</span><span class="p">,</span> <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="n">f</span><span class="o">.</span><span class="n">file_path</span><span class="p">}</span>
+            <span class="k">for</span> <span class="n">repo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">repos</span>
+            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">repo</span><span class="o">.</span><span class="n">contents</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">full_text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prompt_template</span><span class="o">.</span><span class="n">safe_substitute</span><span class="p">(</span>
+            <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;Repository&quot;</span><span class="p">,</span>
+            <span class="n">repo</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">repo</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">repo</span><span class="p">[</span><span class="s1">&#39;content&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">repo</span> <span class="ow">in</span> <span class="n">repo_texts</span>
+            <span class="p">),</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RepoAgent.add_repositories">
+<a class="viewcode-back" href="../../../camel.agents.html#camel.agents.RepoAgent.add_repositories">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_repositories</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">repo_urls</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Add a GitHub repository to the list of repositories.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            repo_urls (str): The Repo URL to be added.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">new_repos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_repositories</span><span class="p">(</span><span class="n">repo_urls</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">repos</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">new_repos</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">construct_full_text</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_tokens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">count_tokens</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">processing_mode</span> <span class="o">==</span> <span class="n">ProcessingMode</span><span class="o">.</span><span class="n">RAG</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">repo</span> <span class="ow">in</span> <span class="n">new_repos</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">repo</span><span class="o">.</span><span class="n">contents</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">vector_retriever</span><span class="o">.</span><span class="n">process</span><span class="p">(</span>
+                        <span class="n">content</span><span class="o">=</span><span class="n">f</span><span class="o">.</span><span class="n">content</span><span class="p">,</span>
+                        <span class="n">should_chunk</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">extra_info</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;file_path&quot;</span><span class="p">:</span> <span class="n">f</span><span class="o">.</span><span class="n">file_path</span><span class="p">},</span>
+                        <span class="n">chunker</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">chunker</span><span class="p">,</span>
+                    <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">check_switch_mode</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="RepoAgent.check_switch_mode">
+<a class="viewcode-back" href="../../../camel.agents.html#camel.agents.RepoAgent.check_switch_mode">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_switch_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Check if the current context exceeds the context window; if so,</span>
+<span class="sd">        switch to RAG mode.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the mode was switched, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">processing_mode</span> <span class="o">==</span> <span class="n">ProcessingMode</span><span class="o">.</span><span class="n">RAG</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_tokens</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_context_tokens</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">vector_retriever</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Token count (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_tokens</span><span class="si">}</span><span class="s2">) exceeds limit &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_context_tokens</span><span class="si">}</span><span class="s2">). &quot;</span>
+                    <span class="s2">&quot;Either reduce repository size or provide a &quot;</span>
+                    <span class="s2">&quot;VectorRetriever.&quot;</span>
+                <span class="p">)</span>
+                <span class="k">return</span> <span class="kc">False</span>
+
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Switching to RAG mode and indexing repositories...&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">processing_mode</span> <span class="o">=</span> <span class="n">ProcessingMode</span><span class="o">.</span><span class="n">RAG</span>
+            <span class="k">for</span> <span class="n">repo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">repos</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">repo</span><span class="o">.</span><span class="n">contents</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">vector_retriever</span><span class="o">.</span><span class="n">process</span><span class="p">(</span>
+                        <span class="n">content</span><span class="o">=</span><span class="n">f</span><span class="o">.</span><span class="n">content</span><span class="p">,</span>
+                        <span class="n">should_chunk</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">extra_info</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;file_path&quot;</span><span class="p">:</span> <span class="n">f</span><span class="o">.</span><span class="n">file_path</span><span class="p">},</span>
+                        <span class="n">chunker</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">chunker</span><span class="p">,</span>
+                    <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_system_message</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="RepoAgent.step">
+<a class="viewcode-back" href="../../../camel.agents.html#camel.agents.RepoAgent.step">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">input_message</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">BaseMessage</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ChatAgentResponse</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Overrides `ChatAgent.step()` to first retrieve relevant context</span>
+<span class="sd">        from the vector store before passing the input to the language model.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">processing_mode</span> <span class="o">==</span> <span class="n">ProcessingMode</span><span class="o">.</span><span class="n">RAG</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">vector_retriever</span>
+        <span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_message</span><span class="p">,</span> <span class="n">BaseMessage</span><span class="p">):</span>
+                <span class="n">user_query</span> <span class="o">=</span> <span class="n">input_message</span><span class="o">.</span><span class="n">content</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">user_query</span> <span class="o">=</span> <span class="n">input_message</span>
+            <span class="n">retrieved_content</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">retries</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">retries</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">raw_rag_content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vector_retriever</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
+                        <span class="n">query</span><span class="o">=</span><span class="n">user_query</span><span class="p">,</span>
+                        <span class="n">top_k</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">top_k</span> <span class="ow">or</span> <span class="mi">5</span><span class="p">,</span>
+                        <span class="n">similarity_threshold</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">similarity</span> <span class="ow">or</span> <span class="mf">0.6</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="c1"># Remove duplicates and retrieve the whole file</span>
+                    <span class="n">paths</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">raw_rag_content</span><span class="p">:</span>
+                        <span class="n">file_path</span> <span class="o">=</span> <span class="n">record</span><span class="p">[</span><span class="s2">&quot;extra_info&quot;</span><span class="p">][</span><span class="s2">&quot;file_path&quot;</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="n">file_path</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">paths</span><span class="p">:</span>
+                            <span class="n">retrieved_content</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                                <span class="p">{</span>
+                                    <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_by_file_path</span><span class="p">(</span>
+                                        <span class="n">file_path</span>
+                                    <span class="p">),</span>
+                                    <span class="s2">&quot;similarity&quot;</span><span class="p">:</span> <span class="n">record</span><span class="p">[</span><span class="s2">&quot;similarity score&quot;</span><span class="p">],</span>
+                                <span class="p">}</span>
+                            <span class="p">)</span>
+                            <span class="n">paths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+
+                    <span class="n">retrieved_content</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+                        <span class="n">retrieved_content</span><span class="p">,</span>
+                        <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;similarity&quot;</span><span class="p">],</span>
+                        <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="p">)</span>
+
+                    <span class="n">full_prompt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prompt_template</span><span class="o">.</span><span class="n">safe_substitute</span><span class="p">(</span>
+                        <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;Retrieved code&quot;</span><span class="p">,</span>
+                        <span class="n">repo</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                            <span class="p">[</span><span class="n">record</span><span class="p">[</span><span class="s2">&quot;content&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">retrieved_content</span><span class="p">]</span>
+                        <span class="p">),</span>
+                    <span class="p">)</span>
+
+                    <span class="n">new_query</span> <span class="o">=</span> <span class="n">user_query</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">full_prompt</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_message</span><span class="p">,</span> <span class="n">BaseMessage</span><span class="p">):</span>
+                        <span class="n">input_message</span><span class="o">.</span><span class="n">content</span> <span class="o">=</span> <span class="n">new_query</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">input_message</span> <span class="o">=</span> <span class="n">BaseMessage</span><span class="o">.</span><span class="n">make_user_message</span><span class="p">(</span>
+                            <span class="n">role_name</span><span class="o">=</span><span class="s2">&quot;User&quot;</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="n">new_query</span>
+                        <span class="p">)</span>
+                    <span class="k">break</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">attempt</span> <span class="o">&lt;</span> <span class="n">retries</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="n">sleep_time</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="n">attempt</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;Retrying qdrant query in </span><span class="si">{</span><span class="n">sleep_time</span><span class="si">}</span><span class="s2"> seconds...&quot;</span>
+                        <span class="p">)</span>
+                        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">sleep_time</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;Failed to query qdrant record after </span><span class="si">{</span><span class="n">retries</span><span class="si">}</span><span class="s2"> &quot;</span>
+                            <span class="s2">&quot;attempts.&quot;</span>
+                        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">input_message</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RepoAgent.reset">
+<a class="viewcode-back" href="../../../camel.agents.html#camel.agents.RepoAgent.reset">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">processing_mode</span> <span class="o">==</span> <span class="n">ProcessingMode</span><span class="o">.</span><span class="n">FULL_CONTEXT</span><span class="p">:</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="n">BaseMessage</span><span class="o">.</span><span class="n">make_user_message</span><span class="p">(</span>
+                <span class="n">role_name</span><span class="o">=</span><span class="n">RoleType</span><span class="o">.</span><span class="n">USER</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+                <span class="n">content</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">full_text</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_memory</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">OpenAIBackendRole</span><span class="o">.</span><span class="n">SYSTEM</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_tokens</span> <span class="o">=</span> <span class="mi">0</span></div>
+
+
+<div class="viewcode-block" id="RepoAgent.search_by_file_path">
+<a class="viewcode-back" href="../../../camel.agents.html#camel.agents.RepoAgent.search_by_file_path">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">search_by_file_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Search for all payloads in the vector database where</span>
+<span class="sd">        file_path matches the given value (the same file),</span>
+<span class="sd">        then sort by piece_num and concatenate text fields to return a</span>
+<span class="sd">        complete result.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            file_path (str): The `file_path` value to filter the payloads.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: A concatenated string of the `text` fields sorted by</span>
+<span class="sd">                `piece_num`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qdrant_client.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">FieldCondition</span><span class="p">,</span> <span class="n">Filter</span><span class="p">,</span> <span class="n">MatchValue</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">storage_instance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vector_retriever</span><span class="o">.</span><span class="n">storage</span>
+            <span class="n">collection_name</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">collection_name</span> <span class="ow">or</span> <span class="n">storage_instance</span><span class="o">.</span><span class="n">collection_name</span>  <span class="c1"># type: ignore[attr-defined]</span>
+            <span class="p">)</span>
+            <span class="n">source_data</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">storage_instance</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">scroll</span><span class="p">(</span>
+                <span class="n">collection_name</span><span class="o">=</span><span class="n">collection_name</span><span class="p">,</span>
+                <span class="n">limit</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+                <span class="n">scroll_filter</span><span class="o">=</span><span class="n">Filter</span><span class="p">(</span>
+                    <span class="n">must</span><span class="o">=</span><span class="p">[</span>
+                        <span class="n">FieldCondition</span><span class="p">(</span>
+                            <span class="n">key</span><span class="o">=</span><span class="s2">&quot;extra_info.file_path&quot;</span><span class="p">,</span>
+                            <span class="n">match</span><span class="o">=</span><span class="n">MatchValue</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">file_path</span><span class="p">),</span>
+                        <span class="p">)</span>
+                    <span class="p">]</span>
+                <span class="p">),</span>
+                <span class="n">with_payload</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">with_vectors</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Error during database initialization or scroll: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">source_data</span><span class="p">:</span>
+            <span class="n">payload</span> <span class="o">=</span> <span class="n">point</span><span class="o">.</span><span class="n">payload</span>
+            <span class="n">piece_num</span> <span class="o">=</span> <span class="n">payload</span><span class="p">[</span><span class="s2">&quot;metadata&quot;</span><span class="p">][</span><span class="s2">&quot;piece_num&quot;</span><span class="p">]</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="n">payload</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">piece_num</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">text</span><span class="p">:</span>
+                <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;piece_num&quot;</span><span class="p">:</span> <span class="n">piece_num</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">text</span><span class="p">})</span>
+
+        <span class="n">sorted_results</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;piece_num&quot;</span><span class="p">])</span>
+        <span class="n">full_doc</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">sorted_results</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">full_doc</span></div>
+</div>
+
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By CAMEL-AI.org
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, CAMEL-AI.org.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

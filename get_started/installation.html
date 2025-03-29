@@ -1,0 +1,815 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>Installation &#8212; CAMEL 0.2.38 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=3c972f42" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=6c336dfe"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'get_started/installation';</script>
+    <link rel="icon" href="https://raw.githubusercontent.com/camel-ai/camel/master/misc/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="API Setup" href="setup.html" />
+    <link rel="prev" title="Welcome to CAMEL’s documentation!" href="../index.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png" class="logo__image only-light" alt=""/>
+    <script>document.write(`<img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png" class="logo__image only-dark" alt=""/>`);</script>
+  
+  
+    <p class="title logo__title">CAMEL 0.2.38</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Get Started</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">API Setup</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Key Modules</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../key_modules/agents.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../key_modules/datagen.html">Data Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../key_modules/models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../key_modules/messages.html">Message</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../key_modules/memory.html">Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../key_modules/tools.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../key_modules/prompts.html">Prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../key_modules/tasks.html">Task</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../key_modules/loaders.html">Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../key_modules/storages.html">Storages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../key_modules/society.html">Society</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../key_modules/embeddings.html">Embeddings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../key_modules/retrievers.html">Retrievers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../key_modules/workforce.html">Workforce</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Cookbooks</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../cookbooks/basic_concepts/index.html">Basic Concepts</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/basic_concepts/create_your_first_agent.html">Creating Your First Agent</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/basic_concepts/create_your_first_agents_society.html">Creating Your First Agent Society</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/basic_concepts/agents_message.html">Message Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/basic_concepts/agents_prompting.html">Prompting Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/basic_concepts/model_speed_comparison.html">Model Speed Comparison Cookbook</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../cookbooks/advanced_features/index.html">Advanced Features</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/advanced_features/agents_with_tools.html">Tools Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/advanced_features/agents_with_tools_from_Composio.html">Using Tools from Composio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/advanced_features/agents_with_human_in_loop_and_tool_approval.html">Agents with Human-in-loop and Tool Approval from HumanLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/advanced_features/agents_with_memory.html">Memory Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/advanced_features/agents_with_rag.html">RAG Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/advanced_features/agents_with_graph_rag.html">Graph RAG Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/advanced_features/agents_tracking.html">Track CAMEL Agents with AgentOps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/advanced_features/critic_agents_and_tree_search.html">Critic Agents and Tree Search</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/advanced_features/embodied_agents.html">Embodied Agents</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../cookbooks/multi_agent_society/index.html">Multi-agent Society</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/multi_agent_society/agents_society.html">Develop Trading Bot with Role Playing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/multi_agent_society/workforce_judge_committee.html">Create A Hackathon Judge Committee with Workforce</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/multi_agent_society/task_generation.html">Task Generation Cookbook</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../cookbooks/data_generation/index.html">Agentic Data Generation</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_mistral_7b_instruct.html">Agenetic SFT Data generation with CAMEL and finetuning Mistral models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B.html">Agenetic Data generation with CAMEL and finetuning Qwen models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_tinyllama.html">Agenetic SFT Data generation with CAMEL and finetuning Meta models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/data_generation/data_gen_with_real_function_calls_and_hermes_format.html">Real Function Calls and Hermes Format Data Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/data_generation/self_instruct_data_generation.html">Self-instruct Data Generation Using Qwen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/data_generation/cot_data_gen_sft_qwen_unsolth_upload_huggingface.html">CoT Data Generation and SFT Qwen With Unsloth</a></li>
+
+
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/data_generation/synthetic_dataevaluation%26filter_with_reward_model.html">Agentic Data Generation, Evaluation &amp; Filtering with Reward Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/data_generation/data_model_generation_and_structured_output_with_qwen.html">Agentic Data Model Generation and Structured Output Powered by CAMEL &amp; Qwen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/data_generation/distill_math_reasoning_data_from_deepseek_r1.html">Distill Math Reasoning Data from DeepSeek R1 with CAMEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/data_generation/self_improving_math_reasoning_data_distillation_from_deepSeek_r1.html">Self-Improving Math Reasoning Data Distillation from DeepSeek R1 with CAMEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/data_generation/self_improving_cot_generation.html">Deep Dive into CAMEL’s Practices for Self-Improving CoT Generation 🚀</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../cookbooks/applications/index.html">Applications</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/applications/roleplaying_scraper.html">Role-Playing Scraper for Report &amp; Knowledge Graph Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/applications/dynamic_travel_planner.html">Dynamic Travel Planner Role-Playing: Multi-Agent System with Real-Time Insights Powered by Dappier</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/applications/customer_service_Discord_bot_with_agentic_RAG.html">Customer Service Discord Bot with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/applications/customer_service_Discord_bot_using_SambaNova_with_agentic_RAG.html">Customer Service Discord Bot Using SambaNova with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/applications/customer_service_Discord_bot_using_local_model_with_agentic_RAG.html">Customer Service Discord Bot Using Local Models with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/applications/finance_discord_bot.html">Customer Service Discord Bot for Finance with OpenBB</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../cookbooks/data_processing/index.html">Data Processing and Analysis</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/data_processing/video_analysis.html">Video Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/data_processing/agent_with_chunkr_for_pdf_parsing.html">Create AI Agents that work with your PDFs using Chunkr &amp; Mistral AI</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../cookbooks/data_processing/ingest_data_from_websites_with_Firecrawl.html">3 ways to ingest data from websites with Firecrawl</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../modules.html">camel</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../camel.html">camel package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../camel.agents.html">camel.agents package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../camel.agents.tool_agents.html">camel.agents.tool_agents package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../camel.configs.html">camel.configs package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../camel.datagen.html">camel.datagen package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../camel.datagen.self_instruct.html">camel.datagen.self_instruct package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../camel.datagen.source2synth.html">camel.datagen.source2synth package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../camel.embeddings.html">camel.embeddings package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../camel.interpreters.html">camel.interpreters package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../camel.loaders.html">camel.loaders package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../camel.memories.html">camel.memories package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../camel.memories.blocks.html">camel.memories.blocks package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../camel.memories.context_creators.html">camel.memories.context_creators package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../camel.messages.html">camel.messages package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../camel.models.html">camel.models package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../camel.prompts.html">camel.prompts package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../camel.responses.html">camel.responses package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../camel.retrievers.html">camel.retrievers package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../camel.societies.html">camel.societies package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../camel.societies.workforce.html">camel.societies.workforce package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../camel.storages.html">camel.storages package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../camel.storages.graph_storages.html">camel.storages.graph_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../camel.storages.key_value_storages.html">camel.storages.key_value_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../camel.storages.object_storages.html">camel.storages.object_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../camel.storages.vectordb_storages.html">camel.storages.vectordb_storages package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../camel.tasks.html">camel.tasks package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../camel.terminators.html">camel.terminators package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../camel.toolkits.html">camel.toolkits package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../camel.types.html">camel.types package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../camel.utils.html">camel.utils package</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/camel-ai/camel" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/camel-ai/camel/edit/main/get_started/installation.md" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/camel-ai/camel/issues/new?title=Issue%20on%20page%20%2Fget_started/installation.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../_sources/get_started/installation.md" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.md</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Installation</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> On this page </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#from-pypi">1. From PyPI</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#from-docker">2. From Docker</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#from-source-with-uv">3. From Source with uv</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#running-tests">4. Running Tests</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setting-default-model-platform-and-model-type-optional">5. Setting Default Model Platform and Model Type (Optional)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setting-your-model-api-key-using-openai-as-an-example">6. Setting Your Model API Key (Using OpenAI as an Example)</a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <p>🐫 <strong>Welcome to CAMEL!</strong> 🐫</p>
+<section id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Link to this heading">#</a></h1>
+<section id="from-pypi">
+<h2>1. From PyPI<a class="headerlink" href="#from-pypi" title="Link to this heading">#</a></h2>
+<p>To install the base CAMEL library:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>camel-ai
+</pre></div>
+</div>
+<blockquote>
+<div><p><strong>Note</strong>: Some features may not work without their required dependencies. Install <code class="docutils literal notranslate"><span class="pre">camel-ai[all]</span></code> to ensure all dependencies are available, or install specific extras based on the features you need.</p>
+</div></blockquote>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;camel-ai[all]&#39;</span><span class="w">  </span><span class="c1"># Replace with options below</span>
+</pre></div>
+</div>
+<p>Available extras:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">all</span></code>: Includes all features below</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">model_platforms</span></code>: OpenAI, Google, Mistral, Anthropic Claude, Cohere etc.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">huggingface</span></code>: Transformers, Diffusers, Accelerate, Datasets, PyTorch etc.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rag</span></code>: Sentence Transformers, Qdrant, Milvus, TiDB, BM25 etc.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">storage</span></code>: Neo4j, Redis, Azure Blob, Google Cloud Storage, AWS S3  etc.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">web_tools</span></code>: DuckDuckGo, Wikipedia, WolframAlpha, Google Maps, Weather API etc.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">document_tools</span></code>: PDF, Word, OpenAPI, BeautifulSoup, Unstructured etc.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">media_tools</span></code>: Image Processing, Audio Processing, YouTube Download, FFmpeg etc.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">communication_tools</span></code>: Slack, Discord, Telegram, GitHub, Reddit, Notion etc.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">data_tools</span></code>: Pandas, TextBlob, DataCommons, OpenBB, Stripe etc.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">research_tools</span></code>: arXiv, Google Scholar etc.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dev_tools</span></code>: Docker, Jupyter, Tree-sitter, Code Interpreter etc.</p></li>
+</ul>
+<p>Multiple extras can be combined using commas:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;camel-ai[rag,web_tools,document_tools]&#39;</span><span class="w">  </span><span class="c1"># Example: RAG system with web search and document processing</span>
+</pre></div>
+</div>
+</section>
+<section id="from-docker">
+<h2>2. From Docker<a class="headerlink" href="#from-docker" title="Link to this heading">#</a></h2>
+<p>Detailed guidance can be find <a class="reference external" href="https://github.com/camel-ai/camel/blob/master/.container/README.md">here</a></p>
+<p>By default, the agent uses the <code class="docutils literal notranslate"><span class="pre">ModelType.DEFAULT</span></code> model from the <code class="docutils literal notranslate"><span class="pre">ModelPlatformType.DEFAULT</span></code>. You can configure the default model platform and model type using environment variables. If these are not set, the agent will fall back to the default settings:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ModelPlatformType.DEFAULT<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;openai&quot;</span>
+ModelType.DEFAULT<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;gpt-4o-mini&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="from-source-with-uv">
+<h2>3. From Source with uv<a class="headerlink" href="#from-source-with-uv" title="Link to this heading">#</a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Clone github repo</span>
+git<span class="w"> </span>clone<span class="w"> </span>https://github.com/camel-ai/camel.git
+
+<span class="c1"># Change directory into project directory</span>
+<span class="nb">cd</span><span class="w"> </span>camel
+
+<span class="c1"># Install uv if you don&#39;t have it already</span>
+pip<span class="w"> </span>install<span class="w"> </span>uv
+
+<span class="c1"># Create a virtual environment and install dependencies</span>
+<span class="c1"># We support using Python 3.10, 3.11, 3.12</span>
+uv<span class="w"> </span>venv<span class="w"> </span>.venv<span class="w"> </span>--python<span class="o">=</span><span class="m">3</span>.10
+
+<span class="c1"># Activate the virtual environment</span>
+<span class="c1"># For macOS/Linux</span>
+<span class="nb">source</span><span class="w"> </span>.venv/bin/activate
+<span class="c1"># For Windows</span>
+.venv<span class="se">\S</span>cripts<span class="se">\a</span>ctivate
+
+<span class="c1"># Install CAMEL with all dependencies</span>
+uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[all, dev, docs]&quot;</span>
+
+<span class="c1"># For developers: Install pre-commit hooks and mypy</span>
+uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>pre-commit<span class="w"> </span>mypy
+pre-commit<span class="w"> </span>install
+
+<span class="c1"># Exit the virtual environment when done</span>
+deactivate
+</pre></div>
+</div>
+</section>
+<section id="running-tests">
+<h2>4. Running Tests<a class="headerlink" href="#running-tests" title="Link to this heading">#</a></h2>
+<p>To run tests, make sure you have activated the virtual environment first:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Activate the virtual environment</span>
+<span class="c1"># For macOS/Linux</span>
+<span class="nb">source</span><span class="w"> </span>.venv/bin/activate
+<span class="c1"># For Windows</span>
+.venv<span class="se">\S</span>cripts<span class="se">\a</span>ctivate
+
+<span class="c1"># Run tests</span>
+pytest<span class="w"> </span>--fast-test-mode<span class="w"> </span>test/
+
+<span class="c1"># Run specific tests</span>
+pytest<span class="w"> </span>-v<span class="w"> </span>apps/
+pytest<span class="w"> </span>-v<span class="w"> </span>examples/
+
+<span class="c1"># Exit the virtual environment when done</span>
+deactivate
+</pre></div>
+</div>
+</section>
+<section id="setting-default-model-platform-and-model-type-optional">
+<h2>5. Setting Default Model Platform and Model Type (Optional)<a class="headerlink" href="#setting-default-model-platform-and-model-type-optional" title="Link to this heading">#</a></h2>
+<p>You can customize the default model platform and model type by setting the following environment variables:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">DEFAULT_MODEL_PLATFORM_TYPE</span><span class="o">=</span>&lt;your<span class="w"> </span>preferred<span class="w"> </span>platform&gt;<span class="w">  </span><span class="c1"># e.g., openai, anthropic, etc.</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">DEFAULT_MODEL_TYPE</span><span class="o">=</span>&lt;your<span class="w"> </span>preferred<span class="w"> </span>model&gt;<span class="w">  </span><span class="c1"># e.g., gpt-3.5-turbo, gpt-4o-mini, etc.</span>
+</pre></div>
+</div>
+</section>
+<section id="setting-your-model-api-key-using-openai-as-an-example">
+<h2>6. Setting Your Model API Key (Using OpenAI as an Example)<a class="headerlink" href="#setting-your-model-api-key-using-openai-as-an-example" title="Link to this heading">#</a></h2>
+<p><strong>For Bash shell (Linux, macOS, Git Bash on Windows):</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Export your OpenAI API key</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">OPENAI_API_KEY</span><span class="o">=</span>&lt;insert<span class="w"> </span>your<span class="w"> </span>OpenAI<span class="w"> </span>API<span class="w"> </span>key&gt;
+<span class="nv">OPENAI_API_BASE_URL</span><span class="o">=</span>&lt;inert<span class="w"> </span>your<span class="w"> </span>OpenAI<span class="w"> </span>API<span class="w"> </span>BASE<span class="w"> </span>URL&gt;<span class="w">  </span><span class="c1">#(Should you utilize an OpenAI proxy service, kindly specify this)</span>
+</pre></div>
+</div>
+<p><strong>For Windows Command Prompt:</strong></p>
+<div class="highlight-cmd notranslate"><div class="highlight"><pre><span></span>REM export your OpenAI API key
+set OPENAI_API_KEY=&lt;insert your OpenAI API key&gt;
+set OPENAI_API_BASE_URL=&lt;inert your OpenAI API BASE URL&gt;  #(Should you utilize an OpenAI proxy service, kindly specify this)
+</pre></div>
+</div>
+<p><strong>For Windows PowerShell:</strong></p>
+<div class="highlight-powershell notranslate"><div class="highlight"><pre><span></span><span class="c"># Export your OpenAI API key</span>
+<span class="nv">$env:OPENAI_API_KEY</span><span class="p">=</span><span class="s2">&quot;&lt;insert your OpenAI API key&gt;&quot;</span>
+<span class="nv">$env:OPENAI_API_BASE_URL</span><span class="p">=</span><span class="s2">&quot;&lt;inert your OpenAI API BASE URL&gt;&quot;</span>  <span class="c">#(Should you utilize an OpenAI proxy service, kindly specify this)</span>
+</pre></div>
+</div>
+<p>Replace <code class="docutils literal notranslate"><span class="pre">&lt;insert</span> <span class="pre">your</span> <span class="pre">OpenAI</span> <span class="pre">API</span> <span class="pre">key&gt;</span></code> with your actual OpenAI API key in each case.</p>
+<p>Please note that the environment variable is session-specific. If you open a new terminal window or tab, you will need to set the API key again in that new session.</p>
+<p><strong>For <code class="docutils literal notranslate"><span class="pre">.env</span></code> File:</strong></p>
+<p>To simplify the process of managing API Keys, you can use store information in a <code class="docutils literal notranslate"><span class="pre">.env</span></code> file and load them into your application dynamically.</p>
+<ol class="arabic simple">
+<li><p>Modify .env file in the root directory of CAMEL and fill the following lines:</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">OPENAI_API_KEY</span><span class="o">=</span>&lt;fill<span class="w"> </span>your<span class="w"> </span>API<span class="w"> </span>KEY<span class="w"> </span>here&gt;
+</pre></div>
+</div>
+<p>Replace <fill your API KEY here> with your actual API key.</p>
+<ol class="arabic simple" start="2">
+<li><p>Load the .env file in your Python script: Use the load_dotenv() function from the dotenv module to load the variables from the .env file into the environment. Here’s an example:</p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dotenv</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dotenv</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="c1"># Load environment variables from the .env file</span>
+<span class="n">load_dotenv</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>For more details about the key names in project and how to apply key,
+you can refer to <a class="reference internal" href="setup.html"><span class="std std-doc">here</span></a>.</p>
+<blockquote>
+<div><p>[!TIP]
+By default, the load_dotenv() function does not overwrite existing environment variables that are already set in your system. It only populates variables that are missing.
+If you need to overwrite existing environment variables with the values from your <code class="docutils literal notranslate"><span class="pre">.env</span></code> file, use the <code class="docutils literal notranslate"><span class="pre">override=True</span></code> parameter:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">load_dotenv</span><span class="p">(</span><span class="n">override</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>After setting the OpenAI API key, you can run the <code class="docutils literal notranslate"><span class="pre">role_playing.py</span></code> script. Find tasks for various assistant-user roles <a class="reference external" href="https://drive.google.com/file/d/194PPaSTBR07m-PzjS-Ty6KlPLdFIPQDd/view?usp=share_link">here</a>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># You can change the role pair and initial prompt in role_playing.py</span>
+python<span class="w"> </span>examples/ai_society/role_playing.py
+</pre></div>
+</div>
+<p>Also feel free to run any scripts below that interest you:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># You can change the role pair and initial prompt in these python files</span>
+
+<span class="c1"># Examples of two agents role-playing</span>
+python<span class="w"> </span>examples/ai_society/role_playing.py
+
+<span class="c1"># The agent answers questions by utilizing code execution tools.</span>
+python<span class="w"> </span>examples/toolkits/code_execution_toolkit.py
+
+<span class="c1"># Generating a knowledge graph with an agent</span>
+python<span class="w"> </span>examples/knowledge_graph/knowledge_graph_agent_example.py<span class="w">  </span>
+
+<span class="c1"># Multiple agents collaborating to decompose and solve tasks</span>
+python<span class="w"> </span>examples/workforce/multiple_single_agents.py<span class="w"> </span>
+
+<span class="c1"># Use agent to generate creative image</span>
+python<span class="w"> </span>examples/vision/image_crafting.py
+</pre></div>
+</div>
+<p>For additional feature examples, see the <a class="reference external" href="https://github.com/camel-ai/camel/tree/master/examples"><code class="docutils literal notranslate"><span class="pre">examples</span></code></a> directory.</p>
+<br>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../index.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Welcome to CAMEL’s documentation!</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="setup.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">API Setup</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#from-pypi">1. From PyPI</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#from-docker">2. From Docker</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#from-source-with-uv">3. From Source with uv</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#running-tests">4. Running Tests</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setting-default-model-platform-and-model-type-optional">5. Setting Default Model Platform and Model Type (Optional)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setting-your-model-api-key-using-openai-as-an-example">6. Setting Your Model API Key (Using OpenAI as an Example)</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By CAMEL-AI.org
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, CAMEL-AI.org.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

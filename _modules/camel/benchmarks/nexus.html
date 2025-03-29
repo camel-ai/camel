@@ -1,0 +1,1059 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>camel.benchmarks.nexus &#8212; CAMEL 0.2.38 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=3c972f42" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../../_static/documentation_options.js?v=6c336dfe"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/camel/benchmarks/nexus';</script>
+    <link rel="icon" href="https://raw.githubusercontent.com/camel-ai/camel/master/misc/favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png" class="logo__image only-light" alt=""/>
+    <script>document.write(`<img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png" class="logo__image only-dark" alt=""/>`);</script>
+  
+  
+    <p class="title logo__title">CAMEL 0.2.38</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Get Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../get_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../get_started/setup.html">API Setup</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Key Modules</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/agents.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/datagen.html">Data Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/messages.html">Message</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/memory.html">Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/tools.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/prompts.html">Prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/tasks.html">Task</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/loaders.html">Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/storages.html">Storages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/society.html">Society</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/embeddings.html">Embeddings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/retrievers.html">Retrievers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/workforce.html">Workforce</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Cookbooks</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/basic_concepts/index.html">Basic Concepts</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/create_your_first_agent.html">Creating Your First Agent</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/create_your_first_agents_society.html">Creating Your First Agent Society</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/agents_message.html">Message Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/agents_prompting.html">Prompting Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/model_speed_comparison.html">Model Speed Comparison Cookbook</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/advanced_features/index.html">Advanced Features</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_tools.html">Tools Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_tools_from_Composio.html">Using Tools from Composio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_human_in_loop_and_tool_approval.html">Agents with Human-in-loop and Tool Approval from HumanLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_memory.html">Memory Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_rag.html">RAG Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_graph_rag.html">Graph RAG Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_tracking.html">Track CAMEL Agents with AgentOps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/critic_agents_and_tree_search.html">Critic Agents and Tree Search</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/embodied_agents.html">Embodied Agents</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/multi_agent_society/index.html">Multi-agent Society</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/multi_agent_society/agents_society.html">Develop Trading Bot with Role Playing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/multi_agent_society/workforce_judge_committee.html">Create A Hackathon Judge Committee with Workforce</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/multi_agent_society/task_generation.html">Task Generation Cookbook</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/data_generation/index.html">Agentic Data Generation</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_mistral_7b_instruct.html">Agenetic SFT Data generation with CAMEL and finetuning Mistral models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B.html">Agenetic Data generation with CAMEL and finetuning Qwen models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_tinyllama.html">Agenetic SFT Data generation with CAMEL and finetuning Meta models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/data_gen_with_real_function_calls_and_hermes_format.html">Real Function Calls and Hermes Format Data Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/self_instruct_data_generation.html">Self-instruct Data Generation Using Qwen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/cot_data_gen_sft_qwen_unsolth_upload_huggingface.html">CoT Data Generation and SFT Qwen With Unsloth</a></li>
+
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/synthetic_dataevaluation%26filter_with_reward_model.html">Agentic Data Generation, Evaluation &amp; Filtering with Reward Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/data_model_generation_and_structured_output_with_qwen.html">Agentic Data Model Generation and Structured Output Powered by CAMEL &amp; Qwen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/distill_math_reasoning_data_from_deepseek_r1.html">Distill Math Reasoning Data from DeepSeek R1 with CAMEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/self_improving_math_reasoning_data_distillation_from_deepSeek_r1.html">Self-Improving Math Reasoning Data Distillation from DeepSeek R1 with CAMEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/self_improving_cot_generation.html">Deep Dive into CAMEL’s Practices for Self-Improving CoT Generation 🚀</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/applications/index.html">Applications</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/roleplaying_scraper.html">Role-Playing Scraper for Report &amp; Knowledge Graph Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/dynamic_travel_planner.html">Dynamic Travel Planner Role-Playing: Multi-Agent System with Real-Time Insights Powered by Dappier</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/customer_service_Discord_bot_with_agentic_RAG.html">Customer Service Discord Bot with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/customer_service_Discord_bot_using_SambaNova_with_agentic_RAG.html">Customer Service Discord Bot Using SambaNova with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/customer_service_Discord_bot_using_local_model_with_agentic_RAG.html">Customer Service Discord Bot Using Local Models with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/finance_discord_bot.html">Customer Service Discord Bot for Finance with OpenBB</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/data_processing/index.html">Data Processing and Analysis</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_processing/video_analysis.html">Video Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_processing/agent_with_chunkr_for_pdf_parsing.html">Create AI Agents that work with your PDFs using Chunkr &amp; Mistral AI</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_processing/ingest_data_from_websites_with_Firecrawl.html">3 ways to ingest data from websites with Firecrawl</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../modules.html">camel</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../camel.html">camel package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.agents.html">camel.agents package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.agents.tool_agents.html">camel.agents.tool_agents package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.configs.html">camel.configs package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.datagen.html">camel.datagen package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.datagen.self_instruct.html">camel.datagen.self_instruct package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.datagen.source2synth.html">camel.datagen.source2synth package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.embeddings.html">camel.embeddings package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.interpreters.html">camel.interpreters package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.loaders.html">camel.loaders package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.memories.html">camel.memories package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.memories.blocks.html">camel.memories.blocks package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.memories.context_creators.html">camel.memories.context_creators package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.messages.html">camel.messages package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.models.html">camel.models package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.prompts.html">camel.prompts package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.responses.html">camel.responses package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.retrievers.html">camel.retrievers package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.societies.html">camel.societies package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.societies.workforce.html">camel.societies.workforce package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.storages.html">camel.storages package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.graph_storages.html">camel.storages.graph_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.key_value_storages.html">camel.storages.key_value_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.object_storages.html">camel.storages.object_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.vectordb_storages.html">camel.storages.vectordb_storages package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.tasks.html">camel.tasks package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.terminators.html">camel.terminators package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.toolkits.html">camel.toolkits package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.types.html">camel.types package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.utils.html">camel.utils package</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/camel-ai/camel" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/camel-ai/camel/issues/new?title=Issue%20on%20page%20%2F_modules/camel/benchmarks/nexus.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for camel.benchmarks.nexus</h1><div class="highlight"><pre>
+<span></span><span class="c1"># ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1"># ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">ast</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">textwrap</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dataset</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.agents</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatAgent</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.benchmarks.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseBenchmark</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="c1"># Define the data class</span>
+<div class="viewcode-block" id="NexusSample">
+<a class="viewcode-back" href="../../../camel.benchmarks.html#camel.benchmarks.nexus.NexusSample">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">NexusSample</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Nexus benchmark dataset sample.&quot;&quot;&quot;</span>
+
+    <span class="nb">input</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">output</span><span class="p">:</span> <span class="nb">str</span></div>
+
+
+
+<div class="viewcode-block" id="NexusTool">
+<a class="viewcode-back" href="../../../camel.benchmarks.html#camel.benchmarks.nexus.NexusTool">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">NexusTool</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Nexus benchmark tool&quot;&quot;&quot;</span>
+
+    <span class="n">function_calls</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">descriptions</span><span class="p">:</span> <span class="nb">str</span></div>
+
+
+
+<span class="n">dataset_mapping</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;NVDLibrary&quot;</span><span class="p">:</span> <span class="s2">&quot;Nexusflow/NVDLibraryBenchmark&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;VirusTotal&quot;</span><span class="p">:</span> <span class="s2">&quot;Nexusflow/VirusTotalBenchmark&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;PlacesAPI&quot;</span><span class="p">:</span> <span class="s2">&quot;Nexusflow/PlacesAPIBenchmark&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ClimateAPI&quot;</span><span class="p">:</span> <span class="s2">&quot;Nexusflow/ClimateAPIBenchmark&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;OTX&quot;</span><span class="p">:</span> <span class="s2">&quot;Nexusflow/OTXAPIBenchmark&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;VirusTotal-NestedCalls&quot;</span><span class="p">:</span> <span class="s2">&quot;Nexusflow/vt_multiapi&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;VirusTotal-ParallelCalls&quot;</span><span class="p">:</span> <span class="s2">&quot;Nexusflow/vt_multiapi&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;NVDLibrary-NestedCalls&quot;</span><span class="p">:</span> <span class="s2">&quot;Nexusflow/CVECPEAPIBenchmark&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">TOOL_CALLING_PROMPT</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">You are given multiple functions and a user query.</span>
+
+<span class="s2">Please proceed with generating a function call for the function </span><span class="se">\</span>
+<span class="s2">with the proper arguments that best answers the given prompt.</span>
+
+<span class="s2">Respond with nothing but the function call ONLY, such that I can </span><span class="se">\</span>
+<span class="s2">directly execute your function call without any post processing </span><span class="se">\</span>
+<span class="s2">necessary from my end. Do not use variables. </span>
+<span class="s2">If there are more than two function calls, separate them with a semicolon (;).</span>
+
+<span class="si">{tools}</span>
+
+<span class="s2">Question: </span><span class="si">{input}</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="NexusBenchmark">
+<a class="viewcode-back" href="../../../camel.benchmarks.html#camel.benchmarks.nexus.NexusBenchmark">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">NexusBenchmark</span><span class="p">(</span><span class="n">BaseBenchmark</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Nexus Function Calling Benchmark adapted from `NexusRaven V2</span>
+<span class="sd">    Function Calling Benchmark`</span>
+<span class="sd">    &lt;https://huggingface.co/collections/Nexusflow/nexusraven-v2-function-calling-benchmark-657a597fb84dbe7a09ebfc3e&gt;.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        data_dir (str): The directory to save the data.</span>
+<span class="sd">        save_to (str): The file to save the results.</span>
+<span class="sd">        processes (int, optional): The number of processes to use.</span>
+<span class="sd">            (default: :obj:`1`)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">data_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">save_to</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">processes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Initialize the Nexus Function Calling benchmark.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data_dir (str): The directory to save the data.</span>
+<span class="sd">            save_to (str): The file to save the results.</span>
+<span class="sd">            processes (int, optional): The number of processes to use for</span>
+<span class="sd">                parallel processing. (default: :obj:`1`)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;nexus&quot;</span><span class="p">,</span> <span class="n">data_dir</span><span class="p">,</span> <span class="n">save_to</span><span class="p">,</span> <span class="n">processes</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">NexusSample</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># type: ignore[assignment]</span>
+
+<div class="viewcode-block" id="NexusBenchmark.download">
+<a class="viewcode-back" href="../../../camel.benchmarks.html#camel.benchmarks.nexus.NexusBenchmark.download">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">download</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Download the Nexus Functional Calling Benchmark dataset.&quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">huggingface_hub</span><span class="w"> </span><span class="kn">import</span> <span class="n">snapshot_download</span>
+
+        <span class="k">for</span> <span class="n">dataset_name</span><span class="p">,</span> <span class="n">repo_id</span> <span class="ow">in</span> <span class="n">dataset_mapping</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">local_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_dir</span> <span class="o">/</span> <span class="n">dataset_name</span>
+            <span class="n">snapshot_download</span><span class="p">(</span>
+                <span class="n">repo_id</span><span class="o">=</span><span class="n">repo_id</span><span class="p">,</span>
+                <span class="n">repo_type</span><span class="o">=</span><span class="s2">&quot;dataset&quot;</span><span class="p">,</span>
+                <span class="n">local_dir</span><span class="o">=</span><span class="n">local_dir</span><span class="p">,</span>
+                <span class="n">local_dir_use_symlinks</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NexusBenchmark.load">
+<a class="viewcode-back" href="../../../camel.benchmarks.html#camel.benchmarks.nexus.NexusBenchmark.load">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">force_download</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>  <span class="c1"># type: ignore[override]</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Load the Nexus Benchmark dataset.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dataset_name (str): Name of the specific dataset to be loaded.</span>
+<span class="sd">            force_download (bool): Whether to force download the data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">_load_csv_data</span><span class="p">(</span><span class="n">dataset_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+<span class="w">            </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Load datasets from CSV files.&quot;&quot;&quot;</span>
+            <span class="n">dataset</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">file_name</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">dataset_dir</span><span class="p">):</span>
+                <span class="n">file_path</span> <span class="o">=</span> <span class="n">dataset_dir</span> <span class="o">/</span> <span class="n">file_name</span>
+                <span class="k">if</span> <span class="n">file_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.csv&quot;</span><span class="p">):</span>
+                    <span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">sample</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+                        <span class="n">dataset</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                            <span class="n">NexusSample</span><span class="p">(</span>
+                                <span class="n">sample</span><span class="p">[</span><span class="s2">&quot;Input&quot;</span><span class="p">],</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">sample</span><span class="p">[</span><span class="s2">&quot;Output&quot;</span><span class="p">])</span>
+                            <span class="p">)</span>
+                        <span class="p">)</span>
+                    <span class="k">continue</span>
+
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Skipping unsupported file: </span><span class="si">{</span><span class="n">file_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">dataset</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">_load_parquet_data</span><span class="p">(</span><span class="n">data_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">dataset_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+<span class="w">            </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Load datasets from Parquet files.&quot;&quot;&quot;</span>
+            <span class="n">dataset</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">data_dir</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Data directory &#39;</span><span class="si">{</span><span class="n">data_dir</span><span class="si">}</span><span class="s2">&#39; does not exist.&quot;</span>
+                <span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">file_name</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">data_dir</span><span class="p">):</span>
+                <span class="n">file_path</span> <span class="o">=</span> <span class="n">data_dir</span> <span class="o">/</span> <span class="n">file_name</span>
+                <span class="k">if</span> <span class="n">file_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.parquet&quot;</span><span class="p">):</span>
+                    <span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+                    <span class="n">dataset</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_process_parquet_data</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">dataset_name</span><span class="p">))</span>
+                    <span class="k">continue</span>
+
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Skipping unsupported file: </span><span class="si">{</span><span class="n">file_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">dataset</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">_process_parquet_data</span><span class="p">(</span>
+            <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">dataset_name</span><span class="p">:</span> <span class="nb">str</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+<span class="w">            </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Process data from Parquet files based on dataset name.&quot;&quot;&quot;</span>
+            <span class="n">dataset</span><span class="p">:</span> <span class="n">List</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">dataset_handlers</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;NVDLibrary&quot;</span><span class="p">:</span> <span class="n">_process_nvdlibrary</span><span class="p">,</span>
+                <span class="s2">&quot;VirusTotal&quot;</span><span class="p">:</span> <span class="n">_process_simple</span><span class="p">,</span>
+                <span class="s2">&quot;PlacesAPI&quot;</span><span class="p">:</span> <span class="n">_process_simple</span><span class="p">,</span>
+                <span class="s2">&quot;ClimateAPI&quot;</span><span class="p">:</span> <span class="n">_process_simple</span><span class="p">,</span>
+                <span class="s2">&quot;OTX&quot;</span><span class="p">:</span> <span class="n">_process_simple</span><span class="p">,</span>
+                <span class="s2">&quot;VirusTotal-NestedCalls&quot;</span><span class="p">:</span> <span class="n">_process_nested_calls</span><span class="p">,</span>
+                <span class="s2">&quot;VirusTotal-ParallelCalls&quot;</span><span class="p">:</span> <span class="n">_process_parallel_calls</span><span class="p">,</span>
+            <span class="p">}</span>
+
+            <span class="k">if</span> <span class="n">dataset_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dataset_handlers</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;No specific handler for dataset: </span><span class="si">{</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+                <span class="k">return</span> <span class="n">dataset</span>
+
+            <span class="n">handler</span> <span class="o">=</span> <span class="n">dataset_handlers</span><span class="p">[</span><span class="n">dataset_name</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">sample</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+                <span class="n">processed_sample</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">processed_sample</span><span class="p">:</span>
+                    <span class="n">dataset</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">processed_sample</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">dataset</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">_process_nvdlibrary</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NexusSample</span><span class="p">:</span>
+<span class="w">            </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Process samples for the NVDLibrary dataset.&quot;&quot;&quot;</span>
+            <span class="k">return</span> <span class="n">NexusSample</span><span class="p">(</span>
+                <span class="n">sample</span><span class="p">[</span><span class="s2">&quot;Input&quot;</span><span class="p">],</span> <span class="n">sample</span><span class="p">[</span><span class="s2">&quot;Output&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;r = nvdlib.&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">_process_simple</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NexusSample</span><span class="p">:</span>
+<span class="w">            </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Process samples for simple datasets (e.g., VirusTotal).&quot;&quot;&quot;</span>
+            <span class="k">return</span> <span class="n">NexusSample</span><span class="p">(</span><span class="n">sample</span><span class="p">[</span><span class="s2">&quot;Input&quot;</span><span class="p">],</span> <span class="n">sample</span><span class="p">[</span><span class="s2">&quot;Output&quot;</span><span class="p">])</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">_process_nested_calls</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">NexusSample</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">            </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Process samples for VirusTotal-NestedCalls dataset.&quot;&quot;&quot;</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sample</span><span class="p">[</span><span class="s2">&quot;fncall&quot;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">NexusSample</span><span class="p">(</span>
+                    <span class="n">sample</span><span class="p">[</span><span class="s2">&quot;generated_question&quot;</span><span class="p">],</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">sample</span><span class="p">[</span><span class="s2">&quot;fncall&quot;</span><span class="p">])</span>
+                <span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">_process_parallel_calls</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">NexusSample</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">            </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Process samples for VirusTotal-ParallelCalls dataset.&quot;&quot;&quot;</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sample</span><span class="p">[</span><span class="s2">&quot;fncall&quot;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">NexusSample</span><span class="p">(</span>
+                    <span class="n">sample</span><span class="p">[</span><span class="s2">&quot;generated_question&quot;</span><span class="p">],</span> <span class="s2">&quot;; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">sample</span><span class="p">[</span><span class="s2">&quot;fncall&quot;</span><span class="p">])</span>
+                <span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">force_download</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Force downloading data.&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">download</span><span class="p">()</span>
+
+        <span class="c1"># Validate dataset name</span>
+        <span class="k">if</span> <span class="n">dataset_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dataset_mapping</span><span class="p">:</span>
+            <span class="n">available_datasets</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">dataset_mapping</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Dataset &#39;</span><span class="si">{</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">&#39; is not recognized. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Available datasets: </span><span class="si">{</span><span class="n">available_datasets</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Get the dataset directory</span>
+        <span class="n">dataset_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_dir</span> <span class="o">/</span> <span class="n">dataset_name</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">dataset_dir</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;The dataset directory for &#39;</span><span class="si">{</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">&#39; </span><span class="se">\</span>
+<span class="s2">                does not exist at </span><span class="si">{</span><span class="n">dataset_dir</span><span class="si">}</span><span class="s2">. &quot;</span>
+                <span class="s2">&quot;Please download it first.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Load the dataset</span>
+        <span class="k">if</span> <span class="n">dataset_name</span> <span class="o">==</span> <span class="s2">&quot;NVDLibrary-NestedCalls&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">_load_csv_data</span><span class="p">(</span><span class="n">dataset_dir</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">_load_parquet_data</span><span class="p">(</span><span class="n">dataset_dir</span> <span class="o">/</span> <span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">dataset_name</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Get the training set.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;Nexus Functional Calling has only a single &#39;train&#39; set.&quot;</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="NexusBenchmark.run">
+<a class="viewcode-back" href="../../../camel.benchmarks.html#camel.benchmarks.nexus.NexusBenchmark.run">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span>  <span class="c1"># type: ignore[override, return]</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">agent</span><span class="p">:</span> <span class="n">ChatAgent</span><span class="p">,</span>
+        <span class="n">task</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span>
+            <span class="s2">&quot;NVDLibrary&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;VirusTotal&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;OTX&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;PlacesAPI&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;ClimateAPI&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;VirusTotal-ParallelCalls&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;VirusTotal-NestedCalls&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;NVDLibrary-NestedCalls&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="n">randomize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">subset</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Run the benchmark.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            agent (ChatAgent): The agent to run the benchmark.</span>
+<span class="sd">            task (Literal[&quot;NVDLibrary&quot;, &quot;VirusTotal&quot;, &quot;OTX&quot;,</span>
+<span class="sd">            &quot;PlacesAPI&quot;, &quot;ClimateAPI&quot;, &quot;VirusTotal-ParallelCalls&quot;,</span>
+<span class="sd">            &quot;VirusTotal-NestedCalls&quot;,</span>
+<span class="sd">            &quot;NVDLibrary-NestedCalls&quot;]): The task to run the benchmark.</span>
+<span class="sd">            randomize (bool, optional): Whether to randomize the data.</span>
+<span class="sd">                (default: :obj:`False`)</span>
+<span class="sd">            subset (Optional[int], optional): The subset of data to run.</span>
+<span class="sd">                (default: :obj:`None`)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dict[str, Any]: The results of the benchmark.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">task</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dataset_mapping</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid value for dataset: </span><span class="si">{</span><span class="n">task</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Running Nexus Function Calling benchmark on </span><span class="si">{</span><span class="n">task</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
+        <span class="n">datas</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span>
+
+        <span class="c1"># Shuffle and subset data if necessary</span>
+        <span class="k">if</span> <span class="n">randomize</span><span class="p">:</span>
+            <span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">datas</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">subset</span><span class="p">:</span>
+            <span class="n">datas</span> <span class="o">=</span> <span class="n">datas</span><span class="p">[:</span><span class="n">subset</span><span class="p">]</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of tasks: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">datas</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Initialize results storage</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_results</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Process samples</span>
+        <span class="n">tools</span> <span class="o">=</span> <span class="n">construct_tool_descriptions</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save_to</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">sample</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">datas</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Running&quot;</span><span class="p">):</span>
+                <span class="n">prompt</span> <span class="o">=</span> <span class="n">construct_prompt</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="n">sample</span><span class="o">.</span><span class="n">input</span><span class="p">,</span> <span class="n">tools</span><span class="o">=</span><span class="n">tools</span><span class="p">)</span>
+                <span class="n">ground_truth_call</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">output</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="c1"># Generate response</span>
+                    <span class="n">response</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">prompt</span><span class="p">)</span>
+                    <span class="n">agent_call</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">msgs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">content</span>
+
+                    <span class="c1"># Evaluate response</span>
+                    <span class="k">if</span> <span class="n">agent_call</span><span class="p">:</span>
+                        <span class="n">result</span> <span class="o">=</span> <span class="n">compare_function_calls</span><span class="p">(</span>
+                            <span class="n">agent_call</span><span class="o">=</span><span class="n">agent_call</span><span class="p">,</span>
+                            <span class="n">ground_truth_call</span><span class="o">=</span><span class="n">ground_truth_call</span><span class="p">,</span>
+                        <span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                            <span class="p">{</span>
+                                <span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="n">sample</span><span class="o">.</span><span class="n">input</span><span class="p">,</span>
+                                <span class="s2">&quot;agent_call&quot;</span><span class="p">:</span> <span class="n">agent_call</span><span class="p">,</span>
+                                <span class="s2">&quot;ground_truth_call&quot;</span><span class="p">:</span> <span class="n">ground_truth_call</span><span class="p">,</span>
+                                <span class="s2">&quot;result&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">,</span>
+                                <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                            <span class="p">}</span>
+                        <span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error in processing task: </span><span class="si">{</span><span class="n">sample</span><span class="o">.</span><span class="n">input</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="p">{</span>
+                            <span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="n">sample</span><span class="o">.</span><span class="n">input</span><span class="p">,</span>
+                            <span class="s2">&quot;agent_call&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                            <span class="s2">&quot;ground_truth_call&quot;</span><span class="p">:</span> <span class="n">ground_truth_call</span><span class="p">,</span>
+                            <span class="s2">&quot;result&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                            <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">),</span>
+                        <span class="p">}</span>
+                    <span class="p">)</span>
+
+                <span class="n">agent</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+                <span class="n">json_str</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_results</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span>
+                <span class="p">)</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json_str</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+        <span class="n">total</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_results</span><span class="p">)</span>
+        <span class="n">correct</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;result&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_results</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;total&quot;</span><span class="p">:</span> <span class="n">total</span><span class="p">,</span>
+            <span class="s2">&quot;correct&quot;</span><span class="p">:</span> <span class="n">correct</span><span class="p">,</span>
+            <span class="s2">&quot;accuracy&quot;</span><span class="p">:</span> <span class="n">correct</span> <span class="o">/</span> <span class="n">total</span><span class="p">,</span>
+        <span class="p">}</span></div>
+</div>
+
+
+
+<span class="c1"># Utility functions</span>
+<div class="viewcode-block" id="construct_tool_descriptions">
+<a class="viewcode-back" href="../../../camel.benchmarks.html#camel.benchmarks.nexus.construct_tool_descriptions">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">construct_tool_descriptions</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Construct tool descriptions from function definitions and</span>
+<span class="sd">    descriptions.&quot;&quot;&quot;</span>
+    <span class="n">tool_dataset_mapping</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;NVDLibrary&quot;</span><span class="p">:</span> <span class="s2">&quot;CVECPE&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;VirusTotal&quot;</span><span class="p">:</span> <span class="s2">&quot;VirusTotal&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;PlacesAPI&quot;</span><span class="p">:</span> <span class="s2">&quot;Places&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;ClimateAPI&quot;</span><span class="p">:</span> <span class="s2">&quot;Climate&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;OTX&quot;</span><span class="p">:</span> <span class="s2">&quot;OTX&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;VirusTotal-NestedCalls&quot;</span><span class="p">:</span> <span class="s2">&quot;VT_Multi (Nested)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;VirusTotal-ParallelCalls&quot;</span><span class="p">:</span> <span class="s2">&quot;VT_Multi (Parallel)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;NVDLibrary-NestedCalls&quot;</span><span class="p">:</span> <span class="s2">&quot;CVECPE_Multi (Nested)&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="n">dataset_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tool_dataset_mapping</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Dataset &#39;</span><span class="si">{</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">&#39; is not recognized. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Available datasets: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">dataset_mapping</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Load the dataset based on the dataset name</span>
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">load_dataset</span><span class="p">(</span>
+        <span class="s2">&quot;Nexusflow/Function_Call_Definitions&quot;</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="n">tool_dataset_mapping</span><span class="p">[</span><span class="n">dataset_name</span><span class="p">],</span>
+    <span class="p">)[</span><span class="s2">&quot;train&quot;</span><span class="p">]</span>
+
+    <span class="c1"># Construct tool descriptions</span>
+    <span class="n">tools</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">NexusTool</span><span class="p">(</span><span class="n">tool</span><span class="p">[</span><span class="s2">&quot;function_calls&quot;</span><span class="p">],</span> <span class="n">tool</span><span class="p">[</span><span class="s2">&quot;descriptions&quot;</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">tool</span> <span class="ow">in</span> <span class="n">dataset</span>
+    <span class="p">]</span>
+
+    <span class="c1"># Generate the tool prompt</span>
+    <span class="n">tool_prompt</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;Function:</span><span class="se">\n</span><span class="s2">def </span><span class="si">{</span><span class="n">tool</span><span class="o">.</span><span class="n">function_calls</span><span class="si">}</span><span class="s2">:</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\&quot;\&quot;\&quot;\n</span><span class="s2">&quot;</span>
+        <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">tool</span><span class="o">.</span><span class="n">descriptions</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\&quot;\&quot;\&quot;\n</span><span class="s2">&quot;</span>
+        <span class="k">for</span> <span class="n">tool</span> <span class="ow">in</span> <span class="n">tools</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">tool_prompt</span></div>
+
+
+
+<div class="viewcode-block" id="construct_prompt">
+<a class="viewcode-back" href="../../../camel.benchmarks.html#camel.benchmarks.nexus.construct_prompt">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">construct_prompt</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">tools</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="sa">r</span><span class="s2">&quot;Construct prompt from tools and input.&quot;</span>
+    <span class="k">return</span> <span class="n">TOOL_CALLING_PROMPT</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tools</span><span class="o">=</span><span class="n">tools</span><span class="p">,</span> <span class="nb">input</span><span class="o">=</span><span class="nb">input</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># Functions for function call evaluation</span>
+<div class="viewcode-block" id="parse_function_call">
+<a class="viewcode-back" href="../../../camel.benchmarks.html#camel.benchmarks.nexus.parse_function_call">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_function_call</span><span class="p">(</span>
+    <span class="n">call</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]],</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Parse a function call string to extract the function name,</span>
+<span class="sd">    positional arguments, and keyword arguments, including</span>
+<span class="sd">    nested function calls.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        call (str): A string in the format `func(arg1, arg2, kwarg=value)`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple: (function_name (str), positional_args (list),</span>
+<span class="sd">        keyword_args (dict)) or (None, None, None).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">preprocess_input</span><span class="p">(</span><span class="n">call</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Remove formatting like code blocks and whitespace.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">call</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;```python&quot;</span><span class="p">):</span>
+            <span class="n">call</span> <span class="o">=</span> <span class="n">call</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">removeprefix</span><span class="p">(</span><span class="s2">&quot;```python&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">removesuffix</span><span class="p">(</span><span class="s2">&quot;```&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span><span class="n">call</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">evaluate_arg</span><span class="p">(</span><span class="n">arg</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Recursively evaluate arguments, including nested calls.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Call</span><span class="p">):</span>
+            <span class="c1"># Recursively parse nested calls</span>
+            <span class="n">func_name</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span> <span class="o">=</span> <span class="n">parse_function_call</span><span class="p">(</span><span class="n">ast</span><span class="o">.</span><span class="n">unparse</span><span class="p">(</span><span class="n">arg</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">func_name</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span>
+            <span class="n">arg</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Constant</span>
+        <span class="p">):</span>  <span class="c1"># Handle literals like numbers, strings, etc.</span>
+            <span class="k">return</span> <span class="n">arg</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">List</span><span class="p">):</span>  <span class="c1"># Handle list literals</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">evaluate_arg</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">arg</span><span class="o">.</span><span class="n">elts</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Dict</span><span class="p">):</span>  <span class="c1"># Handle dictionary literals</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="n">evaluate_arg</span><span class="p">(</span><span class="n">k</span><span class="p">):</span> <span class="n">evaluate_arg</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">keys</span><span class="p">,</span> <span class="n">arg</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+            <span class="p">}</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Tuple</span><span class="p">):</span>  <span class="c1"># Handle tuple literals</span>
+            <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">evaluate_arg</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">arg</span><span class="o">.</span><span class="n">elts</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>  <span class="c1"># Safely evaluate other types</span>
+
+    <span class="n">call</span> <span class="o">=</span> <span class="n">preprocess_input</span><span class="p">(</span><span class="n">call</span><span class="p">)</span>
+    <span class="n">parsed_calls</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Parse the string into an AST</span>
+        <span class="n">parsed_calls</span> <span class="o">=</span> <span class="n">call</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;;&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">single_call</span> <span class="ow">in</span> <span class="n">parsed_calls</span><span class="p">:</span>
+            <span class="n">tree</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">single_call</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;eval&#39;</span><span class="p">)</span>
+
+            <span class="c1"># Ensure it&#39;s a function call</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">body</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Call</span><span class="p">):</span>
+                <span class="c1"># Extract function name</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span>
+                    <span class="n">tree</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">func</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Name</span>
+                <span class="p">):</span>  <span class="c1"># Simple function call</span>
+                    <span class="n">func_name</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">id</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span>
+                    <span class="n">tree</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">func</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Attribute</span>
+                <span class="p">):</span>  <span class="c1"># Attribute function call</span>
+                    <span class="n">func_name</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">tree</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">tree</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">attr</span><span class="si">}</span><span class="s2">&quot;</span>  <span class="c1"># type: ignore[attr-defined]</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported function call: </span><span class="si">{</span><span class="n">call</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+                <span class="c1"># Extract positional arguments</span>
+                <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="n">evaluate_arg</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">args</span><span class="p">]</span>
+
+                <span class="c1"># Extract keyword arguments</span>
+                <span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="n">kw</span><span class="o">.</span><span class="n">arg</span><span class="p">:</span> <span class="n">evaluate_arg</span><span class="p">(</span><span class="n">kw</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">kw</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">keywords</span>
+                    <span class="k">if</span> <span class="n">kw</span><span class="o">.</span><span class="n">arg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="p">}</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Valid call.&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">func_name</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Not a valid function call: </span><span class="si">{</span><span class="n">call</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error parsing call: </span><span class="si">{</span><span class="n">call</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="compare_function_calls">
+<a class="viewcode-back" href="../../../camel.benchmarks.html#camel.benchmarks.nexus.compare_function_calls">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compare_function_calls</span><span class="p">(</span><span class="n">agent_call</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">ground_truth_call</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compare the function name and arguments of</span>
+<span class="sd">    agent_call and ground_truth_call.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        agent_call (str): Function call by agent.</span>
+<span class="sd">        ground_truth_call (str): Ground truth function call.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        - `True` if the function names and arguments match.</span>
+<span class="sd">        - `False` otherwise.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Parse both calls</span>
+    <span class="n">agent_parsed</span> <span class="o">=</span> <span class="n">parse_function_call</span><span class="p">(</span><span class="n">agent_call</span><span class="p">)</span>
+    <span class="n">gt_parsed</span> <span class="o">=</span> <span class="n">parse_function_call</span><span class="p">(</span><span class="n">ground_truth_call</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">agent_parsed</span> <span class="ow">and</span> <span class="n">gt_parsed</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">agent_parsed</span> <span class="o">==</span> <span class="n">gt_parsed</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By CAMEL-AI.org
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, CAMEL-AI.org.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

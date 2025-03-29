@@ -1,0 +1,1337 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>camel.personas package &#8212; CAMEL 0.2.38 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=3c972f42" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="_static/documentation_options.js?v=6c336dfe"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'camel.personas';</script>
+    <link rel="icon" href="https://raw.githubusercontent.com/camel-ai/camel/master/misc/favicon.png"/>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png" class="logo__image only-light" alt=""/>
+    <script>document.write(`<img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png" class="logo__image only-dark" alt=""/>`);</script>
+  
+  
+    <p class="title logo__title">CAMEL 0.2.38</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Get Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="get_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="get_started/setup.html">API Setup</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Key Modules</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="key_modules/agents.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="key_modules/datagen.html">Data Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="key_modules/models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="key_modules/messages.html">Message</a></li>
+<li class="toctree-l1"><a class="reference internal" href="key_modules/memory.html">Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="key_modules/tools.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="key_modules/prompts.html">Prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="key_modules/tasks.html">Task</a></li>
+<li class="toctree-l1"><a class="reference internal" href="key_modules/loaders.html">Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="key_modules/storages.html">Storages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="key_modules/society.html">Society</a></li>
+<li class="toctree-l1"><a class="reference internal" href="key_modules/embeddings.html">Embeddings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="key_modules/retrievers.html">Retrievers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="key_modules/workforce.html">Workforce</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Cookbooks</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="cookbooks/basic_concepts/index.html">Basic Concepts</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/basic_concepts/create_your_first_agent.html">Creating Your First Agent</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/basic_concepts/create_your_first_agents_society.html">Creating Your First Agent Society</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/basic_concepts/agents_message.html">Message Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/basic_concepts/agents_prompting.html">Prompting Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/basic_concepts/model_speed_comparison.html">Model Speed Comparison Cookbook</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="cookbooks/advanced_features/index.html">Advanced Features</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/advanced_features/agents_with_tools.html">Tools Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/advanced_features/agents_with_tools_from_Composio.html">Using Tools from Composio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/advanced_features/agents_with_human_in_loop_and_tool_approval.html">Agents with Human-in-loop and Tool Approval from HumanLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/advanced_features/agents_with_memory.html">Memory Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/advanced_features/agents_with_rag.html">RAG Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/advanced_features/agents_with_graph_rag.html">Graph RAG Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/advanced_features/agents_tracking.html">Track CAMEL Agents with AgentOps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/advanced_features/critic_agents_and_tree_search.html">Critic Agents and Tree Search</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/advanced_features/embodied_agents.html">Embodied Agents</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="cookbooks/multi_agent_society/index.html">Multi-agent Society</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/multi_agent_society/agents_society.html">Develop Trading Bot with Role Playing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/multi_agent_society/workforce_judge_committee.html">Create A Hackathon Judge Committee with Workforce</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/multi_agent_society/task_generation.html">Task Generation Cookbook</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="cookbooks/data_generation/index.html">Agentic Data Generation</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_mistral_7b_instruct.html">Agenetic SFT Data generation with CAMEL and finetuning Mistral models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B.html">Agenetic Data generation with CAMEL and finetuning Qwen models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_tinyllama.html">Agenetic SFT Data generation with CAMEL and finetuning Meta models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/data_generation/data_gen_with_real_function_calls_and_hermes_format.html">Real Function Calls and Hermes Format Data Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/data_generation/self_instruct_data_generation.html">Self-instruct Data Generation Using Qwen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/data_generation/cot_data_gen_sft_qwen_unsolth_upload_huggingface.html">CoT Data Generation and SFT Qwen With Unsloth</a></li>
+
+
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/data_generation/synthetic_dataevaluation%26filter_with_reward_model.html">Agentic Data Generation, Evaluation &amp; Filtering with Reward Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/data_generation/data_model_generation_and_structured_output_with_qwen.html">Agentic Data Model Generation and Structured Output Powered by CAMEL &amp; Qwen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/data_generation/distill_math_reasoning_data_from_deepseek_r1.html">Distill Math Reasoning Data from DeepSeek R1 with CAMEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/data_generation/self_improving_math_reasoning_data_distillation_from_deepSeek_r1.html">Self-Improving Math Reasoning Data Distillation from DeepSeek R1 with CAMEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/data_generation/self_improving_cot_generation.html">Deep Dive into CAMEL’s Practices for Self-Improving CoT Generation 🚀</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="cookbooks/applications/index.html">Applications</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/applications/roleplaying_scraper.html">Role-Playing Scraper for Report &amp; Knowledge Graph Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/applications/dynamic_travel_planner.html">Dynamic Travel Planner Role-Playing: Multi-Agent System with Real-Time Insights Powered by Dappier</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/applications/customer_service_Discord_bot_with_agentic_RAG.html">Customer Service Discord Bot with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/applications/customer_service_Discord_bot_using_SambaNova_with_agentic_RAG.html">Customer Service Discord Bot Using SambaNova with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/applications/customer_service_Discord_bot_using_local_model_with_agentic_RAG.html">Customer Service Discord Bot Using Local Models with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/applications/finance_discord_bot.html">Customer Service Discord Bot for Finance with OpenBB</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="cookbooks/data_processing/index.html">Data Processing and Analysis</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/data_processing/video_analysis.html">Video Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/data_processing/agent_with_chunkr_for_pdf_parsing.html">Create AI Agents that work with your PDFs using Chunkr &amp; Mistral AI</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="cookbooks/data_processing/ingest_data_from_websites_with_Firecrawl.html">3 ways to ingest data from websites with Firecrawl</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="modules.html">camel</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="camel.html">camel package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="camel.agents.html">camel.agents package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.agents.tool_agents.html">camel.agents.tool_agents package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="camel.configs.html">camel.configs package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="camel.datagen.html">camel.datagen package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.datagen.self_instruct.html">camel.datagen.self_instruct package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.datagen.source2synth.html">camel.datagen.source2synth package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="camel.embeddings.html">camel.embeddings package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="camel.interpreters.html">camel.interpreters package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="camel.loaders.html">camel.loaders package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="camel.memories.html">camel.memories package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.memories.blocks.html">camel.memories.blocks package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.memories.context_creators.html">camel.memories.context_creators package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="camel.messages.html">camel.messages package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="camel.models.html">camel.models package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="camel.prompts.html">camel.prompts package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="camel.responses.html">camel.responses package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="camel.retrievers.html">camel.retrievers package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="camel.societies.html">camel.societies package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.societies.workforce.html">camel.societies.workforce package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="camel.storages.html">camel.storages package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.storages.graph_storages.html">camel.storages.graph_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.storages.key_value_storages.html">camel.storages.key_value_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.storages.object_storages.html">camel.storages.object_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.storages.vectordb_storages.html">camel.storages.vectordb_storages package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="camel.tasks.html">camel.tasks package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="camel.terminators.html">camel.terminators package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="camel.toolkits.html">camel.toolkits package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="camel.types.html">camel.types package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="camel.utils.html">camel.utils package</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/camel-ai/camel" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/camel-ai/camel/edit/main/camel.personas.rst" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/camel-ai/camel/issues/new?title=Issue%20on%20page%20%2Fcamel.personas.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="_sources/camel.personas.rst" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.rst</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>camel.personas package</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> On this page </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#submodules">Submodules</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-camel.personas.persona">camel.personas.persona module</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona.Persona"><code class="docutils literal notranslate"><span class="pre">Persona</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona.Persona.name"><code class="docutils literal notranslate"><span class="pre">Persona.name</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona.Persona.description"><code class="docutils literal notranslate"><span class="pre">Persona.description</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona.Persona.text_to_persona_prompt"><code class="docutils literal notranslate"><span class="pre">Persona.text_to_persona_prompt</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona.Persona.persona_to_persona_prompt"><code class="docutils literal notranslate"><span class="pre">Persona.persona_to_persona_prompt</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona.Persona.id"><code class="docutils literal notranslate"><span class="pre">Persona.id</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona.Persona._id"><code class="docutils literal notranslate"><span class="pre">Persona._id</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona.Persona.model_config"><code class="docutils literal notranslate"><span class="pre">Persona.model_config</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id0"><code class="docutils literal notranslate"><span class="pre">Persona.description</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona.Persona.dict"><code class="docutils literal notranslate"><span class="pre">Persona.dict()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id1"><code class="docutils literal notranslate"><span class="pre">Persona.id</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona.Persona.json"><code class="docutils literal notranslate"><span class="pre">Persona.json()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona.Persona.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">Persona.model_computed_fields</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id2"><code class="docutils literal notranslate"><span class="pre">Persona.model_config</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona.Persona.model_fields"><code class="docutils literal notranslate"><span class="pre">Persona.model_fields</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona.Persona.model_json_schema"><code class="docutils literal notranslate"><span class="pre">Persona.model_json_schema()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona.Persona.model_post_init"><code class="docutils literal notranslate"><span class="pre">Persona.model_post_init()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id3"><code class="docutils literal notranslate"><span class="pre">Persona.name</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id4"><code class="docutils literal notranslate"><span class="pre">Persona.persona_to_persona_prompt</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id5"><code class="docutils literal notranslate"><span class="pre">Persona.text_to_persona_prompt</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-camel.personas.persona_hub">camel.personas.persona_hub module</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona_hub.PersonaHub"><code class="docutils literal notranslate"><span class="pre">PersonaHub</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona_hub.PersonaHub.deduplicate"><code class="docutils literal notranslate"><span class="pre">PersonaHub.deduplicate()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona_hub.PersonaHub.get_all_personas"><code class="docutils literal notranslate"><span class="pre">PersonaHub.get_all_personas()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona_hub.PersonaHub.persona_to_persona"><code class="docutils literal notranslate"><span class="pre">PersonaHub.persona_to_persona()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona_hub.PersonaHub.text_to_persona"><code class="docutils literal notranslate"><span class="pre">PersonaHub.text_to_persona()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona_hub.PersonaResponse"><code class="docutils literal notranslate"><span class="pre">PersonaResponse</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona_hub.PersonaResponse.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">PersonaResponse.model_computed_fields</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona_hub.PersonaResponse.model_config"><code class="docutils literal notranslate"><span class="pre">PersonaResponse.model_config</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona_hub.PersonaResponse.model_fields"><code class="docutils literal notranslate"><span class="pre">PersonaResponse.model_fields</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona_hub.PersonaResponse.persona_description"><code class="docutils literal notranslate"><span class="pre">PersonaResponse.persona_description</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona_hub.PersonaResponse.persona_name"><code class="docutils literal notranslate"><span class="pre">PersonaResponse.persona_name</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-camel.personas">Module contents</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.Persona"><code class="docutils literal notranslate"><span class="pre">Persona</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.Persona.name"><code class="docutils literal notranslate"><span class="pre">Persona.name</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.Persona.description"><code class="docutils literal notranslate"><span class="pre">Persona.description</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.Persona.text_to_persona_prompt"><code class="docutils literal notranslate"><span class="pre">Persona.text_to_persona_prompt</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.Persona.persona_to_persona_prompt"><code class="docutils literal notranslate"><span class="pre">Persona.persona_to_persona_prompt</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.Persona.id"><code class="docutils literal notranslate"><span class="pre">Persona.id</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.Persona._id"><code class="docutils literal notranslate"><span class="pre">Persona._id</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.Persona.model_config"><code class="docutils literal notranslate"><span class="pre">Persona.model_config</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id8"><code class="docutils literal notranslate"><span class="pre">Persona.description</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.Persona.dict"><code class="docutils literal notranslate"><span class="pre">Persona.dict()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id9"><code class="docutils literal notranslate"><span class="pre">Persona.id</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.Persona.json"><code class="docutils literal notranslate"><span class="pre">Persona.json()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.Persona.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">Persona.model_computed_fields</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id10"><code class="docutils literal notranslate"><span class="pre">Persona.model_config</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.Persona.model_fields"><code class="docutils literal notranslate"><span class="pre">Persona.model_fields</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.Persona.model_json_schema"><code class="docutils literal notranslate"><span class="pre">Persona.model_json_schema()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.Persona.model_post_init"><code class="docutils literal notranslate"><span class="pre">Persona.model_post_init()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id11"><code class="docutils literal notranslate"><span class="pre">Persona.name</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id12"><code class="docutils literal notranslate"><span class="pre">Persona.persona_to_persona_prompt</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id13"><code class="docutils literal notranslate"><span class="pre">Persona.text_to_persona_prompt</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.PersonaHub"><code class="docutils literal notranslate"><span class="pre">PersonaHub</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.PersonaHub.deduplicate"><code class="docutils literal notranslate"><span class="pre">PersonaHub.deduplicate()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.PersonaHub.get_all_personas"><code class="docutils literal notranslate"><span class="pre">PersonaHub.get_all_personas()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.PersonaHub.persona_to_persona"><code class="docutils literal notranslate"><span class="pre">PersonaHub.persona_to_persona()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.PersonaHub.text_to_persona"><code class="docutils literal notranslate"><span class="pre">PersonaHub.text_to_persona()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="camel-personas-package">
+<h1>camel.personas package<a class="headerlink" href="#camel-personas-package" title="Link to this heading">#</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">#</a></h2>
+</section>
+<section id="module-camel.personas.persona">
+<span id="camel-personas-persona-module"></span><h2>camel.personas.persona module<a class="headerlink" href="#module-camel.personas.persona" title="Link to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="camel.personas.persona.Persona">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">camel.personas.persona.</span></span><span class="sig-name descname"><span class="pre">Persona</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text_to_persona_prompt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="camel.prompts.html#camel.prompts.base.TextPrompt" title="camel.prompts.base.TextPrompt"><span class="pre">TextPrompt</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">persona_to_persona_prompt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="camel.prompts.html#camel.prompts.base.TextPrompt" title="camel.prompts.base.TextPrompt"><span class="pre">TextPrompt</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camel/personas/persona.html#Persona"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camel.personas.persona.Persona" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<p>A persona is a character in the society.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="camel.personas.persona.Persona.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#camel.personas.persona.Persona.name" title="Link to this definition">#</a></dt>
+<dd><p>Name of the persona.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="camel.personas.persona.Persona.description">
+<span class="sig-name descname"><span class="pre">description</span></span><a class="headerlink" href="#camel.personas.persona.Persona.description" title="Link to this definition">#</a></dt>
+<dd><p>Description of the persona.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="camel.personas.persona.Persona.text_to_persona_prompt">
+<span class="sig-name descname"><span class="pre">text_to_persona_prompt</span></span><a class="headerlink" href="#camel.personas.persona.Persona.text_to_persona_prompt" title="Link to this definition">#</a></dt>
+<dd><p>The prompt to convert
+text into a persona.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Union[<a class="reference internal" href="camel.prompts.html#camel.prompts.base.TextPrompt" title="camel.prompts.base.TextPrompt">TextPrompt</a>, str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="camel.personas.persona.Persona.persona_to_persona_prompt">
+<span class="sig-name descname"><span class="pre">persona_to_persona_prompt</span></span><a class="headerlink" href="#camel.personas.persona.Persona.persona_to_persona_prompt" title="Link to this definition">#</a></dt>
+<dd><p>Persona-to-Persona
+interaction prompt.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Union[<a class="reference internal" href="camel.prompts.html#camel.prompts.base.TextPrompt" title="camel.prompts.base.TextPrompt">TextPrompt</a>, str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="camel.personas.persona.Persona.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#camel.personas.persona.Persona.id" title="Link to this definition">#</a></dt>
+<dd><p>The unique identifier for the persona, automatically
+generated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>uuid.UUID</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="camel.personas.persona.Persona._id">
+<span class="sig-name descname"><span class="pre">_id</span></span><a class="headerlink" href="#camel.personas.persona.Persona._id" title="Link to this definition">#</a></dt>
+<dd><p>Internal unique identifier for the persona,
+generated lazily using <cite>uuid.uuid4</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>uuid.UUID</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="camel.personas.persona.Persona.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><a class="headerlink" href="#camel.personas.persona.Persona.model_config" title="Link to this definition">#</a></dt>
+<dd><p>Configuration for the Pydantic
+model. Allows arbitrary types and includes custom JSON schema
+settings.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ClassVar[ConfigDict]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">description</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id0" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="camel.personas.persona.Persona.dict">
+<span class="sig-name descname"><span class="pre">dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camel/personas/persona.html#Persona.dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camel.personas.persona.Persona.dict" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="id1">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">UUID</span></em><a class="headerlink" href="#id1" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="camel.personas.persona.Persona.json">
+<span class="sig-name descname"><span class="pre">json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camel/personas/persona.html#Persona.json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camel.personas.persona.Persona.json" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="camel.personas.persona.Persona.model_computed_fields">
+<span class="sig-name descname"><span class="pre">model_computed_fields</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ComputedFieldInfo</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#camel.personas.persona.Persona.model_computed_fields" title="Link to this definition">#</a></dt>
+<dd><p>A dictionary of computed field names and their corresponding <cite>ComputedFieldInfo</cite> objects.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'arbitrary_types_allowed':</span> <span class="pre">True,</span> <span class="pre">'json_schema_extra':</span> <span class="pre">{'properties':</span> <span class="pre">{'persona_to_persona_prompt':</span> <span class="pre">{'type':</span> <span class="pre">'string'},</span> <span class="pre">'text_to_persona_prompt':</span> <span class="pre">{'type':</span> <span class="pre">'string'}}}}</span></em><a class="headerlink" href="#id2" title="Link to this definition">#</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="camel.personas.persona.Persona.model_fields">
+<span class="sig-name descname"><span class="pre">model_fields</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">FieldInfo</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'description':</span> <span class="pre">FieldInfo(annotation=Union[str,</span> <span class="pre">NoneType],</span> <span class="pre">required=False,</span> <span class="pre">default=None),</span> <span class="pre">'name':</span> <span class="pre">FieldInfo(annotation=Union[str,</span> <span class="pre">NoneType],</span> <span class="pre">required=False,</span> <span class="pre">default=None),</span> <span class="pre">'persona_to_persona_prompt':</span> <span class="pre">FieldInfo(annotation=Union[TextPrompt,</span> <span class="pre">str],</span> <span class="pre">required=False,</span> <span class="pre">default_factory=&lt;lambda&gt;,</span> <span class="pre">description='Persona</span> <span class="pre">to</span> <span class="pre">Persona</span> <span class="pre">Prompt'),</span> <span class="pre">'text_to_persona_prompt':</span> <span class="pre">FieldInfo(annotation=Union[TextPrompt,</span> <span class="pre">str],</span> <span class="pre">required=False,</span> <span class="pre">default_factory=&lt;lambda&gt;,</span> <span class="pre">description='Text</span> <span class="pre">to</span> <span class="pre">Persona</span> <span class="pre">Prompt')}</span></em><a class="headerlink" href="#camel.personas.persona.Persona.model_fields" title="Link to this definition">#</a></dt>
+<dd><p>Metadata about the fields defined on the model,
+mapping of field names to [<cite>FieldInfo</cite>][pydantic.fields.FieldInfo] objects.</p>
+<p>This replaces <cite>Model.__fields__</cite> from Pydantic V1.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="camel.personas.persona.Persona.model_json_schema">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">model_json_schema</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/camel/personas/persona.html#Persona.model_json_schema"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camel.personas.persona.Persona.model_json_schema" title="Link to this definition">#</a></dt>
+<dd><p>Generates a JSON schema for a model class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>by_alias</strong> – Whether to use attribute aliases or not.</p></li>
+<li><p><strong>ref_template</strong> – The reference template.</p></li>
+<li><p><strong>schema_generator</strong> – To override the logic used to generate the JSON schema, as a subclass of
+<cite>GenerateJsonSchema</cite> with your desired modifications</p></li>
+<li><p><strong>mode</strong> – The mode in which to generate the schema.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The JSON schema for the given model class.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="camel.personas.persona.Persona.model_post_init">
+<span class="sig-name descname"><span class="pre">model_post_init</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#camel.personas.persona.Persona.model_post_init" title="Link to this definition">#</a></dt>
+<dd><p>This function is meant to behave like a BaseModel method to initialise private attributes.</p>
+<p>It takes context as an argument since that’s what pydantic-core passes when calling it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> – The BaseModel instance.</p></li>
+<li><p><strong>context</strong> – The context.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id3" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id4">
+<span class="sig-name descname"><span class="pre">persona_to_persona_prompt</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="camel.prompts.html#camel.prompts.base.TextPrompt" title="camel.prompts.base.TextPrompt"><span class="pre">TextPrompt</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#id4" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id5">
+<span class="sig-name descname"><span class="pre">text_to_persona_prompt</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="camel.prompts.html#camel.prompts.base.TextPrompt" title="camel.prompts.base.TextPrompt"><span class="pre">TextPrompt</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#id5" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-camel.personas.persona_hub">
+<span id="camel-personas-persona-hub-module"></span><h2>camel.personas.persona_hub module<a class="headerlink" href="#module-camel.personas.persona_hub" title="Link to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="camel.personas.persona_hub.PersonaHub">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">camel.personas.persona_hub.</span></span><span class="sig-name descname"><span class="pre">PersonaHub</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="camel.models.html#camel.models.base_model.BaseModelBackend" title="camel.models.base_model.BaseModelBackend"><span class="pre">BaseModelBackend</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camel/personas/persona_hub.html#PersonaHub"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camel.personas.persona_hub.PersonaHub" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>The PersonaHub adapted from <a class="reference external" href="https://github.com/tencent-ailab/persona-hub">“Scaling Synthetic Data Creation with 1,
+000,000,000 Personas”</a>.</p>
+<p>PersonaHub proposes a novel persona-driven data synthesis methodology
+that leverages various perspectives within a large language model (LLM) to
+create diverse synthetic data. By showcasing PersonaHub’s use cases in
+synthesizing high-quality mathematical and logical reasoning problems,
+instructions (i.e., user prompts), knowledge-rich texts, game NPCs and
+tools (functions) at scale, the authors demonstrate persona-driven data
+synthesis is versatile, scalable, flexible, and easy to use, potentially
+driving a paradigm shift in synthetic data creation and applications in
+practice, which may have a profound impact on LLM research and development.
+Please refer to the paper for more details: <a class="reference external" href="https://arxiv.org/pdf/2406.20094">https://arxiv.org/pdf/2406.20094</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>model</strong> (<a class="reference internal" href="camel.models.html#camel.models.base_model.BaseModelBackend" title="camel.models.base_model.BaseModelBackend"><em>BaseModelBackend</em></a><em>, </em><em>optional</em>) – The model to use for persona
+generation and manipulation. (default: <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="camel.personas.persona_hub.PersonaHub.deduplicate">
+<span class="sig-name descname"><span class="pre">deduplicate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">embedding_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="camel.embeddings.html#camel.embeddings.base.BaseEmbedding" title="camel.embeddings.base.BaseEmbedding"><span class="pre">BaseEmbedding</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">similarity_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.85</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/camel/personas/persona_hub.html#PersonaHub.deduplicate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camel.personas.persona_hub.PersonaHub.deduplicate" title="Link to this definition">#</a></dt>
+<dd><p>Remove similar personas from the group.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>embedding_model</strong> (<a class="reference internal" href="camel.embeddings.html#camel.embeddings.base.BaseEmbedding" title="camel.embeddings.base.BaseEmbedding"><em>BaseEmbedding</em></a>) – The embedding model
+for similarity compairsion. (default is <cite>None</cite>).</p></li>
+<li><p><strong>similarity_threshold</strong> (<em>float</em>) – The similarity threshold for
+deduplication (default is <cite>0.85</cite>).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="camel.personas.persona_hub.PersonaHub.get_all_personas">
+<span class="sig-name descname"><span class="pre">get_all_personas</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#camel.personas.persona.Persona" title="camel.personas.persona.Persona"><span class="pre">Persona</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/camel/personas/persona_hub.html#PersonaHub.get_all_personas"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camel.personas.persona_hub.PersonaHub.get_all_personas" title="Link to this definition">#</a></dt>
+<dd><p>Return a list of all personas.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="camel.personas.persona_hub.PersonaHub.persona_to_persona">
+<span class="sig-name descname"><span class="pre">persona_to_persona</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">persona</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#camel.personas.persona.Persona" title="camel.personas.persona.Persona"><span class="pre">Persona</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">UUID</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#camel.personas.persona.Persona" title="camel.personas.persona.Persona"><span class="pre">Persona</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/camel/personas/persona_hub.html#PersonaHub.persona_to_persona"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camel.personas.persona_hub.PersonaHub.persona_to_persona" title="Link to this definition">#</a></dt>
+<dd><p>Derives additional personas based on interpersonal relationships
+from this persona.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>persona</strong> (<a class="reference internal" href="#camel.personas.persona.Persona" title="camel.personas.persona.Persona"><em>Persona</em></a>) – The persona from which to derive related
+personas.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary of related personas.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[uuid.UUID, <a class="reference internal" href="#camel.personas.persona.Persona" title="camel.personas.persona.Persona">Persona</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="camel.personas.persona_hub.PersonaHub.text_to_persona">
+<span class="sig-name descname"><span class="pre">text_to_persona</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'read'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'write'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'like'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'dislike'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'read'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#camel.personas.persona.Persona" title="camel.personas.persona.Persona"><span class="pre">Persona</span></a></span></span><a class="reference internal" href="_modules/camel/personas/persona_hub.html#PersonaHub.text_to_persona"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camel.personas.persona_hub.PersonaHub.text_to_persona" title="Link to this definition">#</a></dt>
+<dd><p>Infers a specific persona who is likely to [read|write|like|dislike
+<a href="#id6"><span class="problematic" id="id7">|</span></a>…] the given text.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>text</strong> (<em>str</em>) – The input text for which to infer a persona.</p></li>
+<li><p><strong>action</strong> (<em>str</em>) – The action associated with the persona (default is
+“read”).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The inferred persona.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#camel.personas.persona.Persona" title="camel.personas.persona.Persona">Persona</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="camel.personas.persona_hub.PersonaResponse">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">camel.personas.persona_hub.</span></span><span class="sig-name descname"><span class="pre">PersonaResponse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">persona_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">persona_description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camel/personas/persona_hub.html#PersonaResponse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camel.personas.persona_hub.PersonaResponse" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="camel.personas.persona_hub.PersonaResponse.model_computed_fields">
+<span class="sig-name descname"><span class="pre">model_computed_fields</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ComputedFieldInfo</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#camel.personas.persona_hub.PersonaResponse.model_computed_fields" title="Link to this definition">#</a></dt>
+<dd><p>A dictionary of computed field names and their corresponding <cite>ComputedFieldInfo</cite> objects.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="camel.personas.persona_hub.PersonaResponse.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#camel.personas.persona_hub.PersonaResponse.model_config" title="Link to this definition">#</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="camel.personas.persona_hub.PersonaResponse.model_fields">
+<span class="sig-name descname"><span class="pre">model_fields</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">FieldInfo</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'persona_description':</span> <span class="pre">FieldInfo(annotation=str,</span> <span class="pre">required=True,</span> <span class="pre">description='The</span> <span class="pre">description</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">persona.'),</span> <span class="pre">'persona_name':</span> <span class="pre">FieldInfo(annotation=str,</span> <span class="pre">required=True,</span> <span class="pre">description='The</span> <span class="pre">name</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">persona')}</span></em><a class="headerlink" href="#camel.personas.persona_hub.PersonaResponse.model_fields" title="Link to this definition">#</a></dt>
+<dd><p>Metadata about the fields defined on the model,
+mapping of field names to [<cite>FieldInfo</cite>][pydantic.fields.FieldInfo] objects.</p>
+<p>This replaces <cite>Model.__fields__</cite> from Pydantic V1.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="camel.personas.persona_hub.PersonaResponse.persona_description">
+<span class="sig-name descname"><span class="pre">persona_description</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#camel.personas.persona_hub.PersonaResponse.persona_description" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="camel.personas.persona_hub.PersonaResponse.persona_name">
+<span class="sig-name descname"><span class="pre">persona_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#camel.personas.persona_hub.PersonaResponse.persona_name" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-camel.personas">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-camel.personas" title="Link to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="camel.personas.Persona">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">camel.personas.</span></span><span class="sig-name descname"><span class="pre">Persona</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text_to_persona_prompt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="camel.prompts.html#camel.prompts.base.TextPrompt" title="camel.prompts.base.TextPrompt"><span class="pre">TextPrompt</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">persona_to_persona_prompt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="camel.prompts.html#camel.prompts.base.TextPrompt" title="camel.prompts.base.TextPrompt"><span class="pre">TextPrompt</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camel/personas/persona.html#Persona"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camel.personas.Persona" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<p>A persona is a character in the society.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="camel.personas.Persona.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#camel.personas.Persona.name" title="Link to this definition">#</a></dt>
+<dd><p>Name of the persona.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="camel.personas.Persona.description">
+<span class="sig-name descname"><span class="pre">description</span></span><a class="headerlink" href="#camel.personas.Persona.description" title="Link to this definition">#</a></dt>
+<dd><p>Description of the persona.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="camel.personas.Persona.text_to_persona_prompt">
+<span class="sig-name descname"><span class="pre">text_to_persona_prompt</span></span><a class="headerlink" href="#camel.personas.Persona.text_to_persona_prompt" title="Link to this definition">#</a></dt>
+<dd><p>The prompt to convert
+text into a persona.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Union[<a class="reference internal" href="camel.prompts.html#camel.prompts.base.TextPrompt" title="camel.prompts.base.TextPrompt">TextPrompt</a>, str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="camel.personas.Persona.persona_to_persona_prompt">
+<span class="sig-name descname"><span class="pre">persona_to_persona_prompt</span></span><a class="headerlink" href="#camel.personas.Persona.persona_to_persona_prompt" title="Link to this definition">#</a></dt>
+<dd><p>Persona-to-Persona
+interaction prompt.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Union[<a class="reference internal" href="camel.prompts.html#camel.prompts.base.TextPrompt" title="camel.prompts.base.TextPrompt">TextPrompt</a>, str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="camel.personas.Persona.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#camel.personas.Persona.id" title="Link to this definition">#</a></dt>
+<dd><p>The unique identifier for the persona, automatically
+generated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>uuid.UUID</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="camel.personas.Persona._id">
+<span class="sig-name descname"><span class="pre">_id</span></span><a class="headerlink" href="#camel.personas.Persona._id" title="Link to this definition">#</a></dt>
+<dd><p>Internal unique identifier for the persona,
+generated lazily using <cite>uuid.uuid4</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>uuid.UUID</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="camel.personas.Persona.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><a class="headerlink" href="#camel.personas.Persona.model_config" title="Link to this definition">#</a></dt>
+<dd><p>Configuration for the Pydantic
+model. Allows arbitrary types and includes custom JSON schema
+settings.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ClassVar[ConfigDict]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id8">
+<span class="sig-name descname"><span class="pre">description</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id8" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="camel.personas.Persona.dict">
+<span class="sig-name descname"><span class="pre">dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camel/personas/persona.html#Persona.dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camel.personas.Persona.dict" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="id9">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">UUID</span></em><a class="headerlink" href="#id9" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="camel.personas.Persona.json">
+<span class="sig-name descname"><span class="pre">json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camel/personas/persona.html#Persona.json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camel.personas.Persona.json" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="camel.personas.Persona.model_computed_fields">
+<span class="sig-name descname"><span class="pre">model_computed_fields</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ComputedFieldInfo</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#camel.personas.Persona.model_computed_fields" title="Link to this definition">#</a></dt>
+<dd><p>A dictionary of computed field names and their corresponding <cite>ComputedFieldInfo</cite> objects.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id10">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'arbitrary_types_allowed':</span> <span class="pre">True,</span> <span class="pre">'json_schema_extra':</span> <span class="pre">{'properties':</span> <span class="pre">{'persona_to_persona_prompt':</span> <span class="pre">{'type':</span> <span class="pre">'string'},</span> <span class="pre">'text_to_persona_prompt':</span> <span class="pre">{'type':</span> <span class="pre">'string'}}}}</span></em><a class="headerlink" href="#id10" title="Link to this definition">#</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="camel.personas.Persona.model_fields">
+<span class="sig-name descname"><span class="pre">model_fields</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">FieldInfo</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'description':</span> <span class="pre">FieldInfo(annotation=Union[str,</span> <span class="pre">NoneType],</span> <span class="pre">required=False,</span> <span class="pre">default=None),</span> <span class="pre">'name':</span> <span class="pre">FieldInfo(annotation=Union[str,</span> <span class="pre">NoneType],</span> <span class="pre">required=False,</span> <span class="pre">default=None),</span> <span class="pre">'persona_to_persona_prompt':</span> <span class="pre">FieldInfo(annotation=Union[TextPrompt,</span> <span class="pre">str],</span> <span class="pre">required=False,</span> <span class="pre">default_factory=&lt;lambda&gt;,</span> <span class="pre">description='Persona</span> <span class="pre">to</span> <span class="pre">Persona</span> <span class="pre">Prompt'),</span> <span class="pre">'text_to_persona_prompt':</span> <span class="pre">FieldInfo(annotation=Union[TextPrompt,</span> <span class="pre">str],</span> <span class="pre">required=False,</span> <span class="pre">default_factory=&lt;lambda&gt;,</span> <span class="pre">description='Text</span> <span class="pre">to</span> <span class="pre">Persona</span> <span class="pre">Prompt')}</span></em><a class="headerlink" href="#camel.personas.Persona.model_fields" title="Link to this definition">#</a></dt>
+<dd><p>Metadata about the fields defined on the model,
+mapping of field names to [<cite>FieldInfo</cite>][pydantic.fields.FieldInfo] objects.</p>
+<p>This replaces <cite>Model.__fields__</cite> from Pydantic V1.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="camel.personas.Persona.model_json_schema">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">model_json_schema</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/camel/personas/persona.html#Persona.model_json_schema"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camel.personas.Persona.model_json_schema" title="Link to this definition">#</a></dt>
+<dd><p>Generates a JSON schema for a model class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>by_alias</strong> – Whether to use attribute aliases or not.</p></li>
+<li><p><strong>ref_template</strong> – The reference template.</p></li>
+<li><p><strong>schema_generator</strong> – To override the logic used to generate the JSON schema, as a subclass of
+<cite>GenerateJsonSchema</cite> with your desired modifications</p></li>
+<li><p><strong>mode</strong> – The mode in which to generate the schema.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The JSON schema for the given model class.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="camel.personas.Persona.model_post_init">
+<span class="sig-name descname"><span class="pre">model_post_init</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#camel.personas.Persona.model_post_init" title="Link to this definition">#</a></dt>
+<dd><p>This function is meant to behave like a BaseModel method to initialise private attributes.</p>
+<p>It takes context as an argument since that’s what pydantic-core passes when calling it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> – The BaseModel instance.</p></li>
+<li><p><strong>context</strong> – The context.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id11">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id11" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id12">
+<span class="sig-name descname"><span class="pre">persona_to_persona_prompt</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="camel.prompts.html#camel.prompts.base.TextPrompt" title="camel.prompts.base.TextPrompt"><span class="pre">TextPrompt</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#id12" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id13">
+<span class="sig-name descname"><span class="pre">text_to_persona_prompt</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="camel.prompts.html#camel.prompts.base.TextPrompt" title="camel.prompts.base.TextPrompt"><span class="pre">TextPrompt</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#id13" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="camel.personas.PersonaHub">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">camel.personas.</span></span><span class="sig-name descname"><span class="pre">PersonaHub</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="camel.models.html#camel.models.base_model.BaseModelBackend" title="camel.models.base_model.BaseModelBackend"><span class="pre">BaseModelBackend</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camel/personas/persona_hub.html#PersonaHub"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camel.personas.PersonaHub" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>The PersonaHub adapted from <a class="reference external" href="https://github.com/tencent-ailab/persona-hub">“Scaling Synthetic Data Creation with 1,
+000,000,000 Personas”</a>.</p>
+<p>PersonaHub proposes a novel persona-driven data synthesis methodology
+that leverages various perspectives within a large language model (LLM) to
+create diverse synthetic data. By showcasing PersonaHub’s use cases in
+synthesizing high-quality mathematical and logical reasoning problems,
+instructions (i.e., user prompts), knowledge-rich texts, game NPCs and
+tools (functions) at scale, the authors demonstrate persona-driven data
+synthesis is versatile, scalable, flexible, and easy to use, potentially
+driving a paradigm shift in synthetic data creation and applications in
+practice, which may have a profound impact on LLM research and development.
+Please refer to the paper for more details: <a class="reference external" href="https://arxiv.org/pdf/2406.20094">https://arxiv.org/pdf/2406.20094</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>model</strong> (<a class="reference internal" href="camel.models.html#camel.models.base_model.BaseModelBackend" title="camel.models.base_model.BaseModelBackend"><em>BaseModelBackend</em></a><em>, </em><em>optional</em>) – The model to use for persona
+generation and manipulation. (default: <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="camel.personas.PersonaHub.deduplicate">
+<span class="sig-name descname"><span class="pre">deduplicate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">embedding_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="camel.embeddings.html#camel.embeddings.base.BaseEmbedding" title="camel.embeddings.base.BaseEmbedding"><span class="pre">BaseEmbedding</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">similarity_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.85</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/camel/personas/persona_hub.html#PersonaHub.deduplicate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camel.personas.PersonaHub.deduplicate" title="Link to this definition">#</a></dt>
+<dd><p>Remove similar personas from the group.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>embedding_model</strong> (<a class="reference internal" href="camel.embeddings.html#camel.embeddings.base.BaseEmbedding" title="camel.embeddings.base.BaseEmbedding"><em>BaseEmbedding</em></a>) – The embedding model
+for similarity compairsion. (default is <cite>None</cite>).</p></li>
+<li><p><strong>similarity_threshold</strong> (<em>float</em>) – The similarity threshold for
+deduplication (default is <cite>0.85</cite>).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="camel.personas.PersonaHub.get_all_personas">
+<span class="sig-name descname"><span class="pre">get_all_personas</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#camel.personas.persona.Persona" title="camel.personas.persona.Persona"><span class="pre">Persona</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/camel/personas/persona_hub.html#PersonaHub.get_all_personas"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camel.personas.PersonaHub.get_all_personas" title="Link to this definition">#</a></dt>
+<dd><p>Return a list of all personas.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="camel.personas.PersonaHub.persona_to_persona">
+<span class="sig-name descname"><span class="pre">persona_to_persona</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">persona</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#camel.personas.persona.Persona" title="camel.personas.persona.Persona"><span class="pre">Persona</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">UUID</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#camel.personas.persona.Persona" title="camel.personas.persona.Persona"><span class="pre">Persona</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/camel/personas/persona_hub.html#PersonaHub.persona_to_persona"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camel.personas.PersonaHub.persona_to_persona" title="Link to this definition">#</a></dt>
+<dd><p>Derives additional personas based on interpersonal relationships
+from this persona.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>persona</strong> (<a class="reference internal" href="#camel.personas.Persona" title="camel.personas.Persona"><em>Persona</em></a>) – The persona from which to derive related
+personas.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary of related personas.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[uuid.UUID, <a class="reference internal" href="#camel.personas.Persona" title="camel.personas.Persona">Persona</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="camel.personas.PersonaHub.text_to_persona">
+<span class="sig-name descname"><span class="pre">text_to_persona</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'read'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'write'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'like'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'dislike'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'read'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#camel.personas.persona.Persona" title="camel.personas.persona.Persona"><span class="pre">Persona</span></a></span></span><a class="reference internal" href="_modules/camel/personas/persona_hub.html#PersonaHub.text_to_persona"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#camel.personas.PersonaHub.text_to_persona" title="Link to this definition">#</a></dt>
+<dd><p>Infers a specific persona who is likely to [read|write|like|dislike
+<a href="#id15"><span class="problematic" id="id16">|</span></a>…] the given text.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>text</strong> (<em>str</em>) – The input text for which to infer a persona.</p></li>
+<li><p><strong>action</strong> (<em>str</em>) – The action associated with the persona (default is
+“read”).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The inferred persona.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#camel.personas.Persona" title="camel.personas.Persona">Persona</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#submodules">Submodules</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-camel.personas.persona">camel.personas.persona module</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona.Persona"><code class="docutils literal notranslate"><span class="pre">Persona</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona.Persona.name"><code class="docutils literal notranslate"><span class="pre">Persona.name</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona.Persona.description"><code class="docutils literal notranslate"><span class="pre">Persona.description</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona.Persona.text_to_persona_prompt"><code class="docutils literal notranslate"><span class="pre">Persona.text_to_persona_prompt</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona.Persona.persona_to_persona_prompt"><code class="docutils literal notranslate"><span class="pre">Persona.persona_to_persona_prompt</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona.Persona.id"><code class="docutils literal notranslate"><span class="pre">Persona.id</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona.Persona._id"><code class="docutils literal notranslate"><span class="pre">Persona._id</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona.Persona.model_config"><code class="docutils literal notranslate"><span class="pre">Persona.model_config</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id0"><code class="docutils literal notranslate"><span class="pre">Persona.description</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona.Persona.dict"><code class="docutils literal notranslate"><span class="pre">Persona.dict()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id1"><code class="docutils literal notranslate"><span class="pre">Persona.id</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona.Persona.json"><code class="docutils literal notranslate"><span class="pre">Persona.json()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona.Persona.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">Persona.model_computed_fields</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id2"><code class="docutils literal notranslate"><span class="pre">Persona.model_config</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona.Persona.model_fields"><code class="docutils literal notranslate"><span class="pre">Persona.model_fields</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona.Persona.model_json_schema"><code class="docutils literal notranslate"><span class="pre">Persona.model_json_schema()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona.Persona.model_post_init"><code class="docutils literal notranslate"><span class="pre">Persona.model_post_init()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id3"><code class="docutils literal notranslate"><span class="pre">Persona.name</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id4"><code class="docutils literal notranslate"><span class="pre">Persona.persona_to_persona_prompt</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id5"><code class="docutils literal notranslate"><span class="pre">Persona.text_to_persona_prompt</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-camel.personas.persona_hub">camel.personas.persona_hub module</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona_hub.PersonaHub"><code class="docutils literal notranslate"><span class="pre">PersonaHub</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona_hub.PersonaHub.deduplicate"><code class="docutils literal notranslate"><span class="pre">PersonaHub.deduplicate()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona_hub.PersonaHub.get_all_personas"><code class="docutils literal notranslate"><span class="pre">PersonaHub.get_all_personas()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona_hub.PersonaHub.persona_to_persona"><code class="docutils literal notranslate"><span class="pre">PersonaHub.persona_to_persona()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona_hub.PersonaHub.text_to_persona"><code class="docutils literal notranslate"><span class="pre">PersonaHub.text_to_persona()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona_hub.PersonaResponse"><code class="docutils literal notranslate"><span class="pre">PersonaResponse</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona_hub.PersonaResponse.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">PersonaResponse.model_computed_fields</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona_hub.PersonaResponse.model_config"><code class="docutils literal notranslate"><span class="pre">PersonaResponse.model_config</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona_hub.PersonaResponse.model_fields"><code class="docutils literal notranslate"><span class="pre">PersonaResponse.model_fields</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona_hub.PersonaResponse.persona_description"><code class="docutils literal notranslate"><span class="pre">PersonaResponse.persona_description</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.persona_hub.PersonaResponse.persona_name"><code class="docutils literal notranslate"><span class="pre">PersonaResponse.persona_name</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-camel.personas">Module contents</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.Persona"><code class="docutils literal notranslate"><span class="pre">Persona</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.Persona.name"><code class="docutils literal notranslate"><span class="pre">Persona.name</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.Persona.description"><code class="docutils literal notranslate"><span class="pre">Persona.description</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.Persona.text_to_persona_prompt"><code class="docutils literal notranslate"><span class="pre">Persona.text_to_persona_prompt</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.Persona.persona_to_persona_prompt"><code class="docutils literal notranslate"><span class="pre">Persona.persona_to_persona_prompt</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.Persona.id"><code class="docutils literal notranslate"><span class="pre">Persona.id</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.Persona._id"><code class="docutils literal notranslate"><span class="pre">Persona._id</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.Persona.model_config"><code class="docutils literal notranslate"><span class="pre">Persona.model_config</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id8"><code class="docutils literal notranslate"><span class="pre">Persona.description</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.Persona.dict"><code class="docutils literal notranslate"><span class="pre">Persona.dict()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id9"><code class="docutils literal notranslate"><span class="pre">Persona.id</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.Persona.json"><code class="docutils literal notranslate"><span class="pre">Persona.json()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.Persona.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">Persona.model_computed_fields</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id10"><code class="docutils literal notranslate"><span class="pre">Persona.model_config</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.Persona.model_fields"><code class="docutils literal notranslate"><span class="pre">Persona.model_fields</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.Persona.model_json_schema"><code class="docutils literal notranslate"><span class="pre">Persona.model_json_schema()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.Persona.model_post_init"><code class="docutils literal notranslate"><span class="pre">Persona.model_post_init()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id11"><code class="docutils literal notranslate"><span class="pre">Persona.name</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id12"><code class="docutils literal notranslate"><span class="pre">Persona.persona_to_persona_prompt</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id13"><code class="docutils literal notranslate"><span class="pre">Persona.text_to_persona_prompt</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.PersonaHub"><code class="docutils literal notranslate"><span class="pre">PersonaHub</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.PersonaHub.deduplicate"><code class="docutils literal notranslate"><span class="pre">PersonaHub.deduplicate()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.PersonaHub.get_all_personas"><code class="docutils literal notranslate"><span class="pre">PersonaHub.get_all_personas()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.PersonaHub.persona_to_persona"><code class="docutils literal notranslate"><span class="pre">PersonaHub.persona_to_persona()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#camel.personas.PersonaHub.text_to_persona"><code class="docutils literal notranslate"><span class="pre">PersonaHub.text_to_persona()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By CAMEL-AI.org
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, CAMEL-AI.org.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,897 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>camel.datagen.self_instruct.templates &#8212; CAMEL 0.2.38 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=3c972f42" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../../../_static/documentation_options.js?v=6c336dfe"></script>
+    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/camel/datagen/self_instruct/templates';</script>
+    <link rel="icon" href="https://raw.githubusercontent.com/camel-ai/camel/master/misc/favicon.png"/>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png" class="logo__image only-light" alt=""/>
+    <script>document.write(`<img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png" class="logo__image only-dark" alt=""/>`);</script>
+  
+  
+    <p class="title logo__title">CAMEL 0.2.38</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Get Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../../get_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../get_started/setup.html">API Setup</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Key Modules</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../../key_modules/agents.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../key_modules/datagen.html">Data Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../key_modules/models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../key_modules/messages.html">Message</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../key_modules/memory.html">Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../key_modules/tools.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../key_modules/prompts.html">Prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../key_modules/tasks.html">Task</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../key_modules/loaders.html">Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../key_modules/storages.html">Storages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../key_modules/society.html">Society</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../key_modules/embeddings.html">Embeddings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../key_modules/retrievers.html">Retrievers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../key_modules/workforce.html">Workforce</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Cookbooks</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../../cookbooks/basic_concepts/index.html">Basic Concepts</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/basic_concepts/create_your_first_agent.html">Creating Your First Agent</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/basic_concepts/create_your_first_agents_society.html">Creating Your First Agent Society</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/basic_concepts/agents_message.html">Message Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/basic_concepts/agents_prompting.html">Prompting Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/basic_concepts/model_speed_comparison.html">Model Speed Comparison Cookbook</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../../cookbooks/advanced_features/index.html">Advanced Features</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/advanced_features/agents_with_tools.html">Tools Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/advanced_features/agents_with_tools_from_Composio.html">Using Tools from Composio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/advanced_features/agents_with_human_in_loop_and_tool_approval.html">Agents with Human-in-loop and Tool Approval from HumanLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/advanced_features/agents_with_memory.html">Memory Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/advanced_features/agents_with_rag.html">RAG Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/advanced_features/agents_with_graph_rag.html">Graph RAG Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/advanced_features/agents_tracking.html">Track CAMEL Agents with AgentOps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/advanced_features/critic_agents_and_tree_search.html">Critic Agents and Tree Search</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/advanced_features/embodied_agents.html">Embodied Agents</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../../cookbooks/multi_agent_society/index.html">Multi-agent Society</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/multi_agent_society/agents_society.html">Develop Trading Bot with Role Playing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/multi_agent_society/workforce_judge_committee.html">Create A Hackathon Judge Committee with Workforce</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/multi_agent_society/task_generation.html">Task Generation Cookbook</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../../cookbooks/data_generation/index.html">Agentic Data Generation</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_mistral_7b_instruct.html">Agenetic SFT Data generation with CAMEL and finetuning Mistral models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B.html">Agenetic Data generation with CAMEL and finetuning Qwen models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_tinyllama.html">Agenetic SFT Data generation with CAMEL and finetuning Meta models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/data_generation/data_gen_with_real_function_calls_and_hermes_format.html">Real Function Calls and Hermes Format Data Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/data_generation/self_instruct_data_generation.html">Self-instruct Data Generation Using Qwen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/data_generation/cot_data_gen_sft_qwen_unsolth_upload_huggingface.html">CoT Data Generation and SFT Qwen With Unsloth</a></li>
+
+
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/data_generation/synthetic_dataevaluation%26filter_with_reward_model.html">Agentic Data Generation, Evaluation &amp; Filtering with Reward Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/data_generation/data_model_generation_and_structured_output_with_qwen.html">Agentic Data Model Generation and Structured Output Powered by CAMEL &amp; Qwen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/data_generation/distill_math_reasoning_data_from_deepseek_r1.html">Distill Math Reasoning Data from DeepSeek R1 with CAMEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/data_generation/self_improving_math_reasoning_data_distillation_from_deepSeek_r1.html">Self-Improving Math Reasoning Data Distillation from DeepSeek R1 with CAMEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/data_generation/self_improving_cot_generation.html">Deep Dive into CAMEL’s Practices for Self-Improving CoT Generation 🚀</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../../cookbooks/applications/index.html">Applications</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/applications/roleplaying_scraper.html">Role-Playing Scraper for Report &amp; Knowledge Graph Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/applications/dynamic_travel_planner.html">Dynamic Travel Planner Role-Playing: Multi-Agent System with Real-Time Insights Powered by Dappier</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/applications/customer_service_Discord_bot_with_agentic_RAG.html">Customer Service Discord Bot with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/applications/customer_service_Discord_bot_using_SambaNova_with_agentic_RAG.html">Customer Service Discord Bot Using SambaNova with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/applications/customer_service_Discord_bot_using_local_model_with_agentic_RAG.html">Customer Service Discord Bot Using Local Models with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/applications/finance_discord_bot.html">Customer Service Discord Bot for Finance with OpenBB</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../../cookbooks/data_processing/index.html">Data Processing and Analysis</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/data_processing/video_analysis.html">Video Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/data_processing/agent_with_chunkr_for_pdf_parsing.html">Create AI Agents that work with your PDFs using Chunkr &amp; Mistral AI</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../../cookbooks/data_processing/ingest_data_from_websites_with_Firecrawl.html">3 ways to ingest data from websites with Firecrawl</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../../modules.html">camel</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../../camel.html">camel package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../camel.agents.html">camel.agents package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../camel.agents.tool_agents.html">camel.agents.tool_agents package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../camel.configs.html">camel.configs package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../camel.datagen.html">camel.datagen package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../camel.datagen.self_instruct.html">camel.datagen.self_instruct package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../camel.datagen.source2synth.html">camel.datagen.source2synth package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../camel.embeddings.html">camel.embeddings package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../camel.interpreters.html">camel.interpreters package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../camel.loaders.html">camel.loaders package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../camel.memories.html">camel.memories package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../camel.memories.blocks.html">camel.memories.blocks package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../camel.memories.context_creators.html">camel.memories.context_creators package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../camel.messages.html">camel.messages package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../camel.models.html">camel.models package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../camel.prompts.html">camel.prompts package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../camel.responses.html">camel.responses package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../camel.retrievers.html">camel.retrievers package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../camel.societies.html">camel.societies package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../camel.societies.workforce.html">camel.societies.workforce package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../camel.storages.html">camel.storages package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../camel.storages.graph_storages.html">camel.storages.graph_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../camel.storages.key_value_storages.html">camel.storages.key_value_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../camel.storages.object_storages.html">camel.storages.object_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../camel.storages.vectordb_storages.html">camel.storages.vectordb_storages package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../camel.tasks.html">camel.tasks package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../camel.terminators.html">camel.terminators package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../camel.toolkits.html">camel.toolkits package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../camel.types.html">camel.types package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../camel.utils.html">camel.utils package</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/camel-ai/camel" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/camel-ai/camel/issues/new?title=Issue%20on%20page%20%2F_modules/camel/datagen/self_instruct/templates.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for camel.datagen.self_instruct.templates</h1><div class="highlight"><pre>
+<span></span><span class="c1"># ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1"># ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+
+
+<span class="c1"># flake8: noqa</span>
+<div class="viewcode-block" id="SelfInstructTemplates">
+<a class="viewcode-back" href="../../../../camel.datagen.self_instruct.html#camel.datagen.self_instruct.templates.SelfInstructTemplates">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SelfInstructTemplates</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Contains templates prompts for self-instruct data generation&quot;&quot;&quot;</span>
+
+    <span class="n">clf_template</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot; &#39;&#39;&#39;Can the following task be regarded as a classification task with finite output labels?</span>
+
+<span class="s2">    Task: Given my personality and the job, tell me if I would be suitable.</span>
+<span class="s2">    Is it classification? Yes</span>
+<span class="s2">    </span>
+<span class="s2">    Task: Give me an example of a time when you had to use your sense of humor.</span>
+<span class="s2">    Is it classification? No</span>
+<span class="s2">    </span>
+<span class="s2">    Task: Replace the placeholders in the given text with appropriate named entities.</span>
+<span class="s2">    Is it classification? No</span>
+<span class="s2">    </span>
+<span class="s2">    Task: Fact checking - tell me if the statement is true, false, or unknown, based on your knowledge and common sense.</span>
+<span class="s2">    Is it classification? Yes</span>
+<span class="s2">    </span>
+<span class="s2">    Task: Return the SSN number for the person.</span>
+<span class="s2">    Is it classification? No</span>
+<span class="s2">    </span>
+<span class="s2">    Task: Detect if the Reddit thread contains hate speech.</span>
+<span class="s2">    Is it classification? Yes</span>
+<span class="s2">    </span>
+<span class="s2">    Task: Analyze the sentences below to identify biases.</span>
+<span class="s2">    Is it classification? No</span>
+<span class="s2">    </span>
+<span class="s2">    Task: Select the longest sentence in terms of the number of words in the paragraph, output the sentence index.</span>
+<span class="s2">    Is it classification? Yes</span>
+<span class="s2">    </span>
+<span class="s2">    Task: Find out the toxic word or phrase in the sentence.</span>
+<span class="s2">    Is it classification? No</span>
+<span class="s2">    </span>
+<span class="s2">    Task: Rank these countries by their population.</span>
+<span class="s2">    Is it classification? No</span>
+<span class="s2">    </span>
+<span class="s2">    Task: You are provided with a news article, and you need to identify all the categories that this article belongs to. Possible categories include: Music, Sports, Politics, Tech, Finance, Basketball, Soccer, Tennis, Entertainment, Digital Game, World News. Output its categories one by one, seperated by comma.</span>
+<span class="s2">    Is it classification? Yes</span>
+<span class="s2">    </span>
+<span class="s2">    Task: Given the name of an exercise, explain how to do it.</span>
+<span class="s2">    Is it classification? No</span>
+<span class="s2">    </span>
+<span class="s2">    Task: Select the oldest person from the list.</span>
+<span class="s2">    Is it classification? Yes</span>
+<span class="s2">    </span>
+<span class="s2">    Task: Find the four smallest perfect numbers.</span>
+<span class="s2">    Is it classification? No</span>
+<span class="s2">    </span>
+<span class="s2">    Task: Does the information in the document supports the claim? You can answer &quot;Support&quot; or &quot;Unsupport&quot;.</span>
+<span class="s2">    Is it classification? Yes</span>
+<span class="s2">    </span>
+<span class="s2">    Task: Create a detailed budget for the given hypothetical trip.</span>
+<span class="s2">    Is it classification? No</span>
+<span class="s2">    </span>
+<span class="s2">    Task: Given a sentence, detect if there is any potential stereotype in it. If so, you should explain the stereotype. Else, output no.</span>
+<span class="s2">    Is it classification? No</span>
+<span class="s2">    </span>
+<span class="s2">    Task: Explain the following idiom to me, and try to give me some examples.</span>
+<span class="s2">    Is it classification? No</span>
+<span class="s2">    </span>
+<span class="s2">    Task: Is there anything I can eat for a breakfast that doesn&#39;t include eggs, yet includes protein, and has roughly 700-1000 calories?</span>
+<span class="s2">    Is it classification? No</span>
+<span class="s2">    </span>
+<span class="s2">    Task: Answer the following multiple choice question. Select A, B, C, or D for the final answer.</span>
+<span class="s2">    Is it classification? Yes</span>
+<span class="s2">    </span>
+<span class="s2">    Task: Decide whether the syllogism is logically sound.</span>
+<span class="s2">    Is it classification? Yes</span>
+<span class="s2">    </span>
+<span class="s2">    Task: How can individuals and organizations reduce unconscious bias?</span>
+<span class="s2">    Is it classification? No</span>
+<span class="s2">    </span>
+<span class="s2">    Task: What are some things you can do to de-stress?</span>
+<span class="s2">    Is it classification? No</span>
+<span class="s2">    </span>
+<span class="s2">    Task: Find out the largest one from a set of numbers. Output the number directly.</span>
+<span class="s2">    Is it classification? Yes</span>
+<span class="s2">    </span>
+<span class="s2">    Task: Replace the &lt;mask&gt; token in the text with proper words that are consistent with the context. You can use multiple words for each &lt;mask&gt; token.</span>
+<span class="s2">    Is it classification? No</span>
+<span class="s2">    </span>
+<span class="s2">    Task: Write a cover letter based on the given facts.</span>
+<span class="s2">    Is it classification? No</span>
+<span class="s2">    </span>
+<span class="s2">    Task: Identify the pos tag of the word in the given sentence.</span>
+<span class="s2">    Is it classification? Yes</span>
+<span class="s2">    </span>
+<span class="s2">    Task: Write a program to compute the sum of integers from k to n.</span>
+<span class="s2">    Is it classification? No</span>
+<span class="s2">    </span>
+<span class="s2">    Task: In this task, you need to compare the meaning of the two sentences and tell if they are the same. Output yes or no.</span>
+<span class="s2">    Is it classification? Yes</span>
+<span class="s2">    </span>
+<span class="s2">    Task: To make the pairs have the same analogy, write the fourth word.</span>
+<span class="s2">    Is it classification? No</span>
+<span class="s2">    </span>
+<span class="s2">    Task: Given a set of numbers, find all possible subsets that sum to a given number.</span>
+<span class="s2">    Is it classification? No</span>
+<span class="s2">    </span>
+<span class="s2">    &quot;&quot;&quot;</span>
+    <span class="n">output_first_template_for_clf</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;You are given a classification instruction. </span>
+<span class="s1">    </span>
+<span class="s1">    Produce multiple labeled examples following the format below. For each example:</span>
+<span class="s1">    - Begin with a &quot;Class label:&quot; line identifying one possible category.</span>
+<span class="s1">    - Follow that with one line specifying the example input (e.g., &quot;Sentence:&quot;, &quot;Dialogue:&quot;, &quot;Opinion:&quot;, or &quot;Email:&quot;).</span>
+<span class="s1">    - The content after these lines should serve as an illustrative example of that label.</span>
+<span class="s1">    </span>
+<span class="s1">    Do not restate or include the &quot;Task:&quot; line. Do not add additional commentary. Just produce the labeled examples.</span>
+
+<span class="s1">    Example format (no initial task line, task will be provided) when task is Task: Classify the sentiment of the sentence into positive, negative, or mixed.:</span>
+<span class="s1">        Class label: mixed</span>
+<span class="s1">        Sentence: I enjoy the flavor of the restaurant but their service is too slow.</span>
+<span class="s1">        Class label: Positive</span>
+<span class="s1">        Sentence: I had a great day today. The weather was beautiful and I spent time with friends and family.</span>
+<span class="s1">        Class label: Negative</span>
+<span class="s1">        Sentence: I was really disappointed by the latest superhero movie. I would not recommend it to anyone.</span>
+<span class="s1">    </span>
+<span class="s1">    Below are more examples:</span>
+<span class="s1">    </span>
+<span class="s1">    Task: Given a dialogue, classify whether the user is satisfied with the service. You should respond with &quot;Satisfied&quot; or &quot;Unsatisfied&quot;.</span>
+<span class="s1">    Class label: Satisfied</span>
+<span class="s1">    Dialogue:</span>
+<span class="s1">    - Agent: Thank you for your feedback. We will work to improve our service in the future.</span>
+<span class="s1">    - Customer: I am happy with the service you provided. Thank you for your help.</span>
+<span class="s1">    Class label: Unsatisfied</span>
+<span class="s1">    Dialogue:</span>
+<span class="s1">    - Agent: I am sorry we will cancel that order for you, and you will get a refund within 7 business days.</span>
+<span class="s1">    - Customer: oh that takes too long. I want you to take quicker action on this.</span>
+
+<span class="s1">    Task: Given some political opinions, classify whether the person belongs to Democrats or Republicans.</span>
+<span class="s1">    Class label: Democrats</span>
+<span class="s1">    Opinion: I believe that everyone should have access to quality healthcare regardless of their income level.</span>
+<span class="s1">    Class label: Republicans</span>
+<span class="s1">    Opinion: I believe that people should be able to keep more of their hard-earned money and should not be taxed at high rates.</span>
+
+<span class="s1">    Task: Tell me if the following email is a promotion email or not.</span>
+<span class="s1">    Class label: Promotion</span>
+<span class="s1">    Email: Check out our amazing new sale! We&#39;ve got discounts on all of your favorite products.</span>
+<span class="s1">    Class label: Not Promotion</span>
+<span class="s1">    Email: We hope you are doing well. Let us know if you need any help.</span>
+
+<span class="s1">    Task: Detect if the Reddit thread contains hate speech.</span>
+<span class="s1">    Class label: Hate Speech</span>
+<span class="s1">    Thread: All people of color are stupid and should not be allowed to vote.</span>
+<span class="s1">    Class label: Not Hate Speech</span>
+<span class="s1">    Thread: The best way to cook a steak on the grill.</span>
+
+<span class="s1">    Task:  Does the information in the document supports the claim? You can answer &quot;Support&quot; or &quot;Unsupport&quot;.</span>
+<span class="s1">    Class label: Unsupport</span>
+<span class="s1">    Document: After a record-breaking run that saw mortgage rates plunge to all-time lows and home prices soar to new highs, the U.S. housing market finally is slowing. While demand and price gains are cooling, any correction is likely to be a modest one, housing economists and analysts say. No one expects price drops on the scale of the declines experienced during the Great Recession.</span>
+<span class="s1">    Claim: The US housing market is going to crash soon.</span>
+<span class="s1">    Class label: Support</span>
+<span class="s1">    Document: The U.S. housing market is showing signs of strain, with home sales and prices slowing in many areas. Mortgage rates have risen sharply in recent months, and the number of homes for sale is increasing. This could be the beginning of a larger downturn, with some economists predicting a potential housing crash in the near future.</span>
+<span class="s1">    Claim: The US housing market is going to crash soon.</span>
+
+<span class="s1">    Task: Answer the following multiple-choice question. Select A, B, C, or D for the final answer.</span>
+<span class="s1">    Class label: C</span>
+<span class="s1">    Question: What is the capital of Germany?</span>
+<span class="s1">    A. London</span>
+<span class="s1">    B. Paris</span>
+<span class="s1">    C. Berlin</span>
+<span class="s1">    D. Rome</span>
+<span class="s1">    Class label: D</span>
+<span class="s1">    Question: What is the largest planet in our solar system?</span>
+<span class="s1">    A) Earth</span>
+<span class="s1">    B) Saturn</span>
+<span class="s1">    C) Mars</span>
+<span class="s1">    D) Jupiter</span>
+<span class="s1">    Class label: A</span>
+<span class="s1">    Question: What is the process by which plants make their own food through photosynthesis?</span>
+<span class="s1">    A) Respiration</span>
+<span class="s1">    B) Fermentation</span>
+<span class="s1">    C) Digestion</span>
+<span class="s1">    D) Metabolism</span>
+<span class="s1">    Class label: B</span>
+<span class="s1">    Question: Who wrote the novel &quot;The Great Gatsby&quot;?</span>
+<span class="s1">    A) Ernest Hemingway</span>
+<span class="s1">    B) F. Scott Fitzgerald</span>
+<span class="s1">    C) J.D. Salinger</span>
+<span class="s1">    D) Mark Twain</span>
+
+<span class="s1">    Task: You need to read a code and detect if there is a syntax error or not. Output true if there is an error, output false if there is not.</span>
+<span class="s1">    Class label: true</span>
+<span class="s1">    Code:</span>
+<span class="s1">    def quick_sort(arr):</span>
+<span class="s1">        if len(arr) &lt; 2</span>
+<span class="s1">            return arr</span>
+<span class="s1">    Class label: False</span>
+<span class="s1">    Code:</span>
+<span class="s1">    def calculate_average(numbers):</span>
+<span class="s1">        total = 0</span>
+<span class="s1">        for number in numbers:</span>
+<span class="s1">            total += number</span>
+<span class="s1">        return total / len(numbers)</span>
+
+<span class="s1">    Task: You are provided with a news article, and you need to identify all the categories that this article belongs to. Possible categories include Sports and Politics. Output its categories one by one, separated by a comma.</span>
+<span class="s1">    Class label: Sports</span>
+<span class="s1">    Article: The Golden State Warriors have won the NBA championship for the second year in a row.</span>
+<span class="s1">    Class label: Politics</span>
+<span class="s1">    Article: The United States has withdrawn from the Paris Climate Agreement.</span>
+<span class="s1">    Class label: Politics, Sports</span>
+<span class="s1">    Article: The government has proposed cutting funding for youth sports programs.</span>
+
+<span class="s1">    Task: Given a credit card statement, the cardholder&#39;s spending habits, and the account balance, classify whether the cardholder is at risk of defaulting on their payments or not.</span>
+<span class="s1">    Class label: At risk</span>
+<span class="s1">    Credit card statement: Purchases at high-end clothing stores and luxury hotels.</span>
+<span class="s1">    Cardholder&#39;s spending habits: Frequent purchases at luxury brands and high-end establishments.</span>
+<span class="s1">    Account balance: Over the credit limit and multiple missed payments.</span>
+<span class="s1">    Class label: Not at risk</span>
+<span class="s1">    Credit card statement: Purchases at grocery stores and gas stations.</span>
+<span class="s1">    Cardholder&#39;s spending habits: Regular purchases for necessary expenses and occasional dining out.</span>
+<span class="s1">    Account balance: Slightly below the credit limit and no missed payments.</span>
+
+<span class="s1">    Task: Given a social media post, the hashtags used, and a topic. classify whether the post is relevant to the topic or not.</span>
+<span class="s1">    Class label: Relevant</span>
+<span class="s1">    Post: I can&#39;t believe the government is still not taking action on climate change. It&#39;s time for us to take matters into our own hands.</span>
+<span class="s1">    Hashtags: #climatechange #actnow</span>
+<span class="s1">    Topic: Climate change</span>
+<span class="s1">    Class label: Not relevant </span>
+<span class="s1">    Post: I just bought the new iPhone and it is amazing!</span>
+<span class="s1">    Hashtags: #apple #technology</span>
+<span class="s1">    Topic: Travel</span>
+
+<span class="s1">    Task: The answer will be &#39;yes&#39; if the provided sentence contains an explicit mention that answers the given question. Otherwise, answer &#39;no&#39;. </span>
+<span class="s1">    Class label: Yes</span>
+<span class="s1">    Sentence: Jack played basketball for an hour after school.</span>
+<span class="s1">    Question: How long did Jack play basketball?</span>
+<span class="s1">    Class label: No</span>
+<span class="s1">    Sentence: The leaders of the Department of Homeland Security now appear before 88 committees and subcommittees of Congress.</span>
+<span class="s1">    Question: How often are they required to appear?</span>
+
+<span class="s1">    Task: Tell me what&#39;s the second largest city by population in Canada.</span>
+<span class="s1">    Class label: Montreal</span>
+
+<span class="s1">    Task: Classifying different types of mathematical equations, such as linear, and quadratic equations, based on the coefficients and terms in the equation.</span>
+<span class="s1">    Class label: Linear equation</span>
+<span class="s1">    Equation: y = 2x + 5</span>
+<span class="s1">    Class label: Quadratic equation</span>
+<span class="s1">    Equation: y = x^2 - 4x + 3</span>
+
+<span class="s1">    Task: Tell me the first number of the given list.</span>
+<span class="s1">    Class label: 1</span>
+<span class="s1">    List: 1, 2, 3</span>
+<span class="s1">    Class label: 2</span>
+<span class="s1">    List: 2, 9, 10</span>
+
+<span class="s1">    Task: Which of the following is not an input type? (a) number (b) date (c) phone number (d) email address (e) all of these are valid inputs.</span>
+<span class="s1">    Class label: (e)</span>
+
+<span class="s1">    Now, using the given instruction, produce several formatted examples accordingly:</span>
+<span class="s1">    Task: </span><span class="si">{instruction}</span>
+<span class="s1">    &#39;&#39;&#39;</span>
+
+    <span class="n">input_first_template_for_gen</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;You will be given a task, </span>
+<span class="s1">    Your job is to generate at most two example instances demonstrating how to </span>
+<span class="s1">    perform this task. For each instance:</span>
+<span class="s1">    - If the task requires input (as an actual example of the task), provide it.</span>
+<span class="s1">    - If the task can be answered directly without requiring input, omit the input section.</span>
+<span class="s1">    </span>
+<span class="s1">    Example 1</span>
+<span class="s1">    Input: [Provide input here if needed, otherwise omit this section]</span>
+<span class="s1">    Output: [Provide the correct output]</span>
+<span class="s1">    </span>
+<span class="s1">    Example 2</span>
+<span class="s1">    Input: [Provide input here if needed, otherwise omit this section]</span>
+<span class="s1">    Output: [Provide the correct output]</span>
+
+<span class="s1">    Do not include any additional commentary, explanations, or more than two instances.</span>
+<span class="s1">        </span>
+<span class="s1">    Below are some examples:</span>
+
+<span class="s1">    Task: Which exercises are best for reducing belly fat at home?</span>
+<span class="s1">    Output:</span>
+<span class="s1">    - Lying Leg Raises</span>
+<span class="s1">    - Leg In And Out</span>
+<span class="s1">    - Plank</span>
+<span class="s1">    - Side Plank</span>
+<span class="s1">    - Sit-ups</span>
+
+<span class="s1">    Task: Extract all the country names in the paragraph, list them separated by commas.</span>
+<span class="s1">    Example 1</span>
+<span class="s1">    Paragraph: Dr. No is the sixth novel by the English author Ian Fleming to feature his British Secret Service agent James Bond. Written at Fleming&#39;s Goldeneye estate in Jamaica, it was first published in the United Kingdom by Jonathan Cape in 1958. In the novel Bond looks into the disappearance in Jamaica of two fellow MI6 operatives who had been investigating Doctor No. Bond travels to No&#39;s Caribbean island and meets Honeychile Rider, who is there to collect shells. They are captured and taken to a luxurious facility carved into a mountain. The character of Doctor No, the son of a German missionary and a Chinese woman, was influenced by Sax Rohmer&#39;s Fu Manchu stories. Dr. No was the first of Fleming&#39;s novels to face widespread negative reviews in Britain, but it was received more favourably in the United States.</span>
+<span class="s1">    Output: English, British, Jamaica, the United Kingdom, German, Chinese, Britain, the United States.</span>
+
+<span class="s1">    Task: Converting 85 F to Celsius.</span>
+<span class="s1">    Output: 85°F = 29.44°C</span>
+
+<span class="s1">    Task: Sort the given list ascendingly. </span>
+<span class="s1">    Example 1</span>
+<span class="s1">    List: [10, 92, 2, 5, -4, 92, 5, 101]</span>
+<span class="s1">    Output: [-4, 2, 5, 5, 10, 92, 92, 101]</span>
+<span class="s1">    Example 2</span>
+<span class="s1">    Input 2 - List: [9.99, 10, -5, -1000, 5e6, 999]</span>
+<span class="s1">    Output: [-1000, -5, 9.99, 10, 999, 5e6]</span>
+
+<span class="s1">    Task: Suggest a better and more professional rephrasing of the following sentence.</span>
+<span class="s1">    Example 1</span>
+<span class="s1">    Sentence: This house is surprisingly not constructed very well, and you probably need more money to fix it after you buy it. If you ask me, I would suggest you to consider other candidates.</span>
+<span class="s1">    Output: This house does not seem to be constructed well, so you may need to spend more money to fix it after you purchase it. I would suggest that you look at other properties.</span>
+<span class="s1">    Example 2</span>
+<span class="s1">    Sentence: Just so you know, we did an experiment last week and found really surprising results - language model can improve itself!</span>
+<span class="s1">    Output: Our experiments last week demonstrated surprising results, proving that the language model can improve itself.</span>
+
+<span class="s1">    Task: Read the following paragraph and answer a math question about the paragraph. You need to write out the calculation for getting the final answer.</span>
+<span class="s1">    Example 1</span>
+<span class="s1">    Paragraph: Gun violence in the United States results in tens of thousands of deaths and injuries annually, and was the leading cause of death for children 19 and younger in 2020. In 2018, the most recent year for which data are available as of 2021, the Centers for Disease Control and Prevention&#39;s (CDC) National Center for Health Statistics reports 38,390 deaths by firearm, of which 24,432 were by suicide. The rate of firearm deaths per 100,000 people rose from 10.3 per 100,000 in 1999 to 12 per 100,000 in 2017, with 109 people dying per day or about 14,542 homicides in total, being 11.9 per 100,000 in 2018. In 2010, there were 19,392 firearm-related suicides, and 11,078 firearm-related homicides in the U.S. In 2010, 358 murders were reported involving a rifle while 6,009 were reported involving a handgun; another 1,939 were reported with an unspecified type of firearm. In 2011, a total of 478,400 fatal and nonfatal violent crimes were committed with a firearm.</span>
+<span class="s1">    Question: How many more firearm-related deaths were there in 2018 compared to 2010?</span>
+<span class="s1">    Output:</span>
+<span class="s1">    38390 - (19392 + 11078) = 38390 - 30470 = 7920. </span>
+<span class="s1">    So, in 2018, there were 7920 more deaths by firearm than in 2010.</span>
+
+<span class="s1">    Task: Write Python code to solve this leetcode problem.</span>
+<span class="s1">    Example 1</span>
+<span class="s1">    Problem: You are given two non-empty linked lists representing two non-negative integers. The digits are stored in reverse order, and each of their nodes contains a single digit. Add the two numbers and return the sum as a linked list. You may assume the two numbers do not contain any leading zero, except the number 0 itself.</span>
+<span class="s1">    Output:</span>
+<span class="s1">    class Solution(object):</span>
+<span class="s1">        def addTwoNumbers(self, l1, l2):</span>
+<span class="s1">            carry = 0</span>
+<span class="s1">            root = n = ListNode(0)</span>
+<span class="s1">            while l1 or l2 or carry:</span>
+<span class="s1">                v1 = v2 = 0</span>
+<span class="s1">                if l1:</span>
+<span class="s1">                    v1 = l1.val</span>
+<span class="s1">                    l1 = l1.next</span>
+<span class="s1">                if l2:</span>
+<span class="s1">                    v2 = l2.val</span>
+<span class="s1">                    l2 = l2.next</span>
+<span class="s1">                carry, val = divmod(v1+v2+carry, 10)</span>
+<span class="s1">                n.next = ListNode(val)</span>
+<span class="s1">                n = n.next</span>
+<span class="s1">            return root.next</span>
+
+<span class="s1">    Task: Solve the equation and find the value of X. Show your steps.</span>
+<span class="s1">    Example 1</span>
+<span class="s1">    Equation: 10X + 5 = 10</span>
+<span class="s1">    Output: 10X = 5,  X = 0.5</span>
+<span class="s1">    Example 2</span>
+<span class="s1">    Equation: X + Y + 120 = 100</span>
+<span class="s1">    Output: X + Y = -20, X = -20 - Y</span>
+
+<span class="s1">    Task: Write a program to compute the sum of integers from k to n.</span>
+<span class="s1">    Output:</span>
+<span class="s1">    def sum(k, n):</span>
+<span class="s1">        sum = 0</span>
+<span class="s1">        for i in range(k, n+1):</span>
+<span class="s1">            sum += i</span>
+<span class="s1">        return sum</span>
+
+<span class="s1">    Task: Select the oldest person from the given list.</span>
+<span class="s1">    Example 1</span>
+<span class="s1">    List: George Washington, Confucius, Michael Jordan, Michelangelo</span>
+<span class="s1">    Output: Confucious</span>
+<span class="s1">    Example 2</span>
+<span class="s1">    List: Alan Turing, Geoffrey Hinton, Yann LeCun, Yoshua Bengio</span>
+<span class="s1">    Output: Alan Turing</span>
+
+<span class="s1">    Task: Turn down a job offer by sending an email to a recruiter explaining the reason.</span>
+<span class="s1">    Output: Hi  [Recruiter],</span>
+<span class="s1">    Thank you so much for the generous offer to join your team. As we discussed, I’ve admired the company for a number of years, and am a proud endorser of its products. However, after further consideration of where I currently am in my career, I’ve decided to accept an offer at another company.</span>
+<span class="s1">    I would love to stay in touch with you and have already started following you on [Social Media Platform]. Again, thank you so much for your time and consideration.</span>
+<span class="s1">    Thanks again,</span>
+<span class="s1">    [Your Name]</span>
+
+<span class="s1">    Task: </span><span class="si">{instruction}</span>
+<span class="s1">    &#39;&#39;&#39;</span></div>
+
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By CAMEL-AI.org
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, CAMEL-AI.org.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
