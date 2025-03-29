@@ -60,6 +60,10 @@ class OpenAIModel(BaseModelBackend):
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter` will
             be used. (default: :obj:`None`)
+        timeout (Optional[float], optional): The timeout value in seconds for
+            API calls. If not provided, will fall back to the MODEL_TIMEOUT
+            environment variable or default to 180 seconds.
+            (default: :obj:`None`)
     """
 
     @api_keys_required(
@@ -74,31 +78,33 @@ class OpenAIModel(BaseModelBackend):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
+        timeout: Optional[float] = None,
     ) -> None:
         if model_config_dict is None:
             model_config_dict = ChatGPTConfig().as_dict()
         api_key = api_key or os.environ.get("OPENAI_API_KEY")
         url = url or os.environ.get("OPENAI_API_BASE_URL")
+        timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
 
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter
+            model_type, model_config_dict, api_key, url, token_counter, timeout
         )
 
         self._client = OpenAI(
-            timeout=180,
+            timeout=self._timeout,
             max_retries=3,
             base_url=self._url,
             api_key=self._api_key,
         )
         self._async_client = AsyncOpenAI(
-            timeout=180,
+            timeout=self._timeout,
             max_retries=3,
             base_url=self._url,
             api_key=self._api_key,
         )
 
     def _sanitize_config(self, config_dict: Dict[str, Any]) -> Dict[str, Any]:
-        """Sanitize the model configuration for O1 models."""
+        r"""Sanitize the model configuration for O1 models."""
 
         if self.model_type in [
             ModelType.O1,
@@ -107,7 +113,7 @@ class OpenAIModel(BaseModelBackend):
             ModelType.O3_MINI,
         ]:
             warnings.warn(
-                "Warning: You are using an O1 model (O1_MINI or O1_PREVIEW), "
+                "Warning: You are using an reasoning model (O1 or O3), "
                 "which has certain limitations, reference: "
                 "`https://platform.openai.com/docs/guides/reasoning`.",
                 UserWarning,
@@ -118,6 +124,52 @@ class OpenAIModel(BaseModelBackend):
                 if k not in UNSUPPORTED_PARAMS
             }
         return config_dict
+
+    def _adapt_messages_for_o1_models(
+        self, messages: List[OpenAIMessage]
+    ) -> List[OpenAIMessage]:
+        r"""Adjust message roles to comply with O1 model requirements by
+        converting 'system' or 'developer' to 'user' role.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+
+        Returns:
+            processed_messages (List[OpenAIMessage]): Return a new list of
+                messages to avoid mutating input.
+        """
+
+        # Define supported O1 model types as a class constant would be better
+        O1_MODEL_TYPES = {ModelType.O1_MINI, ModelType.O1_PREVIEW}
+
+        if self.model_type not in O1_MODEL_TYPES:
+            return messages.copy()
+
+        # Issue warning only once using class state
+        if not hasattr(self, "_o1_warning_issued"):
+            warnings.warn(
+                "O1 models (O1_MINI/O1_PREVIEW) have role limitations: "
+                "System or Developer messages will be converted to user role."
+                "Reference: https://community.openai.com/t/"
+                "developer-role-not-accepted-for-o1-o1-mini-o3-mini/1110750/7",
+                UserWarning,
+                stacklevel=2,
+            )
+            self._o1_warning_issued = True
+
+        # Create new message list to avoid mutating input
+        processed_messages = []
+        for message in messages:
+            processed_message = message.copy()
+            if (
+                processed_message["role"] == "system"
+                or processed_message["role"] == "developer"
+            ):
+                processed_message["role"] = "user"  # type: ignore[arg-type]
+            processed_messages.append(processed_message)
+
+        return processed_messages
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -152,6 +204,7 @@ class OpenAIModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
+        messages = self._adapt_messages_for_o1_models(messages)
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
         )
