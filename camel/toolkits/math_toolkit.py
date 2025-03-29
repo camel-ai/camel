@@ -14,16 +14,25 @@
 
 from typing import List
 
+from mcp.server import FastMCP
+
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
+from camel.utils import MCPServer
 
 
+@MCPServer(
+    server_name="MathToolkit",
+    function_names=["add", "sub", "multiply", "divide", "round"],
+)
 class MathToolkit(BaseToolkit):
     r"""A class representing a toolkit for mathematical operations.
 
     This class provides methods for basic mathematical operations such as
     addition, subtraction, multiplication, division, and rounding.
     """
+
+    mcp: FastMCP
 
     def add(self, a: float, b: float) -> float:
         r"""Adds two numbers.

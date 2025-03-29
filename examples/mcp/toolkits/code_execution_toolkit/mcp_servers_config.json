@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "code_execution_toolkit": {
+      "command": "python",
+      "args": [
+        "-m",
+        "code_execution_toolkit"
+      ]
+    }
+  }
+}

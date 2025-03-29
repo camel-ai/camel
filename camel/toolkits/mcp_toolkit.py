@@ -29,7 +29,7 @@ from typing import (
 from urllib.parse import urlparse
 
 if TYPE_CHECKING:
-    from mcp import ListToolsResult, Tool
+    from mcp import ClientSession, ListToolsResult, Tool
 
 from camel.logger import get_logger
 from camel.toolkits import BaseToolkit, FunctionTool
@@ -69,7 +69,6 @@ class _MCPServer(BaseToolkit):
         headers: Optional[Dict[str, str]] = None,
     ):
         from mcp import Tool
-        from mcp.client.session import ClientSession
 
         super().__init__(timeout=timeout)
 
@@ -330,6 +329,10 @@ class _MCPServer(BaseToolkit):
             )
             for mcp_tool in self._mcp_tools
         ]
+
+    @property
+    def session(self) -> Optional["ClientSession"]:
+        return self._session
 
 
 class MCPToolkit(BaseToolkit):

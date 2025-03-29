@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "ask_news_toolkit": {
+      "command": "python",
+      "args": [
+        "-m",
+        "ask_news_toolkit"
+      ]
+    }
+  }
+}

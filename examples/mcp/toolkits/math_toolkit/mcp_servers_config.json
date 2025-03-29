@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "math_toolkit": {
+      "command": "python",
+      "args": [
+        "-m",
+        "math_toolkit"
+      ]
+    }
+  }
+}
