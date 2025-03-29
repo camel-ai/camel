@@ -14,12 +14,28 @@
 import logging
 from typing import Any, Dict, List, Optional, Union
 
+from mcp.server import FastMCP
+
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
+from camel.utils import MCPServer
 
 logger = logging.getLogger(__name__)
 
 
+@MCPServer(
+    server_name="DataCommonsToolkit",
+    function_names=[
+        "query_data_commons",
+        "get_triples",
+        "get_stat_time_series",
+        "get_property_labels",
+        "get_property_values",
+        "get_places_in",
+        "get_stat_value",
+        "get_stat_all",
+    ],
+)
 class DataCommonsToolkit(BaseToolkit):
     r"""A class representing a toolkit for Data Commons.
 
@@ -35,6 +51,8 @@ class DataCommonsToolkit(BaseToolkit):
     All the data are grabbed from the knowledge graph of Data Commons.
     Refer to https://datacommons.org/browser/ for more details.
     """
+
+    mcp: FastMCP
 
     def __init__(self, timeout: Optional[float] = None):
         r"""Initialize the DataCommonsToolkit.

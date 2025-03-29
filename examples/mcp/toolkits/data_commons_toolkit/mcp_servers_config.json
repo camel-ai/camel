@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "data_commons_toolkit": {
+      "command": "python",
+      "args": [
+        "-m",
+        "data_commons_toolkit"
+      ]
+    }
+  }
+}
