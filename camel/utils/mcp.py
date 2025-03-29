@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import functools
 import inspect
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
 from mcp.server.fastmcp import FastMCP
 
@@ -21,8 +21,8 @@ from mcp.server.fastmcp import FastMCP
 class MCPServer:
     def __init__(
         self,
-        function_names: list[str],
-        server_name: str = "MCPServer",
+        function_names: Optional[list[str]] = None,
+        server_name: Optional[str] = None,
     ):
         self.function_names = function_names
         self.server_name = server_name
@@ -43,12 +43,29 @@ class MCPServer:
         return wrapper
 
     def __call__(self, cls):
+        from camel.toolkits.base import BaseToolkit
+
         original_init = cls.__init__
 
         def new_init(instance, *args, **kwargs):
             original_init(instance, *args, **kwargs)
+            self.server_name = self.server_name or cls.__name__
             instance.mcp = FastMCP(self.server_name)
-            for name in self.function_names:
+
+            if not self.function_names and not isinstance(
+                instance, BaseToolkit
+            ):
+                raise ValueError(
+                    "Please specify function names or use BaseToolkit."
+                )
+
+            function_names = self.function_names
+            if not function_names and isinstance(instance, BaseToolkit):
+                function_names = [
+                    tool.get_function_name() for tool in instance.get_tools()
+                ]
+
+            for name in function_names:
                 func = getattr(instance, name, None)
                 if func is None or not callable(func):
                     raise ValueError(
