@@ -1118,9 +1118,8 @@ class MedCalcToolkit(BaseToolkit):
         print(input_variables)
 
         try:
-            from camel.toolkits.medcalc_bench.estimated_conception_date import (
-                add_2_weeks_explanation,
-            )
+            from camel.toolkits.medcalc_bench.estimated_conception_date \
+                import add_2_weeks_explanation
 
             # Call the conception date calculation function
             result = add_2_weeks_explanation(input_variables)
@@ -1181,9 +1180,8 @@ class MedCalcToolkit(BaseToolkit):
         print(input_variables)
 
         try:
-            from camel.toolkits.medcalc_bench.estimated_gestational_age import (
-                compute_gestational_age_explanation,
-            )
+            from camel.toolkits.medcalc_bench.estimated_gestational_age \
+                import compute_gestational_age_explanation
 
             # Call the gestational age calculation function
             result = compute_gestational_age_explanation(input_variables)
@@ -2501,9 +2499,8 @@ class MedCalcToolkit(BaseToolkit):
             "target steroid": str(target_steroid),
         }
 
-        from camel.toolkits.medcalc_bench.steroid_conversion_calculator import (
-            compute_steroid_conversion_explanation,
-        )
+        from camel.toolkits.medcalc_bench.steroid_conversion_calculator \
+            import compute_steroid_conversion_explanation
 
         try:
             result = compute_steroid_conversion_explanation(input_variables)
@@ -3110,6 +3107,618 @@ class MedCalcToolkit(BaseToolkit):
         except Exception as e:
             return self.handle_exception("compute_sofa_explanation", e)
 
+    def centor_score(
+        self,
+        age_value: float,  # Numeric part of age (e.g., 48)
+        age_unit: str,  # Unit of age ("years"/"months")
+        temp_value: float,  # Numeric part of temperature (e.g., 99.0)
+        temp_unit: str,  # Unit of temp ("fahrenheit"/"celsius")
+        exudate: bool,  # Exudate/swelling on tonsils
+        lymph_nodes: bool,  # Tender/swollen lymph nodes
+        cough_absent: bool,  # Whether cough is absent
+    ) -> str:
+        r"""Calculate patient's Centor Score and generate
+        detailed explanatory text.
+
+        Args:
+            age_value (float): Numeric value of patient's age.
+            age_unit (str): Unit of age, one of:
+                - "years" for years
+                - "months" for months
+            temp_value (float): Numeric value of temperature.
+            temp_unit (str): Unit of temperature, one of:
+                - "fahrenheit" for Fahrenheit
+                - "celsius" for Celsius
+            exudate (bool): Presence of exudate/swelling on tonsils.
+            lymph_nodes (bool): Presence of tender/swollen lymph nodes.
+            cough_absent (bool): Whether cough is absent.
+
+        Returns:
+            str: JSON string containing calculation process and result:
+                {
+                    "rationale": "Detailed calculation explanation",
+                    "final_answer": "Centor Score (string format)"
+                }
+                If exception occurs, returns error message
+                from handle_exception.
+
+        Notes:
+            - Uses compute_centor_score_explanation for calculation.
+            - json.dumps used to serialize result to JSON string.
+        """
+        input_variables = {
+            "age": (float(age_value), str(age_unit)),
+            "temperature": (float(temp_value), str(temp_unit)),
+            "exudate_swelling_tonsils": bool(exudate),
+            "tender_lymph_nodes": bool(lymph_nodes),
+            "cough_absent": bool(cough_absent),
+        }
+
+        try:
+            from camel.toolkits.medcalc_bench.centor_score import (
+                compute_centor_score_explanation
+            )
+
+            result = compute_centor_score_explanation(input_variables)
+
+            return json.dumps({
+                "rationale": result["Explanation"],
+                "final_answer": str(result["Answer"]),
+            })
+
+        except Exception as e:
+            return self.handle_exception("compute_centor_score_explanation", e)
+
+    def curb_65(
+        self,
+        age_value: float,  # Numeric part of age (e.g., 37)
+        age_unit: str,  # Unit of age (e.g., "years")
+        sys_bp_value: float,  # Numeric part of systolic BP (e.g., 90.0)
+        sys_bp_unit: str,  # Unit of systolic BP (e.g., "mm hg")
+        dia_bp_value: float,  # Numeric part of diastolic BP (e.g., 50.0)
+        dia_bp_unit: str,  # Unit of diastolic BP (e.g., "mm hg")
+        respiratory_rate_value: float,  # Numeric RR (e.g., 30.0)
+        respiratory_rate_unit: str,  # Unit of RR (e.g., "breaths per minute")
+        bun_value: float,  # Numeric BUN value (e.g., 3.5)
+        bun_unit: str,  # Unit of BUN (e.g., "mmol/L")
+        confusion: bool = None,  # Whether patient has confusion (optional)
+    ) -> str:
+        r"""Calculate the patient's CURB-65 score and generate a detailed
+        explanatory text.
+
+        Args:
+            age_value (float): The numeric value of the patient's age.
+            age_unit (str): The unit of age, one of:
+                - "months"
+                - "years"
+            sys_bp_value (float): The numeric value of systolic blood pressure.
+            sys_bp_unit (str): The unit of systolic BP, currently only "mm hg".
+            dia_bp_value (float): The numeric value of diastolic
+                blood pressure.
+            dia_bp_unit (str): The unit of diastolic BP,
+                currently only "mm hg".
+            respiratory_rate_value (float): The numeric
+                value of respiratory rate.
+            respiratory_rate_unit (str): The unit of respiratory rate, e.g.
+                "breaths per minute".
+            bun_value (float): The numeric value of Blood Urea Nitrogen (BUN).
+            bun_unit (str): The unit of BUN, e.g. "mmol/L".
+            confusion (bool, optional): Whether patient
+                has confusion. Defaults to None if not reported.
+
+        Returns:
+            str: A JSON string containing the calculation process and result,
+                formatted as:
+                {
+                    "rationale": "Detailed calculation process and explanatory
+                        text",
+                    "final_answer": "CURB-65 score (string format)"
+                }
+                If an exception occurs, returns an error message generated by
+                the `handle_exception` method.
+
+        Notes:
+            - The `curb_65_explanation` function is used for core calculations.
+            - The `json.dumps` function serializes the result into JSON string.
+            - Missing confusion status defaults to False in scoring.
+        """
+        input_variables = {
+            "age": (float(age_value), str(age_unit)),
+            "sys_bp": (float(sys_bp_value), str(sys_bp_unit)),
+            "dia_bp": (float(dia_bp_value), str(dia_bp_unit)),
+            "respiratory_rate": (
+                float(respiratory_rate_value),
+                str(respiratory_rate_unit)
+            ),
+            "bun": (float(bun_value), str(bun_unit)),
+        }
+        from camel.toolkits.medcalc_bench.curb_65 import curb_65_explanation
+
+        if confusion is not None:
+            input_variables["confusion"] = bool(confusion)
+
+        try:
+            result = curb_65_explanation(input_variables)
+            return json.dumps({
+                "rationale": result["Explanation"],
+                "final_answer": str(result["Answer"])
+            })
+        except Exception as e:
+            return self.handle_exception("curb_65_explanation", e)
+        
+    def fibrosis_4(
+        self,
+        age_value: float,  # Numeric part of age (e.g., 17)
+        age_unit: str,  # Unit of age ("years"/"months")
+        alt_value: float,  # ALT value (e.g., 144.0)
+        alt_unit: str,  # ALT unit (e.g., "U/L")
+        ast_value: float,  # AST value (e.g., 108.0)
+        ast_unit: str,  # AST unit (e.g., "U/L")
+        platelet_value: float,  # Platelet count (e.g., 277000.0)
+        platelet_unit: str,  # Platelet unit (e.g., "µL")
+    ) -> str:
+        r"""Calculate the patient's Fibrosis-4 (FIB-4) index and generate a
+        detailed explanatory text.
+
+        Args:
+            age_value (float): The numeric value of the patient's age.
+            age_unit (str): The unit of the patient's age, one of:
+                - "years" for years
+                - "months" for months
+            alt_value (float): The numeric value of ALT concentration.
+            alt_unit (str): The unit of ALT concentration (e.g., "U/L").
+            ast_value (float): The numeric value of AST concentration.
+            ast_unit (str): The unit of AST concentration (e.g., "U/L").
+            platelet_value (float): The numeric value of platelet count.
+            platelet_unit (str): The unit of platelet count (e.g., "µL").
+
+        Returns:
+            str: A JSON string containing the calculation process and result,
+                formatted as:
+                {
+                    "rationale": "Detailed calculation process explanation",
+                    "final_answer": "FIB-4 score (string format)"
+                }
+                If an exception occurs, returns an error message generated by
+                the `handle_exception` method.
+
+        Notes:
+            - The `compute_fib4_explanation` function is used for calculation.
+            - The `json.dumps` function serializes the result into JSON string.
+        """
+        input_variables = {
+            "age": (float(age_value), str(age_unit)),
+            "alt": (float(alt_value), str(alt_unit)),
+            "ast": (float(ast_value), str(ast_unit)),
+            "platelet_count": (float(platelet_value), str(platelet_unit)),
+        }
+
+        from camel.toolkits.medcalc_bench.fibrosis_4 import (
+            compute_fib4_explanation
+        )
+
+        try:
+            result = compute_fib4_explanation(input_variables)
+            return json.dumps({
+                "rationale": result["Explanation"],
+                "final_answer": str(result["Answer"])
+            })
+        except Exception as e:
+            return self.handle_exception("compute_fib4_explanation", e)
+
+    def maintenance_fluid_calc(
+        self,
+        weight_value: float,  # Numeric part of the weight (e.g., 12.0)
+        weight_unit: str,  # Unit of the weight ("lbs", "g", or "kg")
+    ) -> str:
+        r"""Calculate the patient's maintenance fluid in mL/hr and generate a
+        detailed explanatory text.
+
+        Args:
+            weight_value (float): The numeric value of the patient's weight.
+            weight_unit (str): The unit of the patient's weight, one of:
+                - "lbs" for pounds.
+                - "g" for grams.
+                - "kg" for kilograms.
+
+        Returns:
+            str: A JSON string containing the calculation process and result,
+                formatted as:
+                {
+                    "rationale": "Detailed calculation process and explanatory
+                        text",
+                    "final_answer":
+                        "Maintenance fluid in mL/hr (string format)"
+                }
+                If an exception occurs, returns an error message generated by
+                the `handle_exception` method.
+
+        Notes:
+            - Uses `maintenance_fluid_explanation` for calculation.
+            - Uses `json.dumps` to serialize result into JSON string.
+            - Different formulas are used based on weight ranges:
+                - <10 kg: weight * 4 mL/kg/hr
+                - 10-20 kg: 40 mL/hr + 2 mL/kg/hr * (weight - 10 kg)
+                - >20 kg: 60 mL/hr + 1 mL/kg/hr * (weight - 20 kg)
+        """
+        # Construct input variables dictionary
+        input_variables = {
+            "weight": (
+                float(weight_value),
+                str(weight_unit),
+            )  # Weight: (value, unit)
+        }
+
+        from camel.toolkits.medcalc_bench.maintenance_fluid_calc import (
+            maintenance_fluid_explanation
+        )
+
+        try:
+            # Call the maintenance fluid calculation function
+            result = maintenance_fluid_explanation(input_variables)
+
+            # Return result as JSON string
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],  # Detailed explanation
+                    "final_answer": str(
+                        result["Answer"]
+                    ),  # Final answer (string)
+                }
+            )
+
+        except Exception as e:
+            # Catch exceptions and return error message
+            return self.handle_exception("maintenance_fluid_explanation", e)
+
+    def mme(
+        self,
+        tapentadol_dose_value: float,
+        tapentadol_dose_unit: str,
+        tapentadol_dose_per_day_value: float,
+        tapentadol_dose_per_day_unit: str,
+        hydrocodone_dose_value: float,
+        hydrocodone_dose_unit: str,
+        hydrocodone_dose_per_day_value: float,
+        hydrocodone_dose_per_day_unit: str,
+        fentanyl_patch_dose_value: float,
+        fentanyl_patch_dose_unit: str,
+        fentanyl_patch_dose_per_day_value: float,
+        fentanyl_patch_dose_per_day_unit: str,
+    ) -> str:
+        r"""Calculate the Morphine Milligram Equivalent (MME) and generate a
+        detailed explanatory text.
+
+        Args:
+            tapentadol_dose_value (float): The numeric value
+                of Tapentadol dose.
+            tapentadol_dose_unit (str): The unit of Tapentadol dose, one of:
+                - "mg" for milligrams
+                - "µg" for micrograms
+            tapentadol_dose_per_day_value (float): Number
+                of Tapentadol doses/day.
+            tapentadol_dose_per_day_unit (str): Unit for doses/day (typically
+                "per day").
+            hydrocodone_dose_value (float): The numeric value
+                of Hydrocodone dose.
+            hydrocodone_dose_unit (str): The unit of Hydrocodone dose, one of:
+                - "mg" for milligrams
+                - "µg" for micrograms
+            hydrocodone_dose_per_day_value (float):
+                Number of Hydrocodone doses/day.
+            hydrocodone_dose_per_day_unit (str): Unit for doses/day (typically
+                "per day").
+            fentanyl_patch_dose_value (float): The numeric value
+                of Fentanyl dose.
+            fentanyl_patch_dose_unit (str): The unit of Fentanyl dose, one of:
+                - "mg" for milligrams
+                - "µg" for micrograms
+            fentanyl_patch_dose_per_day_value (float):
+                Number of Fentanyl doses/day.
+            fentanyl_patch_dose_per_day_unit (str):
+                Unit for doses/day (typically "per day").
+
+        Returns:
+            str: A JSON string containing the calculation process and result,
+                formatted as follows:
+                {
+                    "rationale": "Detailed calculation process
+                        and explanatory text",
+                    "final_answer": "MME in milligrams (string format)"
+                }
+                If an exception occurs, return an error message generated by
+                the `handle_exception` method.
+
+        Notes:
+            - The `mme_explanation` function is used to calculate the MME.
+            - The `json.dumps` function is used to serialize the result into a
+                JSON string.
+        """
+        # Construct the input variables dictionary for mme_explanation
+        input_variables = {
+            "Tapentadol Dose":
+                (float(tapentadol_dose_value),
+                    str(tapentadol_dose_unit)),
+            "Tapentadol Dose Per Day":
+                (float(tapentadol_dose_per_day_value),
+                    str(tapentadol_dose_per_day_unit)),
+            "HYDROcodone Dose":
+                (float(hydrocodone_dose_value),
+                    str(hydrocodone_dose_unit)),
+            "HYDROcodone Dose Per Day":
+                (float(hydrocodone_dose_per_day_value),
+                    str(hydrocodone_dose_per_day_unit)),
+            "FentANYL patch Dose":
+                (float(fentanyl_patch_dose_value),
+                    str(fentanyl_patch_dose_unit)),
+            "FentANYL patch Dose Per Day":
+                (float(fentanyl_patch_dose_per_day_value),
+                    str(fentanyl_patch_dose_per_day_unit)),
+        }
+
+        from camel.toolkits.medcalc_bench.mme import (
+            mme_explanation,
+        )
+
+        try:
+            # Call the MME calculation function
+            result = mme_explanation(input_variables)
+
+            # Return the result as a JSON string
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],  # Detailed explanation
+                    "final_answer": str(result["Answer"]),  # Final answer
+                }
+            )
+
+        except Exception as e:
+            # Catch exceptions and return an error message
+            return self.handle_exception("mme_explanation", e)
+
+    def perc_rule(
+        self,
+        age_value: float,  # Numeric part of age (e.g., 73)
+        age_unit: str,  # Unit of age (e.g., "years")
+        heart_rate_value: float,  # Numeric HR value (e.g., 92.0)
+        heart_rate_unit: str,  # Unit of HR (e.g., "breaths per minute")
+        oxygen_sat_value: float,  # Numeric O2 sat value (e.g., 98.0)
+        oxygen_sat_unit: str,  # Unit of O2 sat (e.g., "%")
+        unilateral_leg_swelling: bool,  # Presence of leg swelling
+        hemoptysis: bool,  # Presence of hemoptysis
+        recent_surgery_or_trauma: bool,  # Recent surgery/trauma
+        previous_pe: bool,  # History of pulmonary embolism
+        previous_dvt: bool,  # History of deep vein thrombosis
+        hormonal_use: bool,  # Current hormonal use
+    ) -> str:
+        r"""Calculate the patient's PERC Rule score and generate a detailed
+        explanatory text.
+
+        Args:
+            age_value (float): The numeric value of the patient's age.
+            age_unit (str): The unit of the patient's age, typically "years".
+            heart_rate_value (float): The numeric value of heart rate.
+            heart_rate_unit (str): The unit of heart rate, typically "beats per
+                minute".
+            oxygen_sat_value (float): The numeric value of oxygen saturation.
+            oxygen_sat_unit (str): The unit of oxygen saturation,
+                typically "%".
+            unilateral_leg_swelling (bool): Presence of unilateral
+                leg swelling.
+            hemoptysis (bool): Presence of hemoptysis.
+            recent_surgery_or_trauma (bool): Recent surgery/trauma
+                within 4 weeks.
+            previous_pe (bool): History of pulmonary embolism.
+            previous_dvt (bool): History of deep vein thrombosis.
+            hormonal_use (bool): Current use of hormonal therapy.
+
+        Returns:
+            str: A JSON string containing the calculation process and result,
+                formatted as follows:
+                {
+                    "rationale": "Detailed calculation process and explanatory
+                        text",
+                    "final_answer": "PERC Rule score
+                        (integer in string format)"
+                }
+                If an exception occurs, return an error message generated by
+                    the `handle_exception` method.
+
+        Notes:
+            - The `compute_perc_rule_explanation` function is used to calculate
+                the PERC Rule score.
+            - The `json.dumps` function is used to serialize the result into a
+                JSON string.
+        """
+        # Construct the input parameters dictionary
+        input_parameters = {
+            "age": (float(age_value), str(age_unit)),
+            "heart_rate": (float(heart_rate_value), str(heart_rate_unit)),
+            "oxygen_sat": (float(oxygen_sat_value), str(oxygen_sat_unit)),
+            "unilateral_leg_swelling": bool(unilateral_leg_swelling),
+            "hemoptysis": bool(hemoptysis),
+            "recent_surgery_or_trauma": bool(recent_surgery_or_trauma),
+            "previous_pe": bool(previous_pe),
+            "previous_dvt": bool(previous_dvt),
+            "hormonal_use": bool(hormonal_use),
+        }
+
+        try:
+
+            from camel.toolkits.medcalc_bench.perc_rule import (
+                compute_perc_rule_explanation,
+            )
+            # Call the PERC Rule calculation function
+            result = compute_perc_rule_explanation(input_parameters)
+
+            # Return the result as a JSON string
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],  # Detailed explanation
+                    "final_answer": str(
+                        result["Answer"]
+                    ),  # Final answer (string format)
+                }
+            )
+
+        except Exception as e:
+            # Catch exceptions and return an error message
+            return self.handle_exception("compute_perc_rule_explanation", e)
+
+    def sirs_criteria(
+        self,
+        temperature_value: float,  # Numeric part of temperature (e.g., 38.0)
+        temperature_unit: str,  # Unit of temperature (e.g., "degrees celsius")
+        heart_rate_value: float,  # Numeric part of heart rate (e.g., 74.0)
+        heart_rate_unit: str,  # Unit of heart rate (e.g., "beats per minute")
+        wbc_value: float,  # Numeric part of WBC count (e.g., 15760.0)
+        wbc_unit: str,  # Unit of WBC count (e.g., "mL")
+        respiratory_rate_value: float = None, 
+        # Optional respiratory rate value
+        respiratory_rate_unit: str = None,  # Optional respiratory rate unit
+        paco2_value: float = None,  # Optional PaCO₂ value
+        paco2_unit: str = None,  # Optional PaCO₂ unit
+    ) -> str:
+        r"""Calculate the patient's SIRS Criteria score and generate a detailed
+        explanatory text.
+
+        Args:
+            temperature_value (float): Numeric value of patient's temperature.
+            temperature_unit (str): Unit of temperature, one of:
+                - "degrees celsius"
+                - "degrees fahrenheit"
+            heart_rate_value (float): Numeric value of patient's heart rate.
+            heart_rate_unit (str): Unit of heart rate
+                (e.g., "beats per minute").
+            wbc_value (float): Numeric value of white blood cell count.
+            wbc_unit (str): Unit of WBC count (e.g., "mL", "m^3").
+            respiratory_rate_value (float, optional):
+                Numeric value of respiratory
+                rate. Defaults to None.
+            respiratory_rate_unit (str, optional): Unit of respiratory rate.
+                Defaults to None.
+            paco2_value (float, optional):
+                Numeric value of PaCO₂. Defaults to None.
+            paco2_unit (str, optional): Unit of PaCO₂. Defaults to None.
+
+        Returns:
+            str: A JSON string containing the calculation process and result,
+                formatted as:
+                {
+                    "rationale": "Detailed calculation process text",
+                    "final_answer": "SIRS Criteria score (string format)"
+                }
+                If an exception occurs, return an error message generated by
+                the `handle_exception` method.
+        """
+        # Construct input dictionary from parameters
+        input_variables = {
+            "temperature": (float(temperature_value), str(temperature_unit)),
+            "heart_rate": (float(heart_rate_value), str(heart_rate_unit)),
+            "wbc": (float(wbc_value), str(wbc_unit)),
+        }
+
+        # Add optional parameters if provided
+        if respiratory_rate_value is not None:
+            input_variables["respiratory_rate"] = (
+                float(respiratory_rate_value),
+                str(respiratory_rate_unit),
+            )
+        if paco2_value is not None:
+            input_variables["paco2"] = (float(paco2_value), str(paco2_unit))
+
+        try:
+            from camel.toolkits.medcalc_bench.sirs_criteria import (
+                sirs_criteria_explanation,
+            )
+
+            # Call the SIRS criteria calculation function
+            result = sirs_criteria_explanation(input_variables)
+
+            # Return result as JSON string
+            return json.dumps({
+                "rationale": result["Explanation"],
+                "final_answer": str(result["Answer"]),
+            })
+
+        except Exception as e:
+            # Catch exceptions and return error message
+            return self.handle_exception("sirs_criteria_explanation", e)
+
+    def sodium_correction_hyperglycemia(
+        self,
+        sodium_value: float,  # Numeric part of sodium level (e.g., 134.0)
+        sodium_unit: str,  # Unit of sodium level (e.g., "mEq/L")
+        glucose_value: float,  # Numeric part of glucose level (e.g., 90.0)
+        glucose_unit: str,  # Unit of glucose level (e.g., "mg/dL")
+    ) -> str:
+        r"""Calculate the patient's corrected sodium
+        concentration for hyperglycemia and generate
+        a detailed explanatory text.
+
+        Args:
+            sodium_value (float): The numeric value of
+                the patient's sodium level.
+            sodium_unit (str): The unit of the patient's sodium level, one of:
+                - "mEq/L" for milliequivalents per liter
+                - Other units supported by conversion_explanation
+            glucose_value (float):
+                The numeric value of the patient's glucose level.
+            glucose_unit (str):
+                The unit of the patient's glucose level, one of:
+                - "mg/dL" for milligrams per deciliter
+                - Other units supported by conversion_explanation
+
+        Returns:
+            str: A JSON string containing the calculation process and result,
+                formatted as follows:
+                {
+                    "rationale":
+                        "Detailed calculation process and explanatory text",
+                    "final_answer": "Corrected sodium concentration in mEq/L"
+                }
+                If an exception occurs, return an error message generated by
+                the `handle_exception` method.
+
+        Notes:
+            - The `compute_sodium_correction_hyperglycemia_explanation`
+            function is used for the calculation.
+            - The `json.dumps` function is used to
+                serialize the result into JSON.
+            - Formula: Corrected Sodium =
+                Measured Sodium + 0.024 * (Glucose - 100)
+        """
+        # Construct the input variables dictionary
+        input_variables = {
+            "sodium": (float(sodium_value), str(sodium_unit)),
+            "glucose": (float(glucose_value), str(glucose_unit)),
+        }
+
+        from camel.toolkits.medcalc_bench.sodium_correction_hyperglycemia \
+            import compute_sodium_correction_hyperglycemia_explanation
+
+        try:
+            # Call the sodium correction calculation function
+            result = compute_sodium_correction_hyperglycemia_explanation(
+                input_variables
+            )
+
+            # Return the result as a JSON string
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],  # Detailed explanation
+                    "final_answer": str(
+                        result["Answer"]
+                    ),  # Final answer (string format)
+                }
+            )
+
+        except Exception as e:
+            # Catch exceptions and return an error message
+            return self.handle_exception(
+                "compute_sodium_correction_hyperglycemia_explanation", e
+            )
+
     def handle_exception(self, func_name: str, error: Exception) -> str:
         r"""Handles exceptions by logging the error and returning
             a standardized error message.
@@ -3176,4 +3785,12 @@ class MedCalcToolkit(BaseToolkit):
             FunctionTool(self.child_pugh_score),
             FunctionTool(self.ckd_epi_2021_creatinine),
             FunctionTool(self.sofa),
+            FunctionTool(self.centor_score),
+            FunctionTool(self.curb_65),
+            FunctionTool(self.fibrosis_4),
+            FunctionTool(self.maintenance_fluid_calc),
+            FunctionTool(self.mme),
+            FunctionTool(self.perc_rule),
+            FunctionTool(self.sirs_criteria),
+            FunctionTool(self.sodium_correction_hyperglycemia),
         ]

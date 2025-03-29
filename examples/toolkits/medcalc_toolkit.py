@@ -21,8 +21,7 @@ from camel.models import ModelFactory
 from camel.toolkits import MedCalcToolkit
 from camel.types import ModelPlatformType, ModelType
 
-os.environ["OPENAI_API_KEY"] = ""
-# Define system message
+os.environ["OPENAI_API_KEY"] = ""# Define system message
 sys_msg = """You are a helpful assistant."""
 
 # Set model config
@@ -58,7 +57,7 @@ with open(file_path, "r") as file:
 # calcium_correction, homa_ir, mean_arterial_pressure, sOsm,
 # estimated_conception_date,
 # delta_gap, mdrd_gfr, target_weight, creatinine_clearance
-calculator_name = "mdrd_gfr"
+calculator_name = "sodium_correction_hyperglycemia"
 
 # Extract the "usr_msg" and "Ground Truth Answer" that match the criteria
 target_entry = None
