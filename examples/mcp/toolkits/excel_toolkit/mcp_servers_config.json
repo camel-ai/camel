@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "excel_toolkit": {
+      "command": "python",
+      "args": [
+        "-m",
+        "excel_toolkit"
+      ]
+    }
+  }
+}
