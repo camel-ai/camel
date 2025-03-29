@@ -1,0 +1,88 @@
+{
+    "$schema": "https://mintlify.com/schema.json",
+    "name": "CAMEL Documentation",
+    "theme": "mint",
+    "logo": {
+      "light": "docs/images/built_with_CAMEL",
+      "dark": "docs/images/built_with_CAMEL",
+      "href": "https://camel-ai.org"
+    },
+    "favicon": "docs/images/built_with_CAMEL.svg",
+    "colors": {
+      "primary": "#5865F2",
+      "light": "#5865F2",
+      "dark": "#5865F2"
+    },
+    "navbar": {
+      "links": [
+        { "label": "CAMEL Home", "href": "https://camel-ai.org" },
+        { "label": "GitHub", "href": "https://github.com/camel-ai/camel" }
+      ],
+      "primary": {
+        "type": "button",
+        "label": "Get Started",
+        "href": "https://docs.camel-ai.org/get_started/installation"
+      }
+    },
+    "navigation": {
+      "tabs": [
+        {
+          "tab": "Documentation",
+          "groups": [
+            {
+              "group": "Overview",
+              "pages": [
+                "docs/index"
+              ]
+            },
+            {
+              "group": "Get Started",
+              "pages": [
+                "docs/get_started/installation",
+                "docs/get_started/setup"
+              ]
+            },
+            {
+              "group": "Key Modules",
+              "pages": [
+                "docs/key_modules/agents",
+                "docs/key_modules/datagen",
+                "docs/key_modules/embeddings",
+                "docs/key_modules/interpreters",
+                "docs/key_modules/loaders",
+                "docs/key_modules/memory",
+                "docs/key_modules/messages",
+                "docs/key_modules/models",
+                "docs/key_modules/prompts",
+                "docs/key_modules/retrievers",
+                "docs/key_modules/society",
+                "docs/key_modules/storages",
+                "docs/key_modules/tasks",
+                "docs/key_modules/tools",
+                "docs/key_modules/workforce"
+              ]
+            },
+            {
+              "group": "Cookbooks",
+              "pages": [
+                "docs/cookbooks/basic_concepts/index",
+                "docs/cookbooks/advanced_features/index",
+                "docs/cookbooks/multi_agent_society/index",
+                "docs/cookbooks/applications/index",
+                "docs/cookbooks/data_generation/index",
+                "docs/cookbooks/data_processing/index",
+                "docs/cookbooks/loong/index"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "footer": {
+      "socials": {
+        "github": "https://github.com/camel-ai/camel",
+        "twitter": "https://x.com/CamelAIOrg"
+      }
+    }
+  }
+  

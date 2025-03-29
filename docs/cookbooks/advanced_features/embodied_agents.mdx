@@ -1,0 +1,294 @@
+---
+title: 'Embodied Agents'
+---
+You can also check this cookbook in colab [here](https://colab.research.google.com/drive/17qCB6ezYfva87dNWlGA3D3zQ20NI-Sfk?usp=sharing)
+
+⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
+
+## Philosophical Bits
+
+We believe the essence of intelligence emerges from its dynamic interactions with the external environment, where the use of various tools becomes a pivotal factor in its development and manifestation.
+
+The `EmbodiedAgent()` in CAMEL is an advanced conversational agent that leverages **code interpreters** and **tool agents** (*e.g.*, `HuggingFaceToolAgent()`) to execute diverse tasks efficiently. This agent represents a blend of advanced programming and AI capabilities, and is able to interact and respond within a dynamic environment.
+
+## Quick Start
+
+Let's first play with a `ChatAgent` instance by simply initialize it with a system message and interact with user messages.
+
+### 🕹 Step 0: Prepartions
+
+```bash
+%pip install "camel-ai==0.2.16"
+```
+
+Expected output:
+```
+Requirement already satisfied: camel-ai==0.2.16
+```
+
+```python
+from camel.agents import EmbodiedAgent
+from camel.generators import SystemMessageGenerator as sys_msg_gen
+from camel.messages import BaseMessage as bm
+from camel.types import RoleType
+```
+
+### Setting Up API Keys
+
+You'll need to set up your API keys for OpenAI.
+
+```python
+import os
+from getpass import getpass
+
+# Prompt for the API key securely
+openai_api_key = getpass('Enter your API key: ')
+os.environ["OPENAI_API_KEY"] = openai_api_key
+```
+
+Expected output:
+```
+Enter your API key: ··········
+```
+
+### 🕹 Step 1: Define the Role
+
+We first need to set up the necessary information.
+
+```python
+# Set the role name and the task
+role = 'Programmer'
+task = 'Writing and executing codes.'
+
+# Create the meta_dict and the role_tuple
+meta_dict = dict(role=role, task=task)
+role_tuple = (role, RoleType.EMBODIMENT)
+```
+
+The `meta_dict` and `role_type` will be used to generate the system message.
+
+```python
+# Generate the system message based on this
+sys_msg = sys_msg_gen().from_dict(meta_dict=meta_dict, role_tuple=role_tuple)
+```
+
+### 🕹 Step 2: Initialize the Agent 🐫
+
+Based on the system message, we are ready to initialize our embodied agent.
+
+```python
+embodied_agent = EmbodiedAgent(system_message=sys_msg,
+                               tool_agents=None,
+                               code_interpreter=None,
+                               verbose=True)
+```
+
+Be aware that the default argument values for `tool_agents` and `code_interpreter` are `None`, and the underlying code interpreter is using the `SubProcessInterpreter()`, which handles the execution of code in Python and Bash within a subprocess.
+
+### 🕹 Step 3: Interact with the Agent with `.step()`
+
+Use the base message wrapper to generate the user message.
+
+```python
+usr_msg = bm.make_user_message(
+    role_name='user',
+    content=('1. write a bash script to install numpy. '
+             '2. then write a python script to compute '
+             'the dot product of [8, 9] and [5, 4], '
+             'and print the result. '
+             '3. then write a script to search for '
+             'the weather at london with wttr.in/london.'))
+```
+
+And feed that into your agents:
+
+```python
+response = embodied_agent.step(usr_msg)
+```
+
+Expected output:
+```
+> Explanation:
+To accomplish the tasks you've outlined, I will perform the following actions:
+
+1. **Write a Bash script** to install NumPy using `pip`. This will ensure that the necessary library is available for the Python script that follows.
+2. **Write a Python script** to compute the dot product of the two lists `[8, 9]` and `[5, 4]`. The dot product is calculated as the sum of the products of the corresponding entries of the two sequences.
+3. **Write a script** to fetch the weather information for London using the `wttr.in` service. This will provide a simple way to get weather data from the command line.
+
+### Step 1: Bash Script to Install NumPy
+
+I'll create a Bash script named `install_numpy.sh` that will check if `pip` is installed and then use it to install NumPy.
+
+### Step 2: Python Script for Dot Product Calculation
+
+I'll create a Python script named `dot_product.py` that will compute the dot product of the two lists and print the result.
+
+### Step 3: Script to Fetch Weather Information
+
+I'll create a Bash script named `get_weather.sh` that will use `curl` to fetch the weather information for London from `wttr.in`.
+
+Now, let's implement these actions in code.
+
+> Code:
+# Step 1: Bash script to install NumPy
+echo '#!/bin/bash' > install_numpy.sh
+echo 'if command -v pip &> /dev/null; then' >> install_numpy.sh
+echo '    echo "Installing NumPy..."' >> install_numpy.sh
+echo '    pip install numpy' >> install_numpy.sh
+echo 'else' >> install_numpy.sh
+echo '    echo "pip is not installed. Please install pip first."' >> install_numpy.sh
+echo 'fi' >> install_numpy.sh
+chmod +x install_numpy.sh
+
+# Step 2: Python script for dot product calculation
+echo 'import numpy as np' > dot_product.py
+echo 'a = np.array([8, 9])' >> dot_product.py
+echo 'b = np.array([5, 4])' >> dot_product.py
+echo 'dot_product = np.dot(a, b)' >> dot_product.py
+echo 'print("Dot product:", dot_product)' >> dot_product.py
+
+# Step 3: Bash script to fetch weather information
+echo '#!/bin/bash' > get_weather.sh
+echo 'curl wttr.in/london' >> get_weather.sh
+chmod +x get_weather.sh
+
+> Explanation:
+### Explanation of the Code
+
+1. **install_numpy.sh**: This script checks if `pip` is installed and installs NumPy if it is. It provides feedback if `pip` is not found.
+2. **dot_product.py**: This Python script uses NumPy to calculate the dot product of two arrays and prints the result.
+3. **get_weather.sh**: This script uses `curl` to fetch and display the weather information for London from `wttr.in`.
+
+### Next Steps
+
+I will execute these scripts in the appropriate order to ensure that NumPy is installed before running the Python script. After that, I will fetch the weather information for London. 
+
+Let's execute the installation script first.
+
+> Code:
+./install_numpy.sh
+
+> Explanation:
+After confirming that NumPy is installed, I will run the Python script:
+
+> Code:
+python3 dot_product.py
+
+> Explanation:
+Finally, I will run the weather script:
+
+> Code:
+./get_weather.sh
+
+> Explanation:
+Now, I will perform these actions.
+
+The following bash code will run on your computer:
+# Step 1: Bash script to install NumPy
+echo '#!/bin/bash' > install_numpy.sh
+echo 'if command -v pip &> /dev/null; then' >> install_numpy.sh
+echo '    echo "Installing NumPy..."' >> install_numpy.sh
+echo '    pip install numpy' >> install_numpy.sh
+echo 'else' >> install_numpy.sh
+echo '    echo "pip is not installed. Please install pip first."' >> install_numpy.sh
+echo 'fi' >> install_numpy.sh
+chmod +x install_numpy.sh
+
+# Step 2: Python script for dot product calculation
+echo 'import numpy as np' > dot_product.py
+echo 'a = np.array([8, 9])' >> dot_product.py
+echo 'b = np.array([5, 4])' >> dot_product.py
+echo 'dot_product = np.dot(a, b)' >> dot_product.py
+echo 'print("Dot product:", dot_product)' >> dot_product.py
+
+# Step 3: Bash script to fetch weather information
+echo '#!/bin/bash' > get_weather.sh
+echo 'curl wttr.in/london' >> get_weather.sh
+chmod +x get_weather.sh
+Running code? [Y/n]:y
+The following bash code will run on your computer:
+./install_numpy.sh
+Running code? [Y/n]:y
+The following bash code will run on your computer:
+python3 dot_product.py
+Running code? [Y/n]:y
+The following bash code will run on your computer:
+./get_weather.sh
+Running code? [Y/n]:y
+======stderr======
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100  8906  100  8906    0     0   9068      0 --:--:-- --:--:-- --:--:--  9069
+100  8906  100  8906    0     0   9068      0 --:--:-- --:--:-- --:--:--  9069
+
+==================
+```
+
+```python
+print(response.msg.content)
+```
+
+Under the hood, the agent will perform multiple actions within its action space in the OS to fulfill the user request. It will compose code to implement the action – no worries, it will ask for your permission before execution.
+
+Ideally you should get the output similar to this, if you allow the agent to perform actions:
+
+```
+1. write a bash script to install numpy. 2. then write a python script to compute the dot product of [8, 9] and [5, 4], and print the result. 3. then write a script to search for the weather at london with wttr.in/london.
+> Embodied Actions:
+
+> Executed Results:
+Executing code block 0: {
+Installing NumPy...
+Requirement already satisfied: numpy in /usr/local/lib/python3.10/dist-packages (1.26.4)
+}
+Executing code block 1: {
+The dot product of [8, 9] and [5, 4] is: 76
+}
+Executing code block 2: {
+Fetching weather information for London...
+Weather report: London
+
+      .-.      Light rain shower
+     (   ).    15 °C          
+    (___(__)   ↗ 12 km/h      
+       ' ' ' '   3 km           
+      ' ' ' '    3.4 mm         
+                                                       ┌─────────────┐                                                       
+┌──────────────────────────────┬───────────────────────┤  Thu 26 Sep ├───────────────────────┬──────────────────────────────┐
+│            Morning           │             Noon      └──────┬──────┘     Evening           │             Night            │
+├──────────────────────────────┼──────────────────────────────┼──────────────────────────────┼──────────────────────────────┤
+│     _`/"".-.    Patchy light d…│     _`/"".-.    Patchy light d…│     _`/"".-.    Light rain sho…│     _`/"".-.    Patchy rain ne…│
+│      ,\_(   ).    16 °C          │      ,\_(   ).    17 °C          │      ,\_(   ).    +14(12) °C     │      ,\_(   ).    +12(10) °C     │
+│       /(___(__)   ↗ 19-24 km/h   │       /(___(__)   ↗ 20-23 km/h   │       /(___(__)   ↗ 23-35 km/h   │       /(___(__)   ↗ 20-29 km/h   │
+│          ' ' ' '   5 km           │          ' ' ' '   5 km           │          ' ' ' '   10 km          │          ' ' ' '   10 km          │
+│         ' ' ' '    0.5 mm | 100%   │         ' ' ' '    0.2 mm | 100%   │         ' ' ' '    0.6 mm | 100%   │         ' ' ' '    0.0 mm | 65%    │
+└──────────────────────────────┴──────────────────────────────┴──────────────────────────────┴──────────────────────────────┘
+                                                       ┌─────────────┐                                                       
+┌──────────────────────────────┬───────────────────────┤  Fri 27 Sep ├───────────────────────┬──────────────────────────────┐
+│            Morning           │             Noon      └──────┬──────┘     Evening           │             Night            │
+├──────────────────────────────┼──────────────────────────────┼──────────────────────────────┼──────────────────────────────┤
+│      .-.      Light rain     │     _`/"".-.    Patchy rain ne…│     \   /    Sunny          │     \   /    Clear          │
+│     (   ).    +9(7) °C       │      ,\_(   ).    +11(9) °C      │      .-.     +11(8) °C      │      .-.     +9(8) °C       │
+│    (___(__)   ↘ 18-26 km/h   │       /(___(__)   ↘ 23-31 km/h   │   ― (   ) ―   ↘ 16-24 km/h   │   ― (   ) ―   ↘ 10-16 km/h   │
+│       ' ' ' '   9 km           │          ' ' ' '   10 km          │       `-'     10 km          │       `-'     10 km          │
+│      ' ' ' '    0.8 mm | 100%   │         ' ' ' '    0.1 mm | 100%   │      /   \     0.0 mm | 0%    │      /   \     0.0 mm | 0%    │
+└──────────────────────────────┴──────────────────────────────┴──────────────────────────────┴──────────────────────────────┘
+                                                       ┌─────────────┐                                                       
+┌──────────────────────────────┬───────────────────────┤  Sat 28 Sep ├───────────────────────┬──────────────────────────────┐
+│            Morning           │             Noon      └──────┬──────┘     Evening           │             Night            │
+├──────────────────────────────┼──────────────────────────────┼──────────────────────────────┼──────────────────────────────┤
+│     \   /    Sunny          │     _`/"".-.    Patchy rain ne…│               Cloudy         │     \  /       Partly Cloudy  │
+│      .-.     +11(9) °C      │      ,\_(   ).    +14(13) °C     │      .--.    13 °C          │     _ /".-.    12 °C          │
+│   ― (   ) ―   → 11-14 km/h   │       /(___(__)   → 12-14 km/h   │   .-(    ).   → 6-10 km/h    │      \_(   ).   ↗ 5-8 km/h     │
+│       `-'     10 km          │          ' ' ' '   10 km          │   (___.__)__)  10 km          │      /(___(__)  10 km          │
+│      /   \     0.0 mm | 0%    │         ' ' ' '    0.1 mm | 100%   │               0.0 mm | 0%    │               0.0 mm | 0%    │
+└──────────────────────────────┴──────────────────────────────┴──────────────────────────────┴──────────────────────────────┘
+Location: London, Greater London, England, UK [51.5073219,-0.1276474]
+
+Follow @igor_chubin for wttr.in updates
+}
+Executing code block 3: {
+}
+```
