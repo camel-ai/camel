@@ -18,7 +18,7 @@ from mcp.server import FastMCP
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import api_keys_required, dependencies_required, MCPServer
+from camel.utils import MCPServer, api_keys_required, dependencies_required
 
 
 @MCPServer(
@@ -26,7 +26,7 @@ from camel.utils import api_keys_required, dependencies_required, MCPServer
     function_names=[
         "search_real_time_data",
         "get_ai_recommendations",
-    ]
+    ],
 )
 class DappierToolkit(BaseToolkit):
     r"""A class representing a toolkit for interacting with the Dappier API.

@@ -75,5 +75,6 @@ up if you're heading out!
 
     await mcp_toolkit.disconnect()
 
+
 if __name__ == "__main__":
     asyncio.run(run_example())
