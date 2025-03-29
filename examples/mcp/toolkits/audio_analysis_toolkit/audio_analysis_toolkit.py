@@ -14,9 +14,9 @@
 import argparse
 import sys
 
-from camel.toolkits import AudioAnalysisToolkit
 from camel.configs import ChatGPTConfig
-from camel.models import OpenAIAudioModels, ModelFactory
+from camel.models import ModelFactory, OpenAIAudioModels
+from camel.toolkits import AudioAnalysisToolkit
 from camel.types import ModelPlatformType, ModelType
 
 
@@ -27,15 +27,15 @@ def generate_example_audio(storage_path: str = "example_audio.mp3"):
     audio_models = OpenAIAudioModels()
 
     # Set example input
-    input = """CAMEL-AI.org is an open-source community dedicated to the study of 
-    autonomous and communicative agents. We believe that studying these agents on 
-    a large scale offers valuable insights into their behaviors, capabilities, and 
-    potential risks. To facilitate research in this field, we provide, implement, 
-    and support various types of agents, tasks, prompts, models, datasets, and 
-    simulated environments.
+    input = """CAMEL-AI.org is an open-source community dedicated to the study 
+    of autonomous and communicative agents. We believe that studying these 
+    agents on a large scale offers valuable insights into their behaviors, 
+    capabilities, and potential risks. To facilitate research in this field, 
+    we provide, implement, and support various types of agents, tasks, 
+    prompts, models, datasets, and simulated environments.
 
-    Join us via Slack, Discord, or WeChat in pushing the boundaries of building AI 
-    Society."""
+    Join us via Slack, Discord, or WeChat in pushing the boundaries of 
+    building AI Society."""
 
     # Convert the example input into audio and store it locally
     audio_models.text_to_speech(input=input, storage_path=storage_path)
@@ -77,8 +77,6 @@ if __name__ == "__main__":
         ).as_dict(),
     )
 
-    toolkit = AudioAnalysisToolkit(
-        audio_reasoning_model=audio_reason_model
-    )
+    toolkit = AudioAnalysisToolkit(audio_reasoning_model=audio_reason_model)
 
     toolkit.mcp.run(args.mode)

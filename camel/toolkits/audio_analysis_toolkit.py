@@ -87,7 +87,7 @@ def download_file(url: str, cache_dir: str) -> str:
     function_names=[
         "audio2text",
         "ask_question_about_audio",
-    ]
+    ],
 )
 class AudioAnalysisToolkit(BaseToolkit):
     r"""A toolkit for audio processing and analysis.

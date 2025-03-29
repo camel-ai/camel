@@ -19,7 +19,7 @@ from mcp.server import FastMCP
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import dependencies_required, MCPServer
+from camel.utils import MCPServer, dependencies_required
 
 logger = get_logger(__name__)
 

@@ -57,11 +57,9 @@ def _process_response(
     else:
         raise ValueError(f"Invalid return_type: {return_type}")
 
+
 @api_keys_required(
-    [
-        (None, "ASKNEWS_CLIENT_ID"),
-        (None, "ASKNEWS_CLIENT_SECRET")
-    ]
+    [(None, "ASKNEWS_CLIENT_ID"), (None, "ASKNEWS_CLIENT_SECRET")]
 )
 @MCPServer(
     server_name="AskNewsToolkit",
@@ -71,7 +69,7 @@ def _process_response(
         "get_web_search",
         "search_reddit",
         "query_finance",
-    ]
+    ],
 )
 class AskNewsToolkit(BaseToolkit):
     r"""A class representing a toolkit for interacting with the AskNews API.

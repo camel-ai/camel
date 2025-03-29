@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import argparse
-import os
 import sys
 
 from camel.toolkits import AskNewsToolkit
