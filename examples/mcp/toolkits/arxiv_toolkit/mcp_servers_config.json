@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "search_toolkit": {
+    "arxiv_toolkit": {
       "command": "python",
       "args": [
         "-m",
