@@ -15,6 +15,8 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
+from camel.storages.graph_storages.graph_element import GraphElement
+
 
 class BaseGraphStorage(ABC):
     r"""An abstract base class for graph storage systems."""
@@ -51,6 +53,14 @@ class BaseGraphStorage(ABC):
             obj (str): The identifier for the object entity.
             rel (str): The relationship between the subject and object.
         """
+        pass
+
+    @abstractmethod
+    def add_graph_elements(
+        self, graph_elements: List[GraphElement], **kwargs: Any
+    ) -> None:
+        r"""Adds nodes and relationships from a list of GraphElement objects
+        to the graph storage"""
         pass
 
     @abstractmethod

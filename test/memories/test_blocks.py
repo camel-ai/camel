@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from datetime import datetime
-from unittest.mock import MagicMock, create_autospec
+from unittest.mock import MagicMock, create_autospec, patch
 from uuid import uuid4
 
 import pytest
@@ -21,13 +21,16 @@ from camel.embeddings import BaseEmbedding
 from camel.memories import (
     ChatHistoryBlock,
     ContextRecord,
+    GraphDBBlock,
     MemoryRecord,
     VectorDBBlock,
 )
 from camel.messages import BaseMessage
 from camel.storages import (
+    BaseGraphStorage,
     BaseKeyValueStorage,
     BaseVectorStorage,
+    GraphElement,
     VectorDBQueryResult,
 )
 from camel.types import OpenAIBackendRole, RoleType
@@ -192,3 +195,124 @@ class TestVectorDBBlock:
         vector_db = VectorDBBlock(storage=mock_storage)
         vector_db.clear()
         mock_storage.clear.assert_called_once()
+
+
+class TestGraphElement(GraphElement):
+    def __init__(self):
+        self.nodes = []
+
+
+class TestGraphDBBlock:
+    @pytest.fixture
+    def mock_storage(self):
+        """Fixture to provide a mock BaseGraphStorage object."""
+        return create_autospec(BaseGraphStorage)
+
+    @pytest.fixture
+    def mock_embedding(self):
+        """Fixture to provide a mock BaseEmbedding object."""
+        mock = MagicMock(spec=BaseEmbedding)
+        mock.embed.return_value = [
+            0.1
+        ] * 1536  # Assuming 1536-dimensional embedding
+        return mock
+
+    def test_init_with_custom_components(self, mock_storage, mock_embedding):
+        """Test initialization with custom storage and embedding components."""
+        block = GraphDBBlock(storage=mock_storage, embedding=mock_embedding)
+        assert block.storage == mock_storage
+        assert block.embedding == mock_embedding
+
+    def test_retrieve_with_query(self, mock_storage, mock_embedding):
+        """Test retrieving records with a query using similarity search."""
+        flat_dict = {
+            "uuid": str(uuid4()),
+            "message___class__": "BaseMessage",
+            "message_role_name": "user",
+            "message_role_type": "USER",
+            "message_content": "test message",
+            "role_at_backend": "user",
+            "timestamp": datetime.now().timestamp(),
+            "agent_id": "test_agent",
+        }
+        query_result = [{"n": flat_dict, "similarity": 0.9}]
+        mock_storage.query.return_value = query_result
+
+        block = GraphDBBlock(storage=mock_storage, embedding=mock_embedding)
+        records = block.retrieve(
+            query="test query", numberOfNearestNeighbours=1
+        )
+
+        assert len(records) == 1
+        assert isinstance(records[0], ContextRecord)
+        assert records[0].memory_record.message.content == "test message"
+        assert records[0].score == 0.9
+
+    def test_retrieve_without_query(self, mock_storage):
+        """Test retrieving recent records without a query."""
+        flat_dict = {
+            "uuid": str(uuid4()),
+            "message___class__": "BaseMessage",
+            "message_role_name": "user",
+            "message_role_type": "USER",
+            "message_content": "test message",
+            "role_at_backend": "user",
+            "timestamp": datetime.now().timestamp(),
+            "agent_id": "test_agent",
+        }
+        query_result = [{"n": flat_dict}]
+        mock_storage.query.return_value = query_result
+
+        block = GraphDBBlock(storage=mock_storage)
+        records = block.retrieve(numberOfNearestNeighbours=1)
+
+        assert len(records) == 1
+        assert isinstance(records[0], ContextRecord)
+        assert records[0].memory_record.message.content == "test message"
+        assert records[0].score == 0
+
+    @patch('camel.agents.KnowledgeGraphAgent')
+    def test_write_records(self, mock_kg_agent, mock_storage, mock_embedding):
+        """Test writing records to the graph database."""
+        # Create a mock GraphElement instance using create_autospec
+        mock_graph_element = create_autospec(GraphElement)
+        mock_graph_element.nodes = []  # Set the nodes attribute as needed
+        mock_kg_agent.return_value.run.return_value = mock_graph_element
+
+        # Initialize the GraphDBBlock with mocked dependencies
+        block = GraphDBBlock(storage=mock_storage, embedding=mock_embedding)
+        record = MemoryRecord(
+            message=BaseMessage("user", RoleType.USER, None, "test message"),
+            role_at_backend=OpenAIBackendRole.USER,
+        )
+
+        # Execute the method under test
+        block.write_records([record])
+
+        # Verify expected interactions
+        mock_storage.add_graph_elements.assert_called_once()
+        mock_storage.query.assert_called()
+
+    @patch.object(MemoryRecord, 'to_dict')
+    def test_delete_records(self, mock_to_dict, mock_storage):
+        """Test deleting specific records by UUID."""
+        mock_to_dict.return_value = {"uuid": "some-uuid"}
+
+        block = GraphDBBlock(storage=mock_storage)
+        record = MemoryRecord(
+            message=BaseMessage("user", RoleType.USER, None, "test message"),
+            role_at_backend=OpenAIBackendRole.USER,
+        )
+
+        block.delete_records([record])
+
+        mock_storage.query.assert_called_with(
+            "MATCH (m:Message {uuid: $uuid}) DETACH DELETE m",
+            {"uuid": "some-uuid"},
+        )
+
+    def test_clear(self, mock_storage):
+        """Test clearing all records from the graph database."""
+        block = GraphDBBlock(storage=mock_storage)
+        block.clear()
+        mock_storage.query.assert_called_with("MATCH (n) DETACH DELETE n")
