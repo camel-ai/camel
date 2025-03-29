@@ -17,12 +17,14 @@ from typing import List, Optional
 from urllib.parse import urlparse
 
 import requests
+from mcp.server import FastMCP
 
 from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.models import BaseAudioModel, BaseModelBackend, OpenAIAudioModels
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
+from camel.utils import MCPServer
 
 logger = get_logger(__name__)
 
@@ -80,6 +82,13 @@ def download_file(url: str, cache_dir: str) -> str:
     return local_path
 
 
+@MCPServer(
+    server_name="AudioAnalysisToolkit",
+    function_names=[
+        "audio2text",
+        "ask_question_about_audio",
+    ]
+)
 class AudioAnalysisToolkit(BaseToolkit):
     r"""A toolkit for audio processing and analysis.
 
@@ -97,6 +106,8 @@ class AudioAnalysisToolkit(BaseToolkit):
             audio reasoning and question answering. If not provided, uses the
             default model from ChatAgent. (default: :obj:`None`)
     """
+
+    mcp: FastMCP
 
     def __init__(
         self,
