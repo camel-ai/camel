@@ -51,17 +51,17 @@ class MathVerifier(BaseVerifier):
         self.numeric_precision = numeric_precision
 
     async def _setup(self, **kwargs) -> None:
-        """No special setup needed for math verification."""
+        r"""No special setup needed for math verification."""
         pass
 
     async def _cleanup(self) -> None:
-        """No cleanup needed for math verification."""
+        r"""No cleanup needed for math verification."""
         pass
 
     async def _verify_implementation(
         self, solution: str, ground_truth: Optional[str]
     ) -> VerificationResult:
-        """Verify mathematical expressions using Math-Verify.
+        r"""Verify mathematical expressions using Math-Verify.
 
         Args:
             solution: The solution to verify

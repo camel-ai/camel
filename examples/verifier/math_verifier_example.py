@@ -13,24 +13,18 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import asyncio
-import logging
 
+from camel.logger import get_logger
 from camel.verifiers import MathVerifier
 
-# Configure logging to show output
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(message)s',  # Simplified format for cleaner output
-    force=True,  # Ensure our configuration takes precedence
-)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Initialize verifier with configuration
 verifier = MathVerifier(float_rounding=6, numeric_precision=15)
 
 
 async def main():
-    """Run test cases demonstrating different verification scenarios."""
+    r"""Run test cases demonstrating different verification scenarios."""
 
     print("\nStarting Math Verifier Examples\n")
     await verifier.setup()
@@ -72,3 +66,26 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+"""
+===============================================================================
+Starting Math Verifier Examples
+
+=== Test 1: Basic Numerical ===
+Input: 0.333333 ≈ 1/3
+Result: VerificationOutcome.SUCCESS
+err: None
+
+=== Test 2: LaTeX Expression ===
+Input: \frac{1}{2} = 0.5
+Result: VerificationOutcome.SUCCESS
+err: None
+
+=== Test 3: Expected Failure ===
+Input: 0.5 ≠ 0.3333
+Result: VerificationOutcome.FAILURE
+err: Solution does not match ground truth
+
+Math Verifier Examples Completed
+===============================================================================
+"""
