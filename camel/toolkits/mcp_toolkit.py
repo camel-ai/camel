@@ -356,6 +356,9 @@ class _MCPServer(BaseToolkit):
             tool_args (Dict[str, Any]): Arguments to pass to the tool
             (default: :obj:`{}`) .
         """
+        if self._session is None:
+            logger.error("Server session is not connected.")
+            return {"error": "Server session is not connected."}
         return await self._session.call_tool(tool_name, tool_args)
 
 

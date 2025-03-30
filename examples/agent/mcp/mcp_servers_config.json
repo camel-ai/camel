@@ -3,7 +3,7 @@
     "calculator": {
       "command": "python",
       "args": [
-        "camel/examples/mcp/calculator_server.py"
+        "/camel/examples/agent/mcp/calculator_server.py"
       ]
     }
   },

@@ -13,8 +13,9 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
-import re
-from typing import Optional
+from typing import List, Optional
+
+from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
 from camel.logger import get_logger
@@ -37,6 +38,21 @@ except (ImportError, AttributeError):
 
 logger = get_logger(__name__)
 
+
+# Define pydantic model for structured tool call response
+class MCPArgument(BaseModel):
+    arg_name: str = Field(description="Name of the argument")
+    arg_value: str = Field(description="Value of the argument")
+
+
+class MCPToolCall(BaseModel):
+    server_idx: int = Field(description="Index of the server to use")
+    tool_name: str = Field(description="Name of the tool to call")
+    tool_args: List[MCPArgument] = Field(
+        description="Arguments to pass to the tool"
+    )
+
+
 SYS_PROMPT = """
 You are a helpful assistant, and you prefer to use tools prvided by the user 
 to solve problems.
@@ -46,11 +62,11 @@ Using a tool, you will tell the user `server_idx`, `tool_name` and
 {
     "server_idx": idx,
     "tool_name": "tool_name",
-    "tool_args": {
-        "arg1": value1,
-        "arg2": value2,
+    "tool_args": [
+        {"arg_name": "arg1", "arg_value": "value1"},
+        {"arg_name": "arg2", "arg_value": "value2"},
         ...
-    }
+    ]
 }
 ```
 Otherwise, you should respond to the user directly.
@@ -75,18 +91,31 @@ class MCPAgent(ChatAgent):
         self,
         config_path: str,
         model: Optional[BaseModelBackend] = None,
-        model_fc_available: bool = False,
+        model_function_call_available: bool = False,
     ) -> None:
         r"""Initialize the MCP agent.
 
+        The MCP (Model Context Protocol) Agent provides an interface for LLMs
+        to interact with tools using the Model Context Protocol. This
+        agent can operate in two modes: with function calling capabilities or
+        with text-based tool descriptions.
+
         Args:
+            config_path (str): Path to the JSON configuration file defining
+                MCP servers.
             model (Optional[BaseModelBackend]): Model backend for the agent.
                 (default: :obj:`None`)
-            model_fc_available (bool): Flag indicating whether the .
-                (default: :obj:`False`)
+            model_function_call_available (bool): Flag indicating whether the
+                model supports function calling capabilities. When True, tools
+                are provided directly to the model; when False, tools are
+                described in text format. (default: :obj:`False`)
 
+        References:
+            For more information on the Model Context Protocol (MCP), see the
+            MCPToolkit implementation which provides a unified interface for
+            managing multiple MCP server connections and their tools.
         """
-        if model_fc_available:
+        if model_function_call_available:
             sys_prompt = "You are a helpful assitant."
         else:
             sys_prompt = SYS_PROMPT
@@ -101,7 +130,7 @@ class MCPAgent(ChatAgent):
         super().__init__(system_message, model=model)
 
         self._mcp_toolkit = MCPToolkit(config_path=config_path)
-        self._model_fc_available = model_fc_available
+        self._model_function_call_available = model_function_call_available
         self._text_tools = None
 
     async def connect(self):
@@ -111,18 +140,20 @@ class MCPAgent(ChatAgent):
         await self._mcp_toolkit.disconnect()
 
     def add_mcp_tools(self):
-        assert self._mcp_toolkit.is_connected(), "Server is not connected."
+        if not self._mcp_toolkit.is_connected():
+            raise ConnectionError("Server is not connected.")
         prompt = TextPrompt(TOOLS_PROMPT)
         self._text_tools = prompt.format(
             tools=self._mcp_toolkit.get_text_tools()
         )
-        if self._model_fc_available:
+        if self._model_function_call_available:
             tools = self._mcp_toolkit.get_tools()
             for tool in tools:
                 self.add_tool(tool)
 
     async def get_text_tools(self):
-        assert self._mcp_toolkit.is_connected(), "Server is not connected."
+        if not self._mcp_toolkit.is_connected():
+            raise ConnectionError("Server is not connected.")
         await self.add_mcp_tools()
         return self._text_tools
 
@@ -130,38 +161,44 @@ class MCPAgent(ChatAgent):
         self,
         prompt: str,
     ):
-        assert self._mcp_toolkit.is_connected(), "Server is not connected."
-        if self._model_fc_available:
+        if not self._mcp_toolkit.is_connected():
+            raise ConnectionError("Server is not connected.")
+
+        if self._model_function_call_available:
             response = await self.astep(prompt)
             return response
         else:
             task = f"## Task:\n  {prompt}"
-            response = await self.astep(str(self._text_tools) + task)
-            content = response.msgs[0].content.lower()
 
-            tool_calls = []
-            while "```json" in content:
-                json_start = re.search(r'```json', content).span()[1]
-                json_end = re.search(r'```', content[json_start:]).span()[0]
-                json_end = json_end + json_start
-                tool_josn = content[json_start:json_end].strip('\n')
-                tool_calls.append(json.loads(tool_josn))
-                content = content[json_end:]
+            # Send the prompt with tools description and use MCPToolCall as
+            # response_format
+            response = await self.astep(
+                str(self._text_tools) + task, response_format=MCPToolCall
+            )
 
-            if len(tool_calls) == 0:
-                return response
-            else:
-                tools_results = []
-                for tool_call in tool_calls:
-                    server_idx = tool_call['server_idx']
-                    tool_name = tool_call['tool_name']
-                    tool_args = tool_call['tool_args']
-                    server = self._mcp_toolkit.servers[server_idx]
-                    result = await server.call_tool(tool_name, tool_args)
-                    tools_results.append({tool_name: result.content[0].text})
-                results = json.dumps(tools_results)
-                final_prompt = TextPrompt(FINAL_RESPONSE_PROMPT).format(
-                    results=results
-                )
-                response = await self.astep(final_prompt)
-                return response
+            # Add type checking to handle the case when parsed is None or not
+            # of expected type
+            if response.msgs[0].parsed is None or not isinstance(
+                response.msgs[0].parsed, MCPToolCall
+            ):
+                raise ValueError("Failed to parse response as MCPToolCall")
+
+            server_idx = response.msgs[0].parsed.server_idx
+            tool_name = response.msgs[0].parsed.tool_name
+            tool_args = response.msgs[0].parsed.tool_args
+
+            # Convert MCPArgument list to dictionary for MCP server
+            tool_args_dict = {arg.arg_name: arg.arg_value for arg in tool_args}
+
+            server = self._mcp_toolkit.servers[server_idx]
+            result = await server.call_tool(tool_name, tool_args_dict)
+
+            tools_results = [{tool_name: result.content[0].text}]
+            results = json.dumps(tools_results)
+
+            final_prompt = TextPrompt(FINAL_RESPONSE_PROMPT).format(
+                results=results
+            )
+            response = await self.astep(final_prompt)
+
+            return response

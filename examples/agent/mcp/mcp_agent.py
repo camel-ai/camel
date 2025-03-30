@@ -12,27 +12,30 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
-from pathlib import Path
 
 from camel.agents import MCPAgent
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType
+from camel.types.enums import ModelType
 
 
 async def main():
     # TODO: modify the tool path in json file to your own path
-    config_path = Path(__file__).parent / "mcp_servers_config.json"
+    config_path = "/camel/examples/agent/mcp/mcp_servers_config.json"
 
     model = ModelFactory.create(
-        model_platform=ModelPlatformType.OLLAMA,
-        model_type="deepseek-r1:70b",
-        model_config_dict={"max_tokens": 64000, "temperature": 0.5},
+        model_platform=ModelPlatformType.DEFAULT,
+        model_type=ModelType.DEFAULT,
     )
 
     mcp_agent = MCPAgent(
-        config_path=str(config_path), model=model, model_fc_available=False
+        config_path=str(config_path),
+        model=model,
+        model_function_call_available=False,
     )
+
     await mcp_agent.connect()
+
     mcp_agent.add_mcp_tools()
 
     user_msg = (
