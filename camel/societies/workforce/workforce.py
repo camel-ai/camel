@@ -160,7 +160,19 @@ class Workforce(BaseNode):
     async def process_task_sequence_async(
         self, tasks: List[Task]
     ) -> List[Task]:
-        """Process a sequence of tasks with shared context."""
+        r"""Asynchronous method to process a sequence of tasks with shared context.
+        This method will initialize the shared channel, maintain a shared context
+        across tasks, and process each task and its subtasks in order.
+
+        The result of each task will be stored in `self.shared_context` under
+        the key `task_{task.id}`.
+
+        Args:
+            tasks (List[Task]): A list of tasks to be processed sequentially.
+
+        Returns:
+            List[Task]: A list of updated tasks with results populated.
+        """
         self.reset()
         self.set_channel(self.shared_channel)
 
@@ -189,8 +201,19 @@ class Workforce(BaseNode):
 
     @check_if_running(False)
     def process_task_sequence(self, tasks: List[Task]) -> List[Task]:
-        """Sync wrapper for processing a sequence of
-        tasks with shared context."""
+        r"""The main entry point for the workforce to process
+        a sequence of tasks.
+        It will process all tasks in order, sharing context
+        across them, and return the updated list of tasks.
+
+        Internally it runs the asynchronous method `process_task_sequence_async`.
+
+        Args:
+            tasks (List[Task]): A list of tasks to be processed sequentially.
+
+        Returns:
+            List[Task]: A list of updated tasks with results populated.
+        """
         return asyncio.run(self.process_task_sequence_async(tasks))
 
     @check_if_running(False)
