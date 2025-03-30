@@ -26,6 +26,7 @@ from .litellm_model import LiteLLMModel
 from .mistral_model import MistralModel
 from .model_factory import ModelFactory
 from .model_manager import ModelManager, ModelProcessingError
+from .modelscope_model import ModelScopeModel
 from .moonshot_model import MoonshotModel
 from .nemotron_model import NemotronModel
 from .nvidia_model import NvidiaModel
@@ -77,6 +78,7 @@ __all__ = [
     'DeepSeekModel',
     'FishAudioModel',
     'InternLMModel',
+    'ModelScopeModel',
     'MoonshotModel',
     'AIMLModel',
     'BaseAudioModel',
