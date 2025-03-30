@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "openbb_toolkit": {
+      "command": "python",
+      "args": [
+        "-m",
+        "openbb_toolkit"
+      ]
+    }
+  }
+}
