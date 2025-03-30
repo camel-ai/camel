@@ -23,7 +23,8 @@ from requests_oauthlib import OAuth1
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import api_keys_required
+from camel.utils import MCPServer, api_keys_required
+
 
 TWEET_TEXT_LIMIT = 280
 
@@ -417,7 +418,7 @@ def _handle_http_error(response: requests.Response) -> str:
     else:
         return "Unexpected Exception"
 
-
+@MCPServer()
 class TwitterToolkit(BaseToolkit):
     r"""A class representing a toolkit for Twitter operations.
 
