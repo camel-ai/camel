@@ -37,6 +37,7 @@ from .github_toolkit import GithubToolkit
 from .google_scholar_toolkit import GoogleScholarToolkit
 from .arxiv_toolkit import ArxivToolkit
 from .slack_toolkit import SlackToolkit
+from .whatsapp_toolkit import WhatsAppToolkit
 from .twitter_toolkit import TwitterToolkit
 from .open_api_toolkit import OpenAPIToolkit
 from .retrieval_toolkit import RetrievalToolkit
@@ -74,6 +75,7 @@ __all__ = [
     'GoogleMapsToolkit',
     'SearchToolkit',
     'SlackToolkit',
+    'WhatsAppToolkit',
     'DalleToolkit',
     'TwitterToolkit',
     'WeatherToolkit',

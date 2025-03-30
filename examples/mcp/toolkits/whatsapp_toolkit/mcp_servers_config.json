@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "whatsapp_toolkit": {
+      "command": "python",
+      "args": [
+        "-m",
+        "whatsapp_toolkit"
+      ]
+    }
+  }
+}
