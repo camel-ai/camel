@@ -1,0 +1,9 @@
+model_platform: GEMINI
+model_type: GEMINI_1_5_FLASH
+model_config_dict:
+  temperature: 0.6
+  max_tokens: 1024
+token_counter: OpenAITokenCounter
+api_key: test_key
+url: null
+
