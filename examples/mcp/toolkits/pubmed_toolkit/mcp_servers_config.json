@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "pubmed_toolkit": {
+      "command": "python",
+      "args": [
+        "-m",
+        "pubmed_toolkit"
+      ]
+    }
+  }
+}
