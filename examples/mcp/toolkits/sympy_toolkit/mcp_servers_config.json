@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "sympy_toolkit": {
+      "command": "python",
+      "args": [
+        "-m",
+        "sympy_toolkit"
+      ]
+    }
+  }
+}
