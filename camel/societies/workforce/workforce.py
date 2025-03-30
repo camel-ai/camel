@@ -160,12 +160,15 @@ class Workforce(BaseNode):
     async def process_task_sequence_async(
         self, tasks: List[Task]
     ) -> List[Task]:
-        r"""Asynchronous method to process a sequence of tasks with shared context.
-        This method will initialize the shared channel, maintain a shared context
-        across tasks, and process each task and its subtasks in order.
+        r"""Asynchronous method to process a sequence of tasks
+        with shared context.
+        This method will initialize the shared channel,
+        maintain a shared context
+        across tasks, and process each task
+        and its subtasks in order.
 
-        The result of each task will be stored in `self.shared_context` under
-        the key `task_{task.id}`.
+        The result of each task will be stored in `self.shared_context`
+        under the key `task_{task.id}`.
 
         Args:
             tasks (List[Task]): A list of tasks to be processed sequentially.
