@@ -76,18 +76,18 @@ async def test_task_sequence_workforce():
         Task(
             id="research",
             content="Conduct brief research on the test project. Summarize "
-                    "core ideas, technology used, and potential impact.",
+            "core ideas, technology used, and potential impact.",
         ),
         Task(
             id="judge_A",
             content="As Judge A, review the project based on the research "
-                    "summary. Provide feedback and score from 1 to 10.",
+            "summary. Provide feedback and score from 1 to 10.",
         ),
         Task(
             id="judge_B",
             content="As Judge B, evaluate the project using your own "
-                    "criteria. Based on research, provide critique and score "
-                    "from 1 to 10.",
+            "criteria. Based on research, provide critique and score "
+            "from 1 to 10.",
         ),
     ]
 
@@ -101,12 +101,12 @@ async def test_task_sequence_workforce():
 
     for task in results:
         assert (
-                workforce.shared_context[f"task_{task.id}"]["result"]
-                == f"Processed result: {task.content}"
+            workforce.shared_context[f"task_{task.id}"]["result"]
+            == f"Processed result: {task.content}"
         )
         assert (
-                workforce.shared_context[f"task_{task.id}"]["content"]
-                == task.content
+            workforce.shared_context[f"task_{task.id}"]["content"]
+            == task.content
         )
 
     single_task = Task(id="test_task", content="Content that needs processing")
@@ -116,16 +116,16 @@ async def test_task_sequence_workforce():
     single_result = await workforce.process_task_sequence_async([single_task])
 
     assert (
-            single_result[0].result
-            == "Processed result: Content that needs processing"
+        single_result[0].result
+        == "Processed result: Content that needs processing"
     )
     assert (
-            workforce.shared_context["task_test_task"]["result"]
-            == "Processed result: Content that needs processing"
+        workforce.shared_context["task_test_task"]["result"]
+        == "Processed result: Content that needs processing"
     )
     assert (
-            workforce.shared_context["task_test_task"]["content"]
-            == "Content that needs processing"
+        workforce.shared_context["task_test_task"]["content"]
+        == "Content that needs processing"
     )
 
     workforce.start = original_start
