@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "semantic_scholar_toolkit": {
+      "command": "python",
+      "args": [
+        "-m",
+        "semantic_scholar_toolkit"
+      ]
+    }
+  }
+}
