@@ -50,21 +50,22 @@ So, the letters R appear at the 3rd, 8th, and 9th positions. 🍓
 ===============================================================================
 '''
 
-# If we set the os environment GET_REASONING_CONTENT to "true", we get the reasoning content.
+# If we set the os environment GET_REASONING_CONTENT to "true", 
+# we get the reasoning content.
 '''
 ===============================================================================
 Okay, let's see. The user is asking how many times the letter 'R' appears in 
-the word 'strawberry'. Hmm, first I need to make sure I spell the word correctly. 
-Strawberry. Let me break it down letter by letter.
+the word 'strawberry'. Hmm, first I need to make sure I spell the word 
+correctly. Strawberry. Let me break it down letter by letter.
 
-S-T-R-A-W-B-E-R-R-Y. Wait, let me write that out: S, T, R, A, W, B, E, R, R, Y. 
-Let me count the Rs. The third letter is R, then after that, the eighth and ninth 
-letters are R and R again. Wait, no, let me check the spelling again. Maybe I'm 
-splitting the syllables wrong. Straw-berry. So 'straw' is S-T-R-A-W, then 'berry' 
-is B-E-R-R-Y. So in 'straw', there's one R (the third letter), and in 'berry', 
-there are two Rs (the third and fourth letters). So total Rs would be 1 + 2 = 3? 
-Wait, but when I spelled it out earlier, I had S-T-R-A-W-B-E-R-R-Y. 
-Let's count the positions:
+S-T-R-A-W-B-E-R-R-Y. Wait, let me write that out: S, T, R, A, W, B, E, R, R, 
+Y. Let me count the Rs. The third letter is R, then after that, the eighth and 
+ninth letters are R and R again. Wait, no, let me check the spelling again. 
+Maybe I'm splitting the syllables wrong. Straw-berry. So 'straw' is S-T-R-A-W, 
+then 'berry' is B-E-R-R-Y. So in 'straw', there's one R (the third letter), 
+and in 'berry', there are two Rs (the third and fourth letters). So total Rs 
+would be 1 + 2 = 3? Wait, but when I spelled it out earlier, I had 
+S-T-R-A-W-B-E-R-R-Y. Let's count the positions:
 
 1. S
 2. T
@@ -77,12 +78,13 @@ Let's count the positions:
 9. R
 10. Y
 
-So positions 3, 8, and 9 are Rs. That's three Rs. But wait, sometimes people might 
-misspell strawberry. Let me confirm the correct spelling. Yes, strawberry is spelled
-S-T-R-A-W-B-E-R-R-Y. So two Rs in 'berry' part and one in 'straw' part? Wait, no. 
-Wait, 'straw' is S-T-R-A-W, so that's one R. Then 'berry' is B-E-R-R-Y, which is 
-two Rs. So total three Rs. But when I count the letters in the full word, 
-it's S-T-R-A-W-B-E-R-R-Y. Let's list them:
+So positions 3, 8, and 9 are Rs. That's three Rs. But wait, sometimes people 
+might misspell strawberry. Let me confirm the correct spelling. Yes, 
+strawberry is spelled S-T-R-A-W-B-E-R-R-Y. So two Rs in 'berry' part and 
+one in 'straw' part? Wait, no. Wait, 'straw' is S-T-R-A-W, so that's one R. 
+Then 'berry' is B-E-R-R-Y, which is two Rs. So total three Rs. But when I 
+count the letters in the full word, it's S-T-R-A-W-B-E-R-R-Y. 
+Let's list them:
 
 1. S
 2. T

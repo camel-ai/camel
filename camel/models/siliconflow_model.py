@@ -123,7 +123,8 @@ class SiliconFlowModel(BaseModelBackend):
                 response.choices[0].message, "reasoning_content", None
             )
 
-            # Ensure base_content is a valid string; fallback prevents empty response
+            # Ensure base_content is a valid string; 
+            # fallback prevents empty response
             base_content = (
                 response.choices[0].message.content
                 or "Nothing generated from model."
