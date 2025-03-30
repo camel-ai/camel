@@ -116,11 +116,19 @@ class SiliconFlowModel(BaseModelBackend):
             reasoning_content = getattr(
                 response.choices[0].message, "reasoning_content", None
             )
-            combined_content = (  # type: ignore[operator]
+
+            # Ensure base_content is a valid string; fallback prevents empty response
+            base_content = (
+                response.choices[0].message.content
+                or "Nothing generated from model."
+            )
+
+            # Combine reasoning and actual message content
+            combined_content = (
                 f"<think>\n{reasoning_content}\n</think>\n"
                 if reasoning_content
                 else ""
-            ) + response.choices[0].message.content
+            ) + base_content
 
             response = ChatCompletion.construct(
                 id=response.id,
