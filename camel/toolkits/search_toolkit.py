@@ -16,7 +16,6 @@ import xml.etree.ElementTree as ET
 from typing import Any, Dict, List, Literal, Optional, TypeAlias, Union
 
 import requests
-from mcp.server import FastMCP
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool

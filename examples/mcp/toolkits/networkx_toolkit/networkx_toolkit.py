@@ -14,8 +14,6 @@
 import argparse
 import sys
 
-import networkx as nx
-
 from camel.toolkits import NetworkXToolkit
 
 if __name__ == "__main__":

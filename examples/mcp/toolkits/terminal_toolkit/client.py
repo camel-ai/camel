@@ -48,8 +48,8 @@ async def run_example():
             'id': 'create_log_directory',
             'exec_dir': '/Users/coco/OnePiece/eigent/camel/examples/mcp'
             '/toolkits/terminal_toolkit/',
-            'command': "mkdir logs"
-        }
+            'command': "mkdir logs",
+        },
     )
     print(res1.content[0].text)
 
@@ -66,8 +66,8 @@ Command started in session 'create_log_directory'. Initial output:
             'exec_dir': '/Users/coco/OnePiece/eigent/camel/examples/mcp'
             '/toolkits/terminal_toolkit/logs',
             'command': "echo 'INFO: Application started successfully at "
-                       "2024-03-30' > app.log"
-        }
+            "2024-03-30' > app.log",
+        },
     )
     print(res2.content[0].text)
     """
@@ -82,8 +82,8 @@ Command started in session 'create_log_file'. Initial output:
             'id': 'delete_log_directory',
             'exec_dir': '/Users/coco/OnePiece/eigent/camel/examples/mcp'
             '/toolkits/terminal_toolkit',
-            'command': "rm -rf ./logs"
-        }
+            'command': "rm -rf ./logs",
+        },
     )
     print(res3.content[0].text)
     """

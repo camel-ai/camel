@@ -42,8 +42,7 @@ async def run_example():
     """
 
     res1: CallToolResult = await math_mcp_client.session.call_tool(
-        "information_retrieval",
-        {}
+        "information_retrieval", {}
     )
     print(res1.content)
     """

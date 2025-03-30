@@ -14,8 +14,6 @@
 import asyncio
 from typing import TYPE_CHECKING, Union
 
-from mcp.types import CallToolResult
-
 from camel.toolkits.mcp_toolkit import MCPToolkit, _MCPServer
 
 if TYPE_CHECKING:

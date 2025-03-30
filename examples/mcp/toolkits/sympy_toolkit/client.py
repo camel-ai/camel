@@ -54,7 +54,7 @@ async def run_example():
         {
             'expression': '(x**4 - 16)/(x**2 - 4) + sin(x)**2 + cos(x)**2 + '
             '(x**3 + 6*x**2 + 12*x + 8)/(x + 2)'
-        }
+        },
     )
     print(res.content[0].text)
     """

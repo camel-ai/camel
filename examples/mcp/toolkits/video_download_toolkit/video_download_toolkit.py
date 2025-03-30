@@ -14,10 +14,10 @@
 import argparse
 import sys
 
+from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
 from camel.toolkits import VideoDownloaderToolkit
 from camel.types import ModelPlatformType, ModelType
-from camel.configs import ChatGPTConfig
 
 if __name__ == "__main__":
     model = ModelFactory.create(

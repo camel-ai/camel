@@ -17,7 +17,6 @@ from typing import List, Optional
 from urllib.parse import urlparse
 
 import requests
-from mcp.server import FastMCP
 
 from camel.logger import get_logger
 from camel.messages import BaseMessage

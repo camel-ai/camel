@@ -16,7 +16,6 @@ import os
 from typing import Any, Dict, Optional
 
 import requests
-from mcp.server import FastMCP
 
 from camel.toolkits.base import BaseToolkit
 from camel.utils import MCPServer, api_keys_required

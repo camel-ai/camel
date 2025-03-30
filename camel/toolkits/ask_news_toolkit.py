@@ -15,8 +15,6 @@ import os
 from datetime import datetime
 from typing import List, Literal, Optional, Tuple, Union
 
-from mcp.server import FastMCP
-
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 from camel.utils import MCPServer, api_keys_required

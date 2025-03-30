@@ -41,9 +41,7 @@ async def run_example():
 ===============================================================================
     """
 
-    res: CallToolResult = await mcp_client.session.call_tool(
-        "get_profile", {}
-    )
+    res: CallToolResult = await mcp_client.session.call_tool("get_profile", {})
     print(res.content[0].text)
 
     """

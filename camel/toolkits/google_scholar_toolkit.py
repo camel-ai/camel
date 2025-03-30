@@ -14,8 +14,6 @@
 import re
 from typing import Any, Dict, List, Optional
 
-from mcp.server import FastMCP
-
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 from camel.utils import MCPServer

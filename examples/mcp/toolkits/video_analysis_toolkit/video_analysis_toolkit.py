@@ -14,10 +14,10 @@
 import argparse
 import sys
 
+from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
 from camel.toolkits import VideoAnalysisToolkit
 from camel.types import ModelPlatformType, ModelType
-from camel.configs import ChatGPTConfig
 
 if __name__ == "__main__":
     model = ModelFactory.create(
@@ -42,7 +42,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     toolkit = VideoAnalysisToolkit(
-        model=model, use_audio_transcription=False,
+        model=model,
+        use_audio_transcription=False,
     )
 
     toolkit.mcp.run(args.mode)

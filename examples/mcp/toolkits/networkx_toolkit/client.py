@@ -65,9 +65,7 @@ async def run_example():
         "add_node", {'node_id': 'G', "attributes": {}}
     )
 
-    res1: CallToolResult = await mcp_client.session.call_tool(
-        "get_nodes", {}
-    )
+    res1: CallToolResult = await mcp_client.session.call_tool("get_nodes", {})
     print(res1.content)
     """
 ===============================================================================
@@ -84,48 +82,36 @@ async def run_example():
     """
 
     await mcp_client.session.call_tool(
-        "add_edge",
-        {'source': 'A', 'target': 'B', 'attributes': {'weight': 2}}
+        "add_edge", {'source': 'A', 'target': 'B', 'attributes': {'weight': 2}}
     )
     await mcp_client.session.call_tool(
-        "add_edge",
-        {'source': 'B', 'target': 'C', 'attributes': {'weight': 3}}
+        "add_edge", {'source': 'B', 'target': 'C', 'attributes': {'weight': 3}}
     )
     await mcp_client.session.call_tool(
-        "add_edge",
-        {'source': 'C', 'target': 'D', 'attributes': {'weight': 4}}
+        "add_edge", {'source': 'C', 'target': 'D', 'attributes': {'weight': 4}}
     )
     await mcp_client.session.call_tool(
-        "add_edge",
-        {'source': 'D', 'target': 'E', 'attributes': {'weight': 5}}
+        "add_edge", {'source': 'D', 'target': 'E', 'attributes': {'weight': 5}}
     )
     await mcp_client.session.call_tool(
-        "add_edge",
-        {'source': 'E', 'target': 'F', 'attributes': {'weight': 6}}
+        "add_edge", {'source': 'E', 'target': 'F', 'attributes': {'weight': 6}}
     )
     await mcp_client.session.call_tool(
-        "add_edge",
-        {'source': 'F', 'target': 'G', 'attributes': {'weight': 7}}
+        "add_edge", {'source': 'F', 'target': 'G', 'attributes': {'weight': 7}}
     )
     await mcp_client.session.call_tool(
-        "add_edge",
-        {'source': 'G', 'target': 'A', 'attributes': {'weight': 8}}
+        "add_edge", {'source': 'G', 'target': 'A', 'attributes': {'weight': 8}}
     )
     await mcp_client.session.call_tool(
-        "add_edge",
-        {'source': 'B', 'target': 'E', 'attributes': {'weight': 2}}
+        "add_edge", {'source': 'B', 'target': 'E', 'attributes': {'weight': 2}}
     )
     await mcp_client.session.call_tool(
-        "add_edge",
-        {'source': 'C', 'target': 'F', 'attributes': {'weight': 3}}
+        "add_edge", {'source': 'C', 'target': 'F', 'attributes': {'weight': 3}}
     )
     await mcp_client.session.call_tool(
-        "add_edge",
-        {'source': 'D', 'target': 'A', 'attributes': {'weight': 1}}
+        "add_edge", {'source': 'D', 'target': 'A', 'attributes': {'weight': 1}}
     )
-    res2: CallToolResult = await mcp_client.session.call_tool(
-        "get_edges", {}
-    )
+    res2: CallToolResult = await mcp_client.session.call_tool("get_edges", {})
     print(res2.content)
     """
 ===============================================================================
@@ -164,8 +150,7 @@ async def run_example():
     """
 
     res3: CallToolResult = await mcp_client.session.call_tool(
-        "get_shortest_path",
-        {"source": "A", "target": "F", "weight": "weight"}
+        "get_shortest_path", {"source": "A", "target": "F", "weight": "weight"}
     )
     print(res3.content)
     """

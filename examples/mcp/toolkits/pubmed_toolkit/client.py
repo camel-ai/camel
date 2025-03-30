@@ -43,8 +43,7 @@ async def run_example():
     """
 
     res1: CallToolResult = await math_mcp_client.session.call_tool(
-        "get_paper_details",
-        {'paper_id': 37840631, 'include_references': True}
+        "get_paper_details", {'paper_id': 37840631, 'include_references': True}
     )
     print(res1.content)
     """

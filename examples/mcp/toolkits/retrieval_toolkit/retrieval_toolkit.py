@@ -16,7 +16,6 @@ import sys
 
 from camel.toolkits import RetrievalToolkit
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Run Retrieval Toolkit with MCP server mode.",

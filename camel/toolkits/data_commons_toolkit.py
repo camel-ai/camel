@@ -14,8 +14,6 @@
 import logging
 from typing import Any, Dict, List, Optional, Union
 
-from mcp.server import FastMCP
-
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 from camel.utils import MCPServer

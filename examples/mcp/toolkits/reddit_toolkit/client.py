@@ -43,8 +43,7 @@ async def run_example():
     """
 
     res: CallToolResult = await math_mcp_client.session.call_tool(
-        "collect_top_posts",
-        {'subreddit_name': "MCP"}
+        "collect_top_posts", {'subreddit_name': "MCP"}
     )
     print(res.content)
     """

@@ -41,9 +41,7 @@ async def run_example():
 ===============================================================================
     """
 
-    video_url = (
-        "https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4"
-    )
+    video_url = "https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4"
 
     res: CallToolResult = await gt_mcp_client.session.call_tool(
         "get_video_bytes",

@@ -13,8 +13,6 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import List, Literal, Optional, Union
 
-from mcp.server import FastMCP
-
 from camel.interpreters import (
     DockerInterpreter,
     E2BInterpreter,

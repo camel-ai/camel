@@ -15,7 +15,6 @@
 from typing import List
 
 import pandas as pd
-from mcp.server import FastMCP
 
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit

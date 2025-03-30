@@ -16,8 +16,6 @@ import logging
 import os
 from typing import Dict, List, Literal, Optional, Union
 
-from mcp.server import FastMCP
-
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 from camel.utils import MCPServer, dependencies_required

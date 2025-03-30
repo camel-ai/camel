@@ -42,8 +42,7 @@ async def run_example():
     """
 
     res: CallToolResult = await math_mcp_client.session.call_tool(
-        "get_weather_data",
-        {'city': 'Shanghai'}
+        "get_weather_data", {'city': 'Shanghai'}
     )
     print(res.content)
     """
