@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "linkedin_toolkit": {
+      "command": "python",
+      "args": [
+        "-m",
+        "linkedin_toolkit"
+      ]
+    }
+  }
+}
