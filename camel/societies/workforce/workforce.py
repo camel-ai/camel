@@ -17,7 +17,7 @@ import asyncio
 import json
 import logging
 from collections import deque
-from typing import Deque, Dict, List, Optional
+from typing import Any, Deque, Dict, List, Optional
 
 from colorama import Fore
 
@@ -79,6 +79,8 @@ class Workforce(BaseNode):
         new_worker_agent_kwargs: Optional[Dict] = None,
     ) -> None:
         super().__init__(description)
+        self.shared_context: Dict[str, Dict[str, Any]] = {}
+        self.shared_channel: TaskChannel = TaskChannel()
         self._child_listening_tasks: Deque[asyncio.Task] = deque()
         self._children = children or []
         self.new_worker_agent_kwargs = new_worker_agent_kwargs
@@ -153,6 +155,43 @@ class Workforce(BaseNode):
         asyncio.run(self.start())
 
         return task
+
+    @check_if_running(False)
+    async def process_task_sequence_async(
+        self, tasks: List[Task]
+    ) -> List[Task]:
+        """Process a sequence of tasks with shared context."""
+        self.reset()
+        self.set_channel(self.shared_channel)
+
+        results = []
+
+        for task in tasks:
+            self._task = task
+            task.state = TaskState.FAILED
+
+            subtasks = self._decompose_task(task)
+            self._pending_tasks.clear()
+            self._pending_tasks.append(task)
+            self._pending_tasks.extendleft(reversed(subtasks))
+
+            await self.start()
+
+            # share context between tasks in list
+            self.shared_context[f"task_{task.id}"] = {
+                "content": task.content,
+                "result": task.result,
+            }
+
+            results.append(task)
+
+        return results
+
+    @check_if_running(False)
+    def process_task_sequence(self, tasks: List[Task]) -> List[Task]:
+        """Sync wrapper for processing a sequence of
+        tasks with shared context."""
+        return asyncio.run(self.process_task_sequence_async(tasks))
 
     @check_if_running(False)
     def add_single_agent_worker(
