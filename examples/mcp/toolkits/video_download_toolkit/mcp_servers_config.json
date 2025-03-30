@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "video_download_toolkit": {
+      "command": "python",
+      "args": [
+        "-m",
+        "video_download_toolkit"
+      ]
+    }
+  }
+}
