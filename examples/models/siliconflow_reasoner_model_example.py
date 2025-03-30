@@ -50,7 +50,7 @@ So, the letters R appear at the 3rd, 8th, and 9th positions. 🍓
 ===============================================================================
 '''
 
-# If we set the os environment GET_REASONING_CONTENT to "true", 
+# If we set the os environment GET_REASONING_CONTENT to "true",
 # we get the reasoning content.
 '''
 ===============================================================================
