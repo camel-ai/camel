@@ -1,4 +1,18 @@
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import textwrap
+
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
@@ -8,8 +22,9 @@ from camel.toolkits import FunctionTool, SearchToolkit
 from camel.types import ModelPlatformType, ModelType
 
 
-def make_judge(persona: str, example_feedback: str,
-               criteria: str) -> ChatAgent:
+def make_judge(
+    persona: str, example_feedback: str, criteria: str
+) -> ChatAgent:
     content = textwrap.dedent(
         f"""\
         You are a judge in a hackathon.
@@ -24,8 +39,9 @@ def make_judge(persona: str, example_feedback: str,
         system_message=BaseMessage.make_assistant_message(
             role_name="Hackathon Judge", content=content
         ),
-        model=ModelFactory.create(ModelPlatformType.DEFAULT,
-                                  ModelType.DEFAULT),
+        model=ModelFactory.create(
+            ModelPlatformType.DEFAULT, ModelType.DEFAULT
+        ),
     )
 
 
@@ -43,8 +59,9 @@ def make_head_judge() -> ChatAgent:
         system_message=BaseMessage.make_assistant_message(
             role_name="Head Judge", content=content
         ),
-        model=ModelFactory.create(ModelPlatformType.DEFAULT,
-                                  ModelType.DEFAULT),
+        model=ModelFactory.create(
+            ModelPlatformType.DEFAULT, ModelType.DEFAULT
+        ),
     )
 
 
@@ -53,19 +70,19 @@ def main():
     vc_agent = make_judge(
         "A buzzword-loving VC looking for unicorn potential.",
         "Absolutely disruptive! Perfect for the FinTech ecosystem!",
-        "### Market Potential (1-4):\n- 4: Unicorn-ready\n- 1: No market"
+        "### Market Potential (1-4):\n- 4: Unicorn-ready\n- 1: No market",
     )
 
     eng_agent = make_judge(
         "A perfectionist systems engineer who hates inefficiencies.",
         "Architecture is unstable and barely performs under load.",
-        "### Technical Quality (1-4):\n- 4: Flawless\n- 1: Broken"
+        "### Technical Quality (1-4):\n- 4: Flawless\n- 1: Broken",
     )
 
     contributor_agent = make_judge(
         "A CAMEL contributor who loves to see CAMEL used creatively.",
         "Love how CAMEL-AI is integrated! So much potential!",
-        "### CAMEL Integration (1-4):\n- 4: Advanced use\n- 1: Basic use"
+        "### CAMEL Integration (1-4):\n- 4: Advanced use\n- 1: Basic use",
     )
 
     researcher_agent = ChatAgent(
@@ -73,8 +90,9 @@ def main():
             role_name="Researcher",
             content="You search the web to provide supporting context.",
         ),
-        model=ModelFactory.create(ModelPlatformType.DEFAULT,
-                                  ModelType.DEFAULT),
+        model=ModelFactory.create(
+            ModelPlatformType.DEFAULT, ModelType.DEFAULT
+        ),
         tools=[
             FunctionTool(SearchToolkit().search_google),
         ],
@@ -98,7 +116,7 @@ def main():
                 "Do a brief research on the hackathon project. Summarize the "
                 "core idea, "
                 "technology used, innovation, and potential impact."
-            )
+            ),
         ),
         Task(
             id="judge_A",
@@ -108,7 +126,7 @@ def main():
                 "Provide your opinion and give a score from 1 to 10. Be "
                 "specific about "
                 "what you liked or disliked."
-            )
+            ),
         ),
         Task(
             id="judge_B",
@@ -117,8 +135,9 @@ def main():
                 "Based on the research summary, give a thoughtful critique "
                 "and assign "
                 "a score from 1 to 10."
-            )
-        )]
+            ),
+        ),
+    ]
 
     results = workforce.process_task_sequence(task_list)
 
