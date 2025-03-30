@@ -6,14 +6,10 @@ from camel.societies.workforce import Workforce
 from camel.tasks import Task
 from camel.toolkits import FunctionTool, SearchToolkit
 from camel.types import ModelPlatformType, ModelType
-from dotenv import load_dotenv
-import os
 
-load_dotenv()  # 加载 .env 文件到环境变量中
 
-openai_key = os.getenv("OPENAI_API_KEY")
-
-def make_judge(persona: str, example_feedback: str, criteria: str) -> ChatAgent:
+def make_judge(persona: str, example_feedback: str,
+               criteria: str) -> ChatAgent:
     content = textwrap.dedent(
         f"""\
         You are a judge in a hackathon.
@@ -28,7 +24,8 @@ def make_judge(persona: str, example_feedback: str, criteria: str) -> ChatAgent:
         system_message=BaseMessage.make_assistant_message(
             role_name="Hackathon Judge", content=content
         ),
-        model=ModelFactory.create(ModelPlatformType.DEFAULT, ModelType.DEFAULT),
+        model=ModelFactory.create(ModelPlatformType.DEFAULT,
+                                  ModelType.DEFAULT),
     )
 
 
@@ -46,18 +43,12 @@ def make_head_judge() -> ChatAgent:
         system_message=BaseMessage.make_assistant_message(
             role_name="Head Judge", content=content
         ),
-        model=ModelFactory.create(ModelPlatformType.DEFAULT, ModelType.DEFAULT),
+        model=ModelFactory.create(ModelPlatformType.DEFAULT,
+                                  ModelType.DEFAULT),
     )
 
 
 def main():
-    # Project descriptions
-    projects = [
-        ("Adaptive Learning Assistant", "A CAMEL-powered tutor for students."),
-        ("AI Climate Modeler", "An AI-driven system to model global warming."),
-        ("Decentralized AI Hiring", "A blockchain-based AI freelancer market."),
-    ]
-
     # Judges
     vc_agent = make_judge(
         "A buzzword-loving VC looking for unicorn potential.",
@@ -82,7 +73,8 @@ def main():
             role_name="Researcher",
             content="You search the web to provide supporting context.",
         ),
-        model=ModelFactory.create(ModelPlatformType.DEFAULT, ModelType.DEFAULT),
+        model=ModelFactory.create(ModelPlatformType.DEFAULT,
+                                  ModelType.DEFAULT),
         tools=[
             FunctionTool(SearchToolkit().search_google),
         ],
@@ -103,15 +95,18 @@ def main():
         Task(
             id="research",
             content=(
-                "Do a brief research on the hackathon project. Summarize the core idea, "
+                "Do a brief research on the hackathon project. Summarize the "
+                "core idea, "
                 "technology used, innovation, and potential impact."
             )
         ),
         Task(
             id="judge_A",
             content=(
-                "As Judge Alice, review the project based on the research summary. "
-                "Provide your opinion and give a score from 1 to 10. Be specific about "
+                "As Judge Alice, review the project based on the research "
+                "summary. "
+                "Provide your opinion and give a score from 1 to 10. Be "
+                "specific about "
                 "what you liked or disliked."
             )
         ),
@@ -119,7 +114,8 @@ def main():
             id="judge_B",
             content=(
                 "As Judge Bob, evaluate the project using your own criteria. "
-                "Based on the research summary, give a thoughtful critique and assign "
+                "Based on the research summary, give a thoughtful critique "
+                "and assign "
                 "a score from 1 to 10."
             )
         )]
