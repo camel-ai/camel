@@ -17,9 +17,10 @@ from camel.retrievers import AutoRetriever
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 from camel.types import StorageType
-from camel.utils import Constants
+from camel.utils import Constants, MCPServer
 
 
+@MCPServer()
 class RetrievalToolkit(BaseToolkit):
     r"""A class representing a toolkit for information retrieval.
 
