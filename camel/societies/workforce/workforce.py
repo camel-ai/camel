@@ -209,7 +209,8 @@ class Workforce(BaseNode):
         It will process all tasks in order, sharing context
         across them, and return the updated list of tasks.
 
-        Internally it runs the asynchronous method `process_task_sequence_async`.
+        Internally it runs the asynchronous method
+        `process_task_sequence_async`.
 
         Args:
             tasks (List[Task]): A list of tasks to be processed sequentially.
