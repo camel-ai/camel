@@ -142,6 +142,8 @@ class ModelType(UnifiedModelType, Enum):
     MISTRAL_MIXTRAL_8x22B = "open-mixtral-8x22b"
     MISTRAL_NEMO = "open-mistral-nemo"
     MISTRAL_PIXTRAL_12B = "pixtral-12b-2409"
+    MISTRAL_PIXTRAL_LARGE = "pixtral-large-latest"
+    MISTRAL_OCR = "mistral-ocr-latest"
 
     # Reka models
     REKA_CORE = "reka-core"
