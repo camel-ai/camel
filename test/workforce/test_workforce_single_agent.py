@@ -43,8 +43,8 @@ async def test_get_dep_tasks_info():
 
 @pytest.mark.asyncio
 async def test_task_sequence_workforce():
-    """Tests that the Workforce correctly processes a sequence of tasks with
-    multiple agents and propagates results to the shared context."""
+    """Tests that the Workforce correctly processes a sequence of tasks
+    and propagates results to the shared context."""
 
     sys_msg = BaseMessage.make_assistant_message(
         role_name="researcher",
