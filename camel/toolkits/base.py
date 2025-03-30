@@ -14,8 +14,6 @@
 
 from typing import List, Optional
 
-from mcp.server import FastMCP
-
 from camel.toolkits import FunctionTool
 from camel.utils import AgentOpsMeta, with_timeout
 
@@ -26,6 +24,8 @@ class BaseToolkit(metaclass=AgentOpsMeta):
     Args:
         timeout (Optional[float]): The timeout for the toolkit.
     """
+
+    from mcp.server import FastMCP
 
     mcp: FastMCP
     timeout: Optional[float] = None

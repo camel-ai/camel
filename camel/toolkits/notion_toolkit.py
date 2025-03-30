@@ -98,7 +98,6 @@ class NotionToolkit(BaseToolkit):
         from notion_client import Client
 
         self.notion_token = notion_token or os.environ.get("NOTION_TOKEN")
-        print(self.notion_token)
         self.notion_client = Client(auth=self.notion_token)
 
     def list_all_users(self) -> List[dict]:

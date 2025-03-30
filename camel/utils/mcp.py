@@ -15,8 +15,6 @@ import functools
 import inspect
 from typing import Any, Callable, Optional
 
-from mcp.server.fastmcp import FastMCP
-
 
 class MCPServer:
     def __init__(
@@ -43,6 +41,8 @@ class MCPServer:
         return wrapper
 
     def __call__(self, cls):
+        from mcp.server.fastmcp import FastMCP
+
         from camel.toolkits.base import BaseToolkit
 
         original_init = cls.__init__
