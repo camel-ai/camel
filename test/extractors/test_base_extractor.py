@@ -12,16 +12,41 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 from unittest.mock import MagicMock
 
 import pytest
 
-from camel.extractors.base import BaseExtractor
+from camel.extractors.base import BaseExtractor, BaseExtractorStrategy
+
+
+class DummyStrategy(BaseExtractorStrategy):
+    r"""A dummy strategy that just returns the input text."""
+
+    async def extract(self, text: str) -> Optional[str]:
+        return text
 
 
 class TestExtractor(BaseExtractor):
     r"""Concrete implementation of BaseExtractor for testing."""
+
+    def __init__(
+        self,
+        cache_templates: bool = True,
+        max_cache_size: int = 1000,
+        extraction_timeout: float = 30.0,
+        batch_size: int = 10,
+        **kwargs,
+    ):
+        pipeline: List[List[BaseExtractorStrategy]] = [[DummyStrategy()]]
+        super().__init__(
+            pipeline=pipeline,
+            cache_templates=cache_templates,
+            max_cache_size=max_cache_size,
+            extraction_timeout=extraction_timeout,
+            batch_size=batch_size,
+            **kwargs,
+        )
 
     async def extract(
         self, response: str, context: Optional[Dict[str, Any]] = None
@@ -59,10 +84,10 @@ def test_extractor_init():
         batch_size=20,
         custom_param="value",
     )
-    assert extractor._cache_templates is False
-    assert extractor._max_cache_size == 500
-    assert extractor._extraction_timeout == 15.0
-    assert extractor._batch_size == 20
+    assert extractor._metadata["cache_templates"] is False
+    assert extractor._metadata["max_cache_size"] == 500
+    assert extractor._metadata["extraction_timeout"] == 15.0
+    assert extractor._metadata["batch_size"] == 20
     assert extractor._metadata["custom_param"] == "value"
 
 

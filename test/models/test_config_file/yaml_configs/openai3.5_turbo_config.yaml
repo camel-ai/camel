@@ -1,0 +1,9 @@
+model_platform: OPENAI
+model_type: GPT_3_5_TURBO
+model_config_dict:
+  temperature: 0.7
+  max_tokens: 1024
+token_counter: null
+api_key: test_key
+url: null
+

@@ -1,6 +1,6 @@
 # Memory
 
-For more detailed usage information, please refer to our cookbook: [Memory Cookbook](../cookbooks/agents_with_memory.ipynb)
+For more detailed usage information, please refer to our cookbook: [Memory Cookbook](../cookbooks/advanced_features/agents_with_memory.ipynb)
 
 ## 1. Concept
 The Memory module in CAMEL provides a flexible and powerful system for storing, retrieving, and managing information for AI agents. It enables agents to maintain context across conversations and retrieve relevant information from past interactions, enhancing the coherence and relevance of AI responses.
@@ -253,6 +253,84 @@ Methods:
 - `write_records()`: Write new records to both chat history and vector database
 - `get_context_creator()`: Get the context creator
 - `clear()`: Remove all records from both memory blocks
+
+### 5.4 Mem0Storage Integration
+
+[Mem0](https://mem0.ai/) offers cloud-based memory management capabilities that can be seamlessly integrated with CAMEL.
+
+Initialization params of `Mem0Storage`:
+
+- `api_key`: Optional str for Mem0 API authentication
+- `agent_id`: Optional str to associate memories with an agent
+- `user_id`: Optional str to associate memories with a user
+- `metadata`: Optional dictionary of metadata to include with all memories
+
+The simplest way to use Mem0 is through its `Mem0Storage` backend with `ChatHistoryMemory`:
+
+```python
+from camel.memories import ChatHistoryMemory, ScoreBasedContextCreator
+from camel.storages import Mem0Storage
+from camel.types import ModelType
+from camel.utils import OpenAITokenCounter
+
+# Initialize ChatHistoryMemory with Mem0Storage
+memory = ChatHistoryMemory(
+    context_creator=ScoreBasedContextCreator(
+        token_counter=OpenAITokenCounter(ModelType.GPT_4O_MINI),
+        token_limit=1024,
+    ),
+    storage=Mem0Storage(
+        api_key="your_mem0_api_key",  # Or set MEM0_API_KEY environment variable
+        agent_id="agent123"  # Unique identifier for this agent
+    ),
+    agent_id="agent123"  # Should match the storage agent_id
+)
+
+# Create and write new records
+records = [
+    MemoryRecord(
+        message=BaseMessage.make_user_message(
+            role_name="User",
+            content="What is CAMEL AI?",
+        ),
+        role_at_backend=OpenAIBackendRole.USER,
+    ),
+    MemoryRecord(
+        message=BaseMessage.make_assistant_message(
+            role_name="Agent",
+            content="CAMEL-AI.org is the 1st LLM multi-agent framework and "
+                    "an open-source community dedicated to finding the scaling law "
+                    "of agents.",
+        ),
+        role_at_backend=OpenAIBackendRole.ASSISTANT,
+    ),
+]
+memory.write_records(records)
+
+
+# Get context for the agent
+context, token_count = memory.get_context()
+
+print(context)
+print(f"Retrieved context (token count: {token_count}):")
+for message in context:
+    print(f"{message}")
+```
+
+```markdown
+>>> Retrieved context (token count: 49):
+{'role': 'user', 'content': 'What is CAMEL AI?'}
+{'role': 'assistant', 'content': 'CAMEL-AI.org is the 1st LLM multi-agent framework and an open-source community dedicated to finding the scaling law of agents.'}
+```
+
+This approach provides cloud persistence for chat history while maintaining the simple sequential retrieval of `ChatHistoryMemory`. The key features include:
+
+1. Cloud persistence of chat history
+2. Simple setup and configuration
+3. Sequential retrieval based on conversation order
+4. Automatic synchronization across sessions
+
+Choose this approach when you need reliable cloud storage for your chat history without complex semantic search requirements.
 
 ## 6. Advanced Topics
 
