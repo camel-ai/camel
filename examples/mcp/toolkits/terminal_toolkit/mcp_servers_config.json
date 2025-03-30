@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "terminal_toolkit": {
+      "command": "python",
+      "args": [
+        "-m",
+        "terminal_toolkit"
+      ]
+    }
+  }
+}
