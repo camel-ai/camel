@@ -198,6 +198,7 @@ class GoogleCalendarToolkit(BaseToolkit):
         end_time: Optional[str] = None,
         description: Optional[str] = None,
         location: Optional[str] = None,
+        attendees_email: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         r"""Updates an existing event in the user's primary Google Calendar.
 
@@ -210,6 +211,7 @@ class GoogleCalendarToolkit(BaseToolkit):
             (YYYY-MM-DDTHH:MM:SSZ).
             description (str, optional): New description of the event.
             location (str, optional): New location of the event.
+            attendees_email (List[str], optional): List of email addresses.
 
         Returns:
             dict: A dictionary containing details of the updated event.
@@ -235,6 +237,10 @@ class GoogleCalendarToolkit(BaseToolkit):
                 event['start']['dateTime'] = start_time
             if end_time:
                 event['end']['dateTime'] = end_time
+            if attendees_email:
+                event['attendees'] = [
+                    {'email': email} for email in attendees_email
+                ]
 
             updated_event = (
                 self.service.events()
@@ -248,6 +254,10 @@ class GoogleCalendarToolkit(BaseToolkit):
                 'Start Time': updated_event.get('start', {}).get('dateTime'),
                 'End Time': updated_event.get('end', {}).get('dateTime'),
                 'Link': updated_event.get('htmlLink'),
+                'Attendees': [
+                    attendee.get('email')
+                    for attendee in updated_event.get('attendees', [])
+                ],
             }
         except Exception:
             raise ValueError("Failed to update event")
