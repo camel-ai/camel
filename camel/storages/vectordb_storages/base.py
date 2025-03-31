@@ -112,6 +112,14 @@ class VectorDBSearch(BaseModel):
     def __init__(
         self, payload_filter: Dict[str, Any], top_k: int = 5, **kwargs: Any
     ) -> None:
+        """Pass in payload_filter and tok_k as positional arg.
+        Args:
+            payload_filter (Dict[str, Any]): The filter criteria used to
+                select records.For example, {"category": "fruit", "color":
+                "red"}.
+            top_top_k (int, optional): The number of top similar vectors to
+                retrieve from the database. (default: :obj:`5`)
+        """
         super().__init__(payload_filter=payload_filter, top_k=top_k, **kwargs)
 
 
@@ -136,7 +144,17 @@ class VectorDBSearchResult(BaseModel):
         id: str,
         payload: Dict[str, Any],
     ) -> "VectorDBSearchResult":
-        r"""A class method to construct a `VectorDBSearchResult` instance."""
+        """A class method to construct a `VectorDBSearchResult` instance.
+
+        Args:
+            vector (List[float]): The numerical representation of the
+                vector.
+            id (str): The unique identifier for the vector.
+            payload (Dict[str, Any]): The payload associated with the
+                vector.
+        Returns:
+            VectorDBSearchResult: The search result object.
+        """
         return cls(
             record=VectorRecord(
                 vector=vector,
