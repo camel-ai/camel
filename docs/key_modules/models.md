@@ -35,6 +35,7 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **SGLANG** | [supported models](https://sgl-project.github.io/references/supported_models.html) |
 | **NVIDIA** | [supported models](https://docs.api.nvidia.com/nim/reference/llm-apis) |
 | **AI/ML API** | [supported models](https://docs.aimlapi.com/api-references/text-models-llm?utm_source=camel-ai&utm_medium=github&utm_campaign=integration) |
+| **ModelScope** | [supported models](https://www.modelscope.cn/docs/model-service/API-Inference/intro) |
 
 ## 3. How to Use Models via API Calls
 
