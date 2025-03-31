@@ -549,7 +549,7 @@ class BaseBrowser:
             # Get url name to form a file name
             # Use urlparser for a safer extraction the url name
             parsed_url = urllib.parse.urlparse(self.page_url)
-            url_name = os.path.basename(str(parsed_url)) or "index"
+            url_name = os.path.basename(str(parsed_url.path)) or "index"
 
             for char in ['\\', '/', ':', '*', '?', '"', '<', '>', '|', '.']:
                 url_name = url_name.replace(char, "_")
@@ -677,7 +677,7 @@ class BaseBrowser:
         )
         if save_image:
             parsed_url = urllib.parse.urlparse(self.page_url)
-            url_name = os.path.basename(str(parsed_url)) or "index"
+            url_name = os.path.basename(str(parsed_url.path)) or "index"
             for char in ['\\', '/', ':', '*', '?', '"', '<', '>', '|', '.']:
                 url_name = url_name.replace(char, "_")
             timestamp = datetime.datetime.now().strftime("%m%d%H%M%S")
