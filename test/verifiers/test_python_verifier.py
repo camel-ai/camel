@@ -95,13 +95,13 @@ async def test_python_verifier_output_mismatch(python_verifier):
 
     script = 'print("Wrong output")'
     result = await python_verifier._verify_implementation(
-        solution=script, ground_truth="'Expected output'"
+        solution=script, ground_truth="Expected output"
     )
 
     assert result.status == VerificationOutcome.FAILURE
     assert (
         result.error_message
-        == "Output mismatch: Wrong output != Expected output"
+        == "Fallback string mismatch: 'Wrong output' != 'Expected output'"
     )
 
     await python_verifier.cleanup()
@@ -114,7 +114,7 @@ async def test_python_verifier_correct_output_matching(python_verifier):
 
     script = 'print("Expected output")'
     result = await python_verifier._verify_implementation(
-        solution=script, ground_truth="'Expected output'"
+        solution=script, ground_truth="Expected output"
     )
 
     assert result.status == VerificationOutcome.SUCCESS
