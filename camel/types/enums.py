@@ -419,6 +419,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_PIXTRAL_12B,
             ModelType.MISTRAL_8B,
             ModelType.MISTRAL_3B,
+            ModelType.MISTRAL_PIXTRAL_LARGE,
+            ModelType.MISTRAL_OCR,
         }
 
     @property
