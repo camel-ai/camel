@@ -324,7 +324,7 @@ class SingleStepEnv:
 
         verification_results = await self.verifier.verify_batch(
             solutions=proposed_solutions,
-            ground_truths=ground_truths,  # type: ignore [arg-type]
+            reference_answers=ground_truths,  # type: ignore [arg-type]
             raise_on_error=True,
         )
 

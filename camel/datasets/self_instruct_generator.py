@@ -373,7 +373,7 @@ class SelfInstructGenerator(BaseGenerator):
                 try:
                     verifier_response = await self.verifier.verify(
                         solution=rationale,
-                        ground_truth=None,
+                        reference_answer=None,
                     )
                     if not verifier_response or not verifier_response.result:
                         raise ValueError(
