@@ -17,6 +17,7 @@ from .critic_agent import CriticAgent
 from .embodied_agent import EmbodiedAgent
 from .knowledge_graph_agent import KnowledgeGraphAgent
 from .mcp_agent import MCPAgent
+from .repo_agent import RepoAgent
 from .role_assignment_agent import RoleAssignmentAgent
 from .search_agent import SearchAgent
 from .task_agent import (
@@ -43,4 +44,6 @@ __all__ = [
     'SearchAgent',
     'KnowledgeGraphAgent',
     'MCPAgent',
+    'RepoAgent',
+
 ]
