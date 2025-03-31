@@ -25,9 +25,11 @@ Before the DATABASE_URL, you can setup the a Milvus database cluster first:
 
 (Option 1): ☁️ Milvus Serverless 
 
-1. Go to [Zilliz Cloud](https://zilliz.com/cloud) and create a Milvus serverless instance
+1. Go to [Zilliz Cloud](https://zilliz.com/cloud) and create a Milvus 
+    serverless instance
 2. Click the **Connect** button on your instance dashboard
-3. Go to "Cluster Detail" > "Connect" Copy the **Public Endpoint** and **Token**  
+3. Go to "Cluster Detail" > "Connect" Copy the **Public 
+    Endpoint** and **Token**  
 4. Pass them as a tuple into MilvusStorage like:
 
 DATABASE_URL = ("https://xxx.api.zillizcloud.com", "your-api-key")
