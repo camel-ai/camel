@@ -14,7 +14,6 @@
 from .base_generator import BaseGenerator
 from .few_shot_generator import FewShotGenerator
 from .models import DataPoint
-from .self_instruct_generator import SelfInstructGenerator
 from .static_dataset import StaticDataset
 
 __all__ = [
@@ -22,5 +21,4 @@ __all__ = [
     "DataPoint",
     "FewShotGenerator",
     "StaticDataset",
-    "SelfInstructGenerator",
 ]

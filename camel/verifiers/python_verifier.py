@@ -76,19 +76,15 @@ class PythonVerifier(BaseVerifier):
 
     async def _setup(self, **kwargs) -> None:
         r"""Set up a virtual environment and install required packages."""
-        # Check if we're in a uv environment and use uv if available
-        if kwargs.get("uv", False) or self._is_uv_environment():
+        uv = kwargs.get('uv', False)
+        if uv or self._is_uv_environment():
             logger.info("[UV] Detected uv environment. Using uv for setup.")
             self._setup_with_uv()
             return
 
         self.venv_path = tempfile.mkdtemp()
         try:
-            # Use system=True to ensure that the virtual environment uses the
-            # system Python libraries
-            venv.create(
-                self.venv_path, with_pip=True, system_site_packages=True
-            )
+            venv.create(self.venv_path, with_pip=True)
             logger.info(f"Virtual environment created at {self.venv_path}")
         except Exception as e:
             logger.error(f"Failed to create virtual environment: {e}")
@@ -171,11 +167,7 @@ class PythonVerifier(BaseVerifier):
             raise
 
         if self.required_packages:
-            venv_python = os.path.join(
-                self.venv_path,
-                self.bin_dir,
-                "python.exe" if os.name == 'nt' else "python",
-            )
+            venv_python = os.path.join(self.venv_path, self.bin_dir, "python")
             try:
                 subprocess.run(
                     [
@@ -292,11 +284,7 @@ class PythonVerifier(BaseVerifier):
 
         # Otherwise, run the code block,
         # which should already include a print(...) in the end
-        venv_python = os.path.join(
-            self.venv_path,
-            self.bin_dir,
-            "python.exe" if os.name == 'nt' else "python",
-        )
+        venv_python = os.path.join(self.venv_path, self.bin_dir, "python")
         if not os.path.exists(venv_python):
             return VerificationResult(
                 status=VerificationOutcome.ERROR,
@@ -320,8 +308,20 @@ class PythonVerifier(BaseVerifier):
                     # First, try to evaluate the output as-is.
                     sol_val = ast.literal_eval(sol_out)
                 except Exception as e:
-                    logger.warning(f"Direct eval failed: {e}.")
-                    sol_val = None
+                    logger.warning(
+                        f"Direct eval failed: {e}. Trying repr on output."
+                    )
+                    try:
+                        # Try to convert sol_out to a literal
+                        # by wrapping it with repr.
+                        # FIXME: may be unnecessary
+                        sol_val = ast.literal_eval(repr(sol_out))
+                    except Exception as e2:
+                        logger.warning(
+                            f"repr eval also failed: {e2}."
+                            "Falling back to string comparison."
+                        )
+                        sol_val = None
 
                 if sol_val is not None:
                     try:
