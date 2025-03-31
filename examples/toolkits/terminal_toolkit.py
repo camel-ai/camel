@@ -151,3 +151,75 @@ slack_bot_use_msg_queue.py\nexamples/bots/discord_bot_use_msg_queue.
 py\nexamples/bots/slack_bot.py', tool_call_id='call_LzRjSotNqKOWwU4yHcstlnG9')]
 ===============================================================================
 """
+
+# Define a user message for testing resource cleanup via __del__ method
+print("\n\n================ Testing Resource Cleanup ================")
+usr_msg = (
+    f"Start a long-running process that sleeps for 300 seconds in the background, "
+    f"then show me the list of running processes to confirm it's running"
+)
+
+# Get response information for starting the process
+camel_agent.reset()
+response = camel_agent.step(usr_msg)
+print(str(response.info['tool_calls'])[:1000])
+"""
+===============================================================================
+[ToolCallingRecord(tool_name='shell_exec', args={'id': 'session1', 'exec_dir': 
+'/tmp', 'command': 'sleep 300 & echo $!'}, result='Operation restriction: 
+Execution path /tmp must be within working directory /home/jjyaoao/openSource/
+camel/workspace', tool_call_id='call_G7TcVUJs195Er6yocORHysXP'), 
+ToolCallingRecord(tool_name='shell_exec', args={'id': 'session1', 'exec_dir': 
+'/home/jjyaoao/openSource/camel/workspace', 'command': 'sleep 300 & echo $!'}, 
+result='10804\n', tool_call_id='call_mncQosy3b4cuc1j5MGiltohH'), 
+ToolCallingRecord(tool_name='shell_exec', args={'id': 'session2', 'exec_dir': 
+'/home/jjyaoao/openSource/camel/workspace', 'command': 'ps aux'}, 
+result='USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME 
+COMMAND\nroot           1  0.0  0.2 170104 12368 ?        Ss   10:06   0:00 
+/sbin/init\nroot           2  0.0  0.0   2776  1928 ?        Sl   10:06   0:00 
+/init\nroot           8  0.0  0.0   2776     4 ?        Sl   10:06   0:00 plan9 
+--control-socket 7 --log-level=debug --log-file=/dev/null ...',
+tool_call_id='call_UvxQrsb1GpfDHTQQc6rLoQ3P')]
+===============================================================================
+"""
+
+# Create a new agent with a new toolkit (to simulate ending the session)
+print("\nCreating a new chat session (this will dispose the old TerminalToolkit)...")
+import time
+
+# Create new agent with a new toolkit
+new_tools = TerminalToolkit(working_dir=workspace_dir).get_tools()
+new_agent = ChatAgent(
+    system_message=sys_msg,
+    model=model,
+    tools=new_tools,
+)
+
+# Give some time for the garbage collector to run
+time.sleep(2)
+
+# Define a user message to check if the process was terminated by __del__
+usr_msg = "Check if there are any sleep processes running on the system"
+
+# Get response information for checking the processes
+new_agent.reset()
+response = new_agent.step(usr_msg)
+print(str(response.info['tool_calls'])[:1000])
+"""
+===============================================================================
+[ToolCallingRecord(tool_name='shell_exec', args={'id': 'check_sleep_processes',
+'exec_dir': '/', 'command': 'ps aux | grep sleep'}, result='Operation 
+restriction: Execution path / must be within working directory 
+/home/jjyaoao/openSource/camel/workspace', tool_call_id=
+'call_gbhmZ3mwpB07uPtVF3FxZaHu'), ToolCallingRecord(tool_name='shell_exec',
+args={'id': 'check_sleep_processes', 'exec_dir': 
+'/home/jjyaoao/openSource/camel/workspace', 'command': 'ps aux | grep sleep'}, 
+result='root       11385  0.0  0.0   2620   532 pts/4    S+   11:16   0:00 
+/bin/sh -c ps aux | grep sleep\nroot       11387  0.0  0.0   8172   656 pts/4  
+S+   11:16   0:00 grep sleep\n', tool_call_id='call_gSZqRaqNAtYjUXOfvVuaObw2')]
+===============================================================================
+"""
+
+print("If no sleep/timeout processes are shown above (or only grep processes), "
+      "then the __del__ method worked correctly!")
+print("================ Resource Cleanup Test Complete ================")
