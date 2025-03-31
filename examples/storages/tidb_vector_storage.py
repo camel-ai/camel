@@ -11,10 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import random
 
 from camel.storages.vectordb_storages import (
     TiDBStorage,
     VectorDBQuery,
+    VectorDBSearch,
     VectorRecord,
 )
 
@@ -50,24 +52,18 @@ DATABASE_URL = "mysql+pymysql://root:@localhost:4000/test"
 def main():
     # Create an instance of TiDBStorage with dimension = 4
     tidb_storage = TiDBStorage(
-        url_and_api_key=(DATABASE_URL, ''),
+        url_and_api_key=(DATABASE_URL, ""),
         vector_dim=4,
         collection_name="my_collection",
     )
 
     # Add two vector records
-    tidb_storage.add(
-        [
-            VectorRecord(
-                vector=[-0.1, 0.1, -0.1, 0.1],
-                payload={'key1': 'value1'},
-            ),
-            VectorRecord(
-                vector=[-0.1, 0.1, 0.1, 0.1],
-                payload={'key2': 'value2'},
-            ),
-        ]
-    )
+    records = []
+    for i in range(100):
+        vector = [random.uniform(-1, 1) for _ in range(4)]
+        payload = {"group": "A" if i % 2 == 0 else "B", "index": i}
+        records.append(VectorRecord(vector=vector, payload=payload))
+    tidb_storage.add(records)
 
     # Query similar vectors
     query_results = tidb_storage.query(
@@ -78,9 +74,23 @@ def main():
 
     """
     Output:
-    {'key2': 'value2'} 0.5669466755703252
+    {'group': 'A', 'index': 70} 0.972551598645325
     """
 
+    search_results = tidb_storage.search(
+        VectorDBSearch(
+            payload_filter={"group": {"$eq": "A"}},
+            top_k=2,
+        )
+    )
+    for result in search_results:
+        print(result.record.payload)
+
+    """
+    Output:
+    {'group': 'A', 'index': 98}
+    {'group': 'A', 'index': 26}
+    """
     # Clear all vectors
     tidb_storage.clear()
 
