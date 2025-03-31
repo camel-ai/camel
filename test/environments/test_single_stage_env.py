@@ -159,7 +159,7 @@ async def test_single_step_env_lifecycle_single():
     mock_verifier.setup = AsyncMock()
     mock_verifier.cleanup = AsyncMock()
     mock_verifier.verify_batch = AsyncMock(
-        side_effect=lambda solutions, ground_truths, **kwargs: [
+        side_effect=lambda solutions, reference_answers, **kwargs: [
             VerificationResult(
                 status=VerificationOutcome.SUCCESS,
                 result="Verification successful",
@@ -290,7 +290,7 @@ async def test_batched_single_step_env_lifecycle():
     mock_verifier.setup = AsyncMock()
     mock_verifier.cleanup = AsyncMock()
     mock_verifier.verify_batch = AsyncMock(
-        side_effect=lambda solutions, ground_truths, **kwargs: [
+        side_effect=lambda solutions, reference_answers, **kwargs: [
             VerificationResult(
                 status=VerificationOutcome.SUCCESS,
                 result="Verification successful",
@@ -462,7 +462,7 @@ def create_mock_verifier():
     verifier.setup = AsyncMock()
     verifier.cleanup = AsyncMock()
     verifier.verify_batch = AsyncMock(
-        side_effect=lambda solutions, ground_truths, **kwargs: [
+        side_effect=lambda solutions, reference_answers, **kwargs: [
             VerificationResult(
                 status=VerificationOutcome.SUCCESS,
                 result="Mock verification",

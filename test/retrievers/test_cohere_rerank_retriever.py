@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+from unittest.mock import patch
+
 import pytest
 
 from camel.retrievers import CohereRerankRetriever
@@ -90,7 +92,30 @@ def mock_retrieved_result():
     ]
 
 
-def test_query(cohere_rerank, mock_retrieved_result):
+class MockRerankResult:
+    def __init__(self, index, relevance_score):
+        self.index = index
+        self.relevance_score = relevance_score
+
+
+class MockRerankResponse:
+    def __init__(self, results):
+        self.results = results
+
+
+@patch('cohere.Client')
+def test_query(mock_client, cohere_rerank, mock_retrieved_result):
+    # Create mock response
+    mock_results = [MockRerankResult(0, 0.9999999)]
+    mock_response = MockRerankResponse(mock_results)
+
+    # Configure the mock
+    mock_client_instance = mock_client.return_value
+    mock_client_instance.rerank.return_value = mock_response
+
+    # Replace the actual client with our mock
+    cohere_rerank.co = mock_client_instance
+
     query = (
         "Developing aligned AI systems is crucial for achieving desired"
         "objectives while avoiding unintended consequences"
@@ -98,6 +123,16 @@ def test_query(cohere_rerank, mock_retrieved_result):
     result = cohere_rerank.query(
         query=query, retrieved_result=mock_retrieved_result, top_k=1
     )
+
+    # Verify the mock was called correctly
+    mock_client_instance.rerank.assert_called_once_with(
+        query=query,
+        documents=mock_retrieved_result,
+        top_n=1,
+        model=cohere_rerank.model_name,
+    )
+
+    # Verify results
     assert len(result) == 1
     assert result[0]["similarity score"] == 0.9999999
     assert (
