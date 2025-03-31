@@ -20,6 +20,8 @@ from camel.storages.vectordb_storages import (
     BaseVectorStorage,
     VectorDBQuery,
     VectorDBQueryResult,
+    VectorDBSearch,
+    VectorDBSearchResult,
     VectorDBStatus,
     VectorRecord,
 )
@@ -53,7 +55,7 @@ class MilvusStorage(BaseVectorStorage):
         ImportError: If `pymilvus` package is not installed.
     """
 
-    @dependencies_required('pymilvus')
+    @dependencies_required("pymilvus")
     def __init__(
         self,
         vector_dim: int,
@@ -130,13 +132,13 @@ class MilvusStorage(BaseVectorStorage):
         schema = self._client.create_schema(
             auto_id=False,
             enable_dynamic_field=True,
-            description='collection schema',
+            description="collection schema",
         )
 
         schema.add_field(
             field_name="id",
             datatype=DataType.VARCHAR,
-            descrition='A unique identifier for the vector',
+            descrition="A unique identifier for the vector",
             is_primary=True,
             max_length=65535,
         )
@@ -144,15 +146,15 @@ class MilvusStorage(BaseVectorStorage):
         schema.add_field(
             field_name="vector",
             datatype=DataType.FLOAT_VECTOR,
-            description='The numerical representation of the vector',
+            description="The numerical representation of the vector",
             dim=self.vector_dim,
         )
         schema.add_field(
             field_name="payload",
             datatype=DataType.JSON,
             description=(
-                'Any additional metadata or information related'
-                'to the vector'
+                "Any additional metadata or information related"
+                "to the vector"
             ),
         )
 
@@ -209,7 +211,7 @@ class MilvusStorage(BaseVectorStorage):
             str: A unique, valid collection name.
         """
         timestamp = datetime.now().isoformat()
-        transformed_name = re.sub(r'[^a-zA-Z0-9_]', '_', timestamp)
+        transformed_name = re.sub(r"[^a-zA-Z0-9_]", "_", timestamp)
         valid_name = "Time" + transformed_name
         return valid_name
 
@@ -224,17 +226,17 @@ class MilvusStorage(BaseVectorStorage):
                 collection.
         """
         vector_count = self._client.get_collection_stats(collection_name)[
-            'row_count'
+            "row_count"
         ]
         collection_info = self._client.describe_collection(collection_name)
-        collection_id = collection_info['collection_id']
+        collection_id = collection_info["collection_id"]
 
         dim_value = next(
             (
-                field['params']['dim']
-                for field in collection_info['fields']
-                if field['description']
-                == 'The numerical representation of the vector'
+                field["params"]["dim"]
+                for field in collection_info["fields"]
+                if field["description"]
+                == "The numerical representation of the vector"
             ),
             None,
         )
@@ -266,12 +268,55 @@ class MilvusStorage(BaseVectorStorage):
                 "id": record.id,
                 "payload": record.payload
                 if record.payload is not None
-                else '',
+                else "",
                 "vector": record.vector,
             }
             validated_data.append(record_dict)
 
         return validated_data
+
+    def _convert_filter_dict_to_expr(self, filter_dict: dict) -> str:
+        def convert_condition(k: str, cond: Any) -> str:
+            if isinstance(cond, dict):
+                expressions = []
+                for op, v in cond.items():
+                    if op == "$eq":
+                        expressions.append(f'payload["{k}"] == "{v}"')
+                    elif op == "$lt":
+                        expressions.append(f'payload["{k}"] < {v}')
+                    elif op == "$lte":
+                        expressions.append(f'payload["{k}"] <= {v}')
+                    elif op == "$gt":
+                        expressions.append(f'payload["{k}"] > {v}')
+                    elif op == "$gte":
+                        expressions.append(f'payload["{k}"] >= {v}')
+                    elif op == "$ne":
+                        expressions.append(f'payload["{k}"] != "{v}"')
+                    elif op == "$in":
+                        expr_list = ",".join(f'"{item}"' for item in v)
+                        expressions.append(f'payload["{k}"] in [{expr_list}]')
+                    else:
+                        raise ValueError(f"Unsupported operator: {op}")
+                return " and ".join(expressions)
+            else:
+                return f'payload["{k}"] == "{cond}"'
+
+        expressions = []
+        for k, v in filter_dict.items():
+            if k.lower() == "$and":
+                sub_expressions = [
+                    self._convert_filter_dict_to_expr(sub) for sub in v
+                ]
+                expressions.append("(" + " and ".join(sub_expressions) + ")")
+            elif k.lower() == "$or":
+                sub_expressions = [
+                    self._convert_filter_dict_to_expr(sub) for sub in v
+                ]
+                expressions.append("(" + " or ".join(sub_expressions) + ")")
+            else:
+                expressions.append(convert_condition(k, v))
+
+        return " and ".join(expressions)
 
     def add(
         self,
@@ -355,21 +400,64 @@ class MilvusStorage(BaseVectorStorage):
             collection_name=self.collection_name,
             data=[query.query_vector],
             limit=query.top_k,
-            output_fields=['vector', 'payload'],
+            output_fields=["vector", "payload"],
             **kwargs,
         )
         query_results = []
         for point in search_result:
             query_results.append(
                 VectorDBQueryResult.create(
-                    similarity=(point[0]['distance']),
-                    id=str(point[0]['id']),
-                    payload=(point[0]['entity'].get('payload')),
-                    vector=point[0]['entity'].get('vector'),
+                    similarity=(point[0]["distance"]),
+                    id=str(point[0]["id"]),
+                    payload=(point[0]["entity"].get("payload")),
+                    vector=point[0]["entity"].get("vector"),
                 )
             )
 
         return query_results
+
+    def search(
+        self,
+        search: VectorDBSearch,
+        **kwargs: Any,
+    ) -> List[VectorDBSearchResult]:
+        r"""Searches for vector records that match the given payload filter.
+
+        Args:
+            search (VectorDBSearch): The search object containing the filter
+                For example, {"category": "fruit", "color": "red"}.
+            **kwargs (Any): Additional parameters for the search.
+
+        Returns:
+            List[VectorDBSearchResult]: A list of vector records that match the
+                filter criteria.
+        """
+        if isinstance(search.payload_filter, dict):
+            filter_expr = self._convert_filter_dict_to_expr(
+                search.payload_filter
+            )
+        else:
+            raise ValueError("payload_filter must be a dict.")
+
+        query_res = self._client.query(
+            collection_name=self.collection_name,
+            filter=filter_expr,
+            output_fields=["id", "vector", "payload"],
+            **kwargs,
+        )
+
+        search_results = []
+        for index, item in enumerate(query_res):
+            search_results.append(
+                VectorDBSearchResult.create(
+                    vector=item.get("vector"),
+                    id=str(item.get("id")),
+                    payload=item.get("payload"),
+                )
+            )
+            if index == search.top_k - 1:
+                break
+        return search_results
 
     def clear(self) -> None:
         r"""Removes all vectors from the Milvus collection. This method
