@@ -20,7 +20,6 @@ from camel.types import ModelPlatformType
 
 
 async def main():
-    # TODO: modify the tool path in json file to your own path
     config_path = Path(__file__).parent / "mcp_servers_config.json"
 
     model = ModelFactory.create(
@@ -30,7 +29,9 @@ async def main():
     )
 
     mcp_agent = MCPAgent(
-        config_path=str(config_path), model=model, model_fc_available=False
+        config_path=str(config_path),
+        model=model,
+        function_calling_available=False,
     )
     await mcp_agent.connect()
     mcp_agent.add_mcp_tools()
@@ -42,6 +43,9 @@ async def main():
     response = await mcp_agent.run(user_msg)
 
     print(response.msgs[0].content)
+    """
+    The total number of apples is **250**.
+    """
 
     # Disconnect from all MCP servers and clean up resources.
     await mcp_agent.close()

@@ -75,18 +75,19 @@ class MCPAgent(ChatAgent):
         self,
         config_path: str,
         model: Optional[BaseModelBackend] = None,
-        model_fc_available: bool = False,
+        function_calling_available: bool = False,
     ) -> None:
-        r"""Initialize the MCP agent.
+        r"""A class for the MCP agent that assists using MCP tools.
 
         Args:
             model (Optional[BaseModelBackend]): Model backend for the agent.
                 (default: :obj:`None`)
-            model_fc_available (bool): Flag indicating whether the .
+            function_calling_available (bool): Flag indicating whether the
+            model equipped with the function calling ability.
                 (default: :obj:`False`)
 
         """
-        if model_fc_available:
+        if function_calling_available:
             sys_prompt = "You are a helpful assitant."
         else:
             sys_prompt = SYS_PROMPT
@@ -101,37 +102,42 @@ class MCPAgent(ChatAgent):
         super().__init__(system_message, model=model)
 
         self._mcp_toolkit = MCPToolkit(config_path=config_path)
-        self._model_fc_available = model_fc_available
+        self._function_calling_available = function_calling_available
         self._text_tools = None
 
     async def connect(self):
+        r"""Explicitly connect to all MCP servers."""
         await self._mcp_toolkit.connect()
 
     async def close(self):
+        r"""Explicitly disconnect from all MCP servers."""
         await self._mcp_toolkit.disconnect()
 
     def add_mcp_tools(self):
-        assert self._mcp_toolkit.is_connected(), "Server is not connected."
+        r"""Get the MCP tools and wrap into the models"""
+
+        if not self._mcp_toolkit.is_connected():
+            raise RuntimeError("The MCP server is not connected")
+
         prompt = TextPrompt(TOOLS_PROMPT)
         self._text_tools = prompt.format(
             tools=self._mcp_toolkit.get_text_tools()
         )
-        if self._model_fc_available:
+        if self._function_calling_available:
             tools = self._mcp_toolkit.get_tools()
             for tool in tools:
                 self.add_tool(tool)
-
-    async def get_text_tools(self):
-        assert self._mcp_toolkit.is_connected(), "Server is not connected."
-        await self.add_mcp_tools()
-        return self._text_tools
 
     async def run(
         self,
         prompt: str,
     ):
-        assert self._mcp_toolkit.is_connected(), "Server is not connected."
-        if self._model_fc_available:
+        r"""Run the agent to interactive with the MCP tools"""
+
+        if not self._mcp_toolkit.is_connected():
+            raise RuntimeError("The MCP server is not connected")
+
+        if self._function_calling_available:
             response = await self.astep(prompt)
             return response
         else:
