@@ -22,6 +22,8 @@ from camel.storages.vectordb_storages import (
     BaseVectorStorage,
     VectorDBQuery,
     VectorDBQueryResult,
+    VectorDBSearch,
+    VectorDBSearchResult,
     VectorDBStatus,
     VectorRecord,
 )
@@ -64,7 +66,7 @@ class TiDBStorage(BaseVectorStorage):
         ImportError: If `pytidb` package is not installed.
     """
 
-    @dependencies_required('pytidb')
+    @dependencies_required("pytidb")
     def __init__(
         self,
         vector_dim: int,
@@ -154,7 +156,7 @@ class TiDBStorage(BaseVectorStorage):
             str: A unique, valid table name.
         """
         timestamp = datetime.now().isoformat()
-        transformed_name = re.sub(r'[^a-zA-Z0-9_]', '_', timestamp)
+        transformed_name = re.sub(r"[^a-zA-Z0-9_]", "_", timestamp)
         valid_name = "vectors_" + transformed_name
         return valid_name
 
@@ -170,7 +172,7 @@ class TiDBStorage(BaseVectorStorage):
         columns = self._table.columns()
         dim_value = None
         for col in columns:
-            match = re.search(r'vector\((\d+)\)', col.column_type)
+            match = re.search(r"vector\((\d+)\)", col.column_type)
             if match:
                 dim_value = int(match.group(1))
                 break
@@ -303,10 +305,73 @@ class TiDBStorage(BaseVectorStorage):
         for row in rows:
             query_results.append(
                 VectorDBQueryResult.create(
-                    similarity=float(row['similarity_score']),
-                    id=str(row['id']),
-                    payload=row['payload'],
-                    vector=row['vector'],
+                    similarity=float(row["similarity_score"]),
+                    id=str(row["id"]),
+                    payload=row["payload"],
+                    vector=row["vector"],
+                )
+            )
+        return query_results
+
+    def _convert_filter_dict_to_internal_format(
+        self, filter_dict: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        def convert_key(key: str) -> str:
+            return f"payload->'$.{key}'"
+
+        if not isinstance(filter_dict, dict):
+            raise TypeError("Filter must be a dictionary")
+
+        converted = {}
+        for key, value in filter_dict.items():
+            if key.lower() in ("$and", "$or"):
+                if isinstance(value, list):
+                    converted[key] = [
+                        self._convert_filter_dict_to_internal_format(sub)
+                        for sub in value
+                    ]
+                else:
+                    raise TypeError(f"{key} must be a list")
+            else:
+                converted[convert_key(key)] = value
+        return converted
+
+    def search(
+        self,
+        search: VectorDBSearch,
+        **kwargs: Any,
+    ) -> List[VectorDBSearchResult]:
+        r"""Searches for vector records in the storage based solely on payload
+        filters,without performing any vector similarity computation.
+
+        This method uses the underlying table.query(filters=...) to retrieve
+        recordsthat satisfy the filtering conditions specified in the
+        `payload_filter` attributeof the provided `VectorDBSearch` object.
+        The returned similarity score is set to 0.
+
+        Args:
+            search (VectorDBSearch): The search object containing the payload
+            filter(e.g. payload_filter={"label": "A"}) and optionally
+            a top_k limit.
+            **kwargs (Any): Additional keyword arguments.
+
+        Returns:
+            List[VectorDBSearchResult]: A list of vector records that match the
+                specified payload filter.
+        """
+
+        internal_filter = self._convert_filter_dict_to_internal_format(
+            search.payload_filter
+        )
+        rows = self._table.query(filters=internal_filter)[: search.top_k]
+
+        query_results = []
+        for row in rows:
+            query_results.append(
+                VectorDBSearchResult.create(
+                    id=str(row.id),
+                    payload=row.payload,
+                    vector=row.vector,
                 )
             )
         return query_results
