@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import atexit
 import os
 import platform
 import queue
@@ -87,6 +88,8 @@ class TerminalToolkit(BaseToolkit):
         self.virtual_env = os.environ.get('VIRTUAL_ENV')
         self.is_macos = platform.system() == 'Darwin'
 
+        atexit.register(self.__del__)
+        
         if working_dir is not None:
             if not os.path.exists(working_dir):
                 os.makedirs(working_dir, exist_ok=True)
