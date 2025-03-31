@@ -50,24 +50,25 @@ def test_create_event(calendar_toolkit, mock_calendar_service):
     event_mock.execute.return_value = {
         'id': 'event123',
         'summary': 'Test Event',
-        'start': {'dateTime': '2024-03-30T10:00:00Z'},
-        'end': {'dateTime': '2024-03-30T11:00:00Z'},
+        'start': {'dateTime': '2024-03-30T10:00:00'},
+        'end': {'dateTime': '2024-03-30T11:00:00'},
         'htmlLink': 'https://calendar.google.com/event?id=event123',
     }
 
     result = calendar_toolkit.create_event(
-        summary='Test Event',
-        start_time='2024-03-30T10:00:00Z',
-        end_time='2024-03-30T11:00:00Z',
+        event_title='Test Event',
+        start_time='2024-03-30T10:00:00',
+        end_time='2024-03-30T11:00:00',
         description='Test Description',
         location='Test Location',
-        attendees=['test@example.com'],
+        attendees_email=['test@example.com'],
+        timezone='UTC',
     )
 
     assert result['Event ID'] == 'event123'
-    assert result['Summary'] == 'Test Event'
-    assert result['Start Time'] == '2024-03-30T10:00:00Z'
-    assert result['End Time'] == '2024-03-30T11:00:00Z'
+    assert result['EventTitle'] == 'Test Event'  # Updated field name
+    assert result['Start Time'] == '2024-03-30T10:00:00'
+    assert result['End Time'] == '2024-03-30T11:00:00'
     assert result['Link'] == 'https://calendar.google.com/event?id=event123'
 
     mock_calendar_service.events().insert.assert_called_once()
@@ -77,9 +78,32 @@ def test_create_event(calendar_toolkit, mock_calendar_service):
     assert event_body['summary'] == 'Test Event'
     assert event_body['description'] == 'Test Description'
     assert event_body['location'] == 'Test Location'
-    assert event_body['start']['dateTime'] == '2024-03-30T10:00:00Z'
-    assert event_body['end']['dateTime'] == '2024-03-30T11:00:00Z'
+    assert event_body['start']['dateTime'] == '2024-03-30T10:00:00'
+    assert event_body['end']['dateTime'] == '2024-03-30T11:00:00'
     assert event_body['attendees'][0]['email'] == 'test@example.com'
+
+
+def test_create_event_invalid_time_format(calendar_toolkit):
+    with pytest.raises(ValueError) as excinfo:
+        calendar_toolkit.create_event(
+            event_title='Test Event',
+            start_time='2024/03/30 10:00',  # Invalid format
+            end_time='2024-03-30T11:00:00',
+        )
+
+    assert "time must be in ISO format" in str(excinfo.value)
+
+
+def test_create_event_invalid_email(calendar_toolkit):
+    with pytest.raises(ValueError) as excinfo:
+        calendar_toolkit.create_event(
+            event_title='Test Event',
+            start_time='2024-03-30T10:00:00',
+            end_time='2024-03-30T11:00:00',
+            attendees_email=['invalid-email'],
+        )
+
+    assert "Invalid email address" in str(excinfo.value)
 
 
 def test_create_event_failure(calendar_toolkit, mock_calendar_service):
@@ -87,11 +111,11 @@ def test_create_event_failure(calendar_toolkit, mock_calendar_service):
     mock_calendar_service.events().insert.return_value = event_mock
     event_mock.execute.side_effect = Exception("API Error")
 
-    with pytest.raises(Exception) as excinfo:
+    with pytest.raises(ValueError) as excinfo:
         calendar_toolkit.create_event(
-            summary='Test Event',
-            start_time='2024-03-30T10:00:00Z',
-            end_time='2024-03-30T11:00:00Z',
+            event_title='Test Event',
+            start_time='2024-03-30T10:00:00',
+            end_time='2024-03-30T11:00:00',
         )
 
     assert "Failed to create event" in str(excinfo.value)
@@ -159,6 +183,17 @@ def test_get_events_empty_result(calendar_toolkit, mock_calendar_service):
     assert result == []
 
 
+def test_get_events_failure(calendar_toolkit, mock_calendar_service):
+    events_mock = MagicMock()
+    mock_calendar_service.events().list.return_value = events_mock
+    events_mock.execute.side_effect = Exception("API Error")
+
+    with pytest.raises(ValueError) as excinfo:
+        calendar_toolkit.get_events()
+
+    assert "Failed to retrieve events" in str(excinfo.value)
+
+
 def test_update_event(calendar_toolkit, mock_calendar_service):
     get_mock = MagicMock()
     update_mock = MagicMock()
@@ -186,7 +221,7 @@ def test_update_event(calendar_toolkit, mock_calendar_service):
 
     result = calendar_toolkit.update_event(
         event_id='event123',
-        summary='New Title',
+        event_title='New Title',
         description='New Description',
         location='New Location',
         start_time='2024-03-30T12:00:00Z',
@@ -238,7 +273,9 @@ def test_update_event_partial(calendar_toolkit, mock_calendar_service):
         'htmlLink': 'https://calendar.google.com/event?id=event123',
     }
 
-    _ = calendar_toolkit.update_event(event_id='event123', summary='New Title')
+    _ = calendar_toolkit.update_event(
+        event_id='event123', event_title='New Title'
+    )
 
     # Verify only summary was updated
     args, kwargs = mock_calendar_service.events().update.call_args
@@ -251,28 +288,43 @@ def test_update_event_partial(calendar_toolkit, mock_calendar_service):
     )  # Unchanged
 
 
-def test_delete_event(calendar_toolkit, mock_calendar_service):
+def test_update_event_failure(calendar_toolkit, mock_calendar_service):
     get_mock = MagicMock()
-    delete_mock = MagicMock()
     mock_calendar_service.events().get.return_value = get_mock
+    get_mock.execute.side_effect = Exception("API Error")
+
+    with pytest.raises(ValueError) as excinfo:
+        calendar_toolkit.update_event(
+            event_id='event123', event_title='New Title'
+        )
+
+    assert "Failed to update event" in str(excinfo.value)
+
+
+def test_delete_event(calendar_toolkit, mock_calendar_service):
+    delete_mock = MagicMock()
     mock_calendar_service.events().delete.return_value = delete_mock
-
-    get_mock.execute.return_value = {'id': 'event123', 'summary': 'Test Event'}
-
     delete_mock.execute.return_value = {}
 
     result = calendar_toolkit.delete_event(event_id='event123')
 
     assert "Event deleted successfully" in result
     assert "event123" in result
-    assert "Test Event" in result
 
-    mock_calendar_service.events().get.assert_called_once_with(
-        calendarId='primary', eventId='event123'
-    )
     mock_calendar_service.events().delete.assert_called_once_with(
         calendarId='primary', eventId='event123'
     )
+
+
+def test_delete_event_failure(calendar_toolkit, mock_calendar_service):
+    delete_mock = MagicMock()
+    mock_calendar_service.events().delete.return_value = delete_mock
+    delete_mock.execute.side_effect = Exception("API Error")
+
+    with pytest.raises(ValueError) as excinfo:
+        calendar_toolkit.delete_event(event_id='event123')
+
+    assert "Failed to delete event" in str(excinfo.value)
 
 
 def test_get_calendar_details(calendar_toolkit, mock_calendar_service):
@@ -300,15 +352,25 @@ def test_get_calendar_details(calendar_toolkit, mock_calendar_service):
     )
 
 
+def test_get_calendar_details_failure(calendar_toolkit, mock_calendar_service):
+    get_mock = MagicMock()
+    mock_calendar_service.calendars().get.return_value = get_mock
+    get_mock.execute.side_effect = Exception("API Error")
+
+    with pytest.raises(ValueError) as excinfo:
+        calendar_toolkit.get_calendar_details()
+
+    assert "Failed to retrieve calendar details" in str(excinfo.value)
+
+
 def test_get_tools(calendar_toolkit):
     tools = calendar_toolkit.get_tools()
 
     assert len(tools) == 5
     assert all(isinstance(tool, FunctionTool) for tool in tools)
 
-    tool_names = [tool.name for tool in tools]
-    assert "create_event" in tool_names
-    assert "get_events" in tool_names
-    assert "update_event" in tool_names
-    assert "delete_event" in tool_names
-    assert "get_calendar_details" in tool_names
+    assert tools[0].func == calendar_toolkit.create_event
+    assert tools[1].func == calendar_toolkit.get_events
+    assert tools[2].func == calendar_toolkit.update_event
+    assert tools[3].func == calendar_toolkit.delete_event
+    assert tools[4].func == calendar_toolkit.get_calendar_details
