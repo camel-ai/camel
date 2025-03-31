@@ -67,7 +67,11 @@ def compute_child_pugh_score_explanation(input_variables):
         - None
 
     Example:
-        compute_child_pugh_score_explanation()
+        compute_child_pugh_score_explanation({'bilirubin': (2.8, 'mg/dL'),
+        'albumin': (2.1, 'g/dL'),
+        'inr': 1.5,
+        'ascites': 'Absent',
+        'encephalopathy': 'Grade 1-2'})
 
         output: "{'Explanation': "\n    The criteria for the Child-PughScore
         are listed below:\n\n    1. Bilirubin (Total): <2 mg/dL (<34.2
