@@ -316,7 +316,19 @@ class TiDBStorage(BaseVectorStorage):
     def _convert_filter_dict_to_internal_format(
         self, filter_dict: Dict[str, Any]
     ) -> Dict[str, Any]:
+        r"""convert filter dict to internal format
+
+        Args:
+            filter_dict (Dict[str, Any]): The filter dictionary
+                to be converted.
+
+        Returns:
+            Dict[str, Any]: The converted filter dictionary.
+
+        """
+
         def convert_key(key: str) -> str:
+            """convert key to internal format"""
             return f"payload->'$.{key}'"
 
         if not isinstance(filter_dict, dict):
