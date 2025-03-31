@@ -160,6 +160,7 @@ usr_msg = (
     "background, then show me the list of running processes"
 )
 
+
 # Get response information for starting the process
 camel_agent.reset()
 response = camel_agent.step(usr_msg)

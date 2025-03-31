@@ -89,7 +89,7 @@ class TerminalToolkit(BaseToolkit):
         self.is_macos = platform.system() == 'Darwin'
 
         atexit.register(self.__del__)
-        
+
         if working_dir is not None:
             if not os.path.exists(working_dir):
                 os.makedirs(working_dir, exist_ok=True)
