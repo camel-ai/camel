@@ -16,6 +16,8 @@ from .base import (
     BaseVectorStorage,
     VectorDBQuery,
     VectorDBQueryResult,
+    VectorDBSearch,
+    VectorDBSearchResult,
     VectorDBStatus,
     VectorRecord,
 )
@@ -24,12 +26,14 @@ from .qdrant import QdrantStorage
 from .tidb import TiDBStorage
 
 __all__ = [
-    'BaseVectorStorage',
-    'VectorDBQuery',
-    'VectorDBQueryResult',
-    'QdrantStorage',
-    'MilvusStorage',
+    "BaseVectorStorage",
+    "MilvusStorage",
+    "QdrantStorage",
     "TiDBStorage",
-    'VectorRecord',
-    'VectorDBStatus',
+    "VectorDBQuery",
+    "VectorDBQueryResult",
+    "VectorDBSearch",
+    "VectorDBSearchResult",
+    "VectorDBStatus",
+    "VectorRecord",
 ]
