@@ -18,10 +18,6 @@ import os
 import pickle
 from typing import Any, Dict, List, Optional
 
-from google.auth.transport.requests import Request
-from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.discovery import build
-
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 
@@ -41,6 +37,18 @@ class GoogleCalendarToolkit(BaseToolkit):
         token_path: str = "token.pickle",
         timeout: Optional[float] = None,
     ):
+        r"""Initializes a new instance of the GoogleCalendarToolkit class.
+
+        Args:
+            credentials_path (str): The file path to the credentials JSON file
+            used for authenticating with the Google Calendar API.
+            Defaults to "credentials.json".
+            token_path (str): The file path to the token pickle file used for
+            storing the user's access and refresh tokens.
+            Defaults to "token.pickle".
+            timeout (Optional[float]): The timeout value for API requests
+            in seconds. If None, no timeout is applied. Defaults to None.
+        """
         super().__init__(timeout=timeout)
         self.credentials_path = credentials_path
         self.token_path = token_path
@@ -48,48 +56,65 @@ class GoogleCalendarToolkit(BaseToolkit):
 
     def create_event(
         self,
-        summary: str,
+        event_title: str,
         start_time: str,
         end_time: str,
         description: str = "",
         location: str = "",
-        attendees: Optional[List[str]] = None,
+        attendees_email: Optional[List[str]] = None,
+        timezone: str = "UTC",
     ) -> Dict[str, Any]:
         r"""Creates an event in the user's primary Google Calendar.
 
         Args:
-            summary (str): Title of the event.
+            event_title (str): Title of the event.
             start_time (str): Start time in ISO format (YYYY-MM-DDTHH:MM:SS).
             end_time (str): End time in ISO format (YYYY-MM-DDTHH:MM:SS).
             description (str, optional): Description of the event.
             location (str, optional): Location of the event.
-            attendees (List[str], optional): List of email addresses.
+            attendees_email (List[str], optional): List of email addresses.
+            timezone (str, optional): Timezone for the event.
+            Defaults to "UTC".
 
         Returns:
             dict: A dictionary containing details of the created event.
 
         Raises:
-            Exception: If the event creation fails.
+            ValueError: If the event creation fails.
         """
-        if attendees is None:
-            attendees = []
+        try:
+            datetime.datetime.strptime(start_time, "%Y-%m-%dT%H:%M:%S")
+            datetime.datetime.strptime(end_time, "%Y-%m-%dT%H:%M:%S")
+        except Exception:
+            raise ValueError("time must be in ISO format: YYYY-MM-DDTHH:MM:SS")
+
+        if attendees_email is None:
+            attendees_email = []
+
+        # Verify email addresses
+        valid_emails = []
+        for email in attendees_email:
+            if "@" in email and "." in email.split("@")[-1]:
+                valid_emails.append(email)
+            else:
+                raise ValueError(f"Invalid email address: {email}")
 
         event: Dict[str, Any] = {
-            'summary': summary,
+            'summary': event_title,
             'location': location,
             'description': description,
             'start': {
                 'dateTime': start_time,
-                'timeZone': 'UTC',
+                'timeZone': timezone,
             },
             'end': {
                 'dateTime': end_time,
-                'timeZone': 'UTC',
+                'timeZone': timezone,
             },
         }
 
-        if attendees:
-            event['attendees'] = [{'email': email} for email in attendees]
+        if valid_emails:
+            event['attendees'] = [{'email': email} for email in valid_emails]
 
         try:
             created_event = (
@@ -99,13 +124,13 @@ class GoogleCalendarToolkit(BaseToolkit):
             )
             return {
                 'Event ID': created_event.get('id'),
-                'Summary': created_event.get('summary'),
+                'EventTitle': created_event.get('summary'),
                 'Start Time': created_event.get('start', {}).get('dateTime'),
                 'End Time': created_event.get('end', {}).get('dateTime'),
                 'Link': created_event.get('htmlLink'),
             }
-        except Exception as e:
-            raise Exception(f"Failed to create event: {e!s}")
+        except Exception:
+            raise ValueError("Failed to create event")
 
     def get_events(
         self, max_results: int = 10, time_min: Optional[str] = None
@@ -122,10 +147,12 @@ class GoogleCalendarToolkit(BaseToolkit):
             each containing details of an event.
 
         Raises:
-            Exception: If the event retrieval fails.
+            ValueError: If the event retrieval fails.
         """
         if time_min is None:
-            time_min = datetime.datetime.utcnow().isoformat() + 'Z'
+            time_min = (
+                datetime.datetime.now(datetime.timezone.utc).isoformat() + 'Z'
+            )
         else:
             if not (time_min.endswith('Z')):
                 time_min = time_min + 'Z'
@@ -160,13 +187,13 @@ class GoogleCalendarToolkit(BaseToolkit):
                 )
 
             return result
-        except Exception as e:
-            raise Exception(f"Failed to retrieve events: {e!s}")
+        except Exception:
+            raise ValueError("Failed to retrieve events")
 
     def update_event(
         self,
         event_id: str,
-        summary: Optional[str] = None,
+        event_title: Optional[str] = None,
         start_time: Optional[str] = None,
         end_time: Optional[str] = None,
         description: Optional[str] = None,
@@ -176,7 +203,7 @@ class GoogleCalendarToolkit(BaseToolkit):
 
         Args:
             event_id (str): The ID of the event to update.
-            summary (str, optional): New title of the event.
+            event_title (str, optional): New title of the event.
             start_time (str, optional): New start time in ISO format
             (YYYY-MM-DDTHH:MM:SSZ).
             end_time (str, optional): New end time in ISO format
@@ -188,7 +215,7 @@ class GoogleCalendarToolkit(BaseToolkit):
             dict: A dictionary containing details of the updated event.
 
         Raises:
-            Exception: If the event update fails.
+            ValueError: If the event update fails.
         """
         try:
             event = (
@@ -198,8 +225,8 @@ class GoogleCalendarToolkit(BaseToolkit):
             )
 
             # Update fields that are provided
-            if summary:
-                event['summary'] = summary
+            if event_title:
+                event['summary'] = event_title
             if description:
                 event['description'] = description
             if location:
@@ -222,8 +249,8 @@ class GoogleCalendarToolkit(BaseToolkit):
                 'End Time': updated_event.get('end', {}).get('dateTime'),
                 'Link': updated_event.get('htmlLink'),
             }
-        except Exception as e:
-            raise Exception(f"Failed to update event: {e!s}")
+        except Exception:
+            raise ValueError("Failed to update event")
 
     def delete_event(self, event_id: str) -> str:
         r"""Deletes an event from the user's primary Google Calendar.
@@ -235,15 +262,15 @@ class GoogleCalendarToolkit(BaseToolkit):
             str: A message indicating the result of the deletion.
 
         Raises:
-            Exception: If the event deletion fails.
+            ValueError: If the event deletion fails.
         """
         try:
             self.service.events().delete(
                 calendarId='primary', eventId=event_id
             ).execute()
             return f"Event deleted successfully. Event ID: {event_id}"
-        except Exception as e:
-            raise Exception(f"Failed to delete event: {e!s}")
+        except Exception:
+            raise ValueError("Failed to delete event")
 
     def get_calendar_details(self) -> Dict[str, Any]:
         r"""Retrieves details about the user's primary Google Calendar.
@@ -252,7 +279,7 @@ class GoogleCalendarToolkit(BaseToolkit):
             dict: A dictionary containing details about the calendar.
 
         Raises:
-            Exception: If the calendar details retrieval fails.
+            ValueError: If the calendar details retrieval fails.
         """
         try:
             calendar = (
@@ -265,8 +292,8 @@ class GoogleCalendarToolkit(BaseToolkit):
                 'Time Zone': calendar.get('timeZone'),
                 'Access Role': calendar.get('accessRole'),
             }
-        except Exception as e:
-            raise Exception(f"Failed to retrieve calendar details: {e!s}")
+        except Exception:
+            raise ValueError("Failed to retrieve calendar details")
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
@@ -291,8 +318,12 @@ class GoogleCalendarToolkit(BaseToolkit):
             Resource: A Google Calendar API service object.
 
         Raises:
-            Exception: If authentication fails.
+            ValueError: If authentication fails.
         """
+        from google.auth.transport.requests import Request
+        from google_auth_oauthlib.flow import InstalledAppFlow
+        from googleapiclient.discovery import build
+
         creds = None
 
         # The file token.pickle stores the user's access and refresh tokens
@@ -317,5 +348,5 @@ class GoogleCalendarToolkit(BaseToolkit):
         try:
             service = build('calendar', 'v3', credentials=creds)
             return service
-        except Exception as e:
-            raise Exception(f"Failed to build service: {e!s}")
+        except Exception:
+            raise ValueError("Failed to build service")
