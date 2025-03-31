@@ -17,6 +17,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
+from camel.models import BaseModelBackend, SGLangModel
 
 from .models import Action, Observation, StepResult
 
@@ -30,6 +31,7 @@ class MultiStepEnv(ABC):
         self,
         extractor: BaseExtractor,
         max_steps: Optional[int] = None,
+        model: Optional[BaseModelBackend] = None,
         **kwargs,
     ) -> None:
         r"""Initialize the environment.
@@ -37,10 +39,13 @@ class MultiStepEnv(ABC):
         Args:
             extractor: Extractor to process LLM responses.
             max_steps: Maximum steps per episode.
+            model: Model to use for LLM interactions. If None,
+                a default model will be used. (default: :obj:`None`)
             **kwargs: Additional environment parameters.
         """
         self.extractor = extractor
         self.max_steps = max_steps
+        self.model = model
         self._metadata = kwargs
 
         # State tracking
@@ -55,16 +60,18 @@ class MultiStepEnv(ABC):
         r"""Set up the environment by initializing the verifier and extractor.
 
         This method ensures that the environment is ready for interaction.
-        It sets up necessary components, including the verifier and extractor.
+        It sets up necessary components, including the model and extractor.
 
         Raises:
             Exception: If setup fails due to an internal error.
         """
-
         if self._is_setup:
             return
 
         try:
+            if self.model:
+                if isinstance(self.model, SGLangModel):
+                    self.model._ensure_server_running()
             await self.extractor.setup()
             await self._setup()
             self._is_setup = True
@@ -79,9 +86,8 @@ class MultiStepEnv(ABC):
 
     async def close(self) -> None:
         r"""Clean up and close all resources used by the environment.
-        This method shuts down the verifier, calls the internal
-        close function that is implemented in any MultiStepEnv,
-        and ensures that the environment is properly closed.
+        This method shuts down the model, extractor, and ensures
+        that the environment is properly closed.
 
         Raises:
             Exception: If an error occurs while closing the environment.
@@ -90,8 +96,9 @@ class MultiStepEnv(ABC):
             return
 
         try:
+            if isinstance(self.model, SGLangModel):
+                self.model.cleanup()
             await self.extractor.cleanup()
-
             await self._close()
 
             self._is_setup = False
