@@ -138,7 +138,7 @@ class MilvusStorage(BaseVectorStorage):
         schema.add_field(
             field_name="id",
             datatype=DataType.VARCHAR,
-            descrition="A unique identifier for the vector",
+            description="A unique identifier for the vector",
             is_primary=True,
             max_length=65535,
         )
@@ -276,7 +276,20 @@ class MilvusStorage(BaseVectorStorage):
         return validated_data
 
     def _convert_filter_dict_to_expr(self, filter_dict: dict) -> str:
+        r"""convert filter dict to expr
+
+        Args:
+            filter_dict (dict): filter dict
+        """
+
         def convert_condition(k: str, cond: Any) -> str:
+            """convert condition
+
+            Args:
+                k (str): key
+                cond (Any): condition
+
+            """
             if isinstance(cond, dict):
                 expressions = []
                 for op, v in cond.items():
