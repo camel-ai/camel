@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import atexit
 import os
 import platform
 import queue
@@ -20,7 +21,7 @@ import sys
 import threading
 import venv
 from queue import Queue
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
@@ -87,6 +88,8 @@ class TerminalToolkit(BaseToolkit):
         self.virtual_env = os.environ.get('VIRTUAL_ENV')
         self.is_macos = platform.system() == 'Darwin'
 
+        atexit.register(self.__del__)
+        
         if working_dir is not None:
             if not os.path.exists(working_dir):
                 os.makedirs(working_dir, exist_ok=True)
@@ -120,11 +123,9 @@ class TerminalToolkit(BaseToolkit):
                 self.gui_thread.start()
                 self.terminal_ready.wait(timeout=5)
 
-        self.safe_mode = safe_mode
-
     def _setup_file_output(self):
-        r"""Set up file output to replace GUI,
-        using a fixed file to simulate terminal.
+        r"""Set up file output to replace GUI, using a fixed file to simulate
+        terminal.
         """
 
         self.log_file = os.path.join(os.getcwd(), "camel_terminal.txt")
@@ -275,8 +276,8 @@ class TerminalToolkit(BaseToolkit):
             path (str): The path to check
 
         Returns:
-            bool: Returns True if the path is within the working directory
-            or if the working directory is not set, otherwise returns False
+            bool: Returns True if the path is within the working directory or
+                if the working directory is not set, otherwise returns False
         """
         if self.working_dir is None:
             return True
@@ -396,7 +397,8 @@ class TerminalToolkit(BaseToolkit):
             # and /b for bare format
 
             pattern = glob
-            command.extend(["dir", "/s", "/b", os.path.join(path, pattern)])
+            file_path = os.path.join(path, pattern).replace('/', '\\')
+            command.extend(["cmd", "/c", "dir", "/s", "/b", file_path])
 
         try:
             result = subprocess.run(
@@ -404,7 +406,7 @@ class TerminalToolkit(BaseToolkit):
                 check=False,
                 capture_output=True,
                 text=True,
-                shell=True,
+                shell=False,
             )
 
             output = result.stdout.strip()
@@ -415,40 +417,30 @@ class TerminalToolkit(BaseToolkit):
             logger.error(f"Error finding files by name: {e}")
             return f"Error: {e!s}"
 
-    def _sanitize_command(self, command: str, exec_dir: str) -> tuple:
-        """
-        Check and modify command to ensure safety
+    def _sanitize_command(self, command: str, exec_dir: str) -> Tuple:
+        r"""Check and modify command to ensure safety.
 
-        Returns: (is safe, modified command or error message)
+        Args:
+            command (str): The command to check
+            exec_dir (str): The directory to execute the command in
+
+        Returns:
+            Tuple: (is safe, modified command or error message)
         """
         if not self.safe_mode:
             return True, command
 
-        # Split command for analysis
-        parts = []
-        current = ""
-        in_quotes = False
-        quote_char = None
+        if not command or command.strip() == "":
+            return False, "Empty command"
 
-        # Parse command, handling quotes
-        for char in command:
-            if char in ['"', "'"]:
-                if not in_quotes:
-                    in_quotes = True
-                    quote_char = char
-                elif char == quote_char:
-                    in_quotes = False
-                    quote_char = None
-                current += char
-            elif char.isspace() and not in_quotes:
-                if current:
-                    parts.append(current)
-                    current = ""
-            else:
-                current += char
+        # Use shlex for safer command parsing
+        import shlex
 
-        if current:
-            parts.append(current)
+        try:
+            parts = shlex.split(command)
+        except ValueError as e:
+            # Handle malformed commands (e.g., unbalanced quotes)
+            return False, f"Invalid command format: {e}"
 
         if not parts:
             return False, "Empty command"
@@ -476,7 +468,7 @@ class TerminalToolkit(BaseToolkit):
 
                 if not self._is_path_within_working_dir(abs_path):
                     return False, (
-                        f"Safety restriction: Cannot change to directory"
+                        f"Safety restriction: Cannot change to directory "
                         f"outside of working directory {self.working_dir}"
                     )
 
@@ -515,7 +507,7 @@ class TerminalToolkit(BaseToolkit):
 
                 if not self._is_path_within_working_dir(abs_path):
                     return False, (
-                        f"Safety restriction: Cannot delete files outside"
+                        f"Safety restriction: Cannot delete files outside "
                         f"of working directory {self.working_dir}"
                     )
 
@@ -668,14 +660,15 @@ class TerminalToolkit(BaseToolkit):
         Returns:
             str: Output of the command execution or error message.
         """
+        # First check if the path is absolute
+        if not os.path.isabs(exec_dir):
+            return f"exec_dir must be an absolute path: {exec_dir}"
+
         # Command execution must be within the working directory
         if self.working_dir:
             error_msg = self._enforce_working_dir_for_execution(exec_dir)
             if error_msg:
                 return error_msg
-
-        if not os.path.isabs(exec_dir):
-            return f"exec_dir must be an absolute path: {exec_dir}"
 
         if not os.path.exists(exec_dir):
             return f"Directory not found: {exec_dir}"
@@ -847,7 +840,7 @@ class TerminalToolkit(BaseToolkit):
         if process is None:
             return f"No active process in session '{id}'"
 
-        if not session["running"]:
+        if not session["running"] or process.poll() is not None:
             return f"Process in session '{id}' is not running"
 
         try:
@@ -993,3 +986,68 @@ class TerminalToolkit(BaseToolkit):
             FunctionTool(self.shell_write_to_process),
             FunctionTool(self.shell_kill_process),
         ]
+
+    def __del__(self):
+        r"""Clean up resources when the object is being destroyed.
+        Terminates all running processes and closes any open file handles.
+        """
+        # Log that cleanup is starting
+        logger.info("TerminalToolkit cleanup initiated")
+
+        # Clean up all processes in shell sessions
+        for session_id, session in self.shell_sessions.items():
+            process = session.get("process")
+            if process is not None and session.get("running", False):
+                try:
+                    logger.info(
+                        f"Terminating process in session '{session_id}'"
+                    )
+
+                    # Close process input/output streams if open
+                    if (
+                        hasattr(process, 'stdin')
+                        and process.stdin
+                        and not process.stdin.closed
+                    ):
+                        process.stdin.close()
+
+                    # Terminate the process
+                    process.terminate()
+                    try:
+                        # Give the process a short time to terminate gracefully
+                        process.wait(timeout=3)
+                    except subprocess.TimeoutExpired:
+                        # Force kill if the process doesn't terminate
+                        # gracefully
+                        logger.warning(
+                            f"Process in session '{session_id}' did not "
+                            f"terminate gracefully, forcing kill"
+                        )
+                        process.kill()
+
+                    # Mark the session as not running
+                    session["running"] = False
+
+                except Exception as e:
+                    logger.error(
+                        f"Error cleaning up process in session "
+                        f"'{session_id}': {e}"
+                    )
+
+        # Close file output if it exists
+        if hasattr(self, 'log_file') and self.is_macos:
+            try:
+                logger.info(f"Final terminal log saved to: {self.log_file}")
+            except Exception as e:
+                logger.error(f"Error logging file information: {e}")
+
+        # Clean up GUI resources if they exist
+        if hasattr(self, 'root') and self.root:
+            try:
+                logger.info("Closing terminal GUI")
+                self.root.quit()
+                self.root.destroy()
+            except Exception as e:
+                logger.error(f"Error closing terminal GUI: {e}")
+
+        logger.info("TerminalToolkit cleanup completed")
