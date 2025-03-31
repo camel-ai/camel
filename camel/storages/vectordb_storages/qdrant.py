@@ -20,7 +20,6 @@ from qdrant_client.http.models import Filter
 if TYPE_CHECKING:
     from qdrant_client import QdrantClient
 
-
 from camel.storages.vectordb_storages import (
     BaseVectorStorage,
     VectorDBQuery,
@@ -482,6 +481,15 @@ class QdrantStorage(BaseVectorStorage):
     def _convert_filter_dict_to_qdrant_filter(
         self, filter_dict: Dict[str, Any]
     ) -> Filter:
+        r"""convert filter_dict to qdrant_client.http.models.Filter
+
+        Args:
+            filter_dict (Dict[str, Any]): A dictionary specifying conditions to
+                filter the query results.
+
+        Returns:
+            qdrant_client.http.models.Filter: A Qdrant filter
+        """
         from qdrant_client.http.models import (
             Condition,
             FieldCondition,
@@ -491,6 +499,15 @@ class QdrantStorage(BaseVectorStorage):
         )
 
         def parse_condition(key: str, value: Any) -> Condition:
+            """parse condition
+
+            Args:
+                key (str): The key of the condition.
+                value (Any): The value of the condition.
+
+            Returns:
+                Condition: The parsed condition.
+            """
             if isinstance(value, dict):
                 for op, v in value.items():
                     if op == "$eq":
@@ -511,10 +528,22 @@ class QdrantStorage(BaseVectorStorage):
                         return FieldCondition(key=key, range=Range(gte=v))
                     else:
                         raise ValueError(f"Unsupported operator: {op}")
+                raise ValueError(
+                    f"No valid operator found in condition for key: {key}"
+                )
             else:
                 return FieldCondition(key=key, match=MatchValue(value=value))
 
         def parse_logic(filter_dict: Dict[str, Any]) -> Filter:
+            """handle the or and the and in filter_dict
+
+            Args:
+                filter_dict (Dict[str, Any]): A dictionary specifying
+                    conditions tofilter the query results.
+
+            Returns:
+                Filter: A Qdrant filter
+            """
             must: List[Condition] = []
             should: List[Condition] = []
             for key, value in filter_dict.items():
