@@ -232,6 +232,15 @@ wheels = [
 ]
 
 [[package]]
+name = "antlr4-python3-runtime"
+version = "4.13.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/33/5f/2cdf6f7aca3b20d3f316e9f505292e1f256a32089bd702034c29ebde6242/antlr4_python3_runtime-4.13.2.tar.gz", hash = "sha256:909b647e1d2fc2b70180ac586df3933e38919c85f98ccc656a96cd3f25ef3916", size = 117467 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/89/03/a851e84fcbb85214dc637b6378121ef9a0dd61b4c65264675d8a5c9b1ae7/antlr4_python3_runtime-4.13.2-py3-none-any.whl", hash = "sha256:fe3835eb8d33daece0e799090eda89719dbccee7aa39ef94eed3818cafa5a7e8", size = 144462 },
+]
+
+[[package]]
 name = "anyio"
 version = "4.8.0"
 source = { registry = "https://pypi.org/simple" }
@@ -585,6 +594,7 @@ all = [
     { name = "jupyter-client" },
     { name = "linkup-sdk" },
     { name = "litellm" },
+    { name = "math-verify" },
     { name = "mcp" },
     { name = "mem0ai" },
     { name = "mistralai" },
@@ -665,6 +675,7 @@ data-tools = [
     { name = "aiosqlite" },
     { name = "datacommons" },
     { name = "datacommons-pandas" },
+    { name = "math-verify" },
     { name = "networkx" },
     { name = "numpy" },
     { name = "pandas" },
@@ -942,6 +953,8 @@ requires-dist = [
     { name = "linkup-sdk", marker = "extra == 'web-tools'", specifier = ">=0.2.1,<0.3" },
     { name = "litellm", marker = "extra == 'all'", specifier = ">=1.38.1,<2" },
     { name = "litellm", marker = "extra == 'model-platforms'", specifier = ">=1.38.1,<2" },
+    { name = "math-verify", marker = "extra == 'all'", specifier = ">=0.7.0,<0.8" },
+    { name = "math-verify", marker = "extra == 'data-tools'", specifier = ">=0.7.0,<0.8" },
     { name = "mcp", marker = "extra == 'all'", specifier = ">=1.3.0" },
     { name = "mcp", marker = "extra == 'dev-tools'", specifier = ">=1.3.0" },
     { name = "mcp-server-fetch", marker = "extra == 'owl'", specifier = "==2025.1.17" },
@@ -3073,6 +3086,19 @@ wheels = [
 ]
 
 [[package]]
+name = "latex2sympy2-extended"
+version = "1.10.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "antlr4-python3-runtime" },
+    { name = "sympy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/14/8d/de5cc53dcf8a98396094b81a6478eb7234ef2e5c5fa4900dcc335d3b7fc2/latex2sympy2_extended-1.10.1.tar.gz", hash = "sha256:e365f0cb8807296c9d1f1661be926859bebd922a6139ce4be1e6572ca183ca57", size = 205808 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6d/eb/a5e8b06b924b4149cf498e1598116bad1e91ab23046c2dfc2c498154d393/latex2sympy2_extended-1.10.1-py3-none-any.whl", hash = "sha256:917a23e8f3b6edea88a56978fbbe87ed9fca4197f8277646be57b4660710347c", size = 207460 },
+]
+
+[[package]]
 name = "lazy-object-proxy"
 version = "1.10.0"
 source = { registry = "https://pypi.org/simple" }
@@ -3275,6 +3301,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/ab/5e/5e53d26b42ab75491cda89b871dab9e97c840bf12c63ec58a1919710cd06/marshmallow-3.26.1.tar.gz", hash = "sha256:e6d8affb6cb61d39d26402096dc0aee12d5a26d490a121f118d2e81dc0719dc6", size = 221825 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/34/75/51952c7b2d3873b44a0028b1bd26a25078c18f92f256608e8d1dc61b39fd/marshmallow-3.26.1-py3-none-any.whl", hash = "sha256:3350409f20a70a7e4e11a27661187b77cdcaeb20abca41c1454fe33636bea09c", size = 50878 },
+]
+
+[[package]]
+name = "math-verify"
+version = "0.7.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "latex2sympy2-extended" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ab/59/7daf53e52593af0f7f455ea97c91dc34682f1c2e72f493490259a640836c/math_verify-0.7.0.tar.gz", hash = "sha256:b7459c7b9f1c503b7df32566a95f1e6a33a6cad8cbb759eaa6f100d401112024", size = 57582 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/44/c5/e5de2e29f9db4c92956ce167e1aa534b1e1770ddc0b17600257cf5f8bd50/math_verify-0.7.0-py3-none-any.whl", hash = "sha256:bbdd491b511f6ceef27c5e08543affa1735807b6e3abb6f005bf493dc0eb485b", size = 28677 },
 ]
 
 [[package]]
