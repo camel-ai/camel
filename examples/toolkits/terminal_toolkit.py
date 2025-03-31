@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
+import time
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
@@ -155,8 +156,8 @@ py\nexamples/bots/slack_bot.py', tool_call_id='call_LzRjSotNqKOWwU4yHcstlnG9')]
 # Define a user message for testing resource cleanup via __del__ method
 print("\n\n================ Testing Resource Cleanup ================")
 usr_msg = (
-    f"Start a long-running process that sleeps for 300 seconds in the background, "
-    f"then show me the list of running processes to confirm it's running"
+    "Start a long-running process that sleeps for 300 seconds in the "
+    "background, then show me the list of running processes"
 )
 
 # Get response information for starting the process
@@ -177,15 +178,17 @@ ToolCallingRecord(tool_name='shell_exec', args={'id': 'session2', 'exec_dir':
 result='USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME 
 COMMAND\nroot           1  0.0  0.2 170104 12368 ?        Ss   10:06   0:00 
 /sbin/init\nroot           2  0.0  0.0   2776  1928 ?        Sl   10:06   0:00 
-/init\nroot           8  0.0  0.0   2776     4 ?        Sl   10:06   0:00 plan9 
---control-socket 7 --log-level=debug --log-file=/dev/null ...',
+/init\nroot           8  0.0  0.0   2776     4 ?        Sl   10:06   0:00 
+plan9 --control-socket 7 --log-level=debug --log-file=/dev/null ...',
 tool_call_id='call_UvxQrsb1GpfDHTQQc6rLoQ3P')]
 ===============================================================================
 """
 
 # Create a new agent with a new toolkit (to simulate ending the session)
-print("\nCreating a new chat session (this will dispose the old TerminalToolkit)...")
-import time
+print(
+    "\nCreating a new chat session "
+    "(this will dispose the old TerminalToolkit)..."
+)
 
 # Create new agent with a new toolkit
 new_tools = TerminalToolkit(working_dir=workspace_dir).get_tools()
@@ -220,6 +223,8 @@ S+   11:16   0:00 grep sleep\n', tool_call_id='call_gSZqRaqNAtYjUXOfvVuaObw2')]
 ===============================================================================
 """
 
-print("If no sleep/timeout processes are shown above (or only grep processes), "
-      "then the __del__ method worked correctly!")
+print(
+    "If no sleep/timeout processes are shown above (or only grep processes), "
+    "then the __del__ method worked correctly!"
+)
 print("================ Resource Cleanup Test Complete ================")

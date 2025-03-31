@@ -990,41 +990,54 @@ class TerminalToolkit(BaseToolkit):
         """
         # Log that cleanup is starting
         logger.info("TerminalToolkit cleanup initiated")
-        
+
         # Clean up all processes in shell sessions
         for session_id, session in self.shell_sessions.items():
             process = session.get("process")
             if process is not None and session.get("running", False):
                 try:
-                    logger.info(f"Terminating process in session '{session_id}'")
-                    
+                    logger.info(
+                        f"Terminating process in session '{session_id}'"
+                    )
+
                     # Close process input/output streams if open
-                    if hasattr(process, 'stdin') and process.stdin and not process.stdin.closed:
+                    if (
+                        hasattr(process, 'stdin')
+                        and process.stdin
+                        and not process.stdin.closed
+                    ):
                         process.stdin.close()
-                    
+
                     # Terminate the process
                     process.terminate()
                     try:
                         # Give the process a short time to terminate gracefully
                         process.wait(timeout=3)
                     except subprocess.TimeoutExpired:
-                        # Force kill if the process doesn't terminate gracefully
-                        logger.warning(f"Process in session '{session_id}' did not terminate gracefully, forcing kill")
+                        # Force kill if the process doesn't terminate
+                        # gracefully
+                        logger.warning(
+                            f"Process in session '{session_id}' did not "
+                            f"terminate gracefully, forcing kill"
+                        )
                         process.kill()
-                    
+
                     # Mark the session as not running
                     session["running"] = False
-                    
+
                 except Exception as e:
-                    logger.error(f"Error cleaning up process in session '{session_id}': {e}")
-        
+                    logger.error(
+                        f"Error cleaning up process in session "
+                        f"'{session_id}': {e}"
+                    )
+
         # Close file output if it exists
         if hasattr(self, 'log_file') and self.is_macos:
             try:
                 logger.info(f"Final terminal log saved to: {self.log_file}")
             except Exception as e:
                 logger.error(f"Error logging file information: {e}")
-        
+
         # Clean up GUI resources if they exist
         if hasattr(self, 'root') and self.root:
             try:
@@ -1033,5 +1046,5 @@ class TerminalToolkit(BaseToolkit):
                 self.root.destroy()
             except Exception as e:
                 logger.error(f"Error closing terminal GUI: {e}")
-        
+
         logger.info("TerminalToolkit cleanup completed")
