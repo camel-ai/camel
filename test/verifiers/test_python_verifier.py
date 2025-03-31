@@ -48,7 +48,9 @@ async def test_python_verifier_execution_success(python_verifier):
     await python_verifier.setup(uv=True)
 
     script = 'print("Hello, World!")'
-    result = await python_verifier.verify(solution=script, reference_answer=None)
+    result = await python_verifier.verify(
+        solution=script, reference_answer=None
+    )
     assert result.status == VerificationOutcome.SUCCESS
     assert result.result == "Hello, World!"
 

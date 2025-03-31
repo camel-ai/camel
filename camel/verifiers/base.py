@@ -305,8 +305,8 @@ class BaseVerifier(ABC):
         Args:
             solutions (List[str]): A list of generated solutions to be
                 verified.
-            reference_answers (List[Optional[str]]): A list of expected outputs for
-                comparison. Each element corresponds to a solution.
+            reference_answers (List[Optional[str]]): A list of expected outputs
+                for comparison. Each element corresponds to a solution.
             raise_on_error (bool, optional): If True, raises an exception if
                 any verification fails. (default: :obj:`False`)
 

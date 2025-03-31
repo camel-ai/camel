@@ -32,7 +32,9 @@ async def main():
     try:
         # Test case 1: Basic numerical equivalence (should succeed)
         print("=== Test 1: Basic Numerical ===")
-        result = await verifier.verify(solution="0.333333", reference_answer="1/3")
+        result = await verifier.verify(
+            solution="0.333333", reference_answer="1/3"
+        )
         print("Input: 0.333333 ≈ 1/3")
         print(f"Result: {result.status}")
         print(
@@ -52,7 +54,9 @@ async def main():
 
         # Test case 3: Deliberate mismatch (should fail)
         print("=== Test 3: Expected Failure ===")
-        result = await verifier.verify(solution="0.5", reference_answer="0.3333")
+        result = await verifier.verify(
+            solution="0.5", reference_answer="0.3333"
+        )
         print("Input: 0.5 ≠ 0.3333")
         print(f"Result: {result.status}")
         print(
