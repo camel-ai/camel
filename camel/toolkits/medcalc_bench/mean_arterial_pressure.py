@@ -54,8 +54,8 @@ def mean_arterial_pressure_explanation(input_variables):
         - None
 
     Example:
-        bmi_calculator_explanation({"sys_bp": [120.0, 'mm hg'], "dia_bp": [
-        80.0, 'mm hg']})
+        mean_arterial_pressure_explanation({"sys_bp": [120.0, 'mm hg'],
+        "dia_bp": [80.0, 'mm hg']})
 
         output: "{'Explanation': "The mean average pressure is computed by
         the formula 2/3 * (diastolic blood pressure) + 1/3 *

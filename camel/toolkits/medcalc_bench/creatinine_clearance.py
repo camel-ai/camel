@@ -59,11 +59,11 @@ def generate_cockcroft_gault_explanation(params):
                 - Value (float): The numerical height measurement.
                 - Unit (str): The unit of height,
                 which can be "cm" (centimeters) or "in" (inches).
-            - "creatinine" (tuple): The patient's height information in the
+            - "creatinine" (tuple): The patient's creatinine information in the
             format (value, unit).
-                - Value (float): The numerical height measurement.
-                - Unit (str): The unit of height,
-                which can be "cm" (centimeters) or "in" (inches).
+                - Value (float): The value of creatinine.
+                - Unit (str): The unit of creatinine,
+                which can be "mg/dL", "μmol/L", and so on.
             - "age" (array): The patient's albumin concentration in the
             format (value, unit).
                 - Value (float): Age.

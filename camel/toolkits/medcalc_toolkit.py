@@ -1106,8 +1106,10 @@ class MedCalcToolkit(BaseToolkit):
         }
 
         try:
-            from camel.toolkits.medcalc_bench.\
-                estimated_conception_date import add_2_weeks_explanation
+            from camel.toolkits.medcalc_bench.estimated_conception_date import (
+                add_2_weeks_explanation,
+            )
+
             # Call the conception date calculation function
             result = add_2_weeks_explanation(input_variables)
 
