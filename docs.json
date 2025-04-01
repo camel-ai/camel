@@ -3,8 +3,8 @@
     "name": "CAMEL Documentation",
     "theme": "mint",
     "logo": {
-      "light": "docs/images/built_with_CAMEL",
-      "dark": "docs/images/built_with_CAMEL",
+      "light": "/docs/images/CAMEL_Icon.png",
+      "dark": "/docs/images/CAMEL_Icon_White.png",
       "href": "https://camel-ai.org"
     },
     "favicon": "docs/images/built_with_CAMEL.svg",
