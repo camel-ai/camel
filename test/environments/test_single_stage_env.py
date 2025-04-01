@@ -37,6 +37,8 @@ class MockSingleStepEnv(SingleStepEnv):
 
 class MockGenerator(BaseGenerator):
     def __init__(self, predefined_data: List[Dict], *args, **kwargs):
+        if 'puffer' not in kwargs:
+            kwargs['puffer'] = 1
         super().__init__(*args, **kwargs)
         self.predefined_data = predefined_data
         self.index = 0
@@ -74,7 +76,7 @@ async def test_single_step_env_lifecycle_single_generator():
     mock_verifier.setup = AsyncMock()
     mock_verifier.cleanup = AsyncMock()
     mock_verifier.verify_batch = AsyncMock(
-        side_effect=lambda solutions, ground_truths, **kwargs: [
+        side_effect=lambda solutions, reference_answers, **kwargs: [
             VerificationResult(
                 status=VerificationOutcome.SUCCESS,
                 result="Verification successful",
@@ -394,7 +396,7 @@ async def test_batched_single_step_env_lifecycle_generator():
     mock_verifier.setup = AsyncMock()
     mock_verifier.cleanup = AsyncMock()
     mock_verifier.verify_batch = AsyncMock(
-        side_effect=lambda solutions, ground_truths, **kwargs: [
+        side_effect=lambda solutions, reference_answers, **kwargs: [
             VerificationResult(
                 status=VerificationOutcome.SUCCESS,
                 result="Verification successful",
