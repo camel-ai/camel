@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import ast
+import asyncio
 import inspect
 import logging
 import textwrap
@@ -331,7 +332,21 @@ class FunctionTool:
         synthesize_output_model: Optional[BaseModelBackend] = None,
         synthesize_output_format: Optional[Type[BaseModel]] = None,
     ) -> None:
-        self.func = func
+        if inspect.iscoroutinefunction(func):
+            original_async_func = func
+
+            def _sync_wrapper(*args, **kwargs):
+                return asyncio.run(original_async_func(*args, **kwargs))
+
+            # Store the original async function for reference
+            self._original_async_func = original_async_func
+            # Overwrite self.func with our sync wrapper
+            self.func = _sync_wrapper
+        else:
+            # If it's not async, keep everything the same
+            self._original_async_func = None
+            self.func = func
+
         self.openai_tool_schema = openai_tool_schema or get_openai_tool_schema(
             func
         )
@@ -409,7 +424,7 @@ class FunctionTool:
 
     @property
     def is_async(self) -> bool:
-        return inspect.iscoroutinefunction(self.func)
+        return self._original_async_func is not None
 
     @staticmethod
     def validate_openai_tool_schema(
