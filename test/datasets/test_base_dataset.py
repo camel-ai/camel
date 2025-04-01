@@ -1337,15 +1337,15 @@ async def test_generate_new():
 
     dataset.agent = mock_agent
 
-    new_datapoints = await dataset.generate_new(2)
+    await dataset.generate_new(2)
 
     assert (
-        len(new_datapoints) == 2
+        len(dataset._data) == 2
     ), "Should generate exactly 2 valid datapoints"
     assert mock_agent.step.call_count == 3, "Should retry past invalid output"
 
     # Check first correct datapoint (5 + 6 = 11)
-    dp1 = new_datapoints[0]
+    dp1 = await dataset.async_sample()
     assert dp1.question == "What is 5 + 6?"
     assert dp1.rationale == "print(5 + 6)"
     assert (
@@ -1354,7 +1354,7 @@ async def test_generate_new():
     assert dp1.metadata["synthetic"] == "True"
 
     # Check second correct datapoint (7 + 8 = 15)
-    dp2 = new_datapoints[1]
+    dp2 = await dataset.async_sample()
     assert dp2.question == "What is 7 + 8?"
     assert dp2.rationale == "print(7 + 8)"
     assert (
