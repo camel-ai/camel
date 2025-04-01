@@ -981,6 +981,7 @@ def with_timeout(timeout=None):
 
     def decorator(func):
         if inspect.iscoroutinefunction(func):
+
             @functools.wraps(func)
             async def async_wrapper(*args, **kwargs):
                 eff_timeout = timeout
@@ -996,6 +997,7 @@ def with_timeout(timeout=None):
 
             return async_wrapper
         else:
+
             @functools.wraps(func)
             def wrapper(*args, **kwargs):
                 # Determine the effective timeout value
