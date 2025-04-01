@@ -116,7 +116,7 @@ class GraphDBBlock(MemoryBlock):
     def retrieve(
         self,
         query: Optional[str] = None,
-        numberOfNearestNeighbours: int = 25,
+        number_of_nearest_neighbours: int = 25,
     ) -> List[ContextRecord]:
         r"""Retrieves records from the graph database based on a query string
             or recent entries.
