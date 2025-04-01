@@ -28,7 +28,7 @@ from camel.verifiers import PythonVerifier
 logger = get_logger(__name__)
 
 verifier = PythonVerifier(required_packages=["sympy"], timeout=60)
-asyncio.run(verifier.setup())
+asyncio.run(verifier.setup(uv=True))
 
 raw_data2 = [
     {
