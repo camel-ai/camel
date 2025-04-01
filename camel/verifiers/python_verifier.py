@@ -142,7 +142,7 @@ class PythonVerifier(BaseVerifier):
         self.venv_path = tempfile.mkdtemp()
         try:
             subprocess.run(
-                ["uv", "venv", self.venv_path],
+                ["uv", "venv", "--python", sys.executable, self.venv_path],
                 check=True,
                 capture_output=True,
                 timeout=self._timeout,
@@ -222,7 +222,7 @@ class PythonVerifier(BaseVerifier):
             self.venv_path = None
 
     async def _verify_implementation(
-        self, solution: str, ground_truth: Optional[str]
+        self, solution: str, reference_answer: Optional[str]
     ) -> VerificationResult:
         r"""Executes the provided Python solution in an isolated environment
         and verifies its output against an expected ground truth expression.
@@ -238,7 +238,7 @@ class PythonVerifier(BaseVerifier):
         Args:
             solution (str): The Python code or expression to execute and
                 verify.
-            ground_truth (Optional[str]): The expected value as a Python
+            reference_answer (Optional[str]): The expected value as a Python
              expression. If None, only execution success is verified.
 
         Returns:
@@ -263,9 +263,9 @@ class PythonVerifier(BaseVerifier):
                     error_message=f"Expression evaluation error: {e}",
                 )
 
-            if ground_truth is not None:
+            if reference_answer is not None:
                 try:
-                    gt_val = ast.literal_eval(ground_truth)
+                    gt_val = ast.literal_eval(reference_answer)
                 except Exception as e:
                     return VerificationResult(
                         status=VerificationOutcome.ERROR,
@@ -315,7 +315,7 @@ class PythonVerifier(BaseVerifier):
                     error_message=f"Solution code error:\n{sol_err}",
                 )
 
-            if ground_truth is not None:
+            if reference_answer is not None:
                 try:
                     # First, try to evaluate the output as-is.
                     sol_val = ast.literal_eval(sol_out)
@@ -325,7 +325,7 @@ class PythonVerifier(BaseVerifier):
 
                 if sol_val is not None:
                     try:
-                        gt_val = ast.literal_eval(ground_truth)
+                        gt_val = ast.literal_eval(reference_answer)
                     except Exception as e:
                         return VerificationResult(
                             status=VerificationOutcome.ERROR,
@@ -347,7 +347,7 @@ class PythonVerifier(BaseVerifier):
                         )
                 else:
                     # Fallback: string comparison
-                    if sol_out.strip() == ground_truth.strip():
+                    if sol_out.strip() == reference_answer.strip():
                         return VerificationResult(
                             status=VerificationOutcome.SUCCESS,
                             result=sol_out,
@@ -357,7 +357,7 @@ class PythonVerifier(BaseVerifier):
                             status=VerificationOutcome.FAILURE,
                             result=sol_out,
                             error_message="Fallback string mismatch: "
-                            f"'{sol_out}' != '{ground_truth}'",
+                            f"'{sol_out}' != '{reference_answer}'",
                         )
             else:
                 return VerificationResult(

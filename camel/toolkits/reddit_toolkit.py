@@ -18,9 +18,10 @@ from typing import Any, Dict, List, Optional, Union
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import retry_on_error
+from camel.utils import MCPServer, retry_on_error
 
 
+@MCPServer()
 class RedditToolkit(BaseToolkit):
     r"""A class representing a toolkit for Reddit operations.
 

@@ -269,15 +269,15 @@ class TestGenerateNew:
             return_value="print('New code')"
         )
 
-        result = await generator.generate_new(n=1)
+        await generator.generate_new(n=1)
 
         # Verify generated datapoint
-        assert len(result) == 1
-        assert result[0].question == "New question?"
-        assert result[0].rationale == "print('New code')"
-        assert result[0].final_answer == "Verified output"
-        assert result[0].metadata["synthetic"] == "True"
-        assert result[0].metadata["generator"] == "self_instruct"
+        assert len(generator._data) == 1
+        assert generator._data[0].question == "New question?"
+        assert generator._data[0].rationale == "print('New code')"
+        assert generator._data[0].final_answer == "Verified output"
+        assert generator._data[0].metadata["synthetic"] == "True"
+        assert generator._data[0].metadata["generator"] == "self_instruct"
 
     @pytest.mark.asyncio
     async def test_generate_new_verification_failure(self, generator):
@@ -304,15 +304,18 @@ class TestGenerateNew:
             side_effect=["print('Failed code')", "print('Successful code')"]
         )
 
-        result = await generator.generate_new(
+        # Clear any existing data
+        generator._data = []
+
+        await generator.generate_new(
             n=1, max_retries=3
         )  # Reduce retries for test speed
 
         # Verify generated datapoint
-        assert len(result) == 1
-        assert result[0].question == "Successful question?"
-        assert result[0].rationale == "print('Successful code')"
-        assert result[0].final_answer == "Verified output"
+        assert len(generator._data) == 1
+        assert generator._data[0].question == "Successful question?"
+        assert generator._data[0].rationale == "print('Successful code')"
+        assert generator._data[0].final_answer == "Verified output"
 
     @pytest.mark.asyncio
     async def test_generate_new_validation_error(self, generator):
@@ -329,6 +332,9 @@ class TestGenerateNew:
         generator.generate_rationale = MagicMock(
             side_effect=["print('Failed code')", "print('Successful code')"]
         )
+
+        # Clear any existing data
+        generator._data = []
 
         # Use a custom DataPoint creation function to simulate validation
         # error then success
@@ -361,12 +367,12 @@ class TestGenerateNew:
             'camel.datasets.self_instruct_generator.DataPoint',
             side_effect=mock_datapoint_factory,
         ):
-            result = await generator.generate_new(
+            await generator.generate_new(
                 n=1, max_retries=3
             )  # Reduce retries for test speed
 
             # Verify generated datapoint
-            assert len(result) == 1
-            assert result[0].question == "Successful question?"
-            assert result[0].rationale == "print('Successful code')"
-            assert result[0].final_answer == "Verified output"
+            assert len(generator._data) == 1
+            assert generator._data[0].question == "Successful question?"
+            assert generator._data[0].rationale == "print('Successful code')"
+            assert generator._data[0].final_answer == "Verified output"

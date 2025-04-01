@@ -16,8 +16,10 @@ from typing import List, Literal
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
+from camel.utils import MCPServer
 
 
+@MCPServer()
 class WeatherToolkit(BaseToolkit):
     r"""A class representing a toolkit for interacting with weather data.
 

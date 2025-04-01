@@ -20,6 +20,7 @@ import os
 from typing import TYPE_CHECKING, List, Optional
 
 from camel.toolkits.base import BaseToolkit
+from camel.utils import MCPServer
 
 if TYPE_CHECKING:
     from ssl import SSLContext
@@ -31,6 +32,7 @@ from camel.toolkits import FunctionTool
 logger = logging.getLogger(__name__)
 
 
+@MCPServer()
 class SlackToolkit(BaseToolkit):
     r"""A class representing a toolkit for Slack operations.
 
