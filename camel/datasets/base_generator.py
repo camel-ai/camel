@@ -39,7 +39,7 @@ class BaseGenerator(abc.ABC, IterableDataset):
     def __init__(
         self,
         seed: int = 42,
-        puffer: int = 20,
+        buffer: int = 20,
         cache: Union[str, Path, None] = None,
         data_path: Union[str, Path, None] = None,
         **kwargs,
@@ -48,7 +48,7 @@ class BaseGenerator(abc.ABC, IterableDataset):
 
         Args:
             seed (int): Random seed for reproducibility. (default: :obj:`42`)
-            puffer (int): Amount of DataPoints to be generated when the
+            buffer (int): Amount of DataPoints to be generated when the
                 iterator runs out of DataPoints in data. (default:  :obj:`20`)
             cache (Union[str, Path, None]): Optional path to save generated
                 datapoints during iteration. If None is provided, datapoints
@@ -59,7 +59,7 @@ class BaseGenerator(abc.ABC, IterableDataset):
         """
         self._rng = random.Random(seed)
         self.cache = Path(cache) if cache else None
-        self._puffer = puffer
+        self._buffer = buffer
         self._data: List[DataPoint] = []
         self._batch_to_save: List[DataPoint] = []
 
@@ -114,7 +114,7 @@ class BaseGenerator(abc.ABC, IterableDataset):
         async def generator():
             while True:
                 if not self._data:
-                    await self.generate_new(self._puffer)
+                    await self.generate_new(self._buffer)
                 datapoint = self._data.pop(0)
                 yield datapoint
                 self._batch_to_save.append(datapoint)
@@ -151,7 +151,7 @@ class BaseGenerator(abc.ABC, IterableDataset):
 
         while True:
             if not self._data:
-                asyncio.run(self.generate_new(self._puffer))
+                asyncio.run(self.generate_new(self._buffer))
             datapoint = self._data.pop(0)
             yield datapoint
             self._batch_to_save.append(datapoint)
