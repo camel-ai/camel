@@ -17,6 +17,7 @@ from typing import List, Literal, Optional, Tuple, Union
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
+from camel.utils import MCPServer, api_keys_required
 
 
 def _process_response(
@@ -55,6 +56,10 @@ def _process_response(
         raise ValueError(f"Invalid return_type: {return_type}")
 
 
+@api_keys_required(
+    [(None, "ASKNEWS_CLIENT_ID"), (None, "ASKNEWS_CLIENT_SECRET")]
+)
+@MCPServer()
 class AskNewsToolkit(BaseToolkit):
     r"""A class representing a toolkit for interacting with the AskNews API.
 
@@ -62,7 +67,10 @@ class AskNewsToolkit(BaseToolkit):
     based on user queries using the AskNews API.
     """
 
-    def __init__(self, timeout: Optional[float] = None):
+    def __init__(
+        self,
+        timeout: Optional[float] = None,
+    ):
         r"""Initialize the AskNewsToolkit with API clients.The API keys and
         credentials are retrieved from environment variables.
         """

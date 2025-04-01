@@ -18,10 +18,12 @@ import requests
 
 from camel.logger import get_logger
 from camel.toolkits import BaseToolkit, FunctionTool
+from camel.utils import MCPServer
 
 logger = get_logger(__name__)
 
 
+@MCPServer()
 class PubMedToolkit(BaseToolkit):
     r"""A toolkit for interacting with PubMed's E-utilities API to access
     MEDLINE data.

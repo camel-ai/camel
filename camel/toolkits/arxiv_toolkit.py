@@ -17,11 +17,12 @@ from typing import Dict, Generator, List, Optional
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import dependencies_required
+from camel.utils import MCPServer, dependencies_required
 
 logger = get_logger(__name__)
 
 
+@MCPServer()
 class ArxivToolkit(BaseToolkit):
     r"""A toolkit for interacting with the arXiv API to search and download
     academic papers.
