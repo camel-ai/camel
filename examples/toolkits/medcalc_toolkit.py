@@ -18,7 +18,7 @@ from camel.models import ModelFactory
 from camel.toolkits import MedCalcToolkit
 from camel.types import ModelPlatformType, ModelType
 
-sys_msg = """You are a helpful assistant."""
+sys_msg = """You are a helpful assistant.please put the final_answer in the \\boxed{}"""
 
 # Set model config
 tools = MedCalcToolkit().get_tools()
