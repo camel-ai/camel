@@ -142,7 +142,7 @@ class PythonVerifier(BaseVerifier):
         self.venv_path = tempfile.mkdtemp()
         try:
             subprocess.run(
-                ["uv", "venv", self.venv_path],
+                ["uv", "venv", "--python", sys.executable, self.venv_path],
                 check=True,
                 capture_output=True,
                 timeout=self._timeout,
