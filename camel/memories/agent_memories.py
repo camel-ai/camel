@@ -21,6 +21,7 @@ from camel.memories.records import ContextRecord, MemoryRecord
 from camel.storages.key_value_storages.base import BaseKeyValueStorage
 from camel.storages.vectordb_storages.base import BaseVectorStorage
 from camel.types import OpenAIBackendRole
+from camel.utils import retry_on_error
 
 
 class ChatHistoryMemory(AgentMemory):
@@ -75,6 +76,7 @@ class ChatHistoryMemory(AgentMemory):
             )
         return records
 
+    @retry_on_error()
     def write_records(self, records: List[MemoryRecord]) -> None:
         for record in records:
             # assign the agent_id to the record
@@ -199,7 +201,7 @@ class GraphDBMemory(AgentMemory):
         """
         return self._graph_db_block.retrieve(
             query=self._current_query,
-            numberOfNearestNeighbours=self._retrieve_limit,
+            number_of_nearest_neighbours=self._retrieve_limit,
         )
 
     def write_records(self, records: List[MemoryRecord]) -> None:

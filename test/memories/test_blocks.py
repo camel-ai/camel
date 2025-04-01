@@ -240,7 +240,7 @@ class TestGraphDBBlock:
 
         block = GraphDBBlock(storage=mock_storage, embedding=mock_embedding)
         records = block.retrieve(
-            query="test query", numberOfNearestNeighbours=1
+            query="test query", number_of_nearest_neighbours=1
         )
 
         assert len(records) == 1

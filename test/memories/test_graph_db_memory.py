@@ -88,7 +88,7 @@ def test_retrieve_with_query(graph_db_memory):
     mock_graph_db_block.retrieve.return_value = [mock_context_record]
     records = memory.retrieve()
     mock_graph_db_block.retrieve.assert_called_once_with(
-        query="test query", numberOfNearestNeighbours=5
+        query="test query", number_of_nearest_neighbours=5
     )
     assert records == [mock_context_record]
 
@@ -101,7 +101,7 @@ def test_retrieve_without_query(graph_db_memory):
     mock_graph_db_block.retrieve.return_value = [mock_context_record]
     records = memory.retrieve()
     mock_graph_db_block.retrieve.assert_called_once_with(
-        query=None, numberOfNearestNeighbours=5
+        query=None, number_of_nearest_neighbours=5
     )
     assert records == [mock_context_record]
 
