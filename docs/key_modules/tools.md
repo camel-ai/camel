@@ -267,7 +267,7 @@ You can connect to MCP servers and use their tools from a client application:
 ```python
 import asyncio
 from mcp.types import CallToolResult
-from camel.toolkits.mcp_toolkit import MCPToolkit, _MCPServer
+from camel.toolkits.mcp_toolkit import MCPToolkit, MCPClient
 
 async def run_example():
     # Initialize the MCPToolkit with your configuration file
@@ -277,7 +277,7 @@ async def run_example():
     await mcp_toolkit.connect()
 
     # Get the first MCP server
-    mcp_client: _MCPServer = mcp_toolkit.servers[0]
+    mcp_client: MCPClient = mcp_toolkit.servers[0]
     
     # List available tools from the server
     res = await mcp_client.list_mcp_tools()
