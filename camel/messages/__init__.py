@@ -22,7 +22,6 @@ from camel.types import (
 )
 
 from .conversion import (
-    AlpacaItem,
     HermesFunctionFormatter,
 )
 from .conversion.sharegpt.function_call_formatter import (
@@ -53,5 +52,4 @@ __all__ = [
     'HermesFunctionFormatter',
     'BaseMessage',
     'FunctionCallingMessage',
-    'AlpacaItem',
 ]

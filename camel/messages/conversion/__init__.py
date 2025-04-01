@@ -12,10 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from .alpaca import AlpacaItem
+
 from .sharegpt import HermesFunctionFormatter
 
 __all__ = [
     'HermesFunctionFormatter',
-    'AlpacaItem',
 ]
