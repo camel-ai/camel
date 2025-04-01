@@ -34,7 +34,7 @@ class Test_MCPServer:
         assert server.args == []
         assert server.env == {}
         assert server._mcp_tools == []
-        assert server._session is None
+        assert server.session is None
         assert server._is_connected is False
 
         # Test with custom parameters
@@ -48,7 +48,7 @@ class Test_MCPServer:
         assert server.args == ["--arg1", "--arg2"]
         assert server.env == {"ENV_VAR": "value"}
         assert server._mcp_tools == []
-        assert server._session is None
+        assert server.session is None
         assert server._is_connected is False
 
     @pytest.mark.asyncio
@@ -368,7 +368,7 @@ class Test_MCPServer:
             assert result == server
             assert server._is_connected is True
             assert server._mcp_tools == ["tool1", "tool2"]
-            assert server._session is not None
+            assert server.session is not None
 
             # Verify mocks were called correctly
             mock_sse_client.assert_called_once_with(
@@ -429,7 +429,7 @@ class Test_MCPServer:
 
         # Verify results
         assert server._is_connected is False
-        assert server._session is None
+        assert server.session is None
         server._exit_stack.aclose.assert_called_once()
 
         # Test disconnecting when not connected
@@ -505,9 +505,9 @@ class TestMCPToolkit:
                         "command": "test-command",
                         "args": ["--arg1"],
                         "env": {"TEST_ENV": "value"},
-                    }
-                },
-                "mcpWebServers": {"server2": {"url": "https://test.com/sse"}},
+                    },
+                    "server2": {"url": "https://test.com/sse"},
+                }
             }
             config_path.write_text(json.dumps(config_data))
 
@@ -543,7 +543,7 @@ class TestMCPToolkit:
                 mock_logger.reset_mock()
 
                 # Missing url field
-                config_data = {"mcpWebServers": {"server1": {"timeout": 30}}}
+                config_data = {"mcpServers": {"server1": {"timeout": 30}}}
                 config_path.write_text(json.dumps(config_data))
 
                 servers = mcp_toolkit._load_servers_from_config(
@@ -571,21 +571,6 @@ class TestMCPToolkit:
                 assert servers == []
                 mock_logger.warning.assert_called_with(
                     "'mcpServers' is not a dictionary, skipping..."
-                )
-
-                mock_logger.reset_mock()
-
-                # mcpWebServers is not a dictionary
-                config_data = {"mcpWebServers": "not a dictionary"}
-                config_path.write_text(json.dumps(config_data))
-
-                servers = mcp_toolkit._load_servers_from_config(
-                    str(config_path)
-                )
-                # Should return an empty list and log a warning
-                assert servers == []
-                mock_logger.warning.assert_called_with(
-                    "'mcpWebServers' is not a dictionary, skipping..."
                 )
 
     @pytest.mark.asyncio
