@@ -18,9 +18,10 @@ from typing import Any, Dict, Optional
 import requests
 
 from camel.toolkits.base import BaseToolkit
-from camel.utils import api_keys_required
+from camel.utils import MCPServer, api_keys_required
 
 
+@MCPServer()
 class MeshyToolkit(BaseToolkit):
     r"""A class representing a toolkit for 3D model generation using Meshy.
 

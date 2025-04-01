@@ -37,8 +37,8 @@ class MockSingleStepEnv(SingleStepEnv):
 
 class MockGenerator(BaseGenerator):
     def __init__(self, predefined_data: List[Dict], *args, **kwargs):
-        if 'puffer' not in kwargs:
-            kwargs['puffer'] = 1
+        if 'buffer' not in kwargs:
+            kwargs['buffer'] = 1
         super().__init__(*args, **kwargs)
         self.predefined_data = predefined_data
         self.index = 0
