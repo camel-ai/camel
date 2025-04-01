@@ -159,7 +159,7 @@ class MCPClient(BaseToolkit):
         on the provided `command_or_url`.
 
         Yields:
-            _MCPServer: Instance with active connection ready for tool
+            MCPClient: Instance with active connection ready for tool
                 interaction.
         """
         try:
@@ -355,7 +355,7 @@ class MCPToolkit(BaseToolkit):
     MCP services.
 
     Args:
-        servers (Optional[List[MCPClient]]): List of _MCPServer
+        servers (Optional[List[MCPClient]]): List of MCPClient
             instances to manage.
         config_path (Optional[str]): Path to a JSON configuration file
             defining MCP servers.
@@ -386,7 +386,7 @@ class MCPToolkit(BaseToolkit):
             }
 
     Attributes:
-        servers (List[MCPClient]): List of _MCPServer instances being managed.
+        servers (List[MCPClient]): List of MCPClient instances being managed.
     """
 
     def __init__(
@@ -417,7 +417,7 @@ class MCPToolkit(BaseToolkit):
             config_path (str): Path to the JSON configuration file.
 
         Returns:
-            List[MCPClient]: List of configured _MCPServer instances.
+            List[MCPClient]: List of configured MCPClient instances.
         """
         try:
             with open(config_path, "r", encoding="utf-8") as f:

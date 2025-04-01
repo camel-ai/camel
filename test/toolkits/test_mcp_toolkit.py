@@ -22,12 +22,12 @@ import pytest
 from camel.toolkits.mcp_toolkit import MCPClient, MCPToolkit
 
 
-class TestMCPServer:
-    r"""Test _MCPServer class."""
+class TestMCPClient:
+    r"""Test MCPClient class."""
 
     @pytest.mark.asyncio
     async def test_init(self):
-        r"""Test initialization of _MCPServer."""
+        r"""Test initialization of MCPClient."""
         # Test with default parameters
         server = MCPClient("test_command")
         assert server.command_or_url == "test_command"
@@ -297,7 +297,7 @@ class TestMCPServer:
 
     @pytest.mark.asyncio
     async def test_get_tools(self):
-        r"""Test get_tools method for _MCPServer."""
+        r"""Test get_tools method for MCPClient."""
         with patch(
             "camel.toolkits.mcp_toolkit.FunctionTool"
         ) as mock_function_tool:
