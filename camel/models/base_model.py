@@ -69,6 +69,8 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         token_counter (Optional[BaseTokenCounter], optional): Token
             counter to use for the model. If not provided,
             :obj:`OpenAITokenCounter` will be used. (default: :obj:`None`)
+        timeout (Optional[float], optional): The timeout value in seconds for
+            API calls. (default: :obj:`None`)
     """
 
     def __init__(
@@ -78,6 +80,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
+        timeout: Optional[float] = None,
     ) -> None:
         self.model_type: UnifiedModelType = UnifiedModelType(model_type)
         if model_config_dict is None:
@@ -86,6 +89,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         self._api_key = api_key
         self._url = url
         self._token_counter = token_counter
+        self._timeout = timeout
         self.check_model_config()
 
     @property
