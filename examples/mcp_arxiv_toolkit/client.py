@@ -12,24 +12,22 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
-from typing import TYPE_CHECKING, Union
 
 from mcp.types import CallToolResult
 
 from camel.toolkits.mcp_toolkit import MCPToolkit, _MCPServer
 
-if TYPE_CHECKING:
-    from mcp import ListToolsResult
-
 
 async def run_example():
-    mcp_toolkit = MCPToolkit(config_path="./mcp_servers_config.json")
+    mcp_toolkit = MCPToolkit(
+        config_path="examples/mcp_arxiv_toolkit/mcp_servers_config.json"
+    )
 
     await mcp_toolkit.connect()
 
     # call the server to list the available tools
-    math_mcp_client: _MCPServer = mcp_toolkit.servers[0]
-    res: Union[str, "ListToolsResult"] = await math_mcp_client.list_mcp_tools()
+    mcp_client: _MCPServer = mcp_toolkit.servers[0]
+    res = await mcp_client.list_mcp_tools()
     if isinstance(res, str):
         raise Exception(res)
 
@@ -37,17 +35,30 @@ async def run_example():
     print(tools)
     """
 ===============================================================================
-['get_weather_data']
+['search_papers', 'download_papers']
 ===============================================================================
     """
 
-    res: CallToolResult = await math_mcp_client.session.call_tool(
-        "get_weather_data", {'city': 'Shanghai'}
+    res1: CallToolResult = await mcp_client.session.call_tool(
+        "search_papers", {"query": "attention is all you need"}
     )
-    print(res.content)
+    print(res1.content[0].text[:1000])
     """
 ===============================================================================
-[Not Tested]
+{"title": "Attention Is All You Need But You Don't Need All Of It For 
+Inference of Large Language Models", "published_date": "2024-07-22", 
+"authors": ["Georgy Tyukin", "Gbetondji J-S Dovonon", "Jean Kaddour", 
+"Pasquale Minervini"], "entry_id": "http://arxiv.org/abs/2407.15516v1", 
+"summary": "The inference demand for LLMs has skyrocketed in recent months, 
+and serving\nmodels with low latencies remains challenging due to the 
+quadratic input length\ncomplexity of the attention layers. In this work, we 
+investigate the effect of\ndropping MLP and attention layers at inference time 
+on the performance of\nLlama-v2 models. We find that dropping dreeper 
+attention layers only marginally\ndecreases performance but leads to the best 
+speedups alongside dropping entire\nlayers. For example, removing 33\\% of 
+attention layers in a 13B Llama2 model\nresults in a 1.8\\% drop in average 
+performance over the OpenLLM benchmark. We\nalso observe that skipping layers 
+except the latter layers reduces perform
 ===============================================================================    
     """
 
