@@ -19,6 +19,7 @@ from camel.datasets import BaseGenerator, DataPoint, StaticDataset
 from camel.logger import get_logger
 from camel.verifiers.base import (
     BaseVerifier,
+    VerificationOutcome,
     VerificationResult,
 )
 
@@ -206,9 +207,18 @@ class SingleStepEnv:
             return observations[0] if batch_size == 1 else observations
 
         elif isinstance(self.dataset, BaseGenerator):
-            raise NotImplementedError(
-                "Reset not yet implemented for BaseGenerator datasets."
-            )
+            self._states = [
+                await self.dataset.async_sample() for _ in range(batch_size)
+            ]
+            self.current_batch_size = batch_size
+            self._states_done = [False] * batch_size
+
+            observations = [
+                Observation(question=sample.question, context={}, metadata={})
+                for sample in self._states
+            ]
+
+            return observations[0] if batch_size == 1 else observations
 
         else:
             raise TypeError(f"Unsupported dataset type: {type(self.dataset)}")
@@ -254,18 +264,19 @@ class SingleStepEnv:
                         "For batch_size=1, expect a single Action or a "
                         "list containing exactly one Action"
                     )
-            elif not isinstance(action, Action):
+                actions = action
+            elif isinstance(action, Action):
+                actions = [action]
+            else:
                 raise ValueError(
                     "For batch_size=1, expect a single Action or a "
                     "list containing exactly one Action"
                 )
-            if isinstance(action, Action):
-                actions = [action]
-            else:
-                actions = action
+
+            # For batch_size=1, set index to 0 if not provided
             if actions[0].index is None:
                 actions[0].index = 0
-            if actions[0].index != 0:
+            elif actions[0].index != 0:
                 raise ValueError("For batch_size=1, index must be None or 0")
 
         else:  # batch_size >= 2
@@ -322,22 +333,31 @@ class SingleStepEnv:
         for idx in indices:
             ground_truths.append(self._states[idx].final_answer)
 
-        verification_results = await self.verifier.verify_batch(
-            solutions=proposed_solutions,
-            ground_truths=ground_truths,  # type: ignore [arg-type]
-            raise_on_error=True,
-        )
+        try:
+            verification_results = await self.verifier.verify_batch(
+                solutions=proposed_solutions,
+                reference_answers=ground_truths,  # type: ignore [arg-type]
+                raise_on_error=True,
+            )
+        except Exception as e:
+            logger.error(f"Verification failed: {e}")
+            # Return failed verification results with status=FAILURE
+            verification_results = [
+                VerificationResult(
+                    result="",
+                    status=VerificationOutcome.FAILURE,
+                    error_message=f"Verification error: {e}",
+                )
+                for _ in range(len(proposed_solutions))
+            ]
 
         total_rewards, rewards_dicts = await self._compute_reward_batch(
             proposed_solutions, verification_results
         )
 
-        # TODO Batch this
-        step_results = []
-        for i, action in enumerate(actions):
-            assert action.index is not None
-            idx = action.index
-            step_result = StepResult(
+        # Create and return step results in batch
+        step_results = [
+            StepResult(
                 observation=self.PLACEHOLDER_OBS,
                 reward=total_rewards[i],
                 rewards_dict=rewards_dicts[i],
@@ -345,10 +365,12 @@ class SingleStepEnv:
                 info={
                     "proposed_solution": proposed_solutions[i],
                     "verification_result": verification_results[i],
-                    "state": self._states[idx],
+                    "state": self._states[indices[i]],
                 },
-            )
-            step_results.append(step_result.as_tuple())
+            ).as_tuple()
+            for i in range(len(actions))
+        ]
+        for _, idx in enumerate(indices):
             self._states_done[idx] = True
 
         return step_results[0] if len(step_results) == 1 else step_results
@@ -426,7 +448,7 @@ class SingleStepEnv:
         return all(self._states_done)
 
     def _batch_started(self) -> bool:
-        r"""Check if any state in the current batch is done.
+        r"""Check if the batch processing has started.
 
         Returns:
             bool: True if at least one state is marked as done, False
