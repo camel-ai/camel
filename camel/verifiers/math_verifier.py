@@ -65,13 +65,13 @@ class MathVerifier(BaseVerifier):
         pass
 
     async def _verify_implementation(
-        self, solution: str, ground_truth: Optional[str]
+        self, solution: str, reference_answer: Optional[str]
     ) -> VerificationResult:
         r"""Verify mathematical expressions using Math-Verify.
 
         Args:
             solution: The solution to verify
-            ground_truth: The expected answer to compare against
+            reference_answer: The expected answer to compare against
 
         Returns:
             VerificationResult containing the verification status and details
@@ -82,7 +82,7 @@ class MathVerifier(BaseVerifier):
             LatexExtractionConfig,
         )
 
-        if ground_truth is None:
+        if reference_answer is None:
             return VerificationResult(
                 status=VerificationOutcome.ERROR,
                 result="",
@@ -93,8 +93,8 @@ class MathVerifier(BaseVerifier):
 
         try:
             # Parse both expressions with LaTeX and plain expression support
-            parsed_ground_truth = parse(
-                ground_truth,
+            parsed_reference_answer = parse(
+                reference_answer,
                 extraction_config=[
                     LatexExtractionConfig(boxed_match_priority=0),
                     ExprExtractionConfig(),
@@ -108,16 +108,16 @@ class MathVerifier(BaseVerifier):
                 ],
             )
 
-            if not parsed_ground_truth or not parsed_solution:
+            if not parsed_reference_answer or not parsed_solution:
                 return VerificationResult(
                     status=VerificationOutcome.ERROR,
                     result="",
                     error_message="Failed to parse expressions",
                 )
 
-            # Order matters! ground_truth must be first argument
+            # Order matters! reference_answer must be first argument
             is_correct = verify(
-                parsed_ground_truth,
+                parsed_reference_answer,
                 parsed_solution,
                 float_rounding=self.float_rounding,
                 numeric_precision=self.numeric_precision,
