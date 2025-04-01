@@ -97,13 +97,14 @@ class GraphDBBlock(MemoryBlock):
             self.storage = storage
 
         # Create vector index for Message embeddings
+        embedding_dim = self.embedding.get_output_dim()
         try:
             self.storage.query(
-                """
+                f"""
                 CREATE VECTOR INDEX message_embeddings IF NOT EXISTS
                 FOR (m:Message) ON (m.embedding)
-                OPTIONS {indexConfig: {`vector.dimensions`: 1536, 
-                `vector.similarity_function`: 'cosine'}}
+                OPTIONS {{indexConfig: {{`vector.dimensions`: {embedding_dim}, 
+                       `vector.similarity_function`: 'cosine'}}}}
                 """
             )
             logger.info(
@@ -124,7 +125,7 @@ class GraphDBBlock(MemoryBlock):
         Args:
             query (Optional[str]): A natural language query for
                 similarity search.  If None, retrieves recent records.
-            numberOfNearestNeighbours (int): The number of nearest neighbors
+            number_of_nearest_neighbours (int): The number of nearest neighbors
                 to retrieve in similarity search, or the limit for default
                 retrieval. Defaults to 25.
 
@@ -147,7 +148,7 @@ class GraphDBBlock(MemoryBlock):
                     """,
                     {
                         "query_embedding": query_embedding,
-                        "k": numberOfNearestNeighbours,
+                        "k": number_of_nearest_neighbours,
                     },
                 )
             else:
@@ -159,7 +160,7 @@ class GraphDBBlock(MemoryBlock):
                     ORDER BY n.timestamp DESC
                     LIMIT $k
                     """,
-                    {"k": numberOfNearestNeighbours},
+                    {"k": number_of_nearest_neighbours},
                 )
 
             def reconstruct_from_flat(d):
