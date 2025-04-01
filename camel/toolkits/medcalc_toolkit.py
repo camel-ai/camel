@@ -3225,7 +3225,7 @@ class MedCalcToolkit(BaseToolkit):
         from camel.toolkits.medcalc_bench.curb_65 import curb_65_explanation
 
         if confusion is not None:
-            input_variables["confusion"] = bool(confusion)
+            input_variables["confusion"] = (float(confusion), "boolean")
 
         try:
             result = curb_65_explanation(input_variables)
