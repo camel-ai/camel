@@ -1,0 +1,12 @@
+#!/bin/sh
+'''exec' '/Users/mac/Development/Camel AI/camel/new_venv_312/bin/python3' "$0" "$@"
+' '''
+# -*- coding: utf-8 -*-
+import sys
+from duckduckgo_search.cli import safe_entry_point
+if __name__ == "__main__":
+    if sys.argv[0].endswith("-script.pyw"):
+        sys.argv[0] = sys.argv[0][:-11]
+    elif sys.argv[0].endswith(".exe"):
+        sys.argv[0] = sys.argv[0][:-4]
+    sys.exit(safe_entry_point())
