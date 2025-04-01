@@ -19,6 +19,7 @@ from camel.memories.records import ContextRecord, MemoryRecord
 from camel.storages.key_value_storages.base import BaseKeyValueStorage
 from camel.storages.key_value_storages.in_memory import InMemoryKeyValueStorage
 from camel.types import OpenAIBackendRole
+from camel.types.enums import RoleType
 
 
 class ChatHistoryBlock(MemoryBlock):
@@ -74,9 +75,32 @@ class ChatHistoryBlock(MemoryBlock):
             return list()
 
         chat_records: List[MemoryRecord] = []
-        truncate_idx = -window_size if window_size is not None else 0
-        for record_dict in record_dicts[truncate_idx:]:
-            chat_records.append(MemoryRecord.from_dict(record_dict))
+        if window_size is not None:
+            # Only check if the first record is ASSISTANT
+            start_index = (
+                1
+                if record_dicts
+                and record_dicts[0]['message']['role_type']
+                == RoleType.ASSISTANT
+                else 0
+            )
+            # Take the last `window_size` records from the remaining messages
+            remaining = record_dicts[start_index:]
+            truncated_remaining = (
+                remaining[-window_size:]
+                if len(remaining) > window_size
+                else remaining
+            )
+            # Combine the preserved ASSISTANT (if any) with the truncated
+            # messages
+            final_records = record_dicts[:start_index] + truncated_remaining
+        else:
+            final_records = record_dicts  # No window size restriction
+
+        # Convert to MemoryRecord objects
+        chat_records = [
+            MemoryRecord.from_dict(record) for record in final_records
+        ]
 
         # We assume that, in the chat history memory, the closer the record is
         # to the current message, the more score it will be.
