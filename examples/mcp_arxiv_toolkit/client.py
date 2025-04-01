@@ -15,7 +15,7 @@ import asyncio
 
 from mcp.types import CallToolResult
 
-from camel.toolkits.mcp_toolkit import MCPToolkit, _MCPServer
+from camel.toolkits.mcp_toolkit import MCPClient, MCPToolkit
 
 
 async def run_example():
@@ -26,7 +26,7 @@ async def run_example():
     await mcp_toolkit.connect()
 
     # call the server to list the available tools
-    mcp_client: _MCPServer = mcp_toolkit.servers[0]
+    mcp_client: MCPClient = mcp_toolkit.servers[0]
     res = await mcp_client.list_mcp_tools()
     if isinstance(res, str):
         raise Exception(res)

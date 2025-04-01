@@ -112,7 +112,7 @@ class MCPClient(BaseToolkit):
             else:
                 command = self.command_or_url
                 arguments = self.args
-                if self.args is None:
+                if not self.args:
                     argv = shlex.split(command)
                     if not argv:
                         raise ValueError("Command is empty")

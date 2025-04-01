@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING
 import pytest
 from mcp.server import FastMCP
 
-from camel.toolkits.mcp_toolkit import _MCPServer
+from camel.toolkits.mcp_toolkit import MCPClient
 from camel.utils import MCPServer
 
 if TYPE_CHECKING:
@@ -83,7 +83,7 @@ def test_tool_schema():
 @pytest.mark.asyncio
 async def test_async_word_count():
     processor = TextProcessorForMCP()
-    server = _MCPServer(
+    server = MCPClient(
         command_or_url=sys.executable,
         args=[__file__, "--server"],
     )
