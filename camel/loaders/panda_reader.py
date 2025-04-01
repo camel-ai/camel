@@ -11,9 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
 from functools import wraps
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union
+
+import pandas as pd
 
 if TYPE_CHECKING:
     from pandas import DataFrame
@@ -47,18 +50,25 @@ def check_suffix(valid_suffixs: List[str]) -> Callable:
     return decorator
 
 
-class PandasReader:
+class PandaReader:
     def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
-        r"""Initializes the PandasReader class.
+        r"""Initializes the PandaReader class.
 
         Args:
             config (Optional[Dict[str, Any]], optional): The configuration
                 dictionary that can include LLM API settings for LLM-based
-                processing. If not provided, no LLM will be configured by
-                default. You can customize the LLM configuration by providing
-                a 'llm' key in the config dictionary. (default: :obj:`None`)
+                processing. If not provided, it will use OpenAI with the API
+                key from the OPENAI_API_KEY environment variable. You can
+                customize the LLM configuration by providing a 'llm' key in
+                the config dictionary. (default: :obj:`None`)
         """
+        from pandasai.llm import OpenAI  # type: ignore[import-untyped]
+
         self.config = config or {}
+        if "llm" not in self.config:
+            self.config["llm"] = OpenAI(
+                api_token=os.getenv("OPENAI_API_KEY"),
+            )
 
         self.__LOADER = {
             ".csv": self.read_csv,
@@ -81,13 +91,8 @@ class PandasReader:
         data: Union["DataFrame", str],
         *args: Any,
         **kwargs: Dict[str, Any],
-    ) -> Union["DataFrame", "SmartDataframe"]:
-        r"""Loads a file or DataFrame and returns a DataFrame or
-        SmartDataframe object.
-
-        If an LLM is configured in the config dictionary, a SmartDataframe
-        will be returned, otherwise a regular pandas DataFrame will be
-        returned.
+    ) -> "SmartDataframe":
+        r"""Loads a file or DataFrame and returns a SmartDataframe object.
 
         args:
             data (Union[DataFrame, str]): The data to load.
@@ -95,32 +100,24 @@ class PandasReader:
             **kwargs (Dict[str, Any]): Additional keyword arguments.
 
         Returns:
-            Union[DataFrame, SmartDataframe]: The DataFrame or SmartDataframe
-                object.
+            SmartDataframe: The SmartDataframe object.
         """
         from pandas import DataFrame
+        from pandasai import SmartDataframe
 
-        # Load the data into a pandas DataFrame
         if isinstance(data, DataFrame):
-            df = data
+            return SmartDataframe(data, config=self.config)
+        file_path = str(data)
+        path = Path(file_path)
+        if not file_path.startswith("http") and not path.exists():
+            raise FileNotFoundError(f"File {file_path} not found")
+        if path.suffix in self.__LOADER:
+            return SmartDataframe(
+                self.__LOADER[path.suffix](file_path, *args, **kwargs),  # type: ignore[operator]
+                config=self.config,
+            )
         else:
-            file_path = str(data)
-            path = Path(file_path)
-            if not file_path.startswith("http") and not path.exists():
-                raise FileNotFoundError(f"File {file_path} not found")
-            if path.suffix in self.__LOADER:
-                df = self.__LOADER[path.suffix](file_path, *args, **kwargs)  # type: ignore[operator]
-            else:
-                raise ValueError(f"Unsupported file format: {path.suffix}")
-
-        # If an LLM is configured, return a SmartDataframe, otherwise return a
-        # regular DataFrame
-        if "llm" in self.config:
-            from pandasai import SmartDataframe
-
-            return SmartDataframe(df, config=self.config)
-        else:
-            return df
+            raise ValueError(f"Unsupported file format: {path.suffix}")
 
     @check_suffix([".csv"])
     def read_csv(
@@ -136,8 +133,6 @@ class PandasReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        import pandas as pd
-
         return pd.read_csv(file_path, *args, **kwargs)
 
     @check_suffix([".xlsx", ".xls"])
@@ -154,8 +149,6 @@ class PandasReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        import pandas as pd
-
         return pd.read_excel(file_path, *args, **kwargs)
 
     @check_suffix([".json"])
@@ -172,8 +165,6 @@ class PandasReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        import pandas as pd
-
         return pd.read_json(file_path, *args, **kwargs)
 
     @check_suffix([".parquet"])
@@ -190,8 +181,6 @@ class PandasReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        import pandas as pd
-
         return pd.read_parquet(file_path, *args, **kwargs)
 
     def read_sql(self, *args: Any, **kwargs: Dict[str, Any]) -> "DataFrame":
@@ -204,8 +193,6 @@ class PandasReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        import pandas as pd
-
         return pd.read_sql(*args, **kwargs)
 
     def read_table(
@@ -221,8 +208,6 @@ class PandasReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        import pandas as pd
-
         return pd.read_table(file_path, *args, **kwargs)
 
     def read_clipboard(
@@ -237,8 +222,6 @@ class PandasReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        import pandas as pd
-
         return pd.read_clipboard(*args, **kwargs)
 
     @check_suffix([".html"])
@@ -255,8 +238,6 @@ class PandasReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        import pandas as pd
-
         return pd.read_html(file_path, *args, **kwargs)
 
     @check_suffix([".feather"])
@@ -273,8 +254,6 @@ class PandasReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        import pandas as pd
-
         return pd.read_feather(file_path, *args, **kwargs)
 
     @check_suffix([".dta"])
@@ -291,8 +270,6 @@ class PandasReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        import pandas as pd
-
         return pd.read_stata(file_path, *args, **kwargs)
 
     @check_suffix([".sas"])
@@ -309,8 +286,6 @@ class PandasReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        import pandas as pd
-
         return pd.read_sas(file_path, *args, **kwargs)
 
     @check_suffix([".pkl"])
@@ -327,8 +302,6 @@ class PandasReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        import pandas as pd
-
         return pd.read_pickle(file_path, *args, **kwargs)
 
     @check_suffix([".h5"])
@@ -345,8 +318,6 @@ class PandasReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        import pandas as pd
-
         return pd.read_hdf(file_path, *args, **kwargs)
 
     @check_suffix([".orc"])
@@ -363,6 +334,4 @@ class PandasReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        import pandas as pd
-
         return pd.read_orc(file_path, *args, **kwargs)

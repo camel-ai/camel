@@ -25,12 +25,11 @@ from typing import (
     Optional,
     Set,
     Union,
-    cast,
 )
 from urllib.parse import urlparse
 
 if TYPE_CHECKING:
-    from mcp import ClientSession, ListToolsResult, Tool
+    from mcp import ListToolsResult, Tool
 
 from camel.logger import get_logger
 from camel.toolkits import BaseToolkit, FunctionTool
@@ -70,6 +69,7 @@ class _MCPServer(BaseToolkit):
         headers: Optional[Dict[str, str]] = None,
     ):
         from mcp import Tool
+        from mcp.client.session import ClientSession
 
         super().__init__(timeout=timeout)
 
@@ -331,9 +331,35 @@ class _MCPServer(BaseToolkit):
             for mcp_tool in self._mcp_tools
         ]
 
-    @property
-    def session(self) -> Optional["ClientSession"]:
-        return self._session
+    def get_text_tools(self) -> str:
+        r"""Returns a string containing the descriptions of the tools
+        in the toolkit.
+
+        Returns:
+            str: A string containing the descriptions of the tools
+            in the toolkit.
+        """
+        return "\n".join(
+            f"tool_name: {tool.name}\n"
+            + f"description: {tool.description or 'No description'}\n"
+            + f"input Schema: {tool.inputSchema}\n"
+            for tool in self._mcp_tools
+        )
+
+    async def call_tool(
+        self, tool_name: str, tool_args: Dict[str, Any]
+    ) -> Any:
+        r"""Calls the specified tool with the provided arguments.
+
+        Args:
+            tool_name (str): Name of the tool to call.
+            tool_args (Dict[str, Any]): Arguments to pass to the tool
+            (default: :obj:`{}`) .
+        """
+        if self._session is None:
+            logger.error("Server session is not connected.")
+            return {"error": "Server session is not connected."}
+        return await self._session.call_tool(tool_name, tool_args)
 
 
 class MCPToolkit(BaseToolkit):
@@ -363,7 +389,7 @@ class MCPToolkit(BaseToolkit):
         .. code-block:: json
 
             {
-              "mcpServers": {
+              "mcpWebServers": {
                 "protected-server": {
                   "url": "https://example.com/mcp",
                   "timeout": 30,
@@ -392,7 +418,7 @@ class MCPToolkit(BaseToolkit):
                 "Servers from both sources will be combined."
             )
 
-        self.servers: List[_MCPServer] = servers or []
+        self.servers = servers or []
 
         if config_path:
             self.servers.extend(self._load_servers_from_config(config_path))
@@ -424,6 +450,7 @@ class MCPToolkit(BaseToolkit):
 
         all_servers = []
 
+        # Process local MCP servers
         mcp_servers = data.get("mcpServers", {})
         if not isinstance(mcp_servers, dict):
             logger.warning("'mcpServers' is not a dictionary, skipping...")
@@ -436,20 +463,47 @@ class MCPToolkit(BaseToolkit):
                 )
                 continue
 
-            if "command" not in cfg and "url" not in cfg:
+            if "command" not in cfg:
                 logger.warning(
-                    f"Missing required 'command' or 'url' field for server "
-                    f"'{name}'"
+                    f"Missing required 'command' field for server '{name}'"
                 )
                 continue
 
             server = _MCPServer(
-                command_or_url=cast(str, cfg.get("command") or cfg.get("url")),
+                command_or_url=cfg["command"],
                 args=cfg.get("args", []),
                 env={**os.environ, **cfg.get("env", {})},
                 timeout=cfg.get("timeout", None),
             )
             all_servers.append(server)
+
+        # Process remote MCP web servers
+        mcp_web_servers = data.get("mcpWebServers", {})
+        if not isinstance(mcp_web_servers, dict):
+            logger.warning("'mcpWebServers' is not a dictionary, skipping...")
+            mcp_web_servers = {}
+
+        for name, cfg in mcp_web_servers.items():
+            if not isinstance(cfg, dict):
+                logger.warning(
+                    f"Configuration for web server '{name}' must"
+                    "be a dictionary"
+                )
+                continue
+
+            if "url" not in cfg:
+                logger.warning(
+                    f"Missing required 'url' field for web server '{name}'"
+                )
+                continue
+
+            server = _MCPServer(
+                command_or_url=cfg["url"],
+                timeout=cfg.get("timeout", None),
+                headers=cfg.get("headers", {}),
+            )
+            all_servers.append(server)
+        assert len(all_servers) > 0, "No servers found in the configuration"
 
         return all_servers
 
@@ -517,3 +571,17 @@ class MCPToolkit(BaseToolkit):
         for server in self.servers:
             all_tools.extend(server.get_tools())
         return all_tools
+
+    def get_text_tools(self) -> str:
+        r"""Aggregates all tools from the managed MCP server instances.
+
+        Returns:
+            str: A string containing the descriptions of the tools
+            in the toolkit.
+        """
+        all_tools = []
+        for idx, server in enumerate(self.servers):
+            all_tools.append(
+                f"server_idx: {idx}\n\n" + server.get_text_tools()
+            )
+        return "\n".join(all_tools)

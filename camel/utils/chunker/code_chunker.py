@@ -16,7 +16,9 @@ from typing import List, Optional
 
 from unstructured.documents.elements import Element, ElementMetadata
 
-from camel.utils import get_model_encoding
+from camel.messages import OpenAIUserMessage
+from camel.types import ModelType
+from camel.utils import BaseTokenCounter, OpenAITokenCounter
 
 from .base import BaseChunker
 
@@ -36,18 +38,20 @@ class CodeChunker(BaseChunker):
             token counting, if `None`, OpenAITokenCounter will be used.
             (default: :obj:`None`)
         remove_image: (bool, optional): If the chunker should skip the images.
-        model_name (str, optional): The tokenizer model name used
-            for token counting. (default: :obj:`"cl100k_base"`)
     """
 
     def __init__(
         self,
         chunk_size: int = 8192,
-        model_name: str = "cl100k_base",
+        token_counter: Optional[BaseTokenCounter] = None,
         remove_image: Optional[bool] = True,
     ):
         self.chunk_size = chunk_size
-        self.tokenizer = get_model_encoding(model_name)
+        self.token_counter = (
+            token_counter
+            if token_counter
+            else OpenAITokenCounter(model=ModelType.GPT_4O_MINI)
+        )
         self.remove_image = remove_image
         self.struct_pattern = re.compile(
             r'^\s*(?:(def|class|function)\s+\w+|'
@@ -68,7 +72,9 @@ class CodeChunker(BaseChunker):
         Returns:
             int: The number of tokens in the input text.
         """
-        return len(self.tokenizer.encode(text, disallowed_special=()))
+        return self.token_counter.count_tokens_from_messages(
+            [OpenAIUserMessage(role="user", name="user", content=text)]
+        )
 
     def _split_oversized(self, line: str) -> List[str]:
         r"""Splits an oversized line into multiple chunks based on token limits
@@ -80,7 +86,7 @@ class CodeChunker(BaseChunker):
             List[str]: A list of smaller chunks after splitting the
                 oversized line.
         """
-        tokens = self.tokenizer.encode(line, disallowed_special=())
+        tokens = self.token_counter.encode(line)
         chunks = []
         buffer = []
         current_count = 0
@@ -90,12 +96,12 @@ class CodeChunker(BaseChunker):
             current_count += 1
 
             if current_count >= self.chunk_size:
-                chunks.append(self.tokenizer.decode(buffer).strip())
+                chunks.append(self.token_counter.decode(buffer).strip())
                 buffer = []
                 current_count = 0
 
         if buffer:
-            chunks.append(self.tokenizer.decode(buffer))
+            chunks.append(self.token_counter.decode(buffer))
         return chunks
 
     def chunk(self, content: List[str]) -> List[Element]:

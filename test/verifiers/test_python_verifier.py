@@ -103,7 +103,7 @@ async def test_python_verifier_output_mismatch(python_verifier):
     assert result.status == VerificationOutcome.FAILURE
     assert (
         result.error_message
-        == "Fallback string mismatch: 'Wrong output' != 'Expected output'"
+        == "Output mismatch: Wrong output != Expected output"
     )
 
     await python_verifier.cleanup()
