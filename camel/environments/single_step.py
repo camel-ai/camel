@@ -206,8 +206,6 @@ class SingleStepEnv:
             return observations[0] if batch_size == 1 else observations
 
         elif isinstance(self.dataset, BaseGenerator):
-            await self.dataset.generate_new(batch_size)
-
             self._states = [
                 await self.dataset.async_sample() for _ in range(batch_size)
             ]
