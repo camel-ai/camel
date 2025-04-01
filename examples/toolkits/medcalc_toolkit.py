@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from camel.agents import ChatAgent
-from camel.configs.openai_config import ChatGPTConfig
+from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
 from camel.toolkits import MedCalcToolkit
 from camel.types import ModelPlatformType, ModelType
