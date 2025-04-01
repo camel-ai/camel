@@ -120,6 +120,8 @@ media_tools = [
 ]
 gui_tools = [
     "pyautogui>=0.9.54,<0.10",
+    "python-dotenv>=1.0.0,<2.0.0",
+
 ]
 communication_tools = [
     "slack-sdk>=3.27.2,<4",

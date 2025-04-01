@@ -432,3 +432,5 @@ benchmark/gaia/results.jsonl
 # Secret files for docker
 .container/.env
 new_venv_312/
+~/new_pyenv/
+~/py312_env/
