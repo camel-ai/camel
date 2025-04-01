@@ -1063,7 +1063,7 @@ class MedCalcToolkit(BaseToolkit):
             # Catch exceptions and return an error message
             return self.handle_exception("compute_delta_gap_explanation", e)
 
-    def estimated_conception_date(
+    def conception_date(
         self,
         # Length of the patient's menstrual cycle (e.g., 28)
         cycle_length: int,
@@ -1106,7 +1106,7 @@ class MedCalcToolkit(BaseToolkit):
         }
 
         try:
-            from camel.toolkits.medcalc_bench.estimated_conception_date import (
+            from camel.toolkits.medcalc_bench.conception_date import (
                 add_2_weeks_explanation,
             )
 
@@ -1127,7 +1127,7 @@ class MedCalcToolkit(BaseToolkit):
             # Catch exceptions and return an error message
             return self.handle_exception("add_2_weeks_explanation", e)
 
-    def estimated_gestational_age(
+    def gestational_age(
         self,
         # Current date in the format "%m/%d/%Y" (e.g., "04/29/2022")
         current_date: str,
@@ -1168,7 +1168,7 @@ class MedCalcToolkit(BaseToolkit):
         }
 
         try:
-            from camel.toolkits.medcalc_bench.estimated_gestational_age import (
+            from camel.toolkits.medcalc_bench.gestational_age import (
                 compute_gestational_age_explanation,
             )
 
@@ -2420,7 +2420,7 @@ class MedCalcToolkit(BaseToolkit):
                 "rautaharju_calculator_explanation", e
             )
 
-    def steroid_conversion_calculator(
+    def steroid_conversion(
         self,
         input_steroid: str,  # Input steroid with route
         # (e.g., "Hydrocortisone PO")
@@ -2485,7 +2485,7 @@ class MedCalcToolkit(BaseToolkit):
             "target steroid": str(target_steroid),
         }
 
-        from camel.toolkits.medcalc_bench.steroid_conversion_calculator import (
+        from camel.toolkits.medcalc_bench.steroid_conversion import (
             compute_steroid_conversion_explanation,
         )
 
@@ -3170,7 +3170,8 @@ class MedCalcToolkit(BaseToolkit):
         respiratory_rate_unit: str,  # Unit of RR (e.g., "breaths per minute")
         bun_value: float,  # Numeric BUN value (e.g., 3.5)
         bun_unit: str,  # Unit of BUN (e.g., "mmol/L")
-        confusion: bool = None,  # Whether patient has confusion (optional)
+        confusion: Optional[bool] = None,
+        # Whether patient has confusion (optional)
     ) -> str:
         r"""Calculate the patient's CURB-65 score and generate a detailed
         explanatory text.
@@ -3648,7 +3649,7 @@ class MedCalcToolkit(BaseToolkit):
             # Catch exceptions and return error message
             return self.handle_exception("sirs_criteria_explanation", e)
 
-    def sodium_correction_hyperglycemia(
+    def sch(
         self,
         sodium_value: float,  # Numeric part of sodium level (e.g., 134.0)
         sodium_unit: str,  # Unit of sodium level (e.g., "mEq/L")
@@ -3697,7 +3698,7 @@ class MedCalcToolkit(BaseToolkit):
             "glucose": (float(glucose_value), str(glucose_unit)),
         }
 
-        from camel.toolkits.medcalc_bench.sodium_correction_hyperglycemia import (
+        from camel.toolkits.medcalc_bench.sch import (
             compute_sodium_correction_hyperglycemia_explanation,
         )
 
@@ -3722,6 +3723,992 @@ class MedCalcToolkit(BaseToolkit):
             return self.handle_exception(
                 "compute_sodium_correction_hyperglycemia_explanation", e
             )
+
+    def apache_ii(
+        self,
+        sodium_value: float,
+        sodium_unit: str,
+        ph: float,
+        heart_rate_value: float,
+        heart_rate_unit: str,
+        respiratory_rate_value: float,
+        respiratory_rate_unit: str,
+        potassium_value: float,
+        potassium_unit: str,
+        creatinine_value: float,
+        creatinine_unit: str,
+        age_value: int,
+        age_unit: str,
+        acute_renal_failure: bool,
+        chronic_renal_failure: bool,
+        hemocratit_value: float,
+        hemocratit_unit: str,
+        wbc_value: float,
+        wbc_unit: str,
+        fio2_value: float,
+        fio2_unit: str,
+        gcs: int,
+        a_a_gradient: float,
+        partial_pressure_oxygen_value: float,
+        partial_pressure_oxygen_unit: str,
+        temperature_value: float,
+        temperature_unit: str,
+        sys_bp_value: float,
+        sys_bp_unit: str,
+        dia_bp_value: float,
+        dia_bp_unit: str,
+        organ_failure_immunocompromise: bool = False,
+        surgery_type: str = "Nonelective",
+    ) -> str:
+        r"""Calculate the patient's APACHE II Score and generate a detailed
+        explanatory text.
+
+        Args:
+            sodium_value (float): Numeric value of sodium level.
+            sodium_unit (str): Unit of sodium level ("mmol/L").
+            ph (float): Patient's arterial pH value.
+            heart_rate_value (float): Numeric heart rate value.
+            heart_rate_unit (str): Unit of heart rate ("beats per minute").
+            respiratory_rate_value (float): Numeric respiratory rate value.
+            respiratory_rate_unit (str): Unit of respiratory rate
+                ("breaths per minute").
+            potassium_value (float): Numeric potassium level value.
+            potassium_unit (str): Unit of potassium level ("mmol/L").
+            creatinine_value (float): Numeric creatinine level value.
+            creatinine_unit (str): Unit of creatinine level ("mg/dL").
+            age_value (int): Numeric age value.
+            age_unit (str): Unit of age ("years").
+            acute_renal_failure (bool): Whether acute renal failure is present.
+            chronic_renal_failure (bool): Whether chronic renal
+                failure is present.
+            hemocratit_value (float): Numeric hemocratit value.
+            hemocratit_unit (str): Unit of hemocratit ("%").
+            wbc_value (float): Numeric white blood cell count value.
+            wbc_unit (str): Unit of white blood cell count ("m^3").
+            fio2_value (float): Numeric FiO2 value.
+            fio2_unit (str): Unit of FiO2 ("Hg").
+            gcs (int): Glasgow Coma Scale score (1-15).
+            a_a_gradient (float): Alveolar-arterial gradient value.
+            partial_pressure_oxygen_value (float): Numeric PaO2 value.
+            partial_pressure_oxygen_unit (str): Unit of PaO2 ("mm").
+            temperature_value (float): Numeric temperature value.
+            temperature_unit (str): Unit of temperature
+                ("degrees fahrenheit" or "celsius").
+            sys_bp_value (float): Numeric systolic blood pressure value.
+            sys_bp_unit (str): Unit of systolic blood pressure ("mm hg").
+            dia_bp_value (float): Numeric diastolic blood pressure value.
+            dia_bp_unit (str): Unit of diastolic blood pressure ("mm hg").
+            organ_failure_immunocompromise (bool): Whether organ failure or
+                immunocompromise is present. Defaults to False.
+            surgery_type (str): Type of surgery ("Nonelective", "Elective", or
+                "Emergency"). Defaults to "Nonelective".
+
+        Returns:
+            str: A JSON string containing the calculation process and result,
+                formatted as follows:
+                {
+                    "rationale": "Detailed calculation process and
+                        explanatory text",
+                    "final_answer": "APACHE II score (string format)"
+                }
+                If an exception occurs, return an error message generated by
+                the `handle_exception` method.
+
+        Notes:
+            - The `apache_ii_explanation` function is used to
+                calculate the score.
+            - The `json.dumps` function is used to serialize the result into a
+                JSON string.
+        """
+        # Construct the input variables dictionary
+        input_variables = {
+            "sodium": (float(sodium_value), str(sodium_unit)),
+            "pH": float(ph),
+            "heart_rate": (float(heart_rate_value), str(heart_rate_unit)),
+            "respiratory_rate": (
+                float(respiratory_rate_value),
+                str(respiratory_rate_unit),
+            ),
+            "potassium": (float(potassium_value), str(potassium_unit)),
+            "creatinine": (float(creatinine_value), str(creatinine_unit)),
+            "age": (int(age_value), str(age_unit)),
+            "acute_renal_failure": bool(acute_renal_failure),
+            "chronic_renal_failure": bool(chronic_renal_failure),
+            "hemocratit": (float(hemocratit_value), str(hemocratit_unit)),
+            "wbc": (float(wbc_value), str(wbc_unit)),
+            "fio2": (float(fio2_value), str(fio2_unit)),
+            "gcs": int(gcs),
+            "a_a_gradient": float(a_a_gradient),
+            "partial_pressure_oxygen": (
+                float(partial_pressure_oxygen_value),
+                str(partial_pressure_oxygen_unit),
+            ),
+            "temperature": (float(temperature_value), str(temperature_unit)),
+            "sys_bp": (float(sys_bp_value), str(sys_bp_unit)),
+            "dia_bp": (float(dia_bp_value), str(dia_bp_unit)),
+            "organ_failure_immunocompromise": bool(
+                organ_failure_immunocompromise
+            ),
+            "surgery_type": str(surgery_type),
+        }
+
+        from camel.toolkits.medcalc_bench.apache_ii import (
+            apache_ii_explanation,
+        )
+
+        try:
+            # Call the APACHE II calculation function
+            result = apache_ii_explanation(input_variables)
+
+            # Return the result as a JSON string
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],
+                    "final_answer": str(result["Answer"]),
+                }
+            )
+
+        except Exception as e:
+            # Catch exceptions and return an error message
+            return self.handle_exception("apache_ii_explanation", e)
+
+    def caprini_score(
+        self,
+        sex: str,  # Gender ("male"/"female")
+        age_value: float,  # Numeric part of age
+        age_unit: str,  # Unit of age ("years")
+        mobility: Optional[str] = None,  # Mobility status (optional)
+        surgery_type: Optional[str] = None,  # Type of surgery (optional)
+        bmi_value: Optional[float] = None,  # Numeric part of BMI (optional)
+        bmi_unit: Optional[str] = None,  # Unit of BMI (optional)
+        major_surgery: bool = False,  # Major surgery in last month
+        chf: bool = False,  # Congestive heart failure
+        sepsis: bool = False,  # Sepsis in last month
+        pneumonia: bool = False,  # Pneumonia in last month
+        immobilizing_plaster_case: bool = False,  # Immobilizing cast
+        hip_pelvis_leg_fracture: bool = False,  # Hip/pelvis/leg fracture
+        stroke: bool = False,  # Stroke in last month
+        multiple_trauma: bool = False,  # Multiple trauma in last month
+        acute_spinal_chord_injury: bool = False,  # Spinal cord injury
+        varicose_veins: bool = False,  # Varicose veins
+        current_swollen_legs: bool = False,  # Current swollen legs
+        current_central_venuous: bool = False,  # Central venous access
+        previous_dvt: bool = False,  # Previous DVT
+        previous_pe: bool = False,  # Previous pulmonary embolism
+        family_history_thrombosis: bool = False,  # Family history
+        positive_factor_v: bool = False,  # Factor V Leiden
+        positive_prothrombin: bool = False,  # Prothrombin 20210A
+        serum_homocysteine: bool = False,  # Elevated homocysteine
+        positive_lupus_anticoagulant: bool = False,  # Lupus anticoagulant
+        elevated_anticardiolipin_antibody: bool = False,  # Anticardiolipin
+        heparin_induced_thrombocytopenia: bool = False,  # HIT
+        congenital_acquired_thrombophilia: bool = False,  # Thrombophilia
+        inflammatory_bowel_disease: bool = False,  # IBD history
+        acute_myocardial_infarction: bool = False,  # MI
+        copd: bool = False,  # COPD
+        malignancy: bool = False,  # Malignancy
+    ) -> str:
+        r"""Calculate the patient's Caprini Score and generate a detailed
+        explanatory text.
+
+        Args:
+            sex (str): The patient's gender, one of:
+                - "male" for male
+                - "female" for female
+            age_value (float): The numeric value of the patient's age.
+            age_unit (str): The unit of the patient's age ("years").
+            mobility (str, optional): Mobility status, one of:
+                - "normal" for normal mobility
+                - "on bed rest" for medical patient on bed rest
+                - "confined to bed >72 hours" for bed confinement
+            surgery_type (str, optional): Type of surgery, one of:
+                - "none" for no surgery
+                - "minor" for minor surgery
+                - "major" for major surgery >45 min
+                - "laparoscopic" for laparoscopic surgery
+                - "arthroscopic" for arthroscopic surgery
+                - "elective major lower extremity arthroplasty"
+            bmi_value (float, optional): The numeric value of BMI.
+            bmi_unit (str, optional): The unit of BMI ("kg/m^2").
+            major_surgery (bool): Major surgery in last month.
+            chf (bool): Congestive heart failure in last month.
+            sepsis (bool): Sepsis in last month.
+            pneumonia (bool): Pneumonia in last month.
+            immobilizing_plaster_case (bool): Immobilizing cast in last month.
+            hip_pelvis_leg_fracture (bool): Hip/pelvis/leg
+                fracture in last month.
+            stroke (bool): Stroke in last month.
+            multiple_trauma (bool): Multiple trauma in last month.
+            acute_spinal_chord_injury (bool): Spinal cord injury in last month.
+            varicose_veins (bool): Varicose veins.
+            current_swollen_legs (bool): Current swollen legs.
+            current_central_venuous (bool): Current central venous access.
+            previous_dvt (bool): Previous DVT.
+            previous_pe (bool): Previous pulmonary embolism.
+            family_history_thrombosis (bool): Family history of thrombosis.
+            positive_factor_v (bool): Positive Factor V Leiden.
+            positive_prothrombin (bool): Positive prothrombin 20210A.
+            serum_homocysteine (bool): Elevated serum homocysteine.
+            positive_lupus_anticoagulant (bool): Positive lupus anticoagulant.
+            elevated_anticardiolipin_antibody (bool): Elevated anticardiolipin.
+            heparin_induced_thrombocytopenia (bool):
+                Heparin-induced thrombocytopenia.
+            congenital_acquired_thrombophilia (bool): Other thrombophilia.
+            inflammatory_bowel_disease (bool): History of IBD.
+            acute_myocardial_infarction (bool): Acute MI.
+            copd (bool): Chronic obstructive pulmonary disease.
+            malignancy (bool): Present or previous malignancy.
+
+        Returns:
+            str: A JSON string containing the calculation process and result,
+                formatted as follows:
+                {
+                    "rationale": "Detailed calculation process and
+                        explanatory text",
+                    "final_answer": "Caprini score (string format)"
+                }
+                If an exception occurs, return an error message generated by
+                the `handle_exception` method.
+
+        Notes:
+            - The `caprini_score_explanation` function is used
+                to calculate the score.
+            - The `json.dumps` function is used to serialize the
+                result into JSON.
+        """
+        # Construct the input parameters dictionary
+        bmi_data = (
+            (float(bmi_value), str(bmi_unit))
+            if bmi_value and bmi_unit
+            else None
+        )
+        input_parameters = {
+            "sex": str(sex).lower(),
+            "age": (float(age_value), str(age_unit)),
+            "mobility": str(mobility) if mobility else None,
+            "surgery_type": str(surgery_type) if surgery_type else None,
+            "bmi": bmi_data,
+            "major_surgery": bool(major_surgery),
+            "chf": bool(chf),
+            "sepsis": bool(sepsis),
+            "pneumonia": bool(pneumonia),
+            "immobilizing_plaster_case": bool(immobilizing_plaster_case),
+            "hip_pelvis_leg_fracture": bool(hip_pelvis_leg_fracture),
+            "stroke": bool(stroke),
+            "multiple_trauma": bool(multiple_trauma),
+            "acute_spinal_chord_injury": bool(acute_spinal_chord_injury),
+            "varicose_veins": bool(varicose_veins),
+            "current_swollen_legs": bool(current_swollen_legs),
+            "current_central_venuous": bool(current_central_venuous),
+            "previous_dvt": bool(previous_dvt),
+            "previous_pe": bool(previous_pe),
+            "family_history_thrombosis": bool(family_history_thrombosis),
+            "positive_factor_v": bool(positive_factor_v),
+            "positive_prothrombin": bool(positive_prothrombin),
+            "serum_homocysteine": bool(serum_homocysteine),
+            "positive_lupus_anticoagulant": bool(positive_lupus_anticoagulant),
+            "elevated_anticardiolipin_antibody": bool(
+                elevated_anticardiolipin_antibody
+            ),
+            "heparin_induced_thrombocytopenia": bool(
+                heparin_induced_thrombocytopenia
+            ),
+            "congenital_acquired_thrombophilia": bool(
+                congenital_acquired_thrombophilia
+            ),
+            "inflammatory_bowel_disease": bool(inflammatory_bowel_disease),
+            "acute_myocardial_infarction": bool(acute_myocardial_infarction),
+            "copd": bool(copd),
+            "malignancy": bool(malignancy),
+        }
+
+        # Remove None values
+        input_parameters = {
+            k: v for k, v in input_parameters.items() if v is not None
+        }
+
+        try:
+            from camel.toolkits.medcalc_bench.caprini_score import (
+                caprini_score_explanation,
+            )
+
+            # Call the Caprini score calculation function
+            result = caprini_score_explanation(input_parameters)
+
+            # Return the result as a JSON string
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],  # Detailed explanation
+                    "final_answer": str(result["Answer"]),  # Final answer
+                }
+            )
+        except Exception as e:
+            # Catch exceptions and return an error message
+            return self.handle_exception("caprini_score_explanation", e)
+
+    def cardiac_risk_index(
+        self,
+        elevated_risk_surgery: bool,  # Elevated-risk surgery status
+        ischemetic_heart_disease: bool,  # Ischemic heart disease history
+        congestive_heart_failure: bool,  # Congestive heart failure history
+        cerebrovascular_disease: bool,  # Cerebrovascular disease history
+        pre_operative_insulin_treatment: bool,  # Pre-op insulin treatment
+        pre_operative_creatinine_value: float,  # Creatinine value
+        pre_operative_creatinine_unit: str,
+        # Creatinine unit ("mg/dL", "μmol/L")
+    ) -> str:
+        r"""Calculate the patient's Cardiac Risk Index (CRI) and generate a
+        detailed explanatory text.
+
+        Args:
+            elevated_risk_surgery (bool): Whether patient had elevated-risk
+                surgery (intraperitoneal, intrathoracic, or suprainguinal
+                vascular).
+            ischemetic_heart_disease (bool): History of ischemic heart disease
+                (myocardial infarction, positive exercise test, chest pain from
+                ischemia, nitrate therapy, or ECG with pathological Q waves).
+            congestive_heart_failure (bool): History of congestive
+                heart failure
+                (pulmonary edema, bilateral rales, S3 gallop,
+                nocturnal dyspnea,
+                or chest x-ray showing pulmonary vascular redistribution).
+            cerebrovascular_disease (bool): History of cerebrovascular disease
+                (prior transient ischemic attack or stroke).
+            pre_operative_insulin_treatment (bool): Pre-operative insulin
+                treatment status.
+            pre_operative_creatinine_value (float): Pre-operative creatinine
+                value.
+            pre_operative_creatinine_unit (str): Unit for creatinine value, one
+                of:
+                - "mg/dL" for milligrams per deciliter
+                - "μmol/L" for micromoles per liter
+                - Other supported creatinine units
+
+        Returns:
+            str: A JSON string containing the calculation process and result,
+                formatted as follows:
+                {
+                    "rationale": "Detailed calculation process and explanatory
+                        text",
+                    "final_answer": "Cardiac risk index score (string format)"
+                }
+                If an exception occurs, return an error message generated by
+                    the `handle_exception` method.
+
+        Notes:
+            - The `compute_cardiac_index_explanation` function is used for the
+                actual calculation.
+            - The `json.dumps` function serializes the result
+                into a JSON string.
+        """
+        # Construct the input variables dictionary from parameters
+        input_variables = {
+            "elevated_risk_surgery": bool(elevated_risk_surgery),
+            "ischemetic_heart_disease": bool(ischemetic_heart_disease),
+            "congestive_heart_failure": bool(congestive_heart_failure),
+            "cerebrovascular_disease": bool(cerebrovascular_disease),
+            "pre_operative_insulin_treatment": bool(
+                pre_operative_insulin_treatment
+            ),
+            "pre_operative_creatinine": (
+                float(pre_operative_creatinine_value),
+                str(pre_operative_creatinine_unit),
+            ),
+        }
+
+        from camel.toolkits.medcalc_bench.cardiac_risk_index import (
+            compute_cardiac_index_explanation,
+        )
+
+        try:
+            # Call the CRI calculation function
+            result = compute_cardiac_index_explanation(input_variables)
+
+            # Return the result as a JSON string
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],  # Detailed explanation
+                    "final_answer": str(
+                        result["Answer"]
+                    ),  # Final answer (string format)
+                }
+            )
+
+        except Exception as e:
+            # Catch exceptions and return an error message
+            return self.handle_exception("cardiac_index", e)
+
+    def compute_fena(
+        self,
+        sodium_value: float,  # Numeric part of sodium (e.g., 134.0)
+        sodium_unit: str,  # Unit of sodium (e.g., "mmol/L")
+        creatinine_value: float,  # Numeric part of creatinine (e.g., 3.7)
+        creatinine_unit: str,  # Unit of creatinine (e.g., "mg/dL")
+        urine_sodium_value: float,  # Numeric part of urine sodium (e.g., 21.0)
+        urine_sodium_unit: str,  # Unit of urine sodium (e.g., "mmol/L")
+        urine_creatinine_value: float,  # Numeric part of urine
+        # creatinine (5.0)
+        urine_creatinine_unit: str,  # Unit of urine creatinine (e.g., "mg/dL")
+    ) -> str:
+        r"""Calculate the patient's Fractional Excretion of Sodium (FEna) and
+        generate a detailed explanatory text.
+
+        Args:
+            sodium_value (float): The numeric value of serum sodium.
+            sodium_unit (str): The unit of serum sodium, one of:
+                - "mmol/L" for millimoles per liter
+                - "mEq/L" for milliequivalents per liter
+            creatinine_value (float): The numeric value of serum creatinine.
+            creatinine_unit (str): The unit of serum creatinine, one of:
+                - "mg/dL" for milligrams per deciliter
+                - "umol/L" for micromoles per liter
+            urine_sodium_value (float): The numeric value of urine sodium.
+            urine_sodium_unit (str): The unit of urine sodium, one of:
+                - "mmol/L" for millimoles per liter
+                - "mEq/L" for milliequivalents per liter
+            urine_creatinine_value (float): The numeric
+                value of urine creatinine.
+            urine_creatinine_unit (str): The unit of urine creatinine, one of:
+                - "mg/dL" for milligrams per deciliter
+                - "umol/L" for micromoles per liter
+
+        Returns:
+            str: A JSON string containing the calculation process and result,
+                formatted as follows:
+                {
+                    "rationale": "Detailed calculation process and explanatory
+                        text",
+                    "final_answer": "FEna percentage (string format)"
+                }
+                If an exception occurs, return an error message generated by
+                    the `handle_exception` method.
+
+        Notes:
+            - The `compute_fena_explanation` function is used
+                to calculate FEna.
+            - The `json.dumps` function is used to serialize the result into a
+                JSON string.
+            - All input values are converted to standard units
+                before calculation.
+        """
+        urine_sodium_data = (float(urine_sodium_value), str(urine_sodium_unit))
+        # Construct the input variables dictionary
+        input_variables = {
+            "sodium": (float(sodium_value), str(sodium_unit)),
+            "creatinine": (float(creatinine_value), str(creatinine_unit)),
+            "urine_sodium": urine_sodium_data,
+            "urine_creatinine": (
+                float(urine_creatinine_value),
+                str(urine_creatinine_unit),
+            ),
+        }
+
+        from camel.toolkits.medcalc_bench.compute_fena import (
+            compute_fena_explanation,
+        )
+
+        try:
+            # Call the FEna calculation function
+            result = compute_fena_explanation(input_variables)
+
+            # Return the result as a JSON string
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],  # Detailed explanation
+                    "final_answer": str(
+                        result["Answer"]
+                    ),  # Final answer (string format)
+                }
+            )
+
+        except Exception as e:
+            # Catch exceptions and return an error message
+            return self.handle_exception("compute_fena_explanation", e)
+
+    def framingham_risk_score(
+        self,
+        age_value: float,  # Numeric part of age (e.g., 45)
+        age_unit: str,  # Unit of age ("years")
+        sex: str,  # Gender ("male"/"female")
+        sys_bp_value: float,  # Systolic BP value (e.g., 120)
+        sys_bp_unit: str,  # Systolic BP unit ("mm Hg")
+        dia_bp_value: float,  # Diastolic BP value (e.g., 80)
+        dia_bp_unit: str,  # Diastolic BP unit ("mm Hg")
+        smoker: bool,  # Whether patient smokes (True/False)
+        bp_medicine: bool,  # Whether on BP meds (True/False)
+        total_chol_value: float,  # Total cholesterol value
+        total_chol_unit: str,  # Total cholesterol unit
+        hdl_chol_value: float,  # HDL cholesterol value
+        hdl_chol_unit: str,  # HDL cholesterol unit
+    ) -> str:
+        r"""Calculate the patient's Framingham Risk Score and
+        generate a detailed explanatory text for 10-year cardiovascular
+        disease risk.
+
+        Args:
+            age_value (float): Numeric value of patient's age.
+            age_unit (str): Unit of age, must be "years".
+            sex (str): Patient's gender, one of:
+                - "Male" for male
+                - "Female" for female
+            sys_bp_value (float): Numeric value of systolic blood pressure.
+            sys_bp_unit (str): Unit of systolic BP, must be "mm Hg".
+            dia_bp_value (float): Numeric value of diastolic blood pressure.
+            dia_bp_unit (str): Unit of diastolic BP, must be "mm Hg".
+            smoker (bool): Whether patient is a smoker.
+            bp_medicine (bool): Whether patient takes BP medication.
+            total_chol_value (float): Numeric value of total cholesterol.
+            total_chol_unit (str): Unit of total cholesterol (e.g., "mg/dL").
+            hdl_chol_value (float): Numeric value of HDL cholesterol.
+            hdl_chol_unit (str): Unit of HDL cholesterol (e.g., "mg/dL").
+
+        Returns:
+            str: A JSON string containing calculation process and result:
+                {
+                    "rationale": "Detailed calculation explanation",
+                    "final_answer": "10-year CVD risk percentage (string)"
+                }
+                If exception occurs, returns error message
+                    from handle_exception.
+
+        Notes:
+            - Uses framingham_risk_score_explanation for core calculation.
+            - Returns JSON string using json.dumps.
+            - If gender not "Male" or "Female", will return error.
+        """
+        # Construct input parameters dictionary
+        input_variables = {
+            "sex": str(sex),
+            "age": (float(age_value), str(age_unit)),
+            "sys_bp": (float(sys_bp_value), str(sys_bp_unit)),
+            "dia_bp": (float(dia_bp_value), str(dia_bp_unit)),
+            "smoker": bool(smoker),
+            "bp_medicine": bool(bp_medicine),
+            "total_cholestrol": (
+                float(total_chol_value),
+                str(total_chol_unit),
+            ),
+            "hdl_cholestrol": (
+                float(hdl_chol_value),
+                str(hdl_chol_unit),
+            ),
+        }
+
+        from camel.toolkits.medcalc_bench.framingham_risk_score import (
+            framingham_risk_score_explanation,
+        )
+
+        try:
+            # Call the Framingham risk calculation function
+            result = framingham_risk_score_explanation(input_variables)
+
+            # Return result as JSON string
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],
+                    "final_answer": str(result["Answer"]),
+                }
+            )
+
+        except Exception as e:
+            # Catch exceptions and return error message
+            return self.handle_exception("framingham_risk_score", e)
+
+    def glasgow_bleeding_score(
+        self,
+        hemoglobin_value: float,
+        hemoglobin_unit: str,
+        bun_value: float,
+        bun_unit: str,
+        sys_bp_value: float,
+        sys_bp_unit: str,
+        sex: str,
+        heart_rate_value: float,
+        heart_rate_unit: str,
+        melena_present: bool = False,
+        syncope: bool = False,
+        hepatic_disease_history: bool = False,
+        cardiac_failure: bool = False,
+        platelet_count_value: Optional[float] = None,
+        platelet_count_unit: Optional[str] = None,
+    ) -> str:
+        r"""Calculate the patient's Glasgow Bleeding Score (GBS) and generate a
+        detailed explanatory text.
+        Args:
+            hemoglobin_value (float): Numeric value of hemoglobin level.
+            hemoglobin_unit (str): Unit of hemoglobin ("g/dL" or others).
+            bun_value (float): Numeric value of BUN level.
+            bun_unit (str): Unit of BUN ("mg/dL" or others).
+            sys_bp_value (float): Numeric value of systolic blood pressure.
+            sys_bp_unit (str): Unit of blood pressure ("mm Hg" or others).
+            sex (str): Patient's gender ("Male" or "Female").
+            heart_rate_value (float): Numeric value of heart rate.
+            heart_rate_unit (str): Unit of heart rate ("beats per minute").
+            melena_present (bool): Presence of melena (default: False).
+            syncope (bool): Recent syncope (default: False).
+            hepatic_disease_history (bool):
+                History of hepatic disease (default: False).
+            cardiac_failure (bool):
+                Presence of cardiac failure (default: False).
+            platelet_count_value (float, optional):
+                Numeric value of platelet count.
+            platelet_count_unit (str, optional): Unit of platelet count.
+
+        Returns:
+            str: A JSON string containing the calculation process and result,
+                formatted as:
+                {
+                    "rationale":
+                        "Detailed calculation process and explanation",
+                    "final_answer": "Glasgow Bleeding Score (string format)"
+                }
+                If an exception occurs, returns an error message generated by
+                the `handle_exception` method.
+
+        Notes:
+            - The `glasgow_bleeding_score_explanation` function is used for the
+                actual calculation.
+            - The `json.dumps` function
+                serializes the result into a JSON string.
+            - Optional parameters default to False if not provided.
+        """
+        input_variables = {
+            "hemoglobin": (float(hemoglobin_value), str(hemoglobin_unit)),
+            "bun": (float(bun_value), str(bun_unit)),
+            "sys_bp": (float(sys_bp_value), str(sys_bp_unit)),
+            "sex": str(sex),
+            "heart_rate": (float(heart_rate_value), str(heart_rate_unit)),
+            "melena_present": bool(melena_present),
+            "syncope": bool(syncope),
+            "hepatic_disease_history": bool(hepatic_disease_history),
+            "cardiac_failure": bool(cardiac_failure),
+        }
+
+        if platelet_count_value is not None:
+            input_variables["platelet_count"] = (
+                float(platelet_count_value),
+                str(platelet_count_unit) if platelet_count_unit else None,
+            )
+
+        try:
+            from camel.toolkits.medcalc_bench.glasgow_bleeding_score import (
+                glasgow_bleeding_score_explanation,
+            )
+
+            result = glasgow_bleeding_score_explanation(input_variables)
+
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],
+                    "final_answer": str(result["Answer"]),
+                }
+            )
+
+        except Exception as e:
+            return self.handle_exception("glasgow_bleeding_score", e)
+
+    def has_bled_score(
+        self,
+        age_value: float,  # Numeric part of age (e.g., 45)
+        age_unit: str,  # Unit of age ("months" or "years")
+        hypertension: bool,  # Hypertension status
+        liver_disease: bool,  # Liver disease status
+        renal_disease: bool,  # Renal disease status
+        stroke: bool,  # Stroke history
+        prior_bleeding: bool,  # Prior major bleeding
+        labile_inr: bool,  # Labile INR status
+        bleeding_meds: bool,  # Medications causing bleeding
+        alcohol_drinks: int,  # Number of alcoholic drinks/week
+    ) -> str:
+        r"""Calculate the patient's HAS-BLED Score and generate a detailed
+        explanatory text.
+
+        Args:
+            age_value (float): The numeric value of the patient's age.
+            age_unit (str): The unit of the patient's age, one of:
+                - "months" for months.
+                - "years" for years.
+            hypertension (bool): Hypertension status (>160 mmHg systolic).
+            liver_disease (bool): Liver disease (Cirrhosis or bilirubin > 2x
+                normal with AST/ALT/AP > 3x normal).
+            renal_disease (bool): Renal disease (Dialysis, transplant,
+                Cr >2.26 mg/dL or > 200 µmol/L).
+            stroke (bool): Stroke history.
+            prior_bleeding (bool): Prior major bleeding or predisposition.
+            labile_inr (bool): Labile INR (time in therapeutic range < 60%).
+            bleeding_meds (bool): Medications predisposing to bleeding.
+            alcohol_drinks (int): Number of alcoholic drinks per week.
+
+        Returns:
+            str: A JSON string containing the calculation process and result,
+                formatted as follows:
+                {
+                    "rationale": "Detailed calculation process and explanatory
+                        text",
+                    "final_answer": "HAS-BLED Score (string format)"
+                }
+                If an exception occurs, return an error message generated by
+                    the `handle_exception` method.
+
+        Notes:
+            - The `compute_has_bled_score_explanation` function is used for the
+                actual calculation.
+            - The `json.dumps` function is used to serialize the result.
+        """
+        # Construct the input variables dictionary
+        input_variables = {
+            "age": (float(age_value), str(age_unit)),
+            "hypertension": bool(hypertension),
+            "liver_disease_has_bled": bool(liver_disease),
+            "renal_disease_has_bled": bool(renal_disease),
+            "stroke": bool(stroke),
+            "prior_bleeding": bool(prior_bleeding),
+            "labile_inr": bool(labile_inr),
+            "medications_for_bleeding": bool(bleeding_meds),
+            "alcoholic_drinks": int(alcohol_drinks),
+        }
+
+        try:
+            from camel.toolkits.medcalc_bench.has_bled_score import (
+                compute_has_bled_score_explanation,
+            )
+
+            # Call the HAS-BLED calculation function
+            result = compute_has_bled_score_explanation(input_variables)
+
+            # Return the result as a JSON string
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],
+                    "final_answer": str(result["Answer"]),
+                }
+            )
+
+        except Exception as e:
+            # Catch exceptions and return an error message
+            return self.handle_exception("compute_has_bled_score", e)
+
+    def meldna(
+        self,
+        creatinine_value: float,  # Numeric part of creatinine (e.g., 1.0)
+        creatinine_unit: str,  # Unit of creatinine (e.g., "mg/dL")
+        bilirubin_value: float,  # Numeric part of bilirubin (e.g., 2.8)
+        bilirubin_unit: str,  # Unit of bilirubin (e.g., "mg/dL")
+        inr_value: float,  # International normalized ratio value
+        sodium_value: float,  # Numeric part of sodium (e.g., 139.0)
+        sodium_unit: str,  # Unit of sodium (e.g., "mEq/L")
+        dialysis_twice: bool = False,  # Dialysis twice in past week
+        cvvhd: bool = False,  # Continuous veno-venous hemodialysis
+    ) -> str:
+        r"""Calculate the patient's MELD-Na score and generate
+        detailed explanation.
+
+        Args:
+            creatinine_value (float): The numeric value of creatinine.
+            creatinine_unit (str): Unit of creatinine, one of:
+                - "mg/dL" for milligrams per deciliter
+                - "μmol/L" for micromoles per liter
+            bilirubin_value (float): The numeric value of bilirubin.
+            bilirubin_unit (str): Unit of bilirubin, one of:
+                - "mg/dL" for milligrams per deciliter
+                - "μmol/L" for micromoles per liter
+            inr_value (float): The international normalized ratio value.
+            sodium_value (float): The numeric value of sodium.
+            sodium_unit (str): Unit of sodium, one of:
+                - "mEq/L" for milliequivalents per liter
+                - "mmol/L" for millimoles per liter
+            dialysis_twice (bool): If patient had dialysis twice in past week.
+                Defaults to False.
+            cvvhd (bool): If patient had continuous veno-venous hemodialysis.
+                Defaults to False.
+
+        Returns:
+            str: A JSON string containing calculation process and result,
+                formatted as:
+                {
+                    "rationale": "Detailed calculation process explanation",
+                    "final_answer": "MELD-Na score (string format)"
+                }
+                If exception occurs, returns error message
+                    from handle_exception.
+
+        Notes:
+            - The compute_meldna_explanation function is used for calculation.
+            - The json.dumps function serializes result into JSON string.
+            - Sodium values <125 are set to 125, >137 are set to 137.
+            - MELD-Na score is capped at 40.
+        """
+        input_variables = {
+            "creatinine": (float(creatinine_value), str(creatinine_unit)),
+            "bilirubin": (float(bilirubin_value), str(bilirubin_unit)),
+            "inr": float(inr_value),
+            "sodium": [float(sodium_value), str(sodium_unit)],
+            "dialysis_twice": bool(dialysis_twice),
+            "cvvhd": bool(cvvhd),
+        }
+
+        from camel.toolkits.medcalc_bench.meldna import (
+            compute_meldna_explanation,
+        )
+
+        try:
+            result = compute_meldna_explanation(input_variables)
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],
+                    "final_answer": str(result["Answer"]),
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("compute_meldna_explanation", e)
+
+    def psi_score(
+        self,
+        sex: str,  # Gender ("male"/"female")
+        age_value: float,  # Numeric part of age
+        age_unit: str,  # Unit of age ("years")
+        temperature_value: float,  # Numeric part of temperature
+        temperature_unit: str,  # Unit of temperature
+        heart_rate_value: float,  # Numeric part of heart rate
+        heart_rate_unit: str,  # Unit of heart rate
+        pH: float,  # Blood pH value
+        respiratory_rate_value: float,  # Numeric part of respiratory rate
+        respiratory_rate_unit: str,  # Unit of respiratory rate
+        sys_bp_value: float,  # Numeric part of systolic blood pressure
+        sys_bp_unit: str,  # Unit of systolic blood pressure
+        bun_value: float,  # Numeric part of BUN
+        bun_unit: str,  # Unit of BUN
+        sodium_value: float,  # Numeric part of sodium
+        sodium_unit: str,  # Unit of sodium
+        glucose_value: float,  # Numeric part of glucose
+        glucose_unit: str,  # Unit of glucose
+        hemocratit_value: float,  # Numeric part of hemocratit
+        hemocratit_unit: str,  # Unit of hemocratit
+        partial_pressure_oxygen_value: float,  # Numeric part of pO2
+        partial_pressure_oxygen_unit: str,  # Unit of pO2
+        nursing_home_resident: bool = False,  # Is nursing home resident
+        neoplastic_disease: bool = False,  # Has neoplastic disease
+        liver_disease: bool = False,  # Has liver disease
+        chf: bool = False,  # Has congestive heart failure
+        cerebrovascular_disease: bool = False,  # Has cerebrovascular disease
+        renal_disease: bool = False,  # Has renal disease
+        altered_mental_status: bool = False,  # Has altered mental status
+        pleural_effusion: bool = False,  # Has pleural effusion
+    ) -> str:
+        r"""Calculate the patient's Pneumonia Severity Index (PSI) score and
+        generate a detailed explanatory text.
+
+        Args:
+            sex (str): The patient's gender, one of:
+                - "male" for male
+                - "female" for female
+            age_value (float): The numeric value of the patient's age
+            age_unit (str): The unit of the patient's age ("years")
+            temperature_value (float): The numeric value of temperature
+            temperature_unit (str): The unit of temperature
+            heart_rate_value (float): The numeric value of heart rate
+            heart_rate_unit (str): The unit of heart rate
+            pH (float): The patient's blood pH value
+            respiratory_rate_value (float): The numeric value of
+                respiratory rate
+            respiratory_rate_unit (str): The unit of respiratory rate
+            sys_bp_value (float): The numeric value of systolic blood pressure
+            sys_bp_unit (str): The unit of systolic blood pressure
+            bun_value (float): The numeric value of BUN (blood urea nitrogen)
+            bun_unit (str): The unit of BUN
+            sodium_value (float): The numeric value of sodium
+            sodium_unit (str): The unit of sodium
+            glucose_value (float): The numeric value of glucose
+            glucose_unit (str): The unit of glucose
+            hemocratit_value (float): The numeric value of hemocratit
+            hemocratit_unit (str): The unit of hemocratit
+            partial_pressure_oxygen_value (float): The numeric value of pO2
+            partial_pressure_oxygen_unit (str): The unit of pO2
+            nursing_home_resident (bool): Whether patient is
+                nursing home resident
+            neoplastic_disease (bool): Whether patient has neoplastic disease
+            liver_disease (bool): Whether patient has liver disease
+            chf (bool): Whether patient has congestive heart failure
+            cerebrovascular_disease (bool): Whether patient has cerebrovascular
+                disease
+            renal_disease (bool): Whether patient has renal disease
+            altered_mental_status (bool): Whether patient has
+                altered mental status
+            pleural_effusion (bool): Whether patient has pleural effusion
+
+        Returns:
+            str: A JSON string containing the calculation process and result,
+                formatted as follows:
+                {
+                    "rationale": "Detailed calculation process and explanatory
+                        text",
+                    "final_answer": "PSI score (string format)"
+                }
+                If an exception occurs, return an error message generated by
+                    the `handle_exception` method.
+
+        Notes:
+            - The `psi_score_explanation` function is used to calculate the PSI
+                score.
+            - The `json.dumps` function is used to serialize the result into a
+                JSON string.
+            - If the input gender is not "male" or "female", the function will
+                still calculate the score but with appropriate adjustments.
+        """
+        # Construct the input variables dictionary
+
+        respiratory_rate_data = (
+            float(respiratory_rate_value),
+            str(respiratory_rate_unit),
+        )
+        partial_pressure_oxygen_data = (
+            float(partial_pressure_oxygen_value),
+            str(partial_pressure_oxygen_unit),
+        )
+        input_variables = {
+            "sex": str(sex),
+            "age": (float(age_value), str(age_unit)),
+            "temperature": (float(temperature_value), str(temperature_unit)),
+            "heart_rate": (float(heart_rate_value), str(heart_rate_unit)),
+            "pH": float(pH),
+            "respiratory_rate": respiratory_rate_data,
+            "sys_bp": (float(sys_bp_value), str(sys_bp_unit)),
+            "bun": (float(bun_value), str(bun_unit)),
+            "sodium": (float(sodium_value), str(sodium_unit)),
+            "glucose": (float(glucose_value), str(glucose_unit)),
+            "hemocratit": (float(hemocratit_value), str(hemocratit_unit)),
+            "partial_pressure_oxygen": partial_pressure_oxygen_data,
+            "nursing_home_resident": bool(nursing_home_resident),
+            "neoplastic_disease": bool(neoplastic_disease),
+            "liver_disease": bool(liver_disease),
+            "chf": bool(chf),
+            "cerebrovascular_disease": bool(cerebrovascular_disease),
+            "renal_disease": bool(renal_disease),
+            "altered_mental_status": bool(altered_mental_status),
+            "pleural_effusion": bool(pleural_effusion),
+        }
+
+        from camel.toolkits.medcalc_bench.psi_score import (
+            psi_score_explanation,
+        )
+
+        try:
+            # Call the PSI score calculation function
+            result = psi_score_explanation(input_variables)
+
+            # Return the result as a JSON string
+            return json.dumps(
+                {
+                    "rationale": result["Explanation"],  # Detailed explanation
+                    "final_answer": str(
+                        result["Answer"]
+                    ),  # Final answer (string format)
+                }
+            )
+
+        except Exception as e:
+            # Catch exceptions and return an error message
+            return self.handle_exception("psi_score_explanation", e)
 
     def handle_exception(self, func_name: str, error: Exception) -> str:
         r"""Handles exceptions by logging the error and returning
@@ -3758,8 +4745,8 @@ class MedCalcToolkit(BaseToolkit):
             FunctionTool(self.bsa_calculator),
             FunctionTool(self.calcium_correction),
             FunctionTool(self.delta_gap),
-            FunctionTool(self.estimated_conception_date),
-            FunctionTool(self.estimated_gestational_age),
+            FunctionTool(self.conception_date),
+            FunctionTool(self.gestational_age),
             FunctionTool(self.feverpain),
             FunctionTool(self.heart_score),
             FunctionTool(self.homa_ir),
@@ -3782,7 +4769,7 @@ class MedCalcToolkit(BaseToolkit):
             FunctionTool(self.qt_calculator_fredericia),
             FunctionTool(self.qt_calculator_hodges),
             FunctionTool(self.qt_calculator_rautaharju),
-            FunctionTool(self.steroid_conversion_calculator),
+            FunctionTool(self.steroid_conversion),
             FunctionTool(self.wells_criteria_dvt),
             FunctionTool(self.cci),
             FunctionTool(self.cha2ds2_vasc_score),
@@ -3796,5 +4783,14 @@ class MedCalcToolkit(BaseToolkit):
             FunctionTool(self.mme),
             FunctionTool(self.perc_rule),
             FunctionTool(self.sirs_criteria),
-            FunctionTool(self.sodium_correction_hyperglycemia),
+            FunctionTool(self.sch),
+            FunctionTool(self.apache_ii),
+            FunctionTool(self.caprini_score),
+            FunctionTool(self.cardiac_risk_index),
+            FunctionTool(self.compute_fena),
+            FunctionTool(self.framingham_risk_score),
+            FunctionTool(self.glasgow_bleeding_score),
+            FunctionTool(self.has_bled_score),
+            FunctionTool(self.meldna),
+            FunctionTool(self.psi_score),
         ]

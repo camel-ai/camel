@@ -41,7 +41,7 @@ from camel.toolkits.medcalc_bench.utils.unit_converter_new import (
 def apache_ii_explanation(input_parameters):
     explanation = """
     The criteria for the APACHE II Score are listed below:
-    
+
        1. Age, years: ≤44 = 0 points, 45-54 = +2 points, 55-64 = +3 points, 
        65-74 = +5 points, ≥75 = +6 points
        2. History of severe organ insufficiency or immunocompromised: Yes, 

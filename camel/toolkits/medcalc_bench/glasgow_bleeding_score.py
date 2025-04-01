@@ -32,7 +32,7 @@ def glasgow_bleeding_score_explanation(input_parameters):
     explanation = r"""
     The Glasgow-Blatchford Score (GBS) for assessing the severity of 
     gastrointestinal bleeding is shown below:
-    
+
        1. Hemoglobin level (g/dL): Enter value (norm: 12-17 g/dL)
        2. BUN level (mg/dL): Enter value (norm: 8-20 mg/dL)
        3. Initial systolic blood pressure (mm Hg): Enter value (norm: 
