@@ -12,12 +12,12 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import re
-from typing import Dict
+from typing import Dict, List
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from camel.datasets import StaticDataset
+from camel.datasets import BaseGenerator, DataPoint, StaticDataset
 from camel.environments import (
     Action,
     Observation,
@@ -33,6 +33,108 @@ class MockSingleStepEnv(SingleStepEnv):
         verification_result: VerificationResult,
     ) -> Dict[str, float]:
         return {"custom_reward": 5}
+
+
+class MockGenerator(BaseGenerator):
+    def __init__(self, predefined_data: List[Dict], *args, **kwargs):
+        if 'puffer' not in kwargs:
+            kwargs['puffer'] = 1
+        super().__init__(*args, **kwargs)
+        self.predefined_data = predefined_data
+        self.index = 0
+
+    async def generate_new(self, n: int, **kwargs) -> None:
+        if self.index + n > len(self.predefined_data):
+            raise ValueError("Not enough predefined datapoints")
+        new_points = [
+            DataPoint(**data)
+            for data in self.predefined_data[self.index : self.index + n]
+        ]
+        self._data.extend(new_points)
+        self.index += n
+
+
+@pytest.mark.asyncio
+async def test_single_step_env_lifecycle_single_generator():
+    predefined_data = [
+        {
+            "question": "What is 2 + 2?",
+            "final_answer": "4",
+            "rationale": "Adding 2 and 2 gives 4.",
+            "metadata": {"difficulty": "easy"},
+        },
+        {
+            "question": "What is the capital of France?",
+            "final_answer": "Paris",
+            "rationale": "Paris is known as the capital city of France.",
+            "metadata": {"difficulty": "easy"},
+        },
+    ]
+    dataset = MockGenerator(predefined_data, seed=42)
+
+    mock_verifier = MagicMock()
+    mock_verifier.setup = AsyncMock()
+    mock_verifier.cleanup = AsyncMock()
+    mock_verifier.verify_batch = AsyncMock(
+        side_effect=lambda solutions, reference_answers, **kwargs: [
+            VerificationResult(
+                status=VerificationOutcome.SUCCESS,
+                result="Verification successful",
+                feedback="Correct",
+                score=1.0,
+            )
+            for _ in solutions
+        ]
+    )
+
+    env = MockSingleStepEnv(dataset=dataset, verifier=mock_verifier)
+
+    await env.setup()
+    assert env._is_setup is True
+    mock_verifier.setup.assert_awaited_once()
+
+    # Test reset with batch_size=1
+    observation = await env.reset(batch_size=1)
+    assert isinstance(observation, Observation)
+    assert observation.question == "What is 2 + 2?"  # First datapoint
+
+    # Test step with a single action
+    action = Action(index=0, llm_response="4")
+    result = await env.step(action)
+    assert isinstance(result, tuple)
+    next_obs, reward, done, info = result
+    assert next_obs == env.PLACEHOLDER_OBS
+    assert reward == env.ACCURACY_REWARD + 5
+    assert done is True
+    assert info["rewards_dict"].get("custom_reward", None) == 5
+
+    # Test that stepping again without reset fails
+    with pytest.raises(
+        RuntimeError,
+        match=r"Episodes have ended for batch\. Call reset\(\) first\.",
+    ):
+        await env.step(action)
+
+    # Test reset and step again
+    observation2 = await env.reset(batch_size=1)
+    assert isinstance(observation2, Observation)
+    assert (
+        observation2.question == "What is the capital of France?"
+    )  # Second datapoint
+    action2 = Action(index=None, llm_response="Paris")
+    result2 = await env.step(action2)
+    next_obs2, reward2, done2, info2 = result2
+    assert next_obs2 == env.PLACEHOLDER_OBS
+    assert reward2 == env.ACCURACY_REWARD + 5
+    assert done2 is True
+    assert info2["rewards_dict"].get("custom_reward", None) == 5
+
+    # Note: Skipping deterministic sampling test as BaseGenerator
+    # doesn't use seed in the same way
+    # Test close
+    await env.close()
+    assert env._is_setup is False
+    mock_verifier.cleanup.assert_awaited_once()
 
 
 @pytest.mark.asyncio
@@ -59,7 +161,7 @@ async def test_single_step_env_lifecycle_single():
     mock_verifier.setup = AsyncMock()
     mock_verifier.cleanup = AsyncMock()
     mock_verifier.verify_batch = AsyncMock(
-        side_effect=lambda solutions, ground_truths, **kwargs: [
+        side_effect=lambda solutions, reference_answers, **kwargs: [
             VerificationResult(
                 status=VerificationOutcome.SUCCESS,
                 result="Verification successful",
@@ -190,7 +292,7 @@ async def test_batched_single_step_env_lifecycle():
     mock_verifier.setup = AsyncMock()
     mock_verifier.cleanup = AsyncMock()
     mock_verifier.verify_batch = AsyncMock(
-        side_effect=lambda solutions, ground_truths, **kwargs: [
+        side_effect=lambda solutions, reference_answers, **kwargs: [
             VerificationResult(
                 status=VerificationOutcome.SUCCESS,
                 result="Verification successful",
@@ -257,12 +359,112 @@ async def test_batched_single_step_env_lifecycle():
     mock_verifier.cleanup.assert_awaited_once()
 
 
+@pytest.mark.asyncio
+async def test_batched_single_step_env_lifecycle_generator():
+    predefined_data = [
+        {
+            "question": "What is 2 + 2?",
+            "final_answer": "4",
+            "rationale": "Adding 2 and 2 gives 4.",
+            "metadata": {"difficulty": "easy"},
+        },
+        {
+            "question": "What is the capital of France?",
+            "final_answer": "Paris",
+            "rationale": "Paris is known as the capital city of France.",
+            "metadata": {"difficulty": "easy"},
+        },
+        {
+            "question": "Who wrote 'Romeo and Juliet'?",
+            "final_answer": "Shakespeare",
+            "rationale": "William Shakespeare is the author of 'Romeo and "
+            "Juliet'.",
+            "metadata": {"difficulty": "medium"},
+        },
+        {
+            "question": "What is the boiling point of water in Celsius?",
+            "final_answer": "100",
+            "rationale": "Water boils at 100 degrees Celsius at standard "
+            "pressure.",
+            "metadata": {"difficulty": "easy"},
+        },
+    ]
+    dataset = MockGenerator(predefined_data, seed=42)
+
+    # Create a mock verifier
+    mock_verifier = MagicMock()
+    mock_verifier.setup = AsyncMock()
+    mock_verifier.cleanup = AsyncMock()
+    mock_verifier.verify_batch = AsyncMock(
+        side_effect=lambda solutions, reference_answers, **kwargs: [
+            VerificationResult(
+                status=VerificationOutcome.SUCCESS,
+                result="Verification successful",
+                feedback="Correct",
+                score=1.0,
+            )
+            for _ in solutions
+        ]
+    )
+
+    # Initialize the environment
+    env = MockSingleStepEnv(dataset=dataset, verifier=mock_verifier)
+
+    # Test setup
+    await env.setup()
+    assert env._is_setup is True
+    mock_verifier.setup.assert_awaited_once()
+
+    # Test reset with batch_size=4
+    observations = await env.reset(batch_size=4)
+    assert isinstance(observations, list)
+    assert len(observations) == 4
+    expected_questions = [dp["question"] for dp in predefined_data]
+    for i, obs in enumerate(observations):
+        assert isinstance(obs, Observation)
+        assert obs.question == expected_questions[i]
+
+    # Test step with 2 actions
+    actions = [
+        Action(index=0, llm_response="4"),  # First question
+        Action(index=2, llm_response="Shakespeare"),  # Third question
+    ]
+    results = await env.step(actions)
+    assert isinstance(results, list)
+    assert len(results) == 2
+    for next_obs, reward, done, info in results:
+        assert next_obs == env.PLACEHOLDER_OBS
+        assert reward == env.ACCURACY_REWARD + 5
+        assert done is True
+        assert info["rewards_dict"].get("custom_reward", None) == 5
+
+    # Test step with remaining 2 actions
+    actions = [
+        Action(index=1, llm_response="Paris"),  # Second question
+        Action(index=3, llm_response="100"),  # Fourth question
+    ]
+    results = await env.step(actions)
+    assert isinstance(results, list)
+    assert len(results) == 2
+    for next_obs, reward, done, info in results:
+        assert next_obs == env.PLACEHOLDER_OBS
+        assert reward == env.ACCURACY_REWARD + 5
+        assert done is True
+        assert info["rewards_dict"].get("custom_reward", None) == 5
+
+    # Test batch completion
+    assert env._batch_done()
+    await env.close()
+    assert env._is_setup is False
+    mock_verifier.cleanup.assert_awaited_once()
+
+
 def create_mock_verifier():
     verifier = MagicMock()
     verifier.setup = AsyncMock()
     verifier.cleanup = AsyncMock()
     verifier.verify_batch = AsyncMock(
-        side_effect=lambda solutions, ground_truths, **kwargs: [
+        side_effect=lambda solutions, reference_answers, **kwargs: [
             VerificationResult(
                 status=VerificationOutcome.SUCCESS,
                 result="Mock verification",
@@ -320,8 +522,16 @@ async def test_single_step_env_error_handling_single():
     await env_fail_verifier.setup()
     await env_fail_verifier.reset(batch_size=1)
     action = Action(index=0, llm_response="4")
-    with pytest.raises(Exception, match="Verifier error"):
-        await env_fail_verifier.step(action)
+
+    step_result = await env_fail_verifier.step(action)
+
+    _, reward, _, info = step_result
+
+    # Verify that the verification result indicates a failure
+    assert info["verification_result"].status == VerificationOutcome.FAILURE
+    assert "Verifier error" in info["verification_result"].error_message
+    # Verify that the reward reflects the failure
+    assert reward == 0.0
 
     # **3. Test State Mismanagement Scenarios**
     # a) Step without setup
@@ -506,7 +716,7 @@ async def test_batched_single_step_env_error_handling():
     dataset = StaticDataset(data)
 
     # **2. Test Faulty Verifier**
-    # Ensure errors in verifier are propagated
+    # Ensure errors in verifier are properly handled
     mock_verifier_exception = MagicMock()
     mock_verifier_exception.setup = AsyncMock()
     mock_verifier_exception.cleanup = AsyncMock()
@@ -520,8 +730,17 @@ async def test_batched_single_step_env_error_handling():
     await env_fail_verifier.setup()
     await env_fail_verifier.reset(batch_size=1)
     action = Action(index=0, llm_response="4")
-    with pytest.raises(Exception, match="Verifier error"):
-        await env_fail_verifier.step(action)
+
+    step_result = await env_fail_verifier.step(action)
+
+    # Unpack step result
+    _, reward, _, info = step_result
+
+    # Verify that the verification result indicates a failure
+    assert info["verification_result"].status == VerificationOutcome.FAILURE
+    assert "Verifier error" in info["verification_result"].error_message
+    # Verify that the reward reflects the failure
+    assert reward == 0.0
 
     # **3. Test State Mismanagement Scenarios**
     # a) Step without setup

@@ -48,7 +48,9 @@ async def test_python_verifier_execution_success(python_verifier):
     await python_verifier.setup(uv=True)
 
     script = 'print("Hello, World!")'
-    result = await python_verifier.verify(solution=script, ground_truth=None)
+    result = await python_verifier.verify(
+        solution=script, reference_answer=None
+    )
     assert result.status == VerificationOutcome.SUCCESS
     assert result.result == "Hello, World!"
 
@@ -62,7 +64,7 @@ async def test_python_verifier_execution_failure(python_verifier):
 
     script = 'print("Hello"'  # Syntax error
     result = await python_verifier._verify_implementation(
-        solution=script, ground_truth=None
+        solution=script, reference_answer=None
     )
 
     assert result.status == VerificationOutcome.ERROR
@@ -79,7 +81,7 @@ async def test_python_verifier_execution_timeout(python_verifier):
 
     script = 'import time; time.sleep(5)'
     result = await python_verifier._verify_implementation(
-        solution=script, ground_truth=None
+        solution=script, reference_answer=None
     )
 
     assert result.status == VerificationOutcome.TIMEOUT
@@ -95,7 +97,7 @@ async def test_python_verifier_output_mismatch(python_verifier):
 
     script = 'print("Wrong output")'
     result = await python_verifier._verify_implementation(
-        solution=script, ground_truth="Expected output"
+        solution=script, reference_answer="Expected output"
     )
 
     assert result.status == VerificationOutcome.FAILURE
@@ -114,7 +116,7 @@ async def test_python_verifier_correct_output_matching(python_verifier):
 
     script = 'print("Expected output")'
     result = await python_verifier._verify_implementation(
-        solution=script, ground_truth="Expected output"
+        solution=script, reference_answer="Expected output"
     )
 
     assert result.status == VerificationOutcome.SUCCESS
@@ -129,7 +131,7 @@ async def test_python_verifier_no_venv_error():
     verifier = PythonVerifier()
     script = 'print("Hello")'
     result = await verifier._verify_implementation(
-        solution=script, ground_truth=None
+        solution=script, reference_answer=None
     )
 
     assert result.status == VerificationOutcome.ERROR
@@ -143,7 +145,7 @@ async def test_python_verifier_with_numpy(python_verifier):
 
     script = 'import numpy as np; print(np.array([1, 2, 3]))'
     result = await python_verifier._verify_implementation(
-        solution=script, ground_truth=None
+        solution=script, reference_answer=None
     )
 
     assert result.status == VerificationOutcome.SUCCESS

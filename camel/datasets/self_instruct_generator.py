@@ -310,7 +310,7 @@ class SelfInstructGenerator(BaseGenerator):
         human_sample_count: int = 3,
         machine_sample_count: int = 1,
         **kwargs,
-    ) -> list[DataPoint]:
+    ) -> None:
         r"""Generates and validates `n` new datapoints through
         self-instruct prompting, with a retry limit.
 
@@ -323,18 +323,6 @@ class SelfInstructGenerator(BaseGenerator):
             machine_sample_count (int): Number of machine examples to sample.
                 (default: :obj:`1`)
             **kwargs: Additional keyword arguments.
-
-        Returns:
-            List[DataPoint]: A list of newly generated valid datapoints.
-
-        Raises:
-            TypeError: If the agent's output is not a dictionary (or does not
-                match the expected format).
-            KeyError: If required keys are missing from the response.
-            AttributeError: If the verifier response lacks attributes.
-            ValidationError: If a datapoint fails schema validation.
-            RuntimeError: If retries are exhausted before `n` valid datapoints
-                are generated.
 
         Notes:
             - Retries on validation failures until `n` valid datapoints exist
@@ -355,10 +343,12 @@ class SelfInstructGenerator(BaseGenerator):
                 )
 
                 machine_dps_list = list(self.machine_instructions)
-                support_machine_dps = random.sample(
-                    machine_dps_list,
-                    min(machine_sample_count, len(machine_dps_list)),
-                )
+                support_machine_dps = []
+                if machine_dps_list and machine_sample_count > 0:
+                    support_machine_dps = random.sample(
+                        machine_dps_list,
+                        min(machine_sample_count, len(machine_dps_list)),
+                    )
                 question = self.generate_new_instruction(
                     self.instruction_agent,
                     support_human_dps,
@@ -373,7 +363,7 @@ class SelfInstructGenerator(BaseGenerator):
                 try:
                     verifier_response = await self.verifier.verify(
                         solution=rationale,
-                        ground_truth=None,
+                        reference_answer=None,
                     )
                     if not verifier_response or not verifier_response.result:
                         raise ValueError(
@@ -423,4 +413,3 @@ class SelfInstructGenerator(BaseGenerator):
 
         async with self._lock:
             self._data.extend(valid_data_points)
-        return valid_data_points
