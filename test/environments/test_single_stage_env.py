@@ -522,8 +522,16 @@ async def test_single_step_env_error_handling_single():
     await env_fail_verifier.setup()
     await env_fail_verifier.reset(batch_size=1)
     action = Action(index=0, llm_response="4")
-    with pytest.raises(Exception, match="Verifier error"):
-        await env_fail_verifier.step(action)
+
+    step_result = await env_fail_verifier.step(action)
+
+    _, reward, _, info = step_result
+
+    # Verify that the verification result indicates a failure
+    assert info["verification_result"].status == VerificationOutcome.FAILURE
+    assert "Verifier error" in info["verification_result"].error_message
+    # Verify that the reward reflects the failure
+    assert reward == 0.0
 
     # **3. Test State Mismanagement Scenarios**
     # a) Step without setup
@@ -708,7 +716,7 @@ async def test_batched_single_step_env_error_handling():
     dataset = StaticDataset(data)
 
     # **2. Test Faulty Verifier**
-    # Ensure errors in verifier are propagated
+    # Ensure errors in verifier are properly handled
     mock_verifier_exception = MagicMock()
     mock_verifier_exception.setup = AsyncMock()
     mock_verifier_exception.cleanup = AsyncMock()
@@ -722,8 +730,17 @@ async def test_batched_single_step_env_error_handling():
     await env_fail_verifier.setup()
     await env_fail_verifier.reset(batch_size=1)
     action = Action(index=0, llm_response="4")
-    with pytest.raises(Exception, match="Verifier error"):
-        await env_fail_verifier.step(action)
+
+    step_result = await env_fail_verifier.step(action)
+
+    # Unpack step result
+    _, reward, _, info = step_result
+
+    # Verify that the verification result indicates a failure
+    assert info["verification_result"].status == VerificationOutcome.FAILURE
+    assert "Verifier error" in info["verification_result"].error_message
+    # Verify that the reward reflects the failure
+    assert reward == 0.0
 
     # **3. Test State Mismanagement Scenarios**
     # a) Step without setup
