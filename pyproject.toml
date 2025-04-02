@@ -514,3 +514,10 @@ module = [
     "math_verify.*"
 ]
 ignore_missing_imports = true
+
+[tool.codespell]
+# Ref: https://github.com/codespell-project/codespell#using-a-config-file
+skip = '.git*,*.pdf,*.svg,*.lock,*.css'
+check-hidden = true
+ignore-regex = '^\s*"image/\S+": ".*'
+# ignore-words-list = ''
