@@ -54,7 +54,7 @@ org is the 1st LLM multi-agent framework and an open-source community dedicated
  to finding the scaling law of agents.', 'author': None, 'keywords': None, 'lan
  guageCode': 'en', 'openGraph': [{'property': 'og:title', 'content': 'CAMEL-AI'
  }, {'property': 'og:description', 'content': 'CAMEL-AI.org is the 1st LLM mult
- i-agent framework and an open-source community dedicated to finding the scalin
+ i-agent framework and an open-source community dedicated to finding the scaling
  g law of agents.'}, {'property': 'twitter:title', 'content': 'CAMEL-AI'}, {'pr
  operty': 'twitter:description', 'content': 'CAMEL-AI.org is the 1st LLM multi-
  agent framework and an open-source community dedicated to finding the scaling 
