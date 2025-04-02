@@ -1,0 +1,11 @@
+{
+    "model_platform": "ollama",
+    "model_type": "llama3.2",
+    "model_config_dict": {
+        "temperature": 0.5,
+        "top_p": 0.9
+    },
+    "token_counter": null,
+    "api_key": null,
+    "url": null
+}

@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from .base import BaseVerifier
+from .math_verifier import MathVerifier
 from .models import VerificationOutcome
 from .python_verifier import PythonVerifier
 
@@ -19,4 +20,5 @@ __all__ = [
     "BaseVerifier",
     "VerificationOutcome",
     "PythonVerifier",
+    "MathVerifier",
 ]
