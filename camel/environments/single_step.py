@@ -356,15 +356,16 @@ class SingleStepEnv:
         return step_results[0] if len(step_results) == 1 else step_results
 
     def _normalize_actions(
-        self, action: Union[Action, List[Action], str]
+        self, action: Union[Action, List[Action], str, Dict[int, str]]
     ) -> List[Action]:
         r"""Normalize the user-provided action(s) into a validated list
         of `Action` objects.
 
         This method handles flexibility in input format by converting
-        raw strings (only allowed when batch size is 1) and ensuring
-        all necessary structure and integrity checks on actions
-        (e.g., index bounds, duplicates).
+        raw strings (only allowed when batch size is 1), dictionaries
+        (only allowed when batch size > 1), and ensuring all necessary
+        structure and integrity checks on actions (e.g., index bounds,
+        duplicates).
 
         Args:
             action (Union[Action, List[Action], str]):
@@ -373,6 +374,8 @@ class SingleStepEnv:
                 - A list of `Action` objects.
                 - A raw string (if `batch_size == 1`), auto-wrapped
                     in an `Action`.
+                - A dict mapping int indices to str responses
+                    (if `batch_size > 1`).
 
         Returns:
             List[Action]: A list of validated `Action` instances
@@ -384,8 +387,9 @@ class SingleStepEnv:
                 - Action list is empty,
                 - Index mismatches expected values
                     (e.g., 0 for batch size 1),
-                - Wrong structure is used
-                    (e.g., string used with batch size > 1).
+                - Wrong structure is used (e.g.,
+                    string used with batch size > 1,
+                    dict used with batch size == 1).
             TypeError: If the action is of an unsupported type.
         """
 
@@ -396,9 +400,20 @@ class SingleStepEnv:
                     " when batch_size == 1"
                 )
             logger.warning("Auto-converting from str to Action", stacklevel=2)
-            action = Action(index=0, llm_response=action)
+            actions = [Action(index=0, llm_response=action)]
 
-        if isinstance(action, Action):
+        elif isinstance(action, dict):
+            if self.current_batch_size == 1:
+                raise ValueError(
+                    "Dict input for action is only allowed when "
+                    "batch_size > 1. Use a string instead for single actions."
+                )
+            if not all(isinstance(k, int) for k in action.keys()):
+                raise ValueError("All dictionary keys must be integers")
+            actions = [
+                Action(index=k, llm_response=v) for k, v in action.items()
+            ]
+        elif isinstance(action, Action):
             actions = [action]
         elif isinstance(action, list):
             if not action:
