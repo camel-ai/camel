@@ -146,8 +146,6 @@ class MCPClient(BaseToolkit):
             await self.disconnect()
             logger.error(f"Failed to connect to MCP server: {e}")
             raise e
-        finally:
-            await self.disconnect()
 
     async def disconnect(self):
         r"""Explicitly disconnect from the MCP server."""
@@ -432,7 +430,7 @@ class MCPToolkit(BaseToolkit):
                         f"Invalid JSON in config file '{config_path}': {e!s}"
                     )
                     raise e
-        except FileNotFoundError:
+        except FileNotFoundError as e:
             logger.warning(f"Config file not found: '{config_path}'")
             raise e
 
