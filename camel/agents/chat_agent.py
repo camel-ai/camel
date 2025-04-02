@@ -790,11 +790,6 @@ class ChatAgent(BaseAgent):
             )
             error_info = str(exc)
 
-            logger.warning(
-                "To improve reliability, consider using models "
-                "that are better equipped to handle structured output"
-            )
-
         if not response and self.model_backend.num_models > 1:
             raise ModelProcessingError(
                 "Unable to process messages: none of the provided models "
