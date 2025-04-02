@@ -11,8 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import asyncio
 import functools
 import importlib
+import inspect
 import logging
 import os
 import platform
@@ -978,36 +980,54 @@ def with_timeout(timeout=None):
     """
 
     def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            # Determine the effective timeout value
-            effective_timeout = timeout
-            if effective_timeout is None and args:
-                effective_timeout = getattr(args[0], 'timeout', None)
+        if inspect.iscoroutinefunction(func):
 
-            # If no timeout value is provided, execute function normally
-            if effective_timeout is None:
-                return func(*args, **kwargs)
+            @functools.wraps(func)
+            async def async_wrapper(*args, **kwargs):
+                eff_timeout = timeout
+                if eff_timeout is None and args:
+                    eff_timeout = getattr(args[0], 'timeout', None)
 
-            # Container to hold the result of the function call
-            result_container = []
+                if eff_timeout is None:
+                    return await func(*args, **kwargs)
 
-            def target():
-                result_container.append(func(*args, **kwargs))
-
-            # Start the function in a new thread
-            thread = threading.Thread(target=target)
-            thread.start()
-            thread.join(effective_timeout)
-
-            # Check if the thread is still alive after the timeout
-            if thread.is_alive():
-                return (
-                    f"Function `{func.__name__}` execution timed out, "
-                    f"exceeded {effective_timeout} seconds."
+                return await asyncio.wait_for(
+                    func(*args, **kwargs), timeout=eff_timeout
                 )
-            else:
-                return result_container[0]
+
+            return async_wrapper
+        else:
+
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                # Determine the effective timeout value
+                effective_timeout = timeout
+                if effective_timeout is None and args:
+                    effective_timeout = getattr(args[0], 'timeout', None)
+
+                # If no timeout value is provided, execute function normally
+                if effective_timeout is None:
+                    return func(*args, **kwargs)
+
+                # Container to hold the result of the function call
+                result_container = []
+
+                def target():
+                    result_container.append(func(*args, **kwargs))
+
+                # Start the function in a new thread
+                thread = threading.Thread(target=target)
+                thread.start()
+                thread.join(effective_timeout)
+
+                # Check if the thread is still alive after the timeout
+                if thread.is_alive():
+                    return (
+                        f"Function `{func.__name__}` execution timed out, "
+                        f"exceeded {effective_timeout} seconds."
+                    )
+                else:
+                    return result_container[0]
 
         return wrapper
 

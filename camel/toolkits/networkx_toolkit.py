@@ -18,10 +18,12 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
+from camel.utils import MCPServer
 
 logger = get_logger(__name__)
 
 
+@MCPServer()
 class NetworkXToolkit(BaseToolkit):
     _nx = None  # Class variable to store the networkx module
 

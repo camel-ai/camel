@@ -191,6 +191,131 @@ CAMEL provides a variety of built-in toolkits that you can use right away. Here'
 | WhatsAppToolkit | A toolkit for interacting with the WhatsApp Business API, including sending messages, managing message templates, and accessing business profile information. |
 | ZapierToolkit | A toolkit for interacting with Zapier's NLA API to execute actions through natural language commands and automate workflows. |
 
-## 4. Conclusion
+## 4. Using Toolkits as MCP Servers
+
+CAMEL supports the Model Context Protocol (MCP), which allows you to expose toolkits as standalone servers that can be accessed by clients. This enables distributed tool execution and integration with various systems.
+
+### 4.1 What is MCP?
+
+Model Context Protocol (MCP) is a protocol that enables language models to interact with external tools and services. In CAMEL, toolkits can be exposed as MCP servers, allowing clients to discover and call tools remotely.
+
+### 4.2 Creating an MCP Server from a Toolkit
+
+Any CAMEL toolkit can be exposed as an MCP server. Here's how to create an MCP server using the ArXiv toolkit as an example:
+
+```python
+# arxiv_toolkit_server.py
+import argparse
+import sys
+
+from camel.toolkits import ArxivToolkit
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Run Arxiv Toolkit with MCP server mode.",
+        usage=f"python {sys.argv[0]} [--mode MODE]",
+    )
+    parser.add_argument(
+        "--mode",
+        choices=["stdio", "sse"],
+        default="stdio",
+        help="MCP server mode (default: 'stdio')",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=float,
+        default=None,
+        help="Timeout for the MCP server (default: None)",
+    )
+
+    args = parser.parse_args()
+
+    toolkit = ArxivToolkit(timeout=args.timeout)
+
+    # Run the toolkit as an MCP server
+    toolkit.mcp.run(args.mode)
+```
+
+The server can be run in two modes:
+- `stdio`: Standard input/output mode (default)
+- `sse`: Server-Sent Events mode
+
+### 4.3 Configuring MCP Servers
+
+Create a configuration file (e.g., `mcp_servers_config.json`) to specify how to launch your MCP servers:
+
+```json
+{
+  "mcpServers": {
+    "arxiv_toolkit": {
+      "command": "python",
+      "args": [
+        "-m",
+        "examples.mcp_arxiv_toolkit.arxiv_toolkit_server",
+        "--timeout",
+        "30"
+      ]
+    }
+  }
+}
+```
+
+### 4.4 Connecting to MCP Servers from a Client
+
+You can connect to MCP servers and use their tools from a client application:
+
+```python
+import asyncio
+from mcp.types import CallToolResult
+from camel.toolkits.mcp_toolkit import MCPToolkit, MCPClient
+
+async def run_example():
+    # Initialize the MCPToolkit with your configuration file
+    mcp_toolkit = MCPToolkit(config_path="path/to/mcp_servers_config.json")
+
+    # Connect to all configured MCP servers
+    await mcp_toolkit.connect()
+
+    # Get the first MCP server
+    mcp_client: MCPClient = mcp_toolkit.servers[0]
+    
+    # List available tools from the server
+    res = await mcp_client.list_mcp_tools()
+    if isinstance(res, str):
+        raise Exception(res)
+
+    tools = [tool.name for tool in res.tools]
+    print(f"Available tools: {tools}")
+
+    # Call a tool from the server
+    result: CallToolResult = await mcp_client.session.call_tool(
+        "tool_name", {"param1": "value1", "param2": "value2"}
+    )
+    print(result.content[0].text)
+
+    # Disconnect from all servers
+    await mcp_toolkit.disconnect()
+
+if __name__ == "__main__":
+    asyncio.run(run_example())
+```
+
+### 4.5 Benefits of Using MCP Servers
+
+1. **Distributed Execution**: Run tools on separate machines or processes.
+2. **Isolation**: Each toolkit runs in its own process, providing better isolation and stability.
+3. **Resource Management**: Allocate resources to specific toolkits based on their requirements.
+4. **Scalability**: Scale individual toolkits independently based on demand.
+5. **Language Interoperability**: MCP servers can be implemented in different programming languages.
+
+### 4.6 Best Practices
+
+- **Timeouts**: Always set appropriate timeouts to prevent hanging operations.
+- **Error Handling**: Implement proper error handling for both server and client sides.
+- **Resource Cleanup**: Ensure proper disconnection from servers when done.
+- **Configuration Management**: Use environment variables or configuration files for server settings.
+- **Monitoring**: Implement logging and monitoring for MCP servers in production environments.
+
+## 5. Conclusion
 
 Tools are essential for extending the capabilities of CAMEL agents, empowering them to perform a wide range of tasks and collaborate efficiently.
