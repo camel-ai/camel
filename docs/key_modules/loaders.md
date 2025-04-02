@@ -233,7 +233,7 @@ shared_invite/zt-1vy8u9lbo-ZQmhIAyWSEfSwLCl2r2eKA)
 
 ### 3.5. Using `Chunkr Reader`
 
-Initialize the client and set the local PDF file path, then use the generated task id to featch the output.
+Initialize the client and set the local PDF file path, then use the generated task id to fetch the output.
 
 ```python
 from camel.loaders import ChunkrReader
@@ -253,7 +253,7 @@ print(task_id)
 >>>"7becf001-6f07-4f63-bddf-5633df363bbb"
 ```
 
-Featch the output.
+Fetch the output.
 ```python
 task_output = chunkr.get_task_output(
     task_id="7becf001-6f07-4f63-bddf-5633df363bbb"

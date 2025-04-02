@@ -218,7 +218,7 @@ class QdrantStorage(BaseVectorStorage):
         )
 
     def _collection_exists(self, collection_name: str) -> bool:
-        r"""Returns wether the collection exists in the database"""
+        r"""Returns whether the collection exists in the database"""
         for c in self._client.get_collections().collections:
             if collection_name == c.name:
                 return True

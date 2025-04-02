@@ -97,7 +97,7 @@ def parse_arguments():
         '--server-port',
         type=int,
         default=8080,
-        help='Port ot run the web page on',
+        help='Port to run the web page on',
     )
     parser.add_argument(
         '--inbrowser',
