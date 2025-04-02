@@ -168,7 +168,7 @@ class ScoreBasedContextCreator(BaseContextCreator):
         # 6. Output Assembly
         # ======================
 
-        # Incase system message is the only message in memory when sorted units
+        # In case system message is the only message in memory when sorted units
         # are empty, raise an error
         if system_unit and len(remaining_units) == 0 and len(records) > 1:
             raise RuntimeError(

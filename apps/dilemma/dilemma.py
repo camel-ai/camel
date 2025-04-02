@@ -198,7 +198,7 @@ def construct_ui(
 
 
 def construct_blocks(data_path: str, has_connection: bool):
-    """Construct Blocs app but do not launch it.
+    """Construct Blocks app but do not launch it.
 
     Args:
         data_path (str): Path to the ZIP dataset with JOSNs inside.

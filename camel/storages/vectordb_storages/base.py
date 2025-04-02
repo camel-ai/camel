@@ -100,7 +100,7 @@ class VectorDBStatus(BaseModel):
     r"""Vector database status.
 
     Attributes:
-        vector_dim (int): The dimention of stored vectors.
+        vector_dim (int): The dimension of stored vectors.
         vector_count (int): The number of stored vectors.
 
     """

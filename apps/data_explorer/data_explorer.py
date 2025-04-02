@@ -399,7 +399,7 @@ def construct_ui(
 
 
 def construct_blocks(data_path: str, default_dataset: Optional[str]):
-    """Construct Blocs app but do not launch it.
+    """Construct Blocks app but do not launch it.
 
     Args:
         data_path (str): Path to the set of ZIP datasets.

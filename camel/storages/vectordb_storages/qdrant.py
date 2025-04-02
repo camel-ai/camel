@@ -40,7 +40,7 @@ class QdrantStorage(BaseVectorStorage):
     `Qdrant <https://qdrant.tech/>`_
 
     Args:
-        vector_dim (int): The dimenstion of storing vectors.
+        vector_dim (int): The dimension of storing vectors.
         collection_name (Optional[str], optional): Name for the collection in
             the Qdrant. If not provided, set it to the current time with iso
             format. (default: :obj:`None`)

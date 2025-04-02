@@ -71,7 +71,7 @@ Reference: [NebulaGraph](https://www.nebula-graph.io/)
 
 **`Neo4jGraph`**:
 
-- Description: A concrete implementation of `BaseGraphStorage`, tailored for interacting with Neo4jGraph, one of the most trusted graph databse.
+- Description: A concrete implementation of `BaseGraphStorage`, tailored for interacting with Neo4jGraph, one of the most trusted graph database.
 
 Reference: [Neo4jGraph](https://neo4j.com/)
 
