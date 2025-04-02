@@ -224,34 +224,51 @@ class SingleStepEnv:
             raise TypeError(f"Unsupported dataset type: {type(self.dataset)}")
 
     async def step(
-        self, action: Union[str, Dict[int, str], Action, List[Action]]
+        self, action: Union[Action, List[Action], str, Dict[int, str]]
     ) -> Union[
         Tuple[Observation, float, bool, Dict[str, Any]],
         List[Tuple[Observation, float, bool, Dict[str, Any]]],
     ]:
-        r"""Process actions for a subset of states and update their finished
-        status.
+        r"""Execute one interaction step in the environment using the
+        proposed solution.
+
+        This method processes the agent's response(s) to the current
+        observation(s), verifies the correctness of the responses using
+        the verifier, computes rewards, and returns the resulting
+        state transition(s).
+
+        The environment is strictly single-step. Once an action is
+        submitted for a state, that state is marked as done, and
+        the observation will not change.
 
         Args:
-            action: Can be one of the following:
-            - **str**: For `batch_size=1`, represents the `llm_response` for
-                index 0.
-            - **Dict[int, str]**: Maps state indices (keys) to `llm_response`
-                 strings (values), valid for any `batch_size`.
-            - **Action**: Single action with an optional index (for
-                `batch_size=1`) or required index (for `batch_size>=2`).
-            - **List[Action]**: List of actions, each with an index (required
-                for `batch_size>=2`).
+            action (Union[Action, List[Action], str, Dict[int, str]]):
+                The action(s) taken by the agent,
+                    which should contain the response(s)
+                to the observation(s). Can be:
+                - A single `Action` object (for batch size 1),
+                - A list of `Action` objects (for batched evaluation),
+                - A raw string (only allowed when batch size is 1).
+                - A dict that maps indices to their `llm_response`
+                    (for batched evaluation)
 
         Returns:
-            Union[StepResult, List[StepResult]]: StepResult or list of
-                StepResults for the processed states.
+            Union[Tuple[Observation, float, bool, Dict[str, Any]], List[...]]:
+                A tuple or list of tuples containing:
+                - `Observation`: Placeholder indicating episode end.
+                - `float`: The reward for the response.
+                - `bool`: Whether the episode is done
+                    (always `True` in this case).
+                - `dict`: Additional info including the proposed solution,
+                          verification result, and original data point.
 
         Raises:
-            RuntimeError: If environment isn't set up or episode has ended.
-            ValueError: If indices are invalid, duplicate, or correspond to
-                finished states.
+            RuntimeError: If the environment has not been set up,
+                or if `reset()` has not been called.
+            ValueError: If invalid action format, duplicate indices,
+                or out-of-bounds indices are detected.
         """
+
         if not self._is_setup:
             raise RuntimeError("Environment not set up. Call setup() first.")
         if self._batch_done():
@@ -261,72 +278,15 @@ class SingleStepEnv:
         if not self._states:
             raise RuntimeError("No current observation. Call reset() first.")
 
-        if isinstance(action, str):
-            if self.current_batch_size != 1:
-                raise ValueError(
-                    "For batch_size > 1, cannot use a single string. "
-                    "Use a dictionary or list of Actions."
-                )
-            actions = [Action(index=0, llm_response=action)]
-        elif isinstance(action, dict):
-            if not all(
-                isinstance(k, int) and isinstance(v, str)
-                for k, v in action.items()
-            ):
-                raise ValueError(
-                    "Dictionary must have integer keys and string values."
-                )
-            actions = [
-                Action(index=k, llm_response=v) for k, v in action.items()
-            ]
-        elif isinstance(action, Action):
-            actions = [action]
-        elif isinstance(action, list):
-            if not all(isinstance(act, Action) for act in action):
-                raise ValueError(
-                    "All elements in list must be Action objects."
-                )
-            actions = action
-        else:
-            raise ValueError(
-                "Invalid action type. Must be str, Dict[int, str], Action, "
-                "or List[Action]."
-            )
+        actions = self._normalize_actions(action)
 
-        # Validation fix for batch_size=1
-        if self.current_batch_size == 1:
-            if len(actions) != 1:
-                raise ValueError(
-                    "For batch_size=1, expect a single Action or a list "
-                    "containing exactly one Action"
-                )
-            if actions[0].index is not None and actions[0].index != 0:
-                raise ValueError("For batch_size=1, index must be None or 0.")
-            if actions[0].index is None:
-                actions[0].index = 0
-        else:  # batch_size >= 2
-            if not actions:
-                raise ValueError(
-                    "Action list cannot be empty for batch_size>=2."
-                )
-            for act in actions:
-                if act.index is None:
-                    raise ValueError(
-                        "For batch_size>=2, each Action must have an index."
-                    )
-                if not isinstance(act.index, int):
-                    raise ValueError("Index must be an integer.")
-            indices = [act.index for act in actions]
-            if len(set(indices)) != len(indices):
-                raise ValueError("Duplicate state indices in actions.")
-            for idx in indices:
-                assert isinstance(idx, int)
-                if idx < 0 or idx >= len(self._states):
-                    raise ValueError(f"Invalid state index {idx}.")
-                if self._states_done[idx]:
-                    raise ValueError(
-                        f"State at index {idx} is already finished."
-                    )
+        indices = [a.index for a in actions]
+
+        for idx in indices:
+            if idx < 0 or idx >= len(self._states):
+                raise ValueError(f"Invalid state index {idx}.")
+            if self._states_done[idx]:
+                raise ValueError(f"State at index {idx} is already finished.")
 
         num_actions = len(actions)
         if self.current_batch_size % num_actions != 0:
@@ -363,7 +323,6 @@ class SingleStepEnv:
         total_rewards, rewards_dicts = await self._compute_reward_batch(
             proposed_solutions, verification_results
         )
-
         # Create and return step results in batch
         step_results = []
 
@@ -395,6 +354,86 @@ class SingleStepEnv:
                 raise RuntimeError()  # Place holder
 
         return step_results[0] if len(step_results) == 1 else step_results
+
+    def _normalize_actions(
+        self, action: Union[Action, List[Action], str]
+    ) -> List[Action]:
+        r"""Normalize the user-provided action(s) into a validated list
+        of `Action` objects.
+
+        This method handles flexibility in input format by converting
+        raw strings (only allowed when batch size is 1) and ensuring
+        all necessary structure and integrity checks on actions
+        (e.g., index bounds, duplicates).
+
+        Args:
+            action (Union[Action, List[Action], str]):
+                The raw input action(s) provided by the agent. Can be:
+                - A single `Action` object.
+                - A list of `Action` objects.
+                - A raw string (if `batch_size == 1`), auto-wrapped
+                    in an `Action`.
+
+        Returns:
+            List[Action]: A list of validated `Action` instances
+                ready for evaluation.
+
+        Raises:
+            ValueError: If:
+                - Action indices are invalid or duplicated,
+                - Action list is empty,
+                - Index mismatches expected values
+                    (e.g., 0 for batch size 1),
+                - Wrong structure is used
+                    (e.g., string used with batch size > 1).
+            TypeError: If the action is of an unsupported type.
+        """
+
+        if isinstance(action, str):
+            if self.current_batch_size != 1:
+                raise ValueError(
+                    "String input for action is only allowed"
+                    " when batch_size == 1"
+                )
+            logger.warning("Auto-converting from str to Action", stacklevel=2)
+            action = Action(index=0, llm_response=action)
+
+        if isinstance(action, Action):
+            actions = [action]
+        elif isinstance(action, list):
+            if not action:
+                raise ValueError("Action list cannot be empty")
+            if not all(isinstance(a, Action) for a in action):
+                raise ValueError(
+                    "All elements in the list must be Action objects"
+                )
+            actions = action
+        else:
+            raise TypeError("Action must be a str, Action, or list of Actions")
+
+        if self.current_batch_size == 1 and len(actions) != 1:
+            raise ValueError(
+                "For batch_size=1, expect a single Action or a "
+                "list containing exactly one Action"
+            )
+
+        # Validate indices
+        for a in actions:
+            if not isinstance(a.index, int):
+                raise ValueError(
+                    f"Action index must be an integer, got {a.index}"
+                )
+            if self.current_batch_size == 1:
+                if a.index != 0:
+                    raise ValueError(
+                        "For batch_size=1, Action index must be 0"
+                    )
+
+        indices = [a.index for a in actions]
+        if len(set(indices)) != len(indices):
+            raise ValueError("Duplicate state indices in actions.")
+
+        return actions
 
     async def _compute_reward_batch(
         self,

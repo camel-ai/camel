@@ -13,10 +13,11 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import requests
 
+from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 from camel.utils import MCPServer, api_keys_required
 
@@ -189,3 +190,19 @@ class MeshyToolkit(BaseToolkit):
 
         # Wait for refinement completion and return final result
         return self.wait_for_task_completion(refine_task_id)
+
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the
+        functions in the toolkit.
+
+        Returns:
+            List[FunctionTool]: A list of FunctionTool objects
+                representing the functions in the toolkit.
+        """
+        return [
+            FunctionTool(self.generate_3d_preview),
+            FunctionTool(self.refine_3d_model),
+            FunctionTool(self.get_task_status),
+            FunctionTool(self.wait_for_task_completion),
+            FunctionTool(self.generate_3d_model_complete),
+        ]
