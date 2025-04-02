@@ -23,7 +23,7 @@ from PIL import Image
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import dependencies_required
+from camel.utils import MCPServer, dependencies_required
 
 logger = get_logger(__name__)
 
@@ -54,6 +54,7 @@ def _capture_screenshot(video_file: str, timestamp: float) -> Image.Image:
     return Image.open(io.BytesIO(out))
 
 
+@MCPServer()
 class VideoDownloaderToolkit(BaseToolkit):
     r"""A class for downloading videos and optionally splitting them into
     chunks.

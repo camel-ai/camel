@@ -19,8 +19,10 @@ import requests
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
+from camel.utils import MCPServer
 
 
+@MCPServer()
 class SemanticScholarToolkit(BaseToolkit):
     r"""A toolkit for interacting with the Semantic Scholar
     API to fetch paper and author data.

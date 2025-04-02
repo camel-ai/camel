@@ -19,17 +19,17 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from camel.toolkits.mcp_toolkit import MCPToolkit, _MCPServer
+from camel.toolkits.mcp_toolkit import MCPClient, MCPToolkit
 
 
-class Test_MCPServer:
-    r"""Test _MCPServer class."""
+class TestMCPClient:
+    r"""Test MCPClient class."""
 
     @pytest.mark.asyncio
     async def test_init(self):
-        r"""Test initialization of _MCPServer."""
+        r"""Test initialization of MCPClient."""
         # Test with default parameters
-        server = _MCPServer("test_command")
+        server = MCPClient("test_command")
         assert server.command_or_url == "test_command"
         assert server.args == []
         assert server.env == {}
@@ -38,7 +38,7 @@ class Test_MCPServer:
         assert server._is_connected is False
 
         # Test with custom parameters
-        server = _MCPServer(
+        server = MCPClient(
             "test_url",
             args=["--arg1", "--arg2"],
             env={"ENV_VAR": "value"},
@@ -77,7 +77,7 @@ class Test_MCPServer:
             mock_session_instance.list_tools.return_value = list_tools_result
 
             # Test HTTP connection
-            server = _MCPServer("https://example.com/api")
+            server = MCPClient("https://example.com/api")
             async with server.connection() as connected_server:
                 assert connected_server._is_connected is True
                 assert connected_server._mcp_tools == ["tool1", "tool2"]
@@ -116,7 +116,7 @@ class Test_MCPServer:
             mock_session_instance.list_tools.return_value = list_tools_result
 
             # Test stdio connection
-            server = _MCPServer(
+            server = MCPClient(
                 "local_command", args=["--arg1"], env={"ENV_VAR": "value"}
             )
             async with server.connection() as connected_server:
@@ -132,7 +132,7 @@ class Test_MCPServer:
     @pytest.mark.asyncio
     async def test_list_mcp_tools_not_connected(self):
         r"""Test list_mcp_tools when not connected."""
-        server = _MCPServer("test_command")
+        server = MCPClient("test_command")
         result = await server.list_mcp_tools()
         assert isinstance(result, str)
         assert "not connected" in result
@@ -140,7 +140,7 @@ class Test_MCPServer:
     @pytest.mark.asyncio
     async def test_list_mcp_tools_connected(self):
         r"""Test list_mcp_tools when connected."""
-        server = _MCPServer("test_command")
+        server = MCPClient("test_command")
         server._session = AsyncMock()
 
         # Mock successful response
@@ -160,7 +160,7 @@ class Test_MCPServer:
     @pytest.mark.asyncio
     async def test_generate_function_from_mcp_tool(self):
         r"""Test generate_function_from_mcp_tool."""
-        server = _MCPServer("test_command")
+        server = MCPClient("test_command")
         server._session = AsyncMock()
 
         # Create mock MCP tool
@@ -246,7 +246,7 @@ class Test_MCPServer:
     @pytest.mark.asyncio
     async def test_build_tool_schema(self):
         r"""Test build_tool_schema method."""
-        server = _MCPServer("test_command")
+        server = MCPClient("test_command")
         mock_tool = MagicMock()
         mock_tool.name = "test_function"
         mock_tool.description = "Test function description"
@@ -297,11 +297,11 @@ class Test_MCPServer:
 
     @pytest.mark.asyncio
     async def test_get_tools(self):
-        r"""Test get_tools method for _MCPServer."""
+        r"""Test get_tools method for MCPClient."""
         with patch(
             "camel.toolkits.mcp_toolkit.FunctionTool"
         ) as mock_function_tool:
-            server = _MCPServer("test_command")
+            server = MCPClient("test_command")
 
             # Mock tools
             mock_tool1 = MagicMock()
@@ -361,7 +361,7 @@ class Test_MCPServer:
             mock_session_instance.list_tools.return_value = list_tools_result
 
             # Test HTTP connection
-            server = _MCPServer("https://example.com/api")
+            server = MCPClient("https://example.com/api")
             result = await server.connect()
 
             # Verify results
@@ -396,7 +396,7 @@ class Test_MCPServer:
             )
 
             # Create server
-            server = _MCPServer("https://example.com/api")
+            server = MCPClient("https://example.com/api")
 
             # Mock disconnect to verify it's called on failure
             server.disconnect = AsyncMock()
@@ -416,7 +416,7 @@ class Test_MCPServer:
     async def test_disconnect_explicit(self):
         r"""Test explicit disconnect method."""
         # Create server
-        server = _MCPServer("test_command")
+        server = MCPClient("test_command")
 
         # Setup connected state
         server._is_connected = True
@@ -452,8 +452,8 @@ class TestMCPToolkit:
     def test_init(self):
         r"""Test initialization of MCPToolkit."""
         # Test with servers list
-        server1 = _MCPServer("test_command1")
-        server2 = _MCPServer("test_command2")
+        server1 = MCPClient("test_command1")
+        server2 = MCPClient("test_command2")
         toolkit = MCPToolkit(servers=[server1, server2])
 
         assert toolkit.servers == [server1, server2]
@@ -576,8 +576,8 @@ class TestMCPToolkit:
     @pytest.mark.asyncio
     async def test_connection(self):
         r"""Test connection context manager."""
-        server1 = _MCPServer("test_command1")
-        server2 = _MCPServer("test_command2")
+        server1 = MCPClient("test_command1")
+        server2 = MCPClient("test_command2")
         toolkit = MCPToolkit(servers=[server1, server2])
 
         # Mock the connection context managers of both servers
@@ -600,7 +600,7 @@ class TestMCPToolkit:
 
     def test_is_connected(self):
         r"""Test is_connected method."""
-        toolkit = MCPToolkit(servers=[_MCPServer("test_command")])
+        toolkit = MCPToolkit(servers=[MCPClient("test_command")])
         assert toolkit.is_connected() is False
         toolkit._connected = True
         assert toolkit.is_connected() is True
@@ -608,8 +608,8 @@ class TestMCPToolkit:
     @pytest.mark.asyncio
     async def test_get_tools(self):
         r"""Test get_tools method."""
-        server1 = _MCPServer("test_command1")
-        server2 = _MCPServer("test_command2")
+        server1 = MCPClient("test_command1")
+        server2 = MCPClient("test_command2")
         toolkit = MCPToolkit(servers=[server1, server2])
 
         # Mock get_tools for both servers
@@ -631,8 +631,8 @@ class TestMCPToolkit:
     async def test_connect(self):
         r"""Test explicit connect method."""
         # Create mock servers
-        server1 = _MCPServer("test_command1")
-        server2 = _MCPServer("test_command2")
+        server1 = MCPClient("test_command1")
+        server2 = MCPClient("test_command2")
 
         # Mock connect methods
         server1.connect = AsyncMock(return_value=server1)
@@ -664,8 +664,8 @@ class TestMCPToolkit:
     async def test_connect_failure(self):
         r"""Test connect method with failure."""
         # Create mock servers
-        server1 = _MCPServer("test_command1")
-        server2 = _MCPServer("test_command2")
+        server1 = MCPClient("test_command1")
+        server2 = MCPClient("test_command2")
 
         # First server connects successfully, second fails
         server1.connect = AsyncMock(return_value=server1)
@@ -694,8 +694,8 @@ class TestMCPToolkit:
     async def test_disconnect(self):
         r"""Test explicit disconnect method."""
         # Create mock servers
-        server1 = _MCPServer("test_command1")
-        server2 = _MCPServer("test_command2")
+        server1 = MCPClient("test_command1")
+        server2 = MCPClient("test_command2")
 
         # Mock disconnect methods
         server1.disconnect = AsyncMock()
