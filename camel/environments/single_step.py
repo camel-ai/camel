@@ -229,6 +229,46 @@ class SingleStepEnv:
         Tuple[Observation, float, bool, Dict[str, Any]],
         List[Tuple[Observation, float, bool, Dict[str, Any]]],
     ]:
+        r"""
+        Execute one interaction step in the environment using the
+        proposed solution.
+
+        This method processes the agent's response(s) to the current
+        observation(s), verifies the correctness of the responses using
+        the verifier, computes rewards, and returns the resulting
+        state transition(s).
+
+        The environment is strictly single-step. Once an action is
+        submitted for a state, that state is marked as done, and
+        the observation will not change.
+
+        Args:
+            action (Union[Action, List[Action], str]):
+                The action(s) taken by the agent,
+                    which should contain the response(s)
+                to the observation(s). Can be:
+                - A single `Action` object (for batch size 1),
+                - A list of `Action` objects (for batched evaluation),
+                - A raw string (only allowed when batch size is 1).
+
+        Returns:
+            Union[Tuple[Observation, float, bool, Dict[str, Any]], List[...]]:
+                A tuple or list of tuples containing:
+                - `Observation`: Placeholder indicating episode end.
+                - `float`: The reward for the response.
+                - `bool`: Whether the episode is done
+                    (always `True` in this case).
+                - `dict`: Additional info including the proposed solution,
+                          verification result, and original data point.
+
+        Raises:
+            RuntimeError: If the environment has not been set up,
+                or if `reset()` has not been called.
+            ValueError: If invalid action format, duplicate indices,
+                or out-of-bounds indices are detected.
+            TypeError: If the action is not one of the accepted types.
+        """
+
         if not self._is_setup:
             raise RuntimeError("Environment not set up. Call setup() first.")
         if self._batch_done():
@@ -304,7 +344,37 @@ class SingleStepEnv:
     def _normalize_actions(
         self, action: Union[Action, List[Action], str]
     ) -> List[Action]:
-        """Normalize input to a list of validated Action objects."""
+        r"""
+        Normalize the user-provided action(s) into a validated list
+            of `Action` objects.
+
+        This method handles flexibility in input format by converting
+        raw strings (only allowed when batch size is 1) and ensuring
+        all necessary structure and integrity checks on actions
+            (e.g., index bounds, duplicates).
+
+        Args:
+            action (Union[Action, List[Action], str]):
+                The raw input action(s) provided by the agent. Can be:
+                - A single `Action` object.
+                - A list of `Action` objects.
+                - A raw string (if `batch_size == 1`), auto-wrapped
+                    in an `Action`.
+
+        Returns:
+            List[Action]: A list of validated `Action` instances
+                ready for evaluation.
+
+        Raises:
+            ValueError: If:
+                - Action indices are invalid or duplicated,
+                - Action list is empty,
+                - Index mismatches expected values
+                    (e.g., 0 for batch size 1),
+                - Wrong structure is used
+                    (e.g., string used with batch size > 1).
+            TypeError: If the action is of an unsupported type.
+        """
 
         if isinstance(action, str):
             if self.current_batch_size != 1:
