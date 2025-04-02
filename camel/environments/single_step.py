@@ -229,8 +229,7 @@ class SingleStepEnv:
         Tuple[Observation, float, bool, Dict[str, Any]],
         List[Tuple[Observation, float, bool, Dict[str, Any]]],
     ]:
-        r"""
-        Execute one interaction step in the environment using the
+        r"""Execute one interaction step in the environment using the
         proposed solution.
 
         This method processes the agent's response(s) to the current
@@ -266,7 +265,6 @@ class SingleStepEnv:
                 or if `reset()` has not been called.
             ValueError: If invalid action format, duplicate indices,
                 or out-of-bounds indices are detected.
-            TypeError: If the action is not one of the accepted types.
         """
 
         if not self._is_setup:
@@ -344,14 +342,13 @@ class SingleStepEnv:
     def _normalize_actions(
         self, action: Union[Action, List[Action], str]
     ) -> List[Action]:
-        r"""
-        Normalize the user-provided action(s) into a validated list
-            of `Action` objects.
+        r"""Normalize the user-provided action(s) into a validated list
+        of `Action` objects.
 
         This method handles flexibility in input format by converting
         raw strings (only allowed when batch size is 1) and ensuring
         all necessary structure and integrity checks on actions
-            (e.g., index bounds, duplicates).
+        (e.g., index bounds, duplicates).
 
         Args:
             action (Union[Action, List[Action], str]):
