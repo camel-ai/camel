@@ -30,6 +30,9 @@ class OpenAICompatibleEmbedding(BaseEmbedding[str]):
         model_type (str): The model type to be used for text embeddings.
         api_key (str): The API key for authenticating with the model service.
         url (str): The url to the model service.
+        output_dim (Optional[int]): The dimensionality of the embedding
+            vectors. If None, it will be determined during the first
+            embedding call.
     """
 
     @api_keys_required(
@@ -43,9 +46,10 @@ class OpenAICompatibleEmbedding(BaseEmbedding[str]):
         model_type: str,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        output_dim: Optional[int] = None,
     ) -> None:
         self.model_type = model_type
-        self.output_dim: Optional[int] = None
+        self.output_dim: Optional[int] = output_dim
 
         self._api_key = api_key or os.environ.get(
             "OPENAI_COMPATIBILITY_API_KEY"
@@ -87,10 +91,14 @@ class OpenAICompatibleEmbedding(BaseEmbedding[str]):
 
         Returns:
             int: The dimensionality of the embedding for the current model.
+
+        Raises:
+            ValueError: If the embedding dimension cannot be determined.
         """
         if self.output_dim is None:
-            raise ValueError(
-                "Output dimension is not yet determined. Call "
-                "'embed_list' first."
-            )
+            self.embed_list(["test"])
+
+        if self.output_dim is None:
+            raise ValueError("Failed to determine embedding dimension")
+
         return self.output_dim
