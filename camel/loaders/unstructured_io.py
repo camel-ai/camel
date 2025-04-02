@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import uuid
 import warnings
+import traceback
 from typing import (
     IO,
     TYPE_CHECKING,
@@ -151,7 +152,7 @@ class UnstructuredIO:
                     elements = partition(file=f, **kwargs)
                     return elements
             except Exception:
-                warnings.warn(f"Failed to partition the file: {input_path}")
+                warnings.warn(traceback.format_exc())
                 return None
 
     @staticmethod
