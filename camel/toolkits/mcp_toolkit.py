@@ -145,6 +145,9 @@ class MCPClient(BaseToolkit):
             # Ensure resources are cleaned up on connection failure
             await self.disconnect()
             logger.error(f"Failed to connect to MCP server: {e}")
+            raise e
+        finally:
+            await self.disconnect()
 
     async def disconnect(self):
         r"""Explicitly disconnect from the MCP server."""
@@ -180,7 +183,8 @@ class MCPClient(BaseToolkit):
         try:
             return await self._session.list_tools()
         except Exception as e:
-            return f"Failed to list MCP tools: {e!s}"
+            logger.exception("Failed to list MCP tools")
+            raise e
 
     def generate_function_from_mcp_tool(self, mcp_tool: "Tool") -> Callable:
         r"""Dynamically generates a Python callable function corresponding to
@@ -245,7 +249,7 @@ class MCPClient(BaseToolkit):
                 logger.error(
                     "MCP Client is not connected. Call `connection()` first."
                 )
-                return (
+                raise RuntimeError(
                     "MCP Client is not connected. Call `connection()` first."
                 )
 
@@ -255,7 +259,7 @@ class MCPClient(BaseToolkit):
                 )
             except Exception as e:
                 logger.error(f"Failed to call MCP tool '{func_name}': {e!s}")
-                return f"Failed to call MCP tool '{func_name}': {e!s}"
+                raise e
 
             if not result.content or len(result.content) == 0:
                 return "No data available for this request."
@@ -282,7 +286,7 @@ class MCPClient(BaseToolkit):
                 logger.error(
                     f"Error processing content from MCP tool response: {e!s}"
                 )
-                return "Error processing content from MCP tool response"
+                raise e
 
         dynamic_function.__name__ = func_name
         dynamic_function.__doc__ = func_desc
@@ -427,10 +431,10 @@ class MCPToolkit(BaseToolkit):
                     logger.warning(
                         f"Invalid JSON in config file '{config_path}': {e!s}"
                     )
-                    return []
+                    raise e
         except FileNotFoundError:
             logger.warning(f"Config file not found: '{config_path}'")
-            return []
+            raise e
 
         all_servers = []
 
@@ -484,6 +488,7 @@ class MCPToolkit(BaseToolkit):
             # Ensure resources are cleaned up on connection failure
             await self.disconnect()
             logger.error(f"Failed to connect to one or more MCP servers: {e}")
+            raise e
 
     async def disconnect(self):
         r"""Explicitly disconnect from all MCP servers."""
