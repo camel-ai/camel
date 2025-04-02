@@ -33,7 +33,7 @@ class Action(BaseModel):
             generated (UTC).
     """
 
-    index: Optional[int] = Field(default=None, description="...")
+    index: int = Field(default=0, description="...")
 
     llm_response: str = Field(description="Generated response from the LLM")
     metadata: Dict[str, Any] = Field(
