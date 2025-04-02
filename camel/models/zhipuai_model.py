@@ -111,7 +111,7 @@ class ZhipuAIModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
-        # Use OpenAI cilent as interface call ZhipuAI
+        # Use OpenAI client as interface call ZhipuAI
         # Reference: https://open.bigmodel.cn/dev/api#openai_sdk
         response = await self._async_client.chat.completions.create(
             messages=messages,
@@ -137,7 +137,7 @@ class ZhipuAIModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        # Use OpenAI cilent as interface call ZhipuAI
+        # Use OpenAI client as interface call ZhipuAI
         # Reference: https://open.bigmodel.cn/dev/api#openai_sdk
         response = self._client.chat.completions.create(
             messages=messages,
