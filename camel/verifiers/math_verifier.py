@@ -29,6 +29,7 @@ class MathVerifier(BaseVerifier):
     - Supports LaTeX and plain mathematical expressions
     - Handles complex numbers, matrices, and sets
     - Configurable precision for floating-point comparisons
+    - Optional normalization of mathematical expressions
     - Comprehensive error handling and logging
     """
 
@@ -38,6 +39,7 @@ class MathVerifier(BaseVerifier):
         timeout: Optional[float] = 30.0,
         float_rounding: int = 6,
         numeric_precision: int = 15,
+        enable_normalization: Optional[bool] = False,
         **kwargs,
     ):
         r"""Initializes the MathVerifier.
@@ -51,10 +53,38 @@ class MathVerifier(BaseVerifier):
                 round floating-point numbers. (default: :obj:`6`)
             numeric_precision (int, optional): The numeric precision for
                 floating-point comparisons. (default: :obj:`15`)
+            enable_normalization (Optional[bool], optional): Whether to
+                normalize mathematical expressions before verification.
+                (default: :obj:`False`)
         """
         super().__init__(extractor=extractor, timeout=timeout, **kwargs)
         self.float_rounding = float_rounding
         self.numeric_precision = numeric_precision
+        self.enable_normalization = enable_normalization
+
+    @staticmethod
+    def _normalize_math_string(s: str) -> str:
+        r"""Normalize mathematical expressions by standardizing notation.
+
+        This method standardizes various LaTeX notations and removes unnecessary
+        formatting characters to ensure consistent comparison.
+
+        Args:
+            s (str): The mathematical expression string to normalize.
+
+        Returns:
+            str: The normalized mathematical expression.
+        """
+        replacements = {
+            r'\dfrac': r'\frac',
+            r'\tfrac': r'\frac',
+            r', ': r',',
+            r'\$': '',
+            r',\!': '',
+        }
+        for old, new in replacements.items():
+            s = s.replace(old, new)
+        return s
 
     async def _setup(self, **kwargs) -> None:
         r"""No special setup needed for math verification."""
@@ -92,6 +122,12 @@ class MathVerifier(BaseVerifier):
             )
 
         try:
+            # Apply normalization if enabled
+            if self.enable_normalization:
+                solution = self._normalize_math_string(solution)
+                reference_answer = self._normalize_math_string(reference_answer)
+                logger.debug("Applied mathematical expression normalization")
+
             # Parse both expressions with LaTeX and plain expression support
             parsed_reference_answer = parse(
                 reference_answer,
