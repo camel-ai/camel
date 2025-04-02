@@ -47,10 +47,10 @@ class HumanToolkit(BaseToolkit):
         actual user interface.
 
         Args:
-            message (str): The message to send to the user
+            message (str): The message to send to the user.
         """
-        print(f"\nMessage:\n{message}")
-        logger.info(f"\nMessage:\n{message}")
+        print(f"\nAgent Message:\n{message}")
+        logger.info(f"\nAgent Message:\n{message}")
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
