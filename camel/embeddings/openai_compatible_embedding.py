@@ -93,12 +93,12 @@ class OpenAICompatibleEmbedding(BaseEmbedding[str]):
             int: The dimensionality of the embedding for the current model.
 
         Raises:
-            RuntimeError: If the embedding dimension cannot be determined.
+            ValueError: If the embedding dimension cannot be determined.
         """
         if self.output_dim is None:
             self.embed_list(["test"])
 
         if self.output_dim is None:
-            raise RuntimeError("Failed to determine embedding dimension")
+            raise ValueError("Failed to determine embedding dimension")
 
         return self.output_dim
