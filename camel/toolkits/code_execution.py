@@ -22,8 +22,10 @@ from camel.interpreters import (
 )
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
+from camel.utils import MCPServer
 
 
+@MCPServer()
 class CodeExecutionToolkit(BaseToolkit):
     r"""A tookit for code execution.
 
