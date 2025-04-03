@@ -96,7 +96,7 @@ class CodeChunker(BaseChunker):
             chunks.append(self.tokenizer.decode(buffer))
         return chunks
 
-    def chunk(self, content: List[str]) -> List[Element]:
+    def chunk(self, content: List[str]) -> List["Element"]:
         r"""Splits the content into smaller chunks while preserving
         structure and adhering to token constraints.
 
