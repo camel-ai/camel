@@ -153,9 +153,9 @@ class TestMCPClient:
 
         # Mock exception
         server._session.list_tools.side_effect = Exception("Test error")
-        result = await server.list_mcp_tools()
-        assert isinstance(result, str)
-        assert "Failed to list MCP tools" in result
+        with pytest.raises(Exception) as excinfo:
+            await server.list_mcp_tools()
+        assert "Test error" in str(excinfo.value)
 
     @pytest.mark.asyncio
     async def test_generate_function_from_mcp_tool(self):
@@ -398,19 +398,12 @@ class TestMCPClient:
             # Create server
             server = MCPClient("https://example.com/api")
 
-            # Mock disconnect to verify it's called on failure
-            server.disconnect = AsyncMock()
-
-            # Test connect with failure
-            with patch("camel.toolkits.mcp_toolkit.logger") as mock_logger:
+            with pytest.raises(Exception) as excinfo:
                 await server.connect()
 
-                # Verify disconnect was called to clean up
-                server.disconnect.assert_called_once()
-                mock_logger.error.assert_called_once()
+            assert "Connection error" in str(excinfo.value)
 
-                # Verify server is not connected
-                assert server._is_connected is False
+            assert server._is_connected is False
 
     @pytest.mark.asyncio
     async def test_disconnect_explicit(self):
@@ -476,24 +469,28 @@ class TestMCPToolkit:
         with patch("camel.toolkits.mcp_toolkit.logger") as mock_logger:
             with tempfile.TemporaryDirectory() as temp_dir:
                 non_existent_path = Path(temp_dir) / "non_existent.json"
-                toolkit = MCPToolkit(config_path=str(non_existent_path))
 
-                # Should return an empty toolkit.
-                assert toolkit.servers == []
-                mock_logger.warning.assert_called_once()
+                with pytest.raises(FileNotFoundError):
+                    MCPToolkit(config_path=str(non_existent_path))
+
+                # Verify that a warning was logged
+                mock_logger.warning.assert_called_once_with(
+                    f"Config file not found: '{non_existent_path}'"
+                )
 
     def test_init_config_invalid_json(self):
         r"""Test from_config with invalid JSON."""
-        with patch("camel.toolkits.mcp_toolkit.logger") as mock_logger:
-            with tempfile.TemporaryDirectory() as temp_dir:
-                config_path = Path(temp_dir) / "invalid.json"
-                config_path.write_text("{invalid json")
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config_path = Path(temp_dir) / "invalid.json"
+            config_path.write_text("{invalid json")
 
-                toolkit = MCPToolkit(config_path=str(config_path))
+            with pytest.raises(json.JSONDecodeError) as excinfo:
+                MCPToolkit(config_path=str(config_path))
 
-                # Should return an empty toolkit
-                assert toolkit.servers == []
-                mock_logger.warning.assert_called_once()
+                assert (
+                    "Expecting property name enclosed in double quotes"
+                    in str(excinfo.value)
+                )
 
     def test_init_config_valid(self):
         r"""Test from_config with valid configuration."""
@@ -576,25 +573,33 @@ class TestMCPToolkit:
     @pytest.mark.asyncio
     async def test_connection(self):
         r"""Test connection context manager."""
-        server1 = MCPClient("test_command1")
-        server2 = MCPClient("test_command2")
+        # Create mock servers with proper setup
+        server1 = AsyncMock()
+        server2 = AsyncMock()
+
+        # Make connect method return the server itself
+        server1.connect = AsyncMock(return_value=server1)
+        server2.connect = AsyncMock(return_value=server2)
+
+        # Create a proper async context manager for connection
+        async_cm1 = AsyncMock()
+        async_cm1.__aenter__.return_value = server1
+
+        async_cm2 = AsyncMock()
+        async_cm2.__aenter__.return_value = server2
+
+        # Set up the connection method to return our context manager
+        server1.connection = MagicMock(return_value=async_cm1)
+        server2.connection = MagicMock(return_value=async_cm2)
+
         toolkit = MCPToolkit(servers=[server1, server2])
 
-        # Mock the connection context managers of both servers
-        class MockAsyncContextManager:
-            async def __aenter__(self):
-                return AsyncMock()
-
-            async def __aexit__(self, exc_type, exc_val, exc_tb):
-                return None
-
-        server1.connection = MagicMock(return_value=MockAsyncContextManager())
-        server2.connection = MagicMock(return_value=MockAsyncContextManager())
-
+        # Test connection context manager
         async with toolkit.connection() as connected_toolkit:
             assert connected_toolkit._connected is True
             assert isinstance(connected_toolkit._exit_stack, AsyncExitStack)
 
+        # Verify context exit cleans up properly
         assert toolkit._connected is False
         assert isinstance(toolkit._exit_stack, AsyncExitStack)
 
@@ -674,21 +679,16 @@ class TestMCPToolkit:
         # Create toolkit with mock servers
         toolkit = MCPToolkit(servers=[server1, server2])
 
-        # Mock disconnect to verify it's called on failure
-        toolkit.disconnect = AsyncMock()
-
-        # Test connect with failure
-        with patch("camel.toolkits.mcp_toolkit.logger") as mock_logger:
+        # Test connect with failure - should raise the exception
+        with pytest.raises(Exception) as excinfo:
             await toolkit.connect()
 
-            # Verify disconnect was called to clean up
-            toolkit.disconnect.assert_called_once()
-            mock_logger.error.assert_called_once()
+        assert "Connection error" in str(excinfo.value)
 
-            # Verify first server was connected
-            server1.connect.assert_called_once()
-            # Verify second server was attempted
-            server2.connect.assert_called_once()
+        # Verify first server was connected
+        server1.connect.assert_called_once()
+        # Verify second server was attempted
+        server2.connect.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_disconnect(self):

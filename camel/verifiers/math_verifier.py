@@ -29,6 +29,7 @@ class MathVerifier(BaseVerifier):
     - Supports LaTeX and plain mathematical expressions
     - Handles complex numbers, matrices, and sets
     - Configurable precision for floating-point comparisons
+    - Optional LaTeX wrapping to ensure proper parsing and rendering
     - Comprehensive error handling and logging
     """
 
@@ -38,6 +39,7 @@ class MathVerifier(BaseVerifier):
         timeout: Optional[float] = 30.0,
         float_rounding: int = 6,
         numeric_precision: int = 15,
+        enable_wrapping: Optional[bool] = False,
         **kwargs,
     ):
         r"""Initializes the MathVerifier.
@@ -51,10 +53,39 @@ class MathVerifier(BaseVerifier):
                 round floating-point numbers. (default: :obj:`6`)
             numeric_precision (int, optional): The numeric precision for
                 floating-point comparisons. (default: :obj:`15`)
+            enable_wrapping (Optional[bool], optional): Whether to wrap LaTeX
+                expressions in math mode delimiters. (default: :obj:`False`)
         """
         super().__init__(extractor=extractor, timeout=timeout, **kwargs)
         self.float_rounding = float_rounding
         self.numeric_precision = numeric_precision
+        self.enable_wrapping = enable_wrapping
+
+    @staticmethod
+    def _latex_wrapping(s: str) -> str:
+        r"""Wrap a LaTeX expression in math mode delimiters.
+
+        This function checks whether the input string is already in a LaTeX
+        math environment (e.g., $, \[, \begin{}, etc.). If not, it wraps the
+        expression in $$...$$ to ensure proper parsing and rendering as a
+        mathematical expression.
+
+        Args:
+            s (str): The input LaTeX string.
+
+        Returns:
+            str: The LaTeX string wrapped in math mode if necessary.
+        """
+        s_stripped = s.strip()
+        if (
+            not any(
+                s_stripped.startswith(prefix)
+                for prefix in ("$", "\\(", "\\[", "\\begin")
+            )
+            and "\\boxed" not in s_stripped
+        ):
+            s = f"$$ {s_stripped} $$"
+        return s
 
     async def _setup(self, **kwargs) -> None:
         r"""No special setup needed for math verification."""
@@ -92,6 +123,12 @@ class MathVerifier(BaseVerifier):
             )
 
         try:
+            # Apply LaTeX wrapping if enabled
+            if self.enable_wrapping:
+                solution = self._latex_wrapping(solution)
+                reference_answer = self._latex_wrapping(reference_answer)
+                logger.debug("Applied LaTeX wrapping")
+
             # Parse both expressions with LaTeX and plain expression support
             parsed_reference_answer = parse(
                 reference_answer,
