@@ -15,7 +15,6 @@
 
 import datetime
 import os
-import pickle
 from typing import Any, Dict, List, Optional
 
 from camel.toolkits import FunctionTool
@@ -33,25 +32,15 @@ class GoogleCalendarToolkit(BaseToolkit):
 
     def __init__(
         self,
-        credentials_path: str = "credentials.json",
-        token_path: str = "token.pickle",
         timeout: Optional[float] = None,
     ):
         r"""Initializes a new instance of the GoogleCalendarToolkit class.
 
         Args:
-            credentials_path (str): The file path to the credentials JSON file
-            used for authenticating with the Google Calendar API.
-            Defaults to "credentials.json".
-            token_path (str): The file path to the token pickle file used for
-            storing the user's access and refresh tokens.
-            Defaults to "token.pickle".
             timeout (Optional[float]): The timeout value for API requests
             in seconds. If None, no timeout is applied. Defaults to None.
         """
         super().__init__(timeout=timeout)
-        self.credentials_path = credentials_path
-        self.token_path = token_path
         self.service = self._get_calendar_service()
 
     def create_event(
@@ -331,32 +320,73 @@ class GoogleCalendarToolkit(BaseToolkit):
             ValueError: If authentication fails.
         """
         from google.auth.transport.requests import Request
-        from google_auth_oauthlib.flow import InstalledAppFlow
         from googleapiclient.discovery import build
 
         creds = None
-
-        # The file token.pickle stores the user's access and refresh tokens
-        if os.path.exists(self.token_path):
-            with open(self.token_path, 'rb') as token:
-                creds = pickle.load(token)
 
         # If there are no (valid) credentials available, let the user log in
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    self.credentials_path, SCOPES
-                )
-                creds = flow.run_local_server(port=0)
-
-            # Save the credentials for the next run
-            with open(self.token_path, 'wb') as token:
-                pickle.dump(creds, token)
+                creds = self._authenticate()
 
         try:
             service = build('calendar', 'v3', credentials=creds)
             return service
         except Exception:
             raise ValueError("Failed to build service")
+
+    def _authenticate(self):
+        r"""Gets Google OAuth2 credentials from environment variables.
+
+        Environment variables needed:
+        - GOOGLE_CLIENT_ID: The OAuth client ID
+        - GOOGLE_CLIENT_SECRET: The OAuth client secret
+        - GOOGLE_REFRESH_TOKEN: (Optional) Refresh token for reauthorization
+
+        Returns:
+            Credentials: A Google OAuth2 credentials object.
+        """
+        client_id = os.environ.get('GOOGLE_CLIENT_ID')
+        client_secret = os.environ.get('GOOGLE_CLIENT_SECRET')
+        refresh_token = os.environ.get('GOOGLE_REFRESH_TOKEN')
+        token_uri = os.environ.get(
+            'GOOGLE_TOKEN_URI', 'https://oauth2.googleapis.com/token'
+        )
+
+        from google.oauth2.credentials import Credentials
+        from google_auth_oauthlib.flow import InstalledAppFlow
+
+        # For first-time authentication
+        if not refresh_token:
+            if not (client_id and client_secret):
+                raise ValueError(
+                    "Missing required environment variables: "
+                    "GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET"
+                )
+
+            client_config = {
+                "installed": {
+                    "client_id": client_id,
+                    "client_secret": client_secret,
+                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                    "token_uri": token_uri,
+                    "redirect_uris": ["http://localhost"],
+                }
+            }
+
+            flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
+            creds = flow.run_local_server(port=0)
+
+            return creds
+        else:
+            # If we have a refresh token, use it to get credentials
+            return Credentials(
+                None,
+                refresh_token=refresh_token,
+                token_uri=token_uri,
+                client_id=client_id,
+                client_secret=client_secret,
+                scopes=SCOPES,
+            )
