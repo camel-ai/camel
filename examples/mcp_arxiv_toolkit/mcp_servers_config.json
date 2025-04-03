@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "arxiv_toolkit": {
+      "command": "python",
+      "args": [
+        "-m",
+        "examples.mcp_arxiv_toolkit.arxiv_toolkit_server",
+        "--timeout",
+        "30"
+      ]
+    }
+  }
+}

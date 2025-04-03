@@ -30,8 +30,8 @@ class Constants:
     # Return response with json format
     FUNC_NAME_FOR_STRUCTURED_OUTPUT = "return_json_response"
 
-    # Default top k vaule for RAG
+    # Default top k value for RAG
     DEFAULT_TOP_K_RESULTS = 1
 
-    # Default similarity threshold vaule for RAG
+    # Default similarity threshold value for RAG
     DEFAULT_SIMILARITY_THRESHOLD = 0.7
