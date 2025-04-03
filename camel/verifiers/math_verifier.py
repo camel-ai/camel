@@ -66,8 +66,8 @@ class MathVerifier(BaseVerifier):
     def _normalize_math_string(s: str) -> str:
         r"""Normalize mathematical expressions by standardizing notation.
 
-        This method standardizes various LaTeX notations and removes unnecessary
-        formatting characters to ensure consistent comparison.
+        This method standardizes various LaTeX notations and removes
+        unnecessary formatting characters to ensure consistent comparison.
 
         Args:
             s (str): The mathematical expression string to normalize.
@@ -78,12 +78,22 @@ class MathVerifier(BaseVerifier):
         replacements = {
             r'\dfrac': r'\frac',
             r'\tfrac': r'\frac',
-            r', ': r',',
             r'\$': '',
             r',\!': '',
         }
         for old, new in replacements.items():
             s = s.replace(old, new)
+
+        # Auto-wrap in $$ if no LaTeX markers detected
+        s_stripped = s.strip()
+        if (
+            not any(
+                s_stripped.startswith(prefix)
+                for prefix in ("$", "\\(", "\\[", "\\begin")
+            )
+            and "\\boxed" not in s_stripped
+        ):
+            s = f"$$ {s_stripped} $$"
         return s
 
     async def _setup(self, **kwargs) -> None:
@@ -125,7 +135,9 @@ class MathVerifier(BaseVerifier):
             # Apply normalization if enabled
             if self.enable_normalization:
                 solution = self._normalize_math_string(solution)
-                reference_answer = self._normalize_math_string(reference_answer)
+                reference_answer = self._normalize_math_string(
+                    reference_answer
+                )
                 logger.debug("Applied mathematical expression normalization")
 
             # Parse both expressions with LaTeX and plain expression support
