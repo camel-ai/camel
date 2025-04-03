@@ -84,6 +84,11 @@ class UnifiedModelType(str):
         return True
 
     @property
+    def is_ppio(self) -> bool:
+        r"""Returns whether the model is a PPIO served model."""
+        return True
+
+    @property
     def is_zhipuai(self) -> bool:
         r"""Returns whether the model is a Zhipuai model."""
         return True
