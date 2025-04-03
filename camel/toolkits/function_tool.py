@@ -173,7 +173,6 @@ def get_openai_tool_schema(func: Callable) -> Dict[str, Any]:
     openai_function_schema = {
         "name": func.__name__,
         "description": func_description,
-        "strict": True,
         "parameters": parameters_dict,
     }
 
