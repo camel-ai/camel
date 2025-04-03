@@ -24,6 +24,7 @@ from .multi_condition_image_craft import (
     MultiConditionImageCraftPromptTemplateDict,
 )
 from .object_recognition import ObjectRecognitionPromptTemplateDict
+from .output_format.prompts import OutputFormatPrompt, JsonOutputFormatPrompt
 from .persona_hub import PersonaHubPrompt
 from .prompt_templates import PromptTemplateGenerator
 from .role_description_prompt_template import RoleDescriptionPromptTemplateDict
@@ -36,6 +37,8 @@ __all__ = [
     'TextPrompt',
     'CodePrompt',
     'TextPromptDict',
+    'OutputFormatPrompt',
+    'JsonOutputFormatPrompt',
     'AISocietyPromptTemplateDict',
     'CodePromptTemplateDict',
     'MisalignmentPromptTemplateDict',
