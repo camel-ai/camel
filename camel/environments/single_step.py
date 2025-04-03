@@ -328,30 +328,22 @@ class SingleStepEnv:
 
         for i in range(len(actions)):
             idx = indices[i]
-            assert isinstance(idx, int) or idx is None
-            if idx is not None:
-                step_results.append(
-                    StepResult(
-                        observation=self.PLACEHOLDER_OBS,
-                        reward=total_rewards[i],
-                        rewards_dict=rewards_dicts[i],
-                        done=True,
-                        info={
-                            "proposed_solution": proposed_solutions[i],
-                            "verification_result": verification_results[i],
-                            "state": self._states[idx],
-                        },
-                    ).as_tuple()
-                )
-            else:
-                raise RuntimeError()  # Place holder
+            step_results.append(
+                StepResult(
+                    observation=self.PLACEHOLDER_OBS,
+                    reward=total_rewards[i],
+                    rewards_dict=rewards_dicts[i],
+                    done=True,
+                    info={
+                        "proposed_solution": proposed_solutions[i],
+                        "verification_result": verification_results[i],
+                        "state": self._states[idx],
+                    },
+                ).as_tuple()
+            )
 
         for _, idx in enumerate(indices):
-            if idx is not None:
-                assert isinstance(idx, int)
-                self._states_done[idx] = True
-            else:
-                raise RuntimeError()  # Place holder
+            self._states_done[idx] = True
 
         return step_results[0] if len(step_results) == 1 else step_results
 
