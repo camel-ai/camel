@@ -19,6 +19,7 @@ from .base import (
     VectorDBStatus,
     VectorRecord,
 )
+from .faiss import FaissStorage
 from .milvus import MilvusStorage
 from .qdrant import QdrantStorage
 from .tidb import TiDBStorage
