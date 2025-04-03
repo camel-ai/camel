@@ -19,10 +19,12 @@ from typing import Any, Dict, List, Optional
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
+from camel.utils import MCPServer
 
 logger = get_logger(__name__)
 
 
+@MCPServer()
 class TerminalToolkit(BaseToolkit):
     r"""A toolkit for terminal operations across multiple operating systems.
 

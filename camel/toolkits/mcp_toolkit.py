@@ -14,6 +14,7 @@
 import inspect
 import json
 import os
+import shlex
 from contextlib import AsyncExitStack, asynccontextmanager
 from typing import (
     TYPE_CHECKING,
@@ -38,7 +39,7 @@ from camel.toolkits import BaseToolkit, FunctionTool
 logger = get_logger(__name__)
 
 
-class _MCPServer(BaseToolkit):
+class MCPClient(BaseToolkit):
     r"""Internal class that provides an abstraction layer to interact with
     external tools using the Model Context Protocol (MCP). It supports two
     modes of connection:
@@ -87,7 +88,7 @@ class _MCPServer(BaseToolkit):
         r"""Explicitly connect to the MCP server.
 
         Returns:
-            _MCPServer: The connected server instance
+            MCPClient: The client used to connect to the server.
         """
         from mcp.client.session import ClientSession
         from mcp.client.sse import sse_client
@@ -110,11 +111,20 @@ class _MCPServer(BaseToolkit):
                 )
             else:
                 command = self.command_or_url
+                arguments = self.args
+                if not self.args:
+                    argv = shlex.split(command)
+                    if not argv:
+                        raise ValueError("Command is empty")
+
+                    command = argv[0]
+                    arguments = argv[1:]
+
                 if os.name == "nt" and command.lower() == "npx":
                     command = "npx.cmd"
 
                 server_parameters = StdioServerParameters(
-                    command=command, args=self.args, env=self.env
+                    command=command, args=arguments, env=self.env
                 )
                 (
                     read_stream,
@@ -135,6 +145,7 @@ class _MCPServer(BaseToolkit):
             # Ensure resources are cleaned up on connection failure
             await self.disconnect()
             logger.error(f"Failed to connect to MCP server: {e}")
+            raise e
 
     async def disconnect(self):
         r"""Explicitly disconnect from the MCP server."""
@@ -149,7 +160,7 @@ class _MCPServer(BaseToolkit):
         on the provided `command_or_url`.
 
         Yields:
-            _MCPServer: Instance with active connection ready for tool
+            MCPClient: Instance with active connection ready for tool
                 interaction.
         """
         try:
@@ -170,7 +181,8 @@ class _MCPServer(BaseToolkit):
         try:
             return await self._session.list_tools()
         except Exception as e:
-            return f"Failed to list MCP tools: {e!s}"
+            logger.exception("Failed to list MCP tools")
+            raise e
 
     def generate_function_from_mcp_tool(self, mcp_tool: "Tool") -> Callable:
         r"""Dynamically generates a Python callable function corresponding to
@@ -235,7 +247,7 @@ class _MCPServer(BaseToolkit):
                 logger.error(
                     "MCP Client is not connected. Call `connection()` first."
                 )
-                return (
+                raise RuntimeError(
                     "MCP Client is not connected. Call `connection()` first."
                 )
 
@@ -245,7 +257,7 @@ class _MCPServer(BaseToolkit):
                 )
             except Exception as e:
                 logger.error(f"Failed to call MCP tool '{func_name}': {e!s}")
-                return f"Failed to call MCP tool '{func_name}': {e!s}"
+                raise e
 
             if not result.content or len(result.content) == 0:
                 return "No data available for this request."
@@ -272,7 +284,7 @@ class _MCPServer(BaseToolkit):
                 logger.error(
                     f"Error processing content from MCP tool response: {e!s}"
                 )
-                return "Error processing content from MCP tool response"
+                raise e
 
         dynamic_function.__name__ = func_name
         dynamic_function.__doc__ = func_desc
@@ -345,7 +357,7 @@ class MCPToolkit(BaseToolkit):
     MCP services.
 
     Args:
-        servers (Optional[List[_MCPServer]]): List of _MCPServer
+        servers (Optional[List[MCPClient]]): List of MCPClient
             instances to manage.
         config_path (Optional[str]): Path to a JSON configuration file
             defining MCP servers.
@@ -376,12 +388,12 @@ class MCPToolkit(BaseToolkit):
             }
 
     Attributes:
-        servers (List[_MCPServer]): List of _MCPServer instances being managed.
+        servers (List[MCPClient]): List of MCPClient instances being managed.
     """
 
     def __init__(
         self,
-        servers: Optional[List[_MCPServer]] = None,
+        servers: Optional[List[MCPClient]] = None,
         config_path: Optional[str] = None,
     ):
         super().__init__()
@@ -392,7 +404,7 @@ class MCPToolkit(BaseToolkit):
                 "Servers from both sources will be combined."
             )
 
-        self.servers: List[_MCPServer] = servers or []
+        self.servers: List[MCPClient] = servers or []
 
         if config_path:
             self.servers.extend(self._load_servers_from_config(config_path))
@@ -400,14 +412,14 @@ class MCPToolkit(BaseToolkit):
         self._exit_stack = AsyncExitStack()
         self._connected = False
 
-    def _load_servers_from_config(self, config_path: str) -> List[_MCPServer]:
+    def _load_servers_from_config(self, config_path: str) -> List[MCPClient]:
         r"""Loads MCP server configurations from a JSON file.
 
         Args:
             config_path (str): Path to the JSON configuration file.
 
         Returns:
-            List[_MCPServer]: List of configured _MCPServer instances.
+            List[MCPClient]: List of configured MCPClient instances.
         """
         try:
             with open(config_path, "r", encoding="utf-8") as f:
@@ -417,10 +429,10 @@ class MCPToolkit(BaseToolkit):
                     logger.warning(
                         f"Invalid JSON in config file '{config_path}': {e!s}"
                     )
-                    return []
-        except FileNotFoundError:
+                    raise e
+        except FileNotFoundError as e:
             logger.warning(f"Config file not found: '{config_path}'")
-            return []
+            raise e
 
         all_servers = []
 
@@ -443,7 +455,7 @@ class MCPToolkit(BaseToolkit):
                 )
                 continue
 
-            server = _MCPServer(
+            server = MCPClient(
                 command_or_url=cast(str, cfg.get("command") or cfg.get("url")),
                 args=cfg.get("args", []),
                 env={**os.environ, **cfg.get("env", {})},
@@ -474,6 +486,7 @@ class MCPToolkit(BaseToolkit):
             # Ensure resources are cleaned up on connection failure
             await self.disconnect()
             logger.error(f"Failed to connect to one or more MCP servers: {e}")
+            raise e
 
     async def disconnect(self):
         r"""Explicitly disconnect from all MCP servers."""

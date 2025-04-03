@@ -18,11 +18,12 @@ from typing import Dict, List, Literal, Optional, Union
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import dependencies_required
+from camel.utils import MCPServer, dependencies_required
 
 logger = logging.getLogger(__name__)
 
 
+@MCPServer()
 class GithubToolkit(BaseToolkit):
     r"""A class representing a toolkit for interacting with GitHub
     repositories.

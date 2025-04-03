@@ -21,6 +21,7 @@ from typing import List, Optional, Union
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
+from camel.utils import MCPServer
 
 logger = get_logger(__name__)
 
@@ -28,6 +29,7 @@ logger = get_logger(__name__)
 DEFAULT_FORMAT = '.md'
 
 
+@MCPServer()
 class FileWriteToolkit(BaseToolkit):
     r"""A toolkit for creating, writing, and modifying text in files.
 
