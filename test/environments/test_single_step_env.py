@@ -121,7 +121,7 @@ async def test_single_step_env_lifecycle_single_generator():
     assert (
         observation2.question == "What is the capital of France?"
     )  # Second datapoint
-    action2 = Action(index=None, llm_response="Paris")
+    action2 = Action(llm_response="Paris")
     result2 = await env.step(action2)
     next_obs2, reward2, done2, info2 = result2
     assert next_obs2 == env.PLACEHOLDER_OBS
@@ -205,12 +205,10 @@ async def test_single_step_env_lifecycle_single():
     ):
         await env.step(action)
 
-    # Test reset and step again with index=None (should default to 0)
+    # Test reset and step again with no index (should default to 0)
     observation2 = await env.reset(batch_size=1)
     assert isinstance(observation2, Observation)
-    action2 = Action(
-        index=None, llm_response="Paris"
-    )  # Assuming second question
+    action2 = Action(llm_response="Paris")  # Assuming second question
     result2 = await env.step(action2)
     next_obs2, reward2, done2, info2 = result2
     assert next_obs2 == env.PLACEHOLDER_OBS
@@ -581,7 +579,7 @@ async def test_single_step_env_error_handling_single():
 
     # a) Action with invalid index
     with pytest.raises(
-        ValueError, match="For batch_size=1, index must be None or 0"
+        ValueError, match="For batch_size=1, Action index must be 0"
     ):
         await env_invalid_actions.step(Action(index=1, llm_response="4"))
 

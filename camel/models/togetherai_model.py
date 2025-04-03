@@ -113,7 +113,7 @@ class TogetherAIModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
-        # Use OpenAI cilent as interface call Together AI
+        # Use OpenAI client as interface call Together AI
         # Reference: https://docs.together.ai/docs/openai-api-compatibility
         response = await self._async_client.chat.completions.create(
             messages=messages,
@@ -139,7 +139,7 @@ class TogetherAIModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        # Use OpenAI cilent as interface call Together AI
+        # Use OpenAI client as interface call Together AI
         # Reference: https://docs.together.ai/docs/openai-api-compatibility
         response = self._client.chat.completions.create(
             messages=messages,
