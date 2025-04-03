@@ -421,7 +421,7 @@ class InternalPythonInterpreter(BaseInterpreter):
         result = None
         if not isinstance(if_statement.test, ast.Compare):
             raise InterpreterError(
-                "Only Campare expr supported in if statement, get"
+                "Only Compare expr supported in if statement, get"
                 f" {if_statement.test.__class__.__name__}"
             )
         if self._execute_condition(if_statement.test):

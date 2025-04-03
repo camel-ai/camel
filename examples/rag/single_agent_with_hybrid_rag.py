@@ -34,7 +34,7 @@ def single_agent(query: str) -> str:
         bm25_retriever_top_k=10,
     )
 
-    # Pass the retrieved infomation to agent
+    # Pass the retrieved information to agent
     user_msg = str(retrieved_info)
     agent = ChatAgent(assistant_sys_msg)
 
