@@ -19,7 +19,6 @@ from camel.memories.records import ContextRecord, MemoryRecord
 from camel.storages.key_value_storages.base import BaseKeyValueStorage
 from camel.storages.key_value_storages.in_memory import InMemoryKeyValueStorage
 from camel.types import OpenAIBackendRole
-from camel.types.enums import RoleType
 
 
 class ChatHistoryBlock(MemoryBlock):
@@ -75,29 +74,51 @@ class ChatHistoryBlock(MemoryBlock):
             return list()
 
         chat_records: List[MemoryRecord] = []
-        if window_size is not None:
-            # Only check if the first record is ASSISTANT
+        if window_size is not None and window_size >= 0:
+            # Initial preserved index: Keep first message
+            # if it's SYSTEM/DEVELOPER (index 0)
             start_index = (
                 1
-                if record_dicts
-                and record_dicts[0]['message']['role_type']
-                == RoleType.ASSISTANT
+                if (
+                    record_dicts
+                    and record_dicts[0]['role_at_backend']
+                    in {OpenAIBackendRole.SYSTEM, OpenAIBackendRole.DEVELOPER}
+                )
                 else 0
             )
-            # Take the last `window_size` records from the remaining messages
-            remaining = record_dicts[start_index:]
-            truncated_remaining = (
-                remaining[-window_size:]
-                if len(remaining) > window_size
-                else remaining
-            )
-            # Combine the preserved ASSISTANT (if any) with the truncated
-            # messages
-            final_records = record_dicts[:start_index] + truncated_remaining
-        else:
-            final_records = record_dicts  # No window size restriction
 
-        # Convert to MemoryRecord objects
+            """
+            Message Processing Logic:
+            1. Preserve first system/developer message (if needed)
+            2. Keep latest window_size messages from the rest
+            
+            Examples:
+            - Case 1: First message is SYSTEM, total 5 messages, window_size=2
+            Input: [system_msg, user_msg1, user_msg2, user_msg3, user_msg4]
+            Result: [system_msg] + [user_msg3, user_msg4]
+
+            - Case 2: First message is USER, total 5 messages, window_size=3
+            Input: [user_msg1, user_msg2, user_msg3, user_msg4, , user_msg5]
+            Result: [user_msg3, user_msg4, , user_msg5]
+            """
+            preserved_messages = record_dicts[
+                :start_index
+            ]  # Preserve system message (if exists)
+            sliding_messages = record_dicts[
+                start_index:
+            ]  # Messages to be truncated
+
+            # Take last window_size messages (if exceeds limit)
+            truncated_messages = (
+                sliding_messages[-window_size:] if window_size else []
+            )
+
+            # Combine preserved messages with truncated window messages
+            final_records = preserved_messages + truncated_messages
+        else:
+            # Return full records when no window restriction
+            final_records = record_dicts
+
         chat_records = [
             MemoryRecord.from_dict(record) for record in final_records
         ]
