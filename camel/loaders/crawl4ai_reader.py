@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import asyncio
-import os
+import logging
 from typing import Any, Dict, List, Optional
 
 from crawl4ai import (
@@ -27,6 +27,8 @@ from crawl4ai.extraction_strategy import (
 from pydantic import BaseModel, ValidationError
 
 from camel.utils import api_keys_required
+
+logger = logging.getLogger(__name__)
 
 
 class Crawl4AI:
@@ -45,7 +47,7 @@ class Crawl4AI:
     def __init__(self) -> None:
         self.crawler = AsyncWebCrawler
 
-    async def _run_crawler(self, url: str, **kwargs) -> Any:
+    async def _run_crawler(self, url: str, **kwargs) -> CrawlResult:
         r"""Run the asynchronous web crawler on a given URL.
 
         Args:
@@ -61,9 +63,9 @@ class Crawl4AI:
 
         try:
             async with self.crawler() as c:
-                result = await c.arun(url, **kwargs)
-                return result
+                return await c.arun(url, **kwargs)
         except Exception as e:
+            logger.error("Crawler run failed: %s", e)
             raise RuntimeError(f"Crawler run failed: {e}") from e
 
     async def crawl(
@@ -121,6 +123,7 @@ class Crawl4AI:
                                 await queue.put((link['href'], depth + 1))
 
             except Exception as e:
+                logger.error("Error crawling %s: %s", url, e)
                 raise RuntimeError(f"Error crawling {url}: {e}") from e
 
             queue.task_done()
@@ -178,7 +181,7 @@ class Crawl4AI:
         api_key: Optional[str] = "no-token",
         llm_provider: str = 'ollama/qwen2',
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> CrawlResult:
         r"""Extract structured data from a URL using an LLM.
 
         Args:
@@ -198,8 +201,6 @@ class Crawl4AI:
             ValidationError: If extracted data does not match the schema.
             RuntimeError: If extraction fails.
         """
-
-        api_key = api_key or os.getenv('CHUNKR_API_KEY')
 
         extraction_strategy = LLMExtractionStrategy(
             provider=llm_provider,
