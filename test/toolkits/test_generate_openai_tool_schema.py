@@ -205,6 +205,7 @@ def test_function_tool_generate_schema_with_retries(
                 'This function checks if the integer is positive and\n'
                 'if the string is non-empty.'
             ),
+            'strict': True,
             'parameters': {
                 'type': 'object',
                 'properties': {

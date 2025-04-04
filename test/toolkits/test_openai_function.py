@@ -119,6 +119,7 @@ def test_get_openai_tool_schema():
             'name': 'test_all_parameters',
             'description': 'A function to test all parameter type.'
             '\nThe parameters will be provided by user.',
+            'strict': True,
             'parameters': {
                 '$defs': {
                     'RoleType': {
@@ -314,6 +315,7 @@ def add_with_wrong_doc(a: int, b: int) -> int:
 function_schema = {
     "name": "add",
     "description": "Adds two numbers.",
+    "strict": True,
     "parameters": {
         'type': 'object',
         'properties': {
@@ -334,6 +336,7 @@ function_schema = {
 function_schema_without_docs = {
     "description": '',
     "name": "add",
+    "strict": True,
     "parameters": {
         'type': 'object',
         'properties': {
@@ -352,6 +355,7 @@ function_schema_without_docs = {
 function_schema_with_wrong_docs = {
     "name": "add",
     "description": "Adds two numbers.",
+    "strict": True,
     "parameters": {
         'type': 'object',
         'properties': {
