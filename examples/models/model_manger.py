@@ -76,7 +76,7 @@ agent_1_response = agent.step(user_msg)
 print(agent_1_response.msg.content)
 
 
-# Creating a model instance by loading model configs fomr a YAML file.
+# Creating a model instance by loading model configs from a YAML file.
 model_inst_from_yaml = ModelFactory.create_from_yaml(
     "config_files/config.yaml"
 )

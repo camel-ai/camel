@@ -185,7 +185,7 @@ class DockerInterpreter(BaseInterpreter):
         code: str,
         code_type: str,
     ) -> str:
-        r"""Executes the given code in the conatiner attached to the
+        r"""Executes the given code in the container attached to the
         interpreter, and captures the stdout and stderr streams.
 
         Args:

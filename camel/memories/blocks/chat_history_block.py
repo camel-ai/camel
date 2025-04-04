@@ -38,7 +38,7 @@ class ChatHistoryBlock(MemoryBlock):
         keep_rate (float, optional): In historical messages, the score of the
             last message is 1.0, and with each step taken backward, the score
             of the message is multiplied by the `keep_rate`. Higher `keep_rate`
-            leads to high possiblity to keep history messages during context
+            leads to high possibility to keep history messages during context
             creation.
     """
 
