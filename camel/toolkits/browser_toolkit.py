@@ -20,6 +20,7 @@ import random
 import re
 import shutil
 import time
+import urllib.parse
 from copy import deepcopy
 from typing import (
     TYPE_CHECKING,
@@ -546,8 +547,10 @@ class BaseBrowser:
         file_path = None
         if save_image:
             # Get url name to form a file name
-            # TODO: Use a safer way for the url name
-            url_name = self.page_url.split("/")[-1]
+            # Use urlparser for a safer extraction the url name
+            parsed_url = urllib.parse.urlparse(self.page_url)
+            url_name = os.path.basename(str(parsed_url.path)) or "index"
+
             for char in ['\\', '/', ':', '*', '?', '"', '<', '>', '|', '.']:
                 url_name = url_name.replace(char, "_")
 
@@ -673,7 +676,8 @@ class BaseBrowser:
             rects,  # type: ignore[arg-type]
         )
         if save_image:
-            url_name = self.page_url.split("/")[-1]
+            parsed_url = urllib.parse.urlparse(self.page_url)
+            url_name = os.path.basename(str(parsed_url.path)) or "index"
             for char in ['\\', '/', ':', '*', '?', '"', '<', '>', '|', '.']:
                 url_name = url_name.replace(char, "_")
             timestamp = datetime.datetime.now().strftime("%m%d%H%M%S")
