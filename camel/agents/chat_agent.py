@@ -526,6 +526,10 @@ class ChatAgent(BaseAgent):
             message.content = response.output_messages[0].content
             if not self._try_format_message(message, response_format):
                 logger.warning(f"Failed to parse response: {message.content}")
+                logger.warning(
+                    "To improve reliability, consider using models "
+                    "that are better equipped to handle structured output"
+                )
 
     async def _aformat_response_if_needed(
         self,
@@ -599,9 +603,6 @@ class ChatAgent(BaseAgent):
                 self._get_full_tool_schemas(),
             )
 
-            if self.single_iteration:
-                break
-
             if tool_call_requests := response.tool_call_requests:
                 # Process all tool calls
                 for tool_call_request in tool_call_requests:
@@ -619,6 +620,9 @@ class ChatAgent(BaseAgent):
 
                 # If we found external tool calls, break the loop
                 if external_tool_call_requests:
+                    break
+
+                if self.single_iteration:
                     break
 
                 # If we're still here, continue the loop
@@ -691,9 +695,6 @@ class ChatAgent(BaseAgent):
                 self._get_full_tool_schemas(),
             )
 
-            if self.single_iteration:
-                break
-
             if tool_call_requests := response.tool_call_requests:
                 # Process all tool calls
                 for tool_call_request in tool_call_requests:
@@ -712,6 +713,9 @@ class ChatAgent(BaseAgent):
 
                 # If we found an external tool call, break the loop
                 if external_tool_call_requests:
+                    break
+
+                if self.single_iteration:
                     break
 
                 # If we're still here, continue the loop

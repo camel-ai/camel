@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.38"
+version = "0.2.41"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -22,6 +22,7 @@ keywords = [
 ]
 dependencies = [
     "openai>=1.68.0,<2",
+    "mcp>=1.3.0",
     "tiktoken>=0.7.0,<0.8",
     "colorama>=0.4.6,<0.5",
     "jsonschema>=4,<5",
@@ -514,3 +515,13 @@ module = [
     "math_verify.*"
 ]
 ignore_missing_imports = true
+
+[tool.codespell]
+# Ref: https://github.com/codespell-project/codespell#using-a-config-file
+# the .py file needs to be listed twice since pre-commit and codespell treat
+# that path differently.
+skip = '.git*,*.pdf,*.svg,*.lock,*.css,examples/toolkits/semantic_scholar_toolkit.py,./examples/toolkits/semantic_scholar_toolkit.py'
+check-hidden = true
+# Ignore long lines as usually some kind of base64 encodings e.g. in ipynb
+ignore-regex = '^\s*"image/\S+": ".*|^.{300,}|\b(NotIn|Unsupport)\b'
+ignore-words-list = 'ans,datas,rouge'

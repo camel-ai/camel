@@ -178,7 +178,7 @@ class Task(BaseModel):
         return None
 
     def to_string(self, indent: str = "", state: bool = False) -> str:
-        r"""Convert task to a sting.
+        r"""Convert task to a string.
 
         Args:
             indent (str): The ident for hierarchical tasks.
@@ -196,7 +196,7 @@ class Task(BaseModel):
         return _str
 
     def get_result(self, indent: str = "") -> str:
-        r"""Get task result to a sting.
+        r"""Get task result to a string.
 
         Args:
             indent (str): The ident for hierarchical tasks.

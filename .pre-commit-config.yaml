@@ -27,3 +27,11 @@ repos:
       language: system
       types: [python]
       exclude: ^docs/cookbooks/  # Ignore files under docs/cookbooks
+
+  - repo: https://github.com/codespell-project/codespell
+    # Configuration for codespell is in pyproject.toml
+    rev: v2.4.1
+    hooks:
+    - id: codespell
+      additional_dependencies:
+      - tomli  # for python_version < '3.11'
