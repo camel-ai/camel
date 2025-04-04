@@ -603,9 +603,6 @@ class ChatAgent(BaseAgent):
                 self._get_full_tool_schemas(),
             )
 
-            if self.single_iteration:
-                break
-
             if tool_call_requests := response.tool_call_requests:
                 # Process all tool calls
                 for tool_call_request in tool_call_requests:
@@ -623,6 +620,9 @@ class ChatAgent(BaseAgent):
 
                 # If we found external tool calls, break the loop
                 if external_tool_call_requests:
+                    break
+
+                if self.single_iteration:
                     break
 
                 # If we're still here, continue the loop
@@ -695,9 +695,6 @@ class ChatAgent(BaseAgent):
                 self._get_full_tool_schemas(),
             )
 
-            if self.single_iteration:
-                break
-
             if tool_call_requests := response.tool_call_requests:
                 # Process all tool calls
                 for tool_call_request in tool_call_requests:
@@ -716,6 +713,9 @@ class ChatAgent(BaseAgent):
 
                 # If we found an external tool call, break the loop
                 if external_tool_call_requests:
+                    break
+
+                if self.single_iteration:
                     break
 
                 # If we're still here, continue the loop
