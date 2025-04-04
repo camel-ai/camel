@@ -10,32 +10,32 @@ The model is the brain of the intelligent agent, responsible for intelligent age
 
 CAMEL supports a wide range of models, including [OpenAI’s GPT series](https://platform.openai.com/docs/models), [Meta’s Llama models](https://www.llama.com/), [DeepSeek models](https://www.deepseek.com/) (R1 and other variants), and more. The table below lists all supported model platforms:
 
-| Model Platform | Model Type(s) |
-|---------------|--------------|
-| **OpenAI** | gpt-4.5-preview, gpt-4o, gpt-4o-mini, o1, o1-preview, o1-mini, o3-mini, gpt-4-turbo, gpt-4, gpt-3.5-turbo |
-| **Azure OpenAI** | gpt-4o, gpt-4-turbo, gpt-4, gpt-3.5-turbo |
-| **Mistral AI** | mistral-large-latest, pixtral-12b-2409, ministral-8b-latest, ministral-3b-latest, open-mistral-nemo, codestral-latest, open-mistral-7b, open-mixtral-8x7b, open-mixtral-8x22b, open-codestral-mamba |
-| **Moonshot** | moonshot-v1-8k, moonshot-v1-32k, moonshot-v1-128k |
-| **Anthropic** | claude-2.1, claude-2.0, claude-instant-1.2, claude-3-opus-latest, claude-3-sonnet-20240229, claude-3-haiku-20240307, claude-3-5-sonnet-latest, claude-3-5-haiku-latest |
-| **Gemini** | gemini-2.0-flash-exp, gemini-1.5-pro, gemini-1.5-flash, gemini-exp-1114 |
-| **Lingyiwanwu** | yi-lightning, yi-large, yi-medium, yi-large-turbo, yi-vision, yi-medium-200k, yi-spark, yi-large-rag, yi-large-fc |
-| **Qwen** | qwq-32b-preview, qwen-max, qwen-plus, qwen-turbo, qwen-long, qwen-vl-max, qwen-vl-plus, qwen-math-plus, qwen-math-turbo, qwen-coder-turbo, qwen2.5-coder-32b-instruct, qwen2.5-72b-instruct, qwen2.5-32b-instruct, qwen2.5-14b-instruct |
-| **DeepSeek** | deepseek-chat, deepseek-reasoner |
-| **ZhipuAI** | glm-4, glm-4v, glm-4v-flash, glm-4v-plus-0111, glm-4-plus, glm-4-air, glm-4-air-0111, glm-4-airx, glm-4-long, glm-4-flashx, glm-zero-preview, glm-4-flash, glm-3-turbo |
-| **InternLM** | internlm3-latest, internlm3-8b-instruct, internlm2.5-latest, internlm2-pro-chat |
-| **Reka** | reka-core, reka-flash, reka-edge |
-| **COHERE** | command-r-plus, command-r, command-light, command, command-nightly |
-| **GROQ** | [supported models](https://console.groq.com/docs/models) |
-| **TOGETHER AI** | [supported models](https://docs.together.ai/docs/chat-models) |
-| **SambaNova** | [supported models](https://docs.sambanova.ai/cloud/docs/get-started/supported-models) |
-| **Ollama** |  [supported models](https://ollama.com/library) |
-| **OpenRouter** | [supported models](https://openrouter.ai/models) |
-| **LiteLLM** | [supported models](https://docs.litellm.ai/docs/providers) |
-| **vLLM** |  [supported models](https://docs.vllm.ai/en/latest/models/supported_models.html) |
-| **SGLANG** | [supported models](https://sgl-project.github.io/references/supported_models.html) |
-| **NVIDIA** | [supported models](https://docs.api.nvidia.com/nim/reference/llm-apis) |
-| **AIML** | [supported models](https://docs.aimlapi.com/api-overview/model-database/text-models) |
-| **ModelScope** | [supported models](https://www.modelscope.cn/docs/model-service/API-Inference/intro) |
+| Model Platform | Model Type(s)                                                                                                                                                                                                                              |
+|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **OpenAI** | gpt-4.5-preview, gpt-4o, gpt-4o-mini, o1, o1-preview, o1-mini, o3-mini, gpt-4-turbo, gpt-4, gpt-3.5-turbo                                                                                                                                  |
+| **Azure OpenAI** | gpt-4o, gpt-4-turbo, gpt-4, gpt-3.5-turbo                                                                                                                                                                                                  |
+| **Mistral AI** | mistral-large-latest, pixtral-12b-2409,pixtral-large-latest,mistral-ocr-latest,ministral-8b-latest, ministral-3b-latest, open-mistral-nemo, codestral-latest, open-mistral-7b, open-mixtral-8x7b, open-mixtral-8x22b, open-codestral-mamba |
+| **Moonshot** | moonshot-v1-8k, moonshot-v1-32k, moonshot-v1-128k                                                                                                                                                                                          |
+| **Anthropic** | claude-2.1, claude-2.0, claude-instant-1.2, claude-3-opus-latest, claude-3-sonnet-20240229, claude-3-haiku-20240307, claude-3-5-sonnet-latest, claude-3-5-haiku-latest                                                                     |
+| **Gemini** | gemini-2.0-flash-exp, gemini-1.5-pro, gemini-1.5-flash, gemini-exp-1114                                                                                                                                                                    |
+| **Lingyiwanwu** | yi-lightning, yi-large, yi-medium, yi-large-turbo, yi-vision, yi-medium-200k, yi-spark, yi-large-rag, yi-large-fc                                                                                                                          |
+| **Qwen** | qwq-32b-preview, qwen-max, qwen-plus, qwen-turbo, qwen-long, qwen-vl-max, qwen-vl-plus, qwen-math-plus, qwen-math-turbo, qwen-coder-turbo, qwen2.5-coder-32b-instruct, qwen2.5-72b-instruct, qwen2.5-32b-instruct, qwen2.5-14b-instruct    |
+| **DeepSeek** | deepseek-chat, deepseek-reasoner                                                                                                                                                                                                           |
+| **ZhipuAI** | glm-4, glm-4v, glm-4v-flash, glm-4v-plus-0111, glm-4-plus, glm-4-air, glm-4-air-0111, glm-4-airx, glm-4-long, glm-4-flashx, glm-zero-preview, glm-4-flash, glm-3-turbo                                                                     |
+| **InternLM** | internlm3-latest, internlm3-8b-instruct, internlm2.5-latest, internlm2-pro-chat                                                                                                                                                            |
+| **Reka** | reka-core, reka-flash, reka-edge                                                                                                                                                                                                           |
+| **COHERE** | command-r-plus, command-r, command-light, command, command-nightly                                                                                                                                                                         |
+| **GROQ** | [supported models](https://console.groq.com/docs/models)                                                                                                                                                                                   |
+| **TOGETHER AI** | [supported models](https://docs.together.ai/docs/chat-models)                                                                                                                                                                              |
+| **SambaNova** | [supported models](https://docs.sambanova.ai/cloud/docs/get-started/supported-models)                                                                                                                                                      |
+| **Ollama** | [supported models](https://ollama.com/library)                                                                                                                                                                                             |
+| **OpenRouter** | [supported models](https://openrouter.ai/models)                                                                                                                                                                                           |
+| **LiteLLM** | [supported models](https://docs.litellm.ai/docs/providers)                                                                                                                                                                                 |
+| **vLLM** | [supported models](https://docs.vllm.ai/en/latest/models/supported_models.html)                                                                                                                                                            |
+| **SGLANG** | [supported models](https://sgl-project.github.io/references/supported_models.html)                                                                                                                                                         |
+| **NVIDIA** | [supported models](https://docs.api.nvidia.com/nim/reference/llm-apis)                                                                                                                                                                     |
+| **AIML** | [supported models](https://docs.aimlapi.com/api-overview/model-database/text-models)                                                                                                                                                       |
+| **ModelScope** | [supported models](https://www.modelscope.cn/docs/model-service/API-Inference/intro)                                                                                                                                                       |
 
 ## 3. How to Use Models via API Calls
 
