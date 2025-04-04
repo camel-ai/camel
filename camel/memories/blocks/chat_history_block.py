@@ -109,9 +109,7 @@ class ChatHistoryBlock(MemoryBlock):
             ]  # Messages to be truncated
 
             # Take last window_size messages (if exceeds limit)
-            truncated_messages = (
-                sliding_messages[-window_size:] if window_size else []
-            )
+            truncated_messages = sliding_messages[-window_size:]
 
             # Combine preserved messages with truncated window messages
             final_records = preserved_messages + truncated_messages
