@@ -15,7 +15,7 @@
 from .apify_reader import Apify
 from .base_io import File, create_file, create_file_from_raw_bytes
 from .chunkr_reader import ChunkrReader
-from .crawl4ai_loader import Crawl4AI
+from .crawl4ai_reader import Crawl4AI
 from .firecrawl_reader import Firecrawl
 from .jina_url_reader import JinaURLReader
 from .mineru_extractor import MinerU

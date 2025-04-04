@@ -1,0 +1,241 @@
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
+import asyncio
+import os
+from typing import Any, Dict, List, Optional
+
+from crawl4ai import (
+    AsyncWebCrawler,
+    CrawlResult,
+)
+from crawl4ai.extraction_strategy import (
+    ExtractionStrategy,
+    LLMExtractionStrategy,
+)
+from pydantic import BaseModel, ValidationError
+
+from camel.utils import api_keys_required
+
+
+class Crawl4AI:
+    r"""Class for converting websites into LLM-ready data.
+
+    This class uses asynchronous crawling with CSS selectors or LLM-based
+    extraction to convert entire websites into structured data.
+
+    Args:
+        None: No parameters are required for initialization.
+
+    References:
+        https://docs.crawl4ai.com/
+    """
+
+    def __init__(self) -> None:
+        self.crawler = AsyncWebCrawler
+
+    async def _run_crawler(self, url: str, **kwargs) -> Any:
+        r"""Run the asynchronous web crawler on a given URL.
+
+        Args:
+            url (str): URL to crawl or scrape.
+            **kwargs: Additional keyword arguments for crawler configuration.
+
+        Returns:
+            Any: The result from the crawler.
+
+        Raises:
+            RuntimeError: If crawler execution fails.
+        """
+
+        try:
+            async with self.crawler() as c:
+                result = await c.arun(url, **kwargs)
+                return result
+        except Exception as e:
+            raise RuntimeError(f"Crawler run failed: {e}") from e
+
+    async def crawl(
+        self,
+        start_url: str,
+        max_depth: int = 1,
+        extraction_strategy: Optional[ExtractionStrategy] = None,
+        **kwargs,
+    ) -> List[Dict[str, Any]]:
+        r"""Crawl a URL and its subpages using breadth-first search.
+
+        Args:
+            start_url (str): URL to start crawling from.
+            max_depth (int, optional): Maximum depth of links to follow
+                (default: 1).
+            extraction_strategy (ExtractionStrategy, optional): Strategy
+                for data extraction.
+            **kwargs: Additional arguments for crawler configuration.
+
+        Returns:
+            List[Dict[str, Any]]: List of crawled page results.
+
+        Raises:
+            RuntimeError: If an error occurs during crawling.
+        """
+
+        all_results: List[Dict[str, Any]] = []
+        visited_urls: set[str] = set()
+        queue: asyncio.Queue[tuple[str, int]] = asyncio.Queue()
+
+        await queue.put((start_url, 1))
+        visited_urls.add(start_url)
+
+        while not queue.empty():
+            url, depth = await queue.get()
+            try:
+                result: CrawlResult = await self._run_crawler(
+                    url, extraction_strategy=extraction_strategy, **kwargs
+                )
+                all_results.append(
+                    {
+                        "url": url,
+                        "raw_result": result,
+                        "markdown": result.markdown,
+                        "cleaned_html": result.cleaned_html,
+                        "links": result.links,
+                    }
+                )
+
+                if depth < max_depth and result.links:
+                    for _, links in result.links.items():
+                        for link in links:
+                            if link['href'] not in visited_urls:
+                                visited_urls.add(link['href'])
+                                await queue.put((link['href'], depth + 1))
+
+            except Exception as e:
+                raise RuntimeError(f"Error crawling {url}: {e}") from e
+
+            queue.task_done()
+
+        await queue.join()
+
+        return all_results
+
+    async def scrape(
+        self,
+        url: str,
+        extraction_strategy: Optional[ExtractionStrategy] = None,
+        **kwargs,
+    ) -> Dict[str, Any]:
+        r"""Scrape a single URL using CSS or LLM-based extraction.
+
+        Args:
+            url (str): URL to scrape.
+            extraction_strategy (ExtractionStrategy, optional): Extraction
+                strategy to use.
+            **kwargs: Additional arguments for crawler configuration.
+
+        Returns:
+            Dict[str, Any]: Dictionary containing scraped data such as markdown
+                and HTML content.
+
+        Raises:
+            RuntimeError: If scraping fails.
+        """
+
+        result: CrawlResult = await self._run_crawler(
+            url, extraction_strategy=extraction_strategy, **kwargs
+        )
+        return {
+            "url": url,
+            "raw_result": result,
+            "markdown": result.markdown,
+            "cleaned_html": result.cleaned_html,
+            "links": result.links,
+        }
+
+    @api_keys_required(
+        [
+            ("api_key", "ANTHROPIC_API_KEY"),
+            ("api_key", "DEEPSEEK_API_KEY"),
+            ("api_key", "GEMINI_API_KEY"),
+            ("api_key", "GROQ_API_KEY"),
+            ("api_key", "OPENAI_API_KEY"),
+        ]
+    )
+    async def structured_scrape(
+        self,
+        url: str,
+        response_format: BaseModel,
+        api_key: Optional[str] = "no-token",
+        llm_provider: str = 'ollama/qwen2',
+        **kwargs,
+    ) -> Dict[str, Any]:
+        r"""Extract structured data from a URL using an LLM.
+
+        Args:
+            url (str): URL to scrape.
+            response_format (BaseModel): Model defining the expected output
+                schema.
+            api_key (Optional[str], optional): API key for the LLM provider
+                (default: "no-token").
+            llm_provider (str, optional): Identifier for the LLM provider
+                (default: 'ollama/qwen2').
+            **kwargs: Additional arguments for crawler configuration.
+
+        Returns:
+            Dict[str, Any]: Dictionary containing extracted structured data.
+
+        Raises:
+            ValidationError: If extracted data does not match the schema.
+            RuntimeError: If extraction fails.
+        """
+
+        api_key = api_key or os.getenv('CHUNKR_API_KEY')
+
+        extraction_strategy = LLMExtractionStrategy(
+            provider=llm_provider,
+            api_token=api_key,
+            schema=response_format.model_json_schema(),
+            extraction_type="schema",
+            instruction="Extract the data according to the schema.",
+        )
+
+        try:
+            return await self._run_crawler(
+                url, extraction_strategy=extraction_strategy, **kwargs
+            )
+        except ValidationError as e:
+            raise ValidationError(
+                f"Extracted data does not match schema: {e}"
+            ) from e
+        except Exception as e:
+            raise RuntimeError(e) from e
+
+    async def map_site(self, url: str, **kwargs) -> List[str]:
+        r"""Map a website by extracting all accessible URLs.
+
+        Args:
+            url (str): Starting URL to map.
+            **kwargs: Additional configuration arguments.
+
+        Returns:
+            List[str]: List of URLs discovered on the website.
+
+        Raises:
+            RuntimeError: If mapping fails.
+        """
+
+        try:
+            result = await self.crawl(url, **kwargs)
+            return [page["url"] for page in result]
+        except Exception as e:
+            raise RuntimeError(f"Failed to map url: {e}") from e
