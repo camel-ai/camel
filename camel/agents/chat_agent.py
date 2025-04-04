@@ -695,9 +695,6 @@ class ChatAgent(BaseAgent):
                 self._get_full_tool_schemas(),
             )
 
-            # if self.single_iteration:
-            #     break
-
             if tool_call_requests := response.tool_call_requests:
                 # Process all tool calls
                 for tool_call_request in tool_call_requests:
