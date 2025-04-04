@@ -72,7 +72,7 @@ citations?view_op=view_photo&user=JicYPdAAAAAJ&citpid=2', 'affiliation':
 2022: 104036, 2023: 106452, 2024: 76413}, 'coauthors': [{'container_type': 
 'Author', 'filled': [], 'scholar_id': 'm1qAiOUAAAAJ', 'source': <AuthorSource.
 CO_AUTHORS_LIST: 'CO_AUTHORS_LIST'>, 'name': 'Terrence Sejnowski', 
-'affiliation': 'Francis Crick Professor, Salk Institute, Distingished 
+'affiliation': 'Francis Crick Professor, Salk Institute, Distinguished 
 Professor, UC San Diego'}, {'container_type': 'Author', 'filled': [], 
 'scholar_id': 'RnoIxUwAAAAJ', 'source': <AuthorSource.CO_AUTHORS_LIST: 
 'CO_AUTHORS_LIST'>, 'name': 'Vinod Nair', 'affiliation': 'Research Scientist, 

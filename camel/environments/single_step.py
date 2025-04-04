@@ -52,7 +52,7 @@ class SingleStepEnv:
         question="Episode ended. This is just a placeholder."
     )
 
-    ACCURACY_REWARD = 10
+    ACCURACY_REWARD = 1
 
     def __init__(
         self,

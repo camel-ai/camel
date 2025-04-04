@@ -27,7 +27,7 @@ from camel.utils import print_text_animated
 # Initialize agentops
 agentops.init(tags=["CAMEL X AgentOps"])
 
-# Import toolkits after init of agentops so that the tool useage would be
+# Import toolkits after init of agentops so that the tool usage would be
 # tracked
 from camel.toolkits import (  # noqa: E402
     MathToolkit,
