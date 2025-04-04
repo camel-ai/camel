@@ -19,9 +19,9 @@ from typing import List
 from pydantic import ValidationError
 
 from camel.agents import ChatAgent
+from camel.interpreters import SubprocessInterpreter
 from camel.logger import get_logger
 from camel.models.base_model import BaseModelBackend
-from camel.verifiers import BaseVerifier
 
 from .base_generator import BaseGenerator
 from .models import DataPoint
@@ -67,7 +67,6 @@ class FewShotGenerator(BaseGenerator):
     def __init__(
         self,
         seed_dataset: StaticDataset,
-        verifier: BaseVerifier,
         model: BaseModelBackend,
         seed: int = 42,
         **kwargs,
@@ -77,7 +76,6 @@ class FewShotGenerator(BaseGenerator):
         Args:
             seed_dataset (StaticDataset): Validated static dataset to
                 use for examples.
-            verifier (BaseVerifier): Verifier to validate generated content.
             model (BaseModelBackend): The underlying LLM that the generating
             agent will be initiated with.
             seed (int): Random seed for reproducibility. (default: :obj:`42`)
@@ -89,8 +87,14 @@ class FewShotGenerator(BaseGenerator):
             self._validate_seed_dataset()
         except Exception:
             raise RuntimeError("Seed Data does not follow Datapoint format")
-        self.verifier = verifier
         self.agent = ChatAgent(system_message=SYSTEM_PROMPT, model=model)
+
+        self.interpreter = SubprocessInterpreter(
+            require_confirm=False,  # No confirmation prompts
+            print_stdout=False,  # Suppress stdout unless needed
+            print_stderr=True,  # Show errors for debugging
+            execution_timeout=30,  # Set a timeout to prevent hanging
+        )
 
     # TODO: Validate that seed dataset contains rationale
     def _validate_seed_dataset(self) -> None:
@@ -135,7 +139,8 @@ class FewShotGenerator(BaseGenerator):
             2. Constructs a prompt using the selected examples.
             3. Uses an agent to generate a new datapoint,
             consisting of a question and code to solve the question.
-            4. Executes code using a verifier to get pseudo ground truth.
+            4. Executes code using the subprocess interpreter to get pseudo
+                ground truth.
             5. Stores valid datapoints in memory.
 
         Args:
@@ -201,18 +206,18 @@ class FewShotGenerator(BaseGenerator):
                     raise TypeError(f"Rationale {rationale} is not a string.")
 
                 try:
-                    verifier_response = await self.verifier.verify(
-                        solution=rationale,
-                        reference_answer=None,
+                    output = await asyncio.to_thread(
+                        self.interpreter.run, rationale, "python"
                     )
-                    if not verifier_response or not verifier_response.result:
-                        raise ValueError(
-                            "Verifier unsuccessful, response: "
-                            f"{verifier_response}"
-                        )
+
+                    if "(stderr:" in output or "(Execution failed" in output:
+                        raise ValueError(f"Execution failed: {output}")
+
+                    final_answer = output.strip()
+
                 except (ValueError, AttributeError) as e:
                     logger.warning(
-                        f"Verifier issue: {e}, "
+                        f"Interpreter issue: {e}, "
                         f"retrying... ({retries + 1}/{max_retries})"
                     )
                     retries += 1
@@ -222,7 +227,7 @@ class FewShotGenerator(BaseGenerator):
                     new_datapoint = DataPoint(
                         question=agent_output.question,
                         rationale=rationale,
-                        final_answer=verifier_response.result,
+                        final_answer=final_answer,
                         metadata={
                             "synthetic": str(True),
                             "created": datetime.now().isoformat(),
