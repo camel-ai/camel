@@ -16,8 +16,10 @@ from typing import Any, Dict, List, Optional
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
+from camel.utils import MCPServer
 
 
+@MCPServer()
 class GoogleScholarToolkit(BaseToolkit):
     r"""A toolkit for retrieving information about authors and their
     publications from Google Scholar.

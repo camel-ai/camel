@@ -11,15 +11,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import argparse
+import sys
 
-from camel.logger import disable_logging, enable_logging, set_log_level
+from camel.toolkits import ArxivToolkit
 
-__version__ = '0.2.41'
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Run Arxiv Toolkit with MCP server mode.",
+        usage=f"python {sys.argv[0]} [--mode MODE]",
+    )
+    parser.add_argument(
+        "--mode",
+        choices=["stdio", "sse"],
+        default="stdio",
+        help="MCP server mode (default: 'stdio')",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=float,
+        default=None,
+        help="Timeout for the MCP server (default: None)",
+    )
 
-__all__ = [
-    '__version__',
-    'camel',
-    'disable_logging',
-    'enable_logging',
-    'set_log_level',
-]
+    args = parser.parse_args()
+
+    toolkit = ArxivToolkit(timeout=args.timeout)
+
+    toolkit.mcp.run(args.mode)

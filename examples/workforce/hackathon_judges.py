@@ -221,7 +221,7 @@ def main():
     workforce = Workforce('Hackathon Judges')
     task = Task(
         content="Evaluate the hackathon project. First, do some research on "
-        "the infomation related to the project, then each judge should give a"
+        "the information related to the project, then each judge should give a"
         " score accordingly. Finally, list the opinions from each judge while"
         " preserving the judge's unique identity, along with the score and"
         " judge name, and also give a final summary of the opinions.",
