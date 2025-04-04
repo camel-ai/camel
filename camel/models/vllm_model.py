@@ -158,6 +158,9 @@ class VLLMModel(BaseModelBackend):
 
         kwargs = self.model_config_dict.copy()
         if tools:
+            for item in tools:
+                if item['function'].get('strict'):
+                    item['function'].pop('strict')
             kwargs["tools"] = tools
         if response_format:
             kwargs["response_format"] = {"type": "json_object"}
@@ -193,6 +196,9 @@ class VLLMModel(BaseModelBackend):
 
         kwargs = self.model_config_dict.copy()
         if tools:
+            for item in tools:
+                if item['function'].get('strict'):
+                    item['function'].pop('strict')
             kwargs["tools"] = tools
         if response_format:
             kwargs["response_format"] = {"type": "json_object"}

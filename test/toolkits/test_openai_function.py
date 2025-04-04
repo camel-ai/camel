@@ -250,7 +250,6 @@ def test_different_docstring_style():
         "function": {
             "name": "mul",
             "description": "Multiply two integers.",
-            "strict": true,
             "parameters": {
                 "properties": {
                     "a": {
@@ -316,7 +315,7 @@ def add_with_wrong_doc(a: int, b: int) -> int:
 function_schema = {
     "name": "add",
     "description": "Adds two numbers.",
-    'strict': True,
+    "strict": True,
     "parameters": {
         'type': 'object',
         'properties': {
