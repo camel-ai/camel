@@ -250,6 +250,10 @@ class FewShotGenerator(BaseGenerator):
                     f" ({retries + 1}/{max_retries})"
                 )
                 retries += 1
+                
+        # Thread-safe way to extend the data list
+        async with asyncio.Lock():
+            self._data.extend(valid_data_points)
 
         if len(valid_data_points) < n:
             raise RuntimeError(
@@ -257,6 +261,4 @@ class FewShotGenerator(BaseGenerator):
                 f"after {max_retries} retries."
             )
 
-        # Thread-safe way to extend the data list
-        async with asyncio.Lock():
-            self._data.extend(valid_data_points)
+        
