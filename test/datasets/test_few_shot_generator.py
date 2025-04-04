@@ -14,14 +14,10 @@
 
 
 import json
-import tempfile
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from datasets import Dataset as HFDataset
-from pydantic import ValidationError
-from torch.utils.data import Dataset
 
 from camel.datasets import (
     DataPoint,
@@ -55,13 +51,20 @@ async def test_few_shot_generator_init():
     )
 
     # Check basic properties
-    assert dataset.seed_dataset is mock_static_dataset, "Seed dataset should be set"
+    assert (
+        dataset.seed_dataset is mock_static_dataset
+    ), "Seed dataset should be set"
     assert dataset.agent is not None, "Agent should be initialized"
     assert dataset.interpreter is not None, "Interpreter should be initialized"
     assert isinstance(dataset._data, list), "Internal data should be a list"
     assert len(dataset._data) == 0, "Internal data should start empty"
-    assert not dataset.interpreter.require_confirm, "Interpreter should not require confirmation"
-    assert dataset.interpreter.execution_timeout == 30, "Interpreter timeout should be 30 seconds"
+    assert (
+        not dataset.interpreter.require_confirm
+    ), "Interpreter should not require confirmation"
+    assert (
+        dataset.interpreter.execution_timeout == 30
+    ), "Interpreter timeout should be 30 seconds"
+
 
 @pytest.mark.asyncio
 async def test_generate_new():
@@ -130,23 +133,32 @@ async def test_generate_new():
     await dataset.generate_new(2)
 
     # Check results
-    assert len(dataset._data) == 2, "Should generate exactly 2 valid datapoints"
+    assert (
+        len(dataset._data) == 2
+    ), "Should generate exactly 2 valid datapoints"
     assert mock_agent.step.call_count == 3, "Should retry past invalid output"
-    assert mock_agent.reset.call_count >= 2, "Agent should reset after each step"
+    assert (
+        mock_agent.reset.call_count >= 2
+    ), "Agent should reset after each step"
 
     # Check first datapoint (5 + 6 = 11)
     dp1 = dataset._data[0]
     assert dp1.question == "What is 5 + 6?"
     assert dp1.rationale == "print(5 + 6)"
-    assert dp1.final_answer == "11", "Interpreter should output '11' from print(5 + 6)"
+    assert (
+        dp1.final_answer == "11"
+    ), "Interpreter should output '11' from print(5 + 6)"
     assert dp1.metadata["synthetic"] == "True"
 
     # Check second datapoint (7 + 8 = 15)
     dp2 = dataset._data[1]
     assert dp2.question == "What is 7 + 8?"
     assert dp2.rationale == "print(7 + 8)"
-    assert dp2.final_answer == "15", "Interpreter should output '15' from print(7 + 8)"
+    assert (
+        dp2.final_answer == "15"
+    ), "Interpreter should output '15' from print(7 + 8)"
     assert dp2.metadata["synthetic"] == "True"
+
 
 @pytest.mark.asyncio
 async def test_generate_new_with_max_retries():
@@ -228,7 +240,8 @@ async def test_generate_new_with_max_retries():
     )
     dataset.agent = mock_agent
 
-    # Expect RuntimeError due to insufficient valid datapoints within retry limit
+    # Expect RuntimeError due to insufficient valid datapoints
+    # within retry limit
     with pytest.raises(
         RuntimeError,
         match="Failed to generate 2 valid datapoints after 2 retries.",
@@ -236,16 +249,21 @@ async def test_generate_new_with_max_retries():
         await dataset.generate_new(2, max_retries=2)
 
     # Verify agent calls
-    assert mock_agent.step.call_count == 3, "Should attempt 3 times: correct, wrong, wrong"
-    assert mock_agent.reset.call_count >= 2, "Agent should reset after each step"
+    assert (
+        mock_agent.step.call_count == 3
+    ), "Should attempt 3 times: correct, wrong, wrong"
+    assert (
+        mock_agent.reset.call_count >= 2
+    ), "Agent should reset after each step"
 
     # Check partial result
-    assert len(dataset._data) == 1, "Only one valid datapoint should be generated"
+    assert (
+        len(dataset._data) == 1
+    ), "Only one valid datapoint should be generated"
     dp = dataset._data[0]
     assert dp.question == "What is 3 + 4?"
     assert dp.rationale == "print(3 + 4)"
     assert dp.final_answer == "7"
-
 
 
 @pytest.mark.asyncio
@@ -562,7 +580,7 @@ def mock_jsonl_file(tmp_path: Path) -> Path:
         },
         {
             "question": "What is the capital of France?",
-            "rationale": "France’s capital is well-known.",
+            "rationale": "France's capital is well-known.",
             "final_answer": "Paris",
         },
     ]
