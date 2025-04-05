@@ -44,7 +44,7 @@ class TerminalToolkit(BaseToolkit):
         shell_sessions (Optional[Dict[str, Any]]): A dictionary to store
             shell session information. If None, an empty dictionary will be
             used. (default: :obj:`{}`)
-        working_dir (Optional[str]): The working directory for operations.
+        working_dir (str): The working directory for operations.
             If specified, all execution and write operations will be restricted
             to this directory. Read operations can access paths outside this
             directory.(default: :obj:`"./workspace"`)
@@ -67,7 +67,7 @@ class TerminalToolkit(BaseToolkit):
         self,
         timeout: Optional[float] = None,
         shell_sessions: Optional[Dict[str, Any]] = None,
-        working_dir: Optional[str] = "./workspace",
+        working_dir: str = "./workspace",
         need_terminal: bool = True,
         use_shell_mode: bool = True,
         clone_current_env: bool = False,
@@ -83,33 +83,30 @@ class TerminalToolkit(BaseToolkit):
         self.safe_mode = safe_mode
 
         self.cloned_env_path = None
-        self.working_dir = None
         self.use_shell_mode = use_shell_mode
 
         self.python_executable = sys.executable
-        self.virtual_env = os.environ.get('VIRTUAL_ENV')
         self.is_macos = platform.system() == 'Darwin'
 
         atexit.register(self.__del__)
 
-        if working_dir is not None:
-            if not os.path.exists(working_dir):
-                os.makedirs(working_dir, exist_ok=True)
-            self.working_dir = os.path.abspath(working_dir)
+        if not os.path.exists(working_dir):
+            os.makedirs(working_dir, exist_ok=True)
+        self.working_dir = os.path.abspath(working_dir)
+        self._update_terminal_output(
+            f"Working directory set to: {self.working_dir}\n"
+        )
+        if self.safe_mode:
             self._update_terminal_output(
-                f"Working directory set to: {self.working_dir}\n"
+                "Safe mode enabled: Write operations can only "
+                "be performed within the working directory\n"
             )
-            if self.safe_mode:
-                self._update_terminal_output(
-                    "Safe mode enabled: Write operations can only "
-                    "be performed within the working directory\n"
-                )
 
-            if clone_current_env:
-                self.cloned_env_path = os.path.join(self.working_dir, ".venv")
-                self._clone_current_environment()
-            else:
-                self.cloned_env_path = None
+        if clone_current_env:
+            self.cloned_env_path = os.path.join(self.working_dir, ".venv")
+            self._clone_current_environment()
+        else:
+            self.cloned_env_path = None
 
         if need_terminal:
             if self.is_macos:
@@ -278,12 +275,9 @@ class TerminalToolkit(BaseToolkit):
             path (str): The path to check
 
         Returns:
-            bool: Returns True if the path is within the working directory or
-                if the working directory is not set, otherwise returns False
+            bool: Returns True if the path is within the working directory,
+                otherwise returns False
         """
-        if self.working_dir is None:
-            return True
-
         abs_path = os.path.abspath(path)
         return abs_path.startswith(self.working_dir)
 
@@ -296,7 +290,7 @@ class TerminalToolkit(BaseToolkit):
 
         Returns:
             Optional[str]: Returns error message if the path is not within
-            the working directory, otherwise returns None
+                the working directory, otherwise returns None
         """
         if not self._is_path_within_working_dir(path):
             return (
@@ -315,11 +309,8 @@ class TerminalToolkit(BaseToolkit):
 
         Returns:
             Optional[str]: New path after copying to the working directory,
-            returns None on failure
+                returns None on failure
         """
-        if not self.working_dir:
-            return None
-
         try:
             import shutil
 
@@ -553,8 +544,8 @@ class TerminalToolkit(BaseToolkit):
 
                     if not self._is_path_within_working_dir(abs_path):
                         return False, (
-                            f"Safety restriction: Cannot write to file outside"
-                            f"of working directory {self.working_dir}"
+                            f"Safety restriction: Cannot write to file "
+                            f"outside of working directory {self.working_dir}"
                         )
 
             # For cp/mv commands, check target paths
@@ -577,8 +568,8 @@ class TerminalToolkit(BaseToolkit):
 
                     if not self._is_path_within_working_dir(abs_path):
                         return False, (
-                            f"Safety restriction: Cannot write to file outside"
-                            f"of working directory {self.working_dir}"
+                            f"Safety restriction: Cannot write to file "
+                            f"outside of working directory {self.working_dir}"
                         )
 
         # Check dangerous commands
@@ -599,14 +590,14 @@ class TerminalToolkit(BaseToolkit):
             'init',
         ]:
             return False, (
-                f"Safety restriction: Command '{base_cmd}' may affect system"
+                f"Safety restriction: Command '{base_cmd}' may affect system "
                 f"security and is prohibited"
             )
 
         # Check network commands
         elif base_cmd in ['ssh', 'telnet', 'ftp', 'sftp', 'nc', 'netcat']:
             return False, (
-                f"Safety restriction: Network command '{base_cmd}'"
+                f"Safety restriction: Network command '{base_cmd}' "
                 f"is prohibited"
             )
 
@@ -649,35 +640,25 @@ class TerminalToolkit(BaseToolkit):
 
         return True, command
 
-    def shell_exec(self, id: str, exec_dir: str, command: str) -> str:
+    def shell_exec(self, id: str, command: str) -> str:
         r"""Execute commands. This can be used to execute various commands,
         such as writing code, executing code, and running commands.
 
         Args:
             id (str): Unique identifier of the target shell session.
-            exec_dir (str): Working directory for command execution (must use
-                absolute path).
             command (str): Shell command to execute.
 
         Returns:
             str: Output of the command execution or error message.
         """
-        # First check if the path is absolute
-        if not os.path.isabs(exec_dir):
-            return f"exec_dir must be an absolute path: {exec_dir}"
-
         # Command execution must be within the working directory
-        if self.working_dir:
-            error_msg = self._enforce_working_dir_for_execution(exec_dir)
-            if error_msg:
-                return error_msg
-
-        if not os.path.exists(exec_dir):
-            return f"Directory not found: {exec_dir}"
+        error_msg = self._enforce_working_dir_for_execution(self.working_dir)
+        if error_msg:
+            return error_msg
 
         if self.safe_mode:
             is_safe, sanitized_command = self._sanitize_command(
-                command, exec_dir
+                command, self.working_dir
             )
             if not is_safe:
                 return f"Command rejected: {sanitized_command}"
@@ -721,7 +702,7 @@ class TerminalToolkit(BaseToolkit):
                 process = subprocess.run(
                     command,
                     shell=True,
-                    cwd=exec_dir,
+                    cwd=self.working_dir,
                     capture_output=True,
                     text=True,
                     env=os.environ.copy(),
@@ -730,7 +711,7 @@ class TerminalToolkit(BaseToolkit):
                 # Process the output
                 output = process.stdout or ""
                 if process.stderr:
-                    output += f"\nErrors:\n{process.stderr}"
+                    output += f"\nStderr Output:\n{process.stderr}"
 
                 # Update session information and terminal
                 self.shell_sessions[id]["output"] = output
@@ -743,7 +724,7 @@ class TerminalToolkit(BaseToolkit):
                 proc = subprocess.Popen(
                     command,
                     shell=True,
-                    cwd=exec_dir,
+                    cwd=self.working_dir,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     stdin=subprocess.PIPE,
@@ -762,7 +743,7 @@ class TerminalToolkit(BaseToolkit):
 
                 output = stdout or ""
                 if stderr:
-                    output += f"\nErrors:\n{stderr}"
+                    output += f"\nStderr Output:\n{stderr}"
 
                 # Update session information and terminal
                 self.shell_sessions[id]["output"] = output
@@ -863,7 +844,8 @@ class TerminalToolkit(BaseToolkit):
                         if isinstance(stderr, bytes)
                         else stderr
                     )
-                    session["output"] += f"\nErrors:\n{stderr_str}"
+                    if stderr_str:
+                        session["output"] += f"\nStderr Output:\n{stderr_str}"
 
                 session["running"] = False
                 return (
@@ -971,24 +953,6 @@ class TerminalToolkit(BaseToolkit):
             logger.error(f"Error killing process: {e}")
             return f"Error killing process: {e!s}"
 
-    def get_tools(self) -> List[FunctionTool]:
-        r"""Returns a list of FunctionTool objects representing the functions
-        in the toolkit.
-
-        Returns:
-            List[FunctionTool]: A list of FunctionTool objects representing the
-                functions in the toolkit.
-        """
-        return [
-            FunctionTool(self.file_find_in_content),
-            FunctionTool(self.file_find_by_name),
-            FunctionTool(self.shell_exec),
-            FunctionTool(self.shell_view),
-            FunctionTool(self.shell_wait),
-            FunctionTool(self.shell_write_to_process),
-            FunctionTool(self.shell_kill_process),
-        ]
-
     def __del__(self):
         r"""Clean up resources when the object is being destroyed.
         Terminates all running processes and closes any open file handles.
@@ -1053,3 +1017,21 @@ class TerminalToolkit(BaseToolkit):
                 logger.error(f"Error closing terminal GUI: {e}")
 
         logger.info("TerminalToolkit cleanup completed")
+
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the functions
+        in the toolkit.
+
+        Returns:
+            List[FunctionTool]: A list of FunctionTool objects representing the
+                functions in the toolkit.
+        """
+        return [
+            FunctionTool(self.file_find_in_content),
+            FunctionTool(self.file_find_by_name),
+            FunctionTool(self.shell_exec),
+            FunctionTool(self.shell_view),
+            FunctionTool(self.shell_wait),
+            FunctionTool(self.shell_write_to_process),
+            FunctionTool(self.shell_kill_process),
+        ]

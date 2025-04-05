@@ -13,7 +13,6 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-import time
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
@@ -184,30 +183,12 @@ plan9 --control-socket 7 --log-level=debug --log-file=/dev/null ...',
 tool_call_id='call_UvxQrsb1GpfDHTQQc6rLoQ3P')]
 ===============================================================================
 """
-
-# Create a new agent with a new toolkit (to simulate ending the session)
-print(
-    "\nCreating a new chat session "
-    "(this will dispose the old TerminalToolkit)..."
-)
-
-# Create new agent with a new toolkit
-new_tools = TerminalToolkit(working_dir=workspace_dir).get_tools()
-new_agent = ChatAgent(
-    system_message=sys_msg,
-    model=model,
-    tools=new_tools,
-)
-
-# Give some time for the garbage collector to run
-time.sleep(2)
-
 # Define a user message to check if the process was terminated by __del__
 usr_msg = "Check if there are any sleep processes running on the system"
 
 # Get response information for checking the processes
-new_agent.reset()
-response = new_agent.step(usr_msg)
+camel_agent.reset()
+response = camel_agent.step(usr_msg)
 print(str(response.info['tool_calls'])[:1000])
 """
 ===============================================================================
@@ -224,8 +205,10 @@ S+   11:16   0:00 grep sleep\n', tool_call_id='call_gSZqRaqNAtYjUXOfvVuaObw2')]
 ===============================================================================
 """
 
-print(
-    "If no sleep/timeout processes are shown above (or only grep processes), "
-    "then the __del__ method worked correctly!"
-)
-print("================ Resource Cleanup Test Complete ================")
+usr_msg = "help me use uv pip install pptx, and create a ppt, and show me the"
+" output of the terminal"
+
+# Get response information for checking the processes
+camel_agent.reset()
+response = camel_agent.step(usr_msg)
+print(str(response.info['tool_calls']))
