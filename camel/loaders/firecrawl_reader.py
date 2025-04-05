@@ -28,6 +28,11 @@ class Firecrawl:
 
     References:
         https://docs.firecrawl.dev/introduction
+
+    Notes:
+        - When using Firecrawl SDKs with a self-hosted instance, API keys are
+        optional. API keys are only required when connecting to the cloud
+        service (api.firecrawl.dev).
     """
 
     def __init__(
