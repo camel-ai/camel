@@ -299,7 +299,6 @@ class SingleStepEnv:
         proposed_solutions = [act.llm_response for act in actions]
         ground_truths: List[str] = []
         for idx in indices:
-            assert isinstance(idx, int)
             ground_truths.append(self._states[idx].final_answer)
 
         try:
@@ -324,23 +323,20 @@ class SingleStepEnv:
             proposed_solutions, verification_results
         )
         # Create and return step results in batch
-        step_results = []
-
-        for i in range(len(actions)):
-            idx = indices[i]
-            step_results.append(
-                StepResult(
-                    observation=self.PLACEHOLDER_OBS,
-                    reward=total_rewards[i],
-                    rewards_dict=rewards_dicts[i],
-                    done=True,
-                    info={
-                        "proposed_solution": proposed_solutions[i],
-                        "verification_result": verification_results[i],
-                        "state": self._states[idx],
-                    },
-                ).as_tuple()
-            )
+        step_results = [
+            StepResult(
+                observation=self.PLACEHOLDER_OBS,
+                reward=total_rewards[i],
+                rewards_dict=rewards_dicts[i],
+                done=True,
+                info={
+                    "proposed_solution": proposed_solutions[i],
+                    "verification_result": verification_results[i],
+                    "state": self._states[indices[i]],
+                },
+            ).as_tuple()
+            for i in range(len(actions))
+        ]
 
         for _, idx in enumerate(indices):
             self._states_done[idx] = True
