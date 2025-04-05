@@ -350,10 +350,9 @@ class SingleStepEnv:
         of `Action` objects.
 
         This method handles flexibility in input format by converting
-        raw strings (only allowed when batch size is 1), dictionaries
-        (only allowed when batch size > 1), and ensuring all necessary
-        structure and integrity checks on actions (e.g., index bounds,
-        duplicates).
+        raw strings (only allowed when batch size is 1) and dictionaries,
+        ensuring all necessary structure and integrity checks on
+        actions (e.g., index bounds, duplicates).
 
         Args:
             action (Union[Action, List[Action], str]):
@@ -363,7 +362,6 @@ class SingleStepEnv:
                 - A raw string (if `batch_size == 1`), auto-wrapped
                     in an `Action`.
                 - A dict mapping int indices to str responses
-                    (if `batch_size > 1`).
 
         Returns:
             List[Action]: A list of validated `Action` instances
@@ -391,13 +389,13 @@ class SingleStepEnv:
             actions = [Action(index=0, llm_response=action)]
 
         elif isinstance(action, dict):
-            if self.current_batch_size == 1:
-                raise ValueError(
-                    "Dict input for action is only allowed when "
-                    "batch_size > 1. Use a string instead for single actions."
-                )
             if not all(isinstance(k, int) for k in action.keys()):
                 raise ValueError("All dictionary keys must be integers")
+
+            if self.current_batch_size == 1 and list(action.keys()) != [0]:
+                raise ValueError(
+                    "For batch_size=1, dict input must have exactly one key: 0"
+                )
             actions = [
                 Action(index=k, llm_response=v) for k, v in action.items()
             ]
@@ -416,7 +414,7 @@ class SingleStepEnv:
 
         if self.current_batch_size == 1 and len(actions) != 1:
             raise ValueError(
-                "For batch_size=1, expect a single Action or a "
+                "For batch_size=1, expect a single Action, a dictionary or a "
                 "list containing exactly one Action"
             )
 

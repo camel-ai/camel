@@ -586,8 +586,8 @@ async def test_single_step_env_error_handling_single():
     # b) Providing a list of 2 actions for batch size == 1
     with pytest.raises(
         ValueError,
-        match="For batch_size=1, expect a single Action or a list containing "
-        "exactly one Action",
+        match="For batch_size=1, expect a single Action, a dictionary or "
+        "a list containing exactly one Action",
     ):
         await env_invalid_actions.step(
             [
@@ -937,19 +937,11 @@ async def test_single_step_env_all_input_types():
     # Reset for error tests
     await env.reset(batch_size=1)
 
-    # 4. Test Dict[int, str] with batch_size=1 (should fail)
+    # 4. Test List[Action] with too many elements
     with pytest.raises(
         ValueError,
-        match="Dict input for action is only allowed when batch_size > 1. "
-        "Use a string instead for single actions.",
-    ):
-        await env.step({0: "4"})
-
-    # 5. Test List[Action] with too many elements
-    with pytest.raises(
-        ValueError,
-        match="For batch_size=1, expect a single Action or a list containing "
-        "exactly one Action",
+        match="For batch_size=1, expect a single Action, a dictionary or "
+        "a list containing exactly one Action",
     ):
         await env.step(
             [
@@ -958,7 +950,7 @@ async def test_single_step_env_all_input_types():
             ]
         )
 
-    # 6. Test Action with wrong index
+    # 5. Test Action with wrong index
     with pytest.raises(
         ValueError, match="For batch_size=1, Action index must be 0"
     ):
@@ -967,7 +959,7 @@ async def test_single_step_env_all_input_types():
     # --- Test with batch_size=2 ---
     await env.reset(batch_size=2)
 
-    # 7. Test Dict[int, str] input (valid for batch_size > 1)
+    # 6. Test Dict[int, str] input (valid for batch_size > 1)
     result = await env.step({0: "4", 1: "Paris"})
     assert isinstance(result, list)
     assert len(result) == 2
@@ -978,7 +970,7 @@ async def test_single_step_env_all_input_types():
     # Reset for next test
     await env.reset(batch_size=2)
 
-    # 8. Test List[Action] input (valid)
+    # 7. Test List[Action] input (valid)
     result = await env.step(
         [
             Action(index=0, llm_response="4"),
@@ -994,26 +986,26 @@ async def test_single_step_env_all_input_types():
     # Reset for next test
     await env.reset(batch_size=2)
 
-    # 9. Test str with batch_size > 1 (should fail)
+    # 8. Test str with batch_size > 1 (should fail)
     with pytest.raises(
         ValueError,
         match="String input for action is only allowed when batch_size == 1",
     ):
         await env.step("4")
 
-    # 10. Test Dict[int, str] with non-integer keys
+    # 9. Test Dict[int, str] with non-integer keys
     with pytest.raises(
         ValueError, match="All dictionary keys must be integers"
     ):
         await env.step({"0": "4", 1: "Paris"})
 
-    # 11. Test List[Action] with non-Action elements
+    # 10. Test List[Action] with non-Action elements
     with pytest.raises(
         ValueError, match="All elements in the list must be Action objects"
     ):
         await env.step([Action(index=0, llm_response="4"), "Paris"])
 
-    # 12. Test invalid index in List[Action]
+    # 11. Test invalid index in List[Action]
     with pytest.raises(ValueError, match="Invalid state index 2"):
         await env.step([Action(index=2, llm_response="4")])
 
