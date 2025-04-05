@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import xml.etree.ElementTree as ET
-from typing import Any, Dict, List, Literal, Optional, TypeAlias, Union
+from typing import Any, Dict, List, Literal, Optional, TypeAlias, Union, cast
 
 import requests
 
@@ -947,6 +947,181 @@ class SearchToolkit(BaseToolkit):
         except Exception as e:
             return {"error": f"Bing scraping error: {e!s}"}
 
+    @api_keys_required([(None, 'EXA_API_KEY')])
+    def search_exa(
+        self,
+        query: str,
+        search_type: Literal["auto", "neural", "keyword"] = "auto",
+        category: Optional[
+            Literal[
+                "company",
+                "research paper",
+                "news",
+                "pdf",
+                "github",
+                "tweet",
+                "personal site",
+                "linkedin profile",
+                "financial report",
+            ]
+        ] = None,
+        num_results: int = 10,
+        include_domains: Optional[List[str]] = None,
+        exclude_domains: Optional[List[str]] = None,
+        start_crawl_date: Optional[str] = None,
+        end_crawl_date: Optional[str] = None,
+        start_published_date: Optional[str] = None,
+        end_published_date: Optional[str] = None,
+        include_text: Optional[List[str]] = None,
+        exclude_text: Optional[List[str]] = None,
+        use_autoprompt: bool = True,
+        include_contents: bool = False,
+    ) -> Dict[str, Any]:
+        r"""Use Exa search API to perform intelligent web search with optional
+        content extraction.
+
+
+        Args:
+            query (str): The search query string.
+            search_type (Literal["auto", "neural", "keyword"]): The type of
+                search to perform. "auto" automatically decides between keyword
+                and neural search. (default: :obj:`"auto"`)
+            category (Optional[Literal]): Category to focus the search on, such
+                as "research paper" or "news". (default: :obj:`None`)
+            num_results (int): Number of results to return (max 100).
+                (default: :obj:`10`)
+            include_domains (Optional[List[str]]): List of domains to restrict
+                search to. (default: :obj:`None`)
+            exclude_domains (Optional[List[str]]): List of domains to exclude
+                from search. (default: :obj:`None`)
+            start_crawl_date (Optional[str]): ISO 8601 date to start search
+                from based on crawl date. (default: :obj:`None`)
+            end_crawl_date (Optional[str]): ISO 8601 date to end search at
+                based on crawl date. (default: :obj:`None`)
+            start_published_date (Optional[str]): ISO 8601 date to start search
+                from based on publish date. (default: :obj:`None`)
+            end_published_date (Optional[str]): ISO 8601 date to end search at
+                based on publish date. (default: :obj:`None`)
+            include_text (Optional[List[str]]): Strings that must be present in
+                webpage text. Limited to 1 string of up to 5 words.
+                (default: :obj:`None`)
+            exclude_text (Optional[List[str]]): Strings that must not be
+                present in webpage text. Limited to 1 string of up to 5 words.
+                (default: :obj:`None`)
+            use_autoprompt (bool): Whether to use Exa's autoprompt feature to
+                enhance the query. (default: :obj:`True`)
+            include_contents (bool): Whether to include webpage contents in
+                results. (default: :obj:`False`)
+
+        Returns:
+            Dict[str, Any]: A dict containing search results and metadata:
+                - requestId (str): Unique identifier for the request
+                - autopromptString (str): Generated autoprompt if enabled
+                - autoDate (str): Timestamp of autoprompt generation
+                - resolvedSearchType (str): The actual search type used
+                - results (List[Dict]): List of search results with metadata
+                - searchType (str): The search type that was selected
+                - costDollars (Dict): Breakdown of API costs
+        """
+        from exa_py import Exa
+
+        EXA_API_KEY = os.getenv("EXA_API_KEY")
+
+        try:
+            exa = Exa(EXA_API_KEY)
+
+            # Validate parameters
+            if search_type is not None and search_type not in [
+                "keyword",
+                "neural",
+                "auto",
+            ]:
+                raise ValueError(
+                    "search_type must be 'keyword', 'neural', or 'auto'"
+                )
+
+            if category is not None:
+                valid_categories = {
+                    "company",
+                    "research paper",
+                    "news",
+                    "pdf",
+                    "github",
+                    "tweet",
+                    "personal site",
+                    "linkedin profile",
+                    "financial report",
+                }
+                if category not in valid_categories:
+                    raise ValueError(
+                        f"category must be one of {valid_categories}"
+                    )
+
+            if num_results is not None and not 0 < num_results <= 100:
+                raise ValueError("num_results must be between 1 and 100")
+
+            if include_text is not None:
+                if len(include_text) > 1:
+                    raise ValueError("include_text can only contain 1 string")
+                if len(include_text[0].split()) > 5:
+                    raise ValueError(
+                        "include_text string cannot be longer than 5 words"
+                    )
+
+            if exclude_text is not None:
+                if len(exclude_text) > 1:
+                    raise ValueError("exclude_text can only contain 1 string")
+                if len(exclude_text[0].split()) > 5:
+                    raise ValueError(
+                        "exclude_text string cannot be longer than 5 words"
+                    )
+
+            # Call Exa API with direct parameters
+            if include_contents:
+                results = cast(
+                    Dict[str, Any],
+                    exa.search_and_contents(
+                        query=query,
+                        type=search_type,
+                        category=category,
+                        num_results=num_results,
+                        include_domains=include_domains,
+                        exclude_domains=exclude_domains,
+                        start_crawl_date=start_crawl_date,
+                        end_crawl_date=end_crawl_date,
+                        start_published_date=start_published_date,
+                        end_published_date=end_published_date,
+                        include_text=include_text,
+                        exclude_text=exclude_text,
+                        use_autoprompt=use_autoprompt,
+                        text=True,
+                    ),
+                )
+            else:
+                results = cast(
+                    Dict[str, Any],
+                    exa.search(
+                        query=query,
+                        type=search_type,
+                        category=category,
+                        num_results=num_results,
+                        include_domains=include_domains,
+                        exclude_domains=exclude_domains,
+                        start_crawl_date=start_crawl_date,
+                        end_crawl_date=end_crawl_date,
+                        start_published_date=start_published_date,
+                        end_published_date=end_published_date,
+                        include_text=include_text,
+                        exclude_text=exclude_text,
+                        use_autoprompt=use_autoprompt,
+                    ),
+                )
+
+            return results
+
+        except Exception as e:
+            return {"error": f"Exa search failed: {e!s}"}
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
@@ -966,4 +1141,5 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.search_bocha),
             FunctionTool(self.search_baidu),
             FunctionTool(self.search_bing),
+            FunctionTool(self.search_exa),
         ]
