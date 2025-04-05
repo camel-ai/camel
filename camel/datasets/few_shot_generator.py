@@ -90,10 +90,10 @@ class FewShotGenerator(BaseGenerator):
         self.agent = ChatAgent(system_message=SYSTEM_PROMPT, model=model)
 
         self.interpreter = SubprocessInterpreter(
-            require_confirm=False,  # No confirmation prompts
-            print_stdout=False,  # Suppress stdout unless needed
+            require_confirm=False,
+            print_stdout=False,
             print_stderr=True,  # Show errors for debugging
-            execution_timeout=30,  # Set a timeout to prevent hanging
+            execution_timeout=kwargs.get('interpreter_timeout', 30),
         )
 
     # TODO: Validate that seed dataset contains rationale
