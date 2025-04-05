@@ -543,13 +543,14 @@ wheels = [
 
 [[package]]
 name = "camel-ai"
-version = "0.2.40"
+version = "0.2.41"
 source = { editable = "." }
 dependencies = [
     { name = "colorama" },
     { name = "docstring-parser" },
     { name = "httpx" },
     { name = "jsonschema" },
+    { name = "mcp" },
     { name = "openai" },
     { name = "psutil" },
     { name = "pydantic" },
@@ -955,6 +956,7 @@ requires-dist = [
     { name = "litellm", marker = "extra == 'model-platforms'", specifier = ">=1.38.1,<2" },
     { name = "math-verify", marker = "extra == 'all'", specifier = ">=0.7.0,<0.8" },
     { name = "math-verify", marker = "extra == 'data-tools'", specifier = ">=0.7.0,<0.8" },
+    { name = "mcp", specifier = ">=1.3.0" },
     { name = "mcp", marker = "extra == 'all'", specifier = ">=1.3.0" },
     { name = "mcp", marker = "extra == 'dev-tools'", specifier = ">=1.3.0" },
     { name = "mcp-server-fetch", marker = "extra == 'owl'", specifier = "==2025.1.17" },
