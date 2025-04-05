@@ -98,7 +98,24 @@ class FewShotGenerator(BaseGenerator):
 
     # TODO: Validate that seed dataset contains rationale
     def _validate_seed_dataset(self) -> None:
-        pass
+        """
+        Validate that all datapoints in the seed dataset have a rationale.
+
+        Raises:
+            ValueError: If any datapoint in the seed dataset has a None
+                rationale, with a message listing the indices of the
+                offending datapoints.
+        """
+        missing_indices = [
+            idx
+            for idx, datapoint in enumerate(self.seed_dataset.data)
+            if datapoint.rationale is None
+        ]
+        if missing_indices:
+            raise ValueError(
+                f"Seed dataset contains datapoints without rationale "
+                f"at indices: {missing_indices}"
+            )
 
     def _construct_prompt(self, examples: List[DataPoint]) -> str:
         r"""Construct a prompt for generating new datapoints
