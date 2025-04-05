@@ -74,9 +74,52 @@ class ChatHistoryBlock(MemoryBlock):
             return list()
 
         chat_records: List[MemoryRecord] = []
-        truncate_idx = -window_size if window_size is not None else 0
-        for record_dict in record_dicts[truncate_idx:]:
-            chat_records.append(MemoryRecord.from_dict(record_dict))
+        if window_size is not None and window_size >= 0:
+            # Initial preserved index: Keep first message
+            # if it's SYSTEM/DEVELOPER (index 0)
+            start_index = (
+                1
+                if (
+                    record_dicts
+                    and record_dicts[0]['role_at_backend']
+                    in {OpenAIBackendRole.SYSTEM, OpenAIBackendRole.DEVELOPER}
+                )
+                else 0
+            )
+
+            """
+            Message Processing Logic:
+            1. Preserve first system/developer message (if needed)
+            2. Keep latest window_size messages from the rest
+            
+            Examples:
+            - Case 1: First message is SYSTEM, total 5 messages, window_size=2
+            Input: [system_msg, user_msg1, user_msg2, user_msg3, user_msg4]
+            Result: [system_msg] + [user_msg3, user_msg4]
+
+            - Case 2: First message is USER, total 5 messages, window_size=3
+            Input: [user_msg1, user_msg2, user_msg3, user_msg4, , user_msg5]
+            Result: [user_msg3, user_msg4, , user_msg5]
+            """
+            preserved_messages = record_dicts[
+                :start_index
+            ]  # Preserve system message (if exists)
+            sliding_messages = record_dicts[
+                start_index:
+            ]  # Messages to be truncated
+
+            # Take last window_size messages (if exceeds limit)
+            truncated_messages = sliding_messages[-window_size:]
+
+            # Combine preserved messages with truncated window messages
+            final_records = preserved_messages + truncated_messages
+        else:
+            # Return full records when no window restriction
+            final_records = record_dicts
+
+        chat_records = [
+            MemoryRecord.from_dict(record) for record in final_records
+        ]
 
         # We assume that, in the chat history memory, the closer the record is
         # to the current message, the more score it will be.
