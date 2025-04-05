@@ -586,8 +586,8 @@ async def test_single_step_env_error_handling_single():
     # b) Providing a list of 2 actions for batch size == 1
     with pytest.raises(
         ValueError,
-        match="For batch_size=1, expect a single Action or a list containing "
-        "exactly one Action",
+        match="For batch_size=1, expect a single Action, a dictionary or "
+        "a list containing exactly one Action",
     ):
         await env_invalid_actions.step(
             [
@@ -863,3 +863,150 @@ async def test_batched_single_step_env_error_handling():
     await env_close_fail.setup()
     with pytest.raises(Exception, match="Cleanup failed"):
         await env_close_fail.close()
+
+
+@pytest.mark.asyncio
+async def test_single_step_env_all_input_types():
+    # Define a simple dataset
+    data = [
+        {
+            "question": "What is 2 + 2?",
+            "final_answer": "4",
+            "rationale": "Adding 2 and 2 gives 4.",
+            "metadata": {"difficulty": "easy"},
+        },
+        {
+            "question": "What is the capital of France?",
+            "final_answer": "Paris",
+            "rationale": "Paris is known as the capital city of France.",
+            "metadata": {"difficulty": "easy"},
+        },
+    ]
+    dataset = StaticDataset(data)
+
+    # Create a mock verifier
+    mock_verifier = MagicMock()
+    mock_verifier.setup = AsyncMock()
+    mock_verifier.cleanup = AsyncMock()
+    mock_verifier.verify_batch = AsyncMock(
+        side_effect=lambda solutions, reference_answers, **kwargs: [
+            VerificationResult(
+                status=VerificationOutcome.SUCCESS,
+                result="Verification successful",
+                feedback="Correct",
+                score=1.0,
+            )
+            for _ in solutions
+        ]
+    )
+
+    # Initialize the environment
+    env = SingleStepEnv(dataset=dataset, verifier=mock_verifier)
+    await env.setup()
+
+    # --- Test with batch_size=1 ---
+    await env.reset(batch_size=1)
+
+    # 1. Test str input (valid for batch_size=1)
+    result = await env.step("4")
+    assert isinstance(result, tuple)
+    _, reward, done, _ = result
+    assert reward == env.ACCURACY_REWARD
+    assert done is True
+
+    # Reset for next test
+    await env.reset(batch_size=1)
+
+    # 2. Test Action input (valid)
+    result = await env.step(Action(index=0, llm_response="4"))
+    assert isinstance(result, tuple)
+    _, reward, done, _ = result
+    assert reward == env.ACCURACY_REWARD
+    assert done is True
+
+    # Reset for next test
+    await env.reset(batch_size=1)
+
+    # 3. Test List[Action] input (valid with one element)
+    result = await env.step([Action(index=0, llm_response="4")])
+    assert isinstance(result, tuple)
+    _, reward, done, _ = result
+    assert reward == env.ACCURACY_REWARD
+    assert done is True
+
+    # Reset for error tests
+    await env.reset(batch_size=1)
+
+    # 4. Test List[Action] with too many elements
+    with pytest.raises(
+        ValueError,
+        match="For batch_size=1, expect a single Action, a dictionary or "
+        "a list containing exactly one Action",
+    ):
+        await env.step(
+            [
+                Action(index=0, llm_response="4"),
+                Action(index=1, llm_response="Paris"),
+            ]
+        )
+
+    # 5. Test Action with wrong index
+    with pytest.raises(
+        ValueError, match="For batch_size=1, Action index must be 0"
+    ):
+        await env.step(Action(index=1, llm_response="4"))
+
+    # --- Test with batch_size=2 ---
+    await env.reset(batch_size=2)
+
+    # 6. Test Dict[int, str] input (valid for batch_size > 1)
+    result = await env.step({0: "4", 1: "Paris"})
+    assert isinstance(result, list)
+    assert len(result) == 2
+    for _, reward, done, _ in result:
+        assert reward == env.ACCURACY_REWARD
+        assert done is True
+
+    # Reset for next test
+    await env.reset(batch_size=2)
+
+    # 7. Test List[Action] input (valid)
+    result = await env.step(
+        [
+            Action(index=0, llm_response="4"),
+            Action(index=1, llm_response="Paris"),
+        ]
+    )
+    assert isinstance(result, list)
+    assert len(result) == 2
+    for _, reward, done, _ in result:
+        assert reward == env.ACCURACY_REWARD
+        assert done is True
+
+    # Reset for next test
+    await env.reset(batch_size=2)
+
+    # 8. Test str with batch_size > 1 (should fail)
+    with pytest.raises(
+        ValueError,
+        match="String input for action is only allowed when batch_size == 1",
+    ):
+        await env.step("4")
+
+    # 9. Test Dict[int, str] with non-integer keys
+    with pytest.raises(
+        ValueError, match="All dictionary keys must be integers"
+    ):
+        await env.step({"0": "4", 1: "Paris"})
+
+    # 10. Test List[Action] with non-Action elements
+    with pytest.raises(
+        ValueError, match="All elements in the list must be Action objects"
+    ):
+        await env.step([Action(index=0, llm_response="4"), "Paris"])
+
+    # 11. Test invalid index in List[Action]
+    with pytest.raises(ValueError, match="Invalid state index 2"):
+        await env.step([Action(index=2, llm_response="4")])
+
+    await env.close()
