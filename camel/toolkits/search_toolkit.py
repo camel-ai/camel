@@ -975,7 +975,7 @@ class SearchToolkit(BaseToolkit):
         include_text: Optional[List[str]] = None,
         exclude_text: Optional[List[str]] = None,
         use_autoprompt: bool = True,
-        include_contents: bool = False,
+        text: bool = False
     ) -> Dict[str, Any]:
         r"""Use Exa search API to perform intelligent web search with optional
         content extraction.
@@ -1010,8 +1010,8 @@ class SearchToolkit(BaseToolkit):
                 (default: :obj:`None`)
             use_autoprompt (bool): Whether to use Exa's autoprompt feature to
                 enhance the query. (default: :obj:`True`)
-            include_contents (bool): Whether to include webpage contents in
-                results. (default: :obj:`False`)
+            text (bool): Whether to include webpage contents in results.
+            (default: :obj:`False`)
 
         Returns:
             Dict[str, Any]: A dict containing search results and metadata:
@@ -1077,7 +1077,7 @@ class SearchToolkit(BaseToolkit):
                     )
 
             # Call Exa API with direct parameters
-            if include_contents:
+            if text:
                 results = cast(
                     Dict[str, Any],
                     exa.search_and_contents(
