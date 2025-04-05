@@ -339,20 +339,55 @@ class SingleStepEnv:
                 for _ in range(len(proposed_solutions))
             ]
 
+        # Track which solutions have been processed and which have timed out
+        total_rewards = [0.0] * len(proposed_solutions)
+        rewards_dicts = [{"correctness": 0.0}] * len(proposed_solutions)
+
         try:
-            total_rewards, rewards_dicts = await asyncio.wait_for(
+            # First try to compute all rewards with a timeout
+            computed_rewards, computed_rewards_dicts = await asyncio.wait_for(
                 self._compute_reward_batch(
                     proposed_solutions, verification_results
                 ),
                 timeout=self._timeout,
             )
+            # If successful, use all the computed values
+            total_rewards = computed_rewards
+            rewards_dicts = computed_rewards_dicts
         except asyncio.TimeoutError as e:
             logger.error(
                 f"Reward computation timed out after {self._timeout}s: {e}"
             )
-            # Provide default rewards if computation times out
-            total_rewards = [0.0] * len(proposed_solutions)
-            rewards_dicts = [{"correctness": 0.0}] * len(proposed_solutions)
+            # Try to compute rewards one by one to identify which ones time out
+            for i, (solution, result) in enumerate(
+                zip(proposed_solutions, verification_results)
+            ):
+                try:
+                    individual_rewards = await asyncio.wait_for(
+                        self._compute_custom_reward(solution, result),
+                        timeout=self._timeout,
+                    )
+                    # If successful, calculate the reward for this solution
+                    correctness_reward = (
+                        self.ACCURACY_REWARD if result.status else 0.0
+                    )
+                    rewards_dict = {
+                        "correctness": correctness_reward,
+                        **individual_rewards,
+                    }
+                    total_rewards[i] = sum(rewards_dict.values())
+                    rewards_dicts[i] = rewards_dict
+                except asyncio.TimeoutError:
+                    logger.warning(
+                        f"Reward computation for solution {i} timed out"
+                    )
+                except Exception as e:
+                    logger.warning(
+                        f"Error computing reward for solution {i}: {e}"
+                    )
+        except Exception as e:
+            logger.error(f"Reward computation failed: {e}")
+
         # Create and return step results in batch
         step_results = [
             StepResult(
