@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import asyncio
 import random
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -58,6 +59,7 @@ class SingleStepEnv:
         self,
         dataset: Union[StaticDataset, BaseGenerator],
         verifier: BaseVerifier,
+        timeout: Optional[float] = 180.0,
         **kwargs,
     ) -> None:
         r"""Initialize the SingleStepEnv.
@@ -67,12 +69,15 @@ class SingleStepEnv:
                 problems from.
             verifier (BaseVerifier): Verifier used to evaluate LLM responses
                 against ground-truth answers.
+            timeout (Optional[float], optional): The execution timeout in
+                seconds. (default: :obj:`180.0`)
             **kwargs: Optional metadata or configuration values.
 
         Notes:
             This class assumes all interactions are single-step: one question,
             one LLM response, one reward.
         """
+        self._timeout = timeout
         self.dataset = dataset
         self.verifier = verifier
         self._metadata = kwargs
@@ -265,6 +270,7 @@ class SingleStepEnv:
                 or if `reset()` has not been called.
             ValueError: If invalid action format, duplicate indices,
                 or out-of-bounds indices are detected.
+            asyncio.TimeoutError: If the step execution exceeds the timeout.
         """
 
         if not self._is_setup:
@@ -299,11 +305,28 @@ class SingleStepEnv:
             ground_truths.append(self._states[idx].final_answer)
 
         try:
-            verification_results = await self.verifier.verify_batch(
-                solutions=proposed_solutions,
-                reference_answers=ground_truths,  # type: ignore [arg-type]
-                raise_on_error=True,
+            verification_results = await asyncio.wait_for(
+                self.verifier.verify_batch(
+                    solutions=proposed_solutions,
+                    reference_answers=ground_truths,  # type: ignore [arg-type]
+                    raise_on_error=True,
+                ),
+                timeout=self._timeout,
             )
+        except asyncio.TimeoutError as e:
+            logger.error(
+                f"Step verification timed out after {self._timeout}s: {e}"
+            )
+            # Return timeout verification results
+            verification_results = [
+                VerificationResult(
+                    result="",
+                    status=VerificationOutcome.TIMEOUT,
+                    error_message=f"Verification timed out "
+                    f"after {self._timeout}s",
+                )
+                for _ in range(len(proposed_solutions))
+            ]
         except Exception as e:
             logger.error(f"Verification failed: {e}")
             # Return failed verification results with status=FAILURE
@@ -316,9 +339,20 @@ class SingleStepEnv:
                 for _ in range(len(proposed_solutions))
             ]
 
-        total_rewards, rewards_dicts = await self._compute_reward_batch(
-            proposed_solutions, verification_results
-        )
+        try:
+            total_rewards, rewards_dicts = await asyncio.wait_for(
+                self._compute_reward_batch(
+                    proposed_solutions, verification_results
+                ),
+                timeout=self._timeout,
+            )
+        except asyncio.TimeoutError as e:
+            logger.error(
+                f"Reward computation timed out after {self._timeout}s: {e}"
+            )
+            # Provide default rewards if computation times out
+            total_rewards = [0.0] * len(proposed_solutions)
+            rewards_dicts = [{"correctness": 0.0}] * len(proposed_solutions)
         # Create and return step results in batch
         step_results = [
             StepResult(
