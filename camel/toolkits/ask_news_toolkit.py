@@ -160,7 +160,7 @@ class AskNewsToolkit(BaseToolkit):
                 each update. (default: :obj:`10`)
 
         Returns:
-            Unio[dict, str]: A dictionary containing the stories and their
+            Union[dict, str]: A dictionary containing the stories and their
                 associated data, or error message if the process fails.
         """
         try:
@@ -454,7 +454,7 @@ class AsyncAskNewsToolkit(BaseToolkit):
                 each update. (default: :obj:`10`)
 
         Returns:
-            Unio[dict, str]: A dictionary containing the stories and their
+            Union[dict, str]: A dictionary containing the stories and their
                 associated data, or error message if the process fails.
         """
         try:

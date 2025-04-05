@@ -27,7 +27,7 @@ from camel.utils import MCPServer
 
 @MCPServer()
 class CodeExecutionToolkit(BaseToolkit):
-    r"""A tookit for code execution.
+    r"""A toolkit for code execution.
 
     Args:
         sandbox (str): The environment type used to execute code.

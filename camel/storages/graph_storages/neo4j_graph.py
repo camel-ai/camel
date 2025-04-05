@@ -69,7 +69,7 @@ class Neo4jGraph(BaseGraphStorage):
     The detailed information about Neo4j is available at:
     `Neo4j https://neo4j.com/docs/getting-started`
 
-    This module refered to the work of Langchian and Llamaindex.
+    This module referred to the work of Langchian and Llamaindex.
 
     Args:
         url (str): The URL of the Neo4j database server.

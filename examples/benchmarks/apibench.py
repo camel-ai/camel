@@ -34,7 +34,7 @@ result = benchmark.run(agent, subset_name, subset=10)
 
 # Please note that APIBench does not use 'real function call'
 # but instead includes API documentation in the questions
-# for the agent to refernce.
+# for the agent to reference.
 # An example question including the API documentation is printed below.
 print(
     "\nExample question including API documentation:\n",

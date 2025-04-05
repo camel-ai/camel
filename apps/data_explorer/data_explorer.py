@@ -56,7 +56,7 @@ def parse_arguments():
         '--server-port',
         type=int,
         default=8080,
-        help='Port ot run the web page on',
+        help='Port to run the web page on',
     )
     parser.add_argument(
         '--inbrowser',
@@ -399,7 +399,7 @@ def construct_ui(
 
 
 def construct_blocks(data_path: str, default_dataset: Optional[str]):
-    """Construct Blocs app but do not launch it.
+    """Construct Blocks app but do not launch it.
 
     Args:
         data_path (str): Path to the set of ZIP datasets.
