@@ -75,7 +75,7 @@ def generate_questions(
 
         with open(f"{folder_path}/{save_file_name}.jsonl", "w") as f:
             for item in parsed_assistant_msg:
-                json.dump(item, f)
+                json.dump(item, f, ensure_ascii=False)
                 f.write('\n')
 
 
@@ -97,7 +97,7 @@ def main(model=None) -> None:
     examples = (
         "1. Develop a C++ program that reads a text file line by line and"
         "counts the number of occurrences of a specific word in the file.\n"
-        "2. Implement a Jave function to find the longest common"
+        "2. Implement a Java function to find the longest common"
         " subsequence of two input strings using dynamic programming.\n"
         "3. Implement a machine learning-based chatbot system in Python."
     )

@@ -12,18 +12,21 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import ast
 import asyncio
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import venv
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
+from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
 from camel.verifiers import BaseVerifier
 
-from .models import VerificationOutcome, VerificationResult, VerifierInput
+from .models import VerificationOutcome, VerificationResult
 
 logger = get_logger(__name__)
 
@@ -45,12 +48,16 @@ class PythonVerifier(BaseVerifier):
 
     def __init__(
         self,
+        extractor: Optional[BaseExtractor] = None,
         timeout: Optional[float] = 30.0,
         required_packages: Optional[List[str]] = None,
+        **kwargs,
     ):
         r"""Initializes the PythonVerifier.
 
         Args:
+            extractor (Optional[BaseExtractor], optional): The extractor to use
+                for extracting code from the solution. (default: :obj:`None`)
             timeout (Optional[float], optional): The execution timeout in
                 seconds. (default: :obj:`30.0`)
             required_packages (Optional[List[str]], optional): A list of
@@ -58,7 +65,7 @@ class PythonVerifier(BaseVerifier):
                 (default: :obj:`None`)
         """
         # TODO: Use CAMEL's Interpreter to execute the code
-        super().__init__(timeout=timeout)
+        super().__init__(extractor=extractor, timeout=timeout, **kwargs)
         self.venv_path: Optional[str] = None
         self.required_packages = required_packages or []
 
@@ -67,25 +74,43 @@ class PythonVerifier(BaseVerifier):
         else:  # Unix-like systems
             self.bin_dir = 'bin'
 
-    async def _setup(self) -> None:
-        r"""Set up a virtual environment for execution
-        and install required packages.
-        """
+    async def _setup(self, **kwargs) -> None:
+        r"""Set up a virtual environment and install required packages."""
+        # Check if we're in a uv environment and use uv if available
+        if kwargs.get("uv", False) or self._is_uv_environment():
+            logger.info("[UV] Detected uv environment. Using uv for setup.")
+            self._setup_with_uv()
+            return
+
         self.venv_path = tempfile.mkdtemp()
-        venv.create(self.venv_path, with_pip=True)
-        logger.info(f"Virtual environment created at {self.venv_path}")
+        try:
+            # Use system=True to ensure that the virtual environment uses the
+            # system Python libraries
+            venv.create(
+                self.venv_path, with_pip=True, system_site_packages=True
+            )
+            logger.info(f"Virtual environment created at {self.venv_path}")
+        except Exception as e:
+            logger.error(f"Failed to create virtual environment: {e}")
+            # Clean up resources before re-raising
+            if self.venv_path and os.path.exists(self.venv_path):
+                shutil.rmtree(self.venv_path)
+                self.venv_path = None
+            raise
 
         venv_pip = os.path.join(self.venv_path, self.bin_dir, "pip")
 
         if self.required_packages:
             try:
+                # Add timeout to subprocess call
                 subprocess.run(
                     [venv_pip, "install", *self.required_packages],
                     check=True,
                     capture_output=True,
+                    timeout=self._timeout,
                 )
                 logger.info(
-                    "Installed required packages:"
+                    "Installed required packages: "
                     f"{', '.join(self.required_packages)}"
                 )
             except subprocess.CalledProcessError as e:
@@ -93,6 +118,101 @@ class PythonVerifier(BaseVerifier):
                     "Failed to install required packages: "
                     f"{e.stderr.decode().strip()}"
                 )
+                # Clean up resources before re-raising
+                if self.venv_path and os.path.exists(self.venv_path):
+                    shutil.rmtree(self.venv_path)
+                    self.venv_path = None
+                raise
+            except subprocess.TimeoutExpired:
+                logger.error(
+                    f"Package installation timed out "
+                    f"after {self._timeout} seconds"
+                )
+                if self.venv_path and os.path.exists(self.venv_path):
+                    shutil.rmtree(self.venv_path)
+                    self.venv_path = None
+                raise
+
+    def _is_uv_environment(self) -> bool:
+        r"""Detect whether the current Python runtime is managed by uv."""
+        return "UV_CACHE_DIR" in os.environ or "uv" in sys.executable
+
+    def _setup_with_uv(self) -> None:
+        r"""Create virtual environment and install packages using uv."""
+        self.venv_path = tempfile.mkdtemp()
+        try:
+            subprocess.run(
+                ["uv", "venv", "--python", sys.executable, self.venv_path],
+                check=True,
+                capture_output=True,
+                timeout=self._timeout,
+            )
+            logger.info(
+                f"[UV] Virtual environment created at {self.venv_path}"
+            )
+        except subprocess.CalledProcessError as e:
+            logger.error(
+                "[UV] Failed to create virtual environment:\n"
+                f"{e.stderr.decode().strip()}"
+            )
+            # Clean up resources before re-raising
+            if self.venv_path and os.path.exists(self.venv_path):
+                shutil.rmtree(self.venv_path)
+                self.venv_path = None
+            raise
+        except subprocess.TimeoutExpired:
+            logger.error(
+                f"[UV] Virtual environment creation timed "
+                f"out after {self._timeout} seconds"
+            )
+            if self.venv_path and os.path.exists(self.venv_path):
+                shutil.rmtree(self.venv_path)
+                self.venv_path = None
+            raise
+
+        if self.required_packages:
+            venv_python = os.path.join(
+                self.venv_path,
+                self.bin_dir,
+                "python.exe" if os.name == 'nt' else "python",
+            )
+            try:
+                subprocess.run(
+                    [
+                        "uv",
+                        "pip",
+                        "install",
+                        "--python",
+                        venv_python,
+                        *self.required_packages,
+                    ],
+                    check=True,
+                    capture_output=True,
+                    timeout=self._timeout,
+                )
+                logger.info(
+                    "[UV] Installed required packages via uv: "
+                    f"{', '.join(self.required_packages)}"
+                )
+            except subprocess.CalledProcessError as e:
+                logger.error(
+                    "[UV] Failed to install required packages via uv:\n"
+                    f"{e.stderr.decode().strip()}"
+                )
+                # Clean up resources before re-raising
+                if self.venv_path and os.path.exists(self.venv_path):
+                    shutil.rmtree(self.venv_path)
+                    self.venv_path = None
+                raise
+            except subprocess.TimeoutExpired:
+                logger.error(
+                    f"[UV] Package installation timed "
+                    f"out after {self._timeout} seconds"
+                )
+                if self.venv_path and os.path.exists(self.venv_path):
+                    shutil.rmtree(self.venv_path)
+                    self.venv_path = None
+                raise
 
     async def _cleanup(self) -> None:
         r"""Clean up the virtual environment."""
@@ -102,25 +222,29 @@ class PythonVerifier(BaseVerifier):
             self.venv_path = None
 
     async def _verify_implementation(
-        self, result: VerifierInput
+        self, solution: str, reference_answer: Optional[str]
     ) -> VerificationResult:
-        r"""Executes the LLM-generated response in a Python virtual
-        environment.
+        r"""Executes the provided Python solution in an isolated environment
+        and verifies its output against an expected ground truth expression.
+
+        This method runs the solution in a subprocess inside a virtual
+        environment. The ground truth is assumed to be a pure Python
+        expression and is evaluated directly in the verifier process.
+
+        If both executions are successful, the actual output is compared
+        against the evaluated ground truth using semantic equality. If
+        evaluation fails, string comparison is used as a fallback.
 
         Args:
-            result (VerifierInput): Contains the LLM-generated Python code to
-                execute and optional ground truth for comparison.
+            solution (str): The Python code or expression to execute and
+                verify.
+            reference_answer (Optional[str]): The expected value as a Python
+             expression. If None, only execution success is verified.
 
         Returns:
-            VerificationResult: Contains verification status (SUCCESS/FAILURE/
-                ERROR), execution output, error messages if any, and execution
-                duration.
-
-        Raises:
-            asyncio.TimeoutError: If execution exceeds the configured timeout.
-            Exception: Any unexpected errors during execution are caught and
-                converted to an ERROR verification result.
+            VerificationResult: Result of the verification process.
         """
+        # Check for virtual environment setup
         if not self.venv_path:
             return VerificationResult(
                 status=VerificationOutcome.ERROR,
@@ -128,9 +252,51 @@ class PythonVerifier(BaseVerifier):
                 error_message="Virtual environment is not set up.",
             )
 
-        script = result.llm_response.strip()
-        venv_python = os.path.join(self.venv_path, self.bin_dir, "python")
+        # If the solution is an expression, evaluate it directly
+        if self._is_expression(solution):
+            try:
+                sol_val = ast.literal_eval(solution)
+            except Exception as e:
+                return VerificationResult(
+                    status=VerificationOutcome.ERROR,
+                    result="",
+                    error_message=f"Expression evaluation error: {e}",
+                )
 
+            if reference_answer is not None:
+                try:
+                    gt_val = ast.literal_eval(reference_answer)
+                except Exception as e:
+                    return VerificationResult(
+                        status=VerificationOutcome.ERROR,
+                        result="",
+                        error_message=f"Ground truth evaluation error: {e}",
+                    )
+                if sol_val == gt_val:
+                    return VerificationResult(
+                        status=VerificationOutcome.SUCCESS,
+                        result=str(sol_val),
+                    )
+                else:
+                    return VerificationResult(
+                        status=VerificationOutcome.FAILURE,
+                        result=str(sol_val),
+                        error_message="Output mismatch: "
+                        f"{sol_val} != {gt_val}",
+                    )
+            else:
+                return VerificationResult(
+                    status=VerificationOutcome.SUCCESS,
+                    result=str(sol_val),
+                )
+
+        # Otherwise, run the code block,
+        # which should already include a print(...) in the end
+        venv_python = os.path.join(
+            self.venv_path,
+            self.bin_dir,
+            "python.exe" if os.name == 'nt' else "python",
+        )
         if not os.path.exists(venv_python):
             return VerificationResult(
                 status=VerificationOutcome.ERROR,
@@ -139,64 +305,154 @@ class PythonVerifier(BaseVerifier):
             )
 
         try:
-            process = await asyncio.create_subprocess_exec(
-                venv_python,
-                "-c",
-                script,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
+            sol_out, sol_err, sol_code = await self._run_code_block(
+                solution, venv_python
             )
+            if sol_code != 0:
+                return VerificationResult(
+                    status=VerificationOutcome.ERROR,
+                    result=sol_out,
+                    error_message=f"Solution code error:\n{sol_err}",
+                )
 
-            stdout, stderr = await asyncio.wait_for(
-                process.communicate(), timeout=self._timeout
-            )
+            if reference_answer is not None:
+                try:
+                    # First, try to evaluate the output as-is.
+                    sol_val = ast.literal_eval(sol_out)
+                except Exception as e:
+                    logger.warning(f"Direct eval failed: {e}.")
+                    sol_val = None
 
-            output_result = stdout.decode().strip()
-            error_output = stderr.decode().strip()
-
-            if process.returncode == 0:
-                # If ground truth is provided, compare it with the result
-                if result.ground_truth is not None:
-                    # Normalize both strings by removing extra whitespace
-                    normalized_output = ' '.join(output_result.strip().split())
-                    normalized_truth = ' '.join(
-                        str(result.ground_truth).strip().split()
-                    )
-
-                    if normalized_output == normalized_truth:
+                if sol_val is not None:
+                    try:
+                        gt_val = ast.literal_eval(reference_answer)
+                    except Exception as e:
+                        return VerificationResult(
+                            status=VerificationOutcome.ERROR,
+                            result="",
+                            error_message="Ground truth evaluation error:"
+                            f"{e}",
+                        )
+                    if sol_val == gt_val:
                         return VerificationResult(
                             status=VerificationOutcome.SUCCESS,
-                            result=output_result,
+                            result=sol_out,
                         )
                     else:
                         return VerificationResult(
                             status=VerificationOutcome.FAILURE,
-                            error_message="Output doesn't match ground truth",
-                            result=output_result,
+                            result=sol_out,
+                            error_message="Output mismatch: "
+                            f"{sol_val} != {gt_val}",
                         )
                 else:
-                    return VerificationResult(
-                        status=VerificationOutcome.SUCCESS,
-                        result=output_result,
-                    )
-
+                    # Fallback: string comparison
+                    if sol_out.strip() == reference_answer.strip():
+                        return VerificationResult(
+                            status=VerificationOutcome.SUCCESS,
+                            result=sol_out,
+                        )
+                    else:
+                        return VerificationResult(
+                            status=VerificationOutcome.FAILURE,
+                            result=sol_out,
+                            error_message="Fallback string mismatch: "
+                            f"'{sol_out}' != '{reference_answer}'",
+                        )
             else:
                 return VerificationResult(
-                    status=VerificationOutcome.ERROR,
-                    error_message=error_output,
-                    result=output_result,
+                    status=VerificationOutcome.SUCCESS,
+                    result=sol_out,
                 )
-
         except asyncio.TimeoutError:
             return VerificationResult(
                 status=VerificationOutcome.TIMEOUT,
                 result="",
                 error_message="Execution timed out.",
             )
-
         except Exception as e:
             return VerificationResult(
                 status=VerificationOutcome.ERROR,
                 result="",
-                error_message=f"Execution error: {e}",
+                error_message=f"Unexpected error: {e}",
             )
+
+    async def _run_code_block(
+        self, code: str, venv_path: str
+    ) -> Tuple[str, str, int]:
+        r"""Executes a block of Python code in the virtual environment.
+
+        The code is written to a temporary file, executed using the Python
+        interpreter from the specified virtual environment, and
+        its output and error streams are captured.
+
+        Args:
+            code (str): The Python code to execute.
+            venv_path (str): The path to the virtual environment's Python
+                binary.
+
+        Returns:
+            Tuple[str, str, int]: A tuple containing the stdout output,
+            stderr output, and return code from the executed script.
+        """
+        # No longer checking for expressions since they're handled separately
+        with tempfile.NamedTemporaryFile(
+            "w+", suffix=".py", delete=False
+        ) as tmp:
+            tmp.write(code)
+            tmp_path = tmp.name
+
+        proc = await asyncio.create_subprocess_exec(
+            venv_path,
+            tmp_path,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await asyncio.wait_for(
+            proc.communicate(), timeout=self._timeout
+        )
+        os.remove(tmp_path)
+        return (
+            stdout.decode().strip(),
+            stderr.decode().strip(),
+            proc.returncode if proc.returncode is not None else -1,
+        )
+
+    def _is_expression(self, code: str) -> bool:
+        r"""Determines whether a given string of code is a single expression.
+
+        This utility uses Python's AST module to parse the code and checks if
+        it consists of a single expression node.
+
+        Args:
+            code (str): The Python code to analyze.
+
+        Returns:
+            bool: True if the code is a single expression, False otherwise.
+        """
+        # Skip empty or whitespace-only strings
+        if not code or code.isspace():
+            return False
+
+        try:
+            # First try parsing as an expression - this is more reliable than
+            # starting with literal_eval
+            tree = ast.parse(code.strip(), mode='eval')
+            # Check if it's a function call (like print()) - these should not
+            # be treated as expressions
+            if isinstance(tree.body, ast.Call):
+                return False
+            # If parsing succeeds in 'eval' mode and it's not a function call,
+            # it's a valid expression
+            return True
+        except SyntaxError:
+            # If parsing as expression fails, it's not a valid expression
+            return False
+        except Exception:
+            # For any other parsing errors, try literal_eval as fallback for
+            # simple literals
+            try:
+                ast.literal_eval(code)
+                return True
+            except Exception:
+                return False

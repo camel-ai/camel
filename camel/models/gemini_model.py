@@ -51,6 +51,10 @@ class GeminiModel(BaseModelBackend):
             use for the model. If not provided, :obj:`OpenAITokenCounter(
             ModelType.GPT_4O_MINI)` will be used.
             (default: :obj:`None`)
+        timeout (Optional[float], optional): The timeout value in seconds for
+            API calls. If not provided, will fall back to the MODEL_TIMEOUT
+            environment variable or default to 180 seconds.
+            (default: :obj:`None`)
     """
 
     @api_keys_required(
@@ -65,6 +69,7 @@ class GeminiModel(BaseModelBackend):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
+        timeout: Optional[float] = None,
     ) -> None:
         if model_config_dict is None:
             model_config_dict = GeminiConfig().as_dict()
@@ -73,17 +78,18 @@ class GeminiModel(BaseModelBackend):
             "GEMINI_API_BASE_URL",
             "https://generativelanguage.googleapis.com/v1beta/openai/",
         )
+        timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter
+            model_type, model_config_dict, api_key, url, token_counter, timeout
         )
         self._client = OpenAI(
-            timeout=180,
+            timeout=self._timeout,
             max_retries=3,
             api_key=self._api_key,
             base_url=self._url,
         )
         self._async_client = AsyncOpenAI(
-            timeout=180,
+            timeout=self._timeout,
             max_retries=3,
             api_key=self._api_key,
             base_url=self._url,
@@ -172,6 +178,24 @@ class GeminiModel(BaseModelBackend):
             for tool in tools:
                 function_dict = tool.get('function', {})
                 function_dict.pop("strict", None)
+
+                # Process parameters to remove anyOf
+                if 'parameters' in function_dict:
+                    params = function_dict['parameters']
+                    if 'properties' in params:
+                        for prop_name, prop_value in params[
+                            'properties'
+                        ].items():
+                            if 'anyOf' in prop_value:
+                                # Replace anyOf with the first type in the list
+                                first_type = prop_value['anyOf'][0]
+                                params['properties'][prop_name] = first_type
+                                # Preserve description if it exists
+                                if 'description' in prop_value:
+                                    params['properties'][prop_name][
+                                        'description'
+                                    ] = prop_value['description']
+
             request_config["tools"] = tools
 
         return self._client.chat.completions.create(
@@ -191,6 +215,24 @@ class GeminiModel(BaseModelBackend):
             for tool in tools:
                 function_dict = tool.get('function', {})
                 function_dict.pop("strict", None)
+
+                # Process parameters to remove anyOf
+                if 'parameters' in function_dict:
+                    params = function_dict['parameters']
+                    if 'properties' in params:
+                        for prop_name, prop_value in params[
+                            'properties'
+                        ].items():
+                            if 'anyOf' in prop_value:
+                                # Replace anyOf with the first type in the list
+                                first_type = prop_value['anyOf'][0]
+                                params['properties'][prop_name] = first_type
+                                # Preserve description if it exists
+                                if 'description' in prop_value:
+                                    params['properties'][prop_name][
+                                        'description'
+                                    ] = prop_value['description']
+
             request_config["tools"] = tools
 
         return await self._async_client.chat.completions.create(

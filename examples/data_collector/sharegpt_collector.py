@@ -46,8 +46,8 @@ collector = ShareGPTDataCollector().record(agent).start()
 response = agent.step("Call tools to calculate 17 * 19 = ?")
 
 
-print(json.dumps(collector.convert(), indent=4))
-print(json.dumps(collector.llm_convert(), indent=4))
+print(json.dumps(collector.convert(), indent=4, ensure_ascii=False))
+print(json.dumps(collector.llm_convert(), indent=4, ensure_ascii=False))
 print(collector.to_sharegpt_conversation(collector.convert()))
 
 # ruff: noqa: E501

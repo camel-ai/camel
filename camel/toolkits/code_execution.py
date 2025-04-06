@@ -22,13 +22,16 @@ from camel.interpreters import (
 )
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
+from camel.utils import MCPServer
 
 
+@MCPServer()
 class CodeExecutionToolkit(BaseToolkit):
-    r"""A tookit for code execution.
+    r"""A toolkit for code execution.
 
     Args:
         sandbox (str): The environment type used to execute code.
+            (default: `subprocess`)
         verbose (bool): Whether to print the output of the code execution.
             (default: :obj:`False`)
         unsafe_mode (bool):  If `True`, the interpreter runs the code
@@ -43,7 +46,7 @@ class CodeExecutionToolkit(BaseToolkit):
         self,
         sandbox: Literal[
             "internal_python", "jupyter", "docker", "subprocess", "e2b"
-        ] = "internal_python",
+        ] = "subprocess",
         verbose: bool = False,
         unsafe_mode: bool = False,
         import_white_list: Optional[List[str]] = None,

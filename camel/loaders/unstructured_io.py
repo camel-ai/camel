@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import traceback
 import uuid
 import warnings
 from typing import (
@@ -153,7 +154,7 @@ class UnstructuredIO:
                     elements = partition(file=f, **kwargs)
                     return elements
             except Exception:
-                warnings.warn(f"Failed to partition the file: {input_path}")
+                warnings.warn(traceback.format_exc())
                 return None
 
     @staticmethod
