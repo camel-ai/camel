@@ -163,6 +163,7 @@ class ChatAgent(BaseAgent):
         response_terminators: Optional[List[ResponseTerminator]] = None,
         scheduling_strategy: str = "round_robin",
         single_iteration: bool = False,
+        tools_max_retries: int = 5,
         agent_id: Optional[str] = None,
     ) -> None:
         # Set up model backend
@@ -239,6 +240,7 @@ class ChatAgent(BaseAgent):
         self.terminated = False
         self.response_terminators = response_terminators or []
         self.single_iteration = single_iteration
+        self.tools_max_retries = tools_max_retries
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
@@ -598,20 +600,37 @@ class ChatAgent(BaseAgent):
         tool_call_records: List[ToolCallingRecord] = []
         external_tool_call_requests: Optional[List[ToolCallRequest]] = None
 
+        enforce_no_tools = False
+        max_retries = self.tools_max_retries
         while True:
+            max_retries -= 1
+
+            if max_retries == -1:
+                logger.info("Max retries reached, terminating the session.")
+                enforce_no_tools = True
+
             try:
                 openai_messages, num_tokens = self.memory.get_context()
             except RuntimeError as e:
                 return self._step_token_exceed(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
-            # Get response from model backend
-            response = self._get_model_response(
-                openai_messages,
-                num_tokens,
-                response_format,
-                self._get_full_tool_schemas(),
-            )
+            if enforce_no_tools:
+                # Get response from model backend which enforce no tools
+                response = self._get_model_response(
+                    openai_messages,
+                    num_tokens,
+                    response_format,
+                    [],
+                )
+            else:
+                # Get response from model backend
+                response = self._get_model_response(
+                    openai_messages,
+                    num_tokens,
+                    response_format,
+                    self._get_full_tool_schemas(),
+                )
 
             if tool_call_requests := response.tool_call_requests:
                 # Process all tool calls
@@ -635,7 +654,11 @@ class ChatAgent(BaseAgent):
                 if self.single_iteration:
                     break
 
-                # If we're still here, continue the loop
+                tool_record, is_success = self._execute_tool(tool_call_request)
+
+                tool_call_records.append(tool_record)
+                if is_success:
+                    enforce_no_tools = True
                 continue
 
             break
@@ -1270,15 +1293,15 @@ class ChatAgent(BaseAgent):
     def _execute_tool(
         self,
         tool_call_request: ToolCallRequest,
-    ) -> ToolCallingRecord:
+    ) -> Tuple[ToolCallingRecord, bool]:
         r"""Execute the tool with arguments following the model's response.
 
         Args:
             tool_call_request (_ToolCallRequest): The tool call request.
 
         Returns:
-            FunctionCallingRecord: A struct for logging information about this
-                function call.
+            Tuple[FunctionCallingRecord, bool]: A struct for logging information about this
+                function call and a boolean indicating success.
         """
         func_name = tool_call_request.tool_name
         args = tool_call_request.args
@@ -1292,7 +1315,25 @@ class ChatAgent(BaseAgent):
             result = {"error": error_msg}
             logging.warning(error_msg)
 
-        return self._record_tool_calling(func_name, args, result, tool_call_id)
+        tool_record = self._record_tool_calling(func_name, args, result, tool_call_id)
+
+        # Check if result indicates success
+        try:
+            if isinstance(eval(result), dict):
+                result = eval(result)
+                if not result.get('status'):
+                    if result.get('result') == []:
+                        return tool_record, False
+                    else:
+                        return tool_record, True
+                if result.get('status') != 'error':
+                    return tool_record, True
+        except Exception:
+            if "stderr" not in result:
+                return tool_record, True
+            else:
+                return tool_record, False
+        return tool_record, False
 
     async def _aexecute_tool(
         self,
