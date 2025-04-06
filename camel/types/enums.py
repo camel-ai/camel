@@ -66,6 +66,7 @@ class ModelType(UnifiedModelType, Enum):
     # OpenRouter models
     OPENROUTER_LLAMA_3_1_405B = "meta-llama/llama-3.3-405b-instruct"
     OPENROUTER_LLAMA_3_1_70B = "meta-llama/llama-3.3-70b-instruct"
+    OPENROUTER_LLAMA_4_MAVERICK = "meta-llama/llama-4-maverick"
     OPENROUTER_OLYMPICODER_7B = "open-r1/olympiccoder-7b:free"
 
     # TogetherAI platform models support tool calling
