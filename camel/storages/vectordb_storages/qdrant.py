@@ -40,7 +40,7 @@ class QdrantStorage(BaseVectorStorage):
     `Qdrant <https://qdrant.tech/>`_
 
     Args:
-        vector_dim (int): The dimenstion of storing vectors.
+        vector_dim (int): The dimension of storing vectors.
         collection_name (Optional[str], optional): Name for the collection in
             the Qdrant. If not provided, set it to the current time with iso
             format. (default: :obj:`None`)
@@ -218,7 +218,7 @@ class QdrantStorage(BaseVectorStorage):
         )
 
     def _collection_exists(self, collection_name: str) -> bool:
-        r"""Returns wether the collection exists in the database"""
+        r"""Returns whether the collection exists in the database"""
         for c in self._client.get_collections().collections:
             if collection_name == c.name:
                 return True

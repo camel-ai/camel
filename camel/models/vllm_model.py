@@ -77,7 +77,7 @@ class VLLMModel(BaseModelBackend):
         )
         if not self._url:
             self._start_server()
-        # Use OpenAI cilent as interface call vLLM
+        # Use OpenAI client as interface call vLLM
         self._client = OpenAI(
             timeout=self._timeout,
             max_retries=3,
@@ -162,6 +162,14 @@ class VLLMModel(BaseModelBackend):
         if response_format:
             kwargs["response_format"] = {"type": "json_object"}
 
+        # Remove additionalProperties from each tool's function parameters
+        if tools and "tools" in kwargs:
+            for tool in kwargs["tools"]:
+                if "function" in tool and "parameters" in tool["function"]:
+                    tool["function"]["parameters"].pop(
+                        "additionalProperties", None
+                    )
+
         response = await self._async_client.chat.completions.create(
             messages=messages,
             model=self.model_type,
@@ -196,6 +204,14 @@ class VLLMModel(BaseModelBackend):
             kwargs["tools"] = tools
         if response_format:
             kwargs["response_format"] = {"type": "json_object"}
+
+        # Remove additionalProperties from each tool's function parameters
+        if tools and "tools" in kwargs:
+            for tool in kwargs["tools"]:
+                if "function" in tool and "parameters" in tool["function"]:
+                    tool["function"]["parameters"].pop(
+                        "additionalProperties", None
+                    )
 
         response = self._client.chat.completions.create(
             messages=messages,
