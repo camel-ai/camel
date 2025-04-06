@@ -89,7 +89,7 @@ test_images = [image, image]
 embeddings = vlm_embedding.embed_list(test_images)
 ```
 
-### 3.1. Using `OpenAIEmbedding`
+### 3.5. Using `AzureOpenAI`
 ```python
 from camel.embeddings import AzureEmbedding
 from camel.types import EmbeddingModelType
