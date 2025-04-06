@@ -16,19 +16,13 @@ import asyncio
 import logging
 from typing import Any, Dict, List, Optional
 
-from crawl4ai import (
-    AsyncWebCrawler,
-    CrawlResult,
-)
-from crawl4ai.extraction_strategy import (
-    ExtractionStrategy,
-    LLMExtractionStrategy,
-)
+from dotenv import load_dotenv
 from pydantic import BaseModel, ValidationError
 
 from camel.utils import api_keys_required
 
 logger = logging.getLogger(__name__)
+load_dotenv()
 
 
 class Crawl4AI:
@@ -45,9 +39,11 @@ class Crawl4AI:
     """
 
     def __init__(self) -> None:
+        from crawl4ai import AsyncWebCrawler
+
         self.crawler = AsyncWebCrawler
 
-    async def _run_crawler(self, url: str, **kwargs) -> CrawlResult:
+    async def _run_crawler(self, url: str, **kwargs) -> Any:
         r"""Run the asynchronous web crawler on a given URL.
 
         Args:
@@ -72,7 +68,7 @@ class Crawl4AI:
         self,
         start_url: str,
         max_depth: int = 1,
-        extraction_strategy: Optional[ExtractionStrategy] = None,
+        extraction_strategy=None,
         **kwargs,
     ) -> List[Dict[str, Any]]:
         r"""Crawl a URL and its subpages using breadth-first search.
@@ -102,7 +98,7 @@ class Crawl4AI:
         while not queue.empty():
             url, depth = await queue.get()
             try:
-                result: CrawlResult = await self._run_crawler(
+                result = await self._run_crawler(
                     url, extraction_strategy=extraction_strategy, **kwargs
                 )
                 all_results.append(
@@ -135,7 +131,7 @@ class Crawl4AI:
     async def scrape(
         self,
         url: str,
-        extraction_strategy: Optional[ExtractionStrategy] = None,
+        extraction_strategy=None,
         **kwargs,
     ) -> Dict[str, Any]:
         r"""Scrape a single URL using CSS or LLM-based extraction.
@@ -154,7 +150,7 @@ class Crawl4AI:
             RuntimeError: If scraping fails.
         """
 
-        result: CrawlResult = await self._run_crawler(
+        result = await self._run_crawler(
             url, extraction_strategy=extraction_strategy, **kwargs
         )
         return {
@@ -167,10 +163,10 @@ class Crawl4AI:
 
     @api_keys_required(
         [
-            ("api_key", "ANTHROPIC_API_KEY"),
-            ("api_key", "DEEPSEEK_API_KEY"),
-            ("api_key", "GEMINI_API_KEY"),
-            ("api_key", "GROQ_API_KEY"),
+            # ("api_key", "ANTHROPIC_API_KEY"),
+            # ("api_key", "DEEPSEEK_API_KEY"),
+            # ("api_key", "GEMINI_API_KEY"),
+            # ("api_key", "GROQ_API_KEY"),
             ("api_key", "OPENAI_API_KEY"),
         ]
     )
@@ -178,29 +174,34 @@ class Crawl4AI:
         self,
         url: str,
         response_format: BaseModel,
-        api_key: Optional[str] = "no-token",
-        llm_provider: str = 'ollama/qwen2',
+        api_key: Optional[str] = None,
+        llm_provider: str = 'ollama/llama3',
         **kwargs,
-    ) -> CrawlResult:
+    ) -> Any:
         r"""Extract structured data from a URL using an LLM.
 
         Args:
             url (str): URL to scrape.
             response_format (BaseModel): Model defining the expected output
                 schema.
-            api_key (Optional[str], optional): API key for the LLM provider
+            api_key (str, optional): API key for the LLM provider
                 (default: "no-token").
             llm_provider (str, optional): Identifier for the LLM provider
-                (default: 'ollama/qwen2').
+                (default: 'ollama/llama3').
             **kwargs: Additional arguments for crawler configuration.
 
         Returns:
-            Dict[str, Any]: Dictionary containing extracted structured data.
+            Any: Crawl result containing the extracted data
+                structured according to the schema.
 
         Raises:
             ValidationError: If extracted data does not match the schema.
             RuntimeError: If extraction fails.
         """
+
+        from crawl4ai.extraction_strategy import (
+            LLMExtractionStrategy,
+        )
 
         extraction_strategy = LLMExtractionStrategy(
             provider=llm_provider,

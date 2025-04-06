@@ -18,57 +18,88 @@ from pydantic import BaseModel, Field
 
 from camel.loaders import Crawl4AI
 
+# Instantiate the Crawl4AI crawler
+crawler = Crawl4AI()
 
-async def main():
-    r"""
-    Example usage of the Crawl4AI crawler.
+URL = "https://toscrape.com/"
 
-    Performs a breadth-first crawl of the given URL, up to a maximum depth.
-    Prints out the results, including any extracted data.
-    """
-    crawler = Crawl4AI()
+# --- Crawling (BFS) ---
+crawl_results = asyncio.run(crawler.crawl(URL, max_depth=1))
+print(crawl_results[0]["markdown"])
+'''
+![](img/zyte.png)
 
-    # --- Crawling (BFS) ---
-    try:
-        crawl_results = await crawler.crawl(
-            "https://github.com/camel-ai/camel/issues/1685", max_depth=1
-        )
-        print("\n--- Crawl Results (BFS): ---")
-        for page_data in crawl_results:
-            print(f"URL: {page_data['url']}")
-            if page_data["markdown"]:
-                print(f"Markdown Data: {page_data['markdown']}")
-            print("-" * 20)
+# Web Scraping Sandbox
 
-        # --- Scraping ---
-        scrape_result = await crawler.scrape(
-            "https://github.com/camel-ai/camel/issues/1685"
-        )
-        print("\n--- Scrape Result: ---")
-        print(f"URL: {scrape_result['url']}")
-        print(f"Markdown Data: {scrape_result['markdown']}")
-        print("-" * 20)
+## Books
 
-        # --- Structured Scraping ---
-        class MovieResponse(BaseModel):
-            title: str = Field(..., description="The title of the movie.")
-            year: int = Field(
-                ..., description="The release year of the movie."
-            )
-            rating: float = Field(..., description="The rating of the movie.")
+A [fictional bookstore](http://books.toscrape.com) that desperately wants to 
+be scraped. It's a safe place for beginners learning web scraping and for 
+developers validating their scraping technologies as well. 
+Available at: [books.toscrape.com](http://books.toscrape.com)
 
-        # api_key = "OPENAI_API_KEY"
-        structured_scrape_result = await crawler.structured_scrape(
-            "https://www.imdb.com/title/tt0111161/",
-            response_format=MovieResponse,
-            # api_key=api_key
-        )
-        print("\n--- Structured Scrape Result: ---")
-        print(structured_scrape_result)
-        print("-" * 20)
-    except RuntimeError as e:
-        print(e)
+[![](./img/books.png)](http://books.toscrape.com)
+
+Details  
+---  
+Amount of items | 1000  
+Pagination | ✔  
+Items per page | max 20  
+Requires JavaScript | ✘  
+  
+## Quotes
+
+[A website](http://quotes.toscrape.com/) that lists quotes from famous people.
+It has many endpoints showing the quotes in many different ways, each of them 
+including new scraping challenges for you, as described below.
+
+[![](./img/quotes.png)](http://quotes.toscrape.com)
+
+Endpoints  
+---  
+[Default](http://quotes.toscrape.com/)| Microdata and pagination  
+[Scroll](http://quotes.toscrape.com/scroll) | infinite scrolling pagination  
+[JavaScript](http://quotes.toscrape.com/js) | JavaScript generated content  
+[Delayed](http://quotes.toscrape.com/js-delayed) | Same as JavaScript but with 
+    a delay (?delay=10000)  
+[Tableful](http://quotes.toscrape.com/tableful) | a table based messed-up 
+    layout
+[Login](http://quotes.toscrape.com/login) | login with CSRF token 
+    (any user/passwd works)  
+[ViewState](http://quotes.toscrape.com/search.aspx) | an AJAX based filter 
+    form with ViewStates  
+[Random](http://quotes.toscrape.com/random) | a single random quote
+'''
 
 
-if __name__ == "__main__":
-    asyncio.run(main())
+# --- Scraping ---
+scrape_result = asyncio.run(crawler.scrape(URL))
+print(scrape_result)
+'''
+{url: 'https://toscrape.com/', 
+'raw_result': CrawlResult(url='https://toscrape.com/', markdown=..., 
+    cleaned_html=..., links=...),
+'markdown': "![](img/zyte.png)\n\n# Web Scraping Sandbox\n\n## Books...", 
+'cleaned_html': '\n<div>\n<div>\n<div>\n<img class="logo" height="108" 
+    src="img/zyte.png" width="200"/>\n
+    <h1>Web Scraping Sandbox</h1>\n...'}
+'''
+
+
+# --- Structured Scraping ---
+class MovieResponse(BaseModel):
+    title: str = Field(..., description="The name of the website.")
+    year: int = Field(..., description="The amount of items on the bookstore.")
+    rating: float = Field(
+        ..., description="The names of the endpoints of quotes."
+    )
+
+
+structured_scrape_result = asyncio.run(
+    crawler.structured_scrape(
+        URL,
+        response_format=MovieResponse,
+        llm_provider="openai/gpt-4o",
+    )
+)
+print(structured_scrape_result.extracted_content)
