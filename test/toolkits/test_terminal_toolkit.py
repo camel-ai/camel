@@ -22,8 +22,8 @@ from camel.toolkits import TerminalToolkit
 
 
 @pytest.fixture
-def terminal_toolkit():
-    return TerminalToolkit()
+def terminal_toolkit(temp_dir):
+    return TerminalToolkit(working_dir=temp_dir, safe_mode=False)
 
 
 @pytest.fixture
@@ -100,7 +100,6 @@ def test_shell_exec(terminal_toolkit, temp_dir):
     # Test basic command execution
     result = terminal_toolkit.shell_exec(
         "test_session",
-        str(temp_dir),
         "echo 'Hello World'",
     )
     assert "Hello World" in result
@@ -108,22 +107,13 @@ def test_shell_exec(terminal_toolkit, temp_dir):
     # Test command with error
     result = terminal_toolkit.shell_exec(
         "test_session",
-        str(temp_dir),
         "nonexistent_command",
     )
     assert "not found" in result.lower()
 
-    # Test with relative path
-    result = terminal_toolkit.shell_exec(
-        "test_session",
-        "relative/path",
-        "echo 'test'",
-    )
-    assert "must be an absolute path" in result.lower()
-
     # Test session persistence
     session_id = "persistent_session"
-    terminal_toolkit.shell_exec(session_id, str(temp_dir), "echo 'test1'")
+    terminal_toolkit.shell_exec(session_id, "echo 'test1'")
     assert session_id in terminal_toolkit.shell_sessions
     assert terminal_toolkit.shell_sessions[session_id]["output"] != ""
 
@@ -135,12 +125,10 @@ def test_shell_exec_multiple_sessions(terminal_toolkit, temp_dir):
 
     result1 = terminal_toolkit.shell_exec(
         session1,
-        str(temp_dir),
         "echo 'Session 1'",
     )
     result2 = terminal_toolkit.shell_exec(
         session2,
-        str(temp_dir),
         "echo 'Session 2'",
     )
 
