@@ -12,24 +12,26 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from .apify_reader import Apify
+from .apify_reader import ApifyLoader
 from .base_io import File, create_file, create_file_from_raw_bytes
-from .chunkr_reader import ChunkrReader
-from .firecrawl_reader import Firecrawl
-from .jina_url_reader import JinaURLReader
-from .mineru_extractor import MinerU
-from .pandas_reader import PandasReader
-from .unstructured_io import UnstructuredIO
+from .chunkr_reader import ChunkrLoader
+from .firecrawl_reader import FirecrawlLoader
+from .jina_url_reader import JinaURLLoader
+from .mineru_extractor import MinerULoader
+from .olmocr_reader import olmOCRLoader
+from .panda_reader import PandasLoader
+from .unstructured_io import UnstructuredIOLoader
 
 __all__ = [
     'File',
     'create_file',
     'create_file_from_raw_bytes',
-    'UnstructuredIO',
-    'JinaURLReader',
-    'Firecrawl',
-    'Apify',
-    'ChunkrReader',
-    'PandasReader',
-    'MinerU',
+    'UnstructuredIOLoader',
+    'ChunkrLoader',
+    'FirecrawlLoader',
+    'JinaURLLoader',
+    'MinerULoader',
+    'PandasLoader',
+    'ApifyLoader',
+    'olmOCRLoader',
 ]
