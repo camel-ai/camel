@@ -140,7 +140,7 @@ print(output)
 """
 
 
-######## Mutliple choices #########
+######## Multiple choices #########
 
 output = model.convert_choice(
     "What is the capital of Spain?",
@@ -155,7 +155,7 @@ Madrid
 """
 
 
-######## Grammer #########
+######## Grammar #########
 
 arithmetic_grammar = """
     ?start: expression

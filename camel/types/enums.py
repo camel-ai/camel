@@ -902,6 +902,7 @@ class VectorDistance(Enum):
 class OpenAIBackendRole(Enum):
     ASSISTANT = "assistant"
     SYSTEM = "system"
+    DEVELOPER = "developer"
     USER = "user"
     FUNCTION = "function"
     TOOL = "tool"
