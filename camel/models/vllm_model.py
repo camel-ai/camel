@@ -170,6 +170,29 @@ class VLLMModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
+        if tools:
+            for tool in tools:
+                function_dict = tool.get('function', {})
+                function_dict.pop("additionalProperties", None)
+
+                # Process parameters to remove anyOf
+                if 'parameters' in function_dict:
+                    params = function_dict['parameters']
+                    if 'properties' in params:
+                        for prop_name, prop_value in params[
+                            'properties'
+                        ].items():
+                            if 'anyOf' in prop_value:
+                                # Replace anyOf with the first type in the list
+                                first_type = prop_value['anyOf'][0]
+                                params['properties'][prop_name] = first_type
+                                # Preserve description if it exists
+                                if 'description' in prop_value:
+                                    params['properties'][prop_name][
+                                        'description'
+                                    ] = prop_value['description']
+
+            self.model_config_dict["tools"] = tools
 
         response = self._client.chat.completions.create(
             messages=messages,
