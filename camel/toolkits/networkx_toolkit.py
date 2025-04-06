@@ -18,10 +18,12 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
+from camel.utils import MCPServer
 
 logger = get_logger(__name__)
 
 
+@MCPServer()
 class NetworkXToolkit(BaseToolkit):
     _nx = None  # Class variable to store the networkx module
 
@@ -178,7 +180,7 @@ class NetworkXToolkit(BaseToolkit):
         """
         logger.info("Serializing the graph.")
         nx = self._get_nx()
-        return json.dumps(nx.node_link_data(self.graph))
+        return json.dumps(nx.node_link_data(self.graph), ensure_ascii=False)
 
     def deserialize_graph(self, data: str) -> None:
         r"""Loads a graph from a serialized JSON string.
@@ -199,7 +201,7 @@ class NetworkXToolkit(BaseToolkit):
         logger.info(f"Exporting graph to file: {file_path}")
         nx = self._get_nx()
         with open(file_path, "w") as file:
-            json.dump(nx.node_link_data(self.graph), file)
+            json.dump(nx.node_link_data(self.graph), file, ensure_ascii=False)
 
     def import_from_file(self, file_path: str) -> None:
         r"""Imports a graph from a JSON file.

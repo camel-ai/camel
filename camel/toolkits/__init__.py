@@ -37,13 +37,14 @@ from .github_toolkit import GithubToolkit
 from .google_scholar_toolkit import GoogleScholarToolkit
 from .arxiv_toolkit import ArxivToolkit
 from .slack_toolkit import SlackToolkit
+from .whatsapp_toolkit import WhatsAppToolkit
 from .twitter_toolkit import TwitterToolkit
 from .open_api_toolkit import OpenAPIToolkit
 from .retrieval_toolkit import RetrievalToolkit
 from .notion_toolkit import NotionToolkit
 from .human_toolkit import HumanToolkit
 from .stripe_toolkit import StripeToolkit
-from .video_toolkit import VideoDownloaderToolkit
+from .video_download_toolkit import VideoDownloaderToolkit
 from .dappier_toolkit import DappierToolkit
 from .networkx_toolkit import NetworkXToolkit
 from .semantic_scholar_toolkit import SemanticScholarToolkit
@@ -53,6 +54,21 @@ from .mineru_toolkit import MinerUToolkit
 from .math_code_toolkit import MathCodeToolkit
 from .geometry_toolkit import GeometryToolkit
 from .geometry_toolkit_new import EnhancedGeometryToolkit
+from .memory_toolkit import MemoryToolkit
+from .audio_analysis_toolkit import AudioAnalysisToolkit
+from .excel_toolkit import ExcelToolkit
+from .video_analysis_toolkit import VideoAnalysisToolkit
+from .image_analysis_toolkit import ImageAnalysisToolkit
+from .mcp_toolkit import MCPToolkit
+from .browser_toolkit import BrowserToolkit
+from .file_write_toolkit import FileWriteToolkit
+from .terminal_toolkit import TerminalToolkit
+from .pubmed_toolkit import PubMedToolkit
+from .data_commons_toolkit import DataCommonsToolkit
+from .thinking_toolkit import ThinkingToolkit
+from .openai_agent_toolkit import OpenAIAgentToolkit
+from .searxng_toolkit import SearxNGToolkit
+
 
 __all__ = [
     'BaseToolkit',
@@ -66,6 +82,7 @@ __all__ = [
     'GoogleMapsToolkit',
     'SearchToolkit',
     'SlackToolkit',
+    'WhatsAppToolkit',
     'DalleToolkit',
     'TwitterToolkit',
     'WeatherToolkit',
@@ -93,4 +110,18 @@ __all__ = [
     'GeometryToolkit',
     'MathCodeToolkit',
     'EnhancedGeometryToolkit',
+    'MemoryToolkit',
+    'MCPToolkit',
+    'AudioAnalysisToolkit',
+    'ExcelToolkit',
+    'VideoAnalysisToolkit',
+    'ImageAnalysisToolkit',
+    'BrowserToolkit',
+    'FileWriteToolkit',
+    'TerminalToolkit',
+    'PubMedToolkit',
+    'DataCommonsToolkit',
+    'ThinkingToolkit',
+    'OpenAIAgentToolkit',
+    'SearxNGToolkit',
 ]

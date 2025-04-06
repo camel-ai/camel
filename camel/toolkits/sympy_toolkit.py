@@ -21,8 +21,10 @@ from sympy.printing import srepr
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
+from camel.utils import MCPServer
 
 
+@MCPServer()
 class SymPyToolkit(BaseToolkit):
     r"""A toolkit for performing symbolic computations using SymPy.
     This includes methods for Algebraic manipulation calculus
@@ -104,7 +106,10 @@ class SymPyToolkit(BaseToolkit):
             self.logger.info(
                 f"Result of simplified expression: {simplified!s}"
             )
-            return json.dumps({"status": "success", "result": srepr(simplified)})
+            return json.dumps(
+                {"status": "success", "result": srepr(simplified)},
+                ensure_ascii=False,
+            )
         except Exception as e:
             self.logger.error(
                 f"Error simplifying expression: {expression} - {e}"
@@ -136,7 +141,9 @@ class SymPyToolkit(BaseToolkit):
             self.logger.info(
                 f"Result of expanded expression: {expanded_expr!s}"
             )
-            return json.dumps({"result": srepr(expanded_expr)})
+            return json.dumps(
+                {"result": srepr(expanded_expr)}, ensure_ascii=False
+            )
         except Exception as e:
             return self.handle_exception("expand_expression", e)
 
@@ -165,7 +172,9 @@ class SymPyToolkit(BaseToolkit):
             self.logger.info(
                 f"Result of factored expression: {factored_expr!s}"
             )
-            return json.dumps({"result": srepr(factored_expr)})
+            return json.dumps(
+                {"result": srepr(factored_expr)}, ensure_ascii=False
+            )
         except Exception as e:
             return self.handle_exception("factor_expression", e)
 
@@ -204,7 +213,9 @@ class SymPyToolkit(BaseToolkit):
             self.logger.info(
                 f"Result of linear system: {[str(sol) for sol in solution]}"
             )
-            return json.dumps({"result": [srepr(sol) for sol in solution]})
+            return json.dumps(
+                {"result": [srepr(sol) for sol in solution]}, ensure_ascii=False
+            )
         except Exception as e:
             return self.handle_exception("solve_linear_system", e)
 
@@ -249,7 +260,9 @@ class SymPyToolkit(BaseToolkit):
             self.logger.info(
                 f"Result of nonlinear system: {[str(sol) for sol in solution]}"
             )
-            return json.dumps({"result": [srepr(sol) for sol in solution]})
+            return json.dumps(
+                {"result": [srepr(sol) for sol in solution]}, ensure_ascii=False
+            )
         except Exception as e:
             return self.handle_exception("solve_nonlinear_system", e)
 
@@ -284,7 +297,7 @@ class SymPyToolkit(BaseToolkit):
             ineq = sp.parse_expr(inequality)
             solution = sp.solve_univariate_inequality(ineq, var)
             self.logger.info(f"Result of univariate inequality: {solution!s}")
-            return json.dumps({"result": srepr(solution)})
+            return json.dumps({"result": srepr(solution)}, ensure_ascii=False)
         except Exception as e:
             return self.handle_exception("solve_univariate_inequality", e)
 
@@ -312,7 +325,7 @@ class SymPyToolkit(BaseToolkit):
             ineqs = [sp.parse_expr(ineq) for ineq in inequalities]
             solution = sp.reduce_inequalities(ineqs)
             self.logger.info(f"Result of reduced inequality: {solution!s}")
-            return json.dumps({"result": srepr(solution)})
+            return json.dumps({"result": srepr(solution)}, ensure_ascii=False)
         except Exception as e:
             return self.handle_exception("reduce_inequalities", e)
 
@@ -346,7 +359,7 @@ class SymPyToolkit(BaseToolkit):
             expr = sp.parse_expr(expression)
             poly = sp.Poly(expr, var)
             self.logger.info(f"Polynomial representation solution: {poly!s}")
-            return json.dumps({"result": srepr(poly)})
+            return json.dumps({"result": srepr(poly)}, ensure_ascii=False)
         except Exception as e:
             return self.handle_exception("polynomial_representation", e)
 
@@ -380,7 +393,7 @@ class SymPyToolkit(BaseToolkit):
             expr = sp.parse_expr(expression)
             degree = int(sp.degree(expr, var))
             self.logger.info(f"Result of polynomial degree: {degree!s}")
-            return json.dumps({"result": degree})
+            return json.dumps({"result": degree}, ensure_ascii=False)
         except Exception as e:
             return self.handle_exception("polynomial_degree", e)
 
@@ -410,7 +423,10 @@ class SymPyToolkit(BaseToolkit):
             var = sp.symbols(variable)
             expr = sp.parse_expr(expression)
             coeffs = sp.Poly(expr, var).all_coeffs()
-            return json.dumps({"result": [srepr(coeff) for coeff in coeffs]})
+            return json.dumps(
+                {"result": [srepr(coeff) for coeff in coeffs]},
+                ensure_ascii=False,
+            )
         except Exception as e:
             return self.handle_exception("polynomial_coefficients", e)
 
@@ -448,7 +464,9 @@ class SymPyToolkit(BaseToolkit):
             self.logger.info(
                 f"Result of equation: {[str(sol) for sol in solutions]}"
             )
-            return json.dumps({"result": [srepr(sol) for sol in solutions]})
+            return json.dumps(
+                {"result": [srepr(sol) for sol in solutions]}, ensure_ascii=False
+            )
         except Exception as e:
             return self.handle_exception("solve_equation", e)
 
@@ -483,7 +501,9 @@ class SymPyToolkit(BaseToolkit):
             expr = sp.parse_expr(expression)
             roots = sp.solve(expr)
             self.logger.info(f"Result of find roots: {roots!s}")
-            return json.dumps({"status": "success", "result": srepr(roots)})
+            return json.dumps(
+                {"status": "success", "result": srepr(roots)}, ensure_ascii=False
+            )
 
         except Exception as e:
             self.logger.error(
@@ -524,7 +544,7 @@ class SymPyToolkit(BaseToolkit):
             expr = sp.parse_expr(expression)
             derivative = sp.diff(expr, variable)
             self.logger.info(f"Result of differentiate: {derivative!s}")
-            return json.dumps({"result": srepr(derivative)})
+            return json.dumps({"result": srepr(derivative)}, ensure_ascii=False)
         except Exception as e:
             return self.handle_exception("differentiate", e)
 
@@ -561,7 +581,7 @@ class SymPyToolkit(BaseToolkit):
             expr = sp.parse_expr(expression)
             integral = sp.integrate(expr, variable)
             self.logger.info(f"Result of integrate: {integral!s}")
-            return json.dumps({"result": srepr(integral)})
+            return json.dumps({"result": srepr(integral)}, ensure_ascii=False)
         except Exception as e:
             return self.handle_exception("integrate", e)
 
@@ -600,7 +620,7 @@ class SymPyToolkit(BaseToolkit):
             expr = sp.parse_expr(expression)
             integral = sp.integrate(expr, (var, lower, upper))
             self.logger.info(f"Result of definite integral: {integral!s}")
-            return json.dumps({"result": srepr(integral)})
+            return json.dumps({"result": srepr(integral)}, ensure_ascii=False)
         except Exception as e:
             return self.handle_exception("definite_integral", e)
 
@@ -641,7 +661,7 @@ class SymPyToolkit(BaseToolkit):
             expr = sp.parse_expr(expression)
             series = sp.series(expr, var, point, order)
             self.logger.info(f"Result of series expansion: {series!s}")
-            return json.dumps({"result": srepr(series)})
+            return json.dumps({"result": srepr(series)}, ensure_ascii=False)
         except Exception as e:
             return self.handle_exception("series_expansion", e)
 
@@ -687,7 +707,7 @@ class SymPyToolkit(BaseToolkit):
             expr = sp.parse_expr(expression)
             limit = sp.limit(expr, var, point)
             self.logger.info(f"Result of compute limit: {limit!s}")
-            return json.dumps({"result": srepr(limit)})
+            return json.dumps({"result": srepr(limit)}, ensure_ascii=False)
         except Exception as e:
             return self.handle_exception("compute_limit", e)
 
@@ -720,7 +740,8 @@ class SymPyToolkit(BaseToolkit):
             derivative = sp.diff(expr, var)
             critical_points = sp.solve(derivative, var)
             return json.dumps(
-                {"result": [srepr(point) for point in critical_points]}
+                {"result": [srepr(point) for point in critical_points]},
+                ensure_ascii=False,
             )
         except Exception as e:
             return self.handle_exception("find_critical_points", e)
@@ -758,7 +779,9 @@ class SymPyToolkit(BaseToolkit):
             right_limit = sp.limit(expr, var, point, dir='+')
             value_at_point = expr.subs(var, point)
             is_continuous = left_limit == right_limit == value_at_point
-            return json.dumps({"result": srepr(is_continuous)})
+            return json.dumps(
+                {"result": srepr(is_continuous)}, ensure_ascii=False
+            )
         except Exception as e:
             return self.handle_exception("check_continuity", e)
 
@@ -786,7 +809,7 @@ class SymPyToolkit(BaseToolkit):
             mat = sp.Matrix(matrix)
             determinant = mat.det()
             self.logger.info(f"Result of compute determinant: {determinant!s}")
-            return json.dumps({"result": srepr(determinant)})
+            return json.dumps({"result": srepr(determinant)}, ensure_ascii=False)
         except Exception as e:
             return self.handle_exception("compute_determinant", e)
 
@@ -814,7 +837,7 @@ class SymPyToolkit(BaseToolkit):
             mat = sp.Matrix(matrix)
             inverse = mat.inv()
             self.logger.info(f"Result of matrix inverse: {inverse!s}")
-            return json.dumps({"result": srepr(inverse)})
+            return json.dumps({"result": srepr(inverse)}, ensure_ascii=False)
         except Exception as e:
             return self.handle_exception("compute_inverse", e)
 
@@ -843,7 +866,8 @@ class SymPyToolkit(BaseToolkit):
             mat = sp.Matrix(matrix)
             eigenvalues = mat.eigenvals()
             return json.dumps(
-                {"result": {srepr(k): v for k, v in eigenvalues.items()}}
+                {"result": {srepr(k): v for k, v in eigenvalues.items()}},
+                ensure_ascii=False,
             )
         except Exception as e:
             return self.handle_exception("compute_eigenvalues", e)
@@ -886,7 +910,7 @@ class SymPyToolkit(BaseToolkit):
                 for eigenvalue, multiplicity, vectors in eigenvectors
             ]
             self.logger.info(f"Result of compute eigenvectors: {result}")
-            return json.dumps({"result": result})
+            return json.dumps({"result": result}, ensure_ascii=False)
         except Exception as e:
             return self.handle_exception("compute_eigenvectors", e)
 
@@ -915,7 +939,9 @@ class SymPyToolkit(BaseToolkit):
             self.logger.info(f"Computing null space of matrix: {matrix}")
             mat = sp.Matrix(matrix)
             nullspace = mat.nullspace()
-            return json.dumps({"result": [srepr(vec) for vec in nullspace]})
+            return json.dumps(
+                {"result": [srepr(vec) for vec in nullspace]}, ensure_ascii=False
+            )
         except Exception as e:
             return self.handle_exception("compute_nullspace", e)
 
@@ -943,9 +969,48 @@ class SymPyToolkit(BaseToolkit):
             mat = sp.Matrix(matrix)
             rank = mat.rank()
             self.logger.info(f"Result of rank of matrix: {rank}")
-            return json.dumps({"result": rank})
+            return json.dumps({"result": rank}, ensure_ascii=False)
         except Exception as e:
             return self.handle_exception("compute_rank", e)
+
+    def compute_inner_product(
+        self, vector1: List[float], vector2: List[float]
+    ) -> str:
+        r"""Computes the inner (dot) product of two vectors.
+
+        Args:
+            vector1 (List[float]): The first vector as a list of floats.
+            vector2 (List[float]): The second vector as a list of floats.
+
+        Returns:
+            str: JSON string containing the inner product in the `"result"`
+                field. If an error occurs, the JSON string will include an
+                `"error"` field with the corresponding error message.
+
+        Raises:
+            ValueError: If the vectors have different dimensions.
+        """
+        import sympy as sp
+
+        try:
+            # Convert the lists into sympy Matrix objects (column vectors)
+            v1 = sp.Matrix(vector1)
+            v2 = sp.Matrix(vector2)
+
+            # Check that the vectors have the same dimensions.
+            if v1.shape != v2.shape:
+                raise ValueError(
+                    "Vectors must have the same dimensions to compute "
+                    "the inner product."
+                )
+
+            # Compute the dot (inner) product.
+            inner_product = v1.dot(v2)
+            return json.dumps(
+                {"result": str(inner_product)}, ensure_ascii=False
+            )
+        except Exception as e:
+            return self.handle_exception("compute_inner_product", e)
 
     def handle_exception(self, func_name: str, error: Exception) -> str:
         r"""Handles exceptions by logging and returning error details.

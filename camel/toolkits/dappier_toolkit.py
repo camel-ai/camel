@@ -16,9 +16,10 @@ from typing import Dict, List, Literal, Optional, Union
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import api_keys_required, dependencies_required
+from camel.utils import MCPServer, api_keys_required, dependencies_required
 
 
+@MCPServer()
 class DappierToolkit(BaseToolkit):
     r"""A class representing a toolkit for interacting with the Dappier API.
 

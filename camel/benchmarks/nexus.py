@@ -343,7 +343,10 @@ class NexusBenchmark(BaseBenchmark):
 
                 agent.reset()
 
-                f.write(json.dumps(self._results[-1], indent=2) + "\n")
+                json_str = json.dumps(
+                    self._results[-1], indent=2, ensure_ascii=False
+                )
+                f.write(json_str + "\n")
                 f.flush()
 
         total = len(self._results)

@@ -44,6 +44,31 @@ class StubTokenCounter(BaseTokenCounter):
         """
         return 10
 
+    def encode(self, text: str) -> List[int]:
+        r"""Encode text into token IDs for STUB models.
+
+        Args:
+            text (str): The text to encode.
+
+        Returns:
+            List[int]: List of token IDs.
+        """
+        # For stub models, just return a list of 0s with length proportional
+        # to text length
+        return [0] * (len(text) // 4 + 1)  # Simple approximation
+
+    def decode(self, token_ids: List[int]) -> str:
+        r"""Decode token IDs back to text for STUB models.
+
+        Args:
+            token_ids (List[int]): List of token IDs to decode.
+
+        Returns:
+            str: Decoded text.
+        """
+        # For stub models, return a placeholder string
+        return "[Stub decoded text]"
+
 
 class StubModel(BaseModelBackend):
     r"""A dummy model used for unit tests."""
@@ -57,10 +82,11 @@ class StubModel(BaseModelBackend):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
+        timeout: Optional[float] = None,
     ) -> None:
         r"""All arguments are unused for the dummy model."""
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter
+            model_type, model_config_dict, api_key, url, token_counter, timeout
         )
 
     @property

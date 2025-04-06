@@ -113,7 +113,7 @@ class ToolCall(BaseModel):
 
         # Try to serialize arguments to ensure they're JSON-compatible
         try:
-            json.dumps(v)
+            json.dumps(v, ensure_ascii=False)
         except (TypeError, ValueError):
             raise ValueError("Arguments must be JSON-serializable")
 
@@ -155,7 +155,7 @@ class ToolResponse(BaseModel):
 
         # Ensure content is JSON-serializable
         try:
-            json.dumps(v)
+            json.dumps(v, ensure_ascii=False)
         except (TypeError, ValueError):
             raise ValueError("Response content must be JSON-serializable")
 

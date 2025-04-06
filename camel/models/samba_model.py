@@ -73,6 +73,10 @@ class SambaModel(BaseModelBackend):
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter(
             ModelType.GPT_4O_MINI)` will be used.
+        timeout (Optional[float], optional): The timeout value in seconds for
+            API calls. If not provided, will fall back to the MODEL_TIMEOUT
+            environment variable or default to 180 seconds.
+            (default: :obj:`None`)
     """
 
     @api_keys_required(
@@ -87,6 +91,7 @@ class SambaModel(BaseModelBackend):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
+        timeout: Optional[float] = None,
     ) -> None:
         if model_config_dict is None:
             model_config_dict = SambaCloudAPIConfig().as_dict()
@@ -95,19 +100,20 @@ class SambaModel(BaseModelBackend):
             "SAMBA_API_BASE_URL",
             "https://api.sambanova.ai/v1",
         )
+        timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter
+            model_type, model_config_dict, api_key, url, token_counter, timeout
         )
 
         if self._url == "https://api.sambanova.ai/v1":
             self._client = OpenAI(
-                timeout=180,
+                timeout=self._timeout,
                 max_retries=3,
                 base_url=self._url,
                 api_key=self._api_key,
             )
             self._async_client = AsyncOpenAI(
-                timeout=180,
+                timeout=self._timeout,
                 max_retries=3,
                 base_url=self._url,
                 api_key=self._api_key,
@@ -307,7 +313,8 @@ class SambaModel(BaseModelBackend):
                     {
                         "conversation_id": str(uuid.uuid4()),
                         "messages": messages,
-                    }
+                    },
+                    ensure_ascii=False,
                 ),
                 "params": {
                     "do_sample": {"type": "bool", "value": "true"},
@@ -537,7 +544,8 @@ class SambaModel(BaseModelBackend):
                     {
                         "conversation_id": str(uuid.uuid4()),
                         "messages": messages,
-                    }
+                    },
+                    ensure_ascii=False,
                 ),
                 "params": {
                     "do_sample": {"type": "bool", "value": "true"},

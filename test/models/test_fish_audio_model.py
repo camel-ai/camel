@@ -48,7 +48,7 @@ def test_fish_audio_model_text_to_speech_no_reference_audio():
         with patch("builtins.open") as mock_file:
             mock_file.return_value.__enter__.return_value.write = MagicMock()
 
-            model.text_to_speech("Hello", "output_path.wav")
+            model.text_to_speech(input="Hello", storage_path="output_path.wav")
 
             mock_session.tts.assert_called_once()
             mock_file.return_value.__enter__.return_value.write.assert_called_once_with(
@@ -76,8 +76,8 @@ def test_fish_audio_model_text_to_speech_with_reference_audio():
             )
 
             model.text_to_speech(
-                "Hello",
-                "output_path.wav",
+                input="Hello",
+                storage_path="output_path.wav",
                 reference_audio="reference_audio.wav",
                 reference_audio_text="Reference text",
             )

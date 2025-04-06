@@ -65,7 +65,7 @@ response = agent.step("Hello, can you help me?")
 ### 3.2. Using Tools with Chat Agent
 ```python
 from camel.agents import ChatAgent
-from camel.functions import FunctionTool
+from camel.toolkits import FunctionTool
 
 # Define a tool
 def calculator(a: int, b: int) -> int:
