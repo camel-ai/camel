@@ -119,6 +119,163 @@ class VLLMModel(BaseModelBackend):
             self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
 
+    def _run(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+        r"""Runs inference of OpenAI chat completion.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+            response_format (Optional[Type[BaseModel]]): The format of the
+                response.
+            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
+                use for the request.
+
+        Returns:
+            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+                `ChatCompletion` in the non-stream mode, or
+                `Stream[ChatCompletionChunk]` in the stream mode.
+        """
+        response_format = response_format or self.model_config_dict.get(
+            "response_format", None
+        )
+        if response_format:
+            return self._request_parse(messages, response_format, tools)
+        else:
+            return self._request_chat_completion(messages, tools)
+
+    async def _arun(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+        r"""Runs inference of OpenAI chat completion in async mode.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+            response_format (Optional[Type[BaseModel]]): The format of the
+                response.
+            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
+                use for the request.
+
+        Returns:
+            Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+                `ChatCompletion` in the non-stream mode, or
+                `AsyncStream[ChatCompletionChunk]` in the stream mode.
+        """
+        response_format = response_format or self.model_config_dict.get(
+            "response_format", None
+        )
+        if response_format:
+            return await self._arequest_parse(messages, response_format, tools)
+        else:
+            return await self._arequest_chat_completion(messages, tools)
+
+    def _request_chat_completion(
+        self,
+        messages: List[OpenAIMessage],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+        request_config = self.model_config_dict.copy()
+
+        if tools:
+            request_config["tools"] = tools
+
+        # Remove additionalProperties from each tool's function parameters
+        if tools and "tools" in request_config:
+            for tool in request_config["tools"]:
+                if "function" in tool and "parameters" in tool["function"]:
+                    tool["function"]["parameters"].pop(
+                        "additionalProperties", None
+                    )
+
+        return self._client.chat.completions.create(
+            messages=messages,
+            model=self.model_type,
+            **request_config,
+        )
+
+    async def _arequest_chat_completion(
+        self,
+        messages: List[OpenAIMessage],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+        request_config = self.model_config_dict.copy()
+
+        if tools:
+            request_config["tools"] = tools
+            # Remove additionalProperties from each tool's function parameters
+            if "tools" in request_config:
+                for tool in request_config["tools"]:
+                    if "function" in tool and "parameters" in tool["function"]:
+                        tool["function"]["parameters"].pop(
+                            "additionalProperties", None
+                        )
+
+        return await self._async_client.chat.completions.create(
+            messages=messages,
+            model=self.model_type,
+            **request_config,
+        )
+
+    def _request_parse(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ChatCompletion:
+        request_config = self.model_config_dict.copy()
+
+        request_config["response_format"] = response_format
+        request_config.pop("stream", None)
+        if tools is not None:
+            request_config["tools"] = tools
+            # Remove additionalProperties from each tool's function parameters
+            if "tools" in request_config:
+                for tool in request_config["tools"]:
+                    if "function" in tool and "parameters" in tool["function"]:
+                        tool["function"]["parameters"].pop(
+                            "additionalProperties", None
+                        )
+
+        return self._client.beta.chat.completions.parse(
+            messages=messages,
+            model=self.model_type,
+            **request_config,
+        )
+
+    async def _arequest_parse(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ChatCompletion:
+        request_config = self.model_config_dict.copy()
+
+        request_config["response_format"] = response_format
+        request_config.pop("stream", None)
+        if tools is not None:
+            request_config["tools"] = tools
+            # Remove additionalProperties from each tool's function parameters
+            if "tools" in request_config:
+                for tool in request_config["tools"]:
+                    if "function" in tool and "parameters" in tool["function"]:
+                        tool["function"]["parameters"].pop(
+                            "additionalProperties", None
+                        )
+
+        return await self._async_client.beta.chat.completions.parse(
+            messages=messages,
+            model=self.model_type,
+            **request_config,
+        )
+
     def check_model_config(self):
         r"""Check whether the model configuration contains any
         unexpected arguments to vLLM API.
@@ -133,92 +290,6 @@ class VLLMModel(BaseModelBackend):
                     f"Unexpected argument `{param}` is "
                     "input into vLLM model backend."
                 )
-
-    async def _arun(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-        r"""Runs inference of OpenAI chat completion.
-
-        Args:
-            messages (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format.
-            response_format (Optional[Type[BaseModel]], optional): The format
-                to return the response in.
-            tools (Optional[List[Dict[str, Any]]], optional): List of tools
-                the model may call.
-
-        Returns:
-            Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-                `ChatCompletion` in the non-stream mode, or
-                `AsyncStream[ChatCompletionChunk]` in the stream mode.
-        """
-
-        kwargs = self.model_config_dict.copy()
-        if tools:
-            kwargs["tools"] = tools
-        if response_format:
-            kwargs["response_format"] = {"type": "json_object"}
-
-        # Remove additionalProperties from each tool's function parameters
-        if tools and "tools" in kwargs:
-            for tool in kwargs["tools"]:
-                if "function" in tool and "parameters" in tool["function"]:
-                    tool["function"]["parameters"].pop(
-                        "additionalProperties", None
-                    )
-
-        response = await self._async_client.chat.completions.create(
-            messages=messages,
-            model=self.model_type,
-            **kwargs,
-        )
-        return response
-
-    def _run(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        r"""Runs inference of OpenAI chat completion.
-
-        Args:
-            messages (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format.
-            response_format (Optional[Type[BaseModel]], optional): The format
-                to return the response in.
-            tools (Optional[List[Dict[str, Any]]], optional): List of tools
-                the model may call.
-
-        Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-                `ChatCompletion` in the non-stream mode, or
-                `Stream[ChatCompletionChunk]` in the stream mode.
-        """
-
-        kwargs = self.model_config_dict.copy()
-        if tools:
-            kwargs["tools"] = tools
-        if response_format:
-            kwargs["response_format"] = {"type": "json_object"}
-
-        # Remove additionalProperties from each tool's function parameters
-        if tools and "tools" in kwargs:
-            for tool in kwargs["tools"]:
-                if "function" in tool and "parameters" in tool["function"]:
-                    tool["function"]["parameters"].pop(
-                        "additionalProperties", None
-                    )
-
-        response = self._client.chat.completions.create(
-            messages=messages,
-            model=self.model_type,
-            **kwargs,
-        )
-        return response
 
     @property
     def stream(self) -> bool:
