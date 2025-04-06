@@ -11,22 +11,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from .azure_embedding import AzureEmbedding
-from .base import BaseEmbedding
-from .jina_embedding import JinaEmbedding
-from .mistral_embedding import MistralEmbedding
-from .openai_compatible_embedding import OpenAICompatibleEmbedding
-from .openai_embedding import OpenAIEmbedding
-from .sentence_transformers_embeddings import SentenceTransformerEncoder
-from .vlm_embedding import VisionLanguageEmbedding
 
-__all__ = [
-    "BaseEmbedding",
-    "OpenAIEmbedding",
-    "AzureEmbedding",
-    "SentenceTransformerEncoder",
-    "VisionLanguageEmbedding",
-    "MistralEmbedding",
-    "OpenAICompatibleEmbedding",
-    "JinaEmbedding",
-]
+
+from camel.embeddings import AzureEmbedding
+
+
+def test_azure_embedding():
+    embedding_model = AzureEmbedding()
+    text = "test 1."
+    vector = embedding_model.embed(text)
+    assert len(vector) == embedding_model.get_output_dim()
+
+    embedding_model = AzureEmbedding(dimensions=256)
+    text = "test 2"
+    vector = embedding_model.embed(text)
+    assert len(vector) == embedding_model.get_output_dim() == 256
