@@ -67,6 +67,9 @@ class ModelType(UnifiedModelType, Enum):
     OPENROUTER_LLAMA_3_1_405B = "meta-llama/llama-3.3-405b-instruct"
     OPENROUTER_LLAMA_3_1_70B = "meta-llama/llama-3.3-70b-instruct"
     OPENROUTER_LLAMA_4_MAVERICK = "meta-llama/llama-4-maverick"
+    OPENROUTER_LLAMA_4_MAVERICK_FREE = "meta-llama/llama-4-maverick:free"
+    OPENROUTER_LLAMA_4_SCOUT = "meta-llama/llama-4-scout"
+    OPENROUTER_LLAMA_4_SCOUT_FREE = "meta-llama/llama-4-scout:free"
     OPENROUTER_OLYMPICODER_7B = "open-r1/olympiccoder-7b:free"
 
     # TogetherAI platform models support tool calling
@@ -380,6 +383,10 @@ class ModelType(UnifiedModelType, Enum):
         return self in {
             ModelType.OPENROUTER_LLAMA_3_1_405B,
             ModelType.OPENROUTER_LLAMA_3_1_70B,
+            ModelType.OPENROUTER_LLAMA_4_MAVERICK,
+            ModelType.OPENROUTER_LLAMA_4_MAVERICK_FREE,
+            ModelType.OPENROUTER_LLAMA_4_SCOUT,
+            ModelType.OPENROUTER_LLAMA_4_SCOUT_FREE,
             ModelType.OPENROUTER_OLYMPICODER_7B,
         }
 
@@ -766,6 +773,10 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.SGLANG_QWEN_2_5_72B,
             ModelType.OPENROUTER_LLAMA_3_1_70B,
             ModelType.OPENROUTER_LLAMA_3_1_405B,
+            ModelType.OPENROUTER_LLAMA_4_MAVERICK,
+            ModelType.OPENROUTER_LLAMA_4_MAVERICK_FREE,
+            ModelType.OPENROUTER_LLAMA_4_SCOUT,
+            ModelType.OPENROUTER_LLAMA_4_SCOUT_FREE,
         }:
             return 131_072
         elif self in {
