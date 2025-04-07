@@ -215,56 +215,31 @@ class TicTacToeEnv(MultiStepEnv):
             else:
                 return 0.5, {"draw": 0.5}
         else:
-            # Look ahead: simulate all outcomes from this state
-            # with optimal play
             board = self._state["board"]
-            x_win_count, total_leaves = self._count_x_winning_paths(
-                board, is_x_turn=True
-            )
+            value = TicTacToeEnv.evaluate_position_for_x(board, is_x_turn=True)
+            return value, {"x_non_loss_value": value}
 
-            if total_leaves == 0:
-                reward = 0.0
-            else:
-                reward = x_win_count / total_leaves
 
-            return reward, {
-                "x_winning_paths": float(x_win_count),
-                "total_paths": float(total_leaves),
-                "estimated_win_rate": reward,
-            }
-
-    def _count_x_winning_paths(
-        self, board: List[str], is_x_turn: bool
-    ) -> Tuple[int, int]:
-        winner = self.check_winner(board)
+    @staticmethod
+    def evaluate_position_for_x(board: List[str], is_x_turn: bool) -> float:
+        winner = TicTacToeEnv.check_winner(board)
         if winner == "X":
-            return 1, 1
-        elif winner in ("O", "draw"):
-            return 0, 1
+            return 1.0  # X wins
+        elif winner == "O":
+            return 0.0  # X loses
+        elif winner == "draw":
+            return 0.5  # draw
 
         moves = TicTacToeEnv.available_moves(board)
-        x_wins = 0
-        total = 0
-
+        values = []
         for move in moves:
             board[move] = "X" if is_x_turn else "O"
-            wins, paths = self._count_x_winning_paths(board, not is_x_turn)
+            value = TicTacToeEnv.evaluate_position_for_x(board, not is_x_turn)
             board[move] = " "
-            total += paths
+            values.append(value)
 
-            # If it's X's turn, accumulate winning futures
-            # If it's O's turn, they play optimally, so minimize X's wins
-            if is_x_turn:
-                x_wins += wins
-            else:
-                # O will *force* the path with the fewest X wins
-                # Only keep the *minimum* winning path seen
-                if total == paths:  # first branch
-                    x_wins = wins
-                else:
-                    x_wins = min(x_wins, wins)
+        return max(values) if is_x_turn else min(values)
 
-        return x_wins, total
 
     def _is_done(self) -> bool:
         return self._state["game_over"]
