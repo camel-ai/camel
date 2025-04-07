@@ -166,11 +166,11 @@ class MCPAgent(ChatAgent):
                     break
                 json_end = end_match.span()[0] + json_start
 
-                tool_josn = content[json_start:json_end].strip('\n')
+                tool_json = content[json_start:json_end].strip('\n')
                 try:
-                    tool_calls.append(json.loads(tool_josn))
+                    tool_calls.append(json.loads(tool_json))
                 except json.JSONDecodeError:
-                    logger.warning(f"Failed to parse JSON: {tool_josn}")
+                    logger.warning(f"Failed to parse JSON: {tool_json}")
                     continue
                 content = content[json_end:]
 
