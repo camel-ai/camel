@@ -150,6 +150,13 @@ class PythonVerifier(BaseVerifier):
         Returns:
             bool: True if values are equal
         """
+        if isinstance(sol_val, list) and isinstance(gt_val, list):
+            if len(sol_val) != len(gt_val):
+                return False
+            return all(
+                self._compare_values(s, g) for s, g in zip(sol_val, gt_val)
+            )
+
         if self.float_tolerance is not None:
             if (
                 isinstance(sol_val, float) and isinstance(gt_val, (int, float))
@@ -163,6 +170,8 @@ class PythonVerifier(BaseVerifier):
                     )
                 except (TypeError, ValueError):
                     return False
+
+        return sol_val == gt_val
 
     def _is_uv_environment(self) -> bool:
         r"""Detect whether the current Python runtime is managed by uv."""
