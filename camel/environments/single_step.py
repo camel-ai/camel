@@ -302,9 +302,7 @@ class SingleStepEnv:
             )
 
         proposed_solutions = [act.llm_response for act in actions]
-        ground_truths: List[str] = []
-        for idx in indices:
-            ground_truths.append(self._states[idx].final_answer)
+        ground_truths: List[str] = [self._states[idx].final_answer for idx in indices]
 
         try:
             verification_results = await asyncio.wait_for(
