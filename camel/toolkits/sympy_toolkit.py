@@ -739,6 +739,7 @@ class SymPyToolkit(BaseToolkit):
             expr = sp.parse_expr(expression)
             derivative = sp.diff(expr, var)
             critical_points = sp.solve(derivative, var)
+            self.logger.info(f"Result of critical points: {critical_points!s}")
             return json.dumps(
                 {"result": [srepr(point) for point in critical_points]},
                 ensure_ascii=False,
@@ -779,6 +780,7 @@ class SymPyToolkit(BaseToolkit):
             right_limit = sp.limit(expr, var, point, dir='+')
             value_at_point = expr.subs(var, point)
             is_continuous = left_limit == right_limit == value_at_point
+            self.logger.info(f"Result of continuity check: {is_continuous!s}")
             return json.dumps(
                 {"result": srepr(is_continuous)}, ensure_ascii=False
             )
@@ -865,6 +867,7 @@ class SymPyToolkit(BaseToolkit):
             self.logger.info(f"Computing eigenvalues of matrix: {matrix}")
             mat = sp.Matrix(matrix)
             eigenvalues = mat.eigenvals()
+            self.logger.info(f"Result of eigenvalues: {eigenvalues!s}")
             return json.dumps(
                 {"result": {srepr(k): v for k, v in eigenvalues.items()}},
                 ensure_ascii=False,
@@ -901,6 +904,7 @@ class SymPyToolkit(BaseToolkit):
             self.logger.info(f"Computing eigenvectors of matrix: {matrix}")
             mat = sp.Matrix(matrix)
             eigenvectors = mat.eigenvects()
+            self.logger.info(f"Result of compute eigenvectors: {eigenvectors!s}")
             result = [
                 {
                     "eigenvalue": srepr(eigenvalue),
@@ -939,6 +943,7 @@ class SymPyToolkit(BaseToolkit):
             self.logger.info(f"Computing null space of matrix: {matrix}")
             mat = sp.Matrix(matrix)
             nullspace = mat.nullspace()
+            self.logger.info(f"Result of compute nullspace: {nullspace!s}")
             return json.dumps(
                 {"result": [srepr(vec) for vec in nullspace]}, ensure_ascii=False
             )
@@ -1006,11 +1011,54 @@ class SymPyToolkit(BaseToolkit):
 
             # Compute the dot (inner) product.
             inner_product = v1.dot(v2)
+            self.logger.info(f"Result of inner product: {inner_product}")
             return json.dumps(
                 {"result": str(inner_product)}, ensure_ascii=False
             )
         except Exception as e:
             return self.handle_exception("compute_inner_product", e)
+
+    def matrix_multiplication(
+        self, matrix1: List[List[float]], matrix2: List[List[float]]
+    ) -> str:
+        r"""Computes the matrix multiplication of two matrices.
+
+        Args:
+            matrix1 (List[List[float]]): The first matrix as a list of lists
+                of floats.
+            matrix2 (List[List[float]]): The second matrix as a list of lists
+                of floats.
+
+        Returns:
+            str: JSON string containing the result of the matrix multiplication
+                in the `"result"` field. If an error occurs, the JSON string
+                will include an `"error"` field with the corresponding error
+                message.
+
+        Raises:
+            ValueError: If the matrices are not compatible for multiplication.
+        """
+        import sympy as sp
+
+        try:
+            # Convert the lists into sympy Matrix objects
+            m1 = sp.Matrix(matrix1)
+            m2 = sp.Matrix(matrix2)
+
+            # Check that the matrices are compatible for multiplication
+            if m1.shape[1] != m2.shape[0]:
+                raise ValueError(
+                    "Matrices must have compatible dimensions for multiplication."
+                )
+
+            # Compute the matrix multiplication
+            result = m1 * m2
+            self.logger.info(f"Result of matrix multiplication: {result!s}")
+            return json.dumps(
+                {"result": str(result)}, ensure_ascii=False
+            )
+        except Exception as e:
+            return self.handle_exception("matrix_multiplication", e)
 
     def handle_exception(self, func_name: str, error: Exception) -> str:
         r"""Handles exceptions by logging and returning error details.
@@ -1078,4 +1126,6 @@ class SymPyToolkit(BaseToolkit):
             FunctionTool(self.compute_eigenvectors),
             FunctionTool(self.compute_nullspace),
             FunctionTool(self.compute_rank),
+            FunctionTool(self.compute_inner_product),
+            FunctionTool(self.matrix_multiplication),
         ]

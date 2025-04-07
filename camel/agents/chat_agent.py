@@ -570,6 +570,7 @@ class ChatAgent(BaseAgent):
         self,
         input_message: Union[BaseMessage, str],
         response_format: Optional[Type[BaseModel]] = None,
+        remove_tool_calls: bool = False,
     ) -> ChatAgentResponse:
         r"""Executes a single step in the chat session, generating a response
         to the input message.
@@ -600,7 +601,7 @@ class ChatAgent(BaseAgent):
         tool_call_records: List[ToolCallingRecord] = []
         external_tool_call_requests: Optional[List[ToolCallRequest]] = None
 
-        enforce_no_tools = False
+        enforce_no_tools = remove_tool_calls
         max_retries = self.tools_max_retries
         while True:
             max_retries -= 1
