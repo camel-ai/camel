@@ -139,40 +139,6 @@ class PythonVerifier(BaseVerifier):
                     self.venv_path = None
                 raise
 
-    def _compare_values(self, sol_val, gt_val) -> bool:
-        r"""Compare values with optional float tolerance,
-            supporting nested structures.
-
-        Args:
-            sol_val: Solution value to compare
-            gt_val: Ground truth value to compare
-
-        Returns:
-            bool: True if values are equal
-        """
-        if isinstance(sol_val, list) and isinstance(gt_val, list):
-            if len(sol_val) != len(gt_val):
-                return False
-            return all(
-                self._compare_values(s, g) for s, g in zip(sol_val, gt_val)
-            )
-
-        if self.float_tolerance is not None:
-            if (
-                isinstance(sol_val, float) and isinstance(gt_val, (int, float))
-            ) or (
-                isinstance(gt_val, float) and isinstance(sol_val, (int, float))
-            ):
-                try:
-                    return (
-                        abs(float(sol_val) - float(gt_val))
-                        <= self.float_tolerance
-                    )
-                except (TypeError, ValueError):
-                    return False
-
-        return sol_val == gt_val
-
     def _is_uv_environment(self) -> bool:
         r"""Detect whether the current Python runtime is managed by uv."""
         return "UV_CACHE_DIR" in os.environ or "uv" in sys.executable
@@ -313,7 +279,51 @@ class PythonVerifier(BaseVerifier):
                         error_message=f"Ground truth evaluation error: {e}",
                     )
 
-                if self._compare_values(sol_val, gt_val):
+                # Handle lists recursively
+                if isinstance(sol_val, list) and isinstance(gt_val, list):
+                    if len(sol_val) != len(gt_val):
+                        equal = False
+                    else:
+                        equal = all(
+                            s == g
+                            if self.float_tolerance is None
+                            else abs(float(s) - float(g))
+                            <= self.float_tolerance
+                            if (
+                                (
+                                    isinstance(s, float)
+                                    and isinstance(g, (int, float))
+                                )
+                                or (
+                                    isinstance(g, float)
+                                    and isinstance(s, (int, float))
+                                )
+                            )
+                            else s == g
+                            for s, g in zip(sol_val, gt_val)
+                        )
+                # Handle float comparison if tolerance is set
+                elif self.float_tolerance is not None and (
+                    (
+                        isinstance(sol_val, float)
+                        and isinstance(gt_val, (int, float))
+                    )
+                    or (
+                        isinstance(gt_val, float)
+                        and isinstance(sol_val, (int, float))
+                    )
+                ):
+                    try:
+                        equal = (
+                            abs(float(sol_val) - float(gt_val))
+                            <= self.float_tolerance
+                        )
+                    except (TypeError, ValueError):
+                        equal = False
+                else:
+                    equal = sol_val == gt_val
+
+                if equal:
                     return VerificationResult(
                         status=VerificationOutcome.SUCCESS,
                         result=str(sol_val),
@@ -325,7 +335,7 @@ class PythonVerifier(BaseVerifier):
                         "Values not equal"
                         + (
                             f" (with float tolerance {self.float_tolerance})"
-                            if self.enable_float_comparison
+                            if self.float_tolerance is not None
                             else ""
                         )
                         + f": {sol_val} != {gt_val}"
