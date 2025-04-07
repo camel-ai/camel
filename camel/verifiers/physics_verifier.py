@@ -12,15 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import ast
 import asyncio
 import os
 import re
-import shutil
-import subprocess
-import sys
-import tempfile
-import venv
 import math
 import sympy as sp
 from typing import List, Optional, Tuple
@@ -315,7 +309,7 @@ class PhysicsVerifier(PythonVerifier):
         answer = answer.replace('\\', '')
         
         return answer
-    
+
     @staticmethod
     def _parse_expression(expr: str):
         expr = expr.lstrip("$").rstrip("$")
@@ -333,6 +327,21 @@ class PhysicsVerifier(PythonVerifier):
             sp.Symbol('e'): sp.E
         })
         return expr
+        
+    def _detect_tolerance(self, value: str) -> float:
+        rel_tol = self.tolerance
+
+        if 'e' in value.lower():
+            match = re.match(r'(-?\d*\.?\d*)[eE]', value)
+
+            if match:
+                significant_part = match.group(1)
+
+                if '.' in significant_part:
+                    decimal_places = len(significant_part.split('.')[1])
+                    rel_tol = 0.5 * 10 ** (-decimal_places)
+        
+        return rel_tol
 
     
     def _convert_units(self, sol_value, sol_unit_expr, gt_unit_expr):
@@ -465,8 +474,9 @@ class PhysicsVerifier(PythonVerifier):
 
             gt_value, gt_unit = self._split_value_unit(reference_answer)
             sol_value, sol_unit = self._split_value_unit(sol_out)
+            gt_value = self._clean_answer(gt_value)
 
-            logger.info(f'Solution value: {sol_value}; Ground truth value: {gt_value}')
+            logger.info(f'Solution value: {sol_value}; Ground truth value: {gt_value}')  
 
             if self.unit_parser.unit_is_none(gt_unit) and self.unit_parser.unit_is_none(sol_unit):
                 gt_unit_expr, sol_unit_expr = None, None
@@ -474,11 +484,10 @@ class PhysicsVerifier(PythonVerifier):
                 gt_unit_expr = self.unit_parser.parse_unit(gt_unit)
                 sol_unit_expr = self.unit_parser.parse_unit(sol_unit)
 
-            gt_value = self._clean_answer(gt_value)
-
             logger.info(f'Solution unit: {sol_unit_expr}; Ground truth unit: {gt_unit_expr}')
 
             if self._is_number(gt_value):
+                rel_tol = self._detect_tolerance(gt_value)
                 gt_value = float(gt_value)
 
                 if self._is_number(sol_value):
@@ -486,7 +495,8 @@ class PhysicsVerifier(PythonVerifier):
                 else:
                     logger.info(f'Convert output expr {sol_value} into numerical.')
                     try:
-                        sol_value = sol_value.evalf()
+                        sol_expr = self._parse_expression(sol_value)
+                        sol_value = sol_expr.evalf()
                     except Exception as e:
                         logger.error(f"Failed to evaluate output {sol_value}: {e}")
                         return VerificationResult(
@@ -507,7 +517,8 @@ class PhysicsVerifier(PythonVerifier):
                     #Compare numerical values
                     logger.info(f'Solution value: {sol_value}')
                     logger.info(f'Ground truth value: {gt_value}')
-                    result_match = math.isclose(sol_value, gt_value, rel_tol=self.tolerance)
+
+                    result_match = math.isclose(sol_value, gt_value, rel_tol=rel_tol)
                 except Exception as e:
                     logger.error(f"Failed to compare values: {e}")
                     return VerificationResult(
