@@ -301,7 +301,6 @@ class SingleStepEnv:
                 f"total batch size ({self.current_batch_size})"
             )
 
-        indices = [act.index for act in actions]
         proposed_solutions = [act.llm_response for act in actions]
         ground_truths: List[str] = []
         for idx in indices:
