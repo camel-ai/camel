@@ -516,7 +516,7 @@ class MCPToolkit(BaseToolkit):
                 )
                 continue
 
-            server = _MCPServer(
+            server = MCPClient(
                 command_or_url=cfg["url"],
                 timeout=cfg.get("timeout", None),
                 headers=cfg.get("headers", {}),
@@ -591,3 +591,13 @@ class MCPToolkit(BaseToolkit):
         for server in self.servers:
             all_tools.extend(server.get_tools())
         return all_tools
+
+    def get_text_tools(self) -> str:
+        r"""Returns a string containing the descriptions of the tools
+        in the toolkit.
+
+        Returns:
+            str: A string containing the descriptions of the tools
+            in the toolkit.
+        """
+        return "\n".join(server.get_text_tools() for server in self.servers)
