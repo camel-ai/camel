@@ -12,8 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import math
+import random
 import re
-from typing import Any, ClassVar, Dict, List, Optional, Tuple
+from typing import Any, ClassVar, Dict, List, Literal, Optional, Tuple
 
 from camel.environments.models import Action, Observation
 from camel.environments.multi_step import MultiStepEnv
@@ -22,10 +23,63 @@ from camel.extractors import BaseExtractor, BaseExtractorStrategy
 
 class ActionParser(BaseExtractorStrategy):
     async def extract(self, text: str) -> Optional[str]:
-        match = re.search(r"<Action>(\d+)", text)
+        match = re.search(r"<Action>\s*(\d+)", text)
         if match:
             return match.group(1)
         return None
+
+
+class Opponent:
+    def __init__(self, play_style: Literal["optimal", "random"]) -> None:
+        self.play_style = play_style
+
+    def select_move(self, board: List[str]) -> Optional[int]:
+        if self.play_style == "optimal":
+            return self.get_optimal_move(board)
+        elif self.play_style == "random":
+            moves = TicTacToeEnv.available_moves(board)
+            if not moves:
+                raise RuntimeError("No valid moves left.")
+            return random.choice(moves)
+
+    def get_optimal_move(self, board: List[str]) -> Optional[int]:
+        _, move = self.minimax(board, is_maximizing=True)
+        return move
+
+    def minimax(
+        self, board: List[str], is_maximizing: bool
+    ) -> Tuple[float, Optional[int]]:
+        winner = TicTacToeEnv.check_winner(board)
+        if winner == "O":
+            return (1, None)
+        elif winner == "X":
+            return (-1, None)
+        elif winner == "draw":
+            return (0, None)
+
+        moves = TicTacToeEnv.available_moves(board)
+        if is_maximizing:
+            best_score = -math.inf
+            best_move = None
+            for move in moves:
+                board[move] = "O"
+                score, _ = self.minimax(board, is_maximizing=False)
+                board[move] = " "
+                if score > best_score:
+                    best_score = score
+                    best_move = move
+            return best_score, best_move
+        else:
+            best_score = math.inf
+            best_move = None
+            for move in moves:
+                board[move] = "X"
+                score, _ = self.minimax(board, is_maximizing=True)
+                board[move] = " "
+                if score < best_score:
+                    best_score = score
+                    best_move = move
+            return best_score, best_move
 
 
 class TicTacToeEnv(MultiStepEnv):
@@ -43,6 +97,8 @@ class TicTacToeEnv(MultiStepEnv):
     def __init__(self, **kwargs) -> None:
         extractor = BaseExtractor(pipeline=[[ActionParser()]])
         super().__init__(extractor, None, **kwargs)
+        # Add an opponent instance to the environment.
+        self.opponent = Opponent(play_style="optimal")
 
     def _get_initial_state(self) -> Dict[str, Any]:
         # State includes the board (9 cells), game_over flag, and winner info.
@@ -53,20 +109,24 @@ class TicTacToeEnv(MultiStepEnv):
             "last_move_illegal": False,
         }
 
-    # TODO: simplify, give feedback if fails
     async def _update_state(self, action: Action) -> None:
         board = self._state["board"]
 
         # Attempt to parse the agent's chosen move
         extraction_result = await self.extractor.extract(action.llm_response)
         if not extraction_result:
+            # TODO: we should catch that error and create an observation
+            # giving feedback
             raise ValueError(
                 f"Couldn't extract anything from {action.llm_response}"
             )
 
         try:
             move = int(extraction_result)
+            self._state["last_move"] = move
         except ValueError:
+            # TODO: we should catch that error and create an
+            # observation giving feedback
             raise ValueError(
                 f"Extraction result '{extraction_result}' is not a valid move"
             )
@@ -90,8 +150,8 @@ class TicTacToeEnv(MultiStepEnv):
             self._state["winner"] = winner
             return
 
-        # Opponent (O) plays optimally.
-        opponent_move = self.get_opponent_move(board)
+        # Opponent (O) plays using the opponent class.
+        opponent_move = self.opponent.select_move(board)
         if opponent_move is not None:
             board[opponent_move] = "O"
 
@@ -108,10 +168,14 @@ class TicTacToeEnv(MultiStepEnv):
                 "You are playing Tic Tac Toe with standard rules.\n"
                 "You are the player with X.\n"
                 "Your last move was illegal.\n"
-                "Choose a number between 1 and 9 to place an X.\n"
+                f"You chose the move {self._state['last_move']}."
+                "Choose another number between 1 and 9 to place an X.\n"
                 "The field must still be available.\n"
                 "This is the current state of the board:\n"
                 f"{self.render_board(board)}"
+                "Each number that you can see is still an empty field"
+                "that you can place your 'X' in. Please end your response with"
+                "<Action> [a number from 1 to 9]"
             )
         else:
             obs = (
@@ -119,7 +183,10 @@ class TicTacToeEnv(MultiStepEnv):
                 "You are the player with X.\n"
                 "Choose a number between 1 and 9 to place an X.\n"
                 "This is the current state of the board:\n"
-                f"{self.render_board(board)}"
+                f"{self.render_board(board)}\n"
+                "Each number that you can see is still an empty field"
+                "that you can place your 'X' in. Please end your response with"
+                "<Action> [a number from 1 to 9]"
             )
 
         return Observation(question=obs, context={}, metadata={})
@@ -175,7 +242,7 @@ class TicTacToeEnv(MultiStepEnv):
         elif winner in ("O", "draw"):
             return 0, 1
 
-        moves = self.available_moves(board)
+        moves = TicTacToeEnv.available_moves(board)
         x_wins = 0
         total = 0
 
@@ -202,6 +269,22 @@ class TicTacToeEnv(MultiStepEnv):
     def _is_done(self) -> bool:
         return self._state["game_over"]
 
+    @staticmethod
+    def available_moves(board: List[str]) -> List[int]:
+        # Return list of indices that are free.
+        return [i for i, cell in enumerate(board) if cell == " "]
+
+    @staticmethod
+    def check_winner(board: List[str]) -> Optional[str]:
+        # Check all win combinations.
+        for a, b, c in TicTacToeEnv.WIN_COMBINATIONS:
+            if board[a] != " " and board[a] == board[b] == board[c]:
+                return board[a]
+        # Check for draw.
+        if all(cell != " " for cell in board):
+            return "draw"
+        return None
+
     def render_board(self, board: List[str]) -> str:
         # Create a nice formatted board.
         def cell_value(i: int) -> str:
@@ -212,60 +295,3 @@ class TicTacToeEnv(MultiStepEnv):
             row = " | ".join(cell_value(j) for j in range(i, i + 3))
             rows.append(row)
         return "\n---------\n".join(rows)
-
-    def check_winner(self, board: List[str]) -> Optional[str]:
-        # Check all win combinations.
-        for a, b, c in self.WIN_COMBINATIONS:
-            if board[a] != " " and board[a] == board[b] == board[c]:
-                return board[a]
-        # Check for draw.
-        if all(cell != " " for cell in board):
-            return "draw"
-        return None
-
-    def available_moves(self, board: List[str]) -> List[int]:
-        # Return list of indices that are free.
-        return [i for i, cell in enumerate(board) if cell == " "]
-
-    def get_opponent_move(self, board: List[str]) -> Optional[int]:
-        moves = self.available_moves(board)
-        if not moves:
-            return None
-        # Use minimax to choose the optimal move for O.
-        _, move = self.minimax(board, is_maximizing=True)
-        return move
-
-    def minimax(
-        self, board: List[str], is_maximizing: bool
-    ) -> Tuple[float, Optional[int]]:
-        winner = self.check_winner(board)
-        if winner == "O":
-            return (1, None)
-        elif winner == "X":
-            return (-1, None)
-        elif winner == "draw":
-            return (0, None)
-
-        moves = self.available_moves(board)
-        if is_maximizing:
-            best_score = -math.inf
-            best_move = None
-            for move in moves:
-                board[move] = "O"
-                score, _ = self.minimax(board, is_maximizing=False)
-                board[move] = " "
-                if score > best_score:
-                    best_score = score
-                    best_move = move
-            return best_score, best_move
-        else:
-            best_score = math.inf
-            best_move = None
-            for move in moves:
-                board[move] = "X"
-                score, _ = self.minimax(board, is_maximizing=True)
-                board[move] = " "
-                if score < best_score:
-                    best_score = score
-                    best_move = move
-            return best_score, best_move

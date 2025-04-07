@@ -12,10 +12,11 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+
 import pytest
 
 from camel.environments.models import Action
-from camel.environments.tic_tac_toe import TicTacToeEnv
+from camel.environments.tic_tac_toe import Opponent, TicTacToeEnv
 
 # --- Setup and Initialization Tests ---
 
@@ -70,6 +71,7 @@ async def test_moves(move, expected_behavior):
         else:
             move_index = int(move) - 1
             assert state["board"][move_index] == "X"
+            # Because the opponent also plays, expect one O on board.
             assert state["board"].count("X") == 1
             assert state["board"].count("O") == 1
             assert state["last_move_illegal"] is False
@@ -149,6 +151,7 @@ async def test_opponent_wins():
         Action(llm_response="<Action>7</Action>")
     )
     state = env._state
+    # The opponent should play optimally to win.
     assert state["board"][1] == "O"  # Opponent places 'O' to win
     assert state["game_over"] is True
     assert state["winner"] == "O"
@@ -186,36 +189,90 @@ def test_helper_methods():
     env = TicTacToeEnv()
     # Test render_board
     board = ["X", "O", " ", " ", "X", " ", " ", " ", "O"]
-    assert (
-        env.render_board(board)
-        == "X | O | 3\n---------\n4 | X | 6\n---------\n7 | 8 | O"
-    )
+    expected_board = "X | O | 3\n---------\n4 | X | 6\n---------\n7 | 8 | O"
+    assert env.render_board(board) == expected_board
     # Test check_winner
     assert (
-        env.check_winner(["X", "X", "X", "O", "O", " ", " ", " ", " "]) == "X"
+        TicTacToeEnv.check_winner(
+            ["X", "X", "X", "O", "O", " ", " ", " ", " "]
+        )
+        == "X"
     )
     assert (
-        env.check_winner(["O", " ", " ", "O", " ", " ", "O", " ", " "]) == "O"
+        TicTacToeEnv.check_winner(
+            ["O", " ", " ", "O", " ", " ", "O", " ", " "]
+        )
+        == "O"
     )
     assert (
-        env.check_winner(["X", "O", "X", "X", "O", "O", "O", "X", "X"])
+        TicTacToeEnv.check_winner(
+            ["X", "O", "X", "X", "O", "O", "O", "X", "X"]
+        )
         == "draw"
     )
     assert (
-        env.check_winner(["X", "O", " ", " ", " ", " ", " ", " ", " "]) is None
+        TicTacToeEnv.check_winner(
+            ["X", "O", " ", " ", " ", " ", " ", " ", " "]
+        )
+        is None
     )
     # Test available_moves
-    assert env.available_moves(board) == [2, 3, 5, 6, 7]
+    assert TicTacToeEnv.available_moves(board) == [2, 3, 5, 6, 7]
+
+
+# --- Opponent Class Tests ---
 
 
 def test_opponent_move_and_minimax():
-    """Test opponent move and minimax algorithm."""
-    env = TicTacToeEnv()
+    """Test opponent move and minimax algorithm directly
+    from Opponent class."""
+    opponent = Opponent(play_style="optimal")
     board = ["X", "X", " ", " ", "O", " ", " ", " ", " "]
-    assert env.get_opponent_move(board) == 2  # Blocks X's win
-    score, move = env.minimax(board, is_maximizing=False)
+    # The optimal move should be index 2 (blocking X's win).
+    assert opponent.select_move(board) == 2
+    score, move = opponent.minimax(board, is_maximizing=False)
     assert score == -1
     assert move == 2
+
+
+def test_opponent_random_move():
+    """Test that a random opponent move is within the available moves."""
+    opponent = Opponent(play_style="random")
+    board = ["X", "O", " ", " ", "X", " ", " ", " ", " "]
+    available = TicTacToeEnv.available_moves(board)
+    move = opponent.select_move(board)
+    assert move in available
+
+
+def test_opponent_no_moves():
+    """Test that when no moves are available, the opponent returns None."""
+    opponent = Opponent(play_style="optimal")
+    board = ["X", "O", "X", "X", "O", "O", "O", "X", "X"]
+    move = opponent.select_move(board)
+    assert move is None
+
+
+def test_opponent_optimal_winning_move():
+    """Test that the optimal opponent identifies and makes a winning move,
+    if available."""
+    opponent = Opponent(play_style="optimal")
+    # Set up a board where O can win immediately (row 0: two O's and an empty).
+    board = ["O", "O", " ", "X", "X", " ", " ", " ", " "]
+    move = opponent.select_move(board)
+    # The winning move is index 2.
+    assert move == 2
+
+
+def test_minimax_draw_scenario():
+    """Test that minimax returns a draw score for a board leading to a draw."""
+    opponent = Opponent(play_style="optimal")
+    # A nearly complete board with one move left that results in a draw.
+    board = ["X", "O", "X", "X", "O", "O", "O", "X", " "]
+    score, move = opponent.minimax(board, is_maximizing=True)
+    # Only one move is available; playing it leads to a draw.
+    assert score == 0
+    # The only available move should be index 8.
+    assert move == 8
 
 
 # --- Error Handling Tests ---
