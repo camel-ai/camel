@@ -591,17 +591,3 @@ class MCPToolkit(BaseToolkit):
         for server in self.servers:
             all_tools.extend(server.get_tools())
         return all_tools
-
-    def get_text_tools(self) -> str:
-        r"""Aggregates all tools from the managed MCP server instances.
-
-        Returns:
-            str: A string containing the descriptions of the tools
-            in the toolkit.
-        """
-        all_tools = []
-        for idx, server in enumerate(self.servers):
-            all_tools.append(
-                f"server_idx: {idx}\n\n" + server.get_text_tools()
-            )
-        return "\n".join(all_tools)
