@@ -52,7 +52,7 @@ class PythonVerifier(BaseVerifier):
         timeout: Optional[float] = 30.0,
         required_packages: Optional[List[str]] = None,
         enable_float_comparison: bool = False,
-        float_tolerance: float = 1e-05,
+        float_tolerance: Optional[float] = 1e-05,
         **kwargs,
     ):
         r"""Initializes the PythonVerifier.
@@ -65,10 +65,8 @@ class PythonVerifier(BaseVerifier):
             required_packages (Optional[List[str]], optional): A list of
                 packages to install in the virtual environment.
                 (default: :obj:`None`)
-            enable_float_comparison (bool, optional): Whether to enable float
-            comparison with tolerance. (default: :obj:`False`)
-            float_tolerance (float, optional): The tolerance for floating point
-            comparisons. (default: :obj:`1e-05`)
+            float_tolerance (Optional[float], optional): The tolerance for
+            floating point comparisons. (default: :obj:`1e-05`)
         """
         # TODO: Use CAMEL's Interpreter to execute the code
         super().__init__(extractor=extractor, timeout=timeout, **kwargs)
@@ -152,14 +150,7 @@ class PythonVerifier(BaseVerifier):
         Returns:
             bool: True if values are equal
         """
-        if isinstance(sol_val, list) and isinstance(gt_val, list):
-            if len(sol_val) != len(gt_val):
-                return False
-            return all(
-                self._compare_values(s, g) for s, g in zip(sol_val, gt_val)
-            )
-
-        if self.enable_float_comparison:
+        if self.float_tolerance is not None:
             if (
                 isinstance(sol_val, float) and isinstance(gt_val, (int, float))
             ) or (
@@ -172,8 +163,6 @@ class PythonVerifier(BaseVerifier):
                     )
                 except (TypeError, ValueError):
                     return False
-
-        return sol_val == gt_val
 
     def _is_uv_environment(self) -> bool:
         r"""Detect whether the current Python runtime is managed by uv."""
