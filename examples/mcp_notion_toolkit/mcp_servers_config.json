@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "arxiv_toolkit": {
+      "command": "python",
+      "args": [
+        "-m",
+        "examples.mcp_notion_toolkit.notion_toolkit_server",
+        "--timeout",
+        "30"
+      ]
+    }
+  }
+}
