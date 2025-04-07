@@ -51,6 +51,7 @@ class PythonVerifier(BaseVerifier):
         extractor: Optional[BaseExtractor] = None,
         timeout: Optional[float] = 30.0,
         required_packages: Optional[List[str]] = None,
+        float_tolerance: float = 1e-05,
         **kwargs,
     ):
         r"""Initializes the PythonVerifier.
@@ -63,11 +64,14 @@ class PythonVerifier(BaseVerifier):
             required_packages (Optional[List[str]], optional): A list of
                 packages to install in the virtual environment.
                 (default: :obj:`None`)
+            float_tolerance (float, optional): The tolerance for floating point
+            comparisons. (default: :obj:`1e-05`)
         """
         # TODO: Use CAMEL's Interpreter to execute the code
         super().__init__(extractor=extractor, timeout=timeout, **kwargs)
         self.venv_path: Optional[str] = None
         self.required_packages = required_packages or []
+        self.float_tolerance = float_tolerance  
 
         if os.name == 'nt':  # Windows
             self.bin_dir = 'Scripts'
@@ -274,10 +278,9 @@ class PythonVerifier(BaseVerifier):
                     )
 
                 # Direct float comparison after evaluation
-                if isinstance(sol_val, float) or isinstance(gt_val, float):
-                    if abs(
-                        float(sol_val) - float(gt_val)
-                    ) <= 1e-08 + 1e-05 * abs(float(gt_val)):
+                if (isinstance(sol_val, float) and isinstance(gt_val, (int, float))) or \
+                   (isinstance(gt_val, float) and isinstance(sol_val, (int, float))):
+                    if abs(float(sol_val) - float(gt_val)) <= self.float_tolerance:
                         return VerificationResult(
                             status=VerificationOutcome.SUCCESS,
                             result=str(sol_val),
@@ -286,8 +289,8 @@ class PythonVerifier(BaseVerifier):
                         status=VerificationOutcome.FAILURE,
                         result=str(sol_val),
                         error_message=(
-                            f"Floating point values not equal within tolerance"
-                            f"{sol_val} != {gt_val}"
+                            "Floating point values not equal within tolerance:"
+                            f"{self.float_tolerance}, {sol_val} != {gt_val}"
                         ),
                     )
                 # Regular comparison for non-float values
