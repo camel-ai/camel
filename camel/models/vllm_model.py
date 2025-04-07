@@ -243,6 +243,8 @@ class VLLMModel(BaseModelBackend):
                         tool["function"]["parameters"].pop(
                             "additionalProperties", None
                         )
+                    if "strict" in tool.get("function", {}):
+                        tool["function"].pop("strict")
 
         return self._client.beta.chat.completions.parse(
             messages=messages,
@@ -269,6 +271,8 @@ class VLLMModel(BaseModelBackend):
                         tool["function"]["parameters"].pop(
                             "additionalProperties", None
                         )
+                    if "strict" in tool.get("function", {}):
+                        tool["function"].pop("strict")
 
         return await self._async_client.beta.chat.completions.parse(
             messages=messages,
