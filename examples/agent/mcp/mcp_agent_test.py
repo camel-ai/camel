@@ -22,22 +22,32 @@ from camel.types import ModelPlatformType
 async def main():
     config_path = Path(__file__).parent / "mcp_servers_config.json"
 
-    model = ModelFactory.create(
+    ollama_model = ModelFactory.create(
         model_platform=ModelPlatformType.OLLAMA,
         model_type="deepseek-r1:70b",
         model_config_dict={"max_tokens": 64000, "temperature": 0.5},
     )
 
+    # Another choice: use OpenRouter model if you do not install ollama
+    # import os
+    # openrouter_model = ModelFactory.create(
+    #     url="https://openrouter.ai/api/v1",
+    #     api_key=os.getenv("OPENROUTER_API_KEY"),
+    #     model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
+    #     model_type="nvidia/llama-3.1-nemotron-70b-instruct:free",
+    # )
+
     mcp_agent = MCPAgent(
         config_path=str(config_path),
-        model=model,
+        model=ollama_model,  # use ollama_model or openrouter_model
+        # model=openrouter_model,
         function_calling_available=False,
     )
     await mcp_agent.connect()
     mcp_agent.add_mcp_tools()
 
     user_msg = (
-        "I have 5 boxes, each of them contiaining 50 apples, "
+        "I have 5 boxes, each of them containing 50 apples, "
         "how many apples in total."
     )
     response = await mcp_agent.run(user_msg)

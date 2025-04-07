@@ -3,7 +3,7 @@
     "calculator": {
       "command": "python",
       "args": [
-        "examples/agent/mcp/calculator_server.py"
+        "calculator_server.py"
       ]
     }
   },

@@ -223,7 +223,7 @@ class MCPClient(BaseToolkit):
 
             func_params.append(param_name)
 
-        async def dynamic_function(**kwargs):
+        async def dynamic_function(**kwargs) -> str:
             r"""Auto-generated function for MCP Tool interaction.
 
             Args:
@@ -343,7 +343,6 @@ class MCPClient(BaseToolkit):
             for mcp_tool in self._mcp_tools
         ]
 
-
     def get_text_tools(self) -> str:
         r"""Returns a string containing the descriptions of the tools
         in the toolkit.
@@ -368,13 +367,18 @@ class MCPClient(BaseToolkit):
             tool_name (str): Name of the tool to call.
             tool_args (Dict[str, Any]): Arguments to pass to the tool
             (default: :obj:`{}`) .
+
+        Returns:
+            Any: The result of the tool call.
         """
+        if self._session is None:
+            raise RuntimeError("Session is not initialized.")
+
         return await self._session.call_tool(tool_name, tool_args)
 
     @property
     def session(self) -> Optional["ClientSession"]:
         return self._session
-
 
 
 class MCPToolkit(BaseToolkit):
@@ -491,7 +495,6 @@ class MCPToolkit(BaseToolkit):
                 timeout=cfg.get("timeout", None),
             )
             all_servers.append(server)
-
 
         # Process remote MCP web servers
         mcp_web_servers = data.get("mcpWebServers", {})

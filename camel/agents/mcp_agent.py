@@ -38,7 +38,7 @@ except (ImportError, AttributeError):
 logger = get_logger(__name__)
 
 SYS_PROMPT = """
-You are a helpful assistant, and you prefer to use tools prvided by the user 
+You are a helpful assistant, and you prefer to use tools provided by the user 
 to solve problems.
 Using a tool, you will tell the user `server_idx`, `tool_name` and 
 `tool_args` formated in JSON as following:
@@ -51,6 +51,14 @@ Using a tool, you will tell the user `server_idx`, `tool_name` and
         "arg2": value2,
         ...
     }
+}
+```
+For example:
+```json
+{
+    "server_idx": 0,
+    "tool_name": "multiply",
+    "tool_args": {"a": 5, "b": 50}
 }
 ```
 Otherwise, you should respond to the user directly.
@@ -88,12 +96,13 @@ class MCPAgent(ChatAgent):
 
         """
         if function_calling_available:
-            sys_prompt = "You are a helpful assitant."
+            sys_prompt = """You are a helpful assistant, and you prefer to use 
+            tools provided by the user to solve problems."""
         else:
             sys_prompt = SYS_PROMPT
 
         system_message = BaseMessage(
-            role_name="MPCRouter",
+            role_name="MCPRouter",
             role_type=RoleType.ASSISTANT,
             meta_dict=None,
             content=sys_prompt,
@@ -147,11 +156,22 @@ class MCPAgent(ChatAgent):
 
             tool_calls = []
             while "```json" in content:
-                json_start = re.search(r'```json', content).span()[1]
-                json_end = re.search(r'```', content[json_start:]).span()[0]
-                json_end = json_end + json_start
+                json_match = re.search(r'```json', content)
+                if not json_match:
+                    break
+                json_start = json_match.span()[1]
+
+                end_match = re.search(r'```', content[json_start:])
+                if not end_match:
+                    break
+                json_end = end_match.span()[0] + json_start
+
                 tool_josn = content[json_start:json_end].strip('\n')
-                tool_calls.append(json.loads(tool_josn))
+                try:
+                    tool_calls.append(json.loads(tool_josn))
+                except json.JSONDecodeError:
+                    logger.warning(f"Failed to parse JSON: {tool_josn}")
+                    continue
                 content = content[json_end:]
 
             if len(tool_calls) == 0:
