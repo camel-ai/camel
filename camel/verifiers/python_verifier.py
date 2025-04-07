@@ -71,7 +71,7 @@ class PythonVerifier(BaseVerifier):
         super().__init__(extractor=extractor, timeout=timeout, **kwargs)
         self.venv_path: Optional[str] = None
         self.required_packages = required_packages or []
-        self.float_tolerance = float_tolerance  
+        self.float_tolerance = float_tolerance
 
         if os.name == 'nt':  # Windows
             self.bin_dir = 'Scripts'
@@ -278,9 +278,14 @@ class PythonVerifier(BaseVerifier):
                     )
 
                 # Direct float comparison after evaluation
-                if (isinstance(sol_val, float) and isinstance(gt_val, (int, float)))or \
-                   (isinstance(gt_val, float) and isinstance(sol_val, int)):
-                    if abs(float(sol_val) - float(gt_val)) <= self.float_tolerance:
+                if (
+                    isinstance(sol_val, float)
+                    and isinstance(gt_val, (int, float))
+                ) or (isinstance(gt_val, float) and isinstance(sol_val, int)):
+                    if (
+                        abs(float(sol_val) - float(gt_val))
+                        <= self.float_tolerance
+                    ):
                         return VerificationResult(
                             status=VerificationOutcome.SUCCESS,
                             result=str(sol_val),
