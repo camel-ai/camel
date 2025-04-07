@@ -655,7 +655,6 @@ class ChatAgent(BaseAgent):
                     break
 
                 tool_record, is_success = self._execute_tool(tool_call_request)
-
                 tool_call_records.append(tool_record)
                 if is_success:
                     enforce_no_tools = True
@@ -811,9 +810,15 @@ class ChatAgent(BaseAgent):
 
         response = None
         try:
-            response = self.model_backend.run(
-                openai_messages, response_format, tool_schemas or None
-            )
+            if tool_schemas == []:
+                # Deliberately pass an empty list of tool schemas
+                response = self.model_backend.run(
+                    openai_messages, response_format, []
+                )
+            else:
+                response = self.model_backend.run(
+                    openai_messages, response_format, tool_schemas or None
+                )
         except Exception as exc:
             logger.error(
                 f"An error occurred while running model "

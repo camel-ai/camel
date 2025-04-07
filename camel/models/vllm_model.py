@@ -225,6 +225,8 @@ class VLLMModel(BaseModelBackend):
         kwargs = self.model_config_dict.copy()
         if tools:
             kwargs["tools"] = tools
+        elif tools is None:
+            kwargs["tools"] = None
         if response_format:
             kwargs["response_format"] = {"type": "json_object"}
 
