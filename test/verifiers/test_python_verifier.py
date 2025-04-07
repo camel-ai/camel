@@ -171,6 +171,8 @@ async def test_python_verifier_with_numpy(python_verifier):
     ],
 )
 def test_is_equal_with_tolerance(a, b, tol, expected):
+    r"""Test the function calculating whether two floats are equal
+    given tolerance"""
     verifier = PythonVerifier(float_tolerance=tol)
     assert verifier._is_equal_with_tolerance(a, b) == expected
 
@@ -216,6 +218,7 @@ def test_is_equal_with_tolerance(a, b, tol, expected):
 async def test_verify_with_float_tolerance(
     script, expected_output, tol, should_pass
 ):
+    r"""Test verifier end-to-end with float tolerance"""
     verifier = PythonVerifier(float_tolerance=tol)
     await verifier.setup(uv=True)
 

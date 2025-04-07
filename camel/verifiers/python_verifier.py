@@ -481,6 +481,25 @@ class PythonVerifier(BaseVerifier):
                 return False
 
     def _is_equal_with_tolerance(self, a, b) -> bool:
+        r"""Compares two Python objects for equality with optional float
+            tolerance.
+
+        This method recursively compares nested structures (lists, tuples,
+        sets, and dictionaries) and applies floating point tolerance when
+        comparing numerical values. If no float tolerance is set, a runtime
+        error is raised.
+
+        Args:
+            a: First value to compare.
+            b: Second value to compare.
+
+        Returns:
+            bool: True if the values are considered equal within the
+            specified float tolerance; False otherwise.
+
+        Raises:
+            RuntimeError: If float tolerance is not set (i.e., None).
+        """
         if self.float_tolerance is None:
             raise RuntimeError(
                 "Can't compare with tolerance if tolerance is None."
