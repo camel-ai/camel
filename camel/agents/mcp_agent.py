@@ -41,7 +41,7 @@ SYS_PROMPT = """
 You are a helpful assistant, and you prefer to use tools provided by the user 
 to solve problems.
 Using a tool, you will tell the user `server_idx`, `tool_name` and 
-`tool_args` formated in JSON as following:
+`tool_args` formatted in JSON as following:
 ```json
 {
     "server_idx": idx,
@@ -191,3 +191,19 @@ class MCPAgent(ChatAgent):
                 )
                 response = await self.astep(final_prompt)
                 return response
+
+    @classmethod
+    async def create(
+        cls,
+        config_path: str,
+        model: Optional[BaseModelBackend] = None,
+        function_calling_available: bool = False,
+    ) -> "MCPAgent":
+        """Factory method to create and initialize an MCPAgent.
+
+        This method handles both creation and initialization of the agent.
+        """
+        agent = cls(config_path, model, function_calling_available)
+        await agent.connect()
+        agent.add_mcp_tools()
+        return agent

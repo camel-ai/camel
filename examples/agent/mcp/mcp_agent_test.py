@@ -37,6 +37,7 @@ async def main():
     #     model_type="nvidia/llama-3.1-nemotron-70b-instruct:free",
     # )
 
+    # Initialize the agent using the constructor
     mcp_agent = MCPAgent(
         config_path=str(config_path),
         model=ollama_model,  # use ollama_model or openrouter_model
@@ -45,6 +46,14 @@ async def main():
     )
     await mcp_agent.connect()
     mcp_agent.add_mcp_tools()
+
+    # Initialize the agent using the factory method (recommended)
+    mcp_agent = await MCPAgent.create(
+        config_path=str(config_path),
+        model=ollama_model,  # use ollama_model or openrouter_model
+        # model=openrouter_model,
+        function_calling_available=False,
+    )
 
     user_msg = (
         "I have 5 boxes, each of them containing 50 apples, "
