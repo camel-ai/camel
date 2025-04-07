@@ -966,16 +966,10 @@ class SearchToolkit(BaseToolkit):
             ]
         ] = None,
         num_results: int = 10,
-        include_domains: Optional[List[str]] = None,
-        exclude_domains: Optional[List[str]] = None,
-        start_crawl_date: Optional[str] = None,
-        end_crawl_date: Optional[str] = None,
-        start_published_date: Optional[str] = None,
-        end_published_date: Optional[str] = None,
         include_text: Optional[List[str]] = None,
         exclude_text: Optional[List[str]] = None,
         use_autoprompt: bool = True,
-        text: bool = False
+        text: bool = False,
     ) -> Dict[str, Any]:
         r"""Use Exa search API to perform intelligent web search with optional
         content extraction.
@@ -990,18 +984,6 @@ class SearchToolkit(BaseToolkit):
                 as "research paper" or "news". (default: :obj:`None`)
             num_results (int): Number of results to return (max 100).
                 (default: :obj:`10`)
-            include_domains (Optional[List[str]]): List of domains to restrict
-                search to. (default: :obj:`None`)
-            exclude_domains (Optional[List[str]]): List of domains to exclude
-                from search. (default: :obj:`None`)
-            start_crawl_date (Optional[str]): ISO 8601 date to start search
-                from based on crawl date. (default: :obj:`None`)
-            end_crawl_date (Optional[str]): ISO 8601 date to end search at
-                based on crawl date. (default: :obj:`None`)
-            start_published_date (Optional[str]): ISO 8601 date to start search
-                from based on publish date. (default: :obj:`None`)
-            end_published_date (Optional[str]): ISO 8601 date to end search at
-                based on publish date. (default: :obj:`None`)
             include_text (Optional[List[str]]): Strings that must be present in
                 webpage text. Limited to 1 string of up to 5 words.
                 (default: :obj:`None`)
@@ -1085,12 +1067,6 @@ class SearchToolkit(BaseToolkit):
                         type=search_type,
                         category=category,
                         num_results=num_results,
-                        include_domains=include_domains,
-                        exclude_domains=exclude_domains,
-                        start_crawl_date=start_crawl_date,
-                        end_crawl_date=end_crawl_date,
-                        start_published_date=start_published_date,
-                        end_published_date=end_published_date,
                         include_text=include_text,
                         exclude_text=exclude_text,
                         use_autoprompt=use_autoprompt,
@@ -1105,12 +1081,6 @@ class SearchToolkit(BaseToolkit):
                         type=search_type,
                         category=category,
                         num_results=num_results,
-                        include_domains=include_domains,
-                        exclude_domains=exclude_domains,
-                        start_crawl_date=start_crawl_date,
-                        end_crawl_date=end_crawl_date,
-                        start_published_date=start_published_date,
-                        end_published_date=end_published_date,
                         include_text=include_text,
                         exclude_text=exclude_text,
                         use_autoprompt=use_autoprompt,
