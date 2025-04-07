@@ -214,7 +214,7 @@ class TicTacToeEnv(MultiStepEnv):
                 return 0.0, {"loss": 0.0}
             else:
                 return 0.5, {"draw": 0.5}
-        
+
         elif self._state["last_move_illegal"]:
             return 0.0, {"illegal_move": 0.0}
 
@@ -222,7 +222,6 @@ class TicTacToeEnv(MultiStepEnv):
             board = self._state["board"]
             value = TicTacToeEnv.evaluate_position_for_x(board, is_x_turn=True)
             return value, {"x_non_loss_value": value}
-
 
     @staticmethod
     def evaluate_position_for_x(board: List[str], is_x_turn: bool) -> float:
@@ -243,7 +242,6 @@ class TicTacToeEnv(MultiStepEnv):
             values.append(value)
 
         return max(values) if is_x_turn else min(values)
-
 
     def _is_done(self) -> bool:
         return self._state["game_over"]

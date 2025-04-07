@@ -74,11 +74,14 @@ async def test_moves(input_move, expected_behavior):
             assert state["board"].count("O") == 1
             assert state["last_move_illegal"] is False
 
-            expected = TicTacToeEnv.evaluate_position_for_x(state["board"], is_x_turn=True)
+            expected = TicTacToeEnv.evaluate_position_for_x(
+                state["board"], is_x_turn=True
+            )
             assert reward == expected
 
         assert done is False
     await env.close()
+
 
 @pytest.mark.asyncio
 async def test_move_occupied():
@@ -311,7 +314,7 @@ async def test_full_game():
     await env.reset()
 
     moves = ["1", "2", "4"]
-    for i, move in enumerate(moves):
+    for move in moves:
         obs, reward, done, info = await env.step(
             Action(llm_response=f"<Action>{move}</Action>")
         )
@@ -325,7 +328,9 @@ async def test_full_game():
                 assert reward == 0.5
         else:
             # NEW: Validate reward matches optimal X evaluation
-            expected = TicTacToeEnv.evaluate_position_for_x(env._state["board"], is_x_turn=True)
+            expected = TicTacToeEnv.evaluate_position_for_x(
+                env._state["board"], is_x_turn=True
+            )
             assert reward == expected
             assert 0.0 <= reward <= 1.0
             assert done is False
