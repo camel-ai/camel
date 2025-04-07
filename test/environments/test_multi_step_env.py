@@ -64,7 +64,7 @@ async def test_multi_step_env_lifecycle():
     mock_extractor = MagicMock()
     mock_extractor.setup = AsyncMock()
     mock_extractor.cleanup = AsyncMock()
-    mock_extractor.extract = MagicMock(return_value="extracted_answer")
+    mock_extractor.extract = AsyncMock(return_value="extracted_answer")
 
     env = MockMultiStepEnv(extractor=mock_extractor, max_steps=3)
     await env.setup()
@@ -144,7 +144,7 @@ async def test_multi_step_env_error_handling():
 
     # **Test Case 4: Extractor failure**
     # Configure extractor to raise an exception
-    mock_extractor.extract = MagicMock(
+    mock_extractor.extract = AsyncMock(
         side_effect=Exception("Extractor error")
     )
     await env.reset()
@@ -154,7 +154,7 @@ async def test_multi_step_env_error_handling():
     # **Test Case 5: Maximum steps reached**
     # Create a new environment with max_steps=1
     # Reset extractor for Test Case 5
-    mock_extractor.extract = MagicMock(return_value="extracted_answer")
+    mock_extractor.extract = AsyncMock(return_value="extracted_answer")
     env_max_steps = MockMultiStepEnv(extractor=mock_extractor, max_steps=1)
     await env_max_steps.setup()
     await env_max_steps.reset()
