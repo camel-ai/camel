@@ -114,6 +114,9 @@ class MultiStepEnv(ABC):
         """
 
         if not self._is_setup:
+            logger.warning(
+                "reset() called on un-setup environment. Setting up..."
+            )
             await self.setup()
 
         # Reset state
