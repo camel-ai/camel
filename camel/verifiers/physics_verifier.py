@@ -304,7 +304,7 @@ class PhysicsVerifier(PythonVerifier):
         # Remove dollar signs that indicate LaTeX math mode
         if answer.startswith("$") and answer.endswith("$"):
             answer = answer[1:-1].strip()
-        
+
         # Replace LaTeX scientific notation format (e.g., 1 \times 10^{14})
         answer = re.sub(r'([\d.]+)\s*\\times\s*10\^\{(\d+)\}', r'\1e\2', answer)
         
@@ -314,7 +314,26 @@ class PhysicsVerifier(PythonVerifier):
         # Remove other common LaTeX formatting
         answer = answer.replace('\\', '')
         
-        return 
+        return answer
+    
+    @staticmethod
+    def _parse_expression(expr: str):
+        expr = expr.lstrip("$").rstrip("$")
+
+        try:
+            expr = parse_expr(expr, local_dict={'pi': sp.Symbol('pi'), 'e': sp.Symbol('e')})
+        except:
+            try:
+                expr = parse_latex(expr.replace('pi', '\pi'))
+            except Exception as e:
+                raise ValueError(f"Failed to parse ground truth expression: {e}")
+        
+        expr = expr.subs({
+            sp.Symbol('pi'): sp.pi,
+            sp.Symbol('e'): sp.E
+        })
+        return expr
+
     
     def _convert_units(self, sol_value, sol_unit_expr, gt_unit_expr):
         """
@@ -441,9 +460,13 @@ class PhysicsVerifier(PythonVerifier):
                     result=sol_out,
                     error_message=f"Solution code error:\n{sol_err}",
                 )
+            
+            logger.info(f"Solution: {sol_out}")
 
             gt_value, gt_unit = self._split_value_unit(reference_answer)
-            sol_value, sol_unit = self._split_value_unit(solution)
+            sol_value, sol_unit = self._split_value_unit(sol_out)
+
+            logger.info(f'Solution value: {sol_value}; Ground truth value: {gt_value}')
 
             if self.unit_parser.unit_is_none(gt_unit) and self.unit_parser.unit_is_none(sol_unit):
                 gt_unit_expr, sol_unit_expr = None, None
@@ -451,18 +474,16 @@ class PhysicsVerifier(PythonVerifier):
                 gt_unit_expr = self.unit_parser.parse_unit(gt_unit)
                 sol_unit_expr = self.unit_parser.parse_unit(sol_unit)
 
-            logger.info(f'Solution unit: {sol_unit_expr}')
-            logger.info(f'Ground truth unit: {gt_unit_expr}')
+            gt_value = self._clean_answer(gt_value)
 
-            print(f'Solution unit: {sol_unit_expr}')
-            print(f'Ground truth unit: {gt_unit_expr}')
+            logger.info(f'Solution unit: {sol_unit_expr}; Ground truth unit: {gt_unit_expr}')
 
-            cleaned_gt_value = self._clean_answer(gt_value)
+            if self._is_number(gt_value):
+                gt_value = float(gt_value)
 
-            if self._is_number(cleaned_gt_value):
-                gt_value = float(cleaned_gt_value)
-
-                if not isinstance(sol_value, (int, float, sp.Number)):
+                if self._is_number(sol_value):
+                    sol_value = float(sol_value)
+                else:
                     logger.info(f'Convert output expr {sol_value} into numerical.')
                     try:
                         sol_value = sol_value.evalf()
@@ -494,18 +515,16 @@ class PhysicsVerifier(PythonVerifier):
                         result=f'{sol_value} {sol_unit_expr}',
                         error_message=f"Failed to compare values: {e}",
                     )
+                
             else:
                 try:
-                    logger.info(f'Solution expression: {sol_value}')
+                    gt_expr = self._parse_expression(gt_value)
+                    sol_expr = self._parse_expression(sol_value)
 
-                    gt_expr = parse_latex(cleaned_gt_value.lstrip("$").rstrip("$"))
-                    gt_expr = gt_expr.subs({
-                        sp.Symbol('pi'): sp.pi,
-                        sp.Symbol('e'): sp.E
-                    })
+                    logger.info(f'Solution expression: {sol_expr}')
                     logger.info(f'Ground truth expression: {gt_expr}')
 
-                    result_match = self.verify_symbolic_expressions(sol_value, gt_expr)
+                    result_match = self.verify_symbolic_expressions(sol_expr, gt_expr)
                 except Exception as e:
                     return VerificationResult(
                             status=VerificationOutcome.ERROR,
