@@ -11,7 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import json
 from typing import Dict, Optional, Type, Union
+
+import yaml
 
 from camel.models.aiml_model import AIMLModel
 from camel.models.anthropic_model import AnthropicModel
@@ -24,11 +27,13 @@ from camel.models.groq_model import GroqModel
 from camel.models.internlm_model import InternLMModel
 from camel.models.litellm_model import LiteLLMModel
 from camel.models.mistral_model import MistralModel
+from camel.models.modelscope_model import ModelScopeModel
 from camel.models.moonshot_model import MoonshotModel
 from camel.models.nvidia_model import NvidiaModel
 from camel.models.ollama_model import OllamaModel
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.models.openai_model import OpenAIModel
+from camel.models.openrouter_model import OpenRouterModel
 from camel.models.qwen_model import QwenModel
 from camel.models.reka_model import RekaModel
 from camel.models.samba_model import SambaModel
@@ -59,6 +64,7 @@ class ModelFactory:
         token_counter: Optional[BaseTokenCounter] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        timeout: Optional[int] = None,
     ) -> BaseModelBackend:
         r"""Creates an instance of `BaseModelBackend` of the specified type.
 
@@ -78,6 +84,8 @@ class ModelFactory:
                 with the model service. (default: :obj:`None`)
             url (Optional[str], optional): The url to the model service.
                 (default: :obj:`None`)
+            timeout (Optional[float], optional): The timeout value in seconds
+                for API calls. (default: :obj:`None`)
 
         Returns:
             BaseModelBackend: The initialized backend.
@@ -119,6 +127,8 @@ class ModelFactory:
             model_class = AnthropicModel
         elif model_platform.is_groq and model_type.is_groq:
             model_class = GroqModel
+        elif model_platform.is_openrouter and model_type.is_openrouter:
+            model_class = OpenRouterModel
         elif model_platform.is_zhipuai and model_type.is_zhipuai:
             model_class = ZhipuAIModel
         elif model_platform.is_gemini and model_type.is_gemini:
@@ -139,6 +149,8 @@ class ModelFactory:
             model_class = InternLMModel
         elif model_platform.is_moonshot and model_type.is_moonshot:
             model_class = MoonshotModel
+        elif model_platform.is_modelscope:
+            model_class = ModelScopeModel
         elif model_type == ModelType.STUB:
             model_class = StubModel
 
@@ -154,4 +166,118 @@ class ModelFactory:
             api_key=api_key,
             url=url,
             token_counter=token_counter,
+            timeout=timeout,
         )
+
+    @classmethod
+    def __parse_model_platform(
+        cls, model_platform_str: str
+    ) -> ModelPlatformType:
+        r"""Parses a string and returns the corresponding ModelPlatformType
+        enum.
+
+        Args:
+            model_platform_str (str): The platform name as a string. Can be in
+                the form "ModelPlatformType.<NAME>" or simply "<NAME>".
+
+        Returns:
+            ModelPlatformType: The matching enum value.
+
+        Raises:
+            ValueError: If the platform name is not a valid member of
+                ModelPlatformType.
+        """
+
+        try:
+            if model_platform_str.startswith("ModelPlatformType."):
+                platform_name = model_platform_str.split('.')[-1]
+            else:
+                platform_name = model_platform_str.upper()
+
+            if platform_name not in ModelPlatformType.__members__:
+                raise ValueError(
+                    f"Invalid model platform: {platform_name}. "
+                    f"Valid options: "
+                    f"{', '.join(ModelPlatformType.__members__.keys())}"
+                )
+
+            return ModelPlatformType[platform_name]
+
+        except KeyError:
+            raise KeyError(f"Invalid model platform: {model_platform_str}")
+
+    @classmethod
+    def __load_yaml(cls, filepath: str) -> Dict:
+        r"""Loads and parses a YAML file into a dictionary.
+
+        Args:
+            filepath (str): Path to the YAML configuration file.
+
+        Returns:
+            Dict: The parsed YAML content as a dictionary.
+        """
+        with open(filepath, 'r') as file:
+            config = yaml.safe_load(file)
+
+        return config
+
+    @classmethod
+    def __load_json(cls, filepath: str) -> Dict:
+        r"""Loads and parses a JSON file into a dictionary.
+
+        Args:
+            filepath (str): Path to the JSON configuration file.
+
+        Returns:
+            Dict: The parsed JSON content as a dictionary.
+        """
+        with open(filepath, 'r') as file:
+            config = json.load(file)
+
+        return config
+
+    @classmethod
+    def create_from_yaml(cls, filepath: str) -> BaseModelBackend:
+        r"""Creates and returns a model base backend instance
+        from a YAML configuration file.
+
+        Args:
+            filepath (str): Path to the YAML file containing model
+                configuration.
+
+        Returns:
+            BaseModelBackend: An instance of the model backend based on the
+                configuration.
+        """
+
+        config = cls.__load_yaml(filepath)
+        config["model_platform"] = cls.__parse_model_platform(
+            config["model_platform"]
+        )
+
+        model = ModelFactory.create(**config)
+
+        return model
+
+    @classmethod
+    def create_from_json(cls, filepath: str) -> BaseModelBackend:
+        r"""Creates and returns a base model backend instance
+        from a JSON configuration file.
+
+        Args:
+            filepath (str): Path to the JSON file containing model
+                configuration.
+
+        Returns:
+            BaseModelBackend: An instance of the model backend based on the
+                configuration.
+        """
+
+        config = cls.__load_json(filepath)
+        config["model_platform"] = cls.__parse_model_platform(
+            config["model_platform"]
+        )
+
+        model = ModelFactory.create(**config)
+
+        return model

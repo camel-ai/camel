@@ -518,7 +518,7 @@ class SelfImprovingCoTPipeline:
             self.reason_agent.model_backend.model_config_dict['n'] = (
                 self.rejection_sampling_n
             )
-            # Generate multiple condidate traces in one call using parameter n
+            # Generate multiple candidate traces in one call using parameter n
             responses = self.reason_agent.step(prompt)
             # Extract cancidate traces
             candidate_traces = [choice.content for choice in responses.msgs]

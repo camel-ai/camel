@@ -63,6 +63,11 @@ class ModelType(UnifiedModelType, Enum):
     GROQ_MIXTRAL_8_7B = "mixtral-8x7b-32768"
     GROQ_GEMMA_2_9B_IT = "gemma2-9b-it"
 
+    # OpenRouter models
+    OPENROUTER_LLAMA_3_1_405B = "meta-llama/llama-3.3-405b-instruct"
+    OPENROUTER_LLAMA_3_1_70B = "meta-llama/llama-3.3-70b-instruct"
+    OPENROUTER_OLYMPICODER_7B = "open-r1/olympiccoder-7b:free"
+
     # TogetherAI platform models support tool calling
     TOGETHER_LLAMA_3_1_8B = "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo"
     TOGETHER_LLAMA_3_1_70B = "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo"
@@ -118,6 +123,7 @@ class ModelType(UnifiedModelType, Enum):
     NVIDIA_LLAMA3_3_70B_INSTRUCT = "meta/llama-3.3-70b-instruct"
 
     # Gemini models
+    GEMINI_2_5_PRO_EXP = "gemini-2.5-pro-exp-03-25"
     GEMINI_2_0_FLASH = "gemini-2.0-flash-exp"
     GEMINI_2_0_FLASH_THINKING = "gemini-2.0-flash-thinking-exp"
     GEMINI_2_0_PRO_EXP = "gemini-2.0-pro-exp-02-05"
@@ -211,6 +217,29 @@ class ModelType(UnifiedModelType, Enum):
     AIML_MIXTRAL_8X7B = "mistralai/Mixtral-8x7B-Instruct-v0.1"
     AIML_MISTRAL_7B_INSTRUCT = "mistralai/Mistral-7B-Instruct-v0.1"
 
+    # ModelScope models support tool calling
+    MODELSCOPE_QWEN_2_5_7B_INSTRUCT = "Qwen/Qwen2.5-7B-Instruct"
+    MODELSCOPE_QWEN_2_5_14B_INSTRUCT = "Qwen/Qwen2.5-14B-Instruct"
+    MODELSCOPE_QWEN_2_5_32B_INSTRUCT = "Qwen/Qwen2.5-32B-Instruct"
+    MODELSCOPE_QWEN_2_5_72B_INSTRUCT = "Qwen/Qwen2.5-72B-Instruct"
+    MODELSCOPE_QWEN_2_5_CODER_7B_INSTRUCT = "Qwen/Qwen2.5-Coder-7B-Instruct"
+    MODELSCOPE_QWEN_2_5_CODER_14B_INSTRUCT = "Qwen/Qwen2.5-Coder-14B-Instruct"
+    MODELSCOPE_QWEN_2_5_CODER_32B_INSTRUCT = "Qwen/Qwen2.5-Coder-32B-Instruct"
+    MODELSCOPE_QWQ_32B = "Qwen/QwQ-32B"
+    MODELSCOPE_QWQ_32B_PREVIEW = "Qwen/QwQ-32B-Preview"
+    MODELSCOPE_LLAMA_3_1_8B_INSTRUCT = (
+        "LLM-Research/Meta-Llama-3.1-8B-Instruct"
+    )
+    MODELSCOPE_LLAMA_3_1_70B_INSTRUCT = (
+        "LLM-Research/Meta-Llama-3.1-70B-Instruct"
+    )
+    MODELSCOPE_LLAMA_3_1_405B_INSTRUCT = (
+        "LLM-Research/Meta-Llama-3.1-405B-Instruct"
+    )
+    MODELSCOPE_LLAMA_3_3_70B_INSTRUCT = "LLM-Research/Llama-3.3-70B-Instruct"
+    MODELSCOPE_MINISTRAL_8B_INSTRUCT = "mistralai/Ministral-8B-Instruct-2410"
+    MODELSCOPE_DEEPSEEK_V3_0324 = "deepseek-ai/DeepSeek-V3-0324"
+
     def __str__(self):
         return self.value
 
@@ -253,9 +282,11 @@ class ModelType(UnifiedModelType, Enum):
                 self.is_together,
                 self.is_sambanova,
                 self.is_groq,
+                self.is_openrouter,
                 self.is_sglang,
                 self.is_moonshot,
                 self.is_siliconflow,
+                self.is_modelscope,
                 self.is_zhipuai,
                 self.is_aiml,
                 self.is_azure_openai,
@@ -343,6 +374,15 @@ class ModelType(UnifiedModelType, Enum):
         }
 
     @property
+    def is_openrouter(self) -> bool:
+        r"""Returns whether this type of models is served by OpenRouter."""
+        return self in {
+            ModelType.OPENROUTER_LLAMA_3_1_405B,
+            ModelType.OPENROUTER_LLAMA_3_1_70B,
+            ModelType.OPENROUTER_OLYMPICODER_7B,
+        }
+
+    @property
     def is_together(self) -> bool:
         r"""Returns whether this type of models is served by Together AI."""
         return self in {
@@ -405,6 +445,7 @@ class ModelType(UnifiedModelType, Enum):
             bool: Whether this type of models is gemini.
         """
         return self in {
+            ModelType.GEMINI_2_5_PRO_EXP,
             ModelType.GEMINI_2_0_FLASH,
             ModelType.GEMINI_1_5_FLASH,
             ModelType.GEMINI_1_5_PRO,
@@ -499,6 +540,26 @@ class ModelType(UnifiedModelType, Enum):
         }
 
     @property
+    def is_modelscope(self) -> bool:
+        return self in {
+            ModelType.MODELSCOPE_QWEN_2_5_7B_INSTRUCT,
+            ModelType.MODELSCOPE_QWEN_2_5_14B_INSTRUCT,
+            ModelType.MODELSCOPE_QWEN_2_5_32B_INSTRUCT,
+            ModelType.MODELSCOPE_QWEN_2_5_72B_INSTRUCT,
+            ModelType.MODELSCOPE_QWEN_2_5_CODER_7B_INSTRUCT,
+            ModelType.MODELSCOPE_QWEN_2_5_CODER_14B_INSTRUCT,
+            ModelType.MODELSCOPE_QWEN_2_5_CODER_32B_INSTRUCT,
+            ModelType.MODELSCOPE_QWQ_32B,
+            ModelType.MODELSCOPE_QWQ_32B_PREVIEW,
+            ModelType.MODELSCOPE_LLAMA_3_1_8B_INSTRUCT,
+            ModelType.MODELSCOPE_LLAMA_3_1_70B_INSTRUCT,
+            ModelType.MODELSCOPE_LLAMA_3_1_405B_INSTRUCT,
+            ModelType.MODELSCOPE_LLAMA_3_3_70B_INSTRUCT,
+            ModelType.MODELSCOPE_MINISTRAL_8B_INSTRUCT,
+            ModelType.MODELSCOPE_DEEPSEEK_V3_0324,
+        }
+
+    @property
     def is_moonshot(self) -> bool:
         return self in {
             ModelType.MOONSHOT_V1_8K,
@@ -580,6 +641,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MOONSHOT_V1_8K,
             ModelType.GLM_4V_FLASH,
             ModelType.GLM_4_AIRX,
+            ModelType.OPENROUTER_OLYMPICODER_7B,
         }:
             return 8_192
         elif self in {
@@ -620,6 +682,21 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MOONSHOT_V1_32K,
             ModelType.AIML_MIXTRAL_8X7B,
             ModelType.AIML_MISTRAL_7B_INSTRUCT,
+            ModelType.MODELSCOPE_QWEN_2_5_7B_INSTRUCT,
+            ModelType.MODELSCOPE_QWEN_2_5_14B_INSTRUCT,
+            ModelType.MODELSCOPE_QWEN_2_5_32B_INSTRUCT,
+            ModelType.MODELSCOPE_QWEN_2_5_72B_INSTRUCT,
+            ModelType.MODELSCOPE_QWEN_2_5_CODER_7B_INSTRUCT,
+            ModelType.MODELSCOPE_QWEN_2_5_CODER_14B_INSTRUCT,
+            ModelType.MODELSCOPE_QWEN_2_5_CODER_32B_INSTRUCT,
+            ModelType.MODELSCOPE_QWQ_32B,
+            ModelType.MODELSCOPE_QWQ_32B_PREVIEW,
+            ModelType.MODELSCOPE_LLAMA_3_1_8B_INSTRUCT,
+            ModelType.MODELSCOPE_LLAMA_3_1_70B_INSTRUCT,
+            ModelType.MODELSCOPE_LLAMA_3_1_405B_INSTRUCT,
+            ModelType.MODELSCOPE_LLAMA_3_3_70B_INSTRUCT,
+            ModelType.MODELSCOPE_MINISTRAL_8B_INSTRUCT,
+            ModelType.MODELSCOPE_DEEPSEEK_V3_0324,
         }:
             return 32_768
         elif self in {
@@ -686,6 +763,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.SGLANG_QWEN_2_5_7B,
             ModelType.SGLANG_QWEN_2_5_32B,
             ModelType.SGLANG_QWEN_2_5_72B,
+            ModelType.OPENROUTER_LLAMA_3_1_70B,
+            ModelType.OPENROUTER_LLAMA_3_1_405B,
         }:
             return 131_072
         elif self in {
@@ -706,6 +785,7 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 256_000
         elif self in {
+            ModelType.GEMINI_2_5_PRO_EXP,
             ModelType.GEMINI_2_0_FLASH,
             ModelType.GEMINI_1_5_FLASH,
             ModelType.GEMINI_1_5_PRO,
@@ -822,6 +902,7 @@ class VectorDistance(Enum):
 class OpenAIBackendRole(Enum):
     ASSISTANT = "assistant"
     SYSTEM = "system"
+    DEVELOPER = "developer"
     USER = "user"
     FUNCTION = "function"
     TOOL = "tool"
@@ -861,6 +942,7 @@ class OpenAIVisionDetailType(Enum):
 class StorageType(Enum):
     MILVUS = "milvus"
     QDRANT = "qdrant"
+    TIDB = "tidb"
 
 
 class OpenAPIName(Enum):
@@ -881,6 +963,7 @@ class ModelPlatformType(Enum):
     AZURE = "azure"
     ANTHROPIC = "anthropic"
     GROQ = "groq"
+    OPENROUTER = "openrouter"
     OLLAMA = "ollama"
     LITELLM = "litellm"
     ZHIPU = "zhipuai"
@@ -899,6 +982,7 @@ class ModelPlatformType(Enum):
     SGLANG = "sglang"
     INTERNLM = "internlm"
     MOONSHOT = "moonshot"
+    MODELSCOPE = "modelscope"
     SILICONFLOW = "siliconflow"
     AIML = "aiml"
     VOLCANO = "volcano"
@@ -930,6 +1014,11 @@ class ModelPlatformType(Enum):
     def is_groq(self) -> bool:
         r"""Returns whether this platform is groq."""
         return self is ModelPlatformType.GROQ
+
+    @property
+    def is_openrouter(self) -> bool:
+        r"""Returns whether this platform is openrouter."""
+        return self is ModelPlatformType.OPENROUTER
 
     @property
     def is_ollama(self) -> bool:
@@ -1021,6 +1110,11 @@ class ModelPlatformType(Enum):
     def is_moonshot(self) -> bool:
         r"""Returns whether this platform is Moonshot model."""
         return self is ModelPlatformType.MOONSHOT
+
+    @property
+    def is_modelscope(self) -> bool:
+        r"""Returns whether this platform is ModelScope model."""
+        return self is ModelPlatformType.MODELSCOPE
 
     @property
     def is_siliconflow(self) -> bool:
