@@ -44,14 +44,6 @@ class TicTacToeEnv(MultiStepEnv):
         extractor = BaseExtractor(pipeline=[[ActionParser()]])
         super().__init__(extractor, None, **kwargs)
 
-    async def _setup(self) -> None:
-        if self._is_setup:
-            return
-        await self.extractor.setup()
-
-    async def _close(self) -> None:
-        await self.extractor.cleanup()
-
     def _get_initial_state(self) -> Dict[str, Any]:
         # State includes the board (9 cells), game_over flag, and winner info.
         return {
