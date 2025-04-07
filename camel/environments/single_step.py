@@ -23,6 +23,8 @@ from camel.verifiers.base import (
     VerificationResult,
 )
 
+from .models import Action, Observation, StepResult
+
 logger = get_logger(__name__)
 
 
