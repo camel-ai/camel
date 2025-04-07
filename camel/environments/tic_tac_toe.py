@@ -206,7 +206,7 @@ class TicTacToeEnv(MultiStepEnv):
         return Observation(question=obs, context={}, metadata={})
 
     async def compute_reward(self) -> Tuple[float, Dict[str, float]]:
-        # Simple reward: 1 for win, -1 for loss, 0 for draw or ongoing.
+        # Simple reward: 1 for win, 0 for loss, 0.5 for draw or ongoing.
         if self._state["game_over"]:
             if self._state["winner"] == "X":
                 return 1.0, {"win": 1.0}
@@ -214,6 +214,10 @@ class TicTacToeEnv(MultiStepEnv):
                 return 0.0, {"loss": 0.0}
             else:
                 return 0.5, {"draw": 0.5}
+        
+        elif self._state["last_move_illegal"]:
+            return 0.0, {"illegal_move": 0.0}
+
         else:
             board = self._state["board"]
             value = TicTacToeEnv.evaluate_position_for_x(board, is_x_turn=True)

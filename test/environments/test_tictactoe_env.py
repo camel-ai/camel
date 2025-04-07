@@ -42,22 +42,20 @@ async def test_setup_and_reset():
 
 
 # --- Step Tests: Moves ---
-
-
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "move, expected_behavior",
+    "input_move, expected_behavior",
     [
         ("5", "valid"),
         ("10", "invalid_move"),
         ("-1", "invalid_input"),
     ],
 )
-async def test_moves(move, expected_behavior):
+async def test_moves(input_move, expected_behavior):
     env = TicTacToeEnv()
     await env.setup()
     await env.reset()
-    action = Action(llm_response=f"<Action>{move}</Action>")
+    action = Action(llm_response=f"<Action>{input_move}</Action>")
 
     if expected_behavior == "invalid_input":
         with pytest.raises(ValueError):
@@ -68,17 +66,19 @@ async def test_moves(move, expected_behavior):
         if expected_behavior == "invalid_move":
             assert state["board"] == [" " for _ in range(9)]
             assert state["last_move_illegal"] is True
+            assert reward == 0.0
         else:
-            move_index = int(move) - 1
+            move_index = int(input_move) - 1
             assert state["board"][move_index] == "X"
-            # Because the opponent also plays, expect one O on board.
             assert state["board"].count("X") == 1
             assert state["board"].count("O") == 1
             assert state["last_move_illegal"] is False
-        assert reward == 0.0
+
+            expected = TicTacToeEnv.evaluate_position_for_x(state["board"], is_x_turn=True)
+            assert reward == expected
+
         assert done is False
     await env.close()
-
 
 @pytest.mark.asyncio
 async def test_move_occupied():
@@ -305,7 +305,7 @@ async def test_step_errors():
 # --- Full test ---
 @pytest.mark.asyncio
 async def test_full_game():
-    """Test a full game sequence leading to X win."""
+    """Test a full game sequence with intermediate reward shaping."""
     env = TicTacToeEnv()
     await env.setup()
     await env.reset()
@@ -315,11 +315,19 @@ async def test_full_game():
         obs, reward, done, info = await env.step(
             Action(llm_response=f"<Action>{move}</Action>")
         )
-        if i < len(moves) - 1:
-            assert done is False
-            assert reward == 0.0
+        if done:
+            winner = env._state["winner"]
+            if winner == "X":
+                assert reward == 1.0
+            elif winner == "O":
+                assert reward == 0.0
+            elif winner == "draw":
+                assert reward == 0.5
         else:
-            assert done is True
-            assert reward == 0.0
-            assert env._state["winner"] == "O"
+            # NEW: Validate reward matches optimal X evaluation
+            expected = TicTacToeEnv.evaluate_position_for_x(env._state["board"], is_x_turn=True)
+            assert reward == expected
+            assert 0.0 <= reward <= 1.0
+            assert done is False
+
     await env.close()
