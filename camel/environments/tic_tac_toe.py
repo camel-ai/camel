@@ -156,9 +156,12 @@ class TicTacToeEnv(MultiStepEnv):
             else:
                 return 0.5, {"draw": 0.5}
         else:
-            # Look ahead: simulate all outcomes from this state with optimal play
+            # Look ahead: simulate all outcomes from this state
+            # with optimal play
             board = self._state["board"]
-            x_win_count, total_leaves = self._count_x_winning_paths(board, is_x_turn=True)
+            x_win_count, total_leaves = self._count_x_winning_paths(
+                board, is_x_turn=True
+            )
 
             if total_leaves == 0:
                 reward = 0.0
@@ -203,7 +206,6 @@ class TicTacToeEnv(MultiStepEnv):
                     x_wins = min(x_wins, wins)
 
         return x_wins, total
-
 
     def _is_done(self) -> bool:
         return self._state["game_over"]

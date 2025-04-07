@@ -85,7 +85,9 @@ async def test_move_occupied():
     await env.setup()
     await env.reset()
     await env.step(Action(llm_response="<Action>1</Action>"))
-    obs, reward, done, info = await env.step(Action(llm_response="<Action>1</Action>"))
+    obs, reward, done, info = await env.step(
+        Action(llm_response="<Action>1</Action>")
+    )
     state = env._state
     assert state["last_move_illegal"] is True
     assert state["board"][0] == "X"
@@ -123,7 +125,9 @@ async def test_agent_wins():
     await env.setup()
     await env.reset()
     env._state["board"] = ["X", "X", " ", "O", "O", " ", " ", " ", " "]
-    obs, reward, done, info = await env.step(Action(llm_response="<Action>3</Action>"))
+    obs, reward, done, info = await env.step(
+        Action(llm_response="<Action>3</Action>")
+    )
     state = env._state
     assert state["board"] == ["X", "X", "X", "O", "O", " ", " ", " ", " "]
     assert state["game_over"] is True
@@ -141,7 +145,9 @@ async def test_opponent_wins():
     await env.setup()
     await env.reset()
     env._state["board"] = ["O", " ", "O", "X", "X", " ", " ", " ", " "]
-    obs, reward, done, info = await env.step(Action(llm_response="<Action>7</Action>"))
+    obs, reward, done, info = await env.step(
+        Action(llm_response="<Action>7</Action>")
+    )
     state = env._state
     assert state["board"][1] == "O"  # Opponent places 'O' to win
     assert state["game_over"] is True
@@ -159,7 +165,9 @@ async def test_draw():
     await env.setup()
     await env.reset()
     env._state["board"] = ["X", "O", "X", "O", "O", "X", "X", " ", "O"]
-    obs, reward, done, info = await env.step(Action(llm_response="<Action>8</Action>"))
+    obs, reward, done, info = await env.step(
+        Action(llm_response="<Action>8</Action>")
+    )
     state = env._state
     assert state["board"] == ["X", "O", "X", "O", "O", "X", "X", "X", "O"]
     assert state["game_over"] is True

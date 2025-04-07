@@ -134,7 +134,9 @@ class MultiStepEnv(ABC):
 
         return observation
 
-    async def step(self, action: Action) -> Tuple[Observation, float, bool, Dict[str, Any]]:
+    async def step(
+        self, action: Action
+    ) -> Tuple[Observation, float, bool, Dict[str, Any]]:
         r"""Take a step in the environment using the given action.
 
         This method updates the environment state based on the LLM's response,

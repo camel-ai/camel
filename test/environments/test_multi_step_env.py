@@ -20,7 +20,6 @@ import pytest
 from camel.environments import (
     Action,
     Observation,
-    StepResult,
 )
 from camel.environments.multi_step import MultiStepEnv
 
@@ -161,11 +160,7 @@ async def test_multi_step_env_error_handling():
     await env_max_steps.reset()
     # First step should end the episode due to max_steps
     obs, reward, done, info = await env_max_steps.step(action)
-    assert (
-        done is True
-    ), "Episode should be done after reaching max_steps"
+    assert done is True, "Episode should be done after reaching max_steps"
     assert env_max_steps._current_step == 1, "Current step should be 1"
     assert env_max_steps.max_steps == 1, "Max steps should be 1"
-    assert (
-        obs.question == "Episode ended"
-    ), "Should reach terminal observation"
+    assert obs.question == "Episode ended", "Should reach terminal observation"
