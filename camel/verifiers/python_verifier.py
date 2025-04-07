@@ -51,6 +51,7 @@ class PythonVerifier(BaseVerifier):
         extractor: Optional[BaseExtractor] = None,
         timeout: Optional[float] = 30.0,
         required_packages: Optional[List[str]] = None,
+        enable_float_comparison: bool = False,
         float_tolerance: float = 1e-05,
         **kwargs,
     ):
@@ -64,6 +65,8 @@ class PythonVerifier(BaseVerifier):
             required_packages (Optional[List[str]], optional): A list of
                 packages to install in the virtual environment.
                 (default: :obj:`None`)
+            enable_float_comparison (bool, optional): Whether to enable float
+            comparison with tolerance. (default: :obj:`False`)
             float_tolerance (float, optional): The tolerance for floating point
             comparisons. (default: :obj:`1e-05`)
         """
@@ -71,6 +74,7 @@ class PythonVerifier(BaseVerifier):
         super().__init__(extractor=extractor, timeout=timeout, **kwargs)
         self.venv_path: Optional[str] = None
         self.required_packages = required_packages or []
+        self.enable_float_comparison = enable_float_comparison
         self.float_tolerance = float_tolerance
 
         if os.name == 'nt':  # Windows
@@ -136,6 +140,40 @@ class PythonVerifier(BaseVerifier):
                     shutil.rmtree(self.venv_path)
                     self.venv_path = None
                 raise
+
+    def _compare_values(self, sol_val, gt_val) -> bool:
+        r"""Compare values with optional float tolerance,
+            supporting nested structures.
+
+        Args:
+            sol_val: Solution value to compare
+            gt_val: Ground truth value to compare
+
+        Returns:
+            bool: True if values are equal
+        """
+        if isinstance(sol_val, list) and isinstance(gt_val, list):
+            if len(sol_val) != len(gt_val):
+                return False
+            return all(
+                self._compare_values(s, g) for s, g in zip(sol_val, gt_val)
+            )
+
+        if self.enable_float_comparison:
+            if (
+                isinstance(sol_val, float) and isinstance(gt_val, (int, float))
+            ) or (
+                isinstance(gt_val, float) and isinstance(sol_val, (int, float))
+            ):
+                try:
+                    return (
+                        abs(float(sol_val) - float(gt_val))
+                        <= self.float_tolerance
+                    )
+                except (TypeError, ValueError):
+                    return False
+
+        return sol_val == gt_val
 
     def _is_uv_environment(self) -> bool:
         r"""Detect whether the current Python runtime is managed by uv."""
@@ -277,40 +315,24 @@ class PythonVerifier(BaseVerifier):
                         error_message=f"Ground truth evaluation error: {e}",
                     )
 
-                # Direct float comparison after evaluation
-                if (
-                    isinstance(sol_val, float)
-                    and isinstance(gt_val, (int, float))
-                ) or (isinstance(gt_val, float) and isinstance(sol_val, int)):
-                    if (
-                        abs(float(sol_val) - float(gt_val))
-                        <= self.float_tolerance
-                    ):
-                        return VerificationResult(
-                            status=VerificationOutcome.SUCCESS,
-                            result=str(sol_val),
-                        )
-                    return VerificationResult(
-                        status=VerificationOutcome.FAILURE,
-                        result=str(sol_val),
-                        error_message=(
-                            "Floating point values not equal within tolerance:"
-                            f"{self.float_tolerance}, {sol_val} != {gt_val}"
-                        ),
-                    )
-                # Regular comparison for non-float values
-                if sol_val == gt_val:
+                if self._compare_values(sol_val, gt_val):
                     return VerificationResult(
                         status=VerificationOutcome.SUCCESS,
                         result=str(sol_val),
                     )
-                else:
-                    return VerificationResult(
-                        status=VerificationOutcome.FAILURE,
-                        result=str(sol_val),
-                        error_message="Output mismatch: "
-                        f"{sol_val} != {gt_val}",
-                    )
+                return VerificationResult(
+                    status=VerificationOutcome.FAILURE,
+                    result=str(sol_val),
+                    error_message=(
+                        "Values not equal"
+                        + (
+                            f" (with float tolerance {self.float_tolerance})"
+                            if self.enable_float_comparison
+                            else ""
+                        )
+                        + f": {sol_val} != {gt_val}"
+                    ),
+                )
             else:
                 return VerificationResult(
                     status=VerificationOutcome.SUCCESS,
