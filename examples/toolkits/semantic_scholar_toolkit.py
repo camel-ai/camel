@@ -138,7 +138,7 @@ result={'paperId': '649def34f8be52c8b66281af98ae884c09aef38b',
 ================================================================
 '''
 
-# Search papers thourgh related topic
+# Search papers through related topic
 usr_msg = """search 3 papers with topic related to
     'generative ai' from 2024 for me"""
 camel_agent.reset()
@@ -167,7 +167,7 @@ f0883cd9', 'title': 'A Chitchat on Using ChatGPT for Cheating',
 ================================================================
 '''
 
-# Search papers through realted topic and operator
+# Search papers through related topic and operator
 usr_msg = """search 2 papers with topic related to
     'ai and bio' from 2024 for me"""
 camel_agent.reset()
@@ -196,7 +196,7 @@ cholar.org/paper/00c8477a9cc28b85e4f6da13d2a889c94a955291',
 ================================================================
 '''
 
-# Recommand papers thorugh positive and negative paper id
+# Recommend papers through positive and negative paper id
 usr_msg = """recommend 2 papers with positive paper id
     of "02138d6d094d1e7511c157f0b1a3dd4e5b20ebee",
     "018f58247a20ec6b3256fd3119f57980a6f37748" and negative

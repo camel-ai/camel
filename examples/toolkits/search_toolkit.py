@@ -92,7 +92,7 @@ conditions in Tokyo.
 ===============================================================================
 """
 search_linkup_response = SearchToolkit().search_linkup(
-    query="Can you tell me which women were awared the Physics Nobel Prize",
+    query="Can you tell me which women were awarded the Physics Nobel Prize",
     depth="standard",
     output_type="searchResults",
 )
@@ -169,7 +169,7 @@ within other Nobel Prize categories here'}]}
 """
 
 search_linkup_response = SearchToolkit().search_linkup(
-    query="Can you tell me which women were awared the Physics Nobel Prize",
+    query="Can you tell me which women were awarded the Physics Nobel Prize",
     depth="standard",
     output_type="sourcedAnswer",
 )
@@ -203,7 +203,7 @@ class PersonInfo(BaseModel):
 
 
 search_linkup_response = SearchToolkit().search_linkup(
-    query="Can you tell me which women were awared the Physics Nobel Prize",
+    query="Can you tell me which women were awarded the Physics Nobel Prize",
     depth="standard",
     output_type="structured",
     structured_output_schema=PersonInfo,

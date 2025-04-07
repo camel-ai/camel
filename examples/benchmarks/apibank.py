@@ -43,7 +43,7 @@ level = 'level-1'
 # Run the benchmark
 result = benchmark.run(agent, level, api_test_enabled=True, subset=10)
 
-# The following steps are only for demostration purposes,
+# The following steps are only for demonstration purposes,
 # they have been integrated into the run method of the benchmark.
 # Get the first example of the test data
 example_test = list(benchmark._data.items())[0]  # type: ignore[assignment] # noqa: RUF015
