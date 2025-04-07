@@ -51,7 +51,6 @@ class PythonVerifier(BaseVerifier):
         extractor: Optional[BaseExtractor] = None,
         timeout: Optional[float] = 30.0,
         required_packages: Optional[List[str]] = None,
-        enable_float_comparison: bool = False,
         float_tolerance: Optional[float] = 1e-05,
         **kwargs,
     ):
@@ -72,7 +71,6 @@ class PythonVerifier(BaseVerifier):
         super().__init__(extractor=extractor, timeout=timeout, **kwargs)
         self.venv_path: Optional[str] = None
         self.required_packages = required_packages or []
-        self.enable_float_comparison = enable_float_comparison
         self.float_tolerance = float_tolerance
 
         if os.name == 'nt':  # Windows
@@ -279,47 +277,8 @@ class PythonVerifier(BaseVerifier):
                         error_message=f"Ground truth evaluation error: {e}",
                     )
 
-                # Handle lists recursively
-                if isinstance(sol_val, list) and isinstance(gt_val, list):
-                    if len(sol_val) != len(gt_val):
-                        equal = False
-                    else:
-                        equal = all(
-                            s == g
-                            if self.float_tolerance is None
-                            else abs(float(s) - float(g))
-                            <= self.float_tolerance
-                            if (
-                                (
-                                    isinstance(s, float)
-                                    and isinstance(g, (int, float))
-                                )
-                                or (
-                                    isinstance(g, float)
-                                    and isinstance(s, (int, float))
-                                )
-                            )
-                            else s == g
-                            for s, g in zip(sol_val, gt_val)
-                        )
-                # Handle float comparison if tolerance is set
-                elif self.float_tolerance is not None and (
-                    (
-                        isinstance(sol_val, float)
-                        and isinstance(gt_val, (int, float))
-                    )
-                    or (
-                        isinstance(gt_val, float)
-                        and isinstance(sol_val, (int, float))
-                    )
-                ):
-                    try:
-                        equal = (
-                            abs(float(sol_val) - float(gt_val))
-                            <= self.float_tolerance
-                        )
-                    except (TypeError, ValueError):
-                        equal = False
+                if self.float_tolerance is not None:
+                    equal = self._is_equal_with_tolerance(sol_val, gt_val)
                 else:
                     equal = sol_val == gt_val
 
@@ -328,19 +287,22 @@ class PythonVerifier(BaseVerifier):
                         status=VerificationOutcome.SUCCESS,
                         result=str(sol_val),
                     )
-                return VerificationResult(
-                    status=VerificationOutcome.FAILURE,
-                    result=str(sol_val),
-                    error_message=(
-                        "Values not equal"
-                        + (
-                            f" (with float tolerance {self.float_tolerance})"
-                            if self.float_tolerance is not None
-                            else ""
-                        )
-                        + f": {sol_val} != {gt_val}"
-                    ),
-                )
+                else:
+                    return VerificationResult(
+                        status=VerificationOutcome.FAILURE,
+                        result=str(sol_val),
+                        error_message=(
+                            "Values not equal"
+                            + (
+                                " (with float tolerance "
+                                f"{self.float_tolerance})"
+                                if self.float_tolerance is not None
+                                else ""
+                            )
+                            + f": {sol_val} != {gt_val}"
+                        ),
+                    )
+
             else:
                 return VerificationResult(
                     status=VerificationOutcome.SUCCESS,
@@ -390,17 +352,21 @@ class PythonVerifier(BaseVerifier):
                             error_message="Ground truth evaluation error:"
                             f"{e}",
                         )
-                    if sol_val == gt_val:
+                    if self.float_tolerance is not None:
+                        equal = self._is_equal_with_tolerance(sol_val, gt_val)
+                    else:
+                        equal = sol_val == gt_val
+
+                    if equal:
                         return VerificationResult(
-                            status=VerificationOutcome.SUCCESS,
-                            result=sol_out,
+                            status=VerificationOutcome.SUCCESS, result=sol_out
                         )
                     else:
                         return VerificationResult(
                             status=VerificationOutcome.FAILURE,
                             result=sol_out,
-                            error_message="Output mismatch: "
-                            f"{sol_val} != {gt_val}",
+                            error_message=f"Output mismatch: {sol_val} "
+                            f"!= {gt_val}",
                         )
                 else:
                     # Fallback: string comparison
@@ -513,3 +479,31 @@ class PythonVerifier(BaseVerifier):
                 return True
             except Exception:
                 return False
+
+    def _is_equal_with_tolerance(self, a, b) -> bool:
+        if self.float_tolerance is None:
+            raise RuntimeError(
+                "Can't compare with tolerance if tolerance is None."
+            )
+        if isinstance(a, (int, float)) and isinstance(b, (int, float)):
+            return abs(float(a) - float(b)) <= self.float_tolerance
+        if isinstance(a, list) and isinstance(b, list):
+            return len(a) == len(b) and all(
+                self._is_equal_with_tolerance(x, y) for x, y in zip(a, b)
+            )
+        if isinstance(a, tuple) and isinstance(b, tuple):
+            return len(a) == len(b) and all(
+                self._is_equal_with_tolerance(x, y) for x, y in zip(a, b)
+            )
+        if isinstance(a, set) and isinstance(b, set):
+            if len(a) != len(b):
+                return False
+            return all(
+                any(self._is_equal_with_tolerance(x, y) for y in b) for x in a
+            )
+        if isinstance(a, dict) and isinstance(b, dict):
+            if set(a.keys()) != set(b.keys()):
+                return False
+            return all(self._is_equal_with_tolerance(a[k], b[k]) for k in a)
+        logger.warning("Falling back to simple comparison without tolerance.")
+        return a == b  # fallback
