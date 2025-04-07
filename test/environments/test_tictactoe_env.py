@@ -62,7 +62,7 @@ async def test_moves(move, expected_behavior):
         with pytest.raises(ValueError):
             await env.step(action)
     else:
-        step_result = await env.step(action)
+        obs, reward, done, info = await env.step(action)
         state = env._state
         if expected_behavior == "invalid_move":
             assert state["board"] == [" " for _ in range(9)]
@@ -73,8 +73,8 @@ async def test_moves(move, expected_behavior):
             assert state["board"].count("X") == 1
             assert state["board"].count("O") == 1
             assert state["last_move_illegal"] is False
-        assert step_result.reward == 0.0
-        assert step_result.done is False
+        assert reward == 0.0
+        assert done is False
     await env.close()
 
 
@@ -85,13 +85,13 @@ async def test_move_occupied():
     await env.setup()
     await env.reset()
     await env.step(Action(llm_response="<Action>1</Action>"))
-    step_result = await env.step(Action(llm_response="<Action>1</Action>"))
+    obs, reward, done, info = await env.step(Action(llm_response="<Action>1</Action>"))
     state = env._state
     assert state["last_move_illegal"] is True
     assert state["board"][0] == "X"
-    assert step_result.reward == 0.0
-    assert step_result.done is False
-    assert "Your last move was illegal" in step_result.observation.question
+    assert reward == 0.0
+    assert done is False
+    assert "Your last move was illegal" in obs.question
     await env.close()
 
 
@@ -123,14 +123,14 @@ async def test_agent_wins():
     await env.setup()
     await env.reset()
     env._state["board"] = ["X", "X", " ", "O", "O", " ", " ", " ", " "]
-    step_result = await env.step(Action(llm_response="<Action>3</Action>"))
+    obs, reward, done, info = await env.step(Action(llm_response="<Action>3</Action>"))
     state = env._state
     assert state["board"] == ["X", "X", "X", "O", "O", " ", " ", " ", " "]
     assert state["game_over"] is True
     assert state["winner"] == "X"
-    assert step_result.reward == 1.0
-    assert step_result.done is True
-    assert "Congratulations, you won!" in step_result.observation.question
+    assert reward == 1.0
+    assert done is True
+    assert "Congratulations, you won!" in obs.question
     await env.close()
 
 
@@ -141,14 +141,14 @@ async def test_opponent_wins():
     await env.setup()
     await env.reset()
     env._state["board"] = ["O", " ", "O", "X", "X", " ", " ", " ", " "]
-    step_result = await env.step(Action(llm_response="<Action>7</Action>"))
+    obs, reward, done, info = await env.step(Action(llm_response="<Action>7</Action>"))
     state = env._state
     assert state["board"][1] == "O"  # Opponent places 'O' to win
     assert state["game_over"] is True
     assert state["winner"] == "O"
-    assert step_result.reward == -1.0
-    assert step_result.done is True
-    assert "Sorry, you lost!" in step_result.observation.question
+    assert reward == 0.0
+    assert done is True
+    assert "Sorry, you lost!" in obs.question
     await env.close()
 
 
@@ -159,14 +159,14 @@ async def test_draw():
     await env.setup()
     await env.reset()
     env._state["board"] = ["X", "O", "X", "O", "O", "X", "X", " ", "O"]
-    step_result = await env.step(Action(llm_response="<Action>8</Action>"))
+    obs, reward, done, info = await env.step(Action(llm_response="<Action>8</Action>"))
     state = env._state
     assert state["board"] == ["X", "O", "X", "O", "O", "X", "X", "X", "O"]
     assert state["game_over"] is True
     assert state["winner"] == "draw"
-    assert step_result.reward == 0.0
-    assert step_result.done is True
-    assert "It's a draw!" in step_result.observation.question
+    assert reward == 0.5
+    assert done is True
+    assert "It's a draw!" in obs.question
     await env.close()
 
 
@@ -247,14 +247,14 @@ async def test_full_game():
 
     moves = ["1", "2", "4"]
     for i, move in enumerate(moves):
-        step_result = await env.step(
+        obs, reward, done, info = await env.step(
             Action(llm_response=f"<Action>{move}</Action>")
         )
         if i < len(moves) - 1:
-            assert step_result.done is False
-            assert step_result.reward == 0.0
+            assert done is False
+            assert reward == 0.0
         else:
-            assert step_result.done is True
-            assert step_result.reward == -1.0
+            assert done is True
+            assert reward == 0.0
             assert env._state["winner"] == "O"
     await env.close()

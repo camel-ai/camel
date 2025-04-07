@@ -134,7 +134,7 @@ class MultiStepEnv(ABC):
 
         return observation
 
-    async def step(self, action: Action) -> StepResult:
+    async def step(self, action: Action) -> Tuple[Observation, float, bool, Dict[str, Any]]:
         r"""Take a step in the environment using the given action.
 
         This method updates the environment state based on the LLM's response,
@@ -159,7 +159,7 @@ class MultiStepEnv(ABC):
                 rewards_dict={},
                 done=True,
                 info={"reason": "max_steps_reached"},
-            )
+            ).as_tuple()
 
         if not self._is_setup:
             raise RuntimeError("Environment not set up. Call setup() first.")
@@ -204,7 +204,7 @@ class MultiStepEnv(ABC):
                 "step": self._current_step,
                 "state": self._state,  # Updated state
             },
-        )
+        ).as_tuple()
 
     @abstractmethod
     def _get_initial_state(self) -> Dict[str, Any]:
