@@ -496,34 +496,6 @@ class MCPToolkit(BaseToolkit):
             )
             all_servers.append(server)
 
-        # Process remote MCP web servers
-        mcp_web_servers = data.get("mcpWebServers", {})
-        if not isinstance(mcp_web_servers, dict):
-            logger.warning("'mcpWebServers' is not a dictionary, skipping...")
-            mcp_web_servers = {}
-
-        for name, cfg in mcp_web_servers.items():
-            if not isinstance(cfg, dict):
-                logger.warning(
-                    f"Configuration for web server '{name}' must"
-                    "be a dictionary"
-                )
-                continue
-
-            if "url" not in cfg:
-                logger.warning(
-                    f"Missing required 'url' field for web server '{name}'"
-                )
-                continue
-
-            server = MCPClient(
-                command_or_url=cfg["url"],
-                timeout=cfg.get("timeout", None),
-                headers=cfg.get("headers", {}),
-            )
-            all_servers.append(server)
-        assert len(all_servers) > 0, "No servers found in the configuration"
-
         return all_servers
 
     async def connect(self):
