@@ -72,9 +72,8 @@ class MultiStepEnv(ABC):
             logger.error(f'Failed to setup environment: {e}')
             raise
 
-    @abstractmethod
     async def _setup(self) -> None:
-        pass
+        return
 
     async def close(self) -> None:
         r"""Clean up and close all resources used by the environment.
@@ -99,9 +98,8 @@ class MultiStepEnv(ABC):
             logger.error(f'Failed to teardown environment: {e}')
             raise
 
-    @abstractmethod
     async def _close(self) -> None:
-        pass
+        return
 
     async def reset(self) -> Observation:
         r"""Reset the environment to an initial state.
@@ -200,7 +198,7 @@ class MultiStepEnv(ABC):
             rewards_dict=rewards_dict,
             done=done,
             info={
-                "extraction_result": self.extractor.extract(
+                "extraction_result": await self.extractor.extract(
                     action.llm_response
                 ),
                 "step": self._current_step,
