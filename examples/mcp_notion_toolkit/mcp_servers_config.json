@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "arxiv_toolkit": {
+    "notion_toolkit": {
       "command": "python",
       "args": [
         "-m",
