@@ -272,6 +272,25 @@ class PythonVerifier(BaseVerifier):
                         result="",
                         error_message=f"Ground truth evaluation error: {e}",
                     )
+
+                # Direct float comparison after evaluation
+                if isinstance(sol_val, float) or isinstance(gt_val, float):
+                    if abs(
+                        float(sol_val) - float(gt_val)
+                    ) <= 1e-08 + 1e-05 * abs(float(gt_val)):
+                        return VerificationResult(
+                            status=VerificationOutcome.SUCCESS,
+                            result=str(sol_val),
+                        )
+                    return VerificationResult(
+                        status=VerificationOutcome.FAILURE,
+                        result=str(sol_val),
+                        error_message=(
+                            f"Floating point values not equal within tolerance"
+                            f"{sol_val} != {gt_val}"
+                        ),
+                    )
+                # Regular comparison for non-float values
                 if sol_val == gt_val:
                     return VerificationResult(
                         status=VerificationOutcome.SUCCESS,
