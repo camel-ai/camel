@@ -533,7 +533,7 @@ class PhysicsVerifier(PythonVerifier):
                         )
             
             if self.unit_parser.unit_is_none(gt_unit):
-                # If the answer is dimensionless, the reponse should also be dimensionless
+                # If the answer is dimensionless, the response should also be dimensionless
                 unit_match = self.unit_parser.unit_is_none(sol_unit)
             elif sol_unit_expr is None or gt_unit_expr is None:
                 unit_match = False

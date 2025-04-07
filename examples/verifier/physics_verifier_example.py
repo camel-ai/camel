@@ -83,7 +83,7 @@ print(f"Result: {result}") # should pass
 result = asyncio.run(
     verifier.verify(solution=numpy_test_code, reference_answer="40")
 )
-print(f"Result: {result}") # shoud fail
+print(f"Result: {result}") # should fail
 
 # A simple physics test case with same value and unit for solutoin and reference answer
 result = asyncio.run(
