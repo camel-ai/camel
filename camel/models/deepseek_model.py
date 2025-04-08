@@ -145,7 +145,11 @@ class DeepSeekModel(BaseModelBackend):
                 for key, value in request_config.items()
                 if key not in REASONSER_UNSUPPORTED_PARAMS
             }
+        import copy
 
+        request_config = copy.deepcopy(self.model_config_dict)
+        # Remove strict from each tool's function parameters since DeepSeek
+        # does not support them
         if tools:
             for tool in tools:
                 function_dict = tool.get('function', {})
