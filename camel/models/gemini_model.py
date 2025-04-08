@@ -172,8 +172,11 @@ class GeminiModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        request_config = self.model_config_dict.copy()
+        import copy
 
+        request_config = copy.deepcopy(self.model_config_dict)
+        # Remove strict and anyOf from each tool's function parameters since
+        # Gemini does not support them
         if tools:
             for tool in tools:
                 function_dict = tool.get('function', {})
@@ -209,8 +212,11 @@ class GeminiModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-        request_config = self.model_config_dict.copy()
+        import copy
 
+        request_config = copy.deepcopy(self.model_config_dict)
+        # Remove strict and anyOf from each tool's function parameters since
+        # Gemini does not support them
         if tools:
             for tool in tools:
                 function_dict = tool.get('function', {})

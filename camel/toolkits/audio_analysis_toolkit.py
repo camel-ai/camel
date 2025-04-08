@@ -23,6 +23,7 @@ from camel.messages import BaseMessage
 from camel.models import BaseAudioModel, BaseModelBackend, OpenAIAudioModels
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
+from camel.utils import MCPServer
 
 logger = get_logger(__name__)
 
@@ -80,6 +81,7 @@ def download_file(url: str, cache_dir: str) -> str:
     return local_path
 
 
+@MCPServer()
 class AudioAnalysisToolkit(BaseToolkit):
     r"""A toolkit for audio processing and analysis.
 
