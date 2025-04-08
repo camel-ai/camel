@@ -51,7 +51,7 @@ class PythonVerifier(BaseVerifier):
         extractor: Optional[BaseExtractor] = None,
         timeout: Optional[float] = 30.0,
         required_packages: Optional[List[str]] = None,
-        float_tolerance: Optional[float] = 1e-05,
+        float_tolerance: Optional[float] = None,
         **kwargs,
     ):
         r"""Initializes the PythonVerifier.
@@ -65,7 +65,7 @@ class PythonVerifier(BaseVerifier):
                 packages to install in the virtual environment.
                 (default: :obj:`None`)
             float_tolerance (Optional[float], optional): The tolerance for
-                floating point comparisons. (default: :obj:`1e-05`)
+                floating point comparisons. (default: :obj:`None`)
         """
         # TODO: Use CAMEL's Interpreter to execute the code
         super().__init__(extractor=extractor, timeout=timeout, **kwargs)
