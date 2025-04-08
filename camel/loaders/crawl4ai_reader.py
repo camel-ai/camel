@@ -14,15 +14,11 @@
 
 import asyncio
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
-from dotenv import load_dotenv
 from pydantic import BaseModel, ValidationError
 
-from camel.utils import api_keys_required
-
 logger = logging.getLogger(__name__)
-load_dotenv()
 
 
 class Crawl4AI:
@@ -31,9 +27,6 @@ class Crawl4AI:
     This class uses asynchronous crawling with CSS selectors or LLM-based
     extraction to convert entire websites into structured data.
 
-    Args:
-        None: No parameters are required for initialization.
-
     References:
         https://docs.crawl4ai.com/
     """
@@ -41,7 +34,7 @@ class Crawl4AI:
     def __init__(self) -> None:
         from crawl4ai import AsyncWebCrawler
 
-        self.crawler = AsyncWebCrawler
+        self.crawler_class = AsyncWebCrawler
 
     async def _run_crawler(self, url: str, **kwargs) -> Any:
         r"""Run the asynchronous web crawler on a given URL.
@@ -58,7 +51,7 @@ class Crawl4AI:
         """
 
         try:
-            async with self.crawler() as c:
+            async with self.crawler_class() as c:
                 return await c.arun(url, **kwargs)
         except Exception as e:
             logger.error("Crawler run failed: %s", e)
@@ -76,9 +69,9 @@ class Crawl4AI:
         Args:
             start_url (str): URL to start crawling from.
             max_depth (int, optional): Maximum depth of links to follow
-                (default: 1).
+                (default: :obj:`1`)
             extraction_strategy (ExtractionStrategy, optional): Strategy
-                for data extraction.
+                for data extraction. (default: :obj:`None`)
             **kwargs: Additional arguments for crawler configuration.
 
         Returns:
@@ -89,8 +82,8 @@ class Crawl4AI:
         """
 
         all_results: List[Dict[str, Any]] = []
-        visited_urls: set[str] = set()
-        queue: asyncio.Queue[tuple[str, int]] = asyncio.Queue()
+        visited_urls: Set[str] = set()
+        queue: asyncio.Queue = asyncio.Queue()
 
         await queue.put((start_url, 1))
         visited_urls.add(start_url)
@@ -114,7 +107,10 @@ class Crawl4AI:
                 if depth < max_depth and result.links:
                     for _, links in result.links.items():
                         for link in links:
-                            if link['href'] not in visited_urls:
+                            if (
+                                'href' in link
+                                and link['href'] not in visited_urls
+                            ):
                                 visited_urls.add(link['href'])
                                 await queue.put((link['href'], depth + 1))
 
@@ -139,7 +135,7 @@ class Crawl4AI:
         Args:
             url (str): URL to scrape.
             extraction_strategy (ExtractionStrategy, optional): Extraction
-                strategy to use.
+                strategy to use. (default: :obj:`None`)
             **kwargs: Additional arguments for crawler configuration.
 
         Returns:
@@ -161,15 +157,6 @@ class Crawl4AI:
             "links": result.links,
         }
 
-    @api_keys_required(
-        [
-            # ("api_key", "ANTHROPIC_API_KEY"),
-            # ("api_key", "DEEPSEEK_API_KEY"),
-            # ("api_key", "GEMINI_API_KEY"),
-            # ("api_key", "GROQ_API_KEY"),
-            ("api_key", "OPENAI_API_KEY"),
-        ]
-    )
     async def structured_scrape(
         self,
         url: str,
@@ -185,9 +172,9 @@ class Crawl4AI:
             response_format (BaseModel): Model defining the expected output
                 schema.
             api_key (str, optional): API key for the LLM provider
-                (default: "no-token").
+                (default: :obj:`None`).
             llm_provider (str, optional): Identifier for the LLM provider
-                (default: 'ollama/llama3').
+                (default: :obj:`'ollama/llama3'`).
             **kwargs: Additional arguments for crawler configuration.
 
         Returns:
@@ -222,11 +209,11 @@ class Crawl4AI:
         except Exception as e:
             raise RuntimeError(e) from e
 
-    async def map_site(self, url: str, **kwargs) -> List[str]:
+    async def map_site(self, start_url: str, **kwargs) -> List[str]:
         r"""Map a website by extracting all accessible URLs.
 
         Args:
-            url (str): Starting URL to map.
+            start_url (str): Starting URL to map.
             **kwargs: Additional configuration arguments.
 
         Returns:
@@ -237,7 +224,7 @@ class Crawl4AI:
         """
 
         try:
-            result = await self.crawl(url, **kwargs)
+            result = await self.crawl(start_url, **kwargs)
             return [page["url"] for page in result]
         except Exception as e:
             raise RuntimeError(f"Failed to map url: {e}") from e
