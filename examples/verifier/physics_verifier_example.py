@@ -75,6 +75,21 @@ unit="m/s"
 print(f"{result} {unit}")
 """
 
+dollar_enclosed_units_test_code = r"""
+import sympy as sp
+Q = sp.symbols('Q')
+q1 = 6.0e-6   # +6.0 μC at x = 8.0 m
+q2 = -4.0e-6  # -4.0 μC at x = 16.0 m
+x1 = 8.0
+x2 = 16.0
+x3 = 24.0
+eqn = sp.Eq(q1/x1**2 + q2/x2**2 + Q/x3**2, 0)
+solution = sp.solve(eqn, Q)
+result = solution[0] * 1e6
+unit="$\\mu \\mathrm{C}$"
+print(f"{result} {unit}")
+"""
+
 # Make sure PhysicsVerifier works for test cases for pythonVerifier
 result = asyncio.run(
     verifier.verify(solution=numpy_test_code, reference_answer="32 ")
@@ -107,6 +122,12 @@ print(f"Result: {result}")
 # The verifier should convert the answer to km/s.
 result = asyncio.run(
     verifier.verify(solution=conversion_test_code, reference_answer="0.47 km/s")
+)
+print(f"Result: {result}")
+
+# The units are enclosed by dollar signs with spacing in between
+result = asyncio.run(
+    verifier.verify(solution=dollar_enclosed_units_test_code, reference_answer="-45 $\\mu \\mathrm{C}$")
 )
 print(f"Result: {result}")
 

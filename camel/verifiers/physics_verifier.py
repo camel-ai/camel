@@ -184,7 +184,7 @@ class UnitParser:
         if isinstance(unit_str, str):
             unit_str = unit_str.strip().lower()
 
-            if unit_str == 'none' or unit_str == '' or unit_str == 'dimensionless':
+            if unit_str in ['none', '', 'dimensionless', 'unitless']:
                 return True
             
         return False
@@ -266,13 +266,28 @@ class PhysicsVerifier(PythonVerifier):
     def _split_value_unit(s):
         """
         Split a string into value and unit components.
+        Handles LaTeX-style units enclosed in dollar signs.
         
         Parameters:
             s (str): The input string
-            
+                
         Returns:
             Tuple of (value, unit) as strings
         """
+        # Check if we have a LaTeX unit at the end (pattern: $ followed by anything up to $)
+        if s.split(' ')[-1] == '':
+            return s.strip(), ''
+
+        latex_unit_match = re.search(r'\s(\$[^$]*\$)$', s)
+        
+        if latex_unit_match:
+            # Extract the LaTeX unit part
+            unit = latex_unit_match.group(1)
+            # Remove the unit part from the original string to get the value
+            value = s[:latex_unit_match.start()].strip()
+            return value, unit
+        
+        # If no LaTeX unit, fall back to the original logic
         parts = s.split(' ')
         if len(parts) == 1:
             return parts[0], ''
@@ -306,7 +321,7 @@ class PhysicsVerifier(PythonVerifier):
         answer = re.sub(r'\\mathrm\{([^}]*)\}', r'\1', answer)
         
         # Remove other common LaTeX formatting
-        answer = answer.replace('\\', '')
+        # answer = answer.replace('\\', '')
         
         return answer
 
@@ -315,16 +330,16 @@ class PhysicsVerifier(PythonVerifier):
         expr = expr.lstrip("$").rstrip("$")
 
         try:
-            expr = parse_expr(expr, local_dict={'pi': sp.Symbol('pi'), 'e': sp.Symbol('e')})
+            expr = parse_expr(expr)
         except:
             try:
-                expr = parse_latex(expr.replace('pi', '\pi'))
+                expr = parse_latex(expr)
             except Exception as e:
                 raise ValueError(f"Failed to parse ground truth expression: {e}")
         
         expr = expr.subs({
             sp.Symbol('pi'): sp.pi,
-            sp.Symbol('e'): sp.E
+            sp.Symbol('e'): sp.E,
         })
         return expr
         
@@ -347,15 +362,15 @@ class PhysicsVerifier(PythonVerifier):
 
         if '.' in significant_part:
             decimal_places = len(significant_part.split('.')[1])
-            rel_tol = abs(round(0.5 * 10 ** (exponent-decimal_places) / factor, 2))
+            rel_tol = abs(round(10 ** (exponent-decimal_places) / factor, 2))
         else:
-            rel_tol = abs(round(0.5 * 10 ** exponent / factor, 2))
+            rel_tol = abs(round(10 ** exponent / factor, 2))
 
         #limit the maximum tolerance to (0.01, 0.1)
         rel_tol = min(rel_tol, 0.1)
         rel_tol = max(rel_tol, 0.01)
 
-        logger.info(f"Detected tolerance based on scientific notation: {rel_tol}")
+        logger.info(f"Detected tolerance: {rel_tol}")
         
         return rel_tol
 
@@ -440,14 +455,24 @@ class PhysicsVerifier(PythonVerifier):
 
         # Handle Equalities
         if isinstance (sol_expr, sp.Eq) and isinstance(gt_expr, sp.Eq):
-            diff = sp.simplify(sol_expr.rhs - gt_expr.rhs)
+            sol_expr = sp.simplify(sol_expr.rhs)
+            gt_expr = sp.simplify(gt_expr.rhs)
         elif not isinstance(sol_expr, sp.Eq) and not isinstance(gt_expr, sp.Eq):
-            diff = sp.simplify(sol_expr - gt_expr)
+            sol_expr = sp.simplify(sol_expr)
+            gt_expr = sp.simplify(gt_expr)
         else:
             raise ValueError(f"Cannot compare an equation with a non-equation directly: {sol_expr}, {gt_expr}")
-            
-        logger.info(f'Difference after simplification: {diff}')
-        return math.isclose(diff, 0, rel_tol=self.tolerance)
+
+        try:
+            sol_value = sol_expr if isinstance(sol_expr, (int, float, sp.Number)) else sol_expr.evalf()
+            gt_value = gt_expr if isinstance(gt_expr, (int, float, sp.Number)) else gt_expr.evalf()
+            return math.isclose(sol_value, gt_value, rel_tol=self.tolerance)
+        except:
+            try:
+                return math.isclose(sol_expr, gt_expr, rel_tol=self.tolerance)
+            except:
+                return sol_expr == gt_expr
+
 
     async def _verify_implementation(
         self, solution: str, reference_answer: Optional[str]
@@ -489,7 +514,7 @@ class PhysicsVerifier(PythonVerifier):
 
             gt_value, gt_unit = self._split_value_unit(reference_answer)
 
-            if self.unit_parser.unit_is_none(gt_unit):
+            if gt_unit == '':
                 sol_value, sol_unit = sol_out, ''
             else:
                 sol_value, sol_unit = self._split_value_unit(sol_out)
@@ -498,7 +523,7 @@ class PhysicsVerifier(PythonVerifier):
 
             logger.info(f'Solution value: {sol_value}; Ground truth value: {gt_value}')  
 
-            if self.unit_parser.unit_is_none(gt_unit):
+            if self.unit_parser.unit_is_none(gt_unit) and self.unit_parser.unit_is_none(sol_unit):
                 gt_unit_expr, sol_unit_expr = None, None
             else:
                 gt_unit_expr = self.unit_parser.parse_unit(gt_unit)
