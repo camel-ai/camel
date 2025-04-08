@@ -48,7 +48,9 @@ async def test_python_verifier_execution_success(python_verifier):
     await python_verifier.setup(uv=True)
 
     script = 'print("Hello, World!")'
-    result = await python_verifier.verify(solution=script, ground_truth=None)
+    result = await python_verifier.verify(
+        solution=script, reference_answer=None
+    )
     assert result.status == VerificationOutcome.SUCCESS
     assert result.result == "Hello, World!"
 
@@ -62,7 +64,7 @@ async def test_python_verifier_execution_failure(python_verifier):
 
     script = 'print("Hello"'  # Syntax error
     result = await python_verifier._verify_implementation(
-        solution=script, ground_truth=None
+        solution=script, reference_answer=None
     )
 
     assert result.status == VerificationOutcome.ERROR
@@ -79,7 +81,7 @@ async def test_python_verifier_execution_timeout(python_verifier):
 
     script = 'import time; time.sleep(5)'
     result = await python_verifier._verify_implementation(
-        solution=script, ground_truth=None
+        solution=script, reference_answer=None
     )
 
     assert result.status == VerificationOutcome.TIMEOUT
@@ -95,7 +97,7 @@ async def test_python_verifier_output_mismatch(python_verifier):
 
     script = 'print("Wrong output")'
     result = await python_verifier._verify_implementation(
-        solution=script, ground_truth="Expected output"
+        solution=script, reference_answer="Expected output"
     )
 
     assert result.status == VerificationOutcome.FAILURE
@@ -114,7 +116,7 @@ async def test_python_verifier_correct_output_matching(python_verifier):
 
     script = 'print("Expected output")'
     result = await python_verifier._verify_implementation(
-        solution=script, ground_truth="Expected output"
+        solution=script, reference_answer="Expected output"
     )
 
     assert result.status == VerificationOutcome.SUCCESS
@@ -129,7 +131,7 @@ async def test_python_verifier_no_venv_error():
     verifier = PythonVerifier()
     script = 'print("Hello")'
     result = await verifier._verify_implementation(
-        solution=script, ground_truth=None
+        solution=script, reference_answer=None
     )
 
     assert result.status == VerificationOutcome.ERROR
@@ -143,9 +145,97 @@ async def test_python_verifier_with_numpy(python_verifier):
 
     script = 'import numpy as np; print(np.array([1, 2, 3]))'
     result = await python_verifier._verify_implementation(
-        solution=script, ground_truth=None
+        solution=script, reference_answer=None
     )
 
     assert result.status == VerificationOutcome.SUCCESS
     assert "[1 2 3]" in result.result
     await python_verifier.cleanup()
+
+
+@pytest.mark.parametrize(
+    "a,b,tol,expected",
+    [
+        (0.123456, 0.123457, 1e-5, True),
+        (0.123456, 0.123467, 1e-5, False),
+        ([1.0, 2.0], [1.0, 2.000001], 1e-5, True),
+        ([1.0, 2.0], [1.0, 2.1], 1e-5, False),
+        ({'a': 1.0, 'b': 2.0}, {'a': 1.0000001, 'b': 2.0}, 1e-5, True),
+        ({'a': 1.0, 'b': 2.0}, {'a': 1.0001, 'b': 2.0}, 1e-5, False),
+        ((1.0, 2.0), (1.0, 2.000001), 1e-5, True),
+        ((1.0, 2.0), (1.0, 2.01), 1e-5, False),
+        ({1.0, 2.0}, {2.000001, 1.0}, 1e-5, True),
+        ({1.0, 2.0}, {2.1, 1.0}, 1e-5, False),
+        ({1.0, 1.000001}, {1.000002, 2.0}, 1e-5, False),
+        ({"x": [1.0, 2.0]}, {"x": [1.000001, 2.0]}, 1e-5, True),
+        ({"x": [1.0, 2.0]}, {"x": [1.1, 2.0]}, 1e-5, False),
+    ],
+)
+def test_is_equal_with_tolerance(a, b, tol, expected):
+    r"""Test the function calculating whether two floats are equal
+    given tolerance"""
+    verifier = PythonVerifier(float_tolerance=tol)
+    assert verifier._is_equal_with_tolerance(a, b) == expected
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "script,expected_output,tol,should_pass",
+    [
+        # Float scalar
+        ("0.123456", "0.123457", 1e-5, True),
+        ("0.123456", "0.123467", 1e-5, False),
+        # Lists
+        ("[1.0, 2.0]", "[1.0, 2.000001]", 1e-5, True),
+        ("[1.0, 2.0]", "[1.0, 2.1]", 1e-5, False),
+        # Dicts
+        ("{'a': 1.0, 'b': 2.0}", "{'a': 1.000001, 'b': 2.0}", 1e-5, True),
+        ("{'a': 1.0, 'b': 2.0}", "{'a': 1.1, 'b': 2.0}", 1e-5, False),
+        # Sets
+        ("{1.0, 2.0}", "{1.0, 2.000001}", 1e-5, True),
+        ("{1.0, 2.0}", "{1.0, 2.1}", 1e-5, False),
+        # Tuples
+        ("(1.0, 2.0)", "(1.0, 2.000001)", 1e-5, True),
+        ("(1.0, 2.0)", "(1.0, 2.1)", 1e-5, False),
+        # Mixed nesting
+        ("{'a': [1.0, 2.0]}", "{'a': [1.000001, 2.0]}", 1e-5, True),
+        ("{'a': [1.0, 2.0]}", "{'a': [1.1, 2.0]}", 1e-5, False),
+        # Same as above, but as code blocks
+        ("print(0.123456)", "0.123457", 1e-5, True),
+        ("print(0.123456)", "0.123467", 1e-5, False),
+        ("print([1.0, 2.0])", "[1.0, 2.000001]", 1e-5, True),
+        ("print([1.0, 2.0])", "[1.0, 2.1]", 1e-5, False),
+        (
+            "print({'a': 1.0, 'b': 2.0})",
+            "{'a': 1.000001, 'b': 2.0}",
+            1e-5,
+            True,
+        ),
+        ("print({'a': 1.0, 'b': 2.0})", "{'a': 1.1, 'b': 2.0}", 1e-5, False),
+        ("print({1.0, 2.0})", "{1.0, 2.000001}", 1e-5, True),
+        ("print({1.0, 2.0})", "{1.0, 2.1}", 1e-5, False),
+        # This test should fail with the simplified all(any(...)) logic
+        ("print({1.0, 1.000001})", "{1.000002, 2.0}", 1e-5, False),
+    ],
+)
+async def test_verify_with_float_tolerance(
+    script, expected_output, tol, should_pass
+):
+    r"""Test verifier end-to-end with float tolerance"""
+    verifier = PythonVerifier(float_tolerance=tol)
+    await verifier.setup(uv=True)
+
+    result = await verifier.verify(
+        solution=script, reference_answer=expected_output
+    )
+
+    if should_pass:
+        assert (
+            result.status == VerificationOutcome.SUCCESS
+        ), f"Expected success, got {result}"
+    else:
+        assert (
+            result.status == VerificationOutcome.FAILURE
+        ), f"Expected failure, got {result}"
+
+    await verifier.cleanup()

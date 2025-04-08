@@ -57,7 +57,7 @@ model = ModelFactory.create(
     model_config_dict=ChatGPTConfig().as_dict(),
 )
 
-# Define an assitant message
+# Define an assistant message
 system_msg = "You are a helpful assistant."
 
 # Initialize the agent

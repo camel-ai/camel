@@ -16,8 +16,10 @@ from typing import List
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
+from camel.utils import MCPServer
 
 
+@MCPServer()
 class MathToolkit(BaseToolkit):
     r"""A class representing a toolkit for mathematical operations.
 
