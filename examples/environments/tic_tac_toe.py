@@ -34,7 +34,9 @@ async def run_game():
             for move in TicTacToeEnv.available_moves(env._state["board"])
         ]
 
-        action = Action(llm_response=f"<Action> {random.choice(available_moves)}")
+        action = Action(
+            llm_response=f"<Action> {random.choice(available_moves)}"
+        )
         result = await env.step(action)
 
         observation, reward, done, info = result
@@ -45,7 +47,7 @@ async def run_game():
         print("Reward:", reward)
         print("Done:", done)
         print("Info:", info)
-    
+
     print("\n___________\n\nBoard at the end:\n")
     print(env.render_board(env._state["board"]), "\n")
     await env._close()
