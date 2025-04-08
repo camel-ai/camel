@@ -18,6 +18,7 @@ from .python_strategies import (
     PythonListStrategy,
     PythonSetStrategy,
     PythonTupleStrategy,
+    TicTacToeExtractorStrategy,
 )
 
 __all__ = [
@@ -28,4 +29,5 @@ __all__ = [
     "PythonDictStrategy",
     "PythonSetStrategy",
     "PythonTupleStrategy",
+    "TicTacToeExtractorStrategy",
 ]

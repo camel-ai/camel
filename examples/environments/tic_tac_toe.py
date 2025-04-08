@@ -16,12 +16,18 @@ import random
 
 from camel.environments import TicTacToeEnv
 from camel.environments.models import Action
+from camel.extractors import BaseExtractor, TicTacToeExtractorStrategy
 
 
 async def run_game():
-    env = TicTacToeEnv()
+    # Create and initialize the extractor explicitly
+    extractor = BaseExtractor(pipeline=[[TicTacToeExtractorStrategy()]])
+    await extractor.setup()
 
-    # Setup the environment (if needed)
+    # Pass the initialized extractor to the environment
+    env = TicTacToeEnv(extractor=extractor)
+
+    # Setup the environment
     await env._setup()
 
     # Initialize the game state

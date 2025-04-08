@@ -13,12 +13,37 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import ast
+import re
 from typing import Optional
 
 from camel.extractors.base import BaseExtractorStrategy
 from camel.logger import get_logger
 
 logger = get_logger(__name__)
+
+
+class TicTacToeExtractorStrategy(BaseExtractorStrategy):
+    r"""A strategy for extracting Tic Tac Toe actions from text."""
+
+    async def extract(self, text: str) -> Optional[str]:
+        r"""Extract a valid Tic Tac Toe move from text.
+
+        Looks for a pattern '<Action> n' where n is a digit between 1 and 9.
+
+        Args:
+            text (str): The text to extract the action from.
+
+        Returns:
+            Optional[str]: The extracted move as a string, or None if no valid
+                move is found.
+        """
+        match = re.search(r"<Action>\s*(\d+)", text)
+        if match:
+            move = match.group(1)
+            # Validate that the move is in range 1-9
+            if move.isdigit() and 1 <= int(move) <= 9:
+                return move
+        return None
 
 
 class BoxedStrategy(BaseExtractorStrategy):
