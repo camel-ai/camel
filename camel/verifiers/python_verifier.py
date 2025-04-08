@@ -482,7 +482,7 @@ class PythonVerifier(BaseVerifier):
 
     def _is_equal_with_tolerance(self, a, b) -> bool:
         r"""Compares two Python objects for equality with optional float
-            tolerance.
+        tolerance.
 
         This method recursively compares nested structures (lists, tuples,
         sets, and dictionaries) and applies floating point tolerance when
@@ -495,7 +495,7 @@ class PythonVerifier(BaseVerifier):
 
         Returns:
             bool: True if the values are considered equal within the
-            specified float tolerance; False otherwise.
+                specified float tolerance; False otherwise.
 
         Raises:
             RuntimeError: If float tolerance is not set (i.e., None).
