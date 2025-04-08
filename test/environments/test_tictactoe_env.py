@@ -57,29 +57,31 @@ async def test_moves(input_move, expected_behavior):
     await env.reset()
     action = Action(llm_response=f"<Action>{input_move}</Action>")
 
-    if expected_behavior == "invalid_input":
-        with pytest.raises(ValueError):
-            await env.step(action)
+    obs, reward, done, info = await env.step(action)
+    state = env._state
+
+    if (
+        expected_behavior == "invalid_input"
+        or expected_behavior == "invalid_move"
+    ):
+        assert state["board"] == [" " for _ in range(9)]
+        assert state["last_move_illegal"] is True
+        assert reward == 0.0
+        if expected_behavior == "invalid_input":
+            assert state["extraction_error"] is not None
     else:
-        obs, reward, done, info = await env.step(action)
-        state = env._state
-        if expected_behavior == "invalid_move":
-            assert state["board"] == [" " for _ in range(9)]
-            assert state["last_move_illegal"] is True
-            assert reward == 0.0
-        else:
-            move_index = int(input_move) - 1
-            assert state["board"][move_index] == "X"
-            assert state["board"].count("X") == 1
-            assert state["board"].count("O") == 1
-            assert state["last_move_illegal"] is False
+        move_index = int(input_move) - 1
+        assert state["board"][move_index] == "X"
+        assert state["board"].count("X") == 1
+        assert state["board"].count("O") == 1
+        assert state["last_move_illegal"] is False
 
-            expected = TicTacToeEnv.evaluate_position_for_x(
-                state["board"], is_x_turn=True
-            )
-            assert reward == expected
+        expected = TicTacToeEnv.evaluate_position_for_x(
+            state["board"], is_x_turn=True
+        )
+        assert reward == expected
 
-        assert done is False
+    assert done is False
     await env.close()
 
 
@@ -115,8 +117,15 @@ async def test_invalid_inputs(invalid_input):
     await env.setup()
     await env.reset()
     action = Action(llm_response=invalid_input)
-    with pytest.raises(ValueError):
-        await env.step(action)
+
+    obs, reward, done, info = await env.step(action)
+    state = env._state
+
+    assert state["last_move_illegal"] is True
+    assert state["extraction_error"] is not None or invalid_input == "5"
+    assert reward == 0.0
+    assert done is False
+
     await env.close()
 
 

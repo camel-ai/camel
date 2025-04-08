@@ -20,47 +20,34 @@ from camel.environments.models import Action
 
 async def run_game():
     env = TicTacToeEnv()
+    # Initialize and set up the environment
+    await env.setup()
 
-    # Setup the environment (if needed)
-    await env._setup()
-
-    # Initialize the game state
-    env._state = env._get_initial_state()
-    observation = env._get_next_observation()
+    # Reset environment and get initial observation
+    observation = await env.reset()
+    print("Initial Observation:\n")
     print(observation.question)
 
-    while not env._is_done():
-        board = env._state["board"]
+    while not env.is_done():
+        available_moves = [
+            move + 1
+            for move in TicTacToeEnv.available_moves(env._state["board"])
+        ]
 
-        available = env.available_moves(board)
-        if not available:
-            break
+        action = Action(llm_response=f"<Action> {random.choice(available_moves)}")
+        result = await env.step(action)
 
-        chosen_move = random.choice(available) + 1
-        print(f"\nPlayer (X) selects move: {chosen_move}")
+        observation, reward, done, info = result
 
-        action = Action(
-            problem_statement="",
-            llm_response="<Action>" + str(chosen_move),
-            metadata={},
-        )
-
-        # Update the game state with the chosen move.
-        await env._update_state(action)
-
-        # Print the board after the move.
-        # If the game ended, print terminal observation.
-        if env._is_done():
-            observation = env._get_terminal_observation()
-        else:
-            observation = env._get_next_observation()
+        print("\nAgent Move:", action)
+        print("Observation:")
         print(observation.question)
-
-    # Compute and display the reward for the game outcome.
-    reward, info = await env.compute_reward()
-    print(f"\nGame over with reward: {reward} and info: {info}")
-
-    # Close the environment (if needed)
+        print("Reward:", reward)
+        print("Done:", done)
+        print("Info:", info)
+    
+    print("\n___________\n\nBoard at the end:\n")
+    print(env.render_board(env._state["board"]), "\n")
     await env._close()
 
 
