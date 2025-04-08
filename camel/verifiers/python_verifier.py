@@ -65,7 +65,7 @@ class PythonVerifier(BaseVerifier):
                 packages to install in the virtual environment.
                 (default: :obj:`None`)
             float_tolerance (Optional[float], optional): The tolerance for
-            floating point comparisons. (default: :obj:`1e-05`)
+                floating point comparisons. (default: :obj:`1e-05`)
         """
         # TODO: Use CAMEL's Interpreter to execute the code
         super().__init__(extractor=extractor, timeout=timeout, **kwargs)
