@@ -42,7 +42,7 @@ URL = "https://example.com"
 def test_init():
     crawler = Crawl4AI()
     # Verify that the crawler attribute is set to AsyncWebCrawler
-    assert crawler.crawler is not None
+    assert crawler.crawl is not None
 
 
 @pytest.mark.asyncio
