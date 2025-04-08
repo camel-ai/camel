@@ -322,8 +322,8 @@ print(response.msgs[0].content)
 
 # Example using Exa search
 exa_response = SearchToolkit().search_exa(
-    query="What is Camel-ai?",
-    category="company",
+    query="What is CAMEL-AI?",
+    category="github",
     num_results=1,
     text=True,
 )
