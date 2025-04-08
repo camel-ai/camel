@@ -974,7 +974,6 @@ class SearchToolkit(BaseToolkit):
         r"""Use Exa search API to perform intelligent web search with optional
         content extraction.
 
-
         Args:
             query (str): The search query string.
             search_type (Literal["auto", "neural", "keyword"]): The type of
