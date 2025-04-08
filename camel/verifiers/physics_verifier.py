@@ -331,8 +331,6 @@ class PhysicsVerifier(PythonVerifier):
     def _detect_tolerance(self, value: str) -> float:
         rel_tol = self.tolerance
 
-        value = value.lower()
-
         if 'e' in value:
             match = re.match(r'(-?\d*\.?\d*)[eE]', value)
             significant_part = match.group(1) if match else value
@@ -342,15 +340,21 @@ class PhysicsVerifier(PythonVerifier):
             exponent = 0
             significant_part = value
 
+        if float(value) == 0:
+            factor = 1
+        else:
+            factor = float(value)
+
         if '.' in significant_part:
             decimal_places = len(significant_part.split('.')[1])
-            rel_tol = abs(round(0.5 * 10 ** (exponent-decimal_places) / float(value), 2))
-            rel_tol = max(rel_tol, 0.1)
+            rel_tol = abs(round(0.5 * 10 ** (exponent-decimal_places) / factor, 2))
         else:
-            rel_tol = abs(round(0.5 * 10 ** exponent / float(value), 2))
+            rel_tol = abs(round(0.5 * 10 ** exponent / factor, 2))
 
-        #limit the maximum tolerance to 0.1
-        rel_tol = max(rel_tol, 0.1)
+        #limit the maximum tolerance to (0.01, 0.1)
+        rel_tol = min(rel_tol, 0.1)
+        rel_tol = max(rel_tol, 0.01)
+
         logger.info(f"Detected tolerance based on scientific notation: {rel_tol}")
         
         return rel_tol
@@ -406,7 +410,16 @@ class PhysicsVerifier(PythonVerifier):
             return sol_value, sol_unit_expr
         
     @staticmethod
-    def verify_symbolic_expressions(sol_expr, gt_expr) -> bool:
+    def verify_unit(sol_unit_expr, gt_unit_expr) -> bool:
+        try: 
+            logger.info(f'Comparing response unit ({sol_unit_expr}) with answer unit ({gt_unit_expr})')
+            diff = sp.simplify(sol_unit_expr - gt_unit_expr)
+            return diff == 0
+        except Exception as e:
+            logger.error("Failed to compare units:", e)
+            return False
+        
+    def verify_symbolic_expressions(self, sol_expr, gt_expr) -> bool:
         """
         Verifies that the symbolic expression provided in the response is equivalent
         to the ground truth expression by comparing their simplified sympy expressions.
@@ -434,17 +447,7 @@ class PhysicsVerifier(PythonVerifier):
             raise ValueError(f"Cannot compare an equation with a non-equation directly: {sol_expr}, {gt_expr}")
             
         logger.info(f'Difference after simplification: {diff}')
-        return diff == 0
-    
-    @staticmethod
-    def verify_unit(sol_unit_expr, gt_unit_expr) -> bool:
-        try: 
-            logger.info(f'Comparing response unit ({sol_unit_expr}) with answer unit ({gt_unit_expr})')
-            diff = sp.simplify(sol_unit_expr - gt_unit_expr)
-            return diff == 0
-        except Exception as e:
-            logger.error("Failed to compare units:", e)
-            return False
+        return math.isclose(diff, 0, rel_tol=self.tolerance)
 
     async def _verify_implementation(
         self, solution: str, reference_answer: Optional[str]
@@ -499,6 +502,7 @@ class PhysicsVerifier(PythonVerifier):
             logger.info(f'Solution unit: {sol_unit_expr}; Ground truth unit: {gt_unit_expr}')
 
             if self._is_number(gt_value):
+                sol_value, gt_value = sol_value.lower().strip(), gt_value.lower().strip()
                 rel_tol = self._detect_tolerance(gt_value)
                 gt_value = float(gt_value)
 
