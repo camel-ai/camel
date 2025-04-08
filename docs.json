@@ -1,88 +1,187 @@
 {
-    "$schema": "https://mintlify.com/schema.json",
-    "name": "CAMEL Documentation",
-    "theme": "mint",
-    "logo": {
-      "light": "/docs/images/CAMEL_Icon.png",
-      "dark": "/docs/images/CAMEL_Icon_White.png",
-      "href": "https://camel-ai.org"
-    },
-    "favicon": "docs/images/built_with_CAMEL.svg",
-    "colors": {
-      "primary": "#5865F2",
-      "light": "#5865F2",
-      "dark": "#5865F2"
-    },
-    "navbar": {
-      "links": [
-        { "label": "CAMEL Home", "href": "https://camel-ai.org" },
-        { "label": "GitHub", "href": "https://github.com/camel-ai/camel" }
-      ],
-      "primary": {
-        "type": "button",
-        "label": "Join Community",
-        "href": "https://discord.com/invite/CNcNpquyDc"
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "CAMEL-AI Documentation",
+  "theme": "mint",
+  "logo": {
+    "light": "/docs/images/CAMEL_Icon.png",
+    "dark": "/docs/images/CAMEL_Icon_White.png",
+    "href": "https://camel-ai.org"
+  },
+  "favicon": "docs/images/built_with_CAMEL.svg",
+  "colors": {
+    "primary": "#5603fc",
+    "light": "#5603fc",
+    "dark": "#5603fc"
+  },
+  "background": {
+    "color": {
+      "light": "#F6F3EF"
+    }
+  },
+  "styling": {
+    "codeblocks": "system"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "CAMEL Home",
+        "href": "https://camel-ai.org"
+      },
+      {
+        "label": "GitHub",
+        "href": "https://github.com/camel-ai/camel"
       }
-    },
-    "navigation": {
-      "tabs": [
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Join Community",
+      "href": "https://discord.com/invite/CNcNpquyDc"
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "docs/get_started/installation",
+              "docs/get_started/setup"
+            ]
+          },
+          {
+            "group": "Key Modules",
+            "pages": [
+              "docs/key_modules/models",
+              "docs/key_modules/messages",
+              "docs/key_modules/memory",
+              "docs/key_modules/tools",
+              "docs/key_modules/prompts"
+            ]
+          },
+          {
+            "group": "Cookbooks",
+            "pages": [
+              {
+                "group": "Basic Concepts",
+                "pages": [
+                  "docs/cookbooks/basic_concepts/index",
+                  "docs/cookbooks/basic_concepts/agents_prompting",
+                  "docs/cookbooks/basic_concepts/agents_message",
+                  "docs/cookbooks/basic_concepts/create_your_first_agent",
+                  "docs/cookbooks/basic_concepts/create_your_first_agents_society",
+                  "docs/cookbooks/basic_concepts/model_speed_comparison"
+                ]
+              },
+              {
+                "group": "Advanced Features",
+                "pages": [
+                  "docs/cookbooks/advanced_features/index",
+                  "docs/cookbooks/advanced_features/agents_tracking",
+                  "docs/cookbooks/advanced_features/agents_with_graph_rag",
+                  "docs/cookbooks/advanced_features/agents_with_dkg",
+                  "docs/cookbooks/advanced_features/agents_with_human_in_loop_and_tool_approval",
+                  "docs/cookbooks/advanced_features/agents_with_memory",
+                  "docs/cookbooks/advanced_features/agents_with_rag",
+                  "docs/cookbooks/advanced_features/agents_with_tools",
+                  "docs/cookbooks/advanced_features/agents_with_tools_from_Composio",
+                  "docs/cookbooks/advanced_features/critic_agents_and_tree_search",
+                  "docs/cookbooks/advanced_features/embodied_agents"
+                ]
+              },
+              {
+                "group": "Applications",
+                "pages": [
+                  "docs/cookbooks/applications/index",
+                  "docs/cookbooks/applications/customer_service_Discord_bot_using_local_model_with_agentic_RAG",
+                  "docs/cookbooks/applications/customer_service_Discord_bot_using_SambaNova_with_agentic_RAG",
+                  "docs/cookbooks/applications/customer_service_Discord_bot_with_agentic_RAG",
+                  "docs/cookbooks/applications/dynamic_travel_planner",
+                  "docs/cookbooks/applications/roleplaying_scraper"
+                ]
+              },
+              {
+                "group": "Data Generation",
+                "pages": [
+                  "docs/cookbooks/data_generation/index",
+                  "docs/cookbooks/data_generation/cot_data_gen_sft_qwen_unsolth_upload_huggingface",
+                  "docs/cookbooks/data_generation/data_gen_with_real_function_calls_and_hermes_format",
+                  "docs/cookbooks/data_generation/distill_math_reasoning_data_from_deepseek_r1",
+                  "docs/cookbooks/data_generation/data_model_generation_and_structured_output_with_qwen",
+                  "docs/cookbooks/data_generation/self_improving_cot_generation",
+                  "docs/cookbooks/data_generation/self_improving_math_reasoning_data_distillation_from_deepSeek_r1",
+                  "docs/cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_mistral_7b_instruct",
+                  "docs/cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_tinyllama",
+                  "docs/cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B",
+                  "docs/cookbooks/data_generation/synthetic_dataevaluation&filter_with_reward_model"
+                ]
+              },
+              {
+                "group": "Data Processing",
+                "pages": [
+                  "docs/cookbooks/data_processing/index",
+                  "docs/cookbooks/data_processing/agent_with_chunkr_for_pdf_parsing",
+                  "docs/cookbooks/data_processing/ingest_data_from_websites_with_Firecrawl",
+                  "docs/cookbooks/data_processing/video_analysis"
+                ]
+              },
+              {
+                "group": "Loong",
+                "pages": [
+                  "docs/cookbooks/loong/index",
+                  "docs/cookbooks/loong/batched_single_step_env"
+                ]
+              },
+              {
+                "group": "Multi Agent Society",
+                "pages": [
+                  "docs/cookbooks/multi_agent_society/index",
+                  "docs/cookbooks/multi_agent_society/agents_society",
+                  "docs/cookbooks/multi_agent_society/task_generation",
+                  "docs/cookbooks/multi_agent_society/workforce_judge_committee"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "camel",
+            "pages": [
+              "docs/camel",
+              {
+                "group": "camel.agents package",
+                "pages": [
+                  "docs/camel_agents",
+                  "docs/camel_configs",
+                  "docs/camel_embeddings",
+                  "docs/camel_interpreters",
+                  "docs/camel_loaders"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "global": {
+      "anchors": [
         {
-          "tab": "Documentation",
-          "groups": [
-            {
-              "group": "Overview",
-              "pages": [
-                "docs/index"
-              ]
-            },
-            {
-              "group": "Get Started",
-              "pages": [
-                "docs/get_started/installation",
-                "docs/get_started/setup"
-              ]
-            },
-            {
-              "group": "Key Modules",
-              "pages": [
-                "docs/key_modules/agents",
-                "docs/key_modules/datagen",
-                "docs/key_modules/embeddings",
-                "docs/key_modules/interpreters",
-                "docs/key_modules/loaders",
-                "docs/key_modules/memory",
-                "docs/key_modules/messages",
-                "docs/key_modules/models",
-                "docs/key_modules/prompts",
-                "docs/key_modules/retrievers",
-                "docs/key_modules/society",
-                "docs/key_modules/storages",
-                "docs/key_modules/tasks",
-                "docs/key_modules/tools",
-                "docs/key_modules/workforce"
-              ]
-            },
-            {
-              "group": "Cookbooks",
-              "pages": [
-                "docs/cookbooks/basic_concepts/index",
-                "docs/cookbooks/advanced_features/index",
-                "docs/cookbooks/multi_agent_society/index",
-                "docs/cookbooks/applications/index",
-                "docs/cookbooks/data_generation/index",
-                "docs/cookbooks/data_processing/index",
-                "docs/cookbooks/loong/index"
-              ]
-            }
-          ]
+          "anchor": "Website",
+          "href": "https://www.eigent.ai/",
+          "icon": "globe"
         }
       ]
-    },
-    "footer": {
-      "socials": {
-        "github": "https://github.com/camel-ai/camel",
-        "twitter": "https://x.com/CamelAIOrg"
-      }
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/camel-ai/camel",
+      "twitter": "https://x.com/CamelAIOrg"
     }
   }
-  
+}
