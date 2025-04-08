@@ -331,15 +331,27 @@ class PhysicsVerifier(PythonVerifier):
     def _detect_tolerance(self, value: str) -> float:
         rel_tol = self.tolerance
 
-        if 'e' in value.lower():
+        value = value.lower()
+
+        if 'e' in value:
             match = re.match(r'(-?\d*\.?\d*)[eE]', value)
+            significant_part = match.group(1) if match else value
+            exponent_match = re.search(r'[eE]([+-]?\d+)', value)
+            exponent = int(exponent_match.group(1)) if exponent_match else 0
+        else:
+            exponent = 0
+            significant_part = value
 
-            if match:
-                significant_part = match.group(1)
+        if '.' in significant_part:
+            decimal_places = len(significant_part.split('.')[1])
+            rel_tol = abs(round(0.5 * 10 ** (exponent-decimal_places) / float(value), 2))
+            rel_tol = max(rel_tol, 0.1)
+        else:
+            rel_tol = abs(round(0.5 * 10 ** exponent / float(value), 2))
 
-                if '.' in significant_part:
-                    decimal_places = len(significant_part.split('.')[1])
-                    rel_tol = 0.5 * 10 ** (-decimal_places)
+        #limit the maximum tolerance to 0.1
+        rel_tol = max(rel_tol, 0.1)
+        logger.info(f"Detected tolerance based on scientific notation: {rel_tol}")
         
         return rel_tol
 
