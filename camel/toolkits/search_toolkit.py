@@ -992,7 +992,7 @@ class SearchToolkit(BaseToolkit):
             use_autoprompt (bool): Whether to use Exa's autoprompt feature to
                 enhance the query. (default: :obj:`True`)
             text (bool): Whether to include webpage contents in results.
-            (default: :obj:`False`)
+                (default: :obj:`False`)
 
         Returns:
             Dict[str, Any]: A dict containing search results and metadata:
