@@ -488,12 +488,17 @@ class PhysicsVerifier(PythonVerifier):
             logger.info(f"Solution: {sol_out}")
 
             gt_value, gt_unit = self._split_value_unit(reference_answer)
-            sol_value, sol_unit = self._split_value_unit(sol_out)
+
+            if self.unit_parser.unit_is_none(gt_unit):
+                sol_value, sol_unit = sol_out, ''
+            else:
+                sol_value, sol_unit = self._split_value_unit(sol_out)
+
             gt_value = self._clean_answer(gt_value)
 
             logger.info(f'Solution value: {sol_value}; Ground truth value: {gt_value}')  
 
-            if self.unit_parser.unit_is_none(gt_unit) and self.unit_parser.unit_is_none(sol_unit):
+            if self.unit_parser.unit_is_none(gt_unit):
                 gt_unit_expr, sol_unit_expr = None, None
             else:
                 gt_unit_expr = self.unit_parser.parse_unit(gt_unit)
