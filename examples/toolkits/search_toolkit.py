@@ -35,26 +35,26 @@ res_detailed = SearchToolkit().query_wolfram_alpha(
 print(res_detailed)
 '''
 ===============================================================================
-{'query': 'solve 3x-7=11', 'pod_info': [{'title': 'Input interpretation', 
+{'query': 'solve 3x-7=11', 'pod_info': [{'title': 'Input interpretation',
 'description': 'solve 3 x - 7 = 11', 'image_url': 'https://www6b3.wolframalpha.
 com/Calculate/MSP/MSP37741a3dc67f338579ff00003fih94dg39300iaf?
-MSPStoreType=image/gif&s=18'}, {'title': 'Result', 'description': 'x = 6', 
+MSPStoreType=image/gif&s=18'}, {'title': 'Result', 'description': 'x = 6',
 'image_url': 'https://www6b3.wolframalpha.com/Calculate/MSP/
-MSP37751a3dc67f338579ff00001dg4gbdcd0f10i3f?MSPStoreType=image/gif&s=18'}, 
+MSP37751a3dc67f338579ff00001dg4gbdcd0f10i3f?MSPStoreType=image/gif&s=18'},
 {'title': 'Plot', 'description': None, 'image_url': 'https://www6b3.
 wolframalpha.com/Calculate/MSP/MSP37761a3dc67f338579ff0000374484g95bh3ah3e?
-MSPStoreType=image/gif&s=18'}, {'title': 'Number line', 'description': None, 
+MSPStoreType=image/gif&s=18'}, {'title': 'Number line', 'description': None,
 'image_url': 'https://www6b3.wolframalpha.com/Calculate/MSP/
-MSP37771a3dc67f338579ff00005573c3a87ahg8dbc?MSPStoreType=image/gif&s=18'}], 
-'final_answer': 'x = 6', 'steps': {'step1': 'Isolate terms with x to the left 
-hand side.\nAdd 7 to both sides:\n3 x + (7 - 7) = 7 + 11', 'step2': 'Look for 
-the difference of two identical terms.\n7 - 7 = 0:\n3 x = 11 + 7', 'step3': 
-'Evaluate 11 + 7.\n11 + 7 = 18:\n3 x = 18', 'step4': 'Divide both sides by a 
+MSP37771a3dc67f338579ff00005573c3a87ahg8dbc?MSPStoreType=image/gif&s=18'}],
+'final_answer': 'x = 6', 'steps': {'step1': 'Isolate terms with x to the left
+hand side.\nAdd 7 to both sides:\n3 x + (7 - 7) = 7 + 11', 'step2': 'Look for
+the difference of two identical terms.\n7 - 7 = 0:\n3 x = 11 + 7', 'step3':
+'Evaluate 11 + 7.\n11 + 7 = 18:\n3 x = 18', 'step4': 'Divide both sides by a
 constant to simplify the equation.\nDivide both sides of 3 x = 18 by 3:\n(3 x)/
-3 = 18/3', 'step5': 'Any nonzero number divided by itself is one.\n3/3 = 1:\nx 
-= 18/3', 'step6': 'Reduce 18/3 to lowest terms. Start by finding the greatest 
-common divisor of 18 and 3.\nThe greatest common divisor of 18 and 3 is 3, so 
-factor out 3 from both the numerator and denominator: 18/3 = (3x6)/(3x1) = 3/3 
+3 = 18/3', 'step5': 'Any nonzero number divided by itself is one.\n3/3 = 1:\nx
+= 18/3', 'step6': 'Reduce 18/3 to lowest terms. Start by finding the greatest
+common divisor of 18 and 3.\nThe greatest common divisor of 18 and 3 is 3, so
+factor out 3 from both the numerator and denominator: 18/3 = (3x6)/(3x1) = 3/3
 x 6 = 6\nAnswer: | \n | x = 6'}}
 ===============================================================================
 '''
@@ -68,7 +68,7 @@ print(res_brave)
 # Example with ChatAgent using the Brave search engine
 
 agent = ChatAgent(
-    system_message="""You are a helpful assistant that can use brave search 
+    system_message="""You are a helpful assistant that can use brave search
         engine to answer questions.""",
     tools=[FunctionTool(SearchToolkit().search_brave)],
 )
@@ -80,14 +80,14 @@ response = agent.step(input_message=usr_msg, response_format=None)
 print(response.msgs[0].content)
 """
 ===============================================================================
-The current temperature in Tokyo can be found on various weather websites. 
-Here are a couple of reliable sources where you can check the latest weather 
+The current temperature in Tokyo can be found on various weather websites.
+Here are a couple of reliable sources where you can check the latest weather
 conditions:
 
 1. [AccuWeather - Tokyo Current Weather](https://www.accuweather.com/en/jp/tokyo/226396/current-weather/226396)
 2. [Time and Date - Tokyo Weather](https://www.timeanddate.com/weather/japan/tokyo)
 
-You can visit these links to get the most up-to-date temperature and weather 
+You can visit these links to get the most up-to-date temperature and weather
 conditions in Tokyo.
 ===============================================================================
 """
@@ -100,70 +100,70 @@ search_linkup_response = SearchToolkit().search_linkup(
 print(search_linkup_response)
 """
 ===============================================================================
-{'results': [{'type': 'text', 'name': 'Physics Nobel Prizes awarded to women | 
+{'results': [{'type': 'text', 'name': 'Physics Nobel Prizes awarded to women |
 Scientia News', 'url': 'https://www.scientianews.org/
-physics-nobel-prize-winners', 'content': 'The next female Nobel Prize in 
-Physics award winner wouldn't be until another half-century later, with Donna 
-Strickland. Strickland was awarded the Prize for her work on chirped pulse 
-amplification and its applications. Although the research itself was published 
-in 1985, she didn't receive the award until 2018.'}, {'type': 'text', 'name': 
+physics-nobel-prize-winners', 'content': 'The next female Nobel Prize in
+Physics award winner wouldn't be until another half-century later, with Donna
+Strickland. Strickland was awarded the Prize for her work on chirped pulse
+amplification and its applications. Although the research itself was published
+in 1985, she didn't receive the award until 2018.'}, {'type': 'text', 'name':
 'The 60 Women Who Have Won the Nobel Prize - Stacker', 'url': 'https://stacker.
-com/history/60-women-who-have-won-nobel-prize', 'content': '- Award: Nobel 
-Prize in Physics - Year: 1963. Maria Goeppert-Mayer was born in Germany. After 
-she married, she migrated to America, where she worked on an American atom 
-bomb project during World War II. Her work uncovered important discoveries 
-about nuclear structure, and Goeppert-Mayer is one of only four women to win 
-the Nobel Prize in physics.'}, {'type': 'text', 'name': 'Nobel Prize awarded 
+com/history/60-women-who-have-won-nobel-prize', 'content': '- Award: Nobel
+Prize in Physics - Year: 1963. Maria Goeppert-Mayer was born in Germany. After
+she married, she migrated to America, where she worked on an American atom
+bomb project during World War II. Her work uncovered important discoveries
+about nuclear structure, and Goeppert-Mayer is one of only four women to win
+the Nobel Prize in physics.'}, {'type': 'text', 'name': 'Nobel Prize awarded
 women - NobelPrize.org', 'url': 'https://www.nobelprize.org/prizes/lists/
-nobel-prize-awarded-women/', 'content': 'The Nobel Prize and the Sveriges 
-Riksbank Prize in Economic Sciences in Memory of Alfred Nobel have been 
-awarded to women 66 times between 1901 and 2024. Only one woman, Marie Curie, 
-has been honoured twice, with the Nobel Prize in Physics 1903 and the Nobel 
-Prize in Chemistry 1911. This means that 65 women in total have been awarded 
-the Nobel ...'}, {'type': 'text', 'name': 'Women who changed science - The 
+nobel-prize-awarded-women/', 'content': 'The Nobel Prize and the Sveriges
+Riksbank Prize in Economic Sciences in Memory of Alfred Nobel have been
+awarded to women 66 times between 1901 and 2024. Only one woman, Marie Curie,
+has been honoured twice, with the Nobel Prize in Physics 1903 and the Nobel
+Prize in Chemistry 1911. This means that 65 women in total have been awarded
+the Nobel ...'}, {'type': 'text', 'name': 'Women who changed science - The
 Nobel Prize', 'url': 'https://www.nobelprize.org/womenwhochangedscience/
-stories', 'content': 'Nobel Prize in Physics 1903 Nobel Prize in Chemistry 
-1911. MARIE CURIE. Read her story. Nobel Prize in Physiology or Medicine 1988. 
-GERTRUDE B. ELION. Read her story. Nobel Prize in Physiology or Medicine 1988. 
-GERTRUDE B. ELION. Read her story. Nobel Prize in Physics 1963. MARIA GOEPPERT 
-MAYER. Read her story.'}, {'type': 'text', 'name': 'List of female Nobel 
+stories', 'content': 'Nobel Prize in Physics 1903 Nobel Prize in Chemistry
+1911. MARIE CURIE. Read her story. Nobel Prize in Physiology or Medicine 1988.
+GERTRUDE B. ELION. Read her story. Nobel Prize in Physiology or Medicine 1988.
+GERTRUDE B. ELION. Read her story. Nobel Prize in Physics 1963. MARIA GOEPPERT
+MAYER. Read her story.'}, {'type': 'text', 'name': 'List of female Nobel
 laureates - Wikipedia', 'url': 'https://en.wikipedia.org/wiki/
-List_of_female_Nobel_laureates', 'content': "The most recent women to be 
-awarded a Nobel Prize were Han Kang in Literature (2024), Claudia Goldin in 
-Economics, Narges Mohammadi for Peace, Anne L'Huillier in Physics and Katalin 
-Karikó in Physiology or Medicine (2023), Annie Ernaux in Literature and 
-Carolyn R. Bertozzi for Chemistry (2022), Maria Ressa for Peace (2021), Louise 
-Glück in ..."}, {'type': 'text', 'name': 'Only 5 women have won the Nobel 
+List_of_female_Nobel_laureates', 'content': "The most recent women to be
+awarded a Nobel Prize were Han Kang in Literature (2024), Claudia Goldin in
+Economics, Narges Mohammadi for Peace, Anne L'Huillier in Physics and Katalin
+Karikó in Physiology or Medicine (2023), Annie Ernaux in Literature and
+Carolyn R. Bertozzi for Chemistry (2022), Maria Ressa for Peace (2021), Louise
+Glück in ..."}, {'type': 'text', 'name': 'Only 5 women have won the Nobel
 Prize in physics—recent winners share ...', 'url': 'https://phys.org/news/
-2024-10-women-won-nobel-prize-physics.html', 'content': 'Out of 225 people 
-awarded the Nobel Prize in physics, only five have been women. This is a very 
-small number, and certainly smaller than 50%—the percent of women in the human 
-population.'}, {'type': 'text', 'name': 'All These Women Won Science Nobel 
+2024-10-women-won-nobel-prize-physics.html', 'content': 'Out of 225 people
+awarded the Nobel Prize in physics, only five have been women. This is a very
+small number, and certainly smaller than 50%—the percent of women in the human
+population.'}, {'type': 'text', 'name': 'All These Women Won Science Nobel
 Prizes - The Stemettes Zine', 'url': 'https://stemettes.org/zine/articles/
-nobel-prize-women/', 'content': 'Currently, only 17% of Nobel Prize winners 
-are women in the Science categories. So here we are celebrating all the 
-amazing women who have Nobel Prizes for their Science research. ... & Physics 
-(1903) Marie and her husband were awarded the Nobel Prize for Physics in 1903, 
+nobel-prize-women/', 'content': 'Currently, only 17% of Nobel Prize winners
+are women in the Science categories. So here we are celebrating all the
+amazing women who have Nobel Prizes for their Science research. ... & Physics
+(1903) Marie and her husband were awarded the Nobel Prize for Physics in 1903,
 for their study into the spontaneous radiation discovered by Becquerel. In ...
-'}, {'type': 'text', 'name': 'These Are the 57 Women Who Have Won the Nobel 
+'}, {'type': 'text', 'name': 'These Are the 57 Women Who Have Won the Nobel
 Prize', 'url': 'https://www.newsweek.com/
 these-are-57-women-who-have-won-nobel-prize-1538702', 'content': 'Getty Images/
-Hulton-Deutsch Collection/CORBIS Marie Curie (born Skłodowska) - Award: Nobel 
-Prize in Physics - Year: 1903. Marie Curie, who was the first woman to win a 
-Nobel Prize, coined the ...'}, {'type': 'text', 'name': 'Anne L'Huillier - 
+Hulton-Deutsch Collection/CORBIS Marie Curie (born Skłodowska) - Award: Nobel
+Prize in Physics - Year: 1903. Marie Curie, who was the first woman to win a
+Nobel Prize, coined the ...'}, {'type': 'text', 'name': 'Anne L'Huillier -
 Banquet speech - NobelPrize.org', 'url': 'https://www.nobelprize.org/prizes/
-physics/2023/lhuillier/speech/', 'content': 'The Nobel Prize in Physics 2023 
-was awarded to Pierre Agostini, Ferenc Krausz and Anne L'Huillier "for 
-experimental methods that generate attosecond pulses of light for the study of 
-electron dynamics in matter" ... 120 years ago, Marie Skłodowska Curie was the 
-first woman to be awarded the Nobel Prize in Physics. I am the fifth. For 
-more ...'}, {'type': 'text', 'name': 'Facts on the Nobel Prize in Physics - 
+physics/2023/lhuillier/speech/', 'content': 'The Nobel Prize in Physics 2023
+was awarded to Pierre Agostini, Ferenc Krausz and Anne L'Huillier "for
+experimental methods that generate attosecond pulses of light for the study of
+electron dynamics in matter" ... 120 years ago, Marie Skłodowska Curie was the
+first woman to be awarded the Nobel Prize in Physics. I am the fifth. For
+more ...'}, {'type': 'text', 'name': 'Facts on the Nobel Prize in Physics -
 NobelPrize.org', 'url': 'https://www.nobelprize.org/prizes/facts/
-facts-on-the-nobel-prize-in-physics/', 'content': 'List of all female Nobel 
-Prize laureates. Multiple Nobel Prize laureates in physics. John Bardeen is 
-the only person who has received the Nobel Prize in Physics twice, year 1956 
-and 1972 . Marie Curie was awarded the Nobel Prize twice, once in physics 1903 
-and once in chemistry 1911.. See the list of multiple Nobel Prize laureates 
+facts-on-the-nobel-prize-in-physics/', 'content': 'List of all female Nobel
+Prize laureates. Multiple Nobel Prize laureates in physics. John Bardeen is
+the only person who has received the Nobel Prize in Physics twice, year 1956
+and 1972 . Marie Curie was awarded the Nobel Prize twice, once in physics 1903
+and once in chemistry 1911.. See the list of multiple Nobel Prize laureates
 within other Nobel Prize categories here'}]}
 ===============================================================================
 """
@@ -177,20 +177,20 @@ search_linkup_response = SearchToolkit().search_linkup(
 print(search_linkup_response)
 """
 ===============================================================================
-{'answer': "The women who have been awarded the Nobel Prize in Physics are: 1. 
-Marie Curie - 1903 2. Maria Goeppert Mayer - 1963 3. Donna Strickland - 2018 
-4. Anne L'Huillier - 2023", 'sources': [{'name': 'Nobel Prize awarded women - 
+{'answer': "The women who have been awarded the Nobel Prize in Physics are: 1.
+Marie Curie - 1903 2. Maria Goeppert Mayer - 1963 3. Donna Strickland - 2018
+4. Anne L'Huillier - 2023", 'sources': [{'name': 'Nobel Prize awarded women -
 NobelPrize.org', 'url': 'https://www.nobelprize.org/prizes/lists/
-nobel-prize-awarded-women/', 'snippet': 'The Nobel Prize and the Sveriges 
-Riksbank Prize in Economic Sciences in Memory of Alfred Nobel have been 
-awarded to women 66 times between 1901 and 2024.'}, {'name': 'Physics Nobel 
+nobel-prize-awarded-women/', 'snippet': 'The Nobel Prize and the Sveriges
+Riksbank Prize in Economic Sciences in Memory of Alfred Nobel have been
+awarded to women 66 times between 1901 and 2024.'}, {'name': 'Physics Nobel
 Prizes awarded to women | Scientia News', 'url': 'https://www.scientianews.org/
-physics-nobel-prize-winners', 'snippet': 'The next female Nobel Prize in 
-Physics award winner wouldn't be until another half-century later, with Donna 
-Strickland.'}, {'name': 'List of female Nobel laureates - Wikipedia', 'url': 
-'https://en.wikipedia.org/wiki/List_of_female_Nobel_laureates', 'snippet': 
-"The most recent women to be awarded a Nobel Prize were Han Kang in Literature 
-(2024), Claudia Goldin in Economics, Narges Mohammadi for Peace, Anne 
+physics-nobel-prize-winners', 'snippet': 'The next female Nobel Prize in
+Physics award winner wouldn't be until another half-century later, with Donna
+Strickland.'}, {'name': 'List of female Nobel laureates - Wikipedia', 'url':
+'https://en.wikipedia.org/wiki/List_of_female_Nobel_laureates', 'snippet':
+"The most recent women to be awarded a Nobel Prize were Han Kang in Literature
+(2024), Claudia Goldin in Economics, Narges Mohammadi for Peace, Anne
 L'Huillier in Physics and Katalin Karikó in Physiology or Medicine (2023)."}]}
 ===============================================================================
 """
@@ -212,10 +212,10 @@ print(search_linkup_response)
 
 """
 ===============================================================================
-{'name': 'Female Nobel Prize Winners in Physics', 'description': 'The women 
-awarded the Nobel Prize in Physics include: 1. Marie Curie (1903) 2. Maria 
-Goeppert-Mayer (1963) 3. Donna Strickland (2018) 4. (4th winner not mentioned 
-in the provided data) 5. (5th winner not mentioned in the provided data). Less 
+{'name': 'Female Nobel Prize Winners in Physics', 'description': 'The women
+awarded the Nobel Prize in Physics include: 1. Marie Curie (1903) 2. Maria
+Goeppert-Mayer (1963) 3. Donna Strickland (2018) 4. (4th winner not mentioned
+in the provided data) 5. (5th winner not mentioned in the provided data). Less
 than 5 women have won the Nobel Prize in Physics out of 225 total laureates.'}
 ===============================================================================
 """
@@ -254,7 +254,7 @@ dly":None},"videos":None}
 
 
 agent = ChatAgent(
-    system_message="""You are a helpful assistant that can use baidu search 
+    system_message="""You are a helpful assistant that can use baidu search
         engine to answer questions.""",
     tools=[FunctionTool(SearchToolkit().search_baidu)],
 )
@@ -287,7 +287,7 @@ QMH0wSjDYOq)
 """
 
 bing_call_agent = ChatAgent(
-    system_message="""You are a helpful assistant that can use baidu search 
+    system_message="""You are a helpful assistant that can use baidu search
         engine to answer questions.""",
     tools=[FunctionTool(SearchToolkit().search_bing)],
 )
@@ -306,7 +306,7 @@ print(response.msgs[0].content)
 
 1. **时隔4年,灾后余生的巴黎圣母院即将重生** -
 [知乎](https://zhuanlan.zhihu.com/p/619405504)
-   
+
 2. **历时4年,耗资70亿,被烧塌的巴黎圣母院修好了!!** -
 [腾讯网](https://news.qq.com/rain/a/20231018A0329F00)
 
@@ -317,5 +317,80 @@ print(response.msgs[0].content)
 [腾讯网](https://news.qq.com/rain/a/20241208A05Q9K00)
 
 这些链接提供了关于巴黎圣母院修复的详细信息和最新进展。
+===============================================================================
+"""
+
+# Example using Exa search
+exa_response = SearchToolkit().search_exa(
+    query="What is CAMEL-AI?",
+    category="github",
+    num_results=1,
+    text=True,
+)
+
+print(exa_response)
+
+# Example with ChatAgent using Exa search
+exa_agent = ChatAgent(
+    system_message="""You are a helpful assistant that can use Exa search 
+        engine to find the latest research papers.""",
+    tools=[FunctionTool(SearchToolkit().search_exa)],
+)
+
+usr_msg = "What are the latest developments in quantum error correction?"
+
+response = exa_agent.step(input_message=usr_msg, response_format=None)
+
+print(response.msgs[0].content)
+"""
+===============================================================================
+Here are some of the latest developments in quantum error correction:
+
+1. **Suppressing Quantum Errors by Scaling a Surface Code Logical Qubit**  
+- **Published Date**: February 22, 2023  
+- **Authors**: Google Quantum AI  
+- **Summary**: This work reports on a 72-qubit superconducting device 
+implementing  49-qubit distance-5 surface code, improving the performance over
+a dist-3 code. The research demonstrates how scaling error-correcting codes
+can lead to significant reductions in logical error rates.  
+- **Link**: [Read paper](https://www.nature.com/articles/s41586-022-05434-1)
+
+![Image](https://media.springernature.com/m685/springer-static/image/art%3A10.
+1038%2Fs41586-022-05434-1/MediaObjects/41586_2022_5434_Fig1_HTML.png)
+
+2. **Increasing Error Tolerance in Quantum Computers with Dynamic Bias**  
+- **Published Date**: March 28, 2023  
+- **Authors**: H'ector Bomb'in, C. Dawson, Naomi H. Nickerson, M. Pant
+- **Summary**: This study introduces a method for dynamically arranging error
+biases to enhance error tolerance in fusion-based quantum computing. By 
+adaptively choosing bias during operations, it triples the loss tolerance.
+- **Link**: [Read the paper](https://arxiv.org/pdf/2303.16122.pdf)
+
+3. **Fault Tolerant Non-Clifford State Preparation for Arbitrary Rotations**  
+- **Published Date**: March 30, 2023  
+- **Authors**: Hyeongrak Choi, Frederic T. Chong, Dirk Englund, Yong Ding  
+- **Summary**: This paper proposes a post-selection-based algorithm for 
+efficiently preparing resource states for gate teleportation, achieving fault
+tolerance with reduced resource overheads for non-Clifford rotations.
+- **Link**: [Read the paper](https://export.arxiv.org/pdf/2303.17380v1.pdf)
+
+4. **Measurement-free Fault-tolerant Logical Zero-state Encoding**  
+- **Published Date**: June 2, 2023  
+- **Authors**: Hayato Goto, Yinghao Ho, Taro Kanao  
+- **Summary**: This work presents an efficient encoding method for the 
+nine-qubit surface code that requires no measurement and can operate on a 
+one-dimensional qubit array, demonstrating its fault tolerance.
+- **Link**: [Read the paper](https://export.arxiv.org/pdf/2303.17211v2.pdf)
+
+5. **High-threshold and Low-overhead Fault-tolerant Quantum Memory**  
+- **Published Date**: March 27, 2024  
+- **Author**: Theodore J. Yoder  
+- **Summary**: This research discusses high-rate LDPC codes for quantum error
+correction, presenting codes that require fewer physical qubits compared to
+traditional surface codes while achieving similar error thresholds.
+- **Link**: [Read paper](https://www.nature.com/articles/s41586-024-07107-7)
+
+These studies reflect ongoing advances in quantum error correction, focusing 
+on improving efficiency, fault tolerance, and minimizing resource overheads.
 ===============================================================================
 """

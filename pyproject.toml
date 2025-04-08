@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.42"
+version = "0.2.43"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -27,7 +27,7 @@ dependencies = [
     "colorama>=0.4.6,<0.5",
     "jsonschema>=4,<5",
     "docstring-parser>=0.15,<0.16",
-    "pydantic>=1.9,<2.10",
+    "pydantic>=2.10.6",
     "httpx>=0.28.0,<1.0.0dev",
     "psutil>=5.9.8,<6",
     "crawl4ai>=0.3.745",
@@ -96,6 +96,7 @@ web_tools = [
     "playwright>=1.50.0",
     "html2text>=2024.2.26",
     "beautifulsoup4>=4,<5",
+    "exa-py>=1.10.0,<2"
 ]
 document_tools = [
     "numpy~=1.26",
@@ -335,6 +336,7 @@ all = [
     "typer>=0.15.2",
     "mem0ai>=0.1.67",
     "math-verify>=0.7.0,<0.8",
+    "exa-py>=1.10.0,<2"
 ]
 
 [project.urls]
@@ -513,7 +515,8 @@ module = [
     "mcp",
     "typer",
     "mem0",
-    "math_verify.*"
+    "math_verify.*",
+    "exa_py"
 ]
 ignore_missing_imports = true
 
