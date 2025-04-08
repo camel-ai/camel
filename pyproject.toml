@@ -28,9 +28,10 @@ dependencies = [
     "jsonschema>=4,<5",
     "docstring-parser>=0.15,<0.16",
     "pydantic>=1.9,<2.10",
-    "httpx>=0.28.0,<1.0.0dev",
+    "httpx>=0.28.0,<1.0.0.dev0",
     "psutil>=5.9.8,<6",
 ]
+
 
 [project.optional-dependencies]
 test = [
@@ -346,6 +347,7 @@ default-groups = [
     "dev",
     "docs",
 ]
+
 
 [tool.hatch.build.targets.sdist]
 include = ["camel"]
