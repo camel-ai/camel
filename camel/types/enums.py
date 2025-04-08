@@ -64,8 +64,8 @@ class ModelType(UnifiedModelType, Enum):
     GROQ_GEMMA_2_9B_IT = "gemma2-9b-it"
 
     # OpenRouter models
-    OPENROUTER_LLAMA_3_1_405B = "meta-llama/llama-3.3-405b-instruct"
-    OPENROUTER_LLAMA_3_1_70B = "meta-llama/llama-3.3-70b-instruct"
+    OPENROUTER_LLAMA_3_1_405B = "meta-llama/llama-3.1-405b-instruct"
+    OPENROUTER_LLAMA_3_1_70B = "meta-llama/llama-3.1-70b-instruct"
     OPENROUTER_LLAMA_4_MAVERICK = "meta-llama/llama-4-maverick"
     OPENROUTER_LLAMA_4_MAVERICK_FREE = "meta-llama/llama-4-maverick:free"
     OPENROUTER_LLAMA_4_SCOUT = "meta-llama/llama-4-scout"
@@ -705,6 +705,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MODELSCOPE_LLAMA_3_3_70B_INSTRUCT,
             ModelType.MODELSCOPE_MINISTRAL_8B_INSTRUCT,
             ModelType.MODELSCOPE_DEEPSEEK_V3_0324,
+            ModelType.OPENROUTER_LLAMA_3_1_405B,
         }:
             return 32_768
         elif self in {
@@ -772,11 +773,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.SGLANG_QWEN_2_5_32B,
             ModelType.SGLANG_QWEN_2_5_72B,
             ModelType.OPENROUTER_LLAMA_3_1_70B,
-            ModelType.OPENROUTER_LLAMA_3_1_405B,
-            ModelType.OPENROUTER_LLAMA_4_MAVERICK,
-            ModelType.OPENROUTER_LLAMA_4_MAVERICK_FREE,
             ModelType.OPENROUTER_LLAMA_4_SCOUT,
-            ModelType.OPENROUTER_LLAMA_4_SCOUT_FREE,
         }:
             return 131_072
         elif self in {
@@ -794,8 +791,13 @@ class ModelType(UnifiedModelType, Enum):
             return 200_000
         elif self in {
             ModelType.MISTRAL_CODESTRAL_MAMBA,
+            ModelType.OPENROUTER_LLAMA_4_MAVERICK_FREE,
         }:
             return 256_000
+        elif self in {
+            ModelType.OPENROUTER_LLAMA_4_SCOUT_FREE,
+        }:
+            return 512_000
         elif self in {
             ModelType.GEMINI_2_5_PRO_EXP,
             ModelType.GEMINI_2_0_FLASH,
@@ -809,6 +811,7 @@ class ModelType(UnifiedModelType, Enum):
             return 1_048_576
         elif self in {
             ModelType.QWEN_LONG,
+            ModelType.OPENROUTER_LLAMA_4_MAVERICK,
         }:
             return 10_000_000
         else:
