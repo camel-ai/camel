@@ -20,7 +20,7 @@ import subprocess
 import sys
 import tempfile
 import venv
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
@@ -480,7 +480,7 @@ class PythonVerifier(BaseVerifier):
             except Exception:
                 return False
 
-    def _is_equal_with_tolerance(self, a, b) -> bool:
+    def _is_equal_with_tolerance(self, a: Any, b: Any) -> bool:
         r"""Compares two Python objects for equality with optional float
         tolerance.
 
