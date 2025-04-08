@@ -490,8 +490,8 @@ class PythonVerifier(BaseVerifier):
         error is raised.
 
         Args:
-            a: First value to compare.
-            b: Second value to compare.
+            a (Any): First value to compare.
+            b (Any): Second value to compare.
 
         Returns:
             bool: True if the values are considered equal within the
@@ -517,12 +517,26 @@ class PythonVerifier(BaseVerifier):
         if isinstance(a, set) and isinstance(b, set):
             if len(a) != len(b):
                 return False
-            return all(
-                any(self._is_equal_with_tolerance(x, y) for y in b) for x in a
-            )
+            # Need to check both directions to ensure proper matching
+            # Create a copy of b to track matched elements
+            b_copy = list(b)
+            for x in a:
+                found_match = False
+                for i, y in enumerate(b_copy):
+                    if self._is_equal_with_tolerance(x, y):
+                        found_match = True
+                        # Remove the matched element to prevent double-matching
+                        b_copy.pop(i)
+                        break
+                if not found_match:
+                    return False
+            return True
         if isinstance(a, dict) and isinstance(b, dict):
             if set(a.keys()) != set(b.keys()):
                 return False
             return all(self._is_equal_with_tolerance(a[k], b[k]) for k in a)
-        logger.warning("Falling back to simple comparison without tolerance.")
+        logger.warning(
+            f"Falling back to simple comparison without "
+            f"tolerance for {a} and {b}."
+        )
         return a == b  # fallback

@@ -166,6 +166,7 @@ async def test_python_verifier_with_numpy(python_verifier):
         ((1.0, 2.0), (1.0, 2.01), 1e-5, False),
         ({1.0, 2.0}, {2.000001, 1.0}, 1e-5, True),
         ({1.0, 2.0}, {2.1, 1.0}, 1e-5, False),
+        ({1.0, 1.000001}, {1.000002, 2.0}, 1e-5, False),
         ({"x": [1.0, 2.0]}, {"x": [1.000001, 2.0]}, 1e-5, True),
         ({"x": [1.0, 2.0]}, {"x": [1.1, 2.0]}, 1e-5, False),
     ],
@@ -213,6 +214,24 @@ def test_is_equal_with_tolerance(a, b, tol, expected):
         ("print({'a': 1.0, 'b': 2.0})", "{'a': 1.1, 'b': 2.0}", 1e-5, False),
         ("print({1.0, 2.0})", "{1.0, 2.000001}", 1e-5, True),
         ("print({1.0, 2.0})", "{1.0, 2.1}", 1e-5, False),
+        # Specific test for set comparison with order differences
+        (
+            "print({1.0, 2.0, 3.0})",
+            "{3.000001, 1.000001, 2.000001}",
+            1e-5,
+            True,
+        ),
+        # This test should fail if element-by-element comparison is removed
+        (
+            "print({1.0, 2.0})",
+            "{1.1, 2.1}",
+            1e-5,
+            False,
+        ),  # Same length but all elements beyond tolerance
+        # This test exposes the flaw in the simplified all(any(...)) logic
+        ("print({1.0, 1.000001})", "{1.000002}", 1e-5, False),
+        # This test *should* fail with the simplified all(any(...)) logic
+        ("print({1.0, 1.000001})", "{1.000002, 2.0}", 1e-5, False),
     ],
 )
 async def test_verify_with_float_tolerance(
