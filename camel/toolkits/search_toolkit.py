@@ -1012,33 +1012,6 @@ class SearchToolkit(BaseToolkit):
         try:
             exa = Exa(EXA_API_KEY)
 
-            # Validate parameters
-            if search_type is not None and search_type not in [
-                "keyword",
-                "neural",
-                "auto",
-            ]:
-                raise ValueError(
-                    "search_type must be 'keyword', 'neural', or 'auto'"
-                )
-
-            if category is not None:
-                valid_categories = {
-                    "company",
-                    "research paper",
-                    "news",
-                    "pdf",
-                    "github",
-                    "tweet",
-                    "personal site",
-                    "linkedin profile",
-                    "financial report",
-                }
-                if category not in valid_categories:
-                    raise ValueError(
-                        f"category must be one of {valid_categories}"
-                    )
-
             if num_results is not None and not 0 < num_results <= 100:
                 raise ValueError("num_results must be between 1 and 100")
 
