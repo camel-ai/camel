@@ -40,6 +40,9 @@ class DataPoint(BaseModel):
         default=None, description="Additional metadata about the data point."
     )
 
+    class Config:
+        extra = "forbid"
+
     def to_dict(self) -> Dict[str, Any]:
         r"""Convert DataPoint to a dictionary.
 
