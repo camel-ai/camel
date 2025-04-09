@@ -163,7 +163,7 @@ class BaseVerifier(ABC):
         pass
 
     async def verify(
-        self, solution: str, ground_truth: Optional[str]
+        self, solution: str, reference_answer: Optional[str]
     ) -> VerificationResult:
         r"""Perform verification with full error handling.
 
@@ -174,7 +174,7 @@ class BaseVerifier(ABC):
 
         Args:
             solution (str): The generated response that needs verification.
-            ground_truth (Optional[str]): The expected correct answer to
+            reference_answer (Optional[str]): The expected correct answer to
                 compare against.
 
         Returns:
@@ -215,13 +215,13 @@ class BaseVerifier(ABC):
                 verification_result = (
                     await asyncio.wait_for(
                         self._verify_implementation(
-                            verifiable_solution, ground_truth
+                            verifiable_solution, reference_answer
                         ),
                         timeout=self._timeout,
                     )
                     if self._timeout
                     else await self._verify_implementation(
-                        verifiable_solution, ground_truth
+                        verifiable_solution, reference_answer
                     )
                 )
 
@@ -267,7 +267,7 @@ class BaseVerifier(ABC):
 
     @abstractmethod
     async def _verify_implementation(
-        self, solution: str, ground_truth: Optional[str]
+        self, solution: str, reference_answer: Optional[str]
     ) -> VerificationResult:
         r"""Abstract method for verification logic.
 
@@ -276,7 +276,7 @@ class BaseVerifier(ABC):
 
         Args:
             solution (str): The generated response requiring verification.
-            ground_truth (Optional[str]): The expected reference output.
+            reference_answer (Optional[str]): The expected reference output.
 
         Returns:
             VerificationResult: Contains verification status and details.
@@ -293,7 +293,7 @@ class BaseVerifier(ABC):
     async def verify_batch(
         self,
         solutions: List[str],
-        ground_truths: List[Optional[str]],
+        reference_answers: List[Optional[str]],
         raise_on_error: bool = False,
     ) -> List[VerificationResult]:
         r"""Verify multiple solutions in parallel with controlled concurrency.
@@ -305,8 +305,8 @@ class BaseVerifier(ABC):
         Args:
             solutions (List[str]): A list of generated solutions to be
                 verified.
-            ground_truths (List[Optional[str]]): A list of expected outputs for
-                comparison. Each element corresponds to a solution.
+            reference_answers (List[Optional[str]]): A list of expected outputs
+                for comparison. Each element corresponds to a solution.
             raise_on_error (bool, optional): If True, raises an exception if
                 any verification fails. (default: :obj:`False`)
 
@@ -337,13 +337,13 @@ class BaseVerifier(ABC):
         semaphore = asyncio.Semaphore(max(1, max_workers))
 
         async def _verify_with_semaphore(
-            solution: str, ground_truth: Optional[str]
+            solution: str, reference_answer: Optional[str]
         ) -> VerificationResult:
             start_time = time.time()
             try:
                 async with semaphore:
                     verification_result = await self.verify(
-                        solution, ground_truth
+                        solution, reference_answer
                     )
                 processing_time = time.time() - start_time
                 success = (
@@ -368,12 +368,12 @@ class BaseVerifier(ABC):
         all_results: List[VerificationResult] = []
         for i in range(0, len(solutions), batch_size):
             batch_solutions = solutions[i : i + batch_size]
-            batch_ground_truths = ground_truths[i : i + batch_size]
+            batch_reference_answers = reference_answers[i : i + batch_size]
 
             verification_tasks = [
-                _verify_with_semaphore(solution, ground_truth)
-                for solution, ground_truth in zip(
-                    batch_solutions, batch_ground_truths
+                _verify_with_semaphore(solution, reference_answer)
+                for solution, reference_answer in zip(
+                    batch_solutions, batch_reference_answers
                 )
             ]
             try:
