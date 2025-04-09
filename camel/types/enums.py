@@ -80,6 +80,19 @@ class ModelType(UnifiedModelType, Enum):
     TOGETHER_MIXTRAL_8_7B = "mistralai/Mixtral-8x7B-Instruct-v0.1"
     TOGETHER_MISTRAL_7B = "mistralai/Mistral-7B-Instruct-v0.1"
 
+    # PPIO platform models support tool calling
+    PPIO_DEEPSEEK_R1_TURBO = "deepseek/deepseek-r1-turbo"
+    PPIO_DEEPSEEK_V3_TURBO = "deepseek/deepseek-v3-turbo"
+    PPIO_DEEPSEEK_R1_COMMUNITY = "deepseek/deepseek-r1/community"
+    PPIO_DEEPSEEK_V3_COMMUNITY = "deepseek/deepseek-v3/community"
+    PPIO_DEEPSEEK_R1 = "deepseek/deepseek-r1"
+    PPIO_DEEPSEEK_V3 = "deepseek/deepseek-v3"
+    PPIO_QWEN_2_5_72B = "qwen/qwen-2.5-72b-instruct"
+    PPIO_BAICHUAN_2_13B_CHAT = "baichuan/baichuan2-13b-chat"
+    PPIO_LLAMA_3_3_70B = "meta-llama/llama-3.3-70b-instruct"
+    PPIO_LLAMA_3_1_70B = "meta-llama/llama-3.1-70b-instruct"
+    PPIO_YI_1_5_34B_CHAT = "01-ai/yi-1.5-34b-chat"
+
     # SambaNova Cloud platform models support tool calling
     SAMBA_LLAMA_3_1_8B = "Meta-Llama-3.1-8B-Instruct"
     SAMBA_LLAMA_3_1_70B = "Meta-Llama-3.1-70B-Instruct"
@@ -281,6 +294,7 @@ class ModelType(UnifiedModelType, Enum):
                 self.is_mistral,
                 self.is_qwen,
                 self.is_deepseek,
+                self.is_ppio,
                 self.is_cohere,
                 self.is_internlm,
                 self.is_together,
@@ -539,6 +553,22 @@ class ModelType(UnifiedModelType, Enum):
         }
 
     @property
+    def is_ppio(self) -> bool:
+        return self in {
+            ModelType.PPIO_DEEPSEEK_R1_TURBO,
+            ModelType.PPIO_DEEPSEEK_V3_TURBO,
+            ModelType.PPIO_DEEPSEEK_R1_COMMUNITY,
+            ModelType.PPIO_DEEPSEEK_V3_COMMUNITY,
+            ModelType.PPIO_DEEPSEEK_R1,
+            ModelType.PPIO_DEEPSEEK_V3,
+            ModelType.PPIO_QWEN_2_5_72B,
+            ModelType.PPIO_BAICHUAN_2_13B_CHAT,
+            ModelType.PPIO_LLAMA_3_3_70B,
+            ModelType.PPIO_LLAMA_3_1_70B,
+            ModelType.PPIO_YI_1_5_34B_CHAT,
+        }
+
+    @property
     def is_internlm(self) -> bool:
         return self in {
             ModelType.INTERNLM3_LATEST,
@@ -653,6 +683,10 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 8_192
         elif self in {
+            ModelType.PPIO_BAICHUAN_2_13B_CHAT,
+        }:
+            return 14_336
+        elif self in {
             ModelType.GPT_3_5_TURBO,
             ModelType.YI_LIGHTNING,
             ModelType.YI_MEDIUM,
@@ -664,6 +698,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.SAMBA_LLAMA_3_1_405B,
             ModelType.GLM_4V_PLUS_0111,
             ModelType.GLM_ZERO_PREVIEW,
+            ModelType.PPIO_YI_1_5_34B_CHAT,
         }:
             return 16_384
         elif self in {
@@ -690,6 +725,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MOONSHOT_V1_32K,
             ModelType.AIML_MIXTRAL_8X7B,
             ModelType.AIML_MISTRAL_7B_INSTRUCT,
+            ModelType.PPIO_QWEN_2_5_72B,
+            ModelType.PPIO_LLAMA_3_1_70B,
             ModelType.MODELSCOPE_QWEN_2_5_7B_INSTRUCT,
             ModelType.MODELSCOPE_QWEN_2_5_14B_INSTRUCT,
             ModelType.MODELSCOPE_QWEN_2_5_32B_INSTRUCT,
@@ -712,6 +749,12 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_MIXTRAL_8x22B,
             ModelType.DEEPSEEK_CHAT,
             ModelType.DEEPSEEK_REASONER,
+            ModelType.PPIO_DEEPSEEK_R1_TURBO,
+            ModelType.PPIO_DEEPSEEK_V3_TURBO,
+            ModelType.PPIO_DEEPSEEK_R1_COMMUNITY,
+            ModelType.PPIO_DEEPSEEK_V3_COMMUNITY,
+            ModelType.PPIO_DEEPSEEK_R1,
+            ModelType.PPIO_DEEPSEEK_V3,
         }:
             return 64_000
         elif self in {
@@ -773,6 +816,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.SGLANG_QWEN_2_5_32B,
             ModelType.SGLANG_QWEN_2_5_72B,
             ModelType.OPENROUTER_LLAMA_3_1_70B,
+            ModelType.PPIO_LLAMA_3_3_70B,
             ModelType.OPENROUTER_LLAMA_4_SCOUT,
         }:
             return 131_072
@@ -994,6 +1038,7 @@ class ModelPlatformType(Enum):
     QWEN = "tongyi-qianwen"
     NVIDIA = "nvidia"
     DEEPSEEK = "deepseek"
+    PPIO = "ppio"
     SGLANG = "sglang"
     INTERNLM = "internlm"
     MOONSHOT = "moonshot"
@@ -1115,6 +1160,11 @@ class ModelPlatformType(Enum):
     def is_deepseek(self) -> bool:
         r"""Returns whether this platform is DeepSeek."""
         return self is ModelPlatformType.DEEPSEEK
+
+    @property
+    def is_ppio(self) -> bool:
+        r"""Returns whether this platform is PPIO."""
+        return self is ModelPlatformType.PPIO
 
     @property
     def is_internlm(self) -> bool:
