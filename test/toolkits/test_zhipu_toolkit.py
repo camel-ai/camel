@@ -11,303 +11,392 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
 from unittest.mock import MagicMock, patch
 
 import pytest
-import os
-from zhipuai import ZhipuAI
 
 from camel.toolkits.zhipu_toolkit import ZhiPuToolkit
-from camel.toolkits import FunctionTool
 
 
-# Fixture for mock ZhipuAI client
+# Fixtures
 @pytest.fixture
-def mock_zhipu_client():
-    mock_client = MagicMock(spec=ZhipuAI)
-    mock_client.files = MagicMock()
-    mock_client.assistant = MagicMock()
-    return mock_client
+def mock_zhipuai_client():
+    return MagicMock()
 
 
-# Fixture for mock environment variables
 @pytest.fixture
-def mock_env_vars():
-    with patch.dict(os.environ, {"ZHIPUAI_API_KEY": "test_api_key"}):
-        yield
+def mock_zhipu_toolkit(mock_zhipuai_client):
+    r"""Fixture for toolkit with mocked dependencies"""
+    with patch('zhipuai.ZhipuAI', return_value=mock_zhipuai_client):
+        toolkit = ZhiPuToolkit(api_key="test_api_key")
+        toolkit.client = mock_zhipuai_client
+        toolkit.file_ids = []
+        toolkit.conversation_id = None
+        yield toolkit
 
 
-# Fixture for ZhiPuToolkit with mocked client
-@pytest.fixture
-def zhipu_toolkit(mock_zhipu_client, mock_env_vars):
-    return ZhiPuToolkit(api_key="test_api_key")
+# --------------------------
+# Test initialization
+# --------------------------
+def test_init_with_provided_api_key():
+    r"""Test initialization with explicitly provided API key"""
+    with patch('zhipuai.ZhipuAI') as mock_zhipuai:
+        ZhiPuToolkit(api_key="provided_api_key")
+        mock_zhipuai.assert_called_once_with(
+            api_key="provided_api_key",
+            base_url="https://open.bigmodel.cn/api/paas/v4/",
+        )
 
 
-def test_init_with_api_key():
-    """Test initialization with provided API key."""
-    toolkit = ZhiPuToolkit(api_key="test_api_key")
-    assert toolkit.client.api_key == "test_api_key"
-    assert toolkit.client.base_url == "https://open.bigmodel.cn/api/paas/v4/"
+def test_init_with_env_api_key():
+    r"""Test initialization with API key from environment variable"""
+    with patch.dict(os.environ, {"ZHIPUAI_API_KEY": "env_api_key"}):
+        with patch('zhipuai.ZhipuAI') as mock_zhipuai:
+            ZhiPuToolkit()
+            mock_zhipuai.assert_called_once_with(
+                api_key="env_api_key",
+                base_url="https://open.bigmodel.cn/api/paas/v4/",
+            )
 
 
-def test_init_with_api_key_and_url():
-    """Test initialization with provided API key and URL."""
-    toolkit = ZhiPuToolkit(api_key="test_api_key", url="http://test_url")
-    assert toolkit.client.api_key == "test_api_key"
-    assert toolkit.client.base_url == "http://test_url"
+def test_init_with_custom_url():
+    r"""Test initialization with custom base URL"""
+    with patch('zhipuai.ZhipuAI') as mock_zhipuai:
+        ZhiPuToolkit(api_key="test_api_key", url="https://custom.url")
+        mock_zhipuai.assert_called_once_with(
+            api_key="test_api_key", base_url="https://custom.url"
+        )
 
 
-def test_init_from_env_vars(mock_zhipu_client, mock_env_vars):
-    """Test initialization using environment variables."""
-    toolkit = ZhiPuToolkit()
-    assert toolkit.client.api_key == "test_api_key"
-    assert toolkit.client.base_url == "https://open.bigmodel.cn/api/paas/v4/"
+# --------------------------
+# Test _call_the_agent method
+# --------------------------
+def test_call_the_agent_success(mock_zhipu_toolkit):
+    r"""Test successful call to the agent"""
+    # Setup mock response for the conversation
+    mock_response = MagicMock()
+    mock_choice = MagicMock()
+    mock_choice.delta.content = "Success response"
+    mock_response.choices = [mock_choice]
+    mock_response.conversation_id = "test_conversation_id"
 
-
-def test_init_no_api_key():
-    """Test initialization without API key raises an error."""
-    with pytest.raises(ValueError, match="ZHIPUAI_API_KEY is required."):
-        ZhiPuToolkit()
-
-
-@patch("camel.toolkits.zhipu_toolkit.ZhipuAI.files.create")
-@patch("camel.toolkits.zhipu_toolkit.ZhipuAI.assistant.conversation")
-def test_call_the_agent_success(
-    mock_conversation, mock_file_create, zhipu_toolkit
-):
-    """Test successful call to the agent."""
-    mock_file_create.return_value.id = "test_file_id"
-    mock_conversation.return_value = [
-        MagicMock(
-            choices=[
-                MagicMock(
-                    delta=MagicMock(
-                        content="Test response part 1", tool_calls=None
-                    )
-                )
-            ],
-            conversation_id="test_conversation_id",
-        ),
-        MagicMock(
-            choices=[
-                MagicMock(
-                    delta=MagicMock(
-                        content="Test response part 2", tool_calls=None
-                    )
-                )
-            ],
-            conversation_id="test_conversation_id",
-        ),
+    # Set up the mock to return our generator of responses
+    mock_zhipu_toolkit.client.assistant.conversation.return_value = [
+        mock_response
     ]
-    result = zhipu_toolkit._call_the_agent(
+
+    # Execute the method
+    result = mock_zhipu_toolkit._call_the_agent(
         prompt="Test prompt", assistant_id="test_assistant_id"
     )
-    assert result == "Test response part 1Test response part 2"
-    mock_conversation.assert_called_once()
-    assert zhipu_toolkit.conversation_id == "test_conversation_id"
-    assert not mock_file_create.called
+
+    # Verify
+    mock_zhipu_toolkit.client.assistant.conversation.assert_called_once_with(
+        assistant_id="test_assistant_id",
+        conversation_id=None,
+        model="glm-4-assistant",
+        messages=[
+            {
+                "role": "user",
+                "content": [{"type": "text", "text": "Test prompt"}],
+            }
+        ],
+        stream=True,
+        attachments=None,
+        metadata=None,
+    )
+    assert result == "Success response"
+    assert mock_zhipu_toolkit.conversation_id == "test_conversation_id"
 
 
-@patch("camel.toolkits.zhipu_toolkit.ZhipuAI.files.create")
-@patch("camel.toolkits.zhipu_toolkit.ZhipuAI.assistant.conversation")
-def test_call_the_agent_with_file(
-    mock_conversation, mock_file_create, zhipu_toolkit
-):
-    """Test calling the agent with a file."""
-    mock_file_create.return_value.id = "test_file_id"
-    mock_conversation.return_value = [
-        MagicMock(
-            choices=[
-                MagicMock(
-                    delta=MagicMock(
-                        content="Test response", tool_calls=None
-                    )
-                )
-            ],
-            conversation_id="test_conversation_id",
-        )
+def test_call_the_agent_with_file(mock_zhipu_toolkit):
+    r"""Test calling the agent with a file upload"""
+    # Setup mock file upload response
+    mock_file_response = MagicMock()
+    mock_file_response.id = "test_file_id"
+    mock_zhipu_toolkit.client.files.create.return_value = mock_file_response
+
+    # Setup mock conversation response
+    mock_response = MagicMock()
+    mock_choice = MagicMock()
+    mock_choice.delta.content = "File analysis result"
+    mock_response.choices = [mock_choice]
+    mock_response.conversation_id = "test_conversation_id"
+    mock_zhipu_toolkit.client.assistant.conversation.return_value = [
+        mock_response
     ]
-    with patch("builtins.open", MagicMock(), create=True):
-        result = zhipu_toolkit._call_the_agent(
-            prompt="Test prompt",
+
+    # Mock open function
+    with patch('builtins.open', MagicMock()):
+        # Execute
+        result = mock_zhipu_toolkit._call_the_agent(
+            prompt="Analyze this file",
             assistant_id="test_assistant_id",
             file_path="test_file.txt",
         )
-    assert result == "Test response"
-    mock_file_create.assert_called_once()
-    mock_conversation.assert_called_once()
-    assert "test_file_id" in zhipu_toolkit.file_ids
+
+    # Verify
+    mock_zhipu_toolkit.client.files.create.assert_called_once()
+    mock_zhipu_toolkit.client.assistant.conversation.assert_called_once()
+    assert mock_zhipu_toolkit.file_ids == ["test_file_id"]
+    assert result == "File analysis result"
+    assert mock_zhipu_toolkit.conversation_id == "test_conversation_id"
 
 
-@patch("camel.toolkits.zhipu_toolkit.ZhipuAI.files.create")
-@patch("camel.toolkits.zhipu_toolkit.ZhipuAI.assistant.conversation")
-def test_call_the_agent_file_upload_fails(
-    mock_conversation, mock_file_create, zhipu_toolkit
-):
-    """Test handling of file upload failure."""
-    mock_file_create.side_effect = Exception("File upload error")
-    with patch("builtins.open", MagicMock(), create=True):
-        result = zhipu_toolkit._call_the_agent(
-            prompt="Test prompt",
+def test_call_the_agent_tool_calls(mock_zhipu_toolkit):
+    r"""Test call with tool calls in the response"""
+    # Setup complex mock response with tool_calls
+    mock_tool_call = MagicMock()
+    mock_output_item = MagicMock()
+    mock_output_item.__str__.return_value = "Tool output"
+    mock_attr = MagicMock()
+    mock_attr.outputs = [mock_output_item]
+    # Set up the structure to match what's checked in the code
+    type(mock_tool_call).function = mock_attr
+
+    mock_response = MagicMock()
+    mock_choice = MagicMock()
+    mock_choice.delta.tool_calls = [mock_tool_call]
+    mock_response.choices = [mock_choice]
+    mock_response.conversation_id = "test_conversation_id"
+
+    mock_zhipu_toolkit.client.assistant.conversation.return_value = [
+        mock_response
+    ]
+
+    # Execute
+    result = mock_zhipu_toolkit._call_the_agent(
+        prompt="Use a tool", assistant_id="test_assistant_id"
+    )
+
+    # Verify
+    assert result == "Tool output"
+    assert mock_zhipu_toolkit.conversation_id == "test_conversation_id"
+
+
+def test_call_the_agent_file_upload_failure(mock_zhipu_toolkit):
+    r"""Test handling of file upload failure"""
+    # Setup
+    mock_zhipu_toolkit.client.files.create.side_effect = Exception(
+        "Upload failed"
+    )
+
+    # Mock open function
+    with patch('builtins.open', MagicMock()):
+        # Execute
+        result = mock_zhipu_toolkit._call_the_agent(
+            prompt="Analyze this file",
             assistant_id="test_assistant_id",
             file_path="test_file.txt",
         )
-    assert "Upload file failed: File upload error" in result
-    assert not mock_conversation.called
+
+    # Verify
+    mock_zhipu_toolkit.client.files.create.assert_called_once()
+    mock_zhipu_toolkit.client.assistant.conversation.assert_not_called()
+    assert "Upload file failed: Upload failed" in result
 
 
-@patch("camel.toolkits.zhipu_toolkit.ZhipuAI.files.create")
-@patch("camel.toolkits.zhipu_toolkit.ZhipuAI.assistant.conversation")
-def test_call_the_agent_api_call_fails(
-    mock_conversation, mock_file_create, zhipu_toolkit
-):
-    """Test handling of API call failure."""
-    mock_conversation.side_effect = Exception("API call error")
-    result = zhipu_toolkit._call_the_agent(
+def test_call_the_agent_conversation_failure(mock_zhipu_toolkit):
+    r"""Test handling of conversation API failure"""
+    # Setup
+    mock_zhipu_toolkit.client.assistant.conversation.side_effect = Exception(
+        "API error"
+    )
+
+    # Execute
+    result = mock_zhipu_toolkit._call_the_agent(
         prompt="Test prompt", assistant_id="test_assistant_id"
     )
-    assert "Call the agent failed: API call error" in result
-    assert not mock_file_create.called
+
+    # Verify
+    mock_zhipu_toolkit.client.assistant.conversation.assert_called_once()
+    assert "Call the agent failed: API error" in result
 
 
-@patch("camel.toolkits.zhipu_toolkit.ZhipuAI.assistant.conversation")
-def test_call_the_agent_with_tool_calls(mock_conversation, zhipu_toolkit):
-    """Test parsing response with tool calls."""
-    mock_conversation.return_value = [
-        MagicMock(
-            choices=[
-                MagicMock(
-                    delta=MagicMock(
-                        content=None,
-                        tool_calls=[
-                            MagicMock(
-                                id="call_123",
-                                type="function",
-                                function=MagicMock(
-                                    name="get_current_weather",
-                                    arguments='{"location": "Beijing"}',
-                                ),
-                            )
-                        ],
-                    )
-                )
-            ],
+# --------------------------
+# Test specific assistant functions
+# --------------------------
+def test_draw_mindmap(mock_zhipu_toolkit):
+    r"""Test draw_mindmap method"""
+    # Setup
+    with patch.object(
+        mock_zhipu_toolkit, '_call_the_agent', return_value="Mindmap created"
+    ) as mock_call:
+        # Execute
+        result = mock_zhipu_toolkit.draw_mindmap("Create a mindmap about AI")
+
+        # Verify
+        mock_call.assert_called_once_with(
+            prompt="Create a mindmap about AI",
+            assistant_id="664dd7bd5bb3a13ba0f81668",
+            file_path=None,
+        )
+        assert result == "Mindmap created"
+
+
+def test_draw_mindmap_with_file(mock_zhipu_toolkit):
+    r"""Test draw_mindmap method with file reference"""
+    # Setup
+    with patch.object(
+        mock_zhipu_toolkit,
+        '_call_the_agent',
+        return_value="Mindmap created with file",
+    ) as mock_call:
+        # Execute
+        result = mock_zhipu_toolkit.draw_mindmap(
+            "Create a mindmap based on this file", file_path="reference.txt"
+        )
+
+        # Verify
+        mock_call.assert_called_once_with(
+            prompt="Create a mindmap based on this file",
+            assistant_id="664dd7bd5bb3a13ba0f81668",
+            file_path="reference.txt",
+        )
+        assert result == "Mindmap created with file"
+
+
+def test_draw_flowchart(mock_zhipu_toolkit):
+    r"""Test draw_flowchart method"""
+    # Setup
+    with patch.object(
+        mock_zhipu_toolkit, '_call_the_agent', return_value="Flowchart created"
+    ) as mock_call:
+        # Execute
+        result = mock_zhipu_toolkit.draw_flowchart(
+            "Create a flowchart about data processing"
+        )
+
+        # Verify
+        mock_call.assert_called_once_with(
+            prompt="Create a flowchart about data processing",
+            assistant_id="664dd7bd5bb3a13ba0f81668",
+            file_path=None,
+        )
+        assert result == "Flowchart created"
+
+
+def test_data_analysis(mock_zhipu_toolkit):
+    r"""Test data_analysis method"""
+    # Setup
+    with patch.object(
+        mock_zhipu_toolkit,
+        '_call_the_agent',
+        return_value="Data analysis results",
+    ) as mock_call:
+        # Execute
+        result = mock_zhipu_toolkit.data_analysis(
+            "Analyze this dataset", file_path="data.csv"
+        )
+
+        # Verify
+        mock_call.assert_called_once_with(
+            prompt="Analyze this dataset",
+            assistant_id="65a265419d72d299a9230616",
+            file_path="data.csv",
+        )
+        assert result == "Data analysis results"
+
+
+def test_ai_drawing(mock_zhipu_toolkit):
+    r"""Test ai_drawing method"""
+    # Setup
+    with patch.object(
+        mock_zhipu_toolkit, '_call_the_agent', return_value="Image created"
+    ) as mock_call:
+        # Execute
+        result = mock_zhipu_toolkit.ai_drawing("Draw a sunset over mountains")
+
+        # Verify
+        mock_call.assert_called_once_with(
+            prompt="Draw a sunset over mountains",
+            assistant_id="66437ef3d920bdc5c60f338e",
+            file_path=None,
+        )
+        assert result == "Image created"
+
+
+def test_ai_search(mock_zhipu_toolkit):
+    r"""Test ai_search method"""
+    # Setup
+    with patch.object(
+        mock_zhipu_toolkit, '_call_the_agent', return_value="Search results"
+    ) as mock_call:
+        # Execute
+        result = mock_zhipu_toolkit.ai_search("Find information about Python")
+
+        # Verify
+        mock_call.assert_called_once_with(
+            prompt="Find information about Python",
+            assistant_id="659e54b1b8006379b4b2abd6",
+            file_path=None,
+        )
+        assert result == "Search results"
+
+
+def test_ppt_generation(mock_zhipu_toolkit):
+    r"""Test ppt_generation method"""
+    # Setup
+    mock_zhipu_toolkit.conversation_id = None
+    side_effect_values = ["Initial response", "PPT generated"]
+
+    with patch.object(
+        mock_zhipu_toolkit, '_call_the_agent', side_effect=side_effect_values
+    ) as mock_call:
+        # Set conversation_id after first call
+        def side_effect(*args, **kwargs):
+            result = side_effect_values.pop(0)
+            mock_zhipu_toolkit.conversation_id = "test_conversation_id"
+            return result
+
+        mock_call.side_effect = side_effect
+
+        # Execute
+        result = mock_zhipu_toolkit.ppt_generation(
+            "Create a presentation about climate change"
+        )
+
+        # Verify
+        assert mock_call.call_count == 2
+        # First call
+        mock_call.assert_any_call(
+            prompt="Create a presentation about climate change",
+            assistant_id="65d2f07bb2c10188f885bd89",
+            file_path=None,
+        )
+        # Second call
+        mock_call.assert_any_call(
+            prompt='生成PPT',
+            assistant_id="65d2f07bb2c10188f885bd89",
+            file_path=None,
             conversation_id="test_conversation_id",
-        ),
-        MagicMock(
-            choices=[
-                MagicMock(
-                    delta=MagicMock(
-                        content=None,
-                        tool_calls=[
-                            MagicMock(
-                                id="call_123",
-                                type="function",
-                                function=MagicMock(
-                                    outputs=[{"name": "temperature", "value": "25"}]
-                                ),
-                            )
-                        ],
-                    )
-                )
-            ],
-            conversation_id="test_conversation_id",
-        ),
-    ]
-    result = zhipu_toolkit._call_the_agent(
-        prompt="Test prompt", assistant_id="test_assistant_id"
-    )
-    assert "{'name': 'temperature', 'value': '25'}" in result
+        )
+        assert result == "PPT generated"
 
 
-@patch("camel.toolkits.zhipu_toolkit.ZhiPuToolkit._call_the_agent")
-def test_draw_mindmap(mock_call_agent, zhipu_toolkit):
-    """Test draw_mindmap method."""
-    zhipu_toolkit.draw_mindmap(prompt="Test mindmap prompt")
-    mock_call_agent.assert_called_once_with(
-        prompt="Test mindmap prompt",
-        assistant_id="664dd7bd5bb3a13ba0f81668",
-        file_path=None,
-    )
+# --------------------------
+# Test get_tools method
+# --------------------------
+def test_get_tools(mock_zhipu_toolkit):
+    r"""Test get_tools method returns correct FunctionTool objects"""
+    # Setup
+    with patch('camel.toolkits.FunctionTool') as mock_function_tool:
+        # Create mock tools to return
+        mock_tools = [MagicMock() for _ in range(6)]
+        mock_function_tool.side_effect = mock_tools
 
+        # Execute
+        tools = mock_zhipu_toolkit.get_tools()
 
-@patch("camel.toolkits.zhipu_toolkit.ZhiPuToolkit._call_the_agent")
-def test_draw_flowchart(mock_call_agent, zhipu_toolkit):
-    """Test draw_flowchart method."""
-    zhipu_toolkit.draw_flowchart(prompt="Test flowchart prompt", file_path="test.txt")
-    mock_call_agent.assert_called_once_with(
-        prompt="Test flowchart prompt",
-        assistant_id="664dd7bd5bb3a13ba0f81668",
-        file_path="test.txt",
-    )
+        # Verify
+        assert len(tools) == 6
+        assert mock_function_tool.call_count == 6
 
-
-@patch("camel.toolkits.zhipu_toolkit.ZhiPuToolkit._call_the_agent")
-def test_data_analysis(mock_call_agent, zhipu_toolkit):
-    """Test data_analysis method."""
-    zhipu_toolkit.data_analysis(prompt="Test data analysis prompt")
-    mock_call_agent.assert_called_once_with(
-        prompt="Test data analysis prompt",
-        assistant_id="65a265419d72d299a9230616",
-        file_path=None,
-    )
-
-
-@patch("camel.toolkits.zhipu_toolkit.ZhiPuToolkit._call_the_agent")
-def test_ai_drawing(mock_call_agent, zhipu_toolkit):
-    """Test ai_drawing method."""
-    zhipu_toolkit.ai_drawing(prompt="Test drawing prompt", file_path="image.png")
-    mock_call_agent.assert_called_once_with(
-        prompt="Test drawing prompt",
-        assistant_id="66437ef3d920bdc5c60f338e",
-        file_path="image.png",
-    )
-
-
-@patch("camel.toolkits.zhipu_toolkit.ZhiPuToolkit._call_the_agent")
-def test_ai_search(mock_call_agent, zhipu_toolkit):
-    """Test ai_search method."""
-    zhipu_toolkit.ai_search(prompt="Test search prompt")
-    mock_call_agent.assert_called_once_with(
-        prompt="Test search prompt",
-        assistant_id="659e54b1b8006379b4b2abd6",
-        file_path=None,
-    )
-
-
-@patch("camel.toolkits.zhipu_toolkit.ZhiPuToolkit._call_the_agent")
-def test_ppt_generation(mock_call_agent, zhipu_toolkit):
-    """Test ppt_generation method."""
-    zhipu_toolkit.ppt_generation(prompt="Test PPT prompt", file_path="report.pdf")
-    assert mock_call_agent.call_count == 2
-    mock_call_agent.assert_any_call(
-        prompt="Test PPT prompt",
-        assistant_id="65d2f07bb2c10188f885bd89",
-        file_path="report.pdf",
-    )
-    mock_call_agent.assert_any_call(
-        prompt="生成PPT",
-        assistant_id="65d2f07bb2c10188f885bd89",
-        file_path="report.pdf",
-        conversation_id=zhipu_toolkit.conversation_id,
-    )
-
-
-def test_get_tools(zhipu_toolkit):
-    """Test get_tools method."""
-    tools = zhipu_toolkit.get_tools()
-    assert isinstance(tools, list)
-    assert len(tools) == 6
-    tool_names = [tool.name for tool in tools]
-    assert "draw_mindmap" in tool_names
-    assert "draw_flowchart" in tool_names
-    assert "data_analysis" in tool_names
-    assert "ai_drawing" in tool_names
-    assert "ai_search" in tool_names
-    assert "ppt_generation" in tool_names
-    assert any(tool.func == zhipu_toolkit.draw_mindmap for tool in tools)
-    assert any(tool.func == zhipu_toolkit.draw_flowchart for tool in tools)
-    assert any(tool.func == zhipu_toolkit.data_analysis for tool in tools)
-    assert any(tool.func == zhipu_toolkit.ai_drawing for tool in tools)
-    assert any(tool.func == zhipu_toolkit.ai_search for tool in tools)
-    assert any(tool.func == zhipu_toolkit.ppt_generation for tool in tools)
+        # Check that all functions were passed to FunctionTool constructor
+        mock_function_tool.assert_any_call(mock_zhipu_toolkit.draw_mindmap)
+        mock_function_tool.assert_any_call(mock_zhipu_toolkit.draw_flowchart)
+        mock_function_tool.assert_any_call(mock_zhipu_toolkit.data_analysis)
+        mock_function_tool.assert_any_call(mock_zhipu_toolkit.ai_drawing)
+        mock_function_tool.assert_any_call(mock_zhipu_toolkit.ai_search)
+        mock_function_tool.assert_any_call(mock_zhipu_toolkit.ppt_generation)

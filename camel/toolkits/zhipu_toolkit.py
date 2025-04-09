@@ -12,9 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import os
 from typing import List, Optional
 
-import os
 from zhipuai import ZhipuAI
 
 from camel.logger import get_logger
@@ -27,8 +27,7 @@ logger = get_logger(__name__)
 
 @MCPServer()
 class ZhiPuToolkit(BaseToolkit):
-    r"""A toolkit using  the agent on Zhipu AI platform.
-    """
+    r"""A toolkit using  the agent on Zhipu AI platform."""
 
     @api_keys_required(
         [
@@ -36,16 +35,16 @@ class ZhiPuToolkit(BaseToolkit):
         ]
     )
     def __init__(
-            self, 
-            api_key: Optional[str] = None,
-            url: Optional[str] = None,
+        self,
+        api_key: Optional[str] = None,
+        url: Optional[str] = None,
     ):
         r"""Initialize the ZhiPuToolkit.
 
         Args:
-            api_key (Optional[str]): The api key to use for the Zhipu AI platform.
+            api_key (Optional[str]): The api key to use for the Zhipu platform.
                 (default: :obj:`None`)
-            url (Optional[str]): The url to use for the Zhipu AI platform.
+            url (Optional[str]): The url to use for the Zhipu platform.
                 (default: :obj:`None`)
         """
         api_key = api_key or os.environ.get("ZHIPUAI_API_KEY")
@@ -53,15 +52,16 @@ class ZhiPuToolkit(BaseToolkit):
             "ZHIPUAI_API_BASE_URL", "https://open.bigmodel.cn/api/paas/v4/"
         )
         self.client = ZhipuAI(api_key=api_key, base_url=url)
-        self.file_ids = []
+        self.file_ids: List[str] = []
+        self.conversation_id: Optional[str] = None
 
     def _call_the_agent(
-            self, 
-            prompt: str ,
-            assistant_id: str ,
-            file_path: Optional[str] = None,
-            conversation_id: Optional[str] = None
-        ) -> str:
+        self,
+        prompt: str,
+        assistant_id: str,
+        file_path: Optional[str] = None,
+        conversation_id: Optional[str] = None,
+    ) -> str:
         r"""Call the agent to get the result.
 
         Args:
@@ -69,7 +69,7 @@ class ZhiPuToolkit(BaseToolkit):
             assistant_id (str): The assistant id to call the agent.
             file_path (Optional[str]): The path of the file to upload.
                 (default: :obj:`None`)
-            conversation_id (Optional[str]): The conversation id to call the agent.
+            conversation_id (Optional[str]): The conversation id of session.
                 (default: :obj:`None`)
         Returns:
             str: The result of the agent.
@@ -77,14 +77,13 @@ class ZhiPuToolkit(BaseToolkit):
         if file_path:
             try:
                 resp = self.client.files.create(
-                    file=open(file_path, 'rb'),
-                    purpose='assistant'
+                    file=open(file_path, 'rb'), purpose='assistant'
                 )
                 file_id = resp.id
                 self.file_ids.append(file_id)
                 attachments = [
                     {"file_id": file_id} for file_id in self.file_ids
-                    ]
+                ]
             except Exception as e:
                 logger.error(f"Upload file failed: {e}")
                 return f"Upload file failed: {e!s}"
@@ -98,33 +97,37 @@ class ZhiPuToolkit(BaseToolkit):
                 messages=[
                     {
                         "role": "user",
-                        "content": [{
-                            "type": "text",
-                            "text": prompt
-                        }]
+                        "content": [{"type": "text", "text": prompt}],
                     }
                 ],
                 stream=True,
                 attachments=attachments,
-                metadata=None
+                metadata=None,
             )
             result = ""
-            #ruff: noqa: E501
             # Parse according to the Zhipu message format
             for resp in response:
                 if hasattr(resp, 'choices') and resp.choices:
                     choice = resp.choices[0]
                     if hasattr(choice, 'delta'):
-                        if hasattr(choice.delta, 'tool_calls') and choice.delta.tool_calls:
+                        if (
+                            hasattr(choice.delta, 'tool_calls')
+                            and choice.delta.tool_calls
+                        ):
                             for tool_call in choice.delta.tool_calls:
                                 for attr in dir(tool_call):
                                     if not attr.startswith('_'):
                                         attr_value = getattr(tool_call, attr)
-                                        if hasattr(attr_value, 'outputs') and attr_value.outputs:
-                                            for output_item in attr_value.outputs:
+                                        if (
+                                            hasattr(attr_value, 'outputs')
+                                            and attr_value.outputs
+                                        ):
+                                            for (
+                                                output_item
+                                            ) in attr_value.outputs:
                                                 result += str(output_item)
                         if hasattr(choice.delta, 'content'):
-                            result += (str(choice.delta.content))
+                            result += str(choice.delta.content)
                         self.conversation_id = resp.conversation_id
 
         except Exception as e:
@@ -134,7 +137,7 @@ class ZhiPuToolkit(BaseToolkit):
         return result
 
     def draw_mindmap(
-        self, prompt: str = None, file_path: Optional[str] = None
+        self, prompt: str, file_path: Optional[str] = None
     ) -> str:
         r"""Generates mindmap with prompt.
 
@@ -148,11 +151,11 @@ class ZhiPuToolkit(BaseToolkit):
         return self._call_the_agent(
             prompt=prompt,
             assistant_id="664dd7bd5bb3a13ba0f81668",
-            file_path=file_path
+            file_path=file_path,
         )
 
     def draw_flowchart(
-        self, prompt: str = None, file_path: Optional[str] = None
+        self, prompt: str, file_path: Optional[str] = None
     ) -> str:
         r"""Draw a flowchart with a prompt.
 
@@ -166,11 +169,11 @@ class ZhiPuToolkit(BaseToolkit):
         return self._call_the_agent(
             prompt=prompt,
             assistant_id="664dd7bd5bb3a13ba0f81668",
-            file_path=file_path
+            file_path=file_path,
         )
 
     def data_analysis(
-        self, prompt: str = None, file_path: Optional[str] = None
+        self, prompt: str, file_path: Optional[str] = None
     ) -> str:
         r"""Analyze data and provide charting capabilities. Also,
         it can complete file processing tasks through simple coding.
@@ -185,12 +188,10 @@ class ZhiPuToolkit(BaseToolkit):
         return self._call_the_agent(
             prompt=prompt,
             assistant_id="65a265419d72d299a9230616",
-            file_path=file_path
+            file_path=file_path,
         )
-    
-    def ai_drawing(
-        self, prompt: str = None, file_path: Optional[str] = None
-    ) -> str:
+
+    def ai_drawing(self, prompt: str, file_path: Optional[str] = None) -> str:
         r"""Draw a picture with a prompt.
 
         Args:
@@ -203,12 +204,10 @@ class ZhiPuToolkit(BaseToolkit):
         return self._call_the_agent(
             prompt=prompt,
             assistant_id="66437ef3d920bdc5c60f338e",
-            file_path=file_path
+            file_path=file_path,
         )
-    
-    def ai_search(
-        self, prompt: str = None, file_path: Optional[str] = None
-    ) -> str:
+
+    def ai_search(self, prompt: str, file_path: Optional[str] = None) -> str:
         r"""Search the internet for information and answer questions.
 
         Args:
@@ -221,14 +220,14 @@ class ZhiPuToolkit(BaseToolkit):
         return self._call_the_agent(
             prompt=prompt,
             assistant_id="659e54b1b8006379b4b2abd6",
-            file_path=file_path
+            file_path=file_path,
         )
 
     def ppt_generation(
-        self, prompt: str = None, file_path: Optional[str] = None
+        self, prompt: str, file_path: Optional[str] = None
     ) -> str:
         r"""Generate a ppt with a prompt.
-        
+
         Args:
             prompt (str): The prompt for generating the ppt.
             file_path (Optional[str]): The path of the reference file.
@@ -239,13 +238,13 @@ class ZhiPuToolkit(BaseToolkit):
         self._call_the_agent(
             prompt=prompt,
             assistant_id="65d2f07bb2c10188f885bd89",
-            file_path=file_path
+            file_path=file_path,
         )
         return self._call_the_agent(
             prompt='生成PPT',
             assistant_id="65d2f07bb2c10188f885bd89",
             file_path=file_path,
-            conversation_id=self.conversation_id
+            conversation_id=self.conversation_id,
         )
 
     def get_tools(self) -> List[FunctionTool]:
