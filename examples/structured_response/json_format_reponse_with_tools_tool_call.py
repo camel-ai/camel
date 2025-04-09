@@ -51,8 +51,7 @@ class Schema(BaseModel):
 
 
 user_msg = """Assume the current age of University of Oxford is 200 and then 
-add 10 more years to this age, you must use tools to get the answer. and call 
-return_json_response tool to generate structured output"""
+add 10 more years to this age, you must use tools to get the answer."""
 
 # Get response information
 response = camel_agent.step(
