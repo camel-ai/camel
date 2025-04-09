@@ -29,6 +29,7 @@ from camel.toolkits.browser_toolkit import (
 
 TEST_URL = "https://example.com"
 
+
 @pytest.fixture(scope="function")
 def base_browser_fixture():
     with patch('playwright.sync_api.sync_playwright'):
@@ -234,4 +235,3 @@ def test_visual_viewport_from_dict():
     viewport = visual_viewport_from_dict(viewport_dict)
     assert viewport["height"] == 800
     assert viewport["scrollHeight"] == 1200
-
