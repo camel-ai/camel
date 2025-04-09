@@ -20,7 +20,7 @@ from typing import Any, Dict, List, Optional, Union
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils.commons import MCPServer, api_keys_required
+from camel.utils import MCPServer, api_keys_required
 
 logger = get_logger(__name__)
 

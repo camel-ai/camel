@@ -31,7 +31,7 @@ class AzureEmbedding(BaseEmbedding[str]):
     Args:
         model_type (EmbeddingModelType, optional): The model type to be
             used for text embeddings.
-            (default: :obj:`TEXT_EMBEDDING_ADA_2`)
+            (default: :obj:`TEXT_EMBEDDING_3_SMALL`)
         url (Optional[str], optional): The url to the Azure OpenAI service.
             (default: :obj:`None`)
         api_key (str, optional): The API key for authenticating with the
