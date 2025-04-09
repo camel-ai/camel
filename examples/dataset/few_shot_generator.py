@@ -22,12 +22,9 @@ from camel.datasets import FewShotGenerator, StaticDataset
 from camel.logger import get_logger
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
-from camel.verifiers import PythonVerifier
 
 logger = get_logger(__name__)
 
-verifier = PythonVerifier(required_packages=["sympy"])
-asyncio.run(verifier.setup())
 
 raw_data2 = [
     {
@@ -79,15 +76,11 @@ model = ModelFactory.create(
     model_type=ModelType.GPT_4O_MINI,
     model_config_dict=ChatGPTConfig().as_dict(),
 )
-generator = FewShotGenerator(
-    seed_dataset=seed_dataset, verifier=verifier, model=model
-)
+generator = FewShotGenerator(seed_dataset=seed_dataset, model=model)
 
-new_data = asyncio.run(generator.generate_new(n=2, max_retries=5))
+asyncio.run(generator.generate_new(n=2, max_retries=5))
 
-for dp in new_data:
+for dp in generator._data:
     print(dp)
 
 generator.save_to_jsonl(Path("generated_data.jsonl"))
-
-asyncio.run(verifier.cleanup())
