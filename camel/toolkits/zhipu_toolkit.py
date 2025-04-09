@@ -109,6 +109,7 @@ class ZhiPuToolkit(BaseToolkit):
                 metadata=None
             )
             ressult = ""
+            #ruff: noqa: E501
             # Parse according to the Zhipu message format
             for resp in response:
                 if hasattr(resp, 'choices') and resp.choices:
