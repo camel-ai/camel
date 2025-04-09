@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-from typing import Any
+from typing import Any, Optional
 
 from openai import OpenAI
 
@@ -45,11 +45,14 @@ class TogetherEmbedding(BaseEmbedding[str]):
     def __init__(
         self,
         model_name: str = "togethercomputer/m2-bert-80M-8k-retrieval",
-        api_key: str | None = None,
-        dimensions: int | None = None,
+        api_key: Optional[str] = None,
+        dimensions: Optional[int] = None,
     ) -> None:
         if not isinstance(model_name, str) or not model_name.strip():
             raise ValueError("Model name must be a non-empty string")
+            
+        if dimensions is not None and dimensions <= 0:
+            raise ValueError("Dimensions must be a positive integer")
 
         self.model_name = model_name
         self._api_key = api_key or os.environ.get("TOGETHER_API_KEY")
@@ -118,7 +121,7 @@ class TogetherEmbedding(BaseEmbedding[str]):
         """
         if self.output_dim is None:
             logger.debug(
-                "Output dimension not set,"
+                "Output dimension not set, "
                 "making test embedding to determine it"
             )
             # Make a test embedding to determine the dimension
@@ -126,7 +129,7 @@ class TogetherEmbedding(BaseEmbedding[str]):
 
         if self.output_dim is None:
             raise ValueError(
-                "Failed to determine embedding dimension for model:"
+                "Failed to determine embedding dimension for model: "
                 f"{self.model_name}"
             )
 
