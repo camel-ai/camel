@@ -39,8 +39,24 @@ def calendar_toolkit(mock_calendar_service):
         patch('os.path.exists', return_value=True),
         patch('pickle.load'),
         patch('builtins.open'),
+        patch.dict(
+            'os.environ',
+            {
+                'GOOGLE_CLIENT_ID': 'mock_client_id',
+                'GOOGLE_CLIENT_SECRET': 'mock_client_secret',
+                'GOOGLE_REFRESH_TOKEN': 'mock_refresh_token',
+            },
+        ),
+        patch.object(
+            GoogleCalendarToolkit,
+            '_get_calendar_service',
+            return_value=mock_calendar_service,
+        ),
     ):
         toolkit = GoogleCalendarToolkit()
+        toolkit.service = (
+            mock_calendar_service  # Ensure the service is set to our mock
+        )
         yield toolkit
 
 
@@ -84,26 +100,26 @@ def test_create_event(calendar_toolkit, mock_calendar_service):
 
 
 def test_create_event_invalid_time_format(calendar_toolkit):
-    with pytest.raises(ValueError) as excinfo:
-        calendar_toolkit.create_event(
-            event_title='Test Event',
-            start_time='2024/03/30 10:00',  # Invalid format
-            end_time='2024-03-30T11:00:00',
-        )
+    result = calendar_toolkit.create_event(
+        event_title='Test Event',
+        start_time='2024/03/30 10:00',  # Invalid format
+        end_time='2024-03-30T11:00:00',
+    )
 
-    assert "time must be in ISO format" in str(excinfo.value)
+    assert "error" in result
+    assert "Time format error" in result["error"]
 
 
 def test_create_event_invalid_email(calendar_toolkit):
-    with pytest.raises(ValueError) as excinfo:
-        calendar_toolkit.create_event(
-            event_title='Test Event',
-            start_time='2024-03-30T10:00:00',
-            end_time='2024-03-30T11:00:00',
-            attendees_email=['invalid-email'],
-        )
+    result = calendar_toolkit.create_event(
+        event_title='Test Event',
+        start_time='2024-03-30T10:00:00',
+        end_time='2024-03-30T11:00:00',
+        attendees_email=['invalid-email'],
+    )
 
-    assert "Invalid email address" in str(excinfo.value)
+    assert "error" in result
+    assert "Invalid email address" in result["error"]
 
 
 def test_create_event_failure(calendar_toolkit, mock_calendar_service):
@@ -111,14 +127,14 @@ def test_create_event_failure(calendar_toolkit, mock_calendar_service):
     mock_calendar_service.events().insert.return_value = event_mock
     event_mock.execute.side_effect = Exception("API Error")
 
-    with pytest.raises(ValueError) as excinfo:
-        calendar_toolkit.create_event(
-            event_title='Test Event',
-            start_time='2024-03-30T10:00:00',
-            end_time='2024-03-30T11:00:00',
-        )
+    result = calendar_toolkit.create_event(
+        event_title='Test Event',
+        start_time='2024-03-30T10:00:00',
+        end_time='2024-03-30T11:00:00',
+    )
 
-    assert "Failed to create event" in str(excinfo.value)
+    assert "error" in result
+    assert "Failed to create event" in result["error"]
 
 
 def test_get_events(calendar_toolkit, mock_calendar_service):
@@ -188,10 +204,10 @@ def test_get_events_failure(calendar_toolkit, mock_calendar_service):
     mock_calendar_service.events().list.return_value = events_mock
     events_mock.execute.side_effect = Exception("API Error")
 
-    with pytest.raises(ValueError) as excinfo:
-        calendar_toolkit.get_events()
+    result = calendar_toolkit.get_events()
 
-    assert "Failed to retrieve events" in str(excinfo.value)
+    assert "error" in result
+    assert "Failed to retrieve events" in result["error"]
 
 
 def test_update_event(calendar_toolkit, mock_calendar_service):

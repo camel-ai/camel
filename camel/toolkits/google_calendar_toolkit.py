@@ -15,10 +15,14 @@
 
 import datetime
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
+from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
+from camel.utils.commons import api_keys_required
+
+logger = get_logger(__name__)
 
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 
@@ -38,7 +42,8 @@ class GoogleCalendarToolkit(BaseToolkit):
 
         Args:
             timeout (Optional[float]): The timeout value for API requests
-            in seconds. If None, no timeout is applied. Defaults to None.
+                in seconds. If None, no timeout is applied.
+                (default: :obj:`None`)
         """
         super().__init__(timeout=timeout)
         self.service = self._get_calendar_service()
@@ -62,8 +67,9 @@ class GoogleCalendarToolkit(BaseToolkit):
             description (str, optional): Description of the event.
             location (str, optional): Location of the event.
             attendees_email (List[str], optional): List of email addresses.
+                (default: :obj:`None`)
             timezone (str, optional): Timezone for the event.
-            Defaults to "UTC".
+                (default: :obj:`UTC`)
 
         Returns:
             dict: A dictionary containing details of the created event.
@@ -72,21 +78,43 @@ class GoogleCalendarToolkit(BaseToolkit):
             ValueError: If the event creation fails.
         """
         try:
-            datetime.datetime.strptime(start_time, "%Y-%m-%dT%H:%M:%S")
-            datetime.datetime.strptime(end_time, "%Y-%m-%dT%H:%M:%S")
-        except Exception:
-            raise ValueError("time must be in ISO format: YYYY-MM-DDTHH:MM:SS")
+            # Handle ISO format with or without timezone info
+            if 'Z' in start_time or '+' in start_time:
+                datetime.datetime.fromisoformat(
+                    start_time.replace('Z', '+00:00')
+                )
+            else:
+                datetime.datetime.strptime(start_time, "%Y-%m-%dT%H:%M:%S")
+
+            if 'Z' in end_time or '+' in end_time:
+                datetime.datetime.fromisoformat(
+                    end_time.replace('Z', '+00:00')
+                )
+            else:
+                datetime.datetime.strptime(end_time, "%Y-%m-%dT%H:%M:%S")
+        except ValueError as e:
+            error_msg = f"Time format error: {e!s}. Expected ISO "
+            "format: YYYY-MM-DDTHH:MM:SS"
+            logger.error(error_msg)
+            return {"error": error_msg}
 
         if attendees_email is None:
             attendees_email = []
 
-        # Verify email addresses
+        # Verify email addresses with improved validation
         valid_emails = []
+        import re
+
+        email_pattern = re.compile(
+            r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        )
+
         for email in attendees_email:
-            if "@" in email and "." in email.split("@")[-1]:
+            if email_pattern.match(email):
                 valid_emails.append(email)
             else:
-                raise ValueError(f"Invalid email address: {email}")
+                logger.error(f"Invalid email address: {email}")
+                return {"error": f"Invalid email address: {email}"}
 
         event: Dict[str, Any] = {
             'summary': event_title,
@@ -118,22 +146,27 @@ class GoogleCalendarToolkit(BaseToolkit):
                 'End Time': created_event.get('end', {}).get('dateTime'),
                 'Link': created_event.get('htmlLink'),
             }
-        except Exception:
-            raise ValueError("Failed to create event")
+        except Exception as e:
+            error_msg = f"Failed to create event: {e!s}"
+            logger.error(error_msg)
+            return {"error": error_msg}
 
     def get_events(
         self, max_results: int = 10, time_min: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+    ) -> Union[List[Dict[str, Any]], Dict[str, Any]]:
         r"""Retrieves upcoming events from the user's primary Google Calendar.
 
         Args:
             max_results (int, optional): Maximum number of events to retrieve.
+                (default: :obj:`10`)
             time_min (str, optional): The minimum time to fetch events from.
                 If not provided, defaults to the current time.
+                (default: :obj:`None`)
 
         Returns:
-            List[Dict[str, Any]]: A list of dictionaries,
-            each containing details of an event.
+            Union[List[Dict[str, Any]], Dict[str, Any]]: A list of
+                dictionaries, each containing details of an event, or a
+                dictionary with an error message.
 
         Raises:
             ValueError: If the event retrieval fails.
@@ -176,8 +209,9 @@ class GoogleCalendarToolkit(BaseToolkit):
                 )
 
             return result
-        except Exception:
-            raise ValueError("Failed to retrieve events")
+        except Exception as e:
+            logger.error(f"Failed to retrieve events: {e!s}")
+            return {"error": f"Failed to retrieve events: {e!s}"}
 
     def update_event(
         self,
@@ -193,17 +227,24 @@ class GoogleCalendarToolkit(BaseToolkit):
 
         Args:
             event_id (str): The ID of the event to update.
-            event_title (str, optional): New title of the event.
-            start_time (str, optional): New start time in ISO format
-            (YYYY-MM-DDTHH:MM:SSZ).
-            end_time (str, optional): New end time in ISO format
-            (YYYY-MM-DDTHH:MM:SSZ).
-            description (str, optional): New description of the event.
-            location (str, optional): New location of the event.
-            attendees_email (List[str], optional): List of email addresses.
+            event_title (Optional[str]): New title of the event.
+                (default: :obj:`None`)
+            start_time (Optional[str]): New start time in ISO format
+                (YYYY-MM-DDTHH:MM:SSZ).
+                (default: :obj:`None`)
+            end_time (Optional[str]): New end time in ISO format
+                (YYYY-MM-DDTHH:MM:SSZ).
+                (default: :obj:`None`)
+            description (Optional[str]): New description of the event.
+                (default: :obj:`None`)
+            location (Optional[str]): New location of the event.
+                (default: :obj:`None`)
+            attendees_email (Optional[List[str]]): List of email addresses.
+                (default: :obj:`None`)
 
         Returns:
-            dict: A dictionary containing details of the updated event.
+            Dict[str, Any]: A dictionary containing details of the updated
+                event.
 
         Raises:
             ValueError: If the event update fails.
@@ -294,22 +335,6 @@ class GoogleCalendarToolkit(BaseToolkit):
         except Exception:
             raise ValueError("Failed to retrieve calendar details")
 
-    def get_tools(self) -> List[FunctionTool]:
-        r"""Returns a list of FunctionTool objects representing the
-        functions in the toolkit.
-
-        Returns:
-            List[FunctionTool]: A list of FunctionTool objects
-                representing the functions in the toolkit.
-        """
-        return [
-            FunctionTool(self.create_event),
-            FunctionTool(self.get_events),
-            FunctionTool(self.update_event),
-            FunctionTool(self.delete_event),
-            FunctionTool(self.get_calendar_details),
-        ]
-
     def _get_calendar_service(self):
         r"""Authenticates and creates a Google Calendar service object.
 
@@ -322,21 +347,25 @@ class GoogleCalendarToolkit(BaseToolkit):
         from google.auth.transport.requests import Request
         from googleapiclient.discovery import build
 
-        creds = None
+        # Get credentials through authentication
+        try:
+            creds = self._authenticate()
 
-        # If there are no (valid) credentials available, let the user log in
-        if not creds or not creds.valid:
+            # Refresh token if expired
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
-            else:
-                creds = self._authenticate()
 
-        try:
             service = build('calendar', 'v3', credentials=creds)
             return service
-        except Exception:
-            raise ValueError("Failed to build service")
+        except Exception as e:
+            raise ValueError(f"Failed to build service: {e!s}")
 
+    @api_keys_required(
+        [
+            (None, "GOOGLE_CLIENT_ID"),
+            (None, "GOOGLE_CLIENT_SECRET"),
+        ]
+    )
     def _authenticate(self):
         r"""Gets Google OAuth2 credentials from environment variables.
 
@@ -360,12 +389,6 @@ class GoogleCalendarToolkit(BaseToolkit):
 
         # For first-time authentication
         if not refresh_token:
-            if not (client_id and client_secret):
-                raise ValueError(
-                    "Missing required environment variables: "
-                    "GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET"
-                )
-
             client_config = {
                 "installed": {
                     "client_id": client_id,
@@ -390,3 +413,19 @@ class GoogleCalendarToolkit(BaseToolkit):
                 client_secret=client_secret,
                 scopes=SCOPES,
             )
+
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the
+        functions in the toolkit.
+
+        Returns:
+            List[FunctionTool]: A list of FunctionTool objects
+                representing the functions in the toolkit.
+        """
+        return [
+            FunctionTool(self.create_event),
+            FunctionTool(self.get_events),
+            FunctionTool(self.update_event),
+            FunctionTool(self.delete_event),
+            FunctionTool(self.get_calendar_details),
+        ]
