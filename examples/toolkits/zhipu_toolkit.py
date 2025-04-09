@@ -67,7 +67,7 @@ You can choose one of the following options to continue:
 Please let me know your choice!
 
 Tool calls:
-[ToolCallingRecord(tool_name='ai_drawing', args={'prompt': 'A cute and playful cat sitting on a windowsill, looking outside with bright green eyes. The background shows a sunny day with blue skies and fluffy clouds.', 'file_path': None}, result="DrawingToolOutput(image='https://sfile.chatglm.cn/testpath/gen-1744186721453265884_0.png')这是一幅描绘一只可爱、活泼的猫咪坐在窗台上的画。它用明亮的绿色眼睛望着窗外,背景是晴朗的一天,蓝天上飘着蓬松的云朵。\n\n接下来,您可以选择以下四个选项之一来继续生成图片:\n\n1. 🎨 选项1 **转变风格** —— 将这幅画转变为梵高风格的画作,增加梵高特有的鲜艳色彩和动感笔触。\n2. 🌟 选项2 **增加元素** —— 在画面中增加一只小鸟,让猫咪看起来像是在和小鸟互动。\n3. 📚 选项3 **连环画** —— 继续生成一张图,展示猫咪从窗台跳下,开始追逐一只蝴蝶的情景。\n4. 💡 选项4 **提升 tips** —— 建议将窗台上的花朵画得更鲜艳一些,并增加一些细节,如窗台上摆放的小饰品,来丰富画面内容。\n\n请告诉我您的选择！", tool_call_id='call_XW4NuDb54ejFH5zBlkdokClZ')]
+[ToolCallingRecord(tool_name='ai_drawing', args={'prompt': 'A cute and playful cat sitting on a windowsill, looking outside with bright green eyes. The background shows a sunny day with blue skies and fluffy clouds.', 'file_path': None}, result="DrawingToolOutput(image='https://sfile.chatglm.cn/testpath/gen-1744186721453265884_0.png')这是一幅描绘一只可爱、活泼的猫咪坐在窗台上的画。它用明亮的绿色眼睛望着窗外,背景是晴朗的一天,蓝天上飘着蓬松的云朵。\n\n接下来,您可以选择以下四个选项之一来继续生成图片:\n\n1. 🎨 选项1 **转变风格** —— 将这幅画转变为梵高风格的画作,增加梵高特有的鲜艳色彩和动感笔触。\n2. 🌟 选项2 **增加元素** —— 在画面中增加一只小鸟,让猫咪看起来像是在和小鸟互动。\n3. 📚 选项3 **连环画** —— 继续生成一张图,展示猫咪从窗台跳下,开始追逐一只蝴蝶的情景。\n4. 💡 选项4 **提升 tips** —— 建议将窗台上的花朵画得更鲜艳一些,并增加一些细节,如窗台上摆放的小饰品,来丰富画面内容。\n\n请告诉我您的选择!", tool_call_id='call_XW4NuDb54ejFH5zBlkdokClZ')]
 ===============================================================================
 """
 
