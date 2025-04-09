@@ -27,6 +27,7 @@ URL = "https://toscrape.com/"
 crawl_results = asyncio.run(crawler.crawl(URL, max_depth=1))
 print(crawl_results[0]["markdown"])
 '''
+===============================================================================
 ![](img/zyte.png)
 
 # Web Scraping Sandbox
@@ -69,6 +70,7 @@ Endpoints
 [ViewState](http://quotes.toscrape.com/search.aspx) | an AJAX based filter 
     form with ViewStates  
 [Random](http://quotes.toscrape.com/random) | a single random quote
+===============================================================================
 '''
 
 
@@ -76,6 +78,7 @@ Endpoints
 scrape_result = asyncio.run(crawler.scrape(URL))
 print(scrape_result)
 '''
+===============================================================================
 {url: 'https://toscrape.com/', 
 'raw_result': CrawlResult(url='https://toscrape.com/', markdown=..., 
     cleaned_html=..., links=...),
@@ -83,6 +86,7 @@ print(scrape_result)
 'cleaned_html': '\n<div>\n<div>\n<div>\n<img class="logo" height="108" 
     src="img/zyte.png" width="200"/>\n
     <h1>Web Scraping Sandbox</h1>\n...'}
+===============================================================================
 '''
 
 
