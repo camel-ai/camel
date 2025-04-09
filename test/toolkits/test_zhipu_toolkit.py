@@ -15,6 +15,7 @@ import os
 from unittest.mock import MagicMock, patch
 
 import pytest
+import zhipuai
 
 from camel.toolkits import ZhiPuToolkit
 
@@ -148,8 +149,7 @@ def test_call_the_agent_tool_calls(mock_zhipu_toolkit):
     r"""Test call with tool calls in the response"""
     # Setup complex mock response with tool_calls
     mock_tool_call = MagicMock()
-    mock_output_item = MagicMock()
-    mock_output_item.__str__.return_value = "Tool output"
+    mock_output_item = "Tool output"
     mock_attr = MagicMock()
     mock_attr.outputs = [mock_output_item]
     # Set up the structure to match what's checked in the code
@@ -382,10 +382,6 @@ def test_get_tools(mock_zhipu_toolkit):
     r"""Test get_tools method returns correct FunctionTool objects"""
     # Setup
     with patch('camel.toolkits.FunctionTool') as mock_function_tool:
-        # Create mock tools to return
-        mock_tools = [MagicMock() for _ in range(6)]
-        mock_function_tool.side_effect = mock_tools
-
         # Execute
         tools = mock_zhipu_toolkit.get_tools()
 
