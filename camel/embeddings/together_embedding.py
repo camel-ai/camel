@@ -50,7 +50,7 @@ class TogetherEmbedding(BaseEmbedding[str]):
     ) -> None:
         if not isinstance(model_name, str) or not model_name.strip():
             raise ValueError("Model name must be a non-empty string")
-            
+
         if dimensions is not None and dimensions <= 0:
             raise ValueError("Dimensions must be a positive integer")
 
