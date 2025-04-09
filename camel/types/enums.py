@@ -63,6 +63,10 @@ class ModelType(UnifiedModelType, Enum):
     GROQ_MIXTRAL_8_7B = "mixtral-8x7b-32768"
     GROQ_GEMMA_2_9B_IT = "gemma2-9b-it"
 
+    # Upstage platform models
+    UPSTAGE_SOLAR_PRO_22B = "solar-pro"
+    UPSTAGE_SOLAR_MINI_10B = "solar-mini"
+
     # OpenRouter models
     OPENROUTER_LLAMA_3_1_405B = "meta-llama/llama-3.1-405b-instruct"
     OPENROUTER_LLAMA_3_1_70B = "meta-llama/llama-3.1-70b-instruct"
@@ -300,6 +304,7 @@ class ModelType(UnifiedModelType, Enum):
                 self.is_together,
                 self.is_sambanova,
                 self.is_groq,
+                self.is_upstage,
                 self.is_openrouter,
                 self.is_sglang,
                 self.is_moonshot,
@@ -389,6 +394,14 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GROQ_LLAMA_3_70B,
             ModelType.GROQ_MIXTRAL_8_7B,
             ModelType.GROQ_GEMMA_2_9B_IT,
+        }
+
+    @property
+    def is_upstage(self) -> bool:
+        r"""Returns whether this type of models is served by Upstage."""
+        return self in {
+            ModelType.UPSTAGE_SOLAR_MINI_10B,
+            ModelType.UPSTAGE_SOLAR_PRO_22B,
         }
 
     @property
@@ -663,6 +676,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.COHERE_COMMAND_LIGHT,
             ModelType.NVIDIA_NEMOTRON_340B_INSTRUCT,
             ModelType.NVIDIA_NEMOTRON_340B_REWARD,
+            ModelType.UPSTAGE_SOLAR_PRO_22B,
         }:
             return 4_096
         elif self in {
@@ -743,6 +757,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MODELSCOPE_MINISTRAL_8B_INSTRUCT,
             ModelType.MODELSCOPE_DEEPSEEK_V3_0324,
             ModelType.OPENROUTER_LLAMA_3_1_405B,
+            ModelType.UPSTAGE_SOLAR_MINI_10B,
         }:
             return 32_768
         elif self in {
@@ -1023,6 +1038,7 @@ class ModelPlatformType(Enum):
     ANTHROPIC = "anthropic"
     GROQ = "groq"
     OPENROUTER = "openrouter"
+    UPSTAGE = "upstage"
     OLLAMA = "ollama"
     LITELLM = "litellm"
     ZHIPU = "zhipuai"
@@ -1079,6 +1095,11 @@ class ModelPlatformType(Enum):
     def is_openrouter(self) -> bool:
         r"""Returns whether this platform is openrouter."""
         return self is ModelPlatformType.OPENROUTER
+
+    @property
+    def is_upstage(self) -> bool:
+        r"""Returns whether this platform is upstage."""
+        return self is ModelPlatformType.UPSTAGE
 
     @property
     def is_ollama(self) -> bool:

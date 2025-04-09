@@ -39,6 +39,7 @@ from .samba_config import (
 from .sglang_config import SGLANG_API_PARAMS, SGLangConfig
 from .siliconflow_config import SILICONFLOW_API_PARAMS, SiliconFlowConfig
 from .togetherai_config import TOGETHERAI_API_PARAMS, TogetherAIConfig
+from .upstage_config import UPSTAGE_API_PARAMS, UpstageConfig
 from .vllm_config import VLLM_API_PARAMS, VLLMConfig
 from .yi_config import YI_API_PARAMS, YiConfig
 from .zhipuai_config import ZHIPUAI_API_PARAMS, ZhipuAIConfig
@@ -97,4 +98,6 @@ __all__ = [
     'AIML_API_PARAMS',
     'OpenRouterConfig',
     'OPENROUTER_API_PARAMS',
+    'UpstageConfig',
+    'UPSTAGE_API_PARAMS',
 ]
