@@ -20,13 +20,14 @@ from typing import Any, Dict, List, Optional, Union
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils.commons import api_keys_required
+from camel.utils.commons import MCPServer, api_keys_required
 
 logger = get_logger(__name__)
 
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 
 
+@MCPServer()
 class GoogleCalendarToolkit(BaseToolkit):
     r"""A class representing a toolkit for Google Calendar operations.
 
