@@ -14,6 +14,7 @@
 from .models import Action, Environment, Observation, StepResult
 from .multi_step import MultiStepEnv
 from .single_step import SingleStepEnv
+from .tic_tac_toe import Opponent, TicTacToeEnv
 
 __all__ = [
     "Environment",
@@ -22,4 +23,6 @@ __all__ = [
     "Action",
     "Observation",
     "StepResult",
+    "TicTacToeEnv",
+    "Opponent",
 ]

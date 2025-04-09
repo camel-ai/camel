@@ -13,14 +13,14 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Optional, Sequence, Union
+from typing import Dict, Optional, Sequence, Type, Union
 
-from pydantic import Field
+from pydantic import BaseModel
 
 from camel.configs.base_config import BaseConfig
 
 
-class TogetherAIConfig(BaseConfig):
+class PPIOConfig(BaseConfig):
     r"""Defines the parameters for generating chat completions using the
     OpenAI API.
 
@@ -76,25 +76,27 @@ class TogetherAIConfig(BaseConfig):
             The exact effect will vary per model, but values between:obj:` -1`
             and :obj:`1` should decrease or increase likelihood of selection;
             values like :obj:`-100` or :obj:`100` should result in a ban or
-            exclusive selection of the relevant token. (default: :obj:`{}`)
+            exclusive selection of the relevant token. (default: :obj:`None`)
         user (str, optional): A unique identifier representing your end-user,
             which can help OpenAI to monitor and detect abuse.
             (default: :obj:`None`)
+        tools (list[FunctionTool], optional): A list of tools the model may
+            call. Currently, only functions are supported as a tool. Use this
+            to provide a list of functions the model may generate JSON inputs
+            for. A max of 128 functions are supported.
     """
 
-    temperature: Optional[float] = None  # openai default: 1.0
+    temperature: Optional[float] = None
     top_p: Optional[float] = None
     n: Optional[int] = None
     stream: Optional[bool] = None
     stop: Optional[Union[str, Sequence[str]]] = None
     max_tokens: Optional[int] = None
     presence_penalty: Optional[float] = None
-    response_format: Optional[dict] = None
+    response_format: Optional[Union[Type[BaseModel], Dict]] = None
     frequency_penalty: Optional[float] = None
-    logit_bias: dict = Field(default_factory=dict)
+    logit_bias: Optional[Dict] = None
     user: Optional[str] = None
 
 
-TOGETHERAI_API_PARAMS = {
-    param for param in TogetherAIConfig.model_fields.keys()
-}
+PPIO_API_PARAMS = {param for param in PPIOConfig.model_fields.keys()}
