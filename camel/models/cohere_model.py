@@ -227,7 +227,11 @@ class CohereModel(BaseModelBackend):
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
-        request_config = self.model_config_dict.copy()
+        import copy
+
+        request_config = copy.deepcopy(self.model_config_dict)
+        # Remove strict from each tool's function parameters since Cohere does
+        # not support them
         if tools:
             for tool in tools:
                 function_dict = tool.get('function', {})

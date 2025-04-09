@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.38"
+version = "0.2.43"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -22,11 +22,12 @@ keywords = [
 ]
 dependencies = [
     "openai>=1.68.0,<2",
+    "mcp>=1.3.0",
     "tiktoken>=0.7.0,<0.8",
     "colorama>=0.4.6,<0.5",
     "jsonschema>=4,<5",
     "docstring-parser>=0.15,<0.16",
-    "pydantic>=1.9,<2.10",
+    "pydantic>=2.10.6",
     "httpx>=0.28.0,<1.0.0dev",
     "psutil>=5.9.8,<6",
 ]
@@ -75,6 +76,7 @@ rag = [
     "cohere>=5.11.0,<6",
     "unstructured==0.16.20",
     "pandasai>=2.3.0,<3",
+    "crawl4ai>=0.3.745",
 ]
 web_tools = [
     "duckduckgo-search>=6.3.5,<7",
@@ -89,11 +91,15 @@ web_tools = [
     "pyowm>=3.3.0,<4",
     "googlemaps>=4.10.0,<5",
     "requests_oauthlib>=1.3.1,<2",
+    "google-api-python-client==2.166.0",
+    "google-auth-httplib2==0.2.0",
+    "google-auth-oauthlib==1.2.1",
     "sympy>=1.13.3,<2",
     "fastapi>=0.115.11",
     "playwright>=1.50.0",
     "html2text>=2024.2.26",
     "beautifulsoup4>=4,<5",
+    "exa-py>=1.10.0,<2"
 ]
 document_tools = [
     "numpy~=1.26",
@@ -109,6 +115,7 @@ document_tools = [
     "openpyxl>=3.1.5",
     "docx>=0.2.4",
     "fpdf>=1.7.2",
+    "crawl4ai>=0.3.745",
 ]
 media_tools = [
     "imageio[pyav]>=2.34.2,<3",
@@ -228,6 +235,7 @@ owl = [
     "tree-sitter>=0.23.2,<0.24",
     "pandas>=1.5.3,<2",
     "rouge>=1.0.1,<2",
+    "crawl4ai>=0.3.745",
 ]
 all = [
     "numpy~=1.26",
@@ -252,6 +260,9 @@ all = [
     "sympy>=1.13.3,<2",
     "pyowm>=3.3.0,<4",
     "googlemaps>=4.10.0,<5",
+    "google-api-python-client==2.166.0",
+    "google-auth-httplib2==0.2.0",
+    "google-auth-oauthlib==1.2.1",
     "requests_oauthlib>=1.3.1,<2",
     "fastapi>=0.115.11",
     "prance>=23.6.21.0,<24",
@@ -333,6 +344,8 @@ all = [
     "typer>=0.15.2",
     "mem0ai>=0.1.67",
     "math-verify>=0.7.0,<0.8",
+    "exa-py>=1.10.0,<2",
+    "crawl4ai>=0.3.745",
 ]
 
 [project.urls]
@@ -456,6 +469,7 @@ module = [
     "sentence_transformers.*",
     "pymilvus",
     "pytidb",
+    "pytidb.schema",
     "pillow",
     "slack-sdk",
     "slack-bolt",
@@ -468,6 +482,8 @@ module = [
     "docker.*",
     "google.*",
     "google_generativeai",
+    "google_auth_oauthlib.flow",
+    "googleapiclient.discovery",
     "mistralai",
     "cohere",
     "fish-audio-sdk",
@@ -511,7 +527,9 @@ module = [
     "mcp",
     "typer",
     "mem0",
-    "math_verify.*"
+    "math_verify.*",
+    "exa_py",
+    "crawl4ai.*",
 ]
 ignore_missing_imports = true
 

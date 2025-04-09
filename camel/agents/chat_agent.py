@@ -327,7 +327,10 @@ class ChatAgent(BaseAgent):
         return False
 
     def update_memory(
-        self, message: BaseMessage, role: OpenAIBackendRole
+        self,
+        message: BaseMessage,
+        role: OpenAIBackendRole,
+        timestamp: Optional[float] = None,
     ) -> None:
         r"""Updates the agent memory with a new message.
 
@@ -335,12 +338,19 @@ class ChatAgent(BaseAgent):
             message (BaseMessage): The new message to add to the stored
                 messages.
             role (OpenAIBackendRole): The backend role type.
+            timestamp (Optional[float], optional): Custom timestamp for the
+                memory record. If None, current timestamp will be used.
+                (default: :obj:`None`)
         """
+        from datetime import timezone
+
         self.memory.write_record(
             MemoryRecord(
                 message=message,
                 role_at_backend=role,
-                timestamp=datetime.now().timestamp(),
+                timestamp=timestamp
+                if timestamp is not None
+                else datetime.now(timezone.utc).timestamp(),
                 agent_id=self.agent_id,
             )
         )
@@ -603,9 +613,6 @@ class ChatAgent(BaseAgent):
                 self._get_full_tool_schemas(),
             )
 
-            if self.single_iteration:
-                break
-
             if tool_call_requests := response.tool_call_requests:
                 # Process all tool calls
                 for tool_call_request in tool_call_requests:
@@ -623,6 +630,9 @@ class ChatAgent(BaseAgent):
 
                 # If we found external tool calls, break the loop
                 if external_tool_call_requests:
+                    break
+
+                if self.single_iteration:
                     break
 
                 # If we're still here, continue the loop
@@ -695,9 +705,6 @@ class ChatAgent(BaseAgent):
                 self._get_full_tool_schemas(),
             )
 
-            if self.single_iteration:
-                break
-
             if tool_call_requests := response.tool_call_requests:
                 # Process all tool calls
                 for tool_call_request in tool_call_requests:
@@ -716,6 +723,9 @@ class ChatAgent(BaseAgent):
 
                 # If we found an external tool call, break the loop
                 if external_tool_call_requests:
+                    break
+
+                if self.single_iteration:
                     break
 
                 # If we're still here, continue the loop
@@ -1331,8 +1341,18 @@ class ChatAgent(BaseAgent):
             tool_call_id=tool_call_id,
         )
 
-        self.update_memory(assist_msg, OpenAIBackendRole.ASSISTANT)
-        self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
+        # Use slightly different timestamps to ensure correct ordering
+        # This ensures the assistant message (tool call) always appears before
+        # the function message (tool result) in the conversation context
+        current_time = datetime.now().timestamp()
+        self.update_memory(
+            assist_msg, OpenAIBackendRole.ASSISTANT, timestamp=current_time
+        )
+        self.update_memory(
+            func_msg,
+            OpenAIBackendRole.FUNCTION,
+            timestamp=current_time + 0.001,
+        )
 
         # Record information about this tool call
         tool_record = ToolCallingRecord(
