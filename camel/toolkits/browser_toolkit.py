@@ -1406,6 +1406,8 @@ Your output should be in json format, including the following fields:
 - `if_need_replan`: bool, A boolean value indicating whether the task needs to be fundamentally replanned.
 - `replanned_schema`: str, The replanned schema for the task, which should not be changed too much compared with the original one. If the task does not need to be replanned, the value should be an empty string. 
 """
+        r""" Reset the history message of planning_agent. Important history information is already included in the history field in replanning_prompt."""
+        self.planning_agent.reset()
         resp = self.planning_agent.step(replanning_prompt)
         resp_dict = _parse_json_output(resp.msgs[0].content)
 
