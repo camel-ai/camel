@@ -21,11 +21,12 @@ import requests
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import handle_http_error
+from camel.utils import MCPServer, handle_http_error
 
 LINKEDIN_POST_LIMIT = 1300
 
 
+@MCPServer()
 class LinkedInToolkit(BaseToolkit):
     r"""A class representing a toolkit for LinkedIn operations.
 

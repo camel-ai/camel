@@ -400,7 +400,8 @@ def test_chat_agent_messages_window():
     )
 
     openai_messages, _ = assistant.memory.get_context()
-    assert len(openai_messages) == 2
+    # system msg does not count in the window size
+    assert len(openai_messages) == 2 + 1
 
 
 @pytest.mark.model_backend
