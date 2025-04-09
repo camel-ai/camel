@@ -108,7 +108,8 @@ class ZhiPuToolkit(BaseToolkit):
                 attachments=attachments,
                 metadata=None
             )
-            ressult = ""
+            result = ""
+            #ruff: noqa: E501
             # Parse according to the Zhipu message format
             for resp in response:
                 if hasattr(resp, 'choices') and resp.choices:
@@ -121,15 +122,16 @@ class ZhiPuToolkit(BaseToolkit):
                                         attr_value = getattr(tool_call, attr)
                                         if hasattr(attr_value, 'outputs') and attr_value.outputs:
                                             for output_item in attr_value.outputs:
-                                                ressult += str(output_item)
+                                                result += str(output_item)
                         if hasattr(choice.delta, 'content'):
-                            ressult += (str(choice.delta.content))
+                            result += (str(choice.delta.content))
                         self.conversation_id = resp.conversation_id
+
         except Exception as e:
             logger.error(f"Unexpected error: {e}")
             return f"Call the agent failed: {e!s}"
 
-        return ressult
+        return result
 
     def draw_mindmap(
         self, prompt: str = None, file_path: Optional[str] = None
