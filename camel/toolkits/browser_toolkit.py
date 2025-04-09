@@ -1175,6 +1175,8 @@ out the information you need. Sometimes they are extremely useful.
         message = BaseMessage.make_user_message(
             role_name='user', content=observe_prompt, image_list=[img]
         )
+        r""" Reset the history message of web_agent. Important history information is already included in the history field in observe_prompt."""
+        self.web_agent.reset()
         resp = self.web_agent.step(message)
 
         resp_content = resp.msgs[0].content
