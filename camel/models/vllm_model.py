@@ -235,14 +235,20 @@ class VLLMModel(BaseModelBackend):
         request_config["response_format"] = response_format
         request_config.pop("stream", None)
         if tools is not None:
-            request_config["tools"] = tools
-            # Remove additionalProperties from each tool's function parameters
+            # Create a deep copy of tools to avoid modifying the original
+            import copy
+
+            request_config["tools"] = copy.deepcopy(tools)
+            # Remove additionalProperties and strict from each tool's function
+            # parameters since vLLM does not support them
             if "tools" in request_config:
                 for tool in request_config["tools"]:
                     if "function" in tool and "parameters" in tool["function"]:
                         tool["function"]["parameters"].pop(
                             "additionalProperties", None
                         )
+                    if "strict" in tool.get("function", {}):
+                        tool["function"].pop("strict")
 
         return self._client.beta.chat.completions.parse(
             messages=messages,
@@ -261,14 +267,20 @@ class VLLMModel(BaseModelBackend):
         request_config["response_format"] = response_format
         request_config.pop("stream", None)
         if tools is not None:
-            request_config["tools"] = tools
-            # Remove additionalProperties from each tool's function parameters
+            # Create a deep copy of tools to avoid modifying the original
+            import copy
+
+            request_config["tools"] = copy.deepcopy(tools)
+            # Remove additionalProperties and strict from each tool's function
+            # parameters since vLLM does not support them
             if "tools" in request_config:
                 for tool in request_config["tools"]:
                     if "function" in tool and "parameters" in tool["function"]:
                         tool["function"]["parameters"].pop(
                             "additionalProperties", None
                         )
+                    if "strict" in tool.get("function", {}):
+                        tool["function"].pop("strict")
 
         return await self._async_client.beta.chat.completions.parse(
             messages=messages,
