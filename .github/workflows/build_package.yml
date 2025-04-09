@@ -101,6 +101,8 @@ jobs:
           OPENROUTER_API_KEY: "${{ secrets.OPENROUTER_API_KEY }}"
           MODELSCOPE_SDK_TOKEN: "${{ secrets.MODELSCOPE_SDK_TOKEN }}"
           NOTION_TOKEN: "${{ secrets.NOTION_TOKEN }}"
+          GOOGLE_CLIENT_ID: "${{ secrets.GOOGLE_CLIENT_ID }}"
+          GOOGLE_CLIENT_SECRET: "${{ secrets.GOOGLE_CLIENT_SECRET }}"
         run: |
           source test_venv/bin/activate
           pytest --fast-test-mode ./test
