@@ -18,6 +18,7 @@ from .mistral_embedding import MistralEmbedding
 from .openai_compatible_embedding import OpenAICompatibleEmbedding
 from .openai_embedding import OpenAIEmbedding
 from .sentence_transformers_embeddings import SentenceTransformerEncoder
+from .together_embedding import TogetherEmbedding
 from .vlm_embedding import VisionLanguageEmbedding
 
 __all__ = [
@@ -29,4 +30,5 @@ __all__ = [
     "MistralEmbedding",
     "OpenAICompatibleEmbedding",
     "JinaEmbedding",
+    "TogetherEmbedding",
 ]
