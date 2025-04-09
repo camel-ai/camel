@@ -15,8 +15,8 @@
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
-from camel.toolkits import ZhiPuToolkit, FunctionTool
 from camel.types import ModelPlatformType, ModelType
+from camel.toolkits import FunctionTool, ZhiPuToolkit
 
 # Create a Model
 model_config_dict = ChatGPTConfig(temperature=0.0).as_dict()

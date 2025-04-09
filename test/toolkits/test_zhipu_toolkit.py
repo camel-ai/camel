@@ -16,7 +16,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from camel.toolkits.zhipu_toolkit import ZhiPuToolkit
+from camel.toolkits import ZhiPuToolkit
 
 
 # Fixtures
