@@ -151,11 +151,38 @@ class UbuntuDockerRuntime(DockerRuntime):
                 [self.python_path, "--version"]
             )
             logger.info(f"Python version check result: {output.decode()}")
+            if exit_code != 0:
+                logger.error(
+                    f"Python version check failed with exit code {exit_code}"
+                )
+                raise RuntimeError(
+                    f"Python installation verification "
+                    f"failed: {output.decode()}"
+                )
 
             # Install required packages
             logger.info("Installing required packages...")
-            self.container.exec_run("apt-get update")
-            self.container.exec_run("apt-get install -y curl")
+            exit_code, output = self.container.exec_run("apt-get update")
+            if exit_code != 0:
+                logger.error(
+                    f"apt-get update failed with "
+                    f"exit code {exit_code}: {output.decode()}"
+                )
+                raise RuntimeError(
+                    f"Failed to update package lists: {output.decode()}"
+                )
+
+            exit_code, output = self.container.exec_run(
+                "apt-get install -y curl"
+            )
+            if exit_code != 0:
+                logger.error(
+                    f"apt-get install curl failed with "
+                    f"exit code {exit_code}: {output.decode()}"
+                )
+                raise RuntimeError(
+                    f"Failed to install curl: {output.decode()}"
+                )
 
             # Start API server with explicit Python path
             logger.info("Starting API server...")
@@ -163,24 +190,36 @@ class UbuntuDockerRuntime(DockerRuntime):
                 [self.python_path, "/home/api.py"],
                 detach=True,
                 environment={
-                    "PYTHONPATH": "/usr/local/lib/python3.10/site-packages",
+                    "PYTHONPATH": str(
+                        Path(self.python_path).parent
+                        / "lib/python3.10/site-packages"
+                    ),
                     "PYTHON_EXECUTABLE": self.python_path,
                 },
             )
             logger.info("API server start result: %s", exec_result)
 
             # Wait for API server to start
-            for _ in range(10):
+            start_time = time.time()
+            while time.time() - start_time < 10:
                 try:
-                    _, curl_result = self.container.exec_run(
-                        "curl -s http://localhost:8000/docs"
+                    exit_code, curl_result = self.container.exec_run(
+                        "curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/docs"
                     )
-                    if curl_result:
-                        logger.info("API server is running")
+                    status_code = curl_result.decode().strip()
+                    if exit_code == 0 and status_code.startswith('2'):
+                        logger.info(
+                            f"API server is running "
+                            f"(status code: {status_code})"
+                        )
                         break
+                    else:
+                        logger.debug(
+                            f"API server not ready yet (status: {status_code})"
+                        )
                 except Exception as e:
                     logger.debug("Waiting for API server... %s", e)
-                time.sleep(1)
+                time.sleep(0.5)
             else:
                 logger.warning("API server may not be running properly")
 
@@ -225,11 +264,10 @@ class UbuntuDockerRuntime(DockerRuntime):
         )
 
         # Copy the file to the container
-        with open(local_path, 'rb'):
-            self.container.put_archive(
-                path=str(Path(container_path).parent),
-                data=self._create_archive_from_file(local_path),
-            )
+        self.container.put_archive(
+            path=str(Path(container_path).parent),
+            data=self._create_archive_from_file(local_path),
+        )
 
         # Prepare command
         cmd = [self.python_path, container_path]
@@ -241,6 +279,9 @@ class UbuntuDockerRuntime(DockerRuntime):
             "PYTHONPATH": "/usr/local/lib/python3.10/site-packages",
             "PYTHON_EXECUTABLE": self.python_path,
         }
+        execution_env["PYTHONPATH"] = str(
+            Path(self.python_path).parent / "lib/python3.10/site-packages"
+        )
         if env:
             execution_env.update(env)
 

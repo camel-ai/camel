@@ -40,8 +40,13 @@ build_image() {
         exit 1
     fi
     
-    # Modify Dockerfile COPY commands
-    sed -i 's|COPY ../../../|COPY camel_source/|g' "$TEMP_DIR/Dockerfile"
+    # Copy API file to a known location
+    mkdir -p "$TEMP_DIR/api"
+    cp "$CAMEL_ROOT/camel/runtime/api.py" "$TEMP_DIR/api/"
+    
+    # Modify Dockerfile COPY commands - fix the sed command
+    sed -i '' 's|COPY ../../../|COPY camel_source/|g' "$TEMP_DIR/Dockerfile"
+    sed -i '' 's|COPY camel/runtime/api.py|COPY api/api.py|g' "$TEMP_DIR/Dockerfile"
     
     # Build in temporary directory
     (cd "$TEMP_DIR" && docker build -t ${FULL_NAME} .)
