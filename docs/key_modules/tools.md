@@ -161,6 +161,7 @@ CAMEL provides a variety of built-in toolkits that you can use right away. Here'
 | FunctionTool | A base toolkit for creating function-based tools that OpenAI chat models can call, with support for schema parsing and synthesis. |
 | FileWriteTool | A toolkit for creating, writing, and modifying text in files. |
 | GitHubToolkit | A toolkit for interacting with GitHub repositories, including retrieving issues and creating pull requests. |
+| GoogleCalendarToolkit | A toolkit for creating events, retrieving events, updating events, and deleting events from a Google Calendar |
 | GoogleMapsToolkit | A toolkit for accessing Google Maps services, including address validation, elevation data, and timezone information. |
 | GoogleScholarToolkit | A toolkit for retrieving information about authors and their publications from Google Scholar. |
 | HumanToolkit | A toolkit for facilitating human-in-the-loop interactions and feedback in AI systems. |
