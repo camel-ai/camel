@@ -17,7 +17,7 @@ import os
 import re
 import math
 import sympy as sp
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union, Dict, Any
 from sympy.parsing.sympy_parser import parse_expr
 from sympy.parsing.latex import parse_latex
 from sympy.physics import units
@@ -239,29 +239,26 @@ class UnitParser:
         base_units = [factor.base if hasattr(factor, 'is_Pow') and factor.is_Pow else factor for factor in factors]
         return base_units
 
-class PhysicsVerifier(PythonVerifier):
-    r"""The PhysicsVerifier inherits PythonVerifier and make it able to 
-    compare and convert units
+class PhysicsSolutionComparitor:
+    """
+    Class for compare solutions and reference answers that contains value and units
+
+    Args:
+        solution_output: The output from running the solution code
+        reference_answer: The reference answer to compare against
+        tolerance: The relative tolerance used to compare numerical value
     """
     def __init__(
         self,
-        extractor: Optional[BaseExtractor] = None,
-        timeout: Optional[float] = 30.0,
-        **kwargs,
+        solution: str,
+        reference_answer: str,
+        tolerance = 1e-2
     ):
-        required_packages = ['sympy', 'numpy']
-        super().__init__(extractor=extractor, timeout=timeout, required_packages=required_packages, **kwargs)
+        self.solution = solution
+        self.reference_answer = reference_answer
+        self.tolerance = tolerance
         self.unit_parser = UnitParser()
-        self.tolerance = 1e-2
 
-    @staticmethod
-    def _is_number(s):
-        try:
-            float(s)
-        except ValueError:
-            return False
-        return True
-    
     @staticmethod
     def _split_value_unit(s):
         """
@@ -324,7 +321,7 @@ class PhysicsVerifier(PythonVerifier):
         # answer = answer.replace('\\', '')
         
         return answer
-
+    
     @staticmethod
     def _parse_expression(expr: str):
         expr = expr.lstrip("$").rstrip("$")
@@ -342,10 +339,17 @@ class PhysicsVerifier(PythonVerifier):
             sp.Symbol('e'): sp.E,
         })
         return expr
-        
-    def _detect_tolerance(self, value: str) -> float:
-        rel_tol = self.tolerance
-
+    
+    @staticmethod
+    def _is_number(s):
+        try:
+            float(s)
+        except ValueError:
+            return False
+        return True
+    
+    @staticmethod            
+    def _detect_tolerance(default_tolerance: float, value: str) -> float:
         if 'e' in value:
             match = re.match(r'(-?\d*\.?\d*)[eE]', value)
             significant_part = match.group(1) if match else value
@@ -366,32 +370,23 @@ class PhysicsVerifier(PythonVerifier):
         else:
             rel_tol = abs(round(10 ** exponent / factor, 2))
 
-        #limit the maximum tolerance to (0.01, 0.1)
-        rel_tol = min(rel_tol, 0.1)
-        rel_tol = max(rel_tol, 0.01)
+        #limit the maximum tolerance to (default_tolerance, 10 * default_tolerance)
+        rel_tol = min(rel_tol, 10 * default_tolerance)
+        rel_tol = max(rel_tol, default_tolerance)
 
         logger.info(f"Detected tolerance: {rel_tol}")
         
         return rel_tol
-
     
-    def _convert_units(self, sol_value, sol_unit_expr, gt_unit_expr):
+    def _convert_units(self):
         """
-        Convert a value from one unit to another.
-        
-        Parameters:
-            sol_value: The value to convert
-            sol_unit_expr: The original unit
-            gt_unit_expr: The target unit
-            
-        Returns:
-            (converted_output, converted_unit): The converted value and unit
+        Convert the solution units to match gt units
         """
         try:
-            sol_with_unit = sol_value * sol_unit_expr
+            sol_with_unit = self.sol_value * self.sol_unit_expr
 
             # Get scaling factor and base gt units
-            scaling_factor, base_unit = self.unit_parser.detect_scaling_factor(gt_unit_expr)
+            scaling_factor, base_unit = self.unit_parser.detect_scaling_factor(self.gt_unit_expr)
 
             gt_unit_args = self.unit_parser.detect_unit_args(base_unit)
 
@@ -402,28 +397,25 @@ class PhysicsVerifier(PythonVerifier):
             converted_sol_expr = units.convert_to(sol_with_unit, gt_unit_args)
             logger.info(f'Converted solution expr: {converted_sol_expr}')
 
-            sol_value, sol_unit_expr = self.unit_parser.extract_value_and_unit(converted_sol_expr)
+            self.sol_value, self.sol_unit_expr = self.unit_parser.extract_value_and_unit(converted_sol_expr)
             
-            if not isinstance(sol_value, (int, float, sp.Number)):
-                raise ValueError(f"Failed to extract value from converted value: {sol_value}")
+            if not isinstance(self.sol_value, (int, float, sp.Number)):
+                raise ValueError(f"Failed to extract value from converted value: {self.sol_value}")
             
-            sol_value = float(sol_value)
+            self.sol_value = float(self.sol_value)
 
             # Apply scaling factor if needed
             if scaling_factor != 1:
                 logger.info(f'Applying scaling factor {scaling_factor} for ground truth units')
-                sol_value /= scaling_factor
-                sol_unit_expr *= scaling_factor
+                self.sol_value /= scaling_factor
+                self.sol_unit_expr *= scaling_factor
             
-            logger.info(f'Converted solution value: {sol_value}')
-            logger.info(f'Converted solution unit: {sol_unit_expr}')
-            
-            return sol_value, sol_unit_expr
-        
+            logger.info(f'Converted solution value: {self.sol_value}')
+            logger.info(f'Converted solution unit: {self.sol_unit_expr}')
+
         except Exception as e:
             logger.error(f'Unit conversion failed: {e}')
-            return sol_value, sol_unit_expr
-        
+    
     @staticmethod
     def verify_unit(sol_unit_expr, gt_unit_expr) -> bool:
         try: 
@@ -433,13 +425,117 @@ class PhysicsVerifier(PythonVerifier):
         except Exception as e:
             logger.error("Failed to compare units:", e)
             return False
+    
+    def compare_solution_to_reference(self) -> VerificationResult:
+        """
+        Compare the solution output to the reference answer.
         
-    def verify_symbolic_expressions(self, sol_expr, gt_expr) -> bool:
+        Args:
+            solution_output: The output from running the solution code
+            reference_answer: The reference answer to compare against
+            
+        Returns:
+            VerificationResult with comparison status
         """
-        Verifies that the symbolic expression provided in the response is equivalent
-        to the ground truth expression by comparing their simplified sympy expressions.
+        try:
+            self._get_value_unit_pairs()
+            logger.info(f'Solution value: {self.sol_value}; Ground truth value: {self.gt_value}')
+            logger.info(f'Solution unit: {self.sol_unit_expr}; Ground truth unit: {self.gt_unit_expr}')
+            
+            if self._is_number(self.gt_value):
+                self.sol_value, self.gt_value = self.sol_value.lower().strip(), self.gt_value.lower().strip()
+                result_match = self._compare_numeric_values()
+            else:
+                result_match = self._compare_symbolic_values()
+            
+            if self.unit_parser.unit_is_none(self.gt_unit):
+                # If the answer is dimensionless, the response should also be dimensionless
+                unit_match = self.unit_parser.unit_is_none(self.sol_unit)
+            elif self.sol_unit_expr is None or self.gt_unit_expr is None:
+                unit_match = False
+            else:
+                unit_match = self.verify_unit(self.sol_unit_expr, self.gt_unit_expr)
+            
+            if result_match and unit_match:
+                return VerificationResult(
+                    status=VerificationOutcome.SUCCESS,
+                    result=f'{self.sol_value} {self.sol_unit_expr}',
+                )
+            elif result_match:
+                return VerificationResult(
+                    status=VerificationOutcome.FAILURE,
+                    result=f'{self.sol_value} {self.sol_unit_expr}',
+                    error_message="Units do not match.",
+                )
+            elif unit_match:
+                return VerificationResult(
+                    status=VerificationOutcome.FAILURE,
+                    result=f'{self.sol_value} {self.sol_unit_expr}',
+                    error_message="Values do not match.",
+                )
+        except Exception as e:
+            return VerificationResult(
+                status=VerificationOutcome.ERROR,
+                result=f'{self.sol_out}',
+                error_message="Comparison failed: {e}"
+            )
+        
+    def _get_value_unit_pairs(self):
+        self.gt_value, self.gt_unit = self._split_value_unit(self.reference_answer)
+
+        if self.gt_unit == '':
+            self.sol_value, self.sol_unit = self.solution, ''
+        else:
+            self.sol_value, self.sol_unit = self._split_value_unit(self.solution)
+
+        self.gt_value = self._clean_answer(self.gt_value)
+
+        if self.unit_parser.unit_is_none(self.gt_unit) and self.unit_parser.unit_is_none(self.sol_unit):
+            self.gt_unit_expr, self.sol_unit_expr = None, None
+        else:
+            self.gt_unit_expr = self.unit_parser.parse_unit(self.gt_unit)
+            self.sol_unit_expr = self.unit_parser.parse_unit(self.sol_unit)
+        
+    def _compare_numeric_values(self) -> bool:
         """
-        # Make sure gt_symbols and output_symbols are using the same sympy symbols.
+        Compare numerical values, with unit conversion if needed.
+        """
+        rel_tol = self._detect_tolerance(self.tolerance, self.gt_value)
+        self.gt_value = float(self.gt_value)
+
+        if self._is_number(self.sol_value):
+            self.sol_value = float(self.sol_value)
+        else:
+            logger.info(f'Convert output expr {self.sol_value} into numerical.')
+            try:
+                sol_expr = self._parse_expression(self.sol_value)
+                self.sol_value = sol_expr.evalf()
+            except Exception as e:
+                raise ValueError(f"Failed to evaluate output {self.sol_value}: {e}")
+            
+        if (self.gt_unit_expr is not None \
+            and self.sol_unit_expr is not None \
+            and not self.verify_unit(self.gt_unit_expr, self.sol_unit_expr)):
+            logger.info(f'Units do not match directly. Attempting conversion...')
+            self._convert_units()
+
+        # try:
+        #Compare numerical values
+        logger.info(f'Solution value: {self.sol_value}')
+        logger.info(f'Ground truth value: {self.gt_value}')
+
+        return math.isclose(self.sol_value, self.gt_value, rel_tol=rel_tol)
+    
+    def _compare_symbolic_values(self) -> bool:
+        """
+        Compare symbolic expressions for equivalence.
+        """
+        gt_expr = self._parse_expression(self.gt_value)
+        sol_expr = self._parse_expression(self.sol_value)
+
+        logger.info(f'Solution expression: {sol_expr}')
+        logger.info(f'Ground truth expression: {gt_expr}')
+
         sol_symbols = sol_expr.free_symbols
         gt_symbols = gt_expr.free_symbols
 
@@ -464,15 +560,30 @@ class PhysicsVerifier(PythonVerifier):
             raise ValueError(f"Cannot compare an equation with a non-equation directly: {sol_expr}, {gt_expr}")
 
         try:
-            sol_value = sol_expr if isinstance(sol_expr, (int, float, sp.Number)) else sol_expr.evalf()
-            gt_value = gt_expr if isinstance(gt_expr, (int, float, sp.Number)) else gt_expr.evalf()
-            return math.isclose(sol_value, gt_value, rel_tol=self.tolerance)
+            self.sol_value = sol_expr if isinstance(sol_expr, (int, float, sp.Number)) else sol_expr.evalf()
+            self.gt_value = gt_expr if isinstance(gt_expr, (int, float, sp.Number)) else gt_expr.evalf()
+            return math.isclose(self.sol_value, self.gt_value, rel_tol=self.tolerance)
         except:
             try:
                 return math.isclose(sol_expr, gt_expr, rel_tol=self.tolerance)
             except:
                 return sol_expr == gt_expr
 
+
+class PhysicsVerifier(PythonVerifier):
+    r"""The PhysicsVerifier inherits PythonVerifier and make it able to 
+    compare and convert units
+    """
+    def __init__(
+        self,
+        extractor: Optional[BaseExtractor] = None,
+        timeout: Optional[float] = 30.0,
+        required_packages: Optional[List[str]] = ['sympy==1.13.3', 'numpy'],
+        tolerance: Optional[float] = 1e-2,
+        **kwargs,
+    ):
+        super().__init__(extractor=extractor, timeout=timeout, required_packages=required_packages, **kwargs)
+        self.tolerance = tolerance
 
     async def _verify_implementation(
         self, solution: str, reference_answer: Optional[str]
@@ -512,108 +623,10 @@ class PhysicsVerifier(PythonVerifier):
             
             logger.info(f"Solution: {sol_out}")
 
-            gt_value, gt_unit = self._split_value_unit(reference_answer)
-
-            if gt_unit == '':
-                sol_value, sol_unit = sol_out, ''
-            else:
-                sol_value, sol_unit = self._split_value_unit(sol_out)
-
-            gt_value = self._clean_answer(gt_value)
-
-            logger.info(f'Solution value: {sol_value}; Ground truth value: {gt_value}')  
-
-            if self.unit_parser.unit_is_none(gt_unit) and self.unit_parser.unit_is_none(sol_unit):
-                gt_unit_expr, sol_unit_expr = None, None
-            else:
-                gt_unit_expr = self.unit_parser.parse_unit(gt_unit)
-                sol_unit_expr = self.unit_parser.parse_unit(sol_unit)
-
-            logger.info(f'Solution unit: {sol_unit_expr}; Ground truth unit: {gt_unit_expr}')
-
-            if self._is_number(gt_value):
-                sol_value, gt_value = sol_value.lower().strip(), gt_value.lower().strip()
-                rel_tol = self._detect_tolerance(gt_value)
-                gt_value = float(gt_value)
-
-                if self._is_number(sol_value):
-                    sol_value = float(sol_value)
-                else:
-                    logger.info(f'Convert output expr {sol_value} into numerical.')
-                    try:
-                        sol_expr = self._parse_expression(sol_value)
-                        sol_value = sol_expr.evalf()
-                    except Exception as e:
-                        logger.error(f"Failed to evaluate output {sol_value}: {e}")
-                        return VerificationResult(
-                            status=VerificationOutcome.FAILURE,
-                            result=f'{sol_value} {sol_unit_expr}',
-                            error_message=f"Failed to evaluate output {sol_value}: {e}",
-                        )
-                    
-                if (gt_unit_expr is not None \
-                    and sol_unit_expr is not None \
-                    and not self.verify_unit(gt_unit_expr, sol_unit_expr)):
-                    logger.info(f'Units do not match directly. Attempting conversion...')
-                    sol_value, sol_unit_expr = self._convert_units(
-                        sol_value, sol_unit_expr, gt_unit_expr
-                    )
-
-                try:
-                    #Compare numerical values
-                    logger.info(f'Solution value: {sol_value}')
-                    logger.info(f'Ground truth value: {gt_value}')
-
-                    result_match = math.isclose(sol_value, gt_value, rel_tol=rel_tol)
-                except Exception as e:
-                    logger.error(f"Failed to compare values: {e}")
-                    return VerificationResult(
-                        status=VerificationOutcome.ERROR,
-                        result=f'{sol_value} {sol_unit_expr}',
-                        error_message=f"Failed to compare values: {e}",
-                    )
-                
-            else:
-                try:
-                    gt_expr = self._parse_expression(gt_value)
-                    sol_expr = self._parse_expression(sol_value)
-
-                    logger.info(f'Solution expression: {sol_expr}')
-                    logger.info(f'Ground truth expression: {gt_expr}')
-
-                    result_match = self.verify_symbolic_expressions(sol_expr, gt_expr)
-                except Exception as e:
-                    return VerificationResult(
-                            status=VerificationOutcome.ERROR,
-                            result=f'{sol_value} {sol_unit_expr}',
-                            error_message=f"Failed to compare symbolic expressions: {e}",
-                        )
+            comparitor = PhysicsSolutionComparitor(sol_out, reference_answer, self.tolerance)
+        
+            return comparitor.compare_solution_to_reference()
             
-            if self.unit_parser.unit_is_none(gt_unit):
-                # If the answer is dimensionless, the response should also be dimensionless
-                unit_match = self.unit_parser.unit_is_none(sol_unit)
-            elif sol_unit_expr is None or gt_unit_expr is None:
-                unit_match = False
-            else:
-                unit_match = self.verify_unit(sol_unit_expr, gt_unit_expr)
-            
-            if result_match and unit_match:
-                return VerificationResult(
-                    status=VerificationOutcome.SUCCESS,
-                    result=f'{sol_value} {sol_unit_expr}',
-                )
-            elif result_match:
-                return VerificationResult(
-                    status=VerificationOutcome.FAILURE,
-                    result=f'{sol_value} {sol_unit_expr}',
-                    error_message="Units do not match.",
-                )
-            elif unit_match:
-                return VerificationResult(
-                    status=VerificationOutcome.FAILURE,
-                    result=f'{sol_value} {sol_unit_expr}',
-                    error_message="Values do not match.",
-                )
         except asyncio.TimeoutError:
             return VerificationResult(
                 status=VerificationOutcome.TIMEOUT,
@@ -626,15 +639,3 @@ class PhysicsVerifier(PythonVerifier):
                 result="",
                 error_message=f"Unexpected error: {e}",
             )
-
-
-
-
-
-            
-            
-                
-        
-        
-        
-
