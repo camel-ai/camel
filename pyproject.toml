@@ -164,6 +164,7 @@ model_platforms = [
     "anthropic>=0.47.0,<0.50.0",
     "cohere>=5.11.0,<6",
     "fish-audio-sdk>=2024.12.5,<2025",
+    "zhipuai",
 ]
 huggingface = [
     "transformers>=4,<5",
@@ -335,7 +336,8 @@ all = [
     "typer>=0.15.2",
     "mem0ai>=0.1.67",
     "math-verify>=0.7.0,<0.8",
-    "exa-py>=1.10.0,<2"
+    "exa-py>=1.10.0,<2",
+    "zhipuai"
 ]
 
 [project.urls]

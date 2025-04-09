@@ -65,7 +65,7 @@ from .data_commons_toolkit import DataCommonsToolkit
 from .thinking_toolkit import ThinkingToolkit
 from .openai_agent_toolkit import OpenAIAgentToolkit
 from .searxng_toolkit import SearxNGToolkit
-
+from .zhipu_toolkit import ZhiPuToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -118,4 +118,5 @@ __all__ = [
     'ThinkingToolkit',
     'OpenAIAgentToolkit',
     'SearxNGToolkit',
+    'ZhiPuToolkit',
 ]
