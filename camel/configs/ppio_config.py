@@ -102,6 +102,4 @@ class PPIOConfig(BaseConfig):
         return config_dict
 
 
-PPIO_API_PARAMS = {
-    param for param in PPIOConfig.model_fields.keys()
-}
+PPIO_API_PARAMS = {param for param in PPIOConfig.model_fields.keys()}
