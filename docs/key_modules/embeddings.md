@@ -37,6 +37,9 @@ Utilizes OpenAI's models for generating image embeddings. This will requires Ope
 ### 2.5. `AzureOpenAI`
 Utilizes OpenAI's models for generating text embeddings. This will requires Azure OpenAI API Key.
 
+### 2.6. `TogetherEmbedding`
+Utilizes Together AI's models for generating text embeddings. This will requires Together AI API Key.
+
 
 ## 3. Get Started
 To use the embedding functionalities, you need to import the necessary classes.
@@ -99,4 +102,15 @@ azure_openai_embedding = AzureEmbedding(model_type=EmbeddingModelType.TEXT_EMBED
 
 # Generate embeddings for a list of texts
 embeddings = azure_openai_embedding.embed_list(["Hello, world!", "Another example"])
+```
+
+### 3.6. Using `TogetherEmbedding`
+```python
+from camel.embeddings import TogetherEmbedding
+
+# Initialize the Together AI embedding with a specific model
+together_embedding = TogetherEmbedding(model_name="togethercomputer/m2-bert-80M-8k-retrieval")
+
+# Generate embeddings for a list of texts
+embeddings = together_embedding.embed_list(["Hello, world!", "Another example"])
 ```
