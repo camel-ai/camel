@@ -19,10 +19,12 @@ import pandas as pd
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
+from camel.utils import MCPServer
 
 logger = get_logger(__name__)
 
 
+@MCPServer()
 class ExcelToolkit(BaseToolkit):
     r"""A class representing a toolkit for extract detailed cell information
     from an Excel file.
