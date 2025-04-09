@@ -477,7 +477,7 @@ class PhysicsSolutionComparitor:
             return VerificationResult(
                 status=VerificationOutcome.ERROR,
                 result=f'{self.sol_out}',
-                error_message="Comparison failed: {e}"
+                error_message=f"Comparison failed: {e}"
             )
         
     def _get_value_unit_pairs(self):
