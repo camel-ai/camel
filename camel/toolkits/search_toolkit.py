@@ -1066,20 +1066,20 @@ class SearchToolkit(BaseToolkit):
 
     @api_keys_required([(None, 'TONGXIAO_API_KEY')])
     def search_ali(
-        self, 
-        query: str, 
-        timeRange: str = "NoLimit", 
-        industry: Optional[str] = None, 
-        page: int = 1, 
-        returnMainText: bool = True, 
-        returnMarkdownText: bool = True, 
-        enableRerank: bool = True
+        self,
+        query: str,
+        timeRange: str = "NoLimit",
+        industry: Optional[str] = None,
+        page: int = 1,
+        returnMainText: bool = True,
+        returnMarkdownText: bool = True,
+        enableRerank: bool = True,
     ) -> Dict[str, Any]:
         r"""Query the Alibaba Tongxiao search API and return search results.
 
-        This function queries the Alibaba Tongxiao search API, a powerful 
+        This function queries the Alibaba Tongxiao search API, a powerful
         real-time search API that provides structured data from various search
-        engines and knowledge base collections. The API is particularly 
+        engines and knowledge base collections. The API is particularly
         effective for Chinese language queries.
 
         Args:
@@ -1091,8 +1091,8 @@ class SearchToolkit(BaseToolkit):
                 - 'OneMonth': Past month.
                 - 'OneYear': Past year.
                 - 'NoLimit': No time limit (default).
-            industry (Optional[str]): Industry-specific search filter. When 
-                specified, only returns results from sites in the specified 
+            industry (Optional[str]): Industry-specific search filter. When
+                specified, only returns results from sites in the specified
                 industries. Multiple industries can be comma-separated.
                 Options include:
                 - 'finance': Financial industry.
@@ -1103,33 +1103,33 @@ class SearchToolkit(BaseToolkit):
                 - 'news_province': Provincial news.
                 - 'news_center': Central news.
             page (int): Page number for results pagination. Default is 1.
-            returnMainText (bool): Whether to include the main text of the 
+            returnMainText (bool): Whether to include the main text of the
                 webpage in results. Default is True.
-            returnMarkdownText (bool): Whether to include markdown formatted 
+            returnMarkdownText (bool): Whether to include markdown formatted
                 content in results. Default is True.
-            enableRerank (bool): Whether to enable result reranking. Default 
-                is True. If response time is critical, setting this to False 
+            enableRerank (bool): Whether to enable result reranking. Default
+                is True. If response time is critical, setting this to False
                 can reduce response time by approximately 140ms.
 
         Returns:
             Dict[str, Any]: A dictionary containing search results or an error
                 message. The structure includes:
                 - 'requestId': A unique identifier for the request.
-                - 'results': A list of dictionaries, each representing a search 
-                  result with the following keys:
+                - 'results': A list of dictionaries, each representing a
+                  search result with the following keys:
                   - 'result_id': The index of the result.
                   - 'title': The title of the webpage.
                   - 'snippet': A dynamic summary of relevant content matching
                     the query keywords.
-                  - 'mainText': The main content of the webpage (if 
+                  - 'mainText': The main content of the webpage (if
                     returnMainText is True).
-                  - 'markdownText': Markdown formatted content (if 
+                  - 'markdownText': Markdown formatted content (if
                     returnMarkdownText is True).
                   - 'hostname': The name of the website.
                   - 'url': The URL of the webpage.
                   - 'publishTime': Publication timestamp in milliseconds.
                   - 'score': Relevance score.
-                - 'searchInformation': Additional metadata about the search 
+                - 'searchInformation': Additional metadata about the search
                   operation.
                 - or 'error': An error message if something went wrong.
         """
@@ -1141,7 +1141,7 @@ class SearchToolkit(BaseToolkit):
         headers = {
             "X-API-Key": TONGXIAO_API_KEY,
         }
-        
+
         # Convert boolean parameters to string for compatibility with requests
         params: Dict[str, Union[str, int]] = {
             "query": query,
@@ -1149,9 +1149,9 @@ class SearchToolkit(BaseToolkit):
             "page": page,
             "returnMainText": str(returnMainText).lower(),
             "returnMarkdownText": str(returnMarkdownText).lower(),
-            "enableRerank": str(enableRerank).lower()
+            "enableRerank": str(enableRerank).lower(),
         }
-        
+
         # Only add industry parameter if specified
         if industry is not None:
             params["industry"] = industry
@@ -1159,10 +1159,7 @@ class SearchToolkit(BaseToolkit):
         try:
             # Send GET request with proper typing for params
             response = requests.get(
-                base_url, 
-                headers=headers, 
-                params=params, 
-                timeout=10
+                base_url, headers=headers, params=params, timeout=10
             )
 
             # Check response status
@@ -1186,34 +1183,43 @@ class SearchToolkit(BaseToolkit):
                     "result_id": idx + 1,
                     "title": item.get("title", ""),
                     "snippet": item.get("snippet", ""),
-                    "url": item.get("link", ""),  # Rename link to url for 
-                                                  # consistency
+                    "url": item.get("link", ""),  # Rename link to url for
+                    # consistency
                     "hostname": item.get("hostname", ""),
-                    "publishTime": item.get("publishTime", 0)
+                    "publishTime": item.get("publishTime", 0),
                 }
-                
+
                 # First try to use summary field, if not available use mainText
                 if "summary" in item and item.get("summary"):
                     result["summary"] = item["summary"]
-                elif (returnMainText and "mainText" in item and 
-                      item.get("mainText")):
+                elif (
+                    returnMainText
+                    and "mainText" in item
+                    and item.get("mainText")
+                ):
                     result["summary"] = item["mainText"]
-                
-                # Include original mainText if it exists and is requested 
+
+                # Include original mainText if it exists and is requested
                 # (for reference)
-                if (returnMainText and "mainText" in item and 
-                    item.get("mainText")):
+                if (
+                    returnMainText
+                    and "mainText" in item
+                    and item.get("mainText")
+                ):
                     result["mainText"] = item["mainText"]
-                
+
                 # Only include markdownText if it exists and is requested
-                if (returnMarkdownText and "markdownText" in item and 
-                    item.get("markdownText")):
+                if (
+                    returnMarkdownText
+                    and "markdownText" in item
+                    and item.get("markdownText")
+                ):
                     result["markdownText"] = item["markdownText"]
-                
+
                 # Include score if available
                 if "score" in item:
                     result["score"] = item["score"]
-                
+
                 results.append(result)
 
             # Return a simplified structure similar to other search methods
@@ -1232,6 +1238,7 @@ class SearchToolkit(BaseToolkit):
                     f"Unexpected error during Alibaba Tongxiao search: {e!s}"
                 )
             }
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
