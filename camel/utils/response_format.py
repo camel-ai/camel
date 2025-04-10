@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import inspect
 import json
-from typing import Callable, Type, Union
+from typing import Any, Callable, Dict, Optional, Type, Union
 
 from pydantic import BaseModel, create_model
 
@@ -61,3 +61,43 @@ def get_pydantic_model(
     if issubclass(input_data, BaseModel):
         return input_data
     raise ValueError("Invalid input data provided.")
+
+
+def model_from_json_schema(
+    name: str,
+    schema: Dict[str, Any],
+) -> Type[BaseModel]:
+    r"""Create a Pydantic model from a JSON schema.
+
+    Args:
+        name (str): The name of the model.
+        schema (Dict[str, Any]): The JSON schema to create the model from.
+
+    Returns:
+        Type[BaseModel]: The Pydantic model.
+    """
+    properties = schema.get("properties", {})
+    required_fields = set(schema.get("required", []))
+    fields: Dict[str, Any] = {}
+
+    type_mapping = {
+        "integer": int,
+        "number": float,
+        "string": str,
+        "boolean": bool,
+        "array": list,
+        "object": dict,
+    }
+
+    for field_name, field_schema in properties.items():
+        json_type = field_schema.get("type", "string")
+        py_type = type_mapping.get(json_type, str)
+
+        if field_name in required_fields:
+            fields[field_name] = (py_type, ...)
+        else:
+            # Optional[py_type] are not actual type objects,
+            # mypy cannot recognize this dynamic type, ignore check
+            fields[field_name] = (Optional[py_type], None)  # type: ignore[assignment]
+
+    return create_model(name, **fields)  # type: ignore[call-overload]

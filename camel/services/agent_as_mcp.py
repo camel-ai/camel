@@ -20,11 +20,11 @@ import sys
 from typing import Any, Dict, Optional
 
 from mcp.server.fastmcp import FastMCP
-from pydantic import BaseModel
 
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType
+from camel.utils import model_from_json_schema
 
 # ========================================================================
 # CUSTOMIZATION SECTION - YOU CAN MODIFY THIS PART TO DEFINE YOUR OWN AGENT
@@ -49,10 +49,13 @@ model = ModelFactory.create(
     model_type="nvidia/llama-3.1-nemotron-70b-instruct:free",
 )
 
+# Customize this message
+system_message = "You are a helpful assistant."
+
 # Create a default chat agent - customize as needed
 chat_agent = ChatAgent(
     model=model,
-    system_message="You are a helpful assistant.",  # Customize this message
+    system_message=system_message,
     # Uncomment to set a specific output language
     # output_language="en",  # or "zh", "es", "fr", etc.
 )
@@ -78,8 +81,8 @@ async def step(
     """
     format_cls = None
     if response_format:
-        format_cls = type(
-            'DynamicResponseFormat', (BaseModel,), response_format
+        format_cls = model_from_json_schema(
+            "DynamicResponseFormat", response_format
         )
 
     response = await chat_agent.astep(message, format_cls)
@@ -90,54 +93,6 @@ async def step(
         "terminated": response.terminated,
         "info": response.info,
     }
-
-
-@mcp.tool()
-def add_tool(
-    name: str,
-    description: str,
-    parameters: Dict[str, Any],  # JSON Schema
-    function_code: str,
-) -> Dict[str, str]:
-    """Add a new tool to the chat agent."""
-    try:
-        exec_globals: Dict[str, Any] = {}
-        exec_locals: Dict[str, Any] = {}
-        exec(function_code, exec_globals, exec_locals)
-        func = exec_locals.get(name)
-
-        if not func or not callable(func):
-            raise ValueError(f"Function '{name}' not found or not callable")
-
-        from camel.toolkits import FunctionTool  # 你项目可能有类似的类
-
-        tool = FunctionTool(
-            func=func,
-            openai_tool_schema=parameters,
-        )
-
-        chat_agent.add_tool(tool)
-
-        return {
-            "status": "success",
-            "message": f"Tool '{name}' added successfully",
-        }
-
-    except Exception as e:
-        logger.exception("Error adding tool")
-        return {"status": "error", "message": str(e)}
-
-
-@mcp.tool()
-def remove_tool(name: str) -> Dict[str, str]:
-    """Remove a tool from the chat agent."""
-    success = chat_agent.remove_tool(name)
-    if success:
-        return {
-            "status": "success",
-            "message": f"Tool '{name}' removed successfully",
-        }
-    return {"status": "error", "message": f"Tool '{name}' not found"}
 
 
 @mcp.tool()
@@ -177,29 +132,59 @@ def get_agent_info() -> str:
     return json.dumps(info, indent=2)
 
 
-# @mcp.resource("available_tools")
-# def get_available_tools() -> str:
-#     """Get a list of available internal tools."""
-#     tools = list(chat_agent.tool_dict.keys())
-#     return json.dumps(tools, indent=2)
+@mcp.resource("http://local/available_tools")
+def get_available_tools() -> str:
+    """Get a list of available internal tools."""
+    tools = list(chat_agent.tool_dict.keys())
+    return json.dumps(tools, indent=2)
 
 
-# @mcp.prompt()
-# def system_prompt(content: str) -> str:
-#     """Create a system prompt for the chat agent."""
-#     chat_agent.reset()
-#     chat_agent._original_system_message = BaseMessage(
-#         role_name="System",
-#         role_type=RoleType.DEFAULT,
-#         meta_dict=None,
-#         content=content,
-#     )
-#     chat_agent._system_message = (
-#         chat_agent._generate_system_message_for_output_language()
-#     )
-#     chat_agent.init_messages()
+# @mcp.tool()
+# def add_tool(
+#     name: str,
+#     description: str,
+#     parameters: Dict[str, Any],  # JSON Schema
+#     function_code: str,
+# ) -> Dict[str, str]:
+#     """Add a new tool to the chat agent."""
+#     try:
+#         exec_globals: Dict[str, Any] = {}
+#         exec_locals: Dict[str, Any] = {}
+#         exec(function_code, exec_globals, exec_locals)
+#         func = exec_locals.get(name)
 
-#     return f"Set system prompt: {content}"
+#         if not func or not callable(func):
+#             raise ValueError(f"Function '{name}' not found or not callable")
+
+#         from camel.toolkits import FunctionTool
+
+#         tool = FunctionTool(
+#             func=func,
+#             openai_tool_schema=parameters,
+#         )
+
+#         chat_agent.add_tool(tool)
+
+#         return {
+#             "status": "success",
+#             "message": f"Tool '{name}' added successfully",
+#         }
+
+#     except Exception as e:
+#         logger.exception("Error adding tool")
+#         return {"status": "error", "message": str(e)}
+
+
+# @mcp.tool()
+# def remove_tool(name: str) -> Dict[str, str]:
+#     """Remove a tool from the chat agent."""
+#     success = chat_agent.remove_tool(name)
+#     if success:
+#         return {
+#             "status": "success",
+#             "message": f"Tool '{name}' removed successfully",
+#         }
+#     return {"status": "error", "message": f"Tool '{name}' not found"}
 
 
 if __name__ == "__main__":
