@@ -104,7 +104,8 @@ class ZhiPuToolkit(BaseToolkit):
                 attachments=attachments,
                 metadata=None,
             )
-            result = ""
+            content = ""
+            tool_output = ""
             # Parse according to the Zhipu message format
             for resp in response:
                 if hasattr(resp, 'choices') and resp.choices:
@@ -125,14 +126,16 @@ class ZhiPuToolkit(BaseToolkit):
                                             for (
                                                 output_item
                                             ) in attr_value.outputs:
-                                                result += str(output_item)
+                                                tool_output += str(output_item)
                         if hasattr(choice.delta, 'content'):
-                            result += str(choice.delta.content)
+                            content += str(choice.delta.content)
                         self.conversation_id = resp.conversation_id
 
         except Exception as e:
             logger.error(f"Unexpected error: {e}")
             return f"Call the agent failed: {e!s}"
+
+        result = tool_output + "\n" + content
 
         return result
 

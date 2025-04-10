@@ -15,8 +15,8 @@
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType
 from camel.toolkits import FunctionTool, ZhiPuToolkit
+from camel.types import ModelPlatformType, ModelType
 
 # Create a Model
 model_config_dict = ChatGPTConfig(temperature=0.0).as_dict()
@@ -31,9 +31,7 @@ zhipu_toolkit = ZhiPuToolkit().ai_drawing
 tools = [FunctionTool(zhipu_toolkit)]
 
 # Set up the ChatAgent with thinking capabilities
-sys_msg = (
-    "You are an assistant that can use other agents to complete tasks."
-)
+sys_msg = "You are an assistant that can use other agents to complete tasks."
 
 agent = ChatAgent(
     system_message=sys_msg,

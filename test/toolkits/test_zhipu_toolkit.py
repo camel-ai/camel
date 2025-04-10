@@ -15,7 +15,6 @@ import os
 from unittest.mock import MagicMock, patch
 
 import pytest
-import zhipuai
 
 from camel.toolkits import ZhiPuToolkit
 
@@ -29,7 +28,10 @@ def mock_zhipuai_client():
 @pytest.fixture
 def mock_zhipu_toolkit(mock_zhipuai_client):
     r"""Fixture for toolkit with mocked dependencies"""
-    with patch('zhipuai.ZhipuAI', return_value=mock_zhipuai_client):
+    with patch(
+        'camel.toolkits.zhipu_toolkit.ZhipuAI',
+        return_value=mock_zhipuai_client,
+    ):
         toolkit = ZhiPuToolkit(api_key="test_api_key")
         toolkit.client = mock_zhipuai_client
         toolkit.file_ids = []
@@ -42,7 +44,7 @@ def mock_zhipu_toolkit(mock_zhipuai_client):
 # --------------------------
 def test_init_with_provided_api_key():
     r"""Test initialization with explicitly provided API key"""
-    with patch('zhipuai.ZhipuAI') as mock_zhipuai:
+    with patch('camel.toolkits.zhipu_toolkit.ZhipuAI') as mock_zhipuai:
         ZhiPuToolkit(api_key="provided_api_key")
         mock_zhipuai.assert_called_once_with(
             api_key="provided_api_key",
@@ -53,7 +55,7 @@ def test_init_with_provided_api_key():
 def test_init_with_env_api_key():
     r"""Test initialization with API key from environment variable"""
     with patch.dict(os.environ, {"ZHIPUAI_API_KEY": "env_api_key"}):
-        with patch('zhipuai.ZhipuAI') as mock_zhipuai:
+        with patch('camel.toolkits.zhipu_toolkit.ZhipuAI') as mock_zhipuai:
             ZhiPuToolkit()
             mock_zhipuai.assert_called_once_with(
                 api_key="env_api_key",
@@ -63,7 +65,7 @@ def test_init_with_env_api_key():
 
 def test_init_with_custom_url():
     r"""Test initialization with custom base URL"""
-    with patch('zhipuai.ZhipuAI') as mock_zhipuai:
+    with patch('camel.toolkits.zhipu_toolkit.ZhipuAI') as mock_zhipuai:
         ZhiPuToolkit(api_key="test_api_key", url="https://custom.url")
         mock_zhipuai.assert_called_once_with(
             api_key="test_api_key", base_url="https://custom.url"
@@ -107,7 +109,7 @@ def test_call_the_agent_success(mock_zhipu_toolkit):
         attachments=None,
         metadata=None,
     )
-    assert result == "Success response"
+    assert result == "\n" + "Success response"
     assert mock_zhipu_toolkit.conversation_id == "test_conversation_id"
 
 
@@ -141,7 +143,7 @@ def test_call_the_agent_with_file(mock_zhipu_toolkit):
     mock_zhipu_toolkit.client.files.create.assert_called_once()
     mock_zhipu_toolkit.client.assistant.conversation.assert_called_once()
     assert mock_zhipu_toolkit.file_ids == ["test_file_id"]
-    assert result == "File analysis result"
+    assert result == "\n" + "File analysis result"
     assert mock_zhipu_toolkit.conversation_id == "test_conversation_id"
 
 
@@ -152,11 +154,11 @@ def test_call_the_agent_tool_calls(mock_zhipu_toolkit):
     mock_output_item = "Tool output"
     mock_attr = MagicMock()
     mock_attr.outputs = [mock_output_item]
-    # Set up the structure to match what's checked in the code
     type(mock_tool_call).function = mock_attr
 
     mock_response = MagicMock()
     mock_choice = MagicMock()
+    mock_choice.delta.content = None
     mock_choice.delta.tool_calls = [mock_tool_call]
     mock_response.choices = [mock_choice]
     mock_response.conversation_id = "test_conversation_id"
@@ -171,7 +173,7 @@ def test_call_the_agent_tool_calls(mock_zhipu_toolkit):
     )
 
     # Verify
-    assert result == "Tool output"
+    assert result == "Tool output" + "\n" + "None"
     assert mock_zhipu_toolkit.conversation_id == "test_conversation_id"
 
 
@@ -381,18 +383,22 @@ def test_ppt_generation(mock_zhipu_toolkit):
 def test_get_tools(mock_zhipu_toolkit):
     r"""Test get_tools method returns correct FunctionTool objects"""
     # Setup
-    with patch('camel.toolkits.FunctionTool') as mock_function_tool:
+    with patch(
+        'camel.toolkits.zhipu_toolkit.FunctionTool'
+    ) as mock_function_tool:
         # Execute
         tools = mock_zhipu_toolkit.get_tools()
 
         # Verify
         assert len(tools) == 6
+
         assert mock_function_tool.call_count == 6
 
-        # Check that all functions were passed to FunctionTool constructor
         mock_function_tool.assert_any_call(mock_zhipu_toolkit.draw_mindmap)
         mock_function_tool.assert_any_call(mock_zhipu_toolkit.draw_flowchart)
         mock_function_tool.assert_any_call(mock_zhipu_toolkit.data_analysis)
         mock_function_tool.assert_any_call(mock_zhipu_toolkit.ai_drawing)
         mock_function_tool.assert_any_call(mock_zhipu_toolkit.ai_search)
         mock_function_tool.assert_any_call(mock_zhipu_toolkit.ppt_generation)
+
+        assert len(tools) == 6

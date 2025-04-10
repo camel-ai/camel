@@ -532,6 +532,7 @@ module = [
     "math_verify.*",
     "exa_py",
     "crawl4ai.*",
+    "zhipuai"
 ]
 ignore_missing_imports = true
 
