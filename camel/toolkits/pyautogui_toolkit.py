@@ -138,7 +138,7 @@ class PyAutoGUIToolkit(BaseToolkit):
                 pyautogui.doubleClick(x=safe_x, y=safe_y)
             else:
                 pyautogui.doubleClick()
-            return "Double-clicked at position"
+            return f"Double-clicked at position ({safe_x}, {safe_y})"
         except Exception as e:
             logger.error(f"Error double-clicking: {e}")
             return f"Error: {str(e)}"
@@ -162,7 +162,7 @@ class PyAutoGUIToolkit(BaseToolkit):
                 pyautogui.rightClick(x=safe_x, y=safe_y)
             else:
                 pyautogui.rightClick()
-            return "Right-clicked at position"
+            return f"Right-clicked at position ({safe_x}, {safe_y})"
         except Exception as e:
             logger.error(f"Error right-clicking: {e}")
             return f"Error: {str(e)}"
@@ -186,7 +186,7 @@ class PyAutoGUIToolkit(BaseToolkit):
                 pyautogui.middleClick(x=safe_x, y=safe_y)
             else:
                 pyautogui.middleClick()
-            return "Middle-clicked at position"
+            return f"Middle-clicked at position ({safe_x}, {safe_y})"
         except Exception as e:
             logger.error(f"Error middle-clicking: {e}")
             return f"Error: {str(e)}"
@@ -313,11 +313,11 @@ class PyAutoGUIToolkit(BaseToolkit):
                 pass
             return f"Error: {str(e)}"
 
-    def scroll(self, clicks: int, x: Optional[int] = None, y: Optional[int] = None) -> str:
+    def scroll(self, scroll_amount: int, x: Optional[int] = None, y: Optional[int] = None) -> str:
         r"""Scroll the mouse wheel.
         
         Args:
-            clicks (int): Number of "clicks" to scroll. Positive scrolls up, negative scrolls down.
+            scroll_amount (int): Amount to scroll. Positive values scroll up, negative values scroll down.
             x (Optional[int]): X-coordinate to scroll at. If None, uses current position.
                 (default: :obj:`None`)
             y (Optional[int]): Y-coordinate to scroll at. If None, uses current position.
@@ -335,13 +335,13 @@ class PyAutoGUIToolkit(BaseToolkit):
             
             # Always apply safety boundaries
             safe_x, safe_y = self._get_safe_coordinates(x, y)
-            pyautogui.scroll(clicks, x=safe_x, y=safe_y)
+            pyautogui.scroll(scroll_amount, x=safe_x, y=safe_y)
             
             # Move mouse back to screen center for added safety
             pyautogui.moveTo(self.screen_center[0], self.screen_center[1])
-            print(f"[Safety] Moving mouse back to screen center ({self.screen_center[0]}, {self.screen_center[1]})")
+            logger.info(f"Safety: Moving mouse back to screen center ({self.screen_center[0]}, {self.screen_center[1]})")
             
-            return f"Scrolled {clicks} click(s)"
+            return f"Scrolled {scroll_amount} click(s)"
         except Exception as e:
             logger.error(f"Error scrolling: {e}")
             return f"Error: {str(e)}"
@@ -358,6 +358,16 @@ class PyAutoGUIToolkit(BaseToolkit):
             str: Success or error message.
         """
         try:
+            # Validate text input
+            if not isinstance(text, str):
+                return f"Error: Input must be a string, got {type(text).__name__}"
+                
+            if not text:
+                return "Error: Cannot type empty text"
+                
+            if len(text) > 1000:  # Set a reasonable maximum length limit
+                logger.warning(f"Warning: Very long text ({len(text)} characters) may cause performance issues")
+                
             # First, move mouse to a safe position to prevent potential issues
             pyautogui.moveTo(self.screen_center[0], self.screen_center[1], duration=0.1)
             
@@ -377,6 +387,22 @@ class PyAutoGUIToolkit(BaseToolkit):
             str: Success or error message.
         """
         try:
+            # Basic validation
+            if not isinstance(key, str):
+                return f"Error: Key must be a string, got {type(key).__name__}"
+            
+            if not key:
+                return "Error: Cannot press empty key"
+            
+            # Length validation (most valid key names are short)
+            if len(key) > 20:
+                return f"Error: Key name '{key}' is too long (max 20 characters)"
+                
+            # Special character validation (key names usually don't contain special characters)
+            import re
+            if re.search(r'[^\w+\-_]', key) and len(key) > 1:  # 允许单个特殊字符
+                logger.warning(f"Warning: Key '{key}' contains unusual characters")
+            
             # First, move mouse to a safe position to prevent potential issues
             pyautogui.moveTo(self.screen_center[0], self.screen_center[1], duration=0.1)
             
@@ -384,7 +410,7 @@ class PyAutoGUIToolkit(BaseToolkit):
             return f"Pressed key: {key}"
         except Exception as e:
             logger.error(f"Error pressing key: {e}")
-            return f"Error: {str(e)}"
+            return f"Error: Invalid key '{key}' or error pressing it. {str(e)}"
     
     def hotkey(self, *keys) -> str:
         r"""Press keys in succession and release in reverse order.
@@ -404,44 +430,7 @@ class PyAutoGUIToolkit(BaseToolkit):
         except Exception as e:
             logger.error(f"Error pressing hotkey: {e}")
             return f"Error: {str(e)}"
-    
-    def read_file(self, filepath: str) -> str:
-        r"""Read text from a file.
-        
-        Args:
-            filepath (str): Path to the file to read.
-            
-        Returns:
-            str: Contents of the file or error message.
-        """
-        try:
-            with open(os.path.expanduser(filepath), 'r') as f:
-                content = f.read()
-            return content
-        except Exception as e:
-            logger.error(f"Error reading file: {e}")
-            return f"Error: {str(e)}"
-    
-    def write_to_file(self, filepath: str, content: str, mode: str = 'w') -> str:
-        r"""Write text to a file.
-        
-        Args:
-            filepath (str): Path to the file to write.
-            content (str): Content to write to the file.
-            mode (str): File open mode ('w' for write, 'a' for append).
-                (default: :obj:`'w'`)
-            
-        Returns:
-            str: Success or error message.
-        """
-        try:
-            with open(os.path.expanduser(filepath), mode) as f:
-                f.write(content)
-            return f"Content written to {filepath}"
-        except Exception as e:
-            logger.error(f"Error writing to file: {e}")
-            return f"Error: {str(e)}"
-    
+  
     def open_terminal(self, wait_time: int = 2, force_english_input: bool = False) -> str:
         r"""Open a terminal window.
         
@@ -495,15 +484,10 @@ class PyAutoGUIToolkit(BaseToolkit):
             FunctionTool(self.keyboard_type),
             FunctionTool(self.take_screenshot),
             FunctionTool(self.get_screen_size),
-
             FunctionTool(self.get_mouse_position),
             FunctionTool(self.press_key),
             FunctionTool(self.hotkey),
             FunctionTool(self.mouse_drag),
             FunctionTool(self.scroll),
-            FunctionTool(self.locate_on_screen),
-            FunctionTool(self.write_to_file),
-            FunctionTool(self.read_file),
-            FunctionTool(self.wait_for_image),
             FunctionTool(self.open_terminal), 
         ]
