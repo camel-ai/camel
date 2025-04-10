@@ -15,24 +15,27 @@
 
 from typing import List, Optional, Tuple
 
-import pyautogui
-import logging
+from camel.logger import get_logger
 import subprocess
 import os
 import time
 from camel.toolkits import BaseToolkit, FunctionTool
-# Configure PyAutoGUI for safety
-pyautogui.FAILSAFE = True  # Move mouse to upper-left to abort
 
 # Set up logging
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class PyAutoGUIToolkit(BaseToolkit):
     r"""A toolkit for automating GUI interactions using PyAutoGUI."""
     
+    @dependencies_required('pyautogui')
     def __init__(self):
         super().__init__()
+        # Import pyautogui here to make it an optional dependency
+        import pyautogui
+        # Configure PyAutoGUI for safety
+        pyautogui.FAILSAFE = True  # Move mouse to upper-left to abort
+
         # Get screen size for safety boundaries
         self.screen_width, self.screen_height = pyautogui.size()
         # Define safe boundaries (10% margin from edges)
@@ -68,6 +71,7 @@ class PyAutoGUIToolkit(BaseToolkit):
             x (int): X-coordinate to move to.
             y (int): Y-coordinate to move to.
             duration (float): How long the movement should take in seconds.
+                (default: :obj:`0.5`)
             
         Returns:
             str: Success or error message.
@@ -92,10 +96,14 @@ class PyAutoGUIToolkit(BaseToolkit):
         
         Args:
             button (str): Button to click ('left', 'middle', 'right').
+                (default: :obj:`'left'`)
             clicks (int): Number of clicks.
+                (default: :obj:`1`)
             x (Optional[int]): X-coordinate to click at. If None, uses current position.
+                (default: :obj:`None`)
             y (Optional[int]): Y-coordinate to click at. If None, uses current position.
-            
+                (default: :obj:`None`)
+                
         Returns:
             str: Success or error message.
         """
@@ -116,7 +124,9 @@ class PyAutoGUIToolkit(BaseToolkit):
         
         Args:
             x (Optional[int]): X-coordinate to double-click at. If None, uses current position.
+                (default: :obj:`None`)
             y (Optional[int]): Y-coordinate to double-click at. If None, uses current position.
+                (default: :obj:`None`)
             
         Returns:
             str: Success or error message.
@@ -138,7 +148,9 @@ class PyAutoGUIToolkit(BaseToolkit):
         
         Args:
             x (Optional[int]): X-coordinate to right-click at. If None, uses current position.
+                (default: :obj:`None`)
             y (Optional[int]): Y-coordinate to right-click at. If None, uses current position.
+                (default: :obj:`None`)
             
         Returns:
             str: Success or error message.
@@ -160,7 +172,9 @@ class PyAutoGUIToolkit(BaseToolkit):
         
         Args:
             x (Optional[int]): X-coordinate to middle-click at. If None, uses current position.
+                (default: :obj:`None`)
             y (Optional[int]): Y-coordinate to middle-click at. If None, uses current position.
+                (default: :obj:`None`)
             
         Returns:
             str: Success or error message.
@@ -208,9 +222,13 @@ class PyAutoGUIToolkit(BaseToolkit):
         
         Args:
             left (int): Left coordinate of the screenshot region.
+                (default: :obj:`0`)
             top (int): Top coordinate of the screenshot region.
+                (default: :obj:`0`)
             width (Optional[int]): Width of the screenshot region. If None, uses full screen width.
+                (default: :obj:`None`)
             height (Optional[int]): Height of the screenshot region. If None, uses full screen height.
+                (default: :obj:`None`)
             
         Returns:
             str: Path to the saved screenshot.
@@ -265,7 +283,9 @@ class PyAutoGUIToolkit(BaseToolkit):
             end_x (int): Ending x-coordinate.
             end_y (int): Ending y-coordinate.
             duration (float): How long the drag should take in seconds.
+                (default: :obj:`0.5`)
             button (str): Mouse button to use ('left', 'middle', 'right').
+                (default: :obj:`'left'`)
             
         Returns:
             str: Success or error message.
@@ -299,7 +319,9 @@ class PyAutoGUIToolkit(BaseToolkit):
         Args:
             clicks (int): Number of "clicks" to scroll. Positive scrolls up, negative scrolls down.
             x (Optional[int]): X-coordinate to scroll at. If None, uses current position.
+                (default: :obj:`None`)
             y (Optional[int]): Y-coordinate to scroll at. If None, uses current position.
+                (default: :obj:`None`)
             
         Returns:
             str: Success or error message.
@@ -330,6 +352,7 @@ class PyAutoGUIToolkit(BaseToolkit):
         Args:
             text (str): Text to type.
             interval (float): Seconds to wait between keypresses.
+                (default: :obj:`0.0`)
             
         Returns:
             str: Success or error message.
@@ -406,6 +429,7 @@ class PyAutoGUIToolkit(BaseToolkit):
             filepath (str): Path to the file to write.
             content (str): Content to write to the file.
             mode (str): File open mode ('w' for write, 'a' for append).
+                (default: :obj:`'w'`)
             
         Returns:
             str: Success or error message.
@@ -423,7 +447,9 @@ class PyAutoGUIToolkit(BaseToolkit):
         
         Args:
             wait_time (int): Seconds to wait for terminal to open.
+                (default: :obj:`2`)
             force_english_input (bool): Force English input method.
+                (default: :obj:`False`)
             
         Returns:
             str: Success or error message.

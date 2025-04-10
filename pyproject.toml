@@ -340,11 +340,8 @@ all = [
     "typer>=0.15.2",
     "mem0ai>=0.1.67",
     "math-verify>=0.7.0,<0.8",
-<<<<<<< HEAD
+    "exa-py>=1.10.0,<2",
     "pyautogui>=0.9.54,<0.10",
-=======
-    "exa-py>=1.10.0,<2"
->>>>>>> upstream/master
 ]
 
 [project.urls]
