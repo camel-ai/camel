@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+from datetime import datetime
 from unittest.mock import MagicMock, create_autospec
 from uuid import uuid4
 
@@ -45,6 +46,8 @@ def generate_mock_records(num_records: int):
             },
             "role_at_backend": "user",
             "extra_info": {},
+            "timestamp": datetime.now().timestamp(),
+            "agent_id": f"test_agent_{i}",
         }
         for i in range(num_records)
     ]
@@ -99,6 +102,8 @@ class TestChatHistoryBlock:
                     "test message {}".format(i),
                 ),
                 role_at_backend=OpenAIBackendRole.USER,
+                timestamp=datetime.now().timestamp(),
+                agent_id=f"test_agent_{i}",
             )
             for i in range(5)
         ]
@@ -174,6 +179,8 @@ class TestVectorDBBlock:
                     "test message {}".format(i),
                 ),
                 role_at_backend=OpenAIBackendRole.USER,
+                timestamp=datetime.now().timestamp(),
+                agent_id=f"test_agent_{i}",
             )
             for i in range(5)
         ]

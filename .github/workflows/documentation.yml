@@ -26,8 +26,9 @@ jobs:
 
       - name: Sphinx build
         run: |
+          source .venv/bin/activate
           cd docs
-          poetry run make html
+          make html
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v4

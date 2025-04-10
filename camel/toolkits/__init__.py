@@ -35,21 +35,37 @@ from .google_maps_toolkit import GoogleMapsToolkit
 from .code_execution import CodeExecutionToolkit
 from .github_toolkit import GithubToolkit
 from .google_scholar_toolkit import GoogleScholarToolkit
+from .google_calendar_toolkit import GoogleCalendarToolkit
 from .arxiv_toolkit import ArxivToolkit
 from .slack_toolkit import SlackToolkit
+from .whatsapp_toolkit import WhatsAppToolkit
 from .twitter_toolkit import TwitterToolkit
 from .open_api_toolkit import OpenAPIToolkit
 from .retrieval_toolkit import RetrievalToolkit
 from .notion_toolkit import NotionToolkit
 from .human_toolkit import HumanToolkit
 from .stripe_toolkit import StripeToolkit
-from .video_toolkit import VideoDownloaderToolkit
+from .video_download_toolkit import VideoDownloaderToolkit
 from .dappier_toolkit import DappierToolkit
 from .networkx_toolkit import NetworkXToolkit
 from .semantic_scholar_toolkit import SemanticScholarToolkit
 from .zapier_toolkit import ZapierToolkit
 from .sympy_toolkit import SymPyToolkit
 from .mineru_toolkit import MinerUToolkit
+from .memory_toolkit import MemoryToolkit
+from .audio_analysis_toolkit import AudioAnalysisToolkit
+from .excel_toolkit import ExcelToolkit
+from .video_analysis_toolkit import VideoAnalysisToolkit
+from .image_analysis_toolkit import ImageAnalysisToolkit
+from .mcp_toolkit import MCPToolkit
+from .browser_toolkit import BrowserToolkit
+from .file_write_toolkit import FileWriteToolkit
+from .terminal_toolkit import TerminalToolkit
+from .pubmed_toolkit import PubMedToolkit
+from .data_commons_toolkit import DataCommonsToolkit
+from .thinking_toolkit import ThinkingToolkit
+from .openai_agent_toolkit import OpenAIAgentToolkit
+from .searxng_toolkit import SearxNGToolkit
 
 
 __all__ = [
@@ -64,6 +80,7 @@ __all__ = [
     'GoogleMapsToolkit',
     'SearchToolkit',
     'SlackToolkit',
+    'WhatsAppToolkit',
     'DalleToolkit',
     'TwitterToolkit',
     'WeatherToolkit',
@@ -75,6 +92,7 @@ __all__ = [
     'AskNewsToolkit',
     'AsyncAskNewsToolkit',
     'GoogleScholarToolkit',
+    'GoogleCalendarToolkit',
     'NotionToolkit',
     'ArxivToolkit',
     'HumanToolkit',
@@ -88,4 +106,18 @@ __all__ = [
     'ZapierToolkit',
     'SymPyToolkit',
     'MinerUToolkit',
+    'MemoryToolkit',
+    'MCPToolkit',
+    'AudioAnalysisToolkit',
+    'ExcelToolkit',
+    'VideoAnalysisToolkit',
+    'ImageAnalysisToolkit',
+    'BrowserToolkit',
+    'FileWriteToolkit',
+    'TerminalToolkit',
+    'PubMedToolkit',
+    'DataCommonsToolkit',
+    'ThinkingToolkit',
+    'OpenAIAgentToolkit',
+    'SearxNGToolkit',
 ]

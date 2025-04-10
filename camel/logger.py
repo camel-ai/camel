@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+
 import logging
 import os
 import sys
@@ -42,8 +43,50 @@ def _configure_library_logging():
         _logger.debug("Existing logger configuration found, using that.")
 
 
+def set_log_file(file_path):
+    r"""Set a file handler for the CAMEL library logging.
+
+    Args:
+        file_path (str): Path to the log file. If the directory doesn't exist,
+            it will be created.
+
+    Returns:
+        logging.FileHandler: The file handler that was added to the logger.
+    """
+    # Check for existing handlers to the same file
+    for handler in _logger.handlers:
+        if isinstance(handler, logging.FileHandler) and os.path.abspath(
+            handler.baseFilename
+        ) == os.path.abspath(file_path):
+            _logger.info(f"File handler already exists for: {file_path}")
+            return handler
+
+    # Create directory if it doesn't exist
+    log_dir = os.path.dirname(file_path)
+    if log_dir and not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+
+    # Create file handler
+    file_handler = logging.FileHandler(file_path)
+    file_handler.setFormatter(
+        logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
+    )
+
+    # Set the same level as the logger
+    file_handler.setLevel(_logger.getEffectiveLevel())
+
+    # Add the handler to the logger
+    _logger.addHandler(file_handler)
+    _logger.info(f"Log file configured at: {file_path}")
+
+    return file_handler
+
+
 def disable_logging():
     r"""Disable all logging for the CAMEL library.
+
 
     This function sets the log level to a value higher than CRITICAL,
     effectively disabling all log messages, and adds a NullHandler to
@@ -63,6 +106,7 @@ def disable_logging():
 def enable_logging():
     r"""Enable logging for the CAMEL library.
 
+
     This function re-enables logging if it was previously disabled,
     and configures the library logging using the default settings.
     If the logging is already configured,
@@ -75,11 +119,13 @@ def enable_logging():
 def set_log_level(level):
     r"""Set the logging level for the CAMEL library.
 
+
     Args:
         level (Union[str, int]): The logging level to set. This can be a string
             (e.g., 'INFO') or a logging level constant (e.g., logging.INFO,
             logging.DEBUG).
             See https://docs.python.org/3/library/logging.html#levels
+
 
     Raises:
         ValueError: If the provided level is not a valid logging level.
@@ -98,14 +144,24 @@ def set_log_level(level):
         )
 
     _logger.setLevel(level)
+
+    # Update level for all handlers
+    for handler in _logger.handlers:
+        try:
+            handler.setLevel(level)
+        except Exception as e:
+            _logger.warning(f"Failed to set level on handler {handler}: {e}")
+
     _logger.debug(f"Logging level set to: {logging.getLevelName(level)}")
 
 
 def get_logger(name):
     r"""Get a logger with the specified name, prefixed with 'camel.'.
 
+
     Args:
         name (str): The name to be appended to 'camel.' to create the logger.
+
 
     Returns:
         logging.Logger: A logger instance with the name 'camel.{name}'.

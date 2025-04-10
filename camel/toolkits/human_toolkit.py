@@ -39,6 +39,19 @@ class HumanToolkit(BaseToolkit):
         logger.info(f"User reply: {reply}")
         return reply
 
+    def send_message_to_user(self, message: str) -> None:
+        r"""Send a message to the user, without waiting for
+        a response. This will send to stdout in a noticeable way.
+
+        This is guaranteed to reach the user regardless of
+        actual user interface.
+
+        Args:
+            message (str): The message to send to the user.
+        """
+        print(f"\nAgent Message:\n{message}")
+        logger.info(f"\nAgent Message:\n{message}")
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
@@ -47,4 +60,7 @@ class HumanToolkit(BaseToolkit):
             List[FunctionTool]: A list of FunctionTool objects
                 representing the functions in the toolkit.
         """
-        return [FunctionTool(self.ask_human_via_console)]
+        return [
+            FunctionTool(self.ask_human_via_console),
+            FunctionTool(self.send_message_to_user),
+        ]
