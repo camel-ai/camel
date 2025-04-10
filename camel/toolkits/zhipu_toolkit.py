@@ -49,7 +49,7 @@ class ZhiPuToolkit(BaseToolkit):
         """
         api_key = api_key or os.environ.get("ZHIPUAI_API_KEY")
         url = url or "https://open.bigmodel.cn/api/paas/v4/"
-        
+
         self.client = ZhipuAI(api_key=api_key, base_url=url)
         self.file_ids: List[str] = []
         self.conversation_id: Optional[str] = None
