@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import xml.etree.ElementTree as ET
-from typing import Any, Dict, List, Literal, Optional, TypeAlias, Union, cast
+from typing import Any, Dict, List, Literal, Optional, TypeAlias, Union
 
 import requests
 
@@ -947,122 +947,174 @@ class SearchToolkit(BaseToolkit):
         except Exception as e:
             return {"error": f"Bing scraping error: {e!s}"}
 
-    @api_keys_required([(None, 'EXA_API_KEY')])
-    def search_exa(
-        self,
-        query: str,
-        search_type: Literal["auto", "neural", "keyword"] = "auto",
-        category: Optional[
-            Literal[
-                "company",
-                "research paper",
-                "news",
-                "pdf",
-                "github",
-                "tweet",
-                "personal site",
-                "linkedin profile",
-                "financial report",
-            ]
-        ] = None,
-        num_results: int = 10,
-        include_text: Optional[List[str]] = None,
-        exclude_text: Optional[List[str]] = None,
-        use_autoprompt: bool = True,
-        text: bool = False,
+    @api_keys_required([(None, 'TONGXIAO_API_KEY')])
+    def search_ali(
+        self, 
+        query: str, 
+        timeRange: str = "NoLimit", 
+        industry: Optional[str] = None, 
+        page: int = 1, 
+        returnMainText: bool = True, 
+        returnMarkdownText: bool = True, 
+        enableRerank: bool = True
     ) -> Dict[str, Any]:
-        r"""Use Exa search API to perform intelligent web search with optional
-        content extraction.
+        r"""Query the Alibaba Tongxiao search API and return search results.
+
+        This function queries the Alibaba Tongxiao search API, a powerful 
+        real-time search API that provides structured data from various search
+        engines and knowledge base collections. The API is particularly 
+        effective for Chinese language queries.
 
         Args:
-            query (str): The search query string.
-            search_type (Literal["auto", "neural", "keyword"]): The type of
-                search to perform. "auto" automatically decides between keyword
-                and neural search. (default: :obj:`"auto"`)
-            category (Optional[Literal]): Category to focus the search on, such
-                as "research paper" or "news". (default: :obj:`None`)
-            num_results (int): Number of results to return (max 100).
-                (default: :obj:`10`)
-            include_text (Optional[List[str]]): Strings that must be present in
-                webpage text. Limited to 1 string of up to 5 words.
-                (default: :obj:`None`)
-            exclude_text (Optional[List[str]]): Strings that must not be
-                present in webpage text. Limited to 1 string of up to 5 words.
-                (default: :obj:`None`)
-            use_autoprompt (bool): Whether to use Exa's autoprompt feature to
-                enhance the query. (default: :obj:`True`)
-            text (bool): Whether to include webpage contents in results.
-                (default: :obj:`False`)
+            query (str): The search query string (length >= 1 and <= 100).
+            timeRange (str): Time frame filter for search results. Default
+                is "NoLimit". Options include:
+                - 'OneDay': Past day.
+                - 'OneWeek': Past week.
+                - 'OneMonth': Past month.
+                - 'OneYear': Past year.
+                - 'NoLimit': No time limit (default).
+            industry (Optional[str]): Industry-specific search filter. When 
+                specified, only returns results from sites in the specified 
+                industries. Multiple industries can be comma-separated.
+                Options include:
+                - 'finance': Financial industry.
+                - 'law': Legal industry.
+                - 'medical': Medical industry.
+                - 'internet': Internet (curated).
+                - 'tax': Tax industry.
+                - 'news_province': Provincial news.
+                - 'news_center': Central news.
+            page (int): Page number for results pagination. Default is 1.
+            returnMainText (bool): Whether to include the main text of the 
+                webpage in results. Default is True.
+            returnMarkdownText (bool): Whether to include markdown formatted 
+                content in results. Default is True.
+            enableRerank (bool): Whether to enable result reranking. Default 
+                is True. If response time is critical, setting this to False 
+                can reduce response time by approximately 140ms.
 
         Returns:
-            Dict[str, Any]: A dict containing search results and metadata:
-                - requestId (str): Unique identifier for the request
-                - autopromptString (str): Generated autoprompt if enabled
-                - autoDate (str): Timestamp of autoprompt generation
-                - resolvedSearchType (str): The actual search type used
-                - results (List[Dict]): List of search results with metadata
-                - searchType (str): The search type that was selected
-                - costDollars (Dict): Breakdown of API costs
+            Dict[str, Any]: A dictionary containing search results or an error
+                message. The structure includes:
+                - 'requestId': A unique identifier for the request.
+                - 'results': A list of dictionaries, each representing a search 
+                  result with the following keys:
+                  - 'result_id': The index of the result.
+                  - 'title': The title of the webpage.
+                  - 'snippet': A dynamic summary of relevant content matching
+                    the query keywords.
+                  - 'mainText': The main content of the webpage (if 
+                    returnMainText is True).
+                  - 'markdownText': Markdown formatted content (if 
+                    returnMarkdownText is True).
+                  - 'hostname': The name of the website.
+                  - 'url': The URL of the webpage.
+                  - 'publishTime': Publication timestamp in milliseconds.
+                  - 'score': Relevance score.
+                - 'searchInformation': Additional metadata about the search 
+                  operation.
+                - or 'error': An error message if something went wrong.
         """
-        from exa_py import Exa
+        TONGXIAO_API_KEY = os.getenv("TONGXIAO_API_KEY")
+        # The @api_keys_required decorator will handle missing API key cases
 
-        EXA_API_KEY = os.getenv("EXA_API_KEY")
+        # API endpoint and parameters
+        base_url = "https://cloud-iqs.aliyuncs.com/search/genericSearch"
+        headers = {
+            "X-API-Key": TONGXIAO_API_KEY,
+        }
+        
+        # Convert boolean parameters to string for compatibility with requests
+        params: Dict[str, Union[str, int]] = {
+            "query": query,
+            "timeRange": timeRange,
+            "page": page,
+            "returnMainText": str(returnMainText).lower(),
+            "returnMarkdownText": str(returnMarkdownText).lower(),
+            "enableRerank": str(enableRerank).lower()
+        }
+        
+        # Only add industry parameter if specified
+        if industry is not None:
+            params["industry"] = industry
 
         try:
-            exa = Exa(EXA_API_KEY)
+            # Send GET request with proper typing for params
+            response = requests.get(
+                base_url, 
+                headers=headers, 
+                params=params, 
+                timeout=10
+            )
 
-            if num_results is not None and not 0 < num_results <= 100:
-                raise ValueError("num_results must be between 1 and 100")
-
-            if include_text is not None:
-                if len(include_text) > 1:
-                    raise ValueError("include_text can only contain 1 string")
-                if len(include_text[0].split()) > 5:
-                    raise ValueError(
-                        "include_text string cannot be longer than 5 words"
+            # Check response status
+            if response.status_code != 200:
+                return {
+                    "error": (
+                        f"Alibaba Tongxiao API request failed with status "
+                        f"code {response.status_code}: {response.text}"
                     )
+                }
 
-            if exclude_text is not None:
-                if len(exclude_text) > 1:
-                    raise ValueError("exclude_text can only contain 1 string")
-                if len(exclude_text[0].split()) > 5:
-                    raise ValueError(
-                        "exclude_text string cannot be longer than 5 words"
-                    )
+            # Parse JSON response
+            data = response.json()
 
-            # Call Exa API with direct parameters
-            if text:
-                results = cast(
-                    Dict[str, Any],
-                    exa.search_and_contents(
-                        query=query,
-                        type=search_type,
-                        category=category,
-                        num_results=num_results,
-                        include_text=include_text,
-                        exclude_text=exclude_text,
-                        use_autoprompt=use_autoprompt,
-                        text=True,
-                    ),
-                )
-            else:
-                results = cast(
-                    Dict[str, Any],
-                    exa.search(
-                        query=query,
-                        type=search_type,
-                        category=category,
-                        num_results=num_results,
-                        include_text=include_text,
-                        exclude_text=exclude_text,
-                        use_autoprompt=use_autoprompt,
-                    ),
-                )
+            # Extract and format pageItems
+            page_items = data.get("pageItems", [])
+            results = []
+            for idx, item in enumerate(page_items):
+                # Create a simplified result structure similar to search_bing
+                result = {
+                    "result_id": idx + 1,
+                    "title": item.get("title", ""),
+                    "snippet": item.get("snippet", ""),
+                    "url": item.get("link", ""),  # Rename link to url for 
+                                                  # consistency
+                    "hostname": item.get("hostname", ""),
+                    "publishTime": item.get("publishTime", 0)
+                }
+                
+                # First try to use summary field, if not available use mainText
+                if "summary" in item and item.get("summary"):
+                    result["summary"] = item["summary"]
+                elif (returnMainText and "mainText" in item and 
+                      item.get("mainText")):
+                    result["summary"] = item["mainText"]
+                
+                # Include original mainText if it exists and is requested 
+                # (for reference)
+                if (returnMainText and "mainText" in item and 
+                    item.get("mainText")):
+                    result["mainText"] = item["mainText"]
+                
+                # Only include markdownText if it exists and is requested
+                if (returnMarkdownText and "markdownText" in item and 
+                    item.get("markdownText")):
+                    result["markdownText"] = item["markdownText"]
+                
+                # Include score if available
+                if "score" in item:
+                    result["score"] = item["score"]
+                
+                results.append(result)
 
-            return results
+            # Return a simplified structure similar to other search methods
+            return {
+                "requestId": data.get("requestId", ""),
+                "results": results,
+            }
 
+        except requests.exceptions.RequestException as e:
+            # Handle connection errors, timeouts
+            return {"error": f"Alibaba Tongxiao search request failed: {e!s}"}
         except Exception as e:
-            return {"error": f"Exa search failed: {e!s}"}
+            # Catch other potential errors (e.g., JSON parsing errors)
+            return {
+                "error": (
+                    f"Unexpected error during Alibaba Tongxiao search: {e!s}"
+                )
+            }
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
@@ -1083,5 +1135,5 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.search_bocha),
             FunctionTool(self.search_baidu),
             FunctionTool(self.search_bing),
-            FunctionTool(self.search_exa),
+            FunctionTool(self.search_ali),
         ]
