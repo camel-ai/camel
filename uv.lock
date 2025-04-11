@@ -651,6 +651,7 @@ all = [
     { name = "wolframalpha" },
     { name = "xls2xlsx" },
     { name = "yt-dlp" },
+    { name = "zhipuai" },
 ]
 communication-tools = [
     { name = "discord-py" },
@@ -751,6 +752,7 @@ model-platforms = [
     { name = "litellm" },
     { name = "mistralai" },
     { name = "reka-api" },
+    { name = "zhipuai" },
 ]
 owl = [
     { name = "anthropic" },
@@ -1150,6 +1152,8 @@ requires-dist = [
     { name = "yt-dlp", marker = "extra == 'all'", specifier = ">=2024.11.4,<2025" },
     { name = "yt-dlp", marker = "extra == 'media-tools'", specifier = ">=2024.11.4,<2025" },
     { name = "yt-dlp", marker = "extra == 'owl'", specifier = ">=2024.11.4,<2025" },
+    { name = "zhipuai", marker = "extra == 'all'" },
+    { name = "zhipuai", marker = "extra == 'model-platforms'" },
 ]
 provides-extras = ["test", "dev", "docs", "rag", "web-tools", "document-tools", "media-tools", "communication-tools", "data-tools", "research-tools", "dev-tools", "model-platforms", "huggingface", "storage", "owl", "all"]
 
@@ -5133,11 +5137,11 @@ wheels = [
 
 [[package]]
 name = "pyjwt"
-version = "2.10.1"
+version = "2.8.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/e7/46/bd74733ff231675599650d3e47f361794b22ef3e3770998dda30d3b63726/pyjwt-2.10.1.tar.gz", hash = "sha256:3cc5772eb20009233caf06e9d8a0577824723b44e6648ee0a2aedb6cf9381953", size = 87785 }
+sdist = { url = "https://files.pythonhosted.org/packages/30/72/8259b2bccfe4673330cea843ab23f86858a419d8f1493f66d413a76c7e3b/PyJWT-2.8.0.tar.gz", hash = "sha256:57e28d156e3d5c10088e0c68abb90bfac3df82b40a71bd0daa20c65ccd5c23de", size = 78313 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/61/ad/689f02752eeec26aed679477e80e632ef1b682313be70793d798c1d5fc8f/PyJWT-2.10.1-py3-none-any.whl", hash = "sha256:dcdd193e30abefd5debf142f9adfcdd2b58004e644f25406ffaebd50bd98dacb", size = 22997 },
+    { url = "https://files.pythonhosted.org/packages/2b/4f/e04a8067c7c96c364cef7ef73906504e2f40d690811c021e1a1901473a19/PyJWT-2.8.0-py3-none-any.whl", hash = "sha256:59127c392cc44c2da5bb3192169a91f429924e17aff6534d70fdc02ab3e04320", size = 22591 },
 ]
 
 [package.optional-dependencies]
@@ -7645,6 +7649,22 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/88/ea/f30e5925c5b9109d2f8e47b87bb7e7feac1a6c496b5324deb352c2002cf4/yt_dlp-2024.12.23.tar.gz", hash = "sha256:ac0e72b5a9017ba104b4258546201a7cedc38e8bd20727e0c63b77c829b425e9", size = 2914953 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/70/d3/dc656c921f45baaba4d439292194b5be7f48b3558fcc38941aca16fa5afa/yt_dlp-2024.12.23-py3-none-any.whl", hash = "sha256:2fc08a5221a0379628ac4e7324c6c69a95b9fdfa7a7ca3187444b3b7451e38be", size = 3176724 },
+]
+
+[[package]]
+name = "zhipuai"
+version = "2.1.5.20250106"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "cachetools" },
+    { name = "httpx" },
+    { name = "pydantic" },
+    { name = "pydantic-core" },
+    { name = "pyjwt" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/46/ba/0c0f855350ce7d486266d48c1e14a0b344227044290341356bbe6edd54da/zhipuai-2.1.5.20250106.tar.gz", hash = "sha256:45d391be336a210b360f126443f07882fa6d8184a148c46a8c7d0b7607d6d1f8", size = 68194 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b2/02/b8e4241dd256cda075c026bc008205a000c4bc57a2ff82291ab0d38b86be/zhipuai-2.1.5.20250106-py3-none-any.whl", hash = "sha256:ca76095f32db501e36038fc1ac4b287b88ed90c4cdd28902d3b1a9365fff879b", size = 105097 },
 ]
 
 [[package]]
