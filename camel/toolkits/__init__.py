@@ -66,6 +66,7 @@ from .data_commons_toolkit import DataCommonsToolkit
 from .thinking_toolkit import ThinkingToolkit
 from .openai_agent_toolkit import OpenAIAgentToolkit
 from .searxng_toolkit import SearxNGToolkit
+from .jina_reranker_toolkit import JinaRerankerToolkit
 
 
 __all__ = [
@@ -120,4 +121,5 @@ __all__ = [
     'ThinkingToolkit',
     'OpenAIAgentToolkit',
     'SearxNGToolkit',
+    'JinaRerankerToolkit',
 ]
