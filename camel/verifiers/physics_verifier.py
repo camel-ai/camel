@@ -399,8 +399,8 @@ class PhysicsSolutionComparitor:
 
             self.sol_value, self.sol_unit_expr = self.unit_parser.extract_value_and_unit(converted_sol_expr)
             
-            if not isinstance(self.sol_value, (int, float, sp.Number)):
-                raise ValueError(f"Failed to extract value from converted value: {self.sol_value}")
+            if not isinstance(self.sol_value, (int, float, sp.Number, sp.Mul)):
+                raise ValueError(f"Failed to extract value from converted value: {self.sol_value} with error {e}")
             
             self.sol_value = float(self.sol_value)
 
