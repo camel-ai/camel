@@ -46,16 +46,12 @@ def detect_image_obj(image_paths: str) -> None:
     print(sys_msg)
     print("=" * 49)
 
-    assistant_sys_msg = BaseMessage.make_assistant_message(
-        role_name="Assistant",
-        content=sys_msg,
-    )
     model = ModelFactory.create(
         model_platform=ModelPlatformType.DEFAULT,
         model_type=ModelType.DEFAULT,
     )
     agent = ChatAgent(
-        assistant_sys_msg,
+        sys_msg,
         model=model,
     )
     image_list = [Image.open(image_path) for image_path in image_paths]

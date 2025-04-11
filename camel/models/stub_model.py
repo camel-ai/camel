@@ -12,9 +12,10 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import time
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
-from openai import Stream
+from openai import AsyncStream, Stream
+from pydantic import BaseModel
 
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
@@ -43,6 +44,31 @@ class StubTokenCounter(BaseTokenCounter):
         """
         return 10
 
+    def encode(self, text: str) -> List[int]:
+        r"""Encode text into token IDs for STUB models.
+
+        Args:
+            text (str): The text to encode.
+
+        Returns:
+            List[int]: List of token IDs.
+        """
+        # For stub models, just return a list of 0s with length proportional
+        # to text length
+        return [0] * (len(text) // 4 + 1)  # Simple approximation
+
+    def decode(self, token_ids: List[int]) -> str:
+        r"""Decode token IDs back to text for STUB models.
+
+        Args:
+            token_ids (List[int]): List of token IDs to decode.
+
+        Returns:
+            str: Decoded text.
+        """
+        # For stub models, return a placeholder string
+        return "[Stub decoded text]"
+
 
 class StubModel(BaseModelBackend):
     r"""A dummy model used for unit tests."""
@@ -56,10 +82,11 @@ class StubModel(BaseModelBackend):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
+        timeout: Optional[float] = None,
     ) -> None:
         r"""All arguments are unused for the dummy model."""
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter
+            model_type, model_config_dict, api_key, url, token_counter, timeout
         )
 
     @property
@@ -74,8 +101,49 @@ class StubModel(BaseModelBackend):
             self._token_counter = StubTokenCounter()
         return self._token_counter
 
-    def run(
-        self, messages: List[OpenAIMessage]
+    async def _arun(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+        r"""Run fake inference by returning a fixed string.
+        All arguments are unused for the dummy model.
+
+        Returns:
+            Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+                The response from the dummy model.
+        """
+        ARBITRARY_STRING = "Lorem Ipsum"
+        response: ChatCompletion = ChatCompletion(
+            id="stub_model_id",
+            model="stub",
+            object="chat.completion",
+            created=int(time.time()),
+            choices=[
+                Choice(
+                    finish_reason="stop",
+                    index=0,
+                    message=ChatCompletionMessage(
+                        content=ARBITRARY_STRING,
+                        role="assistant",
+                    ),
+                    logprobs=None,
+                )
+            ],
+            usage=CompletionUsage(
+                completion_tokens=10,
+                prompt_tokens=10,
+                total_tokens=20,
+            ),
+        )
+        return response
+
+    def _run(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Run fake inference by returning a fixed string.
         All arguments are unused for the dummy model.

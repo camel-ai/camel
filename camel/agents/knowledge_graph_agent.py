@@ -70,6 +70,11 @@ provided Node and Relationship classes.
 Ensure that the extracted data adheres to the structure defined by the classes.
 Output the structured data in a format that can be easily validated against 
 the provided code.
+Do not wrap the output in lists or dictionaries, provide the Node and 
+Relationship with unique identifiers.
+Strictly follow the format provided in the example output, do not add any 
+additional information.
+
 
 Instructions for you:
 Read the provided content thoroughly.
@@ -144,6 +149,7 @@ class KnowledgeGraphAgent(ChatAgent):
         self,
         element: "Element",
         parse_graph_elements: bool = False,
+        prompt: Optional[str] = None,
     ) -> Union[str, GraphElement]:
         r"""Run the agent to extract node and relationship information.
 
@@ -151,6 +157,8 @@ class KnowledgeGraphAgent(ChatAgent):
             element (Element): The input element.
             parse_graph_elements (bool, optional): Whether to parse into
                 `GraphElement`. Defaults to `False`.
+            prompt (str, optional): The custom prompt to be used.
+                Defaults to `None`.
 
         Returns:
             Union[str, GraphElement]: The extracted node and relationship
@@ -160,16 +168,15 @@ class KnowledgeGraphAgent(ChatAgent):
         self.reset()
         self.element = element
 
-        knowledge_graph_prompt = TextPrompt(text_prompt)
+        # Use the provided prompt or fall back to the default text_prompt
+        final_prompt = prompt if prompt is not None else text_prompt
+
+        knowledge_graph_prompt = TextPrompt(final_prompt)
         knowledge_graph_generation = knowledge_graph_prompt.format(
             task=str(element)
         )
 
-        knowledge_graph_generation_msg = BaseMessage.make_user_message(
-            role_name="Graphify", content=knowledge_graph_generation
-        )
-
-        response = self.step(input_message=knowledge_graph_generation_msg)
+        response = self.step(input_message=knowledge_graph_generation)
 
         content = response.msg.content
 
@@ -224,7 +231,8 @@ class KnowledgeGraphAgent(ChatAgent):
         node_pattern = r"Node\(id='(.*?)', type='(.*?)'\)"
         rel_pattern = (
             r"Relationship\(subj=Node\(id='(.*?)', type='(.*?)'\), "
-            r"obj=Node\(id='(.*?)', type='(.*?)'\), type='(.*?)'\)"
+            r"obj=Node\(id='(.*?)', type='(.*?)'\), "
+            r"type='(.*?)'(?:, timestamp='(.*?)')?\)"
         )
 
         nodes = {}
@@ -241,13 +249,24 @@ class KnowledgeGraphAgent(ChatAgent):
 
         # Extract relationships
         for match in re.finditer(rel_pattern, input_string):
-            subj_id, subj_type, obj_id, obj_type, rel_type = match.groups()
+            groups = match.groups()
+            if len(groups) == 6:
+                subj_id, subj_type, obj_id, obj_type, rel_type, timestamp = (
+                    groups
+                )
+            else:
+                subj_id, subj_type, obj_id, obj_type, rel_type = groups
+                timestamp = None
             properties = {'source': 'agent_created'}
             if subj_id in nodes and obj_id in nodes:
                 subj = nodes[subj_id]
                 obj = nodes[obj_id]
                 relationship = Relationship(
-                    subj=subj, obj=obj, type=rel_type, properties=properties
+                    subj=subj,
+                    obj=obj,
+                    type=rel_type,
+                    timestamp=timestamp,
+                    properties=properties,
                 )
                 if self._validate_relationship(relationship):
                     relationships.append(relationship)

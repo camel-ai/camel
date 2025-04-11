@@ -67,10 +67,7 @@ def test_get_triples():
         mock_get_triples.return_value = expected_result
         result = dc_toolkit.get_triples(dcids)
         assert result == expected_result
-        mock_get_triples.assert_called()
-        assert (
-            mock_get_triples.call_args[0][0] == dcids
-        )  # Check that dcids were passed correctly
+        mock_get_triples.assert_called_once_with(dcids, 500)
     print("test_get_triples passed successfully")
 
 

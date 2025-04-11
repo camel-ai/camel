@@ -17,9 +17,10 @@ from camel.retrievers import AutoRetriever
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 from camel.types import StorageType
-from camel.utils import Constants
+from camel.utils import Constants, MCPServer
 
 
+@MCPServer()
 class RetrievalToolkit(BaseToolkit):
     r"""A class representing a toolkit for information retrieval.
 
@@ -27,8 +28,13 @@ class RetrievalToolkit(BaseToolkit):
     storage system based on a specified query.
     """
 
-    def __init__(self, auto_retriever: Optional[AutoRetriever] = None) -> None:
+    def __init__(
+        self,
+        auto_retriever: Optional[AutoRetriever] = None,
+        timeout: Optional[float] = None,
+    ) -> None:
         r"""Initializes a new instance of the RetrievalToolkit class."""
+        super().__init__(timeout=timeout)
         self.ar = auto_retriever or AutoRetriever(
             vector_storage_local_path="camel/temp_storage",
             storage_type=StorageType.QDRANT,

@@ -16,9 +16,10 @@ from typing import Dict, List, Literal, Optional, Union
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import api_keys_required, dependencies_required
+from camel.utils import MCPServer, api_keys_required, dependencies_required
 
 
+@MCPServer()
 class DappierToolkit(BaseToolkit):
     r"""A class representing a toolkit for interacting with the Dappier API.
 
@@ -33,10 +34,11 @@ class DappierToolkit(BaseToolkit):
             (None, "DAPPIER_API_KEY"),
         ]
     )
-    def __init__(self):
+    def __init__(self, timeout: Optional[float] = None):
         r"""Initialize the DappierTookit with API clients.The API keys and
         credentials are retrieved from environment variables.
         """
+        super().__init__(timeout=timeout)
         from dappier import Dappier
 
         dappier_api_key = os.environ.get("DAPPIER_API_KEY")

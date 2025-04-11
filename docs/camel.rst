@@ -9,6 +9,7 @@ Subpackages
 
    camel.agents
    camel.configs
+   camel.datagen
    camel.embeddings
    camel.interpreters
    camel.loaders

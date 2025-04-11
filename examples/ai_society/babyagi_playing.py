@@ -26,7 +26,6 @@ def main(model=None, chat_turn_limit=15) -> None:
         user_role_name="Stock Trader",
         task_prompt=task_prompt,
         task_specify_agent_kwargs=dict(model=model),
-        message_window_size=5,
     )
 
     print(

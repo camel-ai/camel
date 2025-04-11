@@ -14,7 +14,6 @@
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
-from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.toolkits import MathToolkit, SearchToolkit
 from camel.types import ModelPlatformType, ModelType
@@ -39,29 +38,20 @@ def main():
 
     # Set external_tools
     external_tool_agent = ChatAgent(
-        system_message=BaseMessage.make_assistant_message(
-            role_name="Tools calling operator",
-            content="You are a helpful assistant",
-        ),
+        system_message="You are a helpful assistant",
         model=model,
         tools=internal_tools,
         external_tools=external_tools,
     )
 
-    usr_msg = BaseMessage.make_user_message(
-        role_name="User",
-        content="When is the release date of the video game Portal?",
-    )
-
     # This will directly run the internal tool
-    response = external_tool_agent.step(usr_msg)
+    response = external_tool_agent.step(
+        "When is the release date of the video game Portal?"
+    )
     print(response.msg.content)
 
-    usr_msg = BaseMessage.make_user_message(
-        role_name="User",
-        content="What's the result of the release year of Portal subtracted by"
-        "the year that United States was founded?",
-    )
+    usr_msg = "What's the result of the release year of Portal subtracted by"
+    "the year that United States was founded?"
     # This will first automatically run the internal tool to check the years
     # Then it will request the external tool to calculate the sum
     response = external_tool_agent.step(usr_msg)

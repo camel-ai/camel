@@ -13,9 +13,10 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
-from openai import OpenAI, Stream
+from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
+from pydantic import BaseModel
 
 from camel.configs import ZHIPUAI_API_PARAMS, ZhipuAIConfig
 from camel.messages import OpenAIMessage
@@ -50,6 +51,10 @@ class ZhipuAIModel(BaseModelBackend):
             use for the model. If not provided, :obj:`OpenAITokenCounter(
             ModelType.GPT_4O_MINI)` will be used.
             (default: :obj:`None`)
+        timeout (Optional[float], optional): The timeout value in seconds for
+            API calls. If not provided, will fall back to the MODEL_TIMEOUT
+            environment variable or default to 180 seconds.
+            (default: :obj:`None`)
     """
 
     @api_keys_required(
@@ -64,6 +69,7 @@ class ZhipuAIModel(BaseModelBackend):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
+        timeout: Optional[float] = None,
     ) -> None:
         if model_config_dict is None:
             model_config_dict = ZhipuAIConfig().as_dict()
@@ -71,19 +77,54 @@ class ZhipuAIModel(BaseModelBackend):
         url = url or os.environ.get(
             "ZHIPUAI_API_BASE_URL", "https://open.bigmodel.cn/api/paas/v4/"
         )
+        timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter
+            model_type, model_config_dict, api_key, url, token_counter, timeout
         )
         self._client = OpenAI(
-            timeout=180,
+            timeout=self._timeout,
+            max_retries=3,
+            api_key=self._api_key,
+            base_url=self._url,
+        )
+        self._async_client = AsyncOpenAI(
+            timeout=self._timeout,
             max_retries=3,
             api_key=self._api_key,
             base_url=self._url,
         )
 
-    def run(
+    async def _arun(
         self,
         messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+        r"""Runs inference of OpenAI chat completion.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+
+        Returns:
+            Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+                `ChatCompletion` in the non-stream mode, or
+                `AsyncStream[ChatCompletionChunk]` in the stream mode.
+        """
+        # Use OpenAI client as interface call ZhipuAI
+        # Reference: https://open.bigmodel.cn/dev/api#openai_sdk
+        response = await self._async_client.chat.completions.create(
+            messages=messages,
+            model=self.model_type,
+            **self.model_config_dict,
+        )
+        return response
+
+    def _run(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Runs inference of OpenAI chat completion.
 
@@ -96,7 +137,7 @@ class ZhipuAIModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        # Use OpenAI cilent as interface call ZhipuAI
+        # Use OpenAI client as interface call ZhipuAI
         # Reference: https://open.bigmodel.cn/dev/api#openai_sdk
         response = self._client.chat.completions.create(
             messages=messages,

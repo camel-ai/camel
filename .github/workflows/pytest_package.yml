@@ -35,10 +35,10 @@ jobs:
         ZHIPUAI_API_BASE_URL: "${{ secrets.ZHIPUAI_API_BASE_URL }}"
         ZHIPUAI_API_KEY: "${{ secrets.ZHIPUAI_API_KEY }}"
         HF_TOKEN: "${{ secrets.HF_TOKEN }}"
-        AZURE_OPENAI_API_KEY: "to-be-filled"
-        AZURE_API_VERSION: "to-be-filled"
-        AZURE_DEPLOYMENT_NAME: "to-be-filled"
-        AZURE_OPENAI_BASE_URL: "https://camel.openai.azure.com/"
+        AZURE_OPENAI_API_KEY: "${{ secrets.AZURE_OPENAI_API_KEY }}"
+        AZURE_API_VERSION: "${{ secrets.AZURE_API_VERSION }}"
+        AZURE_DEPLOYMENT_NAME: "${{ secrets.AZURE_DEPLOYMENT_NAME }}"
+        AZURE_OPENAI_BASE_URL: "${{ secrets.AZURE_OPENAI_BASE_URL }}"
         MISTRAL_API_KEY: "${{ secrets.MISTRAL_API_KEY }}"
         REKA_API_KEY: "${{ secrets.REKA_API_KEY }}"
         NEO4J_URI: "${{ secrets.NEO4J_URI }}"
@@ -59,7 +59,20 @@ jobs:
         DISCORD_BOT_TOKEN: "${{ secrets.DISCORD_BOT_TOKEN }}"
         INTERNLM_API_KEY: "${{ secrets.INTERNLM_API_KEY }}"
         JINA_API_KEY: "${{ secrets.JINA_API_KEY }}"
-      run: poetry run pytest --fast-test-mode test/
+        MOONSHOT_API_KEY: "${{ secrets.MOONSHOT_API_KEY }}"
+        SILICONFLOW_API_KEY: "${{ secrets.SILICONFLOW_API_KEY }}"
+        AIML_API_KEY: "${{ secrets.AIML_API_KEY }}"
+        VOLCANO_API_KEY: "${{ secrets.VOLCANO_API_KEY }}"
+        OPENROUTER_API_KEY: "${{ secrets.OPENROUTER_API_KEY }}"
+        MODELSCOPE_SDK_TOKEN: "${{ secrets.MODELSCOPE_SDK_TOKEN }}"
+        NOTION_TOKEN: "${{ secrets.NOTION_TOKEN }}"
+        GOOGLE_CLIENT_ID: "${{ secrets.GOOGLE_CLIENT_ID }}"
+        GOOGLE_CLIENT_SECRET: "${{ secrets.GOOGLE_CLIENT_SECRET }}"
+        PPIO_API_KEY: "${{ secrets.PPIO_API_KEY }}"
+      run: |
+        source .venv/bin/activate
+        uv pip install -e ".[all, dev, docs]"
+        pytest --fast-test-mode test/
 
   pytest_package_llm_test:
     runs-on: ubuntu-latest
@@ -83,10 +96,10 @@ jobs:
         ZHIPUAI_API_BASE_URL: "${{ secrets.ZHIPUAI_API_BASE_URL }}"
         ZHIPUAI_API_KEY: "${{ secrets.ZHIPUAI_API_KEY }}"
         HF_TOKEN: "${{ secrets.HF_TOKEN }}"
-        AZURE_OPENAI_API_KEY: "to-be-filled"
-        AZURE_API_VERSION: "to-be-filled"
-        AZURE_DEPLOYMENT_NAME: "to-be-filled"
-        AZURE_OPENAI_BASE_URL: "https://camel.openai.azure.com/"
+        AZURE_OPENAI_API_KEY: "${{ secrets.AZURE_OPENAI_API_KEY }}"
+        AZURE_API_VERSION: "${{ secrets.AZURE_API_VERSION }}"
+        AZURE_DEPLOYMENT_NAME: "${{ secrets.AZURE_DEPLOYMENT_NAME }}"
+        AZURE_OPENAI_BASE_URL: "${{ secrets.AZURE_OPENAI_BASE_URL }}"
         MISTRAL_API_KEY: "${{ secrets.MISTRAL_API_KEY }}"
         REKA_API_KEY: "${{ secrets.REKA_API_KEY }}"
         NEO4J_URI: "${{ secrets.NEO4J_URI }}"
@@ -107,7 +120,20 @@ jobs:
         DISCORD_BOT_TOKEN: "${{ secrets.DISCORD_BOT_TOKEN }}"
         INTERNLM_API_KEY: "${{ secrets.INTERNLM_API_KEY }}"
         JINA_API_KEY: "${{ secrets.JINA_API_KEY }}"
-      run: poetry run pytest --llm-test-only test/
+        MOONSHOT_API_KEY: "${{ secrets.MOONSHOT_API_KEY }}"
+        SILICONFLOW_API_KEY: "${{ secrets.SILICONFLOW_API_KEY }}"
+        AIML_API_KEY: "${{ secrets.AIML_API_KEY }}"
+        VOLCANO_API_KEY: "${{ secrets.VOLCANO_API_KEY }}"
+        OPENROUTER_API_KEY: "${{ secrets.OPENROUTER_API_KEY }}"
+        MODELSCOPE_SDK_TOKEN: "${{ secrets.MODELSCOPE_SDK_TOKEN }}"
+        NOTION_TOKEN: "${{ secrets.NOTION_TOKEN }}"
+        GOOGLE_CLIENT_ID: "${{ secrets.GOOGLE_CLIENT_ID }}"
+        GOOGLE_CLIENT_SECRET: "${{ secrets.GOOGLE_CLIENT_SECRET }}"
+        PPIO_API_KEY: "${{ secrets.PPIO_API_KEY }}"
+      run: |
+        source .venv/bin/activate
+        uv pip install -e ".[all, dev, docs]"
+        pytest --llm-test-only test/
 
   pytest_package_very_slow_test:
     runs-on: ubuntu-latest
@@ -155,4 +181,15 @@ jobs:
         DISCORD_BOT_TOKEN: "${{ secrets.DISCORD_BOT_TOKEN }}"
         INTERNLM_API_KEY: "${{ secrets.INTERNLM_API_KEY }}"
         JINA_API_KEY: "${{ secrets.JINA_API_KEY }}"
-      run: poetry run pytest --very-slow-test-only test/
+        MOONSHOT_API_KEY: "${{ secrets.MOONSHOT_API_KEY }}"
+        VOLCANO_API_KEY: "${{ secrets.VOLCANO_API_KEY }}"
+        OPENROUTER_API_KEY: "${{ secrets.OPENROUTER_API_KEY }}"
+        MODELSCOPE_SDK_TOKEN: "${{ secrets.MODELSCOPE_SDK_TOKEN }}"
+        NOTION_TOKEN: "${{ secrets.NOTION_TOKEN }}"
+        GOOGLE_CLIENT_ID: "${{ secrets.GOOGLE_CLIENT_ID }}"
+        GOOGLE_CLIENT_SECRET: "${{ secrets.GOOGLE_CLIENT_SECRET }}"
+        PPIO_API_KEY: "${{ secrets.PPIO_API_KEY }}"
+      run: |
+        source .venv/bin/activate
+        uv pip install -e ".[all, dev, docs]"
+        pytest --very-slow-test-only test/
