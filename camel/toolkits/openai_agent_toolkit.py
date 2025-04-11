@@ -45,6 +45,7 @@ class OpenAIAgentToolkit(BaseToolkit):
         self,
         model: Optional[BaseModelBackend] = None,
         api_key: Optional[str] = None,
+        timeout: Optional[float] = None,
     ) -> None:
         r"""Initialize the OpenAI agent toolkit.
 
@@ -53,8 +54,11 @@ class OpenAIAgentToolkit(BaseToolkit):
                 If None, defaults to gpt-4o-mini. (default: :obj:`None`)
             api_key (str): OpenAI API key. If not provided, will attempt to
                 use OPENAI_API_KEY environment variable. (default: :obj:`None`)
+            timeout (Optional[float]): The timeout value for API requests
+                in seconds. If None, no timeout is applied.
+                (default: :obj:`None`)
         """
-        super().__init__()
+        super().__init__(timeout=timeout)
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         self.client = OpenAI(api_key=self.api_key)
         self.model = model or ModelFactory.create(

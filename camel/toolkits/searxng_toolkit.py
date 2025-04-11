@@ -42,6 +42,9 @@ class SearxNGToolkit(BaseToolkit):
             values are "day", "week", "month", "year". (default: :obj:`None`)
         safe_search (int, optional): Safe search level (0: None, 1: Moderate,
             2: Strict). (default: :obj:`1`)
+        timeout (Optional[float]): The timeout value for API requests
+                in seconds. If None, no timeout is applied.
+                (default: :obj:`None`)
 
     Raises:
         ValueError: If searxng_host is not a valid HTTP/HTTPS URL.
@@ -65,7 +68,9 @@ class SearxNGToolkit(BaseToolkit):
         categories: Optional[List[str]] = None,
         time_range: Optional[str] = None,
         safe_search: int = 1,
+        timeout: Optional[float] = None,
     ) -> None:
+        super().__init__(timeout=timeout)
         self._validate_searxng_host(searxng_host)
         self._validate_safe_search(safe_search)
         if time_range is not None:

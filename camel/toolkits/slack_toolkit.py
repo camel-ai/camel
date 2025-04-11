@@ -40,6 +40,19 @@ class SlackToolkit(BaseToolkit):
     channel, joining an existing channel, leaving a channel.
     """
 
+    def __init__(
+        self,
+        timeout: Optional[float] = None,
+    ):
+        r"""Initializes a new instance of the SlackToolkit class.
+
+        Args:
+            timeout (Optional[float]): The timeout value for API requests
+                in seconds. If None, no timeout is applied.
+                (default: :obj:`None`)
+        """
+        super().__init__(timeout=timeout)
+
     def _login_slack(
         self,
         slack_token: Optional[str] = None,

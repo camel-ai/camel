@@ -25,9 +25,18 @@ from camel.toolkits.base import BaseToolkit
 
 
 class DalleToolkit(BaseToolkit):
-    r"""A class representing a toolkit for image generation using OpenAI's
-    DALL-E model.
-    """
+    def __init__(
+        self,
+        timeout: Optional[float] = None,
+    ):
+        r"""Initializes a new instance of the DalleToolkit class.
+
+        Args:
+            timeout (Optional[float]): The timeout value for API requests
+                in seconds. If None, no timeout is applied.
+                (default: :obj:`None`)
+        """
+        super().__init__(timeout=timeout)
 
     def base64_to_image(self, base64_string: str) -> Optional[Image.Image]:
         r"""Converts a base64 encoded string into a PIL Image object.
