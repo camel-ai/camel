@@ -14,11 +14,12 @@
 
 import json
 from datetime import datetime
-from typing import Annotated, Dict, Optional, Union
+from typing import Annotated, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field, confloat
 
 from camel.agents import ChatAgent
+from camel.datagen.base import BaseDataGenPipeline
 from camel.logger import get_logger
 
 # Get a logger for this module
@@ -60,7 +61,7 @@ class VerificationResponse(BaseModel):
     )
 
 
-class CoTDataGenerator:
+class CoTDataGenerator(BaseDataGenPipeline):
     r"""Class for generating and managing data through chat agent interactions.
 
     This module implements a sophisticated Chain of Thought data generation
@@ -79,11 +80,17 @@ class CoTDataGenerator:
             answer generation. (default::obj:`None`)
         verifier_agent (Optional[ChatAgent]): Optional specialized agent for
             answer verification. (default::obj:`None`)
-        golden_answers (Dict[str, str]): Dictionary containing pre-defined
+        golden_answers (Optional[Dict[str, str]]): Dictionary containing pre-defined
             correct answers for validation and comparison. Required for answer
-            verification.
+            verification. Can be provided directly or loaded from input_data.
+            (default::obj:`None`)
         search_limit (int): Maximum number of search iterations allowed.
             (default::obj:`100`)
+        input_data (Optional[Union[str, Dict[str, str], List[Dict[str, str]]]]): 
+            Input data that can be a file path, JSONL string, or list of dictionaries 
+            with golden answers. (default::obj:`None`)
+        output_path (Optional[str]): Path to save generated solutions.
+            (default::obj:`None`)
     """
 
     def __init__(
@@ -92,8 +99,10 @@ class CoTDataGenerator:
         *,
         generator_agent: Optional[ChatAgent] = None,
         verifier_agent: Optional[ChatAgent] = None,
-        golden_answers: Dict[str, str],
+        golden_answers: Optional[Dict[str, str]] = None,
         search_limit: int = 100,
+        input_data: Optional[Union[str, Dict[str, str], List[Dict[str, str]]]] = None,
+        output_path: Optional[str] = None,
     ):
         r"""Initialize the CoTDataGenerator.
 
@@ -110,12 +119,20 @@ class CoTDataGenerator:
                 for answer generation. (default::obj:`None`)
             verifier_agent (Optional[ChatAgent]): Optional specialized agent
                 for answer verification. (default::obj:`None`)
-            golden_answers (Dict[str, str]): Dictionary containing pre-defined
-                correct answers for validation and comparison. Required for
-                answer verification.
+            golden_answers (Optional[Dict[str, str]]): Dictionary containing pre-defined
+                correct answers for validation and comparison. Required for answer
+                verification. Can be provided directly or loaded from input_data.
+                (default::obj:`None`)
             search_limit (int): Maximum number of search iterations allowed.
                 (default::obj:`100`)
+            input_data (Optional[Union[str, Dict[str, str], List[Dict[str, str]]]]):
+                Input data that can be a file path, JSONL string, or list of dictionaries
+                with golden answers. (default::obj:`None`)
+            output_path (Optional[str]): Path to save generated solutions.
+                (default::obj:`None`)
         """
+        super().__init__(output_path=output_path)
+        
         if chat_agent is not None:
             if generator_agent is not None or verifier_agent is not None:
                 raise ValueError(
@@ -133,9 +150,14 @@ class CoTDataGenerator:
             self.generator_agent = generator_agent
             self.verifier_agent = verifier_agent
 
-        self.golden_answers = golden_answers
+        self.golden_answers = golden_answers or {}
         self.search_limit = search_limit
         self.solution_tree: Dict[str, Dict[str, Union[str, int]]] = {}
+        
+        # Load golden answers from input_data if provided
+        if input_data is not None:
+            self.import_qa_data(input_data)
+            
         logger.info(
             "CoTDataGenerator initialized with search_limit=%d", search_limit
         )
@@ -329,7 +351,6 @@ class CoTDataGenerator:
                 f"a float between 0 and 1, like this: {{'score': 0.85}}\n"
             )
             self.generator_agent.reset()
-            response = self.generator_agent.step(prompt)
             try:
                 response = self.generator_agent.step(
                     prompt, response_format=AgentResponse
@@ -378,43 +399,42 @@ class CoTDataGenerator:
         }
         return final_solution
 
-    def import_qa_from_json(self, data: Union[str, Dict[str, str]]) -> bool:
-        r"""Import question and answer data from either a JSON file or a
-        dictionary.
+    def import_qa_data(
+        self, data: Union[str, Dict[str, str], List[Dict[str, str]]]
+    ) -> bool:
+        r"""Import question-answer pairs from a data source.
 
         Args:
-            data (Union[str, Dict[str, str]]): Either a path to a JSON file
-                containing QA pairs or a dictionary of question-answer pairs.
-                If a string is provided, it's treated as a file path.
-                The expected format is:
-                {"question1": "answer1",
-                 "question2": "answer2",
-                 ...}
+            data (Union[str, Dict[str, str], List[Dict[str, str]]]): Input data 
+                that can be a file path, JSONL string, or Dictionary/List of 
+                dictionaries with question-answer pairs.
 
         Returns:
             bool: True if import was successful, False otherwise.
         """
         try:
-            if isinstance(data, str):
-                logger.info("Loading QA pairs from file: %s", data)
-                with open(data, 'r', encoding='utf-8') as f:
-                    qa_data = json.load(f)
-            else:
-                logger.info("Loading QA pairs from provided dictionary")
-                qa_data = data
-
-            # Validate the data format
-            if not isinstance(qa_data, dict):
-                logger.error("Invalid data format: expected dictionary")
-                return False
-
-            # Update golden answers
-            self.golden_answers.update(qa_data)
-            logger.info("Successfully imported %d QA pairs", len(qa_data))
-            return True
-
+            if isinstance(data, dict):
+                # Direct dictionary mapping
+                self.golden_answers.update(data)
+                logger.info("Successfully imported %d QA pairs from dictionary", 
+                           len(data))
+                return True
+                
+            # Handle file paths, JSONL strings, or list of dictionaries
+            parsed_data = self.load_data(data)
+            
+            # Extract question-answer pairs from the loaded data
+            qa_count = 0
+            for entry in parsed_data:
+                if "question" in entry and "answer" in entry:
+                    self.golden_answers[entry["question"]] = entry["answer"]
+                    qa_count += 1
+            
+            logger.info("Successfully imported %d QA pairs from data", qa_count)
+            return qa_count > 0
+            
         except Exception as e:
-            logger.error("Error importing QA data: %s", str(e))
+            logger.error(f"Error importing QA data: {str(e)}")
             return False
 
     def export_solutions(self, filepath: str = 'solutions.json') -> None:
@@ -446,3 +466,47 @@ class CoTDataGenerator:
             logger.info(f"Solutions exported successfully to {filepath}")
         except Exception as e:
             logger.error(f"Error exporting solutions: {e!s}")
+
+    def generate(
+        self, questions: Optional[Union[str, List[str]]] = None
+    ) -> List[Dict[str, Any]]:
+        r"""Generate solutions for a list of questions.
+        
+        Args:
+            questions (Optional[Union[str, List[str]]]): Questions to solve.
+                Can be a list of question strings or a string containing
+                questions separated by newlines.
+                If None, uses the questions from golden_answers.
+                (default::obj:`None`)
+                
+        Returns:
+            List[Dict[str, Any]]: Generated solutions.
+        """
+        if questions is None:
+            # Use questions from golden_answers
+            question_list = list(self.golden_answers.keys())
+        elif isinstance(questions, str):
+            # Check if it contains newlines - if so, split it
+            if '\n' in questions:
+                question_list = [q.strip() for q in questions.split('\n') if q.strip()]
+            else:
+                # Single question
+                question_list = [questions]
+        else:
+            # Use the provided list
+            question_list = questions
+            
+        results = []
+        for question in question_list:
+            solution = self.solve(question)
+            results.append({
+                "question": question,
+                "solution": solution,
+                "timestamp": datetime.now().isoformat(),
+            })
+            
+        # Save results if output_path is specified
+        if self.output_path:
+            self.export_solutions()
+            
+        return results

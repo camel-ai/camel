@@ -16,11 +16,12 @@ import json
 import os
 import random
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
+from camel.datagen.base import BaseDataGenPipeline
 from camel.logger import get_logger
 
 from .filter import RougeSimilarityFilter
@@ -30,14 +31,15 @@ from .templates import SelfInstructTemplates
 logger = get_logger(__name__)
 
 
-class SelfInstructPipeline:
+class SelfInstructPipeline(BaseDataGenPipeline):
     r"""A pipeline to generate and manage machine-generated instructions for
     tasks, combining human and machine task samples.
 
     Args:
         agent (ChatAgent): The agent used to interact and generate
             instructions.
-        seed (str): The path to the human-written instructions.
+        seed (Union[str, List[Dict]]): The path to the human-written instructions 
+            or a list of human tasks directly.
         num_machine_instructions (int): Number of machine-generated
             instructions to generate. (default::obj:`5`)
         data_output_path (Optional[str]): Path to save the generated data.
@@ -56,7 +58,7 @@ class SelfInstructPipeline:
     def __init__(
         self,
         agent: ChatAgent,
-        seed: str,
+        seed: Union[str, List[Dict]],
         num_machine_instructions: int = 5,
         data_output_path: Optional[str] = './data_output.json',
         human_to_machine_ratio: tuple = (6, 2),
@@ -64,6 +66,7 @@ class SelfInstructPipeline:
         filter_config: Optional[Dict[str, Dict[str, Any]]] = None,
         stop_on_first_failure: bool = False,
     ):
+        super().__init__(output_path=data_output_path)
         self.agent = agent
         self.num_machine_instructions = num_machine_instructions
         self.data_output_path = data_output_path
@@ -91,25 +94,31 @@ class SelfInstructPipeline:
                 config_to_use, stop_on_first_failure
             )
 
-    def load_seed(self, path: str):
-        r"""Load seed tasks from a file. Defaults to a predefined seed file if
-        no path is provided.
+    def load_seed(self, seed: Union[str, List[Dict]]):
+        r"""Load seed tasks from a file or directly from a list of dictionaries.
 
         Args:
-            path (str): Path to the seed file.
+            seed (Union[str, List[Dict]]): Path to the seed file or a list of 
+                human tasks directly.
 
         Raises:
-            FileNotFoundError: If the seed file does not exist.
+            FileNotFoundError: If the seed is a file path and the file does not exist.
         """
-
-        if os.path.exists(path):
-            with open(path, 'r') as f:
-                for line in f:
-                    line = line.strip()
-                    if line:
-                        self.human_tasks.append(json.loads(line))
+        if isinstance(seed, list):
+            # Direct list of tasks
+            self.human_tasks = seed
+        elif isinstance(seed, str):
+            # File path
+            if os.path.exists(seed):
+                with open(seed, 'r') as f:
+                    for line in f:
+                        line = line.strip()
+                        if line:
+                            self.human_tasks.append(json.loads(line))
+            else:
+                raise FileNotFoundError(f"Seed file not found at path: {seed}")
         else:
-            raise FileNotFoundError(f"Seed file not found at path: {path}")
+            raise ValueError("Seed must be either a file path or a list of dictionaries")
 
     def sample_human_tasks(self, count: int) -> List[dict]:
         r"""Sample a specified number of human tasks from the loaded seed.
@@ -227,15 +236,22 @@ class SelfInstructPipeline:
         )
         attempt_count = 0
         for instruction in self.machine_tasks:
-            instance = self.generate_machine_instance(
-                instruction['instruction'], instruction['is_classification']
-            )
-            instruction['instances'] = instance
+            if not instruction['instruction']:
+                continue
+
             attempt_count += 1
-            logger.info(
-                f"Attempt[Output]: Progress {attempt_count}/"
-                f"{len(self.machine_tasks)} instructions"
+            logger.info(f"[{attempt_count}] Processing: {instruction}")
+
+            is_classification = self.identify_instruction(
+                instruction['instruction']
             )
+            instruction["is_classification"] = is_classification
+
+            if 'instances' not in instruction:
+                instances = self.generate_machine_instance(
+                    instruction['instruction'], is_classification
+                )
+                instruction['instances'] = instances
 
     def generate_machine_instance(
         self, instruction: str, classification: bool
@@ -261,14 +277,18 @@ class SelfInstructPipeline:
                 instruction=instruction
             )
 
-        response = self.agent.step(prompt)
-        self.agent.reset()
-        generated_text = response.msgs[0].content.strip()
+        try:
+            response = self.agent.step(prompt)
+            self.agent.reset()
+            text = response.msgs[0].content.atrip()
 
-        if classification:
-            return self.parse_classification_output(generated_text)
-        else:
-            return self.parse_non_classification_output(generated_text)
+            if classification:
+                return self.parse_classification_output(text)
+            else:
+                return self.parse_non_classification_output(text)
+        except Exception as e:
+            logger.error(f"Error generating instances: {e}")
+            return []
 
     def parse_classification_output(
         self, generated_text: str
@@ -376,19 +396,19 @@ class SelfInstructPipeline:
         return instances
 
     def construct_data(self):
-        r"""Save the machine-generated tasks to the specified output path
-        in JSON format.
-        """
-        with open(self.data_output_path, 'w') as f:
-            json.dump(self.machine_tasks, f, indent=4, ensure_ascii=False)
+        r"""Construct data output from generated tasks and instances."""
+        self.generate_machine_instances()
 
-    def generate(self, timeout_minutes=600):
+    def generate(self, timeout_minutes=600) -> List[Dict[str, Any]]:
         r"""Execute the entire pipeline to generate machine instructions
         and instances.
 
         Args:
             timeout_minutes (int): Maximum time in minutes to run the
                 generation process before timing out. (default: :obj:`600`)
+                
+        Returns:
+            List[Dict[str, Any]]: The generated machine tasks with instances.
         """
         start_time = time.time()
         timeout_seconds = timeout_minutes * 60
@@ -435,6 +455,12 @@ class SelfInstructPipeline:
                 )
         self.generate_machine_instances()
         self.construct_data()
+        
+        # Save results if output_path is specified
+        if self.output_path:
+            self.save_results(self.machine_tasks)
+            
+        return self.machine_tasks
 
 
 class AgentResponse(BaseModel):
