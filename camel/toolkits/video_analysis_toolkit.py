@@ -92,6 +92,9 @@ class VideoAnalysisToolkit(BaseToolkit):
             transcription using OpenAI's audio models. Requires a valid OpenAI
             API key. When disabled, video analysis will be based solely on
             visual content. (default: :obj:`False`)
+        timeout (Optional[float]): The timeout value for API requests
+                in seconds. If None, no timeout is applied.
+                (default: :obj:`None`)
     """
 
     @dependencies_required("ffmpeg", "scenedetect")
@@ -100,7 +103,9 @@ class VideoAnalysisToolkit(BaseToolkit):
         download_directory: Optional[str] = None,
         model: Optional[BaseModelBackend] = None,
         use_audio_transcription: bool = False,
+        timeout: Optional[float] = None,
     ) -> None:
+        super().__init__(timeout=timeout)
         self._cleanup = download_directory is None
         self._temp_files: list[str] = []  # Track temporary files for cleanup
         self._use_audio_transcription = use_audio_transcription

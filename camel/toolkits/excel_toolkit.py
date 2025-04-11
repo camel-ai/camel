@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import List
+from typing import List, Optional
 
 import pandas as pd
 
@@ -32,6 +32,19 @@ class ExcelToolkit(BaseToolkit):
     This class provides method for processing docx, pdf, pptx, etc. It cannot
     process excel files.
     """
+
+    def __init__(
+        self,
+        timeout: Optional[float] = None,
+    ):
+        r"""Initializes a new instance of the ExcelToolkit class.
+
+        Args:
+            timeout (Optional[float]): The timeout value for API requests
+                in seconds. If None, no timeout is applied.
+                (default: :obj:`None`)
+        """
+        super().__init__(timeout=timeout)
 
     def _convert_to_markdown(self, df: pd.DataFrame) -> str:
         r"""Convert DataFrame to Markdown format table.

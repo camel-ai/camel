@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-from typing import List, Literal
+from typing import List, Literal, Optional
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
@@ -26,6 +26,19 @@ class WeatherToolkit(BaseToolkit):
     This class provides methods for fetching weather data for a given city
     using the OpenWeatherMap API.
     """
+
+    def __init__(
+        self,
+        timeout: Optional[float] = None,
+    ):
+        r"""Initializes a new instance of the WeatherToolkit class.
+
+        Args:
+            timeout (Optional[float]): The timeout value for API requests
+                in seconds. If None, no timeout is applied.
+                (default: :obj:`None`)
+        """
+        super().__init__(timeout=timeout)
 
     def get_openweathermap_api_key(self) -> str:
         r"""Retrieve the OpenWeatherMap API key from environment variables.
