@@ -1175,6 +1175,8 @@ out the information you need. Sometimes they are extremely useful.
         message = BaseMessage.make_user_message(
             role_name='user', content=observe_prompt, image_list=[img]
         )
+        # Reset the history message of web_agent.
+        self.web_agent.reset()
         resp = self.web_agent.step(message)
 
         resp_content = resp.msgs[0].content
@@ -1404,6 +1406,8 @@ Your output should be in json format, including the following fields:
 - `if_need_replan`: bool, A boolean value indicating whether the task needs to be fundamentally replanned.
 - `replanned_schema`: str, The replanned schema for the task, which should not be changed too much compared with the original one. If the task does not need to be replanned, the value should be an empty string. 
 """
+        # Reset the history message of planning_agent.
+        self.planning_agent.reset()
         resp = self.planning_agent.step(replanning_prompt)
         resp_dict = _parse_json_output(resp.msgs[0].content)
 
