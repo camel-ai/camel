@@ -224,7 +224,7 @@ class VectorRetriever(BaseRetriever):
         if top_k <= 0:
             raise ValueError("top_k must be a positive integer.")
 
-        # Load the storage incase it's hosted remote
+        # Load the storage in case it's hosted remote
         self.storage.load()
 
         query_vector = self.embedding_model.embed(obj=query)

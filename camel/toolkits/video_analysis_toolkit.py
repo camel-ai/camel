@@ -24,7 +24,7 @@ from camel.messages import BaseMessage
 from camel.models import BaseModelBackend, OpenAIAudioModels
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import dependencies_required
+from camel.utils import MCPServer, dependencies_required
 
 from .video_download_toolkit import (
     VideoDownloaderToolkit,
@@ -77,6 +77,7 @@ similar-looking species or objects
 """
 
 
+@MCPServer()
 class VideoAnalysisToolkit(BaseToolkit):
     r"""A class for analysing videos with vision-language model.
 

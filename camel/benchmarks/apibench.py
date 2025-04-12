@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 # Mapping of dataset names to file names
-# 'Oracle' retriver used here which means all the full
+# 'Oracle' retriever used here which means all the full
 # API documentation will be included in the prompt
 dataset_mapping = {
     "huggingface": {
