@@ -24,6 +24,7 @@ from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel
 
 from camel.agents import ChatAgent
+from camel.datagen.base import BaseDataGenPipeline
 from camel.logger import get_logger
 from camel.models.reward import BaseRewardModel, Evaluator
 from camel.utils import BatchProcessor, retry_on_error
@@ -68,7 +69,7 @@ class ProblemResult(BaseModel):
     improvement_history: List[TraceIteration]
 
 
-class SelfImprovingCoTPipeline:
+class SelfImprovingCoTPipeline(BaseDataGenPipeline):
     r"""Pipeline for generating self-taught reasoning traces
     using the self-improving methodology.
 
@@ -82,7 +83,7 @@ class SelfImprovingCoTPipeline:
     def __init__(
         self,
         reason_agent: ChatAgent,
-        problems: List[Dict],
+        problems: Union[str, List[Dict]],
         max_iterations: int = 3,
         score_threshold: Union[float, Dict[str, float]] = 0.7,
         rejection_sampling_n: Optional[int] = None,
@@ -100,7 +101,8 @@ class SelfImprovingCoTPipeline:
         Args:
             reason_agent (ChatAgent): The chat agent used for generating and
                 improving reasoning traces.
-            problems (List[Dict]): List of problem dictionaries to process.
+            problems (Union[str, List[Dict]]): List of problem dictionaries to process,
+                or a file path/JSONL string to load problems from.
             max_iterations (int, optional): Maximum number of improvement
                 iterations. If set to `0`, the pipeline will generate an
                 initial trace without any improvement iterations.
@@ -139,10 +141,11 @@ class SelfImprovingCoTPipeline:
                 uses the same pattern as solution_pattern.
                 (default: :obj:`None`)
         """
+        super().__init__(output_path=output_path)
+        
         self.reason_agent = reason_agent
         self.evaluate_agent = evaluate_agent
-        self.problems = problems
-        self.output_path = output_path
+        self.problems = self.load_data(problems) if problems else []
         self.max_iterations = max_iterations
         self.score_threshold = score_threshold
         self.rejection_sampling_n = rejection_sampling_n
@@ -160,8 +163,7 @@ class SelfImprovingCoTPipeline:
 
         # Initialize output file with empty results if path is specified
         if self.output_path:
-            with open(self.output_path, 'w') as f:
-                json.dump({'traces': []}, f, indent=2, ensure_ascii=False)
+            self.save_results([], results_key="traces")
         self.lock = threading.Lock()
 
     def safe_write_json(self, file_path, data):
@@ -290,7 +292,7 @@ class SelfImprovingCoTPipeline:
                     futures = [
                         executor.submit(
                             self.evaluate_trace,
-                            problem=problem["problem"],
+                            problem=problem.get("problem", "") if isinstance(problem, dict) else str(problem),
                             trace=trace,
                             solution=solution,
                         )
@@ -669,155 +671,159 @@ class SelfImprovingCoTPipeline:
         Raises:
             ValueError: If the problem format is invalid.
         """
-        # Validate problem format before processing
-        self.validate_problem_format(problem)
+        try:
+            # Validate problem format before processing
+            self.validate_problem_format(problem)
 
-        problem_text = problem["problem"]
-        solution_text = problem.get("solution", "")
-        current_trace = None
-        if self.rejection_sampling_n:
-            current_trace = self.generate_reasoning_trace_rejection(
-                problem_text
-            )
-        else:
-            current_trace = self.generate_reasoning_trace(problem_text)
-        improvement_history = []
-        scores = {}
-
-        # Only evaluate if evaluate_agent or reward_model is set
-        if self.evaluate_agent or self.reward_model:
-            # Create batches for parallel evaluation
-            batch_problems = [problem]
-            batch_traces = [current_trace]
-            batch_solutions = [solution_text]
-
-            # Evaluate current trace batch
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                eval_results = loop.run_until_complete(
-                    self._batch_evaluate_traces(
-                        batch_problems, batch_traces, batch_solutions
-                    )
-                )
-            finally:
-                loop.close()
-
-            # Process evaluation results
-            eval_dict = eval_results[-1]  # Get latest evaluation
-            scores = {k: v for k, v in eval_dict.items() if k != "feedback"}
-
-            # Record initial evaluation
-            if self.evaluator:
-                improvement_history.append(
-                    TraceIteration(
-                        iteration=0,
-                        trace=current_trace,
-                        evaluation=RewardTraceEvaluation(**eval_dict),
-                    )
+            problem_text = problem["problem"]
+            solution_text = problem.get("solution", "")
+            current_trace = None
+            
+            if self.rejection_sampling_n:
+                current_trace = self.generate_reasoning_trace_rejection(
+                    problem_text
                 )
             else:
-                improvement_history.append(
-                    TraceIteration(
-                        iteration=0,
-                        trace=current_trace,
-                        evaluation=AgentTraceEvaluation(
-                            **scores, feedback=eval_dict["feedback"]
-                        ),
-                    )
-                )
+                current_trace = self.generate_reasoning_trace(problem_text)
+                
+            improvement_history = []
+            scores = {}
 
-            # Only do improvement iterations if max_iterations > 0
-            if self.max_iterations > 0:
-                for iteration in range(0, self.max_iterations):
-                    # Check if quality threshold met
-                    if self._check_score_threshold(scores):
-                        break
+            # Only evaluate if evaluate_agent or reward_model is set
+            if self.evaluate_agent or self.reward_model:
+                # Create batches for parallel evaluation
+                batch_problems = [problem]
+                batch_traces = [current_trace]
+                batch_solutions = [solution_text]
 
-                    # Generate improved trace
-                    if rationalization:
-                        current_trace = self.improve_trace(
-                            problem_text,
-                            current_trace,
-                            eval_dict["feedback"],
-                            solution_text,
-                        )
-                    else:
-                        current_trace = self.improve_trace(
-                            problem_text, current_trace, eval_dict["feedback"]
-                        )
-
-                    # Evaluate improved trace
-                    batch_traces = [current_trace]
-                    loop = asyncio.new_event_loop()
-                    asyncio.set_event_loop(loop)
-                    try:
-                        eval_results = loop.run_until_complete(
-                            self._batch_evaluate_traces(
-                                batch_problems, batch_traces, batch_solutions
-                            )
-                        )
-                    finally:
-                        loop.close()
-
-                    eval_dict = eval_results[-1]
-                    scores = {
-                        k: v for k, v in eval_dict.items() if k != "feedback"
-                    }
-
-                    # Record iteration history
-                    if self.evaluator:
-                        improvement_history.append(
-                            TraceIteration(
-                                iteration=iteration + 1,
-                                trace=current_trace,
-                                evaluation=RewardTraceEvaluation(**eval_dict),
-                            )
-                        )
-                    else:
-                        improvement_history.append(
-                            TraceIteration(
-                                iteration=iteration + 1,
-                                trace=current_trace,
-                                evaluation=AgentTraceEvaluation(
-                                    **scores, feedback=eval_dict["feedback"]
-                                ),
-                            )
-                        )
-
-        boxed_answer_success = self._check_boxed_answers(
-            problem.get("solution", ""), current_trace
-        )
-
-        result = ProblemResult(
-            id=problem.get("id", ""),
-            type=problem.get("type", ""),
-            problem=problem_text,
-            solution=problem.get("solution", ""),
-            final_trace=current_trace,
-            agent_evaluate_success=self._check_score_threshold(scores)
-            if scores
-            else None,
-            boxed_answer_success=boxed_answer_success,
-            improvement_history=improvement_history,
-        )
-
-        # Write result to file immediately if output path is specified
-        if self.output_path:
-            with self.lock:
+                # Evaluate current trace batch
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
                 try:
-                    # Read existing results
-                    with open(self.output_path, 'r') as f:
-                        data = json.load(f)
+                    eval_results = loop.run_until_complete(
+                        self._batch_evaluate_traces(
+                            batch_problems, batch_traces, batch_solutions
+                        )
+                    )
+                finally:
+                    loop.close()
 
-                    cleaned_result = self.clean_json(result.model_dump())
-                    data['traces'].append(cleaned_result)
-                    self.safe_write_json(self.output_path, data)
+                # Process evaluation results
+                eval_dict = eval_results[-1] if eval_results else {"feedback": "Evaluation failed"}
+                scores = {k: v for k, v in eval_dict.items() if k != "feedback"}
 
-                except Exception as e:
-                    logger.error(f"Error writing result to file: {e}")
+                # Record initial evaluation
+                if self.evaluator:
+                    improvement_history.append(
+                        TraceIteration(
+                            iteration=0,
+                            trace=current_trace,
+                            evaluation=RewardTraceEvaluation(**eval_dict),
+                        )
+                    )
+                else:
+                    improvement_history.append(
+                        TraceIteration(
+                            iteration=0,
+                            trace=current_trace,
+                            evaluation=AgentTraceEvaluation(
+                                **scores, feedback=eval_dict.get("feedback", "")
+                            ),
+                        )
+                    )
 
-        return result
+                # Only do improvement iterations if max_iterations > 0
+                if self.max_iterations > 0:
+                    for iteration in range(0, self.max_iterations):
+                        # Check if quality threshold met
+                        if self._check_score_threshold(scores):
+                            break
+
+                        # Generate improved trace
+                        if rationalization:
+                            current_trace = self.improve_trace(
+                                problem_text,
+                                current_trace,
+                                eval_dict.get("feedback", ""),
+                                solution_text,
+                            )
+                        else:
+                            current_trace = self.improve_trace(
+                                problem_text, current_trace, eval_dict.get("feedback", "")
+                            )
+
+                        # Evaluate improved trace
+                        batch_traces = [current_trace]
+                        loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(loop)
+                        try:
+                            eval_results = loop.run_until_complete(
+                                self._batch_evaluate_traces(
+                                    batch_problems, batch_traces, batch_solutions
+                                )
+                            )
+                        finally:
+                            loop.close()
+
+                        eval_dict = eval_results[-1] if eval_results else {"feedback": "Evaluation failed"}
+                        scores = {
+                            k: v for k, v in eval_dict.items() if k != "feedback"
+                        }
+
+                        # Record iteration history
+                        if self.evaluator:
+                            improvement_history.append(
+                                TraceIteration(
+                                    iteration=iteration + 1,
+                                    trace=current_trace,
+                                    evaluation=RewardTraceEvaluation(**eval_dict),
+                                )
+                            )
+                        else:
+                            improvement_history.append(
+                                TraceIteration(
+                                    iteration=iteration + 1,
+                                    trace=current_trace,
+                                    evaluation=AgentTraceEvaluation(
+                                        **scores, feedback=eval_dict.get("feedback", "")
+                                    ),
+                                )
+                            )
+
+            boxed_answer_success = self._check_boxed_answers(
+                problem.get("solution", ""), current_trace
+            )
+
+            result = ProblemResult(
+                id=problem.get("id", ""),
+                type=problem.get("type", ""),
+                problem=problem_text,
+                solution=problem.get("solution", ""),
+                final_trace=current_trace,
+                agent_evaluate_success=self._check_score_threshold(scores)
+                if scores
+                else None,
+                boxed_answer_success=boxed_answer_success,
+                improvement_history=improvement_history,
+            )
+
+            # Write result to file immediately if output path is specified
+            if self.output_path:
+                self.append_result_to_traces(result)
+
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error processing problem: {e}")
+            # Create a minimal result with error information
+            return ProblemResult(
+                id=problem.get("id", ""),
+                type=problem.get("type", ""),
+                problem=problem.get("problem", str(problem)),
+                solution=problem.get("solution", ""),
+                final_trace=f"Error processing problem: {str(e)}",
+                improvement_history=[],
+            )
 
     def generate(self, rationalization: bool = False) -> List[Dict[str, Any]]:
         r"""Execute the self-improving cot pipeline on all problems.
@@ -847,7 +853,38 @@ class SelfImprovingCoTPipeline:
             loop.close()
 
         self.reasoning_traces = [result.model_dump() for result in results]
+        
+        # Save results if output_path is specified
+        if self.output_path:
+            self.save_results(self.reasoning_traces, results_key="traces")
+            
         return self.reasoning_traces
+
+    def append_result_to_traces(self, result: ProblemResult) -> None:
+        """Append a single result to the existing traces file in a thread-safe way.
+        
+        Args:
+            result (ProblemResult): The result to append.
+        """
+        if not self.output_path:
+            return
+            
+        with self.lock:
+            try:
+                # Read existing results
+                with open(self.output_path, 'r') as f:
+                    data = json.load(f)
+                
+                # Append the new result
+                cleaned_result = self.clean_json(result.model_dump())
+                data['traces'].append(cleaned_result)
+                
+                # Write back to the file
+                self.safe_write_json(self.output_path, data)
+                
+            except Exception as e:
+                logger.error(f"Error appending result to traces file: {e}")
+
 
     # Templates for generating reasoning, evaluation and improving them.
     REASONING_TEMPLATE = """Let's solve this step by step:
@@ -897,3 +934,4 @@ Feedback:
 {feedback}
 
 Generate a new, improved reasoning trace that addresses the feedback."""
+

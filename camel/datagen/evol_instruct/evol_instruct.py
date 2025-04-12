@@ -21,6 +21,7 @@ from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast
 from tqdm import tqdm
 
 from camel.agents import ChatAgent
+from camel.datagen.base import BaseDataGenPipeline
 from camel.datagen.evol_instruct.scorer import BaseScorer, GeneralScorer
 from camel.datagen.evol_instruct.templates import EvolInstructTemplates
 from camel.logger import get_logger
@@ -28,7 +29,7 @@ from camel.logger import get_logger
 logger = get_logger(__name__)
 
 
-class EvolInstructPipeline:
+class EvolInstructPipeline(BaseDataGenPipeline):
     r"""Pipeline for evolving prompts using the Evol-Instruct methodology.
 
     Supports custom templates defining evolution strategies and methods. The
@@ -43,12 +44,15 @@ class EvolInstructPipeline:
         agent (Optional[ChatAgent]): Chat agent instance for LLM interaction.
             If :obj:`None`, initializes with a default ChatAgent.
             (default: :obj:`None`)
+        output_path (Optional[str]): Path to save generated data.
+            (default: :obj:`None`)
     """
 
     def __init__(
         self,
         templates: Type = EvolInstructTemplates,
         agent: Optional[ChatAgent] = None,
+        output_path: Optional[str] = None,
     ) -> None:
         r"""Initialize pipeline with templates and language model agent.
 
@@ -59,7 +63,10 @@ class EvolInstructPipeline:
             agent (Optional[ChatAgent]): Preconfigured chat agent instance.
                 Creates a default ChatAgent if not provided.
                 (default: :obj:`None`)
+            output_path (Optional[str]): Path to save generated data.
+                (default: :obj:`None`)
         """
+        super().__init__(output_path=output_path)
         self.templates = templates
         self.agent = agent or ChatAgent()
 
@@ -320,7 +327,7 @@ class EvolInstructPipeline:
 
     def generate(
         self,
-        prompts: List[str],
+        prompts: Union[str, List[Dict[str, Any]], List[str]],
         evolution_spec: Union[str, List[Union[str, List[str]]]],
         num_generations: int = 2,
         num_iterations: Optional[int] = None,
@@ -331,27 +338,71 @@ class EvolInstructPipeline:
         retry_delay: float = 1.0,
         num_threads: int = 10,
     ) -> List[Dict[int, List[Dict[str, Any]]]]:
-        r"""Evolve a batch of prompts through iterative refinement.
+        r"""Generate evolved prompts from seed prompts.
 
+        This method supports flexible input formats:
+        - File path to a JSONL file containing prompts
+        - JSONL string
+        - List of dictionaries with a 'prompt' field
+        - List of prompt strings
+        
         Args:
-            prompts (List[str]): Seed prompts to evolve.
-            evolution_spec (Union[str, List[Union[str, List[str]]]]):
+            prompts (Union[str, List[Dict[str, Any]], List[str]]): Source prompts.
+                Can be a file path, JSONL string, list of dictionaries with 'prompt' 
+                field, or list of strings.
+            evolution_spec (Union[str, List[Union[str, List[str]]]]): 
                 Evolution method specification.
                 If a list is provided and num_iterations is None, then
                 num_iterations is set to the length of the list.
             num_generations (int): Candidates to generate per iteration.
+                (default: :obj:`2`)
             num_iterations (Optional[int]): Number of evolution iterations.
                 Defaults to the length of evolution_spec.
             keep_original (bool): Include original prompts in results.
-            scorer (Optional[BaseScorer]): Scoring model for candidate.
-            num_chunks (int): Number of parallel processing chunks.
-            retry_limit (int): Max retries for failed generations.
+                (default: :obj:`True`)
+            scorer (Optional[BaseScorer]): Scoring model for candidates.
+                (default: :obj:`None`)
+            num_chunks (int): Number of chunks to split processing.
+                (default: :obj:`1`)
+            retry_limit (int): Number of retries for failed generations.
+                (default: :obj:`3`)
             retry_delay (float): Delay between retries in seconds.
+                (default: :obj:`1.0`)
             num_threads (int): Number of threads for parallel processing.
+                (default: :obj:`10`)
 
         Returns:
             List[Dict[int, List[Dict[str, Any]]]]: Evolution results.
         """
+        # Load data from various formats
+        seed_prompts = []
+        
+        if isinstance(prompts, str):
+            # Handle file path or JSONL string
+            loaded_data = self.load_data(prompts)
+            for item in loaded_data:
+                if isinstance(item, dict) and 'prompt' in item:
+                    seed_prompts.append(item['prompt'])
+                elif isinstance(item, str):
+                    seed_prompts.append(item)
+        elif isinstance(prompts, list):
+            # Handle list of dicts or list of strings
+            for item in prompts:
+                if isinstance(item, dict) and 'prompt' in item:
+                    seed_prompts.append(item['prompt'])
+                elif isinstance(item, str):
+                    seed_prompts.append(item)
+                else:
+                    logger.warning(f"Skipping invalid prompt item: {item}")
+        else:
+            raise ValueError(
+                "Prompts must be a file path, JSONL string, "
+                "list of dictionaries with 'prompt' field, or list of strings"
+            )
+            
+        logger.info(f"Loaded {len(seed_prompts)} prompts for evolution")
+
+        # Original processing logic
         if num_iterations is None:
             if isinstance(evolution_spec, list):
                 num_iterations = len(evolution_spec)
@@ -359,7 +410,7 @@ class EvolInstructPipeline:
                 num_iterations = 1
 
         evolution_plan: List[List[List[str]]] = []
-        for _ in prompts:
+        for _ in seed_prompts:
             prompt_plan = []
             for iteration in range(num_iterations):
                 if isinstance(evolution_spec, list):
@@ -403,15 +454,15 @@ class EvolInstructPipeline:
                         return {}
 
             raise RuntimeError("_process_prompt() did not return.")
-
-        num_chunks = max(1, min(num_chunks, len(prompts)))
-        chunk_size = ceil(len(prompts) / num_chunks)
+        
+        num_chunks = max(1, min(num_chunks, len(seed_prompts)))
+        chunk_size = ceil(len(seed_prompts) / num_chunks)
         results = []
 
-        for chunk_idx in range(0, len(prompts), chunk_size):
-            chunk = prompts[chunk_idx : chunk_idx + chunk_size]
+        for chunk_idx in range(0, len(seed_prompts), chunk_size):
+            chunk = seed_prompts[chunk_idx : chunk_idx + chunk_size]
             plan_chunk = evolution_plan[chunk_idx : chunk_idx + chunk_size]
-
+            
             with ThreadPoolExecutor(max_workers=num_threads) as executor:
                 chunk_results = list(
                     tqdm(
@@ -421,4 +472,16 @@ class EvolInstructPipeline:
                 )
                 results.extend(chunk_results)
 
+        # Save results if output_path is provided 
+        if self.output_path:
+            results_for_json = []
+            for i, prompt_result in enumerate(results):
+                processed_result = {
+                    "seed_prompt": seed_prompts[i],
+                    "evolutions": prompt_result
+                }
+                results_for_json.append(processed_result)
+            
+            self.save_jsonl(results_for_json)
+        
         return results

@@ -13,11 +13,12 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import random
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 from tqdm import tqdm
 
 from camel.agents.multi_hop_generator_agent import MultiHopGeneratorAgent
+from camel.datagen.base import BaseDataGenPipeline
 from camel.datagen.source2synth.user_data_processor_config import (
     ProcessorConfig,
 )
@@ -536,3 +537,96 @@ class DataCurator:
             return examples
 
         return self.rng.sample(examples, self.config.dataset_size)
+
+
+class Source2SynthDataGenPipeline(BaseDataGenPipeline):
+    r"""A pipeline for generating synthetic data from source text.
+    
+    It wraps the functionality of UserDataProcessor to generate
+    multi-hop question-answer pairs from text inputs.
+    
+    Attributes:
+        processor (UserDataProcessor): The processor for generating multi-hop QA pairs.
+    """
+
+    def __init__(
+        self,
+        config: Optional[ProcessorConfig] = None,
+        output_path: Optional[str] = None,
+    ):
+        r"""Initialize the Source2SynthDataGenPipeline.
+        
+        Args:
+            config (Optional[ProcessorConfig]): Configuration for data processing.
+                If None, uses default ProcessorConfig. (default: :obj:`None`)
+            output_path (Optional[str]): Path to save generated data.
+                (default: :obj:`None`)
+        """
+        super().__init__(output_path=output_path)
+        self.processor = UserDataProcessor(config=config)
+        
+    def generate(
+        self, 
+        data: Union[str, List[str], List[Dict[str, Any]]],
+    ) -> List[Dict[str, Any]]:
+        r"""Generate multi-hop question-answer pairs from input data.
+        
+        Supports flexible input formats:
+        - File path to a JSONL file containing texts
+        - JSONL string
+        - List of dictionaries with a 'text' field (and optional 'source' field)
+        - List of text strings
+        
+        Args:
+            data (Union[str, List[str], List[Dict[str, Any]]]): Input data 
+                that can be a file path, JSONL string, or list of texts or 
+                dictionaries with text content.
+                
+        Returns:
+            List[Dict[str, Any]]: Generated multi-hop QA pairs with metadata.
+        """
+        texts = []
+        sources = []
+        
+        # Handle different input formats
+        if isinstance(data, str):
+            # Check if it's a file path or JSONL string
+            try:
+                loaded_data = self.load_data(data)
+                for item in loaded_data:
+                    if isinstance(item, dict):
+                        if 'text' in item:
+                            texts.append(item['text'])
+                            sources.append(item.get('source', 'data_input'))
+                    elif isinstance(item, str):
+                        texts.append(item)
+                        sources.append('data_input')
+            except:
+                # Treat as a single text string
+                texts = [data]
+                sources = ['data_input']
+        elif isinstance(data, list):
+            # Handle list of dicts or list of strings
+            for item in data:
+                if isinstance(item, dict) and 'text' in item:
+                    texts.append(item['text'])
+                    sources.append(item.get('source', 'data_input'))
+                elif isinstance(item, str):
+                    texts.append(item)
+                    sources.append('data_input')
+                else:
+                    logger.warning(f"Skipping invalid data item: {item}")
+        else:
+            raise ValueError(
+                "Data must be a file path, JSONL string, "
+                "list of dictionaries with 'text' field, or list of strings"
+            )
+        
+        # Generate QA pairs
+        results = self.processor.process_batch(texts=texts, sources=sources)
+        
+        # Save results if output_path is provided
+        if self.output_path:
+            self.save_jsonl(results)
+            
+        return results

@@ -13,8 +13,10 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from .evol_instruct import EvolInstructPipeline
+from .templates import EvolInstructTemplates, MathEvolInstructTemplates
 
 __all__ = [
     'EvolInstructPipeline',
+    'EvolInstructTemplates',
     'MathEvolInstructTemplates',
 ]

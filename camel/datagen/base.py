@@ -129,7 +129,8 @@ class BaseDataGenPipeline:
     def save_results(
         self, 
         results: List[Dict[str, Any]], 
-        output_path: Optional[str] = None
+        output_path: Optional[str] = None,
+        results_key: str = "results"
     ) -> None:
         r"""Save results to a JSON file.
         
@@ -138,6 +139,8 @@ class BaseDataGenPipeline:
             output_path (Optional[str]): Path to save results.
                 If None, uses the pipeline's output_path.
                 (default: :obj:`None`)
+            results_key (str): The key under which to store the results in the JSON file.
+                (default: :obj:`"results"`)
                 
         Raises:
             ValueError: If no output path is provided.
@@ -153,8 +156,8 @@ class BaseDataGenPipeline:
         os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
         
         with open(path, 'w', encoding='utf-8') as f:
-            json.dump({"results": results}, f, indent=2, ensure_ascii=False)
-        logger.info(f"Results saved to {path}")
+            json.dump({results_key: results}, f, indent=2, ensure_ascii=False)
+        logger.info(f"Results saved to {path} under key '{results_key}'")
     
     def save_jsonl(
         self, 
