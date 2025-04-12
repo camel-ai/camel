@@ -217,14 +217,40 @@ class SelfInstructPipeline(BaseDataGenPipeline):
         )
         response = self.agent.step(clf_prompt)
         self.agent.reset()
+        
+        content = response.msgs[0].content.strip()
+        
+        # Try direct parsing with model_validate_json
         try:
-            structured_response = AgentResponse.parse_raw(
-                response.msgs[0].content.strip()
-            )
+            structured_response = AgentResponse.model_validate_json(content)
             return structured_response.answer
-        except ValueError as e:
-            logger.error(f"Error parsing agent response: {e}")
-            return False
+        except ValueError:
+            # continue to next approach
+            pass
+        
+        # Try to extract from markdown code block and parse
+        if "```" in content:
+            try:
+                # Extract content between code block markers
+                parts = content.split("```")
+                if len(parts) >= 2:
+                    markdown_content = parts[1].strip()
+                    # Remove language identifier if present
+                    if markdown_content.startswith("json"):
+                        markdown_content = markdown_content[4:].strip()
+                    elif "\n" in markdown_content:
+                        # If first line might be language identifier, remove it
+                        markdown_content = "\n".join(markdown_content.split("\n")[1:]).strip()
+                    
+                    # Try parsing the extracted content
+                    structured_response = AgentResponse.model_validate_json(markdown_content)
+                    return structured_response.answer
+            except ValueError:
+                pass
+        
+        # If all parsing attempts fail, log the error and return default
+        logger.error(f"Failed to parse classification response")
+        return False
 
     def generate_machine_instances(self):
         r"""Generate instances for each machine task based on its
@@ -280,7 +306,7 @@ class SelfInstructPipeline(BaseDataGenPipeline):
         try:
             response = self.agent.step(prompt)
             self.agent.reset()
-            text = response.msgs[0].content.atrip()
+            text = response.msgs[0].content.strip()
 
             if classification:
                 return self.parse_classification_output(text)
