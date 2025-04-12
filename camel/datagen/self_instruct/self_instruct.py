@@ -42,7 +42,7 @@ class SelfInstructPipeline(BaseDataGenPipeline):
             or a list of human tasks directly.
         num_machine_instructions (int): Number of machine-generated
             instructions to generate. (default::obj:`5`)
-        data_output_path (Optional[str]): Path to save the generated data.
+        output_path (Optional[str]): Path to save the generated data.
             (default::obj:`./data_output.json`)
         human_to_machine_ratio (tuple): Ratio of human to machine tasks used
             for instruction generation. (default::obj:`(6, 2)`)
@@ -53,6 +53,12 @@ class SelfInstructPipeline(BaseDataGenPipeline):
             (default::obj:`None`)
         stop_on_first_failure (bool): If True, stops checking filters after
             the first failure.
+        batch_size (Optional[int]): Batch size for processing instructions.
+            (default::obj:`None`)
+        max_workers (Optional[int]): Maximum number of worker threads.
+            (default::obj:`None`)
+        save_intermediate (bool): Whether to save intermediate results.
+            (default::obj:`False`)
     """
 
     def __init__(
@@ -60,16 +66,23 @@ class SelfInstructPipeline(BaseDataGenPipeline):
         agent: ChatAgent,
         seed: Union[str, List[Dict]],
         num_machine_instructions: int = 5,
-        data_output_path: Optional[str] = './data_output.json',
+        output_path: Optional[str] = './data_output.json',
         human_to_machine_ratio: tuple = (6, 2),
         instruction_filter: Optional[InstructionFilter] = None,
         filter_config: Optional[Dict[str, Dict[str, Any]]] = None,
         stop_on_first_failure: bool = False,
+        batch_size: Optional[int] = None,
+        max_workers: Optional[int] = None,
+        save_intermediate: bool = False,
     ):
-        super().__init__(output_path=data_output_path)
+        super().__init__(
+            output_path=output_path,
+            batch_size=batch_size,
+            max_workers=max_workers,
+            save_intermediate=save_intermediate
+        )
         self.agent = agent
         self.num_machine_instructions = num_machine_instructions
-        self.data_output_path = data_output_path
         self.human_to_machine_ratio = human_to_machine_ratio
         self.human_tasks: List[Dict] = []
         self.machine_tasks: List[Dict] = []
@@ -426,8 +439,9 @@ class SelfInstructPipeline(BaseDataGenPipeline):
         self.generate_machine_instances()
 
     def generate(self, timeout_minutes=600) -> List[Dict[str, Any]]:
-        r"""Execute the entire pipeline to generate machine instructions
-        and instances.
+        r"""Generate machine instructions and instances.
+
+        Core implementation that performs the generation logic.
 
         Args:
             timeout_minutes (int): Maximum time in minutes to run the
@@ -438,27 +452,24 @@ class SelfInstructPipeline(BaseDataGenPipeline):
         """
         start_time = time.time()
         timeout_seconds = timeout_minutes * 60
-        logger.info(
-            f"Starting instruction generation: target "
-            f"{self.num_machine_instructions} instructions"
-        )
+        
+        # Generate instructions
         while len(self.machine_tasks) < self.num_machine_instructions:
             # Check for timeout
             elapsed = time.time() - start_time
             if elapsed > timeout_seconds:
-                logger.info(
-                    f"Generation timed out after {elapsed / 60:.1f} minutes. "
-                    f"Generated {len(self.machine_tasks)}/"
-                    f"{self.num_machine_instructions} instructions."
-                )
                 break
+                
             prompt, instruction = self.generate_machine_instruction()
             existing_instructions = [
                 t["instruction"] for t in self.human_tasks
             ] + [t["instruction"] for t in self.machine_tasks]
+            
+            # Apply filters
             for f in self.instruction_filter.filters:
                 if isinstance(f, RougeSimilarityFilter):
                     f.existing_instructions = existing_instructions
+                    
             if self.instruction_filter.filter(prompt, instruction):
                 instruction_dict = {
                     "id": f"machine_task_{len(self.machine_tasks) + 1}",
@@ -468,25 +479,46 @@ class SelfInstructPipeline(BaseDataGenPipeline):
                     ),
                 }
                 self.machine_tasks.append(instruction_dict)
-                logger.info(
-                    f"Attempt[Instruction]: Progress "
-                    f"{len(self.machine_tasks)}/"
-                    f"{self.num_machine_instructions} "
-                    f"instructions"
-                )
-            else:
-                logger.warning(
-                    f"Instruction failed filters. Skipping instruction: "
-                    f"{instruction}"
-                )
+                
+                # Save intermediate results if configured
+                if self.save_intermediate and self.output_path:
+                    self.save_results(self.machine_tasks)
+            
+        # Generate instances for each instruction
         self.generate_machine_instances()
         self.construct_data()
-        
-        # Save results if output_path is specified
-        if self.output_path:
-            self.save_results(self.machine_tasks)
             
         return self.machine_tasks
+
+    def execute(self, timeout_minutes=600) -> List[Dict[str, Any]]:
+        r"""Execute the self-instruct data generation pipeline.
+        
+        The main entry point for running the pipeline. Handles logging,
+        time measurement, and result saving.
+        
+        Args:
+            timeout_minutes (int): Maximum time in minutes to run the
+                generation process before timing out. (default: :obj:`600`)
+                
+        Returns:
+            List[Dict[str, Any]]: The generated machine tasks with instances.
+        """
+        logger.info(f"Starting self-instruct generation with target {self.num_machine_instructions} instructions")
+        logger.info(f"Timeout set to {timeout_minutes} minutes")
+        start_time = time.time()
+        
+        # Run the generation process
+        results = self.generate(timeout_minutes=timeout_minutes)
+        
+        # Log completion information
+        elapsed_time = (time.time() - start_time) / 60
+        logger.info(f"Self-instruct generation completed with {len(results)} instructions in {elapsed_time:.2f} minutes")
+        
+        # Save final results if output_path is specified
+        if self.output_path:
+            self.save_results(results)
+            
+        return results
 
 
 class AgentResponse(BaseModel):

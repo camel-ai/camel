@@ -33,17 +33,35 @@ class BaseDataGenPipeline:
     
     Attributes:
         output_path (Optional[str]): Path to save generated data.
+        batch_size (Optional[int]): Batch size for processing data.
+        max_workers (Optional[int]): Maximum number of worker threads.
+        save_intermediate (bool): Whether to save intermediate results.
     """
     
-    def __init__(self, output_path: Optional[str] = None):
+    def __init__(
+        self, 
+        output_path: Optional[str] = None,
+        batch_size: Optional[int] = None,
+        max_workers: Optional[int] = None,
+        save_intermediate: bool = False
+    ):
         r"""Initialize the base data generation pipeline.
         
         Args:
             output_path (Optional[str]): Path to save generated data.
                 If None, results will only be returned without saving to file.
                 (default: :obj:`None`)
+            batch_size (Optional[int]): Batch size for processing data.
+                (default: :obj:`None`)
+            max_workers (Optional[int]): Maximum number of worker threads.
+                (default: :obj:`None`)
+            save_intermediate (bool): Whether to save intermediate results.
+                (default: :obj:`False`)
         """
         self.output_path = output_path
+        self.batch_size = batch_size
+        self.max_workers = max_workers
+        self.save_intermediate = save_intermediate
     
     def load_data_from_file(self, file_path: str) -> List[Dict[str, Any]]:
         r"""Load data from a JSONL file.
@@ -225,6 +243,24 @@ class BaseDataGenPipeline:
         # Replace the original file
         os.replace(temp_path, path)
         logger.info(f"Results safely saved to {path}")
+    
+    def execute(self, *args, **kwargs) -> List[Dict[str, Any]]:
+        r"""Execute the data generation pipeline.
+        
+        This is the primary method to run the pipeline. It calls the generate method
+        and handles the result processing. By default, it just calls generate,
+        but subclasses can override it to add pre/post-processing steps.
+        
+        Returns:
+            List[Dict[str, Any]]: Generated data.
+        """
+        results = self.generate(*args, **kwargs)
+        
+        # Save results if output_path is specified
+        if self.output_path:
+            self.save_results(results)
+            
+        return results
     
     def generate(self, *args, **kwargs) -> List[Dict[str, Any]]:
         r"""Generate data based on the pipeline's implementation.

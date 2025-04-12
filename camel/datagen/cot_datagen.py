@@ -80,17 +80,26 @@ class CoTDataGenerator(BaseDataGenPipeline):
             answer generation. (default::obj:`None`)
         verifier_agent (Optional[ChatAgent]): Optional specialized agent for
             answer verification. (default::obj:`None`)
-        golden_answers (Optional[Dict[str, str]]): Dictionary containing pre-defined
-            correct answers for validation and comparison. Required for answer
-            verification. Can be provided directly or loaded from input_data.
+        golden_answers (Optional[Union[Dict[str, str], str, List[Dict[str, str]]]]): 
+            Correct question-answer pairs used for verification. Can be provided in 
+            multiple formats:
+            - Dictionary mapping questions (keys) to answers (values)
+            - File path to a JSON/JSONL file containing QA pairs
+            - JSONL string containing QA pairs
+            - List of dictionaries, each with 'question' and 'answer' fields
             (default::obj:`None`)
         search_limit (int): Maximum number of search iterations allowed.
             (default::obj:`100`)
-        input_data (Optional[Union[str, Dict[str, str], List[Dict[str, str]]]]): 
-            Input data that can be a file path, JSONL string, or list of dictionaries 
-            with golden answers. (default::obj:`None`)
         output_path (Optional[str]): Path to save generated solutions.
             (default::obj:`None`)
+        batch_size (Optional[int]): Batch size for processing questions.
+            (default::obj:`None`)
+        max_workers (Optional[int]): Maximum number of worker threads.
+            (default::obj:`None`)
+        save_intermediate (bool): Whether to save intermediate results.
+            (default::obj:`False`)
+        verification_threshold (float): Threshold for verification score.
+            (default::obj:`0.7`)
     """
 
     def __init__(
@@ -99,10 +108,13 @@ class CoTDataGenerator(BaseDataGenPipeline):
         *,
         generator_agent: Optional[ChatAgent] = None,
         verifier_agent: Optional[ChatAgent] = None,
-        golden_answers: Optional[Dict[str, str]] = None,
+        golden_answers: Optional[Union[Dict[str, str], str, List[Dict[str, str]]]] = None,
         search_limit: int = 100,
-        input_data: Optional[Union[str, Dict[str, str], List[Dict[str, str]]]] = None,
         output_path: Optional[str] = None,
+        batch_size: Optional[int] = None,
+        max_workers: Optional[int] = None,
+        save_intermediate: bool = False,
+        verification_threshold: float = 0.7,
     ):
         r"""Initialize the CoTDataGenerator.
 
@@ -119,19 +131,33 @@ class CoTDataGenerator(BaseDataGenPipeline):
                 for answer generation. (default::obj:`None`)
             verifier_agent (Optional[ChatAgent]): Optional specialized agent
                 for answer verification. (default::obj:`None`)
-            golden_answers (Optional[Dict[str, str]]): Dictionary containing pre-defined
-                correct answers for validation and comparison. Required for answer
-                verification. Can be provided directly or loaded from input_data.
+            golden_answers (Optional[Union[Dict[str, str], str, List[Dict[str, str]]]]): 
+                Correct question-answer pairs used for verification. Can be provided in 
+                multiple formats:
+                - Dictionary mapping questions (keys) to answers (values)
+                - File path to a JSONL file containing QA pairs
+                - JSONL string containing QA pairs
+                - List of dictionaries, each with 'question' and 'answer' fields
                 (default::obj:`None`)
             search_limit (int): Maximum number of search iterations allowed.
                 (default::obj:`100`)
-            input_data (Optional[Union[str, Dict[str, str], List[Dict[str, str]]]]):
-                Input data that can be a file path, JSONL string, or list of dictionaries
-                with golden answers. (default::obj:`None`)
             output_path (Optional[str]): Path to save generated solutions.
                 (default::obj:`None`)
+            batch_size (Optional[int]): Batch size for processing questions.
+                (default::obj:`None`)
+            max_workers (Optional[int]): Maximum number of worker threads.
+                (default::obj:`None`)
+            save_intermediate (bool): Whether to save intermediate results.
+                (default::obj:`False`)
+            verification_threshold (float): Threshold for verification score.
+                (default::obj:`0.7`)
         """
-        super().__init__(output_path=output_path)
+        super().__init__(
+            output_path=output_path,
+            batch_size=batch_size,
+            max_workers=max_workers,
+            save_intermediate=save_intermediate
+        )
         
         if chat_agent is not None:
             if generator_agent is not None or verifier_agent is not None:
@@ -150,14 +176,13 @@ class CoTDataGenerator(BaseDataGenPipeline):
             self.generator_agent = generator_agent
             self.verifier_agent = verifier_agent
 
-        self.golden_answers = golden_answers or {}
+        self.golden_answers = {}
+        if golden_answers is not None:
+            self.import_qa_data(golden_answers)
         self.search_limit = search_limit
+        self.verification_threshold = verification_threshold
         self.solution_tree: Dict[str, Dict[str, Union[str, int]]] = {}
         
-        # Load golden answers from input_data if provided
-        if input_data is not None:
-            self.import_qa_data(input_data)
-            
         logger.info(
             "CoTDataGenerator initialized with search_limit=%d", search_limit
         )
@@ -470,61 +495,79 @@ class CoTDataGenerator(BaseDataGenPipeline):
     def generate(
         self, questions: Optional[Union[str, List[str]]] = None
     ) -> List[Dict[str, Any]]:
-        r"""Generate solutions for a list of questions.
+        r"""Generate solutions for the given questions using chain-of-thought reasoning.
+
+        Core implementation that performs the generation logic.
+
+        Args:
+            questions (Optional[Union[str, List[str]]]): Questions to solve.
+                Can be a single question string, a list of questions, or None.
+                If None, uses questions from golden_answers if available.
+                (default::obj:`None`)
+
+        Returns:
+            List[Dict[str, Any]]: Generated solutions.
+        """
+        # Process input questions
+        if questions is None:
+            if not self.golden_answers:
+                raise ValueError(
+                    "No questions provided and no golden answers available"
+                )
+            questions_to_solve = list(self.golden_answers.keys())
+        elif isinstance(questions, str):
+            questions_to_solve = [questions]
+        else:
+            questions_to_solve = questions
+
+        solutions = []
+        for question in questions_to_solve:
+            solution = self.solve(question)
+            solutions.append({
+                "question": question,
+                "solution": solution,
+                "timestamp": datetime.now().isoformat(),
+            })
+
+            # Save intermediate results if configured
+            if self.save_intermediate and self.output_path:
+                self.save_results(solutions)
+
+        return solutions
+    
+    def execute(
+        self, questions: Optional[Union[str, List[str]]] = None
+    ) -> List[Dict[str, Any]]:
+        r"""Execute the CoT data generation pipeline.
+        
+        The main entry point for running the pipeline. Handles logging,
+        time measurement, and result saving.
         
         Args:
             questions (Optional[Union[str, List[str]]]): Questions to solve.
-                Can be a list of question strings or a string containing
-                questions separated by newlines.
-                If None, uses the questions from golden_answers.
+                Can be a single question string, a list of questions, or None.
+                If None, uses questions from golden_answers if available.
                 (default::obj:`None`)
                 
         Returns:
             List[Dict[str, Any]]: Generated solutions.
         """
-        if questions is None:
-            # Use questions from golden_answers
-            question_list = list(self.golden_answers.keys())
-        elif isinstance(questions, str):
-            # Check if it contains newlines - if so, split it
-            if '\n' in questions:
-                question_list = [q.strip() for q in questions.split('\n') if q.strip()]
-            else:
-                # Single question
-                question_list = [questions]
-        else:
-            # Use the provided list
-            question_list = questions
-        
-        # Add logging for the start of generation    
-        logger.info(f"Starting solution generation for {len(question_list)} questions")
+        logger.info("Starting CoT data generation")
         start_time = datetime.now()
         
-        results = []
-        for i, question in enumerate(question_list, 1):
-            # Log the question being processed (truncate if too long)
-            log_question = question[:50] + "..." if len(question) > 50 else question
-            logger.info(f"Processing question {i}/{len(question_list)}: {log_question}")
-            
-            solution = self.solve(question)
-            results.append({
-                "question": question,
-                "solution": solution,
-                "timestamp": datetime.now().isoformat(),
-            })
-            
-            # Log completion of each question
-            logger.info(f"Completed question {i}/{len(question_list)}")
+        # Run the generation process
+        results = self.generate(questions)
         
-        # Save results if output_path is specified
+        # Log completion information
+        duration = (datetime.now() - start_time).total_seconds()
+        per_question = duration / len(results) if results else 0
+        logger.info(
+            f"CoT data generation completed: {len(results)} solutions in "
+            f"{duration:.2f} seconds ({per_question:.2f} s/question)"
+        )
+        
+        # Save final results if output_path is specified
         if self.output_path:
-            logger.info(f"Exporting solutions to {self.output_path}")
-            self.export_solutions()
-        
-        # Log generation summary
-        end_time = datetime.now()
-        duration = (end_time - start_time).total_seconds()
-        per_question = duration / len(question_list) if question_list else 0
-        logger.info(f"Solution generation completed: {len(results)} questions in {duration:.2f} seconds ({per_question:.2f} s/question)")
-        
+            self.save_results(results)
+            
         return results

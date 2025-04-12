@@ -540,93 +540,111 @@ class DataCurator:
 
 
 class Source2SynthDataGenPipeline(BaseDataGenPipeline):
-    r"""A pipeline for generating synthetic data from source text.
-    
-    It wraps the functionality of UserDataProcessor to generate
-    multi-hop question-answer pairs from text inputs.
-    
+    r"""Pipeline for generating multi-hop question-answer pairs from source data.
+
     Attributes:
-        processor (UserDataProcessor): The processor for generating multi-hop QA pairs.
+        processor (UserDataProcessor): Data processor for generating QA pairs.
     """
 
     def __init__(
         self,
         config: Optional[ProcessorConfig] = None,
         output_path: Optional[str] = None,
+        batch_size: Optional[int] = None,
+        max_workers: Optional[int] = None,
+        save_intermediate: bool = False,
     ):
-        r"""Initialize the Source2SynthDataGenPipeline.
-        
+        r"""Initialize the source-to-synthesis data generation pipeline.
+
         Args:
-            config (Optional[ProcessorConfig]): Configuration for data processing.
-                If None, uses default ProcessorConfig. (default: :obj:`None`)
+            config (Optional[ProcessorConfig]): Configuration for data 
+                processing. (default: :obj:`None`)
             output_path (Optional[str]): Path to save generated data.
                 (default: :obj:`None`)
+            batch_size (Optional[int]): Batch size for processing.
+                (default: :obj:`None`)
+            max_workers (Optional[int]): Maximum number of worker threads.
+                (default: :obj:`None`)
+            save_intermediate (bool): Whether to save intermediate results.
+                (default: :obj:`False`)
         """
-        super().__init__(output_path=output_path)
-        self.processor = UserDataProcessor(config=config)
-        
+        super().__init__(
+            output_path=output_path,
+            batch_size=batch_size,
+            max_workers=max_workers,
+            save_intermediate=save_intermediate
+        )
+        self.processor = UserDataProcessor(config)
+
     def generate(
         self, 
         data: Union[str, List[str], List[Dict[str, Any]]],
     ) -> List[Dict[str, Any]]:
-        r"""Generate multi-hop question-answer pairs from input data.
-        
-        Supports flexible input formats:
-        - File path to a JSONL file containing texts
-        - JSONL string
-        - List of dictionaries with a 'text' field (and optional 'source' field)
-        - List of text strings
-        
+        r"""Process input data through the Source2Synth pipeline.
+
+        Core implementation that performs the generation logic.
+
         Args:
-            data (Union[str, List[str], List[Dict[str, Any]]]): Input data 
-                that can be a file path, JSONL string, or list of texts or 
-                dictionaries with text content.
-                
+            data: Input data, which can be:
+                - A single text string
+                - A list of text strings
+                - A list of dictionaries with 'text' and optional 'source' keys
+
         Returns:
-            List[Dict[str, Any]]: Generated multi-hop QA pairs with metadata.
+            List[Dict[str, Any]]: Generated examples with QA pairs and metadata.
         """
-        texts = []
-        sources = []
-        
-        # Handle different input formats
         if isinstance(data, str):
-            # Check if it's a file path or JSONL string
-            try:
-                loaded_data = self.load_data(data)
-                for item in loaded_data:
-                    if isinstance(item, dict):
-                        if 'text' in item:
-                            texts.append(item['text'])
-                            sources.append(item.get('source', 'data_input'))
-                    elif isinstance(item, str):
-                        texts.append(item)
-                        sources.append('data_input')
-            except:
-                # Treat as a single text string
-                texts = [data]
-                sources = ['data_input']
+            # Single text string
+            results = self.processor.process_text(data)
         elif isinstance(data, list):
-            # Handle list of dicts or list of strings
-            for item in data:
-                if isinstance(item, dict) and 'text' in item:
-                    texts.append(item['text'])
-                    sources.append(item.get('source', 'data_input'))
-                elif isinstance(item, str):
-                    texts.append(item)
-                    sources.append('data_input')
-                else:
-                    logger.warning(f"Skipping invalid data item: {item}")
+            if not data:
+                return []
+            if isinstance(data[0], str):
+                # List of text strings
+                results = self.processor.process_batch(data)
+            elif isinstance(data[0], dict):
+                # List of dictionaries
+                texts = [item.get('text', '') for item in data]
+                sources = [item.get('source', 'user_input') for item in data]
+                results = self.processor.process_batch(texts, sources)
+            else:
+                raise ValueError(
+                    "List items must be either strings or dictionaries"
+                )
         else:
             raise ValueError(
-                "Data must be a file path, JSONL string, "
-                "list of dictionaries with 'text' field, or list of strings"
+                "Data must be a string, list of strings, or list of dictionaries"
             )
         
-        # Generate QA pairs
-        results = self.processor.process_batch(texts=texts, sources=sources)
+        return results
+    
+    def execute(
+        self, 
+        data: Union[str, List[str], List[Dict[str, Any]]]
+    ) -> List[Dict[str, Any]]:
+        r"""Execute the source-to-synthesis pipeline.
         
-        # Save results if output_path is provided
+        The main entry point for running the pipeline. Handles logging,
+        time measurement, and result saving.
+        
+        Args:
+            data: Input data, which can be:
+                - A single text string
+                - A list of text strings
+                - A list of dictionaries with 'text' and optional 'source' keys
+                
+        Returns:
+            List[Dict[str, Any]]: Generated examples with QA pairs and metadata.
+        """
+        logger.info("Starting Source2Synth data generation")
+        
+        # Run the generation process
+        results = self.generate(data)
+        
+        # Save results if output_path is specified
         if self.output_path:
-            self.save_jsonl(results)
+            self.save_results(results)
             
+        logger.info(f"Source2Synth data generation completed with {len(results)} examples")
+        
         return results

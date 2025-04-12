@@ -340,6 +340,8 @@ class EvolInstructPipeline(BaseDataGenPipeline):
     ) -> List[Dict[int, List[Dict[str, Any]]]]:
         r"""Generate evolved prompts from seed prompts.
 
+        Core implementation that performs the generation logic.
+        
         This method supports flexible input formats:
         - File path to a JSONL file containing prompts
         - JSONL string
@@ -471,17 +473,98 @@ class EvolInstructPipeline(BaseDataGenPipeline):
                     )
                 )
                 results.extend(chunk_results)
-
-        # Save results if output_path is provided 
+                
+        return results
+        
+    def execute(
+        self,
+        prompts: Union[str, List[Dict[str, Any]], List[str]],
+        evolution_spec: Union[str, List[Union[str, List[str]]]],
+        num_generations: int = 2,
+        num_iterations: Optional[int] = None,
+        keep_original: bool = True,
+        scorer: Optional[BaseScorer] = None,
+        num_chunks: int = 1,
+        retry_limit: int = 3,
+        retry_delay: float = 1.0,
+        num_threads: int = 10,
+    ) -> List[Dict[int, List[Dict[str, Any]]]]:
+        r"""Execute the Evol-Instruct pipeline.
+        
+        The main entry point for running the pipeline. Handles logging,
+        time measurement, and result saving.
+        
+        Args:
+            prompts (Union[str, List[Dict[str, Any]], List[str]]): Source prompts.
+                Can be a file path, JSONL string, list of dictionaries with 'prompt' 
+                field, or list of strings.
+            evolution_spec (Union[str, List[Union[str, List[str]]]]): 
+                Evolution method specification.
+                If a list is provided and num_iterations is None, then
+                num_iterations is set to the length of the list.
+            num_generations (int): Candidates to generate per iteration.
+                (default: :obj:`2`)
+            num_iterations (Optional[int]): Number of evolution iterations.
+                Defaults to the length of evolution_spec.
+            keep_original (bool): Include original prompts in results.
+                (default: :obj:`True`)
+            scorer (Optional[BaseScorer]): Scoring model for candidates.
+                (default: :obj:`None`)
+            num_chunks (int): Number of chunks to split processing.
+                (default: :obj:`1`)
+            retry_limit (int): Number of retries for failed generations.
+                (default: :obj:`3`)
+            retry_delay (float): Delay between retries in seconds.
+                (default: :obj:`1.0`)
+            num_threads (int): Number of threads for parallel processing.
+                (default: :obj:`10`)
+                
+        Returns:
+            List[Dict[int, List[Dict[str, Any]]]]: Evolution results.
+        """
+        logger.info("Starting Evol-Instruct pipeline")
+        start_time = time.time()
+        
+        # Run the generation process
+        results = self.generate(
+            prompts=prompts,
+            evolution_spec=evolution_spec,
+            num_generations=num_generations,
+            num_iterations=num_iterations,
+            keep_original=keep_original,
+            scorer=scorer,
+            num_chunks=num_chunks,
+            retry_limit=retry_limit,
+            retry_delay=retry_delay,
+            num_threads=num_threads,
+        )
+        
+        # Save results if output_path is provided
         if self.output_path:
+            # Convert results to the format expected by save_jsonl
+            if isinstance(prompts, list) and len(prompts) > 0:
+                seed_prompts = []
+                for item in prompts:
+                    if isinstance(item, dict) and 'prompt' in item:
+                        seed_prompts.append(item['prompt'])
+                    elif isinstance(item, str):
+                        seed_prompts.append(item)
+            else:
+                seed_prompts = self.load_data(prompts) if isinstance(prompts, str) else []
+                
             results_for_json = []
             for i, prompt_result in enumerate(results):
-                processed_result = {
-                    "seed_prompt": seed_prompts[i],
-                    "evolutions": prompt_result
-                }
-                results_for_json.append(processed_result)
+                if i < len(seed_prompts):
+                    processed_result = {
+                        "seed_prompt": seed_prompts[i],
+                        "evolutions": prompt_result
+                    }
+                    results_for_json.append(processed_result)
             
             self.save_jsonl(results_for_json)
+        
+        # Log completion information
+        elapsed_time = (time.time() - start_time) / 60
+        logger.info(f"Evol-Instruct pipeline completed in {elapsed_time:.2f} minutes")
         
         return results

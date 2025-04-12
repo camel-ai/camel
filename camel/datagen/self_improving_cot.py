@@ -95,6 +95,8 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
         max_workers: Optional[int] = None,
         solution_pattern: str = r'\\boxed{(.*?)}',
         trace_pattern: Optional[str] = None,
+        rationalization: bool = False,
+        save_intermediate: bool = False,
     ):
         r"""Initialize the self-improving cot pipeline.
 
@@ -140,8 +142,17 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
                 capture group to extract answers from trace text. If `None`,
                 uses the same pattern as solution_pattern.
                 (default: :obj:`None`)
+            rationalization (bool, optional): Whether to use rationalization.
+                (default: :obj:`False`)
+            save_intermediate (bool, optional): Whether to save intermediate results.
+                (default: :obj:`False`)
         """
-        super().__init__(output_path=output_path)
+        super().__init__(
+            output_path=output_path,
+            batch_size=batch_size,
+            max_workers=max_workers,
+            save_intermediate=save_intermediate
+        )
         
         self.reason_agent = reason_agent
         self.evaluate_agent = evaluate_agent
@@ -155,7 +166,14 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
         )
         self.reasoning_traces: List[Dict[str, Any]] = []
         self.few_shot_examples = few_shot_examples
-        self.batch_processor = BatchProcessor(max_workers, batch_size)
+        self.rationalization = rationalization
+        
+        # Setup batch processor
+        if batch_size is not None or max_workers is not None:
+            self.batch_processor = BatchProcessor(max_workers, batch_size)
+        else:
+            self.batch_processor = BatchProcessor()
+            
         self.solution_pattern = solution_pattern
         self.trace_pattern = (
             trace_pattern if trace_pattern is not None else solution_pattern
@@ -826,10 +844,9 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
             )
 
     def generate(self, rationalization: bool = False) -> List[Dict[str, Any]]:
-        r"""Execute the self-improving cot pipeline on all problems.
+        r"""Process all problems through the self-improving CoT pipeline.
 
-        Process problems and return results. If output_path is specified,
-        also save results to file.
+        Core implementation that performs the generation logic.
 
         Args:
             rationalization (bool, optional): Whether to use rationalization.
@@ -852,11 +869,8 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
         finally:
             loop.close()
 
+        # Convert to dictionaries
         self.reasoning_traces = [result.model_dump() for result in results]
-        
-        # Save results if output_path is specified
-        if self.output_path:
-            self.save_results(self.reasoning_traces, results_key="traces")
             
         return self.reasoning_traces
 
@@ -885,6 +899,30 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
             except Exception as e:
                 logger.error(f"Error appending result to traces file: {e}")
 
+    def execute(self) -> List[Dict[str, Any]]:
+        r"""Execute the self-improving CoT pipeline.
+        
+        The main entry point for running the pipeline. Handles logging,
+        time measurement, and result saving.
+        
+        Returns:
+            List[Dict[str, Any]]: List of processed results.
+        """
+        logger.info(f"Starting self-improving CoT pipeline with {len(self.problems)} problems")
+        start_time = time.time()
+        
+        # Run the generation process with the specified rationalization setting
+        results = self.generate(rationalization=self.rationalization)
+        
+        # Log completion information
+        elapsed_time = (time.time() - start_time) / 60
+        logger.info(f"Self-improving CoT pipeline completed {len(results)} problems in {elapsed_time:.2f} minutes")
+        
+        # Save final results if output_path is specified
+        if self.output_path:
+            self.save_results(results, results_key="traces")
+            
+        return results
 
     # Templates for generating reasoning, evaluation and improving them.
     REASONING_TEMPLATE = """Let's solve this step by step:
