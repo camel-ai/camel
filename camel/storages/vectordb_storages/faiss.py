@@ -1,4 +1,4 @@
-can the following code be integrated into camel vector storage module? # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -12,23 +12,25 @@ can the following code be integrated into camel vector storage module? # =======
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import logging
 import os
+import logging
 import pickle
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Literal
+
 import numpy as np
 
-from camel.storages.vectordb_storages import (
+from camel.storages.vector_db.base import (
     BaseVectorStorage,
     VectorDBQuery,
     VectorDBQueryResult,
     VectorDBStatus,
     VectorRecord,
 )
+from camel.types import VectorDistance
 from camel.utils import dependencies_required
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class FaissStorage(BaseVectorStorage):
@@ -78,6 +80,18 @@ class FaissStorage(BaseVectorStorage):
         m: int = 16,
         **kwargs: Any,
     ) -> None:
+        """Initialize the FAISS vector storage.
+
+        Args:
+            vector_dim: Dimension of vectors to be stored
+            index_type: FAISS index type ('Flat', 'IVF', 'HNSW', etc.)
+            collection_name: Name of the collection (defaults to timestamp)
+            storage_path: Directory to save the index (None for in-memory only)
+            distance: Vector distance metric
+            nlist: Number of clusters for IVF indexes
+            m: HNSW parameter for connections per node
+            **kwargs: Additional parameters
+        """
         import faiss
 
         self.vector_dim = vector_dim
@@ -413,7 +427,7 @@ class FaissStorage(BaseVectorStorage):
                 
                 try:
                     # Remove from FAISS index
-                    id_selector = faiss.IDSelectorArray(indices_to_remove)
+                    id_selector = faiss.IDSelectorArray(len(indices_to_remove), indices_to_remove)
                     self._index.remove_ids(id_selector)
                     
                     # Update mappings and storage
@@ -564,7 +578,7 @@ class FaissStorage(BaseVectorStorage):
                 vector = []
                 
             results.append(
-                VectorDBQueryResult.create(
+                VectorDBQueryResult(
                     similarity=similarity,
                     id=vector_id,
                     payload=self._payloads.get(vector_id, {}),
