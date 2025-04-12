@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Any, Optional, Sequence, Union
+from typing import Optional, Sequence, Union
 
 from pydantic import Field
 
@@ -62,12 +62,6 @@ class SambaVerseAPIConfig(BaseConfig):
     repetition_penalty: Optional[float] = None
     stop: Optional[Union[str, list[str]]] = None
     stream: Optional[bool] = None
-
-    def as_dict(self) -> dict[str, Any]:
-        config_dict = super().as_dict()
-        if "tools" in config_dict:
-            del config_dict["tools"]  # SambaNova does not support tool calling
-        return config_dict
 
 
 SAMBA_VERSE_API_PARAMS = {
