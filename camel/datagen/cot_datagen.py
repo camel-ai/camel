@@ -495,9 +495,17 @@ class CoTDataGenerator(BaseDataGenPipeline):
         else:
             # Use the provided list
             question_list = questions
-            
+        
+        # Add logging for the start of generation    
+        logger.info(f"Starting solution generation for {len(question_list)} questions")
+        start_time = datetime.now()
+        
         results = []
-        for question in question_list:
+        for i, question in enumerate(question_list, 1):
+            # Log the question being processed (truncate if too long)
+            log_question = question[:50] + "..." if len(question) > 50 else question
+            logger.info(f"Processing question {i}/{len(question_list)}: {log_question}")
+            
             solution = self.solve(question)
             results.append({
                 "question": question,
@@ -505,8 +513,18 @@ class CoTDataGenerator(BaseDataGenPipeline):
                 "timestamp": datetime.now().isoformat(),
             })
             
+            # Log completion of each question
+            logger.info(f"Completed question {i}/{len(question_list)}")
+        
         # Save results if output_path is specified
         if self.output_path:
+            logger.info(f"Exporting solutions to {self.output_path}")
             self.export_solutions()
-            
+        
+        # Log generation summary
+        end_time = datetime.now()
+        duration = (end_time - start_time).total_seconds()
+        per_question = duration / len(question_list) if question_list else 0
+        logger.info(f"Solution generation completed: {len(results)} questions in {duration:.2f} seconds ({per_question:.2f} s/question)")
+        
         return results
