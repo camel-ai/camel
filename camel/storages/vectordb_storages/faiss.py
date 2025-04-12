@@ -41,7 +41,7 @@ class FaissStorage(BaseVectorStorage):
     `FAISS <https://github.com/facebookresearch/faiss>`_
 
     Args:
-        vector_dim (int): The dimenstion of storing vectors.
+        vector_dim (int): The dimension of storing vectors.
         index_type (str, optional): Type of FAISS index to create.
             Options include 'Flat', 'IVF', 'HNSW', etc. (default: :obj:`'Flat'`)
         collection_name (Optional[str], optional): Name for the collection.
