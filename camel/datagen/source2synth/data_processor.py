@@ -14,6 +14,10 @@
 
 import random
 from typing import Any, Dict, List, Optional, Sequence, Union
+import threading
+import time
+import json
+import os
 
 from tqdm import tqdm
 
@@ -23,6 +27,7 @@ from camel.datagen.source2synth.user_data_processor_config import (
     ProcessorConfig,
 )
 from camel.logger import get_logger
+from camel.utils import BatchProcessor
 
 logger = get_logger(__name__)
 
@@ -574,7 +579,31 @@ class Source2SynthDataGenPipeline(BaseDataGenPipeline):
             max_workers=max_workers,
             save_intermediate=save_intermediate
         )
+        
         self.processor = UserDataProcessor(config)
+        
+        # Setup batch processor
+        if batch_size is not None or max_workers is not None:
+            self.batch_processor = BatchProcessor(max_workers, batch_size)
+        else:
+            self.batch_processor = BatchProcessor()
+            
+        # Initialize output file with empty results if path is specified
+        if self.output_path:
+            self.save_results([], results_key="examples")
+        self.lock = threading.Lock()
+
+    def safe_write_json(self, file_path, data):
+        r"""Safely write JSON data to file using atomic operations.
+        
+        Args:
+            file_path (str): Path to the output file
+            data (Any): Data to write to the file
+        """
+        temp_path = file_path + ".tmp"
+        with open(temp_path, "w") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        os.replace(temp_path, file_path)
 
     def generate(
         self, 
@@ -637,14 +666,17 @@ class Source2SynthDataGenPipeline(BaseDataGenPipeline):
             List[Dict[str, Any]]: Generated examples with QA pairs and metadata.
         """
         logger.info("Starting Source2Synth data generation")
+        start_time = time.time()
         
         # Run the generation process
         results = self.generate(data)
         
         # Save results if output_path is specified
         if self.output_path:
-            self.save_results(results)
-            
-        logger.info(f"Source2Synth data generation completed with {len(results)} examples")
+            with self.lock:
+                self.save_results(results, results_key="examples")
+                
+        elapsed_time = time.time() - start_time
+        logger.info(f"Source2Synth data generation completed with {len(results)} examples in {elapsed_time:.2f}s")
         
         return results

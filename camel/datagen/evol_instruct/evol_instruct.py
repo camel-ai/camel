@@ -561,7 +561,7 @@ class EvolInstructPipeline(BaseDataGenPipeline):
                     }
                     results_for_json.append(processed_result)
             
-            self.save_jsonl(results_for_json)
+            self.save_results(results_for_json)
         
         # Log completion information
         elapsed_time = (time.time() - start_time) / 60

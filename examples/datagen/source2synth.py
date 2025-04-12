@@ -16,7 +16,7 @@ import json
 import logging
 
 from camel.datagen.source2synth.data_processor import (
-    UserDataProcessor,
+    Source2SynthDataGenPipeline,
 )
 from camel.datagen.source2synth.user_data_processor_config import (
     ProcessorConfig,
@@ -48,8 +48,11 @@ def main():
         use_ai_model=True,
     )
 
-    # 2. Create the processor
-    processor = UserDataProcessor(config)
+    # 2. Create the pipeline
+    pipeline = Source2SynthDataGenPipeline(
+        config=config,
+        output_path="batch_results.json"
+    )
 
     # 3. Prepare test data - texts containing multiple related information
     test_texts = [
@@ -87,22 +90,16 @@ def main():
 
     # 4. Process a single text
     logger.info("Processing a single text example...")
-    single_result = processor.process_text(
-        test_texts[0], source="technology_evolution"
-    )
+    single_result = pipeline.execute(test_texts[0])
 
     # Save the single text processing result
     save_results(single_result, "single_text_results.json")
 
     # 5. Batch process texts
     logger.info("Batch processing texts...")
-    batch_results = processor.process_batch(
-        test_texts,
-        sources=["tech_evolution", "climate_change", "medical_evolution"],
-    )
-
-    # Save the batch processing results
-    save_results(batch_results, "batch_results.json")
+    sources = ["tech_evolution", "climate_change", "medical_evolution"]
+    batch_data = [{"text": text, "source": source} for text, source in zip(test_texts, sources)]
+    batch_results = pipeline.execute(batch_data)
 
     # 6. Print example results
     print("\n=== Single Text Processing Example ===")
