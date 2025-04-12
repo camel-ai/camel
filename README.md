@@ -416,6 +416,13 @@ For more information please contact camel-ai@eigent.ai
 
 - **Ambassador Project:** Advocate for CAMEL-AI, host events, and contribute content. [Learn more](https://www.camel-ai.org/community)
 
+- **WeChat Community:** Scan the QR code below to join our WeChat community.
+
+  <div align="center">
+    <img src="misc/wechat.jpg" alt="WeChat QR Code" width="200">
+  </div>
+
+
 <br>
 
 ## Citation

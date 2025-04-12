@@ -27,6 +27,7 @@ from .nvidia_config import NVIDIA_API_PARAMS, NvidiaConfig
 from .ollama_config import OLLAMA_API_PARAMS, OllamaConfig
 from .openai_config import OPENAI_API_PARAMS, ChatGPTConfig
 from .openrouter_config import OPENROUTER_API_PARAMS, OpenRouterConfig
+from .ppio_config import PPIO_API_PARAMS, PPIOConfig
 from .qwen_config import QWEN_API_PARAMS, QwenConfig
 from .reka_config import REKA_API_PARAMS, RekaConfig
 from .samba_config import (
@@ -82,6 +83,8 @@ __all__ = [
     'QWEN_API_PARAMS',
     'DeepSeekConfig',
     'DEEPSEEK_API_PARAMS',
+    'PPIOConfig',
+    'PPIO_API_PARAMS',
     'InternLMConfig',
     'INTERNLM_API_PARAMS',
     'MoonshotConfig',

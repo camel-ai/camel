@@ -126,7 +126,7 @@ class FewShotGenerator(BaseGenerator):
         max_retries: int = 10,
         num_examples: int = 3,
         **kwargs,
-    ) -> List[DataPoint]:
+    ) -> None:
         r"""Generates and validates `n` new datapoints through
         few-shot prompting, with a retry limit.
 
@@ -201,19 +201,27 @@ class FewShotGenerator(BaseGenerator):
                     raise TypeError(f"Rationale {rationale} is not a string.")
 
                 try:
-                    verifier_response = await self.verifier.verify(
-                        solution=rationale,
-                        ground_truth=None,
+                    verifier_response = await asyncio.wait_for(
+                        self.verifier.verify(
+                            solution=rationale,
+                            reference_answer=None,
+                        ),
+                        timeout=180,
                     )
                     if not verifier_response or not verifier_response.result:
                         raise ValueError(
                             "Verifier unsuccessful, response: "
                             f"{verifier_response}"
                         )
-                except (ValueError, AttributeError) as e:
+                except (ValueError, AttributeError, asyncio.TimeoutError) as e:
+                    error_msg = (
+                        "Verifier timeout"
+                        if isinstance(e, asyncio.TimeoutError)
+                        else f"Verifier issue: {e}"
+                    )
                     logger.warning(
-                        f"Verifier issue: {e}, "
-                        f"retrying... ({retries + 1}/{max_retries})"
+                        f"{error_msg}, retrying... "
+                        f"({retries + 1}/{max_retries})"
                     )
                     retries += 1
                     continue
@@ -227,6 +235,7 @@ class FewShotGenerator(BaseGenerator):
                             "synthetic": str(True),
                             "created": datetime.now().isoformat(),
                             "generator": "few_shot",
+                            "shots": [e.to_dict() for e in examples],
                         },
                     )
                 except ValidationError as e:
@@ -255,4 +264,3 @@ class FewShotGenerator(BaseGenerator):
         # Thread-safe way to extend the data list
         async with asyncio.Lock():
             self._data.extend(valid_data_points)
-        return valid_data_points
