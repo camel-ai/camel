@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
 import io
 import os
 from unittest.mock import MagicMock, patch
@@ -21,6 +22,9 @@ from PIL import Image
 from camel.toolkits.browser_toolkit import (
     BaseBrowser,
     BrowserToolkit,
+    dom_rectangle_from_dict,
+    interactive_region_from_dict,
+    visual_viewport_from_dict,
 )
 
 TEST_URL = "https://example.com"
@@ -172,3 +176,62 @@ def test_browser_back_navigation(base_browser_fixture):
 
     browser.page.go_back.assert_called_once()
     browser.page.wait_for_load_state.assert_called_once()
+
+
+def test_dom_rectangle_from_dict():
+    rect_dict = {
+        "x": 10,
+        "y": 20,
+        "width": 100,
+        "height": 200,
+        "top": 20,
+        "right": 110,
+        "bottom": 220,
+        "left": 10,
+    }
+    rect = dom_rectangle_from_dict(rect_dict)
+    assert rect["width"] == 100
+    assert rect["left"] == 10
+
+
+def test_interactive_region_from_dict():
+    region_dict = {
+        "tag_name": "button",
+        "role": "button",
+        "aria-name": "Submit",
+        "v-scrollable": False,
+        "rects": [
+            {
+                "x": 5,
+                "y": 5,
+                "width": 50,
+                "height": 20,
+                "top": 5,
+                "right": 55,
+                "bottom": 25,
+                "left": 5,
+            }
+        ],
+    }
+    region = interactive_region_from_dict(region_dict)
+    assert region["tag_name"] == "button"
+    assert len(region["rects"]) == 1
+
+
+def test_visual_viewport_from_dict():
+    viewport_dict = {
+        "height": 800,
+        "width": 600,
+        "offsetLeft": 0,
+        "offsetTop": 0,
+        "pageLeft": 0,
+        "pageTop": 0,
+        "scale": 1,
+        "clientWidth": 600,
+        "clientHeight": 800,
+        "scrollWidth": 600,
+        "scrollHeight": 1200,
+    }
+    viewport = visual_viewport_from_dict(viewport_dict)
+    assert viewport["height"] == 800
+    assert viewport["scrollHeight"] == 1200
