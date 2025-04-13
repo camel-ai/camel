@@ -138,11 +138,12 @@ evol_model = ModelFactory.create(
     model_type=ModelType.GPT_4O_MINI,
     model_config_dict={"temperature": 0.7, "max_tokens": 4096},
 )
-
 evol_agent = ChatAgent(model=evol_model)
+
+# 创建pipeline
 evol_pipeline = EvolInstructPipeline(
-    agent=evol_agent,
     templates=MathEvolInstructTemplates,
+    agent=evol_agent
 )
 
 # Define evolution parameters
@@ -153,15 +154,53 @@ evol_spec = [
     "condense",
 ]
 
+
+# 创建专门的打分模型
+scoring_model = ModelFactory.create(
+    model_platform=ModelPlatformType.OPENAI,
+    model_type=ModelType.O3_MINI,
+    model_config_dict={
+        "temperature": 0.3,
+        # "max_completion_tokens": 4096,  # O1 Mini 模型使用 max_completion_tokens
+        # "max_prompt_tokens": 4096,      # 添加 max_prompt_tokens
+    },
+)
+
+# 创建打分器的系统提示词
+scoring_system_msg = (
+    "You are an evaluator for math problems. Your task is to compare "
+    "a new math problem against a reference math problem, and rate it "
+    "in **four dimensions**, each scored from 1 to 5.\n\n"
+    "1. Diversity (1-5): How novel is the new problem compared to the "
+    "reference? 1 = very similar, 5 = completely different.\n"
+    "2. Difficulty (1-5): Rate the relative difficulty compared to the"
+    " reference problem. 1 = much less difficult, "
+    "3 = similar difficulty, 5 = much more difficult.\n"
+    "3. Validity (1-5): How well-defined and sound is the problem?"
+    " 1 = poorly defined, 5 = very well-defined.\n"
+    "4. Solvability (1-5): How solvable is the problem? "
+    "1 = unsolvable, 5 = easily solvable.\n\n"
+    "Please provide your evaluation in JSON format with these four scores."
+)
+
+# 创建打分代理
+scoring_agent = ChatAgent(scoring_system_msg, model=scoring_model)
+scorer = MathScorer(agent=scoring_agent)
+
+
 # Execute the evolution pipeline
-NUM_ITERATIONS = 8
 NUM_GENERATIONS = 4
+NUM_ITERATIONS = 8
+
+# NUM_ITERATIONS = 1
+# NUM_GENERATIONS = 1
+
 evol_results = evol_pipeline.generate(
     prompts=evolution_prompts,
     evolution_spec=evol_spec,
     num_iterations=NUM_ITERATIONS,  # Number of iterations to run 0-3
     num_generations=NUM_GENERATIONS,  # Number of generations per input prompt 3
-    scorer=MathScorer(),
+    scorer=scorer,
 )
 
 # Save the evolved results
