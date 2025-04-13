@@ -15,13 +15,14 @@
 import json
 import os
 from typing import Any, Dict, List, Optional, Union
+from abc import ABC, abstractmethod
 
 from camel.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class BaseDataGenPipeline:
+class BaseDataGenPipeline(ABC):
     r"""Base class for all data generation pipelines.
     
     Provides a unified interface for data generation pipelines,
@@ -262,15 +263,14 @@ class BaseDataGenPipeline:
             
         return results
     
+    @abstractmethod
     def generate(self, *args, **kwargs) -> List[Dict[str, Any]]:
-        r"""Generate data based on the pipeline's implementation.
+        """Generate data based on the pipeline's implementation.
         
-        Subclasses should implement this method to define their specific
+        Subclasses must implement this method to define their specific
         data generation logic.
         
         Returns:
             List[Dict[str, Any]]: Generated data.
         """
-        raise NotImplementedError(
-            "Subclasses must implement the generate method"
-        ) 
+        pass 
