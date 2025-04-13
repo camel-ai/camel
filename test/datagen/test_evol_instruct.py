@@ -15,6 +15,7 @@
 import unittest
 from typing import Any, ClassVar, Dict
 from unittest.mock import MagicMock, patch
+import time
 
 from camel.agents import ChatAgent
 from camel.datagen.evol_instruct import EvolInstructPipeline
@@ -192,6 +193,50 @@ class TestEvolInstructPipeline(unittest.TestCase):
             for res in results:
                 self.assertEqual(res, dummy_result)
             self.assertEqual(mock_iter.call_count, len(prompts))
+
+    @patch('time.time', side_effect=[100, 115])  # Mock start and end times
+    @patch('json.dump')
+    def test_execute(self, mock_dump, mock_time):
+        # Test that execute() correctly calls generate() and saves results
+        prompts = ["Prompt 1", "Prompt 2"]
+        
+        # Raw results from generate method
+        raw_results = [
+            {"seed_prompt": "Prompt 1", "evolutions": {"results": "for prompt 1"}},
+            {"seed_prompt": "Prompt 2", "evolutions": {"results": "for prompt 2"}}
+        ]
+        
+        # Mock generate to return predefined results without actually running it
+        with patch.object(
+            self.pipeline, 'generate', return_value=raw_results
+        ) as mock_generate:
+            # Create a temporary file path for testing
+            with patch('builtins.open', MagicMock()):
+                # Set output path for the pipeline
+                self.pipeline.output_path = "test_output.json"
+                
+                # Call execute and verify results
+                results = self.pipeline.execute(
+                    prompts=prompts,
+                    evolution_spec="DEPTH",
+                    num_generations=2,
+                    num_iterations=1,
+                    keep_original=False,
+                )
+                
+                # Verify generate was called with expected parameters
+                # We only check the provided parameters, not all possible parameters
+                self.assertEqual(mock_generate.call_args.kwargs['prompts'], prompts)
+                self.assertEqual(mock_generate.call_args.kwargs['evolution_spec'], "DEPTH")
+                self.assertEqual(mock_generate.call_args.kwargs['num_generations'], 2)
+                self.assertEqual(mock_generate.call_args.kwargs['num_iterations'], 1)
+                self.assertEqual(mock_generate.call_args.kwargs['keep_original'], False)
+                
+                # Verify results were returned correctly
+                self.assertEqual(results, raw_results)
+                
+                # Instead of asserting exact structure, just verify mock_dump was called
+                mock_dump.assert_called_once()
 
 
 if __name__ == "__main__":
