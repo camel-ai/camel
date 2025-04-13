@@ -35,10 +35,12 @@ class PyAutoGUIToolkit(BaseToolkit):
         # Import pyautogui here to make it an optional dependency
         import pyautogui
         # Configure PyAutoGUI for safety
-        pyautogui.FAILSAFE = True  # Move mouse to upper-left to abort
+        self.pyautogui = pyautogui
+
+        self.pyautogui.FAILSAFE = True  # Move mouse to upper-left to abort
 
         # Get screen size for safety boundaries
-        self.screen_width, self.screen_height = pyautogui.size()
+        self.screen_width, self.screen_height = self.pyautogui.size()
         # Define safe boundaries (10% margin from edges)
         self.safe_margin = 0.1
         self.safe_min_x = int(self.screen_width * self.safe_margin)
@@ -80,7 +82,7 @@ class PyAutoGUIToolkit(BaseToolkit):
         try:
             # Apply safety boundaries
             safe_x, safe_y = self._get_safe_coordinates(x, y)
-            pyautogui.moveTo(safe_x, safe_y, duration=duration)
+            self.pyautogui.moveTo(safe_x, safe_y, duration=duration)
             return f"Mouse moved to position ({safe_x}, {safe_y})"
         except Exception as e:
             logger.error(f"Error moving mouse: {e}")
@@ -112,9 +114,9 @@ class PyAutoGUIToolkit(BaseToolkit):
             # Apply safety boundaries if coordinates are specified
             if x is not None and y is not None:
                 safe_x, safe_y = self._get_safe_coordinates(x, y)
-                pyautogui.click(x=safe_x, y=safe_y, button=button, clicks=clicks)
+                self.pyautogui.click(x=safe_x, y=safe_y, button=button, clicks=clicks)
             else:
-                pyautogui.click(button=button, clicks=clicks)
+                self.pyautogui.click(button=button, clicks=clicks)
             return f"Clicked {button} button {clicks} time(s)"
         except Exception as e:
             logger.error(f"Error clicking mouse: {e}")
@@ -136,9 +138,9 @@ class PyAutoGUIToolkit(BaseToolkit):
             # Apply safety boundaries if coordinates are specified
             if x is not None and y is not None:
                 safe_x, safe_y = self._get_safe_coordinates(x, y)
-                pyautogui.doubleClick(x=safe_x, y=safe_y)
+                self.pyautogui.doubleClick(x=safe_x, y=safe_y)
             else:
-                pyautogui.doubleClick()
+                self.pyautogui.doubleClick()
             return f"Double-clicked at position ({safe_x}, {safe_y})"
         except Exception as e:
             logger.error(f"Error double-clicking: {e}")
@@ -160,9 +162,9 @@ class PyAutoGUIToolkit(BaseToolkit):
             # Apply safety boundaries if coordinates are specified
             if x is not None and y is not None:
                 safe_x, safe_y = self._get_safe_coordinates(x, y)
-                pyautogui.rightClick(x=safe_x, y=safe_y)
+                self.pyautogui.rightClick(x=safe_x, y=safe_y)
             else:
-                pyautogui.rightClick()
+                self.pyautogui.rightClick()
             return f"Right-clicked at position ({safe_x}, {safe_y})"
         except Exception as e:
             logger.error(f"Error right-clicking: {e}")
@@ -184,9 +186,9 @@ class PyAutoGUIToolkit(BaseToolkit):
             # Apply safety boundaries if coordinates are specified
             if x is not None and y is not None:
                 safe_x, safe_y = self._get_safe_coordinates(x, y)
-                pyautogui.middleClick(x=safe_x, y=safe_y)
+                self.pyautogui.middleClick(x=safe_x, y=safe_y)
             else:
-                pyautogui.middleClick()
+                self.pyautogui.middleClick()
             return f"Middle-clicked at position ({safe_x}, {safe_y})"
         except Exception as e:
             logger.error(f"Error middle-clicking: {e}")
@@ -199,7 +201,7 @@ class PyAutoGUIToolkit(BaseToolkit):
             str: Current mouse X and Y coordinates.
         """
         try:
-            x, y = pyautogui.position()
+            x, y = self.pyautogui.position()
             return f"Mouse position: ({x}, {y})"
         except Exception as e:
             logger.error(f"Error getting mouse position: {e}")
@@ -212,7 +214,7 @@ class PyAutoGUIToolkit(BaseToolkit):
             str: Screen width and height.
         """
         try:
-            width, height = pyautogui.size()
+            width, height = self.pyautogui.size()
             return f"Screen size: {width}x{height}"
         except Exception as e:
             logger.error(f"Error getting screen size: {e}")
@@ -255,7 +257,7 @@ class PyAutoGUIToolkit(BaseToolkit):
             os.makedirs(screenshots_dir, exist_ok=True)
             
             # Take screenshot
-            screenshot = pyautogui.screenshot(region=(safe_left, safe_top, width, height))
+            screenshot = self.pyautogui.screenshot(region=(safe_left, safe_top, width, height))
             
             # Save screenshot to file
             timestamp = int(time.time())
@@ -298,18 +300,18 @@ class PyAutoGUIToolkit(BaseToolkit):
             
             # Break operation into smaller steps for safety
             # First move to start position
-            pyautogui.moveTo(safe_start_x, safe_start_y, duration=duration/3)
+            self.pyautogui.moveTo(safe_start_x, safe_start_y, duration=duration/3)
             # Then perform drag
-            pyautogui.dragTo(safe_end_x, safe_end_y, duration=duration/3, button=button)
+            self.pyautogui.dragTo(safe_end_x, safe_end_y, duration=duration/3, button=button)
             # Finally, move to a safe position (screen center) afterwards
-            pyautogui.moveTo(self.screen_center[0], self.screen_center[1], duration=duration/3)
+            self.pyautogui.moveTo(self.screen_center[0], self.screen_center[1], duration=duration/3)
             
             return f"Dragged from ({safe_start_x}, {safe_start_y}) to ({safe_end_x}, {safe_end_y})"
         except Exception as e:
             logger.error(f"Error dragging mouse: {e}")
             # Try to move to safe position even after error
             try:
-                pyautogui.moveTo(self.screen_center[0], self.screen_center[1], duration=0.2)
+                self.pyautogui.moveTo(self.screen_center[0], self.screen_center[1], duration=0.2)
             except:
                 pass
             return f"Error: {str(e)}"
@@ -330,16 +332,16 @@ class PyAutoGUIToolkit(BaseToolkit):
         try:
             # Get current mouse position if coordinates are not specified
             if x is None or y is None:
-                current_x, current_y = pyautogui.position()
+                current_x, current_y = self.pyautogui.position()
                 x = x if x is not None else current_x
                 y = y if y is not None else current_y
             
             # Always apply safety boundaries
             safe_x, safe_y = self._get_safe_coordinates(x, y)
-            pyautogui.scroll(scroll_amount, x=safe_x, y=safe_y)
+            self.pyautogui.scroll(scroll_amount, x=safe_x, y=safe_y)
             
             # Move mouse back to screen center for added safety
-            pyautogui.moveTo(self.screen_center[0], self.screen_center[1])
+            self.pyautogui.moveTo(self.screen_center[0], self.screen_center[1])
             logger.info(f"Safety: Moving mouse back to screen center ({self.screen_center[0]}, {self.screen_center[1]})")
             
             return f"Scrolled {scroll_amount} click(s)"
@@ -370,9 +372,9 @@ class PyAutoGUIToolkit(BaseToolkit):
                 logger.warning(f"Warning: Very long text ({len(text)} characters) may cause performance issues")
                 
             # First, move mouse to a safe position to prevent potential issues
-            pyautogui.moveTo(self.screen_center[0], self.screen_center[1], duration=0.1)
+            self.pyautogui.moveTo(self.screen_center[0], self.screen_center[1], duration=0.1)
             
-            pyautogui.write(text, interval=interval)
+            self.pyautogui.write(text, interval=interval)
             return f"Typed text: {text[:20]}{'...' if len(text) > 20 else ''}"
         except Exception as e:
             logger.error(f"Error typing text: {e}")
@@ -405,9 +407,9 @@ class PyAutoGUIToolkit(BaseToolkit):
                 logger.warning(f"Warning: Key '{key}' contains unusual characters")
             
             # First, move mouse to a safe position to prevent potential issues
-            pyautogui.moveTo(self.screen_center[0], self.screen_center[1], duration=0.1)
+            self.pyautogui.moveTo(self.screen_center[0], self.screen_center[1], duration=0.1)
             
-            pyautogui.press(key)
+            self.pyautogui.press(key)
             return f"Pressed key: {key}"
         except Exception as e:
             logger.error(f"Error pressing key: {e}")
@@ -424,9 +426,9 @@ class PyAutoGUIToolkit(BaseToolkit):
         """
         try:
             # First, move mouse to a safe position to prevent potential issues
-            pyautogui.moveTo(self.screen_center[0], self.screen_center[1], duration=0.1)
+            self.pyautogui.moveTo(self.screen_center[0], self.screen_center[1], duration=0.1)
             
-            pyautogui.hotkey(*keys)
+            self.pyautogui.hotkey(*keys)
             return f"Pressed hotkey: {'+'.join(keys)}"
         except Exception as e:
             logger.error(f"Error pressing hotkey: {e}")
@@ -446,7 +448,7 @@ class PyAutoGUIToolkit(BaseToolkit):
         """
         try:
             # Move to safe position first
-            pyautogui.moveTo(self.screen_center[0], self.screen_center[1], duration=0.1)
+            self.pyautogui.moveTo(self.screen_center[0], self.screen_center[1], duration=0.1)
             
             import platform
             

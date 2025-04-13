@@ -13,13 +13,9 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import pytest
-import sys
 from unittest.mock import patch, MagicMock
 import warnings
-
-
 # Import pyautogui for patch
-import pyautogui
 from camel.toolkits import PyAutoGUIToolkit, FunctionTool
 
 @pytest.fixture(autouse=True)
