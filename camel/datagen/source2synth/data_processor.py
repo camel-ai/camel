@@ -628,17 +628,24 @@ class Source2SynthDataGenPipeline(BaseDataGenPipeline):
         elif isinstance(data, list):
             if not data:
                 return []
-            if isinstance(data[0], str):
+                
+            # Check if the list is a list of strings or a list of dictionaries
+            if all(isinstance(item, str) for item in data):
                 # List of text strings
                 results = self.processor.process_batch(data)
-            elif isinstance(data[0], dict):
+            elif all(isinstance(item, dict) for item in data):
                 # List of dictionaries
-                texts = [item.get('text', '') for item in data]
-                sources = [item.get('source', 'user_input') for item in data]
+                texts: List[str] = []
+                sources: List[str] = []
+                
+                for item in data:
+                    texts.append(item.get('text', ''))
+                    sources.append(item.get('source', 'user_input'))
+                    
                 results = self.processor.process_batch(texts, sources)
             else:
                 raise ValueError(
-                    "List items must be either strings or dictionaries"
+                    "List items must be either all strings or all dictionaries"
                 )
         else:
             raise ValueError(
