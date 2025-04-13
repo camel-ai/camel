@@ -19,15 +19,18 @@ import requests
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
+from camel.utils import MCPServer
 
 
+@MCPServer()
 class SemanticScholarToolkit(BaseToolkit):
     r"""A toolkit for interacting with the Semantic Scholar
     API to fetch paper and author data.
     """
 
-    def __init__(self):
+    def __init__(self, timeout: Optional[float] = None):
         r"""Initializes the SemanticScholarToolkit."""
+        super().__init__(timeout=timeout)
         self.base_url = "https://api.semanticscholar.org/graph/v1"
 
     def fetch_paper_data_title(
@@ -237,7 +240,7 @@ class SemanticScholarToolkit(BaseToolkit):
             papers = response.json()
             if save_to_file:
                 with open('recommended_papers.json', 'w') as output:
-                    json.dump(papers, output)
+                    json.dump(papers, output, ensure_ascii=False)
             return papers
         except requests.exceptions.RequestException as e:
             return {"error": str(e)}
@@ -281,7 +284,7 @@ class SemanticScholarToolkit(BaseToolkit):
             response_data = response.json()
             if save_to_file:
                 with open('author_information.json', 'w') as output:
-                    json.dump(response_data, output)
+                    json.dump(response_data, output, ensure_ascii=False)
             return response_data
         except requests.exceptions.RequestException as e:
             return {"error": str(e)}

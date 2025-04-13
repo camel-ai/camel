@@ -136,6 +136,10 @@ def test_error_handling(mineru_toolkit):
     """Test error handling when API calls fail."""
     # Test single URL extraction error
     mineru_toolkit.client.extract_url.side_effect = Exception("API Error")
+    mineru_toolkit.client.wait_for_completion.side_effect = (
+        None  # Reset any side effects
+    )
+    mineru_toolkit.timeout = None  # Disable timeout to avoid threading issues
     with pytest.raises(Exception) as exc_info:
         mineru_toolkit.extract_from_urls("https://test.com/doc.pdf")
     assert "API Error" in str(exc_info.value)

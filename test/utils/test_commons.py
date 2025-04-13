@@ -12,11 +12,14 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
+import time
 from unittest import TestCase
 from unittest.mock import patch
 
 import pytest
 
+from camel.toolkits import FunctionTool
+from camel.toolkits.base import BaseToolkit
 from camel.utils import (
     BatchProcessor,
     api_keys_required,
@@ -26,6 +29,7 @@ from camel.utils import (
     is_docker_running,
     retry_on_error,
     to_pascal,
+    with_timeout,
 )
 
 
@@ -318,3 +322,64 @@ class TestBatchProcessor(TestCase):
         self.assertAlmostEqual(metrics['error_rate'], 33.33333333333333)
         self.assertAlmostEqual(metrics['avg_processing_time'], 1.5)
         self.assertEqual(metrics['current_workers'], 2)
+
+
+def test_tool_function():
+    return "test result"
+
+
+class MockToolkit(BaseToolkit):
+    def __init__(self, delay_seconds=0, timeout=None):
+        super().__init__(timeout=timeout)
+        self.delay_seconds = delay_seconds
+        self.tools = [FunctionTool(func=test_tool_function)]
+
+    def run(self):
+        time.sleep(self.delay_seconds)
+        return "run success"
+
+
+def test_toolkit_custom_timeout():
+    r"""Test that toolkit accepts custom timeout."""
+    custom_timeout = 300
+    toolkit = MockToolkit(timeout=custom_timeout)
+    assert toolkit.timeout == custom_timeout
+
+
+def test_toolkit_within_timeout():
+    r"""Test toolkit operation completes within timeout period."""
+    toolkit = MockToolkit(delay_seconds=1, timeout=2)
+    assert toolkit.run() == "run success"
+
+
+def test_toolkit_timeout_exceeded():
+    r"""Test that operation times out when exceeding timeout period."""
+    toolkit = MockToolkit(delay_seconds=2, timeout=1)
+    result = toolkit.run()
+    assert result == "Function `run` execution timed out, exceeded 1 seconds."
+
+
+def test_direct_timeout_decorator():
+    r"""Test direct use of timeout decorator with explicit value."""
+
+    @with_timeout(1)
+    def slow_function():
+        time.sleep(2)
+        return "success"
+
+    result = slow_function()
+    assert (
+        result
+        == "Function `slow_function` execution timed out, exceeded 1 seconds."
+    )
+
+
+def test_direct_timeout_no_delay():
+    r"""Test direct use of timeout decorator with no delay."""
+
+    @with_timeout(2)
+    def fast_function():
+        return "success"
+
+    result = fast_function()
+    assert result == "success"

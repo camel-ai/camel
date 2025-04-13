@@ -111,7 +111,7 @@ class MinerUToolkit(BaseToolkit):
             if self.wait:
                 return self.client.wait_for_completion(
                     response['task_id'],
-                    timeout=self.timeout,
+                    timeout=self.timeout,  # type: ignore[arg-type]
                 )
             return response
         else:
@@ -125,7 +125,7 @@ class MinerUToolkit(BaseToolkit):
                 return self.client.wait_for_completion(
                     batch_id,
                     is_batch=True,
-                    timeout=self.timeout if self.timeout > 300 else 600,
+                    timeout=self.timeout if self.timeout > 300 else 600,  # type: ignore[arg-type,operator]
                 )
             return {"batch_id": batch_id}
 

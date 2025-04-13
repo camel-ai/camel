@@ -14,13 +14,14 @@
 
 import os
 import time
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import retry_on_error
+from camel.utils import MCPServer, retry_on_error
 
 
+@MCPServer()
 class RedditToolkit(BaseToolkit):
     r"""A class representing a toolkit for Reddit operations.
 
@@ -30,11 +31,16 @@ class RedditToolkit(BaseToolkit):
 
     Attributes:
         retries (int): Number of retries for API requests in case of failure.
-        delay (int): Delay between retries in seconds.
+        delay (float): Delay between retries in seconds.
         reddit (Reddit): An instance of the Reddit client.
     """
 
-    def __init__(self, retries: int = 3, delay: int = 0):
+    def __init__(
+        self,
+        retries: int = 3,
+        delay: float = 0.0,
+        timeout: Optional[float] = None,
+    ):
         r"""Initializes the RedditToolkit with the specified number of retries
         and delay.
 
@@ -43,7 +49,10 @@ class RedditToolkit(BaseToolkit):
                 failure. Defaults to `3`.
             delay (int): Time in seconds to wait between retries. Defaults to
             `0`.
+            timeout (float): Timeout for API requests in seconds. Defaults to
+                `None`.
         """
+        super().__init__(timeout=timeout)
         from praw import Reddit  # type: ignore[import-untyped]
 
         self.retries = retries

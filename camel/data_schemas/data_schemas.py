@@ -230,7 +230,7 @@ class ToolCall(BaseModel):
     def validate_arguments(cls, v: Dict[str, Any]) -> Dict[str, Any]:
         """Validates that the arguments are JSON-serializable."""
         try:
-            json.dumps(v)
+            json.dumps(v, ensure_ascii=False)
         except (TypeError, ValueError):
             raise ValueError("Arguments must be JSON-serializable.")
         return v
@@ -281,7 +281,7 @@ class ToolResponse(BaseModel):
     def validate_content(cls, v: Dict[str, Any]) -> Dict[str, Any]:
         """Validates that the response content is JSON-serializable."""
         try:
-            json.dumps(v)
+            json.dumps(v, ensure_ascii=False)
         except (TypeError, ValueError):
             raise ValueError("Response content must be JSON-serializable.")
         return v

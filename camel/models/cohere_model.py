@@ -176,7 +176,9 @@ class CohereModel(BaseModelBackend):
                 else:
                     arguments = function_call.get("arguments")  # type: ignore[attr-defined]
                     arguments_dict = ast.literal_eval(arguments)
-                    arguments_json = json.dumps(arguments_dict)
+                    arguments_json = json.dumps(
+                        arguments_dict, ensure_ascii=False
+                    )
 
                     assis_tool_call_id = str(uuid.uuid4())
                     tool_call_id = assis_tool_call_id
@@ -225,7 +227,11 @@ class CohereModel(BaseModelBackend):
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
-        request_config = self.model_config_dict.copy()
+        import copy
+
+        request_config = copy.deepcopy(self.model_config_dict)
+        # Remove strict from each tool's function parameters since Cohere does
+        # not support them
         if tools:
             for tool in tools:
                 function_dict = tool.get('function', {})
