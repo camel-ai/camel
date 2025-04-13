@@ -22,9 +22,15 @@ from PIL import Image
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
+from camel.utils import MCPServer
 
 
+@MCPServer()
 class DalleToolkit(BaseToolkit):
+    r"""A class representing a toolkit for image generation using OpenAI's
+    DALL-E model.
+    """
+
     def __init__(
         self,
         timeout: Optional[float] = None,

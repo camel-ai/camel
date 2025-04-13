@@ -20,10 +20,12 @@ import requests
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
+from camel.utils import MCPServer
 
 logger = get_logger(__name__)
 
 
+@MCPServer()
 class SearxNGToolkit(BaseToolkit):
     r"""A toolkit for performing web searches using SearxNG search engine.
 

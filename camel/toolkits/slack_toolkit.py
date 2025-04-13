@@ -15,7 +15,6 @@
 from __future__ import annotations
 
 import json
-import logging
 import os
 from typing import TYPE_CHECKING, List, Optional
 
@@ -27,9 +26,10 @@ if TYPE_CHECKING:
 
     from slack_sdk import WebClient
 
+from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @MCPServer()

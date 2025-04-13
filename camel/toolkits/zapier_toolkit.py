@@ -34,8 +34,8 @@ class ZapierToolkit(BaseToolkit):
         api_key (str): The API key for authenticating with Zapier's API.
         base_url (str): The base URL for Zapier's API endpoints.
         timeout (Optional[float]): The timeout value for API requests
-                in seconds. If None, no timeout is applied.
-                (default: :obj:`None`)
+            in seconds. If None, no timeout is applied.
+            (default: :obj:`None`)
     """
 
     @dependencies_required("requests")
