@@ -14,6 +14,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from typing import List, Optional, Tuple
+from camel.utils import dependencies_required
 
 from camel.logger import get_logger
 import subprocess

@@ -3,7 +3,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+#     [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0)
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,164 +12,335 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import os
-import time
-# import subprocess
-from camel.toolkits import PyAutoGUIToolkit
+import pytest
+import sys
+from unittest.mock import patch, MagicMock
+import warnings
 
-# Create the toolkit instance
-pyautogui_toolkit = PyAutoGUIToolkit()
 
-# Basic screen operations
-print("==== Screen Operations ====")
-screen_size = pyautogui_toolkit.get_screen_size()
-print(f"Screen size: {screen_size}")
+# Import pyautogui for patch
+import pyautogui
+from camel.toolkits import PyAutoGUIToolkit, FunctionTool
 
-mouse_pos = pyautogui_toolkit.get_mouse_position()
-print(f"Current mouse position: {mouse_pos}")
+@pytest.fixture(autouse=True)
+def ignore_all_warnings():
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        yield
 
-# Extract screen dimensions for positioning
-width, height = map(int, screen_size.split(": ")[1].split("x"))
-center_x, center_y = width // 2, height // 2
+def test_init():
+    """Test initialization of PyAutoGUIToolkit."""
+    pyautogui_mock = MagicMock()
+    pyautogui_mock.size.return_value = (1920, 1080)
+    pyautogui_mock.FAILSAFE = True
+    
+    with patch.dict('sys.modules', {'pyautogui': pyautogui_mock}):
+        toolkit = PyAutoGUIToolkit()
+    
+        # Verify __init__ used the mock correctly
+        pyautogui_mock.size.assert_called_once()
+        assert toolkit.screen_width == 1920
+        assert toolkit.screen_height == 1080
+        assert toolkit.screen_center == (960, 540)
+        assert toolkit.safe_margin == 0.1
+        
+@patch("camel.toolkits.pyautogui_toolkit.pyautogui", create=True)
+def test_mouse_move(mock_pyautogui):
+    """Test mouse_move method by patching the global pyautogui namespace"""
+    # Configure mock object
+    mock_pyautogui.size.return_value = (1920, 1080)
+    
+    # Initialize toolkit
+    toolkit = PyAutoGUIToolkit()
+    
+    # Call the method to be tested
+    result = toolkit.mouse_move(500, 500, duration=0.5)
+    
+    # Verify the mock works as expected
+    mock_pyautogui.moveTo.assert_called_once_with(500, 500, duration=0.5)
+    assert "Mouse moved to position (500, 500)" in result
 
-# Mouse operations
-print("\n==== Mouse Operations ====")
-print(f"Moving mouse to center ({center_x}, {center_y})...")
-pyautogui_toolkit.mouse_move(center_x, center_y, duration=1)
-time.sleep(1)
+@patch("camel.toolkits.pyautogui_toolkit.pyautogui", create=True)
+def test_mouse_click(mock_pyautogui):
+    """Test mouse_click method by patching the global pyautogui namespace"""
+    # Configure mock object
+    mock_pyautogui.size.return_value = (1920, 1080)
+    mock_pyautogui.position.return_value = (100, 100)  # Used for click test without coordinates
+    
+    # Initialize toolkit
+    toolkit = PyAutoGUIToolkit()
+    
+    # Test click with coordinates
+    result = toolkit.mouse_click(button='left', clicks=2, x=500, y=500)
+    
+    # Verify the call is correct
+    mock_pyautogui.click.assert_called_once_with(x=500, y=500, button='left', clicks=2)
+    assert "Clicked left button 2 time(s)" in result
+    
+    # Reset mock object and test click without coordinates
+    mock_pyautogui.click.reset_mock()
+    result = toolkit.mouse_click()
+    
+    # Verify the call is correct, using default values
+    mock_pyautogui.click.assert_called_once_with(button='left', clicks=1)
+    assert "Clicked left button 1 time(s)" in result
 
-print("Clicking mouse...")
-pyautogui_toolkit.mouse_click(button='left', clicks=1)
-time.sleep(1)
 
-print("Dragging mouse...")
-start_x, start_y = width // 4, height // 4
-end_x, end_y = width // 4 * 3, height // 4 * 3
-drag_result = pyautogui_toolkit.mouse_drag(start_x, start_y, end_x, end_y, duration=1)
-print(drag_result)
-time.sleep(1)
+@patch("camel.toolkits.pyautogui_toolkit.pyautogui", create=True)
+def test_keyboard_type(mock_pyautogui):
+    """Test keyboard_type method by patching the global pyautogui namespace"""
+    # Configure mock object
+    mock_pyautogui.size.return_value = (1920, 1080)
+    
+    # Initialize toolkit
+    toolkit = PyAutoGUIToolkit()
+    
+    # Test keyboard input
+    result = toolkit.keyboard_type("Hello, World!")
+    
+    # Verify the call is correct (need to include interval=0.0 default parameter)
+    mock_pyautogui.write.assert_called_once_with("Hello, World!", interval=0.0)
+    assert "Typed text: Hello, World!" in result
+    
+    # Test keyboard input with interval
+    mock_pyautogui.write.reset_mock()
+    result = toolkit.keyboard_type("Hello, World!", interval=0.1)
+    
+    # Verify the call is correct
+    mock_pyautogui.write.assert_called_once_with("Hello, World!", interval=0.1)
+    assert "Typed text: Hello, World!" in result
 
-print("Scrolling down...")
-scroll_result = pyautogui_toolkit.scroll(-3)
-print(scroll_result)
-time.sleep(1)
+def test_get_tools():
+    """Test that get_tools returns a list of FunctionTool objects."""
+    pyautogui_mock = MagicMock()
+    pyautogui_mock.size.return_value = (1920, 1080)
+    
+    with patch.dict('sys.modules', {'pyautogui': pyautogui_mock}):
+        toolkit = PyAutoGUIToolkit()
+        tools = toolkit.get_tools()
+        
+        # Verify tools is a non-empty list of FunctionTool objects
+        assert isinstance(tools, list)
+        assert len(tools) > 0
+        assert all(isinstance(tool, FunctionTool) for tool in tools)
+        
+        # Get actual tool names
+        tool_names = [tool.func.__name__ for tool in tools if hasattr(tool, 'func')]
+        
+        # The actual methods registered in get_tools() based on code review
+        expected_methods = [
+            'mouse_move', 
+            'mouse_click', 
+            'keyboard_type', 
+            'take_screenshot',  # Note: this is 'take_screenshot', not 'screenshot'
+            'get_screen_size',
+            'get_mouse_position',
+            'press_key',
+            'hotkey',
+            'mouse_drag',
+            'scroll',  # Note: this is 'scroll', not 'mouse_scroll'
+            'open_terminal'
+        ]
+        
+        # Verify all expected methods are in the tools
+        for method in expected_methods:
+            assert method in tool_names, f"Expected method '{method}' not found in tools"
+            
+        # Verify tool count matches expected
+        assert len(tool_names) == len(expected_methods), f"Expected {len(expected_methods)} tools, but got {len(tool_names)}"
 
-# Keyboard operations
-print("\n==== Keyboard Operations ====")
-print("Pressing Escape key...")
-key_result = pyautogui_toolkit.press_key("escape")
-print(key_result)
-time.sleep(1)
+@patch("camel.toolkits.pyautogui_toolkit.pyautogui", create=True)
+@patch("camel.toolkits.pyautogui_toolkit.os")
+@patch("camel.toolkits.pyautogui_toolkit.time")
+def test_take_screenshot(mock_time, mock_os, mock_pyautogui):
+    """Test take_screenshot method by patching the global pyautogui namespace"""
+    # Configure mocks
+    mock_pyautogui.size.return_value = (1920, 1080)
+    mock_time.time.return_value = 12345
+    mock_os.path.expanduser.return_value = "/mock/home/camel_screenshots"
+    mock_os.path.join.return_value = "/mock/home/camel_screenshots/screenshot_12345.png"
+    
+    # Create a mock PIL Image
+    mock_image = MagicMock()
+    mock_image.save = MagicMock()
+    
+    # Configure screenshot to return our mock image
+    mock_pyautogui.screenshot.return_value = mock_image
+    
+    # Initialize toolkit
+    toolkit = PyAutoGUIToolkit()
+    
+    # Test with default parameters (full screen)
+    result = toolkit.take_screenshot()
+    
+    # Verify the directory was created
+    mock_os.makedirs.assert_called_once_with("/mock/home/camel_screenshots", exist_ok=True)
+    
+    # Verify screenshot was called once with a region parameter
+    assert mock_pyautogui.screenshot.call_count == 1
+    assert 'region' in mock_pyautogui.screenshot.call_args[1]
+    
+    # Verify the image was saved
+    mock_image.save.assert_called_once_with("/mock/home/camel_screenshots/screenshot_12345.png")
+    
+    # Verify the success message
+    assert "Screenshot saved to /mock/home/camel_screenshots/screenshot_12345.png" in result
+    
+    # Reset mocks for second test
+    mock_pyautogui.screenshot.reset_mock()
+    mock_image.save.reset_mock()
+    
+    # Test with custom region
+    result = toolkit.take_screenshot(left=100, top=100, width=500, height=500)
+    
+    # Verify screenshot was called once
+    assert mock_pyautogui.screenshot.call_count == 1
+    # Verify region parameter was included in the call
+    assert 'region' in mock_pyautogui.screenshot.call_args[1]
+    # Get the actual region that was passed
+    region = mock_pyautogui.screenshot.call_args[1]['region']
+    # Verify that the region coordinates are of the correct type
+    assert isinstance(region, tuple)
+    assert len(region) == 4
+    assert all(isinstance(val, int) for val in region)
+    
+    # Verify the image was saved
+    mock_image.save.assert_called_once_with("/mock/home/camel_screenshots/screenshot_12345.png")
 
-print("Using hotkey combination Alt+Tab...")
-hotkey_result = pyautogui_toolkit.hotkey("alt", "tab")
-print(hotkey_result)
-time.sleep(1)
+@patch("camel.toolkits.pyautogui_toolkit.pyautogui", create=True)
+def test_get_screen_size(mock_pyautogui):
+    """Test get_screen_size method by patching the global pyautogui namespace"""
+    # Configure mock
+    mock_pyautogui.size.return_value = (1920, 1080)
+    
+    # Initialize toolkit
+    toolkit = PyAutoGUIToolkit()
+    
+    # Test get_screen_size
+    result = toolkit.get_screen_size()
+    
+    # Verify the function returns the correct values
+    assert result == "Screen size: 1920x1080"
+    mock_pyautogui.size.assert_called_once()
 
-# Terminal typing demonstration
-print("\n==== Terminal Typing Demonstration ====")
 
-# 1. First we'll open a terminal window using the toolkit method
-print("Opening terminal using toolkit.open_terminal()...")
-terminal_result = pyautogui_toolkit.open_terminal(wait_time=2.0)
-print(terminal_result)
-# Terminal should now be open
+@patch("camel.toolkits.pyautogui_toolkit.pyautogui", create=True)
+def test_get_mouse_position(mock_pyautogui):
+    """Test get_mouse_position method by patching the global pyautogui namespace"""
+    # Configure mock
+    mock_pyautogui.position.return_value = (500, 300)
+    
+    # Initialize toolkit
+    toolkit = PyAutoGUIToolkit()
+    
+    # Test get_mouse_position
+    result = toolkit.get_mouse_position()
+    
+    # Verify the function returns the correct values
+    assert result == "Mouse position: (500, 300)"
+    mock_pyautogui.position.assert_called_once()
 
-# 2. Now type some commands
-print("Typing 'echo Hello from PyAutoGUI' in terminal...")
-pyautogui_toolkit.keyboard_type("echo Hello from PyAutoGUI", interval=0.1)
-time.sleep(0.5)
 
-# 3. Press Enter to execute
-print("Pressing Enter...")
-pyautogui_toolkit.press_key("enter")
-time.sleep(1)
+@patch("camel.toolkits.pyautogui_toolkit.pyautogui", create=True)
+def test_press_key(mock_pyautogui):
+    """Test press_key method by patching the global pyautogui namespace"""
+    # Initialize toolkit
+    toolkit = PyAutoGUIToolkit()
+    
+    # Test press_key
+    result = toolkit.press_key("enter")
+    
+    # Verify the call is correct
+    mock_pyautogui.press.assert_called_once_with("enter")
+    assert "Pressed key: enter" in result
 
-# 4. Type another command to capture output to a file
-print("Typing command to save output to file...")
-output_file = os.path.expanduser("~/Desktop/pyautogui_output.txt")
-command = f"echo 'Terminal test at {time.strftime('%Y-%m-%d %H:%M:%S')}' > {output_file}"
-pyautogui_toolkit.keyboard_type(command, interval=0.1)
-time.sleep(0.5)
 
-# 5. Press Enter to execute
-pyautogui_toolkit.press_key("enter")
-time.sleep(1)
+@patch("camel.toolkits.pyautogui_toolkit.pyautogui", create=True)
+def test_hotkey(mock_pyautogui):
+    """Test hotkey method by patching the global pyautogui namespace"""
+    # Initialize toolkit
+    toolkit = PyAutoGUIToolkit()
+    
+    # Test hotkey with multiple keys
+    result = toolkit.hotkey("ctrl", "c")
+    
+    # Verify the call is correct
+    mock_pyautogui.hotkey.assert_called_once_with("ctrl", "c")
+    assert "Pressed hotkey: ctrl+c" in result
 
-# 6. Read back the file we created
-print("\nReading the output file:")
-if os.path.exists(output_file):
-    file_content = pyautogui_toolkit.read_file(output_file)
-    print(f"Content: {file_content}")
-else:
-    print("Output file not found, may need more time to be created")
 
-# 7. Close the terminal with Command+W
-print("\nClosing terminal window...")
-pyautogui_toolkit.hotkey("command", "w")
-time.sleep(0.5)
-# If Terminal asks to confirm, press Enter to confirm
-pyautogui_toolkit.press_key("enter")
+@patch("camel.toolkits.pyautogui_toolkit.pyautogui", create=True)
+def test_mouse_drag(mock_pyautogui):
+    """Test mouse_drag method by patching the global pyautogui namespace"""
+    # Configure mock
+    mock_pyautogui.size.return_value = (1920, 1080)
+    
+    # Initialize toolkit
+    toolkit = PyAutoGUIToolkit()
+    
+    # Test mouse_drag
+    result = toolkit.mouse_drag(200, 200, 400, 400, duration=0.5)
+    
+    # Verify the call is correct - duration is divided by 3 in the implementation
+    mock_pyautogui.dragTo.assert_called_once_with(400, 400, duration=0.5/3, button='left')
+    assert "Dragged from" in result
 
-# File operations
-print("\n==== File Operations ====")
-test_file = os.path.expanduser("~/Desktop/pyautogui_test.txt")
-test_content = "This is a test file created by PyAutoGUIToolkit\nTime: " + time.strftime("%Y-%m-%d %H:%M:%S")
 
-print(f"Writing to file: {test_file}")
-write_result = pyautogui_toolkit.write_to_file(test_file, test_content)
-print(write_result)
+@patch("camel.toolkits.pyautogui_toolkit.pyautogui", create=True)
+def test_scroll(mock_pyautogui):
+    """Test scroll method by patching the global pyautogui namespace"""
+    # Configure mock for position() call
+    mock_pyautogui.position.return_value = (500, 500)
+    
+    # Initialize toolkit
+    toolkit = PyAutoGUIToolkit()
+    
+    # Test scroll
+    result = toolkit.scroll(5)
+    
+    # Verify the call is correct (should include x and y parameters)
+    # The toolkit applies safety boundaries, so we can't know the exact values
+    assert mock_pyautogui.scroll.call_count == 1
+    call_args = mock_pyautogui.scroll.call_args[0]
+    call_kwargs = mock_pyautogui.scroll.call_args[1]
+    
+    # Check first positional argument is 5
+    assert call_args[0] == 5
+    # Check x and y parameters are present
+    assert 'x' in call_kwargs
+    assert 'y' in call_kwargs
+    
+    assert "Scrolled 5 click" in result
 
-print(f"Reading from file: {test_file}")
-read_result = pyautogui_toolkit.read_file(test_file)
-print(f"File content: {read_result}")
 
-# Screenshot
-print("\n==== Screenshot ====")
-print("Taking screenshot...")
-screenshot_result = pyautogui_toolkit.take_screenshot()
-print(screenshot_result)
-
-'''
-Example output:
-==== Screen Operations ====
-Screen size: 1920x1080
-Current mouse position: (960, 540)
-
-==== Mouse Operations ====
-Moving mouse to center (960, 540)...
-Clicking mouse...
-Dragging mouse...
-Dragged from (480, 270) to (1440, 810)
-Scrolling down...
-Scrolled -3 click(s)
-
-==== Keyboard Operations ====
-Pressing Escape key...
-Pressed key: escape
-Using hotkey combination Alt+Tab...
-Hotkey pressed: alt+tab
-
-==== Terminal Typing Demonstration ====
-Opening terminal using toolkit.open_terminal()...
-Terminal opened on Darwin
-Typing 'echo Hello from PyAutoGUI' in terminal...
-Pressing Enter...
-Typing command to save output to file...
-Reading the output file:
-Content: Terminal test at 2025-03-27 16:59:00
-
-Closing terminal window...
-
-==== File Operations ====
-Writing to file: /Users/mac/Desktop/pyautogui_test.txt
-Content written to /Users/mac/Desktop/pyautogui_test.txt
-Reading from file: /Users/mac/Desktop/pyautogui_test.txt
-File content: This is a test file created by PyAutoGUIToolkit
-Time: 2025-03-27 16:59:00
-
-==== Screenshot ====
-Taking screenshot...
-Screenshot saved to /Users/mac/camel_screenshots/screenshot_1718053740.png
-
-'''
+@patch("camel.toolkits.pyautogui_toolkit.subprocess")
+@patch("camel.toolkits.pyautogui_toolkit.pyautogui", create=True)
+@patch("camel.toolkits.pyautogui_toolkit.time")
+def test_open_terminal(mock_time, mock_pyautogui, mock_subprocess):
+    """Test open_terminal method by patching subprocess and pyautogui"""
+    # Configure mocks
+    mock_subprocess.Popen.return_value = MagicMock()
+    mock_pyautogui.size.return_value = (1920, 1080)
+    
+    # Initialize toolkit
+    toolkit = PyAutoGUIToolkit()
+    
+    # Test open_terminal
+    result = toolkit.open_terminal()
+    
+    # Verify the call depends on the platform
+    import platform
+    if platform.system() == "Darwin":  # macOS
+        mock_subprocess.Popen.assert_called_once_with(["open", "-a", "Terminal"])
+    elif platform.system() == "Windows":
+        mock_subprocess.Popen.assert_called_once_with("cmd.exe")
+    else:  # Linux and others
+        mock_subprocess.Popen.assert_called_once_with("x-terminal-emulator")
+    
+    # Verify the correct wait time was used
+    mock_time.sleep.assert_called_once_with(2)  # Default wait_time is 2
+    
+    # Verify the correct message format
+    assert "Terminal opened on" in result
+    assert platform.system() in result
+    assert "with default input method" in result

@@ -31,7 +31,7 @@ from camel.toolkits import PyAutoGUIToolkit, FunctionTool
 from camel.types import ModelType, ModelPlatformType
 
 class VerbosePyAutoGUIToolkit(PyAutoGUIToolkit):
-    """A wrapper around PyAutoGUIToolkit that prints each operation as it happens."""
+    r"""A wrapper around PyAutoGUIToolkit that prints each operation as it happens."""
     
     def __init__(self):
         # Initialize the parent class first
@@ -57,7 +57,7 @@ class VerbosePyAutoGUIToolkit(PyAutoGUIToolkit):
         self._wrap_toolkit_methods()
     
     def _get_safe_coordinates(self, x, y):
-        """Ensure coordinates are within safe boundaries."""
+        r"""Ensure coordinates are within safe boundaries."""
         safe_x = max(self.safe_min_x, min(x, self.safe_max_x))
         safe_y = max(self.safe_min_y, min(y, self.safe_max_y))
         
@@ -67,7 +67,7 @@ class VerbosePyAutoGUIToolkit(PyAutoGUIToolkit):
         return safe_x, safe_y
     
     def _wrap_toolkit_methods(self):
-        """Wrap all public methods of the toolkit with logging functionality."""
+        r"""Wrap all public methods of the toolkit with logging functionality."""
         # Get all methods from the PyAutoGUIToolkit class
         for name, method in inspect.getmembers(self, predicate=inspect.ismethod):
             # Skip private methods and get_tools
@@ -81,7 +81,7 @@ class VerbosePyAutoGUIToolkit(PyAutoGUIToolkit):
             setattr(self, name, wrapped_method)
     
     def _create_logging_wrapper(self, method_name, method):
-        """Create a wrapper that logs the method call and its result."""
+        r"""Create a wrapper that logs the method call and its result."""
         # Get the original method's signature
         signature = inspect.signature(method)
         
@@ -185,8 +185,8 @@ class VerbosePyAutoGUIToolkit(PyAutoGUIToolkit):
         return wrapper
     
     def get_tools(self):
-        """Return a filtered list of tools that excludes those not implemented in parent class."""
-        # 直接指定要使用的方法，避免调用不存在的方法
+        r"""Return a filtered list of tools that excludes those not implemented in parent class."""
+        # Specify the methods to be used
         available_methods = [
             self.mouse_move,
             self.mouse_click,
@@ -203,17 +203,17 @@ class VerbosePyAutoGUIToolkit(PyAutoGUIToolkit):
             self.open_terminal,
         ]
         
-        # 检查是否有双击、右击和中键点击方法
+        # Check for optional methods
         optional_methods = ['double_click', 'right_click', 'middle_click']
         for method_name in optional_methods:
             if hasattr(self, method_name):
                 available_methods.append(getattr(self, method_name))
         
-        # 创建FunctionTool实例列表
+        # Create FunctionTool instances
         return [FunctionTool(method) for method in available_methods]
 
-def setup_pyautogui_agent(model_type=ModelType.GPT_3_5_TURBO, temperature=0.1):
-    """Create and setup a CAMEL agent with PyAutoGUI tools.
+def setup_pyautogui_agent(model_type=ModelType.GPT_4O_MINI, temperature=0.1):
+    r"""Create and setup a CAMEL agent with PyAutoGUI tools.
     
     Args:
         model_type: The model type to use (default: GPT-3.5-TURBO)
