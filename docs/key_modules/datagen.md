@@ -81,7 +81,7 @@ cot_generator = CoTDataGenerator(
 # Execute the pipeline to generate solutions
 solutions = cot_generator.execute(["question1", "question2"])
 
-# Alternatively, use the generate method for core logic only (wihtout logging or saving)
+# Alternatively, use the generate method for core logic only (without logging or saving)
 # solutions = cot_generator.generate(["question1", "question2"])
 ```
 
