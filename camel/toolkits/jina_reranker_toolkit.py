@@ -18,8 +18,10 @@ from transformers import AutoModel
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
+from camel.utils import MCPServer
 
 
+@MCPServer()
 class JinaRerankerToolkit(BaseToolkit):
     r"""A class representing a toolkit for reranking documents
     using Jina Reranker.
