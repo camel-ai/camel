@@ -83,29 +83,33 @@ def download_file(url: str, cache_dir: str) -> str:
 
 @MCPServer()
 class AudioAnalysisToolkit(BaseToolkit):
-    r"""A toolkit for audio processing and analysis.
-
-    This class provides methods for processing, transcribing, and extracting
-    information from audio data, including direct question answering about
-    audio content.
-
-    Args:
-        cache_dir (Optional[str]): Directory path for caching downloaded audio
-            files. If not provided, 'tmp/' will be used. (default: :obj:`None`)
-        transcribe_model (Optional[BaseAudioModel]): Model used for audio
-            transcription. If not provided, OpenAIAudioModels will be used.
-            (default: :obj:`None`)
-        audio_reasoning_model (Optional[BaseModelBackend]): Model used for
-            audio reasoning and question answering. If not provided, uses the
-            default model from ChatAgent. (default: :obj:`None`)
-    """
-
     def __init__(
         self,
         cache_dir: Optional[str] = None,
         transcribe_model: Optional[BaseAudioModel] = None,
         audio_reasoning_model: Optional[BaseModelBackend] = None,
+        timeout: Optional[float] = None,
     ):
+        r"""A toolkit for audio processing and analysis. This class provides 
+        methods for processing, transcribing, and extracting information from 
+        audio data, including direct question answering about audio content.
+
+        Args:
+            cache_dir (Optional[str]): Directory path for caching downloaded
+                audio files. If not provided, 'tmp/' will be used.
+                (default: :obj:`None`)
+            transcribe_model (Optional[BaseAudioModel]): Model used for audio
+                transcription. If not provided, OpenAIAudioModels will be used.
+                (default: :obj:`None`)
+            audio_reasoning_model (Optional[BaseModelBackend]): Model used for
+                audio reasoning and question answering.
+                If not provided, uses the default model from ChatAgent.
+                (default: :obj:`None`)
+            timeout (Optional[float]): The timeout value for API requests
+                    in seconds. If None, no timeout is applied.
+                    (default: :obj:`None`)
+        """
+        super().__init__(timeout=timeout)
         self.cache_dir = 'tmp/'
         if cache_dir:
             self.cache_dir = cache_dir
