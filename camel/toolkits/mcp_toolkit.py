@@ -314,6 +314,7 @@ class MCPClient(BaseToolkit):
             "type": "object",
             "properties": properties,
             "required": required,
+            "additionalProperties": False,
         }
 
         return {
@@ -322,6 +323,7 @@ class MCPClient(BaseToolkit):
                 "name": mcp_tool.name,
                 "description": mcp_tool.description
                 or "No description provided.",
+                "strict": True,
                 "parameters": parameters,
             },
         }
