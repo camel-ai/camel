@@ -14,8 +14,9 @@
 import logging
 import os
 
-from camel.agents import ChatAgent, SearchAgent
+from camel.agents import ChatAgent
 from camel.models import ModelFactory
+from camel.toolkits import FunctionTool, SearchToolkit
 from camel.types import ModelPlatformType
 
 # Prevent logging since MCP needs to use stdout
@@ -67,7 +68,11 @@ The reasoning agent is a helpful assistant that can reason about the world.
 
 
 # Create another agent for searching the web
-search_agent = SearchAgent()
+search_agent = ChatAgent(
+    model=model,
+    system_message="You are a helpful assistant.",
+    tools=[FunctionTool(SearchToolkit().search_brave)],
+)
 
 search_agent_description = """
 The search agent is a helpful assistant that can search the web.

@@ -39,8 +39,9 @@ async def step(
     Returns:
         A dictionary containing the response from the agent
     """
-    agent = agents_dict[name]
-    if not agent:
+    try:
+        agent = agents_dict[name]
+    except KeyError:
         return {
             "status": "error",
             "message": f"Agent with name {name} not found",
@@ -108,9 +109,14 @@ def get_chat_history(name: str) -> Dict[str, Any]:
     Returns:
         A dictionary containing the chat history for the given agent
     """
-    agent = agents_dict[name]
-    history = agent.chat_history
-    return history
+    try:
+        agent = agents_dict[name]
+    except KeyError:
+        return {
+            "status": "error",
+            "message": f"Agent with name {name} not found",
+        }
+    return agent.chat_history
 
 
 @mcp.resource("agent://{name}")
@@ -122,7 +128,13 @@ def get_agent_info(name: str) -> Dict[str, Any]:
     Returns:
         A dictionary containing information about the given agent
     """
-    agent = agents_dict[name]
+    try:
+        agent = agents_dict[name]
+    except KeyError:
+        return {
+            "status": "error",
+            "message": f"Agent with name {name} not found",
+        }
     info = {
         "agent_id": agent.agent_id,
         "model_type": str(agent.model_type),
@@ -142,7 +154,13 @@ def get_available_tools(name: str) -> Dict[str, Any]:
     Returns:
         A dictionary containing the available internal tools
     """
-    agent = agents_dict[name]
+    try:
+        agent = agents_dict[name]
+    except KeyError:
+        return {
+            "status": "error",
+            "message": f"Agent with name {name} not found",
+        }
     return agent.tool_dict
 
 
