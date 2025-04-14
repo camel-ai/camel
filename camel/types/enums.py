@@ -39,6 +39,9 @@ class ModelType(UnifiedModelType, Enum):
     O1_PREVIEW = "o1-preview"
     O1_MINI = "o1-mini"
     O3_MINI = "o3-mini"
+    GPT_4_1 = "gpt-4.1-2025-04-14"
+    GPT_4_1_MINI = "gpt-4.1-mini-2025-04-14"
+    GPT_4_1_NANO = "gpt-4.1-nano-2025-04-14"
 
     GLM_4 = "glm-4"
     GLM_4V = "glm-4v"
@@ -329,6 +332,9 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.O1_MINI,
             ModelType.O3_MINI,
             ModelType.GPT_4_5_PREVIEW,
+            ModelType.GPT_4_1,
+            ModelType.GPT_4_1_MINI,
+            ModelType.GPT_4_1_NANO,
         }
 
     @property
@@ -857,6 +863,9 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GLM_4_LONG,
             ModelType.TOGETHER_LLAMA_4_MAVERICK,
             ModelType.OPENROUTER_LLAMA_4_MAVERICK,
+            ModelType.GPT_4_1,
+            ModelType.GPT_4_1_MINI,
+            ModelType.GPT_4_1_NANO,
         }:
             return 1_048_576
         elif self in {
