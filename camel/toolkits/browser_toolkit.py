@@ -485,17 +485,19 @@ class BaseBrowser:
         self.browser = self.playwright.chromium.launch(
             headless=self.headless, channel=self.channel
         )
-        
-        # Set up browser context parameters
-        context_params = {"accept_downloads": True}
-        
-        # Check if cookie file exists before using it to maintain authenticated sessions
-        # This prevents errors when the cookie file doesn't exist
+
+        # Check if cookie file exists before using it to maintain 
+        # authenticated sessions. This prevents errors when the cookie file 
+        # doesn't exist
         if self.cookie_json_path and os.path.exists(self.cookie_json_path):
-            context_params["storage_state"] = self.cookie_json_path
-            
-        # Create a new context with the appropriate parameters
-        self.context = self.browser.new_context(**context_params)
+            self.context = self.browser.new_context(
+                accept_downloads=True,
+                storage_state=self.cookie_json_path
+            )
+        else:
+            self.context = self.browser.new_context(
+                accept_downloads=True,
+            )
         # Create a new page
         self.page = self.context.new_page()
 
