@@ -31,39 +31,37 @@ def save_auth_cookie(cookie_json_path: str, url: str):
     This function launches a browser window and navigates to the specified URL,
     allowing the user to manually authenticate (log in) during a 60-second
     wait period.After authentication, it saves all cookies, localStorage, and
-    sessionStorage data to the specified JSON file path, which can be used 
+    sessionStorage data to the specified JSON file path, which can be used
     later to maintain authenticated sessions without requiring manual login.
 
     Args:
         cookie_json_path (str): Path where the authentication cookies and
-                                storage state will be saved as a JSON file. 
+                                storage state will be saved as a JSON file.
                                 If the file already exists, it will be loaded
                                 first and then overwritten with updated state.
                                 The function checks if this file exists before
                                 attempting to use it.
-        url (str): The URL to navigate to for authentication 
+        url (str): The URL to navigate to for authentication
                    (e.g., a login page).
 
     Usage:
-        1. The function opens a browser window and navigates to the 
+        1. The function opens a browser window and navigates to the
            specified URL
         2. User manually logs in during the 60-second wait period
-        3. Browser storage state (including auth cookies) is saved to the 
+        3. Browser storage state (including auth cookies) is saved to the
            specified file
-        4. The saved state can be used in subsequent browser sessions to 
+        4. The saved state can be used in subsequent browser sessions to
            maintain authentication
 
     Note:
         The 60-second sleep is intentional to give the user enough time to
-        complete the manual authentication process before the storage state 
+        complete the manual authentication process before the storage state
         is captured.
     """
     playwright = sync_playwright().start()
-    
+
     # Launch visible browser window using Chromium
-    browser = playwright.chromium.launch(
-        headless=False, channel="chromium"
-    )
+    browser = playwright.chromium.launch(headless=False, channel="chromium")
 
     # Check if cookie file exists before using it
     context_params = {"accept_downloads": True}
