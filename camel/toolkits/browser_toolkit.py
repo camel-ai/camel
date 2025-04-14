@@ -432,6 +432,7 @@ class BaseBrowser:
         headless=True,
         cache_dir: Optional[str] = None,
         channel: Literal["chrome", "msedge", "chromium"] = "chromium",
+        cookie_json_path: Optional[str] = None,
     ):
         r"""Initialize the WebBrowser instance.
 
@@ -441,6 +442,10 @@ class BaseBrowser:
             channel (Literal["chrome", "msedge", "chromium"]): The browser
                 channel to use. Must be one of "chrome", "msedge", or
                 "chromium".
+            cookie_json_path (Optional[str]): Path to a JSON file containing
+                authentication cookies and browser storage state. If provided
+                and the file exists, the browser will load this state to maintain
+                authenticated sessions without requiring manual login.
 
         Returns:
             None
@@ -455,6 +460,7 @@ class BaseBrowser:
         self._ensure_browser_installed()
         self.playwright = sync_playwright().start()
         self.page_history: list = []  # stores the history of visited pages
+        self.cookie_json_path = cookie_json_path
 
         # Set the cache directory
         self.cache_dir = "tmp/" if cache_dir is None else cache_dir
@@ -479,8 +485,17 @@ class BaseBrowser:
         self.browser = self.playwright.chromium.launch(
             headless=self.headless, channel=self.channel
         )
-        # Create a new context
-        self.context = self.browser.new_context(accept_downloads=True)
+        
+        # Set up browser context parameters
+        context_params = {"accept_downloads": True}
+        
+        # Check if cookie file exists before using it to maintain authenticated sessions
+        # This prevents errors when the cookie file doesn't exist
+        if self.cookie_json_path and os.path.exists(self.cookie_json_path):
+            context_params["storage_state"] = self.cookie_json_path
+            
+        # Create a new context with the appropriate parameters
+        self.context = self.browser.new_context(**context_params)
         # Create a new page
         self.page = self.context.new_page()
 
@@ -991,6 +1006,7 @@ class BrowserToolkit(BaseToolkit):
         web_agent_model: Optional[BaseModelBackend] = None,
         planning_agent_model: Optional[BaseModelBackend] = None,
         output_language: str = "en",
+        cookie_json_path: Optional[str] = None,
     ):
         r"""Initialize the BrowserToolkit instance.
 
@@ -1008,10 +1024,15 @@ class BrowserToolkit(BaseToolkit):
                 backend for the planning agent.
             output_language (str): The language to use for output.
                 (default: :obj:`"en`")
+            cookie_json_path (Optional[str]): Path to a JSON file containing
+                authentication cookies and browser storage state. If provided
+                and the file exists, the browser will load this state to maintain
+                authenticated sessions without requiring manual login.
+                (default: :obj:`None`)
         """
 
         self.browser = BaseBrowser(
-            headless=headless, cache_dir=cache_dir, channel=channel
+            headless=headless, cache_dir=cache_dir, channel=channel, cookie_json_path=cookie_json_path
         )
         # This needs to be called explicitly
         self.browser.init()
