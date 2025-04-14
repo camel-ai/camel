@@ -116,7 +116,8 @@ class SelfInstructPipeline(BaseDataGenPipeline):
                 human tasks directly.
 
         Raises:
-            FileNotFoundError: If the seed is a file path and the file does not exist.
+            FileNotFoundError: If the seed is a file path and the file 
+                does not exist.
         """
         if isinstance(seed, list):
             # Direct list of tasks

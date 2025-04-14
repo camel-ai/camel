@@ -658,7 +658,8 @@ class Source2SynthDataGenPipeline(BaseDataGenPipeline):
                 else:
                     results = []
             else:
-                # Handle mixed list - extract only the valid string and dict items
+                # Handle mixed list - extract only the valid string 
+                # and dict items
                 valid_texts: List[str] = []
                 valid_sources: List[str] = []
 
