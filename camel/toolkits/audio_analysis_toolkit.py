@@ -90,8 +90,8 @@ class AudioAnalysisToolkit(BaseToolkit):
         audio_reasoning_model: Optional[BaseModelBackend] = None,
         timeout: Optional[float] = None,
     ):
-        r"""A toolkit for audio processing and analysis. This class provides 
-        methods for processing, transcribing, and extracting information from 
+        r"""A toolkit for audio processing and analysis. This class provides
+        methods for processing, transcribing, and extracting information from
         audio data, including direct question answering about audio content.
 
         Args:
