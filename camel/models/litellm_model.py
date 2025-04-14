@@ -70,9 +70,7 @@ class LiteLLMModel(BaseModelBackend):
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter, timeout
         )
-        self.client = completion(
-            timeout=self._timeout, api_key=self._api_key, base_url=self._url
-        )
+        self.client = completion
 
     def _convert_response_from_litellm_to_openai(
         self, response
@@ -135,6 +133,7 @@ class LiteLLMModel(BaseModelBackend):
             ChatCompletion
         """
         response = self.client(
+            timeout=self._timeout,
             api_key=self._api_key,
             base_url=self._url,
             model=self.model_type,
