@@ -11,11 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from __future__ import annotations
-
 from typing import Any, Dict, Optional
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import Context, FastMCP
 
 from camel.utils import model_from_json_schema
 from services.agent_config import agents_dict, description_dict
@@ -27,6 +25,7 @@ mcp = FastMCP("ChatAgentMCP", dependencies=["camel-ai"])
 async def step(
     name: str,
     message: str,
+    ctx: Context,
     response_format: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Execute a single step in the chat session with the agent.
@@ -53,6 +52,7 @@ async def step(
             "DynamicResponseFormat", response_format
         )
 
+    ctx.info(f"The agent {name} is processing the message: {message}")
     response = await agent.astep(message, format_cls)
 
     return {
@@ -64,18 +64,19 @@ async def step(
 
 
 @mcp.tool()
-def reset() -> Dict[str, str]:
+def reset(ctx: Context) -> Dict[str, str]:
     """Reset the chat agent to its initial state.
     Returns:
         A dictionary containing the status of the reset operation
     """
     for agent in agents_dict.values():
         agent.reset()
+    ctx.info("All agents reset successfully")
     return {"status": "success", "message": "All agents reset successfully"}
 
 
 @mcp.tool()
-def set_output_language(language: str) -> Dict[str, str]:
+def set_output_language(language: str, ctx: Context) -> Dict[str, str]:
     """Set the output language for the chat agent.
     Args:
         language: The language to set the output language to
@@ -85,6 +86,7 @@ def set_output_language(language: str) -> Dict[str, str]:
     """
     for agent in agents_dict.values():
         agent.output_language = language
+    ctx.info(f"Output language set to '{language}'")
     return {
         "status": "success",
         "message": f"Output language set to '{language}'",
