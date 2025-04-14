@@ -346,6 +346,7 @@ all = [
     "math-verify>=0.7.0,<0.8",
     "exa-py>=1.10.0,<2",
     "crawl4ai>=0.3.745",
+    "pyautogui>=0.9.54,<0.10",
 ]
 
 [project.urls]
