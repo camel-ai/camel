@@ -277,7 +277,7 @@ class EvolInstructPipeline(BaseDataGenPipeline):
                 else:
                     iteration_spec = evolution_spec[-1]
             else:
-                iteration_spec: Union[str, List[str]] = evolution_spec
+                iteration_spec = evolution_spec
 
             batch_results = self._generate_multiple_evolutions(
                 prompt=current_prompt,
@@ -426,7 +426,7 @@ class EvolInstructPipeline(BaseDataGenPipeline):
                     else:
                         raw_spec = evolution_spec[-1]
                 else:
-                    raw_spec: Union[str, List[str]] = evolution_spec
+                    raw_spec = evolution_spec
                 prompt_plan.append(
                     self._get_evolution_methods(raw_spec, num_generations)
                 )

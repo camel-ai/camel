@@ -638,7 +638,8 @@ class Source2SynthDataGenPipeline(BaseDataGenPipeline):
             # Check if the list is a list of strings or a list of dictionaries
             if all(isinstance(item, str) for item in data):
                 # List of text strings
-                results = self.processor.process_batch(data)
+                string_texts: List[str] = [item for item in data if isinstance(item, str)]
+                results = self.processor.process_batch(string_texts)
             elif all(isinstance(item, dict) for item in data):
                 # List of dictionaries
                 texts: List[str] = []
@@ -656,19 +657,19 @@ class Source2SynthDataGenPipeline(BaseDataGenPipeline):
                     results = []
             else:
                 # Handle mixed list - extract only the valid string and dict items
-                texts: List[str] = []
-                sources: List[str] = []
+                valid_texts: List[str] = []
+                valid_sources: List[str] = []
                 
                 for item in data:
                     if isinstance(item, str):
-                        texts.append(item)
-                        sources.append('user_input')
+                        valid_texts.append(item)
+                        valid_sources.append('user_input')
                     elif isinstance(item, dict) and 'text' in item:
-                        texts.append(item.get('text', ''))
-                        sources.append(item.get('source', 'user_input'))
+                        valid_texts.append(item.get('text', ''))
+                        valid_sources.append(item.get('source', 'user_input'))
                 
-                if texts:
-                    results = self.processor.process_batch(texts, sources)
+                if valid_texts:
+                    results = self.processor.process_batch(valid_texts, valid_sources)
                 else:
                     results = []
         else:
