@@ -15,12 +15,13 @@
 import os
 import time
 
+from playwright.sync_api import sync_playwright
+
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
 from camel.toolkits import BrowserToolkit
 from camel.types import ModelPlatformType, ModelType
-from playwright.sync_api import sync_playwright
 
 
 def save_auth_cookie(cookie_json_path: str, url: str):
