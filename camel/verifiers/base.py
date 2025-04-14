@@ -219,8 +219,8 @@ class BaseVerifier(ABC):
                         metadata={"attempt": attempt},
                     )
                 logger.warning(
-                    f"Failed to extract verifiable solution on attempt {attempt}, "
-                    f"retrying..."
+                    f"Failed to extract verifiable solution on attempt "
+                    f"{attempt}, retrying..."
                 )
                 await asyncio.sleep(self._retry_delay)
                 continue
