@@ -79,6 +79,10 @@ class ModelType(UnifiedModelType, Enum):
     TOGETHER_LLAMA_3_3_70B = "meta-llama/Llama-3.3-70B-Instruct-Turbo"
     TOGETHER_MIXTRAL_8_7B = "mistralai/Mixtral-8x7B-Instruct-v0.1"
     TOGETHER_MISTRAL_7B = "mistralai/Mistral-7B-Instruct-v0.1"
+    TOGETHER_LLAMA_4_MAVERICK = (
+        "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8"
+    )
+    TOGETHER_LLAMA_4_SCOUT = "meta-llama/Llama-4-Scout-17B-16E-Instruct"
 
     # PPIO platform models support tool calling
     PPIO_DEEPSEEK_R1_TURBO = "deepseek/deepseek-r1-turbo"
@@ -851,11 +855,13 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GEMINI_2_0_FLASH_LITE_PREVIEW,
             ModelType.GEMINI_2_0_PRO_EXP,  # Not given in doc, assume the same
             ModelType.GLM_4_LONG,
+            ModelType.TOGETHER_LLAMA_4_MAVERICK,
+            ModelType.OPENROUTER_LLAMA_4_MAVERICK,
         }:
             return 1_048_576
         elif self in {
             ModelType.QWEN_LONG,
-            ModelType.OPENROUTER_LLAMA_4_MAVERICK,
+            ModelType.TOGETHER_LLAMA_4_SCOUT,
         }:
             return 10_000_000
         else:

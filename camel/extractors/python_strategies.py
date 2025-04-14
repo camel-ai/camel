@@ -22,21 +22,30 @@ logger = get_logger(__name__)
 
 
 class BoxedStrategy(BaseExtractorStrategy):
-    r"""Extracts content from \\boxed{} environments."""
+    r"""Extracts content from \\boxed{} and \boxed{} environments."""
 
     async def extract(self, text: str) -> Optional[str]:
-        r"""Extract content from \\boxed{} environments.
+        r"""Extract content from \\boxed{} and \boxed{} environments.
 
         Args:
             text (str): The input text to process.
 
         Returns:
-            Optional[str]: Content inside \\boxed{} if found, else None.
+            Optional[str]: Content inside \\boxed{} or \boxed{} if found, else
+                None.
         """
         # Find the start of the boxed content
         boxed_pattern = "\\boxed{"
-        if boxed_pattern not in text:
-            logger.debug("No \\boxed{} content found in the response")
+        single_backslash_boxed_pattern = "\boxed{"
+
+        if (
+            boxed_pattern not in text
+            and single_backslash_boxed_pattern not in text
+        ):
+            logger.debug(
+                f"Patterns '{boxed_pattern}' or "
+                f"'{single_backslash_boxed_pattern}' not found in text: {text}"
+            )
             return None
 
         start_idx = text.find(boxed_pattern) + len(boxed_pattern)

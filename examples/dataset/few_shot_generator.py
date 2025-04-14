@@ -27,7 +27,7 @@ from camel.verifiers import PythonVerifier
 logger = get_logger(__name__)
 
 verifier = PythonVerifier(required_packages=["sympy"])
-asyncio.run(verifier.setup())
+asyncio.run(verifier.setup(uv=True))
 
 raw_data2 = [
     {
@@ -84,9 +84,6 @@ generator = FewShotGenerator(
 )
 
 new_data = asyncio.run(generator.generate_new(n=2, max_retries=5))
-
-for dp in new_data:
-    print(dp)
 
 generator.save_to_jsonl(Path("generated_data.jsonl"))
 
