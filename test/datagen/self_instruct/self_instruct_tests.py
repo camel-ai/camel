@@ -163,14 +163,16 @@ class TestSelfInstructPipeline(unittest.TestCase):
     @patch('time.time', side_effect=[100, 130])  # Mock start and end times
     @patch("json.dump")
     def test_execute(self, mock_dump, mock_time):
-        """Test that execute() correctly calls generate() and handles output."""
+        """Test that execute() correctly calls generate() 
+        and handles output."""
         # Mock the generate method to return predefined results
         expected_results = [
             {
                 "id": "machine_task_1",
                 "instruction": "Generated instruction",
                 "is_classification": True,
-                "instances": [{"input": "test", "output": "classification"}]
+                "instances": [{"input": "test", 
+                               "output": "classification"}]
             }
         ]
         

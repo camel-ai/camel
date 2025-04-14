@@ -179,6 +179,10 @@ class ExampleConstructor:
         examples = []
 
         for data in tqdm(raw_data, desc="Constructing examples"):
+            # Ensure data is a dictionary
+            if not isinstance(data, dict):
+                continue
+                
             # 1. Text preprocessing
             processed_text = self._preprocess_text(data.get('text', ''))
             if not processed_text:
@@ -545,7 +549,8 @@ class DataCurator:
 
 
 class Source2SynthDataGenPipeline(BaseDataGenPipeline):
-    r"""Pipeline for generating multi-hop question-answer pairs from source data.
+    r"""Pipeline for generating multi-hop question-answer pairs
+    from source data.
 
     Attributes:
         processor (UserDataProcessor): Data processor for generating QA pairs.
@@ -620,7 +625,8 @@ class Source2SynthDataGenPipeline(BaseDataGenPipeline):
                 - A list of dictionaries with 'text' and optional 'source' keys
 
         Returns:
-            List[Dict[str, Any]]: Generated examples with QA pairs and metadata.
+            List[Dict[str, Any]]: Generated examples with QA pairs
+                and metadata.
         """
         if isinstance(data, str):
             # Single text string
@@ -639,17 +645,36 @@ class Source2SynthDataGenPipeline(BaseDataGenPipeline):
                 sources: List[str] = []
                 
                 for item in data:
-                    texts.append(item.get('text', ''))
-                    sources.append(item.get('source', 'user_input'))
+                    if isinstance(item, dict):
+                        texts.append(item.get('text', ''))
+                        sources.append(item.get('source', 'user_input'))
                     
-                results = self.processor.process_batch(texts, sources)
+                # Only process if we have text items
+                if texts:
+                    results = self.processor.process_batch(texts, sources)
+                else:
+                    results = []
             else:
-                raise ValueError(
-                    "List items must be either all strings or all dictionaries"
-                )
+                # Handle mixed list - extract only the valid string and dict items
+                texts: List[str] = []
+                sources: List[str] = []
+                
+                for item in data:
+                    if isinstance(item, str):
+                        texts.append(item)
+                        sources.append('user_input')
+                    elif isinstance(item, dict) and 'text' in item:
+                        texts.append(item.get('text', ''))
+                        sources.append(item.get('source', 'user_input'))
+                
+                if texts:
+                    results = self.processor.process_batch(texts, sources)
+                else:
+                    results = []
         else:
             raise ValueError(
-                "Data must be a string, list of strings, or list of dictionaries"
+                "Data must be a string, list of strings, or list of "
+                "dictionaries"
             )
         
         return results
@@ -670,7 +695,8 @@ class Source2SynthDataGenPipeline(BaseDataGenPipeline):
                 - A list of dictionaries with 'text' and optional 'source' keys
                 
         Returns:
-            List[Dict[str, Any]]: Generated examples with QA pairs and metadata.
+            List[Dict[str, Any]]: Generated examples with QA pairs
+                and metadata.
         """
         logger.info("Starting Source2Synth data generation")
         start_time = time.time()
@@ -684,6 +710,9 @@ class Source2SynthDataGenPipeline(BaseDataGenPipeline):
                 self.save_results(results, results_key="examples")
                 
         elapsed_time = time.time() - start_time
-        logger.info(f"Source2Synth data generation completed with {len(results)} examples in {elapsed_time:.2f}s")
+        logger.info(
+            f"Source2Synth data generation completed with {len(results)} "
+            f"examples in {elapsed_time:.2f}s"
+        )
         
         return results

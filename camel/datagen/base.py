@@ -26,8 +26,9 @@ class BaseDataGenPipeline(ABC):
     r"""Base class for all data generation pipelines.
     
     Provides a unified interface for data generation pipelines,
-    allowing for flexible input and output options. It includes methods for loading 
-    data from different sources and saving results to files.
+    allowing for flexible input and output options. It includes
+    methods for loading data from different sources and saving
+    results to files.
     
     Subclasses should implement the `generate` method to define their specific
     data generation workflow.
@@ -158,7 +159,8 @@ class BaseDataGenPipeline(ABC):
             output_path (Optional[str]): Path to save results.
                 If None, uses the pipeline's output_path.
                 (default: :obj:`None`)
-            results_key (str): The key under which to store the results in the JSON file.
+            results_key (str): The key under which to store the results
+                in the JSON file.
                 (default: :obj:`"results"`)
                 
         Raises:
@@ -248,9 +250,10 @@ class BaseDataGenPipeline(ABC):
     def execute(self, *args, **kwargs) -> List[Dict[str, Any]]:
         r"""Execute the data generation pipeline.
         
-        This is the primary method to run the pipeline. It calls the generate method
-        and handles the result processing. By default, it just calls generate,
-        but subclasses can override it to add pre/post-processing steps.
+        This is the primary method to run the pipeline. It calls the
+        generate method and handles the result processing. By default,
+        it just calls generate, but subclasses can override it to add
+        pre/post-processing steps.
         
         Returns:
             List[Dict[str, Any]]: Generated data.

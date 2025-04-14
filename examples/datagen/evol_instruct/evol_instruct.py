@@ -59,7 +59,7 @@ def main():
     )
 
     # Execute the data generation pipeline
-    results = pipeline.execute(
+    pipeline.execute(
         prompts=prompts,
         evolution_spec=evol_spec,
         num_iterations=4,

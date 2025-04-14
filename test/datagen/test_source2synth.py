@@ -72,7 +72,9 @@ class TestSource2SynthDataGenPipeline(unittest.TestCase):
         result = self.pipeline.generate("Test input text")
         
         # Verify processor.process_text was called correctly
-        self.mock_processor.process_text.assert_called_once_with("Test input text")
+        self.mock_processor.process_text.assert_called_once_with(
+            "Test input text"
+        )
         
         # Verify result is correct
         self.assertEqual(result, self.sample_result)
@@ -104,8 +106,11 @@ class TestSource2SynthDataGenPipeline(unittest.TestCase):
         # Call generate with dict list
         result = self.pipeline.generate(input_data)
         
-        # Verify processor.process_batch was called with extracted text and sources
-        self.mock_processor.process_batch.assert_called_once_with(expected_texts, expected_sources)
+        # Verify processor.process_batch was called 
+        # with extracted text and sources
+        self.mock_processor.process_batch.assert_called_once_with(
+            expected_texts, expected_sources
+        )
         
         # Verify result is correct
         self.assertEqual(result, self.sample_result * 2)
@@ -116,9 +121,9 @@ class TestSource2SynthDataGenPipeline(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.pipeline.generate(123)
         
-        # Test with invalid list item type
-        with self.assertRaises(ValueError):
-            self.pipeline.generate([1, 2, 3])
+        # Test with a list of invalid items - should return empty list
+        result = self.pipeline.generate([1, 2, 3])
+        self.assertEqual(result, [])
 
     @patch('time.time', side_effect=[100, 115])  # Mock start and end times
     @patch('json.dump')
@@ -142,7 +147,8 @@ class TestSource2SynthDataGenPipeline(unittest.TestCase):
                 # Verify result was saved
                 mock_dump.assert_called_once()
                 args, kwargs = mock_dump.call_args
-                # First argument should be the result data in a dict with 'examples' key
+                # First argument should be the result data in a dict with 
+                # 'examples' key
                 self.assertEqual(args[0], {"examples": self.sample_result})
                 
                 # Verify logging occurred (implicitly, since logging is mocked)

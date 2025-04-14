@@ -38,8 +38,8 @@ class SelfInstructPipeline(BaseDataGenPipeline):
     Args:
         agent (ChatAgent): The agent used to interact and generate
             instructions.
-        seed (Union[str, List[Dict]]): The path to the human-written instructions 
-            or a list of human tasks directly.
+        seed (Union[str, List[Dict]]): The path to the human-written 
+            instructions or a list of human tasks directly.
         num_machine_instructions (int): Number of machine-generated
             instructions to generate. (default::obj:`5`)
         output_path (Optional[str]): Path to save the generated data.
@@ -108,7 +108,8 @@ class SelfInstructPipeline(BaseDataGenPipeline):
             )
 
     def load_seed(self, seed: Union[str, List[Dict]]):
-        r"""Load seed tasks from a file or directly from a list of dictionaries.
+        r"""Load seed tasks from a file or directly from a 
+        list of dictionaries.
 
         Args:
             seed (Union[str, List[Dict]]): Path to the seed file or a list of 
@@ -131,7 +132,9 @@ class SelfInstructPipeline(BaseDataGenPipeline):
             else:
                 raise FileNotFoundError(f"Seed file not found at path: {seed}")
         else:
-            raise ValueError("Seed must be either a file path or a list of dictionaries")
+            raise ValueError(
+                "Seed must be either a file path or a list of dictionaries"
+            )
 
     def sample_human_tasks(self, count: int) -> List[dict]:
         r"""Sample a specified number of human tasks from the loaded seed.
@@ -253,10 +256,14 @@ class SelfInstructPipeline(BaseDataGenPipeline):
                         markdown_content = markdown_content[4:].strip()
                     elif "\n" in markdown_content:
                         # If first line might be language identifier, remove it
-                        markdown_content = "\n".join(markdown_content.split("\n")[1:]).strip()
+                        markdown_content = "\n".join(
+                            markdown_content.split("\n")[1:]
+                        ).strip()
                     
                     # Try parsing the extracted content
-                    structured_response = AgentResponse.model_validate_json(markdown_content)
+                    structured_response = AgentResponse.model_validate_json(
+                        markdown_content
+                    )
                     return structured_response.answer
             except ValueError:
                 pass
@@ -503,7 +510,10 @@ class SelfInstructPipeline(BaseDataGenPipeline):
         Returns:
             List[Dict[str, Any]]: The generated machine tasks with instances.
         """
-        logger.info(f"Starting self-instruct generation with target {self.num_machine_instructions} instructions")
+        logger.info(
+            f"Starting self-instruct generation with target "
+            f"{self.num_machine_instructions} instructions"
+        )
         logger.info(f"Timeout set to {timeout_minutes} minutes")
         start_time = time.time()
         
@@ -512,7 +522,10 @@ class SelfInstructPipeline(BaseDataGenPipeline):
         
         # Log completion information
         elapsed_time = (time.time() - start_time) / 60
-        logger.info(f"Self-instruct generation completed with {len(results)} instructions in {elapsed_time:.2f} minutes")
+        logger.info(
+            f"Self-instruct generation completed with {len(results)} "
+            f"instructions in {elapsed_time:.2f} minutes"
+        )
         
         # Save final results if output_path is specified
         if self.output_path:

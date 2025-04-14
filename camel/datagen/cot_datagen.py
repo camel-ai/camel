@@ -80,11 +80,12 @@ class CoTDataGenerator(BaseDataGenPipeline):
             answer generation. (default::obj:`None`)
         verifier_agent (Optional[ChatAgent]): Optional specialized agent for
             answer verification. (default::obj:`None`)
-        golden_answers (Optional[Union[Dict[str, str], str, List[Dict[str, str]]]]): 
-            Correct question-answer pairs used for verification. Can be provided in 
-            multiple formats:
+        golden_answers (Optional[Union[Dict[str, str], str, 
+            List[Dict[str, str]]]]): 
+            Correct question-answer pairs used for verification.
+            Can be provided in multiple formats:
             - Dictionary mapping questions (keys) to answers (values)
-            - File path to a JSON/JSONL file containing QA pairs
+            - File path to a JSONL file containing QA pairs
             - JSONL string containing QA pairs
             - List of dictionaries, each with 'question' and 'answer' fields
             (default::obj:`None`)
@@ -108,7 +109,8 @@ class CoTDataGenerator(BaseDataGenPipeline):
         *,
         generator_agent: Optional[ChatAgent] = None,
         verifier_agent: Optional[ChatAgent] = None,
-        golden_answers: Optional[Union[Dict[str, str], str, List[Dict[str, str]]]] = None,
+        golden_answers: Optional[Union[Dict[str, str], str, 
+            List[Dict[str, str]]]] = None,
         search_limit: int = 100,
         output_path: Optional[str] = None,
         batch_size: Optional[int] = None,
@@ -131,9 +133,10 @@ class CoTDataGenerator(BaseDataGenPipeline):
                 for answer generation. (default::obj:`None`)
             verifier_agent (Optional[ChatAgent]): Optional specialized agent
                 for answer verification. (default::obj:`None`)
-            golden_answers (Optional[Union[Dict[str, str], str, List[Dict[str, str]]]]): 
-                Correct question-answer pairs used for verification. Can be provided in 
-                multiple formats:
+            golden_answers (Optional[Union[Dict[str, str], str, 
+                List[Dict[str, str]]]]): 
+                Correct question-answer pairs used for verification.
+                Can be provided in multiple formats:
                 - Dictionary mapping questions (keys) to answers (values)
                 - File path to a JSONL file containing QA pairs
                 - JSONL string containing QA pairs
@@ -176,7 +179,7 @@ class CoTDataGenerator(BaseDataGenPipeline):
             self.generator_agent = generator_agent
             self.verifier_agent = verifier_agent
 
-        self.golden_answers = {}
+        self.golden_answers: dict[str, str] = {}
         if golden_answers is not None:
             self.import_qa_data(golden_answers)
         self.search_limit = search_limit
@@ -430,9 +433,9 @@ class CoTDataGenerator(BaseDataGenPipeline):
         r"""Import question-answer pairs from a data source.
 
         Args:
-            data (Union[str, Dict[str, str], List[Dict[str, str]]]): Input data 
-                that can be a file path, JSONL string, or Dictionary/List of 
-                dictionaries with question-answer pairs.
+            data (Union[str, Dict[str, str], List[Dict[str, str]]]):
+                Input data that can be a file path, JSONL string, or
+                Dictionary/List of dictionaries with question-answer pairs.
 
         Returns:
             bool: True if import was successful, False otherwise.
@@ -441,8 +444,10 @@ class CoTDataGenerator(BaseDataGenPipeline):
             if isinstance(data, dict):
                 # Direct dictionary mapping
                 self.golden_answers.update(data)
-                logger.info("Successfully imported %d QA pairs from dictionary", 
-                           len(data))
+                logger.info(
+                    "Successfully imported %d QA pairs from dictionary", 
+                    len(data)
+                )
                 return True
                 
             # Handle file paths, JSONL strings, or list of dictionaries
@@ -455,7 +460,10 @@ class CoTDataGenerator(BaseDataGenPipeline):
                     self.golden_answers[entry["question"]] = entry["answer"]
                     qa_count += 1
             
-            logger.info("Successfully imported %d QA pairs from data", qa_count)
+            logger.info(
+                "Successfully imported %d QA pairs from data", 
+                qa_count
+            )
             return qa_count > 0
             
         except Exception as e:
@@ -495,7 +503,8 @@ class CoTDataGenerator(BaseDataGenPipeline):
     def generate(
         self, questions: Optional[Union[str, List[str]]] = None
     ) -> List[Dict[str, Any]]:
-        r"""Generate solutions for the given questions using chain-of-thought reasoning.
+        r"""Generate solutions for the given questions using 
+        chain-of-thought reasoning.
 
         Core implementation that performs the generation logic.
 

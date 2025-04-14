@@ -190,8 +190,15 @@ class TestEvolInstructPipeline(unittest.TestCase):
                 num_threads=1,
             )
             self.assertEqual(len(results), 2)
-            for res in results:
-                self.assertEqual(res, dummy_result)
+            # Check that each result is correctly formatted with 'evolutions' key containing the dummy_result
+            for i, res in enumerate(results):
+                self.assertIn('evolutions', res)
+                self.assertEqual(res['evolutions'], dummy_result)
+                self.assertIn('seed_prompt', res)
+                self.assertEqual(res['seed_prompt'], prompts[i])
+                self.assertIn('metadata', res)
+                self.assertEqual(res['metadata']['num_generations'], 2)
+                self.assertEqual(res['metadata']['num_iterations'], 1)
             self.assertEqual(mock_iter.call_count, len(prompts))
 
     @patch('time.time', side_effect=[100, 115])  # Mock start and end times
@@ -202,11 +209,14 @@ class TestEvolInstructPipeline(unittest.TestCase):
         
         # Raw results from generate method
         raw_results = [
-            {"seed_prompt": "Prompt 1", "evolutions": {"results": "for prompt 1"}},
-            {"seed_prompt": "Prompt 2", "evolutions": {"results": "for prompt 2"}}
+            {"seed_prompt": "Prompt 1", 
+             "evolutions": {"results": "for prompt 1"}},
+            {"seed_prompt": "Prompt 2", 
+             "evolutions": {"results": "for prompt 2"}}
         ]
         
-        # Mock generate to return predefined results without actually running it
+        # Mock generate to return predefined results without actually 
+        # running it
         with patch.object(
             self.pipeline, 'generate', return_value=raw_results
         ) as mock_generate:
@@ -225,17 +235,29 @@ class TestEvolInstructPipeline(unittest.TestCase):
                 )
                 
                 # Verify generate was called with expected parameters
-                # We only check the provided parameters, not all possible parameters
-                self.assertEqual(mock_generate.call_args.kwargs['prompts'], prompts)
-                self.assertEqual(mock_generate.call_args.kwargs['evolution_spec'], "DEPTH")
-                self.assertEqual(mock_generate.call_args.kwargs['num_generations'], 2)
-                self.assertEqual(mock_generate.call_args.kwargs['num_iterations'], 1)
-                self.assertEqual(mock_generate.call_args.kwargs['keep_original'], False)
+                # We only check the provided parameters, not all possible 
+                # parameters
+                self.assertEqual(
+                    mock_generate.call_args.kwargs['prompts'], prompts
+                )
+                self.assertEqual(
+                    mock_generate.call_args.kwargs['evolution_spec'], "DEPTH"
+                )
+                self.assertEqual(
+                    mock_generate.call_args.kwargs['num_generations'], 2
+                )
+                self.assertEqual(
+                    mock_generate.call_args.kwargs['num_iterations'], 1
+                )
+                self.assertEqual(
+                    mock_generate.call_args.kwargs['keep_original'], False
+                )
                 
                 # Verify results were returned correctly
                 self.assertEqual(results, raw_results)
                 
-                # Instead of asserting exact structure, just verify mock_dump was called
+                # Instead of asserting exact structure, 
+                # just verify mock_dump was called
                 mock_dump.assert_called_once()
 
 

@@ -103,7 +103,8 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
         Args:
             reason_agent (ChatAgent): The chat agent used for generating and
                 improving reasoning traces.
-            problems (Union[str, List[Dict]]): List of problem dictionaries to process,
+            problems (Union[str, List[Dict]]):
+                List of problem dictionaries to process,
                 or a file path/JSONL string to load problems from.
             max_iterations (int, optional): Maximum number of improvement
                 iterations. If set to `0`, the pipeline will generate an
@@ -144,8 +145,8 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
                 (default: :obj:`None`)
             rationalization (bool, optional): Whether to use rationalization.
                 (default: :obj:`False`)
-            save_intermediate (bool, optional): Whether to save intermediate results.
-                (default: :obj:`False`)
+            save_intermediate (bool, optional): Whether to save 
+                intermediate results. (default: :obj:`False`)
         """
         super().__init__(
             output_path=output_path,
@@ -310,7 +311,10 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
                     futures = [
                         executor.submit(
                             self.evaluate_trace,
-                            problem=problem.get("problem", "") if isinstance(problem, dict) else str(problem),
+                            problem=(
+                                problem.get("problem", "") 
+                                if isinstance(problem, dict) else str(problem)
+                            ),
                             trace=trace,
                             solution=solution,
                         )
@@ -727,8 +731,14 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
                     loop.close()
 
                 # Process evaluation results
-                eval_dict = eval_results[-1] if eval_results else {"feedback": "Evaluation failed"}
-                scores = {k: v for k, v in eval_dict.items() if k != "feedback"}
+                eval_dict = (
+                    eval_results[-1] if eval_results 
+                    else {"feedback": "Evaluation failed"}
+                )
+                scores = {
+                    k: v for k, v in eval_dict.items() 
+                    if k != "feedback"
+                }
 
                 # Record initial evaluation
                 if self.evaluator:
@@ -745,7 +755,8 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
                             iteration=0,
                             trace=current_trace,
                             evaluation=AgentTraceEvaluation(
-                                **scores, feedback=eval_dict.get("feedback", "")
+                                **scores, 
+                                feedback=eval_dict.get("feedback", "")
                             ),
                         )
                     )
@@ -767,7 +778,8 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
                             )
                         else:
                             current_trace = self.improve_trace(
-                                problem_text, current_trace, eval_dict.get("feedback", "")
+                                problem_text, current_trace, 
+                                eval_dict.get("feedback", "")
                             )
 
                         # Evaluate improved trace
@@ -777,15 +789,20 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
                         try:
                             eval_results = loop.run_until_complete(
                                 self._batch_evaluate_traces(
-                                    batch_problems, batch_traces, batch_solutions
+                                    batch_problems, batch_traces, 
+                                    batch_solutions
                                 )
                             )
                         finally:
                             loop.close()
 
-                        eval_dict = eval_results[-1] if eval_results else {"feedback": "Evaluation failed"}
+                        eval_dict = (
+                            eval_results[-1] if eval_results 
+                            else {"feedback": "Evaluation failed"}
+                        )
                         scores = {
-                            k: v for k, v in eval_dict.items() if k != "feedback"
+                            k: v for k, v in eval_dict.items() 
+                            if k != "feedback"
                         }
 
                         # Record iteration history
@@ -803,7 +820,8 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
                                     iteration=iteration + 1,
                                     trace=current_trace,
                                     evaluation=AgentTraceEvaluation(
-                                        **scores, feedback=eval_dict.get("feedback", "")
+                                        **scores, 
+                                        feedback=eval_dict.get("feedback", "")
                                     ),
                                 )
                             )
@@ -875,7 +893,8 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
         return self.reasoning_traces
 
     def append_result_to_traces(self, result: ProblemResult) -> None:
-        """Append a single result to the existing traces file in a thread-safe way.
+        """Append a single result to the existing traces file
+        in a thread-safe way.
         
         Args:
             result (ProblemResult): The result to append.
@@ -908,7 +927,10 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
         Returns:
             List[Dict[str, Any]]: List of processed results.
         """
-        logger.info(f"Starting self-improving CoT pipeline with {len(self.problems)} problems")
+        logger.info(
+            f"Starting self-improving CoT pipeline with "
+            f"{len(self.problems)} problems"
+        )
         start_time = time.time()
         
         # Run the generation process with the specified rationalization setting
@@ -916,7 +938,10 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
         
         # Log completion information
         elapsed_time = (time.time() - start_time) / 60
-        logger.info(f"Self-improving CoT pipeline completed {len(results)} problems in {elapsed_time:.2f} minutes")
+        logger.info(
+            f"Self-improving CoT pipeline completed {len(results)} problems "
+            f"in {elapsed_time:.2f} minutes"
+        )
         
         # Save final results if output_path is specified
         if self.output_path:

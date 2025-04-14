@@ -277,7 +277,7 @@ class EvolInstructPipeline(BaseDataGenPipeline):
                 else:
                     iteration_spec = evolution_spec[-1]
             else:
-                iteration_spec = evolution_spec
+                iteration_spec: Union[str, List[str]] = evolution_spec
 
             batch_results = self._generate_multiple_evolutions(
                 prompt=current_prompt,
@@ -337,7 +337,9 @@ class EvolInstructPipeline(BaseDataGenPipeline):
         retry_limit: int = 3,
         retry_delay: float = 1.0,
         num_threads: int = 10,
-    ) -> List[Dict[int, List[Dict[str, Any]]]]:
+        *args: Any,
+        **kwargs: Any
+    ) -> List[Dict[str, Any]]:
         r"""Generate evolved prompts from seed prompts.
 
         Core implementation that performs the generation logic.
@@ -349,9 +351,9 @@ class EvolInstructPipeline(BaseDataGenPipeline):
         - List of prompt strings
         
         Args:
-            prompts (Union[str, List[Dict[str, Any]], List[str]]): Source prompts.
-                Can be a file path, JSONL string, list of dictionaries with 'prompt' 
-                field, or list of strings.
+            prompts (Union[str, List[Dict[str, Any]], List[str]]): 
+                Source prompts. Can be a file path, JSONL string, list of 
+                dictionaries with 'prompt' field, or list of strings.
             evolution_spec (Union[str, List[Union[str, List[str]]]]): 
                 Evolution method specification.
                 If a list is provided and num_iterations is None, then
@@ -372,9 +374,12 @@ class EvolInstructPipeline(BaseDataGenPipeline):
                 (default: :obj:`1.0`)
             num_threads (int): Number of threads for parallel processing.
                 (default: :obj:`10`)
+            *args (Any): Additional positional arguments.
+            **kwargs (Any): Additional keyword arguments.
 
         Returns:
-            List[Dict[int, List[Dict[str, Any]]]]: Evolution results.
+            List[Dict[str, Any]]: Evolution results converted to 
+            standard format.
         """
         # Load data from various formats
         seed_prompts = []
@@ -421,7 +426,7 @@ class EvolInstructPipeline(BaseDataGenPipeline):
                     else:
                         raw_spec = evolution_spec[-1]
                 else:
-                    raw_spec = evolution_spec
+                    raw_spec: Union[str, List[str]] = evolution_spec
                 prompt_plan.append(
                     self._get_evolution_methods(raw_spec, num_generations)
                 )
@@ -459,7 +464,7 @@ class EvolInstructPipeline(BaseDataGenPipeline):
         
         num_chunks = max(1, min(num_chunks, len(seed_prompts)))
         chunk_size = ceil(len(seed_prompts) / num_chunks)
-        results = []
+        raw_results = []
 
         for chunk_idx in range(0, len(seed_prompts), chunk_size):
             chunk = seed_prompts[chunk_idx : chunk_idx + chunk_size]
@@ -472,10 +477,23 @@ class EvolInstructPipeline(BaseDataGenPipeline):
                         total=len(chunk),
                     )
                 )
-                results.extend(chunk_results)
-                
-        return results
+                raw_results.extend(chunk_results)
         
+        # Convert the results to the expected format for BaseDataGenPipeline
+        standardized_results = []
+        for i, evol_result in enumerate(raw_results):
+            seed_prompt = seed_prompts[i] if i < len(seed_prompts) else "unknown"
+            standardized_results.append({
+                "seed_prompt": seed_prompt,
+                "evolutions": evol_result,
+                "metadata": {
+                    "num_iterations": num_iterations,
+                    "num_generations": num_generations
+                }
+            })
+                
+        return standardized_results
+
     def execute(
         self,
         prompts: Union[str, List[Dict[str, Any]], List[str]],
@@ -488,16 +506,18 @@ class EvolInstructPipeline(BaseDataGenPipeline):
         retry_limit: int = 3,
         retry_delay: float = 1.0,
         num_threads: int = 10,
-    ) -> List[Dict[int, List[Dict[str, Any]]]]:
+        *args: Any,
+        **kwargs: Any
+    ) -> List[Dict[str, Any]]:
         r"""Execute the Evol-Instruct pipeline.
         
         The main entry point for running the pipeline. Handles logging,
         time measurement, and result saving.
         
         Args:
-            prompts (Union[str, List[Dict[str, Any]], List[str]]): Source prompts.
-                Can be a file path, JSONL string, list of dictionaries with 'prompt' 
-                field, or list of strings.
+            prompts: Source prompts.
+                Can be a file path, JSONL string, list of dictionaries
+                with 'prompt' field, or list of strings.
             evolution_spec (Union[str, List[Union[str, List[str]]]]): 
                 Evolution method specification.
                 If a list is provided and num_iterations is None, then
@@ -520,7 +540,7 @@ class EvolInstructPipeline(BaseDataGenPipeline):
                 (default: :obj:`10`)
                 
         Returns:
-            List[Dict[int, List[Dict[str, Any]]]]: Evolution results.
+            List[Dict[str, Any]]: Standardized evolution results.
         """
         logger.info("Starting Evol-Instruct pipeline")
         start_time = time.time()
@@ -539,32 +559,14 @@ class EvolInstructPipeline(BaseDataGenPipeline):
             num_threads=num_threads,
         )
         
-        # Save results if output_path is provided
+        # Save results if output_path is specified
         if self.output_path:
-            # Convert results to the format expected by save_jsonl
-            if isinstance(prompts, list) and len(prompts) > 0:
-                seed_prompts = []
-                for item in prompts:
-                    if isinstance(item, dict) and 'prompt' in item:
-                        seed_prompts.append(item['prompt'])
-                    elif isinstance(item, str):
-                        seed_prompts.append(item)
-            else:
-                seed_prompts = self.load_data(prompts) if isinstance(prompts, str) else []
-                
-            results_for_json = []
-            for i, prompt_result in enumerate(results):
-                if i < len(seed_prompts):
-                    processed_result = {
-                        "seed_prompt": seed_prompts[i],
-                        "evolutions": prompt_result
-                    }
-                    results_for_json.append(processed_result)
-            
-            self.save_results(results_for_json)
+            self.save_results(results)
         
         # Log completion information
         elapsed_time = (time.time() - start_time) / 60
-        logger.info(f"Evol-Instruct pipeline completed in {elapsed_time:.2f} minutes")
+        logger.info(
+            f"Evol-Instruct pipeline completed in {elapsed_time:.2f} minutes"
+        )
         
         return results

@@ -491,7 +491,8 @@ class TestSelfImprovingCoTPipeline(unittest.TestCase):
     @patch('time.time', side_effect=[100, 120, 120.5, 121, 121.5, 122])
     @patch("json.dump")
     def test_execute(self, mock_dump, mock_time):
-        """Test that execute() correctly calls generate() and handles output."""
+        """Test that execute() correctly calls generate()
+        and handles output."""
         # Create expected results from generate()
         expected_results = [
             {
@@ -540,8 +541,10 @@ class TestSelfImprovingCoTPipeline(unittest.TestCase):
             saved_data = args[0]
             self.assertEqual(saved_data["traces"], expected_results)
             
-            # Verify execution time measurement occurred (implicitly tested by the mock_time patches)
-            self.assertEqual(mock_time.call_count, 4)  # Time is measured multiple times in the implementation
+            # Verify execution time measurement occurred
+            # (implicitly tested by the mock_time patches)
+            self.assertEqual(mock_time.call_count, 4)  
+            # Time is measured multiple times in the implementation
     
     
 if __name__ == "__main__":
