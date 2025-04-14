@@ -141,7 +141,8 @@ class CoTDataGenerator(BaseDataGenPipeline):
                 - Dictionary mapping questions (keys) to answers (values)
                 - File path to a JSONL file containing QA pairs
                 - JSONL string containing QA pairs
-                - List of dictionaries, each with 'question' and 'answer' fields
+                - List of dictionaries, each with 'question'
+                    and 'answer' fields
                 (default::obj:`None`)
             search_limit (int): Maximum number of search iterations allowed.
                 (default::obj:`100`)
