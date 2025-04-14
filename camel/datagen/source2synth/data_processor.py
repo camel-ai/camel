@@ -12,12 +12,12 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import random
-from typing import Any, Dict, List, Optional, Sequence, Union
-import threading
-import time
 import json
 import os
+import random
+import threading
+import time
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 from tqdm import tqdm
 
@@ -182,7 +182,7 @@ class ExampleConstructor:
             # Ensure data is a dictionary
             if not isinstance(data, dict):
                 continue
-                
+
             # 1. Text preprocessing
             processed_text = self._preprocess_text(data.get('text', ''))
             if not processed_text:
@@ -567,7 +567,7 @@ class Source2SynthDataGenPipeline(BaseDataGenPipeline):
         r"""Initialize the source-to-synthesis data generation pipeline.
 
         Args:
-            config (Optional[ProcessorConfig]): Configuration for data 
+            config (Optional[ProcessorConfig]): Configuration for data
                 processing. (default: :obj:`None`)
             output_path (Optional[str]): Path to save generated data.
                 (default: :obj:`None`)
@@ -582,17 +582,17 @@ class Source2SynthDataGenPipeline(BaseDataGenPipeline):
             output_path=output_path,
             batch_size=batch_size,
             max_workers=max_workers,
-            save_intermediate=save_intermediate
+            save_intermediate=save_intermediate,
         )
-        
+
         self.processor = UserDataProcessor(config)
-        
+
         # Setup batch processor
         if batch_size is not None or max_workers is not None:
             self.batch_processor = BatchProcessor(max_workers, batch_size)
         else:
             self.batch_processor = BatchProcessor()
-            
+
         # Initialize output file with empty results if path is specified
         if self.output_path:
             self.save_results([], results_key="examples")
@@ -600,7 +600,7 @@ class Source2SynthDataGenPipeline(BaseDataGenPipeline):
 
     def safe_write_json(self, file_path, data):
         r"""Safely write JSON data to file using atomic operations.
-        
+
         Args:
             file_path (str): Path to the output file
             data (Any): Data to write to the file
@@ -611,7 +611,7 @@ class Source2SynthDataGenPipeline(BaseDataGenPipeline):
         os.replace(temp_path, file_path)
 
     def generate(
-        self, 
+        self,
         data: Union[str, List[str], List[Dict[str, Any]]],
     ) -> List[Dict[str, Any]]:
         r"""Process input data through the Source2Synth pipeline.
@@ -634,22 +634,24 @@ class Source2SynthDataGenPipeline(BaseDataGenPipeline):
         elif isinstance(data, list):
             if not data:
                 return []
-                
+
             # Check if the list is a list of strings or a list of dictionaries
             if all(isinstance(item, str) for item in data):
                 # List of text strings
-                string_texts: List[str] = [item for item in data if isinstance(item, str)]
+                string_texts: List[str] = [
+                    item for item in data if isinstance(item, str)
+                ]
                 results = self.processor.process_batch(string_texts)
             elif all(isinstance(item, dict) for item in data):
                 # List of dictionaries
                 texts: List[str] = []
                 sources: List[str] = []
-                
+
                 for item in data:
                     if isinstance(item, dict):
                         texts.append(item.get('text', ''))
                         sources.append(item.get('source', 'user_input'))
-                    
+
                 # Only process if we have text items
                 if texts:
                     results = self.processor.process_batch(texts, sources)
@@ -659,7 +661,7 @@ class Source2SynthDataGenPipeline(BaseDataGenPipeline):
                 # Handle mixed list - extract only the valid string and dict items
                 valid_texts: List[str] = []
                 valid_sources: List[str] = []
-                
+
                 for item in data:
                     if isinstance(item, str):
                         valid_texts.append(item)
@@ -667,9 +669,11 @@ class Source2SynthDataGenPipeline(BaseDataGenPipeline):
                     elif isinstance(item, dict) and 'text' in item:
                         valid_texts.append(item.get('text', ''))
                         valid_sources.append(item.get('source', 'user_input'))
-                
+
                 if valid_texts:
-                    results = self.processor.process_batch(valid_texts, valid_sources)
+                    results = self.processor.process_batch(
+                        valid_texts, valid_sources
+                    )
                 else:
                     results = []
         else:
@@ -677,43 +681,42 @@ class Source2SynthDataGenPipeline(BaseDataGenPipeline):
                 "Data must be a string, list of strings, or list of "
                 "dictionaries"
             )
-        
+
         return results
-    
+
     def execute(
-        self, 
-        data: Union[str, List[str], List[Dict[str, Any]]]
+        self, data: Union[str, List[str], List[Dict[str, Any]]]
     ) -> List[Dict[str, Any]]:
         r"""Execute the source-to-synthesis pipeline.
-        
+
         The main entry point for running the pipeline. Handles logging,
         time measurement, and result saving.
-        
+
         Args:
             data: Input data, which can be:
                 - A single text string
                 - A list of text strings
                 - A list of dictionaries with 'text' and optional 'source' keys
-                
+
         Returns:
             List[Dict[str, Any]]: Generated examples with QA pairs
                 and metadata.
         """
         logger.info("Starting Source2Synth data generation")
         start_time = time.time()
-        
+
         # Run the generation process
         results = self.generate(data)
-        
+
         # Save results if output_path is specified
         if self.output_path:
             with self.lock:
                 self.save_results(results, results_key="examples")
-                
+
         elapsed_time = time.time() - start_time
         logger.info(
             f"Source2Synth data generation completed with {len(results)} "
             f"examples in {elapsed_time:.2f}s"
         )
-        
+
         return results

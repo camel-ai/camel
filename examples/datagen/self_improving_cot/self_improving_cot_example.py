@@ -13,15 +13,15 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
-import os
 import logging
+import os
 
 from camel.agents import ChatAgent
 from camel.configs import DeepSeekConfig
 from camel.datagen import SelfImprovingCoTPipeline
+from camel.logger import enable_logging, get_logger, set_log_level
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
-from camel.logger import enable_logging, get_logger, set_log_level
 
 # from camel.models.reward import NemotronRewardModel
 
@@ -89,6 +89,7 @@ def main():
     )
 
     pipeline.execute()
+
 
 if __name__ == "__main__":
     main()

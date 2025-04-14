@@ -145,16 +145,16 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
                 (default: :obj:`None`)
             rationalization (bool, optional): Whether to use rationalization.
                 (default: :obj:`False`)
-            save_intermediate (bool, optional): Whether to save 
+            save_intermediate (bool, optional): Whether to save
                 intermediate results. (default: :obj:`False`)
         """
         super().__init__(
             output_path=output_path,
             batch_size=batch_size,
             max_workers=max_workers,
-            save_intermediate=save_intermediate
+            save_intermediate=save_intermediate,
         )
-        
+
         self.reason_agent = reason_agent
         self.evaluate_agent = evaluate_agent
         self.problems = self.load_data(problems) if problems else []
@@ -168,13 +168,13 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
         self.reasoning_traces: List[Dict[str, Any]] = []
         self.few_shot_examples = few_shot_examples
         self.rationalization = rationalization
-        
+
         # Setup batch processor
         if batch_size is not None or max_workers is not None:
             self.batch_processor = BatchProcessor(max_workers, batch_size)
         else:
             self.batch_processor = BatchProcessor()
-            
+
         self.solution_pattern = solution_pattern
         self.trace_pattern = (
             trace_pattern if trace_pattern is not None else solution_pattern
@@ -312,8 +312,9 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
                         executor.submit(
                             self.evaluate_trace,
                             problem=(
-                                problem.get("problem", "") 
-                                if isinstance(problem, dict) else str(problem)
+                                problem.get("problem", "")
+                                if isinstance(problem, dict)
+                                else str(problem)
                             ),
                             trace=trace,
                             solution=solution,
@@ -700,14 +701,14 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
             problem_text = problem["problem"]
             solution_text = problem.get("solution", "")
             current_trace = None
-            
+
             if self.rejection_sampling_n:
                 current_trace = self.generate_reasoning_trace_rejection(
                     problem_text
                 )
             else:
                 current_trace = self.generate_reasoning_trace(problem_text)
-                
+
             improvement_history = []
             scores = {}
 
@@ -732,12 +733,12 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
 
                 # Process evaluation results
                 eval_dict = (
-                    eval_results[-1] if eval_results 
+                    eval_results[-1]
+                    if eval_results
                     else {"feedback": "Evaluation failed"}
                 )
                 scores = {
-                    k: v for k, v in eval_dict.items() 
-                    if k != "feedback"
+                    k: v for k, v in eval_dict.items() if k != "feedback"
                 }
 
                 # Record initial evaluation
@@ -755,8 +756,8 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
                             iteration=0,
                             trace=current_trace,
                             evaluation=AgentTraceEvaluation(
-                                **scores, 
-                                feedback=eval_dict.get("feedback", "")
+                                **scores,
+                                feedback=eval_dict.get("feedback", ""),
                             ),
                         )
                     )
@@ -778,8 +779,9 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
                             )
                         else:
                             current_trace = self.improve_trace(
-                                problem_text, current_trace, 
-                                eval_dict.get("feedback", "")
+                                problem_text,
+                                current_trace,
+                                eval_dict.get("feedback", ""),
                             )
 
                         # Evaluate improved trace
@@ -789,19 +791,22 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
                         try:
                             eval_results = loop.run_until_complete(
                                 self._batch_evaluate_traces(
-                                    batch_problems, batch_traces, 
-                                    batch_solutions
+                                    batch_problems,
+                                    batch_traces,
+                                    batch_solutions,
                                 )
                             )
                         finally:
                             loop.close()
 
                         eval_dict = (
-                            eval_results[-1] if eval_results 
+                            eval_results[-1]
+                            if eval_results
                             else {"feedback": "Evaluation failed"}
                         )
                         scores = {
-                            k: v for k, v in eval_dict.items() 
+                            k: v
+                            for k, v in eval_dict.items()
                             if k != "feedback"
                         }
 
@@ -811,7 +816,9 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
                                 TraceIteration(
                                     iteration=iteration + 1,
                                     trace=current_trace,
-                                    evaluation=RewardTraceEvaluation(**eval_dict),
+                                    evaluation=RewardTraceEvaluation(
+                                        **eval_dict
+                                    ),
                                 )
                             )
                         else:
@@ -820,8 +827,8 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
                                     iteration=iteration + 1,
                                     trace=current_trace,
                                     evaluation=AgentTraceEvaluation(
-                                        **scores, 
-                                        feedback=eval_dict.get("feedback", "")
+                                        **scores,
+                                        feedback=eval_dict.get("feedback", ""),
                                     ),
                                 )
                             )
@@ -848,7 +855,7 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
                 self.append_result_to_traces(result)
 
             return result
-            
+
         except Exception as e:
             logger.error(f"Error processing problem: {e}")
             # Create a minimal result with error information
@@ -857,7 +864,7 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
                 type=problem.get("type", ""),
                 problem=problem.get("problem", str(problem)),
                 solution=problem.get("solution", ""),
-                final_trace=f"Error processing problem: {str(e)}",
+                final_trace=f"Error processing problem: {e!s}",
                 improvement_history=[],
             )
 
@@ -889,41 +896,41 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
 
         # Convert to dictionaries
         self.reasoning_traces = [result.model_dump() for result in results]
-            
+
         return self.reasoning_traces
 
     def append_result_to_traces(self, result: ProblemResult) -> None:
         """Append a single result to the existing traces file
         in a thread-safe way.
-        
+
         Args:
             result (ProblemResult): The result to append.
         """
         if not self.output_path:
             return
-            
+
         with self.lock:
             try:
                 # Read existing results
                 with open(self.output_path, 'r') as f:
                     data = json.load(f)
-                
+
                 # Append the new result
                 cleaned_result = self.clean_json(result.model_dump())
                 data['traces'].append(cleaned_result)
-                
+
                 # Write back to the file
                 self.safe_write_json(self.output_path, data)
-                
+
             except Exception as e:
                 logger.error(f"Error appending result to traces file: {e}")
 
     def execute(self) -> List[Dict[str, Any]]:
         r"""Execute the self-improving CoT pipeline.
-        
+
         The main entry point for running the pipeline. Handles logging,
         time measurement, and result saving.
-        
+
         Returns:
             List[Dict[str, Any]]: List of processed results.
         """
@@ -932,21 +939,21 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
             f"{len(self.problems)} problems"
         )
         start_time = time.time()
-        
+
         # Run the generation process with the specified rationalization setting
         results = self.generate(rationalization=self.rationalization)
-        
+
         # Log completion information
         elapsed_time = (time.time() - start_time) / 60
         logger.info(
             f"Self-improving CoT pipeline completed {len(results)} problems "
             f"in {elapsed_time:.2f} minutes"
         )
-        
+
         # Save final results if output_path is specified
         if self.output_path:
             self.save_results(results, results_key="traces")
-            
+
         return results
 
     # Templates for generating reasoning, evaluation and improving them.
@@ -997,4 +1004,3 @@ Feedback:
 {feedback}
 
 Generate a new, improved reasoning trace that addresses the feedback."""
-

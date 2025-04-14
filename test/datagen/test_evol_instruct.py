@@ -15,7 +15,6 @@
 import unittest
 from typing import Any, ClassVar, Dict
 from unittest.mock import MagicMock, patch
-import time
 
 from camel.agents import ChatAgent
 from camel.datagen.evol_instruct import EvolInstructPipeline
@@ -206,16 +205,20 @@ class TestEvolInstructPipeline(unittest.TestCase):
     def test_execute(self, mock_dump, mock_time):
         # Test that execute() correctly calls generate() and saves results
         prompts = ["Prompt 1", "Prompt 2"]
-        
+
         # Raw results from generate method
         raw_results = [
-            {"seed_prompt": "Prompt 1", 
-             "evolutions": {"results": "for prompt 1"}},
-            {"seed_prompt": "Prompt 2", 
-             "evolutions": {"results": "for prompt 2"}}
+            {
+                "seed_prompt": "Prompt 1",
+                "evolutions": {"results": "for prompt 1"},
+            },
+            {
+                "seed_prompt": "Prompt 2",
+                "evolutions": {"results": "for prompt 2"},
+            },
         ]
-        
-        # Mock generate to return predefined results without actually 
+
+        # Mock generate to return predefined results without actually
         # running it
         with patch.object(
             self.pipeline, 'generate', return_value=raw_results
@@ -224,7 +227,7 @@ class TestEvolInstructPipeline(unittest.TestCase):
             with patch('builtins.open', MagicMock()):
                 # Set output path for the pipeline
                 self.pipeline.output_path = "test_output.json"
-                
+
                 # Call execute and verify results
                 results = self.pipeline.execute(
                     prompts=prompts,
@@ -233,9 +236,9 @@ class TestEvolInstructPipeline(unittest.TestCase):
                     num_iterations=1,
                     keep_original=False,
                 )
-                
+
                 # Verify generate was called with expected parameters
-                # We only check the provided parameters, not all possible 
+                # We only check the provided parameters, not all possible
                 # parameters
                 self.assertEqual(
                     mock_generate.call_args.kwargs['prompts'], prompts
@@ -252,11 +255,11 @@ class TestEvolInstructPipeline(unittest.TestCase):
                 self.assertEqual(
                     mock_generate.call_args.kwargs['keep_original'], False
                 )
-                
+
                 # Verify results were returned correctly
                 self.assertEqual(results, raw_results)
-                
-                # Instead of asserting exact structure, 
+
+                # Instead of asserting exact structure,
                 # just verify mock_dump was called
                 mock_dump.assert_called_once()
 

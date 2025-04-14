@@ -80,8 +80,8 @@ class CoTDataGenerator(BaseDataGenPipeline):
             answer generation. (default::obj:`None`)
         verifier_agent (Optional[ChatAgent]): Optional specialized agent for
             answer verification. (default::obj:`None`)
-        golden_answers (Optional[Union[Dict[str, str], str, 
-            List[Dict[str, str]]]]): 
+        golden_answers (Optional[Union[Dict[str, str], str,
+            List[Dict[str, str]]]]):
             Correct question-answer pairs used for verification.
             Can be provided in multiple formats:
             - Dictionary mapping questions (keys) to answers (values)
@@ -109,8 +109,9 @@ class CoTDataGenerator(BaseDataGenPipeline):
         *,
         generator_agent: Optional[ChatAgent] = None,
         verifier_agent: Optional[ChatAgent] = None,
-        golden_answers: Optional[Union[Dict[str, str], str, 
-            List[Dict[str, str]]]] = None,
+        golden_answers: Optional[
+            Union[Dict[str, str], str, List[Dict[str, str]]]
+        ] = None,
         search_limit: int = 100,
         output_path: Optional[str] = None,
         batch_size: Optional[int] = None,
@@ -133,8 +134,8 @@ class CoTDataGenerator(BaseDataGenPipeline):
                 for answer generation. (default::obj:`None`)
             verifier_agent (Optional[ChatAgent]): Optional specialized agent
                 for answer verification. (default::obj:`None`)
-            golden_answers (Optional[Union[Dict[str, str], str, 
-                List[Dict[str, str]]]]): 
+            golden_answers (Optional[Union[Dict[str, str], str,
+                List[Dict[str, str]]]]):
                 Correct question-answer pairs used for verification.
                 Can be provided in multiple formats:
                 - Dictionary mapping questions (keys) to answers (values)
@@ -159,9 +160,9 @@ class CoTDataGenerator(BaseDataGenPipeline):
             output_path=output_path,
             batch_size=batch_size,
             max_workers=max_workers,
-            save_intermediate=save_intermediate
+            save_intermediate=save_intermediate,
         )
-        
+
         if chat_agent is not None:
             if generator_agent is not None or verifier_agent is not None:
                 raise ValueError(
@@ -185,7 +186,7 @@ class CoTDataGenerator(BaseDataGenPipeline):
         self.search_limit = search_limit
         self.verification_threshold = verification_threshold
         self.solution_tree: Dict[str, Dict[str, Union[str, int]]] = {}
-        
+
         logger.info(
             "CoTDataGenerator initialized with search_limit=%d", search_limit
         )
@@ -445,29 +446,28 @@ class CoTDataGenerator(BaseDataGenPipeline):
                 # Direct dictionary mapping
                 self.golden_answers.update(data)
                 logger.info(
-                    "Successfully imported %d QA pairs from dictionary", 
-                    len(data)
+                    "Successfully imported %d QA pairs from dictionary",
+                    len(data),
                 )
                 return True
-                
+
             # Handle file paths, JSONL strings, or list of dictionaries
             parsed_data = self.load_data(data)
-            
+
             # Extract question-answer pairs from the loaded data
             qa_count = 0
             for entry in parsed_data:
                 if "question" in entry and "answer" in entry:
                     self.golden_answers[entry["question"]] = entry["answer"]
                     qa_count += 1
-            
+
             logger.info(
-                "Successfully imported %d QA pairs from data", 
-                qa_count
+                "Successfully imported %d QA pairs from data", qa_count
             )
             return qa_count > 0
-            
+
         except Exception as e:
-            logger.error(f"Error importing QA data: {str(e)}")
+            logger.error(f"Error importing QA data: {e!s}")
             return False
 
     def export_solutions(self, filepath: str = 'solutions.json') -> None:
@@ -503,7 +503,7 @@ class CoTDataGenerator(BaseDataGenPipeline):
     def generate(
         self, questions: Optional[Union[str, List[str]]] = None
     ) -> List[Dict[str, Any]]:
-        r"""Generate solutions for the given questions using 
+        r"""Generate solutions for the given questions using
         chain-of-thought reasoning.
 
         Core implementation that performs the generation logic.
@@ -532,41 +532,43 @@ class CoTDataGenerator(BaseDataGenPipeline):
         solutions = []
         for question in questions_to_solve:
             solution = self.solve(question)
-            solutions.append({
-                "question": question,
-                "solution": solution,
-                "timestamp": datetime.now().isoformat(),
-            })
+            solutions.append(
+                {
+                    "question": question,
+                    "solution": solution,
+                    "timestamp": datetime.now().isoformat(),
+                }
+            )
 
             # Save intermediate results if configured
             if self.save_intermediate and self.output_path:
                 self.save_results(solutions)
 
         return solutions
-    
+
     def execute(
         self, questions: Optional[Union[str, List[str]]] = None
     ) -> List[Dict[str, Any]]:
         r"""Execute the CoT data generation pipeline.
-        
+
         The main entry point for running the pipeline. Handles logging,
         time measurement, and result saving.
-        
+
         Args:
             questions (Optional[Union[str, List[str]]]): Questions to solve.
                 Can be a single question string, a list of questions, or None.
                 If None, uses questions from golden_answers if available.
                 (default::obj:`None`)
-                
+
         Returns:
             List[Dict[str, Any]]: Generated solutions.
         """
         logger.info("Starting CoT data generation")
         start_time = datetime.now()
-        
+
         # Run the generation process
         results = self.generate(questions)
-        
+
         # Log completion information
         duration = (datetime.now() - start_time).total_seconds()
         per_question = duration / len(results) if results else 0
@@ -574,9 +576,9 @@ class CoTDataGenerator(BaseDataGenPipeline):
             f"CoT data generation completed: {len(results)} solutions in "
             f"{duration:.2f} seconds ({per_question:.2f} s/question)"
         )
-        
+
         # Save final results if output_path is specified
         if self.output_path:
             self.save_results(results)
-            
+
         return results

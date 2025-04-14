@@ -55,7 +55,7 @@ def main():
     pipeline = EvolInstructPipeline(
         agent=agent,
         templates=MathEvolInstructTemplates,
-        output_path=output_path
+        output_path=output_path,
     )
 
     # Execute the data generation pipeline

@@ -50,8 +50,7 @@ def main():
 
     # 2. Create the pipeline
     pipeline = Source2SynthDataGenPipeline(
-        config=config,
-        output_path="batch_results.json"
+        config=config, output_path="batch_results.json"
     )
 
     # 3. Prepare test data - texts containing multiple related information
@@ -99,7 +98,7 @@ def main():
     logger.info("Batch processing texts...")
     sources = ["tech_evolution", "climate_change", "medical_evolution"]
     batch_data = [
-        {"text": text, "source": source} 
+        {"text": text, "source": source}
         for text, source in zip(test_texts, sources)
     ]
     batch_results = pipeline.execute(batch_data)

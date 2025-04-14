@@ -18,26 +18,21 @@ from .evol_instruct import EvolInstructPipeline
 from .self_improving_cot import SelfImprovingCoTPipeline
 from .self_instruct import SelfInstructPipeline
 from .source2synth import (
-    Source2SynthDataGenPipeline,
     ProcessorConfig,
+    Source2SynthDataGenPipeline,
 )
 
 __all__ = [
     # Base pipeline
     "BaseDataGenPipeline",
-    
     # CoT data generation
     "CoTDataGenerator",
-    
     # Self-improving CoT
     "SelfImprovingCoTPipeline",
-    
     # Self-instruct
     "SelfInstructPipeline",
-    
     # Evol-instruct
     "EvolInstructPipeline",
-    
     # Source2Synth
     "Source2SynthDataGenPipeline",
     "ProcessorConfig",
