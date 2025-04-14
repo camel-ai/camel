@@ -38,6 +38,7 @@ class NetworkXToolkit(BaseToolkit):
 
     def __init__(
         self,
+        timeout: Optional[float] = None,
         graph_type: Literal[
             'graph', 'digraph', 'multigraph', 'multidigraph'
         ] = 'graph',
@@ -53,7 +54,11 @@ class NetworkXToolkit(BaseToolkit):
                 - 'multigraph': Undirected graph with parallel edges
                 - 'multidigraph': Directed graph with parallel edges
                 (default: :obj:`'graph'`)
+            timeout (Optional[float]): The timeout value for API requests
+                in seconds. If None, no timeout is applied.
+                (default: :obj:`None`)
         """
+        super().__init__(timeout=timeout)
         nx = self._get_nx()
         graph_types = {
             'graph': nx.Graph,

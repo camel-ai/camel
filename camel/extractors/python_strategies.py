@@ -42,7 +42,10 @@ class BoxedStrategy(BaseExtractorStrategy):
             boxed_pattern not in text
             and single_backslash_boxed_pattern not in text
         ):
-            logger.debug("Neither of the accepted boxed patterns found")
+            logger.debug(
+                f"Patterns '{boxed_pattern}' or "
+                f"'{single_backslash_boxed_pattern}' not found in text: {text}"
+            )
             return None
 
         start_idx = text.find(boxed_pattern) + len(boxed_pattern)
