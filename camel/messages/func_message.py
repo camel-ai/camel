@@ -126,7 +126,9 @@ class FunctionCallingMessage(BaseMessage):
 
         return {
             "role": "assistant",
-            "content": self.content or "",
+            # default content for assistant message (empty string may cause
+            # error, see issue #1976)
+            "content": self.content or "Let's continue",
             "tool_calls": [
                 {
                     "id": self.tool_call_id or "null",
