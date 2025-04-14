@@ -68,6 +68,7 @@ jobs:
         NOTION_TOKEN: "${{ secrets.NOTION_TOKEN }}"
         GOOGLE_CLIENT_ID: "${{ secrets.GOOGLE_CLIENT_ID }}"
         GOOGLE_CLIENT_SECRET: "${{ secrets.GOOGLE_CLIENT_SECRET }}"
+        PPIO_API_KEY: "${{ secrets.PPIO_API_KEY }}"
       run: |
         source .venv/bin/activate
         uv pip install -e ".[all, dev, docs]"
@@ -128,6 +129,7 @@ jobs:
         NOTION_TOKEN: "${{ secrets.NOTION_TOKEN }}"
         GOOGLE_CLIENT_ID: "${{ secrets.GOOGLE_CLIENT_ID }}"
         GOOGLE_CLIENT_SECRET: "${{ secrets.GOOGLE_CLIENT_SECRET }}"
+        PPIO_API_KEY: "${{ secrets.PPIO_API_KEY }}"
       run: |
         source .venv/bin/activate
         uv pip install -e ".[all, dev, docs]"
@@ -186,6 +188,7 @@ jobs:
         NOTION_TOKEN: "${{ secrets.NOTION_TOKEN }}"
         GOOGLE_CLIENT_ID: "${{ secrets.GOOGLE_CLIENT_ID }}"
         GOOGLE_CLIENT_SECRET: "${{ secrets.GOOGLE_CLIENT_SECRET }}"
+        PPIO_API_KEY: "${{ secrets.PPIO_API_KEY }}"
       run: |
         source .venv/bin/activate
         uv pip install -e ".[all, dev, docs]"
