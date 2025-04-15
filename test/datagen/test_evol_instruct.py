@@ -189,7 +189,7 @@ class TestEvolInstructPipeline(unittest.TestCase):
                 num_threads=1,
             )
             self.assertEqual(len(results), 2)
-            # Check that each result is correctly formatted with 
+            # Check that each result is correctly formatted with
             # 'evolutions' key containing the dummy_result
             for i, res in enumerate(results):
                 self.assertIn('evolutions', res)
