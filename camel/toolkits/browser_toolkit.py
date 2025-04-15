@@ -908,7 +908,8 @@ class BaseBrowser:
         self._wait_for_load()
 
     def close(self):
-        self.browser.close()
+        if self.browser and self.browser is not None:
+            self.browser.close()
 
     # ruff: noqa: E501
     def show_interactive_elements(self):
