@@ -532,6 +532,7 @@ module = [
     "math_verify.*",
     "exa_py",
     "crawl4ai.*",
+    "pyautogui",
 ]
 ignore_missing_imports = true
 
