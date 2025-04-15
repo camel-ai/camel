@@ -50,7 +50,7 @@ class PyAutoGUIToolkit(BaseToolkit):
         self.screen_center = (self.screen_width // 2, self.screen_height // 2)
     
     def _get_safe_coordinates(self, x: int, y: int) -> Tuple[int, int]:
-        r"""Ensure coordinates are within safe boundaries to prevent triggering 
+        r"""Ensure coordinates are within safe boundaries to prevent triggering
         failsafe.
         
         Args:
@@ -122,10 +122,12 @@ class PyAutoGUIToolkit(BaseToolkit):
                 self.pyautogui.click(
                     x=safe_x, y=safe_y, button=button, clicks=clicks
                 )
-                return f"Clicked {button} button {clicks} time(s) at position {safe_x}, {safe_y}"
             else:
                 self.pyautogui.click(button=button, clicks=clicks)
-                return f"Clicked {button} button {clicks} time(s)"
+            return (
+                f"Clicked {button} button {clicks} time(s) at position "
+                f"{safe_x}, {safe_y}"
+            )
         except Exception as e:
             logger.error(f"Error clicking mouse: {e}")
             return f"Error: {e}"
@@ -250,10 +252,10 @@ class PyAutoGUIToolkit(BaseToolkit):
                 (default: :obj:`0`)
             top (int): Top coordinate of the screenshot region.
                 (default: :obj:`0`)
-            width (Optional[int]): Width of the screenshot region. If None, uses 
-                full screen width. (default: :obj:`None`)
-            height (Optional[int]): Height of the screenshot region. If None, uses 
-                full screen height. (default: :obj:`None`)
+            width (Optional[int]): Width of the screenshot region. If None, 
+                uses full screen width. (default: :obj:`None`)
+            height (Optional[int]): Height of the screenshot region. If None, 
+                uses full screen height. (default: :obj:`None`)
             
         Returns:
             str: Path to the saved screenshot.
@@ -285,7 +287,9 @@ class PyAutoGUIToolkit(BaseToolkit):
             
             # Save screenshot to file
             timestamp = int(time.time())
-            screenshot_path = os.path.join(screenshots_dir, f"screenshot_{timestamp}.png")
+            screenshot_path = os.path.join(
+                screenshots_dir, f"screenshot_{timestamp}.png"
+            )
             screenshot.save(screenshot_path)
             
             return f"Screenshot saved to {screenshot_path}"
@@ -335,7 +339,8 @@ class PyAutoGUIToolkit(BaseToolkit):
             )
             # Finally, move to a safe position (screen center) afterwards
             self.pyautogui.moveTo(
-                self.screen_center[0], self.screen_center[1], duration=duration/3
+                self.screen_center[0], self.screen_center[1], 
+                duration=duration/3
             )
             
             return (
@@ -388,7 +393,10 @@ class PyAutoGUIToolkit(BaseToolkit):
                 f"({self.screen_center[0]}, {self.screen_center[1]})"
             )
             
-            return f"Scrolled {scroll_amount} clicks at position {safe_x}, {safe_y}"
+            return (
+                f"Scrolled {scroll_amount} clicks at position "
+                f"{safe_x}, {safe_y}"
+            )
         except Exception as e:
             logger.error(f"Error scrolling: {e}")
             return f"Error: {e}"
@@ -543,7 +551,8 @@ class PyAutoGUIToolkit(BaseToolkit):
             time.sleep(wait_time)  # Wait for terminal to open
             return (
                 f"Terminal opened on {os_name} with "
-                f"{'English' if force_english_input else 'default'} input method"
+                f"{'English' if force_english_input else 'default'} "
+                f"input method"
             )
         except Exception as e:
             logger.error(f"Error opening terminal: {e}")
