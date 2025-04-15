@@ -20,6 +20,7 @@ from .gemini_config import Gemini_API_PARAMS, GeminiConfig
 from .groq_config import GROQ_API_PARAMS, GroqConfig
 from .internlm_config import INTERNLM_API_PARAMS, InternLMConfig
 from .litellm_config import LITELLM_API_PARAMS, LiteLLMConfig
+from .lmstudio_config import LMSTUDIO_API_PARAMS, LMStudioConfig
 from .mistral_config import MISTRAL_API_PARAMS, MistralConfig
 from .modelscope_config import MODELSCOPE_API_PARAMS, ModelScopeConfig
 from .moonshot_config import MOONSHOT_API_PARAMS, MoonshotConfig
@@ -97,4 +98,6 @@ __all__ = [
     'AIML_API_PARAMS',
     'OpenRouterConfig',
     'OPENROUTER_API_PARAMS',
+    'LMSTUDIO_API_PARAMS',
+    'LMStudioConfig',
 ]
