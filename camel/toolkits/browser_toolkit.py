@@ -1031,6 +1031,15 @@ class BrowserToolkit(BaseToolkit):
         self.history = []
         os.makedirs(self.browser.cache_dir, exist_ok=True)
 
+    def _terminate(self):
+        r"""Reset Agents and Terminate Playwright and Browser Instance."""
+        self._reset()
+        if self.browser and self.browser is not None:
+            self.browser.close()
+        if self.browser.playwright and self.browser.playwright is not None:
+            logger.debug("terminating playwright")
+            self.browser.playwright.stop()
+
     def _initialize_agent(self) -> Tuple["ChatAgent", "ChatAgent"]:
         r"""Initialize the agent."""
         from camel.agents import ChatAgent
