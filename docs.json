@@ -57,7 +57,13 @@
               "docs/key_modules/messages",
               "docs/key_modules/memory",
               "docs/key_modules/tools",
-              "docs/key_modules/prompts"
+              "docs/key_modules/prompts",
+              "docs/key_modules/tasks",
+              "docs/key_modules/loaders",
+              "docs/key_modules/storages",
+              "docs/key_modules/embeddings",
+              "docs/key_modules/retrievers",
+              "docs/key_modules/workforce"
             ]
           },
           {
