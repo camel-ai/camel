@@ -19,7 +19,7 @@ from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
 from pydantic import BaseModel
 
 from camel.messages import OpenAIMessage
-from camel.models import BaseModelBackend
+from camel.models.base_model import BaseModelBackend
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,

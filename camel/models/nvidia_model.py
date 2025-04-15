@@ -15,7 +15,7 @@
 import os
 from typing import Any, Dict, List, Optional, Type, Union
 
-from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
+from openai import AsyncStream, Stream
 from openai.types.chat import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -24,12 +24,12 @@ from pydantic import BaseModel
 
 from camel.configs import NVIDIA_API_PARAMS, NvidiaConfig
 from camel.messages import OpenAIMessage
-from camel.models import BaseModelBackend
+from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ModelType
-from camel.utils import BaseTokenCounter, OpenAITokenCounter, api_keys_required
+from camel.utils import BaseTokenCounter, api_keys_required
 
 
-class NvidiaModel(BaseModelBackend):
+class NvidiaModel(OpenAICompatibleModel):
     r"""NVIDIA API in a unified BaseModelBackend interface.
 
     Args:
@@ -75,19 +75,12 @@ class NvidiaModel(BaseModelBackend):
         )
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter, timeout
-        )
-        self._client = OpenAI(
-            timeout=self._timeout,
-            max_retries=3,
-            api_key=self._api_key,
-            base_url=self._url,
-        )
-        self._async_client = AsyncOpenAI(
-            timeout=self._timeout,
-            max_retries=3,
-            api_key=self._api_key,
-            base_url=self._url,
+            model_type=model_type,
+            model_config_dict=model_config_dict,
+            api_key=api_key,
+            url=url,
+            token_counter=token_counter,
+            timeout=timeout,
         )
 
     async def _arun(
@@ -152,19 +145,6 @@ class NvidiaModel(BaseModelBackend):
         )
         return response
 
-    @property
-    def token_counter(self) -> BaseTokenCounter:
-        r"""Initialize the token counter for the model backend.
-
-        Returns:
-            OpenAITokenCounter: The token counter following the model's
-                tokenization style.
-        """
-
-        if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
-        return self._token_counter
-
     def check_model_config(self):
         r"""Check whether the model configuration contains any
         unexpected arguments to NVIDIA API.
@@ -179,13 +159,3 @@ class NvidiaModel(BaseModelBackend):
                     f"Unexpected argument `{param}` is "
                     "input into NVIDIA model backend."
                 )
-
-    @property
-    def stream(self) -> bool:
-        r"""Returns whether the model is in stream mode, which sends partial
-        results each time.
-
-        Returns:
-            bool: Whether the model is in stream mode.
-        """
-        return self.model_config_dict.get('stream', False)

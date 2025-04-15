@@ -20,7 +20,6 @@ from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ModelType
 from camel.utils import (
     BaseTokenCounter,
-    OpenAITokenCounter,
     api_keys_required,
 )
 
@@ -67,21 +66,12 @@ class VolcanoModel(OpenAICompatibleModel):
         )
 
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter
+            model_type=model_type,
+            model_config_dict=model_config_dict,
+            api_key=api_key,
+            url=url,
+            token_counter=token_counter,
         )
-
-    @property
-    def token_counter(self) -> BaseTokenCounter:
-        r"""Initialize the token counter for the model backend.
-
-        Returns:
-            BaseTokenCounter: The token counter following the model's
-                tokenization style.
-        """
-        if not self._token_counter:
-            # Use OpenAI token counter as an approximation
-            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
-        return self._token_counter
 
     def check_model_config(self):
         r"""Check whether the model configuration is valid for Volcano
