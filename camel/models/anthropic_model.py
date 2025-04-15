@@ -12,14 +12,11 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-from typing import Any, Dict, List, Optional, Type, Union
-
-from pydantic import BaseModel
+from typing import Any, Dict, Optional, Union
 
 from camel.configs import ANTHROPIC_API_PARAMS, AnthropicConfig
-from camel.messages import OpenAIMessage
-from camel.models.base_model import BaseModelBackend
-from camel.types import ChatCompletion, ModelType
+from camel.models.openai_compatible_model import OpenAICompatibleModel
+from camel.types import ModelType
 from camel.utils import (
     AnthropicTokenCounter,
     BaseTokenCounter,
@@ -28,8 +25,8 @@ from camel.utils import (
 )
 
 
-class AnthropicModel(BaseModelBackend):
-    r"""Anthropic API in a unified BaseModelBackend interface.
+class AnthropicModel(OpenAICompatibleModel):
+    r"""Anthropic API in a unified OpenAICompatibleModel interface.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is
@@ -66,8 +63,6 @@ class AnthropicModel(BaseModelBackend):
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
     ) -> None:
-        from openai import AsyncOpenAI, OpenAI
-
         if model_config_dict is None:
             model_config_dict = AnthropicConfig().as_dict()
         api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
@@ -78,14 +73,12 @@ class AnthropicModel(BaseModelBackend):
         )
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter, timeout
-        )
-        self.client = OpenAI(
-            base_url=self._url, api_key=self._api_key, timeout=self._timeout
-        )
-
-        self.async_client = AsyncOpenAI(
-            api_key=self._api_key, base_url=self._url, timeout=self._timeout
+            model_type=model_type,
+            model_config_dict=model_config_dict,
+            api_key=api_key,
+            url=url,
+            token_counter=token_counter,
+            timeout=timeout,
         )
 
     @property
@@ -99,54 +92,6 @@ class AnthropicModel(BaseModelBackend):
         if not self._token_counter:
             self._token_counter = AnthropicTokenCounter(self.model_type)
         return self._token_counter
-
-    def _run(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ):
-        r"""Run inference of Anthropic chat completion.
-
-        Args:
-            messages (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format.
-
-        Returns:
-            ChatCompletion: Response in the OpenAI API format.
-        """
-        response = self.client.chat.completions.create(
-            model=self.model_type,
-            messages=messages,
-            **self.model_config_dict,
-            tools=tools,  # type: ignore[arg-type]
-        )
-
-        return response
-
-    async def _arun(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> ChatCompletion:
-        r"""Run inference of Anthropic chat completion.
-
-        Args:
-            messages (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format.
-
-        Returns:
-            ChatCompletion: Response in the OpenAI API format.
-        """
-        response = await self.async_client.chat.completions.create(
-            model=self.model_type,
-            messages=messages,
-            **self.model_config_dict,
-            tools=tools,  # type: ignore[arg-type]
-        )
-
-        return response
 
     def check_model_config(self):
         r"""Check whether the model configuration is valid for anthropic
@@ -162,13 +107,3 @@ class AnthropicModel(BaseModelBackend):
                     f"Unexpected argument `{param}` is "
                     "input into Anthropic model backend."
                 )
-
-    @property
-    def stream(self) -> bool:
-        r"""Returns whether the model is in stream mode, which sends partial
-        results each time.
-
-        Returns:
-            bool: Whether the model is in stream mode.
-        """
-        return self.model_config_dict.get("stream", False)

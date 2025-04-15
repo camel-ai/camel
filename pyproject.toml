@@ -125,6 +125,7 @@ media_tools = [
     "ffmpeg-python>=0.2.0,<0.3",
     "scenedetect>=0.6.5.2",
 ]
+
 communication_tools = [
     "slack-sdk>=3.27.2,<4",
     "slack-bolt>=1.20.1,<2",
@@ -346,6 +347,7 @@ all = [
     "math-verify>=0.7.0,<0.8",
     "exa-py>=1.10.0,<2",
     "crawl4ai>=0.3.745",
+    "pyautogui>=0.9.54,<0.10",
 ]
 
 [project.urls]
@@ -530,6 +532,7 @@ module = [
     "math_verify.*",
     "exa_py",
     "crawl4ai.*",
+    "pyautogui",
 ]
 ignore_missing_imports = true
 
@@ -541,4 +544,4 @@ skip = '.git*,*.pdf,*.svg,*.lock,*.css,examples/toolkits/semantic_scholar_toolki
 check-hidden = true
 # Ignore long lines as usually some kind of base64 encodings e.g. in ipynb
 ignore-regex = '^\s*"image/\S+": ".*|^.{300,}|\b(NotIn|Unsupport)\b'
-ignore-words-list = 'ans,datas,rouge'
+ignore-words-list = 'ans,datas,rouge,doubleClick'
