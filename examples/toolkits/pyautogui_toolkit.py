@@ -1,4 +1,3 @@
-# examples/toolkits/pyautogui_toolkit.py
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,32 +12,22 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-"""Example of using the PyAutoGUI toolkit with CAMEL agents for GUI
-automation."""
-
-import dotenv
 import time
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
-from camel.logger import get_logger
 from camel.models import ModelFactory
 from camel.toolkits import PyAutoGUIToolkit
 from camel.types import ModelPlatformType, ModelType
 
-# Load environment variables from .env file (including OPENAI_API_KEY)
-dotenv.load_dotenv()
-
-# Set up logging
-logger = get_logger(__name__)
 
 def setup_pyautogui_agent(model_type=ModelType.GPT_4O_MINI, temperature=0.1):
     r"""Create and setup a CAMEL agent with PyAutoGUI tools.
-    
+
     Args:
         model_type: The model type to use (default: GPT-4O-MINI)
         temperature: Model temperature parameter (default: 0.1)
-        
+
     Returns:
         ChatAgent: A configured agent with PyAutoGUI tools
     """
@@ -49,36 +38,37 @@ def setup_pyautogui_agent(model_type=ModelType.GPT_4O_MINI, temperature=0.1):
         model_platform=ModelPlatformType.OPENAI,
         model_config_dict=model_config.as_dict(),
     )
-    
+
     # Create PyAutoGUI toolkit and get available tools
     toolkit = PyAutoGUIToolkit()
     tools = toolkit.get_tools()
-    
+
     # System message for the agent
     system_message = (
         "You are an AutoGUI assistant that can control the computer using "
         "the PyAutoGUI toolkit. "
-        "You can move the mouse, click, type text, take screenshots, and more. "
-        "Always respect safety boundaries when interacting with the GUI. "
-        "When asked to perform operations, use the provided tools and "
-        "describe what you're doing. "
-        "Monitor for potential errors and handle them appropriately."
+        "You can move the mouse, click, type text, take screenshots, and "
+        "more. Always respect safety boundaries when interacting with the "
+        "GUI. When asked to perform operations, use the provided tools and "
+        "describe what you're doing. Monitor for potential errors and "
+        "handle them appropriately."
     )
-    
+
     # Create and configure the agent
     agent = ChatAgent(
         system_message=system_message,
         model=model,
         tools=tools,
     )
-    
+
     return agent
+
 
 def run_automated_demo():
     r"""Run an automated demonstration of all PyAutoGUI toolkit features.
-    
+
     This demonstration will:
-    1. Get screen size and mouse position
+    1. Get mouse position
     2. Move mouse to different positions
     3. Click at a position
     4. Type some text
@@ -91,36 +81,46 @@ def run_automated_demo():
         "features automatically"
     )
     print("No user input is required. Please do not interrupt the process.\n")
-    
+
     # Create a chat agent with PyAutoGUI tools
     agent = setup_pyautogui_agent()
-    
+
     # Define a series of tasks to showcase all toolkit features
     tasks = [
-        # Task 1: Get screen information and take a screenshot
+        # Task 1: Basic mouse operations and screenshot
         "Perform these steps in sequence without asking for confirmation:\n"
-        "1. Get the current screen size and mouse position\n"
-        "2. Move the mouse to the center of the screen \n"
-        "3. Click at that position\n"
-        "4. Take a screenshot to document the result\n",
-        
-        # Task 2: Keyboard entry and key pressing
+        "1. Get the current mouse position\n"
+        "2. Move the mouse to the center of the screen\n"
+        "3. Take a screenshot to document the position\n"
+        "4. Right-click at the current position to show a context menu\n"
+        "5. Press the 'Escape' key to dismiss any menus\n",
+        # Task 2: Keyboard operations
         "Perform these steps in sequence without asking for confirmation:\n"
-        "1. Open a terminal window\n"
-        "2. Type 'echo \"Hello from CAMEL PyAutoGUI\"'\n"
-        "3. Press the Enter key\n"
-        "4. Press the key combination Ctrl+C to exit the process if needed\n",
-        
-        # Task 3: Complex mouse operations
+        "1. Move the mouse to a safe position (center of screen)\n"
+        "2. Press the hotkey combination 'command+space' to open "
+        "Spotlight Search\n"
+        "3. Wait 1 second for Spotlight to appear\n"
+        "4. Type 'TextEdit' but DO NOT press Enter\n"
+        "5. Take a screenshot to document the Spotlight search\n"
+        "6. Press the 'Escape' key to close Spotlight\n",
+        # Task 3: Drawing operation with mouse
         "Perform these steps in sequence without asking for confirmation:\n"
-        "1. Move the mouse to the top left quadrant of the screen "
-        "(25% of screen width and height)\n"
-        "2. Drag the mouse to the bottom right quadrant "
-        "(75% of screen width and height)\n"
-        "3. Scroll the mouse wheel down a few clicks\n"
-        "4. Take a screenshot to document the result\n",
+        "1. Move the mouse to the center of the screen\n"
+        "2. Move the mouse in a small square pattern (50 pixels per side):\n"
+        "   a. Move 50 pixels right\n"
+        "   b. Move 50 pixels down\n"
+        "   c. Move 50 pixels left\n"
+        "   d. Move 50 pixels up to complete the square\n"
+        "3. Take a screenshot to document the completed movement\n",
+        # Task 4: Safe scrolling and mouse wheel operations
+        "Perform these steps in sequence without asking for confirmation:\n"
+        "1. Move the mouse to the center of the screen\n"
+        "2. Scroll down 3 clicks\n"
+        "3. Wait 1 second\n"
+        "4. Scroll up 3 clicks to return to the original position\n"
+        "5. Take a screenshot to document the final state\n",
     ]
-    
+
     # Run each task in sequence
     for i, task in enumerate(tasks):
         print("\n" + "=" * 60)
@@ -128,24 +128,26 @@ def run_automated_demo():
         print("=" * 60 + "\n")
         print(f"Instruction: {task}")
         print("")
-        
+
         # Execute the task
         response = agent.step(task)
-        
+
         # Print the agent's response
         print(f"\nAgent response: {response.msg.content}")
-        
+
         # Pause before the next task
         if i < len(tasks) - 1:
             print("\nWaiting a moment before the next task...")
             time.sleep(3)
             print("")
 
+
 def main():
     r"""Main function to run the PyAutoGUI toolkit example."""
     print("Starting PyAutoGUI toolkit automated demonstration...\n")
     run_automated_demo()
     print("\nPyAutoGUI toolkit demonstration completed.")
+
 
 if __name__ == "__main__":
     main()
