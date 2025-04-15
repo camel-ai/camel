@@ -31,6 +31,7 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **SambaNova** | [supported models](https://docs.sambanova.ai/cloud/docs/get-started/supported-models) |
 | **Ollama** |  [supported models](https://ollama.com/library) |
 | **OpenRouter** | [supported models](https://openrouter.ai/models) |
+| **PPIO** | [supported models](https://ppinfra.com/model-api/product/llm-api?utm_source=github_owl) |
 | **LiteLLM** | [supported models](https://docs.litellm.ai/docs/providers) |
 | **vLLM** |  [supported models](https://docs.vllm.ai/en/latest/models/supported_models.html) |
 | **SGLANG** | [supported models](https://sgl-project.github.io/references/supported_models.html) |
@@ -58,7 +59,7 @@ model = ModelFactory.create(
     model_config_dict=ChatGPTConfig().as_dict(),
 )
 
-# Define an assitant message
+# Define an assistant message
 system_msg = "You are a helpful assistant."
 
 # Initialize the agent
@@ -212,7 +213,7 @@ print(assistant_response.msg.content)
 ## 5 Model Speed and Performance
 Performance is critical for interactive AI applications. CAMEL-AI benchmarks tokens processed per second across various models:
 
-In [this notebook](../cookbooks/model_speed_comparison), we compared several models, including OpenAI’s GPT-4O Mini, GPT-4O, O1 Preview, and SambaNova's Llama series, by measuring the number of tokens each model processes per second.
+In [this notebook](../cookbooks/model_speed_comparison.ipynb), we compared several models, including OpenAI’s GPT-4O Mini, GPT-4O, O1 Preview, and SambaNova's Llama series, by measuring the number of tokens each model processes per second.
 
 **Key Insights:** Smaller models like SambaNova’s Llama 8B and OpenAI's GPT-4O Mini typically offer faster responses. Larger models like SambaNova’s Llama 405B, while more powerful, tend to generate output more slowly due to their complexity. OpenAI models demonstrate relatively consistent performance, while SambaNova's Llama 8B significantly outperforms others in speed. The chart below illustrates the tokens per second achieved by each model during our tests:
 
