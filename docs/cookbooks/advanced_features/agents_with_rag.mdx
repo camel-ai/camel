@@ -6,27 +6,23 @@ You can also check this cookbook in colab [here](https://colab.research.google.c
 ⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
 
 ## Overview
-
-In this notebook, we show the useage of CAMEL Retrieve Module in both customized way and auto way. We will also show how to combine `AutoRetriever` with `ChatAgent`, and further combine `AutoRetriever` with `RolePlaying` by using `Function Calling`.
+In this notebook, we show the usage of CAMEL Retrieve Module in both customized way and auto way. We will also show how to combine `AutoRetriever` with `ChatAgent`, and further combine `AutoRetriever` with `RolePlaying` by using `Function Calling`.
 
 4 main parts included:
 
 - Customized RAG
+
 - Auto RAG
+
 - Single Agent with Auto RAG
+
 - Role-playing with Auto RAG
-
 ### Installation
-
 Ensure you have CAMEL AI installed in your Python environment:
-
-```bash
-pip install "camel-ai[all]==0.2.16"
-```
-
+```python!pip install "camel-ai[all]==0.2.16"```
 ## Load Data
-
 Let's first load the CAMEL paper from https://arxiv.org/pdf/2303.17760.pdf. This will be our local example data.
+
 
 ```python
 import os
@@ -37,58 +33,36 @@ os.makedirs('local_data', exist_ok=True)
 url = "https://arxiv.org/pdf/2303.17760.pdf"
 response = requests.get(url)
 with open('local_data/camel_paper.pdf', 'wb') as file:
-     file.write(response.content)
-```
-
+     file.write(response.content)```
 ## 1. Customized RAG
-
 In this section we will set our customized RAG pipeline, we will take `VectorRetriever` as an example.
 Set embedding model, we will use `OpenAIEmbedding` as the embedding model, so we need to set the `OPENAI_API_KEY` in below.
-
-```python
-from getpass import getpass
+```pythonfrom getpass import getpass
 # Prompt for the OpenAI API key securely
 openai_api_key = getpass('Enter your API key: ')
-os.environ["OPENAI_API_KEY"] = openai_api_key
-```
-
+os.environ["OPENAI_API_KEY"] = openai_api_key```
 Import and set the embedding instance:
-
-```python
-from camel.embeddings import OpenAIEmbedding
+```pythonfrom camel.embeddings import OpenAIEmbedding
 from camel.types import EmbeddingModelType
 
-embedding_instance = OpenAIEmbedding(model_type=EmbeddingModelType.TEXT_EMBEDDING_3_LARGE)
-```
-
+embedding_instance = OpenAIEmbedding(model_type=EmbeddingModelType.TEXT_EMBEDDING_3_LARGE)```
 Import and set the vector storage instance:
-
-```python
-from camel.storages import QdrantStorage
+```pythonfrom camel.storages import QdrantStorage
 
 storage_instance = QdrantStorage(
     vector_dim=embedding_instance.get_output_dim(),
     path="local_data",
     collection_name="camel_paper",
-)
-```
-
+)```
 Import and set the retriever instance:
-
-```python
-from camel.retrievers import VectorRetriever
+```pythonfrom camel.retrievers import VectorRetriever
 
 vector_retriever = VectorRetriever(embedding_model=embedding_instance,
-                               storage=storage_instance)
-```
-
+                                   storage=storage_instance)```
 We use integrated `Unstructured Module` to splite the content into small chunks, the content will be splited automacitlly with its `chunk_by_title` function, the max character for each chunk is 500 characters, which is a suitable length for `OpenAIEmbedding`. All the text in the chunks will be embed and stored to the vector storage instance, it will take some time, please wait..
-
-```python
-vector_retriever.process(
+```pythonvector_retriever.process(
     content="local_data/camel_paper.pdf",
-)
-```
+)```
 
 Now we can retrieve information from the vector storage by giving a query. By default it will give you back the text content from top 1 chunk with highest Cosine similarity score, and the similarity score should be higher than 0.75 to ensure the retrieved content is relevant to the query. You can also change the `top_k` value and `similarity_threshold` value with your needs.
 
@@ -97,38 +71,27 @@ The returned dictionary list includes:
 - content path
 - metadata
 - text
-
-```python
-retrieved_info = vector_retriever.query(
+```pythonretrieved_info = vector_retriever.query(
     query="To address the challenges of achieving autonomous cooperation, we propose a novel communicative agent framework named role-playing .",
     top_k=1
 )
-print(retrieved_info)
-```
-
+print(retrieved_info)```
 Let's try an irrelevant query:
-
-```python
-retrieved_info_irrevelant = vector_retriever.query(
+```pythonretrieved_info_irrevelant = vector_retriever.query(
     query="Compared with dumpling and rice, which should I take for dinner?",
     top_k=1,
 )
 
-print(retrieved_info_irrevelant)
-```
-
+print(retrieved_info_irrevelant)```
 ## 2. Auto RAG
-
 In this section we will run the `AutoRetriever` with default settings. It uses `OpenAIEmbedding` as default embedding model and `Qdrant` as default vector storage.
 
 What you need to do is:
 - Set content input paths, which can be local paths or remote urls
 - Give a query
 
-The Auto RAG pipeline would create collections for given content input paths, the collection name will be set automaticlly based on the content input path name, if the collection exists, it will do the retrieve directly.
-
-```python
-from camel.retrievers import AutoRetriever
+The Auto RAG pipeline would create collections for given content input paths, the collection name will be set automatically based on the content input path name, if the collection exists, it will do the retrieve directly.
+```pythonfrom camel.retrievers import AutoRetriever
 from camel.types import StorageType
 
 auto_retriever = AutoRetriever(
@@ -137,7 +100,7 @@ auto_retriever = AutoRetriever(
         embedding_model=embedding_instance)
 
 retrieved_info = auto_retriever.run_vector_retriever(
-    query="If I'm interest in contributing to the CAMEL projec, what should I do?",
+    query="If I'm interest in contributing to the CAMEL project, what should I do?",
     contents=[
         "local_data/camel_paper.pdf",  # example local path
         "https://github.com/camel-ai/camel/wiki/Contributing-Guidlines",  # example remote url
@@ -149,15 +112,11 @@ retrieved_info = auto_retriever.run_vector_retriever(
 
 print(retrieved_info)
 ```
-
 ## 3. Single Agent with Auto RAG
-
 In this section we will show how to combine the `AutoRetriever` with one `ChatAgent`.
 
 Let's set an agent function, in this function we can get the response by providing a query to this agent.
-
-```python
-from camel.agents import ChatAgent
+```pythonfrom camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.types import RoleType
 from camel.retrievers import AutoRetriever
@@ -187,7 +146,7 @@ def single_agent(query: str) ->str :
         similarity_threshold=0.5
     )
 
-    # Pass the retrieved infomation to agent
+    # Pass the retrieved information to agent
     user_msg = str(retrieved_info)
     agent = ChatAgent(assistant_sys_msg)
 
@@ -195,11 +154,9 @@ def single_agent(query: str) ->str :
     assistant_response = agent.step(user_msg)
     return assistant_response.msg.content
 
-print(single_agent("If I'm interest in contributing to the CAMEL projec, what should I do?"))
+print(single_agent("If I'm interest in contributing to the CAMEL project, what should I do?"))
 ```
-
 ## 4. Role-playing with Auto RAG
-
 In this section we will show how to combine the `RETRIEVAL_FUNCS` with `RolePlaying` by applying `Function Calling`.
 
 ```python
@@ -229,6 +186,7 @@ def role_playing_with_rag(
         *MathToolkit().get_tools(),
         *RetrievalToolkit().get_tools(),
     ]
+
 
     role_play_session = RolePlaying(
         assistant_role_name="Searcher",
@@ -310,11 +268,7 @@ def role_playing_with_rag(
         if "CAMEL_TASK_DONE" in user_response.msg.content:
             break
 
-        input_msg = assistant_response.msg
-```
-
+        input_msg = assistant_response.msg```
 Run the role-playing with defined retriever function:
-
 ```python
-role_playing_with_rag(task_prompt = """If I'm interest in contributing to the CAMEL projec and I encounter some challenges during the setup process, what should I do? You should refer to the content in url https://github.com/camel-ai/camel/wiki/Contributing-Guidlines to answer my question, don't generate the answer by yourself, adjust the similarity threshold to lower value is necessary""")
-``` 
+role_playing_with_rag(task_prompt = """If I'm interest in contributing to the CAMEL projec and I encounter some challenges during the setup process, what should I do? You should refer to the content in url https://github.com/camel-ai/camel/wiki/Contributing-Guidlines to answer my question, don't generate the answer by yourself, adjust the similarity threshold to lower value is necessary""")```

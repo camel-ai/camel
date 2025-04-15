@@ -209,6 +209,20 @@ class BaseVerifier(ABC):
             )
 
             if not verifiable_solution:
+                attempt += 1
+                if attempt == self._max_retries:
+                    return VerificationResult(
+                        status=VerificationOutcome.ERROR,
+                        result="",
+                        error_message="Failed to extract verifiable solution",
+                        duration=time.time() - start_time,
+                        metadata={"attempt": attempt},
+                    )
+                logger.warning(
+                    f"Failed to extract verifiable solution on attempt "
+                    f"{attempt}, retrying..."
+                )
+                await asyncio.sleep(self._retry_delay)
                 continue
 
             try:

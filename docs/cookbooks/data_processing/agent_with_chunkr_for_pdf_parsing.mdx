@@ -80,7 +80,6 @@ In this blog, we will focus on the capability of digesting PDF file with Chunkr.
 
 First, install the CAMEL package with all its dependencies.
 
-
 ```python
  pip install "camel-ai[all]==0.2.11"
 ```
@@ -103,7 +102,6 @@ Go to [chunkr.ai ](https://www.chunkr.ai/)and sign up for an account.
 
 Once logged in, navigate to the API section of your account dashboard to find your API key. A new API key will be generated. Copy this key and store it securely.
 
-
 ```python
 import os
 from getpass import getpass
@@ -112,10 +110,8 @@ from getpass import getpass
 chunkr_api_key = getpass('Enter your API key: ')
 os.environ["CHUNKR_API_KEY"] = chunkr_api_key
 ```
-    
 
 Step 2: Let's load the example PDF file from https://arxiv.org/pdf/2303.17760.pdf. This will be our local example data.
-
 
 
 
@@ -131,8 +127,7 @@ with open('local_data/camel_paper.pdf', 'wb') as file:
      file.write(response.content)
 ```
 
-Step 3: Sumbit one task.
-
+Step 3: Submit one task.
 
 ```python
 # Importing the ChunkrReader class from the camel.loaders module
@@ -148,9 +143,6 @@ chunkr_reader = ChunkrReader()
 chunkr_reader.submit_task(file_path="local_data/camel_paper.pdf")
 ```
 
-
-
-
 Step 4: Input the task id above and then we can obtain the task output.
 
 The output of Chunkr is structured text and metadata from documents, including:
@@ -162,7 +154,6 @@ The output of Chunkr is structured text and metadata from documents, including:
 3.   **Bounding Box Data**: Spatial positions of text (x, y coordinates) for OCR-processed documents.
 
 4.   **Metadata**: Information like page numbers, file type, and document properties.
-
 
 ```python
 # Retrieving the output of a previously submitted task
@@ -186,7 +177,6 @@ If you don't have a Mistral API key, you can obtain one by following these steps
 
 For more details, you can also check the Mistral documentation: https://docs.mistral.ai/getting-started/quickstart/
 
-
 ```python
 import os
 from getpass import getpass
@@ -194,9 +184,6 @@ from getpass import getpass
 mistral_api_key = getpass('Enter your API key')
 os.environ["MISTRAL_API_KEY"] = mistral_api_key
 ```
-
-    
-
 
 ```python
 from camel.configs import MistralConfig
@@ -212,7 +199,6 @@ mistral_model = ModelFactory.create(
 # Use Mistral model
 model = mistral_model
 ```
-
 
 ```python
 from camel.agents import ChatAgent
@@ -230,8 +216,6 @@ response = agent.step(f"based on {chunkr_output[:4000]}, give me a conclusion of
 # Print the content of the first message in the response, which contains the assistant's answer
 print(response.msgs[0].content)
 ```
-
-    
 
 **For advanced usage of RAG capabilities with large files, please refer to our [RAG cookbook](https://docs.camel-ai.org/cookbooks/agents_with_rag.html).**
 
@@ -273,4 +257,3 @@ Thanks from everyone at 🐫 CAMEL-AI
 </div>
 ⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
 </div>
-

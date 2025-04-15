@@ -11,6 +11,12 @@ First, we have to load a dataset from which we will sample questions. The datase
 
 For the sake of simplicity, we will start by loading the MATH dataset, remove unnecessary columns and rename the remaining ones, such that we can easily turn it into a `StaticDataset`, which `SingleStepEnv` can deal with. 
 
+First, install the CAMEL package with all its dependencies:
+
+```python
+%pip install camel-ai[all]==0.2.45
+```
+
 ```python
 from datasets import load_dataset
 
@@ -71,7 +77,7 @@ print(f"Number of datapoints with integer answers: {len(valid_datapoints)}")
 filtered_dataset = StaticDataset(valid_datapoints, seed=42)
 ```
 
-Let's create a Python verifier to later compare answers. Since we are re-using the same extractor from before, the PythonVerifier will expect solutions to be wrapped in `\boxed{...}`, too.
+Let's create a Python verifier to later compare answers. Since we are reusing the same extractor from before, the PythonVerifier will expect solutions to be wrapped in `\boxed{...}`, too.
 
 ```python
 from camel.verifiers import PythonVerifier
@@ -80,7 +86,7 @@ verifier = PythonVerifier(extractor=extractor)
 await verifier.setup(uv=True)
 ```
 
-Let's now initalize the single step environment with our filtered dataset and our verifier. The verifier will later help with the correctness reward 
+Let's now initialize the single step environment with our filtered dataset and our verifier. The verifier will later help with the correctness reward 
 
 We can then call `env.reset(batch_size=4)` to draw from the initial state distribution (the dataset) and return `batch_size` many observations, which can then be fed into the agent.
 

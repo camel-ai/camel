@@ -31,7 +31,6 @@ This setup not only demonstrates a practical application but also serves as a fl
 
 First, install the CAMEL package with all its dependencies:
 
-
 ```python
 !pip install "camel-ai==0.2.16"
 ```
@@ -39,7 +38,6 @@ First, install the CAMEL package with all its dependencies:
 ## 🔑 Setting Up API Keys
 
 Your can go to [here](https://www.alibabacloud.com/help/en/model-studio/developer-reference/use-qwen-by-calling-api/) to get API Key from Qwen AI.
-
 
 ```python
 # Prompt for the API key securely
@@ -49,7 +47,6 @@ from getpass import getpass
 qwen_api_key = getpass('Enter your API key: ')
 os.environ["QWEN_API_KEY"] = qwen_api_key
 ```
-    
 
 ## Qwen data generation
 
@@ -57,8 +54,7 @@ In this section, we'll demonstrate how to Qwen to generate structured data. [Qwe
 
 Import necessary libraries, define the Qwen agent, and define the Pydantic classes.
 
-The following function retrieves relevant information from a list of URLs based on a given query. It combines web scraping with Firecrawl and CAMEL's AutoRetriever for a seamless information retrieval process. (Some explaination)
-
+The following function retrieves relevant information from a list of URLs based on a given query. It combines web scraping with Firecrawl and CAMEL's AutoRetriever for a seamless information retrieval process. (Some explanation)
 
 ```python
 from pydantic import BaseModel, Field
@@ -69,7 +65,6 @@ from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 from camel.configs import QwenConfig
 ```
-
 
 ```python
 # Define Qwen model
@@ -95,7 +90,6 @@ class Student(BaseModel):
 First, let's try if we don't specific format just in prompt.
 
 
-
 ```python
 assistant_sys_msg = BaseMessage.make_assistant_message(
     role_name="Assistant",
@@ -112,12 +106,10 @@ user_msg = """Help me 1 student info in JSON format, with the following format:
 response = qwen_agent.step(user_msg)
 print(response.msgs[0].content)
 ```
-    
 
 It did it, but we need to expand our prompts, and the result still has some annoying extra texts, and we still need to parse it into valid JSON object by ourselves.
 
 A more elegant way is to use the `response_format` argument in `.step()` function:
-
 
 ```python
 qwen_agent.reset()
@@ -128,7 +120,6 @@ print(response.msgs[0].content)
 
 And we can directly extract the Pydantic object in `response.msgs[0].parsed` field:
 
-
 ```python
 print(type(response.msgs[0].parsed))
 print(response.msgs[0].parsed)
@@ -136,7 +127,6 @@ print(response.msgs[0].parsed)
 ```
 
 Hooray, now we successfully generate 1 entry of student, suppose we want to generate more, we can still achieve this easily.
-
 
 ```python
 class StudentList(BaseModel):
@@ -146,7 +136,7 @@ user_msg = "Help me 5 random student info in JSON format"
 response = qwen_agent.step(user_msg, response_format=StudentList)
 print(response.msgs[0].content)
 print(response.msgs[0].parsed)
-```   
+```
 
 That's it! We just generate 5 random students out of nowhere by using Qwen Camel agent!
 
@@ -185,6 +175,4 @@ Thanks from everyone at 🐫 CAMEL-AI
   <a href="https://discord.camel-ai.org">
     <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
   </a>
-</div>
-⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
 </div>

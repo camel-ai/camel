@@ -2,7 +2,7 @@
 title: "Create A Hackathon Judge Committee with Workforce"
 ---
 
-Workforce is a system where multiple agents collaborate to solve a given task. In this notebook, we will walk through it with a demo of a hackathon judge committee, where judges with different personas collaborate together to give scores to hackathon projects.
+Workforce is a system where multiple agents collaborate to solve a given task. In this document, we will walk through it with a demo of a hackathon judge committee, where judges with different personas collaborate together to give scores to hackathon projects.
 
 You can also check this cookbook in colab [here](https://colab.research.google.com/drive/18ajYUMfwDx3WyrjHow3EvUMpKQDcrLtr?usp=sharing)
 
@@ -22,15 +22,11 @@ You can also check this cookbook in colab [here](https://colab.research.google.c
 
 To get started, make sure you have `camel-ai` installed.
 
-
-
-
 ```python
 %pip install "camel-ai[all]==0.2.16"
 ```
 
 Workforce employs an asynchronous design with coroutines. However, since **coroutines cannot directly run in notebooks**, we need to do specific handlings in this demo. Note that, under most normal cases (not inside notebook environment), we don't need to do this.
-
 
 ```python
 %pip install nest_asyncio
@@ -38,12 +34,9 @@ import nest_asyncio
 nest_asyncio.apply()
 ```
 
-    
-
 ## Key Configuration
 
-In this demo, we will use tools related to web searching. Therefore, we need to configure the OpenAI API key, along with the Google API keys beforeheads.
-
+In this demo, we will use tools related to web searching. Therefore, we need to configure the OpenAI API key, along with the Google API keys beforehand.
 
 ```python
 from getpass import getpass
@@ -55,16 +48,13 @@ os.environ["OPENAI_API_KEY"] = openai_api_key
 google_api_key = getpass("Please input your Google API key: ")
 os.environ["GOOGLE_API_KEY"] = google_api_key
 # https://cse.google.com/cse/all
-search_engine_id = getpass("Please input your Search Egine ID: ")
+search_engine_id = getpass("Please input your Search Engine ID: ")
 os.environ["SEARCH_ENGINE_ID"] = search_engine_id
 ```
 
-    
-
 ## Define a Function for Making Judge Agent
 
-In this demo, we will create multiple judge agents with different personas and scoring criterias. For reusability, we first create a function to make judge agents.
-
+In this demo, we will create multiple judge agents with different personas and scoring criteria. For reusability, we first create a function to make judge agents.
 
 ```python
 import textwrap
@@ -116,7 +106,6 @@ def make_judge(
 
 Then we will create a mocked hackathon project description, which will be later sent to the judges for scoring.
 
-
 ```python
 proj_content = textwrap.dedent(
     """\
@@ -137,8 +126,7 @@ proj_content = textwrap.dedent(
 
 Then we will create five unique agents that will later collaborate together. Among these five agents, one of them is the helper that will help collect information and summarize the final result. We add search functions to this agent so that it can obtain information from online searches.
 
-The other four agents, on the other hand, are judges with different personas and criterias. They will give scores to the project according to the description, along with the information collected by the helper.
-
+The other four agents, on the other hand, are judges with different personas and criteria. They will give scores to the project according to the description, along with the information collected by the helper.
 
 ```python
 # Create helper agent
@@ -164,7 +152,7 @@ researcher_agent = ChatAgent(
     tools=search_tools,
 )
 
-# Create venture capitailist judge
+# Create venture capitalist judge
 vc_persona = (
     'You are a venture capitalist who is obsessed with how projects can '
     'be scaled into "unicorn" companies. You peppers your speech with '
@@ -299,7 +287,6 @@ Then we will do the most important part of the demo: create a workforce. Despite
 
 Note that, the description is very important in workforce, because it helps the coordinator agent in the workforce to do the task designation. Therefore, it's recommended to clearly mark the responsibility and capability of an agent when adding it to the workforce.
 
-
 ```python
 workforce = Workforce('Hackathon Judges')
 
@@ -327,22 +314,18 @@ workforce.add_single_agent_worker(
 )
 ```
 
-
-
-
 ## Create a Task
 
-A task is what a workforce accepts and processes. We can initailize a task by passing the content into it. It's recommended that the content of task is as detailed as possible, which will facilitate the later task decomposition and handling.
+A task is what a workforce accepts and processes. We can initialize a task by passing the content into it. It's recommended that the content of task is as detailed as possible, which will facilitate the later task decomposition and handling.
 
 The `additional_info` here is an optional field. It will come in handy when the task has important additional information, and you want it to be preserved during the whole process. Workforce will keep `additional_info` unchanged no matter how the task is decomposed and processed. It's perfect for keeping the project description under this scenario.
 
 > Also note that, the `id` of a task is not something important and you can fill in whatever value you like (we suggest `"0"` though). This is due to some legacy problems in the `Task` design and will be fixed later.
 
-
 ```python
 task = Task(
     content="Evaluate the hackathon project. First, do some research on "
-    "the infomation related to the project, then each judge should give a"
+    "the information related to the project, then each judge should give a"
     " score accordingly. Finally, list the opinions from each judge while"
     " preserving the judge's unique identity, along with the score and"
     " judge name, and also give a final summary of the opinions.",
@@ -355,7 +338,6 @@ task = Task(
 
 Finally, run the task with `process_task()` function. You can see the whole process being shown in the console, and at last the final result of the task will be printed.
 
-
 ```python
 task = workforce.process_task(task)
 
@@ -364,7 +346,7 @@ print(task.result)
 
 ## 🌟 Highlights
 
-The power of multi-agent system lies in the diversity. This notebook has
+The power of multi-agent system lies in the diversity. This document has
 guided you through setting up and running a CAMEL Workforce for a hackathon
 judge committee, showcasing how multiple agents can collaborate to solve
 complex tasks. You can easily extend this example to other scenarios

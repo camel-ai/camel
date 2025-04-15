@@ -25,13 +25,11 @@ In this notebook, you'll explore:
 
 ## 📦 Installation
 
-
 ```python
 %pip install "camel-ai[all]==0.2.16"
 ```
 
 ## 🔑 Setting Up API Keys
-
 
 ```python
 import os
@@ -42,10 +40,7 @@ openai_api_key = getpass('Enter your API key: ')
 os.environ["OPENAI_API_KEY"] = openai_api_key
 ```
 
-    
-
 ## Set up an agent for video analysis task
-
 
 ```python
 from camel.agents import ChatAgent
@@ -81,7 +76,6 @@ camel_agent = ChatAgent(
 
 ## Providing video and set user message
 
-
 ```python
 # Provide your video path
 video_cctv = "/content/CCTV.mov"
@@ -100,9 +94,6 @@ user_msg_cctv = BaseMessage.make_user_message(
 response_cctv = camel_agent.step(user_msg_cctv)
 print(response_cctv.msgs[0].content)
 ```
-
-    
-
 
 ```python
 # Provide your video path
@@ -123,9 +114,6 @@ response_help = camel_agent.step(user_msg_help)
 print(response_help.msgs[0].content)
 ```
 
-    
-
-
 ```python
 # Provide your video path
 video_content_mode = "/content/content mod.mov"
@@ -145,11 +133,9 @@ response_content_mode = camel_agent.step(user_msg_content_mode)
 print(response_content_mode.msgs[0].content)
 ```
 
-    
-
 ## 🌟 Highlights
 
-This notebook has guided you through setting up an agent and analying videos using CAMEL. 
+This notebook has guided you through setting up an agent and analyzing videos using CAMEL. 
 
 Now, you know how to generate description for uploaded videos.
 
@@ -181,6 +167,5 @@ Thanks from everyone at 🐫 CAMEL-AI
 </div>
 ⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
 </div>
-
 
 

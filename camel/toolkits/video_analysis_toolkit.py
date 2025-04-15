@@ -24,7 +24,7 @@ from camel.messages import BaseMessage
 from camel.models import BaseModelBackend, OpenAIAudioModels
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import dependencies_required
+from camel.utils import MCPServer, dependencies_required
 
 from .video_download_toolkit import (
     VideoDownloaderToolkit,
@@ -77,6 +77,7 @@ similar-looking species or objects
 """
 
 
+@MCPServer()
 class VideoAnalysisToolkit(BaseToolkit):
     r"""A class for analysing videos with vision-language model.
 
@@ -91,6 +92,9 @@ class VideoAnalysisToolkit(BaseToolkit):
             transcription using OpenAI's audio models. Requires a valid OpenAI
             API key. When disabled, video analysis will be based solely on
             visual content. (default: :obj:`False`)
+        timeout (Optional[float]): The timeout value for API requests
+                in seconds. If None, no timeout is applied.
+                (default: :obj:`None`)
     """
 
     @dependencies_required("ffmpeg", "scenedetect")
@@ -99,7 +103,9 @@ class VideoAnalysisToolkit(BaseToolkit):
         download_directory: Optional[str] = None,
         model: Optional[BaseModelBackend] = None,
         use_audio_transcription: bool = False,
+        timeout: Optional[float] = None,
     ) -> None:
+        super().__init__(timeout=timeout)
         self._cleanup = download_directory is None
         self._temp_files: list[str] = []  # Track temporary files for cleanup
         self._use_audio_transcription = use_audio_transcription

@@ -60,7 +60,6 @@ os.environ["OPENAI_API_KEY"] = openai_api_key
 
 ## Quick Start
 
-
 ```python
 # Import necessary classes
 from camel.societies import RolePlaying
@@ -76,7 +75,6 @@ model = ModelFactory.create(
 ```
 
 ### 🕹 Step 1: Configure the Role-Playing Session
-
 
 #### Set the `Task` Arguments
 
@@ -154,11 +152,11 @@ def run(society, round_limit: int=10):
             break
 
         # Get the results
-        print(f'[AI User] {user_response.msg.content}.\n')
+        print(f'[AI User] {user_response.msg.content}.\\n')
         # Check if the task is end
         if 'CAMEL_TASK_DONE' in user_response.msg.content:
             break
-        print(f'[AI Assistant] {assistant_response.msg.content}.\n')
+        print(f'[AI Assistant] {assistant_response.msg.content}.\\n')
 
 
 
@@ -182,7 +180,7 @@ Key tools utilized in this notebook include:
 
 * **Agent Society**: Enabling multi-agent communication for the task solving.
 
-That's everything: Got questions about 🐫 CAMEL-AI? Join us on [Discord](https://discord.camel-ai.org)! Whether you want to share feedback, explore the latest in multi-agent systems, get support, or connect with others on exciting projects, we’d love to have you in the community! 🤝
+That's everything: Got questions about 🐫 CAMEL-AI? Join us on [Discord](https://discord.camel-ai.org)! Whether you want to share feedback, explore the latest in multi-agent systems, get support, or connect with others on exciting projects, we'd love to have you in the community! 🤝
 
 Check out some of our other work:
 
