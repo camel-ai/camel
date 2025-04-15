@@ -15,7 +15,25 @@
 import os
 from unittest.mock import MagicMock, patch
 
-from camel.toolkits.pyautogui_toolkit import PyAutoGUIToolkit
+import pytest
+
+# Try importing PyAutoGUIToolkit, skip tests if it or its dependencies fail
+# This commonly happens in headless environments where 'DISPLAY' is not set.
+try:
+    import pyautogui  # noqa: F401
+
+    from camel.toolkits import PyAutoGUIToolkit
+
+    pyautogui_functional = True
+except (ImportError, KeyError, RuntimeError):
+    pyautogui_functional = False
+
+# Skip all tests in this module if pyautogui isn't functional
+pytestmark = pytest.mark.skipif(
+    not pyautogui_functional,
+    reason="PyAutoGUI is not installed or not functional in this "
+    "environment (e.g., headless)",
+)
 
 
 def test_initialization():
