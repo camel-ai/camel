@@ -16,9 +16,9 @@ from __future__ import annotations
 
 import inspect
 import json
-from typing import Any, Callable, Dict, Optional, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Type, Union
 
-from pydantic import BaseModel, create_model
+from pydantic import BaseModel, Field, create_model
 
 
 def get_pydantic_model(
@@ -63,6 +63,16 @@ def get_pydantic_model(
     raise ValueError("Invalid input data provided.")
 
 
+TYPE_MAPPING = {
+    "integer": int,
+    "number": float,
+    "string": str,
+    "boolean": bool,
+    "array": list,
+    "object": dict,
+}
+
+
 def model_from_json_schema(
     name: str,
     schema: Dict[str, Any],
@@ -80,24 +90,52 @@ def model_from_json_schema(
     required_fields = set(schema.get("required", []))
     fields: Dict[str, Any] = {}
 
-    type_mapping = {
-        "integer": int,
-        "number": float,
-        "string": str,
-        "boolean": bool,
-        "array": list,
-        "object": dict,
-    }
-
     for field_name, field_schema in properties.items():
         json_type = field_schema.get("type", "string")
-        py_type = type_mapping.get(json_type, str)
-
-        if field_name in required_fields:
-            fields[field_name] = (py_type, ...)
+        # Handle nested objects recursively.
+        if json_type == "object" and "properties" in field_schema:
+            py_type = model_from_json_schema(
+                f"{name}_{field_name}", field_schema
+            )
+        elif json_type == "array":
+            # Process array items if available.
+            items_schema = field_schema.get("items", {"type": "string"})
+            items_type: Type[Any] = TYPE_MAPPING.get(
+                items_schema.get("type", "string"), str
+            )
+            if (
+                items_schema.get("type") == "object"
+                and "properties" in items_schema
+            ):
+                items_type = model_from_json_schema(
+                    f"{name}_{field_name}_item", items_schema
+                )
+            py_type = List[items_type]  # type: ignore[assignment, valid-type]
         else:
-            # Optional[py_type] are not actual type objects,
-            # mypy cannot recognize this dynamic type, ignore check
-            fields[field_name] = (Optional[py_type], None)  # type: ignore[assignment]
+            py_type = TYPE_MAPPING.get(json_type, str)
+
+        # Handle nullable fields.
+        if field_schema.get("nullable", False):
+            py_type = Optional[py_type]  # type: ignore[assignment]
+
+        # Construct constraints if available.
+        constraints = {}
+        if "minLength" in field_schema:
+            constraints["min_length"] = field_schema["minLength"]
+        if "maxLength" in field_schema:
+            constraints["max_length"] = field_schema["maxLength"]
+        if "minimum" in field_schema:
+            constraints["ge"] = field_schema["minimum"]
+        if "maximum" in field_schema:
+            constraints["le"] = field_schema["maximum"]
+
+        default_value = field_schema.get("default", None)
+        if field_name in required_fields:
+            fields[field_name] = (py_type, Field(..., **constraints))
+        else:
+            fields[field_name] = (
+                Optional[py_type],
+                Field(default_value, **constraints),
+            )
 
     return create_model(name, **fields)  # type: ignore[call-overload]
