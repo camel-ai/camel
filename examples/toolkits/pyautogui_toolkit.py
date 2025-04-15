@@ -15,19 +15,18 @@
 
 """Example of using the PyAutoGUI toolkit with CAMEL agents for GUI automation."""
 
-import time
 import dotenv
-import inspect
+import time
+
+from camel.agents import ChatAgent
+from camel.configs import ChatGPTConfig
 from camel.logger import get_logger
+from camel.models import ModelFactory
+from camel.toolkits import PyAutoGUIToolkit
+from camel.types import ModelPlatformType, ModelType
 
 # Load environment variables from .env file (including OPENAI_API_KEY)
 dotenv.load_dotenv()
-
-from camel.agents import ChatAgent
-from camel.models import ModelFactory
-from camel.configs import ChatGPTConfig
-from camel.toolkits import PyAutoGUIToolkit, FunctionTool
-from camel.types import ModelType, ModelPlatformType
 
 # Set up logging
 logger = get_logger(__name__)
@@ -56,10 +55,12 @@ def setup_pyautogui_agent(model_type=ModelType.GPT_4O_MINI, temperature=0.1):
     
     # System message for the agent
     system_message = (
-        "You are an AutoGUI assistant that can control the computer using the PyAutoGUI toolkit. "
+        "You are an AutoGUI assistant that can control the computer using "
+        "the PyAutoGUI toolkit. "
         "You can move the mouse, click, type text, take screenshots, and more. "
         "Always respect safety boundaries when interacting with the GUI. "
-        "When asked to perform operations, use the provided tools and describe what you're doing. "
+        "When asked to perform operations, use the provided tools and describe "
+        "what you're doing. "
         "Monitor for potential errors and handle them appropriately."
     )
     

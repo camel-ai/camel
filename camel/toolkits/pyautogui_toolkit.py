@@ -50,7 +50,8 @@ class PyAutoGUIToolkit(BaseToolkit):
         self.screen_center = (self.screen_width // 2, self.screen_height // 2)
     
     def _get_safe_coordinates(self, x: int, y: int) -> Tuple[int, int]:
-        r"""Ensure coordinates are within safe boundaries to prevent triggering failsafe.
+        r"""Ensure coordinates are within safe boundaries to prevent triggering 
+        failsafe.
         
         Args:
             x (int): Original x-coordinate
@@ -59,14 +60,18 @@ class PyAutoGUIToolkit(BaseToolkit):
         Returns:
             Tuple[int, int]: Safe coordinates
         """
+        # Clamp coordinates to safe boundaries
         safe_x = max(self.safe_min_x, min(x, self.safe_max_x))
         safe_y = max(self.safe_min_y, min(y, self.safe_max_y))
         
         if safe_x != x or safe_y != y:
-            logger.info(f"Safety: Adjusted coordinates from ({x}, {y}) to ({safe_x}, {safe_y})")
+            logger.info(
+                f"Safety: Adjusted coordinates from ({x}, {y}) to "
+                f"({safe_x}, {safe_y})"
+            )
         
         return safe_x, safe_y
-
+    
     def mouse_move(self, x: int, y: int, duration: float = 0.5) -> str:
         r"""Move mouse pointer to specified coordinates.
         
@@ -86,7 +91,7 @@ class PyAutoGUIToolkit(BaseToolkit):
             return f"Mouse moved to position ({safe_x}, {safe_y})"
         except Exception as e:
             logger.error(f"Error moving mouse: {e}")
-            return f"Error: {str(e)}"
+            return f"Error: {e}"
             
     def mouse_click(
         self, 
@@ -102,11 +107,11 @@ class PyAutoGUIToolkit(BaseToolkit):
                 (default: :obj:`'left'`)
             clicks (int): Number of clicks.
                 (default: :obj:`1`)
-            x (Optional[int]): X-coordinate to click at. If None, uses current position.
-                (default: :obj:`None`)
-            y (Optional[int]): Y-coordinate to click at. If None, uses current position.
-                (default: :obj:`None`)
-                
+            x (Optional[int]): X-coordinate to click at. If None, uses current 
+                position. (default: :obj:`None`)
+            y (Optional[int]): Y-coordinate to click at. If None, uses current 
+                position. (default: :obj:`None`)
+            
         Returns:
             str: Success or error message.
         """
@@ -114,22 +119,27 @@ class PyAutoGUIToolkit(BaseToolkit):
             # Apply safety boundaries if coordinates are specified
             if x is not None and y is not None:
                 safe_x, safe_y = self._get_safe_coordinates(x, y)
-                self.pyautogui.click(x=safe_x, y=safe_y, button=button, clicks=clicks)
+                self.pyautogui.click(
+                    x=safe_x, y=safe_y, button=button, clicks=clicks
+                )
+                return f"Clicked {button} button {clicks} time(s) at position {safe_x}, {safe_y}"
             else:
                 self.pyautogui.click(button=button, clicks=clicks)
-            return f"Clicked {button} button {clicks} time(s)"
+                return f"Clicked {button} button {clicks} time(s)"
         except Exception as e:
             logger.error(f"Error clicking mouse: {e}")
-            return f"Error: {str(e)}"
+            return f"Error: {e}"
     
-    def double_click(self, x: Optional[int] = None, y: Optional[int] = None) -> str:
+    def double_click(
+        self, x: Optional[int] = None, y: Optional[int] = None
+    ) -> str:
         r"""Double-click the left mouse button.
         
         Args:
-            x (Optional[int]): X-coordinate to double-click at. If None, uses current position.
-                (default: :obj:`None`)
-            y (Optional[int]): Y-coordinate to double-click at. If None, uses current position.
-                (default: :obj:`None`)
+            x (Optional[int]): X-coordinate to double-click at. If None, uses 
+                current position. (default: :obj:`None`)
+            y (Optional[int]): Y-coordinate to double-click at. If None, uses 
+                current position. (default: :obj:`None`)
             
         Returns:
             str: Success or error message.
@@ -140,22 +150,25 @@ class PyAutoGUIToolkit(BaseToolkit):
                 safe_x, safe_y = self._get_safe_coordinates(x, y)
                 # Method name from PyAutoGUI API (not a typo)
                 self.pyautogui.doubleClick(x=safe_x, y=safe_y)
+                return f"Double-clicked at position {safe_x}, {safe_y}"
             else:
                 # Method name from PyAutoGUI API (not a typo)
                 self.pyautogui.doubleClick()
-            return f"Double-clicked at position ({safe_x}, {safe_y})"
+                return "Double-clicked at current position"
         except Exception as e:
             logger.error(f"Error double-clicking: {e}")
-            return f"Error: {str(e)}"
+            return f"Error: {e}"
     
-    def right_click(self, x: Optional[int] = None, y: Optional[int] = None) -> str:
+    def right_click(
+        self, x: Optional[int] = None, y: Optional[int] = None
+    ) -> str:
         r"""Right-click the mouse.
         
         Args:
-            x (Optional[int]): X-coordinate to right-click at. If None, uses current position.
-                (default: :obj:`None`)
-            y (Optional[int]): Y-coordinate to right-click at. If None, uses current position.
-                (default: :obj:`None`)
+            x (Optional[int]): X-coordinate to right-click at. If None, uses 
+                current position. (default: :obj:`None`)
+            y (Optional[int]): Y-coordinate to right-click at. If None, uses 
+                current position. (default: :obj:`None`)
             
         Returns:
             str: Success or error message.
@@ -165,21 +178,24 @@ class PyAutoGUIToolkit(BaseToolkit):
             if x is not None and y is not None:
                 safe_x, safe_y = self._get_safe_coordinates(x, y)
                 self.pyautogui.rightClick(x=safe_x, y=safe_y)
+                return f"Right-clicked at position {safe_x}, {safe_y}"
             else:
                 self.pyautogui.rightClick()
-            return f"Right-clicked at position ({safe_x}, {safe_y})"
+                return "Right-clicked at current position"
         except Exception as e:
             logger.error(f"Error right-clicking: {e}")
-            return f"Error: {str(e)}"
+            return f"Error: {e}"
     
-    def middle_click(self, x: Optional[int] = None, y: Optional[int] = None) -> str:
+    def middle_click(
+        self, x: Optional[int] = None, y: Optional[int] = None
+    ) -> str:
         r"""Middle-click the mouse.
         
         Args:
-            x (Optional[int]): X-coordinate to middle-click at. If None, uses current position.
-                (default: :obj:`None`)
-            y (Optional[int]): Y-coordinate to middle-click at. If None, uses current position.
-                (default: :obj:`None`)
+            x (Optional[int]): X-coordinate to middle-click at. If None, uses 
+                current position. (default: :obj:`None`)
+            y (Optional[int]): Y-coordinate to middle-click at. If None, uses 
+                current position. (default: :obj:`None`)
             
         Returns:
             str: Success or error message.
@@ -189,12 +205,13 @@ class PyAutoGUIToolkit(BaseToolkit):
             if x is not None and y is not None:
                 safe_x, safe_y = self._get_safe_coordinates(x, y)
                 self.pyautogui.middleClick(x=safe_x, y=safe_y)
+                return f"Middle-clicked at position {safe_x}, {safe_y}"
             else:
                 self.pyautogui.middleClick()
-            return f"Middle-clicked at position ({safe_x}, {safe_y})"
+                return "Middle-clicked at current position"
         except Exception as e:
             logger.error(f"Error middle-clicking: {e}")
-            return f"Error: {str(e)}"
+            return f"Error: {e}"
     
     def get_mouse_position(self) -> str:
         r"""Get current mouse position.
@@ -207,7 +224,7 @@ class PyAutoGUIToolkit(BaseToolkit):
             return f"Mouse position: ({x}, {y})"
         except Exception as e:
             logger.error(f"Error getting mouse position: {e}")
-            return f"Error: {str(e)}"
+            return f"Error: {e}"
     
     def get_screen_size(self) -> str:
         r"""Get screen size.
@@ -220,9 +237,12 @@ class PyAutoGUIToolkit(BaseToolkit):
             return f"Screen size: {width}x{height}"
         except Exception as e:
             logger.error(f"Error getting screen size: {e}")
-            return f"Error: {str(e)}"
+            return f"Error: {e}"
     
-    def take_screenshot(self, left: int = 0, top: int = 0, width: Optional[int] = None, height: Optional[int] = None) -> str:
+    def take_screenshot(
+        self, left: int = 0, top: int = 0, 
+        width: Optional[int] = None, height: Optional[int] = None
+    ) -> str:
         r"""Take a screenshot.
         
         Args:
@@ -230,10 +250,10 @@ class PyAutoGUIToolkit(BaseToolkit):
                 (default: :obj:`0`)
             top (int): Top coordinate of the screenshot region.
                 (default: :obj:`0`)
-            width (Optional[int]): Width of the screenshot region. If None, uses full screen width.
-                (default: :obj:`None`)
-            height (Optional[int]): Height of the screenshot region. If None, uses full screen height.
-                (default: :obj:`None`)
+            width (Optional[int]): Width of the screenshot region. If None, uses 
+                full screen width. (default: :obj:`None`)
+            height (Optional[int]): Height of the screenshot region. If None, uses 
+                full screen height. (default: :obj:`None`)
             
         Returns:
             str: Path to the saved screenshot.
@@ -259,7 +279,9 @@ class PyAutoGUIToolkit(BaseToolkit):
             os.makedirs(screenshots_dir, exist_ok=True)
             
             # Take screenshot
-            screenshot = self.pyautogui.screenshot(region=(safe_left, safe_top, width, height))
+            screenshot = self.pyautogui.screenshot(
+                region=(safe_left, safe_top, width, height)
+            )
             
             # Save screenshot to file
             timestamp = int(time.time())
@@ -269,7 +291,7 @@ class PyAutoGUIToolkit(BaseToolkit):
             return f"Screenshot saved to {screenshot_path}"
         except Exception as e:
             logger.error(f"Error taking screenshot: {e}")
-            return f"Error: {str(e)}"
+            return f"Error: {e}"
     
     def mouse_drag(
         self, 
@@ -297,36 +319,53 @@ class PyAutoGUIToolkit(BaseToolkit):
         """
         try:
             # Apply safety boundaries to both start and end positions
-            safe_start_x, safe_start_y = self._get_safe_coordinates(start_x, start_y)
+            safe_start_x, safe_start_y = self._get_safe_coordinates(
+                start_x, start_y
+            )
             safe_end_x, safe_end_y = self._get_safe_coordinates(end_x, end_y)
             
             # Break operation into smaller steps for safety
             # First move to start position
-            self.pyautogui.moveTo(safe_start_x, safe_start_y, duration=duration/3)
+            self.pyautogui.moveTo(
+                safe_start_x, safe_start_y, duration=duration/3
+            )
             # Then perform drag
-            self.pyautogui.dragTo(safe_end_x, safe_end_y, duration=duration/3, button=button)
+            self.pyautogui.dragTo(
+                safe_end_x, safe_end_y, duration=duration/3, button=button
+            )
             # Finally, move to a safe position (screen center) afterwards
-            self.pyautogui.moveTo(self.screen_center[0], self.screen_center[1], duration=duration/3)
+            self.pyautogui.moveTo(
+                self.screen_center[0], self.screen_center[1], duration=duration/3
+            )
             
-            return f"Dragged from ({safe_start_x}, {safe_start_y}) to ({safe_end_x}, {safe_end_y})"
+            return (
+                f"Dragged from ({safe_start_x}, {safe_start_y}) "
+                f"to ({safe_end_x}, {safe_end_y})"
+            )
         except Exception as e:
             logger.error(f"Error dragging mouse: {e}")
             # Try to move to safe position even after error
             try:
-                self.pyautogui.moveTo(self.screen_center[0], self.screen_center[1], duration=0.2)
-            except:
+                self.pyautogui.moveTo(
+                    self.screen_center[0], self.screen_center[1], duration=0.2
+                )
+            except Exception:  
                 pass
-            return f"Error: {str(e)}"
+            return f"Error: {e}"
 
-    def scroll(self, scroll_amount: int, x: Optional[int] = None, y: Optional[int] = None) -> str:
+    def scroll(
+        self, scroll_amount: int, 
+        x: Optional[int] = None, y: Optional[int] = None
+    ) -> str:
         r"""Scroll the mouse wheel.
         
         Args:
-            scroll_amount (int): Amount to scroll. Positive values scroll up, negative values scroll down.
-            x (Optional[int]): X-coordinate to scroll at. If None, uses current position.
-                (default: :obj:`None`)
-            y (Optional[int]): Y-coordinate to scroll at. If None, uses current position.
-                (default: :obj:`None`)
+            scroll_amount (int): Amount to scroll. Positive values scroll up, 
+                negative values scroll down.
+            x (Optional[int]): X-coordinate to scroll at. If None, uses current 
+                position. (default: :obj:`None`)
+            y (Optional[int]): Y-coordinate to scroll at. If None, uses current 
+                position. (default: :obj:`None`)
             
         Returns:
             str: Success or error message.
@@ -344,12 +383,15 @@ class PyAutoGUIToolkit(BaseToolkit):
             
             # Move mouse back to screen center for added safety
             self.pyautogui.moveTo(self.screen_center[0], self.screen_center[1])
-            logger.info(f"Safety: Moving mouse back to screen center ({self.screen_center[0]}, {self.screen_center[1]})")
+            logger.info(
+                f"Safety: Moving mouse back to screen center "
+                f"({self.screen_center[0]}, {self.screen_center[1]})"
+            )
             
-            return f"Scrolled {scroll_amount} click(s)"
+            return f"Scrolled {scroll_amount} clicks at position {safe_x}, {safe_y}"
         except Exception as e:
             logger.error(f"Error scrolling: {e}")
-            return f"Error: {str(e)}"
+            return f"Error: {e}"
     
     def keyboard_type(self, text: str, interval: float = 0.0) -> str:
         r"""Type text on the keyboard.
@@ -365,22 +407,29 @@ class PyAutoGUIToolkit(BaseToolkit):
         try:
             # Validate text input
             if not isinstance(text, str):
-                return f"Error: Input must be a string, got {type(text).__name__}"
+                return (
+                    f"Error: Input must be a string, got {type(text).__name__}"
+                )
                 
             if not text:
-                return "Error: Cannot type empty text"
+                return "Error: Empty text input"
                 
             if len(text) > 1000:  # Set a reasonable maximum length limit
-                logger.warning(f"Warning: Very long text ({len(text)} characters) may cause performance issues")
+                logger.warning(
+                    f"Warning: Very long text ({len(text)} characters) may "
+                    f"cause performance issues"
+                )
                 
             # First, move mouse to a safe position to prevent potential issues
-            self.pyautogui.moveTo(self.screen_center[0], self.screen_center[1], duration=0.1)
+            self.pyautogui.moveTo(
+                self.screen_center[0], self.screen_center[1], duration=0.1
+            )
             
             self.pyautogui.write(text, interval=interval)
             return f"Typed text: {text[:20]}{'...' if len(text) > 20 else ''}"
         except Exception as e:
             logger.error(f"Error typing text: {e}")
-            return f"Error: {str(e)}"
+            return f"Error: {e}"
     
     def press_key(self, key: str) -> str:
         r"""Press a key on the keyboard.
@@ -392,30 +441,37 @@ class PyAutoGUIToolkit(BaseToolkit):
             str: Success or error message.
         """
         try:
-            # Basic validation
+            # Input validation
             if not isinstance(key, str):
                 return f"Error: Key must be a string, got {type(key).__name__}"
-            
+                
             if not key:
-                return "Error: Cannot press empty key"
-            
+                return "Error: Empty key input"
+                
             # Length validation (most valid key names are short)
             if len(key) > 20:
-                return f"Error: Key name '{key}' is too long (max 20 characters)"
+                return (
+                    f"Error: Key name '{key}' is too long (max 20 characters)"
+                )
                 
-            # Special character validation (key names usually don't contain special characters)
+            # Special character validation 
+            # (key names usually don't contain special characters)
             import re
-            if re.search(r'[^\w+\-_]', key) and len(key) > 1:  # 允许单个特殊字符
-                logger.warning(f"Warning: Key '{key}' contains unusual characters")
+            if re.search(r'[^\w+\-_]', key) and len(key) > 1:  
+                logger.warning(
+                    f"Warning: Key '{key}' contains unusual characters"
+                )
             
             # First, move mouse to a safe position to prevent potential issues
-            self.pyautogui.moveTo(self.screen_center[0], self.screen_center[1], duration=0.1)
+            self.pyautogui.moveTo(
+                self.screen_center[0], self.screen_center[1], duration=0.1
+            )
             
             self.pyautogui.press(key)
             return f"Pressed key: {key}"
         except Exception as e:
             logger.error(f"Error pressing key: {e}")
-            return f"Error: Invalid key '{key}' or error pressing it. {str(e)}"
+            return f"Error: Invalid key '{key}' or error pressing it. {e}"
     
     def hotkey(self, *keys) -> str:
         r"""Press keys in succession and release in reverse order.
@@ -428,15 +484,19 @@ class PyAutoGUIToolkit(BaseToolkit):
         """
         try:
             # First, move mouse to a safe position to prevent potential issues
-            self.pyautogui.moveTo(self.screen_center[0], self.screen_center[1], duration=0.1)
+            self.pyautogui.moveTo(
+                self.screen_center[0], self.screen_center[1], duration=0.1
+            )
             
             self.pyautogui.hotkey(*keys)
             return f"Pressed hotkey: {'+'.join(keys)}"
         except Exception as e:
             logger.error(f"Error pressing hotkey: {e}")
-            return f"Error: {str(e)}"
+            return f"Error: {e}"
   
-    def open_terminal(self, wait_time: int = 2, force_english_input: bool = False) -> str:
+    def open_terminal(
+        self, wait_time: int = 2, force_english_input: bool = False
+    ) -> str:
         r"""Open a terminal window.
         
         Args:
@@ -450,33 +510,45 @@ class PyAutoGUIToolkit(BaseToolkit):
         """
         try:
             # Move to safe position first
-            self.pyautogui.moveTo(self.screen_center[0], self.screen_center[1], duration=0.1)
+            self.pyautogui.moveTo(
+                self.screen_center[0], self.screen_center[1], duration=0.1
+            )
             
             import platform
-            
+            import subprocess
             os_name = platform.system()
+            
             if os_name == 'Darwin':  # macOS
                 if force_english_input:
-                    subprocess.Popen(['open', '-a', 'Terminal', '--args', 'LANG=en_US.UTF-8'])
+                    subprocess.Popen([
+                        'open', '-a', 'Terminal', 
+                        '--args', 'LANG=en_US.UTF-8'
+                    ])
                 else:
                     subprocess.Popen(['open', '-a', 'Terminal'])
             elif os_name == 'Windows':
-                subprocess.Popen(['cmd.exe'])
+                subprocess.Popen('cmd.exe')
             elif os_name == 'Linux':
-                # Try common terminal emulators
-                for terminal in ['gnome-terminal', 'konsole', 'xterm']:
+                # Try several common terminal emulators
+                terminals = ['gnome-terminal', 'konsole', 'xterm']
+                for term in terminals:
                     try:
-                        subprocess.Popen([terminal])
+                        subprocess.Popen(term)
                         break
                     except FileNotFoundError:
                         continue
+            else:
+                return f"Unsupported operating system: {os_name}"
             
             time.sleep(wait_time)  # Wait for terminal to open
-            return f"Terminal opened on {os_name} with {'English' if force_english_input else 'default'} input method"
+            return (
+                f"Terminal opened on {os_name} with "
+                f"{'English' if force_english_input else 'default'} input method"
+            )
         except Exception as e:
             logger.error(f"Error opening terminal: {e}")
-            return f"Error: {str(e)}"
-    
+            return f"Error: {e}"
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects for PyAutoGUI operations.
         
