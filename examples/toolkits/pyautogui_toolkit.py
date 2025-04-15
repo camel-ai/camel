@@ -13,7 +13,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-"""Example of using the PyAutoGUI toolkit with CAMEL agents for GUI automation."""
+"""Example of using the PyAutoGUI toolkit with CAMEL agents for GUI
+automation."""
 
 import time
 import dotenv
@@ -56,10 +57,13 @@ def setup_pyautogui_agent(model_type=ModelType.GPT_4O_MINI, temperature=0.1):
     
     # System message for the agent
     system_message = (
-        "You are an AutoGUI assistant that can control the computer using the PyAutoGUI toolkit. "
-        "You can move the mouse, click, type text, take screenshots, and more. "
+        "You are an AutoGUI assistant that can control the computer using the "
+        "PyAutoGUI toolkit. "
+        "You can move the mouse, click, type text, take screenshots, and "
+        "more. "
         "Always respect safety boundaries when interacting with the GUI. "
-        "When asked to perform operations, use the provided tools and describe what you're doing. "
+        "When asked to perform operations, use the provided tools and "
+        "describe what you're doing. "
         "Monitor for potential errors and handle them appropriately."
     )
     
@@ -84,7 +88,10 @@ def run_automated_demo():
     """
     # Print introduction
     print("\n==== AUTOMATED PYAUTOGUI TOOLKIT DEMONSTRATION ====\n")
-    print("This demonstration will showcase all PyAutoGUI toolkit features automatically")
+    print(
+        "This demonstration will showcase all PyAutoGUI toolkit "
+        "features automatically"
+    )
     print("No user input is required. Please do not interrupt the process.\n")
     
     # Create a chat agent with PyAutoGUI tools
@@ -108,8 +115,10 @@ def run_automated_demo():
         
         # Task 3: Complex mouse operations
         "Perform these steps in sequence without asking for confirmation:\n"
-        "1. Move the mouse to the top left quadrant of the screen (25% of screen width and height)\n"
-        "2. Drag the mouse to the bottom right quadrant (75% of screen width and height)\n"
+        "1. Move the mouse to the top left quadrant of the screen "
+        "(25% of screen width and height)\n"
+        "2. Drag the mouse to the bottom right quadrant "
+        "(75% of screen width and height)\n"
         "3. Scroll the mouse wheel down a few clicks\n"
         "4. Take a screenshot to document the result\n",
     ]

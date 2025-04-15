@@ -61,7 +61,8 @@ def test_mouse_click(mock_pyautogui):
     """Test mouse_click method by patching the global pyautogui namespace"""
     # Configure mock object
     mock_pyautogui.size.return_value = (1920, 1080)
-    mock_pyautogui.position.return_value = (100, 100)  # Used for click test without coordinates
+    mock_pyautogui.position.return_value = (100, 100)  # Used for click test 
+                                                       # without coordinates
     
     # Initialize toolkit
     toolkit = PyAutoGUIToolkit()
@@ -94,7 +95,8 @@ def test_keyboard_type(mock_pyautogui):
     # Test keyboard input
     result = toolkit.keyboard_type("Hello, World!")
     
-    # Verify the call is correct (need to include interval=0.0 default parameter)
+    # Verify the call is correct (need to include interval=0.0 default 
+    # parameter)
     mock_pyautogui.write.assert_called_once_with("Hello, World!", interval=0.0)
     assert "Typed text: Hello, World!" in result
     
@@ -128,7 +130,8 @@ def test_get_tools():
             'mouse_move', 
             'mouse_click', 
             'keyboard_type', 
-            'take_screenshot',  # Note: this is 'take_screenshot', not 'screenshot'
+            'take_screenshot',  # Note: this is 'take_screenshot', 
+                                # not 'screenshot'
             'get_screen_size',
             'get_mouse_position',
             'press_key',
@@ -143,13 +146,17 @@ def test_get_tools():
             assert method in tool_names, f"Expected method '{method}' not found in tools"
             
         # Verify tool count matches expected
-        assert len(tool_names) == len(expected_methods), f"Expected {len(expected_methods)} tools, but got {len(tool_names)}"
+        assert len(tool_names) == len(expected_methods), (
+            f"Expected {len(expected_methods)} tools, "
+            f"but got {len(tool_names)}"
+        )
 
 @patch("camel.toolkits.pyautogui_toolkit.pyautogui", create=True)
 @patch("camel.toolkits.pyautogui_toolkit.os")
 @patch("camel.toolkits.pyautogui_toolkit.time")
 def test_take_screenshot(mock_time, mock_os, mock_pyautogui):
-    """Test take_screenshot method by patching the global pyautogui namespace"""
+    """Test take_screenshot method by patching the global pyautogui 
+    namespace"""
     # Configure mocks
     mock_pyautogui.size.return_value = (1920, 1080)
     mock_time.time.return_value = 12345
@@ -205,7 +212,8 @@ def test_take_screenshot(mock_time, mock_os, mock_pyautogui):
 
 @patch("camel.toolkits.pyautogui_toolkit.pyautogui", create=True)
 def test_get_screen_size(mock_pyautogui):
-    """Test get_screen_size method by patching the global pyautogui namespace"""
+    """Test get_screen_size method by patching the global pyautogui 
+    namespace"""
     # Configure mock
     mock_pyautogui.size.return_value = (1920, 1080)
     
@@ -222,7 +230,8 @@ def test_get_screen_size(mock_pyautogui):
 
 @patch("camel.toolkits.pyautogui_toolkit.pyautogui", create=True)
 def test_get_mouse_position(mock_pyautogui):
-    """Test get_mouse_position method by patching the global pyautogui namespace"""
+    """Test get_mouse_position method by patching the global pyautogui 
+    namespace"""
     # Configure mock
     mock_pyautogui.position.return_value = (500, 300)
     
@@ -277,8 +286,11 @@ def test_mouse_drag(mock_pyautogui):
     # Test mouse_drag
     result = toolkit.mouse_drag(200, 200, 400, 400, duration=0.5)
     
-    # Verify the call is correct - duration is divided by 3 in the implementation
-    mock_pyautogui.dragTo.assert_called_once_with(400, 400, duration=0.5/3, button='left')
+    # Verify the call is correct - duration is divided by 3 in the 
+    # implementation
+    mock_pyautogui.dragTo.assert_called_once_with(
+        400, 400, duration=0.5/3, button='left'
+    )
     assert "Dragged from" in result
 
 

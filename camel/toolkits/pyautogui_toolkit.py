@@ -50,7 +50,8 @@ class PyAutoGUIToolkit(BaseToolkit):
         self.screen_center = (self.screen_width // 2, self.screen_height // 2)
     
     def _get_safe_coordinates(self, x: int, y: int) -> Tuple[int, int]:
-        r"""Ensure coordinates are within safe boundaries to prevent triggering failsafe.
+        r"""Ensure coordinates are within safe boundaries to prevent triggering
+        failsafe.
         
         Args:
             x (int): Original x-coordinate
@@ -63,7 +64,10 @@ class PyAutoGUIToolkit(BaseToolkit):
         safe_y = max(self.safe_min_y, min(y, self.safe_max_y))
         
         if safe_x != x or safe_y != y:
-            logger.info(f"Safety: Adjusted coordinates from ({x}, {y}) to ({safe_x}, {safe_y})")
+            logger.info(
+                f"Safety: Adjusted coordinates from ({x}, {y}) to "
+                f"({safe_x}, {safe_y})"
+            )
         
         return safe_x, safe_y
 
@@ -114,10 +118,15 @@ class PyAutoGUIToolkit(BaseToolkit):
             # Apply safety boundaries if coordinates are specified
             if x is not None and y is not None:
                 safe_x, safe_y = self._get_safe_coordinates(x, y)
-                self.pyautogui.click(x=safe_x, y=safe_y, button=button, clicks=clicks)
+                self.pyautogui.click(
+                    x=safe_x, y=safe_y, button=button, clicks=clicks
+                )
             else:
                 self.pyautogui.click(button=button, clicks=clicks)
-            return f"Clicked {button} button {clicks} time(s)"
+            return (
+                f"Clicked {button} button {clicks} time(s) at position "
+                f"{safe_x}, {safe_y}"
+            )
         except Exception as e:
             logger.error(f"Error clicking mouse: {e}")
             return f"Error: {str(e)}"
@@ -230,10 +239,10 @@ class PyAutoGUIToolkit(BaseToolkit):
                 (default: :obj:`0`)
             top (int): Top coordinate of the screenshot region.
                 (default: :obj:`0`)
-            width (Optional[int]): Width of the screenshot region. If None, uses full screen width.
-                (default: :obj:`None`)
-            height (Optional[int]): Height of the screenshot region. If None, uses full screen height.
-                (default: :obj:`None`)
+            width (Optional[int]): Width of the screenshot region. If None, 
+                uses full screen width. (default: :obj:`None`)
+            height (Optional[int]): Height of the screenshot region. If None, 
+                uses full screen height. (default: :obj:`None`)
             
         Returns:
             str: Path to the saved screenshot.
@@ -263,7 +272,9 @@ class PyAutoGUIToolkit(BaseToolkit):
             
             # Save screenshot to file
             timestamp = int(time.time())
-            screenshot_path = os.path.join(screenshots_dir, f"screenshot_{timestamp}.png")
+            screenshot_path = os.path.join(
+                screenshots_dir, f"screenshot_{timestamp}.png"
+            )
             screenshot.save(screenshot_path)
             
             return f"Screenshot saved to {screenshot_path}"
@@ -306,7 +317,10 @@ class PyAutoGUIToolkit(BaseToolkit):
             # Then perform drag
             self.pyautogui.dragTo(safe_end_x, safe_end_y, duration=duration/3, button=button)
             # Finally, move to a safe position (screen center) afterwards
-            self.pyautogui.moveTo(self.screen_center[0], self.screen_center[1], duration=duration/3)
+            self.pyautogui.moveTo(
+                self.screen_center[0], self.screen_center[1], 
+                duration=duration/3
+            )
             
             return f"Dragged from ({safe_start_x}, {safe_start_y}) to ({safe_end_x}, {safe_end_y})"
         except Exception as e:
@@ -323,10 +337,10 @@ class PyAutoGUIToolkit(BaseToolkit):
         
         Args:
             scroll_amount (int): Amount to scroll. Positive values scroll up, negative values scroll down.
-            x (Optional[int]): X-coordinate to scroll at. If None, uses current position.
-                (default: :obj:`None`)
-            y (Optional[int]): Y-coordinate to scroll at. If None, uses current position.
-                (default: :obj:`None`)
+            x (Optional[int]): X-coordinate to scroll at. If None, 
+                uses current position. (default: :obj:`None`)
+            y (Optional[int]): Y-coordinate to scroll at. If None, 
+                uses current position. (default: :obj:`None`)
             
         Returns:
             str: Success or error message.
@@ -344,9 +358,15 @@ class PyAutoGUIToolkit(BaseToolkit):
             
             # Move mouse back to screen center for added safety
             self.pyautogui.moveTo(self.screen_center[0], self.screen_center[1])
-            logger.info(f"Safety: Moving mouse back to screen center ({self.screen_center[0]}, {self.screen_center[1]})")
+            logger.info(
+                f"Safety: Moving mouse back to screen center "
+                f"({self.screen_center[0]}, {self.screen_center[1]})"
+            )
             
-            return f"Scrolled {scroll_amount} click(s)"
+            return (
+                f"Scrolled {scroll_amount} clicks at position "
+                f"{safe_x}, {safe_y}"
+            )
         except Exception as e:
             logger.error(f"Error scrolling: {e}")
             return f"Error: {str(e)}"
@@ -371,7 +391,9 @@ class PyAutoGUIToolkit(BaseToolkit):
                 return "Error: Cannot type empty text"
                 
             if len(text) > 1000:  # Set a reasonable maximum length limit
-                logger.warning(f"Warning: Very long text ({len(text)} characters) may cause performance issues")
+                logger.warning(
+                    f"Warning: Very long text ({len(text)} characters) may cause performance issues"
+                )
                 
             # First, move mouse to a safe position to prevent potential issues
             self.pyautogui.moveTo(self.screen_center[0], self.screen_center[1], duration=0.1)
@@ -472,7 +494,11 @@ class PyAutoGUIToolkit(BaseToolkit):
                         continue
             
             time.sleep(wait_time)  # Wait for terminal to open
-            return f"Terminal opened on {os_name} with {'English' if force_english_input else 'default'} input method"
+            return (
+                f"Terminal opened on {os_name} with "
+                f"{'English' if force_english_input else 'default'} "
+                f"input method"
+            )
         except Exception as e:
             logger.error(f"Error opening terminal: {e}")
             return f"Error: {str(e)}"
