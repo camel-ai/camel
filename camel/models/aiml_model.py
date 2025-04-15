@@ -24,7 +24,7 @@ from camel.utils import (
 
 
 class AIMLModel(OpenAICompatibleModel):
-    r"""AIML API in a unified BaseModelBackend interface.
+    r"""AIML API in a unified OpenAICompatibleModel interface.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is

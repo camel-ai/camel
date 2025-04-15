@@ -32,7 +32,7 @@ from camel.utils import (
 
 
 class SiliconFlowModel(OpenAICompatibleModel):
-    r"""SiliconFlow API in a unified BaseModelBackend interface.
+    r"""SiliconFlow API in a unified OpenAICompatibleModel interface.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is

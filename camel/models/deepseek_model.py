@@ -44,7 +44,7 @@ REASONSER_UNSUPPORTED_PARAMS = [
 
 
 class DeepSeekModel(OpenAICompatibleModel):
-    r"""DeepSeek API in a unified BaseModelBackend interface.
+    r"""DeepSeek API in a unified OpenAICompatibleModel interface.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is

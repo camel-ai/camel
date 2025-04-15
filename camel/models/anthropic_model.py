@@ -26,7 +26,7 @@ from camel.utils import (
 
 
 class AnthropicModel(OpenAICompatibleModel):
-    r"""Anthropic API in a unified BaseModelBackend interface.
+    r"""Anthropic API in a unified OpenAICompatibleModel interface.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is

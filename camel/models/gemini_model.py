@@ -32,7 +32,7 @@ from camel.utils import (
 
 
 class GeminiModel(OpenAICompatibleModel):
-    r"""Gemini API in a unified BaseModelBackend interface.
+    r"""Gemini API in a unified OpenAICompatibleModel interface.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is

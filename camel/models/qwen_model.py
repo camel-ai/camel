@@ -34,7 +34,7 @@ from camel.utils import (
 
 
 class QwenModel(OpenAICompatibleModel):
-    r"""Qwen API in a unified BaseModelBackend interface.
+    r"""Qwen API in a unified OpenAICompatibleModel interface.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is

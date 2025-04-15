@@ -25,7 +25,7 @@ from camel.utils import (
 
 
 class ModelScopeModel(OpenAICompatibleModel):
-    r"""ModelScope API in a unified BaseModelBackend interface.
+    r"""ModelScope API in a unified OpenAICompatibleModel interface.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is

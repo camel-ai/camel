@@ -33,7 +33,7 @@ from camel.utils import (
 
 
 class GroqModel(OpenAICompatibleModel):
-    r"""LLM API served by Groq in a unified BaseModelBackend interface.
+    r"""LLM API served by Groq in a unified OpenAICompatibleModel interface.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is

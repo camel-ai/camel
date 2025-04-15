@@ -33,7 +33,7 @@ from camel.utils import (
 
 
 class MoonshotModel(OpenAICompatibleModel):
-    r"""Moonshot API in a unified BaseModelBackend interface.
+    r"""Moonshot API in a unified OpenAICompatibleModel interface.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is

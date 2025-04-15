@@ -25,7 +25,7 @@ from camel.utils import (
 
 
 class VolcanoModel(OpenAICompatibleModel):
-    r"""Volcano Engine API in a unified BaseModelBackend interface.
+    r"""Volcano Engine API in a unified OpenAICompatibleModel interface.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is

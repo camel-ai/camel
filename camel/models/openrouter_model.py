@@ -33,7 +33,8 @@ from camel.utils import (
 
 
 class OpenRouterModel(OpenAICompatibleModel):
-    r"""LLM API served by OpenRouter in a unified BaseModelBackend interface.
+    r"""LLM API served by OpenRouter in a unified OpenAICompatibleModel
+    interface.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is

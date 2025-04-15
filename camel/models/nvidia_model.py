@@ -13,24 +13,16 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from typing import Any, Dict, List, Optional, Type, Union
-
-from openai import AsyncStream, Stream
-from openai.types.chat import (
-    ChatCompletion,
-    ChatCompletionChunk,
-)
-from pydantic import BaseModel
+from typing import Any, Dict, Optional, Union
 
 from camel.configs import NVIDIA_API_PARAMS, NvidiaConfig
-from camel.messages import OpenAIMessage
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ModelType
 from camel.utils import BaseTokenCounter, api_keys_required
 
 
 class NvidiaModel(OpenAICompatibleModel):
-    r"""NVIDIA API in a unified BaseModelBackend interface.
+    r"""NVIDIA API in a unified OpenAICompatibleModel interface.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is
@@ -82,68 +74,6 @@ class NvidiaModel(OpenAICompatibleModel):
             token_counter=token_counter,
             timeout=timeout,
         )
-
-    async def _arun(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-        r"""Runs inference of NVIDIA chat completion.
-
-        Args:
-            messages (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format.
-
-        Returns:
-            Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-                `ChatCompletion` in the non-stream mode, or
-                `AsyncStream[ChatCompletionChunk]` in the stream mode.
-        """
-
-        # Remove tool-related parameters if no tools are specified
-        config = dict(self.model_config_dict)
-        if not config.get("tools"):  # None or empty list
-            config.pop("tools", None)
-            config.pop("tool_choice", None)
-
-        response = await self._async_client.chat.completions.create(
-            messages=messages,
-            model=self.model_type,
-            **config,
-        )
-        return response
-
-    def _run(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        r"""Runs inference of NVIDIA chat completion.
-
-        Args:
-            messages (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format.
-
-        Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-                `ChatCompletion` in the non-stream mode, or
-                `Stream[ChatCompletionChunk]` in the stream mode.
-        """
-
-        # Remove tool-related parameters if no tools are specified
-        config = dict(self.model_config_dict)
-        if not config.get('tools'):  # None or empty list
-            config.pop('tools', None)
-            config.pop('tool_choice', None)
-
-        response = self._client.chat.completions.create(
-            messages=messages,
-            model=self.model_type,
-            **config,
-        )
-        return response
 
     def check_model_config(self):
         r"""Check whether the model configuration contains any
