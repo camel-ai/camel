@@ -136,7 +136,9 @@
                 "group": "Loong",
                 "pages": [
                   "docs/cookbooks/loong/index",
-                  "docs/cookbooks/loong/batched_single_step_env"
+                  "docs/cookbooks/loong/batched_single_step_env",
+                  "docs/cookbooks/loong/single_step_env",
+                  "docs/cookbooks/loong/multi_step_rl"
                 ]
               },
               {
