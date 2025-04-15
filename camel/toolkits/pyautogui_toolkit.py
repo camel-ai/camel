@@ -138,8 +138,10 @@ class PyAutoGUIToolkit(BaseToolkit):
             # Apply safety boundaries if coordinates are specified
             if x is not None and y is not None:
                 safe_x, safe_y = self._get_safe_coordinates(x, y)
+                # Method name from PyAutoGUI API (not a typo)
                 self.pyautogui.doubleClick(x=safe_x, y=safe_y)
             else:
+                # Method name from PyAutoGUI API (not a typo)
                 self.pyautogui.doubleClick()
             return f"Double-clicked at position ({safe_x}, {safe_y})"
         except Exception as e:
