@@ -13,12 +13,20 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import subprocess
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union, List, Type
+from openai import AsyncStream, Stream
 
 from camel.configs import VLLM_API_PARAMS, VLLMConfig
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ModelType
 from camel.utils import BaseTokenCounter
+from camel.messages import OpenAIMessage
+from pydantic import BaseModel
+from camel.types import (
+    ChatCompletion,
+    ChatCompletionChunk,
+    ModelType,
+)
 
 
 # flake8: noqa: E501
