@@ -264,6 +264,7 @@ class TestMCPClient:
             "function": {
                 "name": "test_function",
                 "description": "Test function description",
+                "strict": True,
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -271,6 +272,7 @@ class TestMCPClient:
                         "param2": {"type": "integer"},
                     },
                     "required": ["param1", "param2"],
+                    "additionalProperties": False,
                 },
             },
         }
@@ -284,6 +286,7 @@ class TestMCPClient:
             "function": {
                 "name": "test_function",
                 "description": "No description provided.",
+                "strict": True,
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -291,6 +294,7 @@ class TestMCPClient:
                         "param2": {"type": "integer"},
                     },
                     "required": ["param1", "param2"],
+                    "additionalProperties": False,
                 },
             },
         }
