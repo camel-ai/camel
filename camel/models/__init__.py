@@ -26,6 +26,7 @@ from .litellm_model import LiteLLMModel
 from .mistral_model import MistralModel
 from .model_factory import ModelFactory
 from .model_manager import ModelManager, ModelProcessingError
+from .modelscope_model import ModelScopeModel
 from .moonshot_model import MoonshotModel
 from .nemotron_model import NemotronModel
 from .nvidia_model import NvidiaModel
@@ -34,6 +35,7 @@ from .openai_audio_models import OpenAIAudioModels
 from .openai_compatible_model import OpenAICompatibleModel
 from .openai_model import OpenAIModel
 from .openrouter_model import OpenRouterModel
+from .ppio_model import PPIOModel
 from .qwen_model import QwenModel
 from .reka_model import RekaModel
 from .samba_model import SambaModel
@@ -71,12 +73,14 @@ __all__ = [
     'RekaModel',
     'SambaModel',
     'TogetherAIModel',
+    'PPIOModel',
     'YiModel',
     'QwenModel',
     'ModelProcessingError',
     'DeepSeekModel',
     'FishAudioModel',
     'InternLMModel',
+    'ModelScopeModel',
     'MoonshotModel',
     'AIMLModel',
     'BaseAudioModel',

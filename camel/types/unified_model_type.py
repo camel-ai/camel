@@ -84,6 +84,11 @@ class UnifiedModelType(str):
         return True
 
     @property
+    def is_ppio(self) -> bool:
+        r"""Returns whether the model is a PPIO served model."""
+        return True
+
+    @property
     def is_zhipuai(self) -> bool:
         r"""Returns whether the model is a Zhipuai model."""
         return True
@@ -121,6 +126,11 @@ class UnifiedModelType(str):
     @property
     def is_internlm(self) -> bool:
         r"""Returns whether the model is a InternLM model."""
+        return True
+
+    @property
+    def is_modelscope(self) -> bool:
+        r"""Returns whether the model is a ModelScope serverd model."""
         return True
 
     @property

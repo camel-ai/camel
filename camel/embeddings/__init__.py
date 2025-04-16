@@ -11,20 +11,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+from .azure_embedding import AzureEmbedding
 from .base import BaseEmbedding
 from .jina_embedding import JinaEmbedding
 from .mistral_embedding import MistralEmbedding
 from .openai_compatible_embedding import OpenAICompatibleEmbedding
 from .openai_embedding import OpenAIEmbedding
 from .sentence_transformers_embeddings import SentenceTransformerEncoder
+from .together_embedding import TogetherEmbedding
 from .vlm_embedding import VisionLanguageEmbedding
 
 __all__ = [
     "BaseEmbedding",
     "OpenAIEmbedding",
+    "AzureEmbedding",
     "SentenceTransformerEncoder",
     "VisionLanguageEmbedding",
     "MistralEmbedding",
     "OpenAICompatibleEmbedding",
     "JinaEmbedding",
+    "TogetherEmbedding",
 ]

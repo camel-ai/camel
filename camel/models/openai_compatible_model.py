@@ -19,7 +19,7 @@ from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
 from pydantic import BaseModel
 
 from camel.messages import OpenAIMessage
-from camel.models import BaseModelBackend
+from camel.models.base_model import BaseModelBackend
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -177,8 +177,11 @@ class OpenAICompatibleModel(BaseModelBackend):
         response_format: Type[BaseModel],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ChatCompletion:
-        request_config = self.model_config_dict.copy()
+        import copy
 
+        request_config = copy.deepcopy(self.model_config_dict)
+        # Remove stream from request_config since OpenAI does not support it
+        # when structured response is used
         request_config["response_format"] = response_format
         request_config.pop("stream", None)
         if tools is not None:
@@ -196,8 +199,11 @@ class OpenAICompatibleModel(BaseModelBackend):
         response_format: Type[BaseModel],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ChatCompletion:
-        request_config = self.model_config_dict.copy()
+        import copy
 
+        request_config = copy.deepcopy(self.model_config_dict)
+        # Remove stream from request_config since OpenAI does not support it
+        # when structured response is used
         request_config["response_format"] = response_format
         request_config.pop("stream", None)
         if tools is not None:
