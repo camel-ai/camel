@@ -15,7 +15,7 @@ import json
 import re
 from typing import Any, Dict, List, Optional
 
-from camel.messages.conversion import (
+from camel.data_schemas import (
     ToolCall,
     ToolResponse,
 )
