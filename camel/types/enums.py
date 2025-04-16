@@ -56,7 +56,10 @@ class ModelType(UnifiedModelType, Enum):
     GLM_4_FLASH = "glm-4-flash"
     GLM_ZERO_PREVIEW = "glm-zero-preview"
     GLM_3_TURBO = "glm-3-turbo"
-
+    GLM_Z1_AIR = "glm-z1-air"
+    GLM_Z1_AIRX = "glm-z1-airx"
+    GLM_Z1_FLASH = "glm-z1-flash"
+    
     # Groq platform models
     GROQ_LLAMA_3_1_8B = "llama-3.1-8b-instant"
     GROQ_LLAMA_3_3_70B = "llama-3.3-70b-versatile"
@@ -367,6 +370,9 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GLM_4_FLASHX,
             ModelType.GLM_4_FLASH,
             ModelType.GLM_ZERO_PREVIEW,
+            ModelType.GLM_Z1_AIR,
+            ModelType.GLM_Z1_AIRX,
+            ModelType.GLM_Z1_FLASH,
         }
 
     @property
@@ -753,6 +759,9 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MODELSCOPE_MINISTRAL_8B_INSTRUCT,
             ModelType.MODELSCOPE_DEEPSEEK_V3_0324,
             ModelType.OPENROUTER_LLAMA_3_1_405B,
+            ModelType.GLM_Z1_FLASH,
+            ModelType.GLM_Z1_AIR,
+            ModelType.GLM_Z1_AIRX,
         }:
             return 32_768
         elif self in {
