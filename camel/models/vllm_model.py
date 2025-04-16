@@ -13,24 +13,16 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import subprocess
-from typing import Any, Dict, List, Optional, Type, Union
-
-from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
-from pydantic import BaseModel
+from typing import Any, Dict, Optional, Union
 
 from camel.configs import VLLM_API_PARAMS, VLLMConfig
-from camel.messages import OpenAIMessage
-from camel.models import BaseModelBackend
-from camel.types import (
-    ChatCompletion,
-    ChatCompletionChunk,
-    ModelType,
-)
-from camel.utils import BaseTokenCounter, OpenAITokenCounter
+from camel.models.openai_compatible_model import OpenAICompatibleModel
+from camel.types import ModelType
+from camel.utils import BaseTokenCounter
 
 
 # flake8: noqa: E501
-class VLLMModel(BaseModelBackend):
+class VLLMModel(OpenAICompatibleModel):
     r"""vLLM service interface.
 
     Args:
@@ -73,23 +65,15 @@ class VLLMModel(BaseModelBackend):
         url = url or os.environ.get("VLLM_BASE_URL")
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter, timeout
+            model_type=model_type,
+            model_config_dict=model_config_dict,
+            api_key=api_key,
+            url=url,
+            token_counter=token_counter,
+            timeout=timeout,
         )
         if not self._url:
             self._start_server()
-        # Use OpenAI client as interface call vLLM
-        self._client = OpenAI(
-            timeout=self._timeout,
-            max_retries=3,
-            api_key="EMPTY",  # required but ignored
-            base_url=self._url,
-        )
-        self._async_client = AsyncOpenAI(
-            timeout=self._timeout,
-            max_retries=3,
-            api_key="EMPTY",  # required but ignored
-            base_url=self._url,
-        )
 
     def _start_server(self) -> None:
         r"""Starts the vllm server in a subprocess."""
@@ -107,187 +91,6 @@ class VLLMModel(BaseModelBackend):
         except Exception as e:
             print(f"Failed to start vllm server: {e}.")
 
-    @property
-    def token_counter(self) -> BaseTokenCounter:
-        r"""Initialize the token counter for the model backend.
-
-        Returns:
-            BaseTokenCounter: The token counter following the model's
-                tokenization style.
-        """
-        if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
-        return self._token_counter
-
-    def _run(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        r"""Runs inference of OpenAI chat completion.
-
-        Args:
-            messages (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format.
-            response_format (Optional[Type[BaseModel]]): The format of the
-                response.
-            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
-                use for the request.
-
-        Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-                `ChatCompletion` in the non-stream mode, or
-                `Stream[ChatCompletionChunk]` in the stream mode.
-        """
-        response_format = response_format or self.model_config_dict.get(
-            "response_format", None
-        )
-        if response_format:
-            return self._request_parse(messages, response_format, tools)
-        else:
-            return self._request_chat_completion(messages, tools)
-
-    async def _arun(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-        r"""Runs inference of OpenAI chat completion in async mode.
-
-        Args:
-            messages (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format.
-            response_format (Optional[Type[BaseModel]]): The format of the
-                response.
-            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
-                use for the request.
-
-        Returns:
-            Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-                `ChatCompletion` in the non-stream mode, or
-                `AsyncStream[ChatCompletionChunk]` in the stream mode.
-        """
-        response_format = response_format or self.model_config_dict.get(
-            "response_format", None
-        )
-        if response_format:
-            return await self._arequest_parse(messages, response_format, tools)
-        else:
-            return await self._arequest_chat_completion(messages, tools)
-
-    def _request_chat_completion(
-        self,
-        messages: List[OpenAIMessage],
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        request_config = self.model_config_dict.copy()
-
-        if tools:
-            request_config["tools"] = tools
-
-        # Remove additionalProperties from each tool's function parameters
-        if tools and "tools" in request_config:
-            for tool in request_config["tools"]:
-                if "function" in tool and "parameters" in tool["function"]:
-                    tool["function"]["parameters"].pop(
-                        "additionalProperties", None
-                    )
-
-        return self._client.chat.completions.create(
-            messages=messages,
-            model=self.model_type,
-            **request_config,
-        )
-
-    async def _arequest_chat_completion(
-        self,
-        messages: List[OpenAIMessage],
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-        request_config = self.model_config_dict.copy()
-
-        if tools:
-            request_config["tools"] = tools
-            # Remove additionalProperties from each tool's function parameters
-            if "tools" in request_config:
-                for tool in request_config["tools"]:
-                    if "function" in tool and "parameters" in tool["function"]:
-                        tool["function"]["parameters"].pop(
-                            "additionalProperties", None
-                        )
-
-        return await self._async_client.chat.completions.create(
-            messages=messages,
-            model=self.model_type,
-            **request_config,
-        )
-
-    def _request_parse(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Type[BaseModel],
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> ChatCompletion:
-        request_config = self.model_config_dict.copy()
-
-        request_config["response_format"] = response_format
-        request_config.pop("stream", None)
-        if tools is not None:
-            # Create a deep copy of tools to avoid modifying the original
-            import copy
-
-            request_config["tools"] = copy.deepcopy(tools)
-            # Remove additionalProperties and strict from each tool's function
-            # parameters since vLLM does not support them
-            if "tools" in request_config:
-                for tool in request_config["tools"]:
-                    if "function" in tool and "parameters" in tool["function"]:
-                        tool["function"]["parameters"].pop(
-                            "additionalProperties", None
-                        )
-                    if "strict" in tool.get("function", {}):
-                        tool["function"].pop("strict")
-
-        return self._client.beta.chat.completions.parse(
-            messages=messages,
-            model=self.model_type,
-            **request_config,
-        )
-
-    async def _arequest_parse(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Type[BaseModel],
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> ChatCompletion:
-        request_config = self.model_config_dict.copy()
-
-        request_config["response_format"] = response_format
-        request_config.pop("stream", None)
-        if tools is not None:
-            # Create a deep copy of tools to avoid modifying the original
-            import copy
-
-            request_config["tools"] = copy.deepcopy(tools)
-            # Remove additionalProperties and strict from each tool's function
-            # parameters since vLLM does not support them
-            if "tools" in request_config:
-                for tool in request_config["tools"]:
-                    if "function" in tool and "parameters" in tool["function"]:
-                        tool["function"]["parameters"].pop(
-                            "additionalProperties", None
-                        )
-                    if "strict" in tool.get("function", {}):
-                        tool["function"].pop("strict")
-
-        return await self._async_client.beta.chat.completions.parse(
-            messages=messages,
-            model=self.model_type,
-            **request_config,
-        )
-
     def check_model_config(self):
         r"""Check whether the model configuration contains any
         unexpected arguments to vLLM API.
@@ -302,13 +105,3 @@ class VLLMModel(BaseModelBackend):
                     f"Unexpected argument `{param}` is "
                     "input into vLLM model backend."
                 )
-
-    @property
-    def stream(self) -> bool:
-        r"""Returns whether the model is in stream mode, which sends partial
-        results each time.
-
-        Returns:
-            bool: Whether the model is in stream mode.
-        """
-        return self.model_config_dict.get('stream', False)
