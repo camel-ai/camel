@@ -223,12 +223,34 @@ class ModelType(UnifiedModelType, Enum):
     MOONSHOT_V1_32K = "moonshot-v1-32k"
     MOONSHOT_V1_128K = "moonshot-v1-128k"
 
-    # SiliconFlow models support tool calling
+    # SiliconFlow models support tool calling https://docs.siliconflow.cn/cn/userguide/guides/function-calling
     SILICONFLOW_DEEPSEEK_V2_5 = "deepseek-ai/DeepSeek-V2.5"
     SILICONFLOW_DEEPSEEK_V3 = "deepseek-ai/DeepSeek-V3"
+    SILICONFLOW_PRO_DEEPSEEK_V3 = "Pro/deepseek-ai/DeepSeek-V3"
+    SILICONFLOW_DEEPSEEK_R1 = "deepseek-ai/DeepSeek-R1"
+    SILICONFLOW_PRO_DEEPSEEK_R1 = "Pro/deepseek-ai/DeepSeek-R1"
+    SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_32B = (
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B"
+    )
+    SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_14B = (
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B"
+    )
+    SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_7B = (
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
+    )
+    SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_1_5B = (
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+    )
+    SILICONFLOW_PRO_DEEPSEEK_R1_DISTILL_QWEN_7B = (
+        "Pro/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
+    )
+    SILICONFLOW_PRO_DEEPSEEK_R1_DISTILL_QWEN_1_5B = (
+        "Pro/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+    )
     SILICONFLOW_INTERN_LM2_5_20B_CHAT = "internlm/internlm2_5-20b-chat"
     SILICONFLOW_INTERN_LM2_5_7B_CHAT = "internlm/internlm2_5-7b-chat"
     SILICONFLOW_PRO_INTERN_LM2_5_7B_CHAT = "Pro/internlm/internlm2_5-7b-chat"
+    SILICONFLOW_QWQ_32B = "Qwen/QwQ-32B"
     SILICONFLOW_QWEN2_5_72B_INSTRUCT = "Qwen/Qwen2.5-72B-Instruct"
     SILICONFLOW_QWEN2_5_32B_INSTRUCT = "Qwen/Qwen2.5-32B-Instruct"
     SILICONFLOW_QWEN2_5_14B_INSTRUCT = "Qwen/Qwen2.5-14B-Instruct"
@@ -236,6 +258,12 @@ class ModelType(UnifiedModelType, Enum):
     SILICONFLOW_PRO_QWEN2_5_7B_INSTRUCT = "Pro/Qwen/Qwen2.5-7B-Instruct"
     SILICONFLOW_THUDM_GLM_4_9B_CHAT = "THUDM/glm-4-9b-chat"
     SILICONFLOW_PRO_THUDM_GLM_4_9B_CHAT = "Pro/THUDM/glm-4-9b-chat"
+    SILICONFLOW_THUDM_GLM_Z1_32B_0414 = "THUDM/GLM-Z1-32B-0414"
+    SILICONFLOW_THUDM_GLM_4_32B_0414 = "THUDM/GLM-4-32B-0414"
+    SILICONFLOW_THUDM_GLM_Z1_RUMINATION_32B_0414 = (
+        "THUDM/GLM-Z1-Rumination-32B-0414"
+    )
+    SILICONFLOW_THUDM_GLM_4_9B_0414 = "THUDM/GLM-4-9B-0414"
 
     # AIML models support tool calling
     AIML_MIXTRAL_8X7B = "mistralai/Mixtral-8x7B-Instruct-v0.1"
