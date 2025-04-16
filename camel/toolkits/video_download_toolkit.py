@@ -104,11 +104,11 @@ class VideoDownloaderToolkit(BaseToolkit):
         """
         if self._cleanup:
             try:
-                # Import locally to avoid issues during interpreter shutdown
-                # Check if sys.modules is available to avoid errors during shutdown
                 import sys
+
                 if getattr(sys, 'modules', None) is not None:
                     import shutil
+
                     shutil.rmtree(self._download_directory, ignore_errors=True)
             except (ImportError, AttributeError):
                 # Skip cleanup if interpreter is shutting down

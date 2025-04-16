@@ -145,8 +145,8 @@ class VideoAnalysisToolkit(BaseToolkit):
         if self.vl_model:
             # Import ChatAgent at runtime to avoid circular imports
             from camel.agents import ChatAgent
-            
-            self.vl_model.timeout = self.timeout
+
+            self.vl_model._timeout = timeout
             self.vl_agent = ChatAgent(
                 model=self.vl_model, output_language=self.output_language
             )
@@ -191,14 +191,14 @@ class VideoAnalysisToolkit(BaseToolkit):
         # Clean up temporary directory if needed
         if self._cleanup and os.path.exists(self._download_directory):
             try:
-                # Import locally to avoid issues during interpreter shutdown
-                # Check if sys.modules is available to avoid errors during shutdown
                 import sys
+
                 if getattr(sys, 'modules', None) is not None:
                     import shutil
+
                     shutil.rmtree(self._download_directory)
                     logger.debug(
-                        f"Removed temporary directory: {self._download_directory}"
+                        f"Removed temp directory: {self._download_directory}"
                     )
             except (ImportError, AttributeError):
                 # Skip cleanup if interpreter is shutting down
@@ -279,7 +279,8 @@ class VideoAnalysisToolkit(BaseToolkit):
         import cv2
         import numpy as np
         from scenedetect import (  # type: ignore[import-untyped]
-            SceneManager, open_video
+            SceneManager,
+            open_video,
         )
         from scenedetect.detectors import (  # type: ignore[import-untyped]
             ContentDetector,
@@ -321,7 +322,7 @@ class VideoAnalysisToolkit(BaseToolkit):
 
         # Detect scenes using the modern API
         scene_manager.detect_scenes(video)
-        
+
         scenes = scene_manager.get_scene_list()
         keyframes: List[Image.Image] = []
 
