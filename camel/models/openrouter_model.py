@@ -14,13 +14,13 @@
 import os
 from typing import Any, Dict, List, Optional, Type, Union
 
-from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
+from openai import AsyncStream, Stream
 from pydantic import BaseModel
 
 from camel.configs import OPENROUTER_API_PARAMS, OpenRouterConfig
 from camel.messages import OpenAIMessage
-from camel.models import BaseModelBackend
 from camel.models._utils import try_modify_message_with_format
+from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -28,13 +28,13 @@ from camel.types import (
 )
 from camel.utils import (
     BaseTokenCounter,
-    OpenAITokenCounter,
     api_keys_required,
 )
 
 
-class OpenRouterModel(BaseModelBackend):
-    r"""LLM API served by OpenRouter in a unified BaseModelBackend interface.
+class OpenRouterModel(OpenAICompatibleModel):
+    r"""LLM API served by OpenRouter in a unified OpenAICompatibleModel
+    interface.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is
@@ -75,32 +75,13 @@ class OpenRouterModel(BaseModelBackend):
         )
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter, timeout
+            model_type=model_type,
+            model_config_dict=model_config_dict,
+            api_key=api_key,
+            url=url,
+            token_counter=token_counter,
+            timeout=timeout,
         )
-        self._client = OpenAI(
-            timeout=self._timeout,
-            max_retries=3,
-            api_key=self._api_key,
-            base_url=self._url,
-        )
-        self._async_client = AsyncOpenAI(
-            timeout=self._timeout,
-            max_retries=3,
-            api_key=self._api_key,
-            base_url=self._url,
-        )
-
-    @property
-    def token_counter(self) -> BaseTokenCounter:
-        r"""Initialize the token counter for the model backend.
-
-        Returns:
-            BaseTokenCounter: The token counter following the model's
-                tokenization style.
-        """
-        if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
-        return self._token_counter
 
     def _prepare_request(
         self,
@@ -198,13 +179,3 @@ class OpenRouterModel(BaseModelBackend):
                     f"Unexpected argument `{param}` is "
                     "input into OpenRouter model backend."
                 )
-
-    @property
-    def stream(self) -> bool:
-        r"""Returns whether the model is in stream mode, which sends partial
-        results each time.
-
-        Returns:
-            bool: Whether the model is in stream mode.
-        """
-        return self.model_config_dict.get("stream", False)

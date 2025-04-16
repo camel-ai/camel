@@ -15,13 +15,13 @@
 import os
 from typing import Any, Dict, List, Optional, Type, Union
 
-from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
+from openai import AsyncStream, Stream
 from pydantic import BaseModel
 
 from camel.configs import QWEN_API_PARAMS, QwenConfig
 from camel.messages import OpenAIMessage
-from camel.models import BaseModelBackend
 from camel.models._utils import try_modify_message_with_format
+from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -29,13 +29,12 @@ from camel.types import (
 )
 from camel.utils import (
     BaseTokenCounter,
-    OpenAITokenCounter,
     api_keys_required,
 )
 
 
-class QwenModel(BaseModelBackend):
-    r"""Qwen API in a unified BaseModelBackend interface.
+class QwenModel(OpenAICompatibleModel):
+    r"""Qwen API in a unified OpenAICompatibleModel interface.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is
@@ -81,19 +80,12 @@ class QwenModel(BaseModelBackend):
         )
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter, timeout
-        )
-        self._client = OpenAI(
-            timeout=self._timeout,
-            max_retries=3,
-            api_key=self._api_key,
-            base_url=self._url,
-        )
-        self._async_client = AsyncOpenAI(
-            timeout=self._timeout,
-            max_retries=3,
-            api_key=self._api_key,
-            base_url=self._url,
+            model_type=model_type,
+            model_config_dict=model_config_dict,
+            api_key=api_key,
+            url=url,
+            token_counter=token_counter,
+            timeout=timeout,
         )
 
     async def _arun(
@@ -167,19 +159,6 @@ class QwenModel(BaseModelBackend):
 
         return request_config
 
-    @property
-    def token_counter(self) -> BaseTokenCounter:
-        r"""Initialize the token counter for the model backend.
-
-        Returns:
-            OpenAITokenCounter: The token counter following the model's
-                tokenization style.
-        """
-
-        if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
-        return self._token_counter
-
     def check_model_config(self):
         r"""Check whether the model configuration contains any
         unexpected arguments to Qwen API.
@@ -194,13 +173,3 @@ class QwenModel(BaseModelBackend):
                     f"Unexpected argument `{param}` is "
                     "input into Qwen model backend."
                 )
-
-    @property
-    def stream(self) -> bool:
-        r"""Returns whether the model is in stream mode, which sends partial
-        results each time.
-
-        Returns:
-            bool: Whether the model is in stream mode.
-        """
-        return self.model_config_dict.get('stream', False)

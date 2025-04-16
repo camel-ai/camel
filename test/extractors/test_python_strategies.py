@@ -31,6 +31,16 @@ async def test_boxed_strategy():
     result = await strategy.extract(text)
     assert result == "test content"
 
+    # Test not so basic boxed content
+    text = r"\boxed{\dfrac{9}{7}}"
+    result = await strategy.extract(text)
+    assert result == r"\dfrac{9}{7}"
+
+    # Test not so basic boxed content with double backslash
+    text = r"\\boxed{\dfrac{9}{7}}"
+    result = await strategy.extract(text)
+    assert result == r"\dfrac{9}{7}"
+
     # Test nested braces
     text = r"\boxed{nested {braces} test}"
     result = await strategy.extract(text)

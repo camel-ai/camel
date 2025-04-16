@@ -235,6 +235,7 @@ class FewShotGenerator(BaseGenerator):
                             "synthetic": str(True),
                             "created": datetime.now().isoformat(),
                             "generator": "few_shot",
+                            "shots": [e.to_dict() for e in examples],
                         },
                     )
                 except ValidationError as e:
