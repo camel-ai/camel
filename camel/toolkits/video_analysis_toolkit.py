@@ -145,7 +145,8 @@ class VideoAnalysisToolkit(BaseToolkit):
         if self.vl_model:
             # Import ChatAgent at runtime to avoid circular imports
             from camel.agents import ChatAgent
-
+            
+            self.vl_model.timeout = self.timeout
             self.vl_agent = ChatAgent(
                 model=self.vl_model, output_language=self.output_language
             )
@@ -190,12 +191,18 @@ class VideoAnalysisToolkit(BaseToolkit):
         # Clean up temporary directory if needed
         if self._cleanup and os.path.exists(self._download_directory):
             try:
-                import shutil
-
-                shutil.rmtree(self._download_directory)
-                logger.debug(
-                    f"Removed temporary directory: {self._download_directory}"
-                )
+                # Import locally to avoid issues during interpreter shutdown
+                # Check if sys.modules is available to avoid errors during shutdown
+                import sys
+                if getattr(sys, 'modules', None) is not None:
+                    import shutil
+                    shutil.rmtree(self._download_directory)
+                    logger.debug(
+                        f"Removed temporary directory: {self._download_directory}"
+                    )
+            except (ImportError, AttributeError):
+                # Skip cleanup if interpreter is shutting down
+                pass
             except OSError as e:
                 logger.warning(
                     f"Failed to remove temporary directory"
@@ -272,8 +279,7 @@ class VideoAnalysisToolkit(BaseToolkit):
         import cv2
         import numpy as np
         from scenedetect import (  # type: ignore[import-untyped]
-            SceneManager,
-            VideoManager,
+            SceneManager, open_video
         )
         from scenedetect.detectors import (  # type: ignore[import-untyped]
             ContentDetector,
@@ -308,14 +314,14 @@ class VideoAnalysisToolkit(BaseToolkit):
             )
 
         # Use scene detection to extract keyframes
-        video_manager = VideoManager([video_path])
+        # Use open_video instead of VideoManager
+        video = open_video(video_path)
         scene_manager = SceneManager()
         scene_manager.add_detector(ContentDetector(threshold=threshold))
 
-        video_manager.set_duration()
-        video_manager.start()
-        scene_manager.detect_scenes(video_manager)
-
+        # Detect scenes using the modern API
+        scene_manager.detect_scenes(video)
+        
         scenes = scene_manager.get_scene_list()
         keyframes: List[Image.Image] = []
 
@@ -332,14 +338,16 @@ class VideoAnalysisToolkit(BaseToolkit):
                 selected_scenes = scenes
 
             # Extract frames from scenes
-            for start_time, _ in selected_scenes:
+            for scene in selected_scenes:
                 try:
+                    # Get start time in seconds
+                    start_time = scene[0].get_seconds()
                     frame = _capture_screenshot(video_path, start_time)
                     keyframes.append(frame)
                 except Exception as e:
                     logger.warning(
                         f"Failed to capture frame at scene change"
-                        f" {start_time}s: {e}"
+                        f" {scene[0].get_seconds()}s: {e}"
                     )
 
         if len(keyframes) < num_frames and duration > 0:
@@ -350,7 +358,7 @@ class VideoAnalysisToolkit(BaseToolkit):
 
             existing_times = []
             if scenes:
-                existing_times = [start_time for start_time, _ in scenes]
+                existing_times = [scene[0].get_seconds() for scene in scenes]
 
             regular_frames = []
             for i in range(num_frames):
