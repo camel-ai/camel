@@ -662,9 +662,19 @@ class ModelType(UnifiedModelType, Enum):
         return self in {
             ModelType.SILICONFLOW_DEEPSEEK_V2_5,
             ModelType.SILICONFLOW_DEEPSEEK_V3,
+            ModelType.SILICONFLOW_PRO_DEEPSEEK_V3,
+            ModelType.SILICONFLOW_DEEPSEEK_R1,
+            ModelType.SILICONFLOW_PRO_DEEPSEEK_R1,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_32B,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_14B,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_7B,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_1_5B,
+            ModelType.SILICONFLOW_PRO_DEEPSEEK_R1_DISTILL_QWEN_7B,
+            ModelType.SILICONFLOW_PRO_DEEPSEEK_R1_DISTILL_QWEN_1_5B,
             ModelType.SILICONFLOW_INTERN_LM2_5_20B_CHAT,
             ModelType.SILICONFLOW_INTERN_LM2_5_7B_CHAT,
             ModelType.SILICONFLOW_PRO_INTERN_LM2_5_7B_CHAT,
+            ModelType.SILICONFLOW_QWQ_32B,
             ModelType.SILICONFLOW_QWEN2_5_72B_INSTRUCT,
             ModelType.SILICONFLOW_QWEN2_5_32B_INSTRUCT,
             ModelType.SILICONFLOW_QWEN2_5_14B_INSTRUCT,
@@ -672,6 +682,10 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.SILICONFLOW_PRO_QWEN2_5_7B_INSTRUCT,
             ModelType.SILICONFLOW_THUDM_GLM_4_9B_CHAT,
             ModelType.SILICONFLOW_PRO_THUDM_GLM_4_9B_CHAT,
+            ModelType.SILICONFLOW_THUDM_GLM_Z1_32B_0414,
+            ModelType.SILICONFLOW_THUDM_GLM_4_32B_0414,
+            ModelType.SILICONFLOW_THUDM_GLM_Z1_RUMINATION_32B_0414,
+            ModelType.SILICONFLOW_THUDM_GLM_4_9B_0414,
         }
 
     @property
