@@ -1,17 +1,19 @@
 ---
 title: "Agenetic SFT Data generation with CAMEL and finetuning Mistral models with Unsloth"
 ---
+
 For more detailed usage information, please refer to our [cookbook](https://colab.research.google.com/drive/1lYgArBw7ARVPSpdwgKLYnp_NEXiNDOd-?usp=sharing)
 
 To run this, press "*Runtime*" and press "*Run all*" on a **free** Tesla T4 Google Colab instance!
 <div class="align-center">
-<div className="flex justify-center items-center gap-4 mb-8">
-  <a href="https://www.camel-ai.org/">
-    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
-  </a>
-  <a href="https://discord.camel-ai.org">
-    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
-  </a>
+  <div class="flex justify-center items-center gap-4 mb-8">
+    <a href="https://www.camel-ai.org/">
+      <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
+    </a>
+    <a href="https://discord.camel-ai.org">
+      <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
+    </a>
+  </div>
 </div>
 
 CAMEL and Unsloth make an excellent pair. In this notebook we will combine the two to train a model to be proficient at content on a page
@@ -95,7 +97,6 @@ inputs = tokenizer(
 outputs = temp_model.generate(**inputs, max_new_tokens = 512, use_cache = True)
 temp_model = None
 tokenizer.batch_decode(outputs)
-
 ```
 
 Note mistral 7b can handle this output format and follow instructions fine, though it is talking about the wrong project.
@@ -104,7 +105,6 @@ Note mistral 7b can handle this output format and follow instructions fine, thou
 We want to generate data in the Alpaca format, so we can use CAMEL's built-in AlpacaItem class which has some handy conversion functions for us.
 
 We will be using CAMEL's structured output to generate all of these items in one request, which is much faster and cheaper.
-
 
 Here we create a wrapper around the AlpacaItem to help the model know how many have been generated as it's going along, and another wrapper class that represents a list of these.
 
@@ -122,6 +122,7 @@ class AlpacaItemResponse(BaseModel):
     """
     items: list[NumberedAlpacaItem]
 ```
+
 ### Data generation
 Next we define our data generation function. It takes a source content, and generates a list of instruction-input-response triplets around it.
 
@@ -239,8 +240,6 @@ save_json(alpaca_entries, 'alpaca_format_data.json')
 
 Now to define how each row is formatted
 
-
-
 ```python
 EOS_TOKEN = tokenizer.eos_token
 
@@ -323,7 +322,6 @@ tokenizer.batch_decode(outputs)
 
 **Summary**
 
-
 We have generated realistic user queries and responses from a real page and trained on them to produce a model that understands the underlying content.
 
 That's everything: Got questions about 🐫 CAMEL-AI? Join us on [Discord](https://discord.camel-ai.org)! Whether you want to share feedback, explore the latest in multi-agent systems, get support, or connect with others on exciting projects, we’d love to have you in the community! 🤝
@@ -331,26 +329,21 @@ That's everything: Got questions about 🐫 CAMEL-AI? Join us on [Discord](https
 Check out some of our other work:
 
 1. 🐫 Creating Your First CAMEL Agent [free Colab](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html)
-
-2.  Graph RAG Cookbook [free Colab](https://colab.research.google.com/drive/1uZKQSuu0qW6ukkuSv9TukLB9bVaS1H0U?usp=sharing)
-
+2. Graph RAG Cookbook [free Colab](https://colab.research.google.com/drive/1uZKQSuu0qW6ukkuSv9TukLB9bVaS1H0U?usp=sharing)
 3. 🧑‍⚖️ Create A Hackathon Judge Committee with Workforce [free Colab](https://colab.research.google.com/drive/18ajYUMfwDx3WyrjHow3EvUMpKQDcrLtr?usp=sharing)
-
 4. 🔥 3 ways to ingest data from websites with Firecrawl & CAMEL [free Colab](https://colab.research.google.com/drive/1lOmM3VmgR1hLwDKdeLGFve_75RFW0R9I?usp=sharing)
-
 5. 🦥 Agentic SFT Data Generation with CAMEL and Meta Models, Fine-Tuned with Unsloth [free Colab](https://colab.research.google.com/drive/1fdBns2QA1XNwF_tsvG3Hc27QGdViHH3b?usp=sharing)
-
 6. 🦥 Agentic SFT Data Generation with CAMEL and Qwen Models, Fine-Tuned with Unsloth [free Colab](https://colab.research.google.com/drive/1sMnWOvdmASEMhsRIOUSAeYuEywby6FRV?usp=sharing)
 
 Thanks from everyone at 🐫 CAMEL-AI
 
-
 <div class="align-center">
-<div className="flex justify-center items-center gap-4 mb-8">
-  <a href="https://www.camel-ai.org/">
-    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
-  </a>
-  <a href="https://discord.camel-ai.org">
-    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
-  </a>
+  <div class="flex justify-center items-center gap-4 mb-8">
+    <a href="https://www.camel-ai.org/">
+      <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
+    </a>
+    <a href="https://discord.camel-ai.org">
+      <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
+    </a>
+  </div>
 </div>
