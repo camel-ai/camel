@@ -1,0 +1,181 @@
+import { Link } from 'mint';
+
+<div align="center">
+  <img
+    src="/docs/images/mcparchicamel.jpeg"
+    alt="MCP client–server architecture"
+    style={{ maxWidth: '80%', margin: '1rem auto' }}
+  />
+</div>
+
+---
+
+## Purpose
+
+OWL leverages the Model Context Protocol (MCP) to:
+
+- **Standardize** all tool/resource calls into a single, open protocol  
+- **Automate** multi‑agent workflows without bespoke integrations  
+- **Plug & play** new data sources and services with minimal configuration  
+
+---
+
+## 1. Configuring MCP Servers
+
+Create a file `mcp_servers_config.json` at your project root:
+
+```json
+{
+  "mcpServers": {
+    "desktop-commander": {
+      "command": "npx",
+      "args": ["-y", "@wonderwhy-er/desktop-commander"]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@executeautomation/playwright-mcp-server"]
+    },
+    "fetch": {
+      "command": "python",
+      "args": ["-m", "mcp_server_fetch"]
+    }
+  }
+}
+```
+
+- `desktop-commander`: control local applications  
+- `playwright`: browser automation  
+- `fetch`: HTTP‑based content retrieval  
+
+OWL will **discover** and **index** these servers at startup.
+
+---
+
+## 2. Initializing the MCP Toolkit
+
+```jsx
+import { Path } from 'path';
+import { MCPToolkit } from 'mcp_toolkit';
+
+const configPath = Path.join(__dirname, 'mcp_servers_config.json');
+const mcpToolkit = new MCPToolkit({ configPath });
+
+// Establish connections to all configured servers
+await mcpToolkit.connect();
+```
+
+- Using `Path.join` ensures cross‑platform paths  
+- `connect()` asynchronously initializes each MCP client
+
+---
+
+## 3. Sample Task Flow
+
+```jsx
+// 1. Define the user’s request
+const prompt = `
+  Write an academic report on Andrew Ng:
+  - Research directions
+  - ≥3 published papers
+  - Affiliated institutions
+  Format: Markdown, save to desktop.
+`;
+
+// 2. Get all MCP-enabled tools
+const tools = [...mcpToolkit.getTools()];
+
+// 3. Create a multi-agent society
+const society = await constructSociety(prompt, tools);
+
+// 4. Run the dialogue
+const [answer, chatHistory, tokenCount] = await runSociety(society);
+
+console.log(answer);
+```
+
+---
+
+## 4. Fetch Tool Integration Example
+
+CAMEL‑AI MCP tool integration platform: <Link href="https://www.camel-ai.org/mcp">https://www.camel-ai.org/mcp</Link>  
+On our platform you can find a variety of MCP‑enabled plugins. In this tutorial we’ll demonstrate how to integrate the **Fetch** tool step by step.
+
+---
+
+### 1. Find “MCP with CAMEL” on the homepage  
+<div align="center">
+  <img
+    src="/docs/images/mcp_home.jpeg"
+    alt="Find MCP with CAMEL link on CAMEL-AI homepage"
+    style={{ maxWidth: '80%', margin: '1rem auto' }}
+  />
+</div>
+
+---
+
+### 2. Access the Fetch tool page  
+<div align="center">
+  <img
+    src="/docs/images/mcp_toolpage.png"
+    alt="Fetch tool page with usage examples"
+    style={{ maxWidth: '80%', margin: '1rem auto' }}
+  />
+</div>
+
+---
+
+### 3. View the GitHub repository link  
+<div align="center">
+  <img
+    src="/docs/images/mcp_github.png"
+    alt="Click the GitHub button on the Fetch page"
+    style={{ maxWidth: '80%', margin: '1rem auto' }}
+  />
+</div>
+
+---
+
+### 4. Install & configure the Fetch MCP server  
+```bash
+pip install mcp-server-fetch
+```
+Then update your `mcp_servers_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "fetch": {
+      "command": "python",
+      "args": ["-m", "mcp_server_fetch"]
+    }
+  }
+}
+```
+<div align="center">
+  <img
+    src="/docs/images/mcp_config.png"
+    alt="Installation and configuration snippet for Fetch"
+    style={{ maxWidth: '80%', margin: '1rem auto' }}
+  />
+</div>
+
+---
+
+After completing these steps, **restart OWL**. Your new Fetch plugin will be automatically discovered and available to all agents via MCP.
+
+---
+
+## Resources
+
+- 📖 Anthropic Blog:  
+  <Link href="https://www.anthropic.com/news/model-context-protocol">Introducing the Model Context Protocol</Link>  
+- 📚 Official Spec & SDKs:  
+  <Link href="https://docs.anthropic.com/en/docs/agents-and-tools/mcp">docs.anthropic.com/mcp</Link>  
+
+
+
+
+
+
+
+

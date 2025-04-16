@@ -67,6 +67,14 @@
             ]
           },
           {
+            "group": "MCP",
+            "pages": [
+              "docs/mcp/index",
+              "docs/mcp/overview",
+              "docs/mcp/using_mcp_with_owl"
+            ]
+          }, 
+          {
             "group": "Cookbooks",
             "pages": [
               {
