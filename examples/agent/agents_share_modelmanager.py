@@ -50,13 +50,13 @@ async def main():
 
     # Step through a conversation
     tasks = []
-    tasks.append(agent_1.astep("Hello, can you help me?"))
-    tasks.append(agent_2.astep("Hello, how are you?"))
+    tasks.append(agent_1.astep("Hello, what model are you?"))
+    tasks.append(agent_2.astep("Hello, what model are you?"))
 
     results = await asyncio.gather(*tasks)
 
     for result in results:
-        print(result.msgs[0].content)
+        print(result.msgs[0].content, '\n')
 
 
 if __name__ == "__main__":
@@ -64,9 +64,13 @@ if __name__ == "__main__":
 
 '''
 ===============================================================================
-Of course! I'm here to help. What do you need assistance with?
-I'm just a computer program, so I don't have feelings, but I'm here and ready
-to help you! How are you today? Is there anything specific you would like to
-talk about or any questions you have?
+Hello! I am based on OpenAI's GPT-3 model, which is designed to assist with a
+variety of tasks by providing information, answering questions, and engaging
+in conversation. How can I assist you today?
+
+I'm Qwen, a large language model created by Alibaba Cloud. I have a lot in
+common with humans and can understand and generate human-like text. But I
+don't have a physical form or the ability to experience emotions like a human.
+How can I assist you today?
 ===============================================================================
 '''
