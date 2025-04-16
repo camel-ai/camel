@@ -150,7 +150,11 @@ class ChatAgent(BaseAgent):
         self,
         system_message: Optional[Union[BaseMessage, str]] = None,
         model: Optional[
-            Union[BaseModelBackend, List[BaseModelBackend]]
+            Union[
+                BaseModelBackend,
+                List[BaseModelBackend],
+                ModelManager,
+            ]
         ] = None,
         memory: Optional[AgentMemory] = None,
         message_window_size: Optional[int] = None,
@@ -165,18 +169,25 @@ class ChatAgent(BaseAgent):
         single_iteration: bool = False,
         agent_id: Optional[str] = None,
     ) -> None:
-        # Set up model backend
-        self.model_backend = ModelManager(
-            (
-                model
-                if model is not None
-                else ModelFactory.create(
-                    model_platform=ModelPlatformType.DEFAULT,
-                    model_type=ModelType.DEFAULT,
-                )
-            ),
-            scheduling_strategy=scheduling_strategy,
-        )
+        if isinstance(model, ModelManager):
+            self.model_backend = model
+        else:
+            logger.warning(
+                "Passing `BaseModelBackend` or `List[BaseModelBackend]` is "
+                "deprecated. Please use `ModelManager` instead."
+            )
+            # Set up model backend
+            self.model_backend = ModelManager(
+                (
+                    model
+                    if model is not None
+                    else ModelFactory.create(
+                        model_platform=ModelPlatformType.DEFAULT,
+                        model_type=ModelType.DEFAULT,
+                    )
+                ),
+                scheduling_strategy=scheduling_strategy,
+            )
         self.model_type = self.model_backend.model_type
         # Assign unique ID
         self.agent_id = agent_id if agent_id else str(uuid.uuid4())
