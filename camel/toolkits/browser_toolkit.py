@@ -1441,7 +1441,6 @@ Your output should be in json format, including the following fields:
         detailed_plan = self._task_planning(task_prompt, start_url)
         logger.debug(f"Detailed plan: {detailed_plan}")
 
-        self.browser.init()
         self.browser.visit_page(start_url)
 
         for i in range(round_limit):
