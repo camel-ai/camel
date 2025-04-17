@@ -71,6 +71,7 @@
             "pages": [
               "docs/mcp/index",
               "docs/mcp/overview",
+              "docs/mcp/MCP_with_CAMEL",
               "docs/mcp/Using_MCP_with_OWL"
             ]
           }, 
