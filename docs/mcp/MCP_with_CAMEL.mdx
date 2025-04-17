@@ -1,0 +1,184 @@
+The Model Context Protocol (MCP) integration in CAMEL enables agents to interact with external tools through a standardized interface. This documentation covers the current implementation and planned future enhancements.
+
+## Current Implementation
+
+CAMEL currently implements MCP client capabilities through two main classes: `MCPToolkit` and `_MCPServer`. These components allow CAMEL agents to connect to and use tools from external MCP servers.
+
+### Architecture Overview
+
+The current MCP implementation in CAMEL follows this structure:
+
+<div>
+  <img
+    src="/docs/images/mcp_camel.svg"
+    alt="Architecture diagram showing the interaction between CAMEL agent, MCPToolkit, and MCP servers"
+    style={{ maxWidth: '100%' }}
+  />
+  <p style={{ textAlign: 'center' }}>
+    <strong>Architecture: CAMEL Agent with MCP Toolkit & Server</strong>
+  </p>
+</div>
+
+### Key Components
+
+#### MCPToolkit
+
+`MCPToolkit` is the main entry point for MCP functionality in CAMEL. It manages connections to multiple MCP servers and aggregates their tools.
+
+Key features:
+
+- Configuration via JSON files or programmatic setup
+- Management of multiple MCP server connections
+- Aggregation of tools from all connected servers
+- Asynchronous connection handling
+
+Usage example:
+
+```python
+from camel.toolkits.mcp_toolkit import MCPToolkit
+
+# Create toolkit from config file
+toolkit = MCPToolkit(config_path="mcp_config.json")
+
+# Use connection as context manager
+async with toolkit.connection() as connected_toolkit:
+    # Get all tools from connected servers
+    tools = connected_toolkit.get_tools()
+    
+    # Use tools in an agent
+    agent = Agent(tools=tools)
+```
+
+#### _MCPServer
+
+`_MCPServer` is an internal class that handles the connection to a single MCP server. It supports two connection modes:
+
+1. **stdio mode**: Connects via standard input/output for local command-line tools
+2. **SSE mode**: Connects via HTTP for web-based MCP servers
+
+Key features:
+
+- Dynamic function generation from MCP tool definitions
+- Support for various content types in responses (text, images, embedded resources)
+- Tool schema conversion for compatibility with different LLM frameworks
+- Resource management for clean connections and disconnections
+
+### Connection Methods
+
+The MCP implementation supports two connection methods:
+
+#### HTTP/SSE Connection
+
+For web-based MCP servers:
+
+```python
+server = _MCPServer("https://example.com/mcp-endpoint")
+```
+
+#### Local Process Connection
+
+For local command-line tools:
+
+```python
+server = _MCPServer(
+    "local-mcp-command", 
+    args=["--option1", "--option2"], 
+    env={"ENV_VAR": "value"}
+)
+```
+
+### Configuration Format
+
+MCP servers can be configured through a JSON configuration file:
+
+```json
+{
+  "mcpServers": {
+    "localServer": {
+      "command": "local-mcp-command",
+      "args": ["--option1", "--option2"],
+      "env": {"ENV_VAR": "value"}
+    }
+  },
+  "mcpWebServers": {
+    "remoteServer": {
+      "url": "https://example.com/mcp-endpoint"
+    }
+  }
+}
+```
+
+## Available MCP Servers
+
+CAMEL can connect to a growing ecosystem of MCP servers, including:
+
+- Database systems (PostgreSQL, Redis, Astra DB, Neo4j, Milvus, TiDB)
+- Search engines (Bing, Brave, Tavily, Exa, Kagi)
+- Development tools (VSCode, JetBrains IDE, Git, GitHub, GitLab)
+- Cloud services (Cloudflare, AWS Bedrock)
+- Content generation systems (DeepSRT, EverArt)
+- Web tools (Firecrawl, Puppeteer, Fetch)
+
+For a complete list of available MCP servers, visit the [MCP Hub](https://www.camel-ai.org/mcp-hub).
+
+## Integration with CAMEL Agents
+
+CAMEL agents can be enhanced with MCP tools:
+
+```python
+from camel.agents import Agent
+from camel.toolkits.mcp_toolkit import MCPToolkit
+
+# Create and connect to MCP toolkit
+toolkit = MCPToolkit(config_path="mcp_config.json")
+
+async def setup_agent():
+    async with toolkit.connection() as connected_toolkit:
+        # Get tools from MCP servers
+        mcp_tools = connected_toolkit.get_tools()
+        
+        # Create an agent with MCP tools
+        agent = Agent(
+            system_message="You are a helpful assistant with tool access.",
+            tools=mcp_tools
+        )
+        
+        # Agent can now use MCP tools in responses
+        return agent
+```
+
+## Upcoming Features
+
+CAMEL is actively developing enhanced MCP capabilities. The following features are planned for future releases:
+
+### 1. CAMEL Agents as MCP Servers and Clients
+
+Agents will be able to:
+
+- Expose their capabilities as MCP servers
+- Consume other agents' capabilities as MCP clients
+- Create bidirectional communication channels
+
+This will enable more modular, composable agent architectures where agents can specialize and provide services to each other.
+
+### 2. MCP Registry
+
+A centralized registry system to:
+
+- Search for available MCP servers
+- Download and install MCP servers automatically
+- Rate and review different MCP implementations
+- Share custom MCP servers with the community
+
+The registry will simplify the process of extending agent capabilities with specialized tools.
+
+### 3. Inter-Agent Communication via MCP
+
+MCP will serve as a standardized protocol for:
+
+- Agent-to-agent communication
+- Coordinated problem-solving
+- Task delegation between specialized agents
+- Structured information exchange
+
+This will enable more sophisticated multi-agent systems where agents can collaborate effectively through a common communication protocol
