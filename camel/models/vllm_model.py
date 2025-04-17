@@ -13,12 +13,20 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import subprocess
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union, List, Type
+from openai import AsyncStream, Stream
 
 from camel.configs import VLLM_API_PARAMS, VLLMConfig
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ModelType
 from camel.utils import BaseTokenCounter
+from camel.messages import OpenAIMessage
+from pydantic import BaseModel
+from camel.types import (
+    ChatCompletion,
+    ChatCompletionChunk,
+    ModelType,
+)
 
 
 # flake8: noqa: E501
@@ -105,3 +113,124 @@ class VLLMModel(OpenAICompatibleModel):
                     f"Unexpected argument `{param}` is "
                     "input into vLLM model backend."
                 )
+
+    async def _arun(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+        r"""Runs inference of OpenAI chat completion.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+            response_format (Optional[Type[BaseModel]], optional): The format
+                to return the response in.
+            tools (Optional[List[Dict[str, Any]]], optional): List of tools
+                the model may call.
+
+        Returns:
+            Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+                `ChatCompletion` in the non-stream mode, or
+                `AsyncStream[ChatCompletionChunk]` in the stream mode.
+        """
+
+        kwargs = self.model_config_dict.copy()
+        if tools:
+            kwargs["tools"] = tools
+        if response_format:
+            kwargs["response_format"] = {"type": "json_object"}
+
+        # Remove additionalProperties from each tool's function parameters
+        if tools and "tools" in kwargs:
+            for tool in kwargs["tools"]:
+                if "function" in tool and "parameters" in tool["function"]:
+                    tool["function"]["parameters"].pop(
+                        "additionalProperties", None
+                    )
+
+        response = await self._async_client.chat.completions.create(
+            messages=messages,
+            model=self.model_type,
+            **kwargs,
+        )
+        return response
+
+    def _run(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+        r"""Runs inference of OpenAI chat completion.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+            response_format (Optional[Type[BaseModel]], optional): The format
+                to return the response in.
+            tools (Optional[List[Dict[str, Any]]], optional): List of tools
+                the model may call.
+
+        Returns:
+            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+                `ChatCompletion` in the non-stream mode, or
+                `Stream[ChatCompletionChunk]` in the stream mode.
+        """
+        if tools:
+            for tool in tools:
+                function_dict = tool.get('function', {})
+                function_dict.pop("additionalProperties", None)
+
+                # Process parameters to remove anyOf
+                if 'parameters' in function_dict:
+                    params = function_dict['parameters']
+                    if 'properties' in params:
+                        for prop_name, prop_value in params[
+                            'properties'
+                        ].items():
+                            if 'anyOf' in prop_value:
+                                # Replace anyOf with the first type in the list
+                                first_type = prop_value['anyOf'][0]
+                                params['properties'][prop_name] = first_type
+                                # Preserve description if it exists
+                                if 'description' in prop_value:
+                                    params['properties'][prop_name][
+                                        'description'
+                                    ] = prop_value['description']
+
+            self.model_config_dict["tools"] = tools
+
+        kwargs = self.model_config_dict.copy()
+        if tools:
+            kwargs["tools"] = tools
+        elif tools is None:
+            kwargs["tools"] = None
+        if response_format:
+            kwargs["response_format"] = {"type": "json_object"}
+
+        # Remove additionalProperties from each tool's function parameters
+        if tools and "tools" in kwargs:
+            for tool in kwargs["tools"]:
+                if "function" in tool and "parameters" in tool["function"]:
+                    tool["function"]["parameters"].pop(
+                        "additionalProperties", None
+                    )
+
+        response = self._client.chat.completions.create(
+            messages=messages,
+            model=self.model_type,
+            **kwargs,
+        )
+        return response
+
+    @property
+    def stream(self) -> bool:
+        r"""Returns whether the model is in stream mode, which sends partial
+        results each time.
+
+        Returns:
+            bool: Whether the model is in stream mode.
+        """
+        return self.model_config_dict.get('stream', False)
