@@ -163,4 +163,75 @@ agent_with_tool = ChatAgent(
 user_msg = messages[1]["content"]
 
 assistant_response = agent_with_tool.step(user_msg)
-print(assistant_response)
+content = assistant_response.msgs[0].content
+
+# Split thought process and function calls
+if "</think>" in content:
+    think_part, function_part = content.split("</think>", 1)
+else:
+    think_part = content
+    function_part = ""
+
+print("\n")
+# Print thought process
+print("【Assistant Thought Process】")
+print(think_part.strip())
+
+print("\n")
+# Print function calls if they exist
+if function_part:
+    print("【Tool Calls】")
+    print(function_part.strip())
+
+print("\n")
+print(f"ID: {assistant_response.info['id']}")
+print("Usage:")
+
+usage_info = assistant_response.info["usage"]
+print(f"  Completion Tokens: {usage_info['completion_tokens']}")
+print(f"  Prompt Tokens: {usage_info['prompt_tokens']}")
+print(f"  Total Tokens: {usage_info['total_tokens']}")
+
+termination_reasons = assistant_response.info["termination_reasons"]
+print("Termination Reasons: " + ", ".join(termination_reasons))
+
+print(f"Num Tokens: {assistant_response.info['num_tokens']}")
+
+
+"""
+===============================================================================
+【Assistant Thought Process】
+Okay, so the user is asking for the current date and time in New York and
+theweather there. I need to figure out how to get this information using
+the functions provided.
+First, I should use the get_current_date function. The parameters required
+are the timezone. Since the user is in New York, I'll set the timezone
+parameter to 'America/New_York'. That should give me the current date
+and time in that location.
+Next, for the weather, I should use get_current_weather. The parameters needed
+are city, state, and unit. The city is New York, but I need the state 
+abbreviation. New York's state is NY, so the state parameter will be 'NY'. 
+The unit should be in Fahrenheit since that's what the user might prefer,
+but I'm not sure. Wait, the function allows any unit, but the user didn't
+specify, so maybe I should default to Fahrenheit or check if Celsius is more
+common. Hmm, but the example response used Fahrenheit, so I'll go with that.
+Putting it all together, I'll call get_current_date with the timezone and
+get_current_weather with the city, state, and unit. I'll make sure to format
+the function calls correctly, each on a separate line as per the instructions.
+
+
+【Tool Calls】
+<function=get_current_date>{"timezone": "America/New_York"}</function>  
+<function=get_current_weather>{"city": "New York", "state": "NY", "unit":
+"fahrenheit"}</function>
+
+
+ID: 3b49116d8dc84e18b6a9c935b7a4dd2c
+Usage:
+  Completion Tokens: 305
+  Prompt Tokens: 487
+  Total Tokens: 792
+Termination Reasons: stop
+Num Tokens: 496
+===============================================================================
+"""
