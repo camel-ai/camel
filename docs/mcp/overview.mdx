@@ -6,6 +6,15 @@ import { Link } from 'mint';
 
 ## Purpose
 
+<div>
+  <img
+    src="/docs/images/mcp_architecture_detail.png"
+    alt="MCP architecture: remote services, MCP protocol, clients, and local data sources"
+    style={{ maxWidth: '100%' }}
+  />
+  <p><strong>Visualization of MCP as an intermediate protocol layer</strong></p>
+</div>
+
 Model Context Protocol (MCP) is an open, vendor‑agnostic standard for connecting AI assistants to the systems where your data lives—content repositories, business tools, development environments, and more. As AI models advance in reasoning and quality, they still remain siloed from real‑world data.
 
 Every new integration traditionally requires bespoke code, creating an M × N explosion of connectors. MCP replaces that fragmentation with a single, universal protocol—think of it as the “USB for AI”—so that any AI application can securely and reliably access any MCP‑enabled data source or tool.
@@ -33,18 +42,28 @@ Every new integration traditionally requires bespoke code, creating an M × N 
 
 ---
 
-## Before & After MCP
+## Visual Overview
 
-<div align="center">
-  <img src="/docs/images/mcp_comparison.png" alt="Without vs With MCP" style={{ maxWidth: '100%' }} />
+<div>
+  <img
+    src="/docs/images/mcp_comparison.png"
+    alt="Comparison: Without MCP direct connectors; With MCP a single protocol mediates connections"
+    style={{ maxWidth: '100%' }}
+  />
+  <p><strong>Without vs With MCP comparison</strong></p>
 </div>
 
 ---
 
 ## General Architecture
 
-<div align="center">
-  <img src="/docs/images/mcp_architecture.png" alt="MCP client–server architecture" style={{ maxWidth: '100%' }} />
+<div>
+  <img
+    src="/docs/images/mcp_architecture.png"
+    alt="MCP client–server architecture showing host, clients, and servers with protocol connections"
+    style={{ maxWidth: '100%' }}
+  />
+  <p><strong>MCP client–server architecture</strong></p>
 </div>
 
 1. **Initialization**  

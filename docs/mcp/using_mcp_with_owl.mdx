@@ -1,24 +1,22 @@
 import { Link } from 'mint';
 
-<div align="center">
-  <img
-    src="/docs/images/mcparchicamel.jpeg"
-    alt="MCP client–server architecture"
-    style={{ maxWidth: '80%', margin: '1rem auto' }}
-  />
-</div>
+## About OWL
 
----
+OWL (Optimized Workforce Learning) is CAMEL‑AI’s open‑source multi‑agent collaboration framework designed to automate complex tasks through dynamic agent interactions. Since its release in March 2025, OWL has led the GAIA benchmark and powers sophisticated agent workflows.  
+👉 [View OWL on GitHub](https://github.com/camel-ai/owl)
 
 ## Purpose
 
 OWL leverages the Model Context Protocol (MCP) to:
 
-- **Standardize** all tool/resource calls into a single, open protocol  
-- **Automate** multi‑agent workflows without bespoke integrations  
-- **Plug & play** new data sources and services with minimal configuration  
+- **Standardize** all tool/resource calls into a single, open protocol.  
+- **Automate** multi‑agent workflows without bespoke integrations.  
+- **Plug & play** new data sources and services with minimal configuration.
 
 ---
+## Quickstart Steps
+
+Follow these steps to configure and use MCP with OWL:
 
 ## 1. Configuring MCP Servers
 
@@ -43,9 +41,9 @@ Create a file `mcp_servers_config.json` at your project root:
 }
 ```
 
-- `desktop-commander`: control local applications  
-- `playwright`: browser automation  
-- `fetch`: HTTP‑based content retrieval  
+- **desktop-commander**: control local applications  
+- **playwright**: browser automation  
+- **fetch**: HTTP‑based content retrieval  
 
 OWL will **discover** and **index** these servers at startup.
 
@@ -64,8 +62,8 @@ const mcpToolkit = new MCPToolkit({ configPath });
 await mcpToolkit.connect();
 ```
 
-- Using `Path.join` ensures cross‑platform paths  
-- `connect()` asynchronously initializes each MCP client
+- **Path.join** ensures cross‑platform compatibility.  
+- **connect()** asynchronously initializes each MCP client.
 
 ---
 
@@ -81,7 +79,7 @@ const prompt = `
   Format: Markdown, save to desktop.
 `;
 
-// 2. Get all MCP-enabled tools
+// 2. Retrieve all MCP-enabled tools
 const tools = [...mcpToolkit.getTools()];
 
 // 3. Create a multi-agent society
@@ -97,85 +95,58 @@ console.log(answer);
 
 ## 4. Fetch Tool Integration Example
 
-CAMEL‑AI MCP tool integration platform: <Link href="https://www.camel-ai.org/mcp">https://www.camel-ai.org/mcp</Link>  
-On our platform you can find a variety of MCP‑enabled plugins. In this tutorial we’ll demonstrate how to integrate the **Fetch** tool step by step.
+Visit the CAMEL‑AI MCP integration platform: <Link href="https://www.camel-ai.org/mcp">camel-ai.org/mcp</Link>
 
----
-
-### 1. Find “MCP with CAMEL” on the homepage  
-<div align="center">
-  <img
-    src="/docs/images/mcp_home.jpeg"
-    alt="Find MCP with CAMEL link on CAMEL-AI homepage"
-    style={{ maxWidth: '80%', margin: '1rem auto' }}
-  />
-</div>
-
----
-
-### 2. Access the Fetch tool page  
-<div align="center">
-  <img
-    src="/docs/images/mcp_toolpage.png"
-    alt="Fetch tool page with usage examples"
-    style={{ maxWidth: '80%', margin: '1rem auto' }}
-  />
-</div>
-
----
-
-### 3. View the GitHub repository link  
-<div align="center">
-  <img
-    src="/docs/images/mcp_github.png"
-    alt="Click the GitHub button on the Fetch page"
-    style={{ maxWidth: '80%', margin: '1rem auto' }}
-  />
-</div>
-
----
-
-### 4. Install & configure the Fetch MCP server  
 ```bash
 pip install mcp-server-fetch
 ```
-Then update your `mcp_servers_config.json`:
 
-```json
-{
-  "mcpServers": {
-    "fetch": {
-      "command": "python",
-      "args": ["-m", "mcp_server_fetch"]
-    }
-  }
-}
-```
-<div align="center">
-  <img
-    src="/docs/images/mcp_config.png"
-    alt="Installation and configuration snippet for Fetch"
-    style={{ maxWidth: '80%', margin: '1rem auto' }}
-  />
+Update your `mcp_servers_config.json` as above, then **restart OWL**—your new Fetch plugin will be automatically discovered.
+
+
+
+## More MCP Tool Retrieval and Usage Solutions
+
+CAMEL‑AI MCP integration platform: <Link href="https://www.camel-ai.org/mcp">camel-ai.org/mcp</Link>  
+Follow these four steps to discover and retrieve MCP plugins:
+
+<div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', textAlign: 'center' }}>
+  <div>
+    <img
+      src="/docs/images/mcp_home.jpeg"
+      alt="CAMEL-AI homepage highlighting MCP with CAMEL link"
+      style={{ maxWidth: '100%' }}
+    />
+    <p><strong>Go to CAMEL‑AI.org and find “MCP with CAMEL”</strong></p>
+  </div>
+  <div>
+    <img
+      src="/docs/images/mcp_toolpage.png"
+      alt="Anthropic MCP platform showing Fetch tool option"
+      style={{ maxWidth: '100%' }}
+    />
+    <p><strong>Navigate to Anthropics MCP and find “Fetch”</strong></p>
+  </div>
+  <div>
+    <img
+      src="/docs/images/mcp_github.png"
+      alt="Fetch tool page with GitHub button highlighted"
+      style={{ maxWidth: '100%' }}
+    />
+    <p><strong>Visiting the Fetch GitHub repository</strong></p>
+  </div>
+  <div>
+    <img
+      src="/docs/images/mcp_config.png"
+      alt="Installation and configuration steps for the Fetch MCP server"
+      style={{ maxWidth: '100%' }}
+    />
+    <p><strong>Install & configure the Fetch MCP server</strong></p>
+  </div>
 </div>
 
 ---
 
-After completing these steps, **restart OWL**. Your new Fetch plugin will be automatically discovered and available to all agents via MCP.
+## Learn More
 
----
-
-## Resources
-
-- 📖 Anthropic Blog:  
-  <Link href="https://www.anthropic.com/news/model-context-protocol">Introducing the Model Context Protocol</Link>  
-- 📚 Official Spec & SDKs:  
-  <Link href="https://docs.anthropic.com/en/docs/agents-and-tools/mcp">docs.anthropic.com/mcp</Link>  
-
-
-
-
-
-
-
-
+For a detailed walkthrough, see the full blog post: <Link href="https://www.camel-ai.org/blogs/owl-mcp-toolkit-practice">OWL MCP Toolkit Practice</Link>
