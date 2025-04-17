@@ -241,6 +241,8 @@ class ChatAgent(BaseAgent):
         self.response_terminators = response_terminators or []
         self.single_iteration = single_iteration
         self.tools_max_retries = tools_max_retries
+        self.used_tool_call_ids: Set[str] = set()
+
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
@@ -573,21 +575,7 @@ class ChatAgent(BaseAgent):
         remove_tool_calls: bool = False,
     ) -> ChatAgentResponse:
         r"""Executes a single step in the chat session, generating a response
-        to the input message.
-
-        Args:
-            input_message (Union[BaseMessage, str]): The input message for the
-                agent. If provided as a BaseMessage, the `role` is adjusted to
-                `user` to indicate an external message.
-            response_format (Optional[Type[BaseModel]], optional): A Pydantic
-                model defining the expected structure of the response. Used to
-                generate a structured response if provided. (default:
-                :obj:`None`)
-
-        Returns:
-            ChatAgentResponse: Contains output messages, a termination status
-                flag, and session information.
-        """
+        to the input message."""
 
         # Convert input message to BaseMessage if necessary
         if isinstance(input_message, str):
@@ -597,6 +585,9 @@ class ChatAgent(BaseAgent):
 
         # Add user input to memory
         self.update_memory(input_message, OpenAIBackendRole.USER)
+
+        # Prevent reused tool_call_ids
+        self.used_tool_call_ids.clear()
 
         tool_call_records: List[ToolCallingRecord] = []
         external_tool_call_requests: Optional[List[ToolCallRequest]] = None
@@ -616,8 +607,8 @@ class ChatAgent(BaseAgent):
                 return self._step_token_exceed(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
+
             if enforce_no_tools:
-                # Get response from model backend which enforce no tools
                 response = self._get_model_response(
                     openai_messages,
                     num_tokens,
@@ -625,7 +616,6 @@ class ChatAgent(BaseAgent):
                     [],
                 )
             else:
-                # Get response from model backend
                 response = self._get_model_response(
                     openai_messages,
                     num_tokens,
@@ -634,33 +624,29 @@ class ChatAgent(BaseAgent):
                 )
 
             if tool_call_requests := response.tool_call_requests:
-                # Process all tool calls
                 for tool_call_request in tool_call_requests:
-                    if (
-                        tool_call_request.tool_name
-                        in self._external_tool_schemas
-                    ):
+                    if tool_call_request.tool_call_id in self.used_tool_call_ids:
+                        logger.warning(
+                            f"Skipping duplicate tool_call_id: {tool_call_request.tool_call_id}"
+                        )
+                        continue
+
+                    self.used_tool_call_ids.add(tool_call_request.tool_call_id)
+
+                    if tool_call_request.tool_name in self._external_tool_schemas:
                         if external_tool_call_requests is None:
                             external_tool_call_requests = []
                         external_tool_call_requests.append(tool_call_request)
                     else:
-                        tool_call_records.append(
-                            self._execute_tool(tool_call_request)
-                        )
+                        tool_record, is_success = self._execute_tool(tool_call_request)
+                        tool_call_records.append(tool_record)
+                        if is_success:
+                            enforce_no_tools = True
 
-                # If we found external tool calls, break the loop
-                if external_tool_call_requests:
+                if external_tool_call_requests or self.single_iteration:
                     break
 
-                if self.single_iteration:
-                    break
-
-                tool_record, is_success = self._execute_tool(tool_call_request)
-                tool_call_records.append(tool_record)
-                if is_success:
-                    enforce_no_tools = True
                 continue
-
             break
 
         self._format_response_if_needed(response, response_format)
