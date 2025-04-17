@@ -308,7 +308,7 @@ class Workforce(BaseNode):
         response = self.coordinator_agent.step(
             prompt, response_format=TaskAssignResult
         )
-        result_dict = json.loads(response.msg.content)
+        result_dict = json.loads(response.msg.content, parse_int=str)
         task_assign_result = TaskAssignResult(**result_dict)
         return task_assign_result.assignee_id
 
