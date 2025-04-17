@@ -12,6 +12,10 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from .benchmark import CodeRagBenchmark
+from camel.benchmarks import CodeRagBenchmark
 
-__all__ = ["CodeRagBenchmark"]
+benchmark = CodeRagBenchmark(
+    data_dir="./CodeRag_BenchDatasets",
+    save_to="./CodeRag_BenchDatasets",
+    retriever=retriever,
+)

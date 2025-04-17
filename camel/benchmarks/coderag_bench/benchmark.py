@@ -22,6 +22,7 @@ import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Protocol, Union
 import datasets
+import jsonlines
 
 from tqdm import tqdm
 
@@ -62,7 +63,7 @@ def get_top_docs(results: dict, corpus: dict, task_id: str, topk: int = 10) -> l
     doc_code_snippets = [corpus[code_id] for code_id, score in doc_scores_sorted]
     return doc_code_snippets
 
-class CodeRagBenchBenchmark(BaseBenchmark):
+class CodeRagBenchmark(BaseBenchmark):
     r"""CodeRag-Bench Benchmark for evaluating RAG performance."""
 
 
@@ -70,7 +71,6 @@ class CodeRagBenchBenchmark(BaseBenchmark):
         self,
         data_dir: str,
         save_to: str,
-        processes: int = 1,
         task: Literal[
             "humaneval","mbpp","live_code_bench","ds1000", "odex","repoeval_repo","swebench_repo"
         ] = "humaneval",
@@ -162,7 +162,7 @@ class CodeRagBenchBenchmark(BaseBenchmark):
         r"""Load the CodeRAG-Bench dataset.
             save benchmark result to files
             return evaluation result"""
-
+        eval_result = {}
         if self.run_mode in ["retrieve", "retrieve_generate"]:
             if auto_retriever is None:
                 raise ValueError(
@@ -175,41 +175,140 @@ class CodeRagBenchBenchmark(BaseBenchmark):
             logger.info("[INFO] Starting canonical retrieval...")
             if self.corpus is None or self.queries is None or self.qrels is None:
                 self.load()
-            results = auto_retriever.retrieve(corpus=corpus, queries=queries)
 
-            def get_top_docs(results: Dict[str, Dict[str, float]],
-                             corpus: Dict[str, Dict], task_id: str,
-                             top_k: int):
-                scores = results[task_id]
-                top_doc_ids = sorted(scores.items(), key=lambda x: x[1],
-                                     reverse=True)[:top_k]
-                return [corpus[doc_id] for doc_id, _ in top_doc_ids]
+            docs = [v["text"] for v in self.corpus.values()]
+            doc_id_map = {v["text"]: k for k, v in self.corpus.items()}
 
-            top_docs = {
-                task_id: get_top_docs(results, corpus, task_id, top_k)
-                for task_id in queries
-            }
+            # Force all documents to be stored in a single vector collection.
+            # This prevents AutoRetriever from generating a separate collection for each document.
+            auto_retriever._collection_name_generator = lambda \
+                x: "humaneval_collection"
 
-            # Save top docs for future eval or generation
+            # Initialize the vector index once with all documents.
+            # Subsequent retrievals will reuse this collection without re-embedding.
+            auto_retriever.run_vector_retriever(query="dummy", contents=docs,
+                                                top_k=1)
+
+            retrieval_results = {}
+
+            # Prepare output directory
             output_dir = os.path.join(self.save_path, "retrieval")
             os.makedirs(output_dir, exist_ok=True)
-            save_file_jsonl([
-                {"task_id": tid, "docs": docs} for tid, docs in
-                top_docs.items()
-            ], os.path.join(output_dir, f"{self.task}_retrieved_docs.jsonl"))
-
-            logger.info("[INFO] Canonical retrieval completed.")
-            return {"retrieval_done": True, "num_queries": len(queries)}
-
-        elif self.run_mode == "generate":
-            # === Generation-only logic ===
-            logger.info("[INFO] Generation mode selected, skipping retrieval.")
-            raise NotImplementedError("generate-only mode not implemented yet")
-
-        else:
-            raise ValueError(f"Unknown run_mode: {self.run_mode}")
+            output_path = os.path.join(output_dir,
+                                       f"{self.task}_retrieved_docs.jsonl")
+            metrics_path = os.path.join(output_dir,
+                                        f"{self.task}_retrieval_metrics.json")
 
 
+            with jsonlines.open(output_path, mode='w') as writer:
+                for query_id, query_text in tqdm(self.queries.items()):
+                    result = auto_retriever.run_vector_retriever(
+                        query=query_text,
+                        contents=docs,  # Reuses the existing vector index
+                        top_k=10,
+                        return_detailed_info=True
+                    )
+                    doc_entries = []
+                    scores = {}
+
+                    for item in result["Retrieved Context"]:
+                        doc_text = item["text"]
+                        doc_id = doc_id_map.get(doc_text)
+                        if doc_id is None:
+                            continue
+                        scores[doc_id] = item.get("similarity score", 0.0)
+                        doc_entries.append({
+                            "doc_id": doc_id,
+                            "text": doc_text,
+                            "title": self.corpus[doc_id].get("title", ""),
+                            "similarity": item.get("similarity score", 0.0)
+                        })
+
+                    # Accumulate retrieval scores for evaluation
+                    retrieval_results[query_id] = scores
+
+                    # Stream write one record per query
+                    writer.write({
+                        "task_id": query_id,
+                        "docs": doc_entries
+                    })
+
+                    # Evaluate using BEIR
+                    from beir.retrieval.evaluation import EvaluateRetrieval
+                    retriever = EvaluateRetrieval(model=None,
+                                                  score_function="dot")
+                    k_values = [1, 5, 10]
+                    ndcg, _map, recall, precision = retriever.evaluate(
+                        self.qrels, retrieval_results, k_values)
+                    mrr = retriever.evaluate_custom(self.qrels,
+                                                    retrieval_results,
+                                                    k_values, metric="mrr")
+
+                    metrics = {
+                        "ndcg": ndcg,
+                        "mrr": mrr,
+                        "recall": recall,
+                        "precision": precision,
+                    }
+
+                    with open(metrics_path, "w") as f:
+                        json.dump(metrics, f, indent=2)
+
+                    logger.info("[INFO] Retrieval results saved to %s",
+                                output_path)
+                    logger.info("[INFO] Retrieval metrics saved to %s",
+                                metrics_path)
+                    logger.info("[INFO] Canonical retrieval completed.")
+
+                if self.run_mode in ["generate", "retrieve_generate"]:
+                    logger.info("[INFO] Generation step not yet implemented.")
+
+        if self.run_mode in ["generate", "retrieve_generate"]:
+            logger.info("[INFO] Starting generation...")
+            # TODO: Implement generation + save + evaluation
+
+            # Load retrieval docs if needed
+            retrieval_docs = {}
+            if self.run_mode == "retrieve_generate":
+                retrieved_path = os.path.join(self.save_path, "retrieval",
+                                              f"{self.task}_retrieved_docs.jsonl")
+                with jsonlines.open(retrieved_path, mode='r') as reader:
+                    for obj in reader:
+                        retrieval_docs[obj["task_id"]] = obj["docs"]
+            generations = []
+            for task_id, prompt in tqdm(self.queries.items()):
+                context = ""
+                if self.run_mode == "retrieve_generate":
+                    docs = retrieval_docs.get(task_id, [])
+                    context = "\n\n".join([doc["text"] for doc in docs])
+                full_prompt = f"{context}\n\n{prompt}" if context else prompt
+
+                response = agent.generate(
+                    [BaseMessage(role="user", content=full_prompt)])
+                generations.append({
+                    "task_id": task_id,
+                    "prompt": full_prompt,
+                    "generation": response.msg.content
+                })
+
+                # Save generations
+            generation_dir = os.path.join(self.save_path, "generation")
+            os.makedirs(generation_dir, exist_ok=True)
+            gen_path = os.path.join(generation_dir,
+                                    f"{self.task}_generations.jsonl")
+            save_file_jsonl(generations, gen_path)
+            logger.info("[INFO] Generations saved to %s", gen_path)
+
+            # Evaluate generations
+            logger.info("[INFO] Evaluating generation results...")
+            generation_metrics = evaluate_humaneval_completion(generations)
+            metrics_path = os.path.join(generation_dir,
+                                        f"{self.task}_metrics.json")
+            with open(metrics_path, "w") as f:
+                json.dump(generation_metrics, f, indent=2)
+            logger.info("[INFO] Generation metrics saved to %s", metrics_path)
+
+        return
 
 
 
