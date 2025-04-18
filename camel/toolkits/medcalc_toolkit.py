@@ -105,7 +105,7 @@ class MedCalcToolkit(BaseToolkit):
             "age": int(age),  # Age
         }
 
-        from camel.toolkits.medcalc_bench.adjusted_body_weight import (
+        from medcalc.adjusted_body_weight import (
             abw_explanation,
         )
 
@@ -194,7 +194,7 @@ class MedCalcToolkit(BaseToolkit):
             ),  # Bicarbonate: (value, unit)
         }
 
-        from camel.toolkits.medcalc_bench.anion_gap import (
+        from medcalc.anion_gap import (
             compute_anion_gap_explanation,
         )
 
@@ -268,7 +268,7 @@ class MedCalcToolkit(BaseToolkit):
             ),  # Height: (value, unit)
         }
 
-        from camel.toolkits.medcalc_bench.bmi_calculator import (
+        from medcalc.bmi_calculator import (
             bmi_calculator_explanation,
         )
 
@@ -343,7 +343,7 @@ class MedCalcToolkit(BaseToolkit):
             ),  # Height: (value, unit)
         }
 
-        from camel.toolkits.medcalc_bench.bsa_calculator import (
+        from medcalc.bsa_calculator import (
             bsa_calculator_explaination,
         )
 
@@ -423,7 +423,7 @@ class MedCalcToolkit(BaseToolkit):
             ),  # Calcium: (value, unit)
         }
 
-        from camel.toolkits.medcalc_bench.calcium_correction import (
+        from medcalc.calcium_correction import (
             calculate_corrected_calcium_explanation,
         )
 
@@ -504,7 +504,7 @@ class MedCalcToolkit(BaseToolkit):
 
         try:
             # Call the FeverPAIN score calculation function
-            from camel.toolkits.medcalc_bench.feverpain import (
+            from medcalc.feverpain import (
                 compute_fever_pain_explanation,
             )
 
@@ -629,7 +629,7 @@ class MedCalcToolkit(BaseToolkit):
 
         try:
             # Call the HEART Score calculation function
-            from camel.toolkits.medcalc_bench.heart_score import (
+            from medcalc.heart_score import (
                 compute_heart_score_explanation,
             )
 
@@ -708,7 +708,7 @@ class MedCalcToolkit(BaseToolkit):
 
         try:
             # Call the HOMA-IR calculation function
-            from camel.toolkits.medcalc_bench.homa_ir import (
+            from medcalc.homa_ir import (
                 compute_homa_ir_explanation,
             )
 
@@ -781,7 +781,7 @@ class MedCalcToolkit(BaseToolkit):
             "age": int(age),  # Age
         }
 
-        from camel.toolkits.medcalc_bench.ideal_body_weight import (
+        from medcalc.ideal_body_weight import (
             ibw_explanation,
         )
 
@@ -861,7 +861,7 @@ class MedCalcToolkit(BaseToolkit):
             ),  # Diastolic Blood Pressure: (value, unit)
         }
 
-        from camel.toolkits.medcalc_bench.mean_arterial_pressure import (
+        from medcalc.mean_arterial_pressure import (
             mean_arterial_pressure_explanation,
         )
 
@@ -951,7 +951,7 @@ class MedCalcToolkit(BaseToolkit):
         }
 
         try:
-            from camel.toolkits.medcalc_bench.sOsm import (
+            from medcalc.sOsm import (
                 compute_serum_osmolality_explanation,
             )
 
@@ -1041,7 +1041,7 @@ class MedCalcToolkit(BaseToolkit):
             ),  # Bicarbonate: (value, unit)
         }
 
-        from camel.toolkits.medcalc_bench.delta_gap import (
+        from medcalc.delta_gap import (
             compute_delta_gap_explanation,
         )
 
@@ -1106,7 +1106,7 @@ class MedCalcToolkit(BaseToolkit):
         }
 
         try:
-            from camel.toolkits.medcalc_bench.conception_date import (
+            from medcalc.conception_date import (
                 add_2_weeks_explanation,
             )
 
@@ -1168,7 +1168,7 @@ class MedCalcToolkit(BaseToolkit):
         }
 
         try:
-            from camel.toolkits.medcalc_bench.gestational_age import (
+            from medcalc.gestational_age import (
                 compute_gestational_age_explanation,
             )
 
@@ -1253,7 +1253,7 @@ class MedCalcToolkit(BaseToolkit):
             "race": str(race) if race else None,  # Race (optional)
         }
 
-        from camel.toolkits.medcalc_bench.mdrd_gfr import mrdr_gfr_explanation
+        from medcalc.mdrd_gfr import mrdr_gfr_explanation
 
         try:
             # Call the GFR calculation function
@@ -1324,7 +1324,7 @@ class MedCalcToolkit(BaseToolkit):
             ),  # Height: (value, unit)
         }
 
-        from camel.toolkits.medcalc_bench.target_weight import (
+        from medcalc.target_weight import (
             targetweight_explanation,
         )
 
@@ -1412,7 +1412,7 @@ class MedCalcToolkit(BaseToolkit):
         }
 
         try:
-            from camel.toolkits.medcalc_bench.creatinine_clearance import (
+            from medcalc.creatinine_clearance import (
                 generate_cockcroft_gault_explanation,
             )
 
@@ -1498,7 +1498,7 @@ class MedCalcToolkit(BaseToolkit):
             "pe_number_one": bool(pe_number_one),
         }
         try:
-            from camel.toolkits.medcalc_bench.wells_criteria_pe import (
+            from medcalc.wells_criteria_pe import (
                 calculate_pe_wells_explanation,
             )
 
@@ -1585,7 +1585,7 @@ class MedCalcToolkit(BaseToolkit):
             "total_cholestrol": (float(total_value), str(total_unit)),
         }
 
-        from camel.toolkits.medcalc_bench.ldl_calculated import (
+        from medcalc.ldl_calculated import (
             compute_ldl_explanation,
         )
 
@@ -1666,7 +1666,7 @@ class MedCalcToolkit(BaseToolkit):
             "albumin": (float(albumin_value), str(albumin_unit)),
         }
 
-        from camel.toolkits.medcalc_bench.albumin_corrected_anion import (
+        from medcalc.albumin_corrected_anion import (
             compute_albumin_corrected_anion_explanation,
         )
 
@@ -1749,7 +1749,7 @@ class MedCalcToolkit(BaseToolkit):
             "albumin": (float(albumin_value), str(albumin_unit)),
         }
 
-        from camel.toolkits.medcalc_bench.albumin_corrected_delta_gap import (
+        from medcalc.albumin_corrected_delta_gap import (
             compute_albumin_corrected_delta_gap_explanation,
         )
 
@@ -1834,7 +1834,7 @@ class MedCalcToolkit(BaseToolkit):
             "albumin": (float(albumin_value), str(albumin_unit)),
         }
 
-        from camel.toolkits.medcalc_bench.albumin_delta_ratio import (
+        from medcalc.albumin_delta_ratio import (
             compute_albumin_delta_ratio_explanation,
         )
 
@@ -1894,7 +1894,7 @@ class MedCalcToolkit(BaseToolkit):
         }
 
         try:
-            from camel.toolkits.medcalc_bench.estimated_due_date import (
+            from medcalc.estimated_due_date import (
                 add_40_weeks_explanation,
             )
 
@@ -1974,7 +1974,7 @@ class MedCalcToolkit(BaseToolkit):
             "sodium": (float(sodium_value), str(sodium_unit)),
         }
 
-        from camel.toolkits.medcalc_bench.free_water_deficit import (
+        from medcalc.free_water_deficit import (
             free_water_deficit_explanation,
         )
 
@@ -2052,7 +2052,7 @@ class MedCalcToolkit(BaseToolkit):
         }
 
         try:
-            from camel.toolkits.medcalc_bench.glasgow_coma_score import (
+            from medcalc.glasgow_coma_score import (
                 compute_glasgow_coma_score_explanation,
             )
 
@@ -2121,7 +2121,7 @@ class MedCalcToolkit(BaseToolkit):
             ),  # QT interval: (value, unit)
         }
 
-        from camel.toolkits.medcalc_bench.qt_calculator_bazett import (
+        from medcalc.qt_calculator_bazett import (
             bazett_calculator_explanation,
         )
 
@@ -2187,7 +2187,7 @@ class MedCalcToolkit(BaseToolkit):
             ),  # QT interval: (value, unit)
         }
 
-        from camel.toolkits.medcalc_bench.qt_calculator_framingham import (
+        from medcalc.qt_calculator_framingham import (
             framingham_calculator_explanation,
         )
 
@@ -2257,7 +2257,7 @@ class MedCalcToolkit(BaseToolkit):
             ),  # QT interval: (value, unit)
         }
 
-        from camel.toolkits.medcalc_bench.qt_calculator_fredericia import (
+        from medcalc.qt_calculator_fredericia import (
             fredericia_calculator_explanation,
         )
 
@@ -2328,7 +2328,7 @@ class MedCalcToolkit(BaseToolkit):
             ),  # QT interval: (value, unit)
         }
 
-        from camel.toolkits.medcalc_bench.qt_calculator_hodges import (
+        from medcalc.qt_calculator_hodges import (
             hodges_calculator_explanation,
         )
 
@@ -2396,7 +2396,7 @@ class MedCalcToolkit(BaseToolkit):
             ),  # (value, unit)
         }
 
-        from camel.toolkits.medcalc_bench.qt_calculator_rautaharju import (
+        from medcalc.qt_calculator_rautaharju import (
             rautaharju_calculator_explanation,
         )
 
@@ -2485,7 +2485,7 @@ class MedCalcToolkit(BaseToolkit):
             "target steroid": str(target_steroid),
         }
 
-        from camel.toolkits.medcalc_bench.steroid_conversion import (
+        from medcalc.steroid_conversion import (
             compute_steroid_conversion_explanation,
         )
 
@@ -2578,7 +2578,7 @@ class MedCalcToolkit(BaseToolkit):
             "alternative_to_dvt_diagnosis": bool(alternative_to_dvt_diagnosis),
         }
 
-        from camel.toolkits.medcalc_bench.wells_criteria_dvt import (
+        from medcalc.wells_criteria_dvt import (
             compute_wells_criteria_dvt_explanation,
         )
 
@@ -2695,7 +2695,7 @@ class MedCalcToolkit(BaseToolkit):
             "liver_disease": str(liver_disease),
         }
 
-        from camel.toolkits.medcalc_bench.cci import (
+        from medcalc.cci import (
             compute_cci_explanation,
         )
 
@@ -2783,7 +2783,7 @@ class MedCalcToolkit(BaseToolkit):
             "diabetes": bool(diabetes),  # Diabetes
         }
 
-        from camel.toolkits.medcalc_bench.cha2ds2_vasc_score import (
+        from medcalc.cha2ds2_vasc_score import (
             generate_cha2ds2_vasc_explanation,
         )
 
@@ -2866,7 +2866,7 @@ class MedCalcToolkit(BaseToolkit):
             "encephalopathy": str(encephalopathy),
         }
 
-        from camel.toolkits.medcalc_bench.child_pugh_score import (
+        from medcalc.child_pugh_score import (
             compute_child_pugh_score_explanation,
         )
 
@@ -2943,7 +2943,7 @@ class MedCalcToolkit(BaseToolkit):
             "sex": str(sex),  # Gender
         }
 
-        from camel.toolkits.medcalc_bench.ckd_epi_2021_creatinine import (
+        from medcalc.ckd_epi_2021_creatinine import (
             ckd_epi_2021_explanation,
         )
 
@@ -3080,7 +3080,7 @@ class MedCalcToolkit(BaseToolkit):
                 str(urine_output_unit),
             )
 
-        from camel.toolkits.medcalc_bench.sofa import compute_sofa_explanation
+        from medcalc.sofa import compute_sofa_explanation
 
         try:
             result = compute_sofa_explanation(input_variables)
@@ -3142,7 +3142,7 @@ class MedCalcToolkit(BaseToolkit):
         }
 
         try:
-            from camel.toolkits.medcalc_bench.centor_score import (
+            from medcalc.centor_score import (
                 compute_centor_score_explanation,
             )
 
@@ -3222,7 +3222,7 @@ class MedCalcToolkit(BaseToolkit):
             ),
             "bun": (float(bun_value), str(bun_unit)),
         }
-        from camel.toolkits.medcalc_bench.curb_65 import curb_65_explanation
+        from medcalc.curb_65 import curb_65_explanation
 
         if confusion is not None:
             input_variables["confusion"] = (float(confusion), "boolean")
@@ -3285,7 +3285,7 @@ class MedCalcToolkit(BaseToolkit):
             "platelet_count": (float(platelet_value), str(platelet_unit)),
         }
 
-        from camel.toolkits.medcalc_bench.fibrosis_4 import (
+        from medcalc.fibrosis_4 import (
             compute_fib4_explanation,
         )
 
@@ -3343,7 +3343,7 @@ class MedCalcToolkit(BaseToolkit):
             )  # Weight: (value, unit)
         }
 
-        from camel.toolkits.medcalc_bench.maintenance_fluid_calc import (
+        from medcalc.maintenance_fluid_calc import (
             maintenance_fluid_explanation,
         )
 
@@ -3456,7 +3456,7 @@ class MedCalcToolkit(BaseToolkit):
             ),
         }
 
-        from camel.toolkits.medcalc_bench.mme import (
+        from medcalc.mme import (
             mme_explanation,
         )
 
@@ -3544,7 +3544,7 @@ class MedCalcToolkit(BaseToolkit):
         }
 
         try:
-            from camel.toolkits.medcalc_bench.perc_rule import (
+            from medcalc.perc_rule import (
                 compute_perc_rule_explanation,
             )
 
@@ -3630,7 +3630,7 @@ class MedCalcToolkit(BaseToolkit):
             input_variables["paco2"] = (float(paco2_value), str(paco2_unit))
 
         try:
-            from camel.toolkits.medcalc_bench.sirs_criteria import (
+            from medcalc.sirs_criteria import (
                 sirs_criteria_explanation,
             )
 
@@ -3698,7 +3698,7 @@ class MedCalcToolkit(BaseToolkit):
             "glucose": (float(glucose_value), str(glucose_unit)),
         }
 
-        from camel.toolkits.medcalc_bench.sch import (
+        from medcalc.sch import (
             compute_sodium_correction_hyperglycemia_explanation,
         )
 
@@ -3852,7 +3852,7 @@ class MedCalcToolkit(BaseToolkit):
             "surgery_type": str(surgery_type),
         }
 
-        from camel.toolkits.medcalc_bench.apache_ii import (
+        from medcalc.apache_ii import (
             apache_ii_explanation,
         )
 
@@ -4028,7 +4028,7 @@ class MedCalcToolkit(BaseToolkit):
         }
 
         try:
-            from camel.toolkits.medcalc_bench.caprini_score import (
+            from medcalc.caprini_score import (
                 caprini_score_explanation,
             )
 
@@ -4116,7 +4116,7 @@ class MedCalcToolkit(BaseToolkit):
             ),
         }
 
-        from camel.toolkits.medcalc_bench.cardiac_risk_index import (
+        from medcalc.cardiac_risk_index import (
             compute_cardiac_index_explanation,
         )
 
@@ -4203,7 +4203,7 @@ class MedCalcToolkit(BaseToolkit):
             ),
         }
 
-        from camel.toolkits.medcalc_bench.compute_fena import (
+        from medcalc.compute_fena import (
             compute_fena_explanation,
         )
 
@@ -4294,7 +4294,7 @@ class MedCalcToolkit(BaseToolkit):
             ),
         }
 
-        from camel.toolkits.medcalc_bench.framingham_risk_score import (
+        from medcalc.framingham_risk_score import (
             framingham_risk_score_explanation,
         )
 
@@ -4391,7 +4391,7 @@ class MedCalcToolkit(BaseToolkit):
             )
 
         try:
-            from camel.toolkits.medcalc_bench.glasgow_bleeding_score import (
+            from medcalc.glasgow_bleeding_score import (
                 glasgow_bleeding_score_explanation,
             )
 
@@ -4469,7 +4469,7 @@ class MedCalcToolkit(BaseToolkit):
         }
 
         try:
-            from camel.toolkits.medcalc_bench.has_bled_score import (
+            from medcalc.has_bled_score import (
                 compute_has_bled_score_explanation,
             )
 
@@ -4547,7 +4547,7 @@ class MedCalcToolkit(BaseToolkit):
             "cvvhd": bool(cvvhd),
         }
 
-        from camel.toolkits.medcalc_bench.meldna import (
+        from medcalc.meldna import (
             compute_meldna_explanation,
         )
 
@@ -4688,7 +4688,7 @@ class MedCalcToolkit(BaseToolkit):
             "pleural_effusion": bool(pleural_effusion),
         }
 
-        from camel.toolkits.medcalc_bench.psi_score import (
+        from medcalc.psi_score import (
             psi_score_explanation,
         )
 
