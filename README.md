@@ -16,6 +16,7 @@
 [![Hugging Face][huggingface-image]][huggingface-url]
 [![Star][star-image]][star-url]
 [![Package License][package-license-image]][package-license-url]
+[![PyPI Download][package-download-image]][package-download-url]
 
 </div>
 
@@ -460,6 +461,7 @@ The source code is licensed under Apache 2.0.
 [star-url]: https://github.com/camel-ai/camel/stargazers
 [package-license-image]: https://img.shields.io/badge/License-Apache_2.0-blue.svg
 [package-license-url]: https://github.com/camel-ai/camel/blob/master/licenses/LICENSE
+[package-download-image]: https://img.shields.io/pypi/dm/camel-ai
 
 [colab-url]: https://colab.research.google.com/drive/1AzP33O8rnMW__7ocWJhVBXjKziJXPtim?usp=sharing
 [colab-image]: https://colab.research.google.com/assets/colab-badge.svg
@@ -475,3 +477,4 @@ The source code is licensed under Apache 2.0.
 [reddit-url]: https://www.reddit.com/r/CamelAI/
 [reddit-image]: https://img.shields.io/reddit/subreddit-subscribers/CamelAI?style=plastic&logo=reddit&label=r%2FCAMEL&labelColor=white
 [ambassador-url]: https://www.camel-ai.org/community
+[package-download-url]: https://pypi.org/project/camel-ai
