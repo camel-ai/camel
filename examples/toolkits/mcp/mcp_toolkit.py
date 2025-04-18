@@ -40,8 +40,25 @@ from camel.types import ModelPlatformType, ModelType
 
 
 async def main():
+    # Use either config path or config dict to initialize the MCP toolkit.
+    # 1. Use config path:
     config_path = Path(__file__).parent / "mcp_servers_config.json"
     mcp_toolkit = MCPToolkit(config_path=str(config_path))
+    # 2. Use config dict:
+    # config_dict = {
+    #     "mcpServers": {
+    #         "filesystem": {
+    #             "command": "npx",
+    #             "args": [
+    #                 "-y",
+    #                 "@modelcontextprotocol/server-filesystem@2025.1.14",
+    #                 "."
+    #             ]
+    #         }
+    #     },
+    #     "mcpWebServers": {}
+    # }
+    # mcp_toolkit = MCPToolkit(config_dict=config_dict)
 
     # Connect to all MCP servers.
     await mcp_toolkit.connect()

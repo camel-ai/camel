@@ -363,12 +363,14 @@ class MCPToolkit(BaseToolkit):
             instances to manage.
         config_path (Optional[str]): Path to a JSON configuration file
             defining MCP servers.
+        config_dict (Optional[Dict[str, Any]]): Dictionary containing MCP
+            server configurations in the same format as the config file.
 
     Note:
-        Either `servers` or `config_path` must be provided. If both are
-        provided, servers from both sources will be combined.
+        Either `servers`, `config_path`, or `config_dict` must be provided.
+        If multiple are provided, servers from all sources will be combined.
 
-        For web servers in the config file, you can specify authorization
+        For web servers in the config, you can specify authorization
         headers using the "headers" field to connect to protected MCP server
         endpoints.
 
@@ -397,19 +399,27 @@ class MCPToolkit(BaseToolkit):
         self,
         servers: Optional[List[MCPClient]] = None,
         config_path: Optional[str] = None,
+        config_dict: Optional[Dict[str, Any]] = None,
     ):
         super().__init__()
 
-        if servers and config_path:
+        sources_provided = sum(
+            1 for src in [servers, config_path, config_dict] if src is not None
+        )
+        if sources_provided > 1:
             logger.warning(
-                "Both servers and config_path are provided. "
-                "Servers from both sources will be combined."
+                "Multiple configuration sources provided "
+                f"({sources_provided}). Servers from all sources "
+                "will be combined."
             )
 
         self.servers: List[MCPClient] = servers or []
 
         if config_path:
             self.servers.extend(self._load_servers_from_config(config_path))
+
+        if config_dict:
+            self.servers.extend(self._load_servers_from_dict(config_dict))
 
         self._exit_stack = AsyncExitStack()
         self._connected = False
@@ -436,9 +446,23 @@ class MCPToolkit(BaseToolkit):
             logger.warning(f"Config file not found: '{config_path}'")
             raise e
 
+        return self._load_servers_from_dict(data)
+
+    def _load_servers_from_dict(
+        self, config: Dict[str, Any]
+    ) -> List[MCPClient]:
+        r"""Loads MCP server configurations from a dictionary.
+
+        Args:
+            config (Dict[str, Any]): Dictionary containing server
+                configurations.
+
+        Returns:
+            List[MCPClient]: List of configured MCPClient instances.
+        """
         all_servers = []
 
-        mcp_servers = data.get("mcpServers", {})
+        mcp_servers = config.get("mcpServers", {})
         if not isinstance(mcp_servers, dict):
             logger.warning("'mcpServers' is not a dictionary, skipping...")
             mcp_servers = {}
@@ -457,11 +481,16 @@ class MCPToolkit(BaseToolkit):
                 )
                 continue
 
+            # Include headers if provided in the configuration
+            headers = cfg.get("headers", {})
+
+            cmd_or_url = cast(str, cfg.get("command") or cfg.get("url"))
             server = MCPClient(
-                command_or_url=cast(str, cfg.get("command") or cfg.get("url")),
+                command_or_url=cmd_or_url,
                 args=cfg.get("args", []),
                 env={**os.environ, **cfg.get("env", {})},
                 timeout=cfg.get("timeout", None),
+                headers=headers,
             )
             all_servers.append(server)
 
