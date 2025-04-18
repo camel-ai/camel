@@ -17,9 +17,7 @@ from typing import Any, Dict, Optional, Union
 
 from camel.configs import QWEN_API_PARAMS, QwenConfig
 from camel.models.openai_compatible_model import OpenAICompatibleModel
-from camel.types import (
-    ModelType,
-)
+from camel.types import ModelType
 from camel.utils import (
     BaseTokenCounter,
     api_keys_required,
