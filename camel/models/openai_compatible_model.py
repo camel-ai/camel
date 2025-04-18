@@ -19,6 +19,7 @@ from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
 from pydantic import BaseModel
 
 from camel.messages import OpenAIMessage
+from camel.models._utils import try_modify_message_with_format
 from camel.models.base_model import BaseModelBackend
 from camel.types import (
     ChatCompletion,
@@ -187,11 +188,20 @@ class OpenAICompatibleModel(BaseModelBackend):
         if tools is not None:
             request_config["tools"] = tools
 
-        return self._client.beta.chat.completions.parse(
-            messages=messages,
-            model=self.model_type,
-            **request_config,
-        )
+        try:
+            return self._client.beta.chat.completions.parse(
+                messages=messages,
+                model=self.model_type,
+                **request_config,
+            )
+        except Exception:
+            try_modify_message_with_format(messages[-1], response_format)
+            request_config["response_format"] = {"type": "json_object"}
+            return self._client.beta.chat.completions.parse(
+                messages=messages,
+                model=self.model_type,
+                **request_config,
+            )
 
     async def _arequest_parse(
         self,
@@ -209,11 +219,20 @@ class OpenAICompatibleModel(BaseModelBackend):
         if tools is not None:
             request_config["tools"] = tools
 
-        return await self._async_client.beta.chat.completions.parse(
-            messages=messages,
-            model=self.model_type,
-            **request_config,
-        )
+        try:
+            return await self._async_client.beta.chat.completions.parse(
+                messages=messages,
+                model=self.model_type,
+                **request_config,
+            )
+        except Exception:
+            try_modify_message_with_format(messages[-1], response_format)
+            request_config["response_format"] = {"type": "json_object"}
+            return await self._async_client.beta.chat.completions.parse(
+                messages=messages,
+                model=self.model_type,
+                **request_config,
+            )
 
     @property
     def token_counter(self) -> BaseTokenCounter:
