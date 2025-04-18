@@ -30,7 +30,7 @@ class ResponseFormat(BaseModel):
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
     model_type="glm-4",
-    api_key="fb75b60c71bf4d6bb3a49acf66cf5a3d.Nen7idQPezbT8RgM",
+    api_key="fb75bxxxxx",
     url="https://open.bigmodel.cn/api/paas/v4/",
     model_config_dict={"temperature": 0.4},
 )
