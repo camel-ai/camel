@@ -14,9 +14,9 @@
 
 import asyncio
 from datetime import datetime
-from typing import List
+from typing import Any, Dict, List
 
-from pydantic import ValidationError
+from pydantic import BaseModel, Field, ValidationError
 
 from camel.agents import ChatAgent
 from camel.logger import get_logger
@@ -39,22 +39,50 @@ logically sound, and formatted correctly.
    Each data point must include:  
    - **Question**: A clear, well-formed query.  
    - **Rationale**: A step-by-step, executable reasoning process ending 
-   with `print(final_answer)`.  
-   - **Final Answer**: The correct, concise result.  
+   with `print(final_answer)`.
 
 2. **Ensure Logical Consistency**  
-   - The `rationale` must be code that runs correctly.  
-   - The `final_answer` should match the printed output.  
+   - The `rationale` must be code that runs correctly. 
 
 3. **Output Format (Strict)**  
 ```
 Question: [Generated question]
 Rationale: [Code that solves the question, ending in a print statement,
 outputting the answer.]
-Final Answer: [The Final Answer]
 
 **Now, generate a new data point based on the given examples.**
 """
+
+
+class ResponseFormat(BaseModel):
+    r"""A simplified data point for generation, containing only question and
+        rationale.
+
+    Attributes:
+        question (str): The primary question or issue to be addressed.
+        rationale (str): A step-by-step, executable reasoning process ending
+            with a print statement for the final result.
+    """
+
+    question: str = Field(
+        ..., description="The primary question or issue to be addressed."
+    )
+    rationale: str = Field(
+        default=None,
+        description="Logical reasoning or explanation behind the answer.",
+    )
+
+    class Config:
+        extra = "forbid"
+
+    def to_dict(self) -> Dict[str, Any]:
+        r"""Convert ResponseFormat to a dictionary."""
+        return self.dict()
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'ResponseFormat':
+        r"""Create a ResponseFormat from a dictionary."""
+        return cls(**data)
 
 
 class FewShotGenerator(BaseGenerator):
@@ -178,12 +206,12 @@ class FewShotGenerator(BaseGenerator):
 
                 try:
                     agent_output = (
-                        self.agent.step(prompt, response_format=DataPoint)
+                        self.agent.step(prompt, response_format=ResponseFormat)
                         .msgs[0]
                         .parsed
                     )
 
-                    assert isinstance(agent_output, DataPoint)
+                    assert isinstance(agent_output, ResponseFormat)
 
                     self.agent.reset()
 
