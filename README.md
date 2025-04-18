@@ -372,10 +372,10 @@ Practical guides and tutorials for implementing specific functionalities in CAME
 ### 3. Model Training & Data Generation
 | Cookbook | Description |
 |:---|:---|
-| **[Data Generation with CAMEL and Finetuning with Unsloth](https://docs.camel-ai.org/cookbooks/model_training/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B.html)** | Learn how to generate data with CAMEL and fine-tune models effectively with Unsloth. |
-| **[Data Gen with Real Function Calls and Hermes Format](https://docs.camel-ai.org/cookbooks/model_training/data_gen_with_real_function_calls_and_hermes_format.html)** | Explore how to generate data with real function calls and the Hermes format. |
-| **[CoT Data Generation and Upload Data to Huggingface](https://docs.camel-ai.org/cookbooks/model_training/cot_data_gen_upload_to_huggingface.html)** | Uncover how to generate CoT data with CAMEL and seamlessly upload it to Huggingface. |
-| **[CoT Data Generation and SFT Qwen with Unsolth](https://docs.camel-ai.org/cookbooks/model_training/cot_data_gen_sft_qwen_unsolth_upload_huggingface.html)** | Discover how to generate CoT data using CAMEL and SFT Qwen with Unsolth, and seamlessly upload your data and model to Huggingface. |
+| **[Data Generation with CAMEL and Finetuning with Unsloth](https://docs.camel-ai.org/cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B.html)** | Learn how to generate data with CAMEL and fine-tune models effectively with Unsloth. |
+| **[Data Gen with Real Function Calls and Hermes Format](https://docs.camel-ai.org/cookbooks/data_generation/data_gen_with_real_function_calls_and_hermes_format.html)** | Explore how to generate data with real function calls and the Hermes format. |
+| **[CoT Data Generation and Upload Data to Huggingface](https://docs.camel-ai.org/cookbooks/data_generation/distill_math_reasoning_data_from_deepseek_r1.html)** | Uncover how to generate CoT data with CAMEL and seamlessly upload it to Huggingface. |
+| **[CoT Data Generation and SFT Qwen with Unsolth](https://docs.camel-ai.org/cookbooks/data_generation/cot_data_gen_sft_qwen_unsolth_upload_huggingface.html)** | Discover how to generate CoT data using CAMEL and SFT Qwen with Unsolth, and seamlessly upload your data and model to Huggingface. |
 
 ### 4. Multi-Agent Systems & Applications
 | Cookbook | Description |
@@ -415,6 +415,13 @@ For more information please contact camel-ai@eigent.ai
 - **X (Twitter):** Follow for updates, AI insights, and key announcements. [Follow us](https://x.com/CamelAIOrg)
 
 - **Ambassador Project:** Advocate for CAMEL-AI, host events, and contribute content. [Learn more](https://www.camel-ai.org/community)
+
+- **WeChat Community:** Scan the QR code below to join our WeChat community.
+
+  <div align="center">
+    <img src="misc/wechat.jpg" alt="WeChat QR Code" width="200">
+  </div>
+
 
 <br>
 
