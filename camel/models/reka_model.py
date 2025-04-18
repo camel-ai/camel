@@ -11,7 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
+
+from pydantic import BaseModel
 
 from camel.configs import REKA_API_PARAMS, RekaConfig
 from camel.messages import OpenAIMessage
@@ -39,7 +41,7 @@ except (ImportError, AttributeError):
 
 
 class RekaModel(BaseModelBackend):
-    r"""Reka API in a unified BaseModelBackend interface.
+    r"""Reka API in a unified OpenAICompatibleModel interface.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is
@@ -54,6 +56,10 @@ class RekaModel(BaseModelBackend):
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter` will
             be used. (default: :obj:`None`)
+        timeout (Optional[float], optional): The timeout value in seconds for
+            API calls. If not provided, will fall back to the MODEL_TIMEOUT
+            environment variable or default to 180 seconds.
+            (default: :obj:`None`)
     """
 
     @api_keys_required(
@@ -69,17 +75,24 @@ class RekaModel(BaseModelBackend):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
+        timeout: Optional[float] = None,
     ) -> None:
-        from reka.client import Reka
+        from reka.client import AsyncReka, Reka
 
         if model_config_dict is None:
             model_config_dict = RekaConfig().as_dict()
         api_key = api_key or os.environ.get("REKA_API_KEY")
         url = url or os.environ.get("REKA_API_BASE_URL")
+        timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter
+            model_type, model_config_dict, api_key, url, token_counter, timeout
         )
-        self._client = Reka(api_key=self._api_key, base_url=self._url)
+        self._client = Reka(
+            api_key=self._api_key, base_url=self._url, timeout=self._timeout
+        )
+        self._async_client = AsyncReka(
+            api_key=self._api_key, base_url=self._url, timeout=self._timeout
+        )
 
     def _convert_reka_to_openai_response(
         self, response: 'ChatResponse'
@@ -117,6 +130,8 @@ class RekaModel(BaseModelBackend):
     def _convert_openai_to_reka_messages(
         self,
         messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[str]] = None,
     ) -> List["ChatMessage"]:
         r"""Converts OpenAI API messages to Reka API messages.
 
@@ -173,9 +188,52 @@ class RekaModel(BaseModelBackend):
             )
         return self._token_counter
 
-    def run(
+    async def _arun(
         self,
         messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ChatCompletion:
+        r"""Runs inference of Mistral chat completion.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+
+        Returns:
+            ChatCompletion.
+        """
+        reka_messages = self._convert_openai_to_reka_messages(messages)
+
+        response = await self._async_client.chat.create(
+            messages=reka_messages,
+            model=self.model_type,
+            **self.model_config_dict,
+        )
+
+        openai_response = self._convert_reka_to_openai_response(response)
+
+        # Add AgentOps LLM Event tracking
+        if LLMEvent:
+            llm_event = LLMEvent(
+                thread_id=openai_response.id,
+                prompt=" ".join(
+                    [message.get("content") for message in messages]  # type: ignore[misc]
+                ),
+                prompt_tokens=openai_response.usage.input_tokens,  # type: ignore[union-attr]
+                completion=openai_response.choices[0].message.content,
+                completion_tokens=openai_response.usage.output_tokens,  # type: ignore[union-attr]
+                model=self.model_type,
+            )
+            record(llm_event)
+
+        return openai_response
+
+    def _run(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ChatCompletion:
         r"""Runs inference of Mistral chat completion.
 

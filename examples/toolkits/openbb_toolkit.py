@@ -13,10 +13,10 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from camel.agents import ChatAgent
-from camel.toolkits import openbb_toolkit
+from camel.toolkits import OpenBBToolkit
 
 # Initialize OpenBB toolkit with proper credentials
-toolkit = openbb_toolkit.OpenBBToolkit()
+toolkit = OpenBBToolkit()
 
 # Example 1: Stock quotes for multiple companies
 print("\nExample 1: Stock quotes for multiple companies")

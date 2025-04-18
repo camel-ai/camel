@@ -101,7 +101,8 @@ class GoogleMapsToolkit(BaseToolkit):
     """
 
     @dependencies_required('googlemaps')
-    def __init__(self) -> None:
+    def __init__(self, timeout: Optional[float] = None) -> None:
+        super().__init__(timeout=timeout)
         import googlemaps
 
         api_key = os.environ.get('GOOGLE_API_KEY')

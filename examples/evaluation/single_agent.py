@@ -17,7 +17,6 @@ import re
 from typing import Any, Dict, List
 
 from camel.agents import ChatAgent
-from camel.messages import BaseMessage
 from camel.prompts import PromptTemplateGenerator
 from camel.types import TaskType
 
@@ -56,15 +55,11 @@ def generate_questions(
 
     prompt = prompt_template.format(**evaluation_dict)
     print(prompt)
-    assistant_sys_msg = BaseMessage.make_assistant_message(
-        role_name="Assistant",
-        content="You are a helpful assistant.",
-    )
-    agent = ChatAgent(assistant_sys_msg, model=model)
+
+    agent = ChatAgent("You are a helpful assistant.", model=model)
     agent.reset()
 
-    user_msg = BaseMessage.make_user_message(role_name="User", content=prompt)
-    assistant_response = agent.step(user_msg)
+    assistant_response = agent.step(prompt)
 
     if len(assistant_response.msgs) > 0:
         print(assistant_response.msg.content)
@@ -80,7 +75,7 @@ def generate_questions(
 
         with open(f"{folder_path}/{save_file_name}.jsonl", "w") as f:
             for item in parsed_assistant_msg:
-                json.dump(item, f)
+                json.dump(item, f, ensure_ascii=False)
                 f.write('\n')
 
 
@@ -102,7 +97,7 @@ def main(model=None) -> None:
     examples = (
         "1. Develop a C++ program that reads a text file line by line and"
         "counts the number of occurrences of a specific word in the file.\n"
-        "2. Implement a Jave function to find the longest common"
+        "2. Implement a Java function to find the longest common"
         " subsequence of two input strings using dynamic programming.\n"
         "3. Implement a machine learning-based chatbot system in Python."
     )

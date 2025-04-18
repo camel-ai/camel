@@ -91,7 +91,7 @@ def test_function_func_message(
 
     msg_dict: Dict[str, str] = {
         "role": "tool",
-        "content": json.dumps(3),
+        "content": str(3),
         "tool_call_id": "null",
     }
     assert function_result_message.to_openai_tool_message() == msg_dict
@@ -102,7 +102,7 @@ def test_assistant_func_message_to_openai_tool_message(
 ):
     expected_msg_dict: Dict[str, str] = {
         "role": "tool",
-        "content": json.dumps(None),
+        "content": str(None),
         "tool_call_id": "null",
     }
 

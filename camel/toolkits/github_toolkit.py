@@ -18,11 +18,12 @@ from typing import Dict, List, Literal, Optional, Union
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import dependencies_required
+from camel.utils import MCPServer, dependencies_required
 
 logger = logging.getLogger(__name__)
 
 
+@MCPServer()
 class GithubToolkit(BaseToolkit):
     r"""A class representing a toolkit for interacting with GitHub
     repositories.
@@ -39,7 +40,10 @@ class GithubToolkit(BaseToolkit):
 
     @dependencies_required('github')
     def __init__(
-        self, repo_name: str, access_token: Optional[str] = None
+        self,
+        repo_name: str,
+        access_token: Optional[str] = None,
+        timeout: Optional[float] = None,
     ) -> None:
         r"""Initializes a new instance of the GitHubToolkit class.
 
@@ -49,12 +53,14 @@ class GithubToolkit(BaseToolkit):
                 with GitHub. If not provided, it will be obtained using the
                 `get_github_access_token` method.
         """
-        from github import Auth, Github
+        super().__init__(timeout=timeout)
+        from github.Auth import Token
+        from github.MainClass import Github
 
         if access_token is None:
             access_token = self.get_github_access_token()
 
-        self.github = Github(auth=Auth.Token(access_token))
+        self.github = Github(auth=Token(access_token))
         self.repo = self.github.get_repo(repo_name)
 
     def get_github_access_token(self) -> str:
@@ -106,9 +112,21 @@ class GithubToolkit(BaseToolkit):
                 successfully or not.
         """
         sb = self.repo.get_branch(self.repo.default_branch)
-        self.repo.create_git_ref(
-            ref=f"refs/heads/{branch_name}", sha=sb.commit.sha
-        )
+        from github.GithubException import GithubException
+
+        try:
+            self.repo.create_git_ref(
+                ref=f"refs/heads/{branch_name}", sha=sb.commit.sha
+            )
+        except GithubException as e:
+            if e.message == "Reference already exists":
+                # agent might have pushed the branch separately.
+                logger.warning(
+                    f"Branch {branch_name} already exists. "
+                    "Continuing with the existing branch."
+                )
+            else:
+                raise
 
         file = self.repo.get_contents(file_path)
 

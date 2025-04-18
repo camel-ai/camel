@@ -17,7 +17,6 @@ import os
 from typing import Dict
 
 from camel.agents import ChatAgent
-from camel.messages import BaseMessage
 
 # Directory containing your json files of CAMEL conversations
 # This code will append a new key called "gpt_solution" to each json file
@@ -30,16 +29,12 @@ save_dir = "./camel_data/ai_society_solution_extraction_save"
 
 def process_file(data: Dict[str, str]) -> None:
     print(data["id"])
-    assistant_sys_msg = BaseMessage.make_assistant_message(
-        role_name="Assistant",
-        content="You are a helpful assistant.",
-    )
+    assistant_sys_msg = "You are a helpful assistant."
     agent = ChatAgent(assistant_sys_msg)
     agent.reset()
 
     prompt = "Solve the following task:\n" + data["specified_task"]
-    user_msg = BaseMessage.make_user_message(role_name="User", content=prompt)
-    assistant_response = agent.step(user_msg)
+    assistant_response = agent.step(prompt)
     print(assistant_response.msg.content)
 
     # Append solution to JSON file as "gpt_solution"
@@ -51,7 +46,7 @@ def process_file(data: Dict[str, str]) -> None:
 
     # save result as json file
     with open(os.path.join(save_dir, data["id"] + ".json"), 'w') as f:
-        json.dump(data, f)
+        json.dump(data, f, ensure_ascii=False)
 
 
 def main():

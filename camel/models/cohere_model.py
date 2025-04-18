@@ -16,7 +16,9 @@ import json
 import logging
 import os
 import uuid
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
+
+from pydantic import BaseModel
 
 if TYPE_CHECKING:
     from cohere.types import ChatMessageV2, ChatResponse
@@ -24,6 +26,7 @@ if TYPE_CHECKING:
 from camel.configs import COHERE_API_PARAMS, CohereConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
+from camel.models._utils import try_modify_message_with_format
 from camel.types import ChatCompletion, ModelType
 from camel.utils import (
     BaseTokenCounter,
@@ -41,7 +44,28 @@ except (ImportError, AttributeError):
 
 
 class CohereModel(BaseModelBackend):
-    r"""Cohere API in a unified BaseModelBackend interface."""
+    r"""Cohere API in a unified BaseModelBackend interface.
+
+    Args:
+        model_type (Union[ModelType, str]): Model for which a backend is
+            created, one of Cohere series.
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+            that will be fed into:obj:`cohere.ClientV2().chat()`. If
+            :obj:`None`, :obj:`CohereConfig().as_dict()` will be used.
+            (default: :obj:`None`)
+        api_key (Optional[str], optional): The API key for authenticating with
+            the Cohere service. (default: :obj:`None`)
+        url (Optional[str], optional): The url to the Cohere service.
+            (default: :obj:`None`)
+        token_counter (Optional[BaseTokenCounter], optional): Token counter to
+            use for the model. If not provided, :obj:`OpenAITokenCounter(
+            ModelType.GPT_4O_MINI)` will be used.
+            (default: :obj:`None`)
+        timeout (Optional[float], optional): The timeout value in seconds for
+            API calls. If not provided, will fall back to the MODEL_TIMEOUT
+            environment variable or default to 180 seconds.
+            (default: :obj:`None`)
+    """
 
     @api_keys_required(
         [
@@ -55,6 +79,7 @@ class CohereModel(BaseModelBackend):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
+        timeout: Optional[float] = None,
     ):
         import cohere
 
@@ -63,10 +88,17 @@ class CohereModel(BaseModelBackend):
 
         api_key = api_key or os.environ.get("COHERE_API_KEY")
         url = url or os.environ.get("COHERE_API_BASE_URL")
+
+        timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter
+            model_type, model_config_dict, api_key, url, token_counter, timeout
         )
-        self._client = cohere.ClientV2(api_key=self._api_key)
+        self._client = cohere.ClientV2(
+            timeout=self._timeout, api_key=self._api_key
+        )
+        self._async_client = cohere.AsyncClientV2(
+            timeout=self._timeout, api_key=self._api_key
+        )
 
     def _to_openai_response(self, response: 'ChatResponse') -> ChatCompletion:
         if response.usage and response.usage.tokens:
@@ -172,7 +204,9 @@ class CohereModel(BaseModelBackend):
                 else:
                     arguments = function_call.get("arguments")  # type: ignore[attr-defined]
                     arguments_dict = ast.literal_eval(arguments)
-                    arguments_json = json.dumps(arguments_dict)
+                    arguments_json = json.dumps(
+                        arguments_dict, ensure_ascii=False
+                    )
 
                     assis_tool_call_id = str(uuid.uuid4())
                     tool_call_id = assis_tool_call_id
@@ -215,7 +249,34 @@ class CohereModel(BaseModelBackend):
             )
         return self._token_counter
 
-    def run(self, messages: List[OpenAIMessage]) -> ChatCompletion:
+    def _prepare_request(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
+        import copy
+
+        request_config = copy.deepcopy(self.model_config_dict)
+        # Remove strict from each tool's function parameters since Cohere does
+        # not support them
+        if tools:
+            for tool in tools:
+                function_dict = tool.get('function', {})
+                function_dict.pop("strict", None)
+            request_config["tools"] = tools
+        elif response_format:
+            try_modify_message_with_format(messages[-1], response_format)
+            request_config["response_format"] = {"type": "json_object"}
+
+        return request_config
+
+    def _run(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ChatCompletion:
         r"""Runs inference of Cohere chat completion.
 
         Args:
@@ -226,21 +287,71 @@ class CohereModel(BaseModelBackend):
         """
         from cohere.core.api_error import ApiError
 
-        cohere_messages = self._to_cohere_chatmessage(messages)
+        request_config = self._prepare_request(
+            messages, response_format, tools
+        )
 
-        # Removing 'strict': True from the dictionary for
-        # cohere client
-        if self.model_config_dict.get('tools') is not None:
-            for tool in self.model_config_dict.get('tools', []):
-                function_dict = tool.get('function', {})
-                if 'strict' in function_dict:
-                    del function_dict['strict']
+        cohere_messages = self._to_cohere_chatmessage(messages)
 
         try:
             response = self._client.chat(
                 messages=cohere_messages,
                 model=self.model_type,
-                **self.model_config_dict,
+                **request_config,
+            )
+        except ApiError as e:
+            logging.error(f"Cohere API Error: {e.status_code}")
+            logging.error(f"Error body: {e.body}")
+            raise
+        except Exception as e:
+            logging.error(f"Unexpected error when calling Cohere API: {e!s}")
+            raise
+
+        openai_response = self._to_openai_response(response)
+
+        # Add AgentOps LLM Event tracking
+        if LLMEvent:
+            llm_event = LLMEvent(
+                thread_id=openai_response.id,
+                prompt=" ".join(
+                    [message.get("content") for message in messages]  # type: ignore[misc]
+                ),
+                prompt_tokens=openai_response.usage.prompt_tokens,  # type: ignore[union-attr]
+                completion=openai_response.choices[0].message.content,
+                completion_tokens=openai_response.usage.completion_tokens,  # type: ignore[union-attr]
+                model=self.model_type,
+            )
+            record(llm_event)
+
+        return openai_response
+
+    async def _arun(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ChatCompletion:
+        r"""Runs inference of Cohere chat completion.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+        Returns:
+            ChatCompletion.
+        """
+        from cohere.core.api_error import ApiError
+
+        request_config = self._prepare_request(
+            messages, response_format, tools
+        )
+
+        cohere_messages = self._to_cohere_chatmessage(messages)
+
+        try:
+            response = await self._async_client.chat(
+                messages=cohere_messages,
+                model=self.model_type,
+                **request_config,
             )
         except ApiError as e:
             logging.error(f"Cohere API Error: {e.status_code}")

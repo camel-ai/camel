@@ -48,7 +48,7 @@ def process_messages(
     Args:
         chat_history (List[Dict[str, Any]):
             A list of dictionaries representing the chat history.
-        prompt (str): A propmt to be set as the system message.
+        prompt (str): A prompt to be set as the system message.
 
     Returns:
         List[Dict[str, str]]: A list of dictionaries representing
@@ -316,7 +316,10 @@ class APIBankBenchmark(BaseBenchmark):
                                 'Correct': correct,
                             }
                         )
-                        f.write(json.dumps(self._results[-1], indent=2) + "\n")
+                        json_str = json.dumps(
+                            self._results[-1], indent=2, ensure_ascii=False
+                        )
+                        f.write(json_str + "\n")
 
                     elif (
                         sample.ground_truth['role'] == 'AI'
@@ -361,7 +364,10 @@ class APIBankBenchmark(BaseBenchmark):
                                 'Test': test,
                             }
                         )
-                        f.write(json.dumps(self._results[-1], indent=2) + "\n")
+                        json_str = json.dumps(
+                            self._results[-1], indent=2, ensure_ascii=False
+                        )
+                        f.write(json_str + "\n")
 
                     f.flush()
 

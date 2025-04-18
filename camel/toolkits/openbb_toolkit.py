@@ -17,9 +17,10 @@ from typing import List, Literal, Optional
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import api_keys_required, dependencies_required
+from camel.utils import MCPServer, api_keys_required, dependencies_required
 
 
+@MCPServer()
 class OpenBBToolkit(BaseToolkit):
     r"""A toolkit for accessing financial data and analysis through OpenBB
     Platform.
@@ -37,15 +38,16 @@ class OpenBBToolkit(BaseToolkit):
             (None, "OPENBB_TOKEN"),
         ]
     )
-    def __init__(self) -> None:
+    def __init__(self, timeout: Optional[float] = None) -> None:
         r"""Initialize the OpenBBToolkit.
 
         This method sets up the OpenBB client and initializes the OpenBB
         Hub account system.
         """
+        super().__init__(timeout=timeout)
         import os
 
-        from openbb import obb
+        from openbb import obb  # type: ignore[import-not-found]
 
         self.client = obb
         # Initialize OpenBB Hub account with access token

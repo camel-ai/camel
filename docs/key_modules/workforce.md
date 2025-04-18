@@ -6,7 +6,7 @@
 > brief view on the architecture of workforce, and how you can configure
 > and utilize it to solve tasks.
 
-For more detailed usage information, please refer to our cookbook: [Create A Hackathon Judge Committee with Workforce](../cookbooks/workforce_judge_committee.ipynb)
+For more detailed usage information, please refer to our cookbook: [Create A Hackathon Judge Committee with Workforce](https://colab.research.google.com/drive/18ajYUMfwDx3WyrjHow3EvUMpKQDcrLtr?usp=sharing)
 
 ## System Design
 
@@ -60,7 +60,7 @@ has been failed for a certain number of times (3 by default).
 
 Here is a diagram illustrating the workflow with a simple example.
 
-![Workforce Example](https://i.postimg.cc/261dDM9W/work-force.png)
+![Workforce Example](https://i.postimg.cc/jSnjsN57/Wechat-IMG1592.jpg)
 
 ## Get Started
 

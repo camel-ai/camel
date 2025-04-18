@@ -398,6 +398,19 @@ class FunctionTool:
                     f"Error: {e}"
                 )
 
+    async def async_call(self, *args: Any, **kwargs: Any) -> Any:
+        if self.synthesize_output:
+            result = self.synthesize_execution_output(args, kwargs)
+            return result
+        if self.is_async:
+            return await self.func(*args, **kwargs)
+        else:
+            return self.func(*args, **kwargs)
+
+    @property
+    def is_async(self) -> bool:
+        return inspect.iscoroutinefunction(self.func)
+
     @staticmethod
     def validate_openai_tool_schema(
         openai_tool_schema: Dict[str, Any],

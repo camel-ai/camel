@@ -1,15 +1,48 @@
 # Models
 
 ## 1. Concept
-The model is the brain of the intelligent agent, responsible for processing all input and output data. By calling different models, the agent can execute operations such as text analysis, image recognition, or complex reasoning according to task requirements. CAMEL offers a range of standard and customizable interfaces, as well as seamless integrations with various components, to facilitate the development of applications with Large Language Models (LLMs). In this part, we will introduce models currently supported by CAMEL and the working principles and interaction methods with models. 
+The model is the brain of the intelligent agent, responsible for intelligent agent, processing all input and output data to execute tasks such as text analysis, image recognition, and complex reasoning. With customizable interfaces and multiple integration options, CAMEL AI enables rapid development with leading LLMs.  
 
-All the codes are also available on colab notebook [here](https://colab.research.google.com/drive/18hQLpte6WW2Ja3Yfj09NRiVY-6S2MFu7?usp=sharing).
+> **Explore the Code:** Check out our [Colab Notebook](https://colab.research.google.com/drive/18hQLpte6WW2Ja3Yfj09NRiVY-6S2MFu7?usp=sharing) for a hands-on demonstration.
 
 
-## 2. Supported Model Platforms
+## 2. Supported Model Platforms in CAMEL
 
-The following table lists currently supported model platforms by CAMEL.
+CAMEL supports a wide range of models, including [OpenAI’s GPT series](https://platform.openai.com/docs/models), [Meta’s Llama models](https://www.llama.com/), [DeepSeek models](https://www.deepseek.com/) (R1 and other variants), and more. The table below lists all supported model platforms:
 
+| Model Platform | Model Type(s) |
+|---------------|--------------|
+| **OpenAI** | gpt-4.5-preview, gpt-4o, gpt-4o-mini, o1, o1-preview, o1-mini, o3-mini, gpt-4-turbo, gpt-4, gpt-3.5-turbo |
+| **Azure OpenAI** | gpt-4o, gpt-4-turbo, gpt-4, gpt-3.5-turbo |
+| **Mistral AI** | mistral-large-latest, pixtral-12b-2409, ministral-8b-latest, ministral-3b-latest, open-mistral-nemo, codestral-latest, open-mistral-7b, open-mixtral-8x7b, open-mixtral-8x22b, open-codestral-mamba |
+| **Moonshot** | moonshot-v1-8k, moonshot-v1-32k, moonshot-v1-128k |
+| **Anthropic** | claude-2.1, claude-2.0, claude-instant-1.2, claude-3-opus-latest, claude-3-sonnet-20240229, claude-3-haiku-20240307, claude-3-5-sonnet-latest, claude-3-5-haiku-latest |
+| **Gemini** | gemini-2.0-flash-exp, gemini-1.5-pro, gemini-1.5-flash, gemini-exp-1114 |
+| **Lingyiwanwu** | yi-lightning, yi-large, yi-medium, yi-large-turbo, yi-vision, yi-medium-200k, yi-spark, yi-large-rag, yi-large-fc |
+| **Qwen** | qwq-32b-preview, qwen-max, qwen-plus, qwen-turbo, qwen-long, qwen-vl-max, qwen-vl-plus, qwen-math-plus, qwen-math-turbo, qwen-coder-turbo, qwen2.5-coder-32b-instruct, qwen2.5-72b-instruct, qwen2.5-32b-instruct, qwen2.5-14b-instruct |
+| **DeepSeek** | deepseek-chat, deepseek-reasoner |
+| **ZhipuAI** | glm-4, glm-4v, glm-4v-flash, glm-4v-plus-0111, glm-4-plus, glm-4-air, glm-4-air-0111, glm-4-airx, glm-4-long, glm-4-flashx, glm-zero-preview, glm-4-flash, glm-3-turbo |
+| **InternLM** | internlm3-latest, internlm3-8b-instruct, internlm2.5-latest, internlm2-pro-chat |
+| **Reka** | reka-core, reka-flash, reka-edge |
+| **COHERE** | command-r-plus, command-r, command-light, command, command-nightly |
+| **GROQ** | [supported models](https://console.groq.com/docs/models) |
+| **TOGETHER AI** | [supported models](https://docs.together.ai/docs/chat-models) |
+| **SambaNova** | [supported models](https://docs.sambanova.ai/cloud/docs/get-started/supported-models) |
+| **Ollama** |  [supported models](https://ollama.com/library) |
+| **OpenRouter** | [supported models](https://openrouter.ai/models) |
+| **PPIO** | [supported models](https://ppinfra.com/model-api/product/llm-api?utm_source=github_owl) |
+| **LiteLLM** | [supported models](https://docs.litellm.ai/docs/providers) |
+| **vLLM** |  [supported models](https://docs.vllm.ai/en/latest/models/supported_models.html) |
+| **SGLANG** | [supported models](https://sgl-project.github.io/references/supported_models.html) |
+| **NVIDIA** | [supported models](https://docs.api.nvidia.com/nim/reference/llm-apis) |
+| **AIML** | [supported models](https://docs.aimlapi.com/api-overview/model-database/text-models) |
+| **ModelScope** | [supported models](https://www.modelscope.cn/docs/model-service/API-Inference/intro) |
+
+## 3. How to Use Models via API Calls
+
+Easily integrate your chosen model with CAMEL AI using straightforward API calls. For example, to use the **gpt-4o-mini** model:
+
+> If you want to use another model, you can simply change these three parameters: `model_platform`, `model_type`, `model_config_dict` .
 | Model Platform | Available Models| Multi-modality |
 | ----- | ----- | ----- |
 | OpenAI | gpt-4o | Y |
@@ -106,32 +139,32 @@ model = ModelFactory.create(
     model_config_dict=ChatGPTConfig().as_dict(),
 )
 
-# Define an assitant message
+# Define an assistant message
 system_msg = "You are a helpful assistant."
 
 # Initialize the agent
 ChatAgent(system_msg, model=model)
 ```
 
-And if you want to use an OpenAI-compatible API, you can replace the `model` with the following code:
+> And if you want to use an OpenAI-compatible API, you can replace the `model` with the following code:
 
 ```python
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
     model_type="a-string-representing-the-model-type",
-    api_key=os.environ.get("OPENAI_COMPATIBILIY_API_KEY"),
-    url=os.environ.get("OPENAI_COMPATIBILIY_API_BASE_URL"),
+    api_key=os.environ.get("OPENAI_COMPATIBILITY_API_KEY"),
+    url=os.environ.get("OPENAI_COMPATIBILITY_API_BASE_URL"),
     model_config_dict={"temperature": 0.4, "max_tokens": 4096},
 )
 ```
 
 ## 4. Using On-Device Open Source Models
-In the current landscape, for those seeking highly stable content generation, OpenAI’s gpt-4o-mini, gpt-4o are often recommended. However, the field is rich with many other outstanding open-source models that also yield commendable results. CAMEL can support developers to delve into integrating these open-source large language models (LLMs) to achieve project outputs based on unique input ideas.
+CAMEL AI also supports local deployment of open-source LLMs. Choose the setup that suits your project:
 
 ### 4.1 Using Ollama to Set Llama 3 Locally
 
 1. Download [Ollama](https://ollama.com/download).
-2. After setting up Ollama, pull the Llama3 model by typing the following command into the terminal:
+2. After setting up Ollama, pick a model like Llama3 for your project:
 
 ```bash
 ollama pull llama3
@@ -257,20 +290,19 @@ assistant_response = agent.step(user_msg)
 print(assistant_response.msg.content)
 ```
 
-## 5. About Model Speed
-Model speed is a crucial factor in AI application performance. It affects both user experience and system efficiency, especially in real-time or interactive tasks. In [this notebook](../cookbooks/model_speed_comparison.ipynb), we compared several models, including OpenAI’s GPT-4O Mini, GPT-4O, O1 Preview, and SambaNova's Llama series, by measuring the number of tokens each model processes per second.
+## 5 Model Speed and Performance
+Performance is critical for interactive AI applications. CAMEL-AI benchmarks tokens processed per second across various models:
 
-Key Insights:
-Smaller models like SambaNova’s Llama 8B and OpenAI's GPT-4O Mini typically offer faster responses.
-Larger models like SambaNova’s Llama 405B, while more powerful, tend to generate output more slowly due to their complexity.
-OpenAI models demonstrate relatively consistent performance, while SambaNova's Llama 8B significantly outperforms others in speed.
-The chart below illustrates the tokens per second achieved by each model during our tests:
+In [this notebook](../cookbooks/model_speed_comparison.ipynb), we compared several models, including OpenAI’s GPT-4O Mini, GPT-4O, O1 Preview, and SambaNova's Llama series, by measuring the number of tokens each model processes per second.
 
-![Model Speed Comparison](https://i.postimg.cc/4xByytyZ/model-speed.png)
+**Key Insights:** Smaller models like SambaNova’s Llama 8B and OpenAI's GPT-4O Mini typically offer faster responses. Larger models like SambaNova’s Llama 405B, while more powerful, tend to generate output more slowly due to their complexity. OpenAI models demonstrate relatively consistent performance, while SambaNova's Llama 8B significantly outperforms others in speed. The chart below illustrates the tokens per second achieved by each model during our tests:
+
+![Model Speed Comparison: Chart comparing tokens per second for various AI models](https://i.postimg.cc/4xByytyZ/model-speed.png)
+
 
 For local inference, we conducted a straightforward comparison locally between vLLM and SGLang. SGLang demonstrated superior performance, with `meta-llama/Llama-3.2-1B-Instruct` reaching a peak speed of 220.98 tokens per second, compared to vLLM, which capped at 107.2 tokens per second.
 
-## 6. Conclusion
-In conclusion, CAMEL empowers developers to explore and integrate these diverse models, unlocking new possibilities for innovative AI applications. The world of large language models offers a rich tapestry of options beyond just the well-known proprietary solutions. By guiding users through model selection, environment setup, and integration, CAMEL bridges the gap between cutting-edge AI research and practical implementation. Its hybrid approach, combining in-house implementations with third-party integrations, offers unparalleled flexibility and comprehensive support for LLM-based development. Don't just watch this transformation that is happening from the sidelines.
+## 6. Next Steps
+You've now learned how to integrate various models into CAMEL AI.
 
-Dive into the CAMEL documentation, experiment with different models, and be part of shaping the future of AI. The era of truly flexible and powerful AI is here - are you ready to make your mark?
+Next, check out our guide covering basics of creating and converting [messages with BaseMessage.](https://docs.camel-ai.org/key_modules/messages.html) 

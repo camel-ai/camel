@@ -39,7 +39,6 @@ qwen_model = ModelFactory.create(
 
 qwen_agent = ChatAgent(
     model=qwen_model,
-    message_window_size=10,
 )
 
 user_msg = """give me 1 student info."""

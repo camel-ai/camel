@@ -19,7 +19,6 @@ from typing import Any, List
 from colorama import Fore
 
 from camel.agents import ChatAgent
-from camel.messages.base import BaseMessage
 from camel.societies.workforce.prompts import PROCESS_TASK_PROMPT
 from camel.societies.workforce.utils import TaskResult
 from camel.societies.workforce.worker import Worker
@@ -72,12 +71,8 @@ class SingleAgentWorker(Worker):
             dependency_tasks_info=dependency_tasks_info,
             additional_info=task.additional_info,
         )
-        req = BaseMessage.make_user_message(
-            role_name="User",
-            content=prompt,
-        )
         try:
-            response = self.worker.step(req, response_format=TaskResult)
+            response = self.worker.step(prompt, response_format=TaskResult)
         except Exception as e:
             print(
                 f"{Fore.RED}Error occurred while processing task {task.id}:"

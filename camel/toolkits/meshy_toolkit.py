@@ -13,14 +13,16 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 
 import requests
 
+from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import api_keys_required
+from camel.utils import MCPServer, api_keys_required
 
 
+@MCPServer()
 class MeshyToolkit(BaseToolkit):
     r"""A class representing a toolkit for 3D model generation using Meshy.
 
@@ -38,10 +40,11 @@ class MeshyToolkit(BaseToolkit):
             (None, 'MESHY_API_KEY'),
         ]
     )
-    def __init__(self):
+    def __init__(self, timeout: Optional[float] = None):
         r"""Initializes the MeshyToolkit with the API key from the
         environment.
         """
+        super().__init__(timeout=timeout)
         self.api_key = os.getenv('MESHY_API_KEY')
 
     def generate_3d_preview(
@@ -187,3 +190,19 @@ class MeshyToolkit(BaseToolkit):
 
         # Wait for refinement completion and return final result
         return self.wait_for_task_completion(refine_task_id)
+
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the
+        functions in the toolkit.
+
+        Returns:
+            List[FunctionTool]: A list of FunctionTool objects
+                representing the functions in the toolkit.
+        """
+        return [
+            FunctionTool(self.generate_3d_preview),
+            FunctionTool(self.refine_3d_model),
+            FunctionTool(self.get_task_status),
+            FunctionTool(self.wait_for_task_completion),
+            FunctionTool(self.generate_3d_model_complete),
+        ]

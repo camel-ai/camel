@@ -133,7 +133,7 @@ class FunctionCallingMessage(BaseMessage):
                     "type": "function",
                     "function": {
                         "name": self.func_name,
-                        "arguments": json.dumps(self.args),
+                        "arguments": json.dumps(self.args, ensure_ascii=False),
                     },
                 }
             ],
@@ -154,7 +154,7 @@ class FunctionCallingMessage(BaseMessage):
                 " due to missing function name."
             )
 
-        result_content = json.dumps(self.result)
+        result_content = str(self.result)
 
         return {
             "role": "tool",

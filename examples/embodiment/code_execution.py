@@ -13,7 +13,6 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from camel.agents import EmbodiedAgent
 from camel.generators import SystemMessageGenerator
-from camel.messages import BaseMessage
 from camel.types import RoleType
 
 
@@ -30,14 +29,12 @@ def main():
         verbose=True,
     )
     print(embodied_agent.system_message.content)
-    user_msg = BaseMessage.make_user_message(
-        role_name=role_name,
-        content=(
-            "Write a bash script to install numpy, "
-            "then write a python script to compute "
-            "the dot product of [6.75,3] and [4,5] and print the result, "
-            "then write a script to open a browser and search today's weather."
-        ),
+
+    user_msg = (
+        "Write a bash script to install numpy, "
+        "then write a python script to compute "
+        "the dot product of [6.75,3] and [4,5] and print the result, "
+        "then write a script to open a browser and search today's weather."
     )
     response = embodied_agent.step(user_msg)
     print(response.msg.content)

@@ -15,15 +15,19 @@
 import json
 import os
 import random
+import time
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
+from camel.logger import get_logger
 
 from .filter import RougeSimilarityFilter
 from .filter.instruction_filter import InstructionFilter
 from .templates import SelfInstructTemplates
+
+logger = get_logger(__name__)
 
 
 class SelfInstructPipeline:
@@ -45,6 +49,8 @@ class SelfInstructPipeline:
         filter_config (Optional[Dict[str, Dict[str, Any]]]): configuration
             for the filter functions registered in FILE_REGISTRY.
             (default::obj:`None`)
+        stop_on_first_failure (bool): If True, stops checking filters after
+            the first failure.
     """
 
     def __init__(
@@ -56,6 +62,7 @@ class SelfInstructPipeline:
         human_to_machine_ratio: tuple = (6, 2),
         instruction_filter: Optional[InstructionFilter] = None,
         filter_config: Optional[Dict[str, Dict[str, Any]]] = None,
+        stop_on_first_failure: bool = False,
     ):
         self.agent = agent
         self.num_machine_instructions = num_machine_instructions
@@ -80,7 +87,9 @@ class SelfInstructPipeline:
             config_to_use = (
                 filter_config if filter_config is not None else default_config
             )
-            self.instruction_filter = InstructionFilter(config_to_use)
+            self.instruction_filter = InstructionFilter(
+                config_to_use, stop_on_first_failure
+            )
 
     def load_seed(self, path: str):
         r"""Load seed tasks from a file. Defaults to a predefined seed file if
@@ -205,18 +214,28 @@ class SelfInstructPipeline:
             )
             return structured_response.answer
         except ValueError as e:
-            print(f"Error parsing agent response: {e}")
+            logger.error(f"Error parsing agent response: {e}")
             return False
 
     def generate_machine_instances(self):
         r"""Generate instances for each machine task based on its
         classification status.
         """
+        logger.info(
+            f"Starting output generation: target {len(self.machine_tasks)} "
+            f"instructions"
+        )
+        attempt_count = 0
         for instruction in self.machine_tasks:
             instance = self.generate_machine_instance(
                 instruction['instruction'], instruction['is_classification']
             )
             instruction['instances'] = instance
+            attempt_count += 1
+            logger.info(
+                f"Attempt[Output]: Progress {attempt_count}/"
+                f"{len(self.machine_tasks)} instructions"
+            )
 
     def generate_machine_instance(
         self, instruction: str, classification: bool
@@ -361,13 +380,32 @@ class SelfInstructPipeline:
         in JSON format.
         """
         with open(self.data_output_path, 'w') as f:
-            json.dump(self.machine_tasks, f, indent=4)
+            json.dump(self.machine_tasks, f, indent=4, ensure_ascii=False)
 
-    def generate(self):
+    def generate(self, timeout_minutes=600):
         r"""Execute the entire pipeline to generate machine instructions
         and instances.
+
+        Args:
+            timeout_minutes (int): Maximum time in minutes to run the
+                generation process before timing out. (default: :obj:`600`)
         """
+        start_time = time.time()
+        timeout_seconds = timeout_minutes * 60
+        logger.info(
+            f"Starting instruction generation: target "
+            f"{self.num_machine_instructions} instructions"
+        )
         while len(self.machine_tasks) < self.num_machine_instructions:
+            # Check for timeout
+            elapsed = time.time() - start_time
+            if elapsed > timeout_seconds:
+                logger.info(
+                    f"Generation timed out after {elapsed / 60:.1f} minutes. "
+                    f"Generated {len(self.machine_tasks)}/"
+                    f"{self.num_machine_instructions} instructions."
+                )
+                break
             prompt, instruction = self.generate_machine_instruction()
             existing_instructions = [
                 t["instruction"] for t in self.human_tasks
@@ -384,6 +422,17 @@ class SelfInstructPipeline:
                     ),
                 }
                 self.machine_tasks.append(instruction_dict)
+                logger.info(
+                    f"Attempt[Instruction]: Progress "
+                    f"{len(self.machine_tasks)}/"
+                    f"{self.num_machine_instructions} "
+                    f"instructions"
+                )
+            else:
+                logger.warning(
+                    f"Instruction failed filters. Skipping instruction: "
+                    f"{instruction}"
+                )
         self.generate_machine_instances()
         self.construct_data()
 

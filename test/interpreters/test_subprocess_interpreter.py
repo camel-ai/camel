@@ -78,12 +78,11 @@ echo $(undefined_command)
 
 
 def test_run_file_not_found(subprocess_interpreter):
-    with pytest.raises(RuntimeError) as exc_info:
-        subprocess_interpreter.run_file(
-            Path("/path/to/nonexistent/file"),
-            "python",
-        )
-    assert "/path/to/nonexistent/file is not a file." in str(exc_info.value)
+    result = subprocess_interpreter.run_file(
+        Path("/path/to/nonexistent/file"),
+        "python",
+    )
+    assert "/path/to/nonexistent/file is not a file." in result
 
 
 def test_run_unsupported_code_type(subprocess_interpreter):
@@ -92,6 +91,41 @@ def test_run_unsupported_code_type(subprocess_interpreter):
     assert "Unsupported code type unsupported_code_type." in str(
         exc_info.value
     )
+
+
+@pytest.mark.skip(reason="R may not installed on system")
+def test_run_r_code(subprocess_interpreter):
+    r_code = """
+    add <- function(a, b) {
+        return(a + b)
+    }
+    
+    result <- add(10, 20)
+    print(result)
+    """
+    result = subprocess_interpreter.run(r_code, "r")
+    assert "[1] 30" in result
+
+
+@pytest.mark.skip(reason="R may not installed on system")
+def test_r_stderr(subprocess_interpreter):
+    r_code = """
+    undefined_function()
+    """
+    result = subprocess_interpreter.run(r_code, "r")
+    assert "Error" in result
+
+
+@pytest.mark.skip(reason="R may not installed on system")
+def test_r_code_type_variants(subprocess_interpreter):
+    r_code = "print('Hello')"
+    # Test lowercase 'r'
+    result1 = subprocess_interpreter.run(r_code, "r")
+    assert "[1] \"Hello\"" in result1
+
+    # Test uppercase 'R'
+    result2 = subprocess_interpreter.run(r_code, "R")
+    assert "[1] \"Hello\"" in result2
 
 
 def test_require_confirm(subprocess_interpreter, monkeypatch):

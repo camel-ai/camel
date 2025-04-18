@@ -12,13 +12,14 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
-from openai import OpenAI, Stream
+from openai import AsyncStream, Stream
+from pydantic import BaseModel
 
 from camel.configs import Gemini_API_PARAMS, GeminiConfig
 from camel.messages import OpenAIMessage
-from camel.models import BaseModelBackend
+from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -26,13 +27,12 @@ from camel.types import (
 )
 from camel.utils import (
     BaseTokenCounter,
-    OpenAITokenCounter,
     api_keys_required,
 )
 
 
-class GeminiModel(BaseModelBackend):
-    r"""Gemini API in a unified BaseModelBackend interface.
+class GeminiModel(OpenAICompatibleModel):
+    r"""Gemini API in a unified OpenAICompatibleModel interface.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is
@@ -50,6 +50,10 @@ class GeminiModel(BaseModelBackend):
             use for the model. If not provided, :obj:`OpenAITokenCounter(
             ModelType.GPT_4O_MINI)` will be used.
             (default: :obj:`None`)
+        timeout (Optional[float], optional): The timeout value in seconds for
+            API calls. If not provided, will fall back to the MODEL_TIMEOUT
+            environment variable or default to 180 seconds.
+            (default: :obj:`None`)
     """
 
     @api_keys_required(
@@ -64,6 +68,7 @@ class GeminiModel(BaseModelBackend):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
+        timeout: Optional[float] = None,
     ) -> None:
         if model_config_dict is None:
             model_config_dict = GeminiConfig().as_dict()
@@ -72,58 +77,167 @@ class GeminiModel(BaseModelBackend):
             "GEMINI_API_BASE_URL",
             "https://generativelanguage.googleapis.com/v1beta/openai/",
         )
+        timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter
+            model_type=model_type,
+            model_config_dict=model_config_dict,
+            api_key=api_key,
+            url=url,
+            token_counter=token_counter,
+            timeout=timeout,
         )
-        self._client = OpenAI(
-            timeout=180,
-            max_retries=3,
-            api_key=self._api_key,
-            base_url=self._url,
-        )
 
-    def run(
-        self,
-        messages: List[OpenAIMessage],
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        r"""Runs inference of Gemini chat completion.
-
-        Args:
-            messages (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format.
-
-        Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-                `ChatCompletion` in the non-stream mode, or
-                `Stream[ChatCompletionChunk]` in the stream mode.
+    def _process_messages(self, messages) -> List[OpenAIMessage]:
+        r"""Process the messages for Gemini API to ensure no empty content,
+        which is not accepted by Gemini.
         """
-        # Process messages to ensure no empty content, it's not accepeted by
-        # Gemini
         processed_messages = []
         for msg in messages:
             msg_copy = msg.copy()
             if 'content' in msg_copy and msg_copy['content'] == '':
                 msg_copy['content'] = 'null'
             processed_messages.append(msg_copy)
+        return processed_messages
 
-        response = self._client.chat.completions.create(
-            messages=processed_messages,
-            model=self.model_type,
-            **self.model_config_dict,
-        )
-        return response
+    def _run(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+        r"""Runs inference of Gemini chat completion.
 
-    @property
-    def token_counter(self) -> BaseTokenCounter:
-        r"""Initialize the token counter for the model backend.
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+            response_format (Optional[Type[BaseModel]]): The format of the
+                response.
+            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
+                use for the request.
 
         Returns:
-            BaseTokenCounter: The token counter following the model's
-                tokenization style.
+            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+                `ChatCompletion` in the non-stream mode, or
+                `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
-        return self._token_counter
+        response_format = response_format or self.model_config_dict.get(
+            "response_format", None
+        )
+        messages = self._process_messages(messages)
+        if response_format:
+            return self._request_parse(messages, response_format)
+        else:
+            return self._request_chat_completion(messages, tools)
+
+    async def _arun(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+        r"""Runs inference of OpenAI chat completion in async mode.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+            response_format (Optional[Type[BaseModel]]): The format of the
+                response.
+            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
+                use for the request.
+
+        Returns:
+            Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+                `ChatCompletion` in the non-stream mode, or
+                `AsyncStream[ChatCompletionChunk]` in the stream mode.
+        """
+        response_format = response_format or self.model_config_dict.get(
+            "response_format", None
+        )
+        messages = self._process_messages(messages)
+        if response_format:
+            return await self._arequest_parse(messages, response_format)
+        else:
+            return await self._arequest_chat_completion(messages, tools)
+
+    def _request_chat_completion(
+        self,
+        messages: List[OpenAIMessage],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+        import copy
+
+        request_config = copy.deepcopy(self.model_config_dict)
+        # Remove strict and anyOf from each tool's function parameters since
+        # Gemini does not support them
+        if tools:
+            for tool in tools:
+                function_dict = tool.get('function', {})
+                function_dict.pop("strict", None)
+
+                # Process parameters to remove anyOf
+                if 'parameters' in function_dict:
+                    params = function_dict['parameters']
+                    if 'properties' in params:
+                        for prop_name, prop_value in params[
+                            'properties'
+                        ].items():
+                            if 'anyOf' in prop_value:
+                                # Replace anyOf with the first type in the list
+                                first_type = prop_value['anyOf'][0]
+                                params['properties'][prop_name] = first_type
+                                # Preserve description if it exists
+                                if 'description' in prop_value:
+                                    params['properties'][prop_name][
+                                        'description'
+                                    ] = prop_value['description']
+
+            request_config["tools"] = tools
+
+        return self._client.chat.completions.create(
+            messages=messages,
+            model=self.model_type,
+            **request_config,
+        )
+
+    async def _arequest_chat_completion(
+        self,
+        messages: List[OpenAIMessage],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+        import copy
+
+        request_config = copy.deepcopy(self.model_config_dict)
+        # Remove strict and anyOf from each tool's function parameters since
+        # Gemini does not support them
+        if tools:
+            for tool in tools:
+                function_dict = tool.get('function', {})
+                function_dict.pop("strict", None)
+
+                # Process parameters to remove anyOf
+                if 'parameters' in function_dict:
+                    params = function_dict['parameters']
+                    if 'properties' in params:
+                        for prop_name, prop_value in params[
+                            'properties'
+                        ].items():
+                            if 'anyOf' in prop_value:
+                                # Replace anyOf with the first type in the list
+                                first_type = prop_value['anyOf'][0]
+                                params['properties'][prop_name] = first_type
+                                # Preserve description if it exists
+                                if 'description' in prop_value:
+                                    params['properties'][prop_name][
+                                        'description'
+                                    ] = prop_value['description']
+
+            request_config["tools"] = tools
+
+        return await self._async_client.chat.completions.create(
+            messages=messages,
+            model=self.model_type,
+            **request_config,
+        )
 
     def check_model_config(self):
         r"""Check whether the model configuration contains any
@@ -139,13 +253,3 @@ class GeminiModel(BaseModelBackend):
                     f"Unexpected argument `{param}` is "
                     "input into Gemini model backend."
                 )
-
-    @property
-    def stream(self) -> bool:
-        r"""Returns whether the model is in stream mode, which sends partial
-        results each time.
-
-        Returns:
-            bool: Whether the model is in stream mode.
-        """
-        return self.model_config_dict.get('stream', False)
