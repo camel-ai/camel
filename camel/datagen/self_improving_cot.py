@@ -96,7 +96,6 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
         solution_pattern: str = r'\\boxed{(.*?)}',
         trace_pattern: Optional[str] = None,
         rationalization: bool = False,
-        save_intermediate: bool = False,
     ):
         r"""Initialize the self-improving cot pipeline.
 
@@ -145,14 +144,9 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
                 (default: :obj:`None`)
             rationalization (bool, optional): Whether to use rationalization.
                 (default: :obj:`False`)
-            save_intermediate (bool, optional): Whether to save
-                intermediate results. (default: :obj:`False`)
         """
         super().__init__(
             output_path=output_path,
-            batch_size=batch_size,
-            max_workers=max_workers,
-            save_intermediate=save_intermediate,
         )
 
         self.reason_agent = reason_agent

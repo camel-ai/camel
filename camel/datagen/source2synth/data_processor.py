@@ -580,9 +580,6 @@ class Source2SynthDataGenPipeline(BaseDataGenPipeline):
         """
         super().__init__(
             output_path=output_path,
-            batch_size=batch_size,
-            max_workers=max_workers,
-            save_intermediate=save_intermediate,
         )
 
         self.processor = UserDataProcessor(config)
@@ -614,7 +611,7 @@ class Source2SynthDataGenPipeline(BaseDataGenPipeline):
         self,
         data: Union[str, List[str], List[Dict[str, Any]]],
     ) -> List[Dict[str, Any]]:
-        r"""Process input data through the Source2Synth pipeline.
+        r"""Generate multi-hop question-answer pairs from input data.
 
         Core implementation that performs the generation logic.
 
@@ -686,9 +683,10 @@ class Source2SynthDataGenPipeline(BaseDataGenPipeline):
         return results
 
     def execute(
-        self, data: Union[str, List[str], List[Dict[str, Any]]]
+        self,
+        data: Union[str, List[str], List[Dict[str, Any]]],
     ) -> List[Dict[str, Any]]:
-        r"""Execute the source-to-synthesis pipeline.
+        r"""Execute the Source2Synth data generation pipeline.
 
         The main entry point for running the pipeline. Handles logging,
         time measurement, and result saving.
@@ -700,10 +698,9 @@ class Source2SynthDataGenPipeline(BaseDataGenPipeline):
                 - A list of dictionaries with 'text' and optional 'source' keys
 
         Returns:
-            List[Dict[str, Any]]: Generated examples with QA pairs
-                and metadata.
+            List[Dict[str, Any]]: List of final curated examples.
         """
-        logger.info("Starting Source2Synth data generation")
+        logger.info("Executing Source2Synth pipeline...")
         start_time = time.time()
 
         # Run the generation process

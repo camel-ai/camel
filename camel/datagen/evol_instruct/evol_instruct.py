@@ -15,7 +15,6 @@
 import random
 import time
 from concurrent.futures import ThreadPoolExecutor
-from math import ceil
 from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast
 
 from tqdm import tqdm
@@ -340,7 +339,7 @@ class EvolInstructPipeline(BaseDataGenPipeline):
         *args: Any,
         **kwargs: Any,
     ) -> List[Dict[str, Any]]:
-        r"""Generate evolved prompts from seed prompts.
+        r"""Generates evolved prompts from a set of seed prompts.
 
         Core implementation that performs the generation logic.
 
@@ -447,12 +446,12 @@ class EvolInstructPipeline(BaseDataGenPipeline):
         def _process_prompt(
             args: Tuple[str, List[List[str]]],
         ) -> Dict[int, List[Dict[str, Any]]]:
-            prompt, methods = args
+            current_prompt, method_plan = args
             retries = 0
             while retries <= retry_limit:
                 try:
                     return self._generate_iterative_evolutions(
-                        prompt=prompt,
+                        prompt=current_prompt,
                         evolution_spec=evolution_spec,
                         num_generations=num_generations,
                         num_iterations=num_iterations,
@@ -476,7 +475,7 @@ class EvolInstructPipeline(BaseDataGenPipeline):
             return cast(Dict[int, List[Dict[str, Any]]], {})
 
         num_chunks = max(1, min(num_chunks, len(seed_prompts)))
-        chunk_size = ceil(len(seed_prompts) / num_chunks)
+        chunk_size = len(seed_prompts) // num_chunks
         raw_results = []
 
         for chunk_idx in range(0, len(seed_prompts), chunk_size):

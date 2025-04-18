@@ -93,14 +93,11 @@ class CoTDataGenerator(BaseDataGenPipeline):
             (default::obj:`100`)
         output_path (Optional[str]): Path to save generated solutions.
             (default::obj:`None`)
-        batch_size (Optional[int]): Batch size for processing questions.
-            (default::obj:`None`)
-        max_workers (Optional[int]): Maximum number of worker threads.
-            (default::obj:`None`)
         save_intermediate (bool): Whether to save intermediate results.
             (default::obj:`False`)
-        verification_threshold (float): Threshold for verification score.
-            (default::obj:`0.7`)
+        solve_early_exit_threshold (float): Threshold for the score in
+            the solve method to exit early if a good solution is found.
+            (default::obj:`0.9`)
     """
 
     def __init__(
@@ -114,10 +111,8 @@ class CoTDataGenerator(BaseDataGenPipeline):
         ] = None,
         search_limit: int = 100,
         output_path: Optional[str] = None,
-        batch_size: Optional[int] = None,
-        max_workers: Optional[int] = None,
         save_intermediate: bool = False,
-        verification_threshold: float = 0.7,
+        solve_early_exit_threshold: float = 0.9,
     ):
         r"""Initialize the CoTDataGenerator.
 
@@ -148,20 +143,14 @@ class CoTDataGenerator(BaseDataGenPipeline):
                 (default::obj:`100`)
             output_path (Optional[str]): Path to save generated solutions.
                 (default::obj:`None`)
-            batch_size (Optional[int]): Batch size for processing questions.
-                (default::obj:`None`)
-            max_workers (Optional[int]): Maximum number of worker threads.
-                (default::obj:`None`)
             save_intermediate (bool): Whether to save intermediate results.
                 (default::obj:`False`)
-            verification_threshold (float): Threshold for verification score.
-                (default::obj:`0.7`)
+            solve_early_exit_threshold (float): Threshold for the score in
+                the solve method to exit early if a good solution is found.
+                (default::obj:`0.9`)
         """
         super().__init__(
             output_path=output_path,
-            batch_size=batch_size,
-            max_workers=max_workers,
-            save_intermediate=save_intermediate,
         )
 
         if chat_agent is not None:
@@ -181,11 +170,11 @@ class CoTDataGenerator(BaseDataGenPipeline):
             self.generator_agent = generator_agent
             self.verifier_agent = verifier_agent
 
-        self.golden_answers: dict[str, str] = {}
+        self.golden_answers: Dict[str, str] = {}
         if golden_answers is not None:
             self.import_qa_data(golden_answers)
         self.search_limit = search_limit
-        self.verification_threshold = verification_threshold
+        self.solve_early_exit_threshold = solve_early_exit_threshold
         self.solution_tree: Dict[str, Dict[str, Union[str, int]]] = {}
 
         logger.info(
@@ -389,7 +378,7 @@ class CoTDataGenerator(BaseDataGenPipeline):
                 score = agent_response
 
                 # Exit early if we find a very good solution (score > 0.9)
-                if score > 0.9:
+                if score > self.solve_early_exit_threshold:
                     logger.info(
                         "Found excellent solution with score %.2f. "
                         "Stopping search early.",
@@ -542,7 +531,7 @@ class CoTDataGenerator(BaseDataGenPipeline):
             )
 
             # Save intermediate results if configured
-            if self.save_intermediate and self.output_path:
+            if self.output_path:
                 self.save_results(solutions)
 
         return solutions

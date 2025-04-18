@@ -32,20 +32,11 @@ class BaseDataGenPipeline(ABC):
 
     Subclasses should implement the `generate` method to define their specific
     data generation workflow.
-
-    Attributes:
-        output_path (Optional[str]): Path to save generated data.
-        batch_size (Optional[int]): Batch size for processing data.
-        max_workers (Optional[int]): Maximum number of worker threads.
-        save_intermediate (bool): Whether to save intermediate results.
     """
 
     def __init__(
         self,
         output_path: Optional[str] = None,
-        batch_size: Optional[int] = None,
-        max_workers: Optional[int] = None,
-        save_intermediate: bool = False,
     ):
         r"""Initialize the base data generation pipeline.
 
@@ -53,17 +44,8 @@ class BaseDataGenPipeline(ABC):
             output_path (Optional[str]): Path to save generated data.
                 If None, results will only be returned without saving to file.
                 (default: :obj:`None`)
-            batch_size (Optional[int]): Batch size for processing data.
-                (default: :obj:`None`)
-            max_workers (Optional[int]): Maximum number of worker threads.
-                (default: :obj:`None`)
-            save_intermediate (bool): Whether to save intermediate results.
-                (default: :obj:`False`)
         """
         self.output_path = output_path
-        self.batch_size = batch_size
-        self.max_workers = max_workers
-        self.save_intermediate = save_intermediate
 
     def load_data_from_file(self, file_path: str) -> List[Dict[str, Any]]:
         r"""Load data from a JSONL file.

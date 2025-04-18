@@ -71,19 +71,15 @@ class SelfInstructPipeline(BaseDataGenPipeline):
         instruction_filter: Optional[InstructionFilter] = None,
         filter_config: Optional[Dict[str, Dict[str, Any]]] = None,
         stop_on_first_failure: bool = False,
-        batch_size: Optional[int] = None,
-        max_workers: Optional[int] = None,
         save_intermediate: bool = False,
     ):
         super().__init__(
             output_path=output_path,
-            batch_size=batch_size,
-            max_workers=max_workers,
-            save_intermediate=save_intermediate,
         )
         self.agent = agent
         self.num_machine_instructions = num_machine_instructions
         self.human_to_machine_ratio = human_to_machine_ratio
+        self.save_intermediate = save_intermediate
         self.human_tasks: List[Dict] = []
         self.machine_tasks: List[Dict] = []
         self.load_seed(seed)
