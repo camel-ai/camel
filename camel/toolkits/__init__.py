@@ -120,6 +120,8 @@ __all__ = [
     'PubMedToolkit',
     'DataCommonsToolkit',
     'ThinkingToolkit',
+    'PyAutoGUIToolkit',
     'OpenAIAgentToolkit',
     'SearxNGToolkit',
+    'MedCalcToolkit',
 ]
