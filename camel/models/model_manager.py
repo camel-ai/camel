@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import asyncio
 import logging
 from itertools import cycle
 from random import choice
@@ -69,6 +70,7 @@ class ModelManager:
             self.models = [models]
         self.models_cycle = cycle(self.models)
         self.current_model = self.models[0]
+        self.lock = asyncio.Lock()
 
         # Set the scheduling strategy; default is round-robin
         try:
@@ -246,7 +248,8 @@ class ModelManager:
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
-        self.current_model = self.scheduling_strategy()
+        async with self.lock:
+            self.current_model = self.scheduling_strategy()
 
         # Pass all messages to the selected model and get the response
         try:
@@ -260,7 +263,8 @@ class ModelManager:
                 logger.warning(
                     "The scheduling strategy has been changed to 'round_robin'"
                 )
-                # Skip already used one
-                self.current_model = self.scheduling_strategy()
+                async with self.lock:
+                    # Skip already used one
+                    self.current_model = self.scheduling_strategy()
             raise exc
         return response
