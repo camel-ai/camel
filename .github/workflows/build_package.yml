@@ -33,24 +33,12 @@ jobs:
 
       - name: Install dependencies
         run: |
-          if [ -d ".venv/Scripts" ]; then
-            # Windows
-            source .venv/Scripts/activate
-          else
-            # Unix
-            source .venv/bin/activate
-          fi
+          source .venv/bin/activate
           uv pip install -e ".[all, dev, docs]"
 
       - name: Build
         run: |
-          if [ -d ".venv/Scripts" ]; then
-            # Windows
-            source .venv/Scripts/activate
-          else
-            # Unix
-            source .venv/bin/activate
-          fi
+          source .venv/bin/activate
           uv pip install -e ".[all, dev, docs]"
           uv pip install build
           python -m build
