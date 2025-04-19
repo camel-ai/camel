@@ -167,22 +167,26 @@ def get_info_dict(
 
 
 def handle_logprobs(choice: Choice) -> Optional[List[Dict[str, Any]]]:
-    if choice.logprobs is None:
+    if choice.logprobs is None or not isinstance(choice.logprobs, dict):
+        # Return None if logprobs is missing or not a dictionary
         return None
 
-    tokens_logprobs = choice.logprobs.content
+    tokens_logprobs = choice.logprobs.get("content")
 
-    if tokens_logprobs is None:
+    if tokens_logprobs is None or not isinstance(tokens_logprobs, list):
+        # Return None if content is missing or not a list
         return None
 
     return [
         {
-            "token": token_logprob.token,
-            "logprob": token_logprob.logprob,
+            "token": token_logprob.get("token"),
+            "logprob": token_logprob.get("logprob"),
             "top_logprobs": [
-                (top_logprob.token, top_logprob.logprob)
-                for top_logprob in token_logprob.top_logprobs
+                (top_logprob.get("token"), top_logprob.get("logprob"))
+                for top_logprob in token_logprob.get("top_logprobs", [])
+                if isinstance(top_logprob, dict)
             ],
         }
         for token_logprob in tokens_logprobs
+        if isinstance(token_logprob, dict)
     ]
