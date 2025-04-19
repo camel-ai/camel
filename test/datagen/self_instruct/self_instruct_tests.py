@@ -159,6 +159,47 @@ class TestSelfInstructPipeline(unittest.TestCase):
         args, kwargs = mock_dump.call_args
         self.assertEqual(args[0], pipeline.machine_tasks)
 
+    @patch('time.time', side_effect=[100, 130])  # Mock start and end times
+    @patch("json.dump")
+    def test_execute(self, mock_dump, mock_time):
+        """Test that execute() correctly calls generate()
+        and handles output."""
+        # Mock the generate method to return predefined results
+        expected_results = [
+            {
+                "id": "machine_task_1",
+                "instruction": "Generated instruction",
+                "is_classification": True,
+                "instances": [{"input": "test", "output": "classification"}],
+            }
+        ]
+
+        # Create the pipeline
+        pipeline = SelfInstructPipeline(
+            agent=self.mock_agent,
+            seed="some_path.json",
+            instruction_filter=self.mock_filter,
+            output_path="test_output.json",
+        )
+
+        # Mock the generate method
+        with patch.object(
+            pipeline, 'generate', return_value=expected_results
+        ) as mock_generate:
+            # Call execute
+            results = pipeline.execute(timeout_minutes=10)
+
+            # Verify generate was called with correct timeout
+            mock_generate.assert_called_once_with(timeout_minutes=10)
+
+            # Verify results were returned correctly
+            self.assertEqual(results, expected_results)
+
+            # Verify results were saved
+            mock_dump.assert_called()
+            args, kwargs = mock_dump.call_args
+            self.assertEqual(args[0], expected_results)
+
 
 if __name__ == "__main__":
     unittest.main()

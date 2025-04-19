@@ -14,6 +14,7 @@
 from .data_processor import (
     DataCurator,
     ExampleConstructor,
+    Source2SynthDataGenPipeline,
     UserDataProcessor,
 )
 from .models import MultiHopQA, ReasoningStep
@@ -25,6 +26,7 @@ __all__ = [
     "DataCurator",
     "ExampleConstructor",
     "ProcessorConfig",
+    "Source2SynthDataGenPipeline",
     "UserDataProcessor",
     "ReasoningStep",
     "MultiHopQA",

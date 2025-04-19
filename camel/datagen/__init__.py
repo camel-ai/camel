@@ -12,12 +12,28 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+from .base import BaseDataGenPipeline
 from .cot_datagen import CoTDataGenerator
+from .evol_instruct import EvolInstructPipeline
 from .self_improving_cot import SelfImprovingCoTPipeline
 from .self_instruct import SelfInstructPipeline
+from .source2synth import (
+    ProcessorConfig,
+    Source2SynthDataGenPipeline,
+)
 
 __all__ = [
+    # Base pipeline
+    "BaseDataGenPipeline",
+    # CoT data generation
     "CoTDataGenerator",
-    "SelfInstructPipeline",
+    # Self-improving CoT
     "SelfImprovingCoTPipeline",
+    # Self-instruct
+    "SelfInstructPipeline",
+    # Evol-instruct
+    "EvolInstructPipeline",
+    # Source2Synth
+    "Source2SynthDataGenPipeline",
+    "ProcessorConfig",
 ]

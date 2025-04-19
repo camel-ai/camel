@@ -19,9 +19,6 @@ from typing import Dict, Optional
 from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
-from camel.logger import get_logger
-
-logger = get_logger(__name__)
 
 
 class BaseScorer(ABC):

@@ -11,8 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import logging
+
 from camel.agents import ChatAgent
 from camel.datagen.self_instruct import SelfInstructPipeline
+from camel.logger import enable_logging, set_log_level
+
+# Configure logging
+enable_logging()
+set_log_level(logging.INFO)
 
 agent = ChatAgent()
 
@@ -20,8 +27,8 @@ pipeline = SelfInstructPipeline(
     agent=agent,
     seed='seed_tasks.jsonl',
     num_machine_instructions=5,
-    data_output_path='./data_output.json',
+    output_path='./data_output.json',
     human_to_machine_ratio=(6, 2),
 )
 
-pipeline.generate()
+pipeline.execute()
