@@ -1217,13 +1217,3 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.search_exa),
             FunctionTool(self.search_ali),
         ]
-
-if __name__ == "__main__":
-    import os 
-    TONGXIAO_API_KEY="TrI9I0ocD3fnZFKiSysu72GS6WvMdDQw"
-    os.environ["TONGXIAO_API_KEY"] = TONGXIAO_API_KEY
-    search_ali_response = SearchToolkit().search_ali(
-        query="Alibaba's chip investment for 2025",
-        time_range="OneMonth"
-    )
-    print(search_ali_response)
