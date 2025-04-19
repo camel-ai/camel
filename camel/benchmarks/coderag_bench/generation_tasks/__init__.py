@@ -12,21 +12,14 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from .apibank import APIBankBenchmark
-from .apibench import APIBenchBenchmark
-from .base import BaseBenchmark
-from .gaia import DefaultGAIARetriever, GAIABenchmark
-from .nexus import NexusBenchmark
-from .ragbench import RAGBenchBenchmark
-from .coderag_bench import CodeRagBenchmark
+from . import humaneval
 
-__all__ = [
-    "BaseBenchmark",
-    "GAIABenchmark",
-    "DefaultGAIARetriever",
-    "NexusBenchmark",
-    "APIBenchBenchmark",
-    "APIBankBenchmark",
-    "RAGBenchBenchmark",
-    "CodeRagBenchmark",
-]
+GENERATION_TASK_REGISTRY = {
+    "humaneval": humaneval.HumanEvalGenerationWrapper,
+    # "mbpp": mbpp.MBPPGenerationWrapper,  # future
+}
+
+def get_generation_task_wrapper(task_name):
+    if task_name not in GENERATION_TASK_REGISTRY:
+        raise ValueError(f"Unknown task: {task_name}")
+    return GENERATION_TASK_REGISTRY[task_name]

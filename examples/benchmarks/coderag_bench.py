@@ -12,21 +12,10 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from .apibank import APIBankBenchmark
-from .apibench import APIBenchBenchmark
-from .base import BaseBenchmark
-from .gaia import DefaultGAIARetriever, GAIABenchmark
-from .nexus import NexusBenchmark
-from .ragbench import RAGBenchBenchmark
-from .coderag_bench import CodeRagBenchmark
+from camel.benchmarks import CodeRagBenchmark
 
-__all__ = [
-    "BaseBenchmark",
-    "GAIABenchmark",
-    "DefaultGAIARetriever",
-    "NexusBenchmark",
-    "APIBenchBenchmark",
-    "APIBankBenchmark",
-    "RAGBenchBenchmark",
-    "CodeRagBenchmark",
-]
+benchmark = CodeRagBenchmark(
+    data_dir="./CodeRag_BenchDatasets",
+    save_to="./CodeRag_BenchDatasets",
+    retriever=retriever,
+)
