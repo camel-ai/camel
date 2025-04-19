@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import io
 import os
 import tempfile
 from pathlib import Path
@@ -92,6 +93,10 @@ class VideoAnalysisToolkit(BaseToolkit):
             transcription using OpenAI's audio models. Requires a valid OpenAI
             API key. When disabled, video analysis will be based solely on
             visual content. (default: :obj:`False`)
+        frame_interval (float, optional): Interval in seconds between frames
+            to extract from the video. (default: :obj:`4.0`)
+        output_language (str, optional): The language for output responses.
+            (default: :obj:`"English"`)
         timeout (Optional[float]): The timeout value for API requests
                 in seconds. If None, no timeout is applied.
                 (default: :obj:`None`)
@@ -103,12 +108,16 @@ class VideoAnalysisToolkit(BaseToolkit):
         download_directory: Optional[str] = None,
         model: Optional[BaseModelBackend] = None,
         use_audio_transcription: bool = False,
+        frame_interval: float = 4.0,
+        output_language: str = "English",
         timeout: Optional[float] = None,
     ) -> None:
         super().__init__(timeout=timeout)
         self._cleanup = download_directory is None
         self._temp_files: list[str] = []  # Track temporary files for cleanup
         self._use_audio_transcription = use_audio_transcription
+        self.output_language = output_language
+        self.frame_interval = frame_interval
 
         self._download_directory = Path(
             download_directory or tempfile.mkdtemp()
@@ -137,13 +146,16 @@ class VideoAnalysisToolkit(BaseToolkit):
             # Import ChatAgent at runtime to avoid circular imports
             from camel.agents import ChatAgent
 
-            self.vl_agent = ChatAgent(model=self.vl_model)
+            self.vl_model._timeout = timeout
+            self.vl_agent = ChatAgent(
+                model=self.vl_model, output_language=self.output_language
+            )
         else:
             # If no model is provided, use default model in ChatAgent
             # Import ChatAgent at runtime to avoid circular imports
             from camel.agents import ChatAgent
 
-            self.vl_agent = ChatAgent()
+            self.vl_agent = ChatAgent(output_language=self.output_language)
             logger.warning(
                 "No vision-language model provided. Using default model in"
                 " ChatAgent."
@@ -179,12 +191,18 @@ class VideoAnalysisToolkit(BaseToolkit):
         # Clean up temporary directory if needed
         if self._cleanup and os.path.exists(self._download_directory):
             try:
-                import shutil
+                import sys
 
-                shutil.rmtree(self._download_directory)
-                logger.debug(
-                    f"Removed temporary directory: {self._download_directory}"
-                )
+                if getattr(sys, 'modules', None) is not None:
+                    import shutil
+
+                    shutil.rmtree(self._download_directory)
+                    logger.debug(
+                        f"Removed temp directory: {self._download_directory}"
+                    )
+            except (ImportError, AttributeError):
+                # Skip cleanup if interpreter is shutting down
+                pass
             except OSError as e:
                 logger.warning(
                     f"Failed to remove temporary directory"
@@ -243,87 +261,212 @@ class VideoAnalysisToolkit(BaseToolkit):
             return "Audio transcription failed."
 
     def _extract_keyframes(
-        self, video_path: str, num_frames: int, threshold: float = 25.0
+        self, video_path: str, threshold: float = 25.0
     ) -> List[Image.Image]:
-        r"""Extract keyframes from a video based on scene changes
-        and return them as PIL.Image.Image objects.
+        r"""Extract keyframes from a video based on scene changes and
+        regular intervals,and return them as PIL.Image.Image objects.
 
         Args:
             video_path (str): Path to the video file.
-            num_frames (int): Number of keyframes to extract.
             threshold (float): The threshold value for scene change detection.
+                This is kept for backward compatibility but not used in the
+                current implementation.
 
         Returns:
             list: A list of PIL.Image.Image objects representing
                 the extracted keyframes.
         """
+        import cv2
+        import numpy as np
         from scenedetect import (  # type: ignore[import-untyped]
             SceneManager,
-            VideoManager,
+            open_video,
         )
         from scenedetect.detectors import (  # type: ignore[import-untyped]
             ContentDetector,
         )
 
-        if num_frames <= 0:
-            logger.warning(
-                f"Invalid num_frames: {num_frames}, using default of 1"
-            )
-            num_frames = 1
+        # Get video information
+        cap = cv2.VideoCapture(video_path)
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        duration = total_frames / fps if fps > 0 else 0
+        cap.release()
 
-        video_manager = VideoManager([video_path])
+        frame_interval = self.frame_interval  # seconds
+
+        # Calculate the total number of frames to extract
+        if duration <= 0 or fps <= 0:
+            logger.warning(
+                "Invalid video duration or fps, using default frame count"
+            )
+            num_frames = 10
+        else:
+            num_frames = max(int(duration / frame_interval), 1)
+
+            max_frames = 100
+            if num_frames > max_frames:
+                frame_interval = duration / max_frames
+                num_frames = max_frames
+
+            logger.info(
+                f"Video duration: {duration:.2f}s, target frames: {num_frames}"
+                f"at {frame_interval:.2f}s intervals"
+            )
+
+        # Use scene detection to extract keyframes
+        # Use open_video instead of VideoManager
+        video = open_video(video_path)
         scene_manager = SceneManager()
         scene_manager.add_detector(ContentDetector(threshold=threshold))
 
-        video_manager.set_duration()
-        video_manager.start()
-        scene_manager.detect_scenes(video_manager)
+        # Detect scenes using the modern API
+        scene_manager.detect_scenes(video)
 
         scenes = scene_manager.get_scene_list()
         keyframes: List[Image.Image] = []
 
-        # Handle case where no scenes are detected
-        if not scenes:
-            logger.warning(
-                "No scenes detected in video, capturing frames at "
-                "regular intervals"
+        # If scene detection is successful, prioritize scene change points
+        if scenes:
+            logger.info(f"Detected {len(scenes)} scene changes")
+
+            if len(scenes) > num_frames:
+                scene_indices = np.linspace(
+                    0, len(scenes) - 1, num_frames, dtype=int
+                )
+                selected_scenes = [scenes[i] for i in scene_indices]
+            else:
+                selected_scenes = scenes
+
+            # Extract frames from scenes
+            for scene in selected_scenes:
+                try:
+                    # Get start time in seconds
+                    start_time = scene[0].get_seconds()
+                    frame = _capture_screenshot(video_path, start_time)
+                    keyframes.append(frame)
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to capture frame at scene change"
+                        f" {scene[0].get_seconds()}s: {e}"
+                    )
+
+        if len(keyframes) < num_frames and duration > 0:
+            logger.info(
+                f"Scene detection provided {len(keyframes)} frames, "
+                f"supplementing with regular interval frames"
             )
-            import cv2
 
-            cap = cv2.VideoCapture(video_path)
-            total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            fps = cap.get(cv2.CAP_PROP_FPS)
-            duration = total_frames / fps if fps > 0 else 0
+            existing_times = []
+            if scenes:
+                existing_times = [scene[0].get_seconds() for scene in scenes]
 
-            if duration > 0 and total_frames > 0:
-                # Extract frames at regular intervals
-                interval = duration / min(num_frames, total_frames)
-                for i in range(min(num_frames, total_frames)):
-                    time_sec = i * interval
+            regular_frames = []
+            for i in range(num_frames):
+                time_sec = i * frame_interval
+
+                is_duplicate = False
+                for existing_time in existing_times:
+                    if abs(existing_time - time_sec) < 1.0:
+                        is_duplicate = True
+                        break
+
+                if not is_duplicate:
+                    try:
+                        frame = _capture_screenshot(video_path, time_sec)
+                        regular_frames.append(frame)
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to capture frame at {time_sec}s: {e}"
+                        )
+
+            frames_needed = num_frames - len(keyframes)
+            if frames_needed > 0 and regular_frames:
+                if len(regular_frames) > frames_needed:
+                    indices = np.linspace(
+                        0, len(regular_frames) - 1, frames_needed, dtype=int
+                    )
+                    selected_frames = [regular_frames[i] for i in indices]
+                else:
+                    selected_frames = regular_frames
+
+                keyframes.extend(selected_frames)
+
+        if not keyframes:
+            logger.warning(
+                "No frames extracted, falling back to simple interval"
+                "extraction"
+            )
+            for i in range(
+                min(num_frames, 10)
+            ):  # Limit to a maximum of 10 frames to avoid infinite loops
+                time_sec = i * (duration / 10 if duration > 0 else 6.0)
+                try:
                     frame = _capture_screenshot(video_path, time_sec)
                     keyframes.append(frame)
-
-            cap.release()
-        else:
-            # Extract frames from detected scenes
-            for start_time, _ in scenes:
-                if len(keyframes) >= num_frames:
-                    break
-                frame = _capture_screenshot(video_path, start_time)
-                keyframes.append(frame)
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to capture frame at {time_sec}s: {e}"
+                    )
 
         if not keyframes:
             logger.error("Failed to extract any keyframes from video")
             raise ValueError("Failed to extract keyframes from video")
 
-        logger.info(f"Extracted {len(keyframes)} keyframes")
-        return keyframes
+        # Normalize image sizes
+        normalized_keyframes = self._normalize_frames(keyframes)
+
+        logger.info(
+            f"Extracted and normalized {len(normalized_keyframes)} keyframes"
+        )
+        return normalized_keyframes
+
+    def _normalize_frames(
+        self, frames: List[Image.Image], target_width: int = 512
+    ) -> List[Image.Image]:
+        r"""Normalize the size of extracted frames.
+
+        Args:
+            frames (List[Image.Image]): List of frames to normalize.
+            target_width (int): Target width for normalized frames.
+
+        Returns:
+            List[Image.Image]: List of normalized frames.
+        """
+        normalized_frames: List[Image.Image] = []
+
+        for frame in frames:
+            # Get original dimensions
+            width, height = frame.size
+
+            # Calculate new height, maintaining aspect ratio
+            aspect_ratio = width / height
+            new_height = int(target_width / aspect_ratio)
+
+            # Resize image
+            resized_frame = frame.resize(
+                (target_width, new_height), Image.Resampling.LANCZOS
+            )
+
+            # Ensure the image has a proper format
+            if resized_frame.mode != 'RGB':
+                resized_frame = resized_frame.convert('RGB')
+
+            # Create a new image with explicit format
+            with io.BytesIO() as buffer:
+                resized_frame.save(buffer, format='JPEG')
+                buffer.seek(0)
+                formatted_frame = Image.open(buffer)
+                formatted_frame.load()  # Load the image data
+
+            normalized_frames.append(formatted_frame)
+
+        return normalized_frames
 
     def ask_question_about_video(
         self,
         video_path: str,
         question: str,
-        num_frames: int = 28,
     ) -> str:
         r"""Ask a question about the video.
 
@@ -331,9 +474,6 @@ class VideoAnalysisToolkit(BaseToolkit):
             video_path (str): The path to the video file.
                 It can be a local file or a URL (such as Youtube website).
             question (str): The question to ask about the video.
-            num_frames (int): The number of frames to extract from the video.
-                To be adjusted based on the length of the video.
-                (default: :obj:`28`)
 
         Returns:
             str: The answer to the question.
@@ -342,12 +482,6 @@ class VideoAnalysisToolkit(BaseToolkit):
 
         if not question:
             raise ValueError("Question cannot be empty")
-
-        if num_frames <= 0:
-            logger.warning(
-                f"Invalid num_frames: {num_frames}, using default of 28"
-            )
-            num_frames = 28
 
         parsed_url = urlparse(video_path)
         is_url = all([parsed_url.scheme, parsed_url.netloc])
@@ -374,7 +508,7 @@ class VideoAnalysisToolkit(BaseToolkit):
                 audio_path = self._extract_audio_from_video(video_path)
                 audio_transcript = self._transcribe_audio(audio_path)
 
-            video_frames = self._extract_keyframes(video_path, num_frames)
+            video_frames = self._extract_keyframes(video_path)
             prompt = VIDEO_QA_PROMPT.format(
                 audio_transcription=audio_transcript,
                 question=question,
