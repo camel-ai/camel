@@ -16,16 +16,34 @@ runs:
       run: |
         pip install uv
       shell: bash
-    - name: Setup virtual environment
-      run: |
-        uv venv .venv --python=${{ inputs.python-version }}
-      shell: bash
     - uses: actions/cache/restore@v3
       id: cache-restore
       name: Restore caches for the virtual environment based on uv.lock
       with:
         path: ./.venv
         key: venv-${{ hashFiles('uv.lock') }}
+    - name: Verify and setup virtual environment
+      id: verify-venv
+      run: |
+        # Check if Python exists and is executable in the venv
+        if [ -f ".venv/bin/python" ] && [ -x ".venv/bin/python" ] && ".venv/bin/python" --version > /dev/null 2>&1; then
+          echo "Virtual environment exists and seems valid"
+          echo "recreated=false" >> $GITHUB_OUTPUT
+        else
+          echo "Virtual environment invalid or incomplete, recreating..."
+          rm -rf .venv
+          uv venv .venv --python=${{ inputs.python-version }}
+          
+          # Verify the newly created venv
+          if [ -f ".venv/bin/python" ] && [ -x ".venv/bin/python" ] && ".venv/bin/python" --version > /dev/null 2>&1; then
+            echo "Successfully created virtual environment"
+          else
+            echo "Failed to create a valid virtual environment"
+            exit 1
+          fi
+          echo "recreated=true" >> $GITHUB_OUTPUT
+        fi
+      shell: bash
     - name: Install the project dependencies
       run: |
         source .venv/bin/activate
@@ -33,7 +51,7 @@ runs:
       shell: bash
     - uses: actions/cache/save@v3
       name: Save caches based on uv.lock
-      if: ${{ !steps.cache-restore.outputs.cache-hit }}
+      if: ${{ !steps.cache-restore.outputs.cache-hit || steps.verify-venv.outputs.recreated == 'true' }}
       with:
         path: ./.venv
         key: venv-${{ hashFiles('uv.lock') }}
