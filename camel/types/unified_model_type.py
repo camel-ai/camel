@@ -89,6 +89,11 @@ class UnifiedModelType(str):
         return True
 
     @property
+    def is_lmstudio(self) -> bool:
+        r"""Returns whether the model is a LMStudio served model."""
+        return True
+
+    @property
     def is_ppio(self) -> bool:
         r"""Returns whether the model is a PPIO served model."""
         return True
