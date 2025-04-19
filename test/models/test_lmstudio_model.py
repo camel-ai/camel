@@ -39,7 +39,7 @@ def test_lmstudio_model(model_type: ModelType):
 
 
 @pytest.mark.model_backend
-def test_openrouter_model_unexpected_argument():
+def test_lmstudio_model_unexpected_argument():
     model_type = ModelType.LMSTUDIO_GEMMA_3_1B
     model_config_dict = {"model_path": "vicuna_70B"}
 
@@ -56,6 +56,6 @@ def test_openrouter_model_unexpected_argument():
 
 
 @pytest.mark.model_backend
-def test_openrouter_model_stream_property():
+def test_lmstudio_model_stream_property():
     model = LMStudioModel(ModelType.LMSTUDIO_GEMMA_3_1B)
     assert model.stream is False
