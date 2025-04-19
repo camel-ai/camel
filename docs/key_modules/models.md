@@ -32,6 +32,7 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **OpenRouter** | [supported models](https://openrouter.ai/models) |
 | **PPIO** | [supported models](https://ppinfra.com/model-api/product/llm-api?utm_source=github_owl) |
 | **LiteLLM** | [supported models](https://docs.litellm.ai/docs/providers) |
+| **LMStudio** | [supported models](https://lmstudio.ai/models) |
 | **vLLM** |  [supported models](https://docs.vllm.ai/en/latest/models/supported_models.html) |
 | **SGLANG** | [supported models](https://sgl-project.github.io/references/supported_models.html) |
 | **NVIDIA** | [supported models](https://docs.api.nvidia.com/nim/reference/llm-apis) |
