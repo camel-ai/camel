@@ -908,7 +908,8 @@ class BaseBrowser:
         self._wait_for_load()
 
     def close(self):
-        self.browser.close()
+        if self.browser and self.browser is not None:
+            self.browser.close()
 
     # ruff: noqa: E501
     def show_interactive_elements(self):
@@ -1029,6 +1030,15 @@ class BrowserToolkit(BaseToolkit):
         self.planning_agent.reset()
         self.history = []
         os.makedirs(self.browser.cache_dir, exist_ok=True)
+
+    def _terminate(self):
+        r"""Reset Agents and Terminate Playwright and Browser Instance."""
+        self._reset()
+        if self.browser and self.browser is not None:
+            self.browser.close()
+        if self.browser.playwright and self.browser.playwright is not None:
+            logger.debug("terminating playwright")
+            self.browser.playwright.stop()
 
     def _initialize_agent(self) -> Tuple["ChatAgent", "ChatAgent"]:
         r"""Initialize the agent."""
