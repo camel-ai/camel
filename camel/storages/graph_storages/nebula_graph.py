@@ -175,6 +175,7 @@ class NebulaGraph(BaseGraphStorage):
     def add_graph_elements(
         self,
         graph_elements: List[GraphElement],
+        **kwargs: Any,
     ) -> None:
         r"""Add graph elements (nodes and relationships) to the graph.
 
