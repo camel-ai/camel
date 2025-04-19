@@ -84,6 +84,12 @@ class ModelType(UnifiedModelType, Enum):
     OPENROUTER_LLAMA_4_SCOUT_FREE = "meta-llama/llama-4-scout:free"
     OPENROUTER_OLYMPICODER_7B = "open-r1/olympiccoder-7b:free"
 
+    # LMStudio models
+    LMSTUDIO_GEMMA_3_1B = "gemma-3-1b"
+    LMSTUDIO_GEMMA_3_4B = "gemma-3-4b"
+    LMSTUDIO_GEMMA_3_12B = "gemma-3-12b"
+    LMSTUDIO_GEMMA_3_27B = "gemma-3-27b"
+
     # TogetherAI platform models support tool calling
     TOGETHER_LLAMA_3_1_8B = "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo"
     TOGETHER_LLAMA_3_1_70B = "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo"
@@ -317,6 +323,7 @@ class ModelType(UnifiedModelType, Enum):
                 self.is_sambanova,
                 self.is_groq,
                 self.is_openrouter,
+                self.is_lmstudio,
                 self.is_sglang,
                 self.is_moonshot,
                 self.is_siliconflow,
@@ -435,6 +442,16 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.OPENROUTER_LLAMA_4_SCOUT,
             ModelType.OPENROUTER_LLAMA_4_SCOUT_FREE,
             ModelType.OPENROUTER_OLYMPICODER_7B,
+        }
+
+    @property
+    def is_lmstudio(self) -> bool:
+        r"""Returns whether this type of models is served by LMStudio."""
+        return self in {
+            ModelType.LMSTUDIO_GEMMA_3_1B,
+            ModelType.LMSTUDIO_GEMMA_3_4B,
+            ModelType.LMSTUDIO_GEMMA_3_12B,
+            ModelType.LMSTUDIO_GEMMA_3_27B,
         }
 
     @property
@@ -713,6 +730,10 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GLM_4V_FLASH,
             ModelType.GLM_4_AIRX,
             ModelType.OPENROUTER_OLYMPICODER_7B,
+            ModelType.LMSTUDIO_GEMMA_3_1B,
+            ModelType.LMSTUDIO_GEMMA_3_4B,
+            ModelType.LMSTUDIO_GEMMA_3_12B,
+            ModelType.LMSTUDIO_GEMMA_3_27B,
         }:
             return 8_192
         elif self in {
@@ -1072,6 +1093,7 @@ class ModelPlatformType(Enum):
     OPENROUTER = "openrouter"
     OLLAMA = "ollama"
     LITELLM = "litellm"
+    LMSTUDIO = "lmstudio"
     ZHIPU = "zhipuai"
     GEMINI = "gemini"
     VLLM = "vllm"
@@ -1131,6 +1153,11 @@ class ModelPlatformType(Enum):
     def is_openrouter(self) -> bool:
         r"""Returns whether this platform is openrouter."""
         return self is ModelPlatformType.OPENROUTER
+
+    @property
+    def is_lmstudio(self) -> bool:
+        r"""Returns whether this platform is lmstudio."""
+        return self is ModelPlatformType.LMSTUDIO
 
     @property
     def is_ollama(self) -> bool:
