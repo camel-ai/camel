@@ -396,18 +396,27 @@ on improving efficiency, fault tolerance, and minimizing resource overheads.
 """
 
 search_ali_response = SearchToolkit().search_ali(
-    query="阿里巴巴2025年的芯片投入",
-    timeRange="OneMonth",
-    returnMainText=False,
+    query="Alibaba's chip investment for 2025",
+    time_range="OneMonth"
 )
 print(search_ali_response)
 """
 ===============================================================================
-{'requestId': '8e7fd84f22887600d2f5e554b85c1e5f','results': [
-{'result_id': 1,'title': '海光、寒武纪、摩尔的机会来了!',
-'snippet': '另外, 高盛对阿里巴巴的投资方向进行了预测',
-'url': 'https://m.163.com/','hostname': '网易订阅',
-'publishTime': 1742559848000,'summary': '高盛还指出, 尽管我国在高端芯片供应'
-方面面临','score': 0.6214190849377415}]}
+{'request_id': '78a77a7e004dd97bc18bd907b90d152b', 'results': [
+{'result_id': 1, 'title': 'Investor Relations', 'snippet':
+ 'Stock Information Alibaba Group(BABA)-NYSE 112.280 1.690（-1.483%） 
+ 2025-04-15T20:01 EDT Prices shown in USD The data service is provided
+   by Alibaba Cloud,with a delay of at least 15 minutes. Alibaba 
+   Group(9988)-H...', 'url': 'https://www.alibabagroup.com/
+   en-US/investor-relations', 'hostname': 'www.alibabagroup.com', 
+   'summary': 'February 20, 2025\nAlibaba Group Will Announce December
+   Quarter 2024 Results on February 20, 2025April 2, 2025\nAlibaba Group 
+   Announces December Quarter 2024 Results\nFebruary 20, 2025Stock 
+   Information\nAlibaba Group (BABA) - NYSE\n$\n112.280\n-$1.690（-1.483%
+   2025-04-15T20:01 EDTAlibaba Group (9988) - HKEX\nHK$\n104.400\n-HK$5.500
+   （-5.005%）\n2025-04-16T12:00 HKT\nPrices shown in HKD', 
+   'score': 0.33736322991609163, 'publish_time': 1744646400000},
+{'result_id': 2, 'title': 'technode'.....}
+]}
 ===============================================================================
 """

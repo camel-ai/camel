@@ -1068,12 +1068,12 @@ class SearchToolkit(BaseToolkit):
     def search_ali(
         self,
         query: str,
-        timeRange: str = "NoLimit",
-        industry: Optional[str] = None,
+        time_range: Literal["OneDay", "OneWeek", "OneMonth", "OneYear", "NoLimit"] = "NoLimit",
+        industry: Optional[Literal["finance", "law", "medical", "internet", "tax", "news_province", "news_center"]] = None,
         page: int = 1,
-        returnMainText: bool = True,
-        returnMarkdownText: bool = True,
-        enableRerank: bool = True,
+        return_main_text: bool = False,
+        return_markdown_text: bool = True,
+        enable_rerank: bool = True,
     ) -> Dict[str, Any]:
         r"""Query the Alibaba Tongxiao search API and return search results.
 
@@ -1084,57 +1084,34 @@ class SearchToolkit(BaseToolkit):
 
         Args:
             query (str): The search query string (length >= 1 and <= 100).
-            timeRange (str): Time frame filter for search results. Default
-                is "NoLimit". Options include:
-                - 'OneDay': Past day.
-                - 'OneWeek': Past week.
-                - 'OneMonth': Past month.
-                - 'OneYear': Past year.
-                - 'NoLimit': No time limit (default).
-            industry (Optional[str]): Industry-specific search filter. When
+            time_range (Literal["OneDay", "OneWeek", "OneMonth", "OneYear", "NoLimit"]): 
+                Time frame filter for search results. 
+                (default: :obj:`"NoLimit"`)
+            industry (Optional[Literal["finance", "law", "medical", "internet", "tax", 
+                "news_province", "news_center"]]): Industry-specific search filter. When
                 specified, only returns results from sites in the specified
                 industries. Multiple industries can be comma-separated.
-                Options include:
-                - 'finance': Financial industry.
-                - 'law': Legal industry.
-                - 'medical': Medical industry.
-                - 'internet': Internet (curated).
-                - 'tax': Tax industry.
-                - 'news_province': Provincial news.
-                - 'news_center': Central news.
-            page (int): Page number for results pagination. Default is 1.
-            returnMainText (bool): Whether to include the main text of the
-                webpage in results. Default is True.
-            returnMarkdownText (bool): Whether to include markdown formatted
-                content in results. Default is True.
-            enableRerank (bool): Whether to enable result reranking. Default
-                is True. If response time is critical, setting this to False
-                can reduce response time by approximately 140ms.
+                (default: :obj:`None`)
+            page (int): Page number for results pagination. 
+                (default: :obj:`1`)
+            return_main_text (bool): Whether to include the main text of the
+                webpage in results. (default: :obj:`True`)
+            return_markdown_text (bool): Whether to include markdown formatted
+                content in results. (default: :obj:`True`)
+            enable_rerank (bool): Whether to enable result reranking. If 
+                response time is critical, setting this to False can reduce 
+                response time by approximately 140ms. (default: :obj:`True`)
 
         Returns:
-            Dict[str, Any]: A dictionary containing search results or an error
-                message. The structure includes:
-                - 'requestId': A unique identifier for the request.
-                - 'results': A list of dictionaries, each representing a
-                  search result with the following keys:
-                  - 'result_id': The index of the result.
-                  - 'title': The title of the webpage.
-                  - 'snippet': A dynamic summary of relevant content matching
-                    the query keywords.
-                  - 'mainText': The main content of the webpage (if
-                    returnMainText is True).
-                  - 'markdownText': Markdown formatted content (if
-                    returnMarkdownText is True).
-                  - 'hostname': The name of the website.
-                  - 'url': The URL of the webpage.
-                  - 'publishTime': Publication timestamp in milliseconds.
-                  - 'score': Relevance score.
-                - 'searchInformation': Additional metadata about the search
-                  operation.
-                - or 'error': An error message if something went wrong.
+            Dict[str, Any]: A dictionary containing either search results with
+                'requestId' and 'results' keys, or an 'error' key with error message.
+                Each result contains title, snippet, url and other metadata.
         """
         TONGXIAO_API_KEY = os.getenv("TONGXIAO_API_KEY")
-        # The @api_keys_required decorator will handle missing API key cases
+        
+        # Validate query length
+        if not query or len(query) > 100:
+            return {"error": "Query length must be between 1 and 100 characters"}
 
         # API endpoint and parameters
         base_url = "https://cloud-iqs.aliyuncs.com/search/genericSearch"
@@ -1145,11 +1122,11 @@ class SearchToolkit(BaseToolkit):
         # Convert boolean parameters to string for compatibility with requests
         params: Dict[str, Union[str, int]] = {
             "query": query,
-            "timeRange": timeRange,
+            "timeRange": time_range,
             "page": page,
-            "returnMainText": str(returnMainText).lower(),
-            "returnMarkdownText": str(returnMarkdownText).lower(),
-            "enableRerank": str(enableRerank).lower(),
+            "returnMainText": str(return_main_text).lower(),
+            "returnMarkdownText": str(return_markdown_text).lower(),
+            "enableRerank": str(enable_rerank).lower(),
         }
 
         # Only add industry parameter if specified
@@ -1178,66 +1155,45 @@ class SearchToolkit(BaseToolkit):
             page_items = data.get("pageItems", [])
             results = []
             for idx, item in enumerate(page_items):
-                # Create a simplified result structure similar to search_bing
+                # Create a simplified result structure
                 result = {
                     "result_id": idx + 1,
                     "title": item.get("title", ""),
                     "snippet": item.get("snippet", ""),
-                    "url": item.get("link", ""),  # Rename link to url for
-                    # consistency
+                    "url": item.get("link", ""),
                     "hostname": item.get("hostname", ""),
-                    "publishTime": item.get("publishTime", 0),
                 }
 
-                # First try to use summary field, if not available use mainText
+                # Only include additional fields if they exist and are requested
                 if "summary" in item and item.get("summary"):
                     result["summary"] = item["summary"]
-                elif (
-                    returnMainText
-                    and "mainText" in item
-                    and item.get("mainText")
-                ):
+                elif return_main_text and "mainText" in item and item.get("mainText"):
                     result["summary"] = item["mainText"]
 
-                # Include original mainText if it exists and is requested
-                # (for reference)
-                if (
-                    returnMainText
-                    and "mainText" in item
-                    and item.get("mainText")
-                ):
-                    result["mainText"] = item["mainText"]
+                if return_main_text and "mainText" in item and item.get("mainText"):
+                    result["main_text"] = item["mainText"]
 
-                # Only include markdownText if it exists and is requested
-                if (
-                    returnMarkdownText
-                    and "markdownText" in item
-                    and item.get("markdownText")
-                ):
-                    result["markdownText"] = item["markdownText"]
+                if return_markdown_text and "markdownText" in item and item.get("markdownText"):
+                    result["markdown_text"] = item["markdownText"]
 
-                # Include score if available
                 if "score" in item:
                     result["score"] = item["score"]
 
+                if "publishTime" in item:
+                    result["publish_time"] = item["publishTime"]
+
                 results.append(result)
 
-            # Return a simplified structure similar to other search methods
+            # Return a simplified structure
             return {
-                "requestId": data.get("requestId", ""),
+                "request_id": data.get("requestId", ""),
                 "results": results,
             }
 
         except requests.exceptions.RequestException as e:
-            # Handle connection errors, timeouts
             return {"error": f"Alibaba Tongxiao search request failed: {e!s}"}
         except Exception as e:
-            # Catch other potential errors (e.g., JSON parsing errors)
-            return {
-                "error": (
-                    f"Unexpected error during Alibaba Tongxiao search: {e!s}"
-                )
-            }
+            return {"error": f"Unexpected error during Alibaba Tongxiao search: {e!s}"}
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
@@ -1261,3 +1217,13 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.search_exa),
             FunctionTool(self.search_ali),
         ]
+
+if __name__ == "__main__":
+    import os 
+    TONGXIAO_API_KEY="TrI9I0ocD3fnZFKiSysu72GS6WvMdDQw"
+    os.environ["TONGXIAO_API_KEY"] = TONGXIAO_API_KEY
+    search_ali_response = SearchToolkit().search_ali(
+        query="Alibaba's chip investment for 2025",
+        time_range="OneMonth"
+    )
+    print(search_ali_response)
