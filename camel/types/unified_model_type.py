@@ -64,6 +64,11 @@ class UnifiedModelType(str):
         return True
 
     @property
+    def is_aws_bedrock(self) -> bool:
+        r"""Returns whether the model is an AWS Bedrock model."""
+        return True
+
+    @property
     def is_anthropic(self) -> bool:
         r"""Returns whether the model is an Anthropic model."""
         return True
