@@ -11,24 +11,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import os
-from typing import Any, Dict, List, Optional, Union
 
-from openai import OpenAI
+import os
+from typing import Any, Dict, List, Optional, Type, Union
+
+from openai import AsyncStream
+from pydantic import BaseModel
 
 from camel.configs import BEDROCK_API_PARAMS, BedrockConfig
 from camel.messages import OpenAIMessage
-from camel.models.base_model import BaseModelBackend
-from camel.types import ChatCompletion, ModelType
-from camel.utils import (
-    BaseTokenCounter,
-    OpenAITokenCounter,
-    api_keys_required,
+from camel.models.openai_compatible_model import OpenAICompatibleModel
+from camel.types import (
+    ChatCompletion,
+    ChatCompletionChunk,
+    ModelType,
 )
+from camel.utils import BaseTokenCounter, api_keys_required
 
 
-class AWSBedrockModel(BaseModelBackend):
-    r"""AWS Bedrock API in a unified BaseModelBackend interface.
+class AWSBedrockModel(OpenAICompatibleModel):
+    r"""AWS Bedrock API in a unified OpenAICompatibleModel interface.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is
@@ -44,7 +46,10 @@ class AWSBedrockModel(BaseModelBackend):
             use for the model. If not provided, :obj:`OpenAITokenCounter(
             ModelType.GPT_4O_MINI)` will be used.
             (default: :obj:`None`)
-
+        timeout (Optional[float], optional): The timeout value in seconds for
+            API calls. If not provided, will fall back to the MODEL_TIMEOUT
+            environment variable or default to 180 seconds.
+            (default: :obj:`None`)
     References:
         https://docs.aws.amazon.com/bedrock/latest/APIReference/welcome.html
     """
@@ -52,6 +57,7 @@ class AWSBedrockModel(BaseModelBackend):
     @api_keys_required(
         [
             ("url", "BEDROCK_API_BASE_URL"),
+            ("api_key", "BEDROCK_API_KEY"),
         ]
     )
     def __init__(
@@ -61,6 +67,7 @@ class AWSBedrockModel(BaseModelBackend):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
+        timeout: Optional[float] = None,
     ) -> None:
         if model_config_dict is None:
             model_config_dict = BedrockConfig().as_dict()
@@ -68,44 +75,25 @@ class AWSBedrockModel(BaseModelBackend):
         url = url or os.environ.get(
             "BEDROCK_API_BASE_URL",
         )
+        timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter
+            model_type=model_type,
+            model_config_dict=model_config_dict,
+            api_key=api_key,
+            url=url,
+            token_counter=token_counter,
+            timeout=timeout,
         )
-        self._client = OpenAI(
-            timeout=180,
-            max_retries=3,
-            api_key=self._api_key,
-            base_url=self._url,
+
+    async def _arun(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+        raise NotImplementedError(
+            "AWS Bedrock does not support async inference."
         )
-
-    def run(self, messages: List[OpenAIMessage]) -> ChatCompletion:
-        r"""Runs the query to the backend model.
-
-        Args:
-            message (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format.
-
-        Returns:
-            ChatCompletion: The response object in OpenAI's format.
-        """
-        response = self._client.chat.completions.create(
-            messages=messages,
-            model=self.model_type,
-            **self.model_config_dict,
-        )
-        return response
-
-    @property
-    def token_counter(self) -> BaseTokenCounter:
-        r"""Initialize the token counter for the model backend.
-
-        Returns:
-            BaseTokenCounter: The token counter following the model's
-                tokenization style.
-        """
-        if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
-        return self._token_counter
 
     def check_model_config(self):
         r"""Check whether the input model configuration contains unexpected

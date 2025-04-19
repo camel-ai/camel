@@ -37,93 +37,14 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **NVIDIA** | [supported models](https://docs.api.nvidia.com/nim/reference/llm-apis) |
 | **AIML** | [supported models](https://docs.aimlapi.com/api-overview/model-database/text-models) |
 | **ModelScope** | [supported models](https://www.modelscope.cn/docs/model-service/API-Inference/intro) |
+| **AWS Bedrock** | [supported models](https://us-west-2.console.aws.amazon.com/bedrock/home?region=us-west-2#/) |
+
 
 ## 3. How to Use Models via API Calls
 
 Easily integrate your chosen model with CAMEL AI using straightforward API calls. For example, to use the **gpt-4o-mini** model:
 
 > If you want to use another model, you can simply change these three parameters: `model_platform`, `model_type`, `model_config_dict` .
-| Model Platform | Available Models| Multi-modality |
-| ----- | ----- | ----- |
-| OpenAI | gpt-4o | Y |
-| OpenAI | gpt-4o-mini | Y |
-| OpenAI | o1 | Y |
-| OpenAI | o1-preview | N |
-| OpenAI | o1-mini | N |
-| OpenAI | gpt-4-turbo | Y |
-| OpenAI | gpt-4 | Y |
-| OpenAI | gpt-3.5-turbo | N |
-| Azure OpenAI | gpt-4o | Y |
-| Azure OpenAI | gpt-4-turbo | Y |
-| Azure OpenAI | gpt-4 | Y |
-| Azure OpenAI | gpt-3.5-turbo | Y |
-| OpenAI Compatible | Depends on the provider | ----- |
-| Mistral AI | mistral-large-2 | N |
-| Mistral AI | pixtral-12b-2409 | Y |
-| Mistral AI | ministral-8b-latest | N |
-| Mistral AI | ministral-3b-latest | N |
-| Mistral AI | open-mistral-nemo | N |
-| Mistral AI | codestral | N |
-| Mistral AI | open-mistral-7b | N |
-| Mistral AI | open-mixtral-8x7b | N |
-| Mistral AI | open-mixtral-8x22b | N |
-| Mistral AI | open-codestral-mamba | N |
-| Anthropic | claude-3-5-sonnet-latest | Y |
-| Anthropic | claude-3-5-haiku-latest | N |
-| Anthropic | claude-3-haiku-20240307 | Y |
-| Anthropic | claude-3-sonnet-20240229 | Y |
-| Anthropic | claude-3-opus-latest | Y |
-| Anthropic | claude-2.0 | N |
-| Gemini | gemini-1.5-pro | Y |
-| Gemini | gemini-1.5-flash | Y |
-| Gemini | gemini-exp-1114 | Y |
-| Lingyiwanwu | yi-lightning | N |
-| Lingyiwanwu | yi-large | N |
-| Lingyiwanwu | yi-medium | N |
-| Lingyiwanwu | yi-large-turbo | N |
-| Lingyiwanwu | yi-vision | Y |
-| Lingyiwanwu | yi-medium-200k | N |
-| Lingyiwanwu | yi-spark | N |
-| Lingyiwanwu | yi-large-rag | N |
-| Lingyiwanwu | yi-large-fc | N |
-| Qwen | qwq-32b-preview | N |
-| Qwen | qwen-max | N |
-| Qwen | qwen-plus | N |
-| Qwen | qwen-turbo | N |
-| Qwen | qwen-long | N |
-| Qwen | qwen-vl-max | Y |
-| Qwen | qwen-vl-plus | Y |
-| Qwen | qwen-math-plus | N |
-| Qwen | qwen-math-turbo | N |
-| Qwen | qwen-coder-turbo | N |
-| Qwen | qwen2.5-coder-32b-instruct | N |
-| Qwen | qwen2.5-72b-instruct | N |
-| Qwen | qwen2.5-32b-instruct | N |
-| Qwen | qwen2.5-14b-instruct | N |
-| DeepSeek | deepseek-chat | N |
-| DeepSeek | deepseek-reasoner | N |
-| ZhipuAI | glm-4v | Y |
-| ZhipuAI | glm-4 | N |
-| ZhipuAI | glm-3-turbo | N |
-| InternLM | internlm3-latest | N |
-| InternLM | internlm3-8b-instruct | N |
-| InternLM | internlm2.5-latest	| N |
-| InternLM | internlm2-pro-chat	| N |
-| Reka | reka-core | Y |
-| Reka | reka-flash | Y |
-| Reka | reka-edge | Y |
-| Nvidia | https://docs.api.nvidia.com/nim/reference/llm-apis | ----- |
-| SambaNova| https://community.sambanova.ai/t/supported-models/193 | ----- |
-| Groq | https://console.groq.com/docs/models | ----- |
-| Ollama | https://ollama.com/library | ----- |
-| vLLM | https://docs.vllm.ai/en/latest/models/supported_models.html | ----- |
-| Together AI | https://docs.together.ai/docs/chat-models | ----- |
-| LiteLLM | https://docs.litellm.ai/docs/providers | ----- |
-| SGLang | https://sgl-project.github.io/references/supported_models.html | ----- |
-| AWSBedrock | https://docs.aws.amazon.com/bedrock/latest/userguide/models-supported.html | ----- |
-## 3. Using Models by API calling
-
-Here is an example code to use a specific model (gpt-4o-mini). If you want to use another model, you can simply change these three parameters: `model_platform`, `model_type`, `model_config_dict` .
 
 ```python
 from camel.models import ModelFactory

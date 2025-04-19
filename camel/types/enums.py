@@ -43,6 +43,15 @@ class ModelType(UnifiedModelType, Enum):
     GPT_4_1_MINI = "gpt-4.1-mini-2025-04-14"
     GPT_4_1_NANO = "gpt-4.1-nano-2025-04-14"
 
+    AWS_CLAUDE_3_7_SONNET = "anthropic.claude-3-7-sonnet-20250219-v1:0"
+    AWS_CLAUDE_3_5_SONNET = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+    AWS_CLAUDE_3_HAIKU = "anthropic.claude-3-haiku-20240307-v1:0"
+    AWS_CLAUDE_3_SONNET = "anthropic.claude-3-sonnet-20240229-v1:0"
+    AWS_DEEPSEEK_R1 = "us.deepseek.r1-v1:0"
+    AWS_LLAMA_3_3_70B_INSTRUCT = "us.meta.llama3-3-70b-instruct-v1:0"
+    AWS_LLAMA_3_2_90B_INSTRUCT = "us.meta.llama3-2-90b-instruct-v1:0"
+    AWS_LLAMA_3_2_11B_INSTRUCT = "us.meta.llama3-2-11b-instruct-v1:0"
+
     GLM_4 = "glm-4"
     GLM_4V = "glm-4v"
     GLM_4V_FLASH = "glm-4v-flash"
@@ -335,6 +344,20 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4_1,
             ModelType.GPT_4_1_MINI,
             ModelType.GPT_4_1_NANO,
+        }
+
+    @property
+    def is_aws_bedrock(self) -> bool:
+        r"""Returns whether this type of models is an AWS Bedrock model."""
+        return self in {
+            ModelType.AWS_CLAUDE_3_7_SONNET,
+            ModelType.AWS_CLAUDE_3_5_SONNET,
+            ModelType.AWS_CLAUDE_3_HAIKU,
+            ModelType.AWS_CLAUDE_3_SONNET,
+            ModelType.AWS_DEEPSEEK_R1,
+            ModelType.AWS_LLAMA_3_3_70B_INSTRUCT,
+            ModelType.AWS_LLAMA_3_2_90B_INSTRUCT,
+            ModelType.AWS_LLAMA_3_2_11B_INSTRUCT,
         }
 
     @property
@@ -765,6 +788,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.PPIO_DEEPSEEK_V3_COMMUNITY,
             ModelType.PPIO_DEEPSEEK_R1,
             ModelType.PPIO_DEEPSEEK_V3,
+            ModelType.AWS_DEEPSEEK_R1,
         }:
             return 64_000
         elif self in {
@@ -811,6 +835,9 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GLM_4_AIR_0111,
             ModelType.GLM_4_FLASHX,
             ModelType.GLM_4_FLASH,
+            ModelType.AWS_LLAMA_3_3_70B_INSTRUCT,
+            ModelType.AWS_LLAMA_3_2_90B_INSTRUCT,
+            ModelType.AWS_LLAMA_3_2_11B_INSTRUCT,
         }:
             return 128_000
         elif self in {
@@ -841,6 +868,10 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_5_HAIKU,
             ModelType.CLAUDE_3_7_SONNET,
             ModelType.YI_MEDIUM_200K,
+            ModelType.AWS_CLAUDE_3_5_SONNET,
+            ModelType.AWS_CLAUDE_3_HAIKU,
+            ModelType.AWS_CLAUDE_3_SONNET,
+            ModelType.AWS_CLAUDE_3_7_SONNET,
         }:
             return 200_000
         elif self in {
@@ -1034,6 +1065,7 @@ class ModelPlatformType(Enum):
     DEFAULT = os.getenv("DEFAULT_MODEL_PLATFORM_TYPE", "openai")
 
     OPENAI = "openai"
+    AWS_BEDROCK = "aws-bedrock"
     AZURE = "azure"
     ANTHROPIC = "anthropic"
     GROQ = "groq"
@@ -1069,12 +1101,16 @@ class ModelPlatformType(Enum):
             if model_platfrom_type.value == name:
                 return model_platfrom_type
         raise ValueError(f"Unknown ModelPlatformType name: {name}")
-    AWS_BEDROCK = "aws-bedrock"
 
     @property
     def is_openai(self) -> bool:
         r"""Returns whether this platform is openai."""
         return self is ModelPlatformType.OPENAI
+
+    @property
+    def is_aws_bedrock(self) -> bool:
+        r"""Returns whether this platform is aws-bedrock."""
+        return self is ModelPlatformType.AWS_BEDROCK
 
     @property
     def is_azure(self) -> bool:

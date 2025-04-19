@@ -11,13 +11,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
 from camel.agents import ChatAgent
+from camel.configs import BedrockConfig
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType
+from camel.types import ModelPlatformType, ModelType
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.AWS_BEDROCK,
-    model_type="meta.llama3-70b-instruct-v1:0",
+    model_type=ModelType.AWS_LLAMA_3_3_70B_INSTRUCT,
+    model_config_dict=BedrockConfig(temperature=0.2).as_dict(),
 )
 
 camel_agent = ChatAgent(model=model)
