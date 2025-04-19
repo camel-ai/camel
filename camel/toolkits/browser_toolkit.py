@@ -137,7 +137,7 @@ def _get_str(d: Any, k: str) -> str:
     if isinstance(val, str):
         return val
     raise TypeError(
-        f"Expected a string for key '{k}', " f"but got {type(val).__name__}"
+        f"Expected a string for key '{k}', but got {type(val).__name__}"
     )
 
 
@@ -158,7 +158,7 @@ def _get_bool(d: Any, k: str) -> bool:
     if isinstance(val, bool):
         return val
     raise TypeError(
-        f"Expected a boolean for key '{k}', " f"but got {type(val).__name__}"
+        f"Expected a boolean for key '{k}', but got {type(val).__name__}"
     )
 
 
@@ -432,6 +432,7 @@ class BaseBrowser:
         headless=True,
         cache_dir: Optional[str] = None,
         channel: Literal["chrome", "msedge", "chromium"] = "chromium",
+        cookie_json_path: Optional[str] = None,
     ):
         r"""Initialize the WebBrowser instance.
 
@@ -441,6 +442,10 @@ class BaseBrowser:
             channel (Literal["chrome", "msedge", "chromium"]): The browser
                 channel to use. Must be one of "chrome", "msedge", or
                 "chromium".
+            cookie_json_path (Optional[str]): Path to a JSON file containing
+                authentication cookies and browser storage state. If provided
+                and the file exists, the browser will load this state to maintain
+                authenticated sessions without requiring manual login.
 
         Returns:
             None
@@ -455,6 +460,7 @@ class BaseBrowser:
         self._ensure_browser_installed()
         self.playwright = sync_playwright().start()
         self.page_history: list = []  # stores the history of visited pages
+        self.cookie_json_path = cookie_json_path
 
         # Set the cache directory
         self.cache_dir = "tmp/" if cache_dir is None else cache_dir
@@ -479,8 +485,18 @@ class BaseBrowser:
         self.browser = self.playwright.chromium.launch(
             headless=self.headless, channel=self.channel
         )
-        # Create a new context
-        self.context = self.browser.new_context(accept_downloads=True)
+
+        # Check if cookie file exists before using it to maintain
+        # authenticated sessions. This prevents errors when the cookie file
+        # doesn't exist
+        if self.cookie_json_path and os.path.exists(self.cookie_json_path):
+            self.context = self.browser.new_context(
+                accept_downloads=True, storage_state=self.cookie_json_path
+            )
+        else:
+            self.context = self.browser.new_context(
+                accept_downloads=True,
+            )
         # Create a new page
         self.page = self.context.new_page()
 
@@ -991,6 +1007,7 @@ class BrowserToolkit(BaseToolkit):
         web_agent_model: Optional[BaseModelBackend] = None,
         planning_agent_model: Optional[BaseModelBackend] = None,
         output_language: str = "en",
+        cookie_json_path: Optional[str] = None,
     ):
         r"""Initialize the BrowserToolkit instance.
 
@@ -1008,10 +1025,18 @@ class BrowserToolkit(BaseToolkit):
                 backend for the planning agent.
             output_language (str): The language to use for output.
                 (default: :obj:`"en`")
+            cookie_json_path (Optional[str]): Path to a JSON file containing
+                authentication cookies and browser storage state. If provided
+                and the file exists, the browser will load this state to maintain
+                authenticated sessions without requiring manual login.
+                (default: :obj:`None`)
         """
 
         self.browser = BaseBrowser(
-            headless=headless, cache_dir=cache_dir, channel=channel
+            headless=headless,
+            cache_dir=cache_dir,
+            channel=channel,
+            cookie_json_path=cookie_json_path,
         )
         # This needs to be called explicitly
         self.browser.init()
@@ -1105,7 +1130,7 @@ Here are the current available browser functions you can use:
 
 Here are the latest {self.history_window} trajectory (at most) you have taken:
 <history>
-{self.history[-self.history_window:]}
+{self.history[-self.history_window :]}
 </history>
 
 Your output should be in json format, including the following fields:
@@ -1335,7 +1360,7 @@ Here are the global available browser functions we can use:
 {AVAILABLE_ACTIONS_PROMPT}
 
 Here are the latest {self.history_window} trajectory (at most) we have taken:
-<history>{self.history[-self.history_window:]}</history>
+<history>{self.history[-self.history_window :]}</history>
 
 The image provided is the current state of the browser, where we have marked interactive elements. 
 Please carefully examine the requirements of the task, and the current state of the browser, and then make reflections on the previous steps, thinking about whether they are helpful or not, and why, offering detailed feedback and suggestions for the next steps.
@@ -1398,7 +1423,7 @@ In order to solve the task, we made a detailed plan previously. Here is the deta
 <detailed plan>{detailed_plan}</detailed plan>
 
 According to the task above, we have made a series of observations, reasonings, and actions. Here are the latest {self.history_window} trajectory (at most) we have taken:
-<history>{self.history[-self.history_window:]}</history>
+<history>{self.history[-self.history_window :]}</history>
 
 However, the task is not completed yet. As the task is partially observable, we may need to replan the task based on the current state of the browser if necessary.
 Now please carefully examine the current task planning schema, and our history actions, and then judge whether the task needs to be fundamentally replanned. If so, please provide a detailed replanned schema (including the restated overall task).
@@ -1493,7 +1518,7 @@ Your output should be in json format, including the following fields:
         if not task_completed:
             simulation_result = f"""
                 The task is not completed within the round limit. Please check the last round {self.history_window} information to see if there is any useful information:
-                <history>{self.history[-self.history_window:]}</history>
+                <history>{self.history[-self.history_window :]}</history>
             """
 
         else:
