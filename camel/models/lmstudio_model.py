@@ -12,28 +12,16 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-from typing import Any, Dict, List, Optional, Type, Union
-
-from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
-from pydantic import BaseModel
+from typing import Any, Dict, Optional, Union
 
 from camel.configs import LMSTUDIO_API_PARAMS, LMStudioConfig
-from camel.messages import OpenAIMessage
-from camel.models import BaseModelBackend
-from camel.models._utils import try_modify_message_with_format
-from camel.types import (
-    ChatCompletion,
-    ChatCompletionChunk,
-    ModelType,
-)
-from camel.utils import (
-    BaseTokenCounter,
-    OpenAITokenCounter,
-)
+from camel.models.openai_compatible_model import OpenAICompatibleModel
+from camel.types import ModelType
+from camel.utils import BaseTokenCounter
 
 
-class LMStudioModel(BaseModelBackend):
-    r"""LLM API served by LMStudio in a unified BaseModelBackend interface.
+class LMStudioModel(OpenAICompatibleModel):
+    r"""LLM served by LMStudio in a unified OpenAICompatibleModel interface.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is
@@ -75,111 +63,6 @@ class LMStudioModel(BaseModelBackend):
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter, timeout
         )
-        self._client = OpenAI(
-            timeout=self._timeout,
-            max_retries=3,
-            api_key=self._api_key,
-            base_url=self._url,
-        )
-        self._async_client = AsyncOpenAI(
-            timeout=self._timeout,
-            max_retries=3,
-            api_key=self._api_key,
-            base_url=self._url,
-        )
-
-    @property
-    def token_counter(self) -> BaseTokenCounter:
-        r"""Initialize the token counter for the model backend.
-
-        Returns:
-            BaseTokenCounter: The token counter following the model's
-                tokenization style.
-        """
-        if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
-        return self._token_counter
-
-    def _prepare_request(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Dict[str, Any]:
-        request_config = self.model_config_dict.copy()
-        if tools:
-            request_config["tools"] = tools
-        elif response_format:
-            try_modify_message_with_format(messages[-1], response_format)
-            request_config["response_format"] = {"type": "json_object"}
-
-        return request_config
-
-    def _run(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Optional[type[BaseModel]] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        r"""Runs inference of LMStudio chat completion.
-
-        Args:
-            messages (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format.
-            response_format (Optional[Type[BaseModel]]): The format of the
-                response.
-            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
-                use for the request.
-
-        Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-                `ChatCompletion` in the non-stream mode, or
-                `Stream[ChatCompletionChunk]` in the stream mode.
-        """
-        request_config = self._prepare_request(
-            messages, response_format, tools
-        )
-
-        response = self._client.chat.completions.create(
-            messages=messages,
-            model=self.model_type,
-            **request_config,
-        )
-
-        return response
-
-    async def _arun(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Optional[type[BaseModel]] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-        r"""Runs inference of LMStudio chat completion asynchronously.
-
-        Args:
-            messages (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format.
-            response_format (Optional[Type[BaseModel]]): The format of the
-                response.
-            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
-                use for the request.
-
-        Returns:
-            Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-                `ChatCompletion` in the non-stream mode, or
-                `AsyncStream[ChatCompletionChunk]` in the stream mode.
-        """
-        request_config = self._prepare_request(
-            messages, response_format, tools
-        )
-
-        response = await self._async_client.chat.completions.create(
-            messages=messages,
-            model=self.model_type,
-            **request_config,
-        )
-
-        return response
 
     def check_model_config(self):
         r"""Check whether the model configuration contains any unexpected
@@ -196,13 +79,3 @@ class LMStudioModel(BaseModelBackend):
                     f"Unexpected argument `{param}` is "
                     "input into LMStudio model backend."
                 )
-
-    @property
-    def stream(self) -> bool:
-        r"""Returns whether the model is in stream mode, which sends partial
-        results each time.
-
-        Returns:
-            bool: Whether the model is in stream mode.
-        """
-        return self.model_config_dict.get("stream", False)
