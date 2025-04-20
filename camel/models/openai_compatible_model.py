@@ -200,7 +200,7 @@ class OpenAICompatibleModel(BaseModelBackend):
             )
         except (ValidationError, JSONDecodeError) as e:
             logger.warning(
-                f"Format validation error: {e!s}. "
+                f"Format validation error: {e}. "
                 f"Attempting fallback with JSON format."
             )
             try_modify_message_with_format(messages[-1], response_format)
@@ -212,7 +212,7 @@ class OpenAICompatibleModel(BaseModelBackend):
                     **request_config,
                 )
             except Exception as e:
-                logger.error(f"Fallback attempt also failed: {e!s}")
+                logger.error(f"Fallback attempt also failed: {e}")
                 raise
 
     async def _arequest_parse(
@@ -239,7 +239,7 @@ class OpenAICompatibleModel(BaseModelBackend):
             )
         except (ValidationError, JSONDecodeError) as e:
             logger.warning(
-                f"Format validation error: {e!s}. "
+                f"Format validation error: {e}. "
                 f"Attempting fallback with JSON format."
             )
             try_modify_message_with_format(messages[-1], response_format)
@@ -251,7 +251,7 @@ class OpenAICompatibleModel(BaseModelBackend):
                     **request_config,
                 )
             except Exception as e:
-                logger.error(f"Fallback attempt also failed: {e!s}")
+                logger.error(f"Fallback attempt also failed: {e}")
                 raise
 
     @property
