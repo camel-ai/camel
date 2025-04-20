@@ -67,7 +67,7 @@ from .thinking_toolkit import ThinkingToolkit
 from .pyautogui_toolkit import PyAutoGUIToolkit
 from .openai_agent_toolkit import OpenAIAgentToolkit
 from .searxng_toolkit import SearxNGToolkit
-
+from .zhipu_toolkit import ZhiPuToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -122,4 +122,5 @@ __all__ = [
     'PyAutoGUIToolkit',
     'OpenAIAgentToolkit',
     'SearxNGToolkit',
+    'ZhiPuToolkit',
 ]
