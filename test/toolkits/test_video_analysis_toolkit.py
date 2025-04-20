@@ -245,7 +245,10 @@ def test_extract_keyframes_with_scenes(mock_video_toolkit):
     mock_start_time2.get_seconds.return_value = 30.0
     mock_end_time2 = MagicMock()
     mock_end_time2.get_seconds.return_value = 40.0
-    mock_scene_list = [(mock_start_time1, mock_end_time1), (mock_start_time2, mock_end_time2)]
+    mock_scene_list = [
+        (mock_start_time1, mock_end_time1),
+        (mock_start_time2, mock_end_time2),
+    ]
     mock_frame = MagicMock()
     # Configure mock_frame.size
     mock_frame.size = (100, 100)
@@ -265,7 +268,7 @@ def test_extract_keyframes_with_scenes(mock_video_toolkit):
         # from
         patch(
             "camel.toolkits.video_analysis_toolkit._capture_screenshot",
-            side_effect=[mock_frame, mock_frame], 
+            side_effect=[mock_frame, mock_frame],
         ),
         patch("PIL.Image.open", return_value=mock_frame),
     ):
@@ -302,14 +305,14 @@ def test_extract_keyframes_no_scenes(mock_video_toolkit):
         patch("cv2.VideoCapture", return_value=mock_cap),
         # Directly patch the _extract_keyframes method
         patch.object(
-            mock_video_toolkit, 
-            "_extract_keyframes", 
-            return_value=[mock_frame, mock_frame]
+            mock_video_toolkit,
+            "_extract_keyframes",
+            return_value=[mock_frame, mock_frame],
         ),
     ):
         # Call the method directly to verify our patch works
         frames = mock_video_toolkit._extract_keyframes("/path/to/video.mp4", 2)
-        
+
         # Assert that our patch returns the expected number of frames
         assert len(frames) == 2
         assert frames[0] == mock_frame
@@ -346,7 +349,7 @@ def test_extract_keyframes_invalid_num_frames(mock_video_toolkit):
         # from
         patch(
             "camel.toolkits.video_analysis_toolkit._capture_screenshot",
-            side_effect=[mock_frame], 
+            side_effect=[mock_frame],
         ),
         patch("PIL.Image.open", return_value=mock_frame),
     ):
