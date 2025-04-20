@@ -63,3 +63,16 @@ def test_aws_bedrock_model_unexpected_argument():
         ),
     ):
         _ = AWSBedrockModel(model_type, model_config_dict)
+
+
+@pytest.mark.model_backend
+@pytest.mark.asyncio
+async def test_aws_bedrock_async_not_implemented():
+    """Test AWSBedrockModel async method raising NotImplementedError."""
+    model = AWSBedrockModel(ModelType.AWS_CLAUDE_3_HAIKU)
+
+    with pytest.raises(
+        NotImplementedError,
+        match="AWS Bedrock does not support async inference.",
+    ):
+        await model._arun("Test message")
