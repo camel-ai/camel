@@ -97,9 +97,11 @@ class VideoAnalysisToolkit(BaseToolkit):
             to extract from the video. (default: :obj:`4.0`)
         output_language (str, optional): The language for output responses.
             (default: :obj:`"English"`)
+        cookies_path (Optional[str]): The path to the cookies file
+            for the video service in Netscape format. (default: :obj:`None`)
         timeout (Optional[float]): The timeout value for API requests
-                in seconds. If None, no timeout is applied.
-                (default: :obj:`None`)
+            in seconds. If None, no timeout is applied.
+            (default: :obj:`None`)
     """
 
     @dependencies_required("ffmpeg", "scenedetect")
@@ -110,6 +112,7 @@ class VideoAnalysisToolkit(BaseToolkit):
         use_audio_transcription: bool = False,
         frame_interval: float = 4.0,
         output_language: str = "English",
+        cookies_path: Optional[str] = None,
         timeout: Optional[float] = None,
     ) -> None:
         super().__init__(timeout=timeout)
@@ -124,15 +127,12 @@ class VideoAnalysisToolkit(BaseToolkit):
         ).resolve()
 
         self.video_downloader_toolkit = VideoDownloaderToolkit(
-            download_directory=str(self._download_directory)
+            download_directory=str(self._download_directory),
+            cookies_path=cookies_path,
         )
 
         try:
             self._download_directory.mkdir(parents=True, exist_ok=True)
-        except FileExistsError:
-            raise ValueError(
-                f"{self._download_directory} is not a valid directory."
-            )
         except OSError as e:
             raise ValueError(
                 f"Error creating directory {self._download_directory}: {e}"
@@ -146,7 +146,6 @@ class VideoAnalysisToolkit(BaseToolkit):
             # Import ChatAgent at runtime to avoid circular imports
             from camel.agents import ChatAgent
 
-            self.vl_model._timeout = timeout
             self.vl_agent = ChatAgent(
                 model=self.vl_model, output_language=self.output_language
             )
@@ -157,8 +156,8 @@ class VideoAnalysisToolkit(BaseToolkit):
 
             self.vl_agent = ChatAgent(output_language=self.output_language)
             logger.warning(
-                "No vision-language model provided. Using default model in"
-                " ChatAgent."
+                "No vision-language model provided. Using default model in "
+                "ChatAgent."
             )
 
         # Initialize audio models only if audio transcription is enabled
@@ -205,8 +204,8 @@ class VideoAnalysisToolkit(BaseToolkit):
                 pass
             except OSError as e:
                 logger.warning(
-                    f"Failed to remove temporary directory"
-                    f" {self._download_directory}: {e}"
+                    f"Failed to remove temporary directory "
+                    f"{self._download_directory}: {e}"
                 )
 
     def _extract_audio_from_video(
@@ -260,21 +259,19 @@ class VideoAnalysisToolkit(BaseToolkit):
             logger.error(f"Audio transcription failed: {e}")
             return "Audio transcription failed."
 
-    def _extract_keyframes(
-        self, video_path: str, threshold: float = 25.0
-    ) -> List[Image.Image]:
+    def _extract_keyframes(self, video_path: str) -> List[Image.Image]:
         r"""Extract keyframes from a video based on scene changes and
         regular intervals,and return them as PIL.Image.Image objects.
 
         Args:
             video_path (str): Path to the video file.
-            threshold (float): The threshold value for scene change detection.
-                This is kept for backward compatibility but not used in the
-                current implementation.
 
         Returns:
-            list: A list of PIL.Image.Image objects representing
+            List[Image.Image]: A list of PIL.Image.Image objects representing
                 the extracted keyframes.
+
+        Raises:
+            ValueError: If no frames could be extracted from the video.
         """
         import cv2
         import numpy as np
@@ -294,6 +291,10 @@ class VideoAnalysisToolkit(BaseToolkit):
         cap.release()
 
         frame_interval = self.frame_interval  # seconds
+        # Maximum number of frames to extract to avoid memory issues
+        MAX_FRAMES = 100
+        # Minimum time difference (in seconds) to consider frames as distinct
+        TIME_THRESHOLD = 1.0
 
         # Calculate the total number of frames to extract
         if duration <= 0 or fps <= 0:
@@ -304,10 +305,9 @@ class VideoAnalysisToolkit(BaseToolkit):
         else:
             num_frames = max(int(duration / frame_interval), 1)
 
-            max_frames = 100
-            if num_frames > max_frames:
-                frame_interval = duration / max_frames
-                num_frames = max_frames
+            if num_frames > MAX_FRAMES:
+                frame_interval = duration / MAX_FRAMES
+                num_frames = MAX_FRAMES
 
             logger.info(
                 f"Video duration: {duration:.2f}s, target frames: {num_frames}"
@@ -318,7 +318,7 @@ class VideoAnalysisToolkit(BaseToolkit):
         # Use open_video instead of VideoManager
         video = open_video(video_path)
         scene_manager = SceneManager()
-        scene_manager.add_detector(ContentDetector(threshold=threshold))
+        scene_manager.add_detector(ContentDetector())
 
         # Detect scenes using the modern API
         scene_manager.detect_scenes(video)
@@ -367,7 +367,7 @@ class VideoAnalysisToolkit(BaseToolkit):
 
                 is_duplicate = False
                 for existing_time in existing_times:
-                    if abs(existing_time - time_sec) < 1.0:
+                    if abs(existing_time - time_sec) < TIME_THRESHOLD:
                         is_duplicate = True
                         break
 
@@ -410,8 +410,11 @@ class VideoAnalysisToolkit(BaseToolkit):
                     )
 
         if not keyframes:
-            logger.error("Failed to extract any keyframes from video")
-            raise ValueError("Failed to extract keyframes from video")
+            error_msg = (
+                f"Failed to extract any keyframes from video: {video_path}"
+            )
+            logger.error(error_msg)
+            raise ValueError(error_msg)
 
         # Normalize image sizes
         normalized_keyframes = self._normalize_frames(keyframes)
@@ -480,9 +483,6 @@ class VideoAnalysisToolkit(BaseToolkit):
         """
         from urllib.parse import urlparse
 
-        if not question:
-            raise ValueError("Question cannot be empty")
-
         parsed_url = urlparse(video_path)
         is_url = all([parsed_url.scheme, parsed_url.netloc])
 
@@ -519,7 +519,8 @@ class VideoAnalysisToolkit(BaseToolkit):
                 content=prompt,
                 image_list=video_frames,
             )
-
+            # Reset the agent to clear previous state
+            self.vl_agent.reset()
             response = self.vl_agent.step(msg)
             if not response or not response.msgs:
                 logger.error("Model returned empty response")
@@ -532,7 +533,7 @@ class VideoAnalysisToolkit(BaseToolkit):
             return answer
 
         except Exception as e:
-            error_message = f"Error processing video: {e!s}"
+            error_message = f"Error processing video: {e}"
             logger.error(error_message)
             return f"Error: {error_message}"
 
