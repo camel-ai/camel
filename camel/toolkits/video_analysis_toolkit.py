@@ -267,7 +267,7 @@ class VideoAnalysisToolkit(BaseToolkit):
             video_path (str): Path to the video file.
 
         Returns:
-            list: A list of PIL.Image.Image objects representing
+            List[Image.Image]: A list of PIL.Image.Image objects representing
                 the extracted keyframes.
 
         Raises:
