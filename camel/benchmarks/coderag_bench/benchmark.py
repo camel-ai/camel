@@ -37,6 +37,7 @@ from .utils import save_tsv_dict, save_file_jsonl
 from beir.retrieval.evaluation import EvaluateRetrieval
 from beir.datasets.data_loader import GenericDataLoader
 from camel.benchmarks.coderag_bench.generation_tasks import TASK_REGISTRY
+import re
 
 def document2code(data, split="test"):
     r"""Convert document to code. Helper function from Coderag-bench."""
@@ -110,30 +111,8 @@ class CodeRagBenchmark(BaseBenchmark):
         if self.task == "humaneval":
             logger.info(f"[INFO] Downloading and processing dataset for task: {self.task}")
             dataset = datasets.load_dataset("openai_humaneval")
-            #self.dataset = dataset
-            path = os.path.join(self.datadir, "datasets")
-            os.makedirs(path, exist_ok=True)
-            os.makedirs(os.path.join(path, "humaneval"), exist_ok=True)
-            os.makedirs(os.path.join(path, "humaneval","qrels"), exist_ok=True)
-            queries, docs, qrels = document2code(dataset, split="test")
-            save_file_jsonl(queries, os.path.join(path, "queries.jsonl"))
-            save_file_jsonl(docs, os.path.join(path, "corpus.jsonl"))
-            qrels_path = os.path.join(path, "qrels", "test.tsv")
-            save_tsv_dict(qrels, qrels_path, ["query-id", "corpus-id", "score"])
+            self.dataset = dataset
 
-            # create canonical file path if not existent yet
-            os.makedirs(os.path.join(path,"canonical"), exist_ok=True)
-            # Todo: Maybe later allow users to specify canonical file name
-            canonical_file = os.path.join(path, "canonical", "humaneval_solutions.json")
-            if not os.path.exists(canonical_file):
-                canonical_solutions = []
-                for doc in docs:
-                    canonical_solutions.append([{
-                        "text": doc["text"], "title": doc["title"]
-                    }])
-                canonical_dataset = dataset["test"].add_column("docs",
-                                                               canonical_solutions)
-                canonical_dataset.to_json(canonical_file)
         else:
             logger.info(f"[INFO] download() not implemented for task: {self.task}")
             pass
@@ -153,9 +132,7 @@ class CodeRagBenchmark(BaseBenchmark):
             )
             self.download()
 
-        path = os.path.join(self.datadir, "datasets")
-        self.corpus, self.queries, self.qrels = GenericDataLoader(
-            data_folder=os.path.join(path, self.task)).load(split="test")
+
 
     def run(  # type: ignore[override, return]
             self,
@@ -165,10 +142,40 @@ class CodeRagBenchmark(BaseBenchmark):
         r"""Load the CodeRAG-Bench dataset.
             save benchmark result to files
             return evaluation result"""
-        eval_result = {}
-        if self.corpus is None or self.queries is None or self.qrels is None:
+        if self.corpus is None or self.queries is None or self.qrels is None or self.dataset is None:
             self.load()
         if self.run_mode in ["retrieve", "retrieve_generate"]:
+            # path = os.path.join(self.datadir, "datasets")
+            # os.makedirs(path, exist_ok=True)
+            # os.makedirs(os.path.join(path, "humaneval"), exist_ok=True)
+            # os.makedirs(os.path.join(path, "humaneval", "qrels"),
+            #             exist_ok=True)
+            self.queries, self.docs, self.qrels = document2code(self.dataset, split="test")
+            # save_file_jsonl(queries, os.path.join(path, "queries.jsonl"))
+            # save_file_jsonl(docs, os.path.join(path, "corpus.jsonl"))
+            # qrels_path = os.path.join(path, "qrels", "test.tsv")
+            # save_tsv_dict(qrels, qrels_path,
+            #               ["query-id", "corpus-id", "score"])
+            #
+            # # create canonical file path if not existent yet
+            # os.makedirs(os.path.join(path, "canonical"), exist_ok=True)
+            # # Todo: Maybe later allow users to specify canonical file name
+            # canonical_file = os.path.join(path, "canonical",
+            #                               "humaneval_solutions.json")
+            # if not os.path.exists(canonical_file):
+            #     canonical_solutions = []
+            #     for doc in docs:
+            #         canonical_solutions.append([{
+            #             "text": doc["text"], "title": doc["title"]
+            #         }])
+            #     canonical_dataset = dataset["test"].add_column("docs",
+            #                                                    canonical_solutions)
+            #     canonical_dataset.to_json(canonical_file)
+
+            # path = os.path.join(self.datadir, "datasets")
+            # self.corpus, self.queries, self.qrels = GenericDataLoader(
+            #     data_folder=os.path.join(path, self.task)).load(split="test")
+
             if auto_retriever is None:
                 raise ValueError(
                     "auto_retriever must be provided in retrieve or retrieve_generate mode")
@@ -186,7 +193,7 @@ class CodeRagBenchmark(BaseBenchmark):
 
             # Force all documents to be stored in a single vector collection.
             # This prevents AutoRetriever from generating a separate collection for each document.
-            auto_retriever._collection_name_generator = lambda _: f"{self.task}_collection
+            auto_retriever._collection_name_generator = lambda _: f"{self.task}_collection"
 
             # Initialize the vector index once with all documents.
             # Subsequent retrievals will reuse this collection without re-embedding.
@@ -196,22 +203,26 @@ class CodeRagBenchmark(BaseBenchmark):
             retrieval_results = {}
 
             # Prepare output directory
-            output_dir = os.path.join(self.save_path, "retrieval")
+            output_dir = os.path.join(self.save_to, "retrieval")
             os.makedirs(output_dir, exist_ok=True)
             output_path = os.path.join(output_dir,
                                        f"{self.task}_retrieved_docs.jsonl")
             metrics_path = os.path.join(output_dir,
                                         f"{self.task}_retrieval_metrics.json")
 
-
             with jsonlines.open(output_path, mode='w') as writer:
-                for query_id, query_text in tqdm(self.queries.items()):
+                for example in tqdm(self.dataset["test"]):
+                    query_id = example["task_id"]
+                    query_text = example["prompt"]
+
+                    # Run retrieval using the shared vector index
                     result = auto_retriever.run_vector_retriever(
                         query=query_text,
-                        contents=docs,  # Reuses the existing vector index
+                        contents=docs,
                         top_k=10,
                         return_detailed_info=True
                     )
+
                     doc_entries = []
                     scores = {}
 
@@ -228,15 +239,16 @@ class CodeRagBenchmark(BaseBenchmark):
                             "similarity": item.get("similarity score", 0.0)
                         })
 
-                    # Accumulate retrieval scores for evaluation
+                    # Save scores for retrieval evaluation
                     retrieval_results[query_id] = scores
 
-                    # Stream write one record per query
-                    writer.write({
-                        "task_id": query_id,
-                        "docs": doc_entries
-                    })
+                    # Merge retrieved docs into the original sample and stream write
+                    example_with_docs = dict(example)
+                    example_with_docs["docs"] = doc_entries
+                    writer.write(example_with_docs)
 
+            self.dataset["test"] = load_dataset("json", data_files=output_path,
+                                                split="train")
             # Evaluate using BEIR
 
             retriever = EvaluateRetrieval(model=None,
@@ -264,70 +276,90 @@ class CodeRagBenchmark(BaseBenchmark):
                         metrics_path)
             logger.info("[INFO] Canonical retrieval completed.")
 
-
+        # ============================================
+        # generation part
         if self.run_mode in ["generate", "retrieve_generate"]:
             logger.info("[INFO] Starting generation...")
             # TODO: Implement generation + save + evaluation
 
-            # Load retrieval docs if needed
-            retrieval_docs = {}
-            if self.run_mode == "retrieve_generate":
-                retrieved_path = os.path.join(self.save_path, "retrieval",
-                                              f"{self.task}_retrieved_docs.jsonl")
-                with jsonlines.open(retrieved_path, mode='r') as reader:
-                    for obj in reader:
-                        retrieval_docs[obj["task_id"]] = obj["docs"]
-            # Load generation task wrapper
-            if self.task not in TASK_REGISTRY:
-                raise ValueError(f"Unknown task: {self.task}")
-            task_wrapper_cls = TASK_REGISTRY[self.task]
-            task_wrapper = task_wrapper_cls(
-                dataset_path=os.path.join(self.datadir, "datasets",
-                                          "canonical",
-                                          f"{self.task}_solutions.json"),
-                topk_docs=10,
-                retrieval_docs=retrieval_docs
-            )
-
-            dataset = task_wrapper.get_dataset()
-            generations = []
-            references = []
-
-            for idx, doc in enumerate(tqdm(dataset)):
-                prompt = task_wrapper.get_prompt(doc)
-                reference = task_wrapper.get_reference(doc)
-
-                response = agent.step(
-                    [BaseMessage(role="user", content=prompt)])
-                generation = task_wrapper.postprocess_generation(
-                    response.msg.content, idx)
-
-                generations.append([generation])
-                references.append(reference)
-
-            # Save generations
-            generation_dir = os.path.join(self.save_path, "generation",
+            generation_dir = os.path.join(self.save_to, "generation",
                                           self.task)
             os.makedirs(generation_dir, exist_ok=True)
             gen_path = os.path.join(generation_dir, "generations.json")
-            ref_path = os.path.join(generation_dir, "references.json")
 
-            with open(gen_path, "w") as f:
-                json.dump(generations, f, indent=2)
-            with open(ref_path, "w") as f:
-                json.dump(references, f, indent=2)
+            # # Open retrieval results stream if needed
+            # if self.run_mode == "retrieve_generate":
+            #     retrieved_path = os.path.join(self.save_to, "retrieval",
+            #                                   f"{self.task}_retrieved_docs.jsonl")
+            #     retrieval_reader = jsonlines.open(retrieved_path, mode='r')
+            # else:
+            #     retrieval_reader = None
+
+
+            with jsonlines.open(gen_path, mode='w') as writer:
+                for data_i in tqdm(self.dataset["test"]): # data_i is equivalent to doc in <https://github.com/code-rag-bench/code-rag-bench/blob/main/generation/eval/tasks/humaneval.py>
+                    prompt = data_i["prompt"]
+
+                    # Build context from retrieved docs if available
+                    docs = data_i.get("docs", [])
+                    context = "\n\n".join(
+                        doc["text"] for doc in docs[:10])  # Top-10
+
+                    # Construct the final prompt for the agent
+                    final_prompt = (
+                            context +
+                            '\n\nPlease complete the following function based on the example above:\n' +
+                            '```python\n' +
+                            prompt
+                    )
+
+                    # Run generation using the agent
+                    response = agent.step(
+                        [BaseMessage(role="user", content=final_prompt)])
+                    generation = response.msg.content
+
+                    # === Postprocess ===
+
+
+
+                    # Stop words as defined in coderag-bench
+                    stop_words = ["\nclass", "<file_sep>", "if __name__",
+                                  "\nprint(", "\ndef"]
+
+                    # Step 1: Extract code block from markdown if present
+                    # Todo: this part of logic is adapted from extract_generation_code(), but the logic is simpler
+                    # Todo: We might want to improve this part if the code generation is not as expected
+                    matches = re.findall(r"```python\n(.*?)```", generation,
+                                         re.DOTALL | re.IGNORECASE)
+                    if matches:
+                        generation = matches[0].strip()
+
+                    # Step 2: Truncate generation at the first occurrence of any stop word
+                    for stop_word in stop_words:
+                        index = generation.find(stop_word)
+                        if index != -1:
+                            generation = generation[:index].strip()
+                            break  # only cut at the first matched stop word
+
+                    # Step 3: Add prompt back for evaluation (matches reference format)
+                    generation = data_i["prompt"] + generation
+
+                    # Save generation outputs to file
+                    writer.write([generation])
+
+                    # === Code Evaluation ===
+
+                    # Get reference
+                    test_func = data_i["test"]
+                    entry_point = f"check({data_i['entry_point']})"
+                    reference = "\n" + test_func + "\n" + entry_point
+
+                    # evaluation
+
 
             logger.info("[INFO] Generations saved to %s", gen_path)
 
-            # Evaluate
-            logger.info("[INFO] Evaluating generation results...")
-            generation_metrics = task_wrapper.process_results(generations,
-                                                              references)
-            metrics_path = os.path.join(generation_dir, "metrics.json")
-            with open(metrics_path, "w") as f:
-                json.dump(generation_metrics, f, indent=2)
-            logger.info("[INFO] Generation metrics saved to %s",
-                        metrics_path)
+            #Todo: postprocessing + evaluation
 
         return
 
