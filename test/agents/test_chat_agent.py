@@ -852,10 +852,12 @@ async def test_tool_calling_math_async(step_call_count=3):
         meta_dict=None,
         content="You are a help assistant.",
     )
+    model_config = ChatGPTConfig(temperature=0)
     math_funcs = sync_funcs_to_async([FunctionTool(MathToolkit().multiply)])
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
+        model_config_dict=model_config.as_dict(),
     )
     agent = ChatAgent(
         system_message=system_message,
@@ -871,7 +873,7 @@ async def test_tool_calling_math_async(step_call_count=3):
         role_name="User",
         role_type=RoleType.USER,
         meta_dict=dict(),
-        content="Calculate the result of: 2*8",
+        content="Calculate the result of: 2*8 with decimal places 0",
     )
 
     model_backend_rsp_tool = ChatCompletion(
