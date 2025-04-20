@@ -13,12 +13,15 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
+from json import JSONDecodeError
 from typing import Any, Dict, List, Optional, Type, Union
 
 from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
+from camel.logger import get_logger
 from camel.messages import OpenAIMessage
+from camel.models._utils import try_modify_message_with_format
 from camel.models.base_model import BaseModelBackend
 from camel.types import (
     ChatCompletion,
@@ -29,6 +32,8 @@ from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
 )
+
+logger = get_logger(__name__)
 
 
 class OpenAICompatibleModel(BaseModelBackend):
@@ -187,11 +192,28 @@ class OpenAICompatibleModel(BaseModelBackend):
         if tools is not None:
             request_config["tools"] = tools
 
-        return self._client.beta.chat.completions.parse(
-            messages=messages,
-            model=self.model_type,
-            **request_config,
-        )
+        try:
+            return self._client.beta.chat.completions.parse(
+                messages=messages,
+                model=self.model_type,
+                **request_config,
+            )
+        except (ValidationError, JSONDecodeError) as e:
+            logger.warning(
+                f"Format validation error: {e}. "
+                f"Attempting fallback with JSON format."
+            )
+            try_modify_message_with_format(messages[-1], response_format)
+            request_config["response_format"] = {"type": "json_object"}
+            try:
+                return self._client.beta.chat.completions.parse(
+                    messages=messages,
+                    model=self.model_type,
+                    **request_config,
+                )
+            except Exception as e:
+                logger.error(f"Fallback attempt also failed: {e}")
+                raise
 
     async def _arequest_parse(
         self,
@@ -209,11 +231,28 @@ class OpenAICompatibleModel(BaseModelBackend):
         if tools is not None:
             request_config["tools"] = tools
 
-        return await self._async_client.beta.chat.completions.parse(
-            messages=messages,
-            model=self.model_type,
-            **request_config,
-        )
+        try:
+            return await self._async_client.beta.chat.completions.parse(
+                messages=messages,
+                model=self.model_type,
+                **request_config,
+            )
+        except (ValidationError, JSONDecodeError) as e:
+            logger.warning(
+                f"Format validation error: {e}. "
+                f"Attempting fallback with JSON format."
+            )
+            try_modify_message_with_format(messages[-1], response_format)
+            request_config["response_format"] = {"type": "json_object"}
+            try:
+                return await self._async_client.beta.chat.completions.parse(
+                    messages=messages,
+                    model=self.model_type,
+                    **request_config,
+                )
+            except Exception as e:
+                logger.error(f"Fallback attempt also failed: {e}")
+                raise
 
     @property
     def token_counter(self) -> BaseTokenCounter:
