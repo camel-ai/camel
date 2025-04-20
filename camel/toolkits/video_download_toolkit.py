@@ -102,10 +102,17 @@ class VideoDownloaderToolkit(BaseToolkit):
         Cleans up the downloaded video if they are stored in a temporary
         directory.
         """
-        import shutil
-
         if self._cleanup:
-            shutil.rmtree(self._download_directory, ignore_errors=True)
+            try:
+                import sys
+
+                if getattr(sys, 'modules', None) is not None:
+                    import shutil
+
+                    shutil.rmtree(self._download_directory, ignore_errors=True)
+            except (ImportError, AttributeError):
+                # Skip cleanup if interpreter is shutting down
+                pass
 
     def download_video(self, url: str) -> str:
         r"""Download the video and optionally split it into chunks.

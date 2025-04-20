@@ -18,6 +18,7 @@ import yaml
 
 from camel.models.aiml_model import AIMLModel
 from camel.models.anthropic_model import AnthropicModel
+from camel.models.aws_bedrock_model import AWSBedrockModel
 from camel.models.azure_openai_model import AzureOpenAIModel
 from camel.models.base_model import BaseModelBackend
 from camel.models.cohere_model import CohereModel
@@ -26,6 +27,7 @@ from camel.models.gemini_model import GeminiModel
 from camel.models.groq_model import GroqModel
 from camel.models.internlm_model import InternLMModel
 from camel.models.litellm_model import LiteLLMModel
+from camel.models.lmstudio_model import LMStudioModel
 from camel.models.mistral_model import MistralModel
 from camel.models.modelscope_model import ModelScopeModel
 from camel.models.moonshot_model import MoonshotModel
@@ -111,6 +113,8 @@ class ModelFactory:
             model_class = TogetherAIModel
         elif model_platform.is_litellm:
             model_class = LiteLLMModel
+        elif model_platform.is_aws_bedrock:
+            model_class = AWSBedrockModel
         elif model_platform.is_nvidia:
             model_class = NvidiaModel
         elif model_platform.is_siliconflow:
@@ -128,6 +132,8 @@ class ModelFactory:
             model_class = AnthropicModel
         elif model_platform.is_groq and model_type.is_groq:
             model_class = GroqModel
+        elif model_platform.is_lmstudio and model_type.is_lmstudio:
+            model_class = LMStudioModel
         elif model_platform.is_openrouter and model_type.is_openrouter:
             model_class = OpenRouterModel
         elif model_platform.is_zhipuai and model_type.is_zhipuai:
