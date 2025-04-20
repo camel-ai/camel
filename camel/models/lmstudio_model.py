@@ -30,8 +30,9 @@ class LMStudioModel(OpenAICompatibleModel):
             that will be fed into:obj:`openai.ChatCompletion.create()`.
             If:obj:`None`, :obj:`LMStudioConfig().as_dict()` will be used.
             (default: :obj:`None`)
-        api_key (Optional[str], optional): The API key for authenticating
-            with the LMStudio service. (default: :obj:`None`).
+        api_key (Optional[str], optional): The API key for authenticating with
+            the model service.  LMStudio doesn't need API key, it would be
+            ignored if set. (default: :obj:`None`)
         url (Optional[str], optional): The url to the LMStudio service.
             (default: :obj:`None`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
