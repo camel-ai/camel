@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import random
+
 from camel.storages.vectordb_storages import (
     OceanBaseStorage,
     VectorDBQuery,
@@ -63,7 +64,7 @@ def main():
         user=OB_USER,
         password=OB_PASSWORD,
         db_name=OB_DB_NAME,
-        distance="cosine",  
+        distance="cosine",
     )
 
     # Get database status
@@ -74,20 +75,20 @@ def main():
     # Generate and add a larger number of vectors using batching
     print("\nAdding vectors in batches...")
     random.seed(20241023)
-    
+
     # Create a large batch of vector records
     large_batch = []
     for i in range(1000):
         large_batch.append(
             VectorRecord(
                 vector=[random.uniform(-1, 1) for _ in range(4)],
-                payload={'idx': i, 'batch': 'example'}
+                payload={'idx': i, 'batch': 'example'},
             )
         )
-    
+
     # Add vectors with automatic batching (batch_size=100)
     ob_storage.add(large_batch, batch_size=100)
-    
+
     # Check updated status
     status = ob_storage.status()
     print(f"Vector count after adding batch: {status.vector_count}")
@@ -98,7 +99,7 @@ def main():
     query_results = ob_storage.query(
         VectorDBQuery(query_vector=query_vector, top_k=5)
     )
-    
+
     # Display results
     for i, result in enumerate(query_results):
         print(f"Result {i+1}:")
@@ -114,7 +115,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main()
 
 '''
 ===============================================================================

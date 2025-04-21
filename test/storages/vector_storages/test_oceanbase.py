@@ -14,7 +14,6 @@
 from unittest.mock import MagicMock, create_autospec, patch
 
 import pytest
-from sqlalchemy import func as sqla_func
 
 from camel.storages import OceanBaseStorage, VectorDBQuery, VectorRecord
 
@@ -94,7 +93,7 @@ def test_multiple_clients(mock_oceanbase_storage):
 def mock_ob_client():
     with patch('pyobvector.client.ObVecClient') as MockObVecClient:
         client = MagicMock()
-        
+
         # Setup mock methods
         client.check_table_exists.return_value = False
         client.create_table.return_value = None
@@ -102,7 +101,7 @@ def mock_ob_client():
         client.add.return_value = None
         client.delete.return_value = None
         client.perform_raw_text_sql.return_value.fetchone.return_value = [10]
-        
+
         MockObVecClient.return_value = client
         yield client
 
@@ -120,33 +119,32 @@ def test_oceanbase_storage_initialization(mock_ob_client):
                     password="",
                     db_name="test",
                 )
-                
+
                 # Verify that check_table_exists was called
-                mock_ob_client.check_table_exists.assert_called_once_with("test_table")
-                
-                # Verify that create_table was called since check_table_exists returns False
+                mock_ob_client.check_table_exists.assert_called_once_with(
+                    "test_table"
+                )
+
                 mock_ob_client.create_table.assert_called_once()
-                
+
                 # Verify that create_vidx_with_vec_index_param was called
                 mock_ob_client.create_vidx_with_vec_index_param.assert_called_once()
-                
+
                 # Test different distance metrics
                 assert storage.distance == "l2"
-                
+
                 # Create storage with cosine distance
                 cosine_storage = OceanBaseStorage(
-                    vector_dim=64,
-                    table_name="test_table",
-                    distance="cosine"
+                    vector_dim=64, table_name="test_table", distance="cosine"
                 )
                 assert cosine_storage.distance == "cosine"
-                
+
                 # Test invalid distance metric
                 with pytest.raises(ValueError):
                     OceanBaseStorage(
                         vector_dim=64,
                         table_name="test_table",
-                        distance="invalid_distance"
+                        distance="invalid_distance",
                     )
 
 
@@ -154,41 +152,43 @@ def test_oceanbase_storage_operations(mock_ob_client):
     with patch('pyobvector.schema.VECTOR'):
         with patch('pyobvector.client.index_param.IndexParams'):
             with patch('pyobvector.client.index_param.IndexParam'):
-                with patch('sqlalchemy.func') as mock_func:
+                with patch('sqlalchemy.func'):
                     # Setup mock for query results
                     mock_result = MagicMock()
                     mock_result._mapping = {
                         "id": 1,
                         "embedding": [0.1, 0.2, 0.3, 0.4],
                         "metadata": {"text": "test_data"},
-                        "l2_distance": 0.5
+                        "l2_distance": 0.5,
                     }
                     mock_ob_client.ann_search.return_value = [mock_result]
-                    
+
                     # Initialize storage
                     storage = OceanBaseStorage(
                         vector_dim=4,
                         table_name="test_table",
                         uri="127.0.0.1:2881",
                     )
-                    
+
                     # Test add method
                     vectors = [
                         VectorRecord(
                             vector=[0.1, 0.2, 0.3, 0.4],
-                            payload={"text": "test_data"}
+                            payload={"text": "test_data"},
                         )
                     ]
                     storage.add(vectors)
                     mock_ob_client.insert.assert_called_once()
-                    
+
                     # Test query method
-                    query = VectorDBQuery(query_vector=[0.1, 0.2, 0.3, 0.4], top_k=1)
+                    query = VectorDBQuery(
+                        query_vector=[0.1, 0.2, 0.3, 0.4], top_k=1
+                    )
                     results = storage.query(query)
                     assert len(results) == 1
                     assert results[0].record.payload == {"text": "test_data"}
                     mock_ob_client.ann_search.assert_called_once()
-                    
+
                     # Test clear method
                     storage.clear()
                     mock_ob_client.delete.assert_called_once()
@@ -205,15 +205,18 @@ def test_distance_to_similarity_conversion():
                         table_name="test_table",
                         distance="cosine",
                     )
-                    cosine_sim = cosine_storage._convert_distance_to_similarity(0.2)
+                    cosine_sim = (
+                        cosine_storage._convert_distance_to_similarity(0.2)
+                    )
                     assert cosine_sim == 0.8  # 1.0 - 0.2
-                    
+
                     # Test L2 distance conversion (uses exponential decay)
                     import math
+
                     l2_storage = OceanBaseStorage(
                         vector_dim=4,
                         table_name="test_table",
                         distance="l2",
                     )
                     l2_sim = l2_storage._convert_distance_to_similarity(0.2)
-                    assert l2_sim == pytest.approx(math.exp(-0.2)) 
+                    assert l2_sim == pytest.approx(math.exp(-0.2))
