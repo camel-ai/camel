@@ -14,29 +14,26 @@
 import os
 from typing import Any, Dict, Optional, Union
 
-from camel.configs import OPENROUTER_API_PARAMS, OpenRouterConfig
+from camel.configs import LMSTUDIO_API_PARAMS, LMStudioConfig
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ModelType
-from camel.utils import (
-    BaseTokenCounter,
-    api_keys_required,
-)
+from camel.utils import BaseTokenCounter
 
 
-class OpenRouterModel(OpenAICompatibleModel):
-    r"""LLM API served by OpenRouter in a unified OpenAICompatibleModel
-    interface.
+class LMStudioModel(OpenAICompatibleModel):
+    r"""LLM served by LMStudio in a unified OpenAICompatibleModel interface.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is
             created.
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
             that will be fed into:obj:`openai.ChatCompletion.create()`.
-            If:obj:`None`, :obj:`GroqConfig().as_dict()` will be used.
+            If:obj:`None`, :obj:`LMStudioConfig().as_dict()` will be used.
             (default: :obj:`None`)
-        api_key (Optional[str], optional): The API key for authenticating
-            with the OpenRouter service. (default: :obj:`None`).
-        url (Optional[str], optional): The url to the OpenRouter service.
+        api_key (Optional[str], optional): The API key for authenticating with
+            the model service.  LMStudio doesn't need API key, it would be
+            ignored if set. (default: :obj:`None`)
+        url (Optional[str], optional): The url to the LMStudio service.
             (default: :obj:`None`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter(
@@ -48,7 +45,6 @@ class OpenRouterModel(OpenAICompatibleModel):
             (default: :obj:`None`)
     """
 
-    @api_keys_required([("api_key", "OPENROUTER_API_KEY")])
     def __init__(
         self,
         model_type: Union[ModelType, str],
@@ -59,33 +55,28 @@ class OpenRouterModel(OpenAICompatibleModel):
         timeout: Optional[float] = None,
     ) -> None:
         if model_config_dict is None:
-            model_config_dict = OpenRouterConfig().as_dict()
-        api_key = api_key or os.environ.get("OPENROUTER_API_KEY")
+            model_config_dict = LMStudioConfig().as_dict()
+        api_key = "NA"
         url = url or os.environ.get(
-            "OPENROUTER_API_BASE_URL", "https://openrouter.ai/api/v1"
+            "LMSTUDIO_API_BASE_URL", "http://localhost:1234/v1"
         )
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
-            model_type=model_type,
-            model_config_dict=model_config_dict,
-            api_key=api_key,
-            url=url,
-            token_counter=token_counter,
-            timeout=timeout,
+            model_type, model_config_dict, api_key, url, token_counter, timeout
         )
 
     def check_model_config(self):
         r"""Check whether the model configuration contains any unexpected
-        arguments to OpenRouter API. But OpenRouter API does not have any
+        arguments to LMStudio API. But LMStudio API does not have any
         additional arguments to check.
 
         Raises:
             ValueError: If the model configuration dictionary contains any
-                unexpected arguments to OpenRouter API.
+                unexpected arguments to LMStudio API.
         """
         for param in self.model_config_dict:
-            if param not in OPENROUTER_API_PARAMS:
+            if param not in LMSTUDIO_API_PARAMS:
                 raise ValueError(
                     f"Unexpected argument `{param}` is "
-                    "input into OpenRouter model backend."
+                    "input into LMStudio model backend."
                 )
