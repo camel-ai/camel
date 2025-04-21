@@ -32,8 +32,6 @@ class LMStudioConfig(BaseConfig):
             the tokens with top_p probability mass. So :obj:`0.1` means only
             the tokens comprising the top 10% probability mass are considered.
             (default: :obj:`None`)
-        n (int, optional): How many chat completion choices to generate for
-            each input message. (default: :obj:`None`)
         response_format (object, optional): An object specifying the format
             that the model must output. Compatible with GPT-4 Turbo and all
             GPT-3.5 Turbo models newer than gpt-3.5-turbo-1106. Setting to
@@ -66,9 +64,6 @@ class LMStudioConfig(BaseConfig):
             existing frequency in the text so far, decreasing the model's
             likelihood to repeat the same line verbatim. See more information
             about frequency and presence penalties. (default: :obj:`None`)
-        user (str, optional): A unique identifier representing your end-user,
-            which can help OpenAI to monitor and detect abuse.
-            (default: :obj:`None`)
         tools (list[FunctionTool], optional): A list of tools the model may
             call. Currently, only functions are supported as a tool. Use this
             to provide a list of functions the model may generate JSON inputs
@@ -87,14 +82,12 @@ class LMStudioConfig(BaseConfig):
 
     temperature: Optional[float] = None
     top_p: Optional[float] = None
-    n: Optional[int] = None
     stream: Optional[bool] = None
     stop: Optional[Union[str, Sequence[str]]] = None
     max_tokens: Optional[int] = None
     presence_penalty: Optional[float] = None
     response_format: Optional[dict] = None
     frequency_penalty: Optional[float] = None
-    user: Optional[str] = None
     tool_choice: Optional[Union[dict[str, str], str]] = None
 
 

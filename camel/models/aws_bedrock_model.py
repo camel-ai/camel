@@ -50,6 +50,7 @@ class AWSBedrockModel(OpenAICompatibleModel):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
+
     References:
         https://docs.aws.amazon.com/bedrock/latest/APIReference/welcome.html
     """

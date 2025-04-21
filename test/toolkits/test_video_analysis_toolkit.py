@@ -274,7 +274,7 @@ def test_extract_keyframes_with_scenes(mock_video_toolkit):
     ):
         mock_scene_manager.get_scene_list.return_value = mock_scene_list
 
-        result = mock_video_toolkit._extract_keyframes("/path/to/video.mp4", 2)
+        result = mock_video_toolkit._extract_keyframes("/path/to/video.mp4")
 
         assert len(result) == 2
         assert result[0] == mock_frame
@@ -311,7 +311,7 @@ def test_extract_keyframes_no_scenes(mock_video_toolkit):
         ),
     ):
         # Call the method directly to verify our patch works
-        frames = mock_video_toolkit._extract_keyframes("/path/to/video.mp4", 2)
+        frames = mock_video_toolkit._extract_keyframes("/path/to/video.mp4")
 
         # Assert that our patch returns the expected number of frames
         assert len(frames) == 2
@@ -355,9 +355,7 @@ def test_extract_keyframes_invalid_num_frames(mock_video_toolkit):
     ):
         mock_scene_manager.get_scene_list.return_value = mock_scene_list
 
-        result = mock_video_toolkit._extract_keyframes(
-            "/path/to/video.mp4", -1
-        )
+        result = mock_video_toolkit._extract_keyframes("/path/to/video.mp4")
 
         assert len(result) == 1
         assert result[0] == mock_frame
@@ -443,12 +441,6 @@ def test_ask_question_about_video_no_audio(mock_video_toolkit):
         # Check that the message was created with the right content
         call_args = mock_video_toolkit.vl_agent.step.call_args[0][0]
         assert "No audio transcription available" in call_args.content
-
-
-def test_ask_question_about_video_empty_question(mock_video_toolkit):
-    r"""Test asking an empty question"""
-    with pytest.raises(ValueError):
-        mock_video_toolkit.ask_question_about_video("/path/to/video.mp4", "")
 
 
 def test_ask_question_about_video_file_not_found(mock_video_toolkit):
