@@ -45,6 +45,7 @@ extensions = [
     'myst_parser',
     'nbsphinx',
     'sphinxext.rediraffe',
+    'sphinx_markdown_builder',
 ]
 
 templates_path = ['_templates']
