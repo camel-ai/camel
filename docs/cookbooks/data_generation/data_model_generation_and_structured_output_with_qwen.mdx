@@ -1,0 +1,150 @@
+---
+title: "Agentic Data Model Generation and Structured Output Powered by CAMEL & Qwen"
+---
+
+You can also check this cookbook in Colab [here](https://colab.research.google.com/drive/17SiWWjoK7l8Sy9FBsGKUHC6zuEsLt2yX?usp=sharing) (Use the Colab share link)
+
+<div class="align-center">
+  <div class="flex justify-center items-center gap-4 mb-8">
+    <a href="https://www.camel-ai.org/">
+      <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
+    </a>
+    <a href="https://discord.camel-ai.org">
+      <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
+    </a>
+  </div>
+</div>
+⭐ _Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org) or follow our [X](https://x.com/camelaiorg)_
+
+![Agentic Data generation with CAMEL and Qwen](../../images/agentic_datagen.png)
+
+This notebook demonstrates how to set up and leverage CAMEL's structured output capabilities—like JSON and Pydantic objects—powered by the Qwen model.
+
+In this notebook, you'll explore:
+
+- **CAMEL**: A multi-agent framework enabling Retrieval‑Augmented Generation and role-playing.
+- **Structured output**: Generating and parsing JSON/Pydantic responses from LLMs.
+- **Qwen**: Alibaba’s Qwen series of LLMs (e.g., **Qwen-max**, **Qwen-coder**) for versatile tasks.
+
+---
+
+## 📦 Installation
+
+```bash
+pip install "camel-ai==0.2.16"
+```
+
+---
+
+## 🔑 Setting Up API Keys
+
+Get your Qwen API key [here](https://www.alibabacloud.com/help/en/model-studio/developer-reference/use-qwen-by-calling-api/):
+
+```python
+import os
+from getpass import getpass
+
+qwen_api_key = getpass('Enter your Qwen API key: ')
+os.environ["QWEN_API_KEY"] = qwen_api_key
+```
+
+---
+
+## ⚙️ Qwen Data Generation
+
+### 1. Define the Qwen Agent & Pydantic Models
+
+```python
+from pydantic import BaseModel
+from camel.agents import ChatAgent
+from camel.messages import BaseMessage
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType, ModelType
+from camel.configs import QwenConfig
+
+# Create Qwen model & agent
+qwen_model = ModelFactory.create(
+    model_platform=ModelPlatformType.QWEN,
+    model_type=ModelType.QWEN_CODER_TURBO,
+    model_config_dict=QwenConfig().as_dict(),
+)
+qwen_agent = ChatAgent(model=qwen_model, message_window_size=10)
+
+# Pydantic schema
+class Student(BaseModel):
+    name: str
+    age: str
+    email: str
+```
+
+### 2. Prompt & Structured Response
+
+#### Without response_format:
+
+```python
+assistant_sys_msg = BaseMessage.make_assistant_message(
+    role_name="Assistant",
+    content="You are a helpful assistant generating student info in JSON."
+)
+user_msg = '''
+Help me 1 student info in JSON format, with this schema:
+{
+  "name": "string",
+  "age": "string",
+  "email": "string"
+}
+'''
+response = qwen_agent.step(user_msg)
+print(response.msgs[0].content)
+```
+
+#### With `response_format=Student`:
+
+```python
+qwen_agent.reset()
+user_msg = "Help me 1 student info in JSON format"
+response = qwen_agent.step(user_msg, response_format=Student)
+print(response.msgs[0].parsed)  # Pydantic object
+```
+
+### 3. Generating Multiple Entries
+
+```python
+class StudentList(BaseModel):
+    studentList: list[Student]
+
+user_msg = "Help me 5 random student info in JSON format"
+response = qwen_agent.step(user_msg, response_format=StudentList)
+print(response.msgs[0].parsed)  # Parsed list of Student
+```
+
+---
+
+## 🌟 Highlights
+
+- **CAMEL**: Multi-agent RAG & role-playing framework.
+- **Structured Output**: JSON → Pydantic parsing with `response_format`.
+- **Qwen Integration**: Leveraging Qwen’s capabilities in CAMEL.
+
+---
+
+That's everything! Got questions about 🐫 CAMEL‑AI? Join us on [Discord](https://discord.camel-ai.org)!  
+Check out more:
+
+1. 🐫 Creating Your First CAMEL Agent [free Colab](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html)  
+2. Graph RAG Cookbook [free Colab](https://colab.research.google.com/drive/1uZKQSuu0qW6ukkuSv9TukLB9bVaS1H0U?usp=sharing)  
+3. 🧑‍⚖️ Hackathon Judge Committee [free Colab](https://colab.research.google.com/drive/18ajYUMfwDx3WyrjHow3EvUMpKQDcrLtr?usp=sharing)  
+4. 🔥 Ingest data with Firecrawl & CAMEL [free Colab](https://colab.research.google.com/drive/1lOmM3VmgR1hLwDKdeLGFve_75RFW0R9I?usp=sharing)  
+5. 🦥 Data Gen + Unsloth (Mistral) [free Colab](https://colab.research.google.com/drive/1lYgArBw7ARVPSpdwgKLYnp_NEXiNDOd-?usp=sharing)  
+6. 🦥 Data Gen + Unsloth (Qwen) [free Colab](https://colab.research.google.com/drive/1sMnWOvdmASEMhsRIOUSAeYuEywby6FRV?usp=sharing)
+
+<div class="align-center">
+  <div class="flex justify-center items-center gap-4 mb-8">
+    <a href="https://www.camel-ai.org/">
+      <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
+    </a>
+    <a href="https://discord.camel-ai.org">
+      <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
+    </a>
+  </div>
+</div>
