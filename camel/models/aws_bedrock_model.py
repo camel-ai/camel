@@ -11,34 +11,38 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
 import os
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
-from camel.configs import OPENROUTER_API_PARAMS, OpenRouterConfig
+from openai import AsyncStream
+from pydantic import BaseModel
+
+from camel.configs import BEDROCK_API_PARAMS, BedrockConfig
+from camel.messages import OpenAIMessage
 from camel.models.openai_compatible_model import OpenAICompatibleModel
-from camel.types import ModelType
-from camel.utils import (
-    BaseTokenCounter,
-    api_keys_required,
+from camel.types import (
+    ChatCompletion,
+    ChatCompletionChunk,
+    ModelType,
 )
+from camel.utils import BaseTokenCounter, api_keys_required
 
 
-class OpenRouterModel(OpenAICompatibleModel):
-    r"""LLM API served by OpenRouter in a unified OpenAICompatibleModel
-    interface.
+class AWSBedrockModel(OpenAICompatibleModel):
+    r"""AWS Bedrock API in a unified OpenAICompatibleModel interface.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is
             created.
-        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+        model_config_dict (Dict[str, Any], optional): A dictionary
             that will be fed into:obj:`openai.ChatCompletion.create()`.
-            If:obj:`None`, :obj:`GroqConfig().as_dict()` will be used.
+            If:obj:`None`, :obj:`BedrockConfig().as_dict()` will be used.
             (default: :obj:`None`)
-        api_key (Optional[str], optional): The API key for authenticating
-            with the OpenRouter service. (default: :obj:`None`).
-        url (Optional[str], optional): The url to the OpenRouter service.
-            (default: :obj:`None`)
-        token_counter (Optional[BaseTokenCounter], optional): Token counter to
+        api_key (str, optional): The API key for authenticating with
+            the AWS Bedrock service. (default: :obj:`None`)
+        url (str, optional): The url to the AWS Bedrock service.
+        token_counter (BaseTokenCounter, optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter(
             ModelType.GPT_4O_MINI)` will be used.
             (default: :obj:`None`)
@@ -46,9 +50,17 @@ class OpenRouterModel(OpenAICompatibleModel):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
+
+    References:
+        https://docs.aws.amazon.com/bedrock/latest/APIReference/welcome.html
     """
 
-    @api_keys_required([("api_key", "OPENROUTER_API_KEY")])
+    @api_keys_required(
+        [
+            ("url", "BEDROCK_API_BASE_URL"),
+            ("api_key", "BEDROCK_API_KEY"),
+        ]
+    )
     def __init__(
         self,
         model_type: Union[ModelType, str],
@@ -59,10 +71,10 @@ class OpenRouterModel(OpenAICompatibleModel):
         timeout: Optional[float] = None,
     ) -> None:
         if model_config_dict is None:
-            model_config_dict = OpenRouterConfig().as_dict()
-        api_key = api_key or os.environ.get("OPENROUTER_API_KEY")
+            model_config_dict = BedrockConfig().as_dict()
+        api_key = api_key or os.environ.get("BEDROCK_API_KEY")
         url = url or os.environ.get(
-            "OPENROUTER_API_BASE_URL", "https://openrouter.ai/api/v1"
+            "BEDROCK_API_BASE_URL",
         )
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
@@ -74,18 +86,27 @@ class OpenRouterModel(OpenAICompatibleModel):
             timeout=timeout,
         )
 
+    async def _arun(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+        raise NotImplementedError(
+            "AWS Bedrock does not support async inference."
+        )
+
     def check_model_config(self):
-        r"""Check whether the model configuration contains any unexpected
-        arguments to OpenRouter API. But OpenRouter API does not have any
-        additional arguments to check.
+        r"""Check whether the input model configuration contains unexpected
+        arguments.
 
         Raises:
             ValueError: If the model configuration dictionary contains any
-                unexpected arguments to OpenRouter API.
+                unexpected argument for this model class.
         """
         for param in self.model_config_dict:
-            if param not in OPENROUTER_API_PARAMS:
+            if param not in BEDROCK_API_PARAMS:
                 raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into OpenRouter model backend."
+                    f"Invalid parameter '{param}' in model_config_dict. "
+                    f"Valid parameters are: {BEDROCK_API_PARAMS}"
                 )
