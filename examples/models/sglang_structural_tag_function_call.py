@@ -12,11 +12,12 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-
 from dotenv import load_dotenv
 
 from camel.agents import ChatAgent
+from camel.agents._utils import convert_to_schema, generate_tool_prompt
 from camel.models import ModelFactory
+from camel.toolkits import FunctionTool
 from camel.types import ModelPlatformType
 
 r"""Before using sglang to run LLM model offline,
@@ -30,208 +31,143 @@ https://docs.flashinfer.ai/installation.html
 Please load HF_token in your environment variable.
 export HF_TOKEN=""
 When using the OpenAI interface to run SGLang model server, 
-the base model may fail to recognize  huggingface default
+the base model may fail to recognize huggingface default
 chat template, switching to the Instruct model resolves the issue.
 """
 load_dotenv()
 
-tool_get_current_weather = {
-    "type": "function",
-    "function": {
-        "name": "get_current_weather",
-        "description": "Get the current weather in a given location",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "city": {
-                    "type": "string",
-                    "description": "The two-letter abbreviation for,\n"
-                    "the state (e.g., 'CA'), e.g. CA for California",
-                },
-                "state": {
-                    "type": "string",
-                    "description": "the two-letter abbreviation for the"
-                    "state that the city is in, e.g. 'CA' which would mean\n"
-                    "'California'",
-                },
-                "unit": {
-                    "type": "string",
-                    "description": "The unit to fetch the temperature in",
-                    "enum": ["celsius", "fahrenheit"],
-                },
+
+def get_current_weather(city: str, state: str, unit: str):
+    """Get the current weather in a given location.
+
+    Args:
+        city: The city to get the weather for (e.g., 'New York')
+        state: The two-letter abbreviation for the state (e.g., 'NY')
+        unit: The unit to fetch the temperature in ('celsius' or 'fahrenheit')
+
+    Returns:
+        Information about the current weather
+    """
+    # This is a mock function for demonstration purposes
+    return {
+        "location": f"{city}, {state}",
+        "temperature": 72 if unit == "fahrenheit" else 22,
+        "unit": unit,
+        "forecast": "Sunny with occasional clouds",
+    }
+
+
+def get_current_date(timezone: str):
+    """Get the current date and time for a given timezone.
+
+    Args:
+        timezone: The timezone to fetch the current date and time for
+                 (e.g., 'America/New_York')
+
+    Returns:
+        Information about the current date and time
+    """
+    # This is a mock function for demonstration purposes
+    return {
+        "timezone": timezone,
+        "date": "2024-04-21",
+        "time": "10:30:00",
+    }
+
+
+def main():
+    # Define the tools using FunctionTool
+    weather_tool = FunctionTool(get_current_weather)
+    date_tool = FunctionTool(get_current_date)
+
+    # Convert function tools to schema format
+    weather_schema = convert_to_schema(weather_tool)
+    date_schema = convert_to_schema(date_tool)
+
+    # List of tools to use
+    tools = [weather_schema, date_schema]
+
+    # Get parameter schemas for structural tag format
+    weather_params_schema = weather_schema["function"]["parameters"]
+    date_params_schema = date_schema["function"]["parameters"]
+
+    # Create SglLang model with tools
+    sglang_model = ModelFactory.create(
+        model_platform=ModelPlatformType.SGLANG,
+        model_type="deepseek-ai/DeepSeek-R1-Distill-Qwen-7B",
+        model_config_dict={
+            "temperature": 0.0,
+            "response_format": {
+                "type": "structural_tag",
+                "structures": [
+                    {
+                        "begin": "<function=get_current_weather>",
+                        "schema": weather_params_schema,
+                        "end": "</function>",
+                    },
+                    {
+                        "begin": "<function=get_current_date>",
+                        "schema": date_params_schema,
+                        "end": "</function>",
+                    },
+                ],
+                "triggers": ["<function="],
             },
-            "required": ["city", "state", "unit"],
         },
-    },
-}
+    )
 
-tool_get_current_date = {
-    "type": "function",
-    "function": {
-        "name": "get_current_date",
-        "description": "Get the current date and time for a given timezone",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "timezone": {
-                    "type": "string",
-                    "description": "The timezone to fetch the current date\n"
-                    "and time for, e.g. 'America/New_York'",
-                }
-            },
-            "required": ["timezone"],
-        },
-    },
-}
+    # Generate tool prompt using CAMEL's native method
+    tool_prompt = generate_tool_prompt(tools)
 
-schema_get_current_weather = tool_get_current_weather["function"]["parameters"]
-schema_get_current_date = tool_get_current_date["function"]["parameters"]
+    # Create chat agent with the model and tool prompt
+    agent = ChatAgent(
+        system_message=tool_prompt,
+        model=sglang_model,
+        token_limit=4096,
+    )
 
+    # User message
+    user_msg = (
+        "You are in New York. Please get the current date and time,"
+        "and the weather."
+    )
 
-def get_messages():
-    return [
-        {
-            "role": "system",
-            "content": f"""
-# Tool Instructions
-- Always execute python code in messages that you share.
-- When looking for real time information use relevant functions if available
-  else fallback to brave_search
-You have access to the following functions:
-Use the function 'get_current_weather' to: Get the current weather in a given
-location
-{tool_get_current_weather["function"]}
-Use the function 'get_current_date' to: Get the current date and time for a
-given timezone
-{tool_get_current_date["function"]}
-If a you choose to call a function ONLY reply in the following format:
-<{{start_tag}}={{function_name}}>{{parameters}}{{end_tag}}
-where
-start_tag => `<function`
-parameters => a JSON dict with the function argument name as key and function
-              argument value as value.
-end_tag => `</function>`
-Here is an example,
-<function=example_function_name>{{"example_name": "example_value"}}</function>
-Reminder:
-- Function calls MUST follow the specified format
-- Required parameters MUST be specified
-- Only call one function at a time
-- Put the entire function call reply on one line
-- Always add your sources when using search results to answer the user query
-You are a helpful assistant.""",
-        },
-        {
-            "role": "user",
-            "content": "You are in New York. Please get the current date and "
-            "time, and the weather.",
-        },
-    ]
+    # Get assistant response
+    assistant_response = agent.step(user_msg)
+    content = assistant_response.msgs[0].content
+
+    # Split thought process and function calls if present
+    if "</think>" in content:
+        think_part, function_part = content.split("</think>", 1)
+    else:
+        think_part = content
+        function_part = ""
+
+    print("\n")
+    # Print thought process
+    print("【Assistant Thought Process】")
+    print(think_part.strip())
+
+    print("\n")
+    # Print function calls if they exist
+    if function_part:
+        print("【Tool Calls】")
+        print(function_part.strip())
+
+    print("\n")
+    print(f"ID: {assistant_response.info['id']}")
+    print("Usage:")
+
+    usage_info = assistant_response.info["usage"]
+    print(f"  Completion Tokens: {usage_info['completion_tokens']}")
+    print(f"  Prompt Tokens: {usage_info['prompt_tokens']}")
+    print(f"  Total Tokens: {usage_info['total_tokens']}")
+
+    termination_reasons = assistant_response.info["termination_reasons"]
+    print("Termination Reasons: " + ", ".join(termination_reasons))
+
+    print(f"Num Tokens: {assistant_response.info['num_tokens']}")
 
 
-messages = get_messages()
-
-sglang_model_with_tool = ModelFactory.create(
-    model_platform=ModelPlatformType.SGLANG,
-    model_type="deepseek-ai/DeepSeek-R1-Distill-Qwen-7B",
-    model_config_dict={
-        "temperature": 0.0,
-        "response_format": {
-            "type": "structural_tag",
-            "structures": [
-                {
-                    "begin": "<function=get_current_weather>",
-                    "schema": schema_get_current_weather,
-                    "end": "</function>",
-                },
-                {
-                    "begin": "<function=get_current_date>",
-                    "schema": schema_get_current_date,
-                    "end": "</function>",
-                },
-            ],
-            "triggers": ["<function="],
-        },
-    },
-)
-
-agent_with_tool = ChatAgent(
-    system_message=messages[0]["content"],
-    model=sglang_model_with_tool,
-    token_limit=4096,
-)
-user_msg = messages[1]["content"]
-
-assistant_response = agent_with_tool.step(user_msg)
-content = assistant_response.msgs[0].content
-
-# Split thought process and function calls
-if "</think>" in content:
-    think_part, function_part = content.split("</think>", 1)
-else:
-    think_part = content
-    function_part = ""
-
-print("\n")
-# Print thought process
-print("【Assistant Thought Process】")
-print(think_part.strip())
-
-print("\n")
-# Print function calls if they exist
-if function_part:
-    print("【Tool Calls】")
-    print(function_part.strip())
-
-print("\n")
-print(f"ID: {assistant_response.info['id']}")
-print("Usage:")
-
-usage_info = assistant_response.info["usage"]
-print(f"  Completion Tokens: {usage_info['completion_tokens']}")
-print(f"  Prompt Tokens: {usage_info['prompt_tokens']}")
-print(f"  Total Tokens: {usage_info['total_tokens']}")
-
-termination_reasons = assistant_response.info["termination_reasons"]
-print("Termination Reasons: " + ", ".join(termination_reasons))
-
-print(f"Num Tokens: {assistant_response.info['num_tokens']}")
-
-
-"""
-===============================================================================
-【Assistant Thought Process】
-Okay, so the user is asking for the current date and time in New York and
-theweather there. I need to figure out how to get this information using
-the functions provided.
-First, I should use the get_current_date function. The parameters required
-are the timezone. Since the user is in New York, I'll set the timezone
-parameter to 'America/New_York'. That should give me the current date
-and time in that location.
-Next, for the weather, I should use get_current_weather. The parameters needed
-are city, state, and unit. The city is New York, but I need the state 
-abbreviation. New York's state is NY, so the state parameter will be 'NY'. 
-The unit should be in Fahrenheit since that's what the user might prefer,
-but I'm not sure. Wait, the function allows any unit, but the user didn't
-specify, so maybe I should default to Fahrenheit or check if Celsius is more
-common. Hmm, but the example response used Fahrenheit, so I'll go with that.
-Putting it all together, I'll call get_current_date with the timezone and
-get_current_weather with the city, state, and unit. I'll make sure to format
-the function calls correctly, each on a separate line as per the instructions.
-
-
-【Tool Calls】
-<function=get_current_date>{"timezone": "America/New_York"}</function>  
-<function=get_current_weather>{"city": "New York", "state": "NY", "unit":
-"fahrenheit"}</function>
-
-
-ID: 3b49116d8dc84e18b6a9c935b7a4dd2c
-Usage:
-  Completion Tokens: 305
-  Prompt Tokens: 487
-  Total Tokens: 792
-Termination Reasons: stop
-Num Tokens: 496
-===============================================================================
-"""
+if __name__ == "__main__":
+    main()
