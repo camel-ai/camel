@@ -67,7 +67,9 @@ def test_init_with_custom_device():
             model_mock.eval.assert_called_once()
 
 
-@pytest.mark.skip(reason="Skipping due to Hugging Face authentication issues in CI/CD")
+@pytest.mark.skip(
+    reason="Skipping due to Hugging Face authentication issues in CI/CD"
+)
 def test_sort_documents():
     r"""Test the _sort_documents method."""
     toolkit = JinaRerankerToolkit()
@@ -80,7 +82,9 @@ def test_sort_documents():
     assert result == [("doc2", 0.9), ("doc1", 0.5), ("doc3", 0.1)]
 
 
-@pytest.mark.skip(reason="Skipping due to Hugging Face authentication issues in CI/CD")
+@pytest.mark.skip(
+    reason="Skipping due to Hugging Face authentication issues in CI/CD"
+)
 def test_sort_documents_with_mismatched_lengths():
     r"""Test _sort_documents with mismatched document and score lists."""
     toolkit = JinaRerankerToolkit()
@@ -131,7 +135,9 @@ def test_rerank_text_documents_with_custom_max_length(reranker_toolkit):
     assert result == [("doc2", 0.8), ("doc1", 0.6)]
 
 
-@pytest.mark.skip(reason="Skipping due to Hugging Face authentication issues in CI/CD")
+@pytest.mark.skip(
+    reason="Skipping due to Hugging Face authentication issues in CI/CD"
+)
 def test_rerank_text_documents_model_not_initialized():
     r"""Test reranking text documents when model is not initialized."""
     toolkit = JinaRerankerToolkit()
