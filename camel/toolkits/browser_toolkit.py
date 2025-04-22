@@ -301,9 +301,9 @@ def _add_set_of_mark(
 
     Returns:
         Tuple[Image.Image, List[str], List[str], List[str]]: A tuple
-        containing the screenshot with marked ROIs, ROIs fully within the
-        images, ROIs located above the visible area, and ROIs located below
-        the visible area.
+            containing the screenshot with marked ROIs, ROIs fully within the
+            images, ROIs located above the visible area, and ROIs located below
+            the visible area.
     """
     visible_rects: List[str] = list()
     rects_above: List[str] = list()  # Scroll up to see
@@ -1044,7 +1044,7 @@ class BrowserToolkit(BaseToolkit):
         if self.planning_agent_model is None:
             planning_model = ModelFactory.create(
                 model_platform=ModelPlatformType.OPENAI,
-                model_type=ModelType.O4_MINI,
+                model_type=ModelType.O3_MINI,
             )
         else:
             planning_model = self.planning_agent_model
