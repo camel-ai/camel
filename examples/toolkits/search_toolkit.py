@@ -395,11 +395,11 @@ on improving efficiency, fault tolerance, and minimizing resource overheads.
 ===============================================================================
 """
 
-search_ali_response = SearchToolkit().search_ali(
-    query="Alibaba's chip investment for 2025",
-    time_range="OneMonth"
+search_alibaba_tongxiao_response = SearchToolkit().search_alibaba_tongxiao(
+    query="Alibaba's chip investment for 2025", time_range="OneMonth"
 )
-print(search_ali_response)
+print(search_alibaba_tongxiao_response)
+# ruff: noqa: RUF001
 """
 ===============================================================================
 {'request_id': '78a77a7e004dd97bc18bd907b90d152b', 'results': [
