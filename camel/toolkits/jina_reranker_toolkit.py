@@ -94,7 +94,7 @@ class JinaRerankerToolkit(BaseToolkit):
             query (str): The text query for reranking.
             documents (List[str]): List of text documents to be reranked.
             max_length (int): Maximum token length for processing.
-                Defaults to 1024.
+                (default: :obj:`1024`)
 
         Returns:
             List[Tuple[str, float]]: A list of tuples containing
@@ -156,7 +156,7 @@ class JinaRerankerToolkit(BaseToolkit):
             image_query (str): The image URL or path used as query.
             documents (List[str]): List of text documents to be reranked.
             max_length (int): Maximum token length for processing.
-                Defaults to 2048.
+                (default: :obj:`2048`)
 
         Returns:
             List[Tuple[str, float]]: A list of tuples containing
