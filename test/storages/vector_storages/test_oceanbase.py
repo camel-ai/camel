@@ -139,14 +139,6 @@ def test_oceanbase_storage_initialization(mock_ob_client):
                 )
                 assert cosine_storage.distance == "cosine"
 
-                # Test invalid distance metric
-                with pytest.raises(ValueError):
-                    OceanBaseStorage(
-                        vector_dim=64,
-                        table_name="test_table",
-                        distance="invalid_distance",
-                    )
-
 
 def test_oceanbase_storage_operations(mock_ob_client):
     with patch('pyobvector.schema.VECTOR'):

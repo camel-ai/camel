@@ -14,12 +14,12 @@
 
 import json
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional
 
 from sqlalchemy import JSON, Column, Integer
 
 if TYPE_CHECKING:
-    from pyobvector.client import ObVecClient  # type: ignore[import-untyped]
+    from pyobvector.client import ObVecClient
 
 from camel.storages.vectordb_storages import (
     BaseVectorStorage,
@@ -41,12 +41,14 @@ class OceanBaseStorage(BaseVectorStorage):
         vector_dim (int): The dimension of storing vectors.
         table_name (str): Name for the table in OceanBase.
         uri (str): Connection URI for OceanBase (host:port).
+            (default: :obj:`"127.0.0.1:2881"`)
         user (str): Username for connecting to OceanBase.
-        password (str): Password for the user.
+            (default: :obj:`"root@test"`)
+        password (str): Password for the user. (default: :obj:`""`)
         db_name (str): Database name in OceanBase.
-        distance (str, optional): The distance metric for vector comparison.
-            Options: "l2", "cosine"
-            (default: :obj:`"l2"`)
+            (default: :obj:`"test"`)
+        distance (Literal["l2", "cosine"], optional): The distance metric for
+            vector comparison. Options: "l2", "cosine". (default: :obj:`"l2"`)
         delete_table_on_del (bool, optional): Flag to determine if the
             table should be deleted upon object destruction.
             (default: :obj:`False`)
@@ -66,30 +68,23 @@ class OceanBaseStorage(BaseVectorStorage):
         user: str = "root@test",
         password: str = "",
         db_name: str = "test",
-        distance: str = "l2",
+        distance: Literal["l2", "cosine"] = "l2",
         delete_table_on_del: bool = False,
         **kwargs: Any,
     ) -> None:
         from pyobvector.client import (
-            ObVecClient,  # type: ignore[import-untyped]
+            ObVecClient,
         )
-        from pyobvector.client.index_param import (  # type: ignore[import-untyped]
+        from pyobvector.client.index_param import (
             IndexParam,
             IndexParams,
         )
-        from pyobvector.schema import VECTOR  # type: ignore[import-untyped]
+        from pyobvector.schema import VECTOR
 
         self.vector_dim: int = vector_dim
         self.table_name: str = table_name
-        self.distance: str = distance.lower()
+        self.distance: Literal["l2", "cosine"] = distance
         self.delete_table_on_del: bool = delete_table_on_del
-
-        # Validate distance parameter
-        if self.distance not in ["l2", "cosine"]:
-            raise ValueError(
-                f"Unsupported distance metric: {distance}. "
-                "Use either 'l2' or 'cosine'."
-            )
 
         # Create client
         self._client: ObVecClient = ObVecClient(
@@ -139,7 +134,8 @@ class OceanBaseStorage(BaseVectorStorage):
 
     def __del__(self):
         r"""Deletes the table if :obj:`delete_table_on_del` is set to
-        :obj:`True`."""
+        :obj:`True`.
+        """
         if hasattr(self, "delete_table_on_del") and self.delete_table_on_del:
             try:
                 self._client.drop_table_if_exist(self.table_name)
@@ -157,13 +153,14 @@ class OceanBaseStorage(BaseVectorStorage):
 
         Args:
             records (List[VectorRecord]): List of vector records to be saved.
-            batch_size (int, optional): Number of records to insert each batch.
+            batch_size (int): Number of records to insert each batch.
                 Larger batches are more efficient but use more memory.
                 (default: :obj:`100`)
             **kwargs (Any): Additional keyword arguments.
 
         Raises:
             RuntimeError: If there is an error during the saving process.
+            ValueError: If any vector dimension doesn't match vector_dim.
         """
 
         if not records:
@@ -172,7 +169,14 @@ class OceanBaseStorage(BaseVectorStorage):
         try:
             # Convert records to OceanBase format
             data: List[Dict[str, Any]] = []
-            for record in records:
+            for i, record in enumerate(records):
+                # Validate vector dimensions
+                if len(record.vector) != self.vector_dim:
+                    raise ValueError(
+                        f"Vector at index {i} has dimension "
+                        f"{len(record.vector)}, expected {self.vector_dim}"
+                    )
+
                 item: Dict[str, Any] = {
                     "embedding": record.vector,
                     "metadata": record.payload or {},
@@ -197,6 +201,9 @@ class OceanBaseStorage(BaseVectorStorage):
             if data:
                 self._client.insert(self.table_name, data=data)
 
+        except ValueError as e:
+            # Re-raise ValueError for dimension mismatch
+            raise e
         except Exception as e:
             error_msg = f"Failed to add records to OceanBase: {e}"
             logger.error(error_msg)
@@ -237,9 +244,9 @@ class OceanBaseStorage(BaseVectorStorage):
 
             # Delete records with non-numeric IDs stored in metadata
             if non_numeric_ids:
-                for id_val in non_numeric_ids:
-                    from sqlalchemy import text
+                from sqlalchemy import text
 
+                for id_val in non_numeric_ids:
                     self._client.delete(
                         self.table_name,
                         where_clause=[
@@ -278,7 +285,7 @@ class OceanBaseStorage(BaseVectorStorage):
         **kwargs: Any,
     ) -> List[VectorDBQueryResult]:
         r"""Searches for similar vectors in the storage based on the
-            provided query.
+        provided query.
 
         Args:
             query (VectorDBQuery): The query object containing the search
@@ -288,16 +295,28 @@ class OceanBaseStorage(BaseVectorStorage):
         Returns:
             List[VectorDBQueryResult]: A list of vectors retrieved from the
                 storage based on similarity to the query vector.
+
+        Raises:
+            RuntimeError: If there is an error during the query process.
+            ValueError: If the query vector dimension does not match the
+                storage dimension.
         """
+        from sqlalchemy import func
+
         try:
             # Get distance function name
             distance_func_name: str = self._distance_func_map.get(
                 self.distance, "l2_distance"
             )
 
-            from sqlalchemy import func
-
             distance_func = getattr(func, distance_func_name)
+
+            # Validate query vector dimensions
+            if len(query.query_vector) != self.vector_dim:
+                raise ValueError(
+                    f"Query vector dimension {len(query.query_vector)} "
+                    f"does not match storage dimension {self.vector_dim}"
+                )
 
             results = self._client.ann_search(
                 table_name=self.table_name,
@@ -322,12 +341,17 @@ class OceanBaseStorage(BaseVectorStorage):
                     vector: Any = result_dict.get("embedding")
                     if isinstance(vector, str):
                         # If vector is a string, try to parse it
-                        if vector.startswith('[') and vector.endswith(']'):
-                            # Remove brackets and split by commas
-                            vector = [
-                                float(x.strip())
-                                for x in vector[1:-1].split(',')
-                            ]
+                        try:
+                            if vector.startswith('[') and vector.endswith(']'):
+                                # Remove brackets and split by commas
+                                vector = [
+                                    float(x.strip())
+                                    for x in vector[1:-1].split(',')
+                                ]
+                        except (ValueError, TypeError) as e:
+                            logger.warning(
+                                f"Failed to parse vector string: {e}"
+                            )
 
                     # Ensure we have a proper vector
                     if (
@@ -397,15 +421,21 @@ class OceanBaseStorage(BaseVectorStorage):
 
     def _convert_distance_to_similarity(self, distance: float) -> float:
         r"""Converts distance to similarity score based on distance metric."""
+        # Ensure distance is non-negative
+        distance = max(0.0, distance)
+
         if self.distance == "cosine":
             # Cosine distance = 1 - cosine similarity
-            return 1.0 - distance
+            # Ensure similarity is between 0 and 1
+            return max(0.0, min(1.0, 1.0 - distance))
         elif self.distance == "l2":
             import math
 
+            # Exponential decay function for L2 distance
             return math.exp(-distance)
         else:
-            return 1.0 - min(1.0, distance)  # Default normalization
+            # Default normalization, ensure result is between 0 and 1
+            return max(0.0, min(1.0, 1.0 - min(1.0, distance)))
 
     def clear(self) -> None:
         r"""Remove all vectors from the storage."""
