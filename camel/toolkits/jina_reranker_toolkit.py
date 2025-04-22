@@ -13,9 +13,6 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import List, Optional, Tuple
 
-import torch
-from transformers import AutoModel
-
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 from camel.utils import MCPServer
@@ -45,6 +42,9 @@ class JinaRerankerToolkit(BaseToolkit):
                 will use CUDA if available, otherwise CPU.
                 (default: :obj:`None`)
         """
+        import torch
+        from transformers import AutoModel
+
         super().__init__(timeout=timeout)
 
         self.model = AutoModel.from_pretrained(
@@ -100,6 +100,8 @@ class JinaRerankerToolkit(BaseToolkit):
             List[Tuple[str, float]]: A list of tuples containing
                 the reranked documents and their relevance scores.
         """
+        import torch
+
         if self.model is None:
             raise ValueError(
                 "Model has not been initialized or failed to initialize."
@@ -131,6 +133,8 @@ class JinaRerankerToolkit(BaseToolkit):
             List[Tuple[str, float]]: A list of tuples containing
                 the reranked image URLs/paths and their relevance scores.
         """
+        import torch
+
         if self.model is None:
             raise ValueError(
                 "Model has not been initialized or failed to initialize."
@@ -162,6 +166,8 @@ class JinaRerankerToolkit(BaseToolkit):
             List[Tuple[str, float]]: A list of tuples containing
                 the reranked documents and their relevance scores.
         """
+        import torch
+
         if self.model is None:
             raise ValueError("Model has not been initialized.")
         with torch.inference_mode():
@@ -193,6 +199,8 @@ class JinaRerankerToolkit(BaseToolkit):
             List[Tuple[str, float]]: A list of tuples containing
                 the reranked image URLs/paths and their relevance scores.
         """
+        import torch
+
         if self.model is None:
             raise ValueError("Model has not been initialized.")
 
