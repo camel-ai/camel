@@ -37,6 +37,7 @@ from .utils import save_tsv_dict, save_file_jsonl
 from beir.retrieval.evaluation import EvaluateRetrieval
 from beir.datasets.data_loader import GenericDataLoader
 from camel.benchmarks.coderag_bench.generation_tasks import TASK_REGISTRY
+from .code_generation_evaluation import compute_code_eval
 import re
 
 def document2code(data, split="test"):
@@ -80,7 +81,10 @@ class CodeRagBenchmark(BaseBenchmark):
         ] = "humaneval",
         run_mode: Literal["retrieve", "generate", "retrieve_generate"] = "retrieve_generate",
         retrieval_type: Literal['canonical','open'] = "canonical",
-
+        n_samples: int = 1,
+        allow_code_execution = False,
+        generation_eval_k = [1,5,10],
+        subset_size: Optional[int] = None,
     ) -> None:
         r"""Initialize the benchmark.
 
@@ -100,7 +104,15 @@ class CodeRagBenchmark(BaseBenchmark):
         self.corpus: Optional[dict] = None
         self.queries: Optional[dict] = None
         self.qrels: Optional[dict] = None
+        self.samples = n_samples
+        self.allow_code_execution = allow_code_execution
+        self.generation_eval_k = generation_eval_k
+        self.subset_size = subset_size
 
+        # Todo: Support other 6 tasks, e.g., mbpp, ds100,...
+        if self.task != "humaneval":
+            raise NotImplementedError(
+                "Only canonical retrieval is supported for now.")
 
     def download(self):
         r"""Download and preprocess the CodeRag-Bench data.
@@ -176,13 +188,17 @@ class CodeRagBenchmark(BaseBenchmark):
             # self.corpus, self.queries, self.qrels = GenericDataLoader(
             #     data_folder=os.path.join(path, self.task)).load(split="test")
 
+            # Todo: Support Canonical retrieval
+            if self.retrieval_type != "canonical":
+                raise NotImplementedError(
+                    "Only canonical retrieval is supported for now.")
+
+
             if auto_retriever is None:
                 raise ValueError(
                     "auto_retriever must be provided in retrieve or retrieve_generate mode")
 
-            if self.retrieval_type != "canonical":
-                raise NotImplementedError(
-                    "Only canonical retrieval is supported for now.")
+
 
             # === Canonical Retrieval Logic ===
             logger.info("[INFO] Starting canonical retrieval...")
@@ -285,8 +301,10 @@ class CodeRagBenchmark(BaseBenchmark):
             generation_dir = os.path.join(self.save_to, "generation",
                                           self.task)
             os.makedirs(generation_dir, exist_ok=True)
-            gen_path = os.path.join(generation_dir, "generations.json")
 
+            # Todo: Allow path customization!!
+            gen_path = os.path.join(generation_dir, "generations.json")
+            ref_path = os.path.join(generation_dir, "references.json")
             # # Open retrieval results stream if needed
             # if self.run_mode == "retrieve_generate":
             #     retrieved_path = os.path.join(self.save_to, "retrieval",
@@ -295,72 +313,120 @@ class CodeRagBenchmark(BaseBenchmark):
             # else:
             #     retrieval_reader = None
 
+            all_generations = []  # List[List[str]]: list of candidates per task
+            all_references = []  # List[str]: one reference string per task
 
-            with jsonlines.open(gen_path, mode='w') as writer:
-                for data_i in tqdm(self.dataset["test"]): # data_i is equivalent to doc in <https://github.com/code-rag-bench/code-rag-bench/blob/main/generation/eval/tasks/humaneval.py>
-                    prompt = data_i["prompt"]
+            for idx, data_i in enumerate(tqdm(self.dataset["test"])): # data_i is equivalent to doc in <https://github.com/code-rag-bench/code-rag-bench/blob/main/generation/eval/tasks/humaneval.py>
+                prompt = data_i["prompt"]
 
-                    # Build context from retrieved docs if available
-                    docs = data_i.get("docs", [])
-                    context = "\n\n".join(
-                        doc["text"] for doc in docs[:10])  # Top-10
 
-                    # Construct the final prompt for the agent
-                    final_prompt = (
-                            context +
-                            '\n\nPlease complete the following function based on the example above:\n' +
-                            '```python\n' +
-                            prompt
-                    )
+                docs = data_i.get("docs", [])
+                context = "\n\n".join(
+                    doc["text"] for doc in docs[:10])  # Top-10 Todo: allow customization of top-k retrieval!
 
-                    # Run generation using the agent
+                # Construct the final prompt for the agent
+                final_prompt = (
+                        context +
+                        '\n\nPlease complete the following function based on the example above:\n' +
+                        '```python\n' +
+                        prompt
+                )
+
+                candidates = []
+                # Run generation using the agent
+                for _ in range(self.n_samples): #Todo: initilize n_samples in init file
                     response = agent.step(
                         [BaseMessage(role="user", content=final_prompt)])
                     generation = response.msg.content
 
-                    # === Postprocess ===
-
-
-
-                    # Stop words as defined in coderag-bench
-                    stop_words = ["\nclass", "<file_sep>", "if __name__",
-                                  "\nprint(", "\ndef"]
-
-                    # Step 1: Extract code block from markdown if present
-                    # Todo: this part of logic is adapted from extract_generation_code(), but the logic is simpler
-                    # Todo: We might want to improve this part if the code generation is not as expected
+                    # Postprocessing 1: code block if any
+                    # Todo: further check post processing when testing. The logic here is simpler than code-rag bench due to format difference
                     matches = re.findall(r"```python\n(.*?)```", generation,
                                          re.DOTALL | re.IGNORECASE)
                     if matches:
                         generation = matches[0].strip()
+                    if not matches:
+                        logger.warning(
+                            "No closing ``` found, using raw output as fallback.")
+                        generation = generation.strip()
 
-                    # Step 2: Truncate generation at the first occurrence of any stop word
+                    # Postprocessing 2: Truncate at stop words
+                    stop_words = ["\nclass", "<file_sep>", "if __name__",
+                                  "\nprint(", "\ndef"]
                     for stop_word in stop_words:
                         index = generation.find(stop_word)
                         if index != -1:
                             generation = generation[:index].strip()
-                            break  # only cut at the first matched stop word
-
-                    # Step 3: Add prompt back for evaluation (matches reference format)
+                            break
+                    #Postprocessing 3: Add prompt back for evaluation (matches reference format)
                     generation = data_i["prompt"] + generation
+                    candidates.append(generation)
+                all_generations.append(candidates)
 
-                    # Save generation outputs to file
-                    writer.write([generation])
+                # Build reference
+                test_func = data_i["test"]
+                entry_point = f"check({data_i['entry_point']})"
+                reference = "\n" + test_func + "\n" + entry_point
+                all_references.append(reference)
 
-                    # === Code Evaluation ===
+            # Save to JSON files
+            with open(gen_path, "w") as f_gen:
+                json.dump(all_generations, f_gen, indent=2)
+                logger.info(f"[INFO] Saved generations to {gen_path}")
 
-                    # Get reference
-                    test_func = data_i["test"]
-                    entry_point = f"check({data_i['entry_point']})"
-                    reference = "\n" + test_func + "\n" + entry_point
+            with open(ref_path, "w") as f_ref:
+                json.dump(all_references, f_ref, indent=2)
+                logger.info(f"[INFO] Saved references to {ref_path}")
 
-                    # evaluation
+            # === Code Evaluation ===
+            if not self.allow_code_execution:
+                logger.warning(
+                    "[SKIP] Code execution is disabled. Set `allow_code_execution=True` to run evaluation."
+                )
+            else:
+                os.environ["HF_ALLOW_CODE_EVAL"] = "1"  # Allow code execution (sandboxed)
 
+                logger.info("[INFO] Starting code evaluation...")
 
-            logger.info("[INFO] Generations saved to %s", gen_path)
+                pass_at_k, raw_results = compute_code_eval(
+                    references=all_references,
+                    predictions=all_generations,
+                    k=self.generation_eval_k,
+                    num_workers=4,
+                    timeout=3.0,
+                )
 
-            #Todo: postprocessing + evaluation
+                # Print pass@k results
+                logger.info("[EVAL] pass@k:")
+                for k, v in pass_at_k.items():
+                    logger.info(f"  {k}: {v:.4f}")
 
+                # Save metrics
+                eval_dir = os.path.join(generation_dir, "eval")
+                os.makedirs(eval_dir, exist_ok=True)
+
+                eval_path = os.path.join(eval_dir, "pass_at_k.json")
+                with open(eval_path, "w") as f_eval:
+                    json.dump(pass_at_k, f_eval, indent=2)
+                    logger.info(f"[INFO] pass@k metrics saved to {eval_path}")
+
+                # Save raw results for analysis
+                raw_results_path = os.path.join(eval_dir, "raw_results.jsonl")
+                with jsonlines.open(raw_results_path, mode="w") as writer:
+                    for task_id, results in raw_results.items():
+                        for completion_id, result in results:
+                            writer.write({
+                                "task_id": task_id,
+                                "completion_id": completion_id,
+                                **result,
+                                "generation": all_generations[task_id][
+                                    completion_id],
+                                "reference": all_references[task_id],
+                            })
+                    logger.info(
+                        f"[INFO] Raw evaluation results saved to {raw_results_path}")
+
+                logger.info("[INFO] Generations saved to %s", gen_path)
         return
 
 
