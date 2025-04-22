@@ -65,6 +65,7 @@ from .pubmed_toolkit import PubMedToolkit
 from .data_commons_toolkit import DataCommonsToolkit
 from .thinking_toolkit import ThinkingToolkit
 from .pyautogui_toolkit import PyAutoGUIToolkit
+from .medcalc_toolkit import MedCalcToolkit
 from .openai_agent_toolkit import OpenAIAgentToolkit
 from .searxng_toolkit import SearxNGToolkit
 
@@ -122,4 +123,5 @@ __all__ = [
     'PyAutoGUIToolkit',
     'OpenAIAgentToolkit',
     'SearxNGToolkit',
+    'MedCalcToolkit',
 ]
