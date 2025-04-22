@@ -301,9 +301,9 @@ def _add_set_of_mark(
 
     Returns:
         Tuple[Image.Image, List[str], List[str], List[str]]: A tuple
-        containing the screenshot with marked ROIs, ROIs fully within the
-        images, ROIs located above the visible area, and ROIs located below
-        the visible area.
+            containing the screenshot with marked ROIs, ROIs fully within the
+            images, ROIs located above the visible area, and ROIs located below
+            the visible area.
     """
     visible_rects: List[str] = list()
     rects_above: List[str] = list()  # Scroll up to see
@@ -1038,8 +1038,6 @@ class BrowserToolkit(BaseToolkit):
             channel=channel,
             cookie_json_path=cookie_json_path,
         )
-        # This needs to be called explicitly
-        self.browser.init()
 
         self.history_window = history_window
         self.web_agent_model = web_agent_model
@@ -1062,7 +1060,7 @@ class BrowserToolkit(BaseToolkit):
         if self.web_agent_model is None:
             web_agent_model = ModelFactory.create(
                 model_platform=ModelPlatformType.OPENAI,
-                model_type=ModelType.GPT_4O,
+                model_type=ModelType.GPT_4_1,
                 model_config_dict={"temperature": 0, "top_p": 1},
             )
         else:
@@ -1524,7 +1522,6 @@ Your output should be in json format, including the following fields:
         else:
             simulation_result = self._get_final_answer(task_prompt)
 
-        self.browser.close()
         return simulation_result
 
     def get_tools(self) -> List[FunctionTool]:
