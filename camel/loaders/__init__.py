@@ -18,6 +18,7 @@ from .chunkr_reader import ChunkrReader
 from .crawl4ai_reader import Crawl4AI
 from .firecrawl_reader import Firecrawl
 from .jina_url_reader import JinaURLReader
+from .markitdown import MarkItDownConverter
 from .mineru_extractor import MinerU
 from .pandas_reader import PandasReader
 from .unstructured_io import UnstructuredIO
@@ -34,4 +35,5 @@ __all__ = [
     'PandasReader',
     'MinerU',
     'Crawl4AI',
+    'MarkItDownConverter',
 ]
