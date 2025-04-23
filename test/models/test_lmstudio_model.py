@@ -15,8 +15,8 @@ import re
 
 import pytest
 
-from camel.configs import ChatGPTConfig
-from camel.models import OpenAIModel
+from camel.configs import LMStudioConfig
+from camel.models import LMStudioModel
 from camel.types import ModelType
 from camel.utils import OpenAITokenCounter
 
@@ -25,44 +25,37 @@ from camel.utils import OpenAITokenCounter
 @pytest.mark.parametrize(
     "model_type",
     [
-        ModelType.GPT_3_5_TURBO,
-        ModelType.GPT_4,
-        ModelType.GPT_4_TURBO,
-        ModelType.GPT_4O,
-        ModelType.GPT_4O_MINI,
-        ModelType.O1,
-        ModelType.O1_PREVIEW,
-        ModelType.O1_MINI,
-        ModelType.GPT_4_5_PREVIEW,
-        ModelType.O3,
-        ModelType.O3_MINI,
-        ModelType.O4_MINI,
-        ModelType.GPT_4_1,
-        ModelType.GPT_4_1_MINI,
-        ModelType.GPT_4_1_NANO,
+        ModelType.LMSTUDIO_GEMMA_3_1B,
+        ModelType.LMSTUDIO_GEMMA_3_4B,
     ],
 )
-def test_openai_model(model_type: ModelType):
-    model = OpenAIModel(model_type)
+def test_lmstudio_model(model_type: ModelType):
+    model = LMStudioModel(model_type)
     assert model.model_type == model_type
-    assert model.model_config_dict == ChatGPTConfig().as_dict()
+    assert model.model_config_dict == LMStudioConfig().as_dict()
     assert isinstance(model.token_counter, OpenAITokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
 
 
 @pytest.mark.model_backend
-def test_openai_model_unexpected_argument():
-    model_type = ModelType.GPT_4
-    model_config_dict = {"model_path": "vicuna-7b-v1.5"}
+def test_lmstudio_model_unexpected_argument():
+    model_type = ModelType.LMSTUDIO_GEMMA_3_1B
+    model_config_dict = {"model_path": "vicuna_70B"}
 
     with pytest.raises(
         ValueError,
         match=re.escape(
             (
                 "Unexpected argument `model_path` is "
-                "input into OpenAI model backend."
+                "input into LMStudio model backend."
             )
         ),
     ):
-        _ = OpenAIModel(model_type, model_config_dict)
+        _ = LMStudioModel(model_type, model_config_dict)
+
+
+@pytest.mark.model_backend
+def test_lmstudio_model_stream_property():
+    model = LMStudioModel(ModelType.LMSTUDIO_GEMMA_3_1B)
+    assert model.stream is False

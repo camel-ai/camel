@@ -1064,6 +1064,172 @@ class SearchToolkit(BaseToolkit):
         except Exception as e:
             return {"error": f"Exa search failed: {e!s}"}
 
+    @api_keys_required([(None, 'TONGXIAO_API_KEY')])
+    def search_alibaba_tongxiao(
+        self,
+        query: str,
+        time_range: Literal[
+            "OneDay", "OneWeek", "OneMonth", "OneYear", "NoLimit"
+        ] = "NoLimit",
+        industry: Optional[
+            Literal[
+                "finance",
+                "law",
+                "medical",
+                "internet",
+                "tax",
+                "news_province",
+                "news_center",
+            ]
+        ] = None,
+        page: int = 1,
+        return_main_text: bool = False,
+        return_markdown_text: bool = True,
+        enable_rerank: bool = True,
+    ) -> Dict[str, Any]:
+        r"""Query the Alibaba Tongxiao search API and return search results.
+
+        A powerful search API optimized for Chinese language queries with
+        features:
+        - Enhanced Chinese language understanding
+        - Industry-specific filtering (finance, law, medical, etc.)
+        - Structured data with markdown formatting
+        - Result reranking for relevance
+        - Time-based filtering
+
+        Args:
+            query (str): The search query string (length >= 1 and <= 100).
+            time_range (Literal["OneDay", "OneWeek", "OneMonth", "OneYear",
+                "NoLimit"]): Time frame filter for search results.
+                (default: :obj:`"NoLimit"`)
+            industry (Optional[Literal["finance", "law", "medical",
+                "internet", "tax", "news_province", "news_center"]]):
+                Industry-specific search filter. When specified, only returns
+                results from sites in the specified industries. Multiple
+                industries can be comma-separated.
+                (default: :obj:`None`)
+            page (int): Page number for results pagination.
+                (default: :obj:`1`)
+            return_main_text (bool): Whether to include the main text of the
+                webpage in results. (default: :obj:`True`)
+            return_markdown_text (bool): Whether to include markdown formatted
+                content in results. (default: :obj:`True`)
+            enable_rerank (bool): Whether to enable result reranking. If
+                response time is critical, setting this to False can reduce
+                response time by approximately 140ms. (default: :obj:`True`)
+
+        Returns:
+            Dict[str, Any]: A dictionary containing either search results with
+                'requestId' and 'results' keys, or an 'error' key with error
+                message. Each result contains title, snippet, url and other
+                metadata.
+        """
+        TONGXIAO_API_KEY = os.getenv("TONGXIAO_API_KEY")
+
+        # Validate query length
+        if not query or len(query) > 100:
+            return {
+                "error": "Query length must be between 1 and 100 characters"
+            }
+
+        # API endpoint and parameters
+        base_url = "https://cloud-iqs.aliyuncs.com/search/genericSearch"
+        headers = {
+            "X-API-Key": TONGXIAO_API_KEY,
+        }
+
+        # Convert boolean parameters to string for compatibility with requests
+        params: Dict[str, Union[str, int]] = {
+            "query": query,
+            "timeRange": time_range,
+            "page": page,
+            "returnMainText": str(return_main_text).lower(),
+            "returnMarkdownText": str(return_markdown_text).lower(),
+            "enableRerank": str(enable_rerank).lower(),
+        }
+
+        # Only add industry parameter if specified
+        if industry is not None:
+            params["industry"] = industry
+
+        try:
+            # Send GET request with proper typing for params
+            response = requests.get(
+                base_url, headers=headers, params=params, timeout=10
+            )
+
+            # Check response status
+            if response.status_code != 200:
+                return {
+                    "error": (
+                        f"Alibaba Tongxiao API request failed with status "
+                        f"code {response.status_code}: {response.text}"
+                    )
+                }
+
+            # Parse JSON response
+            data = response.json()
+
+            # Extract and format pageItems
+            page_items = data.get("pageItems", [])
+            results = []
+            for idx, item in enumerate(page_items):
+                # Create a simplified result structure
+                result = {
+                    "result_id": idx + 1,
+                    "title": item.get("title", ""),
+                    "snippet": item.get("snippet", ""),
+                    "url": item.get("link", ""),
+                    "hostname": item.get("hostname", ""),
+                }
+
+                # Only include additional fields if they exist and are
+                # requested
+                if "summary" in item and item.get("summary"):
+                    result["summary"] = item["summary"]
+                elif (
+                    return_main_text
+                    and "mainText" in item
+                    and item.get("mainText")
+                ):
+                    result["summary"] = item["mainText"]
+
+                if (
+                    return_main_text
+                    and "mainText" in item
+                    and item.get("mainText")
+                ):
+                    result["main_text"] = item["mainText"]
+
+                if (
+                    return_markdown_text
+                    and "markdownText" in item
+                    and item.get("markdownText")
+                ):
+                    result["markdown_text"] = item["markdownText"]
+
+                if "score" in item:
+                    result["score"] = item["score"]
+
+                if "publishTime" in item:
+                    result["publish_time"] = item["publishTime"]
+
+                results.append(result)
+
+            # Return a simplified structure
+            return {
+                "request_id": data.get("requestId", ""),
+                "results": results,
+            }
+
+        except requests.exceptions.RequestException as e:
+            return {"error": f"Alibaba Tongxiao search request failed: {e!s}"}
+        except Exception as e:
+            return {
+                "error": f"Unexpected error during Alibaba Tongxiao "
+                f"search: {e!s}"
+            }
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
@@ -1084,4 +1250,5 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.search_baidu),
             FunctionTool(self.search_bing),
             FunctionTool(self.search_exa),
+            FunctionTool(self.search_alibaba_tongxiao),
         ]
