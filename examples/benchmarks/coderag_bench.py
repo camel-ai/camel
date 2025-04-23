@@ -13,9 +13,26 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from camel.benchmarks import CodeRagBenchmark
+from camel.agents import ChatAgent
+from camel.retrievers import AutoRetriever
+
+assistant_sys_msg = """You are a helpful assistant to write codes,
+         I will give you the Original Coding Query and Retrieved Context,
+        answer the Original Coding Query based on the Retrieved Context,
+        if you can't answer the question, just leave it blank"""
+agent = ChatAgent(assistant_sys_msg)
+retriever = AutoRetriever()
+
 
 benchmark = CodeRagBenchmark(
-    data_dir="./CodeRag_BenchDatasets",
-    save_to="./CodeRag_BenchDatasets",
+    data_dir="./CodeRag_Bench_Datasets",
+    save_to="./CodeRag_Bench_Datasets",
     retriever=retriever,
-)
+    run_mode = 'retrieve_generate',
+    task = 'humaneval',
+    subset_size = 10,
+    retrieval_type = "canonical",
+    allow_code_execution = True,
+    )
+benchmark.load()
+benchmark.run(agent, retriever)

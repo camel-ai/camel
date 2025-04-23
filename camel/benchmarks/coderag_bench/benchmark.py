@@ -150,12 +150,20 @@ class CodeRagBenchmark(BaseBenchmark):
             self,
             agent: ChatAgent,
             auto_retriever: Optional[AutoRetriever] = None, # TODO: Currently only supports canonical retriever. Add support for other retrieval types.
-    )
+    ):
         r"""Load the CodeRAG-Bench dataset.
             save benchmark result to files
             return evaluation result"""
+
         if self.corpus is None or self.queries is None or self.qrels is None or self.dataset is None:
             self.load()
+
+        if self.subset_size is not None:
+            logger.info(
+                f"[INFO] Using only first {self.subset_size} samples for testing.")
+            self.dataset["test"] = self.dataset["test"].select(
+                range(self.subset_size))
+
         if self.run_mode in ["retrieve", "retrieve_generate"]:
             # path = os.path.join(self.datadir, "datasets")
             # os.makedirs(path, exist_ok=True)

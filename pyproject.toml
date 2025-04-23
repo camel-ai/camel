@@ -237,6 +237,8 @@ owl = [
     "rouge>=1.0.1,<2",
     "crawl4ai>=0.3.745",
 ]
+coderag_bench = [
+    "jsonlines>=3.1.0,<4",]
 all = [
     "numpy~=1.26",
     "transformers>=4,<5",
