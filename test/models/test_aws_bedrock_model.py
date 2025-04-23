@@ -37,7 +37,7 @@ from camel.utils import OpenAITokenCounter
     ],
 )
 def test_aws_bedrock_model(model_type: ModelType):
-    """Test AWSBedrockModel initialization with different model types."""
+    r"""Test AWSBedrockModel initialization with different model types."""
     model = AWSBedrockModel(model_type)
     assert model.model_type == model_type
     assert model.model_config_dict == BedrockConfig().as_dict()
@@ -48,19 +48,17 @@ def test_aws_bedrock_model(model_type: ModelType):
 
 @pytest.mark.model_backend
 def test_aws_bedrock_model_unexpected_argument():
-    """Test AWSBedrockModel with unexpected arguments."""
+    r"""Test AWSBedrockModel with unexpected arguments."""
     model_type = ModelType.AWS_CLAUDE_3_HAIKU
     model_config_dict = {"model_path": "claude-3-haiku"}
 
     with pytest.raises(
         ValueError,
         match=re.escape(
-            (
-                "Invalid parameter 'model_path' in model_config_dict. "
-                "Valid parameters are: "
-            )
-            + ".+"  # Match any characters after the message start
-        ),
+            "Invalid parameter 'model_path' in model_config_dict. "
+            "Valid parameters are: "
+        )
+        + ".*",  # Match any characters after the message start
     ):
         _ = AWSBedrockModel(model_type, model_config_dict)
 
@@ -68,11 +66,11 @@ def test_aws_bedrock_model_unexpected_argument():
 @pytest.mark.model_backend
 @pytest.mark.asyncio
 async def test_aws_bedrock_async_not_implemented():
-    """Test AWSBedrockModel async method raising NotImplementedError."""
+    r"""Test AWSBedrockModel async method raising NotImplementedError."""
     model = AWSBedrockModel(ModelType.AWS_CLAUDE_3_HAIKU)
 
     with pytest.raises(
         NotImplementedError,
         match="AWS Bedrock does not support async inference.",
     ):
-        await model.agenerate("Test message")
+        await model._arun("Test message")
