@@ -23,17 +23,11 @@ from .source2synth import (
 )
 
 __all__ = [
-    # Base pipeline
     "BaseDataGenPipeline",
-    # CoT data generation
     "CoTDataGenerator",
-    # Self-improving CoT
     "SelfImprovingCoTPipeline",
-    # Self-instruct
     "SelfInstructPipeline",
-    # Evol-instruct
     "EvolInstructPipeline",
-    # Source2Synth
     "Source2SynthDataGenPipeline",
     "ProcessorConfig",
 ]
