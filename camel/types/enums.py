@@ -42,6 +42,8 @@ class ModelType(UnifiedModelType, Enum):
     GPT_4_1 = "gpt-4.1-2025-04-14"
     GPT_4_1_MINI = "gpt-4.1-mini-2025-04-14"
     GPT_4_1_NANO = "gpt-4.1-nano-2025-04-14"
+    O4_MINI = "o4-mini"
+    O3 = "o3"
 
     AWS_CLAUDE_3_7_SONNET = "anthropic.claude-3-7-sonnet-20250219-v1:0"
     AWS_CLAUDE_3_5_SONNET = "anthropic.claude-3-5-sonnet-20241022-v2:0"
@@ -351,6 +353,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4_1,
             ModelType.GPT_4_1_MINI,
             ModelType.GPT_4_1_NANO,
+            ModelType.O4_MINI,
+            ModelType.O3,
         }
 
     @property
@@ -893,6 +897,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.AWS_CLAUDE_3_HAIKU,
             ModelType.AWS_CLAUDE_3_SONNET,
             ModelType.AWS_CLAUDE_3_7_SONNET,
+            ModelType.O4_MINI,
+            ModelType.O3,
         }:
             return 200_000
         elif self in {
