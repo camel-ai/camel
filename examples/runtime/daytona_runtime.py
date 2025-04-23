@@ -11,23 +11,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from .base import BaseRuntime
-from .configs import TaskConfig
-from .daytona_runtime import DaytonaRuntime
-from .docker_runtime import DockerRuntime
-from .llm_guard_runtime import LLMGuardRuntime
-from .remote_http_runtime import RemoteHttpRuntime
-from .ubuntu_docker_runtime import UbuntuDockerRuntime
 
-# TODO: Add Celery Runtime to support distributed computing,
-# Rate Limiting, Load Balancing, etc.
+import os
 
-__all__ = [
-    "BaseRuntime",
-    "DockerRuntime",
-    "RemoteHttpRuntime",
-    "LLMGuardRuntime",
-    "TaskConfig",
-    "UbuntuDockerRuntime",
-    "DaytonaRuntime",
-]
+from camel.runtime import DaytonaRuntime
+from camel.toolkits.function_tool import FunctionTool
+
+
+def sample_function(x: int, y: int) -> int:
+    return x + y
+
+
+tool = FunctionTool(sample_function)
+
+runtime = DaytonaRuntime(
+    api_key=os.environ.get('DAYTONA_API_KEY', None),
+    server_url=os.environ.get('API_URL', None),
+    language="python",
+)
+
+
+runtime.build()
+runtime.add(
+    funcs=tool,
+    entrypoint="sample_function_entry",
+)
+
+result = runtime.tools_map["sample_function"](5, y=10)
+print(f"Result: {result}")
+
+# Clean up
+runtime.stop()

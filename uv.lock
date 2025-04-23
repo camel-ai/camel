@@ -707,6 +707,8 @@ dev = [
 ]
 dev-tools = [
     { name = "agentops" },
+    { name = "daytona-api-client" },
+    { name = "daytona-sdk" },
     { name = "docker" },
     { name = "e2b-code-interpreter" },
     { name = "ipykernel" },
@@ -916,6 +918,8 @@ requires-dist = [
     { name = "datasets", marker = "extra == 'all'", specifier = ">=3,<4" },
     { name = "datasets", marker = "extra == 'huggingface'", specifier = ">=3,<4" },
     { name = "datasets", marker = "extra == 'owl'", specifier = ">=3,<4" },
+    { name = "daytona-api-client", marker = "extra == 'dev-tools'", specifier = "==0.16.0" },
+    { name = "daytona-sdk", marker = "extra == 'dev-tools'", specifier = "==0.14.0" },
     { name = "diffusers", marker = "extra == 'all'", specifier = ">=0.25.0,<0.26" },
     { name = "diffusers", marker = "extra == 'huggingface'", specifier = ">=0.25.0,<0.26" },
     { name = "discord-py", marker = "extra == 'all'", specifier = ">=2.3.2,<3" },
@@ -1654,6 +1658,40 @@ wheels = [
 ]
 
 [[package]]
+name = "daytona-api-client"
+version = "0.16.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pydantic" },
+    { name = "python-dateutil" },
+    { name = "typing-extensions" },
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/97/67/0532ab97f5cbf802d19bbcbcf0e7307d787d1af9b14967c6ed32f960f6eb/daytona_api_client-0.16.0.tar.gz", hash = "sha256:0a4ad32934144402b5a47bd5c3a3b1450674e85584623386a3d6c2560ea146b2", size = 63662 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0d/ee/2107f820f3087693dc07eca3cd611b8ab40860def70e54b0ec4e76504bb6/daytona_api_client-0.16.0-py3-none-any.whl", hash = "sha256:31d31409102aa009517d2a0e1ba85f47aadf41b84b7b3732c15cf1ad4c30f19b", size = 165352 },
+]
+
+[[package]]
+name = "daytona-sdk"
+version = "0.14.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "daytona-api-client" },
+    { name = "deprecated" },
+    { name = "environs" },
+    { name = "httpx" },
+    { name = "marshmallow" },
+    { name = "pydantic" },
+    { name = "python-dateutil" },
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/66/2c/1b48a7343168802dc9ae60d4bf5cda75c4755ca7fab39a444df2bcbaf3be/daytona_sdk-0.14.0.tar.gz", hash = "sha256:1df3eaa664dc793a33690a2361cf5262713ca5ff1f1c5730eb00b4940f11b6e8", size = 41874 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/47/ae/8ff649b3aa26ee2dbbf2f1243f7f17ca0b39e2c899d3d946a416313e3ee9/daytona_sdk-0.14.0-py3-none-any.whl", hash = "sha256:a6e5c8d56b8d2342a1a630de93b7346ce2a6bc81cb21a928988964a7b3ce7b0d", size = 46536 },
+]
+
+[[package]]
 name = "debugpy"
 version = "1.8.14"
 source = { registry = "https://pypi.org/simple" }
@@ -1903,6 +1941,19 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/cb/7d/01cddcbb6f5cc0ba72e00ddf9b1fa206c802d557fd0a20b18e130edf1336/emoji-2.14.1.tar.gz", hash = "sha256:f8c50043d79a2c1410ebfae833ae1868d5941a67a6cd4d18377e2eb0bd79346b", size = 597182 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/91/db/a0335710caaa6d0aebdaa65ad4df789c15d89b7babd9a30277838a7d9aac/emoji-2.14.1-py3-none-any.whl", hash = "sha256:35a8a486c1460addb1499e3bf7929d3889b2e2841a57401903699fef595e942b", size = 590617 },
+]
+
+[[package]]
+name = "environs"
+version = "9.5.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "marshmallow" },
+    { name = "python-dotenv" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d4/e3/c3c6c76f3dbe3e019e9a451b35bf9f44690026a5bb1232f7b77097b72ff5/environs-9.5.0.tar.gz", hash = "sha256:a76307b36fbe856bdca7ee9161e6c466fd7fcffc297109a118c59b54e27e30c9", size = 20795 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ca/5e/f0f217dc393372681bfe05c50f06a212e78d0a3fee907a74ab451ec1dcdb/environs-9.5.0-py2.py3-none-any.whl", hash = "sha256:1e549569a3de49c05f856f40bce86979e7d5ffbbc4398e7f338574c220189124", size = 12548 },
 ]
 
 [[package]]
