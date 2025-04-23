@@ -53,8 +53,6 @@ class JinaRerankerToolkit(BaseToolkit):
             use_api (bool): A flag to switch between local model and API.
                 (default: :obj:`False`)
         """
-        import torch
-        from transformers import AutoModel
 
         super().__init__(timeout=timeout)
 
@@ -71,6 +69,9 @@ class JinaRerankerToolkit(BaseToolkit):
                 'Authorization': f'Bearer {self._api_key}',
             }
         else:
+            import torch
+            from transformers import AutoModel
+
             self.model = AutoModel.from_pretrained(
                 self.model_name,
                 torch_dtype="auto",
