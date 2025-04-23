@@ -436,4 +436,4 @@ benchmark/gaia/results.jsonl
 .aider*
 .env
 .cache_ggshield
-myDev/
+my_dev
