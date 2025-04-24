@@ -159,6 +159,7 @@ class ModelType(UnifiedModelType, Enum):
     NETMIND_DEEPSEEK_R1 = "deepseek-ai/DeepSeek-R1"
     NETMIND_DEEPSEEK_V3 = "deepseek-ai/DeepSeek-V3-0324"
     NETMIND_DOUBAO_1_5_PRO = "doubao/Doubao-1.5-pro"
+    NETMIND_QWQ_32B = "Qwen/QwQ-32B"
 
     # Nvidia models
     NVIDIA_NEMOTRON_340B_INSTRUCT = "nvidia/nemotron-4-340b-instruct"
