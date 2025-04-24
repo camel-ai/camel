@@ -13,10 +13,10 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
+import tempfile
 
 from camel.loaders import MarkItDownConverter
 
-# Create mock files for testing
 mock_files = {
     "demo.html": "<html><body><h1>Demo HTML</h1></body></html>",
     "report.pdf": "%PDF-1.4\n% Mock PDF content",
@@ -24,27 +24,30 @@ mock_files = {
     "data.xlsx": "Mock XLSX content",
 }
 
-# Write mock files to disk
-for filename, content in mock_files.items():
-    with open(filename, "w") as f:
-        f.write(content)
+with tempfile.TemporaryDirectory() as temp_dir:
+    file_paths = {}
 
+    for filename, content in mock_files.items():
+        file_path = os.path.join(temp_dir, filename)
+        with open(file_path, "w") as f:
+            f.write(content)
+        file_paths[filename] = file_path
 
-converter = MarkItDownConverter()
+    converter = MarkItDownConverter()
 
-# Convert a single file
-try:
-    markdown_text = converter.convert_file("demo.html")
-    print(markdown_text)
-except Exception as e:
-    print(f"An error occurred: {e}")
+    # Convert a single file
+    try:
+        markdown_text = converter.convert_file(file_paths["demo.html"])
+        print(markdown_text)
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
-# Convert multiple files
-files = ["report.pdf", "presentation.pptx", "data.xlsx"]
-converted = converter.convert_files(files)
-for path, md in converted.items():
-    print(f"Markdown for {path}:\n{md}\n")
-
-# Clean up mock files
-for filename in mock_files.keys():
-    os.remove(filename)
+    # Convert multiple files
+    files = [
+        file_paths["report.pdf"],
+        file_paths["presentation.pptx"],
+        file_paths["data.xlsx"],
+    ]
+    converted = converter.convert_files(files, parallel=True, skip_failed=True)
+    for path, md in converted.items():
+        print(f"Markdown for {path}:\n{md}\n")
