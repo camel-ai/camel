@@ -422,7 +422,7 @@ For more information please contact camel-ai@eigent.ai
 - **WeChat Community:** Scan the QR code below to join our WeChat community.
 
   <div align="center">
-    <img src="misc/wechat.jpg" alt="WeChat QR Code" width="200">
+    <img src="misc/wechat.jpeg" alt="WeChat QR Code" width="200">
   </div>
 
 
