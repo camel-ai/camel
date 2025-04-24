@@ -149,6 +149,17 @@ class ModelType(UnifiedModelType, Enum):
     CLAUDE_3_5_HAIKU = "claude-3-5-haiku-latest"
     CLAUDE_3_7_SONNET = "claude-3-7-sonnet-latest"
 
+    # Netmind models
+    NETMIND_LLAMA_4_MAVERICK_17B_18E_INSTRUCT = """meta-llama/
+    Llama-4-Maverick-17B-128E-Instruct"""
+
+    NETMIND_LLAMA_4_SCOUT_17B_16E_INSTRUCT = """meta-llama/
+    Llama-4-Scout-17B-16E-Instruct"""
+
+    NETMIND_DEEPSEEK_R1 = "deepseek-ai/DeepSeek-R1"
+    NETMIND_DEEPSEEK_V3 = "deepseek-ai/DeepSeek-V3-0324"
+    NETMIND_DOUBAO_1_5_PRO = "doubao/Doubao-1.5-pro"
+
     # Nvidia models
     NVIDIA_NEMOTRON_340B_INSTRUCT = "nvidia/nemotron-4-340b-instruct"
     NVIDIA_NEMOTRON_340B_REWARD = "nvidia/nemotron-4-340b-reward"
