@@ -619,6 +619,17 @@ class ModelType(UnifiedModelType, Enum):
         }
 
     @property
+    def is_netmind(self) -> bool:
+        return self in {
+            ModelType.NETMIND_LLAMA_4_MAVERICK_17B_18E_INSTRUCT,
+            ModelType.NETMIND_LLAMA_4_SCOUT_17B_16E_INSTRUCT,
+            ModelType.NETMIND_DEEPSEEK_R1,
+            ModelType.NETMIND_DEEPSEEK_V3,
+            ModelType.NETMIND_DOUBAO_1_5_PRO,
+            ModelType.NETMIND_QWQ_32B,
+        }
+
+    @property
     def is_ppio(self) -> bool:
         return self in {
             ModelType.PPIO_DEEPSEEK_R1_TURBO,
@@ -771,6 +782,11 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.PPIO_YI_1_5_34B_CHAT,
         }:
             return 16_384
+
+        elif self in {
+            ModelType.NETMIND_DOUBAO_1_5_PRO,
+        }:
+            return 32_000
         elif self in {
             ModelType.MISTRAL_CODESTRAL,
             ModelType.MISTRAL_7B,
@@ -826,6 +842,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.PPIO_DEEPSEEK_R1,
             ModelType.PPIO_DEEPSEEK_V3,
             ModelType.AWS_DEEPSEEK_R1,
+            ModelType.NETMIND_QWQ_32B,
         }:
             return 64_000
         elif self in {
@@ -875,6 +892,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.AWS_LLAMA_3_3_70B_INSTRUCT,
             ModelType.AWS_LLAMA_3_2_90B_INSTRUCT,
             ModelType.AWS_LLAMA_3_2_11B_INSTRUCT,
+            ModelType.NETMIND_DEEPSEEK_R1,
+            ModelType.NETMIND_DEEPSEEK_V3,
         }:
             return 128_000
         elif self in {
@@ -918,8 +937,14 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.OPENROUTER_LLAMA_4_MAVERICK_FREE,
         }:
             return 256_000
+
+        elif self in {
+            ModelType.NETMIND_LLAMA_4_MAVERICK_17B_18E_INSTRUCT,
+        }:
+            return 320_000
         elif self in {
             ModelType.OPENROUTER_LLAMA_4_SCOUT_FREE,
+            ModelType.NETMIND_LLAMA_4_MAVERICK_17B_18E_INSTRUCT,
         }:
             return 512_000
         elif self in {
@@ -1133,6 +1158,7 @@ class ModelPlatformType(Enum):
     SILICONFLOW = "siliconflow"
     AIML = "aiml"
     VOLCANO = "volcano"
+    NETMIND = "netmind"
 
     @classmethod
     def from_name(cls, name):
@@ -1257,6 +1283,11 @@ class ModelPlatformType(Enum):
     def is_deepseek(self) -> bool:
         r"""Returns whether this platform is DeepSeek."""
         return self is ModelPlatformType.DEEPSEEK
+
+    @property
+    def is_netmind(self) -> bool:
+        r"""Returns whether this platform is Netmind."""
+        return self is ModelPlatformType.NETMIND
 
     @property
     def is_ppio(self) -> bool:
