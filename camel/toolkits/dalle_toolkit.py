@@ -134,6 +134,8 @@ class DalleToolkit(BaseToolkit):
             n=1,  # NOTE: now dall-e-3 only supports n=1
             response_format="b64_json",
         )
+        if not response.data or len(response.data) == 0:
+            raise ValueError("No image data returned from DALL-E API.")
         image_b64 = response.data[0].b64_json
         image = self.base64_to_image(image_b64)  # type: ignore[arg-type]
 
