@@ -56,6 +56,8 @@ __all__ = [
     'GroqConfig',
     'LiteLLMConfig',
     'LITELLM_API_PARAMS',
+    'NetmindConfig',
+    'NETMIND_API_PARAMS',
     'NvidiaConfig',
     'NVIDIA_API_PARAMS',
     'OllamaConfig',
