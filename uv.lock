@@ -639,6 +639,7 @@ all = [
     { name = "rouge" },
     { name = "scenedetect" },
     { name = "scholarly", extra = ["tor"] },
+    { name = "scrapegraph-py" },
     { name = "sentence-transformers" },
     { name = "sentencepiece" },
     { name = "slack-bolt" },
@@ -799,6 +800,7 @@ owl = [
     { name = "requests-oauthlib" },
     { name = "rouge" },
     { name = "scenedetect" },
+    { name = "scrapegraph-py" },
     { name = "sentencepiece" },
     { name = "soundfile" },
     { name = "tabulate" },
@@ -867,6 +869,7 @@ web-tools = [
     { name = "playwright" },
     { name = "pyowm" },
     { name = "requests-oauthlib" },
+    { name = "scrapegraph-py" },
     { name = "sympy" },
     { name = "tavily-python" },
     { name = "wikipedia" },
@@ -1100,6 +1103,9 @@ requires-dist = [
     { name = "scenedetect", marker = "extra == 'owl'", specifier = ">=0.6.5.2" },
     { name = "scholarly", extras = ["tor"], marker = "extra == 'all'", specifier = "==1.7.11" },
     { name = "scholarly", extras = ["tor"], marker = "extra == 'research-tools'", specifier = "==1.7.11" },
+    { name = "scrapegraph-py", marker = "extra == 'all'", specifier = ">=1.12.0,<2" },
+    { name = "scrapegraph-py", marker = "extra == 'owl'", specifier = ">=1.12.0,<2" },
+    { name = "scrapegraph-py", marker = "extra == 'web-tools'", specifier = ">=1.12.0,<2" },
     { name = "sentence-transformers", marker = "extra == 'all'", specifier = ">=3.0.1,<4" },
     { name = "sentence-transformers", marker = "extra == 'rag'", specifier = ">=3.0.1,<4" },
     { name = "sentencepiece", marker = "extra == 'all'", specifier = ">=0.2,<0.3" },
@@ -6282,6 +6288,22 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/e9/06/0449b744892ed22b7e7b9a1994a866e64895363572677a316a9042af1fe5/scipy-1.15.2-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:03205d57a28e18dfd39f0377d5002725bf1f19a46f444108c29bdb246b6c8a11", size = 36872390 },
     { url = "https://files.pythonhosted.org/packages/6a/6f/a8ac3cfd9505ec695c1bc35edc034d13afbd2fc1882a7c6b473e280397bb/scipy-1.15.2-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:601881dfb761311045b03114c5fe718a12634e5608c3b403737ae463c9885d53", size = 39700276 },
     { url = "https://files.pythonhosted.org/packages/f5/6f/e6e5aff77ea2a48dd96808bb51d7450875af154ee7cbe72188afb0b37929/scipy-1.15.2-cp312-cp312-win_amd64.whl", hash = "sha256:e7c68b6a43259ba0aab737237876e5c2c549a031ddb7abc28c7b47f22e202ded", size = 40942317 },
+]
+
+[[package]]
+name = "scrapegraph-py"
+version = "1.12.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "aiohttp" },
+    { name = "beautifulsoup4" },
+    { name = "pydantic" },
+    { name = "python-dotenv" },
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/42/36/10546d18157cd2efb2de09098fac8dd6f689b98842a4cc71bb7fc29ba4b9/scrapegraph_py-1.12.0.tar.gz", hash = "sha256:82d27e8ea325975f768f80d4edf403b6294518dae6a1e3ae63e27b8934a5dacb", size = 113290 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/11/a8/8610143e9ebad9596e402260f63cbb6168f99719f07e13847b1df5a28f4d/scrapegraph_py-1.12.0-py3-none-any.whl", hash = "sha256:fd74d091529d3f8f5ba057950333e15a48ac5c0be7e2a56a8f2bad04cebdac30", size = 15458 },
 ]
 
 [[package]]
