@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
+import logging
 import os
 from typing import Dict, List, Optional
 
@@ -20,6 +21,8 @@ import requests
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 from camel.utils import MCPServer
+
+logger = logging.getLogger(__name__)
 
 
 @MCPServer()
@@ -51,7 +54,7 @@ class JinaRerankerToolkit(BaseToolkit):
                 will use CUDA if available, otherwise CPU.
                 (default: :obj:`None`)
             use_api (bool): A flag to switch between local model and API.
-                (default: :obj:`False`)
+                (default: :obj:`True`)
         """
 
         super().__init__(timeout=timeout)
@@ -62,6 +65,8 @@ class JinaRerankerToolkit(BaseToolkit):
         if self.use_api:
             self.model = None
             self._api_key = os.environ.get("JINA_API_KEY", "None")
+            if self._api_key == "None":
+                logger.error("JINA_API_KEY environment variable is not set.")
             self.url = 'https://api.jina.ai/v1/rerank'
             self.headers = {
                 'Content-Type': 'application/json',
@@ -139,17 +144,25 @@ class JinaRerankerToolkit(BaseToolkit):
         }
 
         if self.use_api:
-            response = requests.post(
-                self.url,
-                headers=self.headers,
-                data=json.dumps(data),
-                timeout=self.timeout,
-            )
-            results = [
-                {key: value for key, value in _res.items() if key != 'index'}
-                for _res in response.json()['results']
-            ]
-            return results
+            try:
+                response = requests.post(
+                    self.url,
+                    headers=self.headers,
+                    data=json.dumps(data),
+                    timeout=self.timeout,
+                )
+                response.raise_for_status()
+                results = [
+                    {
+                        key: value
+                        for key, value in _res.items()
+                        if key != 'index'
+                    }
+                    for _res in response.json()['results']
+                ]
+                return results
+            except requests.exceptions.RequestException as e:
+                raise RuntimeError(f"Failed to get response from Jina AI: {e}")
 
         else:
             import torch
@@ -194,17 +207,25 @@ class JinaRerankerToolkit(BaseToolkit):
         }
 
         if self.use_api:
-            response = requests.post(
-                self.url,
-                headers=self.headers,
-                data=json.dumps(data),
-                timeout=self.timeout,
-            )
-            results = [
-                {key: value for key, value in _res.items() if key != 'index'}
-                for _res in response.json()['results']
-            ]
-            return results
+            try:
+                response = requests.post(
+                    self.url,
+                    headers=self.headers,
+                    data=json.dumps(data),
+                    timeout=self.timeout,
+                )
+                response.raise_for_status()
+                results = [
+                    {
+                        key: value
+                        for key, value in _res.items()
+                        if key != 'index'
+                    }
+                    for _res in response.json()['results']
+                ]
+                return results
+            except requests.exceptions.RequestException as e:
+                raise RuntimeError(f"Failed to get response from Jina AI: {e}")
 
         else:
             import torch
@@ -249,17 +270,25 @@ class JinaRerankerToolkit(BaseToolkit):
         }
 
         if self.use_api:
-            response = requests.post(
-                self.url,
-                headers=self.headers,
-                data=json.dumps(data),
-                timeout=self.timeout,
-            )
-            results = [
-                {key: value for key, value in _res.items() if key != 'index'}
-                for _res in response.json()['results']
-            ]
-            return results
+            try:
+                response = requests.post(
+                    self.url,
+                    headers=self.headers,
+                    data=json.dumps(data),
+                    timeout=self.timeout,
+                )
+                response.raise_for_status()
+                results = [
+                    {
+                        key: value
+                        for key, value in _res.items()
+                        if key != 'index'
+                    }
+                    for _res in response.json()['results']
+                ]
+                return results
+            except requests.exceptions.RequestException as e:
+                raise RuntimeError(f"Failed to get response from Jina AI: {e}")
 
         else:
             import torch
@@ -307,17 +336,25 @@ class JinaRerankerToolkit(BaseToolkit):
         }
 
         if self.use_api:
-            response = requests.post(
-                self.url,
-                headers=self.headers,
-                data=json.dumps(data),
-                timeout=self.timeout,
-            )
-            results = [
-                {key: value for key, value in _res.items() if key != 'index'}
-                for _res in response.json()['results']
-            ]
-            return results
+            try:
+                response = requests.post(
+                    self.url,
+                    headers=self.headers,
+                    data=json.dumps(data),
+                    timeout=self.timeout,
+                )
+                response.raise_for_status()
+                results = [
+                    {
+                        key: value
+                        for key, value in _res.items()
+                        if key != 'index'
+                    }
+                    for _res in response.json()['results']
+                ]
+                return results
+            except requests.exceptions.RequestException as e:
+                raise RuntimeError(f"Failed to get response from Jina AI: {e}")
 
         else:
             import torch
