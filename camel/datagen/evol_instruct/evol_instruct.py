@@ -45,6 +45,8 @@ class EvolInstructPipeline(BaseDataGenPipeline):
             (default: :obj:`None`)
         output_path (Optional[str]): Path to save generated data.
             (default: :obj:`None`)
+        save_intermediate (bool): Whether to save intermediate results.
+            (default: :obj:`False`)
     """
 
     def __init__(
@@ -52,6 +54,7 @@ class EvolInstructPipeline(BaseDataGenPipeline):
         templates: Type = EvolInstructTemplates,
         agent: Optional[ChatAgent] = None,
         output_path: Optional[str] = None,
+        save_intermediate: bool = False,
     ) -> None:
         r"""Initialize pipeline with templates and language model agent.
 
@@ -64,8 +67,13 @@ class EvolInstructPipeline(BaseDataGenPipeline):
                 (default: :obj:`None`)
             output_path (Optional[str]): Path to save generated data.
                 (default: :obj:`None`)
+            save_intermediate (bool): Whether to save intermediate results.
+                (default: :obj:`False`)
         """
-        super().__init__(output_path=output_path)
+        super().__init__(
+            output_path=output_path,
+            save_intermediate=save_intermediate,
+        )
         self.templates = templates
         self.agent = agent or ChatAgent()
 
@@ -336,7 +344,6 @@ class EvolInstructPipeline(BaseDataGenPipeline):
         retry_limit: int = 3,
         retry_delay: float = 1.0,
         num_threads: int = 10,
-        *args: Any,
         **kwargs: Any,
     ) -> List[Dict[str, Any]]:
         r"""Generates evolved prompts from a set of seed prompts.
@@ -373,7 +380,6 @@ class EvolInstructPipeline(BaseDataGenPipeline):
                 (default: :obj:`1.0`)
             num_threads (int): Number of threads for parallel processing.
                 (default: :obj:`10`)
-            *args (Any): Additional positional arguments.
             **kwargs (Any): Additional keyword arguments.
 
         Returns:
@@ -478,6 +484,7 @@ class EvolInstructPipeline(BaseDataGenPipeline):
         chunk_size = len(seed_prompts) // num_chunks
         raw_results = []
 
+        # Process each chunk of prompts
         for chunk_idx in range(0, len(seed_prompts), chunk_size):
             chunk = seed_prompts[chunk_idx : chunk_idx + chunk_size]
             plan_chunk = evolution_plan[chunk_idx : chunk_idx + chunk_size]
@@ -490,6 +497,30 @@ class EvolInstructPipeline(BaseDataGenPipeline):
                     )
                 )
                 raw_results.extend(chunk_results)
+
+                # Save intermediate results after each chunk if configured
+                if chunk_idx > 0 and self.save_intermediate:
+                    # Convert the partial results to the expected format
+                    partial_results = []
+                    for i, evol_result in enumerate(raw_results):
+                        if i < len(seed_prompts):
+                            seed_prompt = seed_prompts[i]
+                        else:
+                            seed_prompt = "unknown"
+
+                        partial_results.append(
+                            {
+                                "seed_prompt": seed_prompt,
+                                "evolutions": evol_result,
+                                "metadata": {
+                                    "num_iterations": num_iterations,
+                                    "num_generations": num_generations,
+                                },
+                            }
+                        )
+
+                    # Call the hook for intermediate results
+                    self.on_intermediate_result(partial_results)
 
         # Convert the results to the expected format for BaseDataGenPipeline
         standardized_results = []
@@ -522,7 +553,6 @@ class EvolInstructPipeline(BaseDataGenPipeline):
         retry_limit: int = 3,
         retry_delay: float = 1.0,
         num_threads: int = 10,
-        *args: Any,
         **kwargs: Any,
     ) -> List[Dict[str, Any]]:
         r"""Execute the Evol-Instruct pipeline.
@@ -558,11 +588,7 @@ class EvolInstructPipeline(BaseDataGenPipeline):
         Returns:
             List[Dict[str, Any]]: Standardized evolution results.
         """
-        logger.info("Starting Evol-Instruct pipeline")
-        start_time = time.time()
-
-        # Run the generation process
-        results = self.generate(
+        return super().execute(
             prompts=prompts,
             evolution_spec=evolution_spec,
             num_generations=num_generations,
@@ -573,16 +599,5 @@ class EvolInstructPipeline(BaseDataGenPipeline):
             retry_limit=retry_limit,
             retry_delay=retry_delay,
             num_threads=num_threads,
+            **kwargs,
         )
-
-        # Save results if output_path is specified
-        if self.output_path:
-            self.save_results(results)
-
-        # Log completion information
-        elapsed_time = (time.time() - start_time) / 60
-        logger.info(
-            f"Evol-Instruct pipeline completed in {elapsed_time:.2f} minutes"
-        )
-
-        return results

@@ -12,8 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import json
-import os
 import random
 import time
 from typing import Any, Dict, List, Optional, Union
@@ -75,14 +73,14 @@ class SelfInstructPipeline(BaseDataGenPipeline):
     ):
         super().__init__(
             output_path=output_path,
+            save_intermediate=save_intermediate,
         )
         self.agent = agent
         self.num_machine_instructions = num_machine_instructions
         self.human_to_machine_ratio = human_to_machine_ratio
-        self.save_intermediate = save_intermediate
         self.human_tasks: List[Dict] = []
         self.machine_tasks: List[Dict] = []
-        self.load_seed(seed)
+        self.human_tasks = self.load_data(seed)
         default_config: Dict[str, Dict[str, Any]] = {
             "length": {},
             "keyword": {},
@@ -101,36 +99,6 @@ class SelfInstructPipeline(BaseDataGenPipeline):
             )
             self.instruction_filter = InstructionFilter(
                 config_to_use, stop_on_first_failure
-            )
-
-    def load_seed(self, seed: Union[str, List[Dict]]):
-        r"""Load seed tasks from a file or directly from a
-        list of dictionaries.
-
-        Args:
-            seed (Union[str, List[Dict]]): Path to the seed file or a list of
-                human tasks directly.
-
-        Raises:
-            FileNotFoundError: If the seed is a file path and the file
-                does not exist.
-        """
-        if isinstance(seed, list):
-            # Direct list of tasks
-            self.human_tasks = seed
-        elif isinstance(seed, str):
-            # File path
-            if os.path.exists(seed):
-                with open(seed, 'r') as f:
-                    for line in f:
-                        line = line.strip()
-                        if line:
-                            self.human_tasks.append(json.loads(line))
-            else:
-                raise FileNotFoundError(f"Seed file not found at path: {seed}")
-        else:
-            raise ValueError(
-                "Seed must be either a file path or a list of dictionaries"
             )
 
     def sample_human_tasks(self, count: int) -> List[dict]:
@@ -156,6 +124,7 @@ class SelfInstructPipeline(BaseDataGenPipeline):
             List[dict]: A list of sampled machine tasks, with placeholders if
                 insufficient tasks are available.
         """
+
         available_machine_tasks = len(self.machine_tasks)
         if available_machine_tasks < count:
             sampled_tasks = self.machine_tasks.copy()
@@ -220,6 +189,7 @@ class SelfInstructPipeline(BaseDataGenPipeline):
             bool: True if the instruction is a classification task,
                 otherwise False.
         """
+
         clf_prompt = (
             SelfInstructTemplates.clf_template
             + f"Task: {instruction}\nIs it classification?"
@@ -309,6 +279,7 @@ class SelfInstructPipeline(BaseDataGenPipeline):
         Returns:
             List[dict]: A list of generated instances in input-output format.
         """
+
         if classification:
             prompt = (
                 SelfInstructTemplates.output_first_template_for_clf.format(
@@ -347,6 +318,7 @@ class SelfInstructPipeline(BaseDataGenPipeline):
             List[Dict[str, str]]: A list of dictionaries with 'input' and
                 'output' keys.
         """
+
         instances = []
         lines = generated_text.split("\n")
         current_label = None
@@ -397,6 +369,7 @@ class SelfInstructPipeline(BaseDataGenPipeline):
             List[Dict[str, str]]: A list of dictionaries with 'input' and
                 'output' keys.
         """
+
         instances = []
         prev = 0
         lines = generated_text.split("\n")
@@ -442,6 +415,18 @@ class SelfInstructPipeline(BaseDataGenPipeline):
         r"""Construct data output from generated tasks and instances."""
         self.generate_machine_instances()
 
+    def on_intermediate_result(self, results: List[Dict[str, Any]]) -> None:
+        r"""Handle intermediate results during generation.
+
+        Override of the base class method to save the machine tasks.
+
+        Args:
+            results (List[Dict[str, Any]]): Current machine tasks.
+        """
+
+        if self.save_intermediate and self.output_path:
+            self.save_results(self.machine_tasks)
+
     def generate(self, timeout_minutes=600) -> List[Dict[str, Any]]:
         r"""Generate machine instructions and instances.
 
@@ -454,6 +439,13 @@ class SelfInstructPipeline(BaseDataGenPipeline):
         Returns:
             List[Dict[str, Any]]: The generated machine tasks with instances.
         """
+
+        logger.info(
+            f"Starting self-instruct generation with target "
+            f"{self.num_machine_instructions} instructions"
+        )
+        logger.info(f"Timeout set to {timeout_minutes} minutes")
+
         start_time = time.time()
         timeout_seconds = timeout_minutes * 60
 
@@ -462,6 +454,7 @@ class SelfInstructPipeline(BaseDataGenPipeline):
             # Check for timeout
             elapsed = time.time() - start_time
             if elapsed > timeout_seconds:
+                logger.info(f"Timeout reached after {elapsed/60:.2f} minutes")
                 break
 
             prompt, instruction = self.generate_machine_instruction()
@@ -484,9 +477,8 @@ class SelfInstructPipeline(BaseDataGenPipeline):
                 }
                 self.machine_tasks.append(instruction_dict)
 
-                # Save intermediate results if configured
-                if self.save_intermediate and self.output_path:
-                    self.save_results(self.machine_tasks)
+                # Call the intermediate result hook
+                self.on_intermediate_result(self.machine_tasks)
 
         # Generate instances for each instruction
         self.generate_machine_instances()
@@ -507,28 +499,8 @@ class SelfInstructPipeline(BaseDataGenPipeline):
         Returns:
             List[Dict[str, Any]]: The generated machine tasks with instances.
         """
-        logger.info(
-            f"Starting self-instruct generation with target "
-            f"{self.num_machine_instructions} instructions"
-        )
-        logger.info(f"Timeout set to {timeout_minutes} minutes")
-        start_time = time.time()
 
-        # Run the generation process
-        results = self.generate(timeout_minutes=timeout_minutes)
-
-        # Log completion information
-        elapsed_time = (time.time() - start_time) / 60
-        logger.info(
-            f"Self-instruct generation completed with {len(results)} "
-            f"instructions in {elapsed_time:.2f} minutes"
-        )
-
-        # Save final results if output_path is specified
-        if self.output_path:
-            self.save_results(results)
-
-        return results
+        return super().execute(timeout_minutes=timeout_minutes)
 
 
 class AgentResponse(BaseModel):
