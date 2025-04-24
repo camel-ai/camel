@@ -1396,6 +1396,414 @@ class ChatAgent(BaseAgent):
         """
         self.model_backend.add_strategy(name, strategy_fn)
 
+    def to_mcp(
+        self,
+        server_name: str = "ChatAgentMCP",
+        agent_name: str = "default",
+        description: Optional[str] = None,
+        output_path: Optional[str] = None,
+    ) -> Dict[str, str]:
+        r"""Generate MCP server scripts for the current agent.
+
+        This method generates a single Python file that serves the agent via
+        MCP. The file includes both the agent configuration and the MCP server
+        code.
+
+        Args:
+            server_name (str): The name of the MCP server
+            agent_name (str): The name of the agent in the MCP server
+            description (Optional[str]): A description of the agent. If None,
+                a default description will be used.
+            output_path (Optional[str]): The directory to write the files to.
+                If None, returns the file contents without writing them.
+
+        Returns:
+            Dict[str, str]: A dictionary mapping file names to their contents
+        """
+        import textwrap
+        from pathlib import Path
+
+        # Extract model configuration for agent_config.py
+        model_kwargs = {}
+        model_backend = self.model_backend.current_model
+        model_class = model_backend.__class__.__name__
+
+        # Get model configuration
+        # model_kwargs['model_platform'] = (
+        #     model_backend.__class__.__name__[:-5].lower()
+        # )
+
+        if hasattr(model_backend, 'model_type'):
+            if hasattr(model_backend.model_type, 'name'):
+                model_kwargs['model_type'] = (
+                    f"ModelType.{model_backend.model_type.name}"
+                )
+            else:
+                model_kwargs['model_type'] = f'"{model_backend.model_type}"'
+
+        # Get API keys from environment variables if applicable
+        api_key_env = None
+        if hasattr(model_backend, 'api_key') and model_backend.api_key:
+            # Try to determine which environment variable it might be from
+            if 'openai' in model_class.lower():
+                api_key_env = 'OPENAI_API_KEY'
+            elif 'anthropic' in model_class.lower():
+                api_key_env = 'ANTHROPIC_API_KEY'
+            elif (
+                'openrouter' in str(getattr(model_backend, 'url', '')).lower()
+            ):
+                api_key_env = 'OPENROUTER_API_KEY'
+
+        if api_key_env:
+            model_kwargs['api_key'] = f'os.getenv("{api_key_env}")'
+
+        # Get URL if applicable
+        if hasattr(model_backend, 'url') and model_backend.url:
+            model_kwargs['url'] = f'"{model_backend.url}"'
+
+        # Format model creation code
+        model_args_str = ',\n        '.join(
+            [f"{k}={v}" for k, v in model_kwargs.items()]
+        )
+
+        # Get tools configuration
+        tools_code = ""
+        if self._internal_tools:
+            tool_imports = set()
+            tool_instances: List[str] = []
+
+            for _, tool in self._internal_tools.items():
+                if hasattr(tool, '_func') and hasattr(tool._func, '__self__'):
+                    # This is a method of an object
+                    toolkit_class = tool._func.__self__.__class__.__name__
+                    tool_imports.add(
+                        f"from camel.toolkits import {toolkit_class}"
+                    )
+                    toolkit_var = f"{toolkit_class.lower()}_toolkit"
+                    if any(toolkit_var in line for line in tool_instances):
+                        # We already have this toolkit
+                        continue
+                    tool_instances.append(f"{toolkit_var} = {toolkit_class}()")
+                    method_name = tool._func.__name__
+                    tool_instances.append(
+                        f"FunctionTool({toolkit_var}.{method_name})"
+                    )
+
+            if tool_instances:
+                tools_code = "\n".join(tool_imports) + "\n\n"
+                tools_code += "\n".join(tool_instances[:-1]) + "\n\n"
+                tools_code += (
+                    "tools = [\n    "
+                    + ",\n    ".join(tool_instances[-1:])
+                    + "\n]"
+                )
+
+        # Format agent initialization code
+        agent_kwargs = {}
+        if self.system_message:
+            agent_kwargs['system_message'] = f'"{self.system_message.content}"'
+        if self.output_language:
+            agent_kwargs['output_language'] = f'"{self.output_language}"'
+        if tools_code:
+            agent_kwargs['tools'] = 'tools'
+
+        agent_args_str = ',\n        '.join(
+            [f"{k}={v}" for k, v in agent_kwargs.items()]
+        )
+
+        # Default description if none provided
+        if description is None:
+            description = f"The {agent_name} agent is a helpful assistant."
+            if self._internal_tools:
+                description += (
+                    " It has access to tools for enhanced capabilities."
+                )
+
+        # Generate the combined MCP server file
+        server_content = textwrap.dedent(f'''
+        from typing import Any, Dict, Optional
+        import logging
+        import os
+
+        from mcp.server.fastmcp import Context, FastMCP
+
+        from camel.agents import ChatAgent
+        from camel.models import ModelFactory
+        from camel.toolkits import FunctionTool
+        from camel.types import ModelPlatformType, ModelType
+        from camel.utils import model_from_json_schema
+
+        # Prevent logging since MCP needs to use stdout
+        root_logger = logging.getLogger()
+        root_logger.handlers = []
+        root_logger.addHandler(logging.NullHandler())
+
+        # Create MCP server
+        mcp = FastMCP("{server_name}", dependencies=["camel-ai"])
+
+        # ====================================================================
+        # AGENT CONFIGURATION
+        # ====================================================================
+
+        # Define the model
+        model = ModelFactory.create(
+            {model_args_str}
+        )
+
+        {tools_code if tools_code else "# No tools defined for this agent"}
+
+        # Create the agent
+        {agent_name}_agent = ChatAgent(
+            model=model,
+            {agent_args_str}
+        )
+
+        {agent_name}_agent_description = """
+        {description}
+        """
+
+        # Provide a list of agents with names
+        agents_dict = {{
+            "{agent_name}": {agent_name}_agent,
+        }}
+
+        # Provide descriptions for each agent
+        description_dict = {{
+            "{agent_name}": {agent_name}_agent_description,
+        }}
+        # ====================================================================
+
+        @mcp.tool()
+        async def step(
+            name: str,
+            message: str,
+            ctx: Context,
+            response_format: Optional[Dict[str, Any]] = None,
+        ) -> Dict[str, Any]:
+            """Execute a single step in the chat session with the agent.
+
+            Args:
+                name: The name of the agent to use
+                message: The input message for the agent
+                response_format: Optional schema for structured response
+
+            Returns:
+                A dictionary containing the response from the agent
+            """
+            try:
+                agent = agents_dict[name]
+            except KeyError:
+                return {{
+                    "status": "error",
+                    "message": f"Agent with name {{name}} not found",
+                }}
+
+            format_cls = None
+            if response_format:
+                format_cls = model_from_json_schema(
+                    "DynamicResponseFormat", response_format
+                )
+
+            ctx.info(f"The agent {{name}} is processing the message: 
+                {{message}}")
+            response = await agent.astep(message, format_cls)
+
+            return {{
+                "status": "success",
+                "messages": [msg.to_dict() for msg in response.msgs],
+                "terminated": response.terminated,
+                "info": response.info,
+            }}
+
+
+        @mcp.tool()
+        def reset(ctx: Context) -> Dict[str, str]:
+            """Reset the chat agent to its initial state.
+            Returns:
+                A dictionary containing the status of the reset operation
+            """
+            for agent in agents_dict.values():
+                agent.reset()
+            ctx.info("All agents reset successfully")
+            return {{"status": "success", "message": "All agents reset 
+                successfully"}}
+
+
+        @mcp.tool()
+        def set_output_language(language: str, ctx: Context) -> Dict[str, str]:
+            """Set the output language for the chat agent.
+            Args:
+                language: The language to set the output language to
+
+            Returns:
+                A dictionary containing the status of the language setting 
+                operation
+            """
+            for agent in agents_dict.values():
+                agent.output_language = language
+            ctx.info(f"Output language set to '{{language}}'")
+            return {{
+                "status": "success",
+                "message": f"Output language set to '{{language}}'",
+            }}
+
+
+        @mcp.resource("agent://")
+        def get_agents_info() -> Dict[str, Any]:
+            """Get information about all agents provided by the server.
+            Returns:
+                A dictionary containing information about all agents
+            """
+            return description_dict
+
+
+        @mcp.resource("history://{{name}}")
+        def get_chat_history(name: str) -> Dict[str, Any]:
+            """Get the chat history for the given agent.
+            Args:
+                name: The name of the agent to get the chat history for
+
+            Returns:
+                A dictionary containing the chat history for the given agent
+            """
+            try:
+                agent = agents_dict[name]
+            except KeyError:
+                return {{
+                    "status": "error",
+                    "message": f"Agent with name {{name}} not found",
+                }}
+            return agent.chat_history
+
+
+        @mcp.resource("agent://{{name}}")
+        def get_agent_info(name: str) -> Dict[str, Any]:
+            """Get information about the given agent.
+            Args:
+                name: The name of the agent to get information for
+
+            Returns:
+                A dictionary containing information about the given agent
+            """
+            try:
+                agent = agents_dict[name]
+            except KeyError:
+                return {{
+                    "status": "error",
+                    "message": f"Agent with name {{name}} not found",
+                }}
+            info = {{
+                "agent_id": agent.agent_id,
+                "model_type": str(agent.model_type),
+                "token_limit": agent.token_limit,
+                "output_language": agent.output_language,
+                "description": description_dict[name],
+            }}
+            return info
+
+
+        @mcp.resource("tool://{{name}}")
+        def get_available_tools(name: str) -> Dict[str, Any]:
+            """Get a list of available internal tools.
+            Args:
+                name: The name of the agent to get the available tools for
+
+            Returns:
+                A dictionary containing the available internal tools
+            """
+            try:
+                agent = agents_dict[name]
+            except KeyError:
+                return {{
+                    "status": "error",
+                    "message": f"Agent with name {{name}} not found",
+                }}
+            return agent.tool_dict
+
+
+        if __name__ == "__main__":
+            mcp.run(transport='stdio')
+        ''').strip()
+
+        # Generate a README.md with usage instructions
+        readme_content = textwrap.dedent(f'''
+        # {server_name}
+
+        This is an MCP server for the {agent_name} agent.
+
+        ## Setup
+
+        1. Make sure you have the required dependencies:
+           ```
+           pip install camel-ai mcp-server-fastmcp
+           ```
+
+        2. Set the required environment variables:
+           ```
+           {f'export {api_key_env}="your-api-key"' if api_key_env 
+            else '# No API key required'}
+           ```  
+
+        3. Run the server:
+           ```
+           python {server_name.lower()}.py
+           ```
+
+        ## Usage
+
+        The server exposes the following tools:
+
+        - `step(name, message, response_format=None)`: Execute a chat step
+        - `reset()`: Reset all agents
+        - `set_output_language(language)`: Set the output language
+
+        And the following resources:
+
+        - `agent://`: Get information about all agents
+        - `agent://{{name}}`: Get information about a specific agent
+        - `history://{{name}}`: Get the chat history for a specific agent
+        - `tool://{{name}}`: Get available tools for a specific agent
+
+        ## Example
+
+        ```python
+        from mcp.client import Client
+
+        client = Client("ws://localhost:8000")
+        await client.connect()
+
+        # Chat with the agent
+        response = await client.call("step", {{
+            "name": "{agent_name}",
+            "message": "Hello, how are you?"
+        }})
+        print(response)
+
+        # Reset the agent
+        await client.call("reset")
+
+        # Disconnect
+        await client.disconnect()
+        ```
+        ''').strip()
+
+        # Create dictionary with file contents
+        file_contents = {
+            f"{server_name.lower()}.py": server_content,
+            "README.md": readme_content,
+        }
+
+        # Write files if output_path is provided
+        if output_path:
+            output_dir = Path(output_path)
+            output_dir.mkdir(parents=True, exist_ok=True)
+
+            for filename, content in file_contents.items():
+                with open(output_dir / filename, "w") as f:
+                    f.write(content)
+
+        return file_contents
+
     def __repr__(self) -> str:
         r"""Returns a string representation of the :obj:`ChatAgent`.
 
