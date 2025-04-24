@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.46"
+version = "0.2.48"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -77,6 +77,7 @@ rag = [
     "unstructured==0.16.20",
     "pandasai>=2.3.0,<3",
     "crawl4ai>=0.3.745",
+    "pyobvector>=0.1.18",
 ]
 web_tools = [
     "duckduckgo-search>=6.3.5,<7",
@@ -99,7 +100,8 @@ web_tools = [
     "playwright>=1.50.0",
     "html2text>=2024.2.26",
     "beautifulsoup4>=4,<5",
-    "exa-py>=1.10.0,<2"
+    "exa-py>=1.10.0,<2",
+    "scrapegraph-py>=1.12.0,<2",
 ]
 document_tools = [
     "numpy~=1.26",
@@ -191,7 +193,8 @@ storage = [
     "azure-storage-blob>=12.21.0,<13",
     "google-cloud-storage>=2.18.0,<3",
     "botocore>=1.35.3,<2",
-    "mem0ai>=0.1.73"
+    "mem0ai>=0.1.73",
+    "pyobvector>=0.1.18",
 ]
 owl = [
     "numpy~=1.26",
@@ -237,6 +240,7 @@ owl = [
     "pandas>=1.5.3,<2",
     "rouge>=1.0.1,<2",
     "crawl4ai>=0.3.745",
+    "scrapegraph-py>=1.12.0,<2",
 ]
 all = [
     "numpy~=1.26",
@@ -348,6 +352,8 @@ all = [
     "exa-py>=1.10.0,<2",
     "crawl4ai>=0.3.745",
     "pyautogui>=0.9.54,<0.10",
+    "pyobvector>=0.1.18",
+    "scrapegraph-py>=1.12.0,<2",
 ]
 
 [project.urls]
@@ -533,6 +539,8 @@ module = [
     "exa_py",
     "crawl4ai.*",
     "pyautogui",
+    "pyobvector.*",
+    "scrapegraph_py.*",
 ]
 ignore_missing_imports = true
 
@@ -544,4 +552,4 @@ skip = '.git*,*.pdf,*.svg,*.lock,*.css,examples/toolkits/semantic_scholar_toolki
 check-hidden = true
 # Ignore long lines as usually some kind of base64 encodings e.g. in ipynb
 ignore-regex = '^\s*"image/\S+": ".*|^.{300,}|\b(NotIn|Unsupport)\b'
-ignore-words-list = 'ans,datas,rouge,doubleClick'
+ignore-words-list = 'ans,datas,rouge,doubleClick,OCE'
