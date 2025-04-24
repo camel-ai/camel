@@ -26,6 +26,7 @@ from .mistral_config import MISTRAL_API_PARAMS, MistralConfig
 from .modelscope_config import MODELSCOPE_API_PARAMS, ModelScopeConfig
 from .moonshot_config import MOONSHOT_API_PARAMS, MoonshotConfig
 from .nvidia_config import NVIDIA_API_PARAMS, NvidiaConfig
+from .netmind_config import NETMIND_API_PARAMS, NetmindConfig
 from .ollama_config import OLLAMA_API_PARAMS, OllamaConfig
 from .openai_config import OPENAI_API_PARAMS, ChatGPTConfig
 from .openrouter_config import OPENROUTER_API_PARAMS, OpenRouterConfig
