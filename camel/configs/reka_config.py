@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Any, Optional, Union
+from typing import Optional, Union
 
 from camel.configs.base_config import BaseConfig
 
@@ -64,12 +64,6 @@ class RekaConfig(BaseConfig):
     frequency_penalty: Optional[float] = None
     presence_penalty: Optional[float] = None
     use_search_engine: Optional[bool] = None
-
-    def as_dict(self) -> dict[str, Any]:
-        config_dict = super().as_dict()
-        if "tools" in config_dict:
-            del config_dict["tools"]  # Reka does not support tool calling
-        return config_dict
 
 
 REKA_API_PARAMS = {param for param in RekaConfig().model_fields.keys()}
