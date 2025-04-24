@@ -13,11 +13,12 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Sequence, Union
+from typing import Dict, List, Optional, Union
+
+from pydantic import Field
 
 from camel.configs.base_config import BaseConfig
 from camel.types import NotGiven
-from pydantic import Field
 
 
 class NetmindConfig(BaseConfig):
@@ -27,12 +28,12 @@ class NetmindConfig(BaseConfig):
     Reference: https://netmind-power.gitbook.io/netmind-power-documentation/api/inference/chat
 
      Args:
-        model (str, optional): Specify the model to use. 
+        model (str, optional): Specify the model to use.
             (default: :obj:`None`)
-        messages (List[Dict], optional): (ChatCompletion only) An array of 
+        messages (List[Dict], optional): (ChatCompletion only) An array of
             message objects with roles (system, user, assistant) and content.
             (default: :obj:`None`)
-        prompt (str, optional): (Completion only) The prompt to generate 
+        prompt (str, optional): (Completion only) The prompt to generate
             completions for. (default: :obj:`None`)
         presence_penalty (float, optional): Number between :obj:`-2.0` and
             :obj:`2.0`. Positive values penalize new tokens based on whether
@@ -66,7 +67,7 @@ class NetmindConfig(BaseConfig):
         frequency_penalty (float, optional): Penalizes new tokens based on
             their frequency in the text so far. Range: [-2.0, 2.0].
             (default: :obj:`None`)
-        repetition_penalty (float, optional): Penalizes new tokens based on 
+        repetition_penalty (float, optional): Penalizes new tokens based on
             their appearance in the prompt and generated text.
             (default: :obj:`None`)
         max_tokens (Union[int, NotGiven], optional): Maximum number of tokens
@@ -81,7 +82,7 @@ class NetmindConfig(BaseConfig):
             (default: :obj:`None`)
         stop (Optional[List[str]], optional): List of stop sequences.
             (default: :obj:`None`)
-        n (Optional[int], optional): Number of chat completion choices to 
+        n (Optional[int], optional): Number of chat completion choices to
             generate for each input message. (default: :obj:`None`)
     """
 
@@ -100,6 +101,4 @@ class NetmindConfig(BaseConfig):
     logit_bias: Optional[Dict[str, float]] = Field(default=None)
 
 
-NETMIND_API_PARAMS = {
-    param for param in NetmindConfig.model_fields.keys()
-}
+NETMIND_API_PARAMS = {param for param in NetmindConfig.model_fields.keys()}

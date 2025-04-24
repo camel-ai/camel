@@ -24,7 +24,7 @@ from camel.utils import (
 )
 
 
-class NETMINDModel(OpenAICompatibleModel):
+class NetmindModel(OpenAICompatibleModel):
     r"""Constructor for Netmind backend with OpenAI compatibility.
 
     Args:
@@ -38,8 +38,8 @@ class NETMINDModel(OpenAICompatibleModel):
         api_key (Optional[str], optional): The API key for authenticating with
             the Netmind service. (default: :obj:`None`)
         url (Optional[str], optional): The url to the Netmind service.
-            If not provided, "https://api.netmind.ai/inference-api/openai/v1" will be used.
-            (default: :obj:`None`)
+            If not provided, "https://api.netmind.ai/inference-api/openai/v1"
+            will be used.(default: :obj:`None`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter(
             ModelType.GPT_4O_MINI)` will be used.
@@ -64,10 +64,11 @@ class NETMINDModel(OpenAICompatibleModel):
         timeout: Optional[float] = None,
     ) -> None:
         if model_config_dict is None:
-            model_config_dict = Config().as_dict()
+            model_config_dict = NetmindConfig().as_dict()
         api_key = api_key or os.environ.get("NETMIND_API_KEY")
         url = url or os.environ.get(
-            "NETMIND_API_BASE_URL", "https://api.netmind.ai/inference-api/openai/v1"
+            "NETMIND_API_BASE_URL",
+            "https://api.netmind.ai/inference-api/openai/v1",
         )
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(

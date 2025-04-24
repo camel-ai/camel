@@ -30,8 +30,8 @@ from .model_factory import ModelFactory
 from .model_manager import ModelManager, ModelProcessingError
 from .modelscope_model import ModelScopeModel
 from .moonshot_model import MoonshotModel
-from .netmind_model import NetmindModel
 from .nemotron_model import NemotronModel
+from .netmind_model import NetmindModel
 from .nvidia_model import NvidiaModel
 from .ollama_model import OllamaModel
 from .openai_audio_models import OpenAIAudioModels
@@ -66,7 +66,7 @@ __all__ = [
     'ModelManager',
     'LiteLLMModel',
     'OpenAIAudioModels',
-    'NetmindModel'
+    'NetmindModel',
     'NemotronModel',
     'NvidiaModel',
     'OllamaModel',
