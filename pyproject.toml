@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.38"
+version = "0.2.48"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -22,11 +22,12 @@ keywords = [
 ]
 dependencies = [
     "openai>=1.68.0,<2",
+    "mcp>=1.3.0",
     "tiktoken>=0.7.0,<0.8",
     "colorama>=0.4.6,<0.5",
     "jsonschema>=4,<5",
     "docstring-parser>=0.15,<0.16",
-    "pydantic>=1.9,<2.10",
+    "pydantic>=2.10.6",
     "httpx>=0.28.0,<1.0.0dev",
     "psutil>=5.9.8,<6",
 ]
@@ -75,6 +76,8 @@ rag = [
     "cohere>=5.11.0,<6",
     "unstructured==0.16.20",
     "pandasai>=2.3.0,<3",
+    "crawl4ai>=0.3.745",
+    "pyobvector>=0.1.18",
 ]
 web_tools = [
     "duckduckgo-search>=6.3.5,<7",
@@ -89,11 +92,16 @@ web_tools = [
     "pyowm>=3.3.0,<4",
     "googlemaps>=4.10.0,<5",
     "requests_oauthlib>=1.3.1,<2",
+    "google-api-python-client==2.166.0",
+    "google-auth-httplib2==0.2.0",
+    "google-auth-oauthlib==1.2.1",
     "sympy>=1.13.3,<2",
     "fastapi>=0.115.11",
     "playwright>=1.50.0",
     "html2text>=2024.2.26",
     "beautifulsoup4>=4,<5",
+    "exa-py>=1.10.0,<2",
+    "scrapegraph-py>=1.12.0,<2",
 ]
 document_tools = [
     "numpy~=1.26",
@@ -109,6 +117,7 @@ document_tools = [
     "openpyxl>=3.1.5",
     "docx>=0.2.4",
     "fpdf>=1.7.2",
+    "crawl4ai>=0.3.745",
 ]
 media_tools = [
     "imageio[pyav]>=2.34.2,<3",
@@ -118,6 +127,7 @@ media_tools = [
     "ffmpeg-python>=0.2.0,<0.3",
     "scenedetect>=0.6.5.2",
 ]
+
 communication_tools = [
     "slack-sdk>=3.27.2,<4",
     "slack-bolt>=1.20.1,<2",
@@ -137,6 +147,7 @@ data_tools = [
     "aiosqlite>=0.20.0,<0.21",
     "stripe>=11.3.0,<12",
     "networkx>=3.4.2,<4",
+    "math-verify>=0.7.0,<0.8", 
 ]
 research_tools = [
     "arxiv>=2.1.3,<3",
@@ -182,7 +193,8 @@ storage = [
     "azure-storage-blob>=12.21.0,<13",
     "google-cloud-storage>=2.18.0,<3",
     "botocore>=1.35.3,<2",
-    "mem0ai>=0.1.73"
+    "mem0ai>=0.1.73",
+    "pyobvector>=0.1.18",
 ]
 owl = [
     "numpy~=1.26",
@@ -227,6 +239,8 @@ owl = [
     "tree-sitter>=0.23.2,<0.24",
     "pandas>=1.5.3,<2",
     "rouge>=1.0.1,<2",
+    "crawl4ai>=0.3.745",
+    "scrapegraph-py>=1.12.0,<2",
 ]
 all = [
     "numpy~=1.26",
@@ -251,6 +265,9 @@ all = [
     "sympy>=1.13.3,<2",
     "pyowm>=3.3.0,<4",
     "googlemaps>=4.10.0,<5",
+    "google-api-python-client==2.166.0",
+    "google-auth-httplib2==0.2.0",
+    "google-auth-oauthlib==1.2.1",
     "requests_oauthlib>=1.3.1,<2",
     "fastapi>=0.115.11",
     "prance>=23.6.21.0,<24",
@@ -330,7 +347,13 @@ all = [
     "fpdf>=1.7.2",
     "mcp>=1.3.0",
     "typer>=0.15.2",
-    "mem0ai>=0.1.67"
+    "mem0ai>=0.1.67",
+    "math-verify>=0.7.0,<0.8",
+    "exa-py>=1.10.0,<2",
+    "crawl4ai>=0.3.745",
+    "pyautogui>=0.9.54,<0.10",
+    "pyobvector>=0.1.18",
+    "scrapegraph-py>=1.12.0,<2",
 ]
 
 [project.urls]
@@ -454,6 +477,7 @@ module = [
     "sentence_transformers.*",
     "pymilvus",
     "pytidb",
+    "pytidb.schema",
     "pillow",
     "slack-sdk",
     "slack-bolt",
@@ -466,6 +490,8 @@ module = [
     "docker.*",
     "google.*",
     "google_generativeai",
+    "google_auth_oauthlib.flow",
+    "googleapiclient.discovery",
     "mistralai",
     "cohere",
     "fish-audio-sdk",
@@ -509,5 +535,21 @@ module = [
     "mcp",
     "typer",
     "mem0",
+    "math_verify.*",
+    "exa_py",
+    "crawl4ai.*",
+    "pyautogui",
+    "pyobvector.*",
+    "scrapegraph_py.*",
 ]
 ignore_missing_imports = true
+
+[tool.codespell]
+# Ref: https://github.com/codespell-project/codespell#using-a-config-file
+# the .py file needs to be listed twice since pre-commit and codespell treat
+# that path differently.
+skip = '.git*,*.pdf,*.svg,*.lock,*.css,examples/toolkits/semantic_scholar_toolkit.py,./examples/toolkits/semantic_scholar_toolkit.py'
+check-hidden = true
+# Ignore long lines as usually some kind of base64 encodings e.g. in ipynb
+ignore-regex = '^\s*"image/\S+": ".*|^.{300,}|\b(NotIn|Unsupport)\b'
+ignore-words-list = 'ans,datas,rouge,doubleClick,OCE'

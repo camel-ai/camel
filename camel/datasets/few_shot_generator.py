@@ -16,7 +16,7 @@ import asyncio
 from datetime import datetime
 from typing import List
 
-from pydantic import ValidationError
+from pydantic import BaseModel, Field, ValidationError
 
 from camel.agents import ChatAgent
 from camel.logger import get_logger
@@ -126,7 +126,7 @@ class FewShotGenerator(BaseGenerator):
         max_retries: int = 10,
         num_examples: int = 3,
         **kwargs,
-    ) -> List[DataPoint]:
+    ) -> None:
         r"""Generates and validates `n` new datapoints through
         few-shot prompting, with a retry limit.
 
@@ -176,14 +176,30 @@ class FewShotGenerator(BaseGenerator):
                 ]
                 prompt = self._construct_prompt(examples)
 
+                # Create a simplified version of DataPoint that omits metadata
+                # because agent.step's response_format parameter doesn't
+                # support type Dict[str, Any]
+                class DataPointSimplified(BaseModel):
+                    question: str = Field(
+                        description="The primary question or issue to "
+                        "be addressed."
+                    )
+                    final_answer: str = Field(description="The final answer.")
+                    rationale: str = Field(
+                        description="Logical reasoning or explanation "
+                        "behind the answer."
+                    )
+
                 try:
                     agent_output = (
-                        self.agent.step(prompt, response_format=DataPoint)
+                        self.agent.step(
+                            prompt, response_format=DataPointSimplified
+                        )
                         .msgs[0]
                         .parsed
                     )
 
-                    assert isinstance(agent_output, DataPoint)
+                    assert isinstance(agent_output, DataPointSimplified)
 
                     self.agent.reset()
 
@@ -201,19 +217,27 @@ class FewShotGenerator(BaseGenerator):
                     raise TypeError(f"Rationale {rationale} is not a string.")
 
                 try:
-                    verifier_response = await self.verifier.verify(
-                        solution=rationale,
-                        ground_truth=None,
+                    verifier_response = await asyncio.wait_for(
+                        self.verifier.verify(
+                            solution=rationale,
+                            reference_answer=None,
+                        ),
+                        timeout=180,
                     )
                     if not verifier_response or not verifier_response.result:
                         raise ValueError(
                             "Verifier unsuccessful, response: "
                             f"{verifier_response}"
                         )
-                except (ValueError, AttributeError) as e:
+                except (ValueError, AttributeError, asyncio.TimeoutError) as e:
+                    error_msg = (
+                        "Verifier timeout"
+                        if isinstance(e, asyncio.TimeoutError)
+                        else f"Verifier issue: {e}"
+                    )
                     logger.warning(
-                        f"Verifier issue: {e}, "
-                        f"retrying... ({retries + 1}/{max_retries})"
+                        f"{error_msg}, retrying... "
+                        f"({retries + 1}/{max_retries})"
                     )
                     retries += 1
                     continue
@@ -227,6 +251,7 @@ class FewShotGenerator(BaseGenerator):
                             "synthetic": str(True),
                             "created": datetime.now().isoformat(),
                             "generator": "few_shot",
+                            "shots": [e.to_dict() for e in examples],
                         },
                     )
                 except ValidationError as e:
@@ -255,4 +280,3 @@ class FewShotGenerator(BaseGenerator):
         # Thread-safe way to extend the data list
         async with asyncio.Lock():
             self._data.extend(valid_data_points)
-        return valid_data_points

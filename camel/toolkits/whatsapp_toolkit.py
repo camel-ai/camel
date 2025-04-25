@@ -19,9 +19,10 @@ import requests
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import retry_on_error
+from camel.utils import MCPServer, retry_on_error
 
 
+@MCPServer()
 class WhatsAppToolkit(BaseToolkit):
     r"""A class representing a toolkit for WhatsApp operations.
 

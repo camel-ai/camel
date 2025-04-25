@@ -30,12 +30,16 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **SambaNova** | [supported models](https://docs.sambanova.ai/cloud/docs/get-started/supported-models) |
 | **Ollama** |  [supported models](https://ollama.com/library) |
 | **OpenRouter** | [supported models](https://openrouter.ai/models) |
+| **PPIO** | [supported models](https://ppinfra.com/model-api/product/llm-api?utm_source=github_owl) |
 | **LiteLLM** | [supported models](https://docs.litellm.ai/docs/providers) |
+| **LMStudio** | [supported models](https://lmstudio.ai/models) |
 | **vLLM** |  [supported models](https://docs.vllm.ai/en/latest/models/supported_models.html) |
 | **SGLANG** | [supported models](https://sgl-project.github.io/references/supported_models.html) |
 | **NVIDIA** | [supported models](https://docs.api.nvidia.com/nim/reference/llm-apis) |
 | **AIML** | [supported models](https://docs.aimlapi.com/api-overview/model-database/text-models) |
 | **ModelScope** | [supported models](https://www.modelscope.cn/docs/model-service/API-Inference/intro) |
+| **AWS Bedrock** | [supported models](https://us-west-2.console.aws.amazon.com/bedrock/home?region=us-west-2#/) |
+
 
 ## 3. How to Use Models via API Calls
 
@@ -57,7 +61,7 @@ model = ModelFactory.create(
     model_config_dict=ChatGPTConfig().as_dict(),
 )
 
-# Define an assitant message
+# Define an assistant message
 system_msg = "You are a helpful assistant."
 
 # Initialize the agent

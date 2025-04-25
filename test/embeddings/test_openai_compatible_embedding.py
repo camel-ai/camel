@@ -85,15 +85,24 @@ class TestOpenAICompatibleEmbedding(unittest.TestCase):
 
     def test_get_output_dim_without_embeddings(self):
         # Test if ValueError is raised when get_output_dim is called before
-        # embed_list
+        # embed_list and embed_list fails to set output_dim
         embedding = OpenAICompatibleEmbedding(
             "text-embedding-model", "test_api_key", "http://test-url.com"
         )
 
-        with self.assertRaises(ValueError) as context:
-            embedding.get_output_dim()
+        # Mock the embed_list method to simulate a failed embedding attempt
+        with patch.object(embedding, 'embed_list') as mock_embed_list:
+            # Configure the mock to not change output_dim (simulating failure)
+            mock_embed_list.return_value = []
 
-        self.assertEqual(
-            str(context.exception),
-            "Output dimension is not yet determined. Call 'embed_list' first.",
-        )
+            with self.assertRaises(ValueError) as context:
+                embedding.get_output_dim()
+
+            # Verify that embed_list was called
+            mock_embed_list.assert_called_once_with(["test"])
+
+            # Check the error message
+            self.assertEqual(
+                str(context.exception),
+                "Failed to determine embedding dimension",
+            )
