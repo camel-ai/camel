@@ -116,7 +116,7 @@ class RolePlayingWorker(Worker):
                 input_msg
             )
 
-            if assistant_response.terminated:git commit -am '
+            if assistant_response.terminated:
                 reason = assistant_response.info['termination_reasons']
                 print(
                     f"{Fore.GREEN}AI Assistant terminated. Reason: "
