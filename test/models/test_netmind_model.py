@@ -25,7 +25,7 @@ from camel.utils import OpenAITokenCounter
 @pytest.mark.parametrize(
     "model_type",
     [
-        ModelType.NETMIND_LLAMA_4_MAVERICK_17B_18E_INSTRUCT,
+        ModelType.NETMIND_LLAMA_4_MAVERICK_17B_128E_INSTRUCT,
         ModelType.NETMIND_LLAMA_4_SCOUT_17B_16E_INSTRUCT,
         ModelType.NETMIND_DEEPSEEK_R1,
         ModelType.NETMIND_DEEPSEEK_V3,

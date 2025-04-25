@@ -150,7 +150,7 @@ class ModelType(UnifiedModelType, Enum):
     CLAUDE_3_7_SONNET = "claude-3-7-sonnet-latest"
 
     # Netmind models
-    NETMIND_LLAMA_4_MAVERICK_17B_18E_INSTRUCT = (
+    NETMIND_LLAMA_4_MAVERICK_17B_128E_INSTRUCT = (
         "meta-llama/Llama-4-Maverick-17B-128E-Instruct"
     )
     NETMIND_LLAMA_4_SCOUT_17B_16E_INSTRUCT = (
@@ -621,7 +621,7 @@ class ModelType(UnifiedModelType, Enum):
     @property
     def is_netmind(self) -> bool:
         return self in {
-            ModelType.NETMIND_LLAMA_4_MAVERICK_17B_18E_INSTRUCT,
+            ModelType.NETMIND_LLAMA_4_MAVERICK_17B_128E_INSTRUCT,
             ModelType.NETMIND_LLAMA_4_SCOUT_17B_16E_INSTRUCT,
             ModelType.NETMIND_DEEPSEEK_R1,
             ModelType.NETMIND_DEEPSEEK_V3,
@@ -939,12 +939,12 @@ class ModelType(UnifiedModelType, Enum):
             return 256_000
 
         elif self in {
-            ModelType.NETMIND_LLAMA_4_MAVERICK_17B_18E_INSTRUCT,
+            ModelType.NETMIND_LLAMA_4_SCOUT_17B_16E_INSTRUCT,
         }:
             return 320_000
         elif self in {
             ModelType.OPENROUTER_LLAMA_4_SCOUT_FREE,
-            ModelType.NETMIND_LLAMA_4_MAVERICK_17B_18E_INSTRUCT,
+            ModelType.NETMIND_LLAMA_4_MAVERICK_17B_128E_INSTRUCT,
         }:
             return 512_000
         elif self in {
