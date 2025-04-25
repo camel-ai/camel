@@ -348,9 +348,9 @@ def _add_set_of_mark(
 
     Returns:
         Tuple[Image.Image, List[str], List[str], List[str]]: A tuple
-        containing the screenshot with marked ROIs, ROIs fully within the
-        images, ROIs located above the visible area, and ROIs located below
-        the visible area.
+            containing the screenshot with marked ROIs, ROIs fully within the
+            images, ROIs located above the visible area, and ROIs located below
+            the visible area.
     """
     visible_rects: List[str] = list()
     rects_above: List[str] = list()  # Scroll up to see
