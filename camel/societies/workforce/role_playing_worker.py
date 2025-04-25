@@ -112,11 +112,11 @@ class RolePlayingWorker(Worker):
         chat_history = []
         while n < self.chat_turn_limit:
             n += 1
-            assistant_response, user_response = role_play_session.step(
+            assistant_response, user_response = await role_play_session.step(
                 input_msg
             )
 
-            if assistant_response.terminated:
+            if assistant_response.terminated:git commit -am '
                 reason = assistant_response.info['termination_reasons']
                 print(
                     f"{Fore.GREEN}AI Assistant terminated. Reason: "
