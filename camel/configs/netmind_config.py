@@ -82,9 +82,7 @@ class NetmindConfig(BaseConfig):
             generate for each input message. (default: :obj:`None`)
     """
 
-    model: Optional[str] = Field(default=None)
-    messages: Optional[List[Dict]] = Field(default=None)
-    prompt: Optional[str] = Field(default=None)
+    tool_choice: Optional[Union[Dict[str, str], str]] = Field(default=None)
     stream: Optional[bool] = Field(default=None)
     temperature: Optional[float] = Field(default=None)
     top_p: Optional[float] = Field(default=None)
