@@ -28,8 +28,7 @@ class NetmindConfig(BaseConfig):
     Reference: https://netmind-power.gitbook.io/netmind-power-documentation/api/inference/chat
 
      Args:
-        model (str, optional): Specify the model to use.
-            (default: :obj:`None`)
+
         presence_penalty (float, optional): Number between :obj:`-2.0` and
             :obj:`2.0`. Positive values penalize new tokens based on whether
             they appear in the text so far, increasing the model's likelihood
@@ -62,27 +61,13 @@ class NetmindConfig(BaseConfig):
         max_tokens (Union[int, NotGiven], optional): Maximum number of tokens
             to generate. If not provided, model will use its default maximum.
             (default: :obj:`None`)
-        tools (list[FunctionTool], optional): A list of tools the model may
-            call. Currently, only functions are supported as a tool. Use this
-            to provide a list of functions the model may generate JSON inputs
-            for. A max of 128 functions are supported.
-        tool_choice (Union[dict[str, str], str], optional): Controls which (if
-            any) tool is called by the model. :obj:`"none"` means the model
-            will not call any tool and instead generates a message.
-            :obj:`"auto"` means the model can pick between generating a
-            message or calling one or more tools.  :obj:`"required"` means the
-            model must call one or more tools. Specifying a particular tool
-            via {"type": "function", "function": {"name": "my_function"}}
-            forces the model to call that tool. :obj:`"none"` is the default
-            when no tools are present. :obj:`"auto"` is the default if tools
-            are present.
+
         stop (Optional[List[str]], optional): List of stop sequences.
             (default: :obj:`None`)
         n (Optional[int], optional): Number of chat completion choices to
             generate for each input message. (default: :obj:`None`)
     """
 
-    tool_choice: Optional[Union[Dict[str, str], str]] = Field(default=None)
     stream: Optional[bool] = Field(default=None)
     temperature: Optional[float] = Field(default=None)
     top_p: Optional[float] = Field(default=None)
