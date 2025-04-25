@@ -17,7 +17,7 @@ from camel.agents import ChatAgent
 from camel.toolkits import FunctionTool
 
 
-# Define a function which does't have a docstring
+# Define a function which doesn't have a docstring
 def get_perfect_square(n: int) -> int:
     return n**2
 

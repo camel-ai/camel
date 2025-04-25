@@ -38,7 +38,7 @@ class MilvusStorage(BaseVectorStorage):
     `Milvus <https://milvus.io/docs/overview.md/>`_
 
     Args:
-        vector_dim (int): The dimenstion of storing vectors.
+        vector_dim (int): The dimension of storing vectors.
         url_and_api_key (Tuple[str, str]): Tuple containing
            the URL and API key for connecting to a remote Milvus instance.
            URL maps to Milvus uri concept, typically "endpoint:port".
@@ -138,7 +138,7 @@ class MilvusStorage(BaseVectorStorage):
         schema.add_field(
             field_name="id",
             datatype=DataType.VARCHAR,
-            description="A unique identifier for the vector",
+            description='A unique identifier for the vector',
             is_primary=True,
             max_length=65535,
         )

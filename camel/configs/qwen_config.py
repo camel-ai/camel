@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from camel.configs.base_config import BaseConfig
 
@@ -61,7 +61,7 @@ class QwenConfig(BaseConfig):
             call. It can contain one or more tool objects. During a function
             call process, the model will select one tool from the array.
             (default: :obj:`None`)
-        extra_body (Optional[Dict[str, str]], optional): Additional parameters
+        extra_body (Optional[Dict[str, Any]], optional): Additional parameters
             to be sent to the Qwen API. If you want to enable internet search,
             you can set this parameter to `{"enable_search": True}`.
             (default: :obj:`None`)
@@ -78,7 +78,7 @@ class QwenConfig(BaseConfig):
     max_tokens: Optional[int] = None
     seed: Optional[int] = None
     stop: Optional[Union[str, List]] = None
-    extra_body: Optional[Dict[str, str]] = None
+    extra_body: Optional[Dict[str, Any]] = None
 
     def __init__(self, include_usage: bool = True, **kwargs):
         super().__init__(**kwargs)

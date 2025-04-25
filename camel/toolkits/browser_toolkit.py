@@ -20,6 +20,7 @@ import random
 import re
 import shutil
 import time
+import urllib.parse
 from copy import deepcopy
 from typing import (
     TYPE_CHECKING,
@@ -42,8 +43,9 @@ if TYPE_CHECKING:
 from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.models import BaseModelBackend, ModelFactory
-from camel.toolkits import FunctionTool, VideoAnalysisToolkit
 from camel.toolkits.base import BaseToolkit
+from camel.toolkits.function_tool import FunctionTool
+from camel.toolkits.video_analysis_toolkit import VideoAnalysisToolkit
 from camel.types import ModelPlatformType, ModelType
 from camel.utils import dependencies_required, retry_on_error
 
@@ -299,9 +301,9 @@ def _add_set_of_mark(
 
     Returns:
         Tuple[Image.Image, List[str], List[str], List[str]]: A tuple
-        containing the screenshot with marked ROIs, ROIs fully within the
-        images, ROIs located above the visible area, and ROIs located below
-        the visible area.
+            containing the screenshot with marked ROIs, ROIs fully within the
+            images, ROIs located above the visible area, and ROIs located below
+            the visible area.
     """
     visible_rects: List[str] = list()
     rects_above: List[str] = list()  # Scroll up to see
@@ -546,8 +548,10 @@ class BaseBrowser:
         file_path = None
         if save_image:
             # Get url name to form a file name
-            # TODO: Use a safer way for the url name
-            url_name = self.page_url.split("/")[-1]
+            # Use urlparser for a safer extraction the url name
+            parsed_url = urllib.parse.urlparse(self.page_url)
+            url_name = os.path.basename(str(parsed_url.path)) or "index"
+
             for char in ['\\', '/', ':', '*', '?', '"', '<', '>', '|', '.']:
                 url_name = url_name.replace(char, "_")
 
@@ -673,7 +677,8 @@ class BaseBrowser:
             rects,  # type: ignore[arg-type]
         )
         if save_image:
-            url_name = self.page_url.split("/")[-1]
+            parsed_url = urllib.parse.urlparse(self.page_url)
+            url_name = os.path.basename(str(parsed_url.path)) or "index"
             for char in ['\\', '/', ':', '*', '?', '"', '<', '>', '|', '.']:
                 url_name = url_name.replace(char, "_")
             timestamp = datetime.datetime.now().strftime("%m%d%H%M%S")
@@ -1008,8 +1013,6 @@ class BrowserToolkit(BaseToolkit):
         self.browser = BaseBrowser(
             headless=headless, cache_dir=cache_dir, channel=channel
         )
-        # This needs to be called explicitly
-        self.browser.init()
 
         self.history_window = history_window
         self.web_agent_model = web_agent_model
@@ -1032,7 +1035,7 @@ class BrowserToolkit(BaseToolkit):
         if self.web_agent_model is None:
             web_agent_model = ModelFactory.create(
                 model_platform=ModelPlatformType.OPENAI,
-                model_type=ModelType.GPT_4O,
+                model_type=ModelType.GPT_4_1,
                 model_config_dict={"temperature": 0, "top_p": 1},
             )
         else:
@@ -1171,6 +1174,8 @@ out the information you need. Sometimes they are extremely useful.
         message = BaseMessage.make_user_message(
             role_name='user', content=observe_prompt, image_list=[img]
         )
+        # Reset the history message of web_agent.
+        self.web_agent.reset()
         resp = self.web_agent.step(message)
 
         resp_content = resp.msgs[0].content
@@ -1400,6 +1405,8 @@ Your output should be in json format, including the following fields:
 - `if_need_replan`: bool, A boolean value indicating whether the task needs to be fundamentally replanned.
 - `replanned_schema`: str, The replanned schema for the task, which should not be changed too much compared with the original one. If the task does not need to be replanned, the value should be an empty string. 
 """
+        # Reset the history message of planning_agent.
+        self.planning_agent.reset()
         resp = self.planning_agent.step(replanning_prompt)
         resp_dict = _parse_json_output(resp.msgs[0].content)
 
@@ -1490,7 +1497,6 @@ Your output should be in json format, including the following fields:
         else:
             simulation_result = self._get_final_answer(task_prompt)
 
-        self.browser.close()
         return simulation_result
 
     def get_tools(self) -> List[FunctionTool]:

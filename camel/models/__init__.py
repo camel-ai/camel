@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from .aiml_model import AIMLModel
 from .anthropic_model import AnthropicModel
+from .aws_bedrock_model import AWSBedrockModel
 from .azure_openai_model import AzureOpenAIModel
 from .base_audio_model import BaseAudioModel
 from .base_model import BaseModelBackend
@@ -23,6 +24,7 @@ from .gemini_model import GeminiModel
 from .groq_model import GroqModel
 from .internlm_model import InternLMModel
 from .litellm_model import LiteLLMModel
+from .lmstudio_model import LMStudioModel
 from .mistral_model import MistralModel
 from .model_factory import ModelFactory
 from .model_manager import ModelManager, ModelProcessingError
@@ -35,6 +37,7 @@ from .openai_audio_models import OpenAIAudioModels
 from .openai_compatible_model import OpenAICompatibleModel
 from .openai_model import OpenAIModel
 from .openrouter_model import OpenRouterModel
+from .ppio_model import PPIOModel
 from .qwen_model import QwenModel
 from .reka_model import RekaModel
 from .samba_model import SambaModel
@@ -72,8 +75,10 @@ __all__ = [
     'RekaModel',
     'SambaModel',
     'TogetherAIModel',
+    'PPIOModel',
     'YiModel',
     'QwenModel',
+    'AWSBedrockModel',
     'ModelProcessingError',
     'DeepSeekModel',
     'FishAudioModel',
@@ -84,4 +89,5 @@ __all__ = [
     'BaseAudioModel',
     'SiliconFlowModel',
     'VolcanoModel',
+    'LMStudioModel',
 ]

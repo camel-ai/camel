@@ -78,8 +78,8 @@ class OpenAIAudioModels(BaseAudioModel):
         Returns:
             Union[List[_legacy_response.HttpxBinaryResponseContent],
                 _legacy_response.HttpxBinaryResponseContent]: List of response
-                content object from OpenAI if input charaters more than 4096,
-                single response content if input charaters less than 4096.
+                content object from OpenAI if input characters more than 4096,
+                single response content if input characters less than 4096.
 
         Raises:
             Exception: If there's an error during the TTS API call.
