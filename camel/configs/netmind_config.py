@@ -30,11 +30,6 @@ class NetmindConfig(BaseConfig):
      Args:
         model (str, optional): Specify the model to use.
             (default: :obj:`None`)
-        messages (List[Dict], optional): (ChatCompletion only) An array of
-            message objects with roles (system, user, assistant) and content.
-            (default: :obj:`None`)
-        prompt (str, optional): (Completion only) The prompt to generate
-            completions for. (default: :obj:`None`)
         presence_penalty (float, optional): Number between :obj:`-2.0` and
             :obj:`2.0`. Positive values penalize new tokens based on whether
             they appear in the text so far, increasing the model's likelihood
@@ -45,6 +40,16 @@ class NetmindConfig(BaseConfig):
             existing frequency in the text so far, decreasing the model's
             likelihood to repeat the same line verbatim. See more information
             about frequency and presence penalties. (default: :obj:`None`)
+        repetition_penalty (float, optional): Penalizes new tokens based on
+            their appearance in the prompt and generated text.
+            (default: :obj:`None`)
+        stream (bool, optional): Whether to stream the response.
+            (default: :obj:`None`)
+        temperature (float, optional): Controls randomness in the response.
+            Higher values make output more random, lower values make it more
+            deterministic. Range: [0.0, 2.0]. (default: :obj:`None`)
+        top_p (float, optional): Controls diversity via nucleus sampling.
+            Range: [0.0, 1.0]. (default: :obj:`None`)
         logit_bias (dict, optional): Modify the likelihood of specified tokens
             appearing in the completion. Accepts a json object that maps tokens
             (specified by their token ID in the tokenizer) to an associated
@@ -54,32 +59,23 @@ class NetmindConfig(BaseConfig):
             and :obj:`1` should decrease or increase likelihood of selection;
             values like :obj:`-100` or :obj:`100` should result in a ban or
             exclusive selection of the relevant token. (default: :obj:`None`)
-        stream (bool, optional): Whether to stream the response.
-            (default: :obj:`None`)
-        temperature (float, optional): Controls randomness in the response.
-            Higher values make output more random, lower values make it more
-            deterministic. Range: [0.0, 2.0]. (default: :obj:`None`)
-        top_p (float, optional): Controls diversity via nucleus sampling.
-            Range: [0.0, 1.0]. (default: :obj:`None`)
-        presence_penalty (float, optional): Penalizes new tokens based on
-            whether they appear in the text so far. Range: [-2.0, 2.0].
-            (default: :obj:`None`)
-        frequency_penalty (float, optional): Penalizes new tokens based on
-            their frequency in the text so far. Range: [-2.0, 2.0].
-            (default: :obj:`None`)
-        repetition_penalty (float, optional): Penalizes new tokens based on
-            their appearance in the prompt and generated text.
-            (default: :obj:`None`)
         max_tokens (Union[int, NotGiven], optional): Maximum number of tokens
             to generate. If not provided, model will use its default maximum.
             (default: :obj:`None`)
-        seed (Optional[int], optional): Random seed for deterministic sampling.
-            (default: :obj:`None`)
-        tools (Optional[List[Dict]], optional): List of tools available to the
-            model. This includes tools such as a text editor, a calculator, or
-            a search engine. (default: :obj:`None`)
-        tool_choice (Optional[str], optional): Tool choice configuration.
-            (default: :obj:`None`)
+        tools (list[FunctionTool], optional): A list of tools the model may
+            call. Currently, only functions are supported as a tool. Use this
+            to provide a list of functions the model may generate JSON inputs
+            for. A max of 128 functions are supported.
+        tool_choice (Union[dict[str, str], str], optional): Controls which (if
+            any) tool is called by the model. :obj:`"none"` means the model
+            will not call any tool and instead generates a message.
+            :obj:`"auto"` means the model can pick between generating a
+            message or calling one or more tools.  :obj:`"required"` means the
+            model must call one or more tools. Specifying a particular tool
+            via {"type": "function", "function": {"name": "my_function"}}
+            forces the model to call that tool. :obj:`"none"` is the default
+            when no tools are present. :obj:`"auto"` is the default if tools
+            are present.
         stop (Optional[List[str]], optional): List of stop sequences.
             (default: :obj:`None`)
         n (Optional[int], optional): Number of chat completion choices to
