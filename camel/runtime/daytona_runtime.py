@@ -96,8 +96,6 @@ class DaytonaRuntime(BaseRuntime):
             funcs (Union[FunctionTool, List[FunctionTool]]): The function or
                 list of functions to add.
             entrypoint (str): The entrypoint for the function.
-            redirect_stdout (bool): Whether to return the stdout of
-                the function. (default: :obj: `False`)
             arguments (Optional[Dict[str, Any]]): The arguments for the
                 function. (default: :obj: `None`)
 
@@ -110,6 +108,19 @@ class DaytonaRuntime(BaseRuntime):
             entrypoint += json.dumps(arguments, ensure_ascii=False)
 
         def make_wrapper(inner_func, func_name, func_code):
+            """
+            Creates a wrapper for a function to execute it in the
+            Daytona sandbox.
+
+            Args:
+            inner_func (Callable): The function to wrap.
+            func_name (str): The name of the function.
+            func_code (str): The source code of the function.
+
+            Returns:
+            Callable: A wrapped function that executes in the sandbox.
+            """
+
             @wraps(inner_func)
             def wrapper(*args, **kwargs):
                 if not self.sandbox:
@@ -117,10 +128,17 @@ class DaytonaRuntime(BaseRuntime):
                         "Sandbox not initialized. Call build() first."
                     )
 
-                for key, value in kwargs.items():
-                    if isinstance(value, BaseModel):
-                        kwargs[key] = value.model_dump()
+                try:
+                    for key, value in kwargs.items():
+                        if isinstance(value, BaseModel):
+                            kwargs[key] = value.model_dump()
+                    args_str = json.dumps(args, ensure_ascii=True)
+                    kwargs_str = json.dumps(kwargs, ensure_ascii=True)
+                except (TypeError, ValueError) as e:
+                    logger.error(f"Failed to serialize arguments: {e!s}")
+                    return {"error": f"Argument serialization failed: {e!s}"}
 
+                # Upload function code to the sandbox
                 script_path = f"/home/daytona/{func_name}.py"
                 try:
                     self.sandbox.fs.upload_file(
@@ -131,9 +149,6 @@ class DaytonaRuntime(BaseRuntime):
                         f"Failed to upload function {func_name}: {e!s}"
                     )
                     return {"error": f"Upload failed: {e!s}"}
-
-                args_str = json.dumps(args, ensure_ascii=True)
-                kwargs_str = json.dumps(kwargs, ensure_ascii=True)
 
                 exec_code = (
                     f"import sys\n"
@@ -146,6 +161,7 @@ class DaytonaRuntime(BaseRuntime):
                     f"print(json.dumps(result))"
                 )
 
+                # Execute the function in the sandbox
                 try:
                     response = self.sandbox.process.code_run(exec_code)
                     return (
@@ -153,6 +169,11 @@ class DaytonaRuntime(BaseRuntime):
                         if response.result
                         else None
                     )
+                except json.JSONDecodeError as e:
+                    logger.error(
+                        f"Failed to decode JSON response for {func_name}"
+                    )
+                    return {"error": f"JSON decoding failed: {e!s}"}
                 except Exception as e:
                     logger.error(
                         f"Failed to execute function {func_name}: {e!s}"
