@@ -26,7 +26,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 logger.info("Starting CodeRAG-Bench example run...")
 
-from camel.benchmarks import CodeRagBenchmark
+from camel.benchmarks import CodeRagBenchmark, CoderagBenchAutoRetriever
 from camel.agents import ChatAgent
 from camel.retrievers import AutoRetriever
 from camel.types import StorageType
@@ -36,9 +36,9 @@ if __name__ == "__main__":
             answer the Original Coding Query based on the Retrieved Context,
             if you can't answer the question, just leave it blank"""
     agent = ChatAgent(assistant_sys_msg)
-    retriever = AutoRetriever(storage_type=StorageType.QDRANT,
-        #vector_storage_local_path="./CodeRag_Bench_Datasets/.vector_cache",
-                              )
+    retriever = CoderagBenchAutoRetriever(storage_type=StorageType.QDRANT,
+        vector_storage_local_path="./CodeRag_Bench_Datasets/.vector_cache",
+        overwrite = True)
 
 
     benchmark = CodeRagBenchmark(

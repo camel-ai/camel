@@ -38,7 +38,7 @@ from beir.retrieval.evaluation import EvaluateRetrieval
 
 from camel.benchmarks.coderag_bench.code_generation_evaluation import compute_code_eval
 import re
-from unstructured.documents.elements import Title
+from unstructured.documents.elements import Title, Element
 
 # === BEGIN: Temporary monkey patch for AutoRetriever metadata propagation ===
 # This patch enables `.metadata.extra_info` in unstructured.Element to be forwarded
@@ -107,10 +107,124 @@ def patched_run_vector_retriever(
 # Inject monkey patch
 AutoRetriever.run_vector_retriever = patched_run_vector_retriever
 # === END: Monkey patch ===
+from camel.types import StorageType
+from camel.embeddings import OpenAIEmbedding
+from typing import Optional, List
+class CoderagBenchAutoRetriever(AutoRetriever):
+    """
+    A customized AutoRetriever for CodeRAG-Bench to support retrieval from
+    a list of unstructured.Elements with preserved metadata.
 
+    This class enables document-level ingestion and retrieval without chunking,
+    making it suitable for cases where:
+      - each Element is already a fully-formed document (e.g., one code function),
+      - `.metadata.extra_info` contains structured identifiers (e.g., doc_id),
+      - all Elements belong to the same retrieval corpus and should be stored
+        in a shared vector collection.
+
+    Chunking is explicitly disabled here because in CodeRAG-Bench,
+    each sample (typically a function-level code generation task) is already
+    preprocessed as a single coherent unit. Re-chunking such inputs would
+    break their semantic structure and degrade retrieval quality.
+
+    This implementation is currently specific to CodeRAG-Bench but may be
+    generalized and moved to `camel.retrievers` in the future.
+
+    Args:
+        overwrite (bool): Whether to forcibly re-embed and overwrite existing vector index.
+    """
+
+    def __init__(
+        self,
+        storage_type: Optional[StorageType] = None,
+        embedding_model: Optional[OpenAIEmbedding] = None,
+        vector_storage_local_path: Optional[str] = None,
+        url_and_api_key: Optional[tuple] = None,
+        overwrite: bool = False,
+    ):
+        super().__init__(
+            storage_type=storage_type,
+            embedding_model=embedding_model,
+            vector_storage_local_path=vector_storage_local_path,
+            url_and_api_key=url_and_api_key,
+        )
+        self.overwrite = overwrite
+
+    def run_element_list_retriever(
+        self,
+        query: str,
+        elements: List["Element"],
+        collection_name: Optional[str] = None,
+        top_k: int = 5,
+        similarity_threshold: float = 0.7,
+        return_detailed_info: bool = False,
+        max_characters: int = 500,
+    ) -> dict:
+        if not elements:
+            raise ValueError("No elements provided for retrieval.")
+
+        collection_name = collection_name or self._collection_name_generator(elements[0])
+        vector_storage_instance = self._initialize_vector_storage(collection_name)
+
+        vr = VectorRetriever(
+            storage=vector_storage_instance,
+            embedding_model=self.embedding_model,
+        )
+
+        vector_count = vector_storage_instance.status().vector_count
+
+        if self.overwrite and vector_count > 0:
+            print(f"[DEBUG] Overwriting collection '{collection_name}' with {len(elements)} documents...")
+            vector_storage_instance.clear()
+            vector_count = 0
+
+        if vector_count == 0:
+            print(f"[DEBUG] Ingesting {len(elements)} documents into vector store '{collection_name}'")
+            for elem in elements:
+                vr.process(
+                    content=elem,
+                    max_characters=max_characters,
+                    should_chunk=False,
+                    extra_info=getattr(elem.metadata, "extra_info", {}),
+                )
+            print(f"[DEBUG] Vector store now contains {vector_storage_instance.status().vector_count} documents")
+        else:
+            print(f"[DEBUG] Vector store '{collection_name}' already contains {vector_count} vectors. Skipping ingestion.")
+
+        retrieved_info = vr.query(query, top_k=top_k, similarity_threshold=similarity_threshold)
+
+        return {
+            "Original Query": query,
+            "Retrieved Context": retrieved_info if return_detailed_info else [r["text"] for r in retrieved_info],
+        }
 
 def document2code(data, split="test"):
-    r"""Convert document to code. Helper function from Coderag-bench."""
+    r"""
+    Convert document samples into code generation pairs for IR evaluation.
+
+    This function is directly adapted from the CodeRAG-Bench repository:
+        GitHub: https://github.com/code-rag-bench/code-rag-bench/blob/main/retrieval/create/humaneval.py
+
+    It constructs a flat list of query-document pairs and relevance judgments from a
+    code generation dataset. Each sample contains a "prompt" and its corresponding
+    "canonical_solution". The prompt is used as the query, and the concatenation of
+    prompt + solution is treated as the relevant code document.
+
+    Note:
+        This function is preserved **unmodified** to ensure compatibility with the original
+        CodeRAG-Bench logic. To convert the output into BEIR-compatible dictionary format,
+        use the wrapper function `wrap_as_beir_loader`.
+
+    Args:
+        data (dict): Dataset split dictionary, e.g., {"test": [...]}.
+        split (str): Dataset split to process (default: "test").
+
+    Returns:
+        Tuple[List[dict], List[dict], List[dict]]:
+            - queries: List of dicts with "_id" and "text".
+            - docs: List of dicts with "_id", "text", and "title".
+            - qrels: List of dicts linking queries to relevant documents.
+    """
     data = data[split]
     queries, docs, qrels = [], [], []
 
@@ -131,6 +245,28 @@ def document2code(data, split="test"):
 
 
 def wrap_as_beir_loader(queries_list, corpus_list, qrels_list):
+    r"""
+        Wraps the output of `document2code()` into BEIR-compatible dictionary format.
+
+        This function converts flat lists of queries, documents, and qrels into dictionaries
+        keyed by ID, as expected by BEIR's evaluation tools.
+
+        It is intended to be used directly after `document2code()` to prepare the dataset
+        for retrieval benchmarking.
+
+        Args:
+            queries_list (List[dict]): List of queries with "_id" and "text" fields.
+            corpus_list (List[dict]): List of documents with "_id", "text", and metadata.
+            qrels_list (List[dict]): List of relevance annotations with "query-id",
+                                     "corpus-id", and optional "score".
+
+        Returns:
+            Tuple[Dict[str, dict], Dict[str, dict], Dict[str, Dict[str, int]]]:
+                - queries: Dict mapping query ID to query text.
+                - corpus: Dict mapping document ID to document content.
+                - qrels: Nested dict mapping query ID to a dict of {doc ID: score}.
+        """
+
     queries = {q["_id"]: q for q in queries_list}
     corpus = {d["_id"]: d for d in corpus_list}
     qrels = {}
@@ -148,7 +284,7 @@ def wrap_as_beir_loader(queries_list, corpus_list, qrels_list):
 
 def extract_code_pieces(text: str, prefix: str = "```python",
                         return_all: bool = False) -> str:
-    """Extract code pieces from a text string.
+    r"""Extract code pieces from a text string.
     Args:
         text: str, model prediciton text.
     Rets:
@@ -324,7 +460,7 @@ class CodeRagBenchmark(BaseBenchmark):
     def run(  # type: ignore[override, return]
             self,
             agent: ChatAgent,
-            auto_retriever: Optional[AutoRetriever] = None, # TODO: Currently only supports canonical retriever. Add support for other retrieval types.
+            auto_retriever: Optional[CoderagBenchAutoRetriever] = None, # TODO: Currently only supports canonical retriever. Add support for other retrieval types.
     ):
         r"""Load the CodeRAG-Bench dataset.
             save benchmark result to files
@@ -415,16 +551,16 @@ class CodeRagBenchmark(BaseBenchmark):
             print("[DEBUG] First element metadata:", elements[0].metadata.to_dict())
             # Build the vector index once using the entire document set.
             # Later queries will reuse this collection.
-            auto_retriever.run_vector_retriever(
-                query="dummy",
-                contents=elements,
-                top_k=10,
-            )
+            # auto_retriever.run_vector_retriever(
+            #     query="dummy",
+            #     contents=elements,
+            #     top_k=10,
+            # )
 
-            vector_storage = auto_retriever._initialize_vector_storage(
-                collection_name)
-            print("[DEBUG] Vector count:",
-                  vector_storage.status().vector_count)
+            # vector_storage = auto_retriever._initialize_vector_storage(
+            #     collection_name)
+            # print("[DEBUG] Vector count:",
+            #       vector_storage.status().vector_count)
 
             retrieval_results = {}
 
@@ -446,12 +582,13 @@ class CodeRagBenchmark(BaseBenchmark):
                     # Use any one element to trigger collection matching.
                     # All elements share the same file_directory, so this is safe.
                     #dummy_element = elements[0]
-                    result = auto_retriever.run_vector_retriever(
+                    result = auto_retriever.run_element_list_retriever(
                         query=query_text,
-                        contents=elements,
+                        elements=elements,
+                        collection_name=collection_name,
                         top_k=10,
-                        similarity_threshold=0.0, # no cutoff like BEIR
-                        return_detailed_info=True
+                        similarity_threshold=0.0,
+                        return_detailed_info=True,
                     )
 
                     # print for debugging
