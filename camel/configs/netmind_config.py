@@ -25,10 +25,10 @@ class NetmindConfig(BaseConfig):
     r"""Defines the parameters for generating chat completions using OpenAI
     compatibility.
 
-    Reference: https://netmind-power.gitbook.io/netmind-power-documentation/api/inference/chat
+    Reference: https://netmind-power.gitbook.io/netmind-power-documentation/
+    api/inference/chat
 
      Args:
-
         presence_penalty (float, optional): Number between :obj:`-2.0` and
             :obj:`2.0`. Positive values penalize new tokens based on whether
             they appear in the text so far, increasing the model's likelihood
@@ -61,7 +61,6 @@ class NetmindConfig(BaseConfig):
         max_tokens (Union[int, NotGiven], optional): Maximum number of tokens
             to generate. If not provided, model will use its default maximum.
             (default: :obj:`None`)
-
         stop (Optional[List[str]], optional): List of stop sequences.
             (default: :obj:`None`)
         n (Optional[int], optional): Number of chat completion choices to
