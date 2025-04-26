@@ -284,11 +284,30 @@ def wrap_as_beir_loader(queries_list, corpus_list, qrels_list):
 
 def extract_code_pieces(text: str, prefix: str = "```python",
                         return_all: bool = False) -> str:
-    r"""Extract code pieces from a text string.
+    r"""
+    Extracts Python code blocks from a text string formatted with Markdown-style triple backticks.
+
+    This function scans the input text and extracts code segments that start with a given prefix
+    (e.g., "```python") and end with a closing triple backtick ("```"). It is useful for extracting
+    model-generated code from responses that follow Markdown formatting conventions.
+
     Args:
-        text: str, model prediciton text.
-    Rets:
-        code_pieces: str, code pieces in the text.
+        text (str): The input string potentially containing code blocks.
+        prefix (str): The Markdown code block prefix to search for (default: "```python").
+        return_all (bool): If True, returns all extracted code blocks concatenated with double newlines.
+                           If False, returns only the first matched block.
+
+    Returns:
+        str: The extracted code block(s) as a string. If no block is found, returns an empty string.
+
+    Note:
+        This implementation is adapted from:
+        https://github.com/code-rag-bench/code-rag-bench/blob/main/generation/eval/utils.py
+
+    Example:
+        >>> text = "Here is the function:\n```python\ndef add(a, b):\n    return a + b\n```"
+        >>> extract_code_pieces(text)
+        'def add(a, b):\n    return a + b'
     """
     code_pieces = []
     while prefix in text:
@@ -305,6 +324,26 @@ def extract_code_pieces(text: str, prefix: str = "```python",
 
 
 def get_function_name(question: str, lang: str):
+    """
+    Extracts the function name and the prefix (preceding lines) from a code prompt.
+
+    This is useful for evaluation purposes where the generated function needs to be
+    compared or executed with a known entry point name. The logic assumes a simple structure
+    where either the last Python function is the target, or in non-Python languages, the
+    function appears at the end enclosed in curly braces.
+
+    Args:
+        question (str): The full code prompt or question containing the function definition.
+        lang (str): The programming language (e.g., "python", "java").
+
+    Returns:
+        Tuple[str, str]: A tuple of (function_name, function_prefix), where function_prefix
+                         is the code before the function definition.
+
+    Notes:
+        This function is adapted from:
+        https://github.com/code-rag-bench/code-rag-bench/blob/main/generation/eval/utils.py
+    """
     func_lines = [x for x in question.strip().split('\n') if x.strip()]
 
     if lang.lower() == 'python':

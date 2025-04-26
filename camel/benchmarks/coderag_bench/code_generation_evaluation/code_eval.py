@@ -12,9 +12,13 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-# -------- Original License and Attribution from code-rag-bench --------
+# -------- Note on Original Attribution --------
+# This file is adapted from:
+# https://github.com/code-rag-bench/code-rag-bench/blob/main/generation/eval/tasks/custom_metrics/code_eval.py
+# under the Apache 2.0 License.
+# We thank the original authors for their implementation.
 
-
+# -------- Original License from code-rag-bench --------
 # Copyright 2020 The HuggingFace Datasets Authors and the current dataset script contributor.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,6 +32,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 """The CodeEval metric estimates the pass@k metric for code synthesis.
 This is an evaluation harness for the HumanEval problem solving dataset
 described in the paper "Evaluating Large Language Models Trained on Code"
