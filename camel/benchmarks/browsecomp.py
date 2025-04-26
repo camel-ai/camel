@@ -33,14 +33,7 @@ from camel.models.model_factory import ModelFactory
 from camel.retrievers.auto_retriever import AutoRetriever
 from camel.types.enums import ModelPlatformType
 from camel.toolkits.browser_toolkit import BrowserToolkit
-# # Direct import of BrowserToolkit from the local file
-# browser_toolkit_path = os.path.join(os.path.dirname(
-#     os.path.dirname(__file__)), 'toolkits', 'browser_toolkit.py')
-# spec = importlib.util.spec_from_file_location(
-#     "browser_toolkit", browser_toolkit_path)
-# browser_toolkit_module = importlib.util.module_from_spec(spec)
-# spec.loader.exec_module(browser_toolkit_module)
-# BrowserToolkit = browser_toolkit_module.BrowserToolkit
+
 
 logger = logging.getLogger(__name__)
 
