@@ -27,6 +27,7 @@ from .task_agent import (
 )
 from .tool_agents.base import BaseToolAgent
 from .tool_agents.hugging_face_tool_agent import HuggingFaceToolAgent
+from .deep_research_agent import ReActAgentWrapper,DeepResearchAgent
 
 __all__ = [
     'BaseAgent',
