@@ -25,6 +25,7 @@ from .lmstudio_config import LMSTUDIO_API_PARAMS, LMStudioConfig
 from .mistral_config import MISTRAL_API_PARAMS, MistralConfig
 from .modelscope_config import MODELSCOPE_API_PARAMS, ModelScopeConfig
 from .moonshot_config import MOONSHOT_API_PARAMS, MoonshotConfig
+from .netmind_config import NETMIND_API_PARAMS, NetmindConfig
 from .nvidia_config import NVIDIA_API_PARAMS, NvidiaConfig
 from .ollama_config import OLLAMA_API_PARAMS, OllamaConfig
 from .openai_config import OPENAI_API_PARAMS, ChatGPTConfig
@@ -55,6 +56,8 @@ __all__ = [
     'GroqConfig',
     'LiteLLMConfig',
     'LITELLM_API_PARAMS',
+    'NetmindConfig',
+    'NETMIND_API_PARAMS',
     'NvidiaConfig',
     'NVIDIA_API_PARAMS',
     'OllamaConfig',
