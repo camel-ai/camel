@@ -269,7 +269,7 @@ from typing import Optional, List
 from camel.toolkits import FunctionTool
 tools_list = [
     # *MathToolkit().get_tools(),
-    *SearchToolkit().get_tools(),
+    SearchToolkit().search_duckduckgo,
 ]
 model=ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
@@ -342,7 +342,7 @@ def build_tool_prompt_section_complete(tools: List[FunctionTool]) -> str:
         "<ToolDescriptions>\n" + tool_desc_str + "\n</ToolDescriptions>"
     )
 
-def format_planner_prompt(query: str, tools_list = [], previous_plan: Optional[str] = None, previous_observations: Optional[str] = None) -> str:
+def format_planner_prompt(query: str) -> str:
     # --- System preamble ---
     prompt = (
         "You are the planner agent of the Camel-AI Deep Research Agent for solving complex and difficult problems. "
@@ -352,73 +352,72 @@ def format_planner_prompt(query: str, tools_list = [], previous_plan: Optional[s
     )
     prompt += f"Query: {query}\n"
 
-    # --- Replanning instruction if applicable ---
-    if (previous_plan and previous_observations):
-        prompt += (
-            "You are now in a re-planning stage. You are provided additional Previous Plan and Previous Observations of solving the same Query and be asked to do more planning. "
-            "Please do not change the previous plan and just attach new plans to the current plan.\n"
-        )
-
-        # --- Query and context ---
-
-        prompt += f"\nPrevious Plan:\n{previous_plan}\n"
-        prompt += f"\nPrevious Observations:\n{previous_observations}\n"
-        prompt += (f"\nPlease Think about query, with the previous plan and observations.\n"
-                   "\n If the previous observations has already resolved the origin query, please just output your Thought as the line below:\n"
-                   "$Thought$: $resolved$\n"
-                   "\n Other wise, please generate an additional plan that are following steps of the original plan. "
-                   "When making the new plan, please first repeat the original plan with exactly the same words and format line by line, and then generate additional plan below it."
-                    "Write your output in the format of\n"
-                   "\n$Thought$:\n<Thought about the query>\n"
-                   "\n$Plan$:\n<Attach the Previous plan exactly, and attach an additional step-by-step plan to resolve the original query, to the current plan>\n"
-                    "\nThe plan should be a set of actionable sub-queries, each one take a line. The sub-queries have an order, but please do not explicitly output the order. Just return the pure queries. Each sub-query takes a single line.\n"
-                    "\nNow, begin your think and plan process.\n"
-                    "\n$Thought$:\n"
-                )
-    # --- Final plan start ---
-    # prompt += ("\nPlease Think about the query and return the plan below. Write your output in the format of\n"
-    #            "\n$Thought$:\n<Thought about the query>\n"
-    #            "\n$Plan$:\n<A step-by-step plan to resolve the original query>\n"
-    #            "\nThe plan should be a set of actionable sub-queries, each one take a line. The sub-queries have an order, but please Do Not Explicitly Output the order! Just return the Pure sub-queries without order number. Each sub-query takes a single line.\n"
-    #            "During the plan-making process, if you find you need more tool call, you MUST STOP the plan making, and just output the tools to be called, and the input for the tools, then stop your output by saying 'I can continue to make the plan after I gather the necessary observations.'\n"
-    #            #"\n You are equipped with tool calling ability. If you feel you need more observations, you can choose not to make the plan, but do function call instead. The user will later continue the conversation with you, to continue the plan making process."
-    #            #"\nNow, begin your think and plan process.\n"
-    #            #"\n$Thought$:\n"
-    #            )
-
-    # prompt += (
-    #     "\nNow begin your reasoning and planning. Follow one of the two branches below:\n"
-    #     "\nIf you have sufficient knowledge to complete the plan, write:\n"
-    #     "$Thought$:\n<Your reasoning>\n"
-    #     "$Plan$:\n<Each sub-task in a single line>\n"
-    #     "\nThe plan should be a list of concrete sub-queries, each written on its own line. Do not add numbering or ordering prefixes.\n"
-    #     "\nIf you do NOT have sufficient information to make a complete plan and find tool calling (for example, searching online) is necessary:\n"
-    #     "  - DO NOT write $Plan$.\n"
-    #     "  - Instead, write:\n"
-    #     "\n$Thought$:\n<Explain what information is missing>\n"
-    #     "\n$ToolCalls$:\n- Tool: <tool name from AllowedTools section >\n  Input: <input for the tool>\n"
-    #     "\nThen say: 'I can continue to make the plan after I gather the necessary observations.'\n"
+    # # --- Replanning instruction if applicable ---
+    # if (previous_plan and previous_observations):
+    #     prompt += (
+    #         "You are now in a re-planning stage. You are provided additional Previous Plan and Previous Observations of solving the same Query and be asked to do more planning. "
+    #         "Please do not change the previous plan and just attach new plans to the current plan.\n"
+    #     )
     #
-    # )
+    #     # --- Query and context ---
+    #
+    #     prompt += f"\nPrevious Plan:\n{previous_plan}\n"
+    #     prompt += f"\nPrevious Observations:\n{previous_observations}\n"
+    #     prompt += (f"\nPlease Think about query, with the previous plan and observations.\n"
+    #                "\n If the previous observations has already resolved the origin query, please just output your Thought as the line below:\n"
+    #                "$Thought$: $resolved$\n"
+    #                "\n Other wise, please generate an additional plan that are following steps of the original plan. "
+    #                "When making the new plan, please first repeat the original plan with exactly the same words and format line by line, and then generate additional plan below it."
+    #                 "Write your output in the format of\n"
+    #                "\n$Thought$:\n<Thought about the query>\n"
+    #                "\n$Plan$:\n<Attach the Previous plan exactly, and attach an additional step-by-step plan to resolve the original query, to the current plan>\n"
+    #                 "\nThe plan should be a set of actionable sub-queries, each one take a line. The sub-queries have an order, but please do not explicitly output the order. Just return the pure queries. Each sub-query takes a single line.\n"
+    #                 "\nNow, begin your think and plan process.\n"
+    #                 "\n$Thought$:\n"
+    #             )
+    # # --- Final plan start ---
+    # # prompt += ("\nPlease Think about the query and return the plan below. Write your output in the format of\n"
+    # #            "\n$Thought$:\n<Thought about the query>\n"
+    # #            "\n$Plan$:\n<A step-by-step plan to resolve the original query>\n"
+    # #            "\nThe plan should be a set of actionable sub-queries, each one take a line. The sub-queries have an order, but please Do Not Explicitly Output the order! Just return the Pure sub-queries without order number. Each sub-query takes a single line.\n"
+    # #            "During the plan-making process, if you find you need more tool call, you MUST STOP the plan making, and just output the tools to be called, and the input for the tools, then stop your output by saying 'I can continue to make the plan after I gather the necessary observations.'\n"
+    # #            #"\n You are equipped with tool calling ability. If you feel you need more observations, you can choose not to make the plan, but do function call instead. The user will later continue the conversation with you, to continue the plan making process."
+    # #            #"\nNow, begin your think and plan process.\n"
+    # #            #"\n$Thought$:\n"
+    # #            )
+    #
+    # # prompt += (
+    # #     "\nNow begin your reasoning and planning. Follow one of the two branches below:\n"
+    # #     "\nIf you have sufficient knowledge to complete the plan, write:\n"
+    # #     "$Thought$:\n<Your reasoning>\n"
+    # #     "$Plan$:\n<Each sub-task in a single line>\n"
+    # #     "\nThe plan should be a list of concrete sub-queries, each written on its own line. Do not add numbering or ordering prefixes.\n"
+    # #     "\nIf you do NOT have sufficient information to make a complete plan and find tool calling (for example, searching online) is necessary:\n"
+    # #     "  - DO NOT write $Plan$.\n"
+    # #     "  - Instead, write:\n"
+    # #     "\n$Thought$:\n<Explain what information is missing>\n"
+    # #     "\n$ToolCalls$:\n- Tool: <tool name from AllowedTools section >\n  Input: <input for the tool>\n"
+    # #     "\nThen say: 'I can continue to make the plan after I gather the necessary observations.'\n"
+    # #
+    # # )
 
     prompt += (
         "\nNow begin your reasoning and planning. Follow one of the two branches below:\n"
         "\nIf you have sufficient knowledge to complete the plan, write:\n"
         "$Thought$:\n<Your reasoning>\n"
         "$Plan$:\n<Each sub-task in a single line>\n"
-        "\nThe plan should be a list of concrete sub-queries, each written on its own line. Do not add numbering or ordering prefixes.\n"
-        "\nIf you do NOT have sufficient information to make a complete plan then you should gather more observations. If the query involves an entity that cannot be directly resolved (e.g., a person, TV show, event, or technical term),"
+        "\nThe plan should be a list of concrete sub-queries, each written on its own line. Do not add numbering or ordering prefixes.\n\n"
+        "\nIf you do NOT have sufficient information to make a complete plan then you should gather more observations ONE AT A TIME. If the query involves an entity that cannot be directly resolved (e.g., a person, TV show, event, or technical term),"
         " you MUST first identify or disambiguate the entity before continuing the plan."
         "For example, if the query contains a phrase like a lyric or a vague name, your first step should be to identify what it refers to.\n"
         "Follow the instructions below:\n"
         "- First, identify what is missing (e.g. the identity of a key subject, or data required to reason further).\n"
-        "- Then, generate a set of tool calls that can help fill in the missing knowledge.\n"
-        "- Each tool call should correspond to a specific sub-query and clearly indicate intent.\n"
+        "- Then, generate ONE MOST important NEXT tool call that can help fill in the missing knowledge IN A SINGLE LINE.\n"
+        "You can Follow the example format below:\n"
+        #"- Each tool call should correspond to a specific sub-query and clearly indicate intent.\n"
         "\n$Thought$:\n<Explain what information is missing>\n"
         "$Plan$:\n"
         "Use toolkit to solve the problem. $Tool$: <general name, e.g. Search Online, Calculation>. $Input$: <input for the tool>\n"
-        "Use toolkit to solve the problem. $Tool$: <general name, e.g. Search Online, Calculation>. $Input$: <input for the tool>\n"
-        "... (you may include multiple tool calls if helpful)\n"
     )
 
 
@@ -426,30 +425,69 @@ def format_planner_prompt(query: str, tools_list = [], previous_plan: Optional[s
 
 
 
+def format_replanner_prompt(query: str, plan_obs_dict: dict) -> str:
+    prompt = (
+        "You are the planner agent of the Camel-AI Deep Research Agent for solving complex and difficult problems. "
+        "You are given a Query and the previous planning history, including prior sub-queries (plans) and corresponding observations. "
+        "Your goal is to continue the planning process based on the original Query and the Observations from previous plans.  The worker agents will then work on the plan. You can assume the worker agents can call tools like Search Online, and Do Calculation. You will later have chance to make more plans based on the information gathered by worker agents. "
+        "You must consider the previous plans and their corresponding observations. You are NOT allowed to modify existing plans, "
+        "but you may append new steps as actionable subqueries if the original Query is not yet fully resolved.\n\n"
+        f"Query:\n{query}\n\n"
+        "Previous Plan and Observation Pairs:\n"
+    )
+
+    for plan, obs in plan_obs_dict.items():
+        prompt += f"<Plan>\n{plan.strip()}\n</Plan>\n<Observation>\n{obs.strip()}\n</Observation>\n\n"
+
+    prompt += (
+        "Now, begin your reasoning and planning. Follow one of the two branches below:\n\n"
+        "If the query has already been fully resolved:\n"
+        "$Thought$:\n<Your reasoning>\n"
+        "$Answer$:\n<Your answer to the original query>\n"
+        "$Problem_Resolved$\n\n"
+        
+
+        "If the query is not fully resolved:\n"
+        "$Thought$:\n<Your reasoning>\n"
+        "$Plan$:\n"
+        "Add new sub-queries to resolve the remaining parts of the original query. Each sub-query should be on its own line. "
+        "Do not add numbering or ordering prefixes.\n\n"
+        "\nIf you do NOT have sufficient information to make a complete plan then you should gather more observations ONE AT A TIME. If the query involves an entity that cannot be directly resolved (e.g., a person, TV show, event, or technical term),"
+        " you MUST first identify or disambiguate the entity before continuing the plan."
+        "For example, if the query contains a phrase like a lyric or a vague name, your first step should be to identify what it refers to.\n"
+        "Follow the instruction below if you need more information:\n"
+        "Instead of adding direct sub-queries, list ONE MOST important next tool-based query that the worker agents should perform to gather the missing information IN A SINGLE LINE.\n"
+        "$Thought$:\n<Explain what information is missing>\n"
+        "$Plan$:\n"
+        "Use toolkit to solve the problem. $Tool$: <general name, e.g. Search Online>. $Input$: <input for the tool>\n"
+    )
+
+    return prompt
+
 #print(describe_tools_naturally_en(tools_list ))
-query = "我二十年前看了一个儿童节目，主题曲里有一句是“咕噜咕噜咕噜咕咚咚”，我想请你帮我介绍一下这个节目的主持人，和他们的现状。"
-#query = "Help me draft a report for the Camel-AI open source project"
-#query = "请你回答这个以几个中国春晚著名节目为背景的搞笑问题：买一杯宫廷玉液酒，再请黄大锤使用大锤和小锤一起掏壁橱，一共花多少钱。"
-print(format_planner_prompt(query,tools_list))
+#query = "我二十年前看了一个儿童节目，主题曲里有一句是“咕噜咕噜咕噜咕咚咚”，我想请你帮我介绍一下这个节目当时的两位主持人，和他们的现状。"
+query = "Help me draft a report for the Camel-AI open source project"
+#query = "请你回答这个以几个中国春晚著名节目为背景的搞笑问题：巩汉林喝了一杯宫廷玉液酒，再请黄大锤使用大锤掏壁橱，一共花多少钱。"
+#query = "巩汉林买了一杯自己酒店的宫廷玉液酒，并且请黄大锤使用大锤掏壁橱，一共花多少钱。"
+#print(format_planner_prompt(query,tools_list))
 
 # Set the agent
-agent = ChatAgent(
+planner_agent = ChatAgent(
     format_planner_prompt(query),
     model=model,
     #tools=tools_list,
-    output_language = "Chinese",
+    #output_language = "Chinese",
 )
 
 
 
-response = agent.step("Now let us begin.")
-content = response.msgs[0].content  # 就是你需要的字符串输出
+response = planner_agent.step("Now let us begin.")
+content = response.msgs[0].content
 print(content)
 
 import re
 
 def extract_plan_subqueries(content: str) -> list[str]:
-    # 匹配 $Plan$ 后的部分
     match = re.search(r"\$Plan\$:([\s\S]+)", content)
     if not match:
         return []
@@ -464,7 +502,7 @@ print(subqueries)
 
 
 worker_agent_prompt = ("You are a helpful worker agent in the Camel-AI Deep Research Agent system. Your goal is to solve tasks that the planner assigned to you."
-                       "Your have tool calling ability. Please try your best to give the answer with tool calling. If you really cannot find the answer even"
+                       "Your have tool calling ability. Please try your best to give the answer with tool calling. The answer should be as detailed and verbose as you can. The planner will help you to summarize the information later. If you really cannot find the answer even"
                        "with the help of the tool, then just return 'I do not know'. Please do not make up answers, as it will influence the result!")
 
 # Set the agent
@@ -472,16 +510,51 @@ worker_agent = ChatAgent(
     worker_agent_prompt ,
     model=model,
     tools=tools_list,
-    output_language = "Chinese",
+    #output_language = "Chinese",
 )
 
 subquery_history = {}
-for subquery in subqueries:
-    print(f"Now using worker agent to answer the subquery {subquery}")
+max_replan_iter = 10
+for replan_iter in range(max_replan_iter):
+    print("iteration {}".format(replan_iter))
+    for subquery in subqueries:
+        print(f"Now using worker agent to answer the subquery {subquery}")
 
-    worker_agent.reset()  # Todo: Double check the usage of reset.
-    subquery_response = worker_agent.step(subquery)
-    print("Answer for this subquery:", subquery_response.msgs[0].content)
-    subquery_history[subquery] = subquery_response.msgs[0].content
+        #worker_agent  # Todo: Double check the usage of reset.
+        subquery_response = worker_agent.step(subquery)
+        print("Answer for this subquery:", subquery_response.msgs[0].content)
+        subquery_history[subquery] = subquery_response.msgs[0].content
 
-print(subquery_history)
+    print("Full subquery history:",subquery_history)
+
+    replanner_system_prompt = format_replanner_prompt(query,subquery_history)
+    print("Replan prompt:",replanner_system_prompt)
+    # Set the agent
+    replanner_agent = ChatAgent(
+        replanner_system_prompt,
+        model=model,
+        #tools=tools_list,
+        #output_language = "Chinese",
+    )
+
+
+
+    response = replanner_agent.step("Now let us begin.")
+
+    print("Replan output:", response.msgs[0].content)
+    subqueries = extract_plan_subqueries(response.msgs[0].content)
+    print("New plans:\n",subqueries)
+    if not subqueries:
+        print("Problem Resolved! Stop Now.")
+        break
+
+
+# Initialize the base chat agent with a tool
+base_agent = ChatAgent(
+    system_message="You are a helpful assistant using tools. Please try your best to complete the query from the user.",
+    tools=tools_list,
+    #output_language="Chinese",
+)
+
+baseline_response = base_agent.step(query)
+print("Baseline tool calling agent:\n", baseline_response.msgs[0].content)
