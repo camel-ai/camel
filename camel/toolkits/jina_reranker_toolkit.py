@@ -49,6 +49,7 @@ class JinaRerankerToolkit(BaseToolkit):
                 (default: :obj:`None`)
             device (Optional[str]): Device to load the model on. If None,
                 will use CUDA if available, otherwise CPU.
+                Only effective when use_api=False.
                 (default: :obj:`None`)
             use_api (bool): A flag to switch between local model and API.
                 (default: :obj:`True`)
@@ -83,12 +84,12 @@ class JinaRerankerToolkit(BaseToolkit):
                 torch_dtype="auto",
                 trust_remote_code=True,
             )
-            DEVICE = (
+            self.device = (
                 device
                 if device is not None
                 else ("cuda" if torch.cuda.is_available() else "cpu")
             )
-            self.model.to(DEVICE)
+            self.model.to(self.device)
             self.model.eval()
 
     def _sort_documents(
