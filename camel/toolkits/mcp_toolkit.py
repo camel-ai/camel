@@ -317,13 +317,15 @@ class MCPClient(BaseToolkit):
             "additionalProperties": False,
         }
 
+        # Because certain parameters in MCP may include keywords that are not
+        # supported by OpenAI, it is essential to set "strict" to False.
         return {
             "type": "function",
             "function": {
                 "name": mcp_tool.name,
                 "description": mcp_tool.description
                 or "No description provided.",
-                "strict": True,
+                "strict": False,
                 "parameters": parameters,
             },
         }
