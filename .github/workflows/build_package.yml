@@ -107,6 +107,7 @@ jobs:
           BEDROCK_API_KEY: "${{ secrets.BEDROCK_API_KEY }}"
           BEDROCK_API_BASE_URL: "${{ secrets.BEDROCK_API_BASE_URL }}"
           NETMIND_API_KEY: "${{ secrets.NETMIND_API_KEY }}"
+          NOVITA_API_KEY: "${{ secrets.NOVITA_API_KEY }}"
         run: |
           source test_venv/bin/activate
           pytest --fast-test-mode ./test
