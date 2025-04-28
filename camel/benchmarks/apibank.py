@@ -48,7 +48,7 @@ def process_messages(
     Args:
         chat_history (List[Dict[str, Any]):
             A list of dictionaries representing the chat history.
-        prompt (str): A propmt to be set as the system message.
+        prompt (str): A prompt to be set as the system message.
 
     Returns:
         List[Dict[str, str]]: A list of dictionaries representing

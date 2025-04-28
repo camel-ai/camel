@@ -39,6 +39,20 @@ class ModelType(UnifiedModelType, Enum):
     O1_PREVIEW = "o1-preview"
     O1_MINI = "o1-mini"
     O3_MINI = "o3-mini"
+    GPT_4_1 = "gpt-4.1-2025-04-14"
+    GPT_4_1_MINI = "gpt-4.1-mini-2025-04-14"
+    GPT_4_1_NANO = "gpt-4.1-nano-2025-04-14"
+    O4_MINI = "o4-mini"
+    O3 = "o3"
+
+    AWS_CLAUDE_3_7_SONNET = "anthropic.claude-3-7-sonnet-20250219-v1:0"
+    AWS_CLAUDE_3_5_SONNET = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+    AWS_CLAUDE_3_HAIKU = "anthropic.claude-3-haiku-20240307-v1:0"
+    AWS_CLAUDE_3_SONNET = "anthropic.claude-3-sonnet-20240229-v1:0"
+    AWS_DEEPSEEK_R1 = "us.deepseek.r1-v1:0"
+    AWS_LLAMA_3_3_70B_INSTRUCT = "us.meta.llama3-3-70b-instruct-v1:0"
+    AWS_LLAMA_3_2_90B_INSTRUCT = "us.meta.llama3-2-90b-instruct-v1:0"
+    AWS_LLAMA_3_2_11B_INSTRUCT = "us.meta.llama3-2-11b-instruct-v1:0"
 
     GLM_4 = "glm-4"
     GLM_4V = "glm-4v"
@@ -64,9 +78,19 @@ class ModelType(UnifiedModelType, Enum):
     GROQ_GEMMA_2_9B_IT = "gemma2-9b-it"
 
     # OpenRouter models
-    OPENROUTER_LLAMA_3_1_405B = "meta-llama/llama-3.3-405b-instruct"
-    OPENROUTER_LLAMA_3_1_70B = "meta-llama/llama-3.3-70b-instruct"
+    OPENROUTER_LLAMA_3_1_405B = "meta-llama/llama-3.1-405b-instruct"
+    OPENROUTER_LLAMA_3_1_70B = "meta-llama/llama-3.1-70b-instruct"
+    OPENROUTER_LLAMA_4_MAVERICK = "meta-llama/llama-4-maverick"
+    OPENROUTER_LLAMA_4_MAVERICK_FREE = "meta-llama/llama-4-maverick:free"
+    OPENROUTER_LLAMA_4_SCOUT = "meta-llama/llama-4-scout"
+    OPENROUTER_LLAMA_4_SCOUT_FREE = "meta-llama/llama-4-scout:free"
     OPENROUTER_OLYMPICODER_7B = "open-r1/olympiccoder-7b:free"
+
+    # LMStudio models
+    LMSTUDIO_GEMMA_3_1B = "gemma-3-1b"
+    LMSTUDIO_GEMMA_3_4B = "gemma-3-4b"
+    LMSTUDIO_GEMMA_3_12B = "gemma-3-12b"
+    LMSTUDIO_GEMMA_3_27B = "gemma-3-27b"
 
     # TogetherAI platform models support tool calling
     TOGETHER_LLAMA_3_1_8B = "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo"
@@ -75,6 +99,23 @@ class ModelType(UnifiedModelType, Enum):
     TOGETHER_LLAMA_3_3_70B = "meta-llama/Llama-3.3-70B-Instruct-Turbo"
     TOGETHER_MIXTRAL_8_7B = "mistralai/Mixtral-8x7B-Instruct-v0.1"
     TOGETHER_MISTRAL_7B = "mistralai/Mistral-7B-Instruct-v0.1"
+    TOGETHER_LLAMA_4_MAVERICK = (
+        "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8"
+    )
+    TOGETHER_LLAMA_4_SCOUT = "meta-llama/Llama-4-Scout-17B-16E-Instruct"
+
+    # PPIO platform models support tool calling
+    PPIO_DEEPSEEK_R1_TURBO = "deepseek/deepseek-r1-turbo"
+    PPIO_DEEPSEEK_V3_TURBO = "deepseek/deepseek-v3-turbo"
+    PPIO_DEEPSEEK_R1_COMMUNITY = "deepseek/deepseek-r1/community"
+    PPIO_DEEPSEEK_V3_COMMUNITY = "deepseek/deepseek-v3/community"
+    PPIO_DEEPSEEK_R1 = "deepseek/deepseek-r1"
+    PPIO_DEEPSEEK_V3 = "deepseek/deepseek-v3"
+    PPIO_QWEN_2_5_72B = "qwen/qwen-2.5-72b-instruct"
+    PPIO_BAICHUAN_2_13B_CHAT = "baichuan/baichuan2-13b-chat"
+    PPIO_LLAMA_3_3_70B = "meta-llama/llama-3.3-70b-instruct"
+    PPIO_LLAMA_3_1_70B = "meta-llama/llama-3.1-70b-instruct"
+    PPIO_YI_1_5_34B_CHAT = "01-ai/yi-1.5-34b-chat"
 
     # SambaNova Cloud platform models support tool calling
     SAMBA_LLAMA_3_1_8B = "Meta-Llama-3.1-8B-Instruct"
@@ -107,6 +148,18 @@ class ModelType(UnifiedModelType, Enum):
     CLAUDE_3_5_SONNET = "claude-3-5-sonnet-latest"
     CLAUDE_3_5_HAIKU = "claude-3-5-haiku-latest"
     CLAUDE_3_7_SONNET = "claude-3-7-sonnet-latest"
+
+    # Netmind models
+    NETMIND_LLAMA_4_MAVERICK_17B_128E_INSTRUCT = (
+        "meta-llama/Llama-4-Maverick-17B-128E-Instruct"
+    )
+    NETMIND_LLAMA_4_SCOUT_17B_16E_INSTRUCT = (
+        "meta-llama/Llama-4-Scout-17B-16E-Instruct"
+    )
+    NETMIND_DEEPSEEK_R1 = "deepseek-ai/DeepSeek-R1"
+    NETMIND_DEEPSEEK_V3 = "deepseek-ai/DeepSeek-V3-0324"
+    NETMIND_DOUBAO_1_5_PRO = "doubao/Doubao-1.5-pro"
+    NETMIND_QWQ_32B = "Qwen/QwQ-32B"
 
     # Nvidia models
     NVIDIA_NEMOTRON_340B_INSTRUCT = "nvidia/nemotron-4-340b-instruct"
@@ -277,12 +330,14 @@ class ModelType(UnifiedModelType, Enum):
                 self.is_mistral,
                 self.is_qwen,
                 self.is_deepseek,
+                self.is_ppio,
                 self.is_cohere,
                 self.is_internlm,
                 self.is_together,
                 self.is_sambanova,
                 self.is_groq,
                 self.is_openrouter,
+                self.is_lmstudio,
                 self.is_sglang,
                 self.is_moonshot,
                 self.is_siliconflow,
@@ -307,6 +362,25 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.O1_MINI,
             ModelType.O3_MINI,
             ModelType.GPT_4_5_PREVIEW,
+            ModelType.GPT_4_1,
+            ModelType.GPT_4_1_MINI,
+            ModelType.GPT_4_1_NANO,
+            ModelType.O4_MINI,
+            ModelType.O3,
+        }
+
+    @property
+    def is_aws_bedrock(self) -> bool:
+        r"""Returns whether this type of models is an AWS Bedrock model."""
+        return self in {
+            ModelType.AWS_CLAUDE_3_7_SONNET,
+            ModelType.AWS_CLAUDE_3_5_SONNET,
+            ModelType.AWS_CLAUDE_3_HAIKU,
+            ModelType.AWS_CLAUDE_3_SONNET,
+            ModelType.AWS_DEEPSEEK_R1,
+            ModelType.AWS_LLAMA_3_3_70B_INSTRUCT,
+            ModelType.AWS_LLAMA_3_2_90B_INSTRUCT,
+            ModelType.AWS_LLAMA_3_2_11B_INSTRUCT,
         }
 
     @property
@@ -379,7 +453,21 @@ class ModelType(UnifiedModelType, Enum):
         return self in {
             ModelType.OPENROUTER_LLAMA_3_1_405B,
             ModelType.OPENROUTER_LLAMA_3_1_70B,
+            ModelType.OPENROUTER_LLAMA_4_MAVERICK,
+            ModelType.OPENROUTER_LLAMA_4_MAVERICK_FREE,
+            ModelType.OPENROUTER_LLAMA_4_SCOUT,
+            ModelType.OPENROUTER_LLAMA_4_SCOUT_FREE,
             ModelType.OPENROUTER_OLYMPICODER_7B,
+        }
+
+    @property
+    def is_lmstudio(self) -> bool:
+        r"""Returns whether this type of models is served by LMStudio."""
+        return self in {
+            ModelType.LMSTUDIO_GEMMA_3_1B,
+            ModelType.LMSTUDIO_GEMMA_3_4B,
+            ModelType.LMSTUDIO_GEMMA_3_12B,
+            ModelType.LMSTUDIO_GEMMA_3_27B,
         }
 
     @property
@@ -531,6 +619,33 @@ class ModelType(UnifiedModelType, Enum):
         }
 
     @property
+    def is_netmind(self) -> bool:
+        return self in {
+            ModelType.NETMIND_LLAMA_4_MAVERICK_17B_128E_INSTRUCT,
+            ModelType.NETMIND_LLAMA_4_SCOUT_17B_16E_INSTRUCT,
+            ModelType.NETMIND_DEEPSEEK_R1,
+            ModelType.NETMIND_DEEPSEEK_V3,
+            ModelType.NETMIND_DOUBAO_1_5_PRO,
+            ModelType.NETMIND_QWQ_32B,
+        }
+
+    @property
+    def is_ppio(self) -> bool:
+        return self in {
+            ModelType.PPIO_DEEPSEEK_R1_TURBO,
+            ModelType.PPIO_DEEPSEEK_V3_TURBO,
+            ModelType.PPIO_DEEPSEEK_R1_COMMUNITY,
+            ModelType.PPIO_DEEPSEEK_V3_COMMUNITY,
+            ModelType.PPIO_DEEPSEEK_R1,
+            ModelType.PPIO_DEEPSEEK_V3,
+            ModelType.PPIO_QWEN_2_5_72B,
+            ModelType.PPIO_BAICHUAN_2_13B_CHAT,
+            ModelType.PPIO_LLAMA_3_3_70B,
+            ModelType.PPIO_LLAMA_3_1_70B,
+            ModelType.PPIO_YI_1_5_34B_CHAT,
+        }
+
+    @property
     def is_internlm(self) -> bool:
         return self in {
             ModelType.INTERNLM3_LATEST,
@@ -642,8 +757,16 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GLM_4V_FLASH,
             ModelType.GLM_4_AIRX,
             ModelType.OPENROUTER_OLYMPICODER_7B,
+            ModelType.LMSTUDIO_GEMMA_3_1B,
+            ModelType.LMSTUDIO_GEMMA_3_4B,
+            ModelType.LMSTUDIO_GEMMA_3_12B,
+            ModelType.LMSTUDIO_GEMMA_3_27B,
         }:
             return 8_192
+        elif self in {
+            ModelType.PPIO_BAICHUAN_2_13B_CHAT,
+        }:
+            return 14_336
         elif self in {
             ModelType.GPT_3_5_TURBO,
             ModelType.YI_LIGHTNING,
@@ -656,8 +779,14 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.SAMBA_LLAMA_3_1_405B,
             ModelType.GLM_4V_PLUS_0111,
             ModelType.GLM_ZERO_PREVIEW,
+            ModelType.PPIO_YI_1_5_34B_CHAT,
         }:
             return 16_384
+
+        elif self in {
+            ModelType.NETMIND_DOUBAO_1_5_PRO,
+        }:
+            return 32_000
         elif self in {
             ModelType.MISTRAL_CODESTRAL,
             ModelType.MISTRAL_7B,
@@ -682,6 +811,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MOONSHOT_V1_32K,
             ModelType.AIML_MIXTRAL_8X7B,
             ModelType.AIML_MISTRAL_7B_INSTRUCT,
+            ModelType.PPIO_QWEN_2_5_72B,
+            ModelType.PPIO_LLAMA_3_1_70B,
             ModelType.MODELSCOPE_QWEN_2_5_7B_INSTRUCT,
             ModelType.MODELSCOPE_QWEN_2_5_14B_INSTRUCT,
             ModelType.MODELSCOPE_QWEN_2_5_32B_INSTRUCT,
@@ -697,12 +828,21 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MODELSCOPE_LLAMA_3_3_70B_INSTRUCT,
             ModelType.MODELSCOPE_MINISTRAL_8B_INSTRUCT,
             ModelType.MODELSCOPE_DEEPSEEK_V3_0324,
+            ModelType.OPENROUTER_LLAMA_3_1_405B,
         }:
             return 32_768
         elif self in {
             ModelType.MISTRAL_MIXTRAL_8x22B,
             ModelType.DEEPSEEK_CHAT,
             ModelType.DEEPSEEK_REASONER,
+            ModelType.PPIO_DEEPSEEK_R1_TURBO,
+            ModelType.PPIO_DEEPSEEK_V3_TURBO,
+            ModelType.PPIO_DEEPSEEK_R1_COMMUNITY,
+            ModelType.PPIO_DEEPSEEK_V3_COMMUNITY,
+            ModelType.PPIO_DEEPSEEK_R1,
+            ModelType.PPIO_DEEPSEEK_V3,
+            ModelType.AWS_DEEPSEEK_R1,
+            ModelType.NETMIND_QWQ_32B,
         }:
             return 64_000
         elif self in {
@@ -749,6 +889,11 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GLM_4_AIR_0111,
             ModelType.GLM_4_FLASHX,
             ModelType.GLM_4_FLASH,
+            ModelType.AWS_LLAMA_3_3_70B_INSTRUCT,
+            ModelType.AWS_LLAMA_3_2_90B_INSTRUCT,
+            ModelType.AWS_LLAMA_3_2_11B_INSTRUCT,
+            ModelType.NETMIND_DEEPSEEK_R1,
+            ModelType.NETMIND_DEEPSEEK_V3,
         }:
             return 128_000
         elif self in {
@@ -764,7 +909,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.SGLANG_QWEN_2_5_32B,
             ModelType.SGLANG_QWEN_2_5_72B,
             ModelType.OPENROUTER_LLAMA_3_1_70B,
-            ModelType.OPENROUTER_LLAMA_3_1_405B,
+            ModelType.PPIO_LLAMA_3_3_70B,
+            ModelType.OPENROUTER_LLAMA_4_SCOUT,
         }:
             return 131_072
         elif self in {
@@ -778,12 +924,29 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_5_HAIKU,
             ModelType.CLAUDE_3_7_SONNET,
             ModelType.YI_MEDIUM_200K,
+            ModelType.AWS_CLAUDE_3_5_SONNET,
+            ModelType.AWS_CLAUDE_3_HAIKU,
+            ModelType.AWS_CLAUDE_3_SONNET,
+            ModelType.AWS_CLAUDE_3_7_SONNET,
+            ModelType.O4_MINI,
+            ModelType.O3,
         }:
             return 200_000
         elif self in {
             ModelType.MISTRAL_CODESTRAL_MAMBA,
+            ModelType.OPENROUTER_LLAMA_4_MAVERICK_FREE,
         }:
             return 256_000
+
+        elif self in {
+            ModelType.NETMIND_LLAMA_4_SCOUT_17B_16E_INSTRUCT,
+        }:
+            return 320_000
+        elif self in {
+            ModelType.OPENROUTER_LLAMA_4_SCOUT_FREE,
+            ModelType.NETMIND_LLAMA_4_MAVERICK_17B_128E_INSTRUCT,
+        }:
+            return 512_000
         elif self in {
             ModelType.GEMINI_2_5_PRO_EXP,
             ModelType.GEMINI_2_0_FLASH,
@@ -793,10 +956,16 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GEMINI_2_0_FLASH_LITE_PREVIEW,
             ModelType.GEMINI_2_0_PRO_EXP,  # Not given in doc, assume the same
             ModelType.GLM_4_LONG,
+            ModelType.TOGETHER_LLAMA_4_MAVERICK,
+            ModelType.OPENROUTER_LLAMA_4_MAVERICK,
+            ModelType.GPT_4_1,
+            ModelType.GPT_4_1_MINI,
+            ModelType.GPT_4_1_NANO,
         }:
             return 1_048_576
         elif self in {
             ModelType.QWEN_LONG,
+            ModelType.TOGETHER_LLAMA_4_SCOUT,
         }:
             return 10_000_000
         else:
@@ -902,6 +1071,7 @@ class VectorDistance(Enum):
 class OpenAIBackendRole(Enum):
     ASSISTANT = "assistant"
     SYSTEM = "system"
+    DEVELOPER = "developer"
     USER = "user"
     FUNCTION = "function"
     TOOL = "tool"
@@ -959,12 +1129,14 @@ class ModelPlatformType(Enum):
     DEFAULT = os.getenv("DEFAULT_MODEL_PLATFORM_TYPE", "openai")
 
     OPENAI = "openai"
+    AWS_BEDROCK = "aws-bedrock"
     AZURE = "azure"
     ANTHROPIC = "anthropic"
     GROQ = "groq"
     OPENROUTER = "openrouter"
     OLLAMA = "ollama"
     LITELLM = "litellm"
+    LMSTUDIO = "lmstudio"
     ZHIPU = "zhipuai"
     GEMINI = "gemini"
     VLLM = "vllm"
@@ -978,6 +1150,7 @@ class ModelPlatformType(Enum):
     QWEN = "tongyi-qianwen"
     NVIDIA = "nvidia"
     DEEPSEEK = "deepseek"
+    PPIO = "ppio"
     SGLANG = "sglang"
     INTERNLM = "internlm"
     MOONSHOT = "moonshot"
@@ -985,6 +1158,7 @@ class ModelPlatformType(Enum):
     SILICONFLOW = "siliconflow"
     AIML = "aiml"
     VOLCANO = "volcano"
+    NETMIND = "netmind"
 
     @classmethod
     def from_name(cls, name):
@@ -998,6 +1172,11 @@ class ModelPlatformType(Enum):
     def is_openai(self) -> bool:
         r"""Returns whether this platform is openai."""
         return self is ModelPlatformType.OPENAI
+
+    @property
+    def is_aws_bedrock(self) -> bool:
+        r"""Returns whether this platform is aws-bedrock."""
+        return self is ModelPlatformType.AWS_BEDROCK
 
     @property
     def is_azure(self) -> bool:
@@ -1018,6 +1197,11 @@ class ModelPlatformType(Enum):
     def is_openrouter(self) -> bool:
         r"""Returns whether this platform is openrouter."""
         return self is ModelPlatformType.OPENROUTER
+
+    @property
+    def is_lmstudio(self) -> bool:
+        r"""Returns whether this platform is lmstudio."""
+        return self is ModelPlatformType.LMSTUDIO
 
     @property
     def is_ollama(self) -> bool:
@@ -1099,6 +1283,16 @@ class ModelPlatformType(Enum):
     def is_deepseek(self) -> bool:
         r"""Returns whether this platform is DeepSeek."""
         return self is ModelPlatformType.DEEPSEEK
+
+    @property
+    def is_netmind(self) -> bool:
+        r"""Returns whether this platform is Netmind."""
+        return self is ModelPlatformType.NETMIND
+
+    @property
+    def is_ppio(self) -> bool:
+        r"""Returns whether this platform is PPIO."""
+        return self is ModelPlatformType.PPIO
 
     @property
     def is_internlm(self) -> bool:

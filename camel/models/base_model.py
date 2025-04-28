@@ -108,42 +108,125 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
     ) -> List[OpenAIMessage]:
         r"""Preprocess messages before sending to model API.
         Removes thinking content from assistant and user messages.
+        Automatically formats messages for parallel tool calls if tools are
+        detected.
 
         Args:
-            messages (List[OpenAIMessage]): Original messages
+            messages (List[OpenAIMessage]): Original messages.
 
         Returns:
             List[OpenAIMessage]: Preprocessed messages
         """
+        # Process all messages in a single pass
+        processed_messages = []
+        tool_calls_buffer: List[OpenAIMessage] = []
+        tool_responses_buffer: Dict[str, OpenAIMessage] = {}
+        has_tool_calls = False
 
-        def should_process_thinking(msg: OpenAIMessage) -> bool:
-            # Only process thinking content for assistant and user messages
-            return msg['role'] in ['assistant', 'user'] and isinstance(
-                msg['content'], str
+        for msg in messages:
+            # Remove thinking content if needed
+            role = msg.get('role')
+            content = msg.get('content')
+            if role in ['assistant', 'user'] and isinstance(content, str):
+                if '<think>' in content and '</think>' in content:
+                    content = re.sub(
+                        r'<think>.*?</think>', '', content, flags=re.DOTALL
+                    ).strip()
+                processed_msg = dict(msg)
+                processed_msg['content'] = content
+            else:
+                processed_msg = dict(msg)
+
+            # Check and track tool calls/responses
+            is_tool_call = (
+                processed_msg.get("role") == "assistant"
+                and "tool_calls" in processed_msg
+            )
+            is_tool_response = (
+                processed_msg.get("role") == "tool"
+                and "tool_call_id" in processed_msg
             )
 
-        def remove_thinking(content: str) -> str:
-            # Only remove thinking content if the tags are present
-            if '<think>' in content and '</think>' in content:
-                return re.sub(
-                    r'<think>.*?</think>',
-                    '',
-                    content,
-                    flags=re.DOTALL,
-                ).strip()
-            return content
+            if is_tool_call or is_tool_response:
+                has_tool_calls = True
 
-        return [
-            {  # type: ignore[misc]
-                **msg,
-                'content': (
-                    remove_thinking(msg['content'])  # type: ignore[arg-type]
-                    if should_process_thinking(msg)
-                    else msg['content']
-                ),
-            }
-            for msg in messages
-        ]
+            # Store the processed message for later formatting if needed
+            processed_messages.append(processed_msg)
+
+        # If no tool calls detected, return the processed messages
+        if not has_tool_calls:
+            return processed_messages  # type: ignore[return-value]
+
+        # Format messages for parallel tool calls
+        formatted_messages = []
+        tool_calls_buffer = []
+        tool_responses_buffer = {}
+
+        for msg in processed_messages:  # type: ignore[assignment]
+            # If this is an assistant message with tool calls, add it to the
+            # buffer
+            if msg.get("role") == "assistant" and "tool_calls" in msg:
+                tool_calls_buffer.append(msg)
+                continue
+
+            # If this is a tool response, add it to the responses buffer
+            if msg.get("role") == "tool" and "tool_call_id" in msg:
+                tool_call_id = msg.get("tool_call_id")
+                if isinstance(tool_call_id, str):
+                    tool_responses_buffer[tool_call_id] = msg
+                continue
+
+            # Process any complete tool call + responses before adding regular
+            # messages
+            if tool_calls_buffer and tool_responses_buffer:
+                # Add the assistant message with tool calls
+                assistant_msg = tool_calls_buffer[0]
+                formatted_messages.append(assistant_msg)
+
+                # Add all matching tool responses for this assistant message
+                tool_calls = assistant_msg.get("tool_calls", [])
+                if isinstance(tool_calls, list):
+                    for tool_call in tool_calls:
+                        tool_call_id = tool_call.get("id")
+                        if (
+                            isinstance(tool_call_id, str)
+                            and tool_call_id in tool_responses_buffer
+                        ):
+                            formatted_messages.append(
+                                tool_responses_buffer[tool_call_id]
+                            )
+                            del tool_responses_buffer[tool_call_id]
+
+                tool_calls_buffer.pop(0)
+
+            # Add the current regular message
+            formatted_messages.append(msg)
+
+        # Process any remaining buffered tool calls and responses
+        while tool_calls_buffer:
+            assistant_msg = tool_calls_buffer[0]
+            formatted_messages.append(assistant_msg)
+
+            tool_calls = assistant_msg.get("tool_calls", [])
+            if isinstance(tool_calls, list):
+                for tool_call in tool_calls:
+                    tool_call_id = tool_call.get("id")
+                    if (
+                        isinstance(tool_call_id, str)
+                        and tool_call_id in tool_responses_buffer
+                    ):
+                        formatted_messages.append(
+                            tool_responses_buffer[tool_call_id]
+                        )
+                        del tool_responses_buffer[tool_call_id]
+
+            tool_calls_buffer.pop(0)
+
+        # Add any remaining tool responses
+        for response in tool_responses_buffer.values():
+            formatted_messages.append(response)
+
+        return formatted_messages
 
     @abstractmethod
     def _run(

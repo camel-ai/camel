@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Any, Optional, Sequence, Union
+from typing import Optional, Sequence, Union
 
 from pydantic import Field
 
@@ -93,12 +93,6 @@ class TogetherAIConfig(BaseConfig):
     frequency_penalty: Optional[float] = None
     logit_bias: dict = Field(default_factory=dict)
     user: Optional[str] = None
-
-    def as_dict(self) -> dict[str, Any]:
-        config_dict = super().as_dict()
-        if "tools" in config_dict:
-            del config_dict["tools"]  # Currently does not support tool calling
-        return config_dict
 
 
 TOGETHERAI_API_PARAMS = {

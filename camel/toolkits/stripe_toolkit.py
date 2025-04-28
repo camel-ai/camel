@@ -19,9 +19,10 @@ from typing import List, Optional
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import api_keys_required
+from camel.utils import MCPServer, api_keys_required
 
 
+@MCPServer()
 class StripeToolkit(BaseToolkit):
     r"""A class representing a toolkit for Stripe operations.
 

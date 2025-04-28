@@ -17,7 +17,7 @@ from camel.types import ModelPlatformType, ModelType
 
 sys_msg = "You are a helpful assistant."
 usr_msg = """Who is the best basketball player in the world? 
-Tell about his carrer.
+Tell about his career.
 """
 
 openai_model = ModelFactory.create(
