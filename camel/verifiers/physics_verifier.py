@@ -152,7 +152,7 @@ class UnitParser:
             expr = parse_latex(unit_str)
             logger.info(f"Parsed LaTeX unit: {expr}.")
         except Exception as e:
-            logger.info(f"Failed to parse LaTeX unit '{unit_str}': {e}")
+            logger.warning(f"Failed to parse LaTeX unit '{unit_str}': {e}")
             return unit_str
 
         # Substitute allowed unit symbols
@@ -297,7 +297,7 @@ class UnitParser:
         return base_units
 
 
-class PhysicsSolutionComparitor:
+class PhysicsSolutionComparator:
     r"""Class for compare solutions and reference answers that contains value
     and units.
 
@@ -861,7 +861,7 @@ class PhysicsVerifier(PythonVerifier):
                     ),
                 )
 
-            comparator = PhysicsSolutionComparitor(
+            comparator = PhysicsSolutionComparator(
                 sol_out, reference_answer, self.tolerance
             )
 
