@@ -13,14 +13,17 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import base64
+from collections import defaultdict
+from dataclasses import dataclass, field
 import hashlib
 import logging
 from multiprocessing.pool import ThreadPool, Pool
 import os
 import random
 import re
-import sys
-import importlib.util
+import traceback
+import jinja2
+import numpy as np
 import pandas
 from typing import Any, Dict, List, Optional
 
@@ -37,7 +40,6 @@ from camel.toolkits.browser_toolkit import BrowserToolkit
 
 logger = logging.getLogger(__name__)
 
-# from: https://github.com/centerforaisafety/hle/blob/7b6be5aad6f9b43af3857de7867f3b52f6e4acb3/hle_eval/run_judge_results.py#L16-L33
 GRADER_TEMPLATE = """
 Judge whether the following [response] to [question] is correct or not based on the precise and unambiguous [correct_answer] below.
 
@@ -60,6 +62,117 @@ confidence: The extracted confidence score between 0|\%| and 100|\%| from [respo
 """.strip()
 
 CHOICE_STRINGS = ["yes", "no"]
+Message = dict[str, Any]  # keys role, content
+MessageList = list[Message]
+
+jinja_env = jinja2.Environment(
+    loader=jinja2.BaseLoader(),
+    undefined=jinja2.StrictUndefined,
+    autoescape=jinja2.select_autoescape(["html", "xml"]),
+)
+
+
+def message_to_html(message: Message) -> str:
+    """
+    Generate HTML snippet (inside a <div>) for a message.
+    """
+    print(message)
+    return jinja_env.from_string(_message_template).render(
+        role=message["role"], content=message["content"], variant=message.get(
+            "variant", None)
+    )
+
+
+jinja_env.globals["message_to_html"] = message_to_html
+
+
+_message_template = """
+<div class="message {{ role }}">
+    <div class="role">
+    {{ role }}
+    {% if variant %}<span class="variant">({{ variant }})</span>{% endif %}
+    </div>
+    <div class="content">
+    <pre>{{ content }}</pre>
+    </div>
+</div>
+"""
+
+
+HTML_JINJA = """
+<h3>Question:</h3>
+{{ message_to_html(prompt_messages) | safe }}
+<h3>Sampled message</h3>
+{{ message_to_html(next_message) | safe }}
+<h3>Results</h3>
+<p>Correct Answer: {{ correct_answer }}</p>
+<p>Extracted Answer: {{ extracted_answer }}</p>
+<p>Score: {{ score }}</p>
+"""
+_report_template = """<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            .message {
+                padding: 8px 16px;
+                margin-bottom: 8px;
+                border-radius: 4px;
+            }
+            .message.user {
+                background-color: #B2DFDB;
+                color: #00695C;
+            }
+            .message.assistant {
+                background-color: #B39DDB;
+                color: #4527A0;
+            }
+            .message.system {
+                background-color: #EEEEEE;
+                color: #212121;
+            }
+            .role {
+                font-weight: bold;
+                margin-bottom: 4px;
+            }
+            .variant {
+                color: #795548;
+            }
+            table, th, td {
+                border: 1px solid black;
+            }
+            pre {
+                white-space: pre-wrap;
+            }
+        </style>
+    </head>
+    <body>
+    {% if metrics %}
+    <h1>Metrics</h1>
+    <table>
+    <tr>
+        <th>Metric</th>
+        <th>Value</th>
+    </tr>
+    <tr>
+        <td><b>Score</b></td>
+        <td>{{ score | float | round(3) }}</td>
+    </tr>
+    {% for name, value in metrics.items() %}
+    <tr>
+        <td>{{ name }}</td>
+        <td>{{ value }}</td>
+    </tr>
+    {% endfor %}
+    </table>
+    {% endif %}
+    <h1>Examples</h1>
+    {% for html in htmls %}
+    {{ html | safe }}
+    <hr>
+    {% endfor %}
+    </body>
+</html>
+"""
 
 
 def derive_key(password: str, length: int) -> bytes:
@@ -76,6 +189,84 @@ def decrypt(ciphertext_b64: str, password: str) -> str:
     key = derive_key(password, len(encrypted))
     decrypted = bytes(a ^ b for a, b in zip(encrypted, key))
     return decrypted.decode()
+
+
+@dataclass
+class SingleEvalResult:
+    """
+    Result of evaluating a single sample
+    """
+
+    score: float | None
+    metrics: dict[str, float] = field(default_factory=dict)
+    html: str | None = None
+    convo: MessageList | None = None  # sampled conversation
+
+
+@dataclass
+class EvalResult:
+    """
+    Result of running an evaluation (usually consisting of many samples)
+    """
+
+    score: float | None  # top-line metric
+    metrics: dict[str, float] | None  # other metrics
+    htmls: list[str]  # strings of valid HTML
+    convos: list[MessageList]  # sampled conversations
+
+
+def make_report(eval_result: EvalResult) -> str:
+    """
+    Create a standalone HTML report from an EvalResult.
+    """
+    return jinja_env.from_string(_report_template).render(
+        score=eval_result.score,
+        metrics=eval_result.metrics,
+        htmls=eval_result.htmls,
+    )
+
+
+def _compute_stat(values: list, stat: str):
+    if stat == "mean":
+        return np.mean(values)
+    elif stat == "std":
+        return np.std(values)
+    elif stat == "min":
+        return np.min(values)
+    elif stat == "max":
+        return np.max(values)
+    else:
+        raise ValueError(f"Unknown {stat =}")
+
+
+def aggregate_results(
+    single_eval_results: list[SingleEvalResult],
+    default_stats: tuple[str] = ("mean", "std"),
+    name2stats: dict[str, tuple[str]] | None = None,
+) -> EvalResult:
+    """
+    Aggregate results from multiple evaluations into a single EvalResult.
+    """
+    name2stats = name2stats or {}
+    name2values = defaultdict(list)
+    htmls = []
+    convos = []
+    for single_eval_result in single_eval_results:
+        for name, value in single_eval_result.metrics.items():
+            name2values[name].append(value)
+        if single_eval_result.score is not None:
+            name2values["score"].append(single_eval_result.score)
+        htmls.append(single_eval_result.html)
+        convos.append(single_eval_result.convo)
+    final_metrics = {}
+    for name, values in name2values.items():
+        stats = name2stats.get(name, default_stats)
+        for stat in stats:
+            key = name if stat == "mean" else f"{name}:{stat}"
+            final_metrics[key] = _compute_stat(values, stat)
+    return EvalResult(
+        score=final_metrics.pop("score", None), metrics=final_metrics, htmls=htmls, convos=convos
+    )
 
 
 class BrowseCompBenchmark(BaseBenchmark):
@@ -112,6 +303,8 @@ class BrowseCompBenchmark(BaseBenchmark):
         self.examples = []
         self.load()
         self.raw_results = None
+        self.validated_results = None
+        self._results = None
 
     def download(self):
         r"""Download the BrowseComp dataset."""
@@ -160,78 +353,82 @@ class BrowseCompBenchmark(BaseBenchmark):
             self.raw_results = list(
                 tqdm(pool.imap(process_each_row_f, self.examples), total=len(self.examples)))
 
-    def _process_example_with_agent(self, row: dict) -> Any:
-        """Process a single example with the provided agent.
+    def validate(self, model_config: dict):
+        """Validate the raw results using the GRADER_TEMPLATE and an LLM."""
 
-        This method is used for sequential processing or thread-based parallelism.
-        """
-        problem = decrypt(row.get("problem", ""), row.get("canary", ""))
-        answer = decrypt(row.get("answer", ""), row.get("canary", ""))
-
-        # Model configuration
-        model_config = {
-            "model_platform": ModelPlatformType.OPENAI,
-            "model_type": "gemini-2.5-pro-exp",
-            "url": "https://litellm-cloudrun-668429440317.us-central1.run.app",
-            "api_key": 'sk-RdFh1jOY92e9yfiV7K4A7w'
-        }
-
-        # Create model for the main process
         model = ModelFactory.create(**model_config)
 
-        # Create browser toolkit for the main process
-        # web_toolkit = BrowserToolkit(
-        #     headless=False,
-        #     web_agent_model=model,
-        #     planning_agent_model=model,
-        #     channel="chromium",
-        # )
+        def validate_each_one(result: dict):
+            # Format the template
+            prompt = GRADER_TEMPLATE.format(
+                question=result['problem'],
+                response=result['response'],
+                correct_answer=result['answer']
+            )
 
-        # Create agent for the main process
-        agent = ChatAgent(
-            system_message="You are a helpful assistant.",
-            model=model,
-            # tools=[*web_toolkit.get_tools()],
-        )
-        input_message = f"""
-            {problem}
-            navigate to related website to find the answer.
-            
-            Your response should be in the following format:
-            Explanation:{{your explanation for your final answer}}
-            Exact Answer: {{your succinct, final answer}}
-            Confidence: {{your confidence score between 0% and 100% for your answer}}
-            """.strip()
-        response_text = agent.step(input_message)
+            # Send to LLM for evaluation
+            messages = [{"role": "user", "content": prompt}]
+            try:
+                response = model.run(messages)
+                match = re.search(r"correct: (yes|no)",
+                                  response.choices[0].message.content)
+                grade_result = match.group(1) if match else "no"
 
-        print(problem)
-        print(response_text.msgs[0].content)
-        print(answer)
-        return {
-            "problem": problem,
-            "answer": answer,
-            "response": response_text.msgs[0].content
+                is_correct = int(grade_result == "yes")
+                is_incorrect = int(grade_result == "no")
+
+                extracted_match = re.search(
+                    r"Exact Answer:.*", result['response'])
+
+                score = is_correct
+                html = jinja_env.from_string(HTML_JINJA).render(
+                    prompt_messages=dict(
+                        content=result['problem'], role="user"),
+                    next_message=dict(
+                        content=result['response'], role="assistant"),
+                    score=score,
+                    correct_answer=result['answer'],
+                    extracted_answer=extracted_match.group(0).replace(
+                        'Exact Anwer:', '') if extracted_match else 'N/A',
+                )
+                convo = [dict(content=result['problem'], role="user")] + \
+                    [dict(content=result['response'], role="assistant")]
+                return SingleEvalResult(html=html, score=score, convo=convo, metrics={
+                    "is_correct": is_correct,
+                    "is_incorrect": is_incorrect,
+                })
+            except Exception as e:
+                logger.error(f"Error evaluating result: {e}")
+                logger.error(traceback.format_exc())
+
+        # Use ThreadPool instead of Pool to avoid pickling issues
+        pool_class = ThreadPool
+        with pool_class(min(self.processes, len(self.raw_results))) as pool:
+            self.validated_results = list(
+                tqdm(pool.imap(validate_each_one, self.raw_results), total=len(self.raw_results)))
+
+        aggregate_metrics = {
+            "is_correct": sum(result.metrics["is_correct"] for result in self.validated_results) / len(self.validated_results),
+            "is_incorrect": sum(result.metrics["is_incorrect"] for result in self.validated_results) / len(self.validated_results),
+        }
+        print("AGGREGATE METRICS")
+        print(aggregate_metrics)
+        print("##################")
+
+        output_d = {
+            "accuracy": aggregate_metrics["is_correct"],
         }
 
-    def _process_example_in_new_process(self, args):
-        """Process a single example in a new process with a new agent.
+        print(f"Accuracy: {output_d['accuracy']:.3f}")
 
-        This method is used for process-based parallelism to avoid pickling issues.
-        It creates a new agent for each process, avoiding the need to pickle the agent.
-        """
-        row = args
-
-        try:
-            # Process the example with the new agent
-            return self._process_example_with_agent(row)
-        except Exception as e:
-            print(f"Error processing example: {e}")
-            return {
-                "problem": "Error processing example",
-                "answer": "Error",
-                "response": f"Error: {str(e)}",
-                "error": str(e)
-            }
+        self._results = aggregate_results(self.validated_results)
+        # ^^^ how to use a sampler
+        report_filename = self.save_to
+        print(f"Writing report to {report_filename}")
+        with open(report_filename, "w") as fh:
+            fh.write(make_report(self._results))
+        metrics = self._results.metrics | {"score": self._results.score}
+        print(metrics)
 
 
 def process_each_row(row):
@@ -242,12 +439,10 @@ def process_each_row(row):
         "model_platform": ModelPlatformType.OPENAI,
         "model_type": "gemini-2.5-pro-exp",
         "url": "https://litellm-cloudrun-668429440317.us-central1.run.app",
-        "api_key": 'sk-RdFh1jOY92e9yfiV7K4A7w'
     }
 
     # Create model for the main process
     model = ModelFactory.create(**model_config)
-
     # Create browser toolkit for the main process
     # web_toolkit = BrowserToolkit(
     #     headless=False,
@@ -282,10 +477,15 @@ def process_each_row(row):
 
 if __name__ == "__main__":
 
-    benchmark = BrowseCompBenchmark("", num_examples=2)
+    benchmark = BrowseCompBenchmark("report.html", num_examples=2, processes=2)
 
     # Process in parallel with separate agents in each process
     # Using 'spawn' method ensures each process has a clean environment
     benchmark.run(process_each_row_f=process_each_row)
-
-    print(benchmark.raw_results)
+    # Create a model for validation
+    model_config = {
+        "model_platform": ModelPlatformType.OPENAI,
+        "model_type": "gemini-2.5-pro-exp",
+        "url": "https://litellm-cloudrun-668429440317.us-central1.run.app",
+    }
+    benchmark.validate(model_config=model_config)
