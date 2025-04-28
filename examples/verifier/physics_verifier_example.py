@@ -94,13 +94,14 @@ print(f"{result} {unit}")
 result = asyncio.run(
     verifier.verify(solution=numpy_test_code, reference_answer="32 ")
 )
-print(f"Result: {result}") # should pass
+print(f"Result: {result}")  # should pass
 result = asyncio.run(
     verifier.verify(solution=numpy_test_code, reference_answer="40")
 )
-print(f"Result: {result}") # should fail
+print(f"Result: {result}")  # should fail
 
-# A simple physics test case with same value and unit for solutoin and reference answer
+# A simple physics test case with same value and unit for solutoin and
+# reference answer
 result = asyncio.run(
     verifier.verify(solution=basic_test_code, reference_answer="67 J/K")
 )
@@ -108,7 +109,9 @@ print(f"Result: {result}")
 
 # We have expression "pi" in the solution
 result = asyncio.run(
-    verifier.verify(solution=expression_test_code, reference_answer="pi/3 rads")
+    verifier.verify(
+        solution=expression_test_code, reference_answer="pi/3 rads"
+    )
 )
 print(f"Result: {result}")
 
@@ -121,13 +124,18 @@ print(f"Result: {result}")
 # The code will output answer in m/s, but we expect it to be in km/s.
 # The verifier should convert the answer to km/s.
 result = asyncio.run(
-    verifier.verify(solution=conversion_test_code, reference_answer="0.47 km/s")
+    verifier.verify(
+        solution=conversion_test_code, reference_answer="0.47 km/s"
+    )
 )
 print(f"Result: {result}")
 
 # The units are enclosed by dollar signs with spacing in between
 result = asyncio.run(
-    verifier.verify(solution=dollar_enclosed_units_test_code, reference_answer="-45 $\\mu \\mathrm{C}$")
+    verifier.verify(
+        solution=dollar_enclosed_units_test_code,
+        reference_answer="-45 $\\mu \\mathrm{C}$",
+    )
 )
 print(f"Result: {result}")
 

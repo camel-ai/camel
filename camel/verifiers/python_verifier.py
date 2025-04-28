@@ -243,7 +243,7 @@ class PythonVerifier(BaseVerifier):
             solution (str): The Python code or expression to execute and
                 verify.
             reference_answer (Optional[str]): The expected value as a Python
-             expression. If None, only execution success is verified.
+                expression. If None, only execution success is verified.
 
         Returns:
             VerificationResult: Result of the verification process.
