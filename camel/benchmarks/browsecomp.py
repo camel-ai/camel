@@ -62,25 +62,6 @@ confidence: The extracted confidence score between 0|\%| and 100|\%| from [respo
 CHOICE_STRINGS = ["yes", "no"]
 
 
-def map_with_progress(f: callable, xs: list[Any], num_threads: int = 1, use_processes: bool = False, sequential: bool = False):
-    """
-    Apply f to each element of xs, using a ThreadPool or ProcessPool, and show progress.
-
-    Args:
-        f: Function to apply to each element
-        xs: List of elements to process
-        num_threads: Number of threads/processes to use
-        use_processes: If True, use ProcessPool instead of ThreadPool
-        sequential: If True, process sequentially (ignores num_threads and use_processes)
-    """
-    if sequential or os.getenv("debug"):
-        return list(tqdm(map(f, xs), total=len(xs)))
-    else:
-        pool_class = Pool if use_processes else ThreadPool
-        with pool_class(min(num_threads, len(xs))) as pool:
-            return list(tqdm(pool.imap(f, xs), total=len(xs)))
-
-
 def derive_key(password: str, length: int) -> bytes:
     """Derive a fixed-length key from the password using SHA256."""
     hasher = hashlib.sha256()
@@ -130,6 +111,7 @@ class BrowseCompBenchmark(BaseBenchmark):
         self.n_repeats = n_repeats
         self.examples = []
         self.load()
+        self.raw_results = None
 
     def download(self):
         r"""Download the BrowseComp dataset."""
@@ -161,6 +143,23 @@ class BrowseCompBenchmark(BaseBenchmark):
         r"""Get the training set."""
         raise NotImplementedError("BrowseComp does not have a training set.")
 
+    def run(self, process_each_row_f: callable):
+        """
+        Apply f to each element of xs, using a ThreadPool or ProcessPool, and show progress.
+
+        Args:
+            f: Function to apply to each element
+            xs: List of elements to process
+            num_threads: Number of threads/processes to use
+            use_processes: If True, use ProcessPool instead of ThreadPool
+            sequential: If True, process sequentially (ignores num_threads and use_processes)
+        """
+
+        pool_class = Pool
+        with pool_class(min(self.processes, len(self.examples))) as pool:
+            self.raw_results = list(
+                tqdm(pool.imap(process_each_row_f, self.examples), total=len(self.examples)))
+
     def _process_example_with_agent(self, row: dict) -> Any:
         """Process a single example with the provided agent.
 
@@ -174,7 +173,7 @@ class BrowseCompBenchmark(BaseBenchmark):
             "model_platform": ModelPlatformType.OPENAI,
             "model_type": "gemini-2.5-pro-exp",
             "url": "https://litellm-cloudrun-668429440317.us-central1.run.app",
-
+            "api_key": 'sk-RdFh1jOY92e9yfiV7K4A7w'
         }
 
         # Create model for the main process
@@ -234,71 +233,59 @@ class BrowseCompBenchmark(BaseBenchmark):
                 "error": str(e)
             }
 
-    def run(  # type: ignore[override]
-        self,
-        grading_model=None,
-        use_processes: bool = True,
-        sequential: bool = False,
-    ) -> Dict[str, Any]:
-        r"""Run the benchmark.
 
-        Args:
-            agent (ChatAgent): The agent to run the benchmark.
-            grading_model: The model to use for grading.
-            use_processes (bool): Whether to use processes instead of threads.
-                This helps avoid greenlet switching issues with browser toolkit.
-            sequential (bool): Whether to process examples sequentially.
-                This also avoids greenlet switching issues.
-            model_config (Optional[Dict[str, Any]]): Configuration for creating
-                new models in separate processes. Required if use_processes=True.
+def process_each_row(row):
+    problem = decrypt(row.get("problem", ""), row.get("canary", ""))
+    answer = decrypt(row.get("answer", ""), row.get("canary", ""))
+    # Model configuration
+    model_config = {
+        "model_platform": ModelPlatformType.OPENAI,
+        "model_type": "gemini-2.5-pro-exp",
+        "url": "https://litellm-cloudrun-668429440317.us-central1.run.app",
+        "api_key": 'sk-RdFh1jOY92e9yfiV7K4A7w'
+    }
 
-        Returns:
-            Dict[str, Any]: The results of the benchmark.
-        """
-        if use_processes:
+    # Create model for the main process
+    model = ModelFactory.create(**model_config)
 
-            # Prepare arguments for each process: (row, model_config)
-            process_args = [row for row in self.examples]
+    # Create browser toolkit for the main process
+    # web_toolkit = BrowserToolkit(
+    #     headless=False,
+    #     web_agent_model=model,
+    #     planning_agent_model=model,
+    #     channel="chromium",
+    # )
 
-            # Use process-based parallelism with new agents in each process
-            results = map_with_progress(
-                self._process_example_in_new_process,
-                process_args,
-                use_processes=True,
-                sequential=False
-            )
-        else:
-            # For sequential or thread-based processing, use the provided agent
-            def process_example_wrapper(row):
-                return self._process_example_with_agent(row)
+    # Create agent for the main process
+    agent = ChatAgent(
+        system_message="You are a helpful assistant.",
+        model=model,
+        # tools=[*web_toolkit.get_tools()],
+    )
+    input_message = f"""
+            {problem}
+            navigate to related website to find the answer.
+            
+            Your response should be in the following format:
+            Explanation:{{your explanation for your final answer}}
+            Exact Answer: {{your succinct, final answer}}
+            Confidence: {{your confidence score between 0% and 100% for your answer}}
+            """.strip()
+    response_text = agent.step(input_message)
 
-            # Use sequential processing or thread-based parallelism
-            results = map_with_progress(
-                process_example_wrapper,
-                self.examples,
-                use_processes=False,
-                sequential=sequential
-            )
-
-        return {"results": list(results)}
+    return {
+        "problem": problem,
+        "answer": answer,
+        "response": response_text.msgs[0].content
+    }
 
 
 if __name__ == "__main__":
 
-    try:
-        # Create benchmark
-        benchmark = BrowseCompBenchmark("", num_examples=2)
+    benchmark = BrowseCompBenchmark("", num_examples=2)
 
-        # Process in parallel with separate agents in each process
-        # Using 'spawn' method ensures each process has a clean environment
-        results = benchmark.run(
-            use_processes=True,
-            sequential=False,
-        )
+    # Process in parallel with separate agents in each process
+    # Using 'spawn' method ensures each process has a clean environment
+    benchmark.run(process_each_row_f=process_each_row)
 
-        print(results)
-    except Exception as e:
-        print(f"Error running benchmark: {e}")
-    finally:
-        # Ensure all resources are cleaned up
-        print("Benchmark completed, cleaning up resources...")
+    print(benchmark.raw_results)
