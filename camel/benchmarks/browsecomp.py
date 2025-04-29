@@ -13,30 +13,24 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import base64
-from collections import defaultdict
-from dataclasses import dataclass, field
 import hashlib
 import logging
-from multiprocessing.pool import ThreadPool, Pool
 import os
 import random
 import re
 import traceback
+from collections import defaultdict
+from dataclasses import dataclass, field
+from multiprocessing.pool import Pool, ThreadPool
+from typing import Any
+
 import jinja2
 import numpy as np
 import pandas
-from typing import Any, Dict, List, Optional
-
 from tqdm import tqdm
 
-from camel.agents import ChatAgent
 from camel.benchmarks.base import BaseBenchmark
-from camel.messages import BaseMessage
 from camel.models.model_factory import ModelFactory
-from camel.retrievers.auto_retriever import AutoRetriever
-from camel.types.enums import ModelPlatformType
-from camel.toolkits.browser_toolkit import BrowserToolkit
-
 
 logger = logging.getLogger(__name__)
 
@@ -288,7 +282,9 @@ def aggregate_results(
 
 
 class BrowseCompBenchmark(BaseBenchmark):
-    r"""BrowseComp Benchmark for evaluating browser-based comprehension tasks."""
+    """
+    BrowseComp Benchmark for evaluating browser-based comprehension tasks.
+    """
 
     def __init__(
         self,
@@ -303,8 +299,9 @@ class BrowseCompBenchmark(BaseBenchmark):
             save_to (str): The file to save the results.
             processes (int, optional): The number of processes to use for
                 parallel processing. (default: :obj:`1`)
-            num_examples (int | None, optional): Number of examples to evaluate.
-                If None, all examples are used. Controls the sample size for testing.
+            num_examples (int | None, optional): Number of examples to 
+                evaluate. If None, all examples are used. Controls the 
+                sample size for testing.
             n_repeats (int, optional): Number of times to repeat each example.
                 Useful for evaluating consistency across multiple runs.
         """
@@ -330,23 +327,24 @@ class BrowseCompBenchmark(BaseBenchmark):
     def download(self):
         r"""Download the BrowseComp dataset.
 
-        This method is implemented to maintain compatibility with the BaseBenchmark
-        interface, but BrowseComp doesn't require downloading data separately.
+        This method is implemented to maintain compatibility 
+        with the BaseBenchmark interface, but BrowseComp doesn't 
+        require downloading data separately.
 
         Returns:
             self: The benchmark instance
         """
         logger.info(
-            f"BrowseComp benchmark does not require downloading data separately."
+            "BrowseComp benchmark does not require downloading data."
         )
         return self
 
     def load(self):
         r"""Load the BrowseComp dataset.
 
-        This method loads the dataset from a remote CSV file, converts each row to a
-        dictionary, and applies sampling if num_examples is specified. It also handles
-        repeating examples if n_repeats > 1.
+        This method loads the dataset from a remote CSV file, converts each 
+        row to a dictionary, and applies sampling if num_examples is 
+        specified. It also handles repeating examples if n_repeats > 1.
 
         Returns:
             self: The benchmark instance
@@ -374,8 +372,9 @@ class BrowseCompBenchmark(BaseBenchmark):
     def train(self):
         r"""Get the training set.
 
-        This property is implemented to maintain compatibility with the BaseBenchmark
-        interface, but BrowseComp doesn't have a training set.
+        This property is implemented to maintain compatibility with 
+        the BaseBenchmark interface, but BrowseComp doesn't have a 
+        training set.
 
         Raises:
             NotImplementedError: BrowseComp does not have a training set.
@@ -386,9 +385,9 @@ class BrowseCompBenchmark(BaseBenchmark):
         """
         Run the benchmark by processing each example in parallel.
 
-        This method applies the provided function to each example in the dataset
-        using a process pool for parallel execution. It shows progress using tqdm
-        and stores the results in self.raw_results.
+        This method applies the provided function to each example in the 
+        dataset using a process pool for parallel execution. It shows 
+        progress using tqdm and stores the results in self.raw_results.
 
         Args:
             process_each_row_f (callable): Function to process each example.
@@ -397,9 +396,9 @@ class BrowseCompBenchmark(BaseBenchmark):
         """
         # Use a process pool for parallel execution
         pool_class = Pool
-        # Limit the number of processes to the minimum of self.processes and the number of examples
+        # Limit the number of processes 
         with pool_class(min(self.processes, len(self.examples))) as pool:
-            # Process each example in parallel and collect results with progress bar
+            # Process each example in parallel and collect results
             self._raw_results = list(
                 tqdm(
                     pool.imap(process_each_row_f, self.examples),
@@ -425,17 +424,19 @@ class BrowseCompBenchmark(BaseBenchmark):
             """
             Validate a single result using the LLM grader.
 
-            This inner function formats the prompt for the LLM grader, sends it for
-            evaluation, extracts the correctness assessment, and creates an HTML
-            representation of the result.
+            This inner function formats the prompt for the LLM grader, sends 
+            it for evaluation, extracts the correctness assessment, and 
+            creates an HTML representation of the result.
 
             Args:
-                result (dict): A dictionary containing 'problem', 'response', and 'answer' keys
+                result (dict): A dictionary containing 'problem', 'response',
+                and 'answer' keys
 
             Returns:
-                SingleEvalResult: An evaluation result object with score, metrics, and HTML
+                SingleEvalResult: An evaluation result object with score, 
+                metrics, and HTML
             """
-            # Format the template with the problem, response, and correct answer
+            # Format the template 
             prompt = GRADER_TEMPLATE.format(
                 question=result['problem'],
                 response=result['response'],
@@ -541,4 +542,3 @@ class BrowseCompBenchmark(BaseBenchmark):
         print(f"Writing report to {report_filename}")
         with open(report_filename, "w") as fh:
             fh.write(make_report(self._results))
-        metrics = self._results.metrics | {"score": self._results.score}

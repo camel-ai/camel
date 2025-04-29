@@ -1,7 +1,7 @@
-from camel.types.enums import ModelPlatformType, ModelType
-from camel.models.model_factory import ModelFactory
-from camel.benchmarks.browsecomp import BrowseCompBenchmark, decrypt
 from camel.agents.chat_agent import ChatAgent
+from camel.benchmarks.browsecomp import BrowseCompBenchmark, decrypt
+from camel.models.model_factory import ModelFactory
+from camel.types.enums import ModelPlatformType, ModelType
 
 
 def process_each_row(row):
@@ -13,10 +13,12 @@ def process_each_row(row):
     used with parallel processing in the benchmark's run method.
 
     Args:
-        row (dict): A row from the dataset containing encrypted problem and answer
+        row (dict): A row from the dataset containing 
+        encrypted problem and answer
 
     Returns:
-        dict: A dictionary containing the decrypted problem, answer, and model response
+        dict: A dictionary containing the decrypted problem, answer,
+        and model response
     """
     # Decrypt the problem and answer using the canary as the password
     # DO NOT MODIFY THIS PART, IT'S A GEMERAL STEP OF BROWNSECOMP BENCHMARK
@@ -52,13 +54,13 @@ def process_each_row(row):
     # DO NOT CHANGE THE RESPONSE FORMAT, IT'S REQUIRED IN THE BENCHMARK
     # CHANGING IT WILL IMPACT FOLLOWUP EVALUATION
     input_message = f"""
-            {problem}
-            navigate to related website to find the answer.
+{problem}
+navigate to related website to find the answer.
             
-            Your response should be in the following format:
-            Explanation:{{your explanation for your final answer}}
-            Exact Answer: {{your succinct, final answer}}
-            Confidence: {{your confidence score between 0% and 100% for your answer}}
+Your response should be in the following format:
+Explanation:{{your explanation for your final answer}}
+Exact Answer: {{your succinct, final answer}}
+Confidence: {{your confidence score between 0% and 100% for your answer}}
             """.strip()
     response_text = agent.step(input_message)
 
