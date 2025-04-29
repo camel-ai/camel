@@ -299,8 +299,8 @@ class BrowseCompBenchmark(BaseBenchmark):
             save_to (str): The file to save the results.
             processes (int, optional): The number of processes to use for
                 parallel processing. (default: :obj:`1`)
-            num_examples (int | None, optional): Number of examples to 
-                evaluate. If None, all examples are used. Controls the 
+            num_examples (int | None, optional): Number of examples to
+                evaluate. If None, all examples are used. Controls the
                 sample size for testing.
             n_repeats (int, optional): Number of times to repeat each example.
                 Useful for evaluating consistency across multiple runs.
@@ -327,23 +327,21 @@ class BrowseCompBenchmark(BaseBenchmark):
     def download(self):
         r"""Download the BrowseComp dataset.
 
-        This method is implemented to maintain compatibility 
-        with the BaseBenchmark interface, but BrowseComp doesn't 
+        This method is implemented to maintain compatibility
+        with the BaseBenchmark interface, but BrowseComp doesn't
         require downloading data separately.
 
         Returns:
             self: The benchmark instance
         """
-        logger.info(
-            "BrowseComp benchmark does not require downloading data."
-        )
+        logger.info("BrowseComp benchmark does not require downloading data.")
         return self
 
     def load(self):
         r"""Load the BrowseComp dataset.
 
-        This method loads the dataset from a remote CSV file, converts each 
-        row to a dictionary, and applies sampling if num_examples is 
+        This method loads the dataset from a remote CSV file, converts each
+        row to a dictionary, and applies sampling if num_examples is
         specified. It also handles repeating examples if n_repeats > 1.
 
         Returns:
@@ -372,8 +370,8 @@ class BrowseCompBenchmark(BaseBenchmark):
     def train(self):
         r"""Get the training set.
 
-        This property is implemented to maintain compatibility with 
-        the BaseBenchmark interface, but BrowseComp doesn't have a 
+        This property is implemented to maintain compatibility with
+        the BaseBenchmark interface, but BrowseComp doesn't have a
         training set.
 
         Raises:
@@ -385,8 +383,8 @@ class BrowseCompBenchmark(BaseBenchmark):
         """
         Run the benchmark by processing each example in parallel.
 
-        This method applies the provided function to each example in the 
-        dataset using a process pool for parallel execution. It shows 
+        This method applies the provided function to each example in the
+        dataset using a process pool for parallel execution. It shows
         progress using tqdm and stores the results in self.raw_results.
 
         Args:
@@ -396,7 +394,7 @@ class BrowseCompBenchmark(BaseBenchmark):
         """
         # Use a process pool for parallel execution
         pool_class = Pool
-        # Limit the number of processes 
+        # Limit the number of processes
         with pool_class(min(self.processes, len(self.examples))) as pool:
             # Process each example in parallel and collect results
             self._raw_results = list(
@@ -424,8 +422,8 @@ class BrowseCompBenchmark(BaseBenchmark):
             """
             Validate a single result using the LLM grader.
 
-            This inner function formats the prompt for the LLM grader, sends 
-            it for evaluation, extracts the correctness assessment, and 
+            This inner function formats the prompt for the LLM grader, sends
+            it for evaluation, extracts the correctness assessment, and
             creates an HTML representation of the result.
 
             Args:
@@ -433,10 +431,10 @@ class BrowseCompBenchmark(BaseBenchmark):
                 and 'answer' keys
 
             Returns:
-                SingleEvalResult: An evaluation result object with score, 
+                SingleEvalResult: An evaluation result object with score,
                 metrics, and HTML
             """
-            # Format the template 
+            # Format the template
             prompt = GRADER_TEMPLATE.format(
                 question=result['problem'],
                 response=result['response'],

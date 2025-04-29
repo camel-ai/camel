@@ -13,7 +13,7 @@ def process_each_row(row):
     used with parallel processing in the benchmark's run method.
 
     Args:
-        row (dict): A row from the dataset containing 
+        row (dict): A row from the dataset containing
         encrypted problem and answer
 
     Returns:
