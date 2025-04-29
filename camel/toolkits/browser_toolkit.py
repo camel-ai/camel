@@ -664,7 +664,7 @@ class BaseBrowser:
                 directory.
 
         Returns:
-            Tuple[Image.Image, str | None]: A tuple containing the screenshot image
+            Tuple[Image.Image, Union[str, None]]: A tuple containing the screenshot image
                 and an optional path to the image file if saved, otherwise
                 :obj:`None`.
         """

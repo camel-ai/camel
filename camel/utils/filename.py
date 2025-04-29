@@ -36,16 +36,18 @@ def sanitize_filename(
     default: str = "index",
     max_length: int = MAX_FILENAME_LENGTH,
 ) -> str:
-    """
-    Sanitize a URL path into a safe filename that is safe for most platforms.
+    r"""Sanitize a URL path into a safe filename that is safe for
+    most platforms.
 
     Args:
         url_name (str): The URL path to sanitize.
         default (str): Default name if sanitization results in empty string.
+            (default: :obj:`"index"`)
         max_length (int): Maximum length of the filename.
+            (default: :obj:`MAX_FILENAME_LENGTH`)
 
     Returns:
-        A sanitized filename safe for most platforms.
+        str: A sanitized filename safe for most platforms.
     """
     if max_length < 1:
         raise ValueError(

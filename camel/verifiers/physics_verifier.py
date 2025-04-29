@@ -20,9 +20,9 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
-from camel.verifiers import PythonVerifier
 
 from .models import VerificationOutcome, VerificationResult
+from .python_verifier import PythonVerifier
 
 logger = get_logger(__name__)
 
