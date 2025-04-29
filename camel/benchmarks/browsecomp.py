@@ -30,6 +30,7 @@ import pandas
 from tqdm import tqdm
 
 from camel.benchmarks.base import BaseBenchmark
+from camel.messages import OpenAIMessage
 from camel.models.model_factory import ModelFactory
 
 logger = logging.getLogger(__name__)
@@ -322,7 +323,7 @@ class BrowseCompBenchmark(BaseBenchmark):
         self._raw_results: list[Any]= []  # Will store raw evaluation results
         # Will store validated results after LLM evaluation
         self._validated_results: list[Any]= []
-        self._results: list[Any] = []  # Will store final aggregated results
+        self._eval_result: EvalResult # Will store final aggregated results
 
     def download(self):
         r"""Download the BrowseComp dataset.
@@ -444,15 +445,23 @@ class BrowseCompBenchmark(BaseBenchmark):
             )
 
             # Send to LLM for evaluation
-            messages = [{"role": "user", "content": prompt}]
+            # Convert to OpenAIMessage format
+            from camel.messages import OpenAIMessage
+            messages: list[OpenAIMessage] = [
+                {"role": "user", "content": prompt}
+            ]
             try:
                 # Get the LLM's assessment
                 response = model.run(messages)
-                # Extract the yes/no correctness judgment using regex
-                match = re.search(
-                    r"correct: (yes|no)", 
-                    str(response.choices[0].message.content)
-                ) if response.choices[0].message.content else None
+                
+                # None streaming only.
+                if hasattr(response, 'choices') and len(response.choices) > 0:
+                    content = response.choices[0].message.content
+                    # Extract the yes/no correctness judgment using regex
+                    match = re.search(
+                        r"correct: (yes|no)", 
+                        str(content)
+                    ) if content else None
                 grade_result = match.group(1) if match else "no"
 
                 # Convert to binary metrics (1 for correct, 0 for incorrect)
@@ -537,9 +546,9 @@ class BrowseCompBenchmark(BaseBenchmark):
 
         print(f"Accuracy: {output_d['accuracy']:.3f}")
 
-        self._results = aggregate_results(self._validated_results)
+        self._eval_result = aggregate_results(self._validated_results)
         # ^^^ how to use a sampler
         report_filename = self.save_to
         print(f"Writing report to {report_filename}")
         with open(report_filename, "w") as fh:
-            fh.write(make_report(self._results))
+            fh.write(make_report(self._eval_result))
