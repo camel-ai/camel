@@ -335,6 +335,8 @@ class ModelType(UnifiedModelType, Enum):
     MODELSCOPE_QWEN_2_5_CODER_7B_INSTRUCT = "Qwen/Qwen2.5-Coder-7B-Instruct"
     MODELSCOPE_QWEN_2_5_CODER_14B_INSTRUCT = "Qwen/Qwen2.5-Coder-14B-Instruct"
     MODELSCOPE_QWEN_2_5_CODER_32B_INSTRUCT = "Qwen/Qwen2.5-Coder-32B-Instruct"
+    MODELSCOPE_QWEN_3_235B_A22B = "Qwen/Qwen3-235B-A22B"
+    MODELSCOPE_QWEN_3_32B = "Qwen/Qwen3-32B"
     MODELSCOPE_QWQ_32B = "Qwen/QwQ-32B"
     MODELSCOPE_QWQ_32B_PREVIEW = "Qwen/QwQ-32B-Preview"
     MODELSCOPE_LLAMA_3_1_8B_INSTRUCT = (
@@ -722,6 +724,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MODELSCOPE_QWEN_2_5_CODER_7B_INSTRUCT,
             ModelType.MODELSCOPE_QWEN_2_5_CODER_14B_INSTRUCT,
             ModelType.MODELSCOPE_QWEN_2_5_CODER_32B_INSTRUCT,
+            ModelType.MODELSCOPE_QWEN_3_235B_A22B,
+            ModelType.MODELSCOPE_QWEN_3_32B,
             ModelType.MODELSCOPE_QWQ_32B,
             ModelType.MODELSCOPE_QWQ_32B_PREVIEW,
             ModelType.MODELSCOPE_LLAMA_3_1_8B_INSTRUCT,
@@ -952,6 +956,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MODELSCOPE_QWEN_2_5_CODER_7B_INSTRUCT,
             ModelType.MODELSCOPE_QWEN_2_5_CODER_14B_INSTRUCT,
             ModelType.MODELSCOPE_QWEN_2_5_CODER_32B_INSTRUCT,
+            ModelType.MODELSCOPE_QWEN_3_235B_A22B,
+            ModelType.MODELSCOPE_QWEN_3_32B,
             ModelType.MODELSCOPE_QWQ_32B,
             ModelType.MODELSCOPE_QWQ_32B_PREVIEW,
             ModelType.MODELSCOPE_LLAMA_3_1_8B_INSTRUCT,
