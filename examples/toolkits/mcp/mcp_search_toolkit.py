@@ -14,7 +14,10 @@
 
 import json
 
+from camel.agents import ChatAgent
+from camel.models import ModelFactory
 from camel.toolkits import PulseMCPSearchToolkit
+from camel.types import ModelPlatformType, ModelType
 
 # Create an instance of the MCP search toolkit
 search_toolkit = PulseMCPSearchToolkit()
@@ -110,4 +113,49 @@ Example 2: Search for MCP servers restricted to a specific package registry
     }
   ]
 }
+"""  # noqa: E501
+
+
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.ANTHROPIC,
+    model_type=ModelType.CLAUDE_3_5_SONNET,
+)
+
+agent = ChatAgent(
+    model=model,
+    system_message="You are a helpful assistant that can search for MCP servers.",  # noqa: E501
+    tools=search_toolkit.get_tools(),
+)
+
+response = agent.step("Search for MCP servers related to 'SQL'")
+print(response.msg.content)
+"""
+I've searched for MCP servers related to SQL and found 5 relevant results:
+
+1. SQLite Server
+- Allows querying and analyzing SQLite databases directly
+- Available on PyPI as 'mcp-server-sqlite'
+- Features tools for database operations and schema inspection
+
+2. PostgreSQL Server
+- Provides read-only access to Postgres databases
+- Available on npm as '@modelcontextprotocol/server-postgres'
+- Focuses on database schema inspection and SQL query execution
+
+3. MySQL Server
+- Enables exploring schemas and executing read-only SQL queries on MySQL databases
+- Available on PyPI as 'mysql-mcp-server'
+- Offers secure database interaction capabilities
+
+4. Read MySQL Server
+- Provides secure read-only MySQL database access
+- Available on npm as '@benborla29/mcp-server-mysql'
+- Built in TypeScript with focus on security through read-only transactions
+
+5. SQL Alchemy Server
+- Integrates with multiple SQL database engines using SQLAlchemy
+- Supports PostgreSQL, MySQL, MariaDB, SQLite, and other SQLAlchemy-compatible databases
+- Offers tools for database exploration and query assistance
+
+Each server provides specific functionality for interacting with different types of SQL databases, with varying features and security measures. Would you like more specific information about any of these servers?
 """  # noqa: E501

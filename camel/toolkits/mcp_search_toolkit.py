@@ -31,22 +31,22 @@ class PulseMCPSearchToolkit(BaseToolkit):
     def search_mcp_servers(
         self,
         query: Optional[str] = None,
+        top_k: Optional[int] = 5,
+        package_registry: Optional[str] = None,
         count_per_page: int = 5000,
         offset: int = 0,
-        package_registry: Optional[str] = None,
-        top_k: Optional[int] = 5,
     ) -> Dict[str, Any]:
         r"""Search for MCP servers using the PulseMCP API.
 
         Args:
             query: The query to search for.
+            top_k: After sorting, return only the top_k servers.
+                (default: 5)
+            package_registry: The package registry to search for.
+                (default: None)
             count_per_page: The number of servers to return per page.
                 (default: 5000)
             offset: The offset to start the search from. (default: 0)
-            package_registry: The package registry to search for.
-                (default: None)
-            top_k: After sorting, return only the top_k servers.
-                (default: 5)
         Returns:
             A list of MCP servers.
         """
