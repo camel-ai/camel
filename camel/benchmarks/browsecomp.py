@@ -30,7 +30,6 @@ import pandas
 from tqdm import tqdm
 
 from camel.benchmarks.base import BaseBenchmark
-from camel.messages import OpenAIMessage
 from camel.models.model_factory import ModelFactory
 
 logger = logging.getLogger(__name__)
@@ -206,9 +205,8 @@ class SingleEvalResult:
 
     score: float | None
     html: str
-    convo: MessageList 
+    convo: MessageList
     metrics: dict[str, float] = field(default_factory=dict)
-
 
 
 @dataclass
@@ -315,15 +313,15 @@ class BrowseCompBenchmark(BaseBenchmark):
         # Store configuration parameters
         # Number of examples to sample (if None, use all)
         self.num_examples = num_examples
-        self.n_repeats = n_repeats  
-        self.examples: list[dict[str, Any]] = []  
+        self.n_repeats = n_repeats
+        self.examples: list[dict[str, Any]] = []
         # Load the examples from the dataset
         self.load()
         # Initialize result storage
-        self._raw_results: list[Any]= []  # Will store raw evaluation results
+        self._raw_results: list[Any] = []  # Will store raw evaluation results
         # Will store validated results after LLM evaluation
-        self._validated_results: list[Any]= []
-        self._eval_result: EvalResult # Will store final aggregated results
+        self._validated_results: list[Any] = []
+        self._eval_result: EvalResult  # Will store final aggregated results
 
     def download(self):
         r"""Download the BrowseComp dataset.
@@ -380,8 +378,9 @@ class BrowseCompBenchmark(BaseBenchmark):
         """
         raise NotImplementedError("BrowseComp does not have a training set.")
 
-    def run( # type: ignore[override, return]
-        self, process_each_row_f: Callable):
+    def run(  # type: ignore[override, return]
+        self, process_each_row_f: Callable
+    ):
         """
         Run the benchmark by processing each example in parallel.
 
@@ -447,21 +446,23 @@ class BrowseCompBenchmark(BaseBenchmark):
             # Send to LLM for evaluation
             # Convert to OpenAIMessage format
             from camel.messages import OpenAIMessage
+
             messages: list[OpenAIMessage] = [
                 {"role": "user", "content": prompt}
             ]
             try:
                 # Get the LLM's assessment
                 response = model.run(messages)
-                
+
                 # None streaming only.
                 if hasattr(response, 'choices') and len(response.choices) > 0:
                     content = response.choices[0].message.content
                     # Extract the yes/no correctness judgment using regex
-                    match = re.search(
-                        r"correct: (yes|no)", 
-                        str(content)
-                    ) if content else None
+                    match = (
+                        re.search(r"correct: (yes|no)", str(content))
+                        if content
+                        else None
+                    )
                 grade_result = match.group(1) if match else "no"
 
                 # Convert to binary metrics (1 for correct, 0 for incorrect)
