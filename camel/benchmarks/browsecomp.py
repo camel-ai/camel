@@ -248,7 +248,7 @@ def _compute_stat(values: list, stat: str):
 
 def aggregate_results(
     single_eval_results: list[SingleEvalResult],
-    default_stats: tuple[str] = ("mean", "std"),
+    default_stats: tuple[str, str] = ("mean", "std"),
     name2stats: dict[str, tuple[str]] | None = None,
 ) -> EvalResult:
     """
@@ -315,7 +315,7 @@ class BrowseCompBenchmark(BaseBenchmark):
         # Number of examples to sample (if None, use all)
         self.num_examples = num_examples
         self.n_repeats = n_repeats  
-        self.examples = []  
+        self.examples: list[dict[str, Any]] = []  
         # Load the examples from the dataset
         self.load()
         # Initialize result storage
@@ -353,7 +353,7 @@ class BrowseCompBenchmark(BaseBenchmark):
             "https://openaipublic.blob.core.windows.net/simple-evals/browse_comp_test_set.csv"
         )
         # Convert each row to a dictionary
-        examples = [row.to_dict() for _, row in df.iterrows()]
+        examples: list[dict[str, Any]] = [row.to_dict() for _, row in df.iterrows()]
 
         # Sample examples if num_examples is specified
         if self.num_examples:
@@ -451,8 +451,8 @@ class BrowseCompBenchmark(BaseBenchmark):
                 response = model.run(messages)
                 # Extract the yes/no correctness judgment using regex
                 match = re.search(
-                    r"correct: (yes|no)", response.choices[0].message.content
-                )
+                    r"correct: (yes|no)", str(response.choices[0].message.content)
+                ) if response.choices[0].message.content else None
                 grade_result = match.group(1) if match else "no"
 
                 # Convert to binary metrics (1 for correct, 0 for incorrect)
