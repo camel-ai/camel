@@ -319,11 +319,10 @@ class BrowseCompBenchmark(BaseBenchmark):
         # Load the examples from the dataset
         self.load()
         # Initialize result storage
-        self._raw_results = None  # Will store raw evaluation results
-        self._validated_results = (
-            None  # Will store validated results after LLM evaluation
-        )
-        self._results = []  # Will store final aggregated results
+        self._raw_results: list[Any]= []  # Will store raw evaluation results
+        # Will store validated results after LLM evaluation
+        self._validated_results: list[Any]= []
+        self._results: list[Any] = []  # Will store final aggregated results
 
     def download(self):
         r"""Download the BrowseComp dataset.
@@ -353,7 +352,7 @@ class BrowseCompBenchmark(BaseBenchmark):
             "https://openaipublic.blob.core.windows.net/simple-evals/browse_comp_test_set.csv"
         )
         # Convert each row to a dictionary
-        examples: list[dict[str, Any]] = [row.to_dict() for _, row in df.iterrows()]
+        examples = [row.to_dict() for _, row in df.iterrows()]
 
         # Sample examples if num_examples is specified
         if self.num_examples:
@@ -451,7 +450,8 @@ class BrowseCompBenchmark(BaseBenchmark):
                 response = model.run(messages)
                 # Extract the yes/no correctness judgment using regex
                 match = re.search(
-                    r"correct: (yes|no)", str(response.choices[0].message.content)
+                    r"correct: (yes|no)", 
+                    str(response.choices[0].message.content)
                 ) if response.choices[0].message.content else None
                 grade_result = match.group(1) if match else "no"
 
