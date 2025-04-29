@@ -15,8 +15,8 @@ import re
 
 import pytest
 
-from camel.configs import ChatGPTConfig
-from camel.models import OpenAIModel
+from camel.configs import NovitaConfig
+from camel.models import NovitaModel
 from camel.types import ModelType
 from camel.utils import OpenAITokenCounter
 
@@ -25,44 +25,38 @@ from camel.utils import OpenAITokenCounter
 @pytest.mark.parametrize(
     "model_type",
     [
-        ModelType.GPT_3_5_TURBO,
-        ModelType.GPT_4,
-        ModelType.GPT_4_TURBO,
-        ModelType.GPT_4O,
-        ModelType.GPT_4O_MINI,
-        ModelType.O1,
-        ModelType.O1_PREVIEW,
-        ModelType.O1_MINI,
-        ModelType.GPT_4_5_PREVIEW,
-        ModelType.O3,
-        ModelType.O3_MINI,
-        ModelType.O4_MINI,
-        ModelType.GPT_4_1,
-        ModelType.GPT_4_1_MINI,
-        ModelType.GPT_4_1_NANO,
+        ModelType.NOVITA_DEEPSEEK_R1,
+        ModelType.NOVITA_LLAMA_3_1_70B,
+        ModelType.NOVITA_QWEN_2_5_72B,
     ],
 )
-def test_openai_model(model_type: ModelType):
-    model = OpenAIModel(model_type)
+def test_novita_model(model_type: ModelType):
+    model = NovitaModel(model_type)
     assert model.model_type == model_type
-    assert model.model_config_dict == ChatGPTConfig().as_dict()
+    assert model.model_config_dict == NovitaConfig().as_dict()
     assert isinstance(model.token_counter, OpenAITokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
 
 
 @pytest.mark.model_backend
-def test_openai_model_unexpected_argument():
-    model_type = ModelType.GPT_4
-    model_config_dict = {"model_path": "vicuna-7b-v1.5"}
+def test_novita_model_unexpected_argument():
+    model_type = ModelType.NOVITA_LLAMA_3_1_70B
+    model_config_dict = {"model_path": "novita_llama_3_1_70B"}
 
     with pytest.raises(
         ValueError,
         match=re.escape(
             (
                 "Unexpected argument `model_path` is "
-                "input into OpenAI model backend."
+                "input into Novita model backend."
             )
         ),
     ):
-        _ = OpenAIModel(model_type, model_config_dict)
+        _ = NovitaModel(model_type, model_config_dict)
+
+
+@pytest.mark.model_backend
+def test_novita_model_stream_property():
+    model = NovitaModel(ModelType.NOVITA_LLAMA_3_1_70B)
+    assert model.stream is False

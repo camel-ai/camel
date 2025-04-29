@@ -15,8 +15,8 @@ import re
 
 import pytest
 
-from camel.configs import ChatGPTConfig
-from camel.models import OpenAIModel
+from camel.configs import NetmindConfig
+from camel.models import NetmindModel
 from camel.types import ModelType
 from camel.utils import OpenAITokenCounter
 
@@ -25,44 +25,50 @@ from camel.utils import OpenAITokenCounter
 @pytest.mark.parametrize(
     "model_type",
     [
-        ModelType.GPT_3_5_TURBO,
-        ModelType.GPT_4,
-        ModelType.GPT_4_TURBO,
-        ModelType.GPT_4O,
-        ModelType.GPT_4O_MINI,
-        ModelType.O1,
-        ModelType.O1_PREVIEW,
-        ModelType.O1_MINI,
-        ModelType.GPT_4_5_PREVIEW,
-        ModelType.O3,
-        ModelType.O3_MINI,
-        ModelType.O4_MINI,
-        ModelType.GPT_4_1,
-        ModelType.GPT_4_1_MINI,
-        ModelType.GPT_4_1_NANO,
+        ModelType.NETMIND_LLAMA_4_MAVERICK_17B_128E_INSTRUCT,
+        ModelType.NETMIND_LLAMA_4_SCOUT_17B_16E_INSTRUCT,
+        ModelType.NETMIND_DEEPSEEK_R1,
+        ModelType.NETMIND_DEEPSEEK_V3,
+        ModelType.NETMIND_DOUBAO_1_5_PRO,
+        ModelType.NETMIND_QWQ_32B,
     ],
 )
-def test_openai_model(model_type: ModelType):
-    model = OpenAIModel(model_type)
+def test_netmind_model(model_type: ModelType):
+    model = NetmindModel(model_type)
+
     assert model.model_type == model_type
-    assert model.model_config_dict == ChatGPTConfig().as_dict()
+
+    assert model.model_config_dict == NetmindConfig().as_dict()
+
     assert isinstance(model.token_counter, OpenAITokenCounter)
+
     assert isinstance(model.model_type.value_for_tiktoken, str)
+
     assert isinstance(model.model_type.token_limit, int)
 
 
 @pytest.mark.model_backend
-def test_openai_model_unexpected_argument():
-    model_type = ModelType.GPT_4
-    model_config_dict = {"model_path": "vicuna-7b-v1.5"}
+def test_netmind_model_unexpected_argument():
+    model_type = ModelType.NETMIND_LLAMA_4_SCOUT_17B_16E_INSTRUCT
+
+    model_config_dict = {
+        "model_path": "netmind_llama_4_scout_17b_16e_instruct"
+    }
 
     with pytest.raises(
         ValueError,
         match=re.escape(
             (
                 "Unexpected argument `model_path` is "
-                "input into OpenAI model backend."
+                "input into NETMIND model backend."
             )
         ),
     ):
-        _ = OpenAIModel(model_type, model_config_dict)
+        _ = NetmindModel(model_type, model_config_dict)
+
+
+@pytest.mark.model_backend
+def test_netmind_model_stream_property():
+    model = NetmindModel(ModelType.NETMIND_LLAMA_4_SCOUT_17B_16E_INSTRUCT)
+
+    assert model.stream is False
