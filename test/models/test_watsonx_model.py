@@ -17,8 +17,8 @@ import re
 import pytest
 
 from camel.configs import WatsonXConfig
-from camel.models import WatsonXModel, ModelFactory
-from camel.types import ModelPlatformType, ModelType
+from camel.models import ModelFactory, WatsonXModel
+from camel.types import ModelPlatformType
 from camel.utils import OpenAITokenCounter
 
 

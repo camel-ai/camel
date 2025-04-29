@@ -36,15 +36,15 @@ class WatsonXModel(BaseModelBackend):
         model_type (Union[ModelType, str]): Model type for which a backend is
             created, one of WatsonX series.
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
-            that will be fed into :obj:`ibm_watsonx_ai.foundation_models.ModelInference.chat()`.
+            that will be fed into :obj:`ModelInference.chat()`.
             If :obj:`None`, :obj:`WatsonXConfig().as_dict()` will be used.
             (default: :obj:`None`)
         api_key (Optional[str], optional): The API key for authenticating with
             the WatsonX service. (default: :obj:`None`)
         url (Optional[str], optional): The url to the WatsonX service.
             (default: :obj:`None`)
-        project_id (Optional[str], optional): The project ID for authenticating with
-            the WatsonX service. (default: :obj:`None`)
+        project_id (Optional[str], optional): The project ID authenticating
+            with the WatsonX service. (default: :obj:`None`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter(
             ModelType.GPT_4O_MINI)` will be used.
@@ -71,14 +71,8 @@ class WatsonXModel(BaseModelBackend):
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
     ):
-        try:
-            from ibm_watsonx_ai import APIClient, Credentials
-            from ibm_watsonx_ai.foundation_models import ModelInference
-        except ImportError:
-            raise ImportError(
-                "To use the WatsonX API, please install the ibm-watsonx-ai package "
-                "by running `pip install ibm-watsonx-ai`."
-            )
+        from ibm_watsonx_ai import APIClient, Credentials
+        from ibm_watsonx_ai.foundation_models import ModelInference
 
         if model_config_dict is None:
             model_config_dict = WatsonXConfig().as_dict()
@@ -178,9 +172,9 @@ class WatsonXModel(BaseModelBackend):
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
-            response_format (Optional[Type[BaseModel]], optional): The expected response
-                format. (default: :obj:`None`)
-            tools (Optional[List[Dict[str, Any]]], optional): List of tools to use.
+            response_format (Optional[Type[BaseModel]], optional): The
+                response format. (default: :obj:`None`)
+            tools (Optional[List[Dict[str, Any]]], optional): tools to use.
                 (default: :obj:`None`)
         Returns:
             ChatCompletion.
@@ -215,9 +209,9 @@ class WatsonXModel(BaseModelBackend):
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
-            response_format (Optional[Type[BaseModel]], optional): The expected response
-                format. (default: :obj:`None`)
-            tools (Optional[List[Dict[str, Any]]], optional): List of tools to use.
+            response_format (Optional[Type[BaseModel]], optional): The
+                response format. (default: :obj:`None`)
+            tools (Optional[List[Dict[str, Any]]], optional): tools to use.
                 (default: :obj:`None`)
         Returns:
             ChatCompletion.

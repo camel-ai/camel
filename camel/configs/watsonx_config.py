@@ -36,7 +36,7 @@ class WatsonXConfig(BaseConfig):
             (default: :obj:`None`)
         top_logprobs (int, optional): An integer between 0 and 20 specifying
             the number of most likely tokens to return at each token position,
-            each with an associated log probability. logprobs must be set to true.
+            each with an associated log probability.
             (default: :obj:`None`)
         presence_penalty (float, optional): Number between -2.0 and 2.0.
             Positive values penalize new tokens based on whether they appear
@@ -50,24 +50,21 @@ class WatsonXConfig(BaseConfig):
             but not both.
             (default: :obj:`None`)
         max_tokens (int, optional): The maximum number of tokens to generate
-            in the chat completion. The total length of input tokens and generated
-            tokens is limited by the model's context length.
+            in the chat completion. The total length of input tokens and
+            generated tokens is limited by the model's context length.
             (default: :obj:`None`)
         time_limit (int, optional): The maximum amount of time in seconds
             that the API will spend generating a response.
             (default: :obj:`None`)
-        top_p (float, optional): An alternative to sampling with temperature,
-            called nucleus sampling, where the model considers the results of
-            the tokens with top_p probability mass. So 0.1 means only the tokens
-            comprising the top 10% probability mass are considered.
-            (default: :obj:`None`)
+        top_p (float, optional): Controls the randomness of the generated
+            results. Lower values lead to less randomness, while higher
+            values increase randomness. (default: :obj:`None`)
         n (int, optional): How many chat completion choices to generate for
             each input message. Note that you will be charged based on the
             total number of tokens generated.
             (default: :obj:`None`)
-        logit_bias (dict, optional): Modify the likelihood of specified tokens
-            appearing in the completion. Maps tokens (specified by their token ID
-            in the tokenizer) to an associated bias value from -100 to 100.
+        logit_biaslogit_bias (Optional[dict], optional): Modify probability
+            of specific tokens appearing in the completion.
             (default: :obj:`None`)
         seed (int, optional): If specified, the system will make a best effort
             to sample deterministically, such that repeated requests with the

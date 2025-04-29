@@ -355,9 +355,15 @@ class ModelType(UnifiedModelType, Enum):
     WATSONX_LLAMA_3_3_70B_INSTRUCT = "meta-llama/llama-3-3-70b-instruct"
     WATSONX_LLAMA_3_2_1B_INSTRUCT = "meta-llama/llama-3-2-1b-instruct"
     WATSONX_LLAMA_3_2_3B_INSTRUCT = "meta-llama/llama-3-2-3b-instruct"
-    WATSONX_LLAMA_3_2_11B_VISION_INSTRUCT = "meta-llama/llama-3-2-11b-vision-instruct"
-    WATSONX_LLAMA_3_2_90B_VISION_INSTRUCT = "meta-llama/llama-3-2-90b-vision-instruct"
-    WATSONX_LLAMA_GUARD_3_11B_VISION_INSTRUCT = "meta-llama/llama-guard-3-11b-vision-instruct"
+    WATSONX_LLAMA_3_2_11B_VISION_INSTRUCT = (
+        "meta-llama/llama-3-2-11b-vision-instruct"
+    )
+    WATSONX_LLAMA_3_2_90B_VISION_INSTRUCT = (
+        "meta-llama/llama-3-2-90b-vision-instruct"
+    )
+    WATSONX_LLAMA_GUARD_3_11B_VISION_INSTRUCT = (
+        "meta-llama/llama-guard-3-11b-vision-instruct"
+    )
     WATSONX_MISTRAL_LARGE = "mistralai/mistral-large"
 
     def __str__(self):
@@ -1350,6 +1356,7 @@ class ModelPlatformType(Enum):
     AIML = "aiml"
     VOLCANO = "volcano"
     NETMIND = "netmind"
+    NOVITA = "novita"
     WATSONX = "watsonx"
 
     @classmethod

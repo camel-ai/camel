@@ -14,8 +14,8 @@
 from camel.agents import ChatAgent
 from camel.configs import WatsonXConfig
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType
 from camel.toolkits import MathToolkit
+from camel.types import ModelPlatformType, ModelType
 
 tools = [*MathToolkit().get_tools()]
 
@@ -29,7 +29,7 @@ model = ModelFactory.create(
 sys_msg = "You are a helpful assistant."
 
 # Set agent
-camel_agent = ChatAgent(system_message=sys_msg, model=model,tools=tools)
+camel_agent = ChatAgent(system_message=sys_msg, model=model, tools=tools)
 
 user_msg = "Assume now is 2024 in the Gregorian calendar, University of Oxford was set up in 1096, estimate the current age of University of Oxford"  # noqa: E501
 
