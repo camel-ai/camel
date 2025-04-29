@@ -516,7 +516,7 @@ module = [
     "networkx",
     "pandasai",
     "sklearn.metrics.pairwise",
-    "sympy",
+    "sympy.*",
     "astor",
     "tqdm",
     "colorama",

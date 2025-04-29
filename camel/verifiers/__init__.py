@@ -14,8 +14,8 @@
 from .base import BaseVerifier
 from .math_verifier import MathVerifier
 from .models import VerificationOutcome
-from .python_verifier import PythonVerifier
 from .physics_verifier import PhysicsVerifier
+from .python_verifier import PythonVerifier
 
 __all__ = [
     "BaseVerifier",
