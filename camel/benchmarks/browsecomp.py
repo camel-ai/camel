@@ -61,7 +61,6 @@ correct: Answer 'yes' if extracted_final_answer matches the [correct_answer] giv
 confidence: The extracted confidence score between 0|\%| and 100|\%| from [response]. Put 100 if there is no confidence score available.
 """.strip()
 
-CHOICE_STRINGS = ["yes", "no"]
 Message = dict[str, Any]  # keys role, content
 MessageList = list[Message]
 
@@ -76,7 +75,6 @@ def message_to_html(message: Message) -> str:
     """
     Generate HTML snippet (inside a <div>) for a message.
     """
-    print(message)
     return jinja_env.from_string(_message_template).render(
         role=message["role"], content=message["content"], variant=message.get(
             "variant", None)
@@ -268,17 +266,10 @@ def aggregate_results(
         score=final_metrics.pop("score", None), metrics=final_metrics, htmls=htmls, convos=convos
     )
 
+# Above are from https://github.com/openai/simple-evals/blob/main/browsecomp_eval.py
 
 class BrowseCompBenchmark(BaseBenchmark):
-    r"""BrowseComp Benchmark for evaluating browser-based comprehension tasks.
-
-    Args:
-        save_to (str): The file to save the results.
-        retriever (Optional[RetrieverProtocol]): The retriever to use.
-            (default: :obj:`None`)
-        processes (int, optional): The number of processes to use.
-            (default: :obj:`1`)
-    """
+    r"""BrowseComp Benchmark for evaluating browser-based comprehension tasks."""
 
     def __init__(
         self,
@@ -293,21 +284,37 @@ class BrowseCompBenchmark(BaseBenchmark):
             save_to (str): The file to save the results.
             processes (int, optional): The number of processes to use for
                 parallel processing. (default: :obj:`1`)
+            num_examples (int | None, optional): Number of examples to evaluate.
+                If None, all examples are used. Controls the sample size for testing.
+            n_repeats (int, optional): Number of times to repeat each example.
+                Useful for evaluating consistency across multiple runs.
         """
         # Browsecomp benchmark won't download any data
         # use current path as the data_dir passing into super init
         current_path = os.path.dirname(os.path.abspath(__file__))
+        # Initialize the base benchmark with benchmark name, data directory, output file, and process count
         super().__init__("browsecomp", current_path, save_to, processes)
+        # Store configuration parameters
+        # Number of examples to sample (if None, use all)
         self.num_examples = num_examples
-        self.n_repeats = n_repeats
-        self.examples = []
+        self.n_repeats = n_repeats  # Number of times to repeat each example
+        self.examples = []  # Will store the loaded examples
+        # Load the examples from the dataset
         self.load()
-        self.raw_results = None
-        self.validated_results = None
-        self._results = None
+        # Initialize result storage
+        self._raw_results = None  # Will store raw evaluation results
+        self._validated_results = None  # Will store validated results after LLM evaluation
+        self._results = None  # Will store final aggregated results
 
     def download(self):
-        r"""Download the BrowseComp dataset."""
+        r"""Download the BrowseComp dataset.
+
+        This method is implemented to maintain compatibility with the BaseBenchmark
+        interface, but BrowseComp doesn't require downloading data separately.
+
+        Returns:
+            self: The benchmark instance
+        """
         logger.info(
             f"BrowseComp benchmark does not require downloading data separately."
         )
@@ -316,50 +323,92 @@ class BrowseCompBenchmark(BaseBenchmark):
     def load(self):
         r"""Load the BrowseComp dataset.
 
-        Args:
-            force_download (bool, optional): Whether to
-                force download the data.
+        This method loads the dataset from a remote CSV file, converts each row to a
+        dictionary, and applies sampling if num_examples is specified. It also handles
+        repeating examples if n_repeats > 1.
+
+        Returns:
+            self: The benchmark instance
         """
+        # Load dataset from remote CSV
         df = pandas.read_csv(
             "https://openaipublic.blob.core.windows.net/simple-evals/browse_comp_test_set.csv"
         )
+        # Convert each row to a dictionary
         examples = [row.to_dict() for _, row in df.iterrows()]
+
+        # Sample examples if num_examples is specified
         if self.num_examples:
             assert self.n_repeats == 1, "n_repeats only supported when max_examples = None"
-            rng = random.Random(0)
+            rng = random.Random(0)  # Use fixed seed for reproducibility
             examples = rng.sample(examples, self.num_examples)
+
+        # Repeat examples if n_repeats > 1
         self.examples = examples * self.n_repeats
         return self
 
     @property
     def train(self):
-        r"""Get the training set."""
+        r"""Get the training set.
+
+        This property is implemented to maintain compatibility with the BaseBenchmark
+        interface, but BrowseComp doesn't have a training set.
+
+        Raises:
+            NotImplementedError: BrowseComp does not have a training set.
+        """
         raise NotImplementedError("BrowseComp does not have a training set.")
 
     def run(self, process_each_row_f: callable):
         """
-        Apply f to each element of xs, using a ThreadPool or ProcessPool, and show progress.
+        Run the benchmark by processing each example in parallel.
+
+        This method applies the provided function to each example in the dataset
+        using a process pool for parallel execution. It shows progress using tqdm
+        and stores the results in self.raw_results.
 
         Args:
-            f: Function to apply to each element
-            xs: List of elements to process
-            num_threads: Number of threads/processes to use
-            use_processes: If True, use ProcessPool instead of ThreadPool
-            sequential: If True, process sequentially (ignores num_threads and use_processes)
+            process_each_row_f (callable): Function to process each example.
+                This function should take a row (dict) and return a dict with
+                'problem', 'answer', and 'response' keys.
         """
-
+        # Use a process pool for parallel execution
         pool_class = Pool
+        # Limit the number of processes to the minimum of self.processes and the number of examples
         with pool_class(min(self.processes, len(self.examples))) as pool:
-            self.raw_results = list(
+            # Process each example in parallel and collect results with progress bar
+            self._raw_results = list(
                 tqdm(pool.imap(process_each_row_f, self.examples), total=len(self.examples)))
 
     def validate(self, model_config: dict):
-        """Validate the raw results using the GRADER_TEMPLATE and an LLM."""
+        """
+        Validate the raw results using the GRADER_TEMPLATE and an LLM.
+
+        This method evaluates the correctness of each response by using an LLM
+        to compare it with the expected answer. It aggregates the results and
+        generates a report.
+
+        Args:
+            model_config (dict): Configuration for the LLM used for validation
+        """
 
         model = ModelFactory.create(**model_config)
 
         def validate_each_one(result: dict):
-            # Format the template
+            """
+            Validate a single result using the LLM grader.
+
+            This inner function formats the prompt for the LLM grader, sends it for
+            evaluation, extracts the correctness assessment, and creates an HTML
+            representation of the result.
+
+            Args:
+                result (dict): A dictionary containing 'problem', 'response', and 'answer' keys
+
+            Returns:
+                SingleEvalResult: An evaluation result object with score, metrics, and HTML
+            """
+            # Format the template with the problem, response, and correct answer
             prompt = GRADER_TEMPLATE.format(
                 question=result['problem'],
                 response=result['response'],
@@ -369,18 +418,25 @@ class BrowseCompBenchmark(BaseBenchmark):
             # Send to LLM for evaluation
             messages = [{"role": "user", "content": prompt}]
             try:
+                # Get the LLM's assessment
                 response = model.run(messages)
+                # Extract the yes/no correctness judgment using regex
                 match = re.search(r"correct: (yes|no)",
                                   response.choices[0].message.content)
                 grade_result = match.group(1) if match else "no"
 
+                # Convert to binary metrics (1 for correct, 0 for incorrect)
                 is_correct = int(grade_result == "yes")
                 is_incorrect = int(grade_result == "no")
 
+                # Extract the answer from the response
                 extracted_match = re.search(
                     r"Exact Answer:.*", result['response'])
 
+                # Set the score (1 for correct, 0 for incorrect)
                 score = is_correct
+
+                # Generate HTML representation of the result
                 html = jinja_env.from_string(HTML_JINJA).render(
                     prompt_messages=dict(
                         content=result['problem'], role="user"),
@@ -391,25 +447,30 @@ class BrowseCompBenchmark(BaseBenchmark):
                     extracted_answer=extracted_match.group(0).replace(
                         'Exact Anwer:', '') if extracted_match else 'N/A',
                 )
+
+                # Create a conversation list for the result
                 convo = [dict(content=result['problem'], role="user")] + \
                     [dict(content=result['response'], role="assistant")]
+
+                # Return the evaluation result
                 return SingleEvalResult(html=html, score=score, convo=convo, metrics={
                     "is_correct": is_correct,
                     "is_incorrect": is_incorrect,
                 })
             except Exception as e:
+                # Log any errors that occur during evaluation
                 logger.error(f"Error evaluating result: {e}")
                 logger.error(traceback.format_exc())
 
         # Use ThreadPool instead of Pool to avoid pickling issues
         pool_class = ThreadPool
-        with pool_class(min(self.processes, len(self.raw_results))) as pool:
-            self.validated_results = list(
-                tqdm(pool.imap(validate_each_one, self.raw_results), total=len(self.raw_results)))
+        with pool_class(min(self.processes, len(self._raw_results))) as pool:
+            self._validated_results = list(
+                tqdm(pool.imap(validate_each_one, self._raw_results), total=len(self._raw_results)))
 
         aggregate_metrics = {
-            "is_correct": sum(result.metrics["is_correct"] for result in self.validated_results) / len(self.validated_results),
-            "is_incorrect": sum(result.metrics["is_incorrect"] for result in self.validated_results) / len(self.validated_results),
+            "is_correct": sum(result.metrics["is_correct"] for result in self._validated_results) / len(self._validated_results),
+            "is_incorrect": sum(result.metrics["is_incorrect"] for result in self._validated_results) / len(self._validated_results),
         }
         print("AGGREGATE METRICS")
         print(aggregate_metrics)
@@ -421,71 +482,10 @@ class BrowseCompBenchmark(BaseBenchmark):
 
         print(f"Accuracy: {output_d['accuracy']:.3f}")
 
-        self._results = aggregate_results(self.validated_results)
+        self._results = aggregate_results(self._validated_results)
         # ^^^ how to use a sampler
         report_filename = self.save_to
         print(f"Writing report to {report_filename}")
         with open(report_filename, "w") as fh:
             fh.write(make_report(self._results))
         metrics = self._results.metrics | {"score": self._results.score}
-        print(metrics)
-
-
-def process_each_row(row):
-    problem = decrypt(row.get("problem", ""), row.get("canary", ""))
-    answer = decrypt(row.get("answer", ""), row.get("canary", ""))
-    # Model configuration
-    model_config = {
-        "model_platform": ModelPlatformType.OPENAI,
-        "model_type": "gemini-2.5-pro-exp",
-        "url": "https://litellm-cloudrun-668429440317.us-central1.run.app",
-    }
-
-    # Create model for the main process
-    model = ModelFactory.create(**model_config)
-    # Create browser toolkit for the main process
-    # web_toolkit = BrowserToolkit(
-    #     headless=False,
-    #     web_agent_model=model,
-    #     planning_agent_model=model,
-    #     channel="chromium",
-    # )
-
-    # Create agent for the main process
-    agent = ChatAgent(
-        system_message="You are a helpful assistant.",
-        model=model,
-        # tools=[*web_toolkit.get_tools()],
-    )
-    input_message = f"""
-            {problem}
-            navigate to related website to find the answer.
-            
-            Your response should be in the following format:
-            Explanation:{{your explanation for your final answer}}
-            Exact Answer: {{your succinct, final answer}}
-            Confidence: {{your confidence score between 0% and 100% for your answer}}
-            """.strip()
-    response_text = agent.step(input_message)
-
-    return {
-        "problem": problem,
-        "answer": answer,
-        "response": response_text.msgs[0].content
-    }
-
-
-if __name__ == "__main__":
-
-    benchmark = BrowseCompBenchmark("report.html", num_examples=2, processes=2)
-
-    # Process in parallel with separate agents in each process
-    # Using 'spawn' method ensures each process has a clean environment
-    benchmark.run(process_each_row_f=process_each_row)
-    # Create a model for validation
-    model_config = {
-        "model_platform": ModelPlatformType.OPENAI,
-        "model_type": "gemini-2.5-pro-exp",
-        "url": "https://litellm-cloudrun-668429440317.us-central1.run.app",
-    }
-    benchmark.validate(model_config=model_config)
