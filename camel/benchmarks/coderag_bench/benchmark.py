@@ -627,7 +627,7 @@ class CodeRagBenchmark(BaseBenchmark):
         agent: ChatAgent,
         auto_retriever: Optional[
             CoderagBenchAutoRetriever
-        ] = None,  # TODO: Currently only supports canonical retriever. Add support for open retrieval type.
+        ] = None,
         retrieval_top_k=10,
         n_generation_samples: int = 1,
         allow_code_execution=False,

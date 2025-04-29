@@ -31,10 +31,10 @@ logger.info("Starting CodeRAG-Bench example run...")
 
 
 if __name__ == "__main__":
-    assistant_sys_msg = """You are a helpful assistant to write codes,
-             I will give you the Original Coding Query and Retrieved Context,
-            answer the Original Coding Query based on the Retrieved Context,
-            if you can't answer the question, just leave it blank"""
+    assistant_sys_msg = """You are a helpful AI coding assistant.
+You are given user queries, and your job is to generate appropriate code responses.
+Only output the code.
+If the query is ambiguous or lacks information, make reasonable assumptions."""
     agent = ChatAgent(assistant_sys_msg)
     retriever = CoderagBenchAutoRetriever(
         storage_type=StorageType.QDRANT,
