@@ -13,42 +13,107 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import logging
 
+from camel.agents import ChatAgent
+from camel.benchmarks import CoderagBenchAutoRetriever, CodeRagBenchmark
+from camel.types import StorageType
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler("coderag_bench.log")
-    ]
+        logging.FileHandler("coderag_bench.log"),
+    ],
 )
 
 logger = logging.getLogger(__name__)
 logger.info("Starting CodeRAG-Bench example run...")
 
-from camel.benchmarks import CodeRagBenchmark, CoderagBenchAutoRetriever
-from camel.agents import ChatAgent
-from camel.retrievers import AutoRetriever
-from camel.types import StorageType
+
 if __name__ == "__main__":
     assistant_sys_msg = """You are a helpful assistant to write codes,
              I will give you the Original Coding Query and Retrieved Context,
             answer the Original Coding Query based on the Retrieved Context,
             if you can't answer the question, just leave it blank"""
     agent = ChatAgent(assistant_sys_msg)
-    retriever = CoderagBenchAutoRetriever(storage_type=StorageType.QDRANT,
+    retriever = CoderagBenchAutoRetriever(
+        storage_type=StorageType.QDRANT,
         vector_storage_local_path="./CodeRag_Bench_Datasets/.vector_cache",
-        overwrite = True)
+        overwrite=True,
+    )
 
-
+    # Example: Humaneval, retrieval + generation
     benchmark = CodeRagBenchmark(
         data_dir="./CodeRag_Bench_Datasets",
         save_to="./CodeRag_Bench_Datasets",
-        run_mode = 'retrieve_generate',
-        task = 'humaneval',
-        subset_size = 5,
-        retrieval_type = "canonical",
-        allow_code_execution = True,
-        )
+        run_mode='retrieve_generate',
+        task='humaneval',
+        subset_size=5,
+        retrieval_type="canonical",
+    )
     benchmark.load()
-    benchmark.run(agent, retriever)
+    output_metrics = benchmark.run(
+        agent,
+        retriever,
+        n_generation_samples=1,
+        allow_code_execution=True,
+        generation_eval_k=[1],
+        retrieval_top_k=10,
+    )
+    print(output_metrics)
+    """
+    output_metrics:
+    {'retrieval': {'ndcg': {'NDCG@1': 1.0, 'NDCG@5': 1.0, 'NDCG@10': 1.0},
+                   'mrr': {'MRR@1': 1.0, 'MRR@5': 1.0, 'MRR@10': 1.0},
+                   'recall': {'Recall@1': 1.0, 'Recall@5': 1.0,
+                              'Recall@10': 1.0},
+                   'precision': {'P@1': 1.0, 'P@5': 0.2, 'P@10': 0.1}},
+    'generation': {'pass@1': 1.0}}
+    """
+
+    # Example: Humaneval, retrieval only
+    benchmark = CodeRagBenchmark(
+        data_dir="./CodeRag_Bench_Datasets",
+        save_to="./CodeRag_Bench_Datasets",
+        run_mode='retrieve',
+        task='humaneval',
+        subset_size=5,
+        retrieval_type="canonical",
+    )
+    benchmark.load()
+    output_metrics = benchmark.run(
+        agent,
+        retriever,
+        n_generation_samples=1,
+        allow_code_execution=True,
+        generation_eval_k=[1],
+        retrieval_top_k=10,
+    )
+    print(output_metrics)
+    '''
+    output_metrics:
+    {'retrieval': {'ndcg': {'NDCG@1': 1.0, 'NDCG@5': 1.0, 'NDCG@10': 1.0}, 'mrr': {'MRR@1': 1.0, 'MRR@5': 1.0, 'MRR@10': 1.0}, 'recall': {'Recall@1': 1.0, 'Recall@5': 1.0, 'Recall@10': 1.0}, 'precision': {'P@1': 1.0, 'P@5': 0.2, 'P@10': 0.1}}}
+    '''
+
+    # Example: Humaneval, generation only
+    benchmark = CodeRagBenchmark(
+        data_dir="./CodeRag_Bench_Datasets",
+        save_to="./CodeRag_Bench_Datasets",
+        run_mode='generate',
+        task='humaneval',
+        subset_size=5,
+        retrieval_type="canonical",
+    )
+    benchmark.load()
+    output_metrics = benchmark.run(
+        agent,
+        retriever,
+        n_generation_samples=1,
+        allow_code_execution=True,
+        retrieval_top_k=10,
+        generation_eval_k=[1],
+    )
+    print(output_metrics)
+    '''
+    {'generation': {'pass@1': 1.0}}
+    '''
