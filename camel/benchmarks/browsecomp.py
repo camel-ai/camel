@@ -355,9 +355,9 @@ class BrowseCompBenchmark(BaseBenchmark):
 
         # Sample examples if num_examples is specified
         if self.num_examples:
-            assert self.n_repeats == 1, (
-                "n_repeats only supported when max_examples = None"
-            )
+            assert (
+                self.n_repeats == 1
+            ), "n_repeats only supported when max_examples = None"
             rng = random.Random(0)  # Use fixed seed for reproducibility
             examples = rng.sample(examples, self.num_examples)
 
