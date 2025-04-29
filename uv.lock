@@ -545,6 +545,7 @@ dependencies = [
     { name = "colorama" },
     { name = "docstring-parser" },
     { name = "httpx" },
+    { name = "ibm-watsonx-ai" },
     { name = "jsonschema" },
     { name = "mcp" },
     { name = "openai" },
@@ -591,6 +592,7 @@ all = [
     { name = "googlemaps" },
     { name = "gradio" },
     { name = "html2text" },
+    { name = "ibm-watsonx-ai" },
     { name = "imageio", extra = ["pyav"] },
     { name = "ipykernel" },
     { name = "jupyter-client" },
@@ -763,6 +765,7 @@ model-platforms = [
     { name = "anthropic" },
     { name = "cohere" },
     { name = "fish-audio-sdk" },
+    { name = "ibm-watsonx-ai" },
     { name = "litellm" },
     { name = "mistralai" },
     { name = "reka-api" },
@@ -969,6 +972,9 @@ requires-dist = [
     { name = "html2text", marker = "extra == 'owl'", specifier = ">=2024.2.26" },
     { name = "html2text", marker = "extra == 'web-tools'", specifier = ">=2024.2.26" },
     { name = "httpx", specifier = ">=0.28.0,<1.0.0.dev0" },
+    { name = "ibm-watsonx-ai", specifier = ">=1.3.11" },
+    { name = "ibm-watsonx-ai", marker = "extra == 'all'", specifier = ">=1.3.11" },
+    { name = "ibm-watsonx-ai", marker = "extra == 'model-platforms'", specifier = ">=1.3.11" },
     { name = "imageio", extras = ["pyav"], marker = "extra == 'all'", specifier = ">=2.34.2,<3" },
     { name = "imageio", extras = ["pyav"], marker = "extra == 'media-tools'", specifier = ">=2.34.2,<3" },
     { name = "imageio", extras = ["pyav"], marker = "extra == 'owl'", specifier = ">=2.34.2,<3" },
@@ -2743,6 +2749,58 @@ wheels = [
 ]
 
 [[package]]
+name = "ibm-cos-sdk"
+version = "2.13.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "ibm-cos-sdk-core" },
+    { name = "ibm-cos-sdk-s3transfer" },
+    { name = "jmespath" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e4/e6/908791df6fd31d94e80be9597242eac2b942c28b0d4ea1fc6b963d4a6be3/ibm-cos-sdk-2.13.5.tar.gz", hash = "sha256:1aff7f9863ac9072a3db2f0053bec99478b26f3fb5fa797ce96a15bbb13cd40e", size = 58638 }
+
+[[package]]
+name = "ibm-cos-sdk-core"
+version = "2.13.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "jmespath" },
+    { name = "python-dateutil" },
+    { name = "requests" },
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c7/ff/cabdf3d7892c3607297ffb7d77c3caafe2f50f876d29e90c44ac67495cef/ibm-cos-sdk-core-2.13.5.tar.gz", hash = "sha256:d3a99d8b06b3f8c00b1a9501f85538d592463e63ddf8cec32672ab5a0b107b83", size = 1101815 }
+
+[[package]]
+name = "ibm-cos-sdk-s3transfer"
+version = "2.13.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "ibm-cos-sdk-core" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/6d/42/f2faefd0c3360928336b93a14db2aff25f556aa50252188efd1ba363e371/ibm-cos-sdk-s3transfer-2.13.5.tar.gz", hash = "sha256:9649b1f2201c6de96ff5a6b5a3686de3a809e6ef3b8b12c7c4f2f7ce72da7749", size = 139491 }
+
+[[package]]
+name = "ibm-watsonx-ai"
+version = "1.3.11"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "certifi" },
+    { name = "httpx" },
+    { name = "ibm-cos-sdk" },
+    { name = "lomond" },
+    { name = "packaging" },
+    { name = "pandas" },
+    { name = "requests" },
+    { name = "tabulate" },
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/10/fd/f7ff11c084ff2af39214dd79531c63b4c798b98266e58126d999ff1fdeb9/ibm_watsonx_ai-1.3.11.tar.gz", hash = "sha256:36d4bf38af6795e3113d9e58d0d47d08fe8bc55347bfe9546820a4a09064981c", size = 714156 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/40/af/28627792e9694403b0abb1823e2f17214c3cecd63d642535a1a5d9bef028/ibm_watsonx_ai-1.3.11-py3-none-any.whl", hash = "sha256:7d6571069d241856b6fa7854a786b5f13d5e769c3bc82681594b4ee3bc1c6577", size = 1115138 },
+]
+
+[[package]]
 name = "identify"
 version = "2.6.10"
 source = { registry = "https://pypi.org/simple" }
@@ -3255,6 +3313,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/b5/dc/d3d27a140b40398b103727f9b7689da545bc605ecf0edd79cfd14edb2126/litellm-1.67.0.tar.gz", hash = "sha256:18439db292d85b1d886bfa35de9d999600ecc6b4fc1137f12e6810d2133c8cec", size = 7238539 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ec/ee/745092a4acf931548eae4f442d366b5e0f7282fb4054d6989045c74bd2c2/litellm-1.67.0-py3-none-any.whl", hash = "sha256:d297126f45eea8d8a3df9c0de1d9491ff20e78dab5d1aa3820602082501ba89e", size = 7601690 },
+]
+
+[[package]]
+name = "lomond"
+version = "0.3.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "six" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c0/9e/ef7813c910d4a893f2bc763ce9246269f55cc68db21dc1327e376d6a2d02/lomond-0.3.3.tar.gz", hash = "sha256:427936596b144b4ec387ead99aac1560b77c8a78107d3d49415d3abbe79acbd3", size = 28789 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0f/b1/02eebed49c754b01b17de7705caa8c4ceecfb4f926cdafc220c863584360/lomond-0.3.3-py2.py3-none-any.whl", hash = "sha256:df1dd4dd7b802a12b71907ab1abb08b8ce9950195311207579379eb3b1553de7", size = 35512 },
 ]
 
 [[package]]
@@ -5202,11 +5272,11 @@ wheels = [
 
 [[package]]
 name = "pyjwt"
-version = "2.10.1"
+version = "2.9.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/e7/46/bd74733ff231675599650d3e47f361794b22ef3e3770998dda30d3b63726/pyjwt-2.10.1.tar.gz", hash = "sha256:3cc5772eb20009233caf06e9d8a0577824723b44e6648ee0a2aedb6cf9381953", size = 87785 }
+sdist = { url = "https://files.pythonhosted.org/packages/fb/68/ce067f09fca4abeca8771fe667d89cc347d1e99da3e093112ac329c6020e/pyjwt-2.9.0.tar.gz", hash = "sha256:7e1e5b56cc735432a7369cbfa0efe50fa113ebecdc04ae6922deba8b84582d0c", size = 78825 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/61/ad/689f02752eeec26aed679477e80e632ef1b682313be70793d798c1d5fc8f/PyJWT-2.10.1-py3-none-any.whl", hash = "sha256:dcdd193e30abefd5debf142f9adfcdd2b58004e644f25406ffaebd50bd98dacb", size = 22997 },
+    { url = "https://files.pythonhosted.org/packages/79/84/0fdf9b18ba31d69877bd39c9cd6052b47f3761e9910c15de788e519f079f/PyJWT-2.9.0-py3-none-any.whl", hash = "sha256:3b02fb0f44517787776cf48f2ae25d8e14f300e6d7545a4315cee571a415e850", size = 22344 },
 ]
 
 [package.optional-dependencies]
@@ -7433,11 +7503,11 @@ wheels = [
 
 [[package]]
 name = "urllib3"
-version = "2.4.0"
+version = "2.1.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/8a/78/16493d9c386d8e60e442a35feac5e00f0913c0f4b7c217c11e8ec2ff53e0/urllib3-2.4.0.tar.gz", hash = "sha256:414bc6535b787febd7567804cc015fee39daab8ad86268f1310a9250697de466", size = 390672 }
+sdist = { url = "https://files.pythonhosted.org/packages/36/dd/a6b232f449e1bc71802a5b7950dc3675d32c6dbc2a1bd6d71f065551adb6/urllib3-2.1.0.tar.gz", hash = "sha256:df7aa8afb0148fa78488e7899b2c59b5f4ffcfa82e6c54ccb9dd37c1d7b52d54", size = 263900 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6b/11/cc635220681e93a0183390e26485430ca2c7b5f9d33b15c74c2861cb8091/urllib3-2.4.0-py3-none-any.whl", hash = "sha256:4e16665048960a0900c702d4a66415956a584919c03361cac9f1df5c5dd7e813", size = 128680 },
+    { url = "https://files.pythonhosted.org/packages/96/94/c31f58c7a7f470d5665935262ebd7455c7e4c7782eb525658d3dbf4b9403/urllib3-2.1.0-py3-none-any.whl", hash = "sha256:55901e917a5896a349ff771be919f8bd99aff50b79fe58fec595eb37bbc56bb3", size = 104579 },
 ]
 
 [package.optional-dependencies]
