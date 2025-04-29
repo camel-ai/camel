@@ -36,6 +36,7 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **vLLM** |  [supported models](https://docs.vllm.ai/en/latest/models/supported_models.html) |
 | **SGLANG** | [supported models](https://sgl-project.github.io/references/supported_models.html) |
 | **NetMind** | [supported models](https://www.netmind.ai/modelsLibrary) |
+| **NOVITA** | [supported models](https://novita.ai/models?utm_source=github_owl&utm_medium=github_readme&utm_campaign=github_link) |
 | **NVIDIA** | [supported models](https://docs.api.nvidia.com/nim/reference/llm-apis) |
 | **AIML** | [supported models](https://docs.aimlapi.com/api-overview/model-database/text-models) |
 | **ModelScope** | [supported models](https://www.modelscope.cn/docs/model-service/API-Inference/intro) |
