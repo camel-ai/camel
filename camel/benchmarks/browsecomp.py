@@ -22,7 +22,7 @@ import traceback
 from collections import defaultdict
 from dataclasses import dataclass, field
 from multiprocessing.pool import Pool, ThreadPool
-from typing import Any
+from typing import Any, Callable
 
 import jinja2
 import numpy as np
@@ -204,9 +204,10 @@ class SingleEvalResult:
     """
 
     score: float | None
+    html: str
+    convo: MessageList 
     metrics: dict[str, float] = field(default_factory=dict)
-    html: str | None = None
-    convo: MessageList | None = None  # sampled conversation
+
 
 
 @dataclass
@@ -313,8 +314,8 @@ class BrowseCompBenchmark(BaseBenchmark):
         # Store configuration parameters
         # Number of examples to sample (if None, use all)
         self.num_examples = num_examples
-        self.n_repeats = n_repeats  # Number of times to repeat each example
-        self.examples = []  # Will store the loaded examples
+        self.n_repeats = n_repeats  
+        self.examples = []  
         # Load the examples from the dataset
         self.load()
         # Initialize result storage
@@ -322,7 +323,7 @@ class BrowseCompBenchmark(BaseBenchmark):
         self._validated_results = (
             None  # Will store validated results after LLM evaluation
         )
-        self._results = None  # Will store final aggregated results
+        self._results = []  # Will store final aggregated results
 
     def download(self):
         r"""Download the BrowseComp dataset.
@@ -379,7 +380,8 @@ class BrowseCompBenchmark(BaseBenchmark):
         """
         raise NotImplementedError("BrowseComp does not have a training set.")
 
-    def run(self, process_each_row_f: callable):
+    def run( # type: ignore[override, return]
+        self, process_each_row_f: Callable):
         """
         Run the benchmark by processing each example in parallel.
 
@@ -403,6 +405,7 @@ class BrowseCompBenchmark(BaseBenchmark):
                     total=len(self.examples),
                 )
             )
+        return self
 
     def validate(self, model_config: dict):
         """
