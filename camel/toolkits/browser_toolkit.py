@@ -84,9 +84,12 @@ to fast-check whether the current page contains some specific text.
 14. `click_blank_area()`: Click a blank area of the page to unfocus the
 current element. It is useful when you have clicked an element but it cannot
 unfocus itself (e.g. Menu bar) to automatically render the updated webpage.
+15. `ask_question_about_video(question: str)`: Ask a question about the
+current webpage which contains video, e.g. youtube websites.
 """
 
 ACTION_WITH_FEEDBACK_LIST = [
+    'ask_question_about_video',
     'download_file_id',
     'find_text_on_page',
 ]
@@ -506,6 +509,22 @@ class BaseBrowser:
         self.page.goto(url)
         self._wait_for_load()
         self.page_url = url
+
+    def ask_question_about_video(self, question: str) -> str:
+        r"""Ask a question about the video on the current page,
+        such as YouTube video.
+
+        Args:
+            question (str): The question to ask.
+
+        Returns:
+            str: The answer to the question.
+        """
+        video_analyzer = VideoAnalysisToolkit()
+        result = video_analyzer.ask_question_about_video(
+            self.page_url, question
+        )
+        return result
 
     @retry_on_error()
     def get_screenshot(
