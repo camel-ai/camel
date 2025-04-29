@@ -65,13 +65,12 @@ def process_each_row(row):
     return {
         "problem": problem,
         "answer": answer,
-        "response": response_text.msgs[0].content
+        "response": response_text.msgs[0].content,
     }
 
 
 # Will need to place the benchmark run under
 if __name__ == '__main__':
-
     # Create a benchmark instance with output file "report.html"
     # it samples 2 examples and uses 2 parallel processes for efficiency
     # set num_example=None in case of running full benchmark.

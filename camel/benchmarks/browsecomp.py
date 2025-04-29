@@ -41,7 +41,8 @@ from camel.toolkits.browser_toolkit import BrowserToolkit
 logger = logging.getLogger(__name__)
 
 GRADER_TEMPLATE = """
-Judge whether the following [response] to [question] is correct or not based on the precise and unambiguous [correct_answer] below.
+Judge whether the following [response] to [question] is correct or not 
+based on the precise and unambiguous [correct_answer] below.
 
 [question]: {question}
 
@@ -49,16 +50,28 @@ Judge whether the following [response] to [question] is correct or not based on 
 
 Your judgement must be in the format and criteria specified below:
 
-extracted_final_answer: The final exact answer extracted from the [response]. Put the extracted answer as 'None' if there is no exact, final answer to extract from the response.
+extracted_final_answer: The final exact answer extracted from the [response].
+Put the extracted answer as 'None' if there is no exact, final answer to 
+extract from the response.
 
 [correct_answer]: {correct_answer}
 
-reasoning: Explain why the extracted_final_answer is correct or incorrect based on [correct_answer], focusing only on if there are meaningful differences between [correct_answer] and the extracted_final_answer. Do not comment on any background to the problem, do not attempt to solve the problem, do not argue for any answer different than [correct_answer], focus only on whether the answers match.
+reasoning: Explain why the extracted_final_answer is correct or incorrect 
+based on [correct_answer], focusing only on if there are meaningful 
+differences between [correct_answer] and the extracted_final_answer. 
+Do not comment on any background to the problem, do not attempt 
+to solve the problem, do not argue for any answer different 
+than [correct_answer], focus only on whether the answers match.
 
-correct: Answer 'yes' if extracted_final_answer matches the [correct_answer] given above, or is within a small margin of error for numerical problems. Answer 'no' otherwise, i.e. if there if there is any inconsistency, ambiguity, non-equivalency, or if the extracted answer is incorrect.
+correct: Answer 'yes' if extracted_final_answer matches the 
+[correct_answer] given above, or is within a small margin of error for 
+numerical problems. Answer 'no' otherwise, i.e. if there if there is any 
+inconsistency, ambiguity, non-equivalency, or if the extracted answer is 
+incorrect.
 
 
-confidence: The extracted confidence score between 0|\%| and 100|\%| from [response]. Put 100 if there is no confidence score available.
+confidence: The extracted confidence score between 0|\%| and 100|\%| 
+from [response]. Put 100 if there is no confidence score available.
 """.strip()
 
 Message = dict[str, Any]  # keys role, content
@@ -76,8 +89,9 @@ def message_to_html(message: Message) -> str:
     Generate HTML snippet (inside a <div>) for a message.
     """
     return jinja_env.from_string(_message_template).render(
-        role=message["role"], content=message["content"], variant=message.get(
-            "variant", None)
+        role=message["role"],
+        content=message["content"],
+        variant=message.get("variant", None),
     )
 
 
@@ -263,10 +277,15 @@ def aggregate_results(
             key = name if stat == "mean" else f"{name}:{stat}"
             final_metrics[key] = _compute_stat(values, stat)
     return EvalResult(
-        score=final_metrics.pop("score", None), metrics=final_metrics, htmls=htmls, convos=convos
+        score=final_metrics.pop("score", None),
+        metrics=final_metrics,
+        htmls=htmls,
+        convos=convos,
     )
 
+
 # Above are from https://github.com/openai/simple-evals/blob/main/browsecomp_eval.py
+
 
 class BrowseCompBenchmark(BaseBenchmark):
     r"""BrowseComp Benchmark for evaluating browser-based comprehension tasks."""
@@ -276,7 +295,7 @@ class BrowseCompBenchmark(BaseBenchmark):
         save_to: str,
         processes: int = 1,
         num_examples: int | None = None,
-        n_repeats: int = 1
+        n_repeats: int = 1,
     ):
         r"""Initialize the BrowseComp benchmark.
 
@@ -292,7 +311,7 @@ class BrowseCompBenchmark(BaseBenchmark):
         # Browsecomp benchmark won't download any data
         # use current path as the data_dir passing into super init
         current_path = os.path.dirname(os.path.abspath(__file__))
-        # Initialize the base benchmark with benchmark name, data directory, output file, and process count
+
         super().__init__("browsecomp", current_path, save_to, processes)
         # Store configuration parameters
         # Number of examples to sample (if None, use all)
@@ -303,7 +322,9 @@ class BrowseCompBenchmark(BaseBenchmark):
         self.load()
         # Initialize result storage
         self._raw_results = None  # Will store raw evaluation results
-        self._validated_results = None  # Will store validated results after LLM evaluation
+        self._validated_results = (
+            None  # Will store validated results after LLM evaluation
+        )
         self._results = None  # Will store final aggregated results
 
     def download(self):
@@ -339,7 +360,9 @@ class BrowseCompBenchmark(BaseBenchmark):
 
         # Sample examples if num_examples is specified
         if self.num_examples:
-            assert self.n_repeats == 1, "n_repeats only supported when max_examples = None"
+            assert self.n_repeats == 1, (
+                "n_repeats only supported when max_examples = None"
+            )
             rng = random.Random(0)  # Use fixed seed for reproducibility
             examples = rng.sample(examples, self.num_examples)
 
@@ -378,7 +401,11 @@ class BrowseCompBenchmark(BaseBenchmark):
         with pool_class(min(self.processes, len(self.examples))) as pool:
             # Process each example in parallel and collect results with progress bar
             self._raw_results = list(
-                tqdm(pool.imap(process_each_row_f, self.examples), total=len(self.examples)))
+                tqdm(
+                    pool.imap(process_each_row_f, self.examples),
+                    total=len(self.examples),
+                )
+            )
 
     def validate(self, model_config: dict):
         """
@@ -412,7 +439,7 @@ class BrowseCompBenchmark(BaseBenchmark):
             prompt = GRADER_TEMPLATE.format(
                 question=result['problem'],
                 response=result['response'],
-                correct_answer=result['answer']
+                correct_answer=result['answer'],
             )
 
             # Send to LLM for evaluation
@@ -421,8 +448,9 @@ class BrowseCompBenchmark(BaseBenchmark):
                 # Get the LLM's assessment
                 response = model.run(messages)
                 # Extract the yes/no correctness judgment using regex
-                match = re.search(r"correct: (yes|no)",
-                                  response.choices[0].message.content)
+                match = re.search(
+                    r"correct: (yes|no)", response.choices[0].message.content
+                )
                 grade_result = match.group(1) if match else "no"
 
                 # Convert to binary metrics (1 for correct, 0 for incorrect)
@@ -431,7 +459,8 @@ class BrowseCompBenchmark(BaseBenchmark):
 
                 # Extract the answer from the response
                 extracted_match = re.search(
-                    r"Exact Answer:.*", result['response'])
+                    r"Exact Answer:.*", result['response']
+                )
 
                 # Set the score (1 for correct, 0 for incorrect)
                 score = is_correct
@@ -439,24 +468,36 @@ class BrowseCompBenchmark(BaseBenchmark):
                 # Generate HTML representation of the result
                 html = jinja_env.from_string(HTML_JINJA).render(
                     prompt_messages=dict(
-                        content=result['problem'], role="user"),
+                        content=result['problem'], role="user"
+                    ),
                     next_message=dict(
-                        content=result['response'], role="assistant"),
+                        content=result['response'], role="assistant"
+                    ),
                     score=score,
                     correct_answer=result['answer'],
                     extracted_answer=extracted_match.group(0).replace(
-                        'Exact Anwer:', '') if extracted_match else 'N/A',
+                        'Exact Answer:', ''
+                    )
+                    if extracted_match
+                    else 'N/A',
                 )
 
                 # Create a conversation list for the result
-                convo = [dict(content=result['problem'], role="user")] + \
-                    [dict(content=result['response'], role="assistant")]
+                convo = [
+                    dict(content=result['problem'], role="user"),
+                    dict(content=result['response'], role="assistant"),
+                ]
 
                 # Return the evaluation result
-                return SingleEvalResult(html=html, score=score, convo=convo, metrics={
-                    "is_correct": is_correct,
-                    "is_incorrect": is_incorrect,
-                })
+                return SingleEvalResult(
+                    html=html,
+                    score=score,
+                    convo=convo,
+                    metrics={
+                        "is_correct": is_correct,
+                        "is_incorrect": is_incorrect,
+                    },
+                )
             except Exception as e:
                 # Log any errors that occur during evaluation
                 logger.error(f"Error evaluating result: {e}")
@@ -466,11 +507,23 @@ class BrowseCompBenchmark(BaseBenchmark):
         pool_class = ThreadPool
         with pool_class(min(self.processes, len(self._raw_results))) as pool:
             self._validated_results = list(
-                tqdm(pool.imap(validate_each_one, self._raw_results), total=len(self._raw_results)))
+                tqdm(
+                    pool.imap(validate_each_one, self._raw_results),
+                    total=len(self._raw_results),
+                )
+            )
 
         aggregate_metrics = {
-            "is_correct": sum(result.metrics["is_correct"] for result in self._validated_results) / len(self._validated_results),
-            "is_incorrect": sum(result.metrics["is_incorrect"] for result in self._validated_results) / len(self._validated_results),
+            "is_correct": sum(
+                result.metrics["is_correct"]
+                for result in self._validated_results
+            )
+            / len(self._validated_results),
+            "is_incorrect": sum(
+                result.metrics["is_incorrect"]
+                for result in self._validated_results
+            )
+            / len(self._validated_results),
         }
         print("AGGREGATE METRICS")
         print(aggregate_metrics)
