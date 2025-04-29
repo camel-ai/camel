@@ -163,7 +163,7 @@ def get_task_list(task_response: str) -> List[str]:
 
 
 def check_server_running(server_url: str) -> bool:
-    r"""Check whether the port refered by the URL to the server
+    r"""Check whether the port referred by the URL to the server
     is open.
 
     Args:

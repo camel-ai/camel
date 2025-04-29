@@ -100,7 +100,7 @@ class VectorDBStatus(BaseModel):
     r"""Vector database status.
 
     Attributes:
-        vector_dim (int): The dimention of stored vectors.
+        vector_dim (int): The dimension of stored vectors.
         vector_count (int): The number of stored vectors.
 
     """
@@ -204,7 +204,7 @@ class BaseVectorStorage(ABC):
 
         Args:
             vector (List[float]): The search vector.
-            top_k (int): The number of top similer vectors.
+            top_k (int): The number of top similar vectors.
 
         Returns:
             List[List[Dict[str, Any]]]: A list of vector payloads retrieved
