@@ -32,6 +32,7 @@ from camel.models.mistral_model import MistralModel
 from camel.models.modelscope_model import ModelScopeModel
 from camel.models.moonshot_model import MoonshotModel
 from camel.models.netmind_model import NetmindModel
+from camel.models.novita_model import NovitaModel
 from camel.models.nvidia_model import NvidiaModel
 from camel.models.ollama_model import OllamaModel
 from camel.models.openai_compatible_model import OpenAICompatibleModel
@@ -163,6 +164,8 @@ class ModelFactory:
             model_class = MoonshotModel
         elif model_platform.is_modelscope:
             model_class = ModelScopeModel
+        elif model_platform.is_novita:
+            model_class = NovitaModel
         elif model_type == ModelType.STUB:
             model_class = StubModel
 
