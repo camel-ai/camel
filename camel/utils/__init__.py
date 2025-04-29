@@ -41,6 +41,7 @@ from .commons import (
 )
 from .constants import Constants
 from .deduplication import DeduplicationResult, deduplicate_internally
+from .filename import sanitize_filename
 from .mcp import MCPServer
 from .response_format import get_pydantic_model
 from .token_counting import (
@@ -90,4 +91,5 @@ __all__ = [
     "BatchProcessor",
     "with_timeout",
     "MCPServer",
+    "sanitize_filename",
 ]

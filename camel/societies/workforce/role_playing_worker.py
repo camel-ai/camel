@@ -112,7 +112,7 @@ class RolePlayingWorker(Worker):
         chat_history = []
         while n < self.chat_turn_limit:
             n += 1
-            assistant_response, user_response = role_play_session.step(
+            assistant_response, user_response = await role_play_session.astep(
                 input_msg
             )
 

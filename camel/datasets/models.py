@@ -24,7 +24,7 @@ class DataPoint(BaseModel):
         final_answer (str): The final answer.
         rationale (Optional[str]): Logical reasoning or explanation behind the
             answer. (default: :obj:`None`)
-        metadata Optional[Dict[str, Any]]: Additional metadata about the data
+        metadata (Optional[Dict[str, Any]]): Additional metadata about the data
             point. (default: :obj:`None`)
     """
 

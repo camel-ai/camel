@@ -589,3 +589,59 @@ def test_search_bocha_error(search_toolkit):
 
     assert "error" in result
     assert "Connection error" in result["error"]
+
+
+@patch('requests.get')
+def test_search_alibaba_tongxiao(mock_get, search_toolkit):
+    # Mock the response from Alibaba Tongxiao search
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "requestId": "test-request-id",
+        "pageItems": [
+            {
+                "title": "Test Title 1",
+                "snippet": "Test Snippet 1",
+                "link": "https://example1.com",
+                "hostname": "example1.com",
+                "markdownText": "# Test Markdown 1",
+            }
+        ],
+    }
+    mock_get.return_value = mock_response
+
+    # Mock environment variables and call the function
+    with patch.dict(os.environ, {'TONGXIAO_API_KEY': 'fake_api_key'}):
+        result = search_toolkit.search_alibaba_tongxiao(
+            query="test query", return_markdown_text=True
+        )
+
+        # Verify the request was made correctly
+        mock_get.assert_called_once_with(
+            "https://cloud-iqs.aliyuncs.com/search/genericSearch",
+            headers={"X-API-Key": "fake_api_key"},
+            params={
+                "query": "test query",
+                "timeRange": "NoLimit",
+                "page": 1,
+                "returnMainText": "false",
+                "returnMarkdownText": "true",
+                "enableRerank": "true",
+            },
+            timeout=10,
+        )
+
+        # Check if the result is as expected
+        assert result == {
+            "request_id": "test-request-id",
+            "results": [
+                {
+                    "result_id": 1,
+                    "title": "Test Title 1",
+                    "snippet": "Test Snippet 1",
+                    "url": "https://example1.com",
+                    "hostname": "example1.com",
+                    "markdown_text": "# Test Markdown 1",
+                }
+            ],
+        }

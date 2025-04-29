@@ -20,6 +20,7 @@ from .firecrawl_reader import Firecrawl
 from .jina_url_reader import JinaURLReader
 from .mineru_extractor import MinerU
 from .pandas_reader import PandasReader
+from .scrapegraph_reader import ScrapeGraphAI
 from .unstructured_io import UnstructuredIO
 
 __all__ = [
@@ -34,4 +35,5 @@ __all__ = [
     'PandasReader',
     'MinerU',
     'Crawl4AI',
+    'ScrapeGraphAI',
 ]

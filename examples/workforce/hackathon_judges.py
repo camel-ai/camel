@@ -74,7 +74,6 @@ def main():
 
     search_toolkit = SearchToolkit()
     search_tools = [
-        FunctionTool(search_toolkit.search_google),
         FunctionTool(search_toolkit.search_duckduckgo),
     ]
 

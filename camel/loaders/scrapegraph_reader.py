@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2025@ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -15,15 +15,14 @@
 import os
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel
-
 
 class ScrapeGraphAI:
-    r"""ScrapeGraphAI allows you to perform AI-powered web scraping and searching.
+    r"""ScrapeGraphAI allows you to perform AI-powered web scraping and
+    searching.
 
     Args:
-        api_key (Optional[str]): API key for authenticating with the ScrapeGraphAI
-            API.
+        api_key (Optional[str]): API key for authenticating with the
+            ScrapeGraphAI API.
 
     References:
         https://scrapegraph.ai/
@@ -50,7 +49,8 @@ class ScrapeGraphAI:
             user_prompt (str): The search query or instructions.
 
         Returns:
-            Dict[str, Any]: The search results including answer and reference URLs.
+            Dict[str, Any]: The search results including answer and reference
+                URLs.
 
         Raises:
             RuntimeError: If the search process fails.
@@ -72,8 +72,8 @@ class ScrapeGraphAI:
         Args:
             website_url (str): The URL to scrape.
             user_prompt (str): Instructions for what data to extract.
-            website_html (Optional[str]): Optional HTML content to use instead of
-                fetching from the URL.
+            website_html (Optional[str]): Optional HTML content to use instead
+                of fetching from the URL.
 
         Returns:
             Dict[str, Any]: The scraped data including request ID and result.

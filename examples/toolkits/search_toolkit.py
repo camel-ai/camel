@@ -394,3 +394,29 @@ These studies reflect ongoing advances in quantum error correction, focusing
 on improving efficiency, fault tolerance, and minimizing resource overheads.
 ===============================================================================
 """
+
+search_alibaba_tongxiao_response = SearchToolkit().search_alibaba_tongxiao(
+    query="Alibaba's chip investment for 2025", time_range="OneMonth"
+)
+print(search_alibaba_tongxiao_response)
+# ruff: noqa: RUF001
+"""
+===============================================================================
+{'request_id': '78a77a7e004dd97bc18bd907b90d152b', 'results': [
+{'result_id': 1, 'title': 'Investor Relations', 'snippet':
+ 'Stock Information Alibaba Group(BABA)-NYSE 112.280 1.690（-1.483%） 
+ 2025-04-15T20:01 EDT Prices shown in USD The data service is provided
+   by Alibaba Cloud,with a delay of at least 15 minutes. Alibaba 
+   Group(9988)-H...', 'url': 'https://www.alibabagroup.com/
+   en-US/investor-relations', 'hostname': 'www.alibabagroup.com', 
+   'summary': 'February 20, 2025\nAlibaba Group Will Announce December
+   Quarter 2024 Results on February 20, 2025April 2, 2025\nAlibaba Group 
+   Announces December Quarter 2024 Results\nFebruary 20, 2025Stock 
+   Information\nAlibaba Group (BABA) - NYSE\n$\n112.280\n-$1.690（-1.483%
+   2025-04-15T20:01 EDTAlibaba Group (9988) - HKEX\nHK$\n104.400\n-HK$5.500
+   （-5.005%）\n2025-04-16T12:00 HKT\nPrices shown in HKD', 
+   'score': 0.33736322991609163, 'publish_time': 1744646400000},
+{'result_id': 2, 'title': 'technode'.....}
+]}
+===============================================================================
+"""

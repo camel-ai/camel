@@ -42,6 +42,17 @@ class ModelType(UnifiedModelType, Enum):
     GPT_4_1 = "gpt-4.1-2025-04-14"
     GPT_4_1_MINI = "gpt-4.1-mini-2025-04-14"
     GPT_4_1_NANO = "gpt-4.1-nano-2025-04-14"
+    O4_MINI = "o4-mini"
+    O3 = "o3"
+
+    AWS_CLAUDE_3_7_SONNET = "anthropic.claude-3-7-sonnet-20250219-v1:0"
+    AWS_CLAUDE_3_5_SONNET = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+    AWS_CLAUDE_3_HAIKU = "anthropic.claude-3-haiku-20240307-v1:0"
+    AWS_CLAUDE_3_SONNET = "anthropic.claude-3-sonnet-20240229-v1:0"
+    AWS_DEEPSEEK_R1 = "us.deepseek.r1-v1:0"
+    AWS_LLAMA_3_3_70B_INSTRUCT = "us.meta.llama3-3-70b-instruct-v1:0"
+    AWS_LLAMA_3_2_90B_INSTRUCT = "us.meta.llama3-2-90b-instruct-v1:0"
+    AWS_LLAMA_3_2_11B_INSTRUCT = "us.meta.llama3-2-11b-instruct-v1:0"
 
     GLM_4 = "glm-4"
     GLM_4V = "glm-4v"
@@ -74,6 +85,12 @@ class ModelType(UnifiedModelType, Enum):
     OPENROUTER_LLAMA_4_SCOUT = "meta-llama/llama-4-scout"
     OPENROUTER_LLAMA_4_SCOUT_FREE = "meta-llama/llama-4-scout:free"
     OPENROUTER_OLYMPICODER_7B = "open-r1/olympiccoder-7b:free"
+
+    # LMStudio models
+    LMSTUDIO_GEMMA_3_1B = "gemma-3-1b"
+    LMSTUDIO_GEMMA_3_4B = "gemma-3-4b"
+    LMSTUDIO_GEMMA_3_12B = "gemma-3-12b"
+    LMSTUDIO_GEMMA_3_27B = "gemma-3-27b"
 
     # TogetherAI platform models support tool calling
     TOGETHER_LLAMA_3_1_8B = "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo"
@@ -131,6 +148,18 @@ class ModelType(UnifiedModelType, Enum):
     CLAUDE_3_5_SONNET = "claude-3-5-sonnet-latest"
     CLAUDE_3_5_HAIKU = "claude-3-5-haiku-latest"
     CLAUDE_3_7_SONNET = "claude-3-7-sonnet-latest"
+
+    # Netmind models
+    NETMIND_LLAMA_4_MAVERICK_17B_128E_INSTRUCT = (
+        "meta-llama/Llama-4-Maverick-17B-128E-Instruct"
+    )
+    NETMIND_LLAMA_4_SCOUT_17B_16E_INSTRUCT = (
+        "meta-llama/Llama-4-Scout-17B-16E-Instruct"
+    )
+    NETMIND_DEEPSEEK_R1 = "deepseek-ai/DeepSeek-R1"
+    NETMIND_DEEPSEEK_V3 = "deepseek-ai/DeepSeek-V3-0324"
+    NETMIND_DOUBAO_1_5_PRO = "doubao/Doubao-1.5-pro"
+    NETMIND_QWQ_32B = "Qwen/QwQ-32B"
 
     # Nvidia models
     NVIDIA_NEMOTRON_340B_INSTRUCT = "nvidia/nemotron-4-340b-instruct"
@@ -241,6 +270,63 @@ class ModelType(UnifiedModelType, Enum):
     AIML_MIXTRAL_8X7B = "mistralai/Mixtral-8x7B-Instruct-v0.1"
     AIML_MISTRAL_7B_INSTRUCT = "mistralai/Mistral-7B-Instruct-v0.1"
 
+    # Novita platform models support tool calling
+    NOVITA_LLAMA_4_MAVERICK_17B = (
+        "meta-llama/llama-4-maverick-17b-128e-instruct-fp8"
+    )
+    NOVITA_LLAMA_4_SCOUT_17B = "meta-llama/llama-4-scout-17b-16e-instruct"
+    NOVITA_DEEPSEEK_V3_0324 = "deepseek/deepseek-v3-0324"
+    NOVITA_QWEN_2_5_V1_72B = "qwen/qwen2.5-vl-72b-instruct"
+    NOVITA_DEEPSEEK_V3_TURBO = "deepseek/deepseek-v3-turbo"
+    NOVITA_DEEPSEEK_R1_TURBO = "deepseek/deepseek-r1-turbo"
+    NOVITA_GEMMA_3_27B_IT = "google/gemma-3-27b-it"
+    NOVITA_QWEN_32B = "qwen/qwq-32b"
+    NOVITA_L3_8B_STHENO_V3_2 = "Sao10K/L3-8B-Stheno-v3.2"
+    NOVITA_MYTHOMAX_L2_13B = "gryphe/mythomax-l2-13b"
+    NOVITA_DEEPSEEK_R1_DISTILL_LLAMA_8B = (
+        "deepseek/deepseek-r1-distill-llama-8b"
+    )
+    NOVITA_DEEPSEEK_V3 = "deepseek/deepseek_v3"
+    NOVITA_LLAMA_3_1_8B = "meta-llama/llama-3.1-8b-instruct"
+    NOVITA_DEEPSEEK_R1_DISTILL_QWEN_14B = (
+        "deepseek/deepseek-r1-distill-qwen-14b"
+    )
+    NOVITA_LLAMA_3_3_70B = "meta-llama/llama-3.3-70b-instruct"
+    NOVITA_QWEN_2_5_72B = "qwen/qwen-2.5-72b-instruct"
+    NOVITA_MISTRAL_NEMO = "mistralai/mistral-nemo"
+    NOVITA_DEEPSEEK_R1_DISTILL_QWEN_32B = (
+        "deepseek/deepseek-r1-distill-qwen-32b"
+    )
+    NOVITA_LLAMA_3_8B = "meta-llama/llama-3-8b-instruct"
+    NOVITA_WIZARDLM_2_8X22B = "microsoft/wizardlm-2-8x22b"
+    NOVITA_DEEPSEEK_R1_DISTILL_LLAMA_70B = (
+        "deepseek/deepseek-r1-distill-llama-70b"
+    )
+    NOVITA_LLAMA_3_1_70B = "meta-llama/llama-3.1-70b-instruct"
+    NOVITA_GEMMA_2_9B_IT = "google/gemma-2-9b-it"
+    NOVITA_MISTRAL_7B = "mistralai/mistral-7b-instruct"
+    NOVITA_LLAMA_3_70B = "meta-llama/llama-3-70b-instruct"
+    NOVITA_DEEPSEEK_R1 = "deepseek/deepseek-r1"
+    NOVITA_HERMES_2_PRO_LLAMA_3_8B = "nousresearch/hermes-2-pro-llama-3-8b"
+    NOVITA_L3_70B_EURYALE_V2_1 = "sao10k/l3-70b-euryale-v2.1"
+    NOVITA_DOLPHIN_MIXTRAL_8X22B = (
+        "cognitivecomputations/dolphin-mixtral-8x22b"
+    )
+    NOVITA_AIROBOROS_L2_70B = "jondurbin/airoboros-l2-70b"
+    NOVITA_MIDNIGHT_ROSE_70B = "sophosympatheia/midnight-rose-70b"
+    NOVITA_L3_8B_LUNARIS = "sao10k/l3-8b-lunaris"
+    NOVITA_GLM_4_9B_0414 = "thudm/glm-4-9b-0414"
+    NOVITA_GLM_Z1_9B_0414 = "thudm/glm-z1-9b-0414"
+    NOVITA_GLM_Z1_32B_0414 = "thudm/glm-z1-32b-0414"
+    NOVITA_GLM_4_32B_0414 = "thudm/glm-4-32b-0414"
+    NOVITA_GLM_Z1_RUMINATION_32B_0414 = "thudm/glm-z1-rumination-32b-0414"
+    NOVITA_QWEN_2_5_7B = "qwen/qwen2.5-7b-instruct"
+    NOVITA_LLAMA_3_2_1B = "meta-llama/llama-3.2-1b-instruct"
+    NOVITA_LLAMA_3_2_11B_VISION = "meta-llama/llama-3.2-11b-vision-instruct"
+    NOVITA_LLAMA_3_2_3B = "meta-llama/llama-3.2-3b-instruct"
+    NOVITA_LLAMA_3_1_8B_BF16 = "meta-llama/llama-3.1-8b-instruct-bf16"
+    NOVITA_L31_70B_EURYALE_V2_2 = "sao10k/l31-70b-euryale-v2.2"
+
     # ModelScope models support tool calling
     MODELSCOPE_QWEN_2_5_7B_INSTRUCT = "Qwen/Qwen2.5-7B-Instruct"
     MODELSCOPE_QWEN_2_5_14B_INSTRUCT = "Qwen/Qwen2.5-14B-Instruct"
@@ -249,6 +335,8 @@ class ModelType(UnifiedModelType, Enum):
     MODELSCOPE_QWEN_2_5_CODER_7B_INSTRUCT = "Qwen/Qwen2.5-Coder-7B-Instruct"
     MODELSCOPE_QWEN_2_5_CODER_14B_INSTRUCT = "Qwen/Qwen2.5-Coder-14B-Instruct"
     MODELSCOPE_QWEN_2_5_CODER_32B_INSTRUCT = "Qwen/Qwen2.5-Coder-32B-Instruct"
+    MODELSCOPE_QWEN_3_235B_A22B = "Qwen/Qwen3-235B-A22B"
+    MODELSCOPE_QWEN_3_32B = "Qwen/Qwen3-32B"
     MODELSCOPE_QWQ_32B = "Qwen/QwQ-32B"
     MODELSCOPE_QWQ_32B_PREVIEW = "Qwen/QwQ-32B-Preview"
     MODELSCOPE_LLAMA_3_1_8B_INSTRUCT = (
@@ -308,6 +396,7 @@ class ModelType(UnifiedModelType, Enum):
                 self.is_sambanova,
                 self.is_groq,
                 self.is_openrouter,
+                self.is_lmstudio,
                 self.is_sglang,
                 self.is_moonshot,
                 self.is_siliconflow,
@@ -315,6 +404,7 @@ class ModelType(UnifiedModelType, Enum):
                 self.is_zhipuai,
                 self.is_aiml,
                 self.is_azure_openai,
+                self.is_novita,
             ]
         )
 
@@ -335,6 +425,22 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4_1,
             ModelType.GPT_4_1_MINI,
             ModelType.GPT_4_1_NANO,
+            ModelType.O4_MINI,
+            ModelType.O3,
+        }
+
+    @property
+    def is_aws_bedrock(self) -> bool:
+        r"""Returns whether this type of models is an AWS Bedrock model."""
+        return self in {
+            ModelType.AWS_CLAUDE_3_7_SONNET,
+            ModelType.AWS_CLAUDE_3_5_SONNET,
+            ModelType.AWS_CLAUDE_3_HAIKU,
+            ModelType.AWS_CLAUDE_3_SONNET,
+            ModelType.AWS_DEEPSEEK_R1,
+            ModelType.AWS_LLAMA_3_3_70B_INSTRUCT,
+            ModelType.AWS_LLAMA_3_2_90B_INSTRUCT,
+            ModelType.AWS_LLAMA_3_2_11B_INSTRUCT,
         }
 
     @property
@@ -412,6 +518,16 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.OPENROUTER_LLAMA_4_SCOUT,
             ModelType.OPENROUTER_LLAMA_4_SCOUT_FREE,
             ModelType.OPENROUTER_OLYMPICODER_7B,
+        }
+
+    @property
+    def is_lmstudio(self) -> bool:
+        r"""Returns whether this type of models is served by LMStudio."""
+        return self in {
+            ModelType.LMSTUDIO_GEMMA_3_1B,
+            ModelType.LMSTUDIO_GEMMA_3_4B,
+            ModelType.LMSTUDIO_GEMMA_3_12B,
+            ModelType.LMSTUDIO_GEMMA_3_27B,
         }
 
     @property
@@ -563,6 +679,17 @@ class ModelType(UnifiedModelType, Enum):
         }
 
     @property
+    def is_netmind(self) -> bool:
+        return self in {
+            ModelType.NETMIND_LLAMA_4_MAVERICK_17B_128E_INSTRUCT,
+            ModelType.NETMIND_LLAMA_4_SCOUT_17B_16E_INSTRUCT,
+            ModelType.NETMIND_DEEPSEEK_R1,
+            ModelType.NETMIND_DEEPSEEK_V3,
+            ModelType.NETMIND_DOUBAO_1_5_PRO,
+            ModelType.NETMIND_QWQ_32B,
+        }
+
+    @property
     def is_ppio(self) -> bool:
         return self in {
             ModelType.PPIO_DEEPSEEK_R1_TURBO,
@@ -597,6 +724,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MODELSCOPE_QWEN_2_5_CODER_7B_INSTRUCT,
             ModelType.MODELSCOPE_QWEN_2_5_CODER_14B_INSTRUCT,
             ModelType.MODELSCOPE_QWEN_2_5_CODER_32B_INSTRUCT,
+            ModelType.MODELSCOPE_QWEN_3_235B_A22B,
+            ModelType.MODELSCOPE_QWEN_3_32B,
             ModelType.MODELSCOPE_QWQ_32B,
             ModelType.MODELSCOPE_QWQ_32B_PREVIEW,
             ModelType.MODELSCOPE_LLAMA_3_1_8B_INSTRUCT,
@@ -647,6 +776,54 @@ class ModelType(UnifiedModelType, Enum):
         }
 
     @property
+    def is_novita(self) -> bool:
+        return self in {
+            ModelType.NOVITA_LLAMA_4_MAVERICK_17B,
+            ModelType.NOVITA_LLAMA_4_SCOUT_17B,
+            ModelType.NOVITA_DEEPSEEK_V3_0324,
+            ModelType.NOVITA_QWEN_2_5_V1_72B,
+            ModelType.NOVITA_DEEPSEEK_V3_TURBO,
+            ModelType.NOVITA_DEEPSEEK_R1_TURBO,
+            ModelType.NOVITA_GEMMA_3_27B_IT,
+            ModelType.NOVITA_QWEN_32B,
+            ModelType.NOVITA_L3_8B_STHENO_V3_2,
+            ModelType.NOVITA_MYTHOMAX_L2_13B,
+            ModelType.NOVITA_DEEPSEEK_R1_DISTILL_LLAMA_8B,
+            ModelType.NOVITA_DEEPSEEK_V3,
+            ModelType.NOVITA_LLAMA_3_1_8B,
+            ModelType.NOVITA_DEEPSEEK_R1_DISTILL_QWEN_14B,
+            ModelType.NOVITA_LLAMA_3_3_70B,
+            ModelType.NOVITA_QWEN_2_5_72B,
+            ModelType.NOVITA_MISTRAL_NEMO,
+            ModelType.NOVITA_DEEPSEEK_R1_DISTILL_QWEN_32B,
+            ModelType.NOVITA_LLAMA_3_8B,
+            ModelType.NOVITA_WIZARDLM_2_8X22B,
+            ModelType.NOVITA_DEEPSEEK_R1_DISTILL_LLAMA_70B,
+            ModelType.NOVITA_LLAMA_3_1_70B,
+            ModelType.NOVITA_GEMMA_2_9B_IT,
+            ModelType.NOVITA_MISTRAL_7B,
+            ModelType.NOVITA_LLAMA_3_70B,
+            ModelType.NOVITA_DEEPSEEK_R1,
+            ModelType.NOVITA_HERMES_2_PRO_LLAMA_3_8B,
+            ModelType.NOVITA_L3_70B_EURYALE_V2_1,
+            ModelType.NOVITA_DOLPHIN_MIXTRAL_8X22B,
+            ModelType.NOVITA_AIROBOROS_L2_70B,
+            ModelType.NOVITA_MIDNIGHT_ROSE_70B,
+            ModelType.NOVITA_L3_8B_LUNARIS,
+            ModelType.NOVITA_GLM_4_9B_0414,
+            ModelType.NOVITA_GLM_Z1_9B_0414,
+            ModelType.NOVITA_GLM_Z1_32B_0414,
+            ModelType.NOVITA_GLM_4_32B_0414,
+            ModelType.NOVITA_GLM_Z1_RUMINATION_32B_0414,
+            ModelType.NOVITA_QWEN_2_5_7B,
+            ModelType.NOVITA_LLAMA_3_2_1B,
+            ModelType.NOVITA_LLAMA_3_2_11B_VISION,
+            ModelType.NOVITA_LLAMA_3_2_3B,
+            ModelType.NOVITA_LLAMA_3_1_8B_BF16,
+            ModelType.NOVITA_L31_70B_EURYALE_V2_2,
+        }
+
+    @property
     def is_aiml(self) -> bool:
         return self in {
             ModelType.AIML_MIXTRAL_8X7B,
@@ -673,6 +850,9 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.COHERE_COMMAND_LIGHT,
             ModelType.NVIDIA_NEMOTRON_340B_INSTRUCT,
             ModelType.NVIDIA_NEMOTRON_340B_REWARD,
+            ModelType.NOVITA_MYTHOMAX_L2_13B,
+            ModelType.NOVITA_AIROBOROS_L2_70B,
+            ModelType.NOVITA_MIDNIGHT_ROSE_70B,
         }:
             return 4_096
         elif self in {
@@ -690,12 +870,29 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GLM_4V_FLASH,
             ModelType.GLM_4_AIRX,
             ModelType.OPENROUTER_OLYMPICODER_7B,
+            ModelType.LMSTUDIO_GEMMA_3_1B,
+            ModelType.LMSTUDIO_GEMMA_3_4B,
+            ModelType.LMSTUDIO_GEMMA_3_12B,
+            ModelType.LMSTUDIO_GEMMA_3_27B,
+            ModelType.NOVITA_L3_8B_STHENO_V3_2,
+            ModelType.NOVITA_LLAMA_3_8B,
+            ModelType.NOVITA_GEMMA_2_9B_IT,
+            ModelType.NOVITA_LLAMA_3_70B,
+            ModelType.NOVITA_HERMES_2_PRO_LLAMA_3_8B,
+            ModelType.NOVITA_L3_70B_EURYALE_V2_1,
+            ModelType.NOVITA_L3_8B_LUNARIS,
+            ModelType.NOVITA_LLAMA_3_1_8B_BF16,
+            ModelType.NOVITA_L31_70B_EURYALE_V2_2,
         }:
             return 8_192
         elif self in {
             ModelType.PPIO_BAICHUAN_2_13B_CHAT,
         }:
             return 14_336
+        elif self in {
+            ModelType.NOVITA_DOLPHIN_MIXTRAL_8X22B,
+        }:
+            return 16_000
         elif self in {
             ModelType.GPT_3_5_TURBO,
             ModelType.YI_LIGHTNING,
@@ -709,8 +906,23 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GLM_4V_PLUS_0111,
             ModelType.GLM_ZERO_PREVIEW,
             ModelType.PPIO_YI_1_5_34B_CHAT,
+            ModelType.NOVITA_LLAMA_3_1_8B,
         }:
             return 16_384
+        elif self in {
+            ModelType.NETMIND_DOUBAO_1_5_PRO,
+            ModelType.NOVITA_GEMMA_3_27B_IT,
+            ModelType.NOVITA_DEEPSEEK_R1_DISTILL_LLAMA_8B,
+            ModelType.NOVITA_QWEN_2_5_72B,
+            ModelType.NOVITA_DEEPSEEK_R1_DISTILL_LLAMA_70B,
+            ModelType.NOVITA_GLM_4_9B_0414,
+            ModelType.NOVITA_GLM_Z1_9B_0414,
+            ModelType.NOVITA_GLM_Z1_32B_0414,
+            ModelType.NOVITA_GLM_4_32B_0414,
+            ModelType.NOVITA_GLM_Z1_RUMINATION_32B_0414,
+            ModelType.NOVITA_QWEN_2_5_7B,
+        }:
+            return 32_000
         elif self in {
             ModelType.MISTRAL_CODESTRAL,
             ModelType.MISTRAL_7B,
@@ -744,6 +956,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MODELSCOPE_QWEN_2_5_CODER_7B_INSTRUCT,
             ModelType.MODELSCOPE_QWEN_2_5_CODER_14B_INSTRUCT,
             ModelType.MODELSCOPE_QWEN_2_5_CODER_32B_INSTRUCT,
+            ModelType.MODELSCOPE_QWEN_3_235B_A22B,
+            ModelType.MODELSCOPE_QWEN_3_32B,
             ModelType.MODELSCOPE_QWQ_32B,
             ModelType.MODELSCOPE_QWQ_32B_PREVIEW,
             ModelType.MODELSCOPE_LLAMA_3_1_8B_INSTRUCT,
@@ -753,6 +967,11 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MODELSCOPE_MINISTRAL_8B_INSTRUCT,
             ModelType.MODELSCOPE_DEEPSEEK_V3_0324,
             ModelType.OPENROUTER_LLAMA_3_1_405B,
+            ModelType.NOVITA_QWEN_32B,
+            ModelType.NOVITA_LLAMA_3_1_70B,
+            ModelType.NOVITA_MISTRAL_7B,
+            ModelType.NOVITA_LLAMA_3_2_11B_VISION,
+            ModelType.NOVITA_LLAMA_3_2_3B,
         }:
             return 32_768
         elif self in {
@@ -765,8 +984,24 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.PPIO_DEEPSEEK_V3_COMMUNITY,
             ModelType.PPIO_DEEPSEEK_R1,
             ModelType.PPIO_DEEPSEEK_V3,
+            ModelType.AWS_DEEPSEEK_R1,
+            ModelType.NETMIND_QWQ_32B,
+            ModelType.NOVITA_DEEPSEEK_V3_TURBO,
+            ModelType.NOVITA_DEEPSEEK_R1_TURBO,
+            ModelType.NOVITA_DEEPSEEK_V3,
+            ModelType.NOVITA_DEEPSEEK_R1_DISTILL_QWEN_14B,
+            ModelType.NOVITA_DEEPSEEK_R1_DISTILL_QWEN_32B,
+            ModelType.NOVITA_DEEPSEEK_R1,
         }:
             return 64_000
+        elif self in {
+            ModelType.NOVITA_WIZARDLM_2_8X22B,
+        }:
+            return 65_535
+        elif self in {
+            ModelType.NOVITA_QWEN_2_5_V1_72B,
+        }:
+            return 96_000
         elif self in {
             ModelType.CLAUDE_2_0,
             ModelType.CLAUDE_INSTANT_1_2,
@@ -811,8 +1046,18 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GLM_4_AIR_0111,
             ModelType.GLM_4_FLASHX,
             ModelType.GLM_4_FLASH,
+            ModelType.AWS_LLAMA_3_3_70B_INSTRUCT,
+            ModelType.AWS_LLAMA_3_2_90B_INSTRUCT,
+            ModelType.AWS_LLAMA_3_2_11B_INSTRUCT,
+            ModelType.NETMIND_DEEPSEEK_R1,
+            ModelType.NETMIND_DEEPSEEK_V3,
+            ModelType.NOVITA_DEEPSEEK_V3_0324,
         }:
             return 128_000
+        elif self in {
+            ModelType.NOVITA_LLAMA_3_2_1B,
+        }:
+            return 131_000
         elif self in {
             ModelType.GROQ_LLAMA_3_1_8B,
             ModelType.QWEN_PLUS,
@@ -828,6 +1073,9 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.OPENROUTER_LLAMA_3_1_70B,
             ModelType.PPIO_LLAMA_3_3_70B,
             ModelType.OPENROUTER_LLAMA_4_SCOUT,
+            ModelType.NOVITA_LLAMA_4_SCOUT_17B,
+            ModelType.NOVITA_LLAMA_3_3_70B,
+            ModelType.NOVITA_MISTRAL_NEMO,
         }:
             return 131_072
         elif self in {
@@ -841,6 +1089,12 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_5_HAIKU,
             ModelType.CLAUDE_3_7_SONNET,
             ModelType.YI_MEDIUM_200K,
+            ModelType.AWS_CLAUDE_3_5_SONNET,
+            ModelType.AWS_CLAUDE_3_HAIKU,
+            ModelType.AWS_CLAUDE_3_SONNET,
+            ModelType.AWS_CLAUDE_3_7_SONNET,
+            ModelType.O4_MINI,
+            ModelType.O3,
         }:
             return 200_000
         elif self in {
@@ -848,8 +1102,14 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.OPENROUTER_LLAMA_4_MAVERICK_FREE,
         }:
             return 256_000
+
+        elif self in {
+            ModelType.NETMIND_LLAMA_4_SCOUT_17B_16E_INSTRUCT,
+        }:
+            return 320_000
         elif self in {
             ModelType.OPENROUTER_LLAMA_4_SCOUT_FREE,
+            ModelType.NETMIND_LLAMA_4_MAVERICK_17B_128E_INSTRUCT,
         }:
             return 512_000
         elif self in {
@@ -866,6 +1126,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4_1,
             ModelType.GPT_4_1_MINI,
             ModelType.GPT_4_1_NANO,
+            ModelType.NOVITA_LLAMA_4_MAVERICK_17B,
         }:
             return 1_048_576
         elif self in {
@@ -1034,12 +1295,14 @@ class ModelPlatformType(Enum):
     DEFAULT = os.getenv("DEFAULT_MODEL_PLATFORM_TYPE", "openai")
 
     OPENAI = "openai"
+    AWS_BEDROCK = "aws-bedrock"
     AZURE = "azure"
     ANTHROPIC = "anthropic"
     GROQ = "groq"
     OPENROUTER = "openrouter"
     OLLAMA = "ollama"
     LITELLM = "litellm"
+    LMSTUDIO = "lmstudio"
     ZHIPU = "zhipuai"
     GEMINI = "gemini"
     VLLM = "vllm"
@@ -1061,6 +1324,8 @@ class ModelPlatformType(Enum):
     SILICONFLOW = "siliconflow"
     AIML = "aiml"
     VOLCANO = "volcano"
+    NETMIND = "netmind"
+    NOVITA = "novita"
 
     @classmethod
     def from_name(cls, name):
@@ -1074,6 +1339,11 @@ class ModelPlatformType(Enum):
     def is_openai(self) -> bool:
         r"""Returns whether this platform is openai."""
         return self is ModelPlatformType.OPENAI
+
+    @property
+    def is_aws_bedrock(self) -> bool:
+        r"""Returns whether this platform is aws-bedrock."""
+        return self is ModelPlatformType.AWS_BEDROCK
 
     @property
     def is_azure(self) -> bool:
@@ -1094,6 +1364,11 @@ class ModelPlatformType(Enum):
     def is_openrouter(self) -> bool:
         r"""Returns whether this platform is openrouter."""
         return self is ModelPlatformType.OPENROUTER
+
+    @property
+    def is_lmstudio(self) -> bool:
+        r"""Returns whether this platform is lmstudio."""
+        return self is ModelPlatformType.LMSTUDIO
 
     @property
     def is_ollama(self) -> bool:
@@ -1177,6 +1452,11 @@ class ModelPlatformType(Enum):
         return self is ModelPlatformType.DEEPSEEK
 
     @property
+    def is_netmind(self) -> bool:
+        r"""Returns whether this platform is Netmind."""
+        return self is ModelPlatformType.NETMIND
+
+    @property
     def is_ppio(self) -> bool:
         r"""Returns whether this platform is PPIO."""
         return self is ModelPlatformType.PPIO
@@ -1210,6 +1490,11 @@ class ModelPlatformType(Enum):
     def is_volcano(self) -> bool:
         r"""Returns whether this platform is volcano."""
         return self is ModelPlatformType.VOLCANO
+
+    @property
+    def is_novita(self) -> bool:
+        r"""Returns whether this platform is Novita."""
+        return self is ModelPlatformType.NOVITA
 
 
 class AudioModelType(Enum):

@@ -715,11 +715,11 @@ class ChatAgent(BaseAgent):
                         if external_tool_call_requests is None:
                             external_tool_call_requests = []
                         external_tool_call_requests.append(tool_call_request)
-
-                    tool_call_record = await self._aexecute_tool(
-                        tool_call_request
-                    )
-                    tool_call_records.append(tool_call_record)
+                    else:
+                        tool_call_record = await self._aexecute_tool(
+                            tool_call_request
+                        )
+                        tool_call_records.append(tool_call_record)
 
                 # If we found an external tool call, break the loop
                 if external_tool_call_requests:

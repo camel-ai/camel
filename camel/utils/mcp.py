@@ -69,7 +69,7 @@ class MCPServer:
                 func = getattr(instance, name, None)
                 if func is None or not callable(func):
                     raise ValueError(
-                        f"Method {name} not found in class {cls.__name} or "
+                        f"Method {name} not found in class {cls.__name__} or "
                         "cannot be called."
                     )
                 wrapper = self.make_wrapper(func)
