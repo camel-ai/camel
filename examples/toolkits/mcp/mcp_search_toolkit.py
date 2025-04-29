@@ -14,47 +14,100 @@
 
 import json
 
-from camel.agents import ChatAgent
 from camel.toolkits import PulseMCPSearchToolkit
 
 # Create an instance of the MCP search toolkit
 search_toolkit = PulseMCPSearchToolkit()
 
 # Example 1: Search for MCP servers with a specific query
-print("Example 1: Search for MCP servers related to 'code generation'")
+print("Example 1: Search for MCP servers related to 'github'")
 search_results = search_toolkit.search_mcp_servers(
-    query="code generation",
-    count_per_page=5,  # Limit to 5 results for brevity
+    query="github",
+    top_k=4,  # Limit to 4 results for brevity
 )
 print(json.dumps(search_results, indent=2))
+"""
+Example 1: Search for MCP servers related to 'github'
+{
+  "servers": [
+    {
+      "name": "GitHub",
+      "url": "https://www.pulsemcp.com/servers/modelcontextprotocol-github",
+      "external_url": null,
+      "short_description": "Manage repositories, issues, and search code via GitHub API.",
+      "source_code_url": "https://github.com/modelcontextprotocol/servers/tree/HEAD/src/github",
+      "github_stars": 41847,
+      "package_registry": "npm",
+      "package_name": "@modelcontextprotocol/server-github",
+      "package_download_count": 710829,
+      "EXPERIMENTAL_ai_generated_description": "This GitHub MCP server, developed by Anthropic, provides AI assistants with comprehensive access to GitHub's API functionality. It enables operations like file management, repository creation, issue tracking, and advanced code search across GitHub. Built in TypeScript, the implementation handles authentication, request formatting, and exposes GitHub's features through a standardized MCP interface. By bridging AI models and GitHub's development platform, this server allows AI systems to interact with code repositories, manage projects, and analyze development workflows. It is particularly useful for AI assistants supporting software development teams in tasks like code review, project management, and collaborative coding on GitHub."
+    },
+    {
+      "name": "GitHub",
+      "url": "https://www.pulsemcp.com/servers/github",
+      "external_url": "https://github.blog/changelog/2025-04-04-github-mcp-server-public-preview/",
+      "short_description": "Integration with GitHub Issues, Pull Requests, and more.",
+      "source_code_url": "https://github.com/github/github-mcp-server",
+      "github_stars": 12571,
+      "package_registry": null,
+      "package_name": null,
+      "package_download_count": null,
+      "EXPERIMENTAL_ai_generated_description": "A Model Context Protocol (MCP) server for GitHub that enables AI assistants to access GitHub repositories, issues, pull requests, and other GitHub data."
+    },
+    {
+      "name": "Pipedream",
+      "url": "https://www.pulsemcp.com/servers/pipedream",
+      "external_url": "https://mcp.pipedream.com/",
+      "short_description": "Access hosted MCP servers or deploy your own for 2,500+ APIs like Slack, GitHub, Notion, Google Drive, and more, all with built-in auth and 10k tools.",
+      "source_code_url": "https://github.com/pipedreamhq/pipedream/tree/HEAD/modelcontextprotocol",
+      "github_stars": 9646,
+      "package_registry": "npm",
+      "package_name": "@pipedream/mcp",
+      "package_download_count": 2303,
+      "EXPERIMENTAL_ai_generated_description": "Pipedream's MCP server lets you:\n- Run the servers locally with npx @pipedream/mcp\n- Host the servers yourself to use them within your app or company\n\nSome of the key features include the ability to:\n- Run your own MCP server for over 2,500 apps\n- Manage servers for your users, in your own app.\n- Connect accounts, configure params, and make API requests, all via tools\n- Fully-managed OAuth and credential storage "
+    },
+    {
+      "name": "GitMCP (GitHub to MCP)",
+      "url": "https://www.pulsemcp.com/servers/idosal-git-mcp",
+      "external_url": "https://gitmcp.io/",
+      "short_description": "GitMCP is a free, open-source, remote Model Context Protocol (MCP) server that transforms any GitHub project (repositories or GitHub pages) into a documentation hub. It allows AI tools like Cursor to access up-to-date documentation and code, ending hallucinations seamlessly.",
+      "source_code_url": "https://github.com/idosal/git-mcp",
+      "github_stars": 1864,
+      "package_registry": null,
+      "package_name": null,
+      "package_download_count": null,
+      "EXPERIMENTAL_ai_generated_description": "Transforms any GitHub project (repositories or GitHub pages) into a documentation hub. It allows AI tools like Cursor to access up-to-date documentation and code, ending hallucinations seamlessly."
+    }
+  ]
+}
+"""  # noqa: E501
 
-
-research_results = search_toolkit.search_mcp_servers(
-    query="github",
-    count_per_page=5,  # Limit to 5 results for brevity
+# Example 2: Search for MCP servers restricted to a specific package registry
+print(
+    "Example 2: Search for MCP servers restricted to a specific package registry"  # noqa: E501
 )
-print(json.dumps(research_results, indent=2))
-
-# Example 2: Get details about a specific MCP server
-print("Example 2: Get details about a specific MCP server")
-server_details = search_toolkit.get_mcp_server_details(
-    server_name="github",
+search_results = search_toolkit.search_mcp_servers(
+    query="Slack",
+    package_registry="npm",  # Only search for servers registered in npm
+    top_k=1,
 )
-print(json.dumps(server_details, indent=2))
-
-# Example 3: Using with ChatAgent
-print("Example 3: Using with ChatAgent")
-
-agent = ChatAgent(
-    system_message="""You are a helpful assistant that can search for and 
-    provide information about MCP servers and tools.""",
-    tools=[
-        *search_toolkit.get_tools(),
-    ],
-)
-
-user_message = "What are the most popular MCP servers available?"
-
-response = agent.step(input_message=user_message)
-print(f"User: {user_message}")
-print(f"Agent: {response.msgs[0].content}")
+print(json.dumps(search_results, indent=2))
+"""
+Example 2: Search for MCP servers restricted to a specific package registry
+{
+  "servers": [
+    {
+      "name": "Slack",
+      "url": "https://www.pulsemcp.com/servers/slack",
+      "external_url": null,
+      "short_description": "Send messages, manage channels, and access workspace history.",
+      "source_code_url": "https://github.com/modelcontextprotocol/servers/tree/HEAD/src/slack",
+      "github_stars": 41847,
+      "package_registry": "npm",
+      "package_name": "@modelcontextprotocol/server-slack",
+      "package_download_count": 188989,
+      "EXPERIMENTAL_ai_generated_description": "This Slack MCP Server, developed by the Anthropic team, provides a robust interface for language models to interact with Slack workspaces. It enables AI agents to perform a wide range of Slack-specific tasks including listing channels, posting messages, replying to threads, adding reactions, retrieving channel history, and accessing user information. The implementation distinguishes itself by offering comprehensive Slack API integration, making it ideal for AI-driven workplace communication and automation. By leveraging Slack's Bot User OAuth Tokens, it ensures secure and authorized access to workspace data. This tool is particularly powerful for AI assistants designed to enhance team collaboration, automate routine communication tasks, and provide intelligent insights from Slack conversations."
+    }
+  ]
+}
+"""  # noqa: E501
