@@ -18,10 +18,12 @@ from typing import List, Optional
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
+from camel.utils import MCPServer
 
 logger = get_logger(__name__)
 
 
+@MCPServer()
 class SymPyToolkit(BaseToolkit):
     r"""A toolkit for performing symbolic computations using SymPy.
     This includes methods for Algebraic manipulation calculus

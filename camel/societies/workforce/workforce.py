@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import logging
 from collections import deque
 from typing import Deque, Dict, List, Optional
 
@@ -23,6 +22,7 @@ from colorama import Fore
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
+from camel.logger import get_logger
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
 from camel.societies.workforce.base import BaseNode
@@ -44,7 +44,7 @@ from camel.tasks.task import Task, TaskState
 from camel.toolkits import GoogleMapsToolkit, SearchToolkit, WeatherToolkit
 from camel.types import ModelPlatformType, ModelType
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class Workforce(BaseNode):
@@ -60,13 +60,16 @@ class Workforce(BaseNode):
             another workforce node. (default: :obj:`None`)
         coordinator_agent_kwargs (Optional[Dict], optional): Keyword
             arguments for the coordinator agent, e.g. `model`, `api_key`,
-            `tools`, etc. (default: :obj:`None`)
+            `tools`, etc. If not provided, default model settings will be used.
+            (default: :obj:`None`)
         task_agent_kwargs (Optional[Dict], optional): Keyword arguments for
             the task agent, e.g. `model`, `api_key`, `tools`, etc.
+            If not provided, default model settings will be used.
             (default: :obj:`None`)
         new_worker_agent_kwargs (Optional[Dict]): Default keyword arguments
             for the worker agent that will be created during runtime to
             handle failed tasks, e.g. `model`, `api_key`, `tools`, etc.
+            If not provided, default model settings will be used.
             (default: :obj:`None`)
     """
 
@@ -82,6 +85,26 @@ class Workforce(BaseNode):
         self._child_listening_tasks: Deque[asyncio.Task] = deque()
         self._children = children or []
         self.new_worker_agent_kwargs = new_worker_agent_kwargs
+
+        # Warning messages for default model usage
+        if coordinator_agent_kwargs is None:
+            logger.warning(
+                "No coordinator_agent_kwargs provided. "
+                "Using `ModelPlatformType.DEFAULT` and `ModelType.DEFAULT` "
+                "for coordinator agent."
+            )
+        if task_agent_kwargs is None:
+            logger.warning(
+                "No task_agent_kwargs provided. "
+                "Using `ModelPlatformType.DEFAULT` and `ModelType.DEFAULT` "
+                "for task agent."
+            )
+        if new_worker_agent_kwargs is None:
+            logger.warning(
+                "No new_worker_agent_kwargs provided. "
+                "Using `ModelPlatformType.DEFAULT` and `ModelType.DEFAULT` "
+                "for worker agents created during runtime."
+            )
 
         coord_agent_sys_msg = BaseMessage.make_assistant_message(
             role_name="Workforce Manager",

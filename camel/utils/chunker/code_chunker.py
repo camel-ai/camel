@@ -12,9 +12,10 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import re
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
-from unstructured.documents.elements import Element, ElementMetadata
+if TYPE_CHECKING:
+    from unstructured.documents.elements import Element
 
 from camel.utils import get_model_encoding
 
@@ -23,18 +24,15 @@ from .base import BaseChunker
 
 class CodeChunker(BaseChunker):
     r"""A class for chunking code or text while respecting structure
-        and token limits.
+    and token limits.
 
-        This class ensures that structured elements such as functions,
-        classes, and regions are not arbitrarily split across chunks.
-        It also handles oversized lines and Base64-encoded images.
+    This class ensures that structured elements such as functions,
+    classes, and regions are not arbitrarily split across chunks.
+    It also handles oversized lines and Base64-encoded images.
 
     Attributes:
         chunk_size (int, optional): The maximum token size per chunk.
             (default: :obj:`8192`)
-        token_counter (BaseTokenCounter, optional): The tokenizer used for
-            token counting, if `None`, OpenAITokenCounter will be used.
-            (default: :obj:`None`)
         remove_image: (bool, optional): If the chunker should skip the images.
         model_name (str, optional): The tokenizer model name used
             for token counting. (default: :obj:`"cl100k_base"`)
@@ -98,7 +96,7 @@ class CodeChunker(BaseChunker):
             chunks.append(self.tokenizer.decode(buffer))
         return chunks
 
-    def chunk(self, content: List[str]) -> List[Element]:
+    def chunk(self, content: List[str]) -> List["Element"]:
         r"""Splits the content into smaller chunks while preserving
         structure and adhering to token constraints.
 
@@ -108,6 +106,8 @@ class CodeChunker(BaseChunker):
         Returns:
             List[str]: A list of chunked text segments.
         """
+        from unstructured.documents.elements import Element, ElementMetadata
+
         content_str = "\n".join(map(str, content))
         chunks = []
         current_chunk: list[str] = []

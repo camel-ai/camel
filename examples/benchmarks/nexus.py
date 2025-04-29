@@ -30,7 +30,7 @@ benchmark.download()
 # Set the task (sub-dataset) to be benchmarked
 task = "OTX"
 
-# Please note that the following step is only for demostration purposes,
+# Please note that the following step is only for demonstration purposes,
 # it has been integrated into the run method of the benchmark.
 # The tools fetched here are used to construct the prompt for the task,
 # which will be passed to the agent for response.

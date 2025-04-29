@@ -138,7 +138,7 @@ async def test_verify_success(test_verifier):
 
     result = await test_verifier.verify(
         solution="This is a successful response",
-        ground_truth="Expected response",
+        reference_answer="Expected response",
     )
 
     assert result.status == VerificationOutcome.SUCCESS
@@ -156,7 +156,7 @@ async def test_verify_failure(test_verifier):
 
     result = await test_verifier.verify(
         solution="This will fail the verification",
-        ground_truth="Expected response",
+        reference_answer="Expected response",
     )
 
     assert result.status == VerificationOutcome.FAILURE
@@ -177,7 +177,7 @@ async def test_verify_error_with_retry(test_verifier):
     with patch("asyncio.sleep", new_callable=AsyncMock):
         result = await test_verifier.verify(
             solution="This will cause an error",
-            ground_truth="Expected response",
+            reference_answer="Expected response",
         )
 
         assert result.status == VerificationOutcome.ERROR
@@ -200,7 +200,7 @@ async def test_verify_timeout(test_verifier):
     ):
         result = await test_verifier.verify(
             solution="This will timeout",
-            ground_truth="Expected response",
+            reference_answer="Expected response",
         )
 
         assert result.status == VerificationOutcome.TIMEOUT
@@ -222,7 +222,7 @@ async def test_verify_not_setup():
         )
     )
 
-    await verifier.verify(solution="Test", ground_truth="Expected")
+    await verifier.verify(solution="Test", reference_answer="Expected")
 
     verifier.setup.assert_called_once()
 
@@ -369,19 +369,19 @@ async def test_full_verification_flow():
         assert verifier._is_setup is True
 
         success_result = await verifier.verify(
-            solution="This should succeed", ground_truth="Expected"
+            solution="This should succeed", reference_answer="Expected"
         )
         assert success_result.status == VerificationOutcome.SUCCESS
 
         failure_result = await verifier.verify(
-            solution="This will fail", ground_truth="Expected"
+            solution="This will fail", reference_answer="Expected"
         )
         assert failure_result.status == VerificationOutcome.FAILURE
 
         with patch("asyncio.sleep", new_callable=AsyncMock):
             error_result = await verifier.verify(
                 solution="This will cause an error",
-                ground_truth="Expected",
+                reference_answer="Expected",
             )
             assert error_result.status == VerificationOutcome.ERROR
 

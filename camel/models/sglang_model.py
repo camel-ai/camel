@@ -119,7 +119,9 @@ class SGLangModel(BaseModelBackend):
                 )
 
                 server_process = _execute_shell_command(cmd)
-                _wait_for_server("http://localhost:30000")
+                _wait_for_server(
+                    base_url="http://localhost:30000", timeout=self._timeout
+                )
                 self._url = "http://127.0.0.1:30000/v1"
                 self.server_process = server_process  # type: ignore[assignment]
                 # Start the inactivity monitor in a background thread
@@ -356,12 +358,12 @@ def _execute_shell_command(command: str) -> subprocess.Popen:
     return subprocess.Popen(parts, text=True, stderr=subprocess.STDOUT)
 
 
-def _wait_for_server(base_url: str, timeout: Optional[int] = 30) -> None:
+def _wait_for_server(base_url: str, timeout: Optional[float] = 30) -> None:
     r"""Wait for the server to be ready by polling the /v1/models endpoint.
 
     Args:
         base_url (str): The base URL of the server
-        timeout (Optional[int]): Maximum time to wait in seconds.
+        timeout (Optional[float]): Maximum time to wait in seconds.
             (default: :obj:`30`)
     """
     import requests
