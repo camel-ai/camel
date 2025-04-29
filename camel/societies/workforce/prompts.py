@@ -67,6 +67,7 @@ Following is the information of the existing worker nodes. The format is <ID>:<d
 {child_nodes_info}
 ==============================
 
+
 You must return the ID of the worker node that you think is most capable of doing the task.
 Your response MUST be a valid JSON object containing a single field: 'assignee_id' (a string with the chosen worker node ID).
 
