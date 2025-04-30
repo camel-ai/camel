@@ -275,57 +275,57 @@ class ModelType(UnifiedModelType, Enum):
         "meta-llama/llama-4-maverick-17b-128e-instruct-fp8"
     )
     NOVITA_LLAMA_4_SCOUT_17B = "meta-llama/llama-4-scout-17b-16e-instruct"
-    NOVITA_DEEPSEEK_V3_0324 = ("deepseek/deepseek-v3-0324",)
-    NOVITA_QWEN_2_5_V1_72B = ("qwen/qwen2.5-vl-72b-instruct",)
-    NOVITA_DEEPSEEK_V3_TURBO = ("deepseek/deepseek-v3-turbo",)
-    NOVITA_DEEPSEEK_R1_TURBO = ("deepseek/deepseek-r1-turbo",)
-    NOVITA_GEMMA_3_27B_IT = ("google/gemma-3-27b-it",)
-    NOVITA_QWEN_32B = ("qwen/qwq-32b",)
-    NOVITA_L3_8B_STHENO_V3_2 = ("Sao10K/L3-8B-Stheno-v3.2",)
-    NOVITA_MYTHOMAX_L2_13B = ("gryphe/mythomax-l2-13b",)
+    NOVITA_DEEPSEEK_V3_0324 = "deepseek/deepseek-v3-0324"
+    NOVITA_QWEN_2_5_V1_72B = "qwen/qwen2.5-vl-72b-instruct"
+    NOVITA_DEEPSEEK_V3_TURBO = "deepseek/deepseek-v3-turbo"
+    NOVITA_DEEPSEEK_R1_TURBO = "deepseek/deepseek-r1-turbo"
+    NOVITA_GEMMA_3_27B_IT = "google/gemma-3-27b-it"
+    NOVITA_QWEN_32B = "qwen/qwq-32b"
+    NOVITA_L3_8B_STHENO_V3_2 = "Sao10K/L3-8B-Stheno-v3.2"
+    NOVITA_MYTHOMAX_L2_13B = "gryphe/mythomax-l2-13b"
     NOVITA_DEEPSEEK_R1_DISTILL_LLAMA_8B = (
-        "deepseek/deepseek-r1-distill-llama-8b",
+        "deepseek/deepseek-r1-distill-llama-8b"
     )
-    NOVITA_DEEPSEEK_V3 = ("deepseek/deepseek_v3",)
-    NOVITA_LLAMA_3_1_8B = ("meta-llama/llama-3.1-8b-instruct",)
+    NOVITA_DEEPSEEK_V3 = "deepseek/deepseek_v3"
+    NOVITA_LLAMA_3_1_8B = "meta-llama/llama-3.1-8b-instruct"
     NOVITA_DEEPSEEK_R1_DISTILL_QWEN_14B = (
-        "deepseek/deepseek-r1-distill-qwen-14b",
+        "deepseek/deepseek-r1-distill-qwen-14b"
     )
-    NOVITA_LLAMA_3_3_70B = ("meta-llama/llama-3.3-70b-instruct",)
-    NOVITA_QWEN_2_5_72B = ("qwen/qwen-2.5-72b-instruct",)
-    NOVITA_MISTRAL_NEMO = ("mistralai/mistral-nemo",)
+    NOVITA_LLAMA_3_3_70B = "meta-llama/llama-3.3-70b-instruct"
+    NOVITA_QWEN_2_5_72B = "qwen/qwen-2.5-72b-instruct"
+    NOVITA_MISTRAL_NEMO = "mistralai/mistral-nemo"
     NOVITA_DEEPSEEK_R1_DISTILL_QWEN_32B = (
-        "deepseek/deepseek-r1-distill-qwen-32b",
+        "deepseek/deepseek-r1-distill-qwen-32b"
     )
-    NOVITA_LLAMA_3_8B = ("meta-llama/llama-3-8b-instruct",)
-    NOVITA_WIZARDLM_2_8X22B = ("microsoft/wizardlm-2-8x22b",)
+    NOVITA_LLAMA_3_8B = "meta-llama/llama-3-8b-instruct"
+    NOVITA_WIZARDLM_2_8X22B = "microsoft/wizardlm-2-8x22b"
     NOVITA_DEEPSEEK_R1_DISTILL_LLAMA_70B = (
-        "deepseek/deepseek-r1-distill-llama-70b",
+        "deepseek/deepseek-r1-distill-llama-70b"
     )
-    NOVITA_LLAMA_3_1_70B = ("meta-llama/llama-3.1-70b-instruct",)
-    NOVITA_GEMMA_2_9B_IT = ("google/gemma-2-9b-it",)
-    NOVITA_MISTRAL_7B = ("mistralai/mistral-7b-instruct",)
-    NOVITA_LLAMA_3_70B = ("meta-llama/llama-3-70b-instruct",)
-    NOVITA_DEEPSEEK_R1 = ("deepseek/deepseek-r1",)
-    NOVITA_HERMES_2_PRO_LLAMA_3_8B = ("nousresearch/hermes-2-pro-llama-3-8b",)
-    NOVITA_L3_70B_EURYALE_V2_1 = ("sao10k/l3-70b-euryale-v2.1",)
+    NOVITA_LLAMA_3_1_70B = "meta-llama/llama-3.1-70b-instruct"
+    NOVITA_GEMMA_2_9B_IT = "google/gemma-2-9b-it"
+    NOVITA_MISTRAL_7B = "mistralai/mistral-7b-instruct"
+    NOVITA_LLAMA_3_70B = "meta-llama/llama-3-70b-instruct"
+    NOVITA_DEEPSEEK_R1 = "deepseek/deepseek-r1"
+    NOVITA_HERMES_2_PRO_LLAMA_3_8B = "nousresearch/hermes-2-pro-llama-3-8b"
+    NOVITA_L3_70B_EURYALE_V2_1 = "sao10k/l3-70b-euryale-v2.1"
     NOVITA_DOLPHIN_MIXTRAL_8X22B = (
-        "cognitivecomputations/dolphin-mixtral-8x22b",
+        "cognitivecomputations/dolphin-mixtral-8x22b"
     )
-    NOVITA_AIROBOROS_L2_70B = ("jondurbin/airoboros-l2-70b",)
-    NOVITA_MIDNIGHT_ROSE_70B = ("sophosympatheia/midnight-rose-70b",)
-    NOVITA_L3_8B_LUNARIS = ("sao10k/l3-8b-lunaris",)
-    NOVITA_GLM_4_9B_0414 = ("thudm/glm-4-9b-0414",)
-    NOVITA_GLM_Z1_9B_0414 = ("thudm/glm-z1-9b-0414",)
-    NOVITA_GLM_Z1_32B_0414 = ("thudm/glm-z1-32b-0414",)
-    NOVITA_GLM_4_32B_0414 = ("thudm/glm-4-32b-0414",)
-    NOVITA_GLM_Z1_RUMINATION_32B_0414 = ("thudm/glm-z1-rumination-32b-0414",)
-    NOVITA_QWEN_2_5_7B = ("qwen/qwen2.5-7b-instruct",)
-    NOVITA_LLAMA_3_2_1B = ("meta-llama/llama-3.2-1b-instruct",)
-    NOVITA_LLAMA_3_2_11B_VISION = ("meta-llama/llama-3.2-11b-vision-instruct",)
-    NOVITA_LLAMA_3_2_3B = ("meta-llama/llama-3.2-3b-instruct",)
-    NOVITA_LLAMA_3_1_8B_BF16 = ("meta-llama/llama-3.1-8b-instruct-bf16",)
-    NOVITA_L31_70B_EURYALE_V2_2 = ("sao10k/l31-70b-euryale-v2.2",)
+    NOVITA_AIROBOROS_L2_70B = "jondurbin/airoboros-l2-70b"
+    NOVITA_MIDNIGHT_ROSE_70B = "sophosympatheia/midnight-rose-70b"
+    NOVITA_L3_8B_LUNARIS = "sao10k/l3-8b-lunaris"
+    NOVITA_GLM_4_9B_0414 = "thudm/glm-4-9b-0414"
+    NOVITA_GLM_Z1_9B_0414 = "thudm/glm-z1-9b-0414"
+    NOVITA_GLM_Z1_32B_0414 = "thudm/glm-z1-32b-0414"
+    NOVITA_GLM_4_32B_0414 = "thudm/glm-4-32b-0414"
+    NOVITA_GLM_Z1_RUMINATION_32B_0414 = "thudm/glm-z1-rumination-32b-0414"
+    NOVITA_QWEN_2_5_7B = "qwen/qwen2.5-7b-instruct"
+    NOVITA_LLAMA_3_2_1B = "meta-llama/llama-3.2-1b-instruct"
+    NOVITA_LLAMA_3_2_11B_VISION = "meta-llama/llama-3.2-11b-vision-instruct"
+    NOVITA_LLAMA_3_2_3B = "meta-llama/llama-3.2-3b-instruct"
+    NOVITA_LLAMA_3_1_8B_BF16 = "meta-llama/llama-3.1-8b-instruct-bf16"
+    NOVITA_L31_70B_EURYALE_V2_2 = "sao10k/l31-70b-euryale-v2.2"
 
     # ModelScope models support tool calling
     MODELSCOPE_QWEN_2_5_7B_INSTRUCT = "Qwen/Qwen2.5-7B-Instruct"
@@ -335,6 +335,8 @@ class ModelType(UnifiedModelType, Enum):
     MODELSCOPE_QWEN_2_5_CODER_7B_INSTRUCT = "Qwen/Qwen2.5-Coder-7B-Instruct"
     MODELSCOPE_QWEN_2_5_CODER_14B_INSTRUCT = "Qwen/Qwen2.5-Coder-14B-Instruct"
     MODELSCOPE_QWEN_2_5_CODER_32B_INSTRUCT = "Qwen/Qwen2.5-Coder-32B-Instruct"
+    MODELSCOPE_QWEN_3_235B_A22B = "Qwen/Qwen3-235B-A22B"
+    MODELSCOPE_QWEN_3_32B = "Qwen/Qwen3-32B"
     MODELSCOPE_QWQ_32B = "Qwen/QwQ-32B"
     MODELSCOPE_QWQ_32B_PREVIEW = "Qwen/QwQ-32B-Preview"
     MODELSCOPE_LLAMA_3_1_8B_INSTRUCT = (
@@ -349,6 +351,22 @@ class ModelType(UnifiedModelType, Enum):
     MODELSCOPE_LLAMA_3_3_70B_INSTRUCT = "LLM-Research/Llama-3.3-70B-Instruct"
     MODELSCOPE_MINISTRAL_8B_INSTRUCT = "mistralai/Ministral-8B-Instruct-2410"
     MODELSCOPE_DEEPSEEK_V3_0324 = "deepseek-ai/DeepSeek-V3-0324"
+
+    # WatsonX models
+    WATSONX_GRANITE_3_8B_INSTRUCT = "ibm/granite-3-8b-instruct"
+    WATSONX_LLAMA_3_3_70B_INSTRUCT = "meta-llama/llama-3-3-70b-instruct"
+    WATSONX_LLAMA_3_2_1B_INSTRUCT = "meta-llama/llama-3-2-1b-instruct"
+    WATSONX_LLAMA_3_2_3B_INSTRUCT = "meta-llama/llama-3-2-3b-instruct"
+    WATSONX_LLAMA_3_2_11B_VISION_INSTRUCT = (
+        "meta-llama/llama-3-2-11b-vision-instruct"
+    )
+    WATSONX_LLAMA_3_2_90B_VISION_INSTRUCT = (
+        "meta-llama/llama-3-2-90b-vision-instruct"
+    )
+    WATSONX_LLAMA_GUARD_3_11B_VISION_INSTRUCT = (
+        "meta-llama/llama-guard-3-11b-vision-instruct"
+    )
+    WATSONX_MISTRAL_LARGE = "mistralai/mistral-large"
 
     def __str__(self):
         return self.value
@@ -722,6 +740,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MODELSCOPE_QWEN_2_5_CODER_7B_INSTRUCT,
             ModelType.MODELSCOPE_QWEN_2_5_CODER_14B_INSTRUCT,
             ModelType.MODELSCOPE_QWEN_2_5_CODER_32B_INSTRUCT,
+            ModelType.MODELSCOPE_QWEN_3_235B_A22B,
+            ModelType.MODELSCOPE_QWEN_3_32B,
             ModelType.MODELSCOPE_QWQ_32B,
             ModelType.MODELSCOPE_QWQ_32B_PREVIEW,
             ModelType.MODELSCOPE_LLAMA_3_1_8B_INSTRUCT,
@@ -769,6 +789,19 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.SILICONFLOW_PRO_QWEN2_5_7B_INSTRUCT,
             ModelType.SILICONFLOW_THUDM_GLM_4_9B_CHAT,
             ModelType.SILICONFLOW_PRO_THUDM_GLM_4_9B_CHAT,
+        }
+
+    @property
+    def is_watsonx(self) -> bool:
+        return self in {
+            ModelType.WATSONX_GRANITE_3_8B_INSTRUCT,
+            ModelType.WATSONX_LLAMA_3_3_70B_INSTRUCT,
+            ModelType.WATSONX_LLAMA_3_2_1B_INSTRUCT,
+            ModelType.WATSONX_LLAMA_3_2_3B_INSTRUCT,
+            ModelType.WATSONX_LLAMA_3_2_11B_VISION_INSTRUCT,
+            ModelType.WATSONX_LLAMA_3_2_90B_VISION_INSTRUCT,
+            ModelType.WATSONX_LLAMA_GUARD_3_11B_VISION_INSTRUCT,
+            ModelType.WATSONX_MISTRAL_LARGE,
         }
 
     @property
@@ -870,6 +903,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.LMSTUDIO_GEMMA_3_4B,
             ModelType.LMSTUDIO_GEMMA_3_12B,
             ModelType.LMSTUDIO_GEMMA_3_27B,
+            ModelType.WATSONX_GRANITE_3_8B_INSTRUCT,
             ModelType.NOVITA_L3_8B_STHENO_V3_2,
             ModelType.NOVITA_LLAMA_3_8B,
             ModelType.NOVITA_GEMMA_2_9B_IT,
@@ -952,6 +986,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MODELSCOPE_QWEN_2_5_CODER_7B_INSTRUCT,
             ModelType.MODELSCOPE_QWEN_2_5_CODER_14B_INSTRUCT,
             ModelType.MODELSCOPE_QWEN_2_5_CODER_32B_INSTRUCT,
+            ModelType.MODELSCOPE_QWEN_3_235B_A22B,
+            ModelType.MODELSCOPE_QWEN_3_32B,
             ModelType.MODELSCOPE_QWQ_32B,
             ModelType.MODELSCOPE_QWQ_32B_PREVIEW,
             ModelType.MODELSCOPE_LLAMA_3_1_8B_INSTRUCT,
@@ -961,6 +997,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MODELSCOPE_MINISTRAL_8B_INSTRUCT,
             ModelType.MODELSCOPE_DEEPSEEK_V3_0324,
             ModelType.OPENROUTER_LLAMA_3_1_405B,
+            ModelType.WATSONX_MISTRAL_LARGE,
             ModelType.NOVITA_QWEN_32B,
             ModelType.NOVITA_LLAMA_3_1_70B,
             ModelType.NOVITA_MISTRAL_7B,
@@ -1067,6 +1104,12 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.OPENROUTER_LLAMA_3_1_70B,
             ModelType.PPIO_LLAMA_3_3_70B,
             ModelType.OPENROUTER_LLAMA_4_SCOUT,
+            ModelType.WATSONX_LLAMA_3_3_70B_INSTRUCT,
+            ModelType.WATSONX_LLAMA_3_2_1B_INSTRUCT,
+            ModelType.WATSONX_LLAMA_3_2_3B_INSTRUCT,
+            ModelType.WATSONX_LLAMA_3_2_11B_VISION_INSTRUCT,
+            ModelType.WATSONX_LLAMA_3_2_90B_VISION_INSTRUCT,
+            ModelType.WATSONX_LLAMA_GUARD_3_11B_VISION_INSTRUCT,
             ModelType.NOVITA_LLAMA_4_SCOUT_17B,
             ModelType.NOVITA_LLAMA_3_3_70B,
             ModelType.NOVITA_MISTRAL_NEMO,
@@ -1320,6 +1363,7 @@ class ModelPlatformType(Enum):
     VOLCANO = "volcano"
     NETMIND = "netmind"
     NOVITA = "novita"
+    WATSONX = "watsonx"
 
     @classmethod
     def from_name(cls, name):
