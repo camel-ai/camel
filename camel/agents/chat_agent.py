@@ -79,7 +79,6 @@ from camel.utils import get_model_encoding
 if TYPE_CHECKING:
     from camel.terminators import ResponseTerminator
 
-
 logger = logging.getLogger(__name__)
 
 # AgentOps decorator setting
@@ -111,10 +110,16 @@ class ChatAgent(BaseAgent):
 
     Args:
         system_message (Union[BaseMessage, str], optional): The system message
-            for the chat agent.
-        model (Union[BaseModelBackend, List[BaseModelBackend], Tuple[str, str],
-            str, Tuple[ModelPlatformType, ModelType]] ModelType, optional):
-            The model backend to use for generating responses. (default:
+            for the chat agent. (default: :obj:`None`)
+        model (Union[BaseModelBackend, Tuple[str, str], str, ModelType,
+            Tuple[ModelPlatformType, ModelType], List[BaseModelBackend],
+            List[str], List[ModelType], List[Tuple[str, str]],
+            List[Tuple[ModelPlatformType, ModelType]]], optional):
+            The model backend(s) to use. Can be a single instance,
+            a specification (string, enum, tuple), or a list of instances
+            or specifications to be managed by `ModelManager`. If a list of
+            specifications (not `BaseModelBackend` instances) is provided,
+            they will be instantiated using `ModelFactory`. (default:
             :obj:`ModelPlatformType.DEFAULT` with `ModelType.DEFAULT`)
         memory (AgentMemory, optional): The agent memory for managing chat
             messages. If `None`, a :obj:`ChatHistoryMemory` will be used.
@@ -154,11 +159,15 @@ class ChatAgent(BaseAgent):
         model: Optional[
             Union[
                 BaseModelBackend,
-                List[BaseModelBackend],
                 Tuple[str, str],
                 str,
                 ModelType,
                 Tuple[ModelPlatformType, ModelType],
+                List[BaseModelBackend],
+                List[str],
+                List[ModelType],
+                List[Tuple[str, str]],
+                List[Tuple[ModelPlatformType, ModelType]],
             ]
         ] = None,
         memory: Optional[AgentMemory] = None,
@@ -174,39 +183,95 @@ class ChatAgent(BaseAgent):
         single_iteration: bool = False,
         agent_id: Optional[str] = None,
     ) -> None:
-        # Handle single enum model or string model specification
-        # e.g. ModelType.GPT_4O_MINI or "gpt-4o-mini"
-        if isinstance(model, (ModelType, str)):
-            # Use the default model platform
+        resolved_models: Union[BaseModelBackend, List[BaseModelBackend]]
+
+        if model is None:
+            # Default single model if none provided
+            resolved_models = ModelFactory.create(
+                model_platform=ModelPlatformType.DEFAULT,
+                model_type=ModelType.DEFAULT,
+            )
+        elif isinstance(model, BaseModelBackend):
+            # Already a single pre-instantiated model
+            resolved_models = model
+        elif isinstance(model, list):
+            if not model:  # Handle empty list
+                logger.warning(
+                    "Empty list provided for model, using default model."
+                )
+                resolved_models = ModelFactory.create(
+                    model_platform=ModelPlatformType.DEFAULT,
+                    model_type=ModelType.DEFAULT,
+                )
+            elif isinstance(model[0], BaseModelBackend):
+                # List of pre-instantiated models
+                resolved_models = model  # type: ignore[assignment]
+            elif isinstance(model[0], (str, ModelType)):
+                # List of strings or ModelTypes -> use default platform
+                resolved_models_list = []
+                model_platform = ModelPlatformType.DEFAULT
+                logger.warning(
+                    f"List of model types {model} provided without platforms. "
+                    f"Using platform '{model_platform}' for all. Note: "
+                    "platform is not automatically inferred based on "
+                    "model type."
+                )
+                for model_type_item in model:
+                    resolved_models_list.append(
+                        ModelFactory.create(
+                            model_platform=model_platform,
+                            model_type=model_type_item,  # type: ignore[arg-type]
+                        )
+                    )
+                resolved_models = resolved_models_list
+            elif isinstance(model[0], tuple) and len(model[0]) == 2:
+                # List of tuples (platform, type)
+                resolved_models_list = []
+                for model_spec in model:
+                    platform, type_ = model_spec[0], model_spec[1]  # type: ignore[index]
+                    resolved_models_list.append(
+                        ModelFactory.create(
+                            model_platform=platform, model_type=type_
+                        )
+                    )
+                resolved_models = resolved_models_list
+            else:
+                raise TypeError(
+                    "Unsupported type for list elements in model: "
+                    f"{type(model[0])}"
+                )
+        elif isinstance(model, (ModelType, str)):
+            # Single string or ModelType -> use default platform
             model_platform = ModelPlatformType.DEFAULT
             model_type = model
-            model = ModelFactory.create(
+            logger.warning(
+                f"Model type '{model_type}' provided without a platform. "
+                f"Using platform '{model_platform}'. Note: platform "
+                "is not automatically inferred based on model type."
+            )
+            resolved_models = ModelFactory.create(
                 model_platform=model_platform,
                 model_type=model_type,
             )
-        # Handle tuple-based model specification
-        # e.g. (ModelPlatformType.OPENAI, ModelType.GPT_4O_MINI)
-        # or ("openai", "gpt-4o-mini")
         elif isinstance(model, tuple) and len(model) == 2:
+            # Single tuple (platform, type)
             model_platform, model_type = model  # type: ignore[assignment]
-            model = ModelFactory.create(
+            resolved_models = ModelFactory.create(
                 model_platform=model_platform,
                 model_type=model_type,
+            )
+        else:
+            raise TypeError(
+                f"Unsupported type for model parameter: {type(model)}"
             )
 
         # Set up model backend
         self.model_backend = ModelManager(
-            (
-                model
-                if model is not None
-                else ModelFactory.create(
-                    model_platform=ModelPlatformType.DEFAULT,
-                    model_type=ModelType.DEFAULT,
-                )
-            ),
+            resolved_models,
             scheduling_strategy=scheduling_strategy,
         )
         self.model_type = self.model_backend.model_type
+
         # Assign unique ID
         self.agent_id = agent_id if agent_id else str(uuid.uuid4())
 

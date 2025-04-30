@@ -1301,7 +1301,9 @@ def test_chat_agent_vision(step_call_count=3):
 
 @pytest.mark.model_backend
 def test_chat_agent_creation_methods():
-    """Test different ways to create a ChatAgent with various model specifications."""  # noqa: E501
+    r"""Test different ways to create a ChatAgent with various model 
+    specifications.
+    """
     # Method 1: Initialize with just a string (model name)
     agent_1 = ChatAgent("You are a helpful assistant.", model="gpt-4o-mini")
     assert agent_1.model_type.value == "gpt-4o-mini"
