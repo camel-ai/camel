@@ -60,6 +60,8 @@ class MCPClient(BaseToolkit):
         timeout (Optional[float]): Connection timeout. (default: :obj:`'None'`)
         headers (Dict[str, str]): Headers for the HTTP request.
             (default: :obj:`'None'`)
+        strict (Optional[bool]): Whether to enforce strict mode for the
+            function call. (default: :obj:`True`)
     """
 
     def __init__(
@@ -69,6 +71,7 @@ class MCPClient(BaseToolkit):
         env: Optional[Dict[str, str]] = None,
         timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
+        strict: Optional[bool] = None,
     ):
         from mcp import Tool
 
@@ -78,6 +81,7 @@ class MCPClient(BaseToolkit):
         self.args = args or []
         self.env = env or {}
         self.headers = headers or {}
+        self.strict = strict or True
 
         self._mcp_tools: List[Tool] = []
         self._session: Optional['ClientSession'] = None
@@ -325,7 +329,7 @@ class MCPClient(BaseToolkit):
                 "name": mcp_tool.name,
                 "description": mcp_tool.description
                 or "No description provided.",
-                "strict": False,
+                "strict": self.strict,
                 "parameters": parameters,
             },
         }
@@ -365,6 +369,8 @@ class MCPToolkit(BaseToolkit):
             instances to manage.
         config_path (Optional[str]): Path to a JSON configuration file
             defining MCP servers.
+        strict (Optional[bool]): Whether to enforce strict mode for the
+            function call. (default: :obj:`True`)
 
     Note:
         Either `servers` or `config_path` must be provided. If both are
@@ -399,6 +405,7 @@ class MCPToolkit(BaseToolkit):
         self,
         servers: Optional[List[MCPClient]] = None,
         config_path: Optional[str] = None,
+        strict: Optional[bool] = None,
     ):
         super().__init__()
 
@@ -411,12 +418,16 @@ class MCPToolkit(BaseToolkit):
         self.servers: List[MCPClient] = servers or []
 
         if config_path:
-            self.servers.extend(self._load_servers_from_config(config_path))
+            self.servers.extend(
+                self._load_servers_from_config(config_path, strict or True)
+            )
 
         self._exit_stack = AsyncExitStack()
         self._connected = False
 
-    def _load_servers_from_config(self, config_path: str) -> List[MCPClient]:
+    def _load_servers_from_config(
+        self, config_path: str, strict: bool
+    ) -> List[MCPClient]:
         r"""Loads MCP server configurations from a JSON file.
 
         Args:
@@ -464,6 +475,7 @@ class MCPToolkit(BaseToolkit):
                 args=cfg.get("args", []),
                 env={**os.environ, **cfg.get("env", {})},
                 timeout=cfg.get("timeout", None),
+                strict=strict,
             )
             all_servers.append(server)
 
