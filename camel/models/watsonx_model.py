@@ -90,12 +90,11 @@ class WatsonXModel(BaseModelBackend):
 
         self._project_id = project_id
         credentials = Credentials(api_key=self._api_key, url=self._url)
-        client = APIClient(credentials)
+        client = APIClient(credentials, project_id=self._project_id)
 
         self._model = ModelInference(
             model_id=self.model_type,
             api_client=client,
-            project_id=self._project_id,
             params=model_config_dict,
         )
 
