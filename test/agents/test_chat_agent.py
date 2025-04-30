@@ -1301,7 +1301,7 @@ def test_chat_agent_vision(step_call_count=3):
 
 @pytest.mark.model_backend
 def test_chat_agent_creation_methods():
-    r"""Test different ways to create a ChatAgent with various model 
+    r"""Test different ways to create a ChatAgent with various model
     specifications.
     """
     # Method 1: Initialize with just a string (model name)
