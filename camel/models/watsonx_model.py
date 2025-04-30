@@ -121,7 +121,7 @@ class WatsonXModel(BaseModelBackend):
     def _prepare_tools(
         self, tools: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
-        """Prepare tools for WatsonX format."""
+        r"""Prepare tools for WatsonX format."""
         if not tools:
             return []
 
