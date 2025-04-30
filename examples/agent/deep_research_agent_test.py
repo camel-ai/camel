@@ -443,7 +443,7 @@ def format_replanner_prompt(query: str, plan_obs_dict: dict) -> str:
         "Now, begin your reasoning and planning. Follow one of the two branches below:\n\n"
         "If the query has already been fully resolved:\n"
         "$Thought$:\n<Your reasoning>\n"
-        "$Answer$:\n<Your answer to the original query>\n"
+        #"$Answer$:\n<Your answer to the original query>\n"
         "$Problem_Resolved$\n\n"
         
 
@@ -545,22 +545,39 @@ for replan_iter in range(max_replan_iter):
     subqueries = extract_plan_subqueries(response.msgs[0].content)
     print("New plans:\n",subqueries)
     if not subqueries:
-        print("Problem Resolved! Stop Now.")
+        print("Problem Resolved! Stop Planning Now.")
         break
 
 
 writter_agent_prompt = (
-    "You are the writer agent in the Camel-AI Deep Research Agent system. Your task is to "
-    "write the final answer based on all the previous plan-observation pairs. Please try to revise the original plan base "
-    "on all the previous information, and generate the the final answer.\n\n"
-    "Please always keep the original Query in mind.\n"
-    f"Query:{query}\n\n"
-    "Previous Plan and Observation Pairs:\n"
+    "You are the writer agent in the CAMEL-AI Deep Research Agent system. "
+    "Your task is to synthesize a final answer to the original query using all prior plan-observation pairs.\n\n"
+    "You should:\n"
+    "- Carefully review all prior plans and their corresponding observations.\n"
+    "- Revise or refine the original plan if needed.\n"
+    "- Identify relevant, accurate, and insightful information from observations.\n"
+    "- Compose a coherent and complete final answer.\n\n"
+    "Please keep the original query clearly in mind throughout the writing process.\n\n"
+    f"Original Query:\n{query}\n\n"
+    "Plan and Observation History:\n"
 )
 for plan, obs in subquery_history.items():
-    writter_agent_prompt += f"<Plan>\n{plan.strip()}\n</Plan>\n<Observation>\n{obs.strip()}\n</Observation>\n\n"
+    writter_agent_prompt += (
+        f"<Plan>\n{plan.strip()}\n</Plan>\n"
+        f"<Observation>\n{obs.strip()}\n</Observation>\n\n"
+    )
 
-writter_agent_prompt +=
+# Set the agent
+writter_agent = ChatAgent(
+    writter_agent_prompt ,
+    model=model,
+    tools=tools_list,
+    #output_language = "Chinese",
+)
+
+final_answer = writter_agent.step('Finalize your response based on the context above.')
+print("Deep Researcher answer:\n", final_answer.msgs[0].content)
+
 
 # Initialize the base chat agent with a tool
 base_agent = ChatAgent(
