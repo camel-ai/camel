@@ -11,13 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import logging
 import os
 from typing import Any, Dict, List, Optional, Type, Union
 
 from pydantic import BaseModel
 
 from camel.configs import WATSONX_API_PARAMS, WatsonXConfig
+from camel.logger import get_logger
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.models._utils import try_modify_message_with_format
@@ -27,6 +27,8 @@ from camel.utils import (
     OpenAITokenCounter,
     api_keys_required,
 )
+
+logger = get_logger(__name__)
 
 
 class WatsonXModel(BaseModelBackend):
@@ -164,6 +166,7 @@ class WatsonXModel(BaseModelBackend):
                 response format. (default: :obj:`None`)
             tools (Optional[List[Dict[str, Any]]], optional): tools to use.
                 (default: :obj:`None`)
+
         Returns:
             ChatCompletion.
         """
@@ -183,7 +186,7 @@ class WatsonXModel(BaseModelBackend):
             return openai_response
 
         except Exception as e:
-            logging.error(f"Unexpected error when calling WatsonX API: {e!s}")
+            logger.error(f"Unexpected error when calling WatsonX API: {e!s}")
             raise
 
     async def _arun(
@@ -201,6 +204,7 @@ class WatsonXModel(BaseModelBackend):
                 response format. (default: :obj:`None`)
             tools (Optional[List[Dict[str, Any]]], optional): tools to use.
                 (default: :obj:`None`)
+
         Returns:
             ChatCompletion.
         """
@@ -220,7 +224,7 @@ class WatsonXModel(BaseModelBackend):
             return openai_response
 
         except Exception as e:
-            logging.error(f"Unexpected error when calling WatsonX API: {e!s}")
+            logger.error(f"Unexpected error when calling WatsonX API: {e!s}")
             raise
 
     def check_model_config(self):
