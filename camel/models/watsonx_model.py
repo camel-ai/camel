@@ -118,15 +118,6 @@ class WatsonXModel(BaseModelBackend):
         )
         return obj
 
-    def _prepare_tools(
-        self, tools: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
-        r"""Prepare tools for WatsonX format."""
-        if not tools:
-            return []
-
-        return tools
-
     @property
     def token_counter(self) -> BaseTokenCounter:
         r"""Initialize the token counter for the model backend.
@@ -152,8 +143,7 @@ class WatsonXModel(BaseModelBackend):
         request_config = copy.deepcopy(self.model_config_dict)
 
         if tools:
-            prepared_tools = self._prepare_tools(tools)
-            request_config["tools"] = prepared_tools
+            request_config["tools"] = tools
             request_config["tool_choice_option"] = "auto"
         elif response_format:
             try_modify_message_with_format(messages[-1], response_format)
