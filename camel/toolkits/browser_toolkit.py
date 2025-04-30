@@ -40,6 +40,9 @@ from PIL import Image, ImageDraw, ImageFont
 
 if TYPE_CHECKING:
     from camel.agents import ChatAgent
+
+from playwright.sync_api import BrowserContext, sync_playwright
+
 from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.models import BaseModelBackend, ModelFactory
@@ -433,60 +436,80 @@ def _get_random_color(identifier: int) -> Tuple[int, int, int, int]:
 class BaseBrowser:
     def __init__(
         self,
-        headless=True,
+        headless: bool = True,
         cache_dir: Optional[str] = None,
+        user_data_dir: Optional[str] = None,
         channel: Literal["chrome", "msedge", "chromium"] = "chromium",
     ):
-        r"""Initialize the WebBrowser instance.
+        r"""Initialize the BaseBrowser instance.
 
         Args:
             headless (bool): Whether to run the browser in headless mode.
-            cache_dir (Union[str, None]): The directory to store cache files.
-            channel (Literal["chrome", "msedge", "chromium"]): The browser
-                channel to use. Must be one of "chrome", "msedge", or
-                "chromium".
-
-        Returns:
-            None
+            cache_dir (Optional[str]): Directory to store cache files.
+            user_data_dir (Optional[str]): Directory to store user data (profile info).
+            channel (Literal["chrome", "msedge", "chromium"]): Browser channel to use.
         """
-        from playwright.sync_api import (
-            sync_playwright,
-        )
+        # self.page: Optional[Page] = None
+        # self.context: Optional[BrowserContext] = None
+        self.browser: Optional[BrowserContext] = None
 
         self.history: list = []
+        self.page_history: list = []
         self.headless = headless
         self.channel = channel
-        self._ensure_browser_installed()
-        self.playwright = sync_playwright().start()
-        self.page_history: list = []  # stores the history of visited pages
+
+        # Manually manage playwright context (simulate 'with' behavior)
+        self._playwright_context = sync_playwright()
+        self.playwright = self._playwright_context.__enter__()
 
         # Set the cache directory
         self.cache_dir = "tmp/" if cache_dir is None else cache_dir
         os.makedirs(self.cache_dir, exist_ok=True)
+
+        # Set the user data directory
+        self.user_data_dir = (
+            "user_data_dir/" if user_data_dir is None else user_data_dir
+        )
 
         # Load the page script
         abs_dir_path = os.path.dirname(os.path.abspath(__file__))
         page_script_path = os.path.join(abs_dir_path, "page_script.js")
 
         try:
-            with open(page_script_path, "r", encoding='utf-8') as f:
+            with open(page_script_path, "r", encoding="utf-8") as f:
                 self.page_script = f.read()
-            f.close()
         except FileNotFoundError:
             raise FileNotFoundError(
                 f"Page script file not found at path: {page_script_path}"
             )
 
     def init(self) -> None:
-        r"""Initialize the browser."""
-        # Launch the browser, if headless is False, the browser will display
-        self.browser = self.playwright.chromium.launch(
-            headless=self.headless, channel=self.channel
-        )
-        # Create a new context
-        self.context = self.browser.new_context(accept_downloads=True)
-        # Create a new page
-        self.page = self.context.new_page()
+        r"""Initialize and launch the browser."""
+        if self.browser is None:
+            # Only start the browser if not already started
+            self.browser = self.playwright.chromium.launch_persistent_context(
+                headless=self.headless,
+                channel=self.channel,
+                user_data_dir=self.user_data_dir,
+                accept_downloads=True,
+                args=[
+                    "--disable-blink-features=AutomationControlled",
+                    "--start-maximized",
+                ],
+            )
+            self.context = self.browser
+
+            assert self.context is not None
+            self.page = self.context.new_page()
+
+            # Inject anti-bot JavaScript to hide 'navigator.webdriver'
+            assert self.page is not None
+            self.page.add_init_script(
+                """Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"""
+            )
+
+            logger.info("User data directory location: %s", self.user_data_dir)
+            logger.info("Cache directory location: %s", self.cache_dir)
 
     def clean_cache(self) -> None:
         r"""Delete the cache directory and its contents."""
@@ -910,7 +933,8 @@ class BaseBrowser:
         self._wait_for_load()
 
     def close(self):
-        self.browser.close()
+        if self.page and not self.page.is_closed():
+            self.page.close()
 
     # ruff: noqa: E501
     def show_interactive_elements(self):
@@ -988,6 +1012,7 @@ class BrowserToolkit(BaseToolkit):
         self,
         headless: bool = False,
         cache_dir: Optional[str] = None,
+        user_data_dir: Optional[str] = None,
         channel: Literal["chrome", "msedge", "chromium"] = "chromium",
         history_window: int = 5,
         web_agent_model: Optional[BaseModelBackend] = None,
@@ -999,6 +1024,9 @@ class BrowserToolkit(BaseToolkit):
         Args:
             headless (bool): Whether to run the browser in headless mode.
             cache_dir (Union[str, None]): The directory to store cache files.
+            user_data_dir (Union[str, None]): The directory to store account
+            info.
+
             channel (Literal["chrome", "msedge", "chromium"]): The browser
                 channel to use. Must be one of "chrome", "msedge", or
                 "chromium".
@@ -1013,7 +1041,10 @@ class BrowserToolkit(BaseToolkit):
         """
 
         self.browser = BaseBrowser(
-            headless=headless, cache_dir=cache_dir, channel=channel
+            headless=headless,
+            cache_dir=cache_dir,
+            user_data_dir=user_data_dir,
+            channel=channel,
         )
 
         self.history_window = history_window
