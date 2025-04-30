@@ -13,13 +13,12 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from typing import Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
-from aci import ACI
-from aci.types.app_configurations import AppConfiguration
-from aci.types.apps import AppBasic, AppDetails
-from aci.types.enums import SecurityScheme
-from aci.types.linked_accounts import LinkedAccount
+if TYPE_CHECKING:
+    from aci.types.app_configurations import AppConfiguration
+    from aci.types.apps import AppBasic, AppDetails
+    from aci.types.linked_accounts import LinkedAccount
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
@@ -48,6 +47,8 @@ class ACIToolkit(BaseToolkit):
             timeout (Optional[float], optional): Request timeout.
                 Defaults to None.
         """
+        from aci import ACI
+
         super().__init__(timeout)
         self.client = ACI(api_key=os.getenv("ACI_API_KEY"))
         self.linked_account = linked_account
@@ -60,7 +61,7 @@ class ACIToolkit(BaseToolkit):
         categories=None,
         limit: int = 10,
         offset: int = 0,
-    ) -> Optional[List[AppBasic]]:
+    ) -> Optional[List["AppBasic"]]:
         r"""Search for apps based on intent.
 
         Args:
@@ -96,7 +97,7 @@ class ACIToolkit(BaseToolkit):
 
     def list_configured_apps(
         self, app_names=None, limit: int = 10, offset: int = 0
-    ) -> Optional[List[AppConfiguration]]:
+    ) -> Optional[List["AppConfiguration"]]:
         r"""List all configured apps
         Args:
             app_names (list, optional): List of app names to filter the
@@ -129,6 +130,8 @@ class ACIToolkit(BaseToolkit):
         Returns:
             Optional[Dict]: Configuration result or None on error
         """
+        from aci.types.enums import SecurityScheme
+
         try:
             app_details = self.get_app_details(app_name)
             if app_details and app_details.security_schemes[0] == "api_key":
@@ -147,7 +150,7 @@ class ACIToolkit(BaseToolkit):
 
     def get_app_configuration(
         self, app_name: str
-    ) -> Optional[AppConfiguration]:
+    ) -> Optional["AppConfiguration"]:
         r"""Get app configuration by app name
 
         Args:
@@ -180,7 +183,7 @@ class ACIToolkit(BaseToolkit):
         self,
         app_name: str,
         api_key: Optional[str] = None,  # <-- FIXED
-    ) -> Optional[LinkedAccount]:
+    ) -> Optional["LinkedAccount"]:
         r"""Link an account to a configured app.
 
         Args:
@@ -192,6 +195,8 @@ class ACIToolkit(BaseToolkit):
             LinkedAccount: LinkedAccount object if successful,
                 None if error occurs
         """
+        from aci.types.enums import SecurityScheme
+
         try:
             security_scheme = self.client.app_configurations.get(
                 app_name=app_name
@@ -219,7 +224,7 @@ class ACIToolkit(BaseToolkit):
             print(f"Error linking account: {e!s}")
             return None
 
-    def get_app_details(self, app_name: str) -> Optional[AppDetails]:
+    def get_app_details(self, app_name: str) -> Optional["AppDetails"]:
         r"""Get details of an app.
 
         Args:
@@ -237,7 +242,7 @@ class ACIToolkit(BaseToolkit):
 
     def get_linked_accounts(
         self, app_name: str
-    ) -> Optional[List[LinkedAccount]]:
+    ) -> Optional[List["LinkedAccount"]]:
         r"""List all linked accounts for a specific app.
 
         Args:
