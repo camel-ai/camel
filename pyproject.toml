@@ -543,7 +543,7 @@ module = [
     "pyautogui",
     "pyobvector.*",
     "scrapegraph_py.*",
-    "ibm-watsonx-ai.*",
+    "ibm_watsonx_ai.*",
 ]
 ignore_missing_imports = true
 

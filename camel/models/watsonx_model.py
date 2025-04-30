@@ -143,7 +143,6 @@ class WatsonXModel(BaseModelBackend):
 
         if tools:
             request_config["tools"] = tools
-            request_config["tool_choice_option"] = "auto"
         elif response_format:
             try_modify_message_with_format(messages[-1], response_format)
             request_config["response_format"] = {"type": "json_object"}

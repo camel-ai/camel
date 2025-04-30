@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Literal, Optional
 
 from camel.configs.base_config import BaseConfig
 
@@ -73,6 +73,9 @@ class WatsonXConfig(BaseConfig):
         stop (List[str], optional): Up to 4 sequences where the API will stop
             generating further tokens.
             (default: :obj:`None`)
+        tool_choice_options (Literal["none", "auto"], optional): The options
+            for the tool choice.
+            (default: :obj:`"auto"`)
     """
 
     frequency_penalty: Optional[float] = None
@@ -87,6 +90,7 @@ class WatsonXConfig(BaseConfig):
     logit_bias: Optional[Dict] = None
     seed: Optional[int] = None
     stop: Optional[List[str]] = None
+    tool_choice_options: Literal["none", "auto"] = "auto"
 
 
 WATSONX_API_PARAMS = {param for param in WatsonXConfig.model_fields.keys()}
