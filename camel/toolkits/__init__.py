@@ -52,6 +52,9 @@ from .semantic_scholar_toolkit import SemanticScholarToolkit
 from .zapier_toolkit import ZapierToolkit
 from .sympy_toolkit import SymPyToolkit
 from .mineru_toolkit import MinerUToolkit
+from .math_code_toolkit import MathCodeToolkit
+from .geometry_toolkit import GeometryToolkit
+from .geometry_toolkit_new import EnhancedGeometryToolkit
 from .memory_toolkit import MemoryToolkit
 from .audio_analysis_toolkit import AudioAnalysisToolkit
 from .excel_toolkit import ExcelToolkit
@@ -108,6 +111,9 @@ __all__ = [
     'ZapierToolkit',
     'SymPyToolkit',
     'MinerUToolkit',
+    'GeometryToolkit',
+    'MathCodeToolkit',
+    'EnhancedGeometryToolkit',
     'MemoryToolkit',
     'MCPToolkit',
     'AudioAnalysisToolkit',
