@@ -41,7 +41,7 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **AIML** | [supported models](https://docs.aimlapi.com/api-overview/model-database/text-models) |
 | **ModelScope** | [supported models](https://www.modelscope.cn/docs/model-service/API-Inference/intro) |
 | **AWS Bedrock** | [supported models](https://us-west-2.console.aws.amazon.com/bedrock/home?region=us-west-2#/) |
-
+| **IBM WatsonX** | [supported models](https://jp-tok.dataplatform.cloud.ibm.com/samples?context=wx&tab=foundation-model) |
 
 ## 3. How to Use Models via API Calls
 
