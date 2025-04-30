@@ -515,7 +515,6 @@ class BrowseCompBenchmark(BaseBenchmark):
                 logger.error(f"Error evaluating result: {e}")
                 logger.error(traceback.format_exc())
 
-        # Use ThreadPool instead of Pool to avoid pickling issues
         pool_class = ThreadPool
         with pool_class(min(self.processes, len(self._raw_results))) as pool:
             self._validated_results = list(

@@ -84,14 +84,12 @@ Confidence: {{your confidence score between 0% and 100% for your answer}}
     }
 
 
-# Will need to place the benchmark run under
 if __name__ == '__main__':
     # Create a benchmark instance with output file "report.html"
     # it samples 2 examples and uses 2 parallel processes for efficiency
     # set num_example=None in case of running full benchmark.
     benchmark = BrowseCompBenchmark("report.html", num_examples=2, processes=2)
 
-    # Run the benchmark using the process_each_row function
     # This will process each example in parallel using separate agents
     # you will need to define your own process_each_row_f,
     # process_each_row is an example for reference.
