@@ -100,7 +100,7 @@ class WatsonXModel(BaseModelBackend):
         )
 
     def _to_openai_response(self, response: Dict[str, Any]) -> ChatCompletion:
-        """Convert WatsonX response to OpenAI format."""
+        r"""Convert WatsonX response to OpenAI format."""
         if not response:
             raise ValueError("Empty response from WatsonX API")
 
