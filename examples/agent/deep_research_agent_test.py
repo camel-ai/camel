@@ -549,6 +549,19 @@ for replan_iter in range(max_replan_iter):
         break
 
 
+writter_agent_prompt = (
+    "You are the writer agent in the Camel-AI Deep Research Agent system. Your task is to "
+    "write the final answer based on all the previous plan-observation pairs. Please try to revise the original plan base "
+    "on all the previous information, and generate the the final answer.\n\n"
+    "Please always keep the original Query in mind.\n"
+    f"Query:{query}\n\n"
+    "Previous Plan and Observation Pairs:\n"
+)
+for plan, obs in subquery_history.items():
+    writter_agent_prompt += f"<Plan>\n{plan.strip()}\n</Plan>\n<Observation>\n{obs.strip()}\n</Observation>\n\n"
+
+writter_agent_prompt +=
+
 # Initialize the base chat agent with a tool
 base_agent = ChatAgent(
     system_message="You are a helpful assistant using tools. Please try your best to complete the query from the user.",
