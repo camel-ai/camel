@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
-from camel.toolkits.aci_tool import ACIToolkit
+from camel.toolkits import ACIToolkit
 from camel.types import ModelPlatformType, ModelType
 
 load_dotenv()
