@@ -31,6 +31,15 @@ jobs:
         run: |
           uv venv .venv --python=3.10
 
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@v10
+        with:
+          root-reserve-mb: 512
+          swap-size-mb: 1024
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+
       - name: Install dependencies
         run: |
           source .venv/bin/activate
