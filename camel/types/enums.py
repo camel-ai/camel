@@ -352,6 +352,22 @@ class ModelType(UnifiedModelType, Enum):
     MODELSCOPE_MINISTRAL_8B_INSTRUCT = "mistralai/Ministral-8B-Instruct-2410"
     MODELSCOPE_DEEPSEEK_V3_0324 = "deepseek-ai/DeepSeek-V3-0324"
 
+    # WatsonX models
+    WATSONX_GRANITE_3_8B_INSTRUCT = "ibm/granite-3-8b-instruct"
+    WATSONX_LLAMA_3_3_70B_INSTRUCT = "meta-llama/llama-3-3-70b-instruct"
+    WATSONX_LLAMA_3_2_1B_INSTRUCT = "meta-llama/llama-3-2-1b-instruct"
+    WATSONX_LLAMA_3_2_3B_INSTRUCT = "meta-llama/llama-3-2-3b-instruct"
+    WATSONX_LLAMA_3_2_11B_VISION_INSTRUCT = (
+        "meta-llama/llama-3-2-11b-vision-instruct"
+    )
+    WATSONX_LLAMA_3_2_90B_VISION_INSTRUCT = (
+        "meta-llama/llama-3-2-90b-vision-instruct"
+    )
+    WATSONX_LLAMA_GUARD_3_11B_VISION_INSTRUCT = (
+        "meta-llama/llama-guard-3-11b-vision-instruct"
+    )
+    WATSONX_MISTRAL_LARGE = "mistralai/mistral-large"
+
     def __str__(self):
         return self.value
 
@@ -776,6 +792,19 @@ class ModelType(UnifiedModelType, Enum):
         }
 
     @property
+    def is_watsonx(self) -> bool:
+        return self in {
+            ModelType.WATSONX_GRANITE_3_8B_INSTRUCT,
+            ModelType.WATSONX_LLAMA_3_3_70B_INSTRUCT,
+            ModelType.WATSONX_LLAMA_3_2_1B_INSTRUCT,
+            ModelType.WATSONX_LLAMA_3_2_3B_INSTRUCT,
+            ModelType.WATSONX_LLAMA_3_2_11B_VISION_INSTRUCT,
+            ModelType.WATSONX_LLAMA_3_2_90B_VISION_INSTRUCT,
+            ModelType.WATSONX_LLAMA_GUARD_3_11B_VISION_INSTRUCT,
+            ModelType.WATSONX_MISTRAL_LARGE,
+        }
+
+    @property
     def is_novita(self) -> bool:
         return self in {
             ModelType.NOVITA_LLAMA_4_MAVERICK_17B,
@@ -874,6 +903,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.LMSTUDIO_GEMMA_3_4B,
             ModelType.LMSTUDIO_GEMMA_3_12B,
             ModelType.LMSTUDIO_GEMMA_3_27B,
+            ModelType.WATSONX_GRANITE_3_8B_INSTRUCT,
             ModelType.NOVITA_L3_8B_STHENO_V3_2,
             ModelType.NOVITA_LLAMA_3_8B,
             ModelType.NOVITA_GEMMA_2_9B_IT,
@@ -967,6 +997,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MODELSCOPE_MINISTRAL_8B_INSTRUCT,
             ModelType.MODELSCOPE_DEEPSEEK_V3_0324,
             ModelType.OPENROUTER_LLAMA_3_1_405B,
+            ModelType.WATSONX_MISTRAL_LARGE,
             ModelType.NOVITA_QWEN_32B,
             ModelType.NOVITA_LLAMA_3_1_70B,
             ModelType.NOVITA_MISTRAL_7B,
@@ -1073,6 +1104,12 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.OPENROUTER_LLAMA_3_1_70B,
             ModelType.PPIO_LLAMA_3_3_70B,
             ModelType.OPENROUTER_LLAMA_4_SCOUT,
+            ModelType.WATSONX_LLAMA_3_3_70B_INSTRUCT,
+            ModelType.WATSONX_LLAMA_3_2_1B_INSTRUCT,
+            ModelType.WATSONX_LLAMA_3_2_3B_INSTRUCT,
+            ModelType.WATSONX_LLAMA_3_2_11B_VISION_INSTRUCT,
+            ModelType.WATSONX_LLAMA_3_2_90B_VISION_INSTRUCT,
+            ModelType.WATSONX_LLAMA_GUARD_3_11B_VISION_INSTRUCT,
             ModelType.NOVITA_LLAMA_4_SCOUT_17B,
             ModelType.NOVITA_LLAMA_3_3_70B,
             ModelType.NOVITA_MISTRAL_NEMO,
@@ -1326,6 +1363,7 @@ class ModelPlatformType(Enum):
     VOLCANO = "volcano"
     NETMIND = "netmind"
     NOVITA = "novita"
+    WATSONX = "watsonx"
 
     @classmethod
     def from_name(cls, name):
