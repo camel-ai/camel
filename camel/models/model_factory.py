@@ -18,6 +18,7 @@ import yaml
 
 from camel.models.aiml_model import AIMLModel
 from camel.models.anthropic_model import AnthropicModel
+from camel.models.aws_bedrock_model import AWSBedrockModel
 from camel.models.azure_openai_model import AzureOpenAIModel
 from camel.models.base_model import BaseModelBackend
 from camel.models.cohere_model import CohereModel
@@ -26,9 +27,12 @@ from camel.models.gemini_model import GeminiModel
 from camel.models.groq_model import GroqModel
 from camel.models.internlm_model import InternLMModel
 from camel.models.litellm_model import LiteLLMModel
+from camel.models.lmstudio_model import LMStudioModel
 from camel.models.mistral_model import MistralModel
 from camel.models.modelscope_model import ModelScopeModel
 from camel.models.moonshot_model import MoonshotModel
+from camel.models.netmind_model import NetmindModel
+from camel.models.novita_model import NovitaModel
 from camel.models.nvidia_model import NvidiaModel
 from camel.models.ollama_model import OllamaModel
 from camel.models.openai_compatible_model import OpenAICompatibleModel
@@ -44,6 +48,7 @@ from camel.models.stub_model import StubModel
 from camel.models.togetherai_model import TogetherAIModel
 from camel.models.vllm_model import VLLMModel
 from camel.models.volcano_model import VolcanoModel
+from camel.models.watsonx_model import WatsonXModel
 from camel.models.yi_model import YiModel
 from camel.models.zhipuai_model import ZhipuAIModel
 from camel.types import ModelPlatformType, ModelType, UnifiedModelType
@@ -65,7 +70,7 @@ class ModelFactory:
         token_counter: Optional[BaseTokenCounter] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
-        timeout: Optional[int] = None,
+        timeout: Optional[float] = None,
     ) -> BaseModelBackend:
         r"""Creates an instance of `BaseModelBackend` of the specified type.
 
@@ -111,6 +116,8 @@ class ModelFactory:
             model_class = TogetherAIModel
         elif model_platform.is_litellm:
             model_class = LiteLLMModel
+        elif model_platform.is_aws_bedrock:
+            model_class = AWSBedrockModel
         elif model_platform.is_nvidia:
             model_class = NvidiaModel
         elif model_platform.is_siliconflow:
@@ -119,6 +126,8 @@ class ModelFactory:
             model_class = AIMLModel
         elif model_platform.is_volcano:
             model_class = VolcanoModel
+        elif model_platform.is_netmind:
+            model_class = NetmindModel
 
         elif model_platform.is_openai and model_type.is_openai:
             model_class = OpenAIModel
@@ -128,6 +137,8 @@ class ModelFactory:
             model_class = AnthropicModel
         elif model_platform.is_groq and model_type.is_groq:
             model_class = GroqModel
+        elif model_platform.is_lmstudio and model_type.is_lmstudio:
+            model_class = LMStudioModel
         elif model_platform.is_openrouter and model_type.is_openrouter:
             model_class = OpenRouterModel
         elif model_platform.is_zhipuai and model_type.is_zhipuai:
@@ -154,8 +165,12 @@ class ModelFactory:
             model_class = MoonshotModel
         elif model_platform.is_modelscope:
             model_class = ModelScopeModel
+        elif model_platform.is_novita:
+            model_class = NovitaModel
         elif model_type == ModelType.STUB:
             model_class = StubModel
+        elif model_type.is_watsonx:
+            model_class = WatsonXModel
 
         if model_class is None:
             raise ValueError(

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.43"
+version = "0.2.50"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -78,6 +78,7 @@ rag = [
     "unstructured==0.16.20",
     "pandasai>=2.3.0,<3",
     "crawl4ai>=0.3.745",
+    "pyobvector>=0.1.18",
 ]
 web_tools = [
     "duckduckgo-search>=6.3.5,<7",
@@ -100,7 +101,8 @@ web_tools = [
     "playwright>=1.50.0",
     "html2text>=2024.2.26",
     "beautifulsoup4>=4,<5",
-    "exa-py>=1.10.0,<2"
+    "exa-py>=1.10.0,<2",
+    "scrapegraph-py>=1.12.0,<2",
 ]
 document_tools = [
     "numpy~=1.26",
@@ -126,6 +128,7 @@ media_tools = [
     "ffmpeg-python>=0.2.0,<0.3",
     "scenedetect>=0.6.5.2",
 ]
+
 communication_tools = [
     "slack-sdk>=3.27.2,<4",
     "slack-bolt>=1.20.1,<2",
@@ -170,6 +173,7 @@ model_platforms = [
     "anthropic>=0.47.0,<0.50.0",
     "cohere>=5.11.0,<6",
     "fish-audio-sdk>=2024.12.5,<2025",
+    "ibm-watsonx-ai>=1.3.11",
 ]
 huggingface = [
     "transformers>=4,<5",
@@ -191,7 +195,8 @@ storage = [
     "azure-storage-blob>=12.21.0,<13",
     "google-cloud-storage>=2.18.0,<3",
     "botocore>=1.35.3,<2",
-    "mem0ai>=0.1.73"
+    "mem0ai>=0.1.73",
+    "pyobvector>=0.1.18",
 ]
 owl = [
     "numpy~=1.26",
@@ -237,6 +242,7 @@ owl = [
     "pandas>=1.5.3,<2",
     "rouge>=1.0.1,<2",
     "crawl4ai>=0.3.745",
+    "scrapegraph-py>=1.12.0,<2",
 ]
 all = [
     "numpy~=1.26",
@@ -347,6 +353,10 @@ all = [
     "math-verify>=0.7.0,<0.8",
     "exa-py>=1.10.0,<2",
     "crawl4ai>=0.3.745",
+    "pyautogui>=0.9.54,<0.10",
+    "pyobvector>=0.1.18",
+    "scrapegraph-py>=1.12.0,<2",
+    "ibm-watsonx-ai>=1.3.11",
 ]
 
 [project.urls]
@@ -509,7 +519,7 @@ module = [
     "networkx",
     "pandasai",
     "sklearn.metrics.pairwise",
-    "sympy",
+    "sympy.*",
     "astor",
     "tqdm",
     "colorama",
@@ -531,6 +541,10 @@ module = [
     "math_verify.*",
     "exa_py",
     "crawl4ai.*",
+    "pyautogui",
+    "pyobvector.*",
+    "scrapegraph_py.*",
+    "ibm_watsonx_ai.*",
 ]
 ignore_missing_imports = true
 
@@ -542,4 +556,4 @@ skip = '.git*,*.pdf,*.svg,*.lock,*.css,examples/toolkits/semantic_scholar_toolki
 check-hidden = true
 # Ignore long lines as usually some kind of base64 encodings e.g. in ipynb
 ignore-regex = '^\s*"image/\S+": ".*|^.{300,}|\b(NotIn|Unsupport)\b'
-ignore-words-list = 'ans,datas,rouge'
+ignore-words-list = 'ans,datas,rouge,doubleClick,OCE'
