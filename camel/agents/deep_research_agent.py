@@ -18,165 +18,149 @@ from camel.agents.base import BaseAgent
 from camel.agents.search_agent import SearchAgent
 from camel.retrievers.auto_retriever import AutoRetriever
 from camel.toolkits.search_toolkit import SearchToolkit
+from camel.agents.chat_agent import ChatAgent
 
+# AgentOps decorator setting
+try:
+    import os
 
+    if os.getenv("AGENTOPS_API_KEY") is not None:
+        from agentops import track_agent
+    else:
+        raise ImportError
+except (ImportError, AttributeError):
+    from camel.utils import track_agent
+
+@track_agent(name="DeepResearchAgent")
 class DeepResearchAgent(BaseAgent):
-    r"""A minimal research agent that performs query-based document retrieval and summarization.
-
-    This agent fetches live Wikipedia content based on the query and summarizes it into a markdown answer.
-    """
-
     def __init__(
-        self,
-        top_k: int = 3,
-        retriever: Optional[AutoRetriever] = None,
-        summarizer: Optional[SearchAgent] = None,
+            self,
+            query: str,
+            tools: List[FunctionTool],
+            model: Optional[Union[BaseModelBackend, List[BaseModelBackend]],
+        ] = None,
     ) -> None:
-        # Default retriever: wraps SearchToolkit with search_wiki()
-        self.retriever = retriever or AutoRetriever(tool=SearchToolkit())
-        self.summarizer = summarizer or SearchAgent()
-        self.top_k = top_k
+        self.query = query
+        self.tools = tools
+        self.model = model
+        # Todo: Think about how memory for worker/writer
+        #  can be better customized
 
-    def reset(self, *args: Any, **kwargs: Any) -> None:
-        if hasattr(self.retriever, "reset"):
-            self.retriever.reset()
-        if hasattr(self.summarizer, "reset"):
-            self.summarizer.reset()
-
-    def step(self, query: str) -> str:
-        """Run a research step: retrieve → summarize → format."""
-        documents = self.retriever.retrieve(query, top_k=self.top_k)
-        if not documents:
-            return f"**No relevant documents found for:** {query}"
-
-        # Join content for summarizer
-        full_text = "\n\n".join([doc["content"] for doc in documents])
-        summary = self.summarizer.summarize_text(full_text, query)
-
-        output = f"## Query\n{query}\n\n"
-        output += f"## Answer\n{summary.strip()}\n\n"
-        output += "## Sources\n"
-        for doc in documents:
-            title = doc.get("source", "Wikipedia")
-            url = doc.get("url", None)
-            output += f"- [{title}]({url})\n" if url else f"- {title}\n"
-
-        return output
-
-
-from typing import Optional
-
-from camel.agents import ChatAgent
-from camel.responses import ChatAgentResponse
-from camel.messages import BaseMessage
-from camel.types import OpenAIBackendRole
-
-REACT_SYSTEM_PROMPT = (
-    "You are a helpful agent that uses tools to answer complex questions step by step.\n"
-    "Follow the format:\n"
-    "Thought: <your reasoning>\n"
-    "Action: <tool name>\n"
-    "Action Input: <tool input>\n"
-    "Observation: <tool result>\n"
-    "Thought: <your updated reasoning>\n"
-    "Final Answer: <your answer if ready>\n"
-)
-
-
-class StopCriticAgent:
-    r"""
-    A lightweight utility agent that critiques whether a model's answer
-    is confident and self-contained. Used for termination checking in ReAct.
-    """
-    def __init__(self, chat_agent: ChatAgent):
-        self.chat_agent = chat_agent
-
-    def should_stop(self, query: str, answer: str) -> bool:
-        """
-        Ask the model if the answer is complete. Returns True if so.
-        """
+    @staticmethod
+    def format_planner_prompt(query: str) -> str:
+        # --- System preamble ---
         prompt = (
-            "You are an expert judge. Below is a question and an answer."
-            "\nYour task is to decide if the answer is complete and confident."
-            "\nIf yes, respond with YES. Otherwise, respond with NO."
-            f"\n\nQuestion: {query}\n\nAnswer: {answer}\n\nJudgement:"
+            "You are the planner agent of the Camel-AI Deep Research Agent for solving complex and difficult problems. "
+            "You will be given a Query, which can be a task or a question. You are supposed to give a detailed plan of resolving the query. The worker agents will then work on the plan. You can assume the worker agents can call tools like Search Online, and Do Calculation. You will later have chance to make more plans based on the information gathered by worker agents.\n"
+            "You do not need to select tools or know implementation details. Just describe the **intent** of each step clearly."
+            "Never forget the Query. \n"
         )
-        response = self.chat_agent.step(prompt)
-        content = response.msgs[-1].content.lower()
-        return "yes" in content
+        prompt += f"Query: {query}\n"
+
+        prompt += (
+            "\nNow begin your reasoning and planning. Follow one of the two branches below:\n"
+            "\nIf you have sufficient knowledge to complete the plan, write:\n"
+            "$Thought$:\n<Your reasoning>\n"
+            "$Plan$:\n<Each sub-task in a single line>\n"
+            "\nThe plan should be a list of concrete sub-queries, each written on its own line. Do not add numbering or ordering prefixes.\n\n"
+            "\nIf you do NOT have sufficient information to make a complete plan then you should gather more observations ONE AT A TIME. If the query involves an entity that cannot be directly resolved (e.g., a person, TV show, event, or technical term),"
+            " you MUST first identify or disambiguate the entity before continuing the plan."
+            "For example, if the query contains a phrase like a lyric or a vague name, your first step should be to identify what it refers to.\n"
+            "Follow the instructions below:\n"
+            "- First, identify what is missing (e.g. the identity of a key subject, or data required to reason further).\n"
+            "- Then, generate ONE MOST important NEXT tool call that can help fill in the missing knowledge IN A SINGLE LINE.\n"
+            "You can Follow the example format below:\n"
+            #"- Each tool call should correspond to a specific sub-query and clearly indicate intent.\n"
+            "\n$Thought$:\n<Explain what information is missing>\n"
+            "$Plan$:\n"
+            "Use toolkit to solve the problem. $Tool$: <general name, e.g. Search Online, Calculation>. $Input$: <input for the tool>\n"
+        )
 
 
-class ReActAgentWrapper(ChatAgent):
-    r"""
-    A wrapper around ChatAgent that supports ReAct-style multi-step reasoning
-    using tools, optionally enhanced with a termination critic.
 
-    Attributes:
-        stop_critic (StopCriticAgent): Optional critic for determining termination.
-    """
+    @staticmethod
+    def format_replanner_prompt(query: str, plan_obs_dict: dict) -> str:
+        prompt = (
+            "You are the planner agent of the Camel-AI Deep Research Agent for solving complex and difficult problems. "
+            "You are given a Query and the previous planning history, including prior sub-queries (plans) and corresponding observations. "
+            "Your goal is to continue the planning process based on the original Query and the Observations from previous plans.  The worker agents will then work on the plan. You can assume the worker agents can call tools to Search Online. You will later have chance to make more plans based on the information gathered by worker agents. "
+            "You must consider the previous plans and their corresponding observations. You are NOT allowed to modify existing plans, "
+            "but you may append new steps as actionable subqueries if the original Query is not yet fully resolved.\n\n"
+            f"Query:\n{query}\n\n"
+            "Previous Plan and Observation Pairs:\n"
+        )
 
-    def __init__(
-        self,
-        *args,
-        stop_critic: Optional[StopCriticAgent] = None,
-        max_steps: int = 5,
-        system_message: Optional[str] = None,
-        **kwargs,
-    ) -> None:
-        if system_message is None:
-            system_message = REACT_SYSTEM_PROMPT
+        for plan, obs in plan_obs_dict.items():
+            prompt += f"<Plan>\n{plan.strip()}\n</Plan>\n<Observation>\n{obs.strip()}\n</Observation>\n\n"
 
-        super().__init__(system_message=system_message, *args, **kwargs)
-        self.max_steps = max_steps
-        self.stop_critic = stop_critic
-        self._obs_prefix = "\nObservation:"
-        self._thought_prefix = "\nThought:"
+        prompt += (
+            "Now, begin your reasoning and planning. Follow one of the two branches below:\n\n"
+            "If you **truly** believe the query has been fully resolved:\n"
+            "-Only choose this branch **if and only if**:\n"
+            "1. The retrieved information clearly covers **all aspects** of the original query;\n"
+            "2. You have verified that no further clarification, comparison, or synthesis is necessary;\n"
+            "3. There is enough information for the writer agent to compose a complete and structured answer;\n"
+            "4. You have seen a clear and complete plan in previous results.\n"
+            "- Otherwise, **do not stop the planning process**.\n\n"
+            "$Thought$:\n<Your reasoning>\n"
+            # "$Answer$:\n<Your answer to the original query>\n"
+            "$Problem_Resolved$\n\n"
+    
+    
+            "If the query is not fully resolved:\n"
+            "$Thought$:\n<Your reasoning>\n"
+            "$Plan$:\n"
+            "Add new plans as step by step sub-queries to resolve the remaining parts of the original query. Each sub-query should be a single line"
+            "Do not add numbering or ordering prefixes.\n\n"
+            "\nIf you do NOT have sufficient information to make a complete plan then you should gather more observations ONE AT A TIME. If the query involves an entity that cannot be directly resolved (e.g., a person, TV show, event, or technical term),"
+            " you MUST first identify or disambiguate the entity before continuing the plan."
+            "For example, if the query contains a phrase like a lyric or a vague name, your first step should be to identify what it refers to.\n"
+            "Follow the instruction below if you need more information:\n"
+            "Instead of adding direct sub-queries, list ONE MOST important next tool-based query that the worker agents should perform to gather the missing information IN A SINGLE LINE.\n"
+            "$Thought$:\n<Explain what information is missing>\n"
+            "$Plan$:\n"
+            "Use toolkit to solve the problem. $Tool$: Search Online. $Input$: <input for the tool>\n"
+        )
 
-    def reset(self, *args, **kwargs) -> None:
-        super().reset(*args, **kwargs)
+        return prompt
 
-    def step(self, query: str) -> ChatAgentResponse:
-        """
-        Performs ReAct reasoning until no tool is called or critic allows termination.
-        """
-        msg = query
-        last_response: Optional[ChatAgentResponse] = None
-
-        for _ in range(self.max_steps):
-            response = super().step(msg)
-            last_response = response
-            tool_calls = response.info.get("tool_calls", [])
-
-            if tool_calls:
-                result = tool_calls[-1]["result"]
-                msg = f"{self._obs_prefix} {result}{self._thought_prefix}"
-                continue
-
-            # No tool call, check with stop critic if provided
-            final_answer = response.msgs[-1].content
-            if self.stop_critic is None or self.stop_critic.should_stop(query, final_answer):
-                return response
-            else:
-                msg = f"{self._obs_prefix} The previous answer may be incomplete.\nThought:"
-
-        # Reached max steps without termination, return last response anyway
-        return last_response or super().step("Final Answer:")
+    @staticmethod
+    def format_summarizer_prompt(query,plan_obs_dict):
+        summarizer_agent_prompt = (
+            "You are the writer agent in the CAMEL-AI Deep Research Agent system. "
+            "Your task is to synthesize a final report to the original query using all prior plan-observation pairs.\n\n"
+            "You should:\n"
+            "- Carefully review all prior plans and their corresponding observations.\n"
+            "- Revise or refine the original plan.\n"
+            "- Identify relevant, accurate, and insightful information from observations.\n"
+            "- Compose a coherent and complete final report.\n\n"
+            "Please keep the original query clearly in mind throughout the writing process.\n\n"
+            f"Original Query:\n{query}\n\n"
+            "Plan and Observation History:\n"
+        )
+        for plan, obs in plan_obs_dict.items():
+            summarizer_agent_prompt += (
+                f"<Plan>\n{plan.strip()}\n</Plan>\n"
+                f"<Observation>\n{obs.strip()}\n</Observation>\n\n"
+            )
 
 
-# # ==== Example Usage ====
-# if __name__ == "__main__":
-#     from camel.toolkits.search_toolkit import SearchToolkit
-#
-#     chat_agent = ChatAgent(
-#         system_message="You are a helpful agent. Think step by step and use tools if needed.",
-#         tools=[SearchToolkit().search_duckduckgo],
-#     )
-#     stop_critic = StopCriticAgent(chat_agent)
-#     react_agent = ReActAgentWrapper(
-#         tools=chat_agent.tool_dict.values(),
-#         stop_critic=stop_critic,
-#     )
-#
-#     query = "Who is the president of France and what is his latest speech about?"
-#     response = react_agent.step(query)
-#     print("Final Answer:\n", response.msgs[-1].content)
+    def step(self, query, output_language, max_planning_iterations = 10):
+        r"""docstring"""
+        # Set the planner agent
+        planner_agent = ChatAgent(
+            DeepResearchAgent.format_planner_prompt(query),
+            model=self.model,
+            # tools=tools_list,
+            output_language= output_language,
+        )
+
+        response = planner_agent.step("Now begin planning.")
+        content = response.msgs[0].content
+        logger.info(print(content))
+
+
+    def reset(self):
+        r"The deep research agent does not have state, so do not need reset"
+        pass
+
