@@ -84,6 +84,7 @@ print(response.msgs[0].content)
 
 # ruff: noqa: E501
 '''
+===============================================================================
 First, we need to understand what the notation $ 17_b $ and $ 97_b $ means. The subscript $ b $ indicates that the number is in base $ b $. 
 
 1. **Convert $ 17_b $ to base 10:**
@@ -156,5 +157,5 @@ The valid bases are $ 21 $ and $ 49 $. Their sum is:
 
 ### Final Answer
 \boxed{70}
-
+===============================================================================
 '''
