@@ -30,10 +30,6 @@ jobs:
         run: |
           pip install uv
 
-      - name: Create virtual environment
-        run: |
-          uv venv .venv --python=${{ matrix.python-version }}
-
       - name: Maximize build space
         uses: easimon/maximize-build-space@v10
         with:
@@ -42,6 +38,10 @@ jobs:
           remove-dotnet: 'true'
           remove-android: 'true'
           remove-haskell: 'true'
+
+      - name: Create virtual environment
+        run: |
+          uv venv .venv --python=${{ matrix.python-version }}
 
       - name: Install dependencies
         run: |
