@@ -213,6 +213,10 @@ class ModelType(UnifiedModelType, Enum):
     QWEN_MAX = "qwen-max"
     QWEN_PLUS = "qwen-plus"
     QWEN_TURBO = "qwen-turbo"
+    QWEN_PLUS_LATEST = "qwen-plus-latest"
+    QWEN_PLUS_2025_04_28 = "qwen-plus-2025-04-28"
+    QWEN_TURBO_LATEST = "qwen-turbo-latest"
+    QWEN_TURBO_2025_04_28 = "qwen-turbo-2025-04-28"
     QWEN_LONG = "qwen-long"
     QWEN_VL_MAX = "qwen-vl-max"
     QWEN_VL_PLUS = "qwen-vl-plus"
@@ -686,6 +690,10 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_QWQ_32B,
             ModelType.QWEN_QVQ_72B,
             ModelType.QWEN_QWQ_PLUS,
+            ModelType.QWEN_PLUS_LATEST,
+            ModelType.QWEN_PLUS_2025_04_28,
+            ModelType.QWEN_TURBO_LATEST,
+            ModelType.QWEN_TURBO_2025_04_28,
         }
 
     @property
@@ -1097,6 +1105,10 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_PLUS,
             ModelType.QWEN_TURBO,
             ModelType.QWEN_CODER_TURBO,
+            ModelType.QWEN_PLUS_LATEST,
+            ModelType.QWEN_PLUS_2025_04_28,
+            ModelType.QWEN_TURBO_LATEST,
+            ModelType.QWEN_TURBO_2025_04_28,
             ModelType.TOGETHER_LLAMA_3_1_8B,
             ModelType.TOGETHER_LLAMA_3_1_70B,
             ModelType.TOGETHER_LLAMA_3_1_405B,
