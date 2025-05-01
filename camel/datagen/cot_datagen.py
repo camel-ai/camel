@@ -535,7 +535,7 @@ class CoTDataGenerator(BaseDataGenPipeline):
             logger.info(f"Processed {idx+1}/{total_questions} questions")
 
             if self.save_intermediate:
-                self.on_intermediate_result(solutions)
+                self.save_intermediate_results(solutions)
 
         return solutions
 

@@ -281,7 +281,7 @@ class BaseDataGenPipeline(ABC):
         os.replace(temp_path, path)
         logger.info(f"Results safely saved to {path}")
 
-    def on_intermediate_result(self, results: List[Dict[str, Any]]) -> None:
+    def save_intermediate_results(self, results: List[Dict[str, Any]]) -> None:
         r"""Hook method called when intermediate results are available.
 
         This method is called during the generation process when intermediate
@@ -297,7 +297,12 @@ class BaseDataGenPipeline(ABC):
         if self.save_intermediate and self.output_path:
             self.save_results(results)
 
-    def execute(self, *args, **kwargs) -> List[Dict[str, Any]]:
+    def execute(
+        self,
+        *args,
+        results_key: str = "results",
+        **kwargs,
+    ) -> List[Dict[str, Any]]:
         r"""Execute the data generation pipeline.
 
         This is the primary method to run the pipeline. It calls the
@@ -306,6 +311,12 @@ class BaseDataGenPipeline(ABC):
         pre/post-processing steps.
 
         This method provides standardized timing and logging.
+
+        Args:
+            results_key (str, optional): The key under which to store the results
+                in the output file. (default: :obj:`"results"`)
+            *args: Arguments to pass to the generate method.
+            **kwargs: Keyword arguments to pass to the generate method.
 
         Returns:
             List[Dict[str, Any]]: Generated data.
@@ -331,7 +342,7 @@ class BaseDataGenPipeline(ABC):
 
         # Save results if output_path is specified
         if self.output_path:
-            self.save_results(results)
+            self.save_results(results, results_key=results_key)
 
         return results
 

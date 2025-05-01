@@ -520,7 +520,7 @@ class EvolInstructPipeline(BaseDataGenPipeline):
                         )
 
                     # Call the hook for intermediate results
-                    self.on_intermediate_result(partial_results)
+                    self.save_intermediate_results(partial_results)
 
         # Convert the results to the expected format for BaseDataGenPipeline
         standardized_results = []

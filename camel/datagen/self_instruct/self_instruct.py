@@ -415,18 +415,6 @@ class SelfInstructPipeline(BaseDataGenPipeline):
         r"""Construct data output from generated tasks and instances."""
         self.generate_machine_instances()
 
-    def on_intermediate_result(self, results: List[Dict[str, Any]]) -> None:
-        r"""Handle intermediate results during generation.
-
-        Override of the base class method to save the machine tasks.
-
-        Args:
-            results (List[Dict[str, Any]]): Current machine tasks.
-        """
-
-        if self.save_intermediate and self.output_path:
-            self.save_results(self.machine_tasks)
-
     def generate(self, timeout_minutes=600) -> List[Dict[str, Any]]:
         r"""Generate machine instructions and instances.
 
@@ -440,10 +428,6 @@ class SelfInstructPipeline(BaseDataGenPipeline):
             List[Dict[str, Any]]: The generated machine tasks with instances.
         """
 
-        logger.info(
-            f"Starting self-instruct generation with target "
-            f"{self.num_machine_instructions} instructions"
-        )
         logger.info(f"Timeout set to {timeout_minutes} minutes")
 
         start_time = time.time()
@@ -478,7 +462,7 @@ class SelfInstructPipeline(BaseDataGenPipeline):
                 self.machine_tasks.append(instruction_dict)
 
                 # Call the intermediate result hook
-                self.on_intermediate_result(self.machine_tasks)
+                self.save_intermediate_results(self.machine_tasks)
 
         # Generate instances for each instruction
         self.generate_machine_instances()

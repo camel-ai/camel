@@ -665,7 +665,7 @@ class Source2SynthDataGenPipeline(BaseDataGenPipeline):
             )
 
         if self.save_intermediate:
-            self.on_intermediate_result(results)
+            self.save_intermediate_results(results)
 
         return results
 
@@ -687,9 +687,5 @@ class Source2SynthDataGenPipeline(BaseDataGenPipeline):
         Returns:
             List[Dict[str, Any]]: List of final curated examples.
         """
-        results = super().execute(data)
 
-        if self.output_path:
-            self.save_results(results, results_key="examples")
-
-        return results
+        return super().execute(data=data, results_key="examples")

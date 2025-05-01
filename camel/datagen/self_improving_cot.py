@@ -935,12 +935,10 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
             f"{len(self.problems)} problems"
         )
 
-        results = super().execute(rationalization=self.rationalization)
-
-        if self.output_path:
-            self.save_results(results, results_key="traces")
-
-        return results
+        return super().execute(
+            rationalization=self.rationalization,
+            results_key="traces",
+        )
 
     # Templates for generating reasoning, evaluation and improving them.
     REASONING_TEMPLATE = """Let's solve this step by step:
