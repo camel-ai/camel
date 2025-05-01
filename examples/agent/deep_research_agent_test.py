@@ -429,7 +429,7 @@ def format_replanner_prompt(query: str, plan_obs_dict: dict) -> str:
     prompt = (
         "You are the planner agent of the Camel-AI Deep Research Agent for solving complex and difficult problems. "
         "You are given a Query and the previous planning history, including prior sub-queries (plans) and corresponding observations. "
-        "Your goal is to continue the planning process based on the original Query and the Observations from previous plans.  The worker agents will then work on the plan. You can assume the worker agents can call tools like Search Online, and Do Calculation. You will later have chance to make more plans based on the information gathered by worker agents. "
+        "Your goal is to continue the planning process based on the original Query and the Observations from previous plans.  The worker agents will then work on the plan. You can assume the worker agents can call tools to Search Online. You will later have chance to make more plans based on the information gathered by worker agents. "
         "You must consider the previous plans and their corresponding observations. You are NOT allowed to modify existing plans, "
         "but you may append new steps as actionable subqueries if the original Query is not yet fully resolved.\n\n"
         f"Query:\n{query}\n\n"
@@ -441,7 +441,13 @@ def format_replanner_prompt(query: str, plan_obs_dict: dict) -> str:
 
     prompt += (
         "Now, begin your reasoning and planning. Follow one of the two branches below:\n\n"
-        "If the query has already been fully resolved:\n"
+        "If you **truly** believe the query has been fully resolved:\n"
+        "-Only choose this branch **if and only if**:\n"
+        "1. The retrieved information clearly covers **all aspects** of the original query;\n"
+        "2. You have verified that no further clarification, comparison, or synthesis is necessary;\n"
+        "3. There is enough information for the writer agent to compose a complete and structured answer;\n"
+        "4. You have seen a clear and complete plan in previous results.\n"
+        "- Otherwise, **do not stop the planning process**.\n\n"
         "$Thought$:\n<Your reasoning>\n"
         #"$Answer$:\n<Your answer to the original query>\n"
         "$Problem_Resolved$\n\n"
@@ -450,7 +456,7 @@ def format_replanner_prompt(query: str, plan_obs_dict: dict) -> str:
         "If the query is not fully resolved:\n"
         "$Thought$:\n<Your reasoning>\n"
         "$Plan$:\n"
-        "Add new sub-queries to resolve the remaining parts of the original query. Each sub-query should be on its own line. "
+        "Add new plans as step by step sub-queries to resolve the remaining parts of the original query. Each sub-query should be a single line"
         "Do not add numbering or ordering prefixes.\n\n"
         "\nIf you do NOT have sufficient information to make a complete plan then you should gather more observations ONE AT A TIME. If the query involves an entity that cannot be directly resolved (e.g., a person, TV show, event, or technical term),"
         " you MUST first identify or disambiguate the entity before continuing the plan."
@@ -459,16 +465,18 @@ def format_replanner_prompt(query: str, plan_obs_dict: dict) -> str:
         "Instead of adding direct sub-queries, list ONE MOST important next tool-based query that the worker agents should perform to gather the missing information IN A SINGLE LINE.\n"
         "$Thought$:\n<Explain what information is missing>\n"
         "$Plan$:\n"
-        "Use toolkit to solve the problem. $Tool$: <general name, e.g. Search Online>. $Input$: <input for the tool>\n"
+        "Use toolkit to solve the problem. $Tool$: Search Online. $Input$: <input for the tool>\n"
     )
 
     return prompt
 
 #print(describe_tools_naturally_en(tools_list ))
 #query = "我二十年前看了一个儿童节目，主题曲里有一句是“咕噜咕噜咕噜咕咚咚”，我想请你帮我介绍一下这个节目当时的两位主持人，和他们的现状。"
-query = "Help me draft a report for the Camel-AI open source project"
-#query = "请你回答这个以几个中国春晚著名节目为背景的搞笑问题：巩汉林喝了一杯宫廷玉液酒，再请黄大锤使用大锤掏壁橱，一共花多少钱。"
+#query = "Help me draft a report for the Camel-AI open source project"
+query = "请你回答搞笑问题：巩汉林喝了一杯太后大酒楼的宫廷玉液酒，再请黄大锤使用大锤掏壁橱，一共花多少钱。"
 #query = "巩汉林买了一杯自己酒店的宫廷玉液酒，并且请黄大锤使用大锤掏壁橱，一共花多少钱。"
+#query = "我今天听到了一首好听的古典乐，大概是这样，灯，等灯，等灯等灯灯灯，灯，等灯，等灯灯等灯等，你能帮我想想这是什么歌曲吗"
+#query = "请写一个报告介绍为什么"
 #print(format_planner_prompt(query,tools_list))
 
 # Set the agent
@@ -476,7 +484,7 @@ planner_agent = ChatAgent(
     format_planner_prompt(query),
     model=model,
     #tools=tools_list,
-    #output_language = "Chinese",
+    output_language = "Chinese",
 )
 
 
@@ -498,7 +506,7 @@ def extract_plan_subqueries(content: str) -> list[str]:
 
 
 subqueries = extract_plan_subqueries(content)
-print(subqueries)
+print("Initial plan:",subqueries)
 
 
 worker_agent_prompt = ("You are a helpful worker agent in the Camel-AI Deep Research Agent system. Your goal is to solve tasks that the planner assigned to you."
@@ -510,11 +518,11 @@ worker_agent = ChatAgent(
     worker_agent_prompt ,
     model=model,
     tools=tools_list,
-    #output_language = "Chinese",
+    output_language = "Chinese",
 )
 
 subquery_history = {}
-max_replan_iter = 10
+max_replan_iter = 20
 for replan_iter in range(max_replan_iter):
     print("iteration {}".format(replan_iter))
     for subquery in subqueries:
@@ -525,23 +533,23 @@ for replan_iter in range(max_replan_iter):
         print("Answer for this subquery:", subquery_response.msgs[0].content)
         subquery_history[subquery] = subquery_response.msgs[0].content
 
-    print("Full subquery history:",subquery_history)
+    #print("Full subquery history:",subquery_history)
 
     replanner_system_prompt = format_replanner_prompt(query,subquery_history)
-    print("Replan prompt:",replanner_system_prompt)
+    #print("Replan prompt:",replanner_system_prompt)
     # Set the agent
     replanner_agent = ChatAgent(
         replanner_system_prompt,
         model=model,
         #tools=tools_list,
-        #output_language = "Chinese",
+        output_language = "Chinese",
     )
 
 
 
     response = replanner_agent.step("Now let us begin.")
 
-    print("Replan output:", response.msgs[0].content)
+    # print("Replan output:", response.msgs[0].content)
     subqueries = extract_plan_subqueries(response.msgs[0].content)
     print("New plans:\n",subqueries)
     if not subqueries:
@@ -549,41 +557,41 @@ for replan_iter in range(max_replan_iter):
         break
 
 
-writter_agent_prompt = (
+summarizer_agent_prompt = (
     "You are the writer agent in the CAMEL-AI Deep Research Agent system. "
-    "Your task is to synthesize a final answer to the original query using all prior plan-observation pairs.\n\n"
+    "Your task is to synthesize a final report to the original query using all prior plan-observation pairs.\n\n"
     "You should:\n"
     "- Carefully review all prior plans and their corresponding observations.\n"
-    "- Revise or refine the original plan if needed.\n"
+    "- Revise or refine the original plan.\n"
     "- Identify relevant, accurate, and insightful information from observations.\n"
-    "- Compose a coherent and complete final answer.\n\n"
+    "- Compose a coherent and complete final report.\n\n"
     "Please keep the original query clearly in mind throughout the writing process.\n\n"
     f"Original Query:\n{query}\n\n"
     "Plan and Observation History:\n"
 )
 for plan, obs in subquery_history.items():
-    writter_agent_prompt += (
+    summarizer_agent_prompt += (
         f"<Plan>\n{plan.strip()}\n</Plan>\n"
         f"<Observation>\n{obs.strip()}\n</Observation>\n\n"
     )
 
 # Set the agent
-writter_agent = ChatAgent(
-    writter_agent_prompt ,
+summarizer_agent = ChatAgent(
+    summarizer_agent_prompt ,
     model=model,
-    tools=tools_list,
-    #output_language = "Chinese",
+    #tools=tools_list,
+    output_language = "Chinese",
 )
 
-final_answer = writter_agent.step('Finalize your response based on the context above.')
-print("Deep Researcher answer:\n", final_answer.msgs[0].content)
+final_answer = summarizer_agent.step('Finalize your response based on the context above. Please first write out a final step-by-step plan, then resolve the query beginning with $Final Report$:\n')
+print("Deep Researcher final answer:\n", final_answer.msgs[0].content)
 
 
 # Initialize the base chat agent with a tool
 base_agent = ChatAgent(
     system_message="You are a helpful assistant using tools. Please try your best to complete the query from the user.",
     tools=tools_list,
-    #output_language="Chinese",
+    output_language="Chinese",
 )
 
 baseline_response = base_agent.step(query)
