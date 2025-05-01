@@ -43,6 +43,9 @@ jobs:
         run: |
           uv venv .venv --python=${{ matrix.python-version }}
 
+      - name: List files in working directory
+        run: ls -la
+
       - name: Install dependencies
         run: |
           source .venv/bin/activate
