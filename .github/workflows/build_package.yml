@@ -11,7 +11,10 @@ jobs:
       matrix:
         python-version: ["3.10"]
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
 
       - name: Clean up before build
         run: |
@@ -43,13 +46,26 @@ jobs:
         run: |
           uv venv .venv --python=${{ matrix.python-version }}
 
-      - name: List files in working directory
-        run: ls -la
+      - name: Debug repository structure
+        run: |
+          echo "Current directory: $(pwd)"
+          ls -la
+          echo "Parent directory: $(dirname $(pwd))"
+          ls -la $(dirname $(pwd))
+          echo "Check for pyproject.toml:"
+          find . -name "pyproject.toml"
 
       - name: Install dependencies
         run: |
           source .venv/bin/activate
-          uv pip install -e ".[all, dev, docs]"
+          echo "Working directory before install: $(pwd)"
+          if [ -f "pyproject.toml" ]; then
+            echo "pyproject.toml exists, proceeding with installation"
+            uv pip install -e ".[all, dev, docs]"
+          else
+            echo "ERROR: pyproject.toml not found"
+            exit 1
+          fi
 
       - name: Build
         run: |
