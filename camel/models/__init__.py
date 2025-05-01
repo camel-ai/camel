@@ -31,6 +31,8 @@ from .model_manager import ModelManager, ModelProcessingError
 from .modelscope_model import ModelScopeModel
 from .moonshot_model import MoonshotModel
 from .nemotron_model import NemotronModel
+from .netmind_model import NetmindModel
+from .novita_model import NovitaModel
 from .nvidia_model import NvidiaModel
 from .ollama_model import OllamaModel
 from .openai_audio_models import OpenAIAudioModels
@@ -47,6 +49,7 @@ from .stub_model import StubModel
 from .togetherai_model import TogetherAIModel
 from .vllm_model import VLLMModel
 from .volcano_model import VolcanoModel
+from .watsonx_model import WatsonXModel
 from .yi_model import YiModel
 from .zhipuai_model import ZhipuAIModel
 
@@ -65,7 +68,9 @@ __all__ = [
     'ModelManager',
     'LiteLLMModel',
     'OpenAIAudioModels',
+    'NetmindModel',
     'NemotronModel',
+    'NovitaModel',
     'NvidiaModel',
     'OllamaModel',
     'VLLMModel',
@@ -90,4 +95,5 @@ __all__ = [
     'SiliconFlowModel',
     'VolcanoModel',
     'LMStudioModel',
+    'WatsonXModel',
 ]

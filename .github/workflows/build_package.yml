@@ -106,6 +106,10 @@ jobs:
           PPIO_API_KEY: "${{ secrets.PPIO_API_KEY }}"
           BEDROCK_API_KEY: "${{ secrets.BEDROCK_API_KEY }}"
           BEDROCK_API_BASE_URL: "${{ secrets.BEDROCK_API_BASE_URL }}"
+          NETMIND_API_KEY: "${{ secrets.NETMIND_API_KEY }}"
+          NOVITA_API_KEY: "${{ secrets.NOVITA_API_KEY }}"
+          WATSONX_API_KEY: "${{ secrets.WATSONX_API_KEY }}"
+          WATSONX_PROJECT_ID: "${{ secrets.WATSONX_PROJECT_ID }}"
         run: |
           source test_venv/bin/activate
           pytest --fast-test-mode ./test
