@@ -22,23 +22,32 @@ def sample_function(x: int, y: int) -> int:
     return x + y
 
 
-tool = FunctionTool(sample_function)
-
+# Initialize the runtime with the API key
 runtime = DaytonaRuntime(
-    api_key=os.environ.get('DAYTONA_API_KEY', None),
-    server_url=os.environ.get('API_URL', None),
+    api_key=os.environ.get('DAYTONA_API_KEY'),
+    api_url=os.environ.get('DAYTONA_API_URL'),
     language="python",
 )
 
-
+# Build the sandbox
 runtime.build()
+
+# Add the function to the runtime
 runtime.add(
-    funcs=tool,
+    funcs=FunctionTool(sample_function),
     entrypoint="sample_function_entry",
 )
 
+# Execute the function in the sandbox
 result = runtime.tools_map["sample_function"](5, y=10)
 print(f"Result: {result}")
 
 # Clean up
 runtime.stop()
+
+
+"""
+===============================================================================
+Result: 15
+===============================================================================
+"""

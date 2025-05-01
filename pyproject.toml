@@ -164,7 +164,6 @@ dev_tools = [
     "tree-sitter>=0.23.2,<0.24",
     "typer>=0.15.2",
     "mcp>=1.3.0",
-    "daytona-api-client==0.16.0",
     "daytona-sdk==0.14.0",
 ]
 model_platforms = [
@@ -356,6 +355,7 @@ all = [
     "pyautogui>=0.9.54,<0.10",
     "pyobvector>=0.1.18",
     "scrapegraph-py>=1.12.0,<2",
+    "daytona-sdk==0.14.0",
 ]
 
 [project.urls]
@@ -542,7 +542,7 @@ module = [
     "crawl4ai.*",
     "pyautogui",
     "pyobvector.*",
-    "daytona_sdk"
+    "daytona_sdk",
     "scrapegraph_py.*",
 ]
 ignore_missing_imports = true
