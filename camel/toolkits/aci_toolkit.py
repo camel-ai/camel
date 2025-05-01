@@ -20,9 +20,12 @@ if TYPE_CHECKING:
     from aci.types.apps import AppBasic, AppDetails
     from aci.types.linked_accounts import LinkedAccount
 
+from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 from camel.utils import api_keys_required, dependencies_required
+
+logger = get_logger(__name__)
 
 
 @api_keys_required(
@@ -92,13 +95,14 @@ class ACIToolkit(BaseToolkit):
             )
             return apps
         except Exception as e:
-            print(f"Error: {e}")
+            logger.error(f"Error: {e}")
             return None
 
     def list_configured_apps(
         self, app_names=None, limit: int = 10, offset: int = 0
     ) -> Optional[List["AppConfiguration"]]:
         r"""List all configured apps
+
         Args:
             app_names (list, optional): List of app names to filter the
                 results. Defaults to an empty list.
@@ -118,7 +122,7 @@ class ACIToolkit(BaseToolkit):
             )
             return apps
         except Exception as e:
-            print(f"Error: {e}")
+            logger.error(f"Error: {e}")
             return None
 
     def configure_app(self, app_name: str) -> Optional[Dict]:
@@ -145,7 +149,7 @@ class ACIToolkit(BaseToolkit):
             )
             return configuration
         except Exception as e:
-            print(f"Error: {e}")
+            logger.error(f"Error: {e}")
             return None
 
     def get_app_configuration(
@@ -164,7 +168,7 @@ class ACIToolkit(BaseToolkit):
             app = self.client.app_configurations.get(app_name=app_name)
             return app
         except Exception as e:
-            print(f"Error: {e}")
+            logger.error(f"Error: {e}")
             return None
 
     def delete_app(self, app_name: str) -> None:
@@ -177,7 +181,7 @@ class ACIToolkit(BaseToolkit):
         try:
             self.client.app_configurations.delete(app_name=app_name)
         except Exception as e:
-            print(f"Error: {e}")
+            logger.error(f"Error: {e}")
 
     def link_account(
         self,
@@ -221,7 +225,7 @@ class ACIToolkit(BaseToolkit):
                     security_scheme=security_scheme,
                 )
         except Exception as e:
-            print(f"Error linking account: {e!s}")
+            logger.error(f"Error linking account: {e!s}")
             return None
 
     def get_app_details(self, app_name: str) -> Optional["AppDetails"]:
@@ -237,7 +241,7 @@ class ACIToolkit(BaseToolkit):
             app = self.client.apps.get(app_name=app_name)
             return app
         except Exception as e:
-            print(f"Error: {e}")
+            logger.error(f"Error: {e}")
             return None
 
     def get_linked_accounts(
@@ -256,7 +260,7 @@ class ACIToolkit(BaseToolkit):
             accounts = self.client.linked_accounts.list(app_name=app_name)
             return accounts
         except Exception as e:
-            print(f"Error: {e}")
+            logger.error(f"Error: {e}")
             return None
 
     def enable_linked_account(self, linked_account_id: str) -> None:
@@ -273,7 +277,7 @@ class ACIToolkit(BaseToolkit):
                 linked_account_id=linked_account_id
             )
         except Exception as e:
-            print(f"Error: {e}")
+            logger.error(f"Error: {e}")
 
     def disable_linked_account(self, linked_account_id: str) -> None:
         r"""Disable a linked account.
@@ -289,7 +293,7 @@ class ACIToolkit(BaseToolkit):
                 linked_account_id=linked_account_id
             )
         except Exception as e:
-            print(f"Error: {e}")
+            logger.error(f"Error: {e}")
 
     def delete_linked_account(self, linked_account_id: str) -> None:
         r"""Delete a linked account.
@@ -305,7 +309,7 @@ class ACIToolkit(BaseToolkit):
                 linked_account_id=linked_account_id
             )
         except Exception as e:
-            print(f"Error: {e}")
+            logger.error(f"Error: {e}")
 
     def function_definition(self, func_name: str) -> Dict:
         r"""Get the function definition for an app.
