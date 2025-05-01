@@ -205,7 +205,13 @@ class SingleStepEnv:
             self._states_done = [False] * self.current_batch_size
 
             observations = [
-                Observation(question=sample.question, context={}, metadata={})
+                Observation(
+                    question=sample.question,
+                    context={},
+                    metadata=sample.metadata
+                    if sample.metadata is not None
+                    else {},
+                )
                 for sample in self._states
             ]
 
@@ -219,7 +225,13 @@ class SingleStepEnv:
             self._states_done = [False] * batch_size
 
             observations = [
-                Observation(question=sample.question, context={}, metadata={})
+                Observation(
+                    question=sample.question,
+                    context={},
+                    metadata=sample.metadata
+                    if sample.metadata is not None
+                    else {},
+                )
                 for sample in self._states
             ]
 

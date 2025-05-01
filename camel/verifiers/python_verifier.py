@@ -20,7 +20,7 @@ import subprocess
 import sys
 import tempfile
 import venv
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
@@ -51,6 +51,7 @@ class PythonVerifier(BaseVerifier):
         extractor: Optional[BaseExtractor] = None,
         timeout: Optional[float] = 30.0,
         required_packages: Optional[List[str]] = None,
+        float_tolerance: Optional[float] = None,
         **kwargs,
     ):
         r"""Initializes the PythonVerifier.
@@ -63,16 +64,25 @@ class PythonVerifier(BaseVerifier):
             required_packages (Optional[List[str]], optional): A list of
                 packages to install in the virtual environment.
                 (default: :obj:`None`)
+            float_tolerance (Optional[float], optional): The tolerance for
+                floating point comparisons. (default: :obj:`None`)
         """
         # TODO: Use CAMEL's Interpreter to execute the code
         super().__init__(extractor=extractor, timeout=timeout, **kwargs)
         self.venv_path: Optional[str] = None
         self.required_packages = required_packages or []
+        self.float_tolerance = float_tolerance
 
         if os.name == 'nt':  # Windows
             self.bin_dir = 'Scripts'
         else:  # Unix-like systems
             self.bin_dir = 'bin'
+
+    def _cleanup_venv(self) -> None:
+        r"""Clean up the virtual environment if it exists."""
+        if self.venv_path and os.path.exists(self.venv_path):
+            shutil.rmtree(self.venv_path)
+            self.venv_path = None
 
     async def _setup(self, **kwargs) -> None:
         r"""Set up a virtual environment and install required packages."""
@@ -92,10 +102,7 @@ class PythonVerifier(BaseVerifier):
             logger.info(f"Virtual environment created at {self.venv_path}")
         except Exception as e:
             logger.error(f"Failed to create virtual environment: {e}")
-            # Clean up resources before re-raising
-            if self.venv_path and os.path.exists(self.venv_path):
-                shutil.rmtree(self.venv_path)
-                self.venv_path = None
+            self._cleanup_venv()
             raise
 
         venv_pip = os.path.join(self.venv_path, self.bin_dir, "pip")
@@ -118,19 +125,14 @@ class PythonVerifier(BaseVerifier):
                     "Failed to install required packages: "
                     f"{e.stderr.decode().strip()}"
                 )
-                # Clean up resources before re-raising
-                if self.venv_path and os.path.exists(self.venv_path):
-                    shutil.rmtree(self.venv_path)
-                    self.venv_path = None
+                self._cleanup_venv()
                 raise
             except subprocess.TimeoutExpired:
                 logger.error(
                     f"Package installation timed out "
                     f"after {self._timeout} seconds"
                 )
-                if self.venv_path and os.path.exists(self.venv_path):
-                    shutil.rmtree(self.venv_path)
-                    self.venv_path = None
+                self._cleanup_venv()
                 raise
 
     def _is_uv_environment(self) -> bool:
@@ -155,19 +157,14 @@ class PythonVerifier(BaseVerifier):
                 "[UV] Failed to create virtual environment:\n"
                 f"{e.stderr.decode().strip()}"
             )
-            # Clean up resources before re-raising
-            if self.venv_path and os.path.exists(self.venv_path):
-                shutil.rmtree(self.venv_path)
-                self.venv_path = None
+            self._cleanup_venv()
             raise
         except subprocess.TimeoutExpired:
             logger.error(
                 f"[UV] Virtual environment creation timed "
                 f"out after {self._timeout} seconds"
             )
-            if self.venv_path and os.path.exists(self.venv_path):
-                shutil.rmtree(self.venv_path)
-                self.venv_path = None
+            self._cleanup_venv()
             raise
 
         if self.required_packages:
@@ -199,27 +196,19 @@ class PythonVerifier(BaseVerifier):
                     "[UV] Failed to install required packages via uv:\n"
                     f"{e.stderr.decode().strip()}"
                 )
-                # Clean up resources before re-raising
-                if self.venv_path and os.path.exists(self.venv_path):
-                    shutil.rmtree(self.venv_path)
-                    self.venv_path = None
+                self._cleanup_venv()
                 raise
             except subprocess.TimeoutExpired:
                 logger.error(
                     f"[UV] Package installation timed "
                     f"out after {self._timeout} seconds"
                 )
-                if self.venv_path and os.path.exists(self.venv_path):
-                    shutil.rmtree(self.venv_path)
-                    self.venv_path = None
+                self._cleanup_venv()
                 raise
 
     async def _cleanup(self) -> None:
-        r"""Clean up the virtual environment."""
-        if self.venv_path:
-            shutil.rmtree(self.venv_path)
-            logger.info(f"Virtual environment at {self.venv_path} removed")
-            self.venv_path = None
+        r"""Clean up resources after execution."""
+        self._cleanup_venv()
 
     async def _verify_implementation(
         self, solution: str, reference_answer: Optional[str]
@@ -239,7 +228,7 @@ class PythonVerifier(BaseVerifier):
             solution (str): The Python code or expression to execute and
                 verify.
             reference_answer (Optional[str]): The expected value as a Python
-             expression. If None, only execution success is verified.
+                expression. If None, only execution success is verified.
 
         Returns:
             VerificationResult: Result of the verification process.
@@ -272,7 +261,13 @@ class PythonVerifier(BaseVerifier):
                         result="",
                         error_message=f"Ground truth evaluation error: {e}",
                     )
-                if sol_val == gt_val:
+
+                if self.float_tolerance is not None:
+                    equal = self._is_equal_with_tolerance(sol_val, gt_val)
+                else:
+                    equal = sol_val == gt_val
+
+                if equal:
                     return VerificationResult(
                         status=VerificationOutcome.SUCCESS,
                         result=str(sol_val),
@@ -281,9 +276,18 @@ class PythonVerifier(BaseVerifier):
                     return VerificationResult(
                         status=VerificationOutcome.FAILURE,
                         result=str(sol_val),
-                        error_message="Output mismatch: "
-                        f"{sol_val} != {gt_val}",
+                        error_message=(
+                            "Values not equal"
+                            + (
+                                " (with float tolerance "
+                                f"{self.float_tolerance})"
+                                if self.float_tolerance is not None
+                                else ""
+                            )
+                            + f": {sol_val} != {gt_val}"
+                        ),
                     )
+
             else:
                 return VerificationResult(
                     status=VerificationOutcome.SUCCESS,
@@ -333,17 +337,21 @@ class PythonVerifier(BaseVerifier):
                             error_message="Ground truth evaluation error:"
                             f"{e}",
                         )
-                    if sol_val == gt_val:
+                    if self.float_tolerance is not None:
+                        equal = self._is_equal_with_tolerance(sol_val, gt_val)
+                    else:
+                        equal = sol_val == gt_val
+
+                    if equal:
                         return VerificationResult(
-                            status=VerificationOutcome.SUCCESS,
-                            result=sol_out,
+                            status=VerificationOutcome.SUCCESS, result=sol_out
                         )
                     else:
                         return VerificationResult(
                             status=VerificationOutcome.FAILURE,
                             result=sol_out,
-                            error_message="Output mismatch: "
-                            f"{sol_val} != {gt_val}",
+                            error_message=f"Output mismatch: {sol_val} "
+                            f"!= {gt_val}",
                         )
                 else:
                     # Fallback: string comparison
@@ -456,3 +464,64 @@ class PythonVerifier(BaseVerifier):
                 return True
             except Exception:
                 return False
+
+    def _is_equal_with_tolerance(self, a: Any, b: Any) -> bool:
+        r"""Compares two Python objects for equality with optional float
+        tolerance.
+
+        This method recursively compares nested structures (lists, tuples,
+        sets, and dictionaries) and applies floating point tolerance when
+        comparing numerical values. If no float tolerance is set, a runtime
+        error is raised.
+
+        Args:
+            a (Any): First value to compare.
+            b (Any): Second value to compare.
+
+        Returns:
+            bool: True if the values are considered equal within the
+                specified float tolerance; False otherwise.
+
+        Raises:
+            RuntimeError: If float tolerance is not set (i.e., None).
+        """
+        if self.float_tolerance is None:
+            raise RuntimeError(
+                "Can't compare with tolerance if tolerance is None."
+            )
+        if isinstance(a, (int, float)) and isinstance(b, (int, float)):
+            return abs(float(a) - float(b)) <= self.float_tolerance
+        if isinstance(a, list) and isinstance(b, list):
+            return len(a) == len(b) and all(
+                self._is_equal_with_tolerance(x, y) for x, y in zip(a, b)
+            )
+        if isinstance(a, tuple) and isinstance(b, tuple):
+            return len(a) == len(b) and all(
+                self._is_equal_with_tolerance(x, y) for x, y in zip(a, b)
+            )
+        if isinstance(a, set) and isinstance(b, set):
+            if len(a) != len(b):
+                return False
+            # Need to check both directions to ensure proper matching
+            # Create a copy of b to track matched elements
+            b_copy = list(b)
+            for x in a:
+                found_match = False
+                for i, y in enumerate(b_copy):
+                    if self._is_equal_with_tolerance(x, y):
+                        found_match = True
+                        # Remove the matched element to prevent double-matching
+                        b_copy.pop(i)
+                        break
+                if not found_match:
+                    return False
+            return True
+        if isinstance(a, dict) and isinstance(b, dict):
+            if set(a.keys()) != set(b.keys()):
+                return False
+            return all(self._is_equal_with_tolerance(a[k], b[k]) for k in a)
+        logger.warning(
+            f"Falling back to simple comparison without "
+            f"tolerance for {a} and {b}."
+        )
+        return a == b  # fallback
