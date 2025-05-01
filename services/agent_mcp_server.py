@@ -94,6 +94,7 @@ def set_output_language(language: str, ctx: Context) -> Dict[str, str]:
 
 
 @mcp.resource("agent://")
+@mcp.tool()
 def get_agents_info() -> Dict[str, Any]:
     """Get information about all agents provided by the server.
     Returns:
@@ -103,6 +104,7 @@ def get_agents_info() -> Dict[str, Any]:
 
 
 @mcp.resource("history://{name}")
+@mcp.tool()
 def get_chat_history(name: str) -> Dict[str, Any]:
     """Get the chat history for the given agent.
     Args:
@@ -122,6 +124,7 @@ def get_chat_history(name: str) -> Dict[str, Any]:
 
 
 @mcp.resource("agent://{name}")
+@mcp.tool()
 def get_agent_info(name: str) -> Dict[str, Any]:
     """Get information about the given agent.
     Args:
@@ -148,6 +151,7 @@ def get_agent_info(name: str) -> Dict[str, Any]:
 
 
 @mcp.resource("tool://{name}")
+@mcp.tool()
 def get_available_tools(name: str) -> Dict[str, Any]:
     """Get a list of available internal tools.
     Args:

@@ -69,7 +69,10 @@ The reasoning agent is a helpful assistant that can reason about the world.
 
 # Create another agent for searching the web
 search_agent = ChatAgent(
-    model=model,
+    model=ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type="gpt-4o",
+    ),
     system_message="You are a helpful assistant.",
     tools=[FunctionTool(SearchToolkit().search_brave)],
 )
