@@ -14,6 +14,8 @@
 
 import json
 import os
+import threading
+import time
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Union
 
@@ -37,6 +39,7 @@ class BaseDataGenPipeline(ABC):
     def __init__(
         self,
         output_path: Optional[str] = None,
+        save_intermediate: bool = False,
     ):
         r"""Initialize the base data generation pipeline.
 
@@ -44,8 +47,12 @@ class BaseDataGenPipeline(ABC):
             output_path (Optional[str]): Path to save generated data.
                 If None, results will only be returned without saving to file.
                 (default: :obj:`None`)
+            save_intermediate (bool): Whether to save intermediate results.
+                (default: :obj:`False`)
         """
         self.output_path = output_path
+        self.save_intermediate = save_intermediate
+        self.lock = threading.Lock()
 
     def load_data_from_file(self, file_path: str) -> List[Dict[str, Any]]:
         r"""Load data from a JSONL file.
@@ -225,7 +232,77 @@ class BaseDataGenPipeline(ABC):
         os.replace(temp_path, path)
         logger.info(f"Results safely saved to {path}")
 
-    def execute(self, *args, **kwargs) -> List[Dict[str, Any]]:
+    def safe_write_json(
+        self,
+        data: Union[Dict[str, Any], List[Dict[str, Any]]],
+        output_path: Optional[str] = None,
+        results_key: Optional[str] = None,
+    ) -> None:
+        r"""Safely write results to a JSON file using atomic operations.
+
+        Args:
+            data (Union[Dict[str, Any], List[Dict[str, Any]]]): Data to save.
+                Can be either a dictionary or a list of dictionaries.
+            output_path (Optional[str]): Path to save results.
+                If None, uses the pipeline's output_path.
+                (default: :obj:`None`)
+            results_key (Optional[str]): The key under which to store the
+                results if data is a list and should be wrapped in a dict.
+                If None and data is a list, saves the list directly.
+                (default: :obj:`None`)
+
+        Raises:
+            ValueError: If no output path is provided.
+        """
+        path = output_path or self.output_path
+        if not path:
+            raise ValueError(
+                "No output path provided. Either set output_path during "
+                "initialization or provide it to safe_write_json."
+            )
+
+        # Ensure the directory exists
+        os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+
+        # Format data appropriately
+        formatted_data: Union[Dict[str, Any], List[Dict[str, Any]]]
+
+        if isinstance(data, list) and results_key is not None:
+            formatted_data = {results_key: data}
+        else:
+            formatted_data = data
+
+        # Write to temporary file first
+        temp_path = path + ".tmp"
+        with open(temp_path, 'w', encoding='utf-8') as f:
+            json.dump(formatted_data, f, indent=2, ensure_ascii=False)
+
+        # Replace the original file
+        os.replace(temp_path, path)
+        logger.info(f"Results safely saved to {path}")
+
+    def save_intermediate_results(self, results: List[Dict[str, Any]]) -> None:
+        r"""Hook method called when intermediate results are available.
+
+        This method is called during the generation process when intermediate
+        results are available. Subclasses can override this method to implement
+        custom behavior, such as additional processing or specialized saving.
+
+        By default, if save_intermediate is True, it will save the results
+        using the default save_results method.
+
+        Args:
+            results (List[Dict[str, Any]]): Intermediate results to process.
+        """
+        if self.save_intermediate and self.output_path:
+            self.save_results(results)
+
+    def execute(
+        self,
+        *args,
+        results_key: str = "results",
+        **kwargs,
+    ) -> List[Dict[str, Any]]:
         r"""Execute the data generation pipeline.
 
         This is the primary method to run the pipeline. It calls the
@@ -233,14 +310,39 @@ class BaseDataGenPipeline(ABC):
         it just calls generate, but subclasses can override it to add
         pre/post-processing steps.
 
+        This method provides standardized timing and logging.
+
+        Args:
+            results_key (str, optional): The key under which to store the results
+                in the output file. (default: :obj:`"results"`)
+            *args: Arguments to pass to the generate method.
+            **kwargs: Keyword arguments to pass to the generate method.
+
         Returns:
             List[Dict[str, Any]]: Generated data.
         """
+        logger.info(f"Starting {self.__class__.__name__} pipeline")
+        start_time = time.time()
+
+        # Run the generate method
         results = self.generate(*args, **kwargs)
+
+        # Calculate and log elapsed time
+        elapsed_time = time.time() - start_time
+        if elapsed_time >= 60:
+            logger.info(
+                f"{self.__class__.__name__} pipeline completed in "
+                f"{elapsed_time / 60:.2f} minutes"
+            )
+        else:
+            logger.info(
+                f"{self.__class__.__name__} pipeline completed in "
+                f"{elapsed_time:.2f} seconds"
+            )
 
         # Save results if output_path is specified
         if self.output_path:
-            self.save_results(results)
+            self.save_results(results, results_key=results_key)
 
         return results
 

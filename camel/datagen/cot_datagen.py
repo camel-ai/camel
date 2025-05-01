@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import json
 from datetime import datetime
 from typing import Annotated, Any, Dict, List, Optional, Union
 
@@ -151,6 +150,7 @@ class CoTDataGenerator(BaseDataGenPipeline):
         """
         super().__init__(
             output_path=output_path,
+            save_intermediate=save_intermediate,
         )
 
         if chat_agent is not None:
@@ -483,9 +483,9 @@ class CoTDataGenerator(BaseDataGenPipeline):
             "golden_answers": self.golden_answers,
             "export_time": datetime.now().isoformat(),
         }
+
         try:
-            with open(filepath, 'w', encoding='utf-8') as f:
-                json.dump(export_data, f, ensure_ascii=False, indent=2)
+            self.safe_write_json(export_data, filepath)
             logger.info(f"Solutions exported successfully to {filepath}")
         except Exception as e:
             logger.error(f"Error exporting solutions: {e!s}")
@@ -520,7 +520,9 @@ class CoTDataGenerator(BaseDataGenPipeline):
             questions_to_solve = questions
 
         solutions = []
-        for question in questions_to_solve:
+        total_questions = len(questions_to_solve)
+
+        for idx, question in enumerate(questions_to_solve):
             solution = self.solve(question)
             solutions.append(
                 {
@@ -530,9 +532,10 @@ class CoTDataGenerator(BaseDataGenPipeline):
                 }
             )
 
-            # Save intermediate results if configured
-            if self.output_path:
-                self.save_results(solutions)
+            logger.info(f"Processed {idx+1}/{total_questions} questions")
+
+            if self.save_intermediate:
+                self.save_intermediate_results(solutions)
 
         return solutions
 
@@ -553,22 +556,4 @@ class CoTDataGenerator(BaseDataGenPipeline):
         Returns:
             List[Dict[str, Any]]: Generated solutions.
         """
-        logger.info("Starting CoT data generation")
-        start_time = datetime.now()
-
-        # Run the generation process
-        results = self.generate(questions)
-
-        # Log completion information
-        duration = (datetime.now() - start_time).total_seconds()
-        per_question = duration / len(results) if results else 0
-        logger.info(
-            f"CoT data generation completed: {len(results)} solutions in "
-            f"{duration:.2f} seconds ({per_question:.2f} s/question)"
-        )
-
-        # Save final results if output_path is specified
-        if self.output_path:
-            self.save_results(results)
-
-        return results
+        return super().execute(questions=questions)

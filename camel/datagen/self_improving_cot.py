@@ -15,8 +15,6 @@
 import asyncio
 import json
 import math
-import os
-import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Dict, List, Optional, Union
@@ -96,6 +94,7 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
         solution_pattern: str = r'\\boxed{(.*?)}',
         trace_pattern: Optional[str] = None,
         rationalization: bool = False,
+        save_intermediate: bool = False,
     ):
         r"""Initialize the self-improving cot pipeline.
 
@@ -144,9 +143,12 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
                 (default: :obj:`None`)
             rationalization (bool, optional): Whether to use rationalization.
                 (default: :obj:`False`)
+            save_intermediate (bool, optional): Whether to save intermediate
+                results. (default: :obj:`False`)
         """
         super().__init__(
             output_path=output_path,
+            save_intermediate=save_intermediate,
         )
 
         self.reason_agent = reason_agent
@@ -177,15 +179,16 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
         # Initialize output file with empty results if path is specified
         if self.output_path:
             self.save_results([], results_key="traces")
-        self.lock = threading.Lock()
-
-    def safe_write_json(self, file_path, data):
-        temp_path = file_path + ".tmp"
-        with open(temp_path, "w") as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
-        os.replace(temp_path, file_path)
 
     def clean_json(self, data):
+        r"""Clean JSON data by handling NaN and Infinity values.
+
+        Args:
+            data: Data to clean
+
+        Returns:
+            Cleaned data with NaN and Infinity replaced by None
+        """
         if isinstance(data, dict):
             return {k: self.clean_json(v) for k, v in data.items()}
         elif isinstance(data, list):
@@ -913,8 +916,7 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
                 cleaned_result = self.clean_json(result.model_dump())
                 data['traces'].append(cleaned_result)
 
-                # Write back to the file
-                self.safe_write_json(self.output_path, data)
+                self.safe_write_json(data, self.output_path)
 
             except Exception as e:
                 logger.error(f"Error appending result to traces file: {e}")
@@ -932,23 +934,11 @@ class SelfImprovingCoTPipeline(BaseDataGenPipeline):
             f"Starting self-improving CoT pipeline with "
             f"{len(self.problems)} problems"
         )
-        start_time = time.time()
 
-        # Run the generation process with the specified rationalization setting
-        results = self.generate(rationalization=self.rationalization)
-
-        # Log completion information
-        elapsed_time = (time.time() - start_time) / 60
-        logger.info(
-            f"Self-improving CoT pipeline completed {len(results)} problems "
-            f"in {elapsed_time:.2f} minutes"
+        return super().execute(
+            rationalization=self.rationalization,
+            results_key="traces",
         )
-
-        # Save final results if output_path is specified
-        if self.output_path:
-            self.save_results(results, results_key="traces")
-
-        return results
 
     # Templates for generating reasoning, evaluation and improving them.
     REASONING_TEMPLATE = """Let's solve this step by step:

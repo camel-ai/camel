@@ -12,11 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import json
-import os
 import random
-import threading
-import time
 from typing import Any, Dict, List, Optional, Sequence, Union
 
 from tqdm import tqdm
@@ -580,6 +576,7 @@ class Source2SynthDataGenPipeline(BaseDataGenPipeline):
         """
         super().__init__(
             output_path=output_path,
+            save_intermediate=save_intermediate,
         )
 
         self.processor = UserDataProcessor(config)
@@ -593,19 +590,6 @@ class Source2SynthDataGenPipeline(BaseDataGenPipeline):
         # Initialize output file with empty results if path is specified
         if self.output_path:
             self.save_results([], results_key="examples")
-        self.lock = threading.Lock()
-
-    def safe_write_json(self, file_path, data):
-        r"""Safely write JSON data to file using atomic operations.
-
-        Args:
-            file_path (str): Path to the output file
-            data (Any): Data to write to the file
-        """
-        temp_path = file_path + ".tmp"
-        with open(temp_path, "w") as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
-        os.replace(temp_path, file_path)
 
     def generate(
         self,
@@ -680,6 +664,9 @@ class Source2SynthDataGenPipeline(BaseDataGenPipeline):
                 "dictionaries"
             )
 
+        if self.save_intermediate:
+            self.save_intermediate_results(results)
+
         return results
 
     def execute(
@@ -700,21 +687,5 @@ class Source2SynthDataGenPipeline(BaseDataGenPipeline):
         Returns:
             List[Dict[str, Any]]: List of final curated examples.
         """
-        logger.info("Executing Source2Synth pipeline...")
-        start_time = time.time()
 
-        # Run the generation process
-        results = self.generate(data)
-
-        # Save results if output_path is specified
-        if self.output_path:
-            with self.lock:
-                self.save_results(results, results_key="examples")
-
-        elapsed_time = time.time() - start_time
-        logger.info(
-            f"Source2Synth data generation completed with {len(results)} "
-            f"examples in {elapsed_time:.2f}s"
-        )
-
-        return results
+        return super().execute(data=data, results_key="examples")
