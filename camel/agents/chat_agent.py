@@ -28,6 +28,7 @@ from typing import (
     List,
     Optional,
     Set,
+    Tuple,
     Type,
     Union,
 )
@@ -78,7 +79,6 @@ from camel.utils import get_model_encoding
 if TYPE_CHECKING:
     from camel.terminators import ResponseTerminator
 
-
 logger = logging.getLogger(__name__)
 
 # AgentOps decorator setting
@@ -110,10 +110,17 @@ class ChatAgent(BaseAgent):
 
     Args:
         system_message (Union[BaseMessage, str], optional): The system message
-            for the chat agent.
-        model (BaseModelBackend, optional): The model backend to use for
-            generating responses. (default: :obj:`ModelPlatformType.DEFAULT`
-            with `ModelType.DEFAULT`)
+            for the chat agent. (default: :obj:`None`)
+        model (Union[BaseModelBackend, Tuple[str, str], str, ModelType,
+            Tuple[ModelPlatformType, ModelType], List[BaseModelBackend],
+            List[str], List[ModelType], List[Tuple[str, str]],
+            List[Tuple[ModelPlatformType, ModelType]]], optional):
+            The model backend(s) to use. Can be a single instance,
+            a specification (string, enum, tuple), or a list of instances
+            or specifications to be managed by `ModelManager`. If a list of
+            specifications (not `BaseModelBackend` instances) is provided,
+            they will be instantiated using `ModelFactory`. (default:
+            :obj:`ModelPlatformType.DEFAULT` with `ModelType.DEFAULT`)
         memory (AgentMemory, optional): The agent memory for managing chat
             messages. If `None`, a :obj:`ChatHistoryMemory` will be used.
             (default: :obj:`None`)
@@ -150,7 +157,18 @@ class ChatAgent(BaseAgent):
         self,
         system_message: Optional[Union[BaseMessage, str]] = None,
         model: Optional[
-            Union[BaseModelBackend, List[BaseModelBackend]]
+            Union[
+                BaseModelBackend,
+                Tuple[str, str],
+                str,
+                ModelType,
+                Tuple[ModelPlatformType, ModelType],
+                List[BaseModelBackend],
+                List[str],
+                List[ModelType],
+                List[Tuple[str, str]],
+                List[Tuple[ModelPlatformType, ModelType]],
+            ]
         ] = None,
         memory: Optional[AgentMemory] = None,
         message_window_size: Optional[int] = None,
@@ -165,19 +183,14 @@ class ChatAgent(BaseAgent):
         single_iteration: bool = False,
         agent_id: Optional[str] = None,
     ) -> None:
-        # Set up model backend
+        # Resolve model backends and set up model manager
+        resolved_models = self._resolve_models(model)
         self.model_backend = ModelManager(
-            (
-                model
-                if model is not None
-                else ModelFactory.create(
-                    model_platform=ModelPlatformType.DEFAULT,
-                    model_type=ModelType.DEFAULT,
-                )
-            ),
+            resolved_models,
             scheduling_strategy=scheduling_strategy,
         )
         self.model_type = self.model_backend.model_type
+
         # Assign unique ID
         self.agent_id = agent_id if agent_id else str(uuid.uuid4())
 
@@ -246,6 +259,137 @@ class ChatAgent(BaseAgent):
         self.init_messages()
         for terminator in self.response_terminators:
             terminator.reset()
+
+    def _resolve_models(
+        self,
+        model: Optional[
+            Union[
+                BaseModelBackend,
+                Tuple[str, str],
+                str,
+                ModelType,
+                Tuple[ModelPlatformType, ModelType],
+                List[BaseModelBackend],
+                List[str],
+                List[ModelType],
+                List[Tuple[str, str]],
+                List[Tuple[ModelPlatformType, ModelType]],
+            ]
+        ],
+    ) -> Union[BaseModelBackend, List[BaseModelBackend]]:
+        r"""Resolves model specifications into model backend instances.
+
+        This method handles various input formats for model specifications and
+        returns the appropriate model backend(s).
+
+        Args:
+            model: Model specification in various formats including single
+                model, list of models, or model type specifications.
+
+        Returns:
+            Union[BaseModelBackend, List[BaseModelBackend]]: Resolved model
+                backend(s).
+
+        Raises:
+            TypeError: If the model specification format is not supported.
+        """
+        if model is None:
+            # Default single model if none provided
+            return ModelFactory.create(
+                model_platform=ModelPlatformType.DEFAULT,
+                model_type=ModelType.DEFAULT,
+            )
+        elif isinstance(model, BaseModelBackend):
+            # Already a single pre-instantiated model
+            return model
+        elif isinstance(model, list):
+            return self._resolve_model_list(model)
+        elif isinstance(model, (ModelType, str)):
+            # Single string or ModelType -> use default platform
+            model_platform = ModelPlatformType.DEFAULT
+            model_type = model
+            logger.warning(
+                f"Model type '{model_type}' provided without a platform. "
+                f"Using platform '{model_platform}'. Note: platform "
+                "is not automatically inferred based on model type."
+            )
+            return ModelFactory.create(
+                model_platform=model_platform,
+                model_type=model_type,
+            )
+        elif isinstance(model, tuple) and len(model) == 2:
+            # Single tuple (platform, type)
+            model_platform, model_type = model  # type: ignore[assignment]
+            return ModelFactory.create(
+                model_platform=model_platform,
+                model_type=model_type,
+            )
+        else:
+            raise TypeError(
+                f"Unsupported type for model parameter: {type(model)}"
+            )
+
+    def _resolve_model_list(
+        self, model_list: list
+    ) -> Union[BaseModelBackend, List[BaseModelBackend]]:
+        r"""Resolves a list of model specifications into model backend
+        instances.
+
+        Args:
+            model_list (list): List of model specifications in various formats.
+
+        Returns:
+            Union[BaseModelBackend, List[BaseModelBackend]]: Resolved model
+                backend(s).
+
+        Raises:
+            TypeError: If the list elements format is not supported.
+        """
+        if not model_list:  # Handle empty list
+            logger.warning(
+                "Empty list provided for model, using default model."
+            )
+            return ModelFactory.create(
+                model_platform=ModelPlatformType.DEFAULT,
+                model_type=ModelType.DEFAULT,
+            )
+        elif isinstance(model_list[0], BaseModelBackend):
+            # List of pre-instantiated models
+            return model_list  # type: ignore[return-value]
+        elif isinstance(model_list[0], (str, ModelType)):
+            # List of strings or ModelTypes -> use default platform
+            model_platform = ModelPlatformType.DEFAULT
+            logger.warning(
+                f"List of model types {model_list} provided without "
+                f"platforms. Using platform '{model_platform}' for all. "
+                "Note: platform is not automatically inferred based on "
+                "model type."
+            )
+            resolved_models_list = []
+            for model_type_item in model_list:
+                resolved_models_list.append(
+                    ModelFactory.create(
+                        model_platform=model_platform,
+                        model_type=model_type_item,  # type: ignore[arg-type]
+                    )
+                )
+            return resolved_models_list
+        elif isinstance(model_list[0], tuple) and len(model_list[0]) == 2:
+            # List of tuples (platform, type)
+            resolved_models_list = []
+            for model_spec in model_list:
+                platform, type_ = model_spec[0], model_spec[1]  # type: ignore[index]
+                resolved_models_list.append(
+                    ModelFactory.create(
+                        model_platform=platform, model_type=type_
+                    )
+                )
+            return resolved_models_list
+        else:
+            raise TypeError(
+                "Unsupported type for list elements in model: "
+                f"{type(model_list[0])}"
+            )
 
     @property
     def system_message(self) -> Optional[BaseMessage]:
