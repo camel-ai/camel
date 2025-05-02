@@ -17,9 +17,19 @@ from typing import Any, Optional
 from camel.agents.base import BaseAgent
 from camel.agents.search_agent import SearchAgent
 from camel.retrievers.auto_retriever import AutoRetriever
-from camel.toolkits.search_toolkit import SearchToolkit
+from camel.toolkits.search_toolkit import SearchToolkit, FunctionTool
+from typing import List, Union
 from camel.agents.chat_agent import ChatAgent
-
+from camel.logger import get_logger
+import re
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType, ModelType
+from camel.models import (
+    BaseModelBackend,
+    ModelFactory,
+    ModelManager,
+    ModelProcessingError,
+)
 # AgentOps decorator setting
 try:
     import os
@@ -31,17 +41,16 @@ try:
 except (ImportError, AttributeError):
     from camel.utils import track_agent
 
+logger = get_logger(__name__)
+
 @track_agent(name="DeepResearchAgent")
 class DeepResearchAgent(BaseAgent):
     def __init__(
             self,
-            query: str,
-            tools: List[FunctionTool],
-            model: Optional[Union[BaseModelBackend, List[BaseModelBackend]],
-        ] = None,
+            tools, #: List[FunctionTool],
+            model, #: Optional[Union[BaseModelBackend, List[BaseModelBackend]],
     ) -> None:
-        self.query = query
-        self.tools = tools
+        self.tools_list = tools
         self.model = model
         # Todo: Think about how memory for worker/writer
         #  can be better customized
@@ -143,9 +152,19 @@ class DeepResearchAgent(BaseAgent):
                 f"<Plan>\n{plan.strip()}\n</Plan>\n"
                 f"<Observation>\n{obs.strip()}\n</Observation>\n\n"
             )
+    @staticmethod
+    def extract_plan_subqueries(content: str) -> list[str]:
+        match = re.search(r"\$Plan\$:([\s\S]+)", content)
+        if not match:
+            return []
+
+        plan_block = match.group(1).strip()
+        lines = [line.strip() for line in plan_block.split("\n") if
+                 line.strip()]
+        return lines
 
 
-    def step(self, query, output_language, max_planning_iterations = 10):
+    def step(self, query, max_planning_iterations = 10, output_language = 'English'):
         r"""docstring"""
         # Set the planner agent
         planner_agent = ChatAgent(
@@ -155,12 +174,96 @@ class DeepResearchAgent(BaseAgent):
             output_language= output_language,
         )
 
-        response = planner_agent.step("Now begin planning.")
+        response = planner_agent.step("Please begin planning.")
         content = response.msgs[0].content
-        logger.info(print(content))
+        #logger.info(content)
+        subqueries = DeepResearchAgent.extract_plan_subqueries(content)
+        print("Initial plan:", subqueries)
 
+        worker_agent_prompt = (
+        "You are a helpful worker agent in the Camel-AI Deep Research Agent"
+        " system. Your goal is to solve tasks that the planner assigned to "
+        "you. Your have tool calling ability. Please try your best to "
+        "give the answer with tool calling. The answer should be as detailed "
+        "and verbose as you can. The planner will help you to summarize the "
+        "information later. If you really cannot find the answer even"
+        "with the help of the tool, then just return 'I do not know'. "
+        "Please do not make up answers, as it will influence the result!")
 
+        # Set the worker agent
+        worker_agent = ChatAgent(
+            worker_agent_prompt,
+            model=self.model,
+            tools=self.tools_list,
+            output_language=output_language ,
+        )
+
+        subquery_history = {}
+        for replan_iter in range(1, max_planning_iterations):
+            print("replan iteration {}".format(replan_iter))
+            for subquery in subqueries:
+                print(
+                    f"Now using worker agent to answer the subquery {subquery}")
+
+                # worker_agent  # Todo: Double check the usage of reset.
+                subquery_response = worker_agent.step(subquery)
+                print("Answer for this subquery:",
+                      subquery_response.msgs[0].content)
+                subquery_history[subquery] = subquery_response.msgs[0].content
+
+            replanner_system_prompt = DeepResearchAgent.format_replanner_prompt(query,
+                                                              subquery_history)
+            # print("Replan prompt:",replanner_system_prompt)
+            # Set the agent
+            replanner_agent = ChatAgent(
+                replanner_system_prompt,
+                model=self.model,
+                # tools=tools_list,
+                output_language=output_language ,
+            )
+
+            response = replanner_agent.step("Please begin planning.")
+
+            # print("Replan output:", response.msgs[0].content)
+            subqueries = DeepResearchAgent.extract_plan_subqueries(response.msgs[0].content)
+            print("New plans:\n", subqueries)
+            if not subqueries:
+                print("Problem Resolved! Stop Planning Now.")
+                break
+
+        summarizer_agent_prompt = (
+            "You are the writer agent in the CAMEL-AI Deep Research Agent system. "
+            "Your task is to synthesize a final report to the original query using all prior plan-observation pairs.\n\n"
+            "You should:\n"
+            "- Carefully review all prior plans and their corresponding observations.\n"
+            "- Revise or refine the original plan.\n"
+            "- Identify relevant, accurate, and insightful information from observations.\n"
+            "- Compose a coherent and complete final report.\n\n"
+            "Please keep the original query clearly in mind throughout the writing process.\n\n"
+            f"Original Query:\n{query}\n\n"
+            "Plan and Observation History:\n"
+        )
+        for plan, obs in subquery_history.items():
+            summarizer_agent_prompt += (
+                f"<Plan>\n{plan.strip()}\n</Plan>\n"
+                f"<Observation>\n{obs.strip()}\n</Observation>\n\n"
+            )
+
+        # Set the agent
+        summarizer_agent = ChatAgent(
+            summarizer_agent_prompt,
+            model=self.model,
+            # tools=tools_list,
+            output_language=output_language,
+        )
+
+        final_answer = summarizer_agent.step(
+            'Finalize your response based on the context above. Please first write out a final step-by-step plan, then resolve the query beginning with $Final Report$:\n')
+        print("Deep Researcher final answer:\n", final_answer.msgs[0].content)
+
+        return final_answer.msgs[0].content
     def reset(self):
         r"The deep research agent does not have state, so do not need reset"
         pass
+        
 
