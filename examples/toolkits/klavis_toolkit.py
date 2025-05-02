@@ -70,12 +70,57 @@ print(response.msg.content)
 
 """
 Expected output would show:
-1. A list of available MCP servers with their details
-2. The result of creating a new server instance (success or error)
-3. Details about the created server instance
+1. **Markdown2doc**
+   - **Description:** Convert markdown text to different file
+     formats (pdf, docx, doc, html), based on Pandoc.
+   - **Tools:**
+     - Convert markdown text to different file formats (pdf, docx, 
+     doc, html, html5)
 
-The actual responses will depend on:
-- Whether valid API keys are configured in the environment
-- The actual server data available in the Klavis API
-- Success/failure of the API calls
+2. **Discord**
+   - **Description:** Discord is a VoIP and instant messaging 
+   social platform.
+   - **Tools:**
+     - Get information about a Discord server (guild)
+     - Get a list of members in a server
+     - Create a new text channel
+     - Add a reaction emoji to a message
+     - Send a text message to a specific Discord channel
+     - Read recent messages from a Discord channel
+
+3. **YouTube**
+   - **Description:** Extract and convert YouTube video information to 
+   markdown format.
+   - **Tools:**
+     - Retrieve the transcript/subtitles for a YouTube video and convert 
+     it to markdown
+
+.....
+
+========================================================================
+
+Server Instance Creation Result:
+A new Klavis AI MCP server instance has been successfully created for the 
+server named **GitHub**. Here are the details:
+
+- **Server URL:** [https://github-mcp-server.klavis.ai/sse?instance_id=
+{instance_id}](https://github-mcp-server.klavis.ai/sse?instance_id={instance_id})
+- **Instance ID:** {instance_id}
+
+You can use this URL to connect to the server instance. If you need any further
+assistance or actions, feel free to ask!
+
+=========================================================================
+
+Server Instance Details:
+Here are the details about the server instance we just created:
+
+- **Instance ID:** {instance_id}
+- **Server Name:** GitHub
+- **Platform:** `<your-platform-name>`
+- **External User ID:** user123
+- **Is Authenticated:** No
+
+The instance is currently not authenticated. If you need to set an 
+authentication token or perform any other actions, please let me know!
 """

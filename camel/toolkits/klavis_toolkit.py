@@ -17,9 +17,12 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
+from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.utils import MCPServer, api_keys_required, dependencies_required
+
+logger = get_logger(__name__)
 
 
 @MCPServer()
@@ -45,12 +48,62 @@ class KlavisToolkit(BaseToolkit):
         ]
     )
     def __init__(self, timeout: Optional[float] = None) -> None:
-        super().__init__(timeout=timeout)
         r"""Initialize the KlavisToolkit with API client. The API key is
         retrieved from environment variables.
         """
+        super().__init__(timeout=timeout)
         self.api_key = os.environ.get("KLAVIS_API_KEY")
         self.base_url = "https://api.klavis.ai"
+
+    def _request(
+        self,
+        method: str,
+        endpoint: str,
+        payload: Optional[Dict[str, Any]] = None,
+        additional_headers: Optional[Dict[str, str]] = None,
+    ) -> Dict[str, Any]:
+        r"""Make an HTTP request to the Klavis API.
+
+        Args:
+            method (str): HTTP method (e.g., 'GET', 'POST', 'DELETE').
+            endpoint (str): API endpoint path.
+            payload (Optional[Dict[str, Any]]): JSON payload for POST
+                requests.
+            additional_headers (Optional[Dict[str, str]]): Additional
+                headers to include in the request.
+
+        Returns:
+            Dict[str, Any]: The JSON response from the API or an error
+                dict.
+        """
+        url = f"{self.base_url}{endpoint}"
+        headers = {
+            'accept': 'application/json',
+            'Authorization': f'Bearer {self.api_key}',
+        }
+        if additional_headers:
+            headers.update(additional_headers)
+
+        logger.debug(
+            f"Making {method} request to {url} with payload: {payload}"
+        )
+
+        try:
+            response = requests.request(
+                method,
+                url,
+                headers=headers,
+                json=payload,
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Request failed for {method} {endpoint}: {e!s}")
+            return {"error": f"Request failed: {e!s}"}
+        except ValueError:
+            logger.error(f"Response for {method} {endpoint} is not valid JSON")
+            return {"error": "Response is not valid JSON"}
 
     def create_server_instance(
         self, server_name: str, user_id: str, platform_name: str
@@ -66,28 +119,16 @@ class KlavisToolkit(BaseToolkit):
         Returns:
             Dict[str, Any]: Response containing the server instance details.
         """
-        try:
-            headers = {
-                'accept': 'application/json',
-                'Authorization': f'Bearer {self.api_key}',
-                'Content-Type': 'application/json',
-            }
-            payload = {
-                "serverName": server_name,
-                "userId": user_id,
-                "platformName": platform_name,
-            }
-            response = requests.post(
-                f"{self.base_url}/mcp-server/instance/create",
-                headers=headers,
-                json=payload,
-            )
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.RequestException as e:
-            return {"error": f"Request failed: {e!s}"}
-        except ValueError:
-            return {"error": "Response is not valid JSON"}
+        endpoint = "/mcp-server/instance/create"
+        payload = {
+            "serverName": server_name,
+            "userId": user_id,
+            "platformName": platform_name,
+        }
+        headers = {'Content-Type': 'application/json'}
+        return self._request(
+            'POST', endpoint, payload=payload, additional_headers=headers
+        )
 
     def get_server_instance(self, instance_id: str) -> Dict[str, Any]:
         r"""Get details of a specific server connection instance.
@@ -99,21 +140,8 @@ class KlavisToolkit(BaseToolkit):
         Returns:
             Dict[str, Any]: Details about the server instance.
         """
-        try:
-            headers = {
-                'accept': 'application/json',
-                'Authorization': f'Bearer {self.api_key}',
-            }
-            response = requests.get(
-                f"{self.base_url}/mcp-server/instance/get/{instance_id}",
-                headers=headers,
-            )
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.RequestException as e:
-            return {"error": f"Request failed: {e!s}"}
-        except ValueError:
-            return {"error": "Response is not valid JSON"}
+        endpoint = f"/mcp-server/instance/get/{instance_id}"
+        return self._request('GET', endpoint)
 
     def delete_auth_data(self, instance_id: str) -> Dict[str, Any]:
         r"""Delete authentication metadata for a specific server
@@ -126,21 +154,8 @@ class KlavisToolkit(BaseToolkit):
         Returns:
             Dict[str, Any]: Status response for the operation.
         """
-        try:
-            headers = {
-                'accept': 'application/json',
-                'Authorization': f'Bearer {self.api_key}',
-            }
-            response = requests.delete(
-                f"{self.base_url}/mcp-server/instance/delete-auth/{instance_id}",
-                headers=headers,
-            )
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.RequestException as e:
-            return {"error": f"Request failed: {e!s}"}
-        except ValueError:
-            return {"error": "Response is not valid JSON"}
+        endpoint = f"/mcp-server/instance/delete-auth/{instance_id}"
+        return self._request('DELETE', endpoint)
 
     def delete_server_instance(self, instance_id: str) -> Dict[str, Any]:
         r"""Completely removes a server connection instance.
@@ -151,21 +166,8 @@ class KlavisToolkit(BaseToolkit):
         Returns:
             Dict[str, Any]: Status response for the operation.
         """
-        try:
-            headers = {
-                'accept': 'application/json',
-                'Authorization': f'Bearer {self.api_key}',
-            }
-            response = requests.delete(
-                f"{self.base_url}/mcp-server/instance/delete/{instance_id}",
-                headers=headers,
-            )
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.RequestException as e:
-            return {"error": f"Request failed: {e!s}"}
-        except ValueError:
-            return {"error": "Response is not valid JSON"}
+        endpoint = f"/mcp-server/instance/delete/{instance_id}"
+        return self._request('DELETE', endpoint)
 
     def get_server_tools(self, server_name: str) -> Dict[str, Any]:
         r"""Get list of tool names for a specific MCP server.
@@ -176,21 +178,8 @@ class KlavisToolkit(BaseToolkit):
         Returns:
             Dict[str, Any]: List of tools available for the specified server.
         """
-        try:
-            headers = {
-                'accept': 'application/json',
-                'Authorization': f'Bearer {self.api_key}',
-            }
-            response = requests.get(
-                f"{self.base_url}/mcp-server/tools/{server_name}",
-                headers=headers,
-            )
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.RequestException as e:
-            return {"error": f"Request failed: {e!s}"}
-        except ValueError:
-            return {"error": "Response is not valid JSON"}
+        endpoint = f"/mcp-server/tools/{server_name}"
+        return self._request('GET', endpoint)
 
     def get_all_servers(self) -> Dict[str, Any]:
         r"""Get all MCP servers with their basic information.
@@ -198,21 +187,8 @@ class KlavisToolkit(BaseToolkit):
         Returns:
             Dict[str, Any]: Information about all available MCP servers.
         """
-        try:
-            headers = {
-                'accept': 'application/json',
-                'Authorization': f'Bearer {self.api_key}',
-            }
-            response = requests.get(
-                f"{self.base_url}/mcp-server/servers",
-                headers=headers,
-            )
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.RequestException as e:
-            return {"error": f"Request failed: {e!s}"}
-        except ValueError:
-            return {"error": "Response is not valid JSON"}
+        endpoint = "/mcp-server/servers"
+        return self._request('GET', endpoint)
 
     def set_auth_token(
         self, instance_id: str, auth_token: str
@@ -226,24 +202,12 @@ class KlavisToolkit(BaseToolkit):
         Returns:
             Dict[str, Any]: Status response for the operation.
         """
-        try:
-            headers = {
-                'accept': 'application/json',
-                'Authorization': f'Bearer {self.api_key}',
-                'Content-Type': 'application/json',
-            }
-            payload = {"instanceId": instance_id, "authToken": auth_token}
-            response = requests.post(
-                f"{self.base_url}/mcp-server/instance/set-auth-token",
-                headers=headers,
-                json=payload,
-            )
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.RequestException as e:
-            return {"error": f"Request failed: {e!s}"}
-        except ValueError:
-            return {"error": "Response is not valid JSON"}
+        endpoint = "/mcp-server/instance/set-auth-token"
+        payload = {"instanceId": instance_id, "authToken": auth_token}
+        headers = {'Content-Type': 'application/json'}
+        return self._request(
+            'POST', endpoint, payload=payload, additional_headers=headers
+        )
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the functions
