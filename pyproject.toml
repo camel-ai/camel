@@ -242,6 +242,7 @@ owl = [
     "rouge>=1.0.1,<2",
     "crawl4ai>=0.3.745",
     "scrapegraph-py>=1.12.0,<2",
+    "pyautogui>=0.9.54,<0.10",
 ]
 all = [
     "numpy~=1.26",
