@@ -714,13 +714,10 @@ class ChatAgent(BaseAgent):
             message.content = response.output_messages[0].content
             self._try_format_message(message, response_format)
 
-    import threading
-
     def step(
         self,
         input_message: Union[BaseMessage, str],
         response_format: Optional[Type[BaseModel]] = None,
-        stop_event: Optional[threading.Event] = None,
     ) -> ChatAgentResponse:
         r"""Executes a single step in the chat session, generating a response
         to the input message.
@@ -733,9 +730,6 @@ class ChatAgent(BaseAgent):
                 model defining the expected structure of the response. Used to
                 generate a structured response if provided. (default:
                 :obj:`None`)
-            stop_event (Optional[threading.Event], optional): Event to signal
-                termination of the agent's operation. When set, the agent will
-                terminate its execution. (default: :obj:`None`)
 
         Returns:
             ChatAgentResponse: Contains output messages, a termination status
@@ -770,7 +764,7 @@ class ChatAgent(BaseAgent):
             )
 
             # Terminate Agent if stop_event is set
-            if stop_event and stop_event.is_set():
+            if self.stop_event and self.stop_event.is_set():
                 # Use the _step_token_exceed to terminate the agent with reason
                 return self._step_token_exceed(
                     num_tokens, tool_call_records, "termination_triggered"
@@ -822,7 +816,6 @@ class ChatAgent(BaseAgent):
         self,
         input_message: Union[BaseMessage, str],
         response_format: Optional[Type[BaseModel]] = None,
-        stop_event: Optional[threading.Event] = None,
     ) -> ChatAgentResponse:
         r"""Performs a single step in the chat session by generating a response
         to the input message. This agent step can call async function calls.
@@ -839,9 +832,6 @@ class ChatAgent(BaseAgent):
                 used to generate a structured response by LLM. This schema
                 helps in defining the expected output format. (default:
                 :obj:`None`)
-            stop_event (Optional[threading.Event], optional): Event to signal
-                termination of the agent's operation. When set, the agent will
-                terminate its execution. (default: :obj:`None`)
 
         Returns:
             ChatAgentResponse: A struct containing the output messages,
@@ -873,7 +863,7 @@ class ChatAgent(BaseAgent):
             )
 
             # Terminate Agent if stop_event is set
-            if stop_event and stop_event.is_set():
+            if self.stop_event and self.stop_event.is_set():
                 # Use the _step_token_exceed to terminate the agent with reason
                 return self._step_token_exceed(
                     num_tokens, tool_call_records, "termination_triggered"
