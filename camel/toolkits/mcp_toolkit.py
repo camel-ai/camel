@@ -61,7 +61,7 @@ class MCPClient(BaseToolkit):
         headers (Dict[str, str]): Headers for the HTTP request.
             (default: :obj:`'None'`)
         strict (Optional[bool]): Whether to enforce strict mode for the
-            function call. (default: :obj:`True`)
+            function call. (default: :obj:`False`)
     """
 
     def __init__(
@@ -71,7 +71,7 @@ class MCPClient(BaseToolkit):
         env: Optional[Dict[str, str]] = None,
         timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
-        strict: Optional[bool] = None,
+        strict: Optional[bool] = False,
     ):
         from mcp import Tool
 
@@ -81,7 +81,7 @@ class MCPClient(BaseToolkit):
         self.args = args or []
         self.env = env or {}
         self.headers = headers or {}
-        self.strict = strict or True
+        self.strict = strict
 
         self._mcp_tools: List[Tool] = []
         self._session: Optional['ClientSession'] = None
@@ -370,7 +370,7 @@ class MCPToolkit(BaseToolkit):
         config_path (Optional[str]): Path to a JSON configuration file
             defining MCP servers.
         strict (Optional[bool]): Whether to enforce strict mode for the
-            function call. (default: :obj:`True`)
+            function call. (default: :obj:`False`)
 
     Note:
         Either `servers` or `config_path` must be provided. If both are
@@ -405,7 +405,7 @@ class MCPToolkit(BaseToolkit):
         self,
         servers: Optional[List[MCPClient]] = None,
         config_path: Optional[str] = None,
-        strict: Optional[bool] = None,
+        strict: Optional[bool] = False,
     ):
         super().__init__()
 
@@ -419,19 +419,21 @@ class MCPToolkit(BaseToolkit):
 
         if config_path:
             self.servers.extend(
-                self._load_servers_from_config(config_path, strict or True)
+                self._load_servers_from_config(config_path, strict)
             )
 
         self._exit_stack = AsyncExitStack()
         self._connected = False
 
     def _load_servers_from_config(
-        self, config_path: str, strict: bool
+        self, config_path: str, strict: Optional[bool] = False
     ) -> List[MCPClient]:
         r"""Loads MCP server configurations from a JSON file.
 
         Args:
             config_path (str): Path to the JSON configuration file.
+            strict (bool): Whether to enforce strict mode for the
+                function call. (default: :obj:`False`)
 
         Returns:
             List[MCPClient]: List of configured MCPClient instances.
