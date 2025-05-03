@@ -571,6 +571,7 @@ all = [
     { name = "datacommons" },
     { name = "datacommons-pandas" },
     { name = "datasets" },
+    { name = "daytona-sdk" },
     { name = "diffusers" },
     { name = "discord-py" },
     { name = "docker" },
@@ -709,7 +710,6 @@ dev = [
 ]
 dev-tools = [
     { name = "agentops" },
-    { name = "daytona-api-client" },
     { name = "daytona-sdk" },
     { name = "docker" },
     { name = "e2b-code-interpreter" },
@@ -924,7 +924,7 @@ requires-dist = [
     { name = "datasets", marker = "extra == 'all'", specifier = ">=3,<4" },
     { name = "datasets", marker = "extra == 'huggingface'", specifier = ">=3,<4" },
     { name = "datasets", marker = "extra == 'owl'", specifier = ">=3,<4" },
-    { name = "daytona-api-client", marker = "extra == 'dev-tools'", specifier = "==0.16.0" },
+    { name = "daytona-sdk", marker = "extra == 'all'", specifier = "==0.14.0" },
     { name = "daytona-sdk", marker = "extra == 'dev-tools'", specifier = "==0.14.0" },
     { name = "diffusers", marker = "extra == 'all'", specifier = ">=0.25.0,<0.26" },
     { name = "diffusers", marker = "extra == 'huggingface'", specifier = ">=0.25.0,<0.26" },

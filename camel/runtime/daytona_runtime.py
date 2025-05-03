@@ -14,18 +14,17 @@
 
 import inspect
 import json
-import logging
 import os
 from functools import wraps
 from typing import Any, Dict, List, Optional, Union
 
-from daytona_sdk import CreateSandboxParams, Daytona, DaytonaConfig
 from pydantic import BaseModel
 
+from camel.logger import get_logger
 from camel.runtime import BaseRuntime
 from camel.toolkits.function_tool import FunctionTool
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class DaytonaRuntime(BaseRuntime):
@@ -33,26 +32,30 @@ class DaytonaRuntime(BaseRuntime):
     Requires the Daytona server to be running and an API key configured.
 
     Args:
-        api_key (str): The Daytona API key for authentication.
-        server_url (str): The URL of the Daytona server.
-        (default: :obj: `http://localhost:8000`)
-        language (str): The programming language for the sandbox.
-        (default: :obj: `python`)
+        api_key (Optional[str]): The Daytona API key for authentication. If not
+            provided, it will try to use the DAYTONA_API_KEY environment
+            variable. (default: :obj: `None`)
+        api_url (Optional[str]): The URL of the Daytona server. If not
+            provided, it will try to use the DAYTONA_API_URL environment
+            variable. If none is provided, it will use "http://localhost:8000".
+            (default: :obj: `None`)
+        language (Optional[str]): The programming language for the sandbox.
+            (default: :obj: `"python"`)
     """
 
     def __init__(
         self,
-        api_key: str,
-        server_url: str = "http://localhost:8000",
-        language: str = "python",
+        api_key: Optional[str] = None,
+        api_url: Optional[str] = None,
+        language: Optional[str] = "python",
     ):
+        from daytona_sdk import Daytona, DaytonaConfig
+
         super().__init__()
-        self.api_key = api_key
-        self.server_url = server_url
+        self.api_key = api_key or os.environ.get('DAYTONA_API_KEY')
+        self.api_url = api_url or os.environ.get('DAYTONA_API_URL')
         self.language = language
-        self.config = DaytonaConfig(
-            api_key=os.environ.get('DAYTONA_API_KEY', None)
-        )
+        self.config = DaytonaConfig(api_key=self.api_key, api_url=self.api_url)
         self.daytona = Daytona(self.config)
         self.sandbox = None
         self.entrypoint: Dict[str, str] = dict()
@@ -63,6 +66,8 @@ class DaytonaRuntime(BaseRuntime):
         Returns:
             DaytonaRuntime: The current runtime.
         """
+        from daytona_sdk import CreateSandboxParams
+
         try:
             params = CreateSandboxParams(language=self.language)
             self.sandbox = self.daytona.create(params)
@@ -71,7 +76,7 @@ class DaytonaRuntime(BaseRuntime):
             logger.info(f"Sandbox created with ID: {self.sandbox.id}")
         except Exception as e:
             logger.error(f"Failed to create sandbox: {e!s}")
-            raise
+            raise RuntimeError(f"Daytona sandbox creation failed: {e!s}")
         return self
 
     def _cleanup(self):
@@ -108,17 +113,16 @@ class DaytonaRuntime(BaseRuntime):
             entrypoint += json.dumps(arguments, ensure_ascii=False)
 
         def make_wrapper(inner_func, func_name, func_code):
-            """
-            Creates a wrapper for a function to execute it in the
+            r"""Creates a wrapper for a function to execute it in the
             Daytona sandbox.
 
             Args:
-            inner_func (Callable): The function to wrap.
-            func_name (str): The name of the function.
-            func_code (str): The source code of the function.
+                inner_func (Callable): The function to wrap.
+                func_name (str): The name of the function.
+                func_code (str): The source code of the function.
 
             Returns:
-            Callable: A wrapped function that executes in the sandbox.
+                Callable: A wrapped function that executes in the sandbox.
             """
 
             @wraps(inner_func)
@@ -158,7 +162,8 @@ class DaytonaRuntime(BaseRuntime):
                     f"args = json.loads('{args_str}')\n"
                     f"kwargs = json.loads('{kwargs_str}')\n"
                     f"result = {func_name}(*args, **kwargs)\n"
-                    f"print(json.dumps(result))"
+                    f"print(json.dumps(result) if result is not "
+                    f"None else 'null')"
                 )
 
                 # Execute the function in the sandbox
@@ -194,6 +199,14 @@ class DaytonaRuntime(BaseRuntime):
         return self
 
     def info(self) -> str:
+        r"""Get information about the current sandbox.
+
+        Returns:
+            str: Information about the sandbox.
+
+        Raises:
+            RuntimeError: If the sandbox is not initialized.
+        """
         if self.sandbox is None:
             raise RuntimeError("Failed to create sandbox.")
         info = self.sandbox.info()
@@ -205,7 +218,8 @@ class DaytonaRuntime(BaseRuntime):
 
     def __del__(self):
         r"""Clean up the sandbox when the object is deleted."""
-        self._cleanup()
+        if hasattr(self, 'sandbox'):
+            self._cleanup()
 
     def stop(self) -> "DaytonaRuntime":
         r"""Stop and remove the sandbox.
