@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Any, List, Optional
+from typing import List, Optional
 
 from camel.configs.base_config import BaseConfig
 
@@ -23,6 +23,7 @@ class AnthropicConfig(BaseConfig):
     Anthropic API.
 
     See: https://docs.anthropic.com/en/api/messages
+
     Args:
         max_tokens (int, optional): The maximum number of tokens to
             generate before stopping. Note that Anthropic models may stop
@@ -74,29 +75,6 @@ class AnthropicConfig(BaseConfig):
     metadata: Optional[dict] = None
     thinking: Optional[dict] = None
     tool_choice: Optional[dict] = None
-
-    def as_dict(self) -> dict[str, Any]:
-        config_dict = super().as_dict()
-        # Create a list of keys to remove to avoid modifying dict
-        keys_to_remove = [
-            key for key, value in config_dict.items() if value is None
-        ]
-
-        for key in keys_to_remove:
-            del config_dict[key]
-
-        # remove some keys if thinking is enabled
-        thinking_enabled = (
-            self.thinking is not None
-            and self.thinking.get("type") == "enabled"
-        )
-        if thinking_enabled:
-            # `top_p`, `top_k`, `temperature` must be unset when thinking is
-            # enabled.
-            config_dict.pop("top_k", None)
-            config_dict.pop("top_p", None)
-            config_dict.pop("temperature", None)
-        return config_dict
 
 
 ANTHROPIC_API_PARAMS = {param for param in AnthropicConfig.model_fields.keys()}

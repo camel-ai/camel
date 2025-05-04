@@ -352,6 +352,8 @@ def api_keys_required(
                 key_way = "https://platform.lingyiwanwu.com/docs"
             elif env_var_name == 'ZHIPUAI_API_KEY':
                 key_way = "https://www.zhipuai.cn/"
+            elif env_var_name == 'KLAVIS_API_KEY':
+                key_way = "https://www.klavis.ai/docs"
 
             if missing_keys:
                 raise ValueError(

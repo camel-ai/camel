@@ -18,6 +18,7 @@ import yaml
 
 from camel.models.aiml_model import AIMLModel
 from camel.models.anthropic_model import AnthropicModel
+from camel.models.aws_bedrock_model import AWSBedrockModel
 from camel.models.azure_openai_model import AzureOpenAIModel
 from camel.models.base_model import BaseModelBackend
 from camel.models.cohere_model import CohereModel
@@ -26,14 +27,18 @@ from camel.models.gemini_model import GeminiModel
 from camel.models.groq_model import GroqModel
 from camel.models.internlm_model import InternLMModel
 from camel.models.litellm_model import LiteLLMModel
+from camel.models.lmstudio_model import LMStudioModel
 from camel.models.mistral_model import MistralModel
 from camel.models.modelscope_model import ModelScopeModel
 from camel.models.moonshot_model import MoonshotModel
+from camel.models.netmind_model import NetmindModel
+from camel.models.novita_model import NovitaModel
 from camel.models.nvidia_model import NvidiaModel
 from camel.models.ollama_model import OllamaModel
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.models.openai_model import OpenAIModel
 from camel.models.openrouter_model import OpenRouterModel
+from camel.models.ppio_model import PPIOModel
 from camel.models.qwen_model import QwenModel
 from camel.models.reka_model import RekaModel
 from camel.models.samba_model import SambaModel
@@ -43,6 +48,7 @@ from camel.models.stub_model import StubModel
 from camel.models.togetherai_model import TogetherAIModel
 from camel.models.vllm_model import VLLMModel
 from camel.models.volcano_model import VolcanoModel
+from camel.models.watsonx_model import WatsonXModel
 from camel.models.yi_model import YiModel
 from camel.models.zhipuai_model import ZhipuAIModel
 from camel.types import ModelPlatformType, ModelType, UnifiedModelType
@@ -58,21 +64,24 @@ class ModelFactory:
 
     @staticmethod
     def create(
-        model_platform: ModelPlatformType,
-        model_type: Union[ModelType, str],
+        model_platform: Union[ModelPlatformType, str],
+        model_type: Union[ModelType, str, UnifiedModelType],
         model_config_dict: Optional[Dict] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
-        timeout: Optional[int] = None,
+        timeout: Optional[float] = None,
+        **kwargs,
     ) -> BaseModelBackend:
         r"""Creates an instance of `BaseModelBackend` of the specified type.
 
         Args:
-            model_platform (ModelPlatformType): Platform from which the model
-                originates.
-            model_type (Union[ModelType, str]): Model for which a
-                backend is created. Can be a `str` for open source platforms.
+            model_platform (Union[ModelPlatformType, str]): Platform from
+                which the model originates. Can be a string or
+                ModelPlatformType enum.
+            model_type (Union[ModelType, str, UnifiedModelType]): Model for
+                which a backend is created. Can be a string, ModelType enum, or
+                UnifiedModelType.
             model_config_dict (Optional[Dict]): A dictionary that will be fed
                 into the backend constructor. (default: :obj:`None`)
             token_counter (Optional[BaseTokenCounter], optional): Token
@@ -86,6 +95,10 @@ class ModelFactory:
                 (default: :obj:`None`)
             timeout (Optional[float], optional): The timeout value in seconds
                 for API calls. (default: :obj:`None`)
+            **kwargs: Additional model-specific parameters that will be passed
+                to the model constructor. For example, Azure OpenAI models may
+                require `api_version`, `azure_deployment_name`,
+                `azure_ad_token_provider`, and `azure_ad_token`.
 
         Returns:
             BaseModelBackend: The initialized backend.
@@ -93,6 +106,21 @@ class ModelFactory:
         Raises:
             ValueError: If there is no backend for the model.
         """
+        # Convert string to ModelPlatformType enum if needed
+        if isinstance(model_platform, str):
+            try:
+                model_platform = ModelPlatformType(model_platform)
+            except ValueError:
+                raise ValueError(f"Unknown model platform: {model_platform}")
+
+        # Convert string to ModelType enum or UnifiedModelType if needed
+        if isinstance(model_type, str):
+            try:
+                model_type = ModelType(model_type)
+            except ValueError:
+                # If not in ModelType, create a UnifiedModelType
+                model_type = UnifiedModelType(model_type)
+
         model_class: Optional[Type[BaseModelBackend]] = None
         model_type = UnifiedModelType(model_type)
 
@@ -110,6 +138,8 @@ class ModelFactory:
             model_class = TogetherAIModel
         elif model_platform.is_litellm:
             model_class = LiteLLMModel
+        elif model_platform.is_aws_bedrock:
+            model_class = AWSBedrockModel
         elif model_platform.is_nvidia:
             model_class = NvidiaModel
         elif model_platform.is_siliconflow:
@@ -118,6 +148,8 @@ class ModelFactory:
             model_class = AIMLModel
         elif model_platform.is_volcano:
             model_class = VolcanoModel
+        elif model_platform.is_netmind:
+            model_class = NetmindModel
 
         elif model_platform.is_openai and model_type.is_openai:
             model_class = OpenAIModel
@@ -127,6 +159,8 @@ class ModelFactory:
             model_class = AnthropicModel
         elif model_platform.is_groq and model_type.is_groq:
             model_class = GroqModel
+        elif model_platform.is_lmstudio and model_type.is_lmstudio:
+            model_class = LMStudioModel
         elif model_platform.is_openrouter and model_type.is_openrouter:
             model_class = OpenRouterModel
         elif model_platform.is_zhipuai and model_type.is_zhipuai:
@@ -145,14 +179,20 @@ class ModelFactory:
             model_class = QwenModel
         elif model_platform.is_deepseek:
             model_class = DeepSeekModel
+        elif model_platform.is_ppio:
+            model_class = PPIOModel
         elif model_platform.is_internlm and model_type.is_internlm:
             model_class = InternLMModel
         elif model_platform.is_moonshot and model_type.is_moonshot:
             model_class = MoonshotModel
         elif model_platform.is_modelscope:
             model_class = ModelScopeModel
+        elif model_platform.is_novita:
+            model_class = NovitaModel
         elif model_type == ModelType.STUB:
             model_class = StubModel
+        elif model_type.is_watsonx:
+            model_class = WatsonXModel
 
         if model_class is None:
             raise ValueError(
@@ -167,6 +207,7 @@ class ModelFactory:
             url=url,
             token_counter=token_counter,
             timeout=timeout,
+            **kwargs,
         )
 
     @classmethod
