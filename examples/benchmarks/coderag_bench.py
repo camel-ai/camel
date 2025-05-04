@@ -14,7 +14,7 @@
 import logging
 
 from camel.agents import ChatAgent
-from camel.benchmarks import CoderagBenchAutoRetriever, CodeRagBenchmark
+from camel.benchmarks import CodeRAGBenchAutoRetriever, CodeRAGBenchmark
 from camel.types import StorageType
 
 logging.basicConfig(
@@ -36,14 +36,14 @@ You are given user queries, and your job is to generate appropriate code respons
 Only output the code.
 If the query is ambiguous or lacks information, make reasonable assumptions."""
     agent = ChatAgent(assistant_sys_msg)
-    retriever = CoderagBenchAutoRetriever(
+    retriever = CodeRAGBenchAutoRetriever(
         storage_type=StorageType.QDRANT,
         vector_storage_local_path="./CodeRag_Bench_Datasets/.vector_cache",
         overwrite=True,
     )
 
     # Example: Humaneval, retrieval + generation
-    benchmark = CodeRagBenchmark(
+    benchmark = CodeRAGBenchmark(
         data_dir="./CodeRag_Bench_Datasets",
         save_to="./CodeRag_Bench_Datasets",
         run_mode='retrieve_generate',
@@ -72,7 +72,7 @@ If the query is ambiguous or lacks information, make reasonable assumptions."""
     """
 
     # Example: Humaneval, retrieval only
-    benchmark = CodeRagBenchmark(
+    benchmark = CodeRAGBenchmark(
         data_dir="./CodeRag_Bench_Datasets",
         save_to="./CodeRag_Bench_Datasets",
         run_mode='retrieve',
@@ -96,7 +96,7 @@ If the query is ambiguous or lacks information, make reasonable assumptions."""
     '''
 
     # Example: Humaneval, generation only
-    benchmark = CodeRagBenchmark(
+    benchmark = CodeRAGBenchmark(
         data_dir="./CodeRag_Bench_Datasets",
         save_to="./CodeRag_Bench_Datasets",
         run_mode='generate',

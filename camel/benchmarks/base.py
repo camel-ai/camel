@@ -131,7 +131,7 @@ class BaseBenchmark(ABC):
     ) -> "BaseBenchmark":
         r"""Run the benchmark.
 
-         Args:
+        Args:
             agent (ChatAgent): The chat agent.
             on (str): The data split to run the benchmark on.
             randomize (bool): Whether to randomize the data.

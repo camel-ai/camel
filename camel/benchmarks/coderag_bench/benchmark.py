@@ -12,59 +12,131 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import inspect
 import json
 import logging
 import os
 import re
-from typing import List, Literal, Optional, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Protocol,
+    Union,
+)
 
 import datasets
-import jsonlines
 from datasets import Dataset
 from tqdm import tqdm
+from unstructured.documents.elements import Element, Title
 
 from camel.agents import ChatAgent
 from camel.benchmarks.base import BaseBenchmark
-from camel.retrievers.auto_retriever import AutoRetriever
-
-
-
-from beir.retrieval.evaluation import EvaluateRetrieval
-from unstructured.documents.elements import Element, Title
-
 from camel.benchmarks.coderag_bench.code_generation_evaluation import (
     compute_code_eval,
 )
 from camel.embeddings import OpenAIEmbedding
+from camel.retrievers.auto_retriever import AutoRetriever
 
-# === BEGIN: Temporary monkey patch for AutoRetriever metadata propagation ===
-# This patch enables `.metadata.extra_info` in unstructured.Element to be forwarded
-# to VectorRetriever.process(extra_info=...) when used with AutoRetriever.
-# Without this, structured document metadata (e.g., doc_id) will be silently discarded.
+# === BEGIN: Temporary monkey patch for AutoRetriever metadata ===
+# This patch enables `.metadata.extra_info` in Element to be passed
+# to VectorRetriever.process(extra_info=...) when used with
+# AutoRetriever. Without this, structured metadata (e.g., doc_id)
+# may be silently discarded.
 # A formal enhancement PR will follow for upstream merge.
 from camel.retrievers.vector_retriever import VectorRetriever
 from camel.types import StorageType
+
 logger = logging.getLogger(__name__)
 
-class CoderagBenchAutoRetriever(AutoRetriever):
-    r"""
-    A customized AutoRetriever for CodeRAG-Bench that supports vector retrieval
-    over a list of `unstructured.Element` documents with preserved metadata.
 
-    Unlike generic retrievers that chunk long documents, this retriever assumes
-    each `Element` is already a semantically complete unit (e.g., one code function),
-    and uses `should_chunk=False` for ingestion.
+class RetrieverFn(Protocol):
+    r"""Protocol for a retrieval function used in benchmark evaluation.
 
-    It supports standard retrieval interface `run_vector_retriever` consistent with
-    other CAMEL-AI retrievers, and returns either plain text or detailed metadata
-    depending on `return_detailed_info`.
+    This function takes a user query and a list of `Element` documents, and
+        returns
+    a dictionary containing retrieved results.
+
+    Required arguments:
+        - query (str): The input query string.
+        - contents (List[Element]): A list of unstructured elements to
+            retrieve from.
+
+    Optional keyword arguments that may be supported:
+        - top_k (int): Number of results to retrieve. (default: :obj:`5`)
+        - collection_name (str): Optional identifier for
+            grouping indexed elements.
+        - similarity_threshold (float): Minimum similarity score
+            to retain results.
+        - return_detailed_info (bool): If True, return full metadata
+            instead of plain text.
+
+    Returns:
+        dict: A dictionary with keys like "Original Query" and
+            "Retrieved Context".
+    """
+
+    def __call__(
+        self,
+        query: str,
+        contents: Union[Element, List[Element]],
+        top_k: int = 5,
+        **kwargs,
+    ) -> Dict: ...
+
+
+def safe_call(func: Callable[..., Any], **kwargs) -> Any:
+    r"""Call a function with only the parameters it declares.
+
+    This avoids TypeError when the function doesn't accept some
+    of the keyword arguments provided.
 
     Args:
-        storage_type (Optional[StorageType]): The type of vector store to use.
-        embedding_model (Optional[OpenAIEmbedding]): Embedding model for indexing and querying.
-        vector_storage_local_path (Optional[str]): Path for local storage (if applicable).
-        url_and_api_key (Optional[tuple]): Remote storage URL and API key (if applicable).
-        overwrite (bool): Whether to re-index documents and overwrite existing collection.
+        func (Callable): The function to call.
+        **kwargs: Keyword arguments to be passed to the function.
+
+    Returns:
+        The return value of the function.
+    """
+
+    sig = inspect.signature(func)
+    accepted_params = set(sig.parameters.keys())
+
+    # If function supports **kwargs, pass everything
+    if any(p.kind == p.VAR_KEYWORD for p in sig.parameters.values()):
+        return func(**kwargs)
+
+    # Otherwise filter out unsupported keys
+    filtered_kwargs = {k: v for k, v in kwargs.items() if k in accepted_params}
+    return func(**filtered_kwargs)
+
+
+class CodeRAGBenchAutoRetriever(AutoRetriever):
+    r"""Customized AutoRetriever for CodeRAG-Bench.
+
+    Supports vector retrieval over a list of `Element` documents
+    with preserved metadata. Assumes each `Element` is already a
+    semantically complete unit (e.g., one code function), and sets
+    `should_chunk=False` during ingestion.
+
+    Compatible with `run_vector_retriever` interface used by other
+    CAMEL-AI retrievers. Returns plain text or metadata depending
+    on `return_detailed_info`.
+
+    Args:
+        storage_type (Optional[StorageType]): Type of vector store.
+            (default: :obj:`None`)
+        embedding_model (Optional[OpenAIEmbedding]): Embedding model
+            for indexing and querying. (default: :obj:`None`)
+        vector_storage_local_path (Optional[str]): Local storage path.
+            (default: :obj:`None`)
+        url_and_api_key (Optional[tuple]): Remote URL and API key.
+            (default: :obj:`None`)
+        overwrite (bool): Whether to re-index and overwrite existing
+            collection. (default: :obj:`False`)
     """
 
     def __init__(
@@ -75,15 +147,19 @@ class CoderagBenchAutoRetriever(AutoRetriever):
         url_and_api_key: Optional[tuple] = None,
         overwrite: bool = False,
     ):
-        r"""
-        Initializes the retriever with optional vector store config and embedding model.
+        r"""Initializes the retriever with optional vector config.
 
         Args:
             storage_type (Optional[StorageType]): Type of storage to use.
-            embedding_model (Optional[OpenAIEmbedding]): Embedding model to use.
-            vector_storage_local_path (Optional[str]): Local vector DB path.
-            url_and_api_key (Optional[tuple]): Remote DB config if needed.
-            overwrite (bool): Whether to re-index if collection already exists.
+                (default: :obj:`None`)
+            embedding_model (Optional[OpenAIEmbedding]): Embedding model
+                to use for indexing and querying. (default: :obj:`None`)
+            vector_storage_local_path (Optional[str]): Path to local
+                vector DB, if applicable. (default: :obj:`None`)
+            url_and_api_key (Optional[tuple]): Remote DB config, if any.
+                (default: :obj:`None`)
+            overwrite (bool): Whether to re-index and overwrite existing
+                collection. (default: :obj:`False`)
         """
         super().__init__(
             storage_type=storage_type,
@@ -104,26 +180,33 @@ class CoderagBenchAutoRetriever(AutoRetriever):
         collection_name: Optional[str] = None,
         **kwargs,
     ) -> dict:
-        r"""
-        Runs document-level retrieval on a list of unstructured Elements.
+        r"""Runs document-level retrieval on unstructured Elements.
 
-        Supports optional manual specification of collection_name. If not provided,
-        a collection name will be automatically generated based on the first Element.
+        Supports optional collection name override. If not provided,
+        a name will be auto-generated from the first Element.
 
         Args:
-            query (str): The user query string.
-            contents (Union[Element, List[Element]]): One or more `Element` documents to ingest/query.
+            query (str): The input query string.
+            contents (Union[Element, List[Element]]): One or more
+                `Element` documents to ingest and retrieve over.
             top_k (int): Number of top results to return.
-            similarity_threshold (float): Minimum similarity score to retain results.
-            return_detailed_info (bool): If True, returns full metadata; else, returns plain text only.
-            max_characters (int): Maximum allowed characters per document for embedding.
-            collection_name (Optional[str]): Custom name for the vector storage collection. If None, auto-generate.
+                (default: :obj:`5`)
+            similarity_threshold (float): Minimum similarity score to
+                retain results. (default: :obj:`0.7`)
+            return_detailed_info (bool): If True, returns full metadata;
+                otherwise, returns plain text. (default: :obj:`False`)
+            max_characters (int): Max characters per document for
+                embedding. (default: :obj:`500`)
+            collection_name (Optional[str]): Custom name for the vector
+                collection. If None, a name is auto-generated.
+                (default: :obj:`None`)
             **kwargs: Extra keyword arguments for compatibility.
 
         Returns:
             dict: {
                 "Original Query": query,
-                "Retrieved Context": [list of texts] or [list of detailed results]
+                "Retrieved Context": list of plain texts or detailed
+                metadata entries
             }
         """
         if isinstance(contents, Element):
@@ -158,14 +241,16 @@ class CoderagBenchAutoRetriever(AutoRetriever):
 
         if self.overwrite and vector_count > 0:
             logger.debug(
-                f"Overwriting collection '{collection_name}' with {len(elements)} documents..."
+                f"Overwriting collection '{collection_name}' with "
+                f"{len(elements)} documents..."
             )
             vector_storage_instance.clear()
             vector_count = 0
 
         if vector_count == 0:
             logger.debug(
-                f"Ingesting {len(elements)} documents into vector store '{collection_name}'"
+                f"Ingesting {len(elements)} documents into vector store "
+                f"'{collection_name}'"
             )
             for elem in elements:
                 vr.process(
@@ -175,11 +260,13 @@ class CoderagBenchAutoRetriever(AutoRetriever):
                     extra_info=getattr(elem.metadata, "extra_info", {}),
                 )
             logger.debug(
-                f"Vector store now contains {vector_storage_instance.status().vector_count} documents"
+                f"Vector store now contains "
+                f"{vector_storage_instance.status().vector_count} documents"
             )
         else:
             logger.debug(
-                f"Vector store '{collection_name}' already contains {vector_count} vectors. Skipping ingestion."
+                f"Vector store '{collection_name}' "
+                f"already contains {vector_count} vectors. Skipping ingestion."
             )
 
         retrieved_info = vr.query(
@@ -209,32 +296,35 @@ class CoderagBenchAutoRetriever(AutoRetriever):
 
 
 def document2code(data, split="test"):
-    r"""
-    Convert document samples into code generation pairs for IR evaluation.
+    r"""Converts document samples into IR code generation pairs.
 
-    This function is directly adapted from the CodeRAG-Bench repository:
-        GitHub: https://github.com/code-rag-bench/code-rag-bench/blob/main/retrieval/create/humaneval.py
+    Adapted from CodeRAG-Bench:
+        https://github.com/code-rag-bench/code-rag-bench/blob/
+        main/retrieval/create/humaneval.py
 
-    It constructs a flat list of query-document pairs and relevance judgments from a
-    code generation dataset. Each sample contains a "prompt" and its corresponding
-    "canonical_solution". The prompt is used as the query, and the concatenation of
-    prompt + solution is treated as the relevant code document.
+    Constructs a flat list of query-document pairs and relevance
+    judgments from a code generation dataset. Each sample includes a
+    "prompt" and its corresponding "canonical_solution". The prompt is
+    used as the query, and prompt + solution is treated as the target
+    code document.
 
     Note:
-        This function is preserved **unmodified** to ensure compatibility with the original
-        CodeRAG-Bench logic. To convert the output into BEIR-compatible dictionary format,
-        use the wrapper function `wrap_as_beir_loader`.
+        This function is preserved unmodified for compatibility with
+        original CodeRAG-Bench logic. To convert the result into
+        BEIR-style format, use `wrap_as_beir_loader`.
 
     Args:
         data (dict): Dataset split dictionary, e.g., {"test": [...]}.
-        split (str): Dataset split to process (default: "test").
+        split (str): Dataset split to process.
+            (default: :obj:`"test"`)
 
     Returns:
         Tuple[List[dict], List[dict], List[dict]]:
             - queries: List of dicts with "_id" and "text".
             - docs: List of dicts with "_id", "text", and "title".
-            - qrels: List of dicts linking queries to relevant documents.
+            - qrels: List of dicts linking queries to relevant docs.
     """
+
     data = data[split]
     queries, docs, qrels = [], [], []
 
@@ -259,18 +349,21 @@ def document2code(data, split="test"):
 
 
 def wrap_as_beir_loader(queries_list, corpus_list, qrels_list):
-    r"""
-    Wraps the output of `document2code()` into BEIR-compatible dictionary format.
+    r"""Wraps the output of `document2code()` into BEIR-compatible
+        dictionary format.
 
-    This function converts flat lists of queries, documents, and qrels into dictionaries
-    keyed by ID, as expected by BEIR's evaluation tools.
+    This function converts flat lists of queries, documents, and qrels into
+        dictionaries keyed by ID, as expected by BEIR's evaluation tools.
 
-    It is intended to be used directly after `document2code()` to prepare the dataset
+    It is intended to be used directly after `document2code()` to
+        prepare the dataset
     for retrieval benchmarking.
 
     Args:
-        queries_list (List[dict]): List of queries with "_id" and "text" fields.
-        corpus_list (List[dict]): List of documents with "_id", "text", and metadata.
+        queries_list (List[dict]): List of queries with "_id" and "text"
+            fields.
+        corpus_list (List[dict]): List of documents with "_id", "text",
+            and metadata.
         qrels_list (List[dict]): List of relevance annotations with "query-id",
                                  "corpus-id", and optional "score".
 
@@ -299,31 +392,37 @@ def wrap_as_beir_loader(queries_list, corpus_list, qrels_list):
 def extract_code_pieces(
     text: str, prefix: str = "```python", return_all: bool = False
 ) -> str:
-    r"""
-    Extracts Python code blocks from a text string formatted with Markdown-style triple backticks.
+    r"""Extracts Python code blocks from Markdown-style strings.
 
-    This function scans the input text and extracts code segments that start with a given prefix
-    (e.g., "```python") and end with a closing triple backtick ("```"). It is useful for extracting
-    model-generated code from responses that follow Markdown formatting conventions.
+    Scans input text and extracts code blocks that start with the
+    given prefix (e.g., "```python") and end with a triple backtick
+    ("```"). Useful for parsing model-generated code formatted using
+    Markdown.
 
     Args:
-        text (str): The input string potentially containing code blocks.
-        prefix (str): The Markdown code block prefix to search for (default: "```python").
-        return_all (bool): If True, returns all extracted code blocks concatenated with double newlines.
-                           If False, returns only the first matched block.
+        text (str): Input string possibly containing code blocks.
+        prefix (str): Markdown code prefix to search for.
+            (default: :obj:`"```python"`)
+        return_all (bool): If True, returns all code blocks joined by
+            double newlines. If False, returns only the first match.
+            (default: :obj:`False`)
 
     Returns:
-        str: The extracted code block(s) as a string. If no block is found, returns an empty string.
+        str: Extracted code block(s). If none found, returns empty
+            string.
 
     Note:
-        This implementation is adapted from:
-        https://github.com/code-rag-bench/code-rag-bench/blob/main/generation/eval/utils.py
+        Adapted from:
+        https://github.com/code-rag-bench/code-rag-bench/blob/main/
+        generation/eval/utils.py
 
     Example:
-        >>> text = "Here is the function:\n```python\ndef add(a, b):\n    return a + b\n```"
+        >>> text = "Here is the function:\n```python\ndef add(a, b):\n"
+        >>>        "    return a + b\n```"
         >>> extract_code_pieces(text)
         'def add(a, b):\n    return a + b'
     """
+
     code_pieces = []
     while prefix in text:
         st_idx = text.index(prefix) + 10
@@ -378,18 +477,18 @@ def get_function_name(question: str, lang: str):
 
 
 def indent_code_block(code: str, indent: int = 4) -> str:
-    r"""
-    Indents each non-empty line in a code block by a specified number of spaces.
+    r"""Indents each non-empty line in a code block.
 
-    This is typically used to ensure that generated code fits correctly within
-    a function body, control structure, or other nested context.
+    Typically used to ensure that generated code fits correctly
+    within a function body, control structure, or nested context.
 
     Args:
-        code (str): The input code block as a string.
-        indent (int): The number of spaces to add at the beginning of each non-empty line. Defaults to 4.
+        code (str): Input code block as a single string.
+        indent (int): Number of spaces to add at the beginning of
+            each non-empty line. (default: :obj:`4`)
 
     Returns:
-        str: The indented code block as a single string.
+        str: Indented code block as a single string.
     """
     return "\n".join(
         " " * indent + line if line.strip() else ""
@@ -398,26 +497,28 @@ def indent_code_block(code: str, indent: int = 4) -> str:
 
 
 def extract_generation_code(output: str, question: str) -> str:
-    r"""
-    Extracts the generated Python code block from a model's output and reconstructs
-    it with the original function header from the prompt.
+    r"""Reconstructs function code from model output and prompt.
 
-    This ensures that the generated code can be executed properly by attaching
-    it to the original function signature and any necessary imports.
+    Extracts the first Python code block from model output and
+    reattaches the original function header from the prompt to
+    ensure proper execution (e.g., for pass@k evaluation).
 
-    The extraction follows the pattern of locating the first ```python ... ``` block
-    in the output, combined with parsing the function definition line from the prompt.
+    Combines Markdown-style block parsing with prompt-based header
+    recovery to ensure correctness of generated code.
 
     Note:
-        This implementation is adapted from:
-        https://github.com/code-rag-bench/code-rag-bench/blob/main/generation/eval/utils.py
+        Adapted from:
+        https://github.com/code-rag-bench/code-rag-bench/blob/main/
+        generation/eval/utils.py
 
     Args:
-        output (str): The raw model output containing a code snippet.
-        question (str): The original prompt, containing the intended function signature.
+        output (str): Model output containing a code snippet.
+        question (str): Prompt containing the expected function
+            signature.
 
     Returns:
-        str: The reconstructed full function code, or the raw output if extraction fails.
+        str: Reconstructed full function code. Returns raw output if
+            extraction fails.
     """
     try:
         # Extract the content within ```python ... ``` block
@@ -451,8 +552,7 @@ def extract_generation_code(output: str, question: str) -> str:
 
 
 def stop_at_stop_token(decoded_string, stop_tokens):
-    r"""
-    Produces the prefix of the decoded string that ends at the first occurrence
+    r"""Produces the prefix of the decoded string that ends at the first occurrence
     of any stop token.
 
     This function searches for the earliest appearance of any provided stop token
@@ -484,27 +584,30 @@ def stop_at_stop_token(decoded_string, stop_tokens):
 def get_top_docs(
     results: dict, corpus: dict, task_id: str, topk: int = 10
 ) -> list[str]:
-    r"""
-    Retrieves the top-ranked documents for a given task based on retrieval scores.
+    r"""Retrieves top-ranked documents by similarity score.
 
-    This function sorts the documents associated with a specific task ID by their
-    similarity scores in descending order, and returns the corresponding code snippets
+    Sorts documents for a given task ID by similarity score in
+    descending order and returns the corresponding code snippets
     from the corpus.
 
-    If the task ID is not present in the results, an empty list is returned.
+    If the task ID is not found in the results, returns an empty
+    list.
 
     Note:
-        This implementation is adapted from:
-        https://github.com/code-rag-bench/code-rag-bench/blob/main/retrieval/eval_beir_sbert_canonical.py
+        Adapted from:
+        https://github.com/code-rag-bench/code-rag-bench/blob/main/
+        retrieval/eval_beir_sbert_canonical.py
 
     Args:
-        results (dict): A mapping from task IDs to document-score dictionaries.
-        corpus (dict): A mapping from document IDs to their content (e.g., code snippets).
-        task_id (str): The identifier for the task whose top documents are to be retrieved.
-        topk (int): The number of top documents to return. Defaults to 10.
+        results (dict): Mapping from task IDs to document-score
+            dictionaries.
+        corpus (dict): Mapping from document IDs to code content.
+        task_id (str): Task ID to retrieve top documents for.
+        topk (int): Number of top documents to return.
+            (default: :obj:`10`)
 
     Returns:
-        list[str]: A list of top code snippets or documents corresponding to the task ID.
+        list[str]: Top code snippets or documents for the task ID.
     """
     if task_id not in results:
         return []
@@ -519,25 +622,29 @@ def get_top_docs(
     return doc_code_snippets
 
 
-class CodeRagBenchmark(BaseBenchmark):
-    r"""
-    CodeRag-Bench Benchmark for evaluating retrieval-augmented generation (RAG) performance
-    across multiple programming datasets.
+class CodeRAGBenchmark(BaseBenchmark):
+    r"""Benchmark for evaluating CodeRAG-Bench performance.
 
-    This benchmark supports:
+    Evaluates retrieval-augmented generation (RAG) on multiple
+    programming datasets.
+
+    Supports:
     - Canonical retrieval evaluation
-    - Code generation based on retrieved contexts
-    - End-to-end retrieval and generation evaluation
-    - Pass@k code evaluation with optional execution
+    - Code generation from retrieved context
+    - End-to-end retrieval + generation evaluation
+    - Pass@k code evaluation (with optional execution)
 
-    Currently, only the "humaneval" task and canonical retrieval are supported.
+    Currently, only the "humaneval" task and canonical retrieval
+    are supported.
 
     Attributes:
-        task (str): The name of the target evaluation dataset.
-        run_mode (str): Execution mode ("retrieve", "generate", or "retrieve_generate").
-        retrieval_type (str): Type of retrieval ("canonical" or "open").
-        subset_size (Optional[int]): Optional subset size for quicker benchmarking.
-        dataset (Optional[Dataset]): Loaded dataset.
+        task (str): Target evaluation dataset name.
+        run_mode (str): Execution mode ("retrieve", "generate", or
+            "retrieve_generate").
+        retrieval_type (str): Retrieval type ("canonical" or "open").
+        subset_size (Optional[int]): Optional limit on number of
+            examples for faster benchmarking.
+        dataset (Optional[Dataset]): Loaded HuggingFace dataset.
     """
 
     def __init__(
@@ -559,16 +666,20 @@ class CodeRagBenchmark(BaseBenchmark):
         retrieval_type: Literal['canonical', 'open'] = "canonical",
         subset_size: Optional[int] = None,
     ) -> None:
-        r"""
-        Initializes the CodeRagBenchmark instance with configuration options.
+        r"""Initializes the CodeRAGBenchmark configuration.
 
         Args:
             data_dir (str): Path to the data directory.
-            save_to (str): Path to save the results and outputs.
+            save_to (str): Path to save results and outputs.
             task (str): Evaluation task name.
-            run_mode (str): Mode to run ("retrieve"(only), "generate"(only), "retrieve_generate").
-            retrieval_type (str): Retrieval method ("canonical" or "open").
-            subset_size (Optional[int]): If set, limits evaluation to a subset of the data.
+                (default: :obj:`"humaneval"`)
+            run_mode (str): Execution mode: "retrieve",
+                "generate", or "retrieve_generate".
+                (default: :obj:`"retrieve_generate"`)
+            retrieval_type (str): Retrieval type: "canonical" or
+                "open". (default: :obj:`"canonical"`)
+            subset_size (Optional[int]): Optional subset size for
+                limiting evaluation. (default: :obj:`None`)
         """
         super().__init__("coderag_bench", data_dir, save_to)
         self.task = task
@@ -584,10 +695,10 @@ class CodeRagBenchmark(BaseBenchmark):
             )
 
     def download(self):
-        r"""
-        Downloads and preprocesses the CodeRag-Bench dataset if necessary.
+        r"""Downloads and preprocesses CodeRAG-Bench dataset.
 
-        Currently, only supports downloading and preparing the "humaneval" dataset.
+        Currently only supports downloading and preparing the
+        "humaneval" dataset.
 
         Returns:
             None
@@ -606,11 +717,14 @@ class CodeRagBenchmark(BaseBenchmark):
             pass
 
     def load(self, force_download: bool = False):
-        r"""
-        Loads the dataset into memory. Downloads if not already available or if forced.
+        r"""Loads the dataset into memory.
+
+        Downloads the dataset if not already available or if
+        `force_download` is set to True.
 
         Args:
-            force_download (bool, optional): Whether to force re-downloading the dataset.
+            force_download (bool, optional): Whether to force
+                re-downloading the dataset. (default: :obj:`False`)
 
         Returns:
             None
@@ -622,37 +736,394 @@ class CodeRagBenchmark(BaseBenchmark):
             )
             self.download()
 
+    def run_retrieval(self, retrieve_fn, retrieval_top_k):
+        r"""Run top-k document retrieval and compute retrieval metrics.
+
+        Args:
+            retrieve_fn (Callable): A callable retrieval function that takes
+                `query`, `contents`, `top_k`, and optionally other keyword arguments.
+            retrieval_top_k (int): Number of top documents to retrieve per query.
+
+        Returns:
+            dict: A dictionary containing retrieval evaluation metrics.
+        """
+
+        queries_list, docs_list, qrels_list = document2code(self.dataset)
+
+        # Format corpus, queries, and qrels in BEIR style
+        # corpus: Corpus used for retrieval.
+        # queries: Queries used for retrieval evaluation.
+        # qrels: Relevance labels for retrieval evaluation.
+        queries, corpus, qrels = wrap_as_beir_loader(
+            queries_list, docs_list, qrels_list
+        )
+
+        # Todo: Support Open retrieval
+        if self.retrieval_type != "canonical":
+            raise NotImplementedError(
+                "Only canonical retrieval is supported for now."
+            )
+
+        if retrieve_fn is None or not callable(retrieve_fn):
+            raise ValueError(
+                "A callable `retrieve_fn` must be provided in "
+                "`retrieve` or `retrieve_generate` mode."
+            )
+
+        # === Canonical Retrieval Logic ===
+        logger.info("Starting canonical retrieval...")
+
+        # Convert the corpus into a list of Element objects
+        #   (one per document),
+        # and assign a consistent file_directory to group them into
+        #   a single vector collection.
+        elements = []
+        collection_name = f"{self.task}_collection"
+        for doc_id, doc in corpus.items():
+            element = Title(text=doc["text"])
+            element.metadata.file_directory = collection_name
+            element.metadata.extra_info = {"doc_id": doc_id}
+            elements.append(element)
+
+        # Logging debug information
+        for idx, elem in enumerate(elements):
+            logger.debug("Element #%d", idx)
+            logger.debug("Text preview: %s", elem.text[:80].replace('\n', ' '))
+            logger.debug("file_directory: %s", elem.metadata.file_directory)
+            logger.debug("other: %s", getattr(elem.metadata, "other", {}))
+            logger.debug("-" * 50)
+
+        retrieval_results = {}
+
+        # Prepare output directory
+        output_dir = os.path.join(self.save_to, "retrieval")
+        os.makedirs(output_dir, exist_ok=True)
+        output_path = os.path.join(
+            output_dir, f"{self.task}_retrieved_docs.jsonl"
+        )
+        metrics_path = os.path.join(
+            output_dir, f"{self.task}_retrieval_metrics.json"
+        )
+        import jsonlines
+
+        with jsonlines.open(output_path, mode='w') as writer:
+            for example in tqdm(self.dataset["test"]):
+                query_text = example["prompt"]
+                query_id = (
+                    example["task_id"] + "_doc"
+                )  # make sure the format is the same as qrel,
+                #   for evaluation purposes
+
+                # Prepare optional keyword arguments for retrieval.
+                # All elements share the same `file_directory`, so
+                # collection_name can be shared safely.
+                kwargs = {
+                    "collection_name": collection_name,
+                    "similarity_threshold": 0.0,
+                    "return_detailed_info": True,
+                }
+
+                # Only pass arguments that are accepted by retrieve_fn.
+                # This makes the interface flexible for lightweight
+                # user-defined functions.
+                sig = inspect.signature(retrieve_fn)
+                accepted_kwargs = {
+                    k: v for k, v in kwargs.items() if k in sig.parameters
+                }
+
+                # Call the retriever function with required and filtered
+                # optional arguments.
+                result = retrieve_fn(
+                    query=query_text,
+                    contents=elements,
+                    top_k=retrieval_top_k,
+                    **accepted_kwargs,
+                )
+
+                # print for debugging
+                logger.debug("Query: %s", query_text[:60])
+                logger.debug(
+                    "Retrieved Context: %s", result['Retrieved Context']
+                )
+
+                doc_entries = []
+                scores = {}
+
+                for item in result["Retrieved Context"]:
+                    doc_text = item["text"]
+                    doc_id = item.get("extra_info", {}).get("doc_id")
+                    if doc_id is None:
+                        continue  # fallback or missing metadata
+
+                    scores[doc_id] = float(item.get("similarity score", 0.0))
+                    doc_entries.append(
+                        {
+                            "doc_id": doc_id,
+                            "text": doc_text,
+                            "title": corpus[doc_id].get("title", ""),
+                            "similarity": float(
+                                item.get("similarity score", 0.0)
+                            ),
+                        }
+                    )
+
+                # Save scores for retrieval evaluation
+                retrieval_results[query_id] = scores
+
+                # Merge retrieved docs into the original sample
+                #   and stream write
+                example_with_docs = dict(example)
+                example_with_docs["docs"] = doc_entries
+                writer.write(example_with_docs)
+
+        self.dataset["test"] = datasets.load_dataset(
+            "json", data_files=output_path, split="train"
+        )
+        # Evaluate using BEIR
+        from beir.retrieval.evaluation import EvaluateRetrieval
+
+        retriever = EvaluateRetrieval(score_function="dot")
+        k_values = [1, 5, 10]
+        logger.debug("qrels keys: %s", list(qrels.keys())[:5])
+        logger.debug(
+            "retrieval_results keys: %s",
+            list(retrieval_results.keys())[:5],
+        )
+
+        for qid in qrels:
+            relevant_doc_ids = set(qrels[qid].keys())
+            retrieved_doc_ids = set(retrieval_results.get(qid, {}).keys())
+
+            if not relevant_doc_ids & retrieved_doc_ids:
+                logger.debug(f"[NO MATCH] for query {qid}")
+            else:
+                logger.debug(f"[MATCH] {qid} retrieved")
+            logger.debug(f"  gold:      {relevant_doc_ids}")
+            logger.debug(f"  retrieved: {retrieved_doc_ids}")
+
+        ndcg, _map, recall, precision = retriever.evaluate(
+            qrels, retrieval_results, k_values, ignore_identical_ids=False
+        )
+        mrr = retriever.evaluate_custom(
+            qrels, retrieval_results, k_values, metric="mrr"
+        )
+
+        metrics = {
+            "ndcg": ndcg,
+            "mrr": mrr,
+            "recall": recall,
+            "precision": precision,
+        }
+
+        with open(metrics_path, "w") as f:
+            json.dump(metrics, f, indent=2)
+
+        logger.info("Retrieval results saved to %s", output_path)
+        logger.info("Retrieval metrics saved to %s", metrics_path)
+        logger.info("Canonical retrieval completed.")
+        return metrics
+
+    def run_generation(
+        self, n_generation_samples, allow_code_execution, generation_eval_k
+    ):
+        r"""Runs code generation and evaluation for the task.
+
+        This uses retrieved documents to construct prompts
+        and optionally runs pass@k evaluation using code
+        execution if enabled.
+
+        Args:
+            n_generation_samples (int): Number of completions
+                to generate per prompt. (default: :obj:`1`)
+            allow_code_execution (bool): Whether to run code for
+                pass@k evaluation. Use with caution.
+                (default: :obj:`False`)
+            generation_eval_k (List[int]): k values used in pass@k
+                computation. (default: :obj:`List[int]` with [1, 5, 10])
+
+        Returns:
+            Optional[Dict[str, float]]: Dictionary of pass@k
+                results if executed; otherwise None.
+        """
+        generation_dir = os.path.join(self.save_to, "generation", self.task)
+        os.makedirs(generation_dir, exist_ok=True)
+
+        gen_path = os.path.join(generation_dir, "generations.json")
+        ref_path = os.path.join(generation_dir, "references.json")
+
+        # List[List[str]]: list of candidates per task
+        all_generations = []
+
+        # List[str]: one reference string per task
+        all_references = []
+
+        for idx, data_i in enumerate(
+            tqdm(self.dataset["test"])
+        ):  # data_i is equivalent to doc in <https://github.com/
+            # code-rag-bench/code-rag-bench/blob/main/generation/
+            # eval/tasks/humaneval.py>
+            prompt = data_i["prompt"]
+
+            docs = data_i.get("docs", [])
+            context = "\n\n".join(
+                doc["text"] for doc in docs[:10]
+            )  # Top-10 Todo: allow customization of top-k retrieval!
+
+            # Construct the final prompt for the agent
+            final_prompt = (
+                context + '\n\nPlease complete the following function based '
+                'on the example above:\n' + '```python\n' + prompt
+            )
+
+            candidates = []
+            # Run generation using the agent
+            for _ in range(n_generation_samples):
+                response = agent.step(final_prompt)
+                generation = response.msg.content
+
+                # === Postprocessing based on CodeRAG-Bench ===
+                stop_words = [
+                    "\nclass",
+                    "<file_sep>",
+                    "if __name__",
+                    "\nprint(",
+                    "\ndef",
+                ]
+                generation = stop_at_stop_token(generation, stop_words)
+                generation = prompt + generation
+                logger.debug("%s", "=" * 40)
+                logger.debug("%s", generation)
+                logger.debug("%s", "=" * 40)
+
+                generation = extract_generation_code(generation, prompt)
+
+                logger.debug("%s", "=" * 40)
+                logger.debug("%s", generation)
+                logger.debug("%s", "=" * 40)
+                candidates.append(generation)
+            all_generations.append(candidates)
+
+            # Build reference
+            test_func = data_i["test"]
+            entry_point = f"check({data_i['entry_point']})"
+            reference = "\n" + test_func + "\n" + entry_point
+            all_references.append(reference)
+
+        with open(gen_path, "w") as f_gen:
+            json.dump(all_generations, f_gen, indent=2)
+            logger.info(f"Saved generations to {gen_path}")
+
+        with open(ref_path, "w") as f_ref:
+            json.dump(all_references, f_ref, indent=2)
+            logger.info(f"Saved references to {ref_path}")
+
+        # === Code Evaluation ===
+        if not allow_code_execution:
+            logger.warning(
+                "[SKIP] Code execution is disabled. "
+                "Set `allow_code_execution=True` to run evaluation."
+            )
+        else:
+            logger.warning(
+                "Running code to evaluate the benchmark. "
+                "It can be dangerous, as the generated code may "
+                "contain unknown or harmful operations. "
+                "To ensure safety, please execute all code in a "
+                "secure sandboxed environment."
+            )
+            os.environ["HF_ALLOW_CODE_EVAL"] = (
+                "1"  # Allow code execution (sandboxed)
+            )
+
+            logger.info("Starting code evaluation...")
+
+            pass_at_k, raw_results = compute_code_eval(
+                references=all_references,
+                predictions=all_generations,
+                k=generation_eval_k,
+                num_workers=4,
+                timeout=3.0,
+            )
+
+            # Print pass@k results
+            logger.info("[EVAL] pass@k:")
+            for k, v in pass_at_k.items():
+                logger.info(f"  {k}: {v:.4f}")
+
+            # Save metrics
+            eval_dir = os.path.join(generation_dir, "eval")
+            os.makedirs(eval_dir, exist_ok=True)
+
+            eval_path = os.path.join(eval_dir, "pass_at_k.json")
+            with open(eval_path, "w") as f_eval:
+                json.dump(pass_at_k, f_eval, indent=2)
+                logger.info(f"pass@k metrics saved to {eval_path}")
+
+            # Save raw results for analysis
+            raw_results_path = os.path.join(eval_dir, "raw_results.jsonl")
+
+            import jsonlines
+
+            with jsonlines.open(raw_results_path, mode="w") as writer:
+                for task_id, results in raw_results.items():
+                    for completion_id, result in results:
+                        writer.write(
+                            {
+                                "task_id": task_id,
+                                "completion_id": completion_id,
+                                **result,
+                                "generation": all_generations[task_id][
+                                    completion_id
+                                ],
+                                "reference": all_references[task_id],
+                            }
+                        )
+                logger.info(
+                    f"Raw evaluation results saved to " f"{raw_results_path}"
+                )
+
+            logger.info("Generations saved to %s", gen_path)
+
+            return pass_at_k
+
     def run(
         self,
         agent: ChatAgent,
-        auto_retriever: Optional[
-            CoderagBenchAutoRetriever
-        ] = None,
-        retrieval_top_k=10,
+        retrieve_fn: Optional[RetrieverFn] = None,
+        retrieval_top_k: int = 10,
         n_generation_samples: int = 1,
-        allow_code_execution=False,
-        generation_eval_k=[1, 5, 10],
+        allow_code_execution: bool = False,
+        generation_eval_k: List[int] = [1, 5, 10],
     ):
-        r"""
-        Runs the CodeRAG-Bench benchmark, including retrieval, code generation, and evaluation.
+        r"""Runs the CodeRAG-Bench benchmark: retrieval and eval.
 
-        Depending on the specified run mode ("retrieve", "generate", or "retrieve_generate"), this method:
+        Depending on the run mode ("retrieve", "generate", or
+        "retrieve_generate"), this method:
         - Retrieves top-k documents for each query.
-        - Generates code based on the retrieved contexts.
-        - Optionally executes generated code to compute pass@k metrics.
+        - Generates code from retrieved contexts.
+        - Optionally executes code to compute pass@k.
 
-        Benchmark outputs, including retrieval results, generations, and evaluation metrics, are saved to disk.
+        Outputs (retrievals, generations, metrics) are saved to disk.
 
         Args:
-            agent (ChatAgent): Chat agent used for code generation.
-            auto_retriever (Optional[CoderagBenchAutoRetriever]): Retriever used for document retrieval. Required if retrieval is enabled.
-            retrieval_top_k (int, optional): Number of top documents to retrieve for each query. Defaults to 10.
-            n_generation_samples (int, optional): Number of code generations to sample per query. Defaults to 1.
-            allow_code_execution (bool, optional): Whether to execute generated code for pass@k evaluation. **Warning:** Executing untrusted code may be unsafe. Always run in a sandboxed environment. Defaults to False.
-            generation_eval_k (List[int], optional): List of k values for pass@k computation (e.g., [1, 5, 10]). Defaults to [1, 5, 10].
+            agent (ChatAgent): Chat agent for code generation.
+            retrieve_fn (Optional[RetrieverFn]): A callable that accepts
+                query and contents, and may support kwargs like
+                `collection_name`, `top_k`, and `return_detailed_info`.
+                Required if retrieval is enabled.
+                (default: :obj:`None`)
+            retrieval_top_k (int, optional): Number of top docs to
+                retrieve. (default: :obj:`10`)
+            n_generation_samples (int, optional): Number of samples per
+                query. (default: :obj:`1`)
+            allow_code_execution (bool, optional): Whether to execute
+                generated code. Use caution—run in a sandboxed env.
+                (default: :obj:`False`)
+            generation_eval_k (List[int], optional): k values for pass@k.
+                (default: :obj:`List[int]` with value [1, 5, 10])
 
         Returns:
-            Dict[str, Any]: A dictionary containing retrieval and/or generation evaluation metrics.
+            Dict[str, Any]: Evaluation metrics.
         """
 
         output_metrics = {}
@@ -668,296 +1139,20 @@ class CodeRagBenchmark(BaseBenchmark):
                 range(self.subset_size)
             )
 
+        # === Retrieval Logic ===
         if self.run_mode in ["retrieve", "retrieve_generate"]:
-            queries_list, docs_list, qrels_list = document2code(self.dataset)
-            """
-            corpus: Corpus used for retrieval.
-            queries: Queries used for retrieval evaluation.
-            qrels: Relevance labels for retrieval evaluation.
-            """
-            queries, corpus, qrels = wrap_as_beir_loader(
-                queries_list, docs_list, qrels_list
+            logger.info("[INFO] Starting retrieval...")
+            output_metrics['retrieval'] = self.run_retrieval(
+                retrieve_fn=retrieve_fn, retrieval_top_k=retrieval_top_k
             )
-
-            # Todo: Support Open retrieval
-            if self.retrieval_type != "canonical":
-                raise NotImplementedError(
-                    "Only canonical retrieval is supported for now."
-                )
-
-            if auto_retriever is None:
-                raise ValueError(
-                    "auto_retriever must be provided in retrieve or retrieve_generate mode"
-                )
-
-            # === Canonical Retrieval Logic ===
-            logger.info("Starting canonical retrieval...")
-
-            # Convert the corpus into a list of Element objects (one per document),
-            # and assign a consistent file_directory to group them into a single vector collection.
-            elements = []
-            collection_name = f"{self.task}_collection"
-            for doc_id, doc in corpus.items():
-                element = Title(text=doc["text"])
-                element.metadata.file_directory = collection_name
-                element.metadata.extra_info = {"doc_id": doc_id}
-                elements.append(element)
-
-            for idx, elem in enumerate(elements):
-                logger.debug("Element #%d", idx)
-                logger.debug(
-                    "Text preview: %s", elem.text[:80].replace('\n', ' ')
-                )
-                logger.debug(
-                    "file_directory: %s", elem.metadata.file_directory
-                )
-                logger.debug("other: %s", getattr(elem.metadata, "other", {}))
-                logger.debug("-" * 50)
-
-            retrieval_results = {}
-
-            # Prepare output directory
-            output_dir = os.path.join(self.save_to, "retrieval")
-            os.makedirs(output_dir, exist_ok=True)
-            output_path = os.path.join(
-                output_dir, f"{self.task}_retrieved_docs.jsonl"
-            )
-            metrics_path = os.path.join(
-                output_dir, f"{self.task}_retrieval_metrics.json"
-            )
-
-            with jsonlines.open(output_path, mode='w') as writer:
-                for example in tqdm(self.dataset["test"]):
-                    query_text = example["prompt"]
-                    query_id = (
-                        example["task_id"] + "_doc"
-                    )  # make sure the format is the same as qrel, for evaluation purposes
-
-                    # Use any one element to trigger collection matching.
-                    # All elements share the same file_directory, so this is safe.
-                    result = auto_retriever.run_vector_retriever(
-                        query=query_text,
-                        contents=elements,
-                        collection_name=collection_name,
-                        top_k=retrieval_top_k,
-                        similarity_threshold=0.0,
-                        return_detailed_info=True,
-                    )
-
-                    # print for debugging
-                    logger.debug("Query: %s", query_text[:60])
-                    logger.debug(
-                        "Retrieved Context: %s", result['Retrieved Context']
-                    )
-
-                    doc_entries = []
-                    scores = {}
-
-                    for item in result["Retrieved Context"]:
-                        doc_text = item["text"]
-                        doc_id = item.get("extra_info", {}).get("doc_id")
-                        if doc_id is None:
-                            continue  # fallback or missing metadata
-
-                        scores[doc_id] = float(
-                            item.get("similarity score", 0.0)
-                        )
-                        doc_entries.append(
-                            {
-                                "doc_id": doc_id,
-                                "text": doc_text,
-                                "title": corpus[doc_id].get("title", ""),
-                                "similarity": float(
-                                    item.get("similarity score", 0.0)
-                                ),
-                            }
-                        )
-
-                    # Save scores for retrieval evaluation
-                    retrieval_results[query_id] = scores
-
-                    # Merge retrieved docs into the original sample and stream write
-                    example_with_docs = dict(example)
-                    example_with_docs["docs"] = doc_entries
-                    writer.write(example_with_docs)
-
-            self.dataset["test"] = datasets.load_dataset(
-                "json", data_files=output_path, split="train"
-            )
-            # Evaluate using BEIR
-            retriever = EvaluateRetrieval(score_function="dot")
-            k_values = [1, 5, 10]
-            logger.debug("qrels keys: %s", list(qrels.keys())[:5])
-            logger.debug(
-                "retrieval_results keys: %s",
-                list(retrieval_results.keys())[:5],
-            )
-
-            for qid in qrels:
-                relevant_doc_ids = set(qrels[qid].keys())
-                retrieved_doc_ids = set(retrieval_results.get(qid, {}).keys())
-
-                if not relevant_doc_ids & retrieved_doc_ids:
-                    logger.debug(f"[NO MATCH] for query {qid}")
-                else:
-                    logger.debug(f"[MATCH] {qid} retrieved")
-                logger.debug(f"  gold:      {relevant_doc_ids}")
-                logger.debug(f"  retrieved: {retrieved_doc_ids}")
-
-            ndcg, _map, recall, precision = retriever.evaluate(
-                qrels, retrieval_results, k_values, ignore_identical_ids=False
-            )
-            mrr = retriever.evaluate_custom(
-                qrels, retrieval_results, k_values, metric="mrr"
-            )
-
-            metrics = {
-                "ndcg": ndcg,
-                "mrr": mrr,
-                "recall": recall,
-                "precision": precision,
-            }
-            output_metrics['retrieval'] = metrics
-
-            with open(metrics_path, "w") as f:
-                json.dump(metrics, f, indent=2)
-
-            logger.info("Retrieval results saved to %s", output_path)
-            logger.info("Retrieval metrics saved to %s", metrics_path)
-            logger.info("Canonical retrieval completed.")
 
         # === Generation Logic ===
         if self.run_mode in ["generate", "retrieve_generate"]:
             logger.info("[INFO] Starting generation...")
-
-            generation_dir = os.path.join(
-                self.save_to, "generation", self.task
+            output_metrics['generation'] = self.run_generation(
+                n_generation_samples=n_generation_samples,
+                allow_code_execution=allow_code_execution,
+                generation_eval_k=generation_eval_k,
             )
-            os.makedirs(generation_dir, exist_ok=True)
 
-            gen_path = os.path.join(generation_dir, "generations.json")
-            ref_path = os.path.join(generation_dir, "references.json")
-
-            all_generations = []  # List[List[str]]: list of candidates per task
-            all_references = []  # List[str]: one reference string per task
-
-            for idx, data_i in enumerate(
-                tqdm(self.dataset["test"])
-            ):  # data_i is equivalent to doc in <https://github.com/code-rag-bench/code-rag-bench/blob/main/generation/eval/tasks/humaneval.py>
-                prompt = data_i["prompt"]
-
-                docs = data_i.get("docs", [])
-                context = "\n\n".join(
-                    doc["text"] for doc in docs[:10]
-                )  # Top-10 Todo: allow customization of top-k retrieval!
-
-                # Construct the final prompt for the agent
-                final_prompt = (
-                    context
-                    + '\n\nPlease complete the following function based on the example above:\n'
-                    + '```python\n'
-                    + prompt
-                )
-
-                candidates = []
-                # Run generation using the agent
-                for _ in range(n_generation_samples):
-                    response = agent.step(final_prompt)
-                    generation = response.msg.content
-
-                    # === Postprocessing based on CodeRAG-Bench ===
-                    stop_words = [
-                        "\nclass",
-                        "<file_sep>",
-                        "if __name__",
-                        "\nprint(",
-                        "\ndef",
-                    ]
-                    generation = stop_at_stop_token(generation, stop_words)
-                    generation = prompt + generation
-                    logger.debug("%s", "=" * 40)
-                    logger.debug("%s", generation)
-                    logger.debug("%s", "=" * 40)
-
-                    generation = extract_generation_code(generation, prompt)
-
-                    logger.debug("%s", "=" * 40)
-                    logger.debug("%s", generation)
-                    logger.debug("%s", "=" * 40)
-                    candidates.append(generation)
-                all_generations.append(candidates)
-
-                # Build reference
-                test_func = data_i["test"]
-                entry_point = f"check({data_i['entry_point']})"
-                reference = "\n" + test_func + "\n" + entry_point
-                all_references.append(reference)
-
-            with open(gen_path, "w") as f_gen:
-                json.dump(all_generations, f_gen, indent=2)
-                logger.info(f"Saved generations to {gen_path}")
-
-            with open(ref_path, "w") as f_ref:
-                json.dump(all_references, f_ref, indent=2)
-                logger.info(f"Saved references to {ref_path}")
-
-            # === Code Evaluation ===
-            if not allow_code_execution:
-                logger.warning(
-                    "[SKIP] Code execution is disabled. Set `allow_code_execution=True` to run evaluation."
-                )
-            else:
-                logger.warning(
-                    "Running code to evaluate the benchmark. It can be dangerous, as the generated code may contain unknown or harmful operations. To ensure safety, please execute all code in a secure sandboxed environment."
-                )
-                os.environ["HF_ALLOW_CODE_EVAL"] = (
-                    "1"  # Allow code execution (sandboxed)
-                )
-
-                logger.info("Starting code evaluation...")
-
-                pass_at_k, raw_results = compute_code_eval(
-                    references=all_references,
-                    predictions=all_generations,
-                    k=generation_eval_k,
-                    num_workers=4,
-                    timeout=3.0,
-                )
-
-                # Print pass@k results
-                logger.info("[EVAL] pass@k:")
-                for k, v in pass_at_k.items():
-                    logger.info(f"  {k}: {v:.4f}")
-
-                # Save metrics
-                eval_dir = os.path.join(generation_dir, "eval")
-                os.makedirs(eval_dir, exist_ok=True)
-
-                eval_path = os.path.join(eval_dir, "pass_at_k.json")
-                with open(eval_path, "w") as f_eval:
-                    json.dump(pass_at_k, f_eval, indent=2)
-                    logger.info(f"pass@k metrics saved to {eval_path}")
-                output_metrics['generation'] = pass_at_k
-
-                # Save raw results for analysis
-                raw_results_path = os.path.join(eval_dir, "raw_results.jsonl")
-                with jsonlines.open(raw_results_path, mode="w") as writer:
-                    for task_id, results in raw_results.items():
-                        for completion_id, result in results:
-                            writer.write(
-                                {
-                                    "task_id": task_id,
-                                    "completion_id": completion_id,
-                                    **result,
-                                    "generation": all_generations[task_id][
-                                        completion_id
-                                    ],
-                                    "reference": all_references[task_id],
-                                }
-                            )
-                    logger.info(
-                        f"Raw evaluation results saved to {raw_results_path}"
-                    )
-
-                logger.info("Generations saved to %s", gen_path)
         return output_metrics

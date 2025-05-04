@@ -15,10 +15,10 @@
 from .apibank import APIBankBenchmark
 from .apibench import APIBenchBenchmark
 from .base import BaseBenchmark
+from .coderag_bench import CodeRAGBenchAutoRetriever, CodeRAGBenchmark
 from .gaia import DefaultGAIARetriever, GAIABenchmark
 from .nexus import NexusBenchmark
 from .ragbench import RAGBenchBenchmark
-from .coderag_bench import CodeRagBenchmark, CoderagBenchAutoRetriever
 
 __all__ = [
     "BaseBenchmark",
@@ -28,5 +28,6 @@ __all__ = [
     "APIBenchBenchmark",
     "APIBankBenchmark",
     "RAGBenchBenchmark",
-    "CodeRagBenchmark",
+    "CodeRAGBenchmark",
+    "CodeRAGBenchAutoRetriever",
 ]

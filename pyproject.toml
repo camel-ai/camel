@@ -244,7 +244,7 @@ owl = [
 ]
 coderag_bench = [
     "jsonlines>=3.1.0,<4",
-	"beir==2.1.0",
+    "beir==2.1.0"
 ]
 all = [
     "numpy~=1.26",
@@ -358,6 +358,8 @@ all = [
     "pyautogui>=0.9.54,<0.10",
     "pyobvector>=0.1.18",
     "scrapegraph-py>=1.12.0,<2",
+    "jsonlines>=3.1.0,<4",
+    "beir==2.1.0"
 ]
 
 [project.urls]
