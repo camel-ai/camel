@@ -32,8 +32,8 @@ class GeminiEmbedding(BaseEmbedding[str]):
             Gemini service. (default: :obj:`None`)
         dimensions (int, optional): The text embedding output dimensions.
             (default: :obj:`None`)
-        task_type (str, optional): The task type for which to optimize
-            the embeddings. (default: :obj:`None`)
+        task_type (GeminiEmbeddingTaskType, optional): The task type for which
+            to optimize the embeddings. (default: :obj:`None`)
 
     Raises:
         RuntimeError: If an unsupported model type is specified.
