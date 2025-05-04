@@ -558,7 +558,6 @@ name = "camel-ai"
 version = "0.2.52"
 source = { editable = "." }
 dependencies = [
-    { name = "aci-sdk" },
     { name = "colorama" },
     { name = "docstring-parser" },
     { name = "httpx" },
@@ -573,6 +572,7 @@ dependencies = [
 [package.optional-dependencies]
 all = [
     { name = "accelerate" },
+    { name = "aci-sdk" },
     { name = "agentops" },
     { name = "aiosqlite" },
     { name = "anthropic" },
@@ -727,6 +727,7 @@ dev = [
     { name = "uv" },
 ]
 dev-tools = [
+    { name = "aci-sdk" },
     { name = "agentops" },
     { name = "daytona-sdk" },
     { name = "docker" },
@@ -790,6 +791,7 @@ model-platforms = [
     { name = "reka-api" },
 ]
 owl = [
+    { name = "aci-sdk" },
     { name = "anthropic" },
     { name = "beautifulsoup4" },
     { name = "chunkr-ai" },
@@ -904,7 +906,9 @@ web-tools = [
 requires-dist = [
     { name = "accelerate", marker = "extra == 'all'", specifier = ">=0.26.0,<0.27" },
     { name = "accelerate", marker = "extra == 'huggingface'", specifier = ">=0.26.0,<0.27" },
-    { name = "aci-sdk", specifier = ">=1.0.0b1" },
+    { name = "aci-sdk", marker = "extra == 'all'", specifier = ">=1.0.0b1" },
+    { name = "aci-sdk", marker = "extra == 'dev-tools'", specifier = ">=1.0.0b1" },
+    { name = "aci-sdk", marker = "extra == 'owl'", specifier = ">=1.0.0b1" },
     { name = "agentops", marker = "extra == 'all'", specifier = ">=0.3.21,<0.4" },
     { name = "agentops", marker = "extra == 'dev-tools'", specifier = ">=0.3.21,<0.4" },
     { name = "aiosqlite", marker = "extra == 'all'", specifier = ">=0.20.0,<0.21" },

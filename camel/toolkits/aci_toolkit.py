@@ -34,59 +34,74 @@ logger = get_logger(__name__)
     ]
 )
 class ACIToolkit(BaseToolkit):
-    """A toolkit for interacting with the ACI API."""
+    r"""A toolkit for interacting with the ACI API."""
 
     @dependencies_required('aci')
     def __init__(
         self,
-        api_key: Union[str, None] = None,
-        linked_account: Union[str, None] = None,
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
+        linked_account_owner_id: Optional[str] = None,
         timeout: Optional[float] = None,
     ) -> None:
         r"""Initialize the ACI toolkit.
 
         Args:
-            api_key (str): The API key for authentication
-            timeout (Optional[float], optional): Request timeout.
-                Defaults to None.
+            api_key (Optional[str]): The API key for authentication.
+                (default: :obj: `None`)
+            base_url (Optional[str]): The base URL for the ACI API.
+                (default: :obj: `None`)
+            linked_account_owner_id (Optional[str]): ID of the owner of the
+                linked account, e.g., "johndoe"
+                (default: :obj: `None`)
+            timeout (Optional[float]): Request timeout.
+                (default: :obj: `None`)
         """
         from aci import ACI
 
         super().__init__(timeout)
-        self.client = ACI(api_key=os.getenv("ACI_API_KEY"))
-        self.linked_account = linked_account
+
+        self._api_key = api_key or os.getenv("ACI_API_KEY")
+        self._base_url = base_url or os.getenv("ACI_BASE_URL")
+        self.client = ACI(api_key=self._api_key, base_url=self._base_url)
+        self.linked_account_owner_id = linked_account_owner_id
 
     def search_tool(
         self,
-        query: str = "",
+        intent: Optional[str] = None,
         allowed_app_only: bool = True,
         include_functions: bool = False,
-        categories=None,
-        limit: int = 10,
-        offset: int = 0,
-    ) -> Optional[List["AppBasic"]]:
+        categories: Optional[List[str]] = None,
+        limit: Optional[int] = 10,
+        offset: Optional[int] = 0,
+    ) -> Union[List["AppBasic"], str]:
         r"""Search for apps based on intent.
 
         Args:
-            query (str,optional): The search query/intent
-            allowed_app_only(bool,optional): If true, only return apps that
+            intent (Optional[str]): Search results will be sorted by relevance
+                to this intent.
+                (default: :obj: `None`)
+            allowed_app_only (bool): If true, only return apps that
                 are allowed by the agent/accessor, identified by the api key.
-            include_functions (bool,optional): If true, include functions
+                (default: :obj: `True`)
+            include_functions (bool): If true, include functions
                 (name and description) in the search results.
-            categories (list,optional): List of categories to filter the
+                (default: :obj: `False`)
+            categories (Optional[List[str]]): List of categories to filter the
                 search results. Defaults to an empty list.
-            limit (int, optional): Maximum number of results to return.
-                Defaults to 10.
-            offset (int, optional): Offset for pagination. Defaults to 0.
+                (default: :obj: `None`)
+            limit (Optional[int]): Maximum number of results to return.
+                (default: :obj: `10`)
+            offset (Optional[int]): Offset for pagination.
+                (default: :obj: `0`)
 
         Returns:
-            List[AppBasic]: List of matching apps
+            Optional[List[AppBasic]]: List of matching apps if successful,
+                error message otherwise.
         """
-        if categories is None:
-            categories = []
         try:
             apps = self.client.apps.search(
-                intent=query,
+                intent=intent,
                 allowed_apps_only=allowed_app_only,
                 include_functions=include_functions,
                 categories=categories,
@@ -96,26 +111,27 @@ class ACIToolkit(BaseToolkit):
             return apps
         except Exception as e:
             logger.error(f"Error: {e}")
-            return None
+            return str(e)
 
     def list_configured_apps(
-        self, app_names=None, limit: int = 10, offset: int = 0
-    ) -> Optional[List["AppConfiguration"]]:
-        r"""List all configured apps
+        self,
+        app_names: Optional[List[str]] = None,
+        limit: Optional[int] = 10,
+        offset: Optional[int] = 0,
+    ) -> Union[List["AppConfiguration"], str]:
+        r"""List all configured apps.
 
         Args:
-            app_names (list, optional): List of app names to filter the
-                results. Defaults to an empty list.
-            limit (int, optional): Maximum number of results to return.
-                Defaults to 10.
-            offset (int, optional): Offset for pagination. Defaults to 0.
+            app_names (Optional[List[str]]): List of app names to filter the
+                results. (default: :obj: `None`)
+            limit (Optional[int]): Maximum number of results to return.
+                (default: :obj: `10`)
+            offset (Optional[int]): Offset for pagination. (default: :obj: `0`)
 
         Returns:
-            Optional[List[AppBasic]]: List of configured apps if successful,
-                None otherwise
+            Union[List[AppConfiguration], str]: List of configured apps if
+                successful, error message otherwise.
         """
-        if app_names is None:
-            app_names = []
         try:
             apps = self.client.app_configurations.list(
                 app_names=app_names, limit=limit, offset=offset
@@ -123,16 +139,16 @@ class ACIToolkit(BaseToolkit):
             return apps
         except Exception as e:
             logger.error(f"Error: {e}")
-            return None
+            return str(e)
 
-    def configure_app(self, app_name: str) -> Optional[Dict]:
+    def configure_app(self, app_name: str) -> Union[Dict, str]:
         r"""Configure an app with specified authentication type.
 
         Args:
-            app_name (str): Name of the app to configure
+            app_name (str): Name of the app to configure.
 
         Returns:
-            Optional[Dict]: Configuration result or None on error
+            Union[Dict, str]: Configuration result or error message.
         """
         from aci.types.enums import SecurityScheme
 
@@ -150,54 +166,55 @@ class ACIToolkit(BaseToolkit):
             return configuration
         except Exception as e:
             logger.error(f"Error: {e}")
-            return None
+            return str(e)
 
     def get_app_configuration(
         self, app_name: str
-    ) -> Optional["AppConfiguration"]:
-        r"""Get app configuration by app name
+    ) -> Union["AppConfiguration", str]:
+        r"""Get app configuration by app name.
 
         Args:
-            app_name (str): Name of the app to get configuration for
+            app_name (str): Name of the app to get configuration for.
 
         Returns:
-            Optional[AppDetails]: App configuration if successful,
-                None otherwise
+            Union[AppConfiguration, str]: App configuration if successful,
+                error message otherwise.
         """
         try:
             app = self.client.app_configurations.get(app_name=app_name)
             return app
         except Exception as e:
             logger.error(f"Error: {e}")
-            return None
+            return str(e)
 
-    def delete_app(self, app_name: str) -> None:
+    def delete_app(self, app_name: str) -> Optional[str]:
         r"""Delete an app configuration.
+
         Args:
-            app_name (str): Name of the app to delete
+            app_name (str): Name of the app to delete.
+
         Returns:
-            None
+            Optional[str]: None if successful, error message otherwise.
         """
         try:
             self.client.app_configurations.delete(app_name=app_name)
+            return None
         except Exception as e:
             logger.error(f"Error: {e}")
+            return str(e)
 
     def link_account(
         self,
         app_name: str,
-        api_key: Optional[str] = None,  # <-- FIXED
-    ) -> Optional["LinkedAccount"]:
+    ) -> Union["LinkedAccount", str]:
         r"""Link an account to a configured app.
 
         Args:
-            app_name (str): Name of the app to link the account to
-            api_key (str, optional): API key for API_KEY authentication.
-                Required for API_KEY auth type. Defaults to None
+            app_name (str): Name of the app to link the account to.
 
         Returns:
-            LinkedAccount: LinkedAccount object if successful,
-                None if error occurs
+            Union[LinkedAccount, str]: LinkedAccount object if successful,
+                error message otherwise.
         """
         from aci.types.enums import SecurityScheme
 
@@ -207,109 +224,114 @@ class ACIToolkit(BaseToolkit):
             ).security_scheme
 
             if security_scheme == SecurityScheme.API_KEY:
-                if not api_key:
-                    raise ValueError(
-                        "API key is required for API_KEY authentication type"
-                    )
-
                 return self.client.linked_accounts.link(
                     app_name=app_name,
-                    linked_account_owner_id=self.linked_account,
+                    linked_account_owner_id=self.linked_account_owner_id,
                     security_scheme=security_scheme,
-                    api_key=api_key,
+                    api_key=self._api_key,
                 )
             else:
                 return self.client.linked_accounts.link(
                     app_name=app_name,
-                    linked_account_owner_id=self.linked_account,
+                    linked_account_owner_id=self.linked_account_owner_id,
                     security_scheme=security_scheme,
                 )
         except Exception as e:
             logger.error(f"Error linking account: {e!s}")
-            return None
+            return str(e)
 
-    def get_app_details(self, app_name: str) -> Optional["AppDetails"]:
+    def get_app_details(self, app_name: str) -> "AppDetails":
         r"""Get details of an app.
 
         Args:
-            app_name (str): Name of the app to get details for
+            app_name (str): Name of the app to get details for.
 
         Returns:
-            Optional[AppDetails]: App details if successful, None otherwise
+            AppDetails: App details.
         """
-        try:
-            app = self.client.apps.get(app_name=app_name)
-            return app
-        except Exception as e:
-            logger.error(f"Error: {e}")
-            return None
+        app = self.client.apps.get(app_name=app_name)
+        return app
 
     def get_linked_accounts(
         self, app_name: str
-    ) -> Optional[List["LinkedAccount"]]:
+    ) -> Union[List["LinkedAccount"], str]:
         r"""List all linked accounts for a specific app.
 
         Args:
-            app_name (str): Name of the app to get linked accounts for
+            app_name (str): Name of the app to get linked accounts for.
 
         Returns:
-            Optional[List[LinkedAccount]]: List of linked accounts if
-                successful, None otherwise
+            Union[List[LinkedAccount], str]: List of linked accounts if
+                successful, error message otherwise.
         """
         try:
             accounts = self.client.linked_accounts.list(app_name=app_name)
             return accounts
         except Exception as e:
             logger.error(f"Error: {e}")
-            return None
+            return str(e)
 
-    def enable_linked_account(self, linked_account_id: str) -> None:
+    def enable_linked_account(
+        self, linked_account_id: str
+    ) -> Union["LinkedAccount", str]:
         r"""Enable a linked account.
 
         Args:
-            linked_account_id (str): ID of the linked account to enable
+            linked_account_id (str): ID of the linked account to enable.
 
         Returns:
-            None
+            Union[LinkedAccount, str]: Linked account if successful, error
+                message otherwise.
         """
         try:
-            self.client.linked_accounts.enable(
+            linked_account = self.client.linked_accounts.enable(
                 linked_account_id=linked_account_id
             )
+            return linked_account
         except Exception as e:
             logger.error(f"Error: {e}")
+            return str(e)
 
-    def disable_linked_account(self, linked_account_id: str) -> None:
+    def disable_linked_account(
+        self, linked_account_id: str
+    ) -> Union["LinkedAccount", str]:
         r"""Disable a linked account.
 
         Args:
-            linked_account_id (str): ID of the linked account to disable
+            linked_account_id (str): ID of the linked account to disable.
 
         Returns:
-            None
+            Union[LinkedAccount, str]: The updated linked account if
+                successful, error message otherwise.
         """
         try:
-            self.client.linked_accounts.disable(
+            linked_account = self.client.linked_accounts.disable(
                 linked_account_id=linked_account_id
             )
+            return linked_account
         except Exception as e:
             logger.error(f"Error: {e}")
+            return str(e)
 
-    def delete_linked_account(self, linked_account_id: str) -> None:
+    def delete_linked_account(self, linked_account_id: str) -> str:
         r"""Delete a linked account.
 
         Args:
-            linked_account_id (str): ID of the linked account to delete
+            linked_account_id (str): ID of the linked account to delete.
 
         Returns:
-            None
+            str: Success message if successful, error message otherwise.
         """
         try:
             self.client.linked_accounts.delete(
                 linked_account_id=linked_account_id
             )
+            return (
+                f"linked_account_id: {linked_account_id} deleted successfully"
+            )
         except Exception as e:
             logger.error(f"Error: {e}")
+            return str(e)
 
     def function_definition(self, func_name: str) -> Dict:
         r"""Get the function definition for an app.
@@ -318,36 +340,35 @@ class ACIToolkit(BaseToolkit):
             app_name (str): Name of the app to get function definition for
 
         Returns:
-            Dict: Function definition dictionary
+            Dict: Function definition dictionary.
         """
         return self.client.functions.get_definition(func_name)
 
     def search_function(
         self,
-        app_names=None,
-        intent: str = "",
+        app_names: Optional[List[str]] = None,
+        intent: Optional[str] = None,
         allowed_apps_only: bool = True,
-        limit: int = 10,
-        offset: int = 0,
+        limit: Optional[int] = 10,
+        offset: Optional[int] = 0,
     ) -> List[Dict]:
         r"""Search for functions based on intent.
 
         Args:
-            app_names (list, optional): List of app names to filter the
-                search results. Defaults to an empty list.
-            intent (str, optional): The search query/intent.
-                Defaults to an empty string.
-            allowed_apps_only (bool, optional): If true, only return
-                functions from allowed apps. Defaults to True.
-            limit (int, optional): Maximum number of results to return.
-                Defaults to 10.
-            offset (int, optional): Offset for pagination. Defaults to 0.
+            app_names (Optional[List[str]]): List of app names to filter the
+                search results. (default: :obj: `None`)
+            intent (Optional[str]): The search query/intent.
+                (default: :obj: `None`)
+            allowed_apps_only (bool): If true, only return
+                functions from allowed apps. (default: :obj: `True`)
+            limit (Optional[int]): Maximum number of results to return.
+                (default: :obj: `10`)
+            offset (Optional[int]): Offset for pagination.
+                (default: :obj: `0`)
 
         Returns:
             List[Dict]: List of matching functions
         """
-        if app_names is None:
-            app_names = []
         return self.client.functions.search(
             app_names=app_names,
             intent=intent,
@@ -359,25 +380,31 @@ class ACIToolkit(BaseToolkit):
     def execute_function(
         self,
         function_name: str,
-        arguments: Dict,
-        linked_account: str,
+        function_arguments: Dict,
+        linked_account_owner_id: str,
         allowed_apps_only: bool = False,
     ) -> Dict:
         r"""Execute a function call.
 
         Args:
-            function_name (str): Name of the function to execute
-            arguments (Dict): Arguments to pass to the function
-            linked_account (LinkedAccount): Linked account to execute
-                function with
-            allowed_apps_only (bool, optional): Whether to restrict to
-                allowed apps. Defaults to False
+            function_name (str): Name of the function to execute.
+            function_arguments (Dict): Arguments to pass to the function.
+            linked_account_owner_id (str): To specify the end-user (account
+                owner) on behalf of whom you want to execute functions
+                You need to first link corresponding account with the same
+                owner id in the ACI dashboard (https://platform.aci.dev).
+            allowed_apps_only (bool): If true, only returns functions/apps
+                that are allowed to be used by the agent/accessor, identified
+                by the api key. (default: :obj: `False`)
 
         Returns:
             Dict: Result of the function execution
         """
         result = self.client.handle_function_call(
-            function_name, arguments, str(linked_account), allowed_apps_only
+            function_name,
+            function_arguments,
+            linked_account_owner_id,
+            allowed_apps_only,
         )
         return result
 
@@ -389,7 +416,8 @@ class ACIToolkit(BaseToolkit):
                 available functions
         """
         _configure_app = [
-            app.app_name for app in self.list_configured_apps() or []
+            app.app_name  # type: ignore[union-attr]
+            for app in self.list_configured_apps() or []
         ]
         _all_function = self.search_function(app_names=_configure_app)
         tools = []
@@ -402,8 +430,8 @@ class ACIToolkit(BaseToolkit):
             def dummy_func(*, schema=schema, **kwargs):
                 return self.execute_function(
                     function_name=schema['function']['name'],
-                    arguments=kwargs,
-                    linked_account=self.linked_account,
+                    function_arguments=kwargs,
+                    linked_account_owner_id=self.linked_account_owner_id,
                 )
 
             tool = FunctionTool(
