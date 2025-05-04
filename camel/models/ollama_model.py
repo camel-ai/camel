@@ -16,9 +16,12 @@ import subprocess
 from typing import Any, Dict, Optional, Union
 
 from camel.configs import OLLAMA_API_PARAMS, OllamaConfig
+from camel.logger import get_logger
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ModelType
 from camel.utils import BaseTokenCounter
+
+logger = get_logger(__name__)
 
 
 class OllamaModel(OpenAICompatibleModel):
@@ -60,19 +63,21 @@ class OllamaModel(OpenAICompatibleModel):
     ) -> None:
         if model_config_dict is None:
             model_config_dict = OllamaConfig().as_dict()
-        url = url or os.environ.get("OLLAMA_BASE_URL")
+        self._url = url or os.environ.get("OLLAMA_BASE_URL")
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
-        super().__init__(
-            model_type=model_type,
-            model_config_dict=model_config_dict,
-            api_key=api_key,
-            url=url,
-            token_counter=token_counter,
-            timeout=timeout,
-        )
+        self._model_type = model_type
 
         if not self._url:
             self._start_server()
+
+        super().__init__(
+            model_type=self._model_type,
+            model_config_dict=model_config_dict,
+            api_key="Not_Used",
+            url=self._url,
+            token_counter=token_counter,
+            timeout=timeout,
+        )
 
     def _start_server(self) -> None:
         r"""Starts the Ollama server in a subprocess."""
@@ -83,12 +88,12 @@ class OllamaModel(OpenAICompatibleModel):
                 stderr=subprocess.PIPE,
             )
             self._url = "http://localhost:11434/v1"
-            print(
+            logger.info(
                 f"Ollama server started on {self._url} "
-                f"for {self.model_type} model."
+                f"for {self._model_type} model."
             )
         except Exception as e:
-            print(f"Failed to start Ollama server: {e}.")
+            logger.error(f"Failed to start Ollama server: {e}.")
 
     def check_model_config(self):
         r"""Check whether the model configuration contains any
