@@ -15,12 +15,12 @@
 import random
 import time
 from concurrent.futures import ThreadPoolExecutor
-from math import ceil
 from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast
 
 from tqdm import tqdm
 
 from camel.agents import ChatAgent
+from camel.datagen.base import BaseDataGenPipeline
 from camel.datagen.evol_instruct.scorer import BaseScorer, GeneralScorer
 from camel.datagen.evol_instruct.templates import EvolInstructTemplates
 from camel.logger import get_logger
@@ -28,7 +28,7 @@ from camel.logger import get_logger
 logger = get_logger(__name__)
 
 
-class EvolInstructPipeline:
+class EvolInstructPipeline(BaseDataGenPipeline):
     r"""Pipeline for evolving prompts using the Evol-Instruct methodology.
 
     Supports custom templates defining evolution strategies and methods. The
@@ -43,12 +43,18 @@ class EvolInstructPipeline:
         agent (Optional[ChatAgent]): Chat agent instance for LLM interaction.
             If :obj:`None`, initializes with a default ChatAgent.
             (default: :obj:`None`)
+        output_path (Optional[str]): Path to save generated data.
+            (default: :obj:`None`)
+        save_intermediate (bool): Whether to save intermediate results.
+            (default: :obj:`False`)
     """
 
     def __init__(
         self,
         templates: Type = EvolInstructTemplates,
         agent: Optional[ChatAgent] = None,
+        output_path: Optional[str] = None,
+        save_intermediate: bool = False,
     ) -> None:
         r"""Initialize pipeline with templates and language model agent.
 
@@ -59,7 +65,15 @@ class EvolInstructPipeline:
             agent (Optional[ChatAgent]): Preconfigured chat agent instance.
                 Creates a default ChatAgent if not provided.
                 (default: :obj:`None`)
+            output_path (Optional[str]): Path to save generated data.
+                (default: :obj:`None`)
+            save_intermediate (bool): Whether to save intermediate results.
+                (default: :obj:`False`)
         """
+        super().__init__(
+            output_path=output_path,
+            save_intermediate=save_intermediate,
+        )
         self.templates = templates
         self.agent = agent or ChatAgent()
 
@@ -320,7 +334,7 @@ class EvolInstructPipeline:
 
     def generate(
         self,
-        prompts: List[str],
+        prompts: Union[str, List[Dict[str, Any]], List[str]],
         evolution_spec: Union[str, List[Union[str, List[str]]]],
         num_generations: int = 2,
         num_iterations: Optional[int] = None,
@@ -330,28 +344,89 @@ class EvolInstructPipeline:
         retry_limit: int = 3,
         retry_delay: float = 1.0,
         num_threads: int = 10,
-    ) -> List[Dict[int, List[Dict[str, Any]]]]:
-        r"""Evolve a batch of prompts through iterative refinement.
+        **kwargs: Any,
+    ) -> List[Dict[str, Any]]:
+        r"""Generates evolved prompts from a set of seed prompts.
+
+        Core implementation that performs the generation logic.
+
+        This method supports flexible input formats:
+        - File path to a JSONL file containing prompts
+        - JSONL string
+        - List of dictionaries with a 'prompt' field
+        - List of prompt strings
 
         Args:
-            prompts (List[str]): Seed prompts to evolve.
+            prompts (Union[str, List[Dict[str, Any]], List[str]]):
+                Source prompts. Can be a file path, JSONL string, list of
+                dictionaries with 'prompt' field, or list of strings.
             evolution_spec (Union[str, List[Union[str, List[str]]]]):
                 Evolution method specification.
                 If a list is provided and num_iterations is None, then
                 num_iterations is set to the length of the list.
             num_generations (int): Candidates to generate per iteration.
+                (default: :obj:`2`)
             num_iterations (Optional[int]): Number of evolution iterations.
                 Defaults to the length of evolution_spec.
             keep_original (bool): Include original prompts in results.
-            scorer (Optional[BaseScorer]): Scoring model for candidate.
-            num_chunks (int): Number of parallel processing chunks.
-            retry_limit (int): Max retries for failed generations.
+                (default: :obj:`True`)
+            scorer (Optional[BaseScorer]): Scoring model for candidates.
+                (default: :obj:`None`)
+            num_chunks (int): Number of chunks to split processing.
+                (default: :obj:`1`)
+            retry_limit (int): Number of retries for failed generations.
+                (default: :obj:`3`)
             retry_delay (float): Delay between retries in seconds.
+                (default: :obj:`1.0`)
             num_threads (int): Number of threads for parallel processing.
+                (default: :obj:`10`)
+            **kwargs (Any): Additional keyword arguments.
 
         Returns:
-            List[Dict[int, List[Dict[str, Any]]]]: Evolution results.
+            List[Dict[str, Any]]: Evolution results converted to
+            standard format.
         """
+        # Load data from various formats
+        seed_prompts = []
+
+        if isinstance(prompts, str):
+            # Handle file path or JSONL string
+            loaded_data = self.load_data(prompts)
+            # Ensure loaded_data is properly typed
+            processed_data: List[Dict[str, Any]] = []
+            for item in loaded_data:
+                if isinstance(item, dict):
+                    processed_data.append(item)
+                else:
+                    processed_data.append({"prompt": item})
+
+            for item in processed_data:
+                if isinstance(item, dict) and 'prompt' in item:
+                    seed_prompts.append(item['prompt'])
+                elif isinstance(item, dict) and isinstance(
+                    item.get('text', ''), str
+                ):
+                    seed_prompts.append(item.get('text', ''))
+        elif isinstance(prompts, list):
+            # Handle list of dicts or list of strings
+            for prompt_item in prompts:
+                if isinstance(prompt_item, dict) and 'prompt' in prompt_item:
+                    seed_prompts.append(prompt_item['prompt'])
+                elif isinstance(prompt_item, str):
+                    seed_prompts.append(prompt_item)
+                else:
+                    logger.warning(
+                        f"Skipping invalid prompt item: {prompt_item}"
+                    )
+        else:
+            raise ValueError(
+                "Prompts must be a file path, JSONL string, "
+                "list of dictionaries with 'prompt' field, or list of strings"
+            )
+
+        logger.info(f"Loaded {len(seed_prompts)} prompts for evolution")
+
+        # Original processing logic
         if num_iterations is None:
             if isinstance(evolution_spec, list):
                 num_iterations = len(evolution_spec)
@@ -359,7 +434,7 @@ class EvolInstructPipeline:
                 num_iterations = 1
 
         evolution_plan: List[List[List[str]]] = []
-        for _ in prompts:
+        for _ in seed_prompts:
             prompt_plan = []
             for iteration in range(num_iterations):
                 if isinstance(evolution_spec, list):
@@ -377,12 +452,12 @@ class EvolInstructPipeline:
         def _process_prompt(
             args: Tuple[str, List[List[str]]],
         ) -> Dict[int, List[Dict[str, Any]]]:
-            prompt, methods = args
+            current_prompt, method_plan = args
             retries = 0
             while retries <= retry_limit:
                 try:
                     return self._generate_iterative_evolutions(
-                        prompt=prompt,
+                        prompt=current_prompt,
                         evolution_spec=evolution_spec,
                         num_generations=num_generations,
                         num_iterations=num_iterations,
@@ -400,16 +475,18 @@ class EvolInstructPipeline:
                         time.sleep(retry_delay)
                     else:
                         logger.error("Failed to process prompt.")
-                        return {}
+                        # Return empty dict with proper type
+                        return cast(Dict[int, List[Dict[str, Any]]], {})
 
-            raise RuntimeError("_process_prompt() did not return.")
+            return cast(Dict[int, List[Dict[str, Any]]], {})
 
-        num_chunks = max(1, min(num_chunks, len(prompts)))
-        chunk_size = ceil(len(prompts) / num_chunks)
-        results = []
+        num_chunks = max(1, min(num_chunks, len(seed_prompts)))
+        chunk_size = len(seed_prompts) // num_chunks
+        raw_results = []
 
-        for chunk_idx in range(0, len(prompts), chunk_size):
-            chunk = prompts[chunk_idx : chunk_idx + chunk_size]
+        # Process each chunk of prompts
+        for chunk_idx in range(0, len(seed_prompts), chunk_size):
+            chunk = seed_prompts[chunk_idx : chunk_idx + chunk_size]
             plan_chunk = evolution_plan[chunk_idx : chunk_idx + chunk_size]
 
             with ThreadPoolExecutor(max_workers=num_threads) as executor:
@@ -419,6 +496,108 @@ class EvolInstructPipeline:
                         total=len(chunk),
                     )
                 )
-                results.extend(chunk_results)
+                raw_results.extend(chunk_results)
 
-        return results
+                # Save intermediate results after each chunk if configured
+                if chunk_idx > 0 and self.save_intermediate:
+                    # Convert the partial results to the expected format
+                    partial_results = []
+                    for i, evol_result in enumerate(raw_results):
+                        if i < len(seed_prompts):
+                            seed_prompt = seed_prompts[i]
+                        else:
+                            seed_prompt = "unknown"
+
+                        partial_results.append(
+                            {
+                                "seed_prompt": seed_prompt,
+                                "evolutions": evol_result,
+                                "metadata": {
+                                    "num_iterations": num_iterations,
+                                    "num_generations": num_generations,
+                                },
+                            }
+                        )
+
+                    # Call the hook for intermediate results
+                    self.save_intermediate_results(partial_results)
+
+        # Convert the results to the expected format for BaseDataGenPipeline
+        standardized_results = []
+        for i, evol_result in enumerate(raw_results):
+            seed_prompt = (
+                seed_prompts[i] if i < len(seed_prompts) else "unknown"
+            )
+            standardized_results.append(
+                {
+                    "seed_prompt": seed_prompt,
+                    "evolutions": evol_result,
+                    "metadata": {
+                        "num_iterations": num_iterations,
+                        "num_generations": num_generations,
+                    },
+                }
+            )
+
+        return standardized_results
+
+    def execute(
+        self,
+        prompts: Union[str, List[Dict[str, Any]], List[str]],
+        evolution_spec: Union[str, List[Union[str, List[str]]]],
+        num_generations: int = 2,
+        num_iterations: Optional[int] = None,
+        keep_original: bool = True,
+        scorer: Optional[BaseScorer] = None,
+        num_chunks: int = 1,
+        retry_limit: int = 3,
+        retry_delay: float = 1.0,
+        num_threads: int = 10,
+        **kwargs: Any,
+    ) -> List[Dict[str, Any]]:
+        r"""Execute the Evol-Instruct pipeline.
+
+        The main entry point for running the pipeline. Handles logging,
+        time measurement, and result saving.
+
+        Args:
+            prompts: Source prompts.
+                Can be a file path, JSONL string, list of dictionaries
+                with 'prompt' field, or list of strings.
+            evolution_spec (Union[str, List[Union[str, List[str]]]]):
+                Evolution method specification.
+                If a list is provided and num_iterations is None, then
+                num_iterations is set to the length of the list.
+            num_generations (int): Candidates to generate per iteration.
+                (default: :obj:`2`)
+            num_iterations (Optional[int]): Number of evolution iterations.
+                Defaults to the length of evolution_spec.
+            keep_original (bool): Include original prompts in results.
+                (default: :obj:`True`)
+            scorer (Optional[BaseScorer]): Scoring model for candidates.
+                (default: :obj:`None`)
+            num_chunks (int): Number of chunks to split processing.
+                (default: :obj:`1`)
+            retry_limit (int): Number of retries for failed generations.
+                (default: :obj:`3`)
+            retry_delay (float): Delay between retries in seconds.
+                (default: :obj:`1.0`)
+            num_threads (int): Number of threads for parallel processing.
+                (default: :obj:`10`)
+
+        Returns:
+            List[Dict[str, Any]]: Standardized evolution results.
+        """
+        return super().execute(
+            prompts=prompts,
+            evolution_spec=evolution_spec,
+            num_generations=num_generations,
+            num_iterations=num_iterations,
+            keep_original=keep_original,
+            scorer=scorer,
+            num_chunks=num_chunks,
+            retry_limit=retry_limit,
+            retry_delay=retry_delay,
+            num_threads=num_threads,
+            **kwargs,
+        )
