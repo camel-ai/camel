@@ -1269,7 +1269,7 @@ class EmbeddingModelType(Enum):
 
 
 class GeminiEmbeddingTaskType(str, Enum):
-    """Task types for Gemini embedding models.
+    r"""Task types for Gemini embedding models.
 
     For more information, please refer to:
     https://ai.google.dev/gemini-api/docs/embeddings#task-types
