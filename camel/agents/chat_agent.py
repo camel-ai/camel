@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import logging
 import textwrap
+import threading
 import uuid
 from collections import defaultdict
 from datetime import datetime
@@ -151,6 +152,9 @@ class ChatAgent(BaseAgent):
             model calling at each step. (default: :obj:`False`)
         agent_id (str, optional): The ID of the agent. If not provided, a
             random UUID will be generated. (default: :obj:`None`)
+        stop_event (Optional[threading.Event], optional): Event to signal
+            termination of the agent's operation. When set, the agent will
+            terminate its execution. (default: :obj:`None`)
     """
 
     def __init__(
@@ -182,6 +186,7 @@ class ChatAgent(BaseAgent):
         scheduling_strategy: str = "round_robin",
         single_iteration: bool = False,
         agent_id: Optional[str] = None,
+        stop_event: Optional[threading.Event] = None,
     ) -> None:
         # Resolve model backends and set up model manager
         resolved_models = self._resolve_models(model)
@@ -252,6 +257,7 @@ class ChatAgent(BaseAgent):
         self.terminated = False
         self.response_terminators = response_terminators or []
         self.single_iteration = single_iteration
+        self.stop_event = stop_event
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
@@ -757,6 +763,13 @@ class ChatAgent(BaseAgent):
                 self._get_full_tool_schemas(),
             )
 
+            # Terminate Agent if stop_event is set
+            if self.stop_event and self.stop_event.is_set():
+                # Use the _step_token_exceed to terminate the agent with reason
+                return self._step_token_exceed(
+                    num_tokens, tool_call_records, "termination_triggered"
+                )
+
             if tool_call_requests := response.tool_call_requests:
                 # Process all tool calls
                 for tool_call_request in tool_call_requests:
@@ -848,6 +861,13 @@ class ChatAgent(BaseAgent):
                 response_format,
                 self._get_full_tool_schemas(),
             )
+
+            # Terminate Agent if stop_event is set
+            if self.stop_event and self.stop_event.is_set():
+                # Use the _step_token_exceed to terminate the agent with reason
+                return self._step_token_exceed(
+                    num_tokens, tool_call_records, "termination_triggered"
+                )
 
             if tool_call_requests := response.tool_call_requests:
                 # Process all tool calls
