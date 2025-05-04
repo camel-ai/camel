@@ -136,6 +136,7 @@ jobs:
           NOVITA_API_KEY: "${{ secrets.NOVITA_API_KEY }}"
           WATSONX_API_KEY: "${{ secrets.WATSONX_API_KEY }}"
           WATSONX_PROJECT_ID: "${{ secrets.WATSONX_PROJECT_ID }}"
+          ACI_API_KEY: "${{ secrets.ACI_API_KEY }}"
         run: |
           source test_venv/bin/activate
           pytest --fast-test-mode ./test
