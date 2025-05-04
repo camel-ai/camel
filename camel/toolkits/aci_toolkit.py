@@ -391,7 +391,7 @@ class ACIToolkit(BaseToolkit):
         _configure_app = [
             app.app_name for app in self.list_configured_apps() or []
         ]
-        _all_function = self.client.functions.search(app_names=_configure_app)
+        _all_function = self.search_function(app_names=_configure_app)
         tools = []
 
         for function in _all_function:

@@ -44,3 +44,18 @@ model = ChatAgent(
 
 respond = model.step("star the repo camel-ai/camel")
 print(respond)
+
+'''msgs=[BaseMessage(role_name='Assistant',
+role_type=<RoleType.ASSISTANT: 'assistant'>,meta_dict={}, 
+content='I have starred the repository camel-ai/camel for you.\n',
+video_bytes=None, image_list=None, image_detail='auto', 
+video_detail='low', parsed=None)]
+terminated=False info={'id': '', 'usage': {'completion_tokens': 14,
+'prompt_tokens': 4997,
+'total_tokens': 5011, 'completion_tokens_details': None, 
+'prompt_tokens_details': None},
+'termination_reasons': ['stop'], 'num_tokens': 49,
+'tool_calls': [ToolCallingRecord(tool_name='GITHUB__STAR_REPOSITORY',
+args={'path': {'repo': 'camel', 'owner': 'camel-ai'}},
+result={'success': True, 'data': {}}, tool_call_id='')],
+'external_tool_call_requests': None}'''
