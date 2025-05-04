@@ -420,7 +420,21 @@ class ACIToolkit(BaseToolkit):
             for app in self.list_configured_apps() or []
         ]
         _all_function = self.search_function(app_names=_configure_app)
-        tools = []
+        tools = [
+            FunctionTool(self.search_tool),
+            FunctionTool(self.list_configured_apps),
+            FunctionTool(self.configure_app),
+            FunctionTool(self.get_app_configuration),
+            FunctionTool(self.delete_app),
+            FunctionTool(self.link_account),
+            FunctionTool(self.get_app_details),
+            FunctionTool(self.get_linked_accounts),
+            FunctionTool(self.enable_linked_account),
+            FunctionTool(self.disable_linked_account),
+            FunctionTool(self.delete_linked_account),
+            FunctionTool(self.function_definition),
+            FunctionTool(self.search_function),
+        ]
 
         for function in _all_function:
             schema = self.client.functions.get_definition(
