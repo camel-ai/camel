@@ -30,7 +30,7 @@ sys.modules['aci.types.enums'] = MagicMock()
     os.getenv("ACI_API_KEY") is None, reason="ACI_API_KEY not set"
 )
 def test_aci_toolkit_init():
-    """Test ACIToolkit initialization."""
+    r"""Test ACIToolkit initialization."""
     # Test initialization with default parameters
     toolkit = ACIToolkit()
     assert toolkit._api_key == os.getenv("ACI_API_KEY")
@@ -53,7 +53,7 @@ def test_aci_toolkit_init():
 
 @patch("aci.ACI")
 def test_search_tool(mock_aci):
-    """Test search_tool method."""
+    r"""Test search_tool method."""
     # Setup mock
     mock_client = MagicMock()
     mock_aci.return_value = mock_client
@@ -84,7 +84,7 @@ def test_search_tool(mock_aci):
 
 @patch("aci.ACI")
 def test_search_tool_exception(mock_aci):
-    """Test search_tool method with exception."""
+    r"""Test search_tool method with exception."""
     # Setup mock to raise exception
     mock_client = MagicMock()
     mock_aci.return_value = mock_client
@@ -101,7 +101,7 @@ def test_search_tool_exception(mock_aci):
 
 @patch("aci.ACI")
 def test_list_configured_apps(mock_aci):
-    """Test list_configured_apps method."""
+    r"""Test list_configured_apps method."""
     # Setup mock
     mock_client = MagicMock()
     mock_aci.return_value = mock_client
@@ -123,7 +123,7 @@ def test_list_configured_apps(mock_aci):
 @patch("aci.types.enums.SecurityScheme")
 @patch("aci.ACI")
 def test_configure_app(mock_aci, mock_security_scheme):
-    """Test configure_app method."""
+    r"""Test configure_app method."""
     # Setup mock
     mock_client = MagicMock()
     mock_aci.return_value = mock_client
@@ -150,7 +150,7 @@ def test_configure_app(mock_aci, mock_security_scheme):
 
 @patch("aci.ACI")
 def test_enable_linked_account(mock_aci):
-    """Test enable_linked_account method."""
+    r"""Test enable_linked_account method."""
     # Setup mock
     mock_client = MagicMock()
     mock_aci.return_value = mock_client
@@ -175,7 +175,7 @@ def test_enable_linked_account(mock_aci):
 
 @patch("aci.ACI")
 def test_disable_linked_account(mock_aci):
-    """Test disable_linked_account method."""
+    r"""Test disable_linked_account method."""
     # Setup mock
     mock_client = MagicMock()
     mock_aci.return_value = mock_client
@@ -200,7 +200,7 @@ def test_disable_linked_account(mock_aci):
 
 @patch("aci.ACI")
 def test_delete_linked_account(mock_aci):
-    """Test delete_linked_account method."""
+    r"""Test delete_linked_account method."""
     # Setup mock
     mock_client = MagicMock()
     mock_aci.return_value = mock_client
@@ -219,7 +219,7 @@ def test_delete_linked_account(mock_aci):
 
 @patch("aci.ACI")
 def test_get_tools(mock_aci):
-    """Test get_tools method."""
+    r"""Test get_tools method."""
     # Setup mock
     mock_client = MagicMock()
     mock_aci.return_value = mock_client
@@ -260,7 +260,7 @@ def test_get_tools(mock_aci):
 
 @patch("aci.ACI")
 def test_execute_function(mock_aci):
-    """Test execute_function method."""
+    r"""Test execute_function method."""
     # Setup mock
     mock_client = MagicMock()
     mock_aci.return_value = mock_client
