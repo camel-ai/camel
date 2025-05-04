@@ -536,19 +536,19 @@ class BrowseCompBenchmark(BaseBenchmark):
             )
             / len(self._validated_results),
         }
-        print("AGGREGATE METRICS")
-        print(aggregate_metrics)
-        print("##################")
+        logger.info("AGGREGATE METRICS")
+        logger.info(aggregate_metrics)
+        logger.info("##################")
 
         output_d = {
             "accuracy": aggregate_metrics["is_correct"],
         }
 
-        print(f"Accuracy: {output_d['accuracy']:.3f}")
+        logger.info(f"Accuracy: {output_d['accuracy']:.3f}")
 
         self._eval_result = aggregate_results(self._validated_results)
         # ^^^ how to use a sampler
         report_filename = self.save_to
-        print(f"Writing report to {report_filename}")
+        logger.info(f"Writing report to {report_filename}")
         with open(report_filename, "w") as fh:
             fh.write(make_report(self._eval_result))
