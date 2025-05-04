@@ -25,9 +25,6 @@ from multiprocessing.pool import Pool, ThreadPool
 from typing import Any, Callable
 
 import jinja2
-import numpy as np
-import pandas
-from tqdm import tqdm
 
 from camel.benchmarks.base import BaseBenchmark
 from camel.models.model_factory import ModelFactory
@@ -233,6 +230,8 @@ def make_report(eval_result: EvalResult) -> str:
 
 
 def _compute_stat(values: list, stat: str):
+    import numpy as np
+
     if stat == "mean":
         return np.mean(values)
     elif stat == "std":
@@ -347,6 +346,8 @@ class BrowseCompBenchmark(BaseBenchmark):
             self: The benchmark instance
         """
         # Load dataset from remote CSV
+        import pandas
+
         df = pandas.read_csv(
             "https://openaipublic.blob.core.windows.net/simple-evals/browse_comp_test_set.csv"
         )
@@ -393,6 +394,8 @@ class BrowseCompBenchmark(BaseBenchmark):
                 This function should take a row (dict) and return a dict with
                 'problem', 'answer', and 'response' keys.
         """
+        from tqdm import tqdm
+
         # Use a process pool for parallel execution
         pool_class = Pool
         # Limit the number of processes
@@ -417,7 +420,7 @@ class BrowseCompBenchmark(BaseBenchmark):
         Args:
             model_config (dict): Configuration for the LLM used for validation
         """
-
+        from tqdm import tqdm
         model = ModelFactory.create(**model_config)
 
         def validate_each_one(result: dict):
