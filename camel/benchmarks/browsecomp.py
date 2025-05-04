@@ -22,14 +22,114 @@ import traceback
 from collections import defaultdict
 from dataclasses import dataclass, field
 from multiprocessing.pool import Pool, ThreadPool
-from typing import Any, Callable
-
-import jinja2
+from typing import Any, Callable, Optional
 
 from camel.benchmarks.base import BaseBenchmark
 from camel.models.model_factory import ModelFactory
 
 logger = logging.getLogger(__name__)
+
+
+Message = dict[str, Any]  # keys role, content
+MessageList = list[Message]
+
+# Define the message template first
+_message_template = """
+<div class="message {{ role }}">
+    <div class="role">
+    {{ role }}
+    {% if variant %}<span class="variant">({{ variant }})</span>{% endif %}
+    </div>
+    <div class="content">
+    <pre>{{ content }}</pre>
+    </div>
+</div>
+"""
+
+
+class JinjaEnv:
+    """A class that encapsulates the Jinja environment setup with lazy importing.
+
+    This class enables lazy importing of Jinja2, which means Jinja2 is only imported
+    when the class is actually used, not when the module is imported.
+    """
+
+    _instance: Optional['JinjaEnv'] = None
+    _env = None
+
+    def __new__(cls):
+        """Implement singleton pattern to ensure only one instance exists."""
+        if cls._instance is None:
+            cls._instance = super(JinjaEnv, cls).__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+
+    def __init__(self):
+        """Initialize the JinjaEnv instance if not already initialized."""
+        if not getattr(self, '_initialized', False):
+            self._initialized = True
+
+    @classmethod
+    def get_instance(cls):
+        """Get the singleton instance of JinjaEnv.
+
+        Returns:
+            JinjaEnv: The singleton instance.
+        """
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
+
+    @property
+    def env(self):
+        """Lazily initialize and return the Jinja environment.
+
+        Returns:
+            jinja2.Environment: The Jinja environment instance.
+        """
+        if self._env is None:
+            # Lazy import of jinja2
+            import jinja2
+
+            # Create the Jinja environment
+            self._env = jinja2.Environment(
+                loader=jinja2.BaseLoader(),
+                undefined=jinja2.StrictUndefined,
+                autoescape=jinja2.select_autoescape(["html", "xml"]),
+            )
+
+            # Register the message_to_html function
+            self._env.globals["message_to_html"] = self.message_to_html
+
+        return self._env
+
+    def from_string(self, template_str):
+        """Create a template from the given string.
+
+        Args:
+            template_str (str): The template string.
+
+        Returns:
+            jinja2.Template: The compiled template.
+        """
+        return self.env.from_string(template_str)
+
+    @staticmethod
+    def message_to_html(message: Message) -> str:
+        """Generate HTML snippet (inside a <div>) for a message.
+
+        Args:
+            message (Message): The message to convert to HTML.
+
+        Returns:
+            str: The HTML representation of the message.
+        """
+        return JinjaEnv.get_instance().from_string(_message_template).render(
+            role=message["role"],
+            content=message["content"],
+            variant=message.get("variant", None),
+        )
+
 
 GRADER_TEMPLATE = """
 Judge whether the following [response] to [question] is correct or not 
@@ -64,42 +164,6 @@ incorrect.
 confidence: The extracted confidence score between 0|\%| and 100|\%| 
 from [response]. Put 100 if there is no confidence score available.
 """.strip()
-
-Message = dict[str, Any]  # keys role, content
-MessageList = list[Message]
-
-jinja_env = jinja2.Environment(
-    loader=jinja2.BaseLoader(),
-    undefined=jinja2.StrictUndefined,
-    autoescape=jinja2.select_autoescape(["html", "xml"]),
-)
-
-
-def message_to_html(message: Message) -> str:
-    """
-    Generate HTML snippet (inside a <div>) for a message.
-    """
-    return jinja_env.from_string(_message_template).render(
-        role=message["role"],
-        content=message["content"],
-        variant=message.get("variant", None),
-    )
-
-
-jinja_env.globals["message_to_html"] = message_to_html
-
-
-_message_template = """
-<div class="message {{ role }}">
-    <div class="role">
-    {{ role }}
-    {% if variant %}<span class="variant">({{ variant }})</span>{% endif %}
-    </div>
-    <div class="content">
-    <pre>{{ content }}</pre>
-    </div>
-</div>
-"""
 
 
 HTML_JINJA = """
@@ -218,17 +282,6 @@ class EvalResult:
     convos: list[MessageList]  # sampled conversations
 
 
-def make_report(eval_result: EvalResult) -> str:
-    """
-    Create a standalone HTML report from an EvalResult.
-    """
-    return jinja_env.from_string(_report_template).render(
-        score=eval_result.score,
-        metrics=eval_result.metrics,
-        htmls=eval_result.htmls,
-    )
-
-
 def _compute_stat(values: list, stat: str):
     import numpy as np
 
@@ -321,6 +374,7 @@ class BrowseCompBenchmark(BaseBenchmark):
         # Will store validated results after LLM evaluation
         self._validated_results: list[Any] = []
         self._eval_result: EvalResult  # Will store final aggregated results
+        self.jinja_env = JinjaEnv.get_instance()
 
     def download(self):
         r"""Download the BrowseComp dataset.
@@ -409,6 +463,16 @@ class BrowseCompBenchmark(BaseBenchmark):
             )
         return self
 
+    def make_report(self, eval_result: EvalResult) -> str:
+        """
+        Create a standalone HTML report from an EvalResult.
+        """
+        return self.jinja_env.from_string(_report_template).render(
+            score=eval_result.score,
+            metrics=eval_result.metrics,
+            htmls=eval_result.htmls,
+        )
+
     def validate(self, model_config: dict):
         """
         Validate the raw results using the GRADER_TEMPLATE and an LLM.
@@ -481,7 +545,7 @@ class BrowseCompBenchmark(BaseBenchmark):
                 score = is_correct
 
                 # Generate HTML representation of the result
-                html = jinja_env.from_string(HTML_JINJA).render(
+                html = self.jinja_env.from_string(HTML_JINJA).render(
                     prompt_messages=dict(
                         content=result['problem'], role="user"
                     ),
@@ -554,4 +618,4 @@ class BrowseCompBenchmark(BaseBenchmark):
         report_filename = self.save_to
         logger.info(f"Writing report to {report_filename}")
         with open(report_filename, "w") as fh:
-            fh.write(make_report(self._eval_result))
+            fh.write(self.make_report(self._eval_result))
