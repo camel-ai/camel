@@ -147,7 +147,8 @@ class CodeRAGBenchAutoRetriever(AutoRetriever):
         url_and_api_key: Optional[tuple] = None,
         overwrite: bool = False,
     ):
-        r"""Initializes the retriever with optional vector config.
+        r"""Initializes the retriever with optional vector store config and 
+        embedding model.
 
         Args:
             storage_type (Optional[StorageType]): Type of storage to use.
@@ -160,7 +161,7 @@ class CodeRAGBenchAutoRetriever(AutoRetriever):
                 (default: :obj:`None`)
             overwrite (bool): Whether to re-index and overwrite existing
                 collection. (default: :obj:`False`)
-        """
+       """
         super().__init__(
             storage_type=storage_type,
             embedding_model=embedding_model,
