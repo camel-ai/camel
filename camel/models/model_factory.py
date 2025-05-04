@@ -31,6 +31,8 @@ from camel.models.lmstudio_model import LMStudioModel
 from camel.models.mistral_model import MistralModel
 from camel.models.modelscope_model import ModelScopeModel
 from camel.models.moonshot_model import MoonshotModel
+from camel.models.netmind_model import NetmindModel
+from camel.models.novita_model import NovitaModel
 from camel.models.nvidia_model import NvidiaModel
 from camel.models.ollama_model import OllamaModel
 from camel.models.openai_compatible_model import OpenAICompatibleModel
@@ -46,6 +48,7 @@ from camel.models.stub_model import StubModel
 from camel.models.togetherai_model import TogetherAIModel
 from camel.models.vllm_model import VLLMModel
 from camel.models.volcano_model import VolcanoModel
+from camel.models.watsonx_model import WatsonXModel
 from camel.models.yi_model import YiModel
 from camel.models.zhipuai_model import ZhipuAIModel
 from camel.types import ModelPlatformType, ModelType, UnifiedModelType
@@ -61,8 +64,8 @@ class ModelFactory:
 
     @staticmethod
     def create(
-        model_platform: ModelPlatformType,
-        model_type: Union[ModelType, str],
+        model_platform: Union[ModelPlatformType, str],
+        model_type: Union[ModelType, str, UnifiedModelType],
         model_config_dict: Optional[Dict] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         api_key: Optional[str] = None,
@@ -72,10 +75,12 @@ class ModelFactory:
         r"""Creates an instance of `BaseModelBackend` of the specified type.
 
         Args:
-            model_platform (ModelPlatformType): Platform from which the model
-                originates.
-            model_type (Union[ModelType, str]): Model for which a
-                backend is created. Can be a `str` for open source platforms.
+            model_platform (Union[ModelPlatformType, str]): Platform from
+                which the model originates. Can be a string or
+                ModelPlatformType enum.
+            model_type (Union[ModelType, str, UnifiedModelType]): Model for
+                which a backend is created. Can be a string, ModelType enum, or
+                UnifiedModelType.
             model_config_dict (Optional[Dict]): A dictionary that will be fed
                 into the backend constructor. (default: :obj:`None`)
             token_counter (Optional[BaseTokenCounter], optional): Token
@@ -96,6 +101,21 @@ class ModelFactory:
         Raises:
             ValueError: If there is no backend for the model.
         """
+        # Convert string to ModelPlatformType enum if needed
+        if isinstance(model_platform, str):
+            try:
+                model_platform = ModelPlatformType(model_platform)
+            except ValueError:
+                raise ValueError(f"Unknown model platform: {model_platform}")
+
+        # Convert string to ModelType enum or UnifiedModelType if needed
+        if isinstance(model_type, str):
+            try:
+                model_type = ModelType(model_type)
+            except ValueError:
+                # If not in ModelType, create a UnifiedModelType
+                model_type = UnifiedModelType(model_type)
+
         model_class: Optional[Type[BaseModelBackend]] = None
         model_type = UnifiedModelType(model_type)
 
@@ -123,6 +143,8 @@ class ModelFactory:
             model_class = AIMLModel
         elif model_platform.is_volcano:
             model_class = VolcanoModel
+        elif model_platform.is_netmind:
+            model_class = NetmindModel
 
         elif model_platform.is_openai and model_type.is_openai:
             model_class = OpenAIModel
@@ -160,8 +182,12 @@ class ModelFactory:
             model_class = MoonshotModel
         elif model_platform.is_modelscope:
             model_class = ModelScopeModel
+        elif model_platform.is_novita:
+            model_class = NovitaModel
         elif model_type == ModelType.STUB:
             model_class = StubModel
+        elif model_type.is_watsonx:
+            model_class = WatsonXModel
 
         if model_class is None:
             raise ValueError(

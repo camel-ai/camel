@@ -67,6 +67,8 @@ from .thinking_toolkit import ThinkingToolkit
 from .pyautogui_toolkit import PyAutoGUIToolkit
 from .openai_agent_toolkit import OpenAIAgentToolkit
 from .searxng_toolkit import SearxNGToolkit
+from .jina_reranker_toolkit import JinaRerankerToolkit
+from .klavis_toolkit import KlavisToolkit
 
 
 __all__ = [
@@ -122,4 +124,6 @@ __all__ = [
     'PyAutoGUIToolkit',
     'OpenAIAgentToolkit',
     'SearxNGToolkit',
+    'JinaRerankerToolkit',
+    'KlavisToolkit',
 ]

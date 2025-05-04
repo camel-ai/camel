@@ -87,8 +87,11 @@ def test_image_to_base64_with_invalid_input(dalle_toolkit):
     # Intentionally pass a non-image object to simulate an error condition
     invalid_input = "This is not an image"
 
-    # Expect the function to return None when an error occurs during encoding
+    # Expect the function to return an error message when an error occurs
+    # during encoding
     result = dalle_toolkit.image_to_base64(invalid_input)
 
-    # Assert that the function correctly returns None for invalid inputs
-    assert result == ""
+    # Assert that the function correctly returns an error message for invalid
+    # inputs
+    assert "An error occurred:" in result
+    assert "'str' object has no attribute 'save'" in result
