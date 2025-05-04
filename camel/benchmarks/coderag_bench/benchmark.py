@@ -75,15 +75,20 @@ class CoderagBenchAutoRetriever(AutoRetriever):
         url_and_api_key: Optional[tuple] = None,
         overwrite: bool = False,
     ):
-        r"""
-        Initializes the retriever with optional vector store config and embedding model.
+        r"""Initializes the retriever with optional vector store config and 
+        embedding model.
 
         Args:
             storage_type (Optional[StorageType]): Type of storage to use.
-            embedding_model (Optional[OpenAIEmbedding]): Embedding model to use.
+                (default: :obj:`None`)
+            embedding_model (Optional[OpenAIEmbedding]): Embedding model to 
+                use. (default: :obj:`None`)
             vector_storage_local_path (Optional[str]): Local vector DB path.
+                (default: :obj:`None`)
             url_and_api_key (Optional[tuple]): Remote DB config if needed.
+                (default: :obj:`None`)
             overwrite (bool): Whether to re-index if collection already exists.
+                (default: :obj:`False`)
         """
         super().__init__(
             storage_type=storage_type,
