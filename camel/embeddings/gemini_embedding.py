@@ -14,28 +14,26 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Optional, Union
-
-from openai import OpenAI
+from typing import Any, Optional
 
 from camel.embeddings.base import BaseEmbedding
-from camel.types import NOT_GIVEN, EmbeddingModelType, NotGiven
+from camel.types import EmbeddingModelType, GeminiEmbeddingTaskType
 from camel.utils import api_keys_required
 
 
-class OpenAIEmbedding(BaseEmbedding[str]):
-    r"""Provides text embedding functionalities using OpenAI's models.
+class GeminiEmbedding(BaseEmbedding[str]):
+    r"""Provides text embedding functionalities using Google's Gemini models.
 
     Args:
-        model_type (EmbeddingModelType): The model type to be used for text
-            embeddings.
-            (default: :obj:`TEXT_EMBEDDING_3_SMALL`)
-        url (Optional[str]): The url to the OpenAI service.
+        model_type (EmbeddingModelType, optional): The model type to be
+            used for text embeddings.
+            (default: :obj:`GEMINI_EMBEDDING_EXP`)
+        api_key (str, optional): The API key for authenticating with the
+            Gemini service. (default: :obj:`None`)
+        dimensions (int, optional): The text embedding output dimensions.
             (default: :obj:`None`)
-        api_key (Optional[str]): The API key for authenticating with
-            the OpenAI service. (default: :obj:`None`)
-        dimensions (Union[int, NotGiven]): The text embedding output
-            dimensions. (default: :obj:`NOT_GIVEN`)
+        task_type (GeminiEmbeddingTaskType, optional): The task type for which
+            to optimize the embeddings. (default: :obj:`None`)
 
     Raises:
         RuntimeError: If an unsupported model type is specified.
@@ -43,34 +41,35 @@ class OpenAIEmbedding(BaseEmbedding[str]):
 
     @api_keys_required(
         [
-            ("api_key", 'OPENAI_API_KEY'),
+            ("api_key", 'GEMINI_API_KEY'),
         ]
     )
     def __init__(
         self,
         model_type: EmbeddingModelType = (
-            EmbeddingModelType.TEXT_EMBEDDING_3_SMALL
+            EmbeddingModelType.GEMINI_EMBEDDING_EXP
         ),
-        url: Optional[str] = None,
         api_key: Optional[str] = None,
-        dimensions: Union[int, NotGiven] = NOT_GIVEN,
+        dimensions: Optional[int] = None,
+        task_type: Optional[GeminiEmbeddingTaskType] = None,
     ) -> None:
-        if not model_type.is_openai:
-            raise ValueError("Invalid OpenAI embedding model type.")
+        from google import genai
+
+        if not model_type.is_gemini:
+            raise ValueError("Invalid Gemini embedding model type.")
+
         self.model_type = model_type
-        if dimensions == NOT_GIVEN:
+        if dimensions is None:
             self.output_dim = model_type.output_dim
         else:
             assert isinstance(dimensions, int)
             self.output_dim = dimensions
-        self._api_key = api_key or os.environ.get("OPENAI_API_KEY")
-        self._url = url or os.environ.get("OPENAI_API_BASE_URL")
-        self.client = OpenAI(
-            timeout=180,
-            max_retries=3,
-            base_url=self._url,
-            api_key=self._api_key,
-        )
+
+        self._api_key = api_key or os.environ.get("GEMINI_API_KEY")
+        self._task_type = task_type
+
+        # Initialize Gemini client
+        self._client = genai.Client(api_key=self._api_key)
 
     def embed_list(
         self,
@@ -87,21 +86,25 @@ class OpenAIEmbedding(BaseEmbedding[str]):
             list[list[float]]: A list that represents the generated embedding
                 as a list of floating-point numbers.
         """
-        # TODO: count tokens
-        if self.model_type == EmbeddingModelType.TEXT_EMBEDDING_ADA_2:
-            response = self.client.embeddings.create(
-                input=objs,
-                model=self.model_type.value,
-                **kwargs,
+        from google.genai import types
+
+        # Create embedding config if task_type is specified
+        embed_config = None
+        if self._task_type:
+            embed_config = types.EmbedContentConfig(
+                task_type=self._task_type.value
             )
-        else:
-            response = self.client.embeddings.create(
-                input=objs,
-                model=self.model_type.value,
-                dimensions=self.output_dim,
-                **kwargs,
-            )
-        return [data.embedding for data in response.data]
+
+        # Process each text separately since Gemini API
+        # expects single content item
+        responses = self._client.models.embed_content(
+            model=self.model_type.value,
+            contents=objs,  # type: ignore[arg-type]
+            config=embed_config,
+            **kwargs,
+        )
+
+        return [response.values for response in responses.embeddings]  # type: ignore[misc,union-attr]
 
     def get_output_dim(self) -> int:
         r"""Returns the output dimension of the embeddings.

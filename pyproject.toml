@@ -78,6 +78,7 @@ rag = [
     "pandasai>=2.3.0,<3",
     "crawl4ai>=0.3.745",
     "pyobvector>=0.1.18",
+    "google-genai>=1.13.0",
 ]
 web_tools = [
     "duckduckgo-search>=6.3.5,<7",
@@ -359,6 +360,7 @@ all = [
     "scrapegraph-py>=1.12.0,<2",
     "daytona-sdk==0.14.0",
     "ibm-watsonx-ai>=1.3.11",
+    "google-genai>=1.13.0",
 ]
 
 [project.urls]
@@ -548,6 +550,7 @@ module = [
     "daytona_sdk",
     "scrapegraph_py.*",
     "ibm_watsonx_ai.*",
+    "google_genai",
 ]
 ignore_missing_imports = true
 
