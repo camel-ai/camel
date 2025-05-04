@@ -14,6 +14,7 @@
 from .base import BaseAgent
 from .chat_agent import ChatAgent
 from .critic_agent import CriticAgent
+from .deep_research_agent import DeepResearchAgent
 from .embodied_agent import EmbodiedAgent
 from .knowledge_graph_agent import KnowledgeGraphAgent
 from .repo_agent import RepoAgent
@@ -27,7 +28,6 @@ from .task_agent import (
 )
 from .tool_agents.base import BaseToolAgent
 from .tool_agents.hugging_face_tool_agent import HuggingFaceToolAgent
-from .deep_research_agent import DeepResearchAgent
 
 __all__ = [
     'BaseAgent',
