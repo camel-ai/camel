@@ -105,6 +105,7 @@ class ModelType(UnifiedModelType, Enum):
     TOGETHER_LLAMA_4_SCOUT = "meta-llama/Llama-4-Scout-17B-16E-Instruct"
 
     # PPIO platform models support tool calling
+    PPIO_DEEPSEEK_PROVER_V2_671B = "deepseek/deepseek-prover-v2-671b"
     PPIO_DEEPSEEK_R1_TURBO = "deepseek/deepseek-r1-turbo"
     PPIO_DEEPSEEK_V3_TURBO = "deepseek/deepseek-v3-turbo"
     PPIO_DEEPSEEK_R1_COMMUNITY = "deepseek/deepseek-r1/community"
@@ -212,6 +213,10 @@ class ModelType(UnifiedModelType, Enum):
     QWEN_MAX = "qwen-max"
     QWEN_PLUS = "qwen-plus"
     QWEN_TURBO = "qwen-turbo"
+    QWEN_PLUS_LATEST = "qwen-plus-latest"
+    QWEN_PLUS_2025_04_28 = "qwen-plus-2025-04-28"
+    QWEN_TURBO_LATEST = "qwen-turbo-latest"
+    QWEN_TURBO_2025_04_28 = "qwen-turbo-2025-04-28"
     QWEN_LONG = "qwen-long"
     QWEN_VL_MAX = "qwen-vl-max"
     QWEN_VL_PLUS = "qwen-vl-plus"
@@ -685,6 +690,10 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_QWQ_32B,
             ModelType.QWEN_QVQ_72B,
             ModelType.QWEN_QWQ_PLUS,
+            ModelType.QWEN_PLUS_LATEST,
+            ModelType.QWEN_PLUS_2025_04_28,
+            ModelType.QWEN_TURBO_LATEST,
+            ModelType.QWEN_TURBO_2025_04_28,
         }
 
     @property
@@ -708,6 +717,7 @@ class ModelType(UnifiedModelType, Enum):
     @property
     def is_ppio(self) -> bool:
         return self in {
+            ModelType.PPIO_DEEPSEEK_PROVER_V2_671B,
             ModelType.PPIO_DEEPSEEK_R1_TURBO,
             ModelType.PPIO_DEEPSEEK_V3_TURBO,
             ModelType.PPIO_DEEPSEEK_R1_COMMUNITY,
@@ -920,6 +930,7 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 14_336
         elif self in {
+            ModelType.PPIO_DEEPSEEK_PROVER_V2_671B,
             ModelType.NOVITA_DOLPHIN_MIXTRAL_8X22B,
         }:
             return 16_000
@@ -1094,6 +1105,10 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_PLUS,
             ModelType.QWEN_TURBO,
             ModelType.QWEN_CODER_TURBO,
+            ModelType.QWEN_PLUS_LATEST,
+            ModelType.QWEN_PLUS_2025_04_28,
+            ModelType.QWEN_TURBO_LATEST,
+            ModelType.QWEN_TURBO_2025_04_28,
             ModelType.TOGETHER_LLAMA_3_1_8B,
             ModelType.TOGETHER_LLAMA_3_1_70B,
             ModelType.TOGETHER_LLAMA_3_1_405B,
