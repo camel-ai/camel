@@ -12,6 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from .benchmark import CodeRagBenchmark, CoderagBenchAutoRetriever
+from .benchmark import CodeRAGBenchmark, CodeRAGBenchAutoRetriever
 
-__all__ = ["CodeRagBenchmark", CoderagBenchAutoRetriever]
+__all__ = ["CodeRAGBenchmark", "CodeRAGBenchAutoRetriever"]

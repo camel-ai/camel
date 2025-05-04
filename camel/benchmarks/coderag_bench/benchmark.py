@@ -925,7 +925,7 @@ class CodeRAGBenchmark(BaseBenchmark):
         return metrics
 
     def run_generation(
-        self, n_generation_samples, allow_code_execution, generation_eval_k
+        self, agent, n_generation_samples, allow_code_execution, generation_eval_k
     ):
         r"""Runs code generation and evaluation for the task.
 
@@ -1151,6 +1151,7 @@ class CodeRAGBenchmark(BaseBenchmark):
         if self.run_mode in ["generate", "retrieve_generate"]:
             logger.info("[INFO] Starting generation...")
             output_metrics['generation'] = self.run_generation(
+                agent = agent,
                 n_generation_samples=n_generation_samples,
                 allow_code_execution=allow_code_execution,
                 generation_eval_k=generation_eval_k,

@@ -12,11 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import logging
-
-from camel.agents import ChatAgent
-from camel.benchmarks import CodeRAGBenchAutoRetriever, CodeRAGBenchmark
-from camel.types import StorageType
-
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -25,6 +20,11 @@ logging.basicConfig(
         logging.FileHandler("coderag_bench.log"),
     ],
 )
+from camel.agents import ChatAgent
+from camel.benchmarks import CodeRAGBenchAutoRetriever, CodeRAGBenchmark
+from camel.types import StorageType
+
+
 
 logger = logging.getLogger(__name__)
 logger.info("Starting CodeRAG-Bench example run...")
@@ -54,7 +54,7 @@ If the query is ambiguous or lacks information, make reasonable assumptions."""
     benchmark.load()
     output_metrics = benchmark.run(
         agent,
-        retriever,
+        retriever.run_vector_retriever,
         n_generation_samples=1,
         allow_code_execution=True,
         generation_eval_k=[1],
@@ -83,7 +83,7 @@ If the query is ambiguous or lacks information, make reasonable assumptions."""
     benchmark.load()
     output_metrics = benchmark.run(
         agent,
-        retriever,
+        retriever.run_vector_retriever,
         n_generation_samples=1,
         allow_code_execution=True,
         generation_eval_k=[1],
@@ -107,7 +107,7 @@ If the query is ambiguous or lacks information, make reasonable assumptions."""
     benchmark.load()
     output_metrics = benchmark.run(
         agent,
-        retriever,
+        retriever.run_vector_retriever,
         n_generation_samples=1,
         allow_code_execution=True,
         retrieval_top_k=10,
