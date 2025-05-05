@@ -357,7 +357,7 @@ class MCPClient(BaseToolkit):
 
         Returns:
             str: A string containing the descriptions of the tools
-            in the toolkit.
+                in the toolkit.
         """
         return "\n".join(
             f"tool_name: {tool.name}\n"
@@ -374,7 +374,7 @@ class MCPClient(BaseToolkit):
         Args:
             tool_name (str): Name of the tool to call.
             tool_args (Dict[str, Any]): Arguments to pass to the tool
-            (default: :obj:`{}`) .
+                (default: :obj:`{}`).
 
         Returns:
             Any: The result of the tool call.
@@ -588,6 +588,6 @@ class MCPToolkit(BaseToolkit):
 
         Returns:
             str: A string containing the descriptions of the tools
-            in the toolkit.
+                in the toolkit.
         """
         return "\n".join(server.get_text_tools() for server in self.servers)
