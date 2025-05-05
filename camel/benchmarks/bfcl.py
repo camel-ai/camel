@@ -17,19 +17,29 @@ import logging
 import os
 import random
 import re
-import requests
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import (
+    Any,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
-import pandas as pd
+import requests
 from huggingface_hub import snapshot_download
 
 from camel.agents import ChatAgent
 from camel.benchmarks.base import BaseBenchmark
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
-from camel.types import RoleType
+from camel.types import (
+    RoleType,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -41,20 +51,25 @@ TEST_CATEGORIES = {
     "simple": f"{VERSION_PREFIX}_simple.json",
     "multiple": f"{VERSION_PREFIX}_multiple.json",
     "parallel": f"{VERSION_PREFIX}_parallel.json",
-    "parallel_multiple": f"{VERSION_PREFIX}_parallel_multiple.json", 
+    "parallel_multiple": f"{VERSION_PREFIX}_parallel_multiple.json",
     "irrelevance": f"{VERSION_PREFIX}_irrelevance.json",
     "java": f"{VERSION_PREFIX}_java.json",
     "javascript": f"{VERSION_PREFIX}_javascript.json",
     "rest": f"{VERSION_PREFIX}_rest.json",
 }
 
-class BFCLSample:
-    """Class for BFCL sample objects.
+# define generic type variable for return type
+T = TypeVar('T', bound=BaseBenchmark)
 
-    Attributes:
+
+class BFCLSample:
+    """Sample for BFCL benchmark.
+
+    Args:
         question (str): User question/prompt.
         functions (str): JSON string of function definitions.
-        possible_answer (Union[List, Dict, str]): Possible correct function call formats.
+        possible_answer (Union[List, Dict, str]): Possible correct
+            function call formats.
         category (str): Category of the function call.
         id (str, optional): Sample ID.
     """
@@ -63,31 +78,31 @@ class BFCLSample:
         self,
         question: str,
         functions: str,
-        possible_answer: Union[List, Dict, str] = None,
+        possible_answer: Optional[Union[List, Dict, str]] = None,
         category: str = "",
-        id: str = None,
+        id: Optional[str] = None,
     ):
         self.question = question
         self.functions = functions
-        self.possible_answer = possible_answer if possible_answer is not None else {}
+        self.possible_answer = possible_answer
         self.category = category
         self.id = id
 
 
 class FunctionCallParser:
     """Parser for function calls in model responses.
-    
+
     This class provides methods to extract and evaluate function calls
     from model-generated text responses.
     """
-    
+
     @staticmethod
     def extract_json_from_string(text: str) -> Optional[Dict]:
         """Attempt to extract a JSON object from text string.
-        
+
         Args:
             text (str): The text to parse for JSON objects
-            
+
         Returns:
             Optional[Dict]: Extracted JSON object or None if not found
         """
@@ -99,116 +114,140 @@ class FunctionCallParser:
                 # Try to parse the entire matched content
                 return json.loads(match.group(1))
             except json.JSONDecodeError:
-                # If parsing fails, try to find and extract a JSON object within
+                # If parsing fails, try to find and extract a JSON object
+                # within
                 curly_pattern = r'{[\s\S]*?}'
                 curly_match = re.search(curly_pattern, match.group(1))
                 if curly_match:
                     try:
                         return json.loads(curly_match.group(0))
-                    except:
+                    except Exception:
                         pass
-        
+
         # Try to parse the entire text as JSON
         try:
             return json.loads(text)
-        except:
+        except Exception:
             pass
-        
+
         # Try to find JSON object surrounded by curly braces in the text
         curly_pattern = r'{[\s\S]*?}'
         match = re.search(curly_pattern, text)
         if match:
             try:
                 return json.loads(match.group(0))
-            except:
+            except Exception:
                 pass
-        
+
         return None
 
     @staticmethod
-    def parse_function_call(response_text: str) -> Tuple[Optional[str], Optional[Dict]]:
+    def parse_function_call(
+        response_text: str,
+    ) -> Tuple[Optional[str], Optional[Dict]]:
         """Parse a function call from model response text.
-        
+
         Args:
             response_text (str): The model's response text
-            
+
         Returns:
-            tuple: (function_name, parameters) or (None, None) if no function call is found
+            tuple: (function_name, parameters) or (None, None)
+                if no function call is found
         """
         # Try to extract JSON-formatted function call
         json_obj = FunctionCallParser.extract_json_from_string(response_text)
-        
+
         if json_obj and isinstance(json_obj, dict):
             # Check for function_call format (OpenAI format)
-            if 'function_call' in json_obj and isinstance(json_obj['function_call'], dict):
+            if 'function_call' in json_obj and isinstance(
+                json_obj['function_call'], dict
+            ):
                 function_call = json_obj['function_call']
                 if 'name' in function_call:
                     function_name = function_call['name']
-                    
+
                     # Process parameters, which may be a string or dict
-                    parameters = function_call.get('parameters', function_call.get('arguments', {}))
+                    parameters = function_call.get(
+                        'parameters', function_call.get('arguments', {})
+                    )
                     if isinstance(parameters, str):
                         try:
                             parameters = json.loads(parameters)
-                        except:
+                        except Exception:
                             pass
                     return function_name, parameters
-            
+
             # Try to extract general format function call
             if 'name' in json_obj and 'parameters' in json_obj:
                 function_name = json_obj['name']
                 parameters = json_obj['parameters']
                 return function_name, parameters
-            
+
             # Try to extract single function call (not nested under parameters)
             if 'name' in json_obj and isinstance(json_obj.get('name'), str):
                 function_name = json_obj['name']
                 # Exclude name and other non-parameter fields
-                parameters = {k: v for k, v in json_obj.items() if k not in ['name', 'description', 'type']}
+                parameters = {
+                    k: v
+                    for k, v in json_obj.items()
+                    if k not in ['name', 'description', 'type']
+                }
                 if parameters:
                     return function_name, parameters
-        
+
         # Try to parse JavaScript category special format
         if "createJsObject" in response_text or "JavaScript" in response_text:
-            js_pattern = r'createJsObject\s*\(\s*properties\s*[=:]\s*["\'](.*?)["\']\s*\)'
+            js_pattern = (
+                r'createJsObject\s*\(\s*properties\s*[=:]\s*'
+                r'["\'](.*?)["\']\s*\)'
+            )
             js_match = re.search(js_pattern, response_text, re.DOTALL)
             if js_match:
                 properties = js_match.group(1)
                 return "createJsObject", {"properties": properties}
-        
+
         # Try to parse Java category special format
         if "createHashMap" in response_text or "Java" in response_text:
-            java_pattern = r'createHashMap\s*\(\s*entries\s*[=:]\s*["\'](.*?)["\']\s*\)'
+            java_pattern = (
+                r'createHashMap\s*\(\s*entries\s*[=:]\s*["\'](.*?)["\']\s*\)'
+            )
             java_match = re.search(java_pattern, response_text, re.DOTALL)
             if java_match:
                 entries = java_match.group(1)
                 return "createHashMap", {"entries": entries}
-        
+
         # Try to parse REST API call format
         if "requests.get" in response_text or "API" in response_text:
-            rest_pattern = r'requests\.get\s*\(\s*(?:url\s*[=:]\s*)?["\']([^"\']+)["\'](?:\s*,\s*(?:params|data)\s*[=:]\s*(\{.*?\}))?\s*\)'
+            rest_pattern = (
+                r'requests\.get\s*\(\s*(?:url\s*[=:]\s*)?["\']([^"\']+)["\']'
+                r'(?:\s*,\s*(?:params|data)\s*[=:]\s*(\{.*?\}))?\s*\)'
+            )
             rest_match = re.search(rest_pattern, response_text, re.DOTALL)
             if rest_match:
                 url = rest_match.group(1)
-                parameters_str = rest_match.group(2) if rest_match.group(2) else "{}"
+                parameters_str = (
+                    rest_match.group(2) if rest_match.group(2) else "{}"
+                )
                 try:
                     # Try to parse parameter string as dictionary
                     parameters = eval(parameters_str)
-                except:
+                except Exception:
                     parameters = {}
                 return "requests.get", {"url": url, "params": parameters}
-        
+
         # Try to extract function name from text
-        function_name_pattern = r'[`"]([a-zA-Z0-9_.]+)[`"](?:\s+function|\s*\()'
+        function_name_pattern = (
+            r'[`"]([a-zA-Z0-9_.]+)[`"](?:\s+function|\s*\()'
+        )
         function_match = re.search(function_name_pattern, response_text)
-        
+
         if function_match:
             function_name = function_match.group(1)
             # Try to extract parameters
             parameters = {}
             param_pattern = r'[`"]?([a-zA-Z0-9_]+)[`"]?\s*[=:]\s*([^,\s]+)'
             param_matches = re.findall(param_pattern, response_text)
-            
+
             for param_name, param_value in param_matches:
                 # Try to convert parameter value to appropriate type
                 try:
@@ -218,43 +257,55 @@ class FunctionCallParser:
                     elif re.match(r'^-?\d+\.\d+$', param_value):
                         parameters[param_name] = float(param_value)
                     # Try as quoted string
-                    elif (param_value.startswith('"') and param_value.endswith('"')) or \
-                         (param_value.startswith("'") and param_value.endswith("'")):
+                    elif (
+                        param_value.startswith('"')
+                        and param_value.endswith('"')
+                    ) or (
+                        param_value.startswith("'")
+                        and param_value.endswith("'")
+                    ):
                         parameters[param_name] = param_value[1:-1]
                     else:
                         parameters[param_name] = param_value
-                except:
+                except Exception:
                     parameters[param_name] = param_value
-            
+
             return function_name, parameters
-        
+
         # Fall back to legacy AST-based parsing for simple function calls
         try:
             # Clean up the input
             clean_call = response_text.strip()
-            
+
             # Remove code blocks if present
             if clean_call.startswith("```") and clean_call.endswith("```"):
                 lines = clean_call.split('\n')
                 if len(lines) > 2:
                     clean_call = '\n'.join(lines[1:-1])
-            
+
             # Try to extract function call format: func_name(args)
             function_call_pattern = r'([a-zA-Z0-9_.]+)\s*\((.*?)\)'
-            function_call_match = re.search(function_call_pattern, clean_call, re.DOTALL)
+            function_call_match = re.search(
+                function_call_pattern, clean_call, re.DOTALL
+            )
             if function_call_match:
                 function_name = function_call_match.group(1)
                 args_str = function_call_match.group(2)
-                
+
                 # Parse parameters
                 parameters = {}
                 # Look for param=value pairs
-                param_pattern = r'([a-zA-Z0-9_]+)\s*=\s*("[^"]*"|\'[^\']*\'|\d+|\d+\.\d+|True|False|None)'
+                param_pattern = (
+                    r'([a-zA-Z0-9_]+)\s*=\s*("[^"]*"|\'[^\']*\'|\d+|\d+\.\d+|'
+                    r'True|False|None)'
+                )
                 param_matches = re.findall(param_pattern, args_str)
-                
+
                 for param_name, param_value in param_matches:
                     # Convert parameter values to appropriate types
-                    if param_value.startswith('"') or param_value.startswith("'"):
+                    if param_value.startswith('"') or param_value.startswith(
+                        "'"
+                    ):
                         # Strip quotes
                         parameters[param_name] = param_value[1:-1]
                     elif param_value == "True":
@@ -267,23 +318,23 @@ class FunctionCallParser:
                         parameters[param_name] = float(param_value)
                     else:
                         parameters[param_name] = int(param_value)
-                
+
                 if parameters:
                     return function_name, parameters
         except Exception:
             pass
-            
+
         return None, None
 
     @staticmethod
     def evaluate_function_call(response_text: str, ground_truth: Dict) -> bool:
         """Evaluate if a function call matches the expected ground truth.
-        
+
         Args:
             response_text (str): The model's response text
-            ground_truth (dict): The expected answer in the format 
+            ground_truth (dict): The expected answer in the format
                 {func_name: {param1: [value1], param2: [value2], ...}}
-            
+
         Returns:
             bool: True if the function call matches, False otherwise
         """
@@ -291,16 +342,20 @@ class FunctionCallParser:
         if not ground_truth or not isinstance(ground_truth, dict):
             logger.warning(f"Invalid ground_truth format: {ground_truth}")
             return False
-            
-        function_name, parameters = FunctionCallParser.parse_function_call(response_text)
-        
+
+        function_name, parameters = FunctionCallParser.parse_function_call(
+            response_text
+        )
+
         if not function_name:
             logger.debug("No function call detected")
             return False
-        
+
         # Debug parsed results
-        logger.debug(f"Parsed function: {function_name}, parameters: {parameters}")
-        
+        logger.debug(
+            f"Parsed function: {function_name}, parameters: {parameters}"
+        )
+
         # Check if function name is in ground truth
         if function_name not in ground_truth:
             # Try removing namespace prefix (e.g., math.factorial -> factorial)
@@ -308,66 +363,87 @@ class FunctionCallParser:
                 simple_name = function_name.split('.')[-1]
                 if simple_name in ground_truth:
                     function_name = simple_name
-                    logger.debug(f"Using simplified function name: {function_name}")
+                    logger.debug(
+                        f"Using simplified function name: {function_name}"
+                    )
                 else:
                     # Check for namespace matching cases
                     for gt_func in ground_truth.keys():
-                        if '.' in gt_func and gt_func.split('.')[-1] == simple_name:
+                        if (
+                            '.' in gt_func
+                            and gt_func.split('.')[-1] == simple_name
+                        ):
                             function_name = gt_func
-                            logger.debug(f"Using matched function name: {function_name}")
+                            logger.debug(
+                                f"Using matched function name: {function_name}"
+                            )
                             break
-            
+
             if function_name not in ground_truth:
-                logger.debug(f"Function name mismatch: found {function_name}, expected {list(ground_truth.keys())}")
+                logger.debug(
+                    f"Function name mismatch: found {function_name}, "
+                    f"expected {list(ground_truth.keys())}"
+                )
                 return False
-        
+
         # Get expected parameters
         expected_parameters = ground_truth[function_name]
-        
+
         # Check if expected_parameters is valid
         if not isinstance(expected_parameters, dict):
-            logger.warning(f"Invalid expected_params format: {expected_parameters}")
+            logger.warning(
+                f"Invalid expected_params format: {expected_parameters}"
+            )
             return False
-        
+
         # If no parameters are required, just check function name match
         if not expected_parameters:
-            logger.debug(f"Reference answer for function {function_name} has no parameter requirements, only checking function name match")
+            logger.debug(
+                f"Reference answer for function {function_name} has no "
+                f"parameter requirements, only checking function name match"
+            )
             return True
-        
+
         # If parameters aren't provided in the response, fail
         if not parameters:
             logger.debug("Function call has no parameters")
             return False
-        
+
         # Check all required parameters exist
         for param_name, expected_values in expected_parameters.items():
-            # For optional parameters (value list includes empty string or default value), can skip if parameter doesn't exist
+            # For optional parameters (value list includes empty string or
+            # default value), can skip if parameter doesn't exist
             is_optional = False
             if isinstance(expected_values, list):
                 is_optional = "" in expected_values or None in expected_values
-            
+
             # Check for parameter name variants (parameters vs arguments)
             alt_param_name = None
             if param_name == "parameters" and "arguments" in parameters:
                 alt_param_name = "arguments"
             elif param_name == "arguments" and "parameters" in parameters:
                 alt_param_name = "parameters"
-                
+
             if param_name not in parameters and alt_param_name:
-                logger.debug(f"Using alternative parameter name: {alt_param_name} instead of {param_name}")
+                logger.debug(
+                    f"Using alternative parameter name: {alt_param_name} "
+                    f"instead of {param_name}"
+                )
                 param_name = alt_param_name
-            
+
             if param_name not in parameters:
                 if is_optional:
-                    logger.debug(f"Parameter {param_name} is optional, skipping check")
+                    logger.debug(
+                        f"Parameter {param_name} is optional, skipping check"
+                    )
                     continue
                 logger.debug(f"Missing required parameter: {param_name}")
                 return False
-            
+
             # Convert single value to list for unified processing
             if not isinstance(expected_values, list):
                 expected_values = [expected_values]
-            
+
             # Expand nested lists from value list
             expanded_values = []
             for val in expected_values:
@@ -376,44 +452,54 @@ class FunctionCallParser:
                 else:
                     expanded_values.append(val)
             expected_values = expanded_values
-            
+
             # Check if parameter value matches any expected value
             param_value = parameters[param_name]
             value_matched = False
-            
+
             for expected_value in expected_values:
                 if expected_value == "" or expected_value is None:
                     # Optional parameter, any value is acceptable
                     value_matched = True
                     break
-                    
+
                 # Try different types of comparison
                 try:
                     # Number comparison (ignore type)
-                    if (isinstance(param_value, (int, float)) or 
-                        isinstance(expected_value, (int, float)) or 
-                        (isinstance(param_value, str) and param_value.replace('.', '', 1).isdigit()) or
-                        (isinstance(expected_value, str) and expected_value.replace('.', '', 1).isdigit())):
+                    if (
+                        isinstance(param_value, (int, float))
+                        or isinstance(expected_value, (int, float))
+                        or (
+                            isinstance(param_value, str)
+                            and param_value.replace('.', '', 1).isdigit()
+                        )
+                        or (
+                            isinstance(expected_value, str)
+                            and expected_value.replace('.', '', 1).isdigit()
+                        )
+                    ):
                         try:
                             if float(param_value) == float(expected_value):
                                 value_matched = True
                                 break
                         except (ValueError, TypeError):
                             pass
-                    
+
                     # String comparison (case insensitive)
-                    if isinstance(param_value, str) and isinstance(expected_value, str):
+                    if isinstance(param_value, str) and isinstance(
+                        expected_value, str
+                    ):
                         if param_value.lower() == expected_value.lower():
                             value_matched = True
                             break
-                        
+
                         # Try handling quote issues
                         cleaned_param = param_value.strip('"\'')
                         cleaned_expected = expected_value.strip('"\'')
                         if cleaned_param.lower() == cleaned_expected.lower():
                             value_matched = True
                             break
-                    
+
                     # Default comparison
                     if param_value == expected_value:
                         value_matched = True
@@ -423,27 +509,31 @@ class FunctionCallParser:
                     if param_value == expected_value:
                         value_matched = True
                         break
-            
+
             if not value_matched:
-                logger.debug(f"Parameter value mismatch: {param_name}={param_value}, expected one of: {expected_values}")
+                logger.debug(
+                    f"Parameter value mismatch: {param_name}={param_value}, "
+                    f"expected one of: {expected_values}"
+                )
                 return False
-        
+
         # All checks passed
         logger.debug(f"Function call {function_name} validation passed!")
         return True
 
+
 def get_model(
-    model_platform: str = None,
-    model_type: str = None,
-    api_key: str = None,
-    url: str = None,
+    model_platform: Optional[str] = None,
+    model_type: Optional[str] = None,
+    api_key: Optional[str] = None,
+    url: Optional[str] = None,
 ):
     """Create a model instance based on configuration.
 
     Args:
-        model_platform (str, optional): Model platform, e.g., openai, anthropic, etc.
-            If None, will read from environment variable MODEL_PLATFORM,
-            defaulting to openai.
+        model_platform (str, optional): Model platform, e.g., openai,
+            anthropic, etc. If None, will read from environment variable
+            MODEL_PLATFORM, defaulting to openai.
         model_type (str, optional): Model type, e.g., gpt-4, claude-3, etc.
             If None, will read from environment variable MODEL_TYPE,
             defaulting to gpt-4o.
@@ -456,23 +546,28 @@ def get_model(
         BaseModelBackend: Model backend instance
     """
     # Get configuration from environment variables or parameters
-    model_platform = model_platform or os.environ.get("MODEL_PLATFORM", "openai")
+    model_platform = model_platform or os.environ.get(
+        "MODEL_PLATFORM", "openai"
+    )
     model_type = model_type or os.environ.get("MODEL_TYPE", "gpt-4o")
     api_key = api_key or os.environ.get("API_KEY", None)
     url = url or os.environ.get("BASE_URL", None)
-    
+
     logger.info(f"Using model platform: {model_platform}")
     logger.info(f"Using model type: {model_type}")
-    
+
     # Create model instance with ModelFactory
+    assert model_platform is not None, "model_platform cannot be None"
+    assert model_type is not None, "model_type cannot be None"
     model = ModelFactory.create(
         model_platform=model_platform,
         model_type=model_type,
         api_key=api_key,
         url=url,
     )
-    
+
     return model
+
 
 class BFCLBenchmark(BaseBenchmark):
     """Berkeley Function Call Leaderboard (BFCL) benchmark adapted from
@@ -502,7 +597,9 @@ class BFCLBenchmark(BaseBenchmark):
                 parallel processing. (default: :obj:`1`)
         """
         super().__init__("bfcl", data_dir, save_to, processes)
-        self._data: List[BFCLSample] = []
+        # Use cast to make _data typed as dict[str, list[dict[str, Any]]]
+        # but store as List[BFCLSample] for internal use
+        self._data: Any = []
 
     def download(self) -> "BFCLBenchmark":
         r"""Download the BFCL dataset from HuggingFace.
@@ -522,46 +619,50 @@ class BFCLBenchmark(BaseBenchmark):
         except Exception as e:
             logger.warning(f"Failed to download from Hugging Face: {e}")
             logger.info("Trying to download from GitHub...")
-            
+
             # Fallback to GitHub if Hugging Face fails
             for category in TEST_CATEGORIES.keys():
                 self._download_category(category)
-                
+
         return self
-    
+
     def _download_category(self, category: str) -> bool:
         """Download a specific category dataset from GitHub.
-        
+
         Args:
             category (str): Category to download
-            
+
         Returns:
             bool: Whether download was successful
         """
         data_file = self.data_dir / f"{VERSION_PREFIX}_{category}.json"
-        
+
         # Skip if file already exists
         if data_file.exists():
-            logger.info(f"Dataset file {data_file} already exists, skipping download")
+            logger.info(
+                f"Dataset file {data_file} already exists, skipping download"
+            )
             return True
-        
+
         # Create directory if it doesn't exist
         os.makedirs(self.data_dir, exist_ok=True)
-        
+
         # Download URL from GitHub
         url = f"https://raw.githubusercontent.com/gorilla-llm/berkeley-function-call-leaderboard/main/data/{category}.json"
-        
+
         logger.info(f"Downloading {category} dataset from {url}")
-        
+
         try:
             response = requests.get(url)
             response.raise_for_status()
-            
+
             # Write response to file
             with open(data_file, "w", encoding="utf-8") as f:
                 f.write(response.text)
-                
-            logger.info(f"Successfully downloaded {category} dataset to {data_file}")
+
+            logger.info(
+                f"Successfully downloaded {category} dataset to {data_file}"
+            )
             return True
         except Exception as e:
             logger.error(f"Failed to download {category} dataset: {e}")
@@ -569,39 +670,42 @@ class BFCLBenchmark(BaseBenchmark):
 
     def load(
         self,
-        category: Literal[
-            "simple",
-            "multiple",
-            "parallel",
-            "parallel_multiple",
-            "irrelevance",
-            "java",
-            "javascript",
-            "rest",
-        ] = "simple",
         force_download: bool = False,
-    ) -> "BFCLBenchmark":
+        **kwargs: Any,
+    ) -> BaseBenchmark:
         r"""Load the BFCL dataset.
 
         Args:
-            category (str): Category of function calling to evaluate.
-                Options: "simple", "multiple", "parallel", "parallel_multiple",
-                "irrelevance", "java", "javascript", "rest".
-                (default: :obj:`"simple"`)
             force_download (bool): Whether to force download the data.
                 (default: :obj:`False`)
 
         Returns:
-            BFCLBenchmark: The benchmark instance.
+            BaseBenchmark: The benchmark instance.
         """
+        # get category parameter from kwargs
+        category = kwargs.get("category", "simple")
+        if isinstance(category, str):
+            if category not in TEST_CATEGORIES:
+                logger.warning(
+                    f"Invalid category: {category}. "
+                    f"Using default category: simple"
+                )
+                category = "simple"
+        else:
+            category = "simple"
+
         if force_download:
             logger.info("Force downloading data.")
             self.download()
 
         # Get the dataset file
         dataset_file = self.data_dir / f"{VERSION_PREFIX}_{category}.json"
-        possible_answers_file = self.data_dir / "possible_answer" / f"{VERSION_PREFIX}_{category}.json"
-        
+        possible_answers_file = (
+            self.data_dir
+            / "possible_answer"
+            / f"{VERSION_PREFIX}_{category}.json"
+        )
+
         if not dataset_file.exists():
             raise FileNotFoundError(
                 f"The dataset file {dataset_file} does not exist. "
@@ -611,20 +715,29 @@ class BFCLBenchmark(BaseBenchmark):
         # Load possible answers if they exist in the separate file
         possible_answers_dict = {}
         if possible_answers_file.exists():
-            logger.info(f"Loading reference answers from: {possible_answers_file}")
+            logger.info(
+                f"Loading reference answers from: {possible_answers_file}"
+            )
             try:
                 with open(possible_answers_file, "r", encoding="utf-8") as f:
                     for line in f:
                         line = line.strip()
                         if not line:
                             continue
-                        
+
                         try:
                             answer_obj = json.loads(line)
-                            if "id" in answer_obj and "ground_truth" in answer_obj:
-                                possible_answers_dict[answer_obj["id"]] = answer_obj["ground_truth"]
+                            if (
+                                "id" in answer_obj
+                                and "ground_truth" in answer_obj
+                            ):
+                                possible_answers_dict[answer_obj["id"]] = (
+                                    answer_obj["ground_truth"]
+                                )
                         except json.JSONDecodeError as e:
-                            logger.warning(f"Failed to parse reference answer line: {e}")
+                            logger.warning(
+                                f"Failed to parse reference answer line: {e}"
+                            )
             except Exception as e:
                 logger.warning(f"Error loading reference answers: {e}")
 
@@ -636,36 +749,48 @@ class BFCLBenchmark(BaseBenchmark):
                     line = line.strip()
                     if not line:
                         continue
-                    
+
                     try:
                         item = json.loads(line)
-                        
+
                         # Extract question
                         question = item.get("question", "")
-                        
+
                         # Extract function definitions
-                        functions = item.get("function", item.get("functions", []))
-                        
+                        functions = item.get(
+                            "function", item.get("functions", [])
+                        )
+
                         # Get sample ID
                         sample_id = item.get("id", f"{category}_{i}")
-                        
-                        # Get reference answer for this sample - try different sources
+
+                        # Get reference answer for this sample - try different
+                        # sources
                         ground_truth = None
                         if sample_id in possible_answers_dict:
-                            # First check if we have the answer in the separate file
+                            # First check if we have the answer in the separate
+                            # file
                             ground_truth = possible_answers_dict[sample_id]
-                            logger.debug(f"Found reference answer for {sample_id} in separate file")
+                            logger.debug(
+                                f"Found reference answer for {sample_id} "
+                                "in separate file"
+                            )
                         elif "ground_truth" in item:
                             ground_truth = item["ground_truth"]
                         elif "possible_answer" in item:
                             ground_truth = item["possible_answer"]
-                        
-                        # If ground_truth is still None, use an empty dict to avoid errors
+
+                        # If ground_truth is still None, use an empty dict to
+                        # avoid errors
                         if ground_truth is None:
-                            logger.warning(f"No reference answer found for sample {sample_id}, using empty dict")
+                            logger.warning(
+                                f"No reference answer found for sample "
+                                f"{sample_id}, using empty dict"
+                            )
                             ground_truth = {}
-                        
-                        # Create sample - we store ground_truth as is, not as JSON string
+
+                        # Create sample - we store ground_truth as is, not as
+                        # JSON string
                         sample = BFCLSample(
                             question=question,
                             functions=json.dumps(functions),
@@ -674,9 +799,11 @@ class BFCLBenchmark(BaseBenchmark):
                             id=sample_id,
                         )
                         self._data.append(sample)
-                        
+
                     except json.JSONDecodeError as e:
-                        logger.warning(f"Skipping invalid JSON line {i+1}: {e}")
+                        logger.warning(
+                            f"Skipping invalid JSON line {i+1}: {e}"
+                        )
                     except Exception as e:
                         logger.warning(f"Error processing line {i+1}: {e}")
         except Exception as e:
@@ -684,27 +811,51 @@ class BFCLBenchmark(BaseBenchmark):
 
         # If no data was loaded, add a default example
         if not self._data:
-            logger.info("No data loaded. Creating a default sample for testing")
-            default_func = [{
-                "name": "calculate_triangle_area",
-                "description": "Calculate the area of a triangle",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "base": {"type": "number", "description": "Length of the base"},
-                        "height": {"type": "number", "description": "Height of the triangle"},
-                        "unit": {"type": "string", "description": "Unit of measurement"}
+            logger.info(
+                "No data loaded. Creating a default sample for testing"
+            )
+            default_func = [
+                {
+                    "name": "calculate_triangle_area",
+                    "description": "Calculate the area of a triangle",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "base": {
+                                "type": "number",
+                                "description": "Length of the base",
+                            },
+                            "height": {
+                                "type": "number",
+                                "description": "Height of the triangle",
+                            },
+                            "unit": {
+                                "type": "string",
+                                "description": "Unit of measurement",
+                            },
+                        },
+                        "required": ["base", "height"],
                     },
-                    "required": ["base", "height"]
                 }
-            }]
-            
-            ground_truth = [{"calculate_triangle_area": {"base": [10], "height": [5], "unit": ["units", ""]}}]
-            
+            ]
+
+            ground_truth = [
+                {
+                    "calculate_triangle_area": {
+                        "base": [10],
+                        "height": [5],
+                        "unit": ["units", ""],
+                    }
+                }
+            ]
+
             sample = BFCLSample(
-                question="Calculate the area of a triangle with a base of 10 units and a height of 5 units.",
+                question=(
+                    "Calculate the area of a triangle with a base of 10 "
+                    "units and a height of 5 units."
+                ),
                 functions=json.dumps(default_func),
-                possible_answer=ground_truth,  # Store as Python object, not JSON string
+                possible_answer=ground_truth,  # Store as Python object
                 category=category,
                 id=f"{category}_default",
             )
@@ -718,49 +869,39 @@ class BFCLBenchmark(BaseBenchmark):
 
     def run(
         self,
-        agent: ChatAgent,
-        category: Literal[
-            "simple",
-            "multiple",
-            "parallel",
-            "parallel_multiple",
-            "irrelevance",
-            "java",
-            "javascript",
-            "rest",
-        ] = "simple",
+        agent: "ChatAgent",
+        on: Literal[
+            "train", "valid", "test"
+        ] = "test",  # add on parameter to match parent class
         randomize: bool = False,
         subset: Optional[int] = None,
-        model_platform: str = None,
-        model_type: str = None,
-        api_key: str = None,
-        base_url: str = None,
-        system_message: Optional[str] = None,
-    ) -> "BFCLBenchmark":
-        r"""Run the BFCL benchmark.
+        *args: Any,
+        **kwargs: Any,
+    ) -> BaseBenchmark:
+        """Run the BFCL benchmark.
 
         Args:
             agent (ChatAgent): The chat agent to use.
-            category (str): Category of function calling to evaluate.
-                Options: "simple", "multiple", "parallel", "parallel_multiple",
-                "irrelevance", "java", "javascript", "rest".
-                (default: :obj:`"simple"`)
+            on (Literal["train", "valid", "test"]): The dataset split to use.
+                (default: :obj:`"test"`)
             randomize (bool): Whether to randomize the data.
                 (default: :obj:`False`)
             subset (int, optional): Number of samples to evaluate.
                 (default: :obj:`None`)
-            model_platform (str, optional): Model platform. If provided, will create a new agent.
-            model_type (str, optional): Model type. If provided, will create a new agent.
-            api_key (str, optional): API key. If provided, will create a new agent.
-            base_url (str, optional): API base URL. If provided, will create a new agent.
-            system_message (str, optional): System message for the agent.
-                (default: :obj:`None`)
 
         Returns:
-            BFCLBenchmark: The benchmark instance.
+            BaseBenchmark: The benchmark instance.
         """
+        # process parameters from kwargs
+        category = kwargs.get("category", "simple")
+        model_platform = kwargs.get("model_platform")
+        model_type = kwargs.get("model_type")
+        api_key = kwargs.get("api_key")
+        base_url = kwargs.get("base_url")
+        system_message = kwargs.get("system_message")
+
         logger.info(f"Running BFCL benchmark on {category} category.")
-        self.load(category)
+        self.load(force_download=False, category=category)
         samples = self._data
 
         # Shuffle and subset if necessary
@@ -775,8 +916,10 @@ class BFCLBenchmark(BaseBenchmark):
         self._results = []
 
         # flag variable, used to track if a new agent needs to be created
-        need_create_agent = agent is None and (model_platform or model_type or api_key or base_url)
-        
+        need_create_agent = agent is None and (
+            model_platform or model_type or api_key or base_url
+        )
+
         # Create a new agent if model parameters are provided
         if need_create_agent:
             logger.info("Creating new agent with provided model parameters")
@@ -784,12 +927,15 @@ class BFCLBenchmark(BaseBenchmark):
             if system_message is None:
                 system_message = (
                     "You are an expert in function calling. "
-                    "If the user request is not related to any function, you should directly return a single string 'None' in natural language instead of JSON format."
-                    "You analyze user requests and call the appropriate functions "
-                    "with the correct parameters. "
-                    "Return the function call in JSON format with function_call property."
+                    "If the user request is not related to any function, "
+                    "you should directly return a single string 'None' in "
+                    "natural language instead of JSON format."
+                    "You analyze user requests and call the appropriate "
+                    "functions with the correct parameters. "
+                    "Return the function call in JSON format with "
+                    "function_call property."
                 )
-                
+
             # Create system message
             system_message_obj = BaseMessage(
                 role_name="System",
@@ -807,8 +953,13 @@ class BFCLBenchmark(BaseBenchmark):
                     url=base_url,
                 )
 
-                agent = ChatAgent(model=model, system_message=system_message_obj)
-                logger.info(f"Created agent with model {model_type} on platform {model_platform}")
+                agent = ChatAgent(
+                    model=model, system_message=system_message_obj
+                )
+                logger.info(
+                    f"Created agent with model {model_type} on platform "
+                    f"{model_platform}"
+                )
             except Exception as e:
                 logger.error(f"Failed to create agent: {e}")
                 self._results = []
@@ -818,25 +969,36 @@ class BFCLBenchmark(BaseBenchmark):
         if agent is None:
             logger.error("Agent is None, cannot proceed with benchmark")
             return self
-            
+
         # Import tqdm for progress display
         try:
-            from tqdm import tqdm
-            samples_iter = tqdm(enumerate(samples), total=len(samples), desc=f"Testing {category}", position=0, leave=True)
+            from tqdm.auto import tqdm as tqdm_func
+
+            samples_list = list(enumerate(samples))
+            samples_iter: Any = tqdm_func(
+                samples_list,
+                total=len(samples),
+                desc=f"Testing {category}",
+                position=0,
+                leave=True,
+            )
         except ImportError:
-            logger.warning("tqdm not found, progress bar will not be displayed")
+            logger.warning(
+                "tqdm not found, progress bar will not be displayed"
+            )
             samples_iter = enumerate(samples)
 
         # Process samples
         for i, sample in samples_iter:
             logger.info(f"Processing sample {i+1}/{len(samples)}")
-            
+
             # Prepare the user prompt
             user_prompt = (
                 f"Question: {sample.question}\n\n"
-                f"Here is a list of functions in JSON format that you can invoke:\n{sample.functions}"
+                f"Here is a list of functions in JSON format that "
+                f"you can invoke:\n{sample.functions}"
             )
-            
+
             # Get agent response
             try:
                 start_time = time.time()
@@ -848,43 +1010,47 @@ class BFCLBenchmark(BaseBenchmark):
                     agent_response_text = ""
                 else:
                     agent_response_text = agent_response.msg.content
-                    
-                # Add some debugging output 
+
+                # Add some debugging output
                 logger.debug(f"Agent response: {agent_response_text[:200]}...")
             except Exception as e:
                 logger.error(f"Error getting agent response: {e}")
                 agent_response_text = ""
                 response_time = 0
-            
+
             # Evaluate the response
             try:
-                result = self._evaluate_response(
+                is_result_correct = self._evaluate_response(
                     agent_response_text, sample, category
                 )
             except Exception as e:
                 logger.error(f"Error in evaluation: {e}")
-                result = False
-            
+                is_result_correct = False
+
             # Create a sample ID if not available
             sample_id = getattr(sample, 'id', f"{category}_{i}")
-            
+
             # Store the result
-            self._results.append({
-                "id": sample_id,
-                "question": sample.question,
-                "functions": sample.functions,
-                "possible_answer": sample.possible_answer,
-                "category": category,
-                "agent_response": agent_response_text,
-                "result": result,
-                "latency": response_time,
-            })
+            self._results.append(
+                {
+                    "id": sample_id,
+                    "question": sample.question,
+                    "functions": sample.functions,
+                    "possible_answer": sample.possible_answer,
+                    "category": category,
+                    "agent_response": agent_response_text,
+                    "result": is_result_correct,
+                    "latency": response_time,
+                }
+            )
 
         # Calculate accuracy
         if self._results:
-            accuracy = sum(r["result"] for r in self._results) / len(self._results)
+            accuracy = sum(r["result"] for r in self._results) / len(
+                self._results
+            )
             logger.info(f"BFCL {category} accuracy: {accuracy:.4f}")
-            
+
             # Save results to file
             if self.save_to:
                 try:
@@ -892,31 +1058,40 @@ class BFCLBenchmark(BaseBenchmark):
                     save_path = Path(self.save_to)
                     save_dir = save_path.parent
                     os.makedirs(save_dir, exist_ok=True)
-                    
-                    # 确保结果可以被JSON序列化
+
+                    # ensure the results are serializable
                     serializable_results = []
                     for result in self._results:
                         result_copy = result.copy()
-                        # 处理可能的不可序列化的对象
+                        # handle possible non-serializable objects
                         for key, value in list(result_copy.items()):
                             try:
-                                # 测试是否可以序列化
+                                # test if it can be serialized
                                 json.dumps(value)
                             except (TypeError, OverflowError):
-                                # 对于不可序列化的对象，转换为字符串
-                                if key == "possible_answer" and not isinstance(value, (str, type(None))):
+                                # for non-serializable objects, convert to
+                                # string
+                                if key == "possible_answer" and not isinstance(
+                                    value, (str, type(None))
+                                ):
                                     result_copy[key] = json.dumps(value)
                                 else:
                                     result_copy[key] = str(value)
                         serializable_results.append(result_copy)
-                    
+
                     # Write results to file
                     with open(save_path, "w", encoding="utf-8") as f:
-                        json.dump(serializable_results, f, indent=2, ensure_ascii=False)
+                        json.dump(
+                            serializable_results,
+                            f,
+                            indent=2,
+                            ensure_ascii=False,
+                        )
                     logger.info(f"Results saved to: {self.save_to}")
-                    
+
                     # We only log the results but don't print them here
-                    # to avoid duplicate printing with the run_bfcl_benchmark function
+                    # to avoid duplicate printing with the run_bfcl_benchmark
+                    # function
                     correct = sum(1 for r in self._results if r["result"])
                     total = len(self._results)
                     model_name = "unknown"
@@ -924,9 +1099,13 @@ class BFCLBenchmark(BaseBenchmark):
                         model_name = model_type
                     logger.info(f"Model: {model_name}")
                     logger.info(f"Category: {category}")
-                    logger.info(f"Accuracy: {accuracy:.4f} ({correct}/{total})")
+                    logger.info(
+                        f"Accuracy: {accuracy:.4f} ({correct}/{total})"
+                    )
                 except Exception as e:
-                    logger.error(f"Error saving results to {self.save_to}: {e}")
+                    logger.error(
+                        f"Error saving results to {self.save_to}: {e}"
+                    )
         else:
             logger.warning("No results to calculate accuracy")
 
@@ -949,36 +1128,47 @@ class BFCLBenchmark(BaseBenchmark):
             # For irrelevance category, the correct answer is no function call
             # We consider any non-function-call response as correct
             function_name, _ = FunctionCallParser.parse_function_call(response)
-            # If no function call was parsed, it's correct for irrelevance category
+            # If no function call was parsed, it's correct for irrelevance
+            # category
             return function_name is None
         else:
             # For other categories, evaluate using ground truth
             try:
                 # Get the possible answers
                 possible_answers = sample.possible_answer
-                
+
                 # Handle empty possible_answer
                 if not possible_answers:
                     logger.warning("Sample has no possible_answer defined")
                     return False
-                
+
                 # Debug the possible answers
                 logger.debug(f"Reference answer: {possible_answers}")
-                
-                # If possible_answers is a list, we need to check if any of them match
+
+                # If possible_answers is a list, need to check if any of
+                # them match
                 if isinstance(possible_answers, list):
                     for possible_answer in possible_answers:
-                        if FunctionCallParser.evaluate_function_call(response, possible_answer):
+                        if FunctionCallParser.evaluate_function_call(
+                            response, possible_answer
+                        ):
                             return True
                     return False
-                # If possible_answers is a dict, we just need to check if it matches
+                # If possible_answers is a dict, just need to check if it
+                # matches
                 elif isinstance(possible_answers, dict):
-                    return FunctionCallParser.evaluate_function_call(response, possible_answers)
+                    return FunctionCallParser.evaluate_function_call(
+                        response, possible_answers
+                    )
                 else:
-                    logger.warning(f"Unexpected format for possible_answers: {type(possible_answers)}")
+                    logger.warning(
+                        f"Unexpected format for possible_answers: "
+                        f"{type(possible_answers)}"
+                    )
                     return False
             except Exception as e:
                 logger.error(f"Error evaluating response: {e}")
                 import traceback
+
                 logger.error(traceback.format_exc())
                 return False

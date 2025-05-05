@@ -17,27 +17,33 @@ import json
 import logging
 import os
 from datetime import datetime
+from typing import Optional
 
 # Try to import tqdm for progress display
 try:
     from tqdm import tqdm
+
     TQDM_AVAILABLE = True
 except ImportError:
     TQDM_AVAILABLE = False
-    logging.warning("Note: tqdm is not installed, progress bar will not be displayed. You can install it using 'pip install tqdm'.")
+    logging.warning(
+        "Note: tqdm is not installed, progress bar will not be displayed. "
+        "You can install it using 'pip install tqdm'."
+    )
 
 from camel.benchmarks import BFCLBenchmark
 
 logger = logging.getLogger(__name__)
+
 
 def run_bfcl_benchmark(
     model_name: str,
     category: str = "simple",
     data_dir: str = "data/bfcl",
     save_to: str = "results/bfcl",
-    subset: int = None,
-    api_key: str = None,
-    base_url: str = None,
+    subset: Optional[int] = None,
+    api_key: Optional[str] = None,
+    base_url: Optional[str] = None,
     model_platform: str = "openai",
     force_download: bool = False,
 ):
@@ -76,16 +82,18 @@ def run_bfcl_benchmark(
 
     # Initialize and run the benchmark directly
     benchmark = BFCLBenchmark(data_dir=data_dir, save_to=results_file)
-    
+
     # Create a default system message in case needed
     system_message = (
         "You are an expert in function calling. "
-        "If the user request is not related to any function, you should directly return a single string 'None' in natural language instead of JSON format."
+        "If the user request is not related to any function, you should "
+        "directly return a single string 'None' in natural language instead "
+        "of JSON format."
         "You analyze user requests and call the appropriate functions "
         "with the correct parameters. "
         "Return the function call in JSON format with function_call property."
     )
-    
+
     benchmark.run(
         agent=None,  # Will be created inside run method
         category=category,
@@ -107,7 +115,7 @@ def run_bfcl_benchmark(
     logger.info(f"Category: {category}")
     logger.info(f"Accuracy: {accuracy:.4f} ({correct}/{total})")
     logger.info(f"Results saved to: {results_file}")
-    
+
     return benchmark
 
 
@@ -115,9 +123,9 @@ if __name__ == "__main__":
     # set up logging
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     )
-    
+
     parser = argparse.ArgumentParser(
         description="Run BFCL benchmark on a model."
     )
@@ -180,54 +188,61 @@ if __name__ == "__main__":
         help="Platform of the model (default: openai)",
     )
     parser.add_argument(
-        "--run_all", 
+        "--run_all",
         action="store_true",
         help="Run benchmark on all categories",
     )
     parser.add_argument(
-        "--force_download", 
+        "--force_download",
         action="store_true",
         help="Force download dataset even if it exists",
     )
 
     args = parser.parse_args()
-    
+
     # If run_all flag is set, run all categories
     if args.run_all:
         logger.info("Running benchmark on all categories...")
-        
+
         # Store all category results
         all_results = {}
         total_correct = 0
         total_samples = 0
-        
-        # Define categories to test for run_all except rest because rest does not have an official possible answer
+
+        # Define categories to test for run_all except rest because rest does
+        # not have an official possible answer
         categories_to_run = [
             "simple",
             "multiple",
-            "parallel", 
+            "parallel",
             "parallel_multiple",
-            "irrelevance", 
+            "irrelevance",
             "java",
             "javascript",
         ]
-        
+
         # Create iterator with progress bar if available
         if TQDM_AVAILABLE:
-            # use position parameter to keep the progress bar on a separate line
-            categories_iter = tqdm(categories_to_run, desc="Testing categories", position=0, leave=True)
+            # use position parameter to keep the progress bar on a separate
+            # line
+            categories_iter = tqdm(
+                categories_to_run,
+                desc="Testing categories",
+                position=0,
+                leave=True,
+            )
         else:
             categories_iter = categories_to_run
-        
+
         # Run each category test
         for category in categories_iter:
             logger.info(f"\n{'='*40}")
             logger.info(f"Testing category: {category}")
             logger.info(f"{'='*40}")
-            
+
             # Set different save path for each category
             save_path = os.path.join(args.save_to, f"{category}")
-            
+
             try:
                 benchmark = run_bfcl_benchmark(
                     model_name=args.model,
@@ -240,20 +255,20 @@ if __name__ == "__main__":
                     model_platform=args.model_platform,
                     force_download=args.force_download,
                 )
-                
+
                 # Calculate and save results
                 if benchmark and benchmark.results:
                     results = benchmark.results
                     correct = sum(1 for r in results if r["result"])
                     total = len(results)
                     accuracy = correct / total if total > 0 else 0
-                    
+
                     all_results[category] = {
                         "accuracy": accuracy,
                         "correct": correct,
-                        "total": total
+                        "total": total,
                     }
-                    
+
                     total_correct += correct
                     total_samples += total
                 else:
@@ -261,7 +276,7 @@ if __name__ == "__main__":
                     all_results[category] = {
                         "accuracy": 0,
                         "correct": 0,
-                        "total": 0
+                        "total": 0,
                     }
             except Exception as e:
                 logger.error(f"Error running {category} category: {e}")
@@ -269,29 +284,38 @@ if __name__ == "__main__":
                     "accuracy": 0,
                     "correct": 0,
                     "total": 0,
-                    "error": str(e)
+                    "error": str(e),
                 }
-        
+
         # Calculate overall accuracy
-        overall_accuracy = total_correct / total_samples if total_samples > 0 else 0
-        
+        overall_accuracy = (
+            total_correct / total_samples if total_samples > 0 else 0
+        )
+
         # Log summary
-        logger.info("\n" + "="*50)
+        logger.info("\n" + "=" * 50)
         logger.info("BFCL Benchmark Summary")
-        logger.info("="*50)
-        logger.info(f"Overall accuracy: {overall_accuracy:.4f} ({total_correct}/{total_samples})")
+        logger.info("=" * 50)
+        logger.info(
+            f"Overall accuracy: {overall_accuracy:.4f} "
+            f"({total_correct}/{total_samples})"
+        )
         logger.info("\nCategory accuracies:")
-        
+
         # Create table format output
-        logger.info(f"{'Category':<20} {'Accuracy':<10} {'Correct':<10} {'Total':<10}")
-        logger.info("-"*50)
-        
+        logger.info(
+            f"{'Category':<20} {'Accuracy':<10} {'Correct':<10} {'Total':<10}"
+        )
+        logger.info("-" * 50)
+
         for category, result in all_results.items():
             accuracy = result["accuracy"]
             correct = result["correct"]
             total = result["total"]
-            logger.info(f"{category:<20} {accuracy:.4f}     {correct:<10} {total:<10}")
-        
+            logger.info(
+                f"{category:<20} {accuracy:.4f}     {correct:<10} {total:<10}"
+            )
+
         # Save summary results
         summary_path = os.path.join(args.save_to, "bfcl_summary.json")
         os.makedirs(os.path.dirname(summary_path), exist_ok=True)
@@ -300,12 +324,12 @@ if __name__ == "__main__":
                 "overall": {
                     "accuracy": overall_accuracy,
                     "correct": total_correct,
-                    "total": total_samples
+                    "total": total_samples,
                 },
-                "categories": all_results
+                "categories": all_results,
             }
             json.dump(summary, f, indent=2, ensure_ascii=False)
-        
+
         logger.info(f"\nSummary results saved to: {summary_path}")
     else:
         # Run a single category
@@ -319,4 +343,4 @@ if __name__ == "__main__":
             base_url=args.base_url,
             model_platform=args.model_platform,
             force_download=args.force_download,
-        ) 
+        )

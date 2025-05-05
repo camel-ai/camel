@@ -25,7 +25,9 @@ logger = logging.getLogger(__name__)
 # Simple function call
 MOCK_SIMPLE_DATA = [
     {
-        "question": "Calculate the area of a triangle with base 10 and height 5",
+        "question": (
+            "Calculate the area of a triangle with base 10 and height 5"
+        ),
         "functions": [
             {
                 "name": "calculate_triangle_area",
@@ -35,30 +37,30 @@ MOCK_SIMPLE_DATA = [
                     "properties": {
                         "base": {
                             "type": "number",
-                            "description": "The base length of the triangle"
+                            "description": "The base length of the triangle",
                         },
                         "height": {
                             "type": "number",
-                            "description": "The height of the triangle"
-                        }
+                            "description": "The height of the triangle",
+                        },
                     },
-                    "required": ["base", "height"]
-                }
+                    "required": ["base", "height"],
+                },
             }
         ],
         "possible_answer": {
-            "calculate_triangle_area": {
-                "base": [10],
-                "height": [5]
-            }
-        }
+            "calculate_triangle_area": {"base": [10], "height": [5]}
+        },
     }
 ]
 
 # Multiple function call (choose one from multiple functions)
 MOCK_MULTIPLE_DATA = [
     {
-        "question": "I need to predict the price of a house in San Francisco with 3 bedrooms, 2 bathrooms, and 1800 square feet",
+        "question": (
+            "I need to predict the price of a house in San Francisco with "
+            "3 bedrooms, 2 bathrooms, and 1800 square feet"
+        ),
         "functions": [
             {
                 "name": "predict_house_price",
@@ -68,23 +70,23 @@ MOCK_MULTIPLE_DATA = [
                     "properties": {
                         "bedrooms": {
                             "type": "number",
-                            "description": "Number of bedrooms"
+                            "description": "Number of bedrooms",
                         },
                         "bathrooms": {
                             "type": "number",
-                            "description": "Number of bathrooms"
+                            "description": "Number of bathrooms",
                         },
                         "area": {
                             "type": "number",
-                            "description": "Area in square feet"
+                            "description": "Area in square feet",
                         },
                         "location": {
                             "type": "string",
-                            "description": "Location of the house"
-                        }
+                            "description": "Location of the house",
+                        },
                     },
-                    "required": ["bedrooms", "bathrooms", "area", "location"]
-                }
+                    "required": ["bedrooms", "bathrooms", "area", "location"],
+                },
             },
             {
                 "name": "predict_apartment_price",
@@ -94,37 +96,37 @@ MOCK_MULTIPLE_DATA = [
                     "properties": {
                         "bedrooms": {
                             "type": "number",
-                            "description": "Number of bedrooms"
+                            "description": "Number of bedrooms",
                         },
                         "bathrooms": {
                             "type": "number",
-                            "description": "Number of bathrooms"
+                            "description": "Number of bathrooms",
                         },
                         "area": {
                             "type": "number",
-                            "description": "Area in square feet"
+                            "description": "Area in square feet",
                         },
                         "floor": {
                             "type": "number",
-                            "description": "Floor number"
+                            "description": "Floor number",
                         },
                         "location": {
                             "type": "string",
-                            "description": "Location of the apartment"
-                        }
+                            "description": "Location of the apartment",
+                        },
                     },
-                    "required": ["bedrooms", "bathrooms", "area", "location"]
-                }
-            }
+                    "required": ["bedrooms", "bathrooms", "area", "location"],
+                },
+            },
         ],
         "possible_answer": {
             "predict_house_price": {
                 "bedrooms": [3],
                 "bathrooms": [2],
                 "area": [1800],
-                "location": ["San Francisco", "San Francisco, CA"]
+                "location": ["San Francisco", "San Francisco, CA"],
             }
-        }
+        },
     }
 ]
 
@@ -141,25 +143,17 @@ MOCK_PARALLEL_DATA = [
                     "properties": {
                         "location": {
                             "type": "string",
-                            "description": "The city and state/country"
+                            "description": "The city and state/country",
                         }
                     },
-                    "required": ["location"]
-                }
+                    "required": ["location"],
+                },
             }
         ],
         "possible_answer": [
-            {
-                "get_weather": {
-                    "location": ["New York", "New York, NY"]
-                }
-            },
-            {
-                "get_weather": {
-                    "location": ["London", "London, UK"]
-                }
-            }
-        ]
+            {"get_weather": {"location": ["New York", "New York, NY"]}},
+            {"get_weather": {"location": ["London", "London, UK"]}},
+        ],
     }
 ]
 
@@ -176,11 +170,11 @@ MOCK_PARALLEL_MULTIPLE_DATA = [
                     "properties": {
                         "location": {
                             "type": "string",
-                            "description": "The city and state/country"
+                            "description": "The city and state/country",
                         }
                     },
-                    "required": ["location"]
-                }
+                    "required": ["location"],
+                },
             },
             {
                 "name": "get_traffic",
@@ -190,11 +184,11 @@ MOCK_PARALLEL_MULTIPLE_DATA = [
                     "properties": {
                         "location": {
                             "type": "string",
-                            "description": "The city and state/country"
+                            "description": "The city and state/country",
                         }
                     },
-                    "required": ["location"]
-                }
+                    "required": ["location"],
+                },
             },
             {
                 "name": "get_news",
@@ -204,29 +198,21 @@ MOCK_PARALLEL_MULTIPLE_DATA = [
                     "properties": {
                         "location": {
                             "type": "string",
-                            "description": "The city and state/country"
+                            "description": "The city and state/country",
                         },
                         "category": {
                             "type": "string",
-                            "description": "News category"
-                        }
+                            "description": "News category",
+                        },
                     },
-                    "required": ["location"]
-                }
-            }
+                    "required": ["location"],
+                },
+            },
         ],
         "possible_answer": [
-            {
-                "get_weather": {
-                    "location": ["Boston", "Boston, MA"]
-                }
-            },
-            {
-                "get_traffic": {
-                    "location": ["Boston", "Boston, MA"]
-                }
-            }
-        ]
+            {"get_weather": {"location": ["Boston", "Boston, MA"]}},
+            {"get_traffic": {"location": ["Boston", "Boston, MA"]}},
+        ],
     }
 ]
 
@@ -243,25 +229,28 @@ MOCK_IRRELEVANCE_DATA = [
                     "properties": {
                         "shape": {
                             "type": "string",
-                            "description": "The shape (circle, square, etc.)"
+                            "description": "The shape (circle, square, etc.)",
                         },
                         "dimensions": {
                             "type": "array",
-                            "description": "Dimensions of the shape"
-                        }
+                            "description": "Dimensions of the shape",
+                        },
                     },
-                    "required": ["shape", "dimensions"]
-                }
+                    "required": ["shape", "dimensions"],
+                },
             }
         ],
-        "possible_answer": {}
+        "possible_answer": {},
     }
 ]
 
 # Java function call
 MOCK_JAVA_DATA = [
     {
-        "question": "Create a Java HashMap with three entries: 'apple' -> 1, 'banana' -> 2, 'orange' -> 3",
+        "question": (
+            "Create a Java HashMap with three entries: 'apple' -> 1, "
+            "'banana' -> 2, 'orange' -> 3"
+        ),
         "functions": [
             {
                 "name": "createHashMap",
@@ -271,18 +260,20 @@ MOCK_JAVA_DATA = [
                     "properties": {
                         "entries": {
                             "type": "string",
-                            "description": "Entries for the HashMap in Java format"
+                            "description": (
+                                "Entries for the HashMap in Java format"
+                            ),
                         }
                     },
-                    "required": ["entries"]
-                }
+                    "required": ["entries"],
+                },
             }
         ],
         "possible_answer": {
             "createHashMap": {
                 "entries": ["\"apple\", 1, \"banana\", 2, \"orange\", 3"]
             }
-        }
+        },
     }
 ]
 
@@ -299,18 +290,18 @@ MOCK_JAVASCRIPT_DATA = [
                     "properties": {
                         "properties": {
                             "type": "string",
-                            "description": "Properties for the JavaScript object"
+                            "description": (
+                                "Properties for the JavaScript object"
+                            ),
                         }
                     },
-                    "required": ["properties"]
-                }
+                    "required": ["properties"],
+                },
             }
         ],
         "possible_answer": {
-            "createJsObject": {
-                "properties": ["name: 'John', age: 30"]
-            }
-        }
+            "createJsObject": {"properties": ["name: 'John', age: 30"]}
+        },
     }
 ]
 
@@ -327,23 +318,23 @@ MOCK_REST_DATA = [
                     "properties": {
                         "url": {
                             "type": "string",
-                            "description": "The API URL to request"
+                            "description": "The API URL to request",
                         },
                         "params": {
                             "type": "object",
-                            "description": "Query parameters"
-                        }
+                            "description": "Query parameters",
+                        },
                     },
-                    "required": ["url"]
-                }
+                    "required": ["url"],
+                },
             }
         ],
         "possible_answer": {
             "requests.get": {
                 "url": ["https://api.weather.example/v1/current"],
-                "params": [{"city": "New York", "country": "US"}]
+                "params": [{"city": "New York", "country": "US"}],
             }
-        }
+        },
     }
 ]
 
@@ -362,51 +353,67 @@ MOCK_DATA_MAP = {
 # Mock responses for different categories
 MOCK_RESPONSES = {
     "simple": "calculate_triangle_area(base=10, height=5)",
-    "multiple": "predict_house_price(bedrooms=3, bathrooms=2, area=1800, location='San Francisco')",
-    "parallel": "get_weather(location='New York')\nget_weather(location='London')",
-    "parallel_multiple": "get_weather(location='Boston')\nget_traffic(location='Boston')",
-    "irrelevance": "I don't have a favorite color as I'm an AI, but I'd be happy to help you with calculations or other tasks.",
-    "java": "createHashMap(entries=\"apple\", 1, \"banana\", 2, \"orange\", 3)",
+    "multiple": (
+        "predict_house_price(bedrooms=3, bathrooms=2, area=1800, "
+        "location='San Francisco')"
+    ),
+    "parallel": (
+        "get_weather(location='New York')\nget_weather(location='London')"
+    ),
+    "parallel_multiple": (
+        "get_weather(location='Boston')\nget_traffic(location='Boston')"
+    ),
+    "irrelevance": (
+        "I don't have a favorite color as I'm an AI, but I'd be happy to help "
+        "you with calculations or other tasks."
+    ),
+    "java": (
+        "createHashMap(entries=\"apple\", 1, \"banana\", 2, \"orange\", 3)"
+    ),
     "javascript": "createJsObject(properties=\"name: 'John', age: 30\")",
-    "rest": "requests.get(url=\"https://api.weather.example/v1/current\", params={\"city\": \"New York\", \"country\": \"US\"})",
+    "rest": (
+        "requests.get(url=\"https://api.weather.example/v1/current\", "
+        "params={\"city\": \"New York\", \"country\": \"US\"})"
+    ),
 }
 
 
 def run_test_for_category(category):
     """Run the test for a specific category and log results"""
     logger.info(f"Testing BFCL benchmark for category: {category}")
-    
+
     # Patch necessary functions and classes to prevent real file system access
-    with patch("pathlib.Path.mkdir"), \
-         patch("pathlib.Path.exists", return_value=True), \
-         patch("pathlib.Path.is_dir", return_value=True), \
-         patch("huggingface_hub.snapshot_download"), \
-         patch("json.load", return_value=MOCK_DATA_MAP[category]), \
-         patch("builtins.open", mock_open()) as mock_file, \
-         patch.object(BFCLBenchmark, 'download'):
-        
+    with (
+        patch("pathlib.Path.mkdir"),
+        patch("pathlib.Path.exists", return_value=True),
+        patch("pathlib.Path.is_dir", return_value=True),
+        patch("huggingface_hub.snapshot_download"),
+        patch("json.load", return_value=MOCK_DATA_MAP[category]),
+        patch("builtins.open", mock_open()),
+        patch.object(BFCLBenchmark, 'download'),
+    ):
         # Initialize BFCLBenchmark with mock paths
         data_dir = "/mock_data_dir"
         save_to = "mock_save_to.json"
         benchmark = BFCLBenchmark(data_dir=data_dir, save_to=save_to)
-        
+
         # Mock the agent's generate_response method
         mock_agent = MagicMock()
-        
+
         # create mock response
         mock_response = MagicMock()
         mock_response.content = str(MOCK_RESPONSES[category])
-        
+
         # set the return value of the step method
         mock_step_response = MagicMock()
         mock_message = MagicMock()
         mock_message.content = str(MOCK_RESPONSES[category])
         mock_step_response.msg = mock_message
         mock_agent.step.return_value = mock_step_response
-        
+
         # set the return value of the generate_response method
         mock_agent.generate_response.return_value = mock_response
-        
+
         # Run the benchmark
         benchmark.run(
             agent=mock_agent,
@@ -414,48 +421,64 @@ def run_test_for_category(category):
             randomize=False,
             subset=1,
         )
-        
+
         # Assert the benchmark results
         results_len = len(benchmark._results)
         is_result_correct = benchmark._results[0]["result"] is True
         category_match = benchmark._results[0]["category"] == category
-        
+
         logger.info(f"  Test completed successfully for {category}")
         logger.info(f"  Results count: {results_len}")
         logger.info(f"  Result correct: {is_result_correct}")
         logger.info(f"  Category match: {category_match}")
         logger.info("  All assertions passed!\n")
-        
+
         return True
+
 
 if __name__ == "__main__":
     # set up logging
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     )
-    
+
     logger.info("===== Running BFCL Benchmark Tests =====")
-    logger.info("Note: These tests use mocks and don't actually call any real APIs or models.")
+    logger.info(
+        "Note: These tests use mocks and don't actually call any real APIs "
+        "or models."
+    )
     logger.info("Running tests for all categories...")
-    
-    all_categories = ["simple", "multiple", "parallel", "parallel_multiple", 
-                      "irrelevance", "java", "javascript", "rest"]
-    
+
+    all_categories = [
+        "simple",
+        "multiple",
+        "parallel",
+        "parallel_multiple",
+        "irrelevance",
+        "java",
+        "javascript",
+        "rest",
+    ]
+
     results = []
     for category in all_categories:
         try:
             result = run_test_for_category(category)
             results.append((category, "PASS" if result else "FAIL"))
         except Exception as e:
-            logger.error(f"  ERROR: Test for {category} failed with exception: {e}")
+            logger.error(
+                f"  ERROR: Test for {category} failed with exception: {e}"
+            )
             results.append((category, "ERROR"))
-    
+
     # Log summary
     logger.info("\n===== Test Summary =====")
     for category, status in results:
         logger.info(f"{category.ljust(20)}: {status}")
-    
+
     # Count successes
     success_count = sum(1 for _, status in results if status == "PASS")
-    logger.info(f"\nPassed {success_count} out of {len(all_categories)} tests.") 
+    logger.info(
+        f"\nPassed {success_count} out of {len(all_categories)} tests."
+    )
