@@ -38,4 +38,4 @@ if __name__ == "__main__":
 
     toolkit = ArxivToolkit(timeout=args.timeout)
 
-    toolkit.mcp.run(args.mode)
+    toolkit.run_mcp_server(mode=args.mode)
