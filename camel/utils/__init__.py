@@ -17,6 +17,7 @@ from .commons import (
     BatchProcessor,
     agentops_decorator,
     api_keys_required,
+    browser_toolkit_save_auth_cookie,
     check_server_running,
     create_chunks,
     dependencies_required,
@@ -92,4 +93,5 @@ __all__ = [
     "with_timeout",
     "MCPServer",
     "sanitize_filename",
+    "browser_toolkit_save_auth_cookie",
 ]
