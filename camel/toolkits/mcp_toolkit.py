@@ -227,7 +227,7 @@ class MCPClient(BaseToolkit):
 
             func_params.append(param_name)
 
-        async def dynamic_function(**kwargs):
+        async def dynamic_function(**kwargs) -> str:
             r"""Auto-generated function for MCP Tool interaction.
 
             Args:
@@ -350,6 +350,39 @@ class MCPClient(BaseToolkit):
             )
             for mcp_tool in self._mcp_tools
         ]
+
+    def get_text_tools(self) -> str:
+        r"""Returns a string containing the descriptions of the tools
+        in the toolkit.
+
+        Returns:
+            str: A string containing the descriptions of the tools
+                in the toolkit.
+        """
+        return "\n".join(
+            f"tool_name: {tool.name}\n"
+            + f"description: {tool.description or 'No description'}\n"
+            + f"input Schema: {tool.inputSchema}\n"
+            for tool in self._mcp_tools
+        )
+
+    async def call_tool(
+        self, tool_name: str, tool_args: Dict[str, Any]
+    ) -> Any:
+        r"""Calls the specified tool with the provided arguments.
+
+        Args:
+            tool_name (str): Name of the tool to call.
+            tool_args (Dict[str, Any]): Arguments to pass to the tool
+                (default: :obj:`{}`).
+
+        Returns:
+            Any: The result of the tool call.
+        """
+        if self._session is None:
+            raise RuntimeError("Session is not initialized.")
+
+        return await self._session.call_tool(tool_name, tool_args)
 
     @property
     def session(self) -> Optional["ClientSession"]:
@@ -548,3 +581,13 @@ class MCPToolkit(BaseToolkit):
         for server in self.servers:
             all_tools.extend(server.get_tools())
         return all_tools
+
+    def get_text_tools(self) -> str:
+        r"""Returns a string containing the descriptions of the tools
+        in the toolkit.
+
+        Returns:
+            str: A string containing the descriptions of the tools
+                in the toolkit.
+        """
+        return "\n".join(server.get_text_tools() for server in self.servers)

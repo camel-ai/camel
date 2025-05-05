@@ -32,6 +32,7 @@ dependencies = [
     "psutil>=5.9.8,<6",
 ]
 
+
 [project.optional-dependencies]
 test = [
     "pytest>=7,<8",
