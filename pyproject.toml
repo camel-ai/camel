@@ -337,6 +337,7 @@ all = [
     "cohere>=5.11.0,<6",
     "sentence-transformers>=3.0.1,<4",
     "neo4j>=5.18.0,<6",
+    "markitdown==0.1.1",
     "nebula3-python==3.8.2",
     "rank-bm25>=0.2.2,<0.3",
     "litellm>=1.38.1,<2",
