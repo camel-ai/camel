@@ -229,9 +229,9 @@ class JinaRerankerToolkit(BaseToolkit):
                 )
 
             with torch.inference_mode():
-                text_pairs = [[query, doc] for doc in documents]
+                image_pairs = [[query, doc] for doc in documents]
                 scores = self.model.compute_score(
-                    text_pairs, max_length=max_length, doc_type="image"
+                    image_pairs, max_length=max_length, doc_type="image"
                 )
 
         return self._sort_documents(documents, scores)
