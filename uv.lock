@@ -44,6 +44,22 @@ wheels = [
 ]
 
 [[package]]
+name = "aci-sdk"
+version = "1.0.0b1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "griffe" },
+    { name = "httpx" },
+    { name = "pydantic" },
+    { name = "tenacity" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/71/9d/0d956545331ac6760af30a7bc6492083a84b32f16faa89f28ee269a83dac/aci_sdk-1.0.0b1.tar.gz", hash = "sha256:9130bf196c680deda2004d71b091883bc468ea1649d71dbf676b9172c067d4ef", size = 63449 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e2/57/2f1cfb3ee6a84e355a09dd94a4c3c5d1dbe9dbb925950c6903cb8ef2a216/aci_sdk-1.0.0b1-py3-none-any.whl", hash = "sha256:f3d9f3de58c518ecf4fc44ebedf1e4a1e23a30df268782989d1ce8852bd47175", size = 31713 },
+]
+
+[[package]]
 name = "agentops"
 version = "0.3.26"
 source = { registry = "https://pypi.org/simple" }
@@ -539,7 +555,7 @@ wheels = [
 
 [[package]]
 name = "camel-ai"
-version = "0.2.52"
+version = "0.2.53"
 source = { editable = "." }
 dependencies = [
     { name = "colorama" },
@@ -556,6 +572,7 @@ dependencies = [
 [package.optional-dependencies]
 all = [
     { name = "accelerate" },
+    { name = "aci-sdk" },
     { name = "agentops" },
     { name = "aiosqlite" },
     { name = "anthropic" },
@@ -589,6 +606,7 @@ all = [
     { name = "google-auth-httplib2" },
     { name = "google-auth-oauthlib" },
     { name = "google-cloud-storage" },
+    { name = "google-genai" },
     { name = "googlemaps" },
     { name = "gradio" },
     { name = "html2text" },
@@ -709,6 +727,7 @@ dev = [
     { name = "uv" },
 ]
 dev-tools = [
+    { name = "aci-sdk" },
     { name = "agentops" },
     { name = "daytona-sdk" },
     { name = "docker" },
@@ -772,6 +791,7 @@ model-platforms = [
     { name = "reka-api" },
 ]
 owl = [
+    { name = "aci-sdk" },
     { name = "anthropic" },
     { name = "beautifulsoup4" },
     { name = "chunkr-ai" },
@@ -821,6 +841,7 @@ owl = [
 rag = [
     { name = "cohere" },
     { name = "crawl4ai" },
+    { name = "google-genai" },
     { name = "nebula3-python" },
     { name = "neo4j" },
     { name = "numpy" },
@@ -885,6 +906,9 @@ web-tools = [
 requires-dist = [
     { name = "accelerate", marker = "extra == 'all'", specifier = ">=0.26.0,<0.27" },
     { name = "accelerate", marker = "extra == 'huggingface'", specifier = ">=0.26.0,<0.27" },
+    { name = "aci-sdk", marker = "extra == 'all'", specifier = ">=1.0.0b1" },
+    { name = "aci-sdk", marker = "extra == 'dev-tools'", specifier = ">=1.0.0b1" },
+    { name = "aci-sdk", marker = "extra == 'owl'", specifier = ">=1.0.0b1" },
     { name = "agentops", marker = "extra == 'all'", specifier = ">=0.3.21,<0.4" },
     { name = "agentops", marker = "extra == 'dev-tools'", specifier = ">=0.3.21,<0.4" },
     { name = "aiosqlite", marker = "extra == 'all'", specifier = ">=0.20.0,<0.21" },
@@ -968,6 +992,8 @@ requires-dist = [
     { name = "google-auth-oauthlib", marker = "extra == 'web-tools'", specifier = "==1.2.1" },
     { name = "google-cloud-storage", marker = "extra == 'all'", specifier = ">=2.18.0,<3" },
     { name = "google-cloud-storage", marker = "extra == 'storage'", specifier = ">=2.18.0,<3" },
+    { name = "google-genai", marker = "extra == 'all'", specifier = ">=1.13.0" },
+    { name = "google-genai", marker = "extra == 'rag'", specifier = ">=1.13.0" },
     { name = "googlemaps", marker = "extra == 'all'", specifier = ">=4.10.0,<5" },
     { name = "googlemaps", marker = "extra == 'web-tools'", specifier = ">=4.10.0,<5" },
     { name = "gradio", marker = "extra == 'all'", specifier = ">=3,<4" },
@@ -2473,6 +2499,24 @@ wheels = [
 ]
 
 [[package]]
+name = "google-genai"
+version = "1.13.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "google-auth" },
+    { name = "httpx" },
+    { name = "pydantic" },
+    { name = "requests" },
+    { name = "typing-extensions" },
+    { name = "websockets" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5e/1f/0861dad47febbb391123a529f3655582e2a7ce14aadb6ddc527dd7dea470/google_genai-1.13.0.tar.gz", hash = "sha256:de7b4960d361c7ea85b715ce0e07fe34903d94affa82d566d9eb04e8f92512b9", size = 165727 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c5/2c/1833fa15311fa4f0790e9c8ea3488382fe428c3eca62b329d6aa355871ae/google_genai-1.13.0-py3-none-any.whl", hash = "sha256:e88417c95f333827ed051282803db627192fd8e5fdf5b49b6f26644a67775d1a", size = 164405 },
+]
+
+[[package]]
 name = "google-resumable-media"
 version = "2.7.2"
 source = { registry = "https://pypi.org/simple" }
@@ -2573,6 +2617,18 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/4a/11/0bad66138622d0c1463b0b87935cefd397f9f04fac325a838525a3aa4da7/greenlet-3.2.0-cp312-cp312-musllinux_1_1_aarch64.whl", hash = "sha256:430cba962c85e339767235a93450a6aaffed6f9c567e73874ea2075f5aae51e1", size = 1119582 },
     { url = "https://files.pythonhosted.org/packages/17/26/0f8a4d222b9014af88bb8b5d921305308dd44de667c01714817dc9fb91fb/greenlet-3.2.0-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:5e57ff52315bfc0c5493917f328b8ba3ae0c0515d94524453c4d24e7638cbb53", size = 1147452 },
     { url = "https://files.pythonhosted.org/packages/8a/d4/70d262492338c4939f97dca310c45b002a3af84b265720f0e9b135bc85b2/greenlet-3.2.0-cp312-cp312-win_amd64.whl", hash = "sha256:211a9721f540e454a02e62db7956263e9a28a6cf776d4b9a7213844e36426333", size = 296217 },
+]
+
+[[package]]
+name = "griffe"
+version = "1.7.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "colorama" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a9/3e/5aa9a61f7c3c47b0b52a1d930302992229d191bf4bc76447b324b731510a/griffe-1.7.3.tar.gz", hash = "sha256:52ee893c6a3a968b639ace8015bec9d36594961e156e23315c8e8e51401fa50b", size = 395137 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/58/c6/5c20af38c2a57c15d87f7f38bee77d63c1d2a3689f74fefaf35915dd12b2/griffe-1.7.3-py3-none-any.whl", hash = "sha256:c6b3ee30c2f0f17f30bcdef5068d6ab7a2a4f1b8bf1a3e74b56fffd21e1c5f75", size = 129303 },
 ]
 
 [[package]]
@@ -3607,6 +3663,12 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/95/d2/f587cb965a56e992634bebc8611c5b579af912b74e04eb9164bd49527d21/mcp-1.6.0.tar.gz", hash = "sha256:d9324876de2c5637369f43161cd71eebfd803df5a95e46225cab8d280e366723", size = 200031 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/10/30/20a7f33b0b884a9d14dd3aa94ff1ac9da1479fe2ad66dd9e2736075d2506/mcp-1.6.0-py3-none-any.whl", hash = "sha256:7bd24c6ea042dbec44c754f100984d186620d8b841ec30f1b19eda9b93a634d0", size = 76077 },
+]
+
+[package.optional-dependencies]
+cli = [
+    { name = "python-dotenv" },
+    { name = "typer" },
 ]
 
 [[package]]
@@ -6929,6 +6991,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/2c/72/f36a49c2fd344b45e6f1ddab59a7f809bff4f46dcc78af7ac9758461a5bf/tavily_python-0.5.4.tar.gz", hash = "sha256:fdad5303f9f6603a06fddcc7e21b128bebc1adf7694e553a664caf87eb2d2d9d", size = 109050 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/2f/dd/63d1d2fddcaaee040745ea58d13b54c0b1483260ddae52eb59abf691f757/tavily_python-0.5.4-py3-none-any.whl", hash = "sha256:47f8c0b41283d44849fe9531596cd26d3de42a59618ef66f9e1244d8fedba404", size = 44419 },
+]
+
+[[package]]
+name = "tenacity"
+version = "9.1.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/0a/d4/2b0cd0fe285e14b36db076e78c93766ff1d529d70408bd1d2a5a84f1d929/tenacity-9.1.2.tar.gz", hash = "sha256:1169d376c297e7de388d18b4481760d478b0e99a777cad3a9c86e556f4b697cb", size = 48036 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e5/30/643397144bfbfec6f6ef821f36f33e57d35946c44a2352d3c9f0ae847619/tenacity-9.1.2-py3-none-any.whl", hash = "sha256:f77bf36710d8b73a50b2dd155c97b870017ad21afe6ab300326b0371b3b05138", size = 28248 },
 ]
 
 [[package]]

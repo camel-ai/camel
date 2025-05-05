@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.52"
+version = "0.2.53"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -31,6 +31,7 @@ dependencies = [
     "httpx>=0.28.0,<1.0.0dev",
     "psutil>=5.9.8,<6",
 ]
+
 
 [project.optional-dependencies]
 test = [
@@ -78,6 +79,7 @@ rag = [
     "pandasai>=2.3.0,<3",
     "crawl4ai>=0.3.745",
     "pyobvector>=0.1.18",
+    "google-genai>=1.13.0",
 ]
 web_tools = [
     "duckduckgo-search>=6.3.5,<7",
@@ -165,6 +167,7 @@ dev_tools = [
     "typer>=0.15.2",
     "mcp>=1.3.0",
     "daytona-sdk==0.14.0",
+    "aci-sdk>=1.0.0b1",
 ]
 model_platforms = [
     "litellm>=1.38.1,<2",
@@ -244,6 +247,7 @@ owl = [
     "crawl4ai>=0.3.745",
     "scrapegraph-py>=1.12.0,<2",
     "pyautogui>=0.9.54,<0.10",
+    "aci-sdk>=1.0.0b1",
 ]
 all = [
     "numpy~=1.26",
@@ -359,6 +363,8 @@ all = [
     "scrapegraph-py>=1.12.0,<2",
     "daytona-sdk==0.14.0",
     "ibm-watsonx-ai>=1.3.11",
+    "google-genai>=1.13.0",
+    "aci-sdk>=1.0.0b1",
 ]
 
 [project.urls]
@@ -548,6 +554,7 @@ module = [
     "daytona_sdk",
     "scrapegraph_py.*",
     "ibm_watsonx_ai.*",
+    "google_genai",
 ]
 ignore_missing_imports = true
 
@@ -559,4 +566,4 @@ skip = '.git*,*.pdf,*.svg,*.lock,*.css,examples/toolkits/semantic_scholar_toolki
 check-hidden = true
 # Ignore long lines as usually some kind of base64 encodings e.g. in ipynb
 ignore-regex = '^\s*"image/\S+": ".*|^.{300,}|\b(NotIn|Unsupport)\b'
-ignore-words-list = 'ans,datas,rouge,doubleClick,OCE'
+ignore-words-list = 'ans,datas,rouge,doubleClick,OCE,ACI,aci'
