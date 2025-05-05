@@ -521,10 +521,13 @@ def extract_generation_code(output: str, question: str) -> str:
         str: Reconstructed full function code. Returns raw output if
             extraction fails.
     """
+
+
     try:
         # Extract the content within ```python ... ``` block
         code_block = re.findall(
-            r"```python\n(.*?)```", output, re.DOTALL | re.IGNORECASE
+            r"```(?:python)?\s*\n(.*?)```", output,
+            re.DOTALL | re.IGNORECASE
         )[0]
 
         # Get the original function header from the prompt
@@ -934,8 +937,10 @@ class CodeRAGBenchmark(BaseBenchmark):
         execution if enabled.
 
         Args:
+            agent (ChatAgent): Chat agent for code generation.
             n_generation_samples (int): Number of completions
                 to generate per prompt. (default: :obj:`1`)
+
             allow_code_execution (bool): Whether to run code for
                 pass@k evaluation. Use with caution.
                 (default: :obj:`False`)
@@ -973,7 +978,8 @@ class CodeRAGBenchmark(BaseBenchmark):
             # Construct the final prompt for the agent
             final_prompt = (
                 context + '\n\nPlease complete the following function based '
-                'on the example above:\n' + '```python\n' + prompt
+                'on the example above, DO NOT REPEAT'
+                'PREVIOUS DEFINITIONS :\n' + '```python\n' + prompt
             )
 
             candidates = []
@@ -981,7 +987,7 @@ class CodeRAGBenchmark(BaseBenchmark):
             for _ in range(n_generation_samples):
                 response = agent.step(final_prompt)
                 generation = response.msg.content
-
+                logger.debug("GENERATION: %s", generation)
                 # === Postprocessing based on CodeRAG-Bench ===
                 stop_words = [
                     "\nclass",

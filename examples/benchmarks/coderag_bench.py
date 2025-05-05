@@ -33,7 +33,7 @@ logger.info("Starting CodeRAG-Bench example run...")
 if __name__ == "__main__":
     assistant_sys_msg = """You are a helpful AI coding assistant.
 You are given user queries, and your job is to generate appropriate code responses.
-Only output the code.
+Please just complete the code according to the prompt, do not repeate previous lines.
 If the query is ambiguous or lacks information, make reasonable assumptions."""
     agent = ChatAgent(assistant_sys_msg)
     retriever = CodeRAGBenchAutoRetriever(
