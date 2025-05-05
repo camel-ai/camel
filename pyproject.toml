@@ -378,7 +378,6 @@ default-groups = [
     "docs",
 ]
 
-
 [tool.hatch.build.targets.sdist]
 include = ["camel"]
 
