@@ -28,6 +28,12 @@ from .enums import (
     VectorDistance,
     VoiceType,
 )
+from .mcp_registries import (
+    ACIRegistryConfig,
+    BaseMCPRegistryConfig,
+    MCPRegistryType,
+    SmitheryRegistryConfig,
+)
 from .openai_types import (
     NOT_GIVEN,
     ChatCompletion,
@@ -77,4 +83,8 @@ __all__ = [
     'HuggingFaceRepoType',
     'NOT_GIVEN',
     'NotGiven',
+    'BaseMCPRegistryConfig',
+    'MCPRegistryType',
+    'SmitheryRegistryConfig',
+    'ACIRegistryConfig',
 ]

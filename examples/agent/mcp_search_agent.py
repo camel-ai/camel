@@ -14,13 +14,31 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import asyncio
+import logging
+import os
 
-from camel.agents import MCPAgent, MCPRegistryConfig, MCPRegistryType
+from camel.agents import MCPAgent
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType
+from camel.types import (
+    # ACIRegistryConfig,
+    BaseMCPRegistryConfig,
+    ModelPlatformType,
+    ModelType,
+    SmitheryRegistryConfig,
+)
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+)
+logger = logging.getLogger('camel')
+logger.setLevel(logging.DEBUG)
 
 
-async def example_with_registry_config(message: str):
+async def example_with_registry_config(
+    message: str, registry_config: BaseMCPRegistryConfig
+):
     """Example using MCPAgent with registry configurations."""
 
     # Create a model
@@ -29,17 +47,10 @@ async def example_with_registry_config(message: str):
         model_type=ModelType.CLAUDE_3_7_SONNET,
     )
 
-    # Create a registry configuration for Smithery
-    import os
-
-    smithery_config = MCPRegistryConfig(
-        type=MCPRegistryType.SMITHERY, api_key=os.getenv("SMITHERY_API_KEY")
-    )
-
     # Create MCPAgent with registry configurations
     agent = MCPAgent(
         model=model,
-        registry_configs=[smithery_config],
+        registry_configs=[registry_config],
     )
 
     await agent.connect()
@@ -55,10 +66,23 @@ async def example_with_registry_config(message: str):
 
 async def main():
     """Run examples."""
+    smithery_config = SmitheryRegistryConfig(
+        api_key=os.getenv("SMITHERY_API_KEY"),
+        profile=os.getenv("SMITHERY_PROFILE"),
+        os="windows",
+    )
+    # aci_config = ACIRegistryConfig(
+    #     api_key=os.getenv("ACI_API_KEY"),
+    #     linked_account_owner_id=os.getenv("ACI_LINKED_ACCOUNT_OWNER_ID")
+    # )
     # Registry configuration example
     message = "What MCP tools I can use for connecting to the Gmail?"
     # message = "Use Brave MCP search tools to search info about Camel-AI.org."
-    await example_with_registry_config(message)
+    await example_with_registry_config(
+        message=message,
+        registry_config=smithery_config,
+        # registry_config=aci_config
+    )
 
 
 if __name__ == "__main__":

@@ -13,10 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import asyncio
-from enum import Enum, auto
-from typing import Any, Callable, Dict, List, Optional, Union, cast
-
-from pydantic import BaseModel
+from typing import Any, Callable, List, Optional, Union, cast
 
 from camel.agents import ChatAgent
 from camel.logger import get_logger
@@ -24,54 +21,10 @@ from camel.messages import BaseMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.responses import ChatAgentResponse
 from camel.toolkits import FunctionTool, MCPToolkit
-from camel.types import ModelPlatformType, ModelType
+from camel.types import BaseMCPRegistryConfig, ModelPlatformType, ModelType
 from camel.utils import track_agent
 
 logger = get_logger(__name__)
-
-
-class MCPRegistryType(Enum):
-    """Enum for different types of MCP registries."""
-
-    SMITHERY = auto()
-    CUSTOM = auto()
-
-
-class MCPRegistryConfig(BaseModel):
-    """Configuration for an MCP registry.
-
-    Attributes:
-        name (str): The name of the registry.
-        type (MCPRegistryType): The type of the registry.
-        api_key (Optional[str]): API key for the registry.
-    """
-
-    type: MCPRegistryType
-    api_key: Optional[str] = None
-
-    def get_config(self) -> Dict:
-        """Generate configuration based on registry type and API key.
-
-        Returns:
-            Dict: The complete configuration for the registry.
-        """
-        # Smithery
-        if self.type == MCPRegistryType.SMITHERY:
-            assert self.api_key is not None, "API key is required for Smithery"
-            return {
-                "toolbox": {
-                    "command": "npx",
-                    "args": [
-                        "-y",
-                        "@smithery/cli@latest",
-                        "run",
-                        "@smithery/toolbox",
-                        "--config",
-                        f'{{"dynamic":false,"smitheryApiKey":"{self.api_key}"}}',
-                    ],
-                }
-            }
-        return {}
 
 
 @track_agent(name="MCPAgent")
@@ -87,7 +40,7 @@ class MCPAgent(ChatAgent):
         model (BaseModelBackend): The model backend to use for generating
             responses. (default: :obj:`ModelPlatformType.DEFAULT` with
             `ModelType.DEFAULT`)
-        registry_configs (List[MCPRegistryConfig]): List of registry
+        registry_configs (List[BaseMCPRegistryConfig]): List of registry
             configurations (default: :obj:`None`)
         auto_connect (bool): Whether to automatically connect to MCP servers
             upon initialization. (default: :obj:`True`)
@@ -96,7 +49,9 @@ class MCPAgent(ChatAgent):
 
     def __init__(
         self,
-        registry_configs: Union[List[MCPRegistryConfig], MCPRegistryConfig],
+        registry_configs: Union[
+            List[BaseMCPRegistryConfig], BaseMCPRegistryConfig
+        ],
         system_message: Optional[str] = (
             "You are an assistant with search capabilities using MCP tools."
         ),
@@ -110,7 +65,7 @@ class MCPAgent(ChatAgent):
                 model_type=ModelType.DEFAULT,
             )
 
-        if isinstance(registry_configs, MCPRegistryConfig):
+        if isinstance(registry_configs, BaseMCPRegistryConfig):
             self.registry_configs = [registry_configs]
         else:
             self.registry_configs = registry_configs or []
@@ -134,6 +89,22 @@ class MCPAgent(ChatAgent):
         # Wrap the config in a mcpServers key
         config_dict = {"mcpServers": config_dict}
         return MCPToolkit(config_dict=config_dict)
+
+    def add_registry(self, registry_config: BaseMCPRegistryConfig) -> None:
+        """Add a new registry configuration to the agent.
+
+        Args:
+            registry_config (BaseMCPRegistryConfig): The registry
+                configuration to add.
+        """
+        self.registry_configs.append(registry_config)
+        # Reinitialize the toolkit with the updated configurations
+        self.mcp_toolkit = self._initialize_mcp_toolkit()
+
+        # If already connected, reconnect to apply changes
+        if self.mcp_toolkit and self.mcp_toolkit.is_connected():
+            asyncio.run(self.disconnect())
+            asyncio.run(self.connect())
 
     async def connect(self) -> None:
         """Connect to the MCP servers."""
