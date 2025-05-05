@@ -16,9 +16,12 @@ import subprocess
 from typing import Any, Dict, Optional, Union
 
 from camel.configs import VLLM_API_PARAMS, VLLMConfig
+from camel.logger import get_logger
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ModelType
 from camel.utils import BaseTokenCounter
+
+logger = get_logger(__name__)
 
 
 # flake8: noqa: E501
@@ -62,18 +65,21 @@ class VLLMModel(OpenAICompatibleModel):
     ) -> None:
         if model_config_dict is None:
             model_config_dict = VLLMConfig().as_dict()
-        url = url or os.environ.get("VLLM_BASE_URL")
+        self._url = url or os.environ.get("VLLM_BASE_URL")
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
+        self._model_type = model_type
+
+        if not self._url:
+            self._start_server()
+
         super().__init__(
-            model_type=model_type,
+            model_type=self._model_type,
             model_config_dict=model_config_dict,
-            api_key=api_key,
-            url=url,
+            api_key="Not_Used",
+            url=self._url,
             token_counter=token_counter,
             timeout=timeout,
         )
-        if not self._url:
-            self._start_server()
 
     def _start_server(self) -> None:
         r"""Starts the vllm server in a subprocess."""
@@ -84,12 +90,12 @@ class VLLMModel(OpenAICompatibleModel):
                 stderr=subprocess.PIPE,
             )
             self._url = "http://localhost:8000/v1"
-            print(
+            logger.info(
                 f"vllm server started on {self._url} "
-                f"for {self.model_type} model."
+                f"for {self._model_type} model."
             )
         except Exception as e:
-            print(f"Failed to start vllm server: {e}.")
+            logger.error(f"Failed to start vllm server: {e}.")
 
     def check_model_config(self):
         r"""Check whether the model configuration contains any
