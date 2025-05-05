@@ -12,14 +12,19 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from camel.logger import disable_logging, enable_logging, set_log_level
+from camel.embeddings import GeminiEmbedding
+from camel.types import EmbeddingModelType
 
-__version__ = '0.2.53'
+gemini_embed = GeminiEmbedding(
+    model_type=EmbeddingModelType.GEMINI_EMBEDDING_EXP
+)
 
-__all__ = [
-    '__version__',
-    'camel',
-    'disable_logging',
-    'enable_logging',
-    'set_log_level',
-]
+# Embed a single text
+text_embeddings = gemini_embed.embed_list(["What is the capital of France?"])
+
+print("Default model embedding dimension:", len(text_embeddings[0]))
+'''
+===============================================================================
+Default model embedding dimension: 3072
+===============================================================================
+'''

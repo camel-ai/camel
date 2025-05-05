@@ -696,15 +696,7 @@ def test_chat_agent_multiple_return_message_error(n, step_call_count=3):
     )
     for _ in range(step_call_count):
         assistant_response = assistant.step(user_msg)
-
-        with pytest.raises(
-            RuntimeError,
-            match=(
-                "Property msg is only available "
-                "for a single message in msgs."
-            ),
-        ):
-            _ = assistant_response.msg
+        assert assistant_response.msg is None
 
 
 @pytest.mark.model_backend
