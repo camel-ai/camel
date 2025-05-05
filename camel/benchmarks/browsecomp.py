@@ -29,7 +29,6 @@ from pydantic import BaseModel, Field
 
 from camel.agents.chat_agent import ChatAgent
 from camel.benchmarks.base import BaseBenchmark
-from camel.models.model_factory import ModelFactory
 
 logger = logging.getLogger(__name__)
 
@@ -52,10 +51,10 @@ _message_template = """
 
 
 class JinjaEnv:
-    """A class that encapsulates the Jinja environment setup with lazy importing.
+    """A class that encapsulates the Jinja environment setup.
 
-    This class enables lazy importing of Jinja2, which means Jinja2 is only imported
-    when the class is actually used, not when the module is imported.
+    This class enables lazy importing of Jinja2, which means Jinja2 is only
+    imported when the class is actually used, not when the module is imported.
     """
 
     _instance: Optional['JinjaEnv'] = None
