@@ -23,12 +23,15 @@ import traceback
 from collections import defaultdict
 from dataclasses import dataclass, field
 from multiprocessing.pool import Pool, ThreadPool
+from functools import partial
 from typing import Any, Callable, Optional
 
 from pydantic import BaseModel, Field
 
 from camel.agents.chat_agent import ChatAgent
 from camel.benchmarks.base import BaseBenchmark
+from camel.societies.role_playing import RolePlaying
+from camel.societies.workforce.workforce import Workforce
 
 logger = logging.getLogger(__name__)
 
@@ -137,6 +140,15 @@ class JinjaEnv:
             )
         )
 
+
+QUERY_TEMPLATE = """
+{question}
+
+Your response should be in the following format:
+Explanation: {{your explanation for your final answer}}
+Exact Answer: {{your succinct, final answer}}
+Confidence: {{your confidence score between 0% and 100% for your answer}}
+""".strip()
 
 GRADER_TEMPLATE = """
 Judge whether the following [response] to [question] is correct or not 
@@ -265,6 +277,22 @@ def decrypt(ciphertext_b64: str, password: str) -> str:
     return decrypted.decode()
 
 
+class QueryResponse(BaseModel):
+    r"""A query response."""
+
+    explanation: str = Field(
+        description="""your explanation for your final answer."""
+    )
+    exact_answer: str = Field(
+        description="""your succinct, final answer."""
+    )
+    confidence: str = Field(
+        description="""
+your confidence score between 0|\%| and 100|\%| for your answer.
+"""
+    )
+
+
 class GradingResponse(BaseModel):
     r"""A grading response."""
 
@@ -372,6 +400,60 @@ def aggregate_results(
 # Above are from https://github.com/openai/simple-evals/blob/main/browsecomp_eval.py
 
 
+def process_benchmark_row(row, agent_config):
+    """
+    Process a single example row from the benchmark dataset.
+
+    This function decrypts the problem and answer, creates a model and agent,
+    and gets a response from the agent for the problem. It's designed to be
+    used with parallel processing in the benchmark's run method.
+
+    Args:
+        row (dict): A row from the dataset containing encrypted problem and answer
+        agent_config (dict): Configuration for creating the agent
+
+    Returns:
+        dict: A dictionary containing the decrypted problem, answer,
+        and model response
+    """
+    from camel.agents.chat_agent import ChatAgent
+    from camel.models.model_factory import ModelFactory
+
+    # Decrypt the problem and answer using the canary as the password
+    # DO NOT MODIFY THIS PART, IT'S A GEMERAL STEP OF BROWNSECOMP BENCHMARK
+    problem = decrypt(row.get("problem", ""), row.get("canary", ""))
+    answer = decrypt(row.get("answer", ""), row.get("canary", ""))
+
+    # Create a new agent in this process using the configuration
+    model = ModelFactory.create(**agent_config["model_config"])
+    agent = ChatAgent(agent_config["system_message"], model=model)
+
+    # TODO: Add necessary prompts when tuning.
+    input_message = QUERY_TEMPLATE.format(question=problem)
+    response_text = agent.step(
+        input_message, response_format=QueryResponse)
+
+    # Parse the response JSON
+    response_dict = json.loads(response_text.msg.content)
+
+    # Format the response as a key-value string
+    formatted_response = f"""
+Explanation: {response_dict['explanation']}
+
+Exact Answer: {response_dict['exact_answer']}
+Confidence: {response_dict['confidence']}"""
+
+    # Create the result dictionary
+    raw_result = {}
+    raw_result['problem'] = problem
+    raw_result['expected_answer'] = answer
+    raw_result['response'] = formatted_response
+    # Keep the original dict for reference
+    raw_result['response_dict'] = response_dict
+
+    return raw_result
+
+
 class BrowseCompBenchmark(BaseBenchmark):
     """
     BrowseComp Benchmark for evaluating browser-based comprehension tasks.
@@ -473,7 +555,7 @@ class BrowseCompBenchmark(BaseBenchmark):
         raise NotImplementedError("BrowseComp does not have a training set.")
 
     def run(  # type: ignore[override, return]
-        self, process_each_row_f: Callable
+        self, agent_config: dict
     ):
         """
         Run the benchmark by processing each example in parallel.
@@ -483,11 +565,13 @@ class BrowseCompBenchmark(BaseBenchmark):
         progress using tqdm and stores the results in self.raw_results.
 
         Args:
-            process_each_row_f (callable): Function to process each example.
-                This function should take a row (dict) and return a dict with
-                'problem', 'answer', and 'response' keys.
+            agent_config (dict): Configuration for creating agents in worker processes
         """
         from tqdm import tqdm
+
+        # Create a partial function with the agent_config parameter bound
+        process_func = partial(process_benchmark_row,
+                               agent_config=agent_config)
 
         # Use a process pool for parallel execution
         pool_class = Pool
@@ -496,7 +580,7 @@ class BrowseCompBenchmark(BaseBenchmark):
             # Process each example in parallel and collect results
             self._raw_results = list(
                 tqdm(
-                    pool.imap(process_each_row_f, self.examples),
+                    pool.imap(process_func, self.examples),
                     total=len(self.examples),
                 )
             )
@@ -545,7 +629,7 @@ class BrowseCompBenchmark(BaseBenchmark):
             prompt = GRADER_TEMPLATE.format(
                 question=raw_result['problem'],
                 response=raw_result['response'],
-                correct_answer=raw_result['answer'],
+                correct_answer=raw_result['expected_answer'],
             )
             if grader:
                 grader_in_process = grader.clone()
@@ -565,11 +649,6 @@ class BrowseCompBenchmark(BaseBenchmark):
                 is_correct = int(grade_result == "yes")
                 is_incorrect = int(grade_result == "no")
 
-                # Extract the answer from the response
-                extracted_match = re.search(
-                    r"Exact Answer:.*", raw_result['response']
-                )
-
                 # Set the score (1 for correct, 0 for incorrect)
                 score = is_correct
 
@@ -582,12 +661,8 @@ class BrowseCompBenchmark(BaseBenchmark):
                         content=raw_result['response'], role="assistant"
                     ),
                     score=score,
-                    correct_answer=raw_result['answer'],
-                    extracted_answer=extracted_match.group(0).replace(
-                        'Exact Answer:', ''
-                    )
-                    if extracted_match
-                    else 'N/A',
+                    correct_answer=raw_result['expected_answer'],
+                    extracted_answer=raw_result['response_dict']['exact_answer']
                 )
 
                 # Create a conversation list for the result
