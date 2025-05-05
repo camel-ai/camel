@@ -430,7 +430,6 @@ benchmark/gaia/Dataset
 benchmark/gaia/results.jsonl
 
 # Secret files for docker
-<<<<<<< HEAD
 .container/.env
 
 # Extra
@@ -438,6 +437,3 @@ benchmark/gaia/results.jsonl
 .env
 .cache_ggshield
 my_dev
-=======
-.container/.env
->>>>>>> upstream
