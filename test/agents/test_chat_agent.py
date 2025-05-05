@@ -52,6 +52,7 @@ from camel.types import (
     UnifiedModelType,
 )
 from camel.utils.async_func import sync_funcs_to_async
+from test.utils.mock_openai import mock_chat_completion
 
 model_backend_rsp_base = ChatCompletion(
     id="mock_response_id",
@@ -81,10 +82,6 @@ model_backend_rsp_base = ChatCompletion(
 parametrize = pytest.mark.parametrize(
     'model',
     [
-        ModelFactory.create(
-            model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_4O_MINI,
-        ),
         pytest.param(None, marks=pytest.mark.model_backend),
     ],
 )
@@ -1223,7 +1220,7 @@ def test_response_words_termination(step_call_count=3):
         ), f"Error in calling round {i+1}"
 
 
-def test_chat_agent_vision(step_call_count=3):
+def test_chat_agent_vision(openai_mock, step_call_count=3):
     system_message = BaseMessage(
         role_name="assistant",
         role_type=RoleType.ASSISTANT,
@@ -1257,32 +1254,10 @@ def test_chat_agent_vision(step_call_count=3):
         image_list=image_list,
         image_detail="low",
     )
-    # Mock the OpenAI model return value:
-    agent.model_backend.run = MagicMock(
-        return_value=ChatCompletion(
-            id="mock_vision_id",
-            choices=[
-                Choice(
-                    finish_reason='stop',
-                    index=0,
-                    logprobs=None,
-                    message=ChatCompletionMessage(
-                        content='Yes.',
-                        role='assistant',
-                        function_call=None,
-                        tool_calls=None,
-                    ),
-                )
-            ],
-            created=123456,
-            model='gpt-4-turbo-2024-04-09',
-            object='chat.completion',
-            system_fingerprint='fp_5d12056990',
-            usage=CompletionUsage(
-                completion_tokens=2, prompt_tokens=113, total_tokens=115
-            ),
-        )
-    )
+
+    # Configure mock to return "Yes." response
+    openai_mock.run.return_value = mock_chat_completion(content="Yes.")
+    agent.model_backend.run = openai_mock.run
 
     for i in range(step_call_count):
         agent_response = agent.step(user_msg)
