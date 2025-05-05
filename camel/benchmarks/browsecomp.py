@@ -14,6 +14,7 @@
 
 import base64
 import hashlib
+import json
 import logging
 import os
 import random
@@ -24,6 +25,9 @@ from dataclasses import dataclass, field
 from multiprocessing.pool import Pool, ThreadPool
 from typing import Any, Callable, Optional
 
+from pydantic import BaseModel, Field
+
+from camel.agents.chat_agent import ChatAgent
 from camel.benchmarks.base import BaseBenchmark
 from camel.models.model_factory import ModelFactory
 
@@ -124,10 +128,14 @@ class JinjaEnv:
         Returns:
             str: The HTML representation of the message.
         """
-        return JinjaEnv.get_instance().from_string(_message_template).render(
-            role=message["role"],
-            content=message["content"],
-            variant=message.get("variant", None),
+        return (
+            JinjaEnv.get_instance()
+            .from_string(_message_template)
+            .render(
+                role=message["role"],
+                content=message["content"],
+                variant=message.get("variant", None),
+            )
         )
 
 
@@ -256,6 +264,38 @@ def decrypt(ciphertext_b64: str, password: str) -> str:
     key = derive_key(password, len(encrypted))
     decrypted = bytes(a ^ b for a, b in zip(encrypted, key))
     return decrypted.decode()
+
+
+class GradingResponse(BaseModel):
+    r"""A grading response."""
+
+    extracted_final_answer: str = Field(
+        description="""
+The final exact answer extracted from the [response].
+Put the extracted answer as 'None' if there is no exact, final answer to 
+extract from the response."""
+    )
+    reasoning: str = Field(
+        description="""
+Explain why the extracted_final_answer is correct or incorrect 
+based on [correct_answer], focusing only on if there are meaningful 
+differences between [correct_answer] and the extracted_final_answer. 
+Do not comment on any background to the problem, do not attempt 
+to solve the problem, do not argue for any answer different 
+than [correct_answer], focus only on whether the answers match."""
+    )
+    correct: str = Field(
+        description="""Answer 'yes' if extracted_final_answer matches the 
+[correct_answer] given above, or is within a small margin of error for 
+numerical problems. Answer 'no' otherwise, i.e. if there if there is any 
+inconsistency, ambiguity, non-equivalency, or if the extracted answer is 
+incorrect."""
+    )
+    confidence: str = Field(
+        description="""The extracted confidence score between 0|\%| 
+and 100|\%| from [response]. Put 100 if there is no confidence score available.
+"""
+    )
 
 
 @dataclass
@@ -473,64 +513,54 @@ class BrowseCompBenchmark(BaseBenchmark):
             htmls=eval_result.htmls,
         )
 
-    def validate(self, model_config: dict):
-        """
-        Validate the raw results using the GRADER_TEMPLATE and an LLM.
+    def validate(self, grader: ChatAgent | None = None):
+        r"""Validate the raw results using the GRADER_TEMPLATE and ChatAgent.
 
-        This method evaluates the correctness of each response by using an LLM
-        to compare it with the expected answer. It aggregates the results and
-        generates a report.
+        This method evaluates the correctness of each response by
+        multi-threading. A dedicated chat agent is created in each thread.
+        The chat agent will compare raw result with the expected answer. The
+        grading results will be aggregated in a report.
 
         Args:
-            model_config (dict): Configuration for the LLM used for validation
+            grader: The ChatAgent used for validation. If None, a default
+                agent will be created in each thread. If provided, the
+                provided agent will be used as a template and be cloned into
+                new agents in each thread. (default: :obj:`None`)
         """
         from tqdm import tqdm
-        model = ModelFactory.create(**model_config)
 
-        def validate_each_one(result: dict):
-            """
-            Validate a single result using the LLM grader.
-
-            This inner function formats the prompt for the LLM grader, sends
-            it for evaluation, extracts the correctness assessment, and
-            creates an HTML representation of the result.
+        def validate_each_one(raw_result: dict):
+            r"""This inner function formats the prompt for the ChatAgent
+            grader, sends it for evaluation, extracts the correctness
+            assessment, and creates an HTML representation of the result.
 
             Args:
-                result (dict): A dictionary containing 'problem', 'response',
-                and 'answer' keys
+                raw_result (dict): A dictionary containing 'problem',
+                    'response', and 'answer' keys
 
             Returns:
                 SingleEvalResult: An evaluation result object with score,
-                metrics, and HTML
+                    metrics, and HTML
             """
             # Format the template
             prompt = GRADER_TEMPLATE.format(
-                question=result['problem'],
-                response=result['response'],
-                correct_answer=result['answer'],
+                question=raw_result['problem'],
+                response=raw_result['response'],
+                correct_answer=raw_result['answer'],
             )
+            if grader:
+                grader_in_process = grader.clone()
+            else:
+                grader_in_process = ChatAgent("You are a helpful assistant.")
 
-            # Send to LLM for evaluation
-            # Convert to OpenAIMessage format
-            from camel.messages import OpenAIMessage
-
-            messages: list[OpenAIMessage] = [
-                {"role": "user", "content": prompt}
-            ]
             try:
-                # Get the LLM's assessment
-                response = model.run(messages)
+                response = grader_in_process.step(
+                    prompt, response_format=GradingResponse
+                )
 
-                # None streaming only.
-                if hasattr(response, 'choices') and len(response.choices) > 0:
-                    content = response.choices[0].message.content
-                    # Extract the yes/no correctness judgment using regex
-                    match = (
-                        re.search(r"correct: (yes|no)", str(content))
-                        if content
-                        else None
-                    )
-                grade_result = match.group(1) if match else "no"
+                content = json.loads(response.msg.content)
+
+                grade_result = content['correct']
 
                 # Convert to binary metrics (1 for correct, 0 for incorrect)
                 is_correct = int(grade_result == "yes")
@@ -538,7 +568,7 @@ class BrowseCompBenchmark(BaseBenchmark):
 
                 # Extract the answer from the response
                 extracted_match = re.search(
-                    r"Exact Answer:.*", result['response']
+                    r"Exact Answer:.*", raw_result['response']
                 )
 
                 # Set the score (1 for correct, 0 for incorrect)
@@ -547,13 +577,13 @@ class BrowseCompBenchmark(BaseBenchmark):
                 # Generate HTML representation of the result
                 html = self.jinja_env.from_string(HTML_JINJA).render(
                     prompt_messages=dict(
-                        content=result['problem'], role="user"
+                        content=raw_result['problem'], role="user"
                     ),
                     next_message=dict(
-                        content=result['response'], role="assistant"
+                        content=raw_result['response'], role="assistant"
                     ),
                     score=score,
-                    correct_answer=result['answer'],
+                    correct_answer=raw_result['answer'],
                     extracted_answer=extracted_match.group(0).replace(
                         'Exact Answer:', ''
                     )
@@ -563,8 +593,8 @@ class BrowseCompBenchmark(BaseBenchmark):
 
                 # Create a conversation list for the result
                 convo = [
-                    dict(content=result['problem'], role="user"),
-                    dict(content=result['response'], role="assistant"),
+                    dict(content=raw_result['problem'], role="user"),
+                    dict(content=raw_result['response'], role="assistant"),
                 ]
 
                 # Return the evaluation result

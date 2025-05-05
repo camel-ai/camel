@@ -41,8 +41,9 @@ def process_each_row(row):
     # Model configuration for the LLM
     # define the agent you would like to run benchmark on.
     model_config = {
-        "model_platform": ModelPlatformType.OPENAI,
-        "model_type": ModelType.O1_MINI,
+        "model_platform": ModelPlatformType.GEMINI,
+        "model_type": 'gemini-2.5-pro',
+        "url": "https://litellm-cloudrun-668429440317.us-central1.run.app"
     }
 
     # Create model for the main process
@@ -98,12 +99,18 @@ if __name__ == '__main__':
     # Configure the model for validation
     # This model will be used to evaluate the correctness of responses
     model_config = {
-        "model_platform": ModelPlatformType.OPENAI,
-        "model_type": ModelType.O1_MINI,
+        "model_platform": ModelPlatformType.GEMINI,
+        "model_type": 'gemini-2.5-pro',
+        "url": "https://litellm-cloudrun-668429440317.us-central1.run.app"
     }
+
+    grader_agent_format = ChatAgent(
+        "You are a helpful assistant.",
+        model=ModelFactory.create(**model_config)
+    )
 
     # Validate the results using the configured model
     # This will generate a report.html file with the evaluation results
     # The output AGGRECATION METRICS are rates:
     # {'is_correct': 0.0, 'is_incorrect': 1.0} means is_incorrect=100%
-    benchmark.validate(model_config=model_config)
+    benchmark.validate(grader=grader_agent_format)
