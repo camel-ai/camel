@@ -24,6 +24,8 @@ from camel.agents.repo_agent import (
     RepositoryInfo,
 )
 from camel.messages import BaseMessage
+from camel.models import BaseModelBackend
+from camel.types import ModelType
 
 # Create mock Github module
 mock_github_module = MagicMock()
@@ -93,8 +95,31 @@ def mock_vector_retriever():
 
 @pytest.fixture(autouse=True)
 def mock_model_factory():
-    r"""Mock ModelFactory to avoid requiring API keys."""
-    with patch('camel.models.ModelFactory.create', return_value=mock_model):
+    r"""Mock ModelFactory"""
+    # Create a mock that is recognized as a BaseModelBackend instance
+    mock_backend = MagicMock(spec=BaseModelBackend)
+    # Set necessary attributes that might be accessed
+    mock_backend.model_type = ModelType.DEFAULT
+    mock_backend.token_limit = 4096
+    mock_backend.token_counter = MagicMock()
+
+    with patch('camel.models.ModelFactory.create', return_value=mock_backend):
+        yield
+
+
+@pytest.fixture(autouse=True)
+def mock_github_import():
+    r"""Mock the github module import to avoid requiring the PyGithub
+    package.
+    """
+    github_module = MagicMock()
+    github_class = MagicMock()
+    github_module.Github = github_class
+
+    with patch.dict(
+        'sys.modules',
+        {'github': github_module, 'github.MainClass': github_module},
+    ):
         yield
 
 
@@ -279,6 +304,11 @@ def test_add_repositories(mock_vector_retriever):
     r"""Test adding repositories to an existing agent."""
     # Arrange
     agent = RepoAgent(vector_retriever=mock_vector_retriever)
+    # Set required attributes to avoid MagicMock comparison issues
+    agent.num_tokens = 0
+    agent.max_context_tokens = 2000
+    # Mock check_switch_mode to avoid comparison issues
+    agent.check_switch_mode = MagicMock(return_value=False)
     agent.load_repositories = MagicMock(
         return_value=[
             RepositoryInfo(
