@@ -16,42 +16,21 @@ from pathlib import Path
 
 from camel.agents import MCPAgent
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType
+from camel.types import ModelPlatformType, ModelType
 
 
 async def main():
     config_path = Path(__file__).parent / "mcp_servers_config.json"
 
-    ollama_model = ModelFactory.create(
-        model_platform=ModelPlatformType.OLLAMA,
-        model_type="deepseek-r1:70b",
-        model_config_dict={"max_tokens": 64000, "temperature": 0.5},
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.DEFAULT,
+        model_type=ModelType.DEFAULT,
     )
-
-    # Another choice: use OpenRouter model if you do not install ollama
-    # import os
-    # openrouter_model = ModelFactory.create(
-    #     url="https://openrouter.ai/api/v1",
-    #     api_key=os.getenv("OPENROUTER_API_KEY"),
-    #     model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
-    #     model_type="nvidia/llama-3.1-nemotron-70b-instruct:free",
-    # )
-
-    # Initialize the agent using the constructor
-    # mcp_agent = MCPAgent(
-    #     config_path=str(config_path),
-    #     model=ollama_model,  # use ollama_model or openrouter_model
-    #     # model=openrouter_model,
-    #     function_calling_available=False,
-    # )
-    # await mcp_agent.connect()
-    # mcp_agent.add_mcp_tools()
 
     # Initialize the agent using the factory method (recommended)
     mcp_agent = await MCPAgent.create(
         config_path=str(config_path),
-        model=ollama_model,  # use ollama_model or openrouter_model
-        # model=openrouter_model,
+        model=model,
         function_calling_available=False,
     )
 
@@ -62,9 +41,6 @@ async def main():
     response = await mcp_agent.run(user_msg)
 
     print(response.msgs[0].content)
-    """
-    The total number of apples is **250**.
-    """
 
     # Disconnect from all MCP servers and clean up resources.
     await mcp_agent.close()
@@ -72,3 +48,9 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+"""
+==============================================================================
+The total number of apples in the 5 boxes is 250.
+==============================================================================
+"""

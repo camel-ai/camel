@@ -21,6 +21,7 @@ from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.models import BaseModelBackend
 from camel.prompts import TextPrompt
+from camel.responses import ChatAgentResponse
 from camel.toolkits import MCPToolkit
 from camel.types import RoleType
 
@@ -37,7 +38,7 @@ except (ImportError, AttributeError):
 
 logger = get_logger(__name__)
 
-SYS_PROMPT = """
+SYS_MSG_CONTENT = """
 You are a helpful assistant, and you prefer to use tools provided by the user 
 to solve problems.
 Using a tool, you will tell the user `server_idx`, `tool_name` and 
@@ -88,24 +89,24 @@ class MCPAgent(ChatAgent):
         r"""A class for the MCP agent that assists using MCP tools.
 
         Args:
+            config_path (str): Path to the MCP configuration file.
             model (Optional[BaseModelBackend]): Model backend for the agent.
                 (default: :obj:`None`)
             function_calling_available (bool): Flag indicating whether the
-            model equipped with the function calling ability.
+                model is equipped with the function calling ability.
                 (default: :obj:`False`)
-
         """
         if function_calling_available:
-            sys_prompt = """You are a helpful assistant, and you prefer to use 
-            tools provided by the user to solve problems."""
+            sys_msg_content = "You are a helpful assistant, and you prefer "
+            "to use tools provided by the user to solve problems."
         else:
-            sys_prompt = SYS_PROMPT
+            sys_msg_content = SYS_MSG_CONTENT
 
         system_message = BaseMessage(
             role_name="MCPRouter",
             role_type=RoleType.ASSISTANT,
             meta_dict=None,
-            content=sys_prompt,
+            content=sys_msg_content,
         )
 
         super().__init__(system_message, model=model)
@@ -140,8 +141,21 @@ class MCPAgent(ChatAgent):
     async def run(
         self,
         prompt: str,
-    ):
-        r"""Run the agent to interactive with the MCP tools"""
+    ) -> ChatAgentResponse:
+        r"""Run the agent to interact with the MCP tools.
+
+        Args:
+            prompt (str): The user's input prompt or query to be processed by
+                the agent.
+
+        Returns:
+            ChatAgentResponse: The agent's response after processing the
+                prompt and potentially executing MCP tool calls.
+
+        Raises:
+            RuntimeError: If the MCP server is not connected when attempting
+                to run.
+        """
 
         if not self._mcp_toolkit.is_connected():
             raise RuntimeError("The MCP server is not connected")
@@ -174,7 +188,7 @@ class MCPAgent(ChatAgent):
                     continue
                 content = content[json_end:]
 
-            if len(tool_calls) == 0:
+            if not tool_calls:
                 return response
             else:
                 tools_results = []
@@ -199,9 +213,19 @@ class MCPAgent(ChatAgent):
         model: Optional[BaseModelBackend] = None,
         function_calling_available: bool = False,
     ) -> "MCPAgent":
-        """Factory method to create and initialize an MCPAgent.
+        r"""Factory method to create and initialize an MCPAgent.
 
-        This method handles both creation and initialization of the agent.
+        Args:
+            config_path (str): Path to the MCP configuration file that contains
+                server settings and other configuration parameters.
+            model (Optional[BaseModelBackend]): Model backend for the agent.
+                If None, the default model will be used. (default: :obj:`None`)
+            function_calling_available (bool): Flag indicating whether the
+                model is equipped with function calling ability. This affects
+                the system message content. (default: :obj:`False`)
+
+        Returns:
+            MCPAgent: A fully initialized MCPAgent instance ready for use.
         """
         agent = cls(config_path, model, function_calling_available)
         await agent.connect()

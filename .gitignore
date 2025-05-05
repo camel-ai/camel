@@ -431,6 +431,3 @@ benchmark/gaia/results.jsonl
 
 # Secret files for docker
 .container/.env
-
-# workspace of develop
-workspace/
