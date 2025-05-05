@@ -41,7 +41,7 @@ except (ImportError, AttributeError):
 
 
 class RekaModel(BaseModelBackend):
-    r"""Reka API in a unified BaseModelBackend interface.
+    r"""Reka API in a unified OpenAICompatibleModel interface.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is

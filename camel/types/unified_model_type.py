@@ -64,6 +64,11 @@ class UnifiedModelType(str):
         return True
 
     @property
+    def is_aws_bedrock(self) -> bool:
+        r"""Returns whether the model is an AWS Bedrock model."""
+        return True
+
+    @property
     def is_anthropic(self) -> bool:
         r"""Returns whether the model is an Anthropic model."""
         return True
@@ -88,6 +93,10 @@ class UnifiedModelType(str):
         r"""Returns whether the model is a Upstage served model."""
         return True
 
+    def is_lmstudio(self) -> bool:
+        r"""Returns whether the model is a LMStudio served model."""
+        return True
+
     @property
     def is_ppio(self) -> bool:
         r"""Returns whether the model is a PPIO served model."""
@@ -106,6 +115,11 @@ class UnifiedModelType(str):
     @property
     def is_mistral(self) -> bool:
         r"""Returns whether the model is a Mistral model."""
+        return True
+
+    @property
+    def is_netmind(self) -> bool:
+        r"""Returns whether the model is a Netmind model."""
         return True
 
     @property
@@ -141,6 +155,16 @@ class UnifiedModelType(str):
     @property
     def is_moonshot(self) -> bool:
         r"""Returns whether this platform is Moonshot model."""
+        return True
+
+    @property
+    def is_novita(self) -> bool:
+        r"""Returns whether the model is a Novita served model."""
+        return True
+
+    @property
+    def is_watsonx(self) -> bool:
+        r"""Returns whether the model is a WatsonX served model."""
         return True
 
     @property
