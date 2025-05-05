@@ -46,6 +46,7 @@ from camel.models.sglang_model import SGLangModel
 from camel.models.siliconflow_model import SiliconFlowModel
 from camel.models.stub_model import StubModel
 from camel.models.togetherai_model import TogetherAIModel
+from camel.models.upstage_model import UpstageModel
 from camel.models.vllm_model import VLLMModel
 from camel.models.volcano_model import VolcanoModel
 from camel.models.watsonx_model import WatsonXModel
@@ -163,6 +164,8 @@ class ModelFactory:
             model_class = LMStudioModel
         elif model_platform.is_openrouter and model_type.is_openrouter:
             model_class = OpenRouterModel
+        elif model_platform.is_upstage and model_type.is_upstage:
+            model_class = UpstageModel
         elif model_platform.is_zhipuai and model_type.is_zhipuai:
             model_class = ZhipuAIModel
         elif model_platform.is_gemini and model_type.is_gemini:

@@ -47,6 +47,7 @@ from .sglang_model import SGLangModel
 from .siliconflow_model import SiliconFlowModel
 from .stub_model import StubModel
 from .togetherai_model import TogetherAIModel
+from .upstage_model import UpstageModel
 from .vllm_model import VLLMModel
 from .volcano_model import VolcanoModel
 from .watsonx_model import WatsonXModel
@@ -94,6 +95,7 @@ __all__ = [
     'BaseAudioModel',
     'SiliconFlowModel',
     'VolcanoModel',
+    'UpstageModel',
     'LMStudioModel',
     'WatsonXModel',
 ]

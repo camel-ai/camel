@@ -89,6 +89,10 @@ class UnifiedModelType(str):
         return True
 
     @property
+    def is_upstage(self) -> bool:
+        r"""Returns whether the model is a Upstage served model."""
+        return True
+
     def is_lmstudio(self) -> bool:
         r"""Returns whether the model is a LMStudio served model."""
         return True
