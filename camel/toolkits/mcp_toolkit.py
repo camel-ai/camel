@@ -11,6 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+from datetime import timedelta
+
+
 import inspect
 import json
 import os
@@ -138,7 +141,8 @@ class MCPClient(BaseToolkit):
                 )
 
             self._session = await self._exit_stack.enter_async_context(
-                ClientSession(read_stream, write_stream)
+                ClientSession(read_stream, write_stream,
+                              timedelta(seconds=self.timeout))
             )
             await self._session.initialize()
             list_tools_result = await self.list_mcp_tools()
