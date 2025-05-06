@@ -15,7 +15,7 @@ import datetime
 import sys
 import threading
 import time
-from queue import Empty, Queue
+from queue import Queue
 
 from colorama import Fore
 
@@ -29,172 +29,82 @@ interrupt_printing = threading.Event()
 human_interrupt_requested = threading.Event()
 original_terminal_settings = None
 h_pressed = False
+print_lock = threading.Lock()
 
 
-def print_text_animated(text, *args, **kwargs):
-    """Interruptible streaming output function that checks for interrupt
-    requests during printing"""
+def print_text_animated(text):
     interrupt_printing.clear()
-
-    if keyboard_listener_active:
+    try:
         for char in text:
             if interrupt_printing.is_set():
-                print(Fore.MAGENTA + "[Output interrupted]")
+                print(Fore.MAGENTA + "\n[Output interrupted]")
                 return
-
-            try:
-                while not keyboard_input_queue.empty():
-                    key = keyboard_input_queue.get_nowait()
-                    if key == 'h':
-                        interrupt_printing.set()
-                        human_interrupt_requested.set()
-                        print(
-                            Fore.MAGENTA
-                            + "[Output interrupted, entering human "
-                            + "intervention mode]"
-                        )
-                        return
-            except Empty:
-                pass
-
-            sys.stdout.write(char)
-            sys.stdout.flush()
-            time.sleep(0.01)  # Adjust printing speed
-    else:
-        print_text_animated(text, *args, **kwargs)
+            print(char, end="", flush=True)
+            time.sleep(0.01)
+    except Exception as e:
+        print(Fore.RED + f"\nError during animated printing: {e}")
+        print(text)
 
 
 def start_keyboard_listener():
-    """Start the keyboard listener thread"""
-    global keyboard_listener_active, original_terminal_settings, h_pressed
+    global keyboard_listener_active, original_terminal_settings
 
     if keyboard_listener_active:
         return True
 
     try:
-        import select
-        import termios
-        import tty
-
-        fd = sys.stdin.fileno()
-        original_terminal_settings = termios.tcgetattr(fd)
 
         def unix_listener():
-            """Unix/Mac non-blocking keyboard listener"""
-            global h_pressed
             print(
-                Fore.MAGENTA
-                + "Keyboard listener started, press 'h' to enter human "
-                + "intervention mode at any time"
+                Fore.MAGENTA + "Keyboard listener started. Type 'h' and press "
+                "Enter to enter human intervention mode."
             )
 
-            fd = sys.stdin.fileno()
-            old_settings = termios.tcgetattr(fd)
             try:
-                tty.setraw(fd)
-
                 while not should_exit.is_set():
-                    try:
+                    import select
+
+                    readable, _, _ = select.select([sys.stdin], [], [], 0.1)
+                    if readable:
+                        user_input = sys.stdin.readline().strip()
                         if (
-                            sys.stdin
-                            in select.select([sys.stdin], [], [], 0.1)[0]
+                            user_input == 'h'
+                            and not human_interrupt_requested.is_set()
                         ):
-                            char = sys.stdin.read(1)
-
-                            if (
-                                char == 'h'
-                                and not human_interrupt_requested.is_set()
-                            ):
-                                keyboard_input_queue.put(char)
-                                termios.tcsetattr(
-                                    fd, termios.TCSADRAIN, old_settings
-                                )
-                                print(
-                                    Fore.MAGENTA + "\nKeyboard 'h' detected!"
-                                )
-                                tty.setraw(fd)
-                            elif ord(char) == 3:  # Ctrl+C
-                                should_exit.set()
-                    except Exception as e:
-                        try:
-                            termios.tcsetattr(
-                                fd, termios.TCSADRAIN, old_settings
-                            )
+                            interrupt_printing.set()
+                            human_interrupt_requested.set()
                             print(
-                                Fore.RED + f"\nError in keyboard listener: {e}"
+                                Fore.MAGENTA
+                                + "\n[Human intervention triggered]\n"
                             )
-                            tty.setraw(fd)
-                        except Exception as terminal_err:
-                            print(
-                                Fore.RED
-                                + f"Terminal reset error: {terminal_err}"
-                            )
-
                     time.sleep(0.01)
-            finally:
-                try:
-                    termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-                except Exception as term_err:
-                    print(
-                        Fore.RED
-                        + f"Failed to restore terminal settings: {term_err}"
-                    )
+            except Exception as e:
+                print(Fore.RED + f"Keyboard listener error: {e}")
 
-        listener_thread = threading.Thread(target=unix_listener)
-        listener_thread.daemon = True
+        listener_thread = threading.Thread(target=unix_listener, daemon=True)
         listener_thread.start()
         keyboard_listener_active = True
         return True
 
-    except (ImportError, AttributeError) as e:
-        print(
-            Fore.MAGENTA + f"Keyboard listener functionality unavailable: {e}"
-        )
-        print(Fore.MAGENTA + "Using periodic polling instead")
+    except Exception as e:
+        print(Fore.RED + f"Keyboard listener init failed: {e}")
         return False
 
 
 def stop_keyboard_listener():
-    """Stop the keyboard listener thread"""
+    r"""Stop the keyboard listener thread"""
     global keyboard_listener_active
     should_exit.set()
     keyboard_listener_active = False
-    restore_terminal()
 
 
 def clear_keyboard_queue():
-    """Clear the keyboard input queue"""
-    global h_pressed
-
-    h_pressed = False
-
-    human_interrupt_requested.clear()
     interrupt_printing.clear()
-
-    while not keyboard_input_queue.empty():
-        try:
-            keyboard_input_queue.get_nowait()
-        except Empty:
-            break
-
-
-def restore_terminal():
-    """Restore the terminal to normal state"""
-    global original_terminal_settings
-    if original_terminal_settings is not None:
-        try:
-            import termios
-
-            fd = sys.stdin.fileno()
-            termios.tcsetattr(
-                fd, termios.TCSADRAIN, original_terminal_settings
-            )
-        except (ImportError, IOError, AttributeError):
-            pass
+    human_interrupt_requested.clear()
 
 
 def print_checkpoints(checkpoints):
-    """Print the list of available checkpoints"""
+    r"""Print the list of available checkpoints"""
     print(Fore.YELLOW + "\nAvailable checkpoints:")
     for i, checkpoint in enumerate(checkpoints):
         timestamp = datetime.datetime.fromtimestamp(
@@ -207,8 +117,7 @@ def print_checkpoints(checkpoints):
 
 
 def human_intervention_handler(role_play_session):
-    """Handle the human intervention process"""
-    restore_terminal()
+    r"""Handle the human intervention process"""
 
     print(Fore.MAGENTA + "\n--- Human Intervention Mode Activated ---")
     print(Fore.MAGENTA + "Preparing to rollback to a historical checkpoint...")
@@ -217,7 +126,6 @@ def human_intervention_handler(role_play_session):
     print_checkpoints(checkpoints)
 
     print(Fore.MAGENTA + "Enter checkpoint number to rollback to: ")
-    restore_terminal()
 
     try:
         checkpoint_idx = int(input().strip()) - 1
@@ -235,7 +143,7 @@ def human_intervention_handler(role_play_session):
                     Fore.MAGENTA
                     + "Enter your new message to replace AI user: "
                 )
-                restore_terminal()
+
                 human_message = input().strip()
 
                 human_msg = role_play_session.human_intervene(human_message)
@@ -295,9 +203,8 @@ def main(model=None, chat_turn_limit=50) -> None:
         task_prompt=task_prompt,
         with_task_specify=True,
         task_specify_agent_kwargs=dict(model=model),
-        with_human_on_the_loop=True,  # Enable human intervention feature
-        human_role_name="Human Trader",  # Set human role name
-        output_language="zh-CN",
+        with_human_on_the_loop=True,
+        human_role_name="Human Trader",
     )
 
     print(
@@ -324,73 +231,29 @@ def main(model=None, chat_turn_limit=50) -> None:
 
         while n < chat_turn_limit:
             n += 1
-
             clear_keyboard_queue()
 
             assistant_response, user_response = role_play_session.step(
                 input_msg
             )
 
-            if assistant_response.terminated:
-                print(
-                    Fore.GREEN
-                    + (
-                        "AI Assistant terminated. Reason: "
-                        f"{assistant_response.info['termination_reasons']}."
-                    )
-                )
-                break
-            if user_response.terminated:
-                print(
-                    Fore.GREEN
-                    + (
-                        "AI User terminated. "
-                        f"Reason: {user_response.info['termination_reasons']}."
-                    )
-                )
+            if assistant_response.terminated or user_response.terminated:
+                print(Fore.GREEN + "Conversation terminated.")
                 break
 
             print_text_animated(
                 Fore.BLUE + f"AI User:\n\n{user_response.msg.content}\n"
             )
-
-            if human_interrupt_requested.is_set():
-                result = human_intervention_handler(role_play_session)
-                if result is not None:
-                    input_msg = result
-                    if keyboard_mode:
-                        try:
-                            import tty
-
-                            fd = sys.stdin.fileno()
-                            tty.setraw(fd)
-                        except Exception as e:
-                            print(
-                                Fore.RED
-                                + f"Failed to restore keyboard mode: {e}"
-                            )
-                    continue
-
             print_text_animated(
-                Fore.GREEN + "AI Assistant:\n\n"
-                f"{assistant_response.msg.content}\n"
+                Fore.GREEN
+                + f"AI Assistant:\n\n{assistant_response.msg.content}\n"
             )
 
             if human_interrupt_requested.is_set():
                 result = human_intervention_handler(role_play_session)
+                human_interrupt_requested.clear()
                 if result is not None:
                     input_msg = result
-                    if keyboard_mode:
-                        try:
-                            import tty
-
-                            fd = sys.stdin.fileno()
-                            tty.setraw(fd)
-                        except Exception as e:
-                            print(
-                                Fore.RED
-                                + f"Failed to restore keyboard mode: {e}"
-                            )
                     continue
 
             if "CAMEL_TASK_DONE" in user_response.msg.content:
@@ -410,7 +273,6 @@ def main(model=None, chat_turn_limit=50) -> None:
     finally:
         if keyboard_mode:
             stop_keyboard_listener()
-        restore_terminal()
 
 
 if __name__ == "__main__":

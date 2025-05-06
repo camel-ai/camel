@@ -698,7 +698,7 @@ class RolePlaying:
 
         Args:
             assistant_msg: A `BaseMessage` representing the message from the
-                assistant.
+                assistant or human.
 
         Returns:
             Tuple[ChatAgentResponse, ChatAgentResponse]: A tuple containing two
@@ -733,8 +733,7 @@ class RolePlaying:
                         info=user_response.info,
                     ),
                 )
-        user_msg = self._reduce_message_options(user_response.msgs)
-
+            user_msg = self._reduce_message_options(user_response.msgs)
         # To prevent recording the same memory more than once (once in chat
         # step and once in role play), and the model generates only one
         # response when multi-response support is enabled.
@@ -757,7 +756,6 @@ class RolePlaying:
                 ),
             )
         assistant_msg = self._reduce_message_options(assistant_response.msgs)
-
         # To prevent recording the same memory more than once (once in chat
         # step and once in role play), and the model generates only one
         # response when multi-response support is enabled.
