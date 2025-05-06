@@ -105,6 +105,7 @@ class ModelType(UnifiedModelType, Enum):
     TOGETHER_LLAMA_4_SCOUT = "meta-llama/Llama-4-Scout-17B-16E-Instruct"
 
     # PPIO platform models support tool calling
+    PPIO_DEEPSEEK_PROVER_V2_671B = "deepseek/deepseek-prover-v2-671b"
     PPIO_DEEPSEEK_R1_TURBO = "deepseek/deepseek-r1-turbo"
     PPIO_DEEPSEEK_V3_TURBO = "deepseek/deepseek-v3-turbo"
     PPIO_DEEPSEEK_R1_COMMUNITY = "deepseek/deepseek-r1/community"
@@ -212,6 +213,10 @@ class ModelType(UnifiedModelType, Enum):
     QWEN_MAX = "qwen-max"
     QWEN_PLUS = "qwen-plus"
     QWEN_TURBO = "qwen-turbo"
+    QWEN_PLUS_LATEST = "qwen-plus-latest"
+    QWEN_PLUS_2025_04_28 = "qwen-plus-2025-04-28"
+    QWEN_TURBO_LATEST = "qwen-turbo-latest"
+    QWEN_TURBO_2025_04_28 = "qwen-turbo-2025-04-28"
     QWEN_LONG = "qwen-long"
     QWEN_VL_MAX = "qwen-vl-max"
     QWEN_VL_PLUS = "qwen-vl-plus"
@@ -351,6 +356,22 @@ class ModelType(UnifiedModelType, Enum):
     MODELSCOPE_LLAMA_3_3_70B_INSTRUCT = "LLM-Research/Llama-3.3-70B-Instruct"
     MODELSCOPE_MINISTRAL_8B_INSTRUCT = "mistralai/Ministral-8B-Instruct-2410"
     MODELSCOPE_DEEPSEEK_V3_0324 = "deepseek-ai/DeepSeek-V3-0324"
+
+    # WatsonX models
+    WATSONX_GRANITE_3_8B_INSTRUCT = "ibm/granite-3-8b-instruct"
+    WATSONX_LLAMA_3_3_70B_INSTRUCT = "meta-llama/llama-3-3-70b-instruct"
+    WATSONX_LLAMA_3_2_1B_INSTRUCT = "meta-llama/llama-3-2-1b-instruct"
+    WATSONX_LLAMA_3_2_3B_INSTRUCT = "meta-llama/llama-3-2-3b-instruct"
+    WATSONX_LLAMA_3_2_11B_VISION_INSTRUCT = (
+        "meta-llama/llama-3-2-11b-vision-instruct"
+    )
+    WATSONX_LLAMA_3_2_90B_VISION_INSTRUCT = (
+        "meta-llama/llama-3-2-90b-vision-instruct"
+    )
+    WATSONX_LLAMA_GUARD_3_11B_VISION_INSTRUCT = (
+        "meta-llama/llama-guard-3-11b-vision-instruct"
+    )
+    WATSONX_MISTRAL_LARGE = "mistralai/mistral-large"
 
     def __str__(self):
         return self.value
@@ -669,6 +690,10 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_QWQ_32B,
             ModelType.QWEN_QVQ_72B,
             ModelType.QWEN_QWQ_PLUS,
+            ModelType.QWEN_PLUS_LATEST,
+            ModelType.QWEN_PLUS_2025_04_28,
+            ModelType.QWEN_TURBO_LATEST,
+            ModelType.QWEN_TURBO_2025_04_28,
         }
 
     @property
@@ -692,6 +717,7 @@ class ModelType(UnifiedModelType, Enum):
     @property
     def is_ppio(self) -> bool:
         return self in {
+            ModelType.PPIO_DEEPSEEK_PROVER_V2_671B,
             ModelType.PPIO_DEEPSEEK_R1_TURBO,
             ModelType.PPIO_DEEPSEEK_V3_TURBO,
             ModelType.PPIO_DEEPSEEK_R1_COMMUNITY,
@@ -773,6 +799,19 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.SILICONFLOW_PRO_QWEN2_5_7B_INSTRUCT,
             ModelType.SILICONFLOW_THUDM_GLM_4_9B_CHAT,
             ModelType.SILICONFLOW_PRO_THUDM_GLM_4_9B_CHAT,
+        }
+
+    @property
+    def is_watsonx(self) -> bool:
+        return self in {
+            ModelType.WATSONX_GRANITE_3_8B_INSTRUCT,
+            ModelType.WATSONX_LLAMA_3_3_70B_INSTRUCT,
+            ModelType.WATSONX_LLAMA_3_2_1B_INSTRUCT,
+            ModelType.WATSONX_LLAMA_3_2_3B_INSTRUCT,
+            ModelType.WATSONX_LLAMA_3_2_11B_VISION_INSTRUCT,
+            ModelType.WATSONX_LLAMA_3_2_90B_VISION_INSTRUCT,
+            ModelType.WATSONX_LLAMA_GUARD_3_11B_VISION_INSTRUCT,
+            ModelType.WATSONX_MISTRAL_LARGE,
         }
 
     @property
@@ -874,6 +913,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.LMSTUDIO_GEMMA_3_4B,
             ModelType.LMSTUDIO_GEMMA_3_12B,
             ModelType.LMSTUDIO_GEMMA_3_27B,
+            ModelType.WATSONX_GRANITE_3_8B_INSTRUCT,
             ModelType.NOVITA_L3_8B_STHENO_V3_2,
             ModelType.NOVITA_LLAMA_3_8B,
             ModelType.NOVITA_GEMMA_2_9B_IT,
@@ -890,6 +930,7 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 14_336
         elif self in {
+            ModelType.PPIO_DEEPSEEK_PROVER_V2_671B,
             ModelType.NOVITA_DOLPHIN_MIXTRAL_8X22B,
         }:
             return 16_000
@@ -967,6 +1008,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MODELSCOPE_MINISTRAL_8B_INSTRUCT,
             ModelType.MODELSCOPE_DEEPSEEK_V3_0324,
             ModelType.OPENROUTER_LLAMA_3_1_405B,
+            ModelType.WATSONX_MISTRAL_LARGE,
             ModelType.NOVITA_QWEN_32B,
             ModelType.NOVITA_LLAMA_3_1_70B,
             ModelType.NOVITA_MISTRAL_7B,
@@ -1063,6 +1105,10 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_PLUS,
             ModelType.QWEN_TURBO,
             ModelType.QWEN_CODER_TURBO,
+            ModelType.QWEN_PLUS_LATEST,
+            ModelType.QWEN_PLUS_2025_04_28,
+            ModelType.QWEN_TURBO_LATEST,
+            ModelType.QWEN_TURBO_2025_04_28,
             ModelType.TOGETHER_LLAMA_3_1_8B,
             ModelType.TOGETHER_LLAMA_3_1_70B,
             ModelType.TOGETHER_LLAMA_3_1_405B,
@@ -1073,6 +1119,12 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.OPENROUTER_LLAMA_3_1_70B,
             ModelType.PPIO_LLAMA_3_3_70B,
             ModelType.OPENROUTER_LLAMA_4_SCOUT,
+            ModelType.WATSONX_LLAMA_3_3_70B_INSTRUCT,
+            ModelType.WATSONX_LLAMA_3_2_1B_INSTRUCT,
+            ModelType.WATSONX_LLAMA_3_2_3B_INSTRUCT,
+            ModelType.WATSONX_LLAMA_3_2_11B_VISION_INSTRUCT,
+            ModelType.WATSONX_LLAMA_3_2_90B_VISION_INSTRUCT,
+            ModelType.WATSONX_LLAMA_GUARD_3_11B_VISION_INSTRUCT,
             ModelType.NOVITA_LLAMA_4_SCOUT_17B,
             ModelType.NOVITA_LLAMA_3_3_70B,
             ModelType.NOVITA_MISTRAL_NEMO,
@@ -1150,6 +1202,8 @@ class EmbeddingModelType(Enum):
 
     MISTRAL_EMBED = "mistral-embed"
 
+    GEMINI_EMBEDDING_EXP = "gemini-embedding-exp-03-07"
+
     @property
     def is_openai(self) -> bool:
         r"""Returns whether this type of models is an OpenAI-released model."""
@@ -1179,6 +1233,13 @@ class EmbeddingModelType(Enum):
         }
 
     @property
+    def is_gemini(self) -> bool:
+        r"""Returns whether this type of models is an Gemini-released model."""
+        return self in {
+            EmbeddingModelType.GEMINI_EMBEDDING_EXP,
+        }
+
+    @property
     def output_dim(self) -> int:
         if self in {
             EmbeddingModelType.JINA_COLBERT_V2,
@@ -1201,8 +1262,27 @@ class EmbeddingModelType(Enum):
             return 3072
         elif self is EmbeddingModelType.MISTRAL_EMBED:
             return 1024
+        elif self is EmbeddingModelType.GEMINI_EMBEDDING_EXP:
+            return 3072
         else:
             raise ValueError(f"Unknown model type {self}.")
+
+
+class GeminiEmbeddingTaskType(str, Enum):
+    r"""Task types for Gemini embedding models.
+
+    For more information, please refer to:
+    https://ai.google.dev/gemini-api/docs/embeddings#task-types
+    """
+
+    SEMANTIC_SIMILARITY = "SEMANTIC_SIMILARITY"
+    CLASSIFICATION = "CLASSIFICATION"
+    CLUSTERING = "CLUSTERING"
+    RETRIEVAL_DOCUMENT = "RETRIEVAL_DOCUMENT"
+    RETRIEVAL_QUERY = "RETRIEVAL_QUERY"
+    QUESTION_ANSWERING = "QUESTION_ANSWERING"
+    FACT_VERIFICATION = "FACT_VERIFICATION"
+    CODE_RETRIEVAL_QUERY = "CODE_RETRIEVAL_QUERY"
 
 
 class TaskType(Enum):
@@ -1326,6 +1406,7 @@ class ModelPlatformType(Enum):
     VOLCANO = "volcano"
     NETMIND = "netmind"
     NOVITA = "novita"
+    WATSONX = "watsonx"
 
     @classmethod
     def from_name(cls, name):

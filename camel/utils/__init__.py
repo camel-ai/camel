@@ -17,6 +17,7 @@ from .commons import (
     BatchProcessor,
     agentops_decorator,
     api_keys_required,
+    browser_toolkit_save_auth_cookie,
     check_server_running,
     create_chunks,
     dependencies_required,
@@ -41,6 +42,7 @@ from .commons import (
 )
 from .constants import Constants
 from .deduplication import DeduplicationResult, deduplicate_internally
+from .filename import sanitize_filename
 from .mcp import MCPServer
 from .response_format import get_pydantic_model
 from .token_counting import (
@@ -90,4 +92,6 @@ __all__ = [
     "BatchProcessor",
     "with_timeout",
     "MCPServer",
+    "sanitize_filename",
+    "browser_toolkit_save_auth_cookie",
 ]

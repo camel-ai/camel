@@ -44,6 +44,22 @@ wheels = [
 ]
 
 [[package]]
+name = "aci-sdk"
+version = "1.0.0b1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "griffe" },
+    { name = "httpx" },
+    { name = "pydantic" },
+    { name = "tenacity" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/71/9d/0d956545331ac6760af30a7bc6492083a84b32f16faa89f28ee269a83dac/aci_sdk-1.0.0b1.tar.gz", hash = "sha256:9130bf196c680deda2004d71b091883bc468ea1649d71dbf676b9172c067d4ef", size = 63449 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e2/57/2f1cfb3ee6a84e355a09dd94a4c3c5d1dbe9dbb925950c6903cb8ef2a216/aci_sdk-1.0.0b1-py3-none-any.whl", hash = "sha256:f3d9f3de58c518ecf4fc44ebedf1e4a1e23a30df268782989d1ce8852bd47175", size = 31713 },
+]
+
+[[package]]
 name = "agentops"
 version = "0.3.26"
 source = { registry = "https://pypi.org/simple" }
@@ -539,7 +555,7 @@ wheels = [
 
 [[package]]
 name = "camel-ai"
-version = "0.2.50"
+version = "0.2.53"
 source = { editable = "." }
 dependencies = [
     { name = "colorama" },
@@ -556,6 +572,7 @@ dependencies = [
 [package.optional-dependencies]
 all = [
     { name = "accelerate" },
+    { name = "aci-sdk" },
     { name = "agentops" },
     { name = "aiosqlite" },
     { name = "anthropic" },
@@ -571,6 +588,7 @@ all = [
     { name = "datacommons" },
     { name = "datacommons-pandas" },
     { name = "datasets" },
+    { name = "daytona-sdk" },
     { name = "diffusers" },
     { name = "discord-py" },
     { name = "docker" },
@@ -588,9 +606,11 @@ all = [
     { name = "google-auth-httplib2" },
     { name = "google-auth-oauthlib" },
     { name = "google-cloud-storage" },
+    { name = "google-genai" },
     { name = "googlemaps" },
     { name = "gradio" },
     { name = "html2text" },
+    { name = "ibm-watsonx-ai" },
     { name = "imageio", extra = ["pyav"] },
     { name = "ipykernel" },
     { name = "jupyter-client" },
@@ -707,7 +727,9 @@ dev = [
     { name = "uv" },
 ]
 dev-tools = [
+    { name = "aci-sdk" },
     { name = "agentops" },
+    { name = "daytona-sdk" },
     { name = "docker" },
     { name = "e2b-code-interpreter" },
     { name = "ipykernel" },
@@ -763,11 +785,13 @@ model-platforms = [
     { name = "anthropic" },
     { name = "cohere" },
     { name = "fish-audio-sdk" },
+    { name = "ibm-watsonx-ai" },
     { name = "litellm" },
     { name = "mistralai" },
     { name = "reka-api" },
 ]
 owl = [
+    { name = "aci-sdk" },
     { name = "anthropic" },
     { name = "beautifulsoup4" },
     { name = "chunkr-ai" },
@@ -794,6 +818,7 @@ owl = [
     { name = "pillow" },
     { name = "playwright" },
     { name = "prance" },
+    { name = "pyautogui" },
     { name = "pydub" },
     { name = "pymupdf" },
     { name = "python-dotenv" },
@@ -816,6 +841,7 @@ owl = [
 rag = [
     { name = "cohere" },
     { name = "crawl4ai" },
+    { name = "google-genai" },
     { name = "nebula3-python" },
     { name = "neo4j" },
     { name = "numpy" },
@@ -880,6 +906,9 @@ web-tools = [
 requires-dist = [
     { name = "accelerate", marker = "extra == 'all'", specifier = ">=0.26.0,<0.27" },
     { name = "accelerate", marker = "extra == 'huggingface'", specifier = ">=0.26.0,<0.27" },
+    { name = "aci-sdk", marker = "extra == 'all'", specifier = ">=1.0.0b1" },
+    { name = "aci-sdk", marker = "extra == 'dev-tools'", specifier = ">=1.0.0b1" },
+    { name = "aci-sdk", marker = "extra == 'owl'", specifier = ">=1.0.0b1" },
     { name = "agentops", marker = "extra == 'all'", specifier = ">=0.3.21,<0.4" },
     { name = "agentops", marker = "extra == 'dev-tools'", specifier = ">=0.3.21,<0.4" },
     { name = "aiosqlite", marker = "extra == 'all'", specifier = ">=0.20.0,<0.21" },
@@ -919,6 +948,8 @@ requires-dist = [
     { name = "datasets", marker = "extra == 'all'", specifier = ">=3,<4" },
     { name = "datasets", marker = "extra == 'huggingface'", specifier = ">=3,<4" },
     { name = "datasets", marker = "extra == 'owl'", specifier = ">=3,<4" },
+    { name = "daytona-sdk", marker = "extra == 'all'", specifier = "==0.14.0" },
+    { name = "daytona-sdk", marker = "extra == 'dev-tools'", specifier = "==0.14.0" },
     { name = "diffusers", marker = "extra == 'all'", specifier = ">=0.25.0,<0.26" },
     { name = "diffusers", marker = "extra == 'huggingface'", specifier = ">=0.25.0,<0.26" },
     { name = "discord-py", marker = "extra == 'all'", specifier = ">=2.3.2,<3" },
@@ -961,6 +992,8 @@ requires-dist = [
     { name = "google-auth-oauthlib", marker = "extra == 'web-tools'", specifier = "==1.2.1" },
     { name = "google-cloud-storage", marker = "extra == 'all'", specifier = ">=2.18.0,<3" },
     { name = "google-cloud-storage", marker = "extra == 'storage'", specifier = ">=2.18.0,<3" },
+    { name = "google-genai", marker = "extra == 'all'", specifier = ">=1.13.0" },
+    { name = "google-genai", marker = "extra == 'rag'", specifier = ">=1.13.0" },
     { name = "googlemaps", marker = "extra == 'all'", specifier = ">=4.10.0,<5" },
     { name = "googlemaps", marker = "extra == 'web-tools'", specifier = ">=4.10.0,<5" },
     { name = "gradio", marker = "extra == 'all'", specifier = ">=3,<4" },
@@ -969,6 +1002,8 @@ requires-dist = [
     { name = "html2text", marker = "extra == 'owl'", specifier = ">=2024.2.26" },
     { name = "html2text", marker = "extra == 'web-tools'", specifier = ">=2024.2.26" },
     { name = "httpx", specifier = ">=0.28.0,<1.0.0.dev0" },
+    { name = "ibm-watsonx-ai", marker = "extra == 'all'", specifier = ">=1.3.11" },
+    { name = "ibm-watsonx-ai", marker = "extra == 'model-platforms'", specifier = ">=1.3.11" },
     { name = "imageio", extras = ["pyav"], marker = "extra == 'all'", specifier = ">=2.34.2,<3" },
     { name = "imageio", extras = ["pyav"], marker = "extra == 'media-tools'", specifier = ">=2.34.2,<3" },
     { name = "imageio", extras = ["pyav"], marker = "extra == 'owl'", specifier = ">=2.34.2,<3" },
@@ -1051,6 +1086,7 @@ requires-dist = [
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3,<4" },
     { name = "psutil", specifier = ">=5.9.8,<6" },
     { name = "pyautogui", marker = "extra == 'all'", specifier = ">=0.9.54,<0.10" },
+    { name = "pyautogui", marker = "extra == 'owl'", specifier = ">=0.9.54,<0.10" },
     { name = "pydantic", specifier = ">=2.10.6" },
     { name = "pydub", marker = "extra == 'all'", specifier = ">=0.25.1,<0.26" },
     { name = "pydub", marker = "extra == 'media-tools'", specifier = ">=0.25.1,<0.26" },
@@ -1660,6 +1696,40 @@ wheels = [
 ]
 
 [[package]]
+name = "daytona-api-client"
+version = "0.16.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pydantic" },
+    { name = "python-dateutil" },
+    { name = "typing-extensions" },
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/97/67/0532ab97f5cbf802d19bbcbcf0e7307d787d1af9b14967c6ed32f960f6eb/daytona_api_client-0.16.0.tar.gz", hash = "sha256:0a4ad32934144402b5a47bd5c3a3b1450674e85584623386a3d6c2560ea146b2", size = 63662 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0d/ee/2107f820f3087693dc07eca3cd611b8ab40860def70e54b0ec4e76504bb6/daytona_api_client-0.16.0-py3-none-any.whl", hash = "sha256:31d31409102aa009517d2a0e1ba85f47aadf41b84b7b3732c15cf1ad4c30f19b", size = 165352 },
+]
+
+[[package]]
+name = "daytona-sdk"
+version = "0.14.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "daytona-api-client" },
+    { name = "deprecated" },
+    { name = "environs" },
+    { name = "httpx" },
+    { name = "marshmallow" },
+    { name = "pydantic" },
+    { name = "python-dateutil" },
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/66/2c/1b48a7343168802dc9ae60d4bf5cda75c4755ca7fab39a444df2bcbaf3be/daytona_sdk-0.14.0.tar.gz", hash = "sha256:1df3eaa664dc793a33690a2361cf5262713ca5ff1f1c5730eb00b4940f11b6e8", size = 41874 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/47/ae/8ff649b3aa26ee2dbbf2f1243f7f17ca0b39e2c899d3d946a416313e3ee9/daytona_sdk-0.14.0-py3-none-any.whl", hash = "sha256:a6e5c8d56b8d2342a1a630de93b7346ce2a6bc81cb21a928988964a7b3ce7b0d", size = 46536 },
+]
+
+[[package]]
 name = "debugpy"
 version = "1.8.14"
 source = { registry = "https://pypi.org/simple" }
@@ -1909,6 +1979,19 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/cb/7d/01cddcbb6f5cc0ba72e00ddf9b1fa206c802d557fd0a20b18e130edf1336/emoji-2.14.1.tar.gz", hash = "sha256:f8c50043d79a2c1410ebfae833ae1868d5941a67a6cd4d18377e2eb0bd79346b", size = 597182 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/91/db/a0335710caaa6d0aebdaa65ad4df789c15d89b7babd9a30277838a7d9aac/emoji-2.14.1-py3-none-any.whl", hash = "sha256:35a8a486c1460addb1499e3bf7929d3889b2e2841a57401903699fef595e942b", size = 590617 },
+]
+
+[[package]]
+name = "environs"
+version = "9.5.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "marshmallow" },
+    { name = "python-dotenv" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d4/e3/c3c6c76f3dbe3e019e9a451b35bf9f44690026a5bb1232f7b77097b72ff5/environs-9.5.0.tar.gz", hash = "sha256:a76307b36fbe856bdca7ee9161e6c466fd7fcffc297109a118c59b54e27e30c9", size = 20795 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ca/5e/f0f217dc393372681bfe05c50f06a212e78d0a3fee907a74ab451ec1dcdb/environs-9.5.0-py2.py3-none-any.whl", hash = "sha256:1e549569a3de49c05f856f40bce86979e7d5ffbbc4398e7f338574c220189124", size = 12548 },
 ]
 
 [[package]]
@@ -2416,6 +2499,24 @@ wheels = [
 ]
 
 [[package]]
+name = "google-genai"
+version = "1.13.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "google-auth" },
+    { name = "httpx" },
+    { name = "pydantic" },
+    { name = "requests" },
+    { name = "typing-extensions" },
+    { name = "websockets" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5e/1f/0861dad47febbb391123a529f3655582e2a7ce14aadb6ddc527dd7dea470/google_genai-1.13.0.tar.gz", hash = "sha256:de7b4960d361c7ea85b715ce0e07fe34903d94affa82d566d9eb04e8f92512b9", size = 165727 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c5/2c/1833fa15311fa4f0790e9c8ea3488382fe428c3eca62b329d6aa355871ae/google_genai-1.13.0-py3-none-any.whl", hash = "sha256:e88417c95f333827ed051282803db627192fd8e5fdf5b49b6f26644a67775d1a", size = 164405 },
+]
+
+[[package]]
 name = "google-resumable-media"
 version = "2.7.2"
 source = { registry = "https://pypi.org/simple" }
@@ -2516,6 +2617,18 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/4a/11/0bad66138622d0c1463b0b87935cefd397f9f04fac325a838525a3aa4da7/greenlet-3.2.0-cp312-cp312-musllinux_1_1_aarch64.whl", hash = "sha256:430cba962c85e339767235a93450a6aaffed6f9c567e73874ea2075f5aae51e1", size = 1119582 },
     { url = "https://files.pythonhosted.org/packages/17/26/0f8a4d222b9014af88bb8b5d921305308dd44de667c01714817dc9fb91fb/greenlet-3.2.0-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:5e57ff52315bfc0c5493917f328b8ba3ae0c0515d94524453c4d24e7638cbb53", size = 1147452 },
     { url = "https://files.pythonhosted.org/packages/8a/d4/70d262492338c4939f97dca310c45b002a3af84b265720f0e9b135bc85b2/greenlet-3.2.0-cp312-cp312-win_amd64.whl", hash = "sha256:211a9721f540e454a02e62db7956263e9a28a6cf776d4b9a7213844e36426333", size = 296217 },
+]
+
+[[package]]
+name = "griffe"
+version = "1.7.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "colorama" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a9/3e/5aa9a61f7c3c47b0b52a1d930302992229d191bf4bc76447b324b731510a/griffe-1.7.3.tar.gz", hash = "sha256:52ee893c6a3a968b639ace8015bec9d36594961e156e23315c8e8e51401fa50b", size = 395137 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/58/c6/5c20af38c2a57c15d87f7f38bee77d63c1d2a3689f74fefaf35915dd12b2/griffe-1.7.3-py3-none-any.whl", hash = "sha256:c6b3ee30c2f0f17f30bcdef5068d6ab7a2a4f1b8bf1a3e74b56fffd21e1c5f75", size = 129303 },
 ]
 
 [[package]]
@@ -2740,6 +2853,58 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/02/e7/94f8232d4a74cc99514c13a9f995811485a6903d48e5d952771ef6322e30/hyperframe-6.1.0.tar.gz", hash = "sha256:f630908a00854a7adeabd6382b43923a4c4cd4b821fcb527e6ab9e15382a3b08", size = 26566 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/48/30/47d0bf6072f7252e6521f3447ccfa40b421b6824517f82854703d0f5a98b/hyperframe-6.1.0-py3-none-any.whl", hash = "sha256:b03380493a519fce58ea5af42e4a42317bf9bd425596f7a0835ffce80f1a42e5", size = 13007 },
+]
+
+[[package]]
+name = "ibm-cos-sdk"
+version = "2.13.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "ibm-cos-sdk-core" },
+    { name = "ibm-cos-sdk-s3transfer" },
+    { name = "jmespath" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e4/e6/908791df6fd31d94e80be9597242eac2b942c28b0d4ea1fc6b963d4a6be3/ibm-cos-sdk-2.13.5.tar.gz", hash = "sha256:1aff7f9863ac9072a3db2f0053bec99478b26f3fb5fa797ce96a15bbb13cd40e", size = 58638 }
+
+[[package]]
+name = "ibm-cos-sdk-core"
+version = "2.13.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "jmespath" },
+    { name = "python-dateutil" },
+    { name = "requests" },
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c7/ff/cabdf3d7892c3607297ffb7d77c3caafe2f50f876d29e90c44ac67495cef/ibm-cos-sdk-core-2.13.5.tar.gz", hash = "sha256:d3a99d8b06b3f8c00b1a9501f85538d592463e63ddf8cec32672ab5a0b107b83", size = 1101815 }
+
+[[package]]
+name = "ibm-cos-sdk-s3transfer"
+version = "2.13.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "ibm-cos-sdk-core" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/6d/42/f2faefd0c3360928336b93a14db2aff25f556aa50252188efd1ba363e371/ibm-cos-sdk-s3transfer-2.13.5.tar.gz", hash = "sha256:9649b1f2201c6de96ff5a6b5a3686de3a809e6ef3b8b12c7c4f2f7ce72da7749", size = 139491 }
+
+[[package]]
+name = "ibm-watsonx-ai"
+version = "1.3.11"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "certifi" },
+    { name = "httpx" },
+    { name = "ibm-cos-sdk" },
+    { name = "lomond" },
+    { name = "packaging" },
+    { name = "pandas" },
+    { name = "requests" },
+    { name = "tabulate" },
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/10/fd/f7ff11c084ff2af39214dd79531c63b4c798b98266e58126d999ff1fdeb9/ibm_watsonx_ai-1.3.11.tar.gz", hash = "sha256:36d4bf38af6795e3113d9e58d0d47d08fe8bc55347bfe9546820a4a09064981c", size = 714156 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/40/af/28627792e9694403b0abb1823e2f17214c3cecd63d642535a1a5d9bef028/ibm_watsonx_ai-1.3.11-py3-none-any.whl", hash = "sha256:7d6571069d241856b6fa7854a786b5f13d5e769c3bc82681594b4ee3bc1c6577", size = 1115138 },
 ]
 
 [[package]]
@@ -3258,6 +3423,18 @@ wheels = [
 ]
 
 [[package]]
+name = "lomond"
+version = "0.3.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "six" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c0/9e/ef7813c910d4a893f2bc763ce9246269f55cc68db21dc1327e376d6a2d02/lomond-0.3.3.tar.gz", hash = "sha256:427936596b144b4ec387ead99aac1560b77c8a78107d3d49415d3abbe79acbd3", size = 28789 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0f/b1/02eebed49c754b01b17de7705caa8c4ceecfb4f926cdafc220c863584360/lomond-0.3.3-py2.py3-none-any.whl", hash = "sha256:df1dd4dd7b802a12b71907ab1abb08b8ce9950195311207579379eb3b1553de7", size = 35512 },
+]
+
+[[package]]
 name = "lxml"
 version = "5.3.2"
 source = { registry = "https://pypi.org/simple" }
@@ -3486,6 +3663,12 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/95/d2/f587cb965a56e992634bebc8611c5b579af912b74e04eb9164bd49527d21/mcp-1.6.0.tar.gz", hash = "sha256:d9324876de2c5637369f43161cd71eebfd803df5a95e46225cab8d280e366723", size = 200031 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/10/30/20a7f33b0b884a9d14dd3aa94ff1ac9da1479fe2ad66dd9e2736075d2506/mcp-1.6.0-py3-none-any.whl", hash = "sha256:7bd24c6ea042dbec44c754f100984d186620d8b841ec30f1b19eda9b93a634d0", size = 76077 },
+]
+
+[package.optional-dependencies]
+cli = [
+    { name = "python-dotenv" },
+    { name = "typer" },
 ]
 
 [[package]]
@@ -5202,11 +5385,11 @@ wheels = [
 
 [[package]]
 name = "pyjwt"
-version = "2.10.1"
+version = "2.9.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/e7/46/bd74733ff231675599650d3e47f361794b22ef3e3770998dda30d3b63726/pyjwt-2.10.1.tar.gz", hash = "sha256:3cc5772eb20009233caf06e9d8a0577824723b44e6648ee0a2aedb6cf9381953", size = 87785 }
+sdist = { url = "https://files.pythonhosted.org/packages/fb/68/ce067f09fca4abeca8771fe667d89cc347d1e99da3e093112ac329c6020e/pyjwt-2.9.0.tar.gz", hash = "sha256:7e1e5b56cc735432a7369cbfa0efe50fa113ebecdc04ae6922deba8b84582d0c", size = 78825 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/61/ad/689f02752eeec26aed679477e80e632ef1b682313be70793d798c1d5fc8f/PyJWT-2.10.1-py3-none-any.whl", hash = "sha256:dcdd193e30abefd5debf142f9adfcdd2b58004e644f25406ffaebd50bd98dacb", size = 22997 },
+    { url = "https://files.pythonhosted.org/packages/79/84/0fdf9b18ba31d69877bd39c9cd6052b47f3761e9910c15de788e519f079f/PyJWT-2.9.0-py3-none-any.whl", hash = "sha256:3b02fb0f44517787776cf48f2ae25d8e14f300e6d7545a4315cee571a415e850", size = 22344 },
 ]
 
 [package.optional-dependencies]
@@ -6811,6 +6994,15 @@ wheels = [
 ]
 
 [[package]]
+name = "tenacity"
+version = "9.1.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/0a/d4/2b0cd0fe285e14b36db076e78c93766ff1d529d70408bd1d2a5a84f1d929/tenacity-9.1.2.tar.gz", hash = "sha256:1169d376c297e7de388d18b4481760d478b0e99a777cad3a9c86e556f4b697cb", size = 48036 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e5/30/643397144bfbfec6f6ef821f36f33e57d35946c44a2352d3c9f0ae847619/tenacity-9.1.2-py3-none-any.whl", hash = "sha256:f77bf36710d8b73a50b2dd155c97b870017ad21afe6ab300326b0371b3b05138", size = 28248 },
+]
+
+[[package]]
 name = "termcolor"
 version = "2.4.0"
 source = { registry = "https://pypi.org/simple" }
@@ -7433,11 +7625,11 @@ wheels = [
 
 [[package]]
 name = "urllib3"
-version = "2.4.0"
+version = "2.1.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/8a/78/16493d9c386d8e60e442a35feac5e00f0913c0f4b7c217c11e8ec2ff53e0/urllib3-2.4.0.tar.gz", hash = "sha256:414bc6535b787febd7567804cc015fee39daab8ad86268f1310a9250697de466", size = 390672 }
+sdist = { url = "https://files.pythonhosted.org/packages/36/dd/a6b232f449e1bc71802a5b7950dc3675d32c6dbc2a1bd6d71f065551adb6/urllib3-2.1.0.tar.gz", hash = "sha256:df7aa8afb0148fa78488e7899b2c59b5f4ffcfa82e6c54ccb9dd37c1d7b52d54", size = 263900 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6b/11/cc635220681e93a0183390e26485430ca2c7b5f9d33b15c74c2861cb8091/urllib3-2.4.0-py3-none-any.whl", hash = "sha256:4e16665048960a0900c702d4a66415956a584919c03361cac9f1df5c5dd7e813", size = 128680 },
+    { url = "https://files.pythonhosted.org/packages/96/94/c31f58c7a7f470d5665935262ebd7455c7e4c7782eb525658d3dbf4b9403/urllib3-2.1.0-py3-none-any.whl", hash = "sha256:55901e917a5896a349ff771be919f8bd99aff50b79fe58fec595eb37bbc56bb3", size = 104579 },
 ]
 
 [package.optional-dependencies]
