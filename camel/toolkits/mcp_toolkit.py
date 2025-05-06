@@ -399,11 +399,12 @@ class MCPToolkit(BaseToolkit):
 
     Args:
         servers (Optional[List[MCPClient]]): List of MCPClient
-            instances to manage.
+            instances to manage. (default: :obj:`None`)
         config_path (Optional[str]): Path to a JSON configuration file
-            defining MCP servers.
+            defining MCP servers. (default: :obj:`None`)
         config_dict (Optional[Dict[str, Any]]): Dictionary containing MCP
             server configurations in the same format as the config file.
+            (default: :obj:`None`)
         strict (Optional[bool]): Whether to enforce strict mode for the
             function call. (default: :obj:`False`)
 
@@ -494,16 +495,18 @@ class MCPToolkit(BaseToolkit):
             logger.warning(f"Config file not found: '{config_path}'")
             raise e
 
-        return self._load_servers_from_dict(data)
+        return self._load_servers_from_dict(config=data, strict=strict)
 
     def _load_servers_from_dict(
-        self, config: Dict[str, Any]
+        self, config: Dict[str, Any], strict: Optional[bool] = False
     ) -> List[MCPClient]:
         r"""Loads MCP server configurations from a dictionary.
 
         Args:
             config (Dict[str, Any]): Dictionary containing server
                 configurations.
+            strict (bool): Whether to enforce strict mode for the
+                function call. (default: :obj:`False`)
 
         Returns:
             List[MCPClient]: List of configured MCPClient instances.
