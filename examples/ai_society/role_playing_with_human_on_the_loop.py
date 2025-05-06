@@ -250,11 +250,8 @@ def main(model=None, chat_turn_limit=50) -> None:
             )
 
             if human_interrupt_requested.is_set():
-                result = human_intervention_handler(role_play_session)
+                human_intervention_handler(role_play_session)
                 human_interrupt_requested.clear()
-                if result is not None:
-                    input_msg = result
-                    continue
 
             if "CAMEL_TASK_DONE" in user_response.msg.content:
                 break
