@@ -16,7 +16,7 @@ import os
 from json import JSONDecodeError
 from typing import Any, Dict, List, Optional, Type, Union
 
-from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream, BadRequestError
+from openai import AsyncOpenAI, AsyncStream, BadRequestError, OpenAI, Stream
 from pydantic import BaseModel, ValidationError
 
 from camel.logger import get_logger
