@@ -436,11 +436,13 @@ class MCPClient(BaseToolkit):
             command_or_url (str): URL for SSE mode or command executable
                 for stdio mode.
             args (Optional[List[str]]): List of command-line arguments if
-                stdio mode is used.
+                stdio mode is used. (default: :obj:`None`)
             env (Optional[Dict[str, str]]): Environment variables for
-                the stdio mode command.
+                the stdio mode command. (default: :obj:`None`)
             timeout (Optional[float]): Connection timeout.
+                (default: :obj:`None`)
             headers (Optional[Dict[str, str]]): Headers for the HTTP request.
+                (default: :obj:`None`)
 
         Returns:
             MCPClient: A fully initialized and connected MCPClient instance.
@@ -465,7 +467,7 @@ class MCPClient(BaseToolkit):
             raise RuntimeError(f"Failed to initialize MCPClient: {e}") from e
 
     async def __aenter__(self) -> "MCPClient":
-        """Async context manager entry point. Automatically connects to the
+        r"""Async context manager entry point. Automatically connects to the
         MCP server when used in an async with statement.
 
         Returns:
@@ -475,7 +477,7 @@ class MCPClient(BaseToolkit):
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
-        """Async context manager exit point. Automatically disconnects from
+        r"""Async context manager exit point. Automatically disconnects from
         the MCP server when exiting an async with statement.
         """
         await self.disconnect()
@@ -584,9 +586,6 @@ class MCPToolkit(BaseToolkit):
             self.servers.extend(
                 self._load_servers_from_config(config_path, strict)
             )
-
-        if config_dict:
-            self.servers.extend(self._load_servers_from_dict(config_dict))
 
         if config_dict:
             self.servers.extend(self._load_servers_from_dict(config_dict))

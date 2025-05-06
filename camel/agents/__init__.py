@@ -45,5 +45,4 @@ __all__ = [
     'KnowledgeGraphAgent',
     'MCPAgent',
     'RepoAgent',
-    'MCPAgent',
 ]

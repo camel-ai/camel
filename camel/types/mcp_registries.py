@@ -11,15 +11,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
 import platform
 from enum import Enum, auto
-from typing import Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field, model_validator
 
+from camel.utils.commons import api_keys_required
+
 
 class MCPRegistryType(Enum):
-    """Enum for different types of MCP registries."""
+    r"""Enum for different types of MCP registries."""
 
     SMITHERY = auto()
     ACI = auto()
@@ -27,13 +30,13 @@ class MCPRegistryType(Enum):
 
 
 class BaseMCPRegistryConfig(BaseModel):
-    """Base configuration for an MCP registry.
+    r"""Base configuration for an MCP registry.
 
     Attributes:
         type (MCPRegistryType): The type of the registry.
-        os (Literal["darwin", "linux", "windows"]): The operating system.
-          It is automatically set to "darwin" for MacOS, "linux" for Linux,
-          and "windows" for Windows.
+        os (Literal["darwin", "linux", "windows"]): The operating system. It
+            is automatically set to "darwin" for MacOS, "linux" for Linux, and
+            "windows" for Windows.
         api_key (Optional[str]): API key for the registry.
     """
 
@@ -41,18 +44,18 @@ class BaseMCPRegistryConfig(BaseModel):
     os: Literal["darwin", "linux", "windows"]
     api_key: Optional[str] = None
 
-    def get_config(self) -> Dict:
-        """Generate configuration based on registry type and API key.
+    def get_config(self) -> Dict[str, Any]:
+        r"""Generate configuration based on registry type and API key.
 
         Returns:
-            Dict: The complete configuration for the registry.
+            Dict[str, Any]: The complete configuration for the registry.
         """
         return {}
 
     @model_validator(mode='before')
     @classmethod
     def set_default_os(cls, values: Dict) -> Dict:
-        """Set the default OS based on the current platform if not provided.
+        r"""Set the default OS based on the current platform if not provided.
 
         Args:
             values (Dict): The values dictionary from the model validation.
@@ -71,15 +74,17 @@ class BaseMCPRegistryConfig(BaseModel):
                 raise ValueError(f"Unsupported system: {system}")
         return values
 
-    def _prepare_command_args(self, command: str, args: List[str]) -> Dict:
-        """Prepare command and arguments based on OS.
+    def _prepare_command_args(
+        self, command: str, args: List[str]
+    ) -> Dict[str, Any]:
+        r"""Prepare command and arguments based on OS.
 
         Args:
             command (str): The base command to run.
             args (List[str]): The arguments for the command.
 
         Returns:
-            Dict: Command configuration with OS-specific adjustments.
+            Dict[str, Any]: Command configuration with OS-specific adjustments.
         """
         if self.os == "windows":
             return {"command": "cmd", "args": ["/c", command, *args]}
@@ -88,26 +93,25 @@ class BaseMCPRegistryConfig(BaseModel):
 
 
 class SmitheryRegistryConfig(BaseMCPRegistryConfig):
-    """Configuration for Smithery registry."""
+    r"""Configuration for Smithery registry."""
 
     type: MCPRegistryType = MCPRegistryType.SMITHERY
     profile: str = Field(
         ..., description="The profile to use for the registry."
     )
 
-    def get_config(self) -> Dict:
-        """Generate configuration for Smithery registry.
+    @api_keys_required(
+        [
+            (None, "SMITHERY_API_KEY"),
+        ]
+    )
+    def get_config(self) -> Dict[str, Any]:
+        r"""Generate configuration for Smithery registry.
 
         Returns:
-            Dict: The complete configuration for the registry.
+            Dict[str, Any]: The complete configuration for the registry.
         """
-        import os
-
         api_key = self.api_key or os.environ.get("SMITHERY_API_KEY")
-        assert api_key is not None, (
-            "API key is required for Smithery. Set via api_key parameter or "
-            "SMITHERY_API_KEY environment variable."
-        )
 
         args = [
             "-y",
@@ -120,32 +124,31 @@ class SmitheryRegistryConfig(BaseMCPRegistryConfig):
             self.profile,
         ]
 
-        cmd_config = self._prepare_command_args("npx", args)
+        cmd_config = self._prepare_command_args("npx", args)  # type: ignore[arg-type]
 
         return {"toolbox": cmd_config}
 
 
 class ACIRegistryConfig(BaseMCPRegistryConfig):
-    """Configuration for ACI registry."""
+    r"""Configuration for ACI registry."""
 
     type: MCPRegistryType = MCPRegistryType.ACI
     linked_account_owner_id: str = Field(
         ..., description="The owner ID of the linked account."
     )
 
-    def get_config(self) -> Dict:
-        """Generate configuration for ACI registry.
+    @api_keys_required(
+        [
+            (None, "ACI_API_KEY"),
+        ]
+    )
+    def get_config(self) -> Dict[str, Any]:
+        r"""Generate configuration for ACI registry.
 
         Returns:
-            Dict: The complete configuration for the registry.
+            Dict[str, Any]: The complete configuration for the registry.
         """
-        import os
-
         api_key = self.api_key or os.environ.get("ACI_API_KEY")
-        assert api_key is not None, (
-            "API key is required for ACI. Set via api_key parameter or "
-            "ACI_API_KEY environment variable."
-        )
 
         args = [
             "aci-mcp",
