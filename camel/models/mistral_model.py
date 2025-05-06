@@ -95,7 +95,7 @@ class MistralModel(BaseModelBackend):
             model_type, model_config_dict, api_key, url, token_counter, timeout
         )
         self._client = Mistral(
-            timeout_ms=int(self._timeout)
+            timeout_ms=int(self._timeout * 1000)
             if self._timeout is not None
             else None,
             api_key=self._api_key,
