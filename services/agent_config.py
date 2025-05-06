@@ -16,7 +16,7 @@ import os
 
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
-from camel.toolkits import FunctionTool, SearchToolkit
+from camel.toolkits import SearchToolkit
 from camel.types import ModelPlatformType
 
 # Prevent logging since MCP needs to use stdout
@@ -74,7 +74,7 @@ search_agent = ChatAgent(
         model_type="gpt-4o",
     ),
     system_message="You are a helpful assistant.",
-    tools=[FunctionTool(SearchToolkit().search_brave)],
+    tools=SearchToolkit().get_tools(),
 )
 
 search_agent_description = """
