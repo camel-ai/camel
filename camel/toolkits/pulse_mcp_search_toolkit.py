@@ -39,16 +39,20 @@ class PulseMCPSearchToolkit(BaseToolkit):
         r"""Search for MCP servers using the PulseMCP API.
 
         Args:
-            query: The query to search for.
-            top_k: After sorting, return only the top_k servers.
-                (default: 5)
-            package_registry: The package registry to search for.
-                (default: None)
-            count_per_page: The number of servers to return per page.
-                (default: 5000)
-            offset: The offset to start the search from. (default: 0)
+            query (Optional[str]): The query to search for.
+                (default: :obj:`None`)
+            top_k (Optional[int]): After sorting, return only the top_k
+                servers. (default: :obj:`5`)
+            package_registry (Optional[str]): The package registry to search
+                for. (default: :obj:`None`)
+            count_per_page (int): The number of servers to return per page.
+                (default: :obj:`5000`)
+            offset (int): The offset to start the search from.
+                (default: :obj:`0`)
+
         Returns:
-            A list of MCP servers.
+            Dict[str, Any]: A dictionary containing the search results or
+                an error message.
         """
         params: Dict[str, Any] = {
             "count_per_page": min(count_per_page, 5000),
@@ -95,13 +99,13 @@ class PulseMCPSearchToolkit(BaseToolkit):
                 name = server.get("name", "").lower()
                 desc = server.get("short_description", "").lower()
                 stars = server.get("github_stars", 0) or 0
-                s: float = 0.0
+                score: float = 0.0
                 if query_lower in name:
-                    s += 5
+                    score += 5
                 if query_lower in desc:
-                    s += 3
-                s += stars / 1000
-                return s
+                    score += 3
+                score += stars / 1000
+                return score
 
             servers = sorted(servers, key=score, reverse=True)
         else:
@@ -121,7 +125,7 @@ class PulseMCPSearchToolkit(BaseToolkit):
         functions in the toolkit.
 
         Returns:
-            A list of FunctionTool objects.
+            List[FunctionTool]: A list of FunctionTool objects.
         """
         return [
             FunctionTool(self.search_mcp_servers),

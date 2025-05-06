@@ -30,6 +30,7 @@ search_results = search_toolkit.search_mcp_servers(
 )
 print(json.dumps(search_results, indent=2))
 """
+===============================================================================
 Example 1: Search for MCP servers related to 'github'
 {
   "servers": [
@@ -83,6 +84,7 @@ Example 1: Search for MCP servers related to 'github'
     }
   ]
 }
+===============================================================================
 """  # noqa: E501
 
 # Example 2: Search for MCP servers restricted to a specific package registry
@@ -96,6 +98,7 @@ search_results = search_toolkit.search_mcp_servers(
 )
 print(json.dumps(search_results, indent=2))
 """
+===============================================================================
 Example 2: Search for MCP servers restricted to a specific package registry
 {
   "servers": [
@@ -113,12 +116,13 @@ Example 2: Search for MCP servers restricted to a specific package registry
     }
   ]
 }
+===============================================================================
 """  # noqa: E501
 
 # Example 3: Search for MCP servers using a chat agent
 model = ModelFactory.create(
     model_platform=ModelPlatformType.ANTHROPIC,
-    model_type=ModelType.CLAUDE_3_5_SONNET,
+    model_type=ModelType.CLAUDE_3_7_SONNET,
 )
 
 agent = ChatAgent(
@@ -130,6 +134,7 @@ agent = ChatAgent(
 response = agent.step("Search for MCP servers related to 'SQL'")
 print(response.msg.content)
 """
+===============================================================================
 I've searched for MCP servers related to SQL and found 5 relevant results:
 
 1. SQLite Server
@@ -158,4 +163,5 @@ I've searched for MCP servers related to SQL and found 5 relevant results:
 - Offers tools for database exploration and query assistance
 
 Each server provides specific functionality for interacting with different types of SQL databases, with varying features and security measures. Would you like more specific information about any of these servers?
+===============================================================================
 """  # noqa: E501
