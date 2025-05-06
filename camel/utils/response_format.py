@@ -128,6 +128,10 @@ def model_from_json_schema(
             constraints["ge"] = field_schema["minimum"]
         if "maximum" in field_schema:
             constraints["le"] = field_schema["maximum"]
+        if "enum" in field_schema:
+            constraints["enum"] = field_schema["enum"]
+        if "description" in field_schema:
+            constraints["description"] = field_schema["description"]
 
         default_value = field_schema.get("default", None)
         if field_name in required_fields:
