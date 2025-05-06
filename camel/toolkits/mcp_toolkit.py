@@ -60,7 +60,8 @@ class MCPClient(BaseToolkit):
             (default: :obj:`'None'`)
         env (Dict[str, str]): Environment variables for the stdio mode command.
             (default: :obj:`'None'`)
-        timeout (Optional[float]): Connection timeout. (default: :obj:`'None'`)
+        timeout (Optional[float]): Connection timeout seconds.
+            (default: :obj:`'None'`)
         headers (Dict[str, str]): Headers for the HTTP request.
             (default: :obj:`'None'`)
         strict (Optional[bool]): Whether to enforce strict mode for the
@@ -114,6 +115,7 @@ class MCPClient(BaseToolkit):
                     sse_client(
                         self.command_or_url,
                         headers=self.headers,
+                        timeout=self.timeout
                     )
                 )
             else:
