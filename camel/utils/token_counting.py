@@ -136,7 +136,11 @@ class OpenAITokenCounter(BaseTokenCounter):
         elif ("gpt-3.5-turbo" in self.model) or ("gpt-4" in self.model):
             self.tokens_per_message = 3
             self.tokens_per_name = 1
-        elif ("o1" in self.model) or ("o3" in self.model):
+        elif (
+            ("o1" in self.model)
+            or ("o3" in self.model)
+            or ("o4" in self.model)
+        ):
             self.tokens_per_message = 2
             self.tokens_per_name = 1
         else:
@@ -144,8 +148,8 @@ class OpenAITokenCounter(BaseTokenCounter):
             raise NotImplementedError(
                 "Token counting for OpenAI Models is not presently "
                 f"implemented for model {model}. "
-                "See https://github.com/openai/openai-python/blob/main/chatml.md "
-                "for information on how messages are converted to tokens. "
+                "See https://github.com/openai/openai-python/blob/main/chatml"
+                ".md for information on how messages are converted to tokens. "
                 "See https://platform.openai.com/docs/models/gpt-4"
                 "or https://platform.openai.com/docs/models/gpt-3-5"
                 "for information about openai chat models."

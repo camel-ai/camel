@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from .aiml_model import AIMLModel
 from .anthropic_model import AnthropicModel
+from .aws_bedrock_model import AWSBedrockModel
 from .azure_openai_model import AzureOpenAIModel
 from .base_audio_model import BaseAudioModel
 from .base_model import BaseModelBackend
@@ -23,12 +24,15 @@ from .gemini_model import GeminiModel
 from .groq_model import GroqModel
 from .internlm_model import InternLMModel
 from .litellm_model import LiteLLMModel
+from .lmstudio_model import LMStudioModel
 from .mistral_model import MistralModel
 from .model_factory import ModelFactory
 from .model_manager import ModelManager, ModelProcessingError
 from .modelscope_model import ModelScopeModel
 from .moonshot_model import MoonshotModel
 from .nemotron_model import NemotronModel
+from .netmind_model import NetmindModel
+from .novita_model import NovitaModel
 from .nvidia_model import NvidiaModel
 from .ollama_model import OllamaModel
 from .openai_audio_models import OpenAIAudioModels
@@ -45,6 +49,7 @@ from .stub_model import StubModel
 from .togetherai_model import TogetherAIModel
 from .vllm_model import VLLMModel
 from .volcano_model import VolcanoModel
+from .watsonx_model import WatsonXModel
 from .yi_model import YiModel
 from .zhipuai_model import ZhipuAIModel
 
@@ -63,7 +68,9 @@ __all__ = [
     'ModelManager',
     'LiteLLMModel',
     'OpenAIAudioModels',
+    'NetmindModel',
     'NemotronModel',
+    'NovitaModel',
     'NvidiaModel',
     'OllamaModel',
     'VLLMModel',
@@ -76,6 +83,7 @@ __all__ = [
     'PPIOModel',
     'YiModel',
     'QwenModel',
+    'AWSBedrockModel',
     'ModelProcessingError',
     'DeepSeekModel',
     'FishAudioModel',
@@ -86,4 +94,6 @@ __all__ = [
     'BaseAudioModel',
     'SiliconFlowModel',
     'VolcanoModel',
+    'LMStudioModel',
+    'WatsonXModel',
 ]

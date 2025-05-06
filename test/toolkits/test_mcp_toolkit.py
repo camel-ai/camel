@@ -264,7 +264,7 @@ class TestMCPClient:
             "function": {
                 "name": "test_function",
                 "description": "Test function description",
-                "strict": True,
+                "strict": False,
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -286,7 +286,7 @@ class TestMCPClient:
             "function": {
                 "name": "test_function",
                 "description": "No description provided.",
-                "strict": True,
+                "strict": False,
                 "parameters": {
                     "type": "object",
                     "properties": {

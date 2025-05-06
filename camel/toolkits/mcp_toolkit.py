@@ -60,6 +60,8 @@ class MCPClient(BaseToolkit):
         timeout (Optional[float]): Connection timeout. (default: :obj:`'None'`)
         headers (Dict[str, str]): Headers for the HTTP request.
             (default: :obj:`'None'`)
+        strict (Optional[bool]): Whether to enforce strict mode for the
+            function call. (default: :obj:`False`)
     """
 
     def __init__(
@@ -69,6 +71,7 @@ class MCPClient(BaseToolkit):
         env: Optional[Dict[str, str]] = None,
         timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
+        strict: Optional[bool] = False,
     ):
         from mcp import Tool
 
@@ -78,6 +81,7 @@ class MCPClient(BaseToolkit):
         self.args = args or []
         self.env = env or {}
         self.headers = headers or {}
+        self.strict = strict
 
         self._mcp_tools: List[Tool] = []
         self._session: Optional['ClientSession'] = None
@@ -223,7 +227,7 @@ class MCPClient(BaseToolkit):
 
             func_params.append(param_name)
 
-        async def dynamic_function(**kwargs):
+        async def dynamic_function(**kwargs) -> str:
             r"""Auto-generated function for MCP Tool interaction.
 
             Args:
@@ -317,13 +321,15 @@ class MCPClient(BaseToolkit):
             "additionalProperties": False,
         }
 
+        # Because certain parameters in MCP may include keywords that are not
+        # supported by OpenAI, it is essential to set "strict" to False.
         return {
             "type": "function",
             "function": {
                 "name": mcp_tool.name,
                 "description": mcp_tool.description
                 or "No description provided.",
-                "strict": True,
+                "strict": self.strict,
                 "parameters": parameters,
             },
         }
@@ -345,6 +351,39 @@ class MCPClient(BaseToolkit):
             for mcp_tool in self._mcp_tools
         ]
 
+    def get_text_tools(self) -> str:
+        r"""Returns a string containing the descriptions of the tools
+        in the toolkit.
+
+        Returns:
+            str: A string containing the descriptions of the tools
+                in the toolkit.
+        """
+        return "\n".join(
+            f"tool_name: {tool.name}\n"
+            + f"description: {tool.description or 'No description'}\n"
+            + f"input Schema: {tool.inputSchema}\n"
+            for tool in self._mcp_tools
+        )
+
+    async def call_tool(
+        self, tool_name: str, tool_args: Dict[str, Any]
+    ) -> Any:
+        r"""Calls the specified tool with the provided arguments.
+
+        Args:
+            tool_name (str): Name of the tool to call.
+            tool_args (Dict[str, Any]): Arguments to pass to the tool
+                (default: :obj:`{}`).
+
+        Returns:
+            Any: The result of the tool call.
+        """
+        if self._session is None:
+            raise RuntimeError("Session is not initialized.")
+
+        return await self._session.call_tool(tool_name, tool_args)
+
     @property
     def session(self) -> Optional["ClientSession"]:
         return self._session
@@ -365,6 +404,8 @@ class MCPToolkit(BaseToolkit):
             defining MCP servers.
         config_dict (Optional[Dict[str, Any]]): Dictionary containing MCP
             server configurations in the same format as the config file.
+        strict (Optional[bool]): Whether to enforce strict mode for the
+            function call. (default: :obj:`False`)
 
     Note:
         Either `servers`, `config_path`, or `config_dict` must be provided.
@@ -400,6 +441,7 @@ class MCPToolkit(BaseToolkit):
         servers: Optional[List[MCPClient]] = None,
         config_path: Optional[str] = None,
         config_dict: Optional[Dict[str, Any]] = None,
+        strict: Optional[bool] = False,
     ):
         super().__init__()
 
@@ -416,7 +458,9 @@ class MCPToolkit(BaseToolkit):
         self.servers: List[MCPClient] = servers or []
 
         if config_path:
-            self.servers.extend(self._load_servers_from_config(config_path))
+            self.servers.extend(
+                self._load_servers_from_config(config_path, strict)
+            )
 
         if config_dict:
             self.servers.extend(self._load_servers_from_dict(config_dict))
@@ -424,11 +468,15 @@ class MCPToolkit(BaseToolkit):
         self._exit_stack = AsyncExitStack()
         self._connected = False
 
-    def _load_servers_from_config(self, config_path: str) -> List[MCPClient]:
+    def _load_servers_from_config(
+        self, config_path: str, strict: Optional[bool] = False
+    ) -> List[MCPClient]:
         r"""Loads MCP server configurations from a JSON file.
 
         Args:
             config_path (str): Path to the JSON configuration file.
+            strict (bool): Whether to enforce strict mode for the
+                function call. (default: :obj:`False`)
 
         Returns:
             List[MCPClient]: List of configured MCPClient instances.
@@ -491,6 +539,7 @@ class MCPToolkit(BaseToolkit):
                 env={**os.environ, **cfg.get("env", {})},
                 timeout=cfg.get("timeout", None),
                 headers=headers,
+                strict=strict,
             )
             all_servers.append(server)
 
@@ -561,3 +610,13 @@ class MCPToolkit(BaseToolkit):
         for server in self.servers:
             all_tools.extend(server.get_tools())
         return all_tools
+
+    def get_text_tools(self) -> str:
+        r"""Returns a string containing the descriptions of the tools
+        in the toolkit.
+
+        Returns:
+            str: A string containing the descriptions of the tools
+                in the toolkit.
+        """
+        return "\n".join(server.get_text_tools() for server in self.servers)
