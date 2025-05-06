@@ -60,7 +60,7 @@ class MCPClient(BaseToolkit):
             (default: :obj:`'None'`)
         env (Dict[str, str]): Environment variables for the stdio mode command.
             (default: :obj:`'None'`)
-        timeout (Optional[float]): Connection timeout seconds.
+        timeout (float): Connection timeout seconds.
             (default: 30)
         headers (Dict[str, str]): Headers for the HTTP request.
             (default: :obj:`'None'`)
