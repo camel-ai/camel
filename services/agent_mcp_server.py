@@ -34,7 +34,7 @@ async def step(
         name (str): The name of the agent to use.
         message (str): The input message for the agent.
         ctx (Context): The context object for the tool.
-        response_format (Optional[Dict[str, Any]]): Optional schema for 
+        response_format (Optional[Dict[str, Any]]): Optional schema for
             structured response. (default: :obj:`None`)
 
     Returns:
@@ -73,7 +73,7 @@ def reset(ctx: Context) -> Dict[str, str]:
         ctx (Context): The context object for the tool.
 
     Returns:
-        Dict[str, str]: A dictionary containing the status of the reset 
+        Dict[str, str]: A dictionary containing the status of the reset
             operation.
     """
     for agent in agents_dict.values():
@@ -91,7 +91,7 @@ def set_output_language(language: str, ctx: Context) -> Dict[str, str]:
         ctx (Context): The context object for the tool.
 
     Returns:
-        Dict[str, str]: A dictionary containing the status of the language 
+        Dict[str, str]: A dictionary containing the status of the language
             setting operation
     """
     for agent in agents_dict.values():
@@ -123,7 +123,7 @@ def get_chat_history(name: str) -> Dict[str, Any]:
         name (str): The name of the agent to get the chat history for.
 
     Returns:
-        Dict[str, Any]: A dictionary containing the chat history for the 
+        Dict[str, Any]: A dictionary containing the chat history for the
             given agent.
     """
     try:
@@ -145,7 +145,7 @@ def get_agent_info(name: str) -> Dict[str, Any]:
         name (str): The name of the agent to get information for.
 
     Returns:
-        Dict[str, Any]: A dictionary containing information about the given 
+        Dict[str, Any]: A dictionary containing information about the given
             agent.
     """
     try:
