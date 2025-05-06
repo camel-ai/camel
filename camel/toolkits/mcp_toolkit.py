@@ -90,6 +90,8 @@ class MCPClient(BaseToolkit):
         timeout (Optional[float]): Connection timeout. (default: :obj:`'None'`)
         headers (Dict[str, str]): Headers for the HTTP request.
             (default: :obj:`'None'`)
+        strict (Optional[bool]): Whether to enforce strict mode for the
+            function call. (default: :obj:`False`)
     """
 
     def __init__(
@@ -99,6 +101,7 @@ class MCPClient(BaseToolkit):
         env: Optional[Dict[str, str]] = None,
         timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
+        strict: Optional[bool] = False,
     ):
         from mcp import Tool
 
@@ -108,6 +111,7 @@ class MCPClient(BaseToolkit):
         self.args = args or []
         self.env = env or {}
         self.headers = headers or {}
+        self.strict = strict
 
         self._mcp_tools: List[Tool] = []
         self._session: Optional['ClientSession'] = None
@@ -253,7 +257,7 @@ class MCPClient(BaseToolkit):
 
             func_params.append(param_name)
 
-        async def dynamic_function(**kwargs):
+        async def dynamic_function(**kwargs) -> str:
             r"""Auto-generated function for MCP Tool interaction.
 
             Args:
@@ -347,13 +351,15 @@ class MCPClient(BaseToolkit):
             "additionalProperties": False,
         }
 
+        # Because certain parameters in MCP may include keywords that are not
+        # supported by OpenAI, it is essential to set "strict" to False.
         return {
             "type": "function",
             "function": {
                 "name": mcp_tool.name,
                 "description": mcp_tool.description
                 or "No description provided.",
-                "strict": True,
+                "strict": self.strict,
                 "parameters": parameters,
             },
         }
@@ -374,6 +380,39 @@ class MCPClient(BaseToolkit):
             )
             for mcp_tool in self._mcp_tools
         ]
+
+    def get_text_tools(self) -> str:
+        r"""Returns a string containing the descriptions of the tools
+        in the toolkit.
+
+        Returns:
+            str: A string containing the descriptions of the tools
+                in the toolkit.
+        """
+        return "\n".join(
+            f"tool_name: {tool.name}\n"
+            + f"description: {tool.description or 'No description'}\n"
+            + f"input Schema: {tool.inputSchema}\n"
+            for tool in self._mcp_tools
+        )
+
+    async def call_tool(
+        self, tool_name: str, tool_args: Dict[str, Any]
+    ) -> Any:
+        r"""Calls the specified tool with the provided arguments.
+
+        Args:
+            tool_name (str): Name of the tool to call.
+            tool_args (Dict[str, Any]): Arguments to pass to the tool
+                (default: :obj:`{}`).
+
+        Returns:
+            Any: The result of the tool call.
+        """
+        if self._session is None:
+            raise RuntimeError("Session is not initialized.")
+
+        return await self._session.call_tool(tool_name, tool_args)
 
     @property
     def session(self) -> Optional["ClientSession"]:
@@ -482,11 +521,14 @@ class MCPToolkit(BaseToolkit):
 
     Args:
         servers (Optional[List[MCPClient]]): List of MCPClient
-            instances to manage.
+            instances to manage. (default: :obj:`None`)
         config_path (Optional[str]): Path to a JSON configuration file
-            defining MCP servers.
+            defining MCP servers. (default: :obj:`None`)
         config_dict (Optional[Dict[str, Any]]): Dictionary containing MCP
             server configurations in the same format as the config file.
+            (default: :obj:`None`)
+        strict (Optional[bool]): Whether to enforce strict mode for the
+            function call. (default: :obj:`False`)
 
     Note:
         Either `servers`, `config_path`, or `config_dict` must be provided.
@@ -522,6 +564,7 @@ class MCPToolkit(BaseToolkit):
         servers: Optional[List[MCPClient]] = None,
         config_path: Optional[str] = None,
         config_dict: Optional[Dict[str, Any]] = None,
+        strict: Optional[bool] = False,
     ):
         super().__init__()
 
@@ -538,7 +581,12 @@ class MCPToolkit(BaseToolkit):
         self.servers: List[MCPClient] = servers or []
 
         if config_path:
-            self.servers.extend(self._load_servers_from_config(config_path))
+            self.servers.extend(
+                self._load_servers_from_config(config_path, strict)
+            )
+
+        if config_dict:
+            self.servers.extend(self._load_servers_from_dict(config_dict))
 
         if config_dict:
             self.servers.extend(self._load_servers_from_dict(config_dict))
@@ -546,11 +594,15 @@ class MCPToolkit(BaseToolkit):
         self._exit_stack = AsyncExitStack()
         self._connected = False
 
-    def _load_servers_from_config(self, config_path: str) -> List[MCPClient]:
+    def _load_servers_from_config(
+        self, config_path: str, strict: Optional[bool] = False
+    ) -> List[MCPClient]:
         r"""Loads MCP server configurations from a JSON file.
 
         Args:
             config_path (str): Path to the JSON configuration file.
+            strict (bool): Whether to enforce strict mode for the
+                function call. (default: :obj:`False`)
 
         Returns:
             List[MCPClient]: List of configured MCPClient instances.
@@ -568,16 +620,18 @@ class MCPToolkit(BaseToolkit):
             logger.warning(f"Config file not found: '{config_path}'")
             raise e
 
-        return self._load_servers_from_dict(data)
+        return self._load_servers_from_dict(config=data, strict=strict)
 
     def _load_servers_from_dict(
-        self, config: Dict[str, Any]
+        self, config: Dict[str, Any], strict: Optional[bool] = False
     ) -> List[MCPClient]:
         r"""Loads MCP server configurations from a dictionary.
 
         Args:
             config (Dict[str, Any]): Dictionary containing server
                 configurations.
+            strict (bool): Whether to enforce strict mode for the
+                function call. (default: :obj:`False`)
 
         Returns:
             List[MCPClient]: List of configured MCPClient instances.
@@ -613,6 +667,7 @@ class MCPToolkit(BaseToolkit):
                 env={**os.environ, **cfg.get("env", {})},
                 timeout=cfg.get("timeout", None),
                 headers=headers,
+                strict=strict,
             )
             all_servers.append(server)
 
@@ -684,58 +739,12 @@ class MCPToolkit(BaseToolkit):
             all_tools.extend(server.get_tools())
         return all_tools
 
-    @classmethod
-    async def create(
-        cls,
-        servers: Optional[List[MCPClient]] = None,
-        config_path: Optional[str] = None,
-        config_dict: Optional[Dict[str, Any]] = None,
-    ) -> "MCPToolkit":
-        r"""Factory method that creates and connects to MCPToolkit.
-
-        This async factory method ensures all MCP server connections are
-        established before the toolkit object is fully constructed.
-
-        Args:
-            servers (Optional[List[MCPClient]]): List of MCPClient
-                instances to manage.
-            config_path (Optional[str]): Path to a JSON configuration file
-                defining MCP servers.
-            config_dict (Optional[Dict[str, Any]]): Dictionary containing MCP
-                server configurations in the same format as the config file.
+    def get_text_tools(self) -> str:
+        r"""Returns a string containing the descriptions of the tools
+        in the toolkit.
 
         Returns:
-            MCPToolkit: A fully initialized and connected MCPToolkit instance.
-
-        Raises:
-            RuntimeError: If connection to any MCP server fails.
+            str: A string containing the descriptions of the tools
+                in the toolkit.
         """
-        toolkit = cls(
-            servers=servers,
-            config_path=config_path,
-            config_dict=config_dict,
-        )
-        try:
-            await toolkit.connect()
-            return toolkit
-        except Exception as e:
-            # Ensure cleanup on initialization failure
-            await toolkit.disconnect()
-            logger.error(f"Failed to initialize MCPToolkit: {e}")
-            raise RuntimeError(f"Failed to initialize MCPToolkit: {e}") from e
-
-    async def __aenter__(self) -> "MCPToolkit":
-        """Async context manager entry point. Automatically connects to all
-        MCP servers when used in an async with statement.
-
-        Returns:
-            MCPToolkit: Self with all servers connected.
-        """
-        await self.connect()
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
-        """Async context manager exit point. Automatically disconnects from
-        all MCP servers when exiting an async with statement.
-        """
-        await self.disconnect()
+        return "\n".join(server.get_text_tools() for server in self.servers)

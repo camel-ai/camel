@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import logging
+import threading
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 from camel.agents import (
@@ -77,6 +78,9 @@ class RolePlaying:
             task specify meta dict with. (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
             agents. (default: :obj:`None`)
+        stop_event (Optional[threading.Event], optional): Event to signal
+            termination of the agent's operation. When set, the agent will
+            terminate its execution. (default: :obj:`None`)
     """
 
     def __init__(
@@ -101,6 +105,7 @@ class RolePlaying:
         extend_sys_msg_meta_dicts: Optional[List[Dict]] = None,
         extend_task_specify_meta_dict: Optional[Dict] = None,
         output_language: Optional[str] = None,
+        stop_event: Optional[threading.Event] = None,
     ) -> None:
         if model is not None:
             logger.warning(
@@ -156,6 +161,7 @@ class RolePlaying:
             assistant_agent_kwargs=assistant_agent_kwargs,
             user_agent_kwargs=user_agent_kwargs,
             output_language=output_language,
+            stop_event=stop_event,
         )
         self.critic: Optional[Union[CriticAgent, Human]] = None
         self.critic_sys_msg: Optional[BaseMessage] = None
@@ -316,6 +322,7 @@ class RolePlaying:
         assistant_agent_kwargs: Optional[Dict] = None,
         user_agent_kwargs: Optional[Dict] = None,
         output_language: Optional[str] = None,
+        stop_event: Optional[threading.Event] = None,
     ) -> None:
         r"""Initialize assistant and user agents with their system messages.
 
@@ -330,6 +337,9 @@ class RolePlaying:
                 pass to the user agent. (default: :obj:`None`)
             output_language (str, optional): The language to be output by the
                 agents. (default: :obj:`None`)
+            stop_event (Optional[threading.Event], optional): Event to signal
+                termination of the agent's operation. When set, the agent will
+                terminate its execution. (default: :obj:`None`)
         """
         if self.model is not None:
             if assistant_agent_kwargs is None:
@@ -344,6 +354,7 @@ class RolePlaying:
         self.assistant_agent = ChatAgent(
             init_assistant_sys_msg,
             output_language=output_language,
+            stop_event=stop_event,
             **(assistant_agent_kwargs or {}),
         )
         self.assistant_sys_msg = self.assistant_agent.system_message
@@ -351,6 +362,7 @@ class RolePlaying:
         self.user_agent = ChatAgent(
             init_user_sys_msg,
             output_language=output_language,
+            stop_event=stop_event,
             **(user_agent_kwargs or {}),
         )
         self.user_sys_msg = self.user_agent.system_message

@@ -43,6 +43,7 @@ __all__ = [
     'RoleAssignmentAgent',
     'SearchAgent',
     'KnowledgeGraphAgent',
+    'MCPAgent',
     'RepoAgent',
     'MCPAgent',
 ]

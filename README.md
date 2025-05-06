@@ -18,6 +18,8 @@
 [![Package License][package-license-image]][package-license-url]
 [![PyPI Download][package-download-image]][package-download-url]
 
+<a href="https://trendshift.io/repositories/649" target="_blank"><img src="https://trendshift.io/api/badge/repositories/649" alt="camel-ai/camel | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
+
 </div>
 
 
@@ -420,7 +422,7 @@ For more information please contact camel-ai@eigent.ai
 - **WeChat Community:** Scan the QR code below to join our WeChat community.
 
   <div align="center">
-    <img src="misc/wechat.jpg" alt="WeChat QR Code" width="200">
+    <img src="misc/wechat.jpeg" alt="WeChat QR Code" width="200">
   </div>
 
 
