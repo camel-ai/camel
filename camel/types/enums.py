@@ -105,6 +105,7 @@ class ModelType(UnifiedModelType, Enum):
     TOGETHER_LLAMA_4_SCOUT = "meta-llama/Llama-4-Scout-17B-16E-Instruct"
 
     # PPIO platform models support tool calling
+    PPIO_DEEPSEEK_PROVER_V2_671B = "deepseek/deepseek-prover-v2-671b"
     PPIO_DEEPSEEK_R1_TURBO = "deepseek/deepseek-r1-turbo"
     PPIO_DEEPSEEK_V3_TURBO = "deepseek/deepseek-v3-turbo"
     PPIO_DEEPSEEK_R1_COMMUNITY = "deepseek/deepseek-r1/community"
@@ -716,6 +717,7 @@ class ModelType(UnifiedModelType, Enum):
     @property
     def is_ppio(self) -> bool:
         return self in {
+            ModelType.PPIO_DEEPSEEK_PROVER_V2_671B,
             ModelType.PPIO_DEEPSEEK_R1_TURBO,
             ModelType.PPIO_DEEPSEEK_V3_TURBO,
             ModelType.PPIO_DEEPSEEK_R1_COMMUNITY,
@@ -928,6 +930,7 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 14_336
         elif self in {
+            ModelType.PPIO_DEEPSEEK_PROVER_V2_671B,
             ModelType.NOVITA_DOLPHIN_MIXTRAL_8X22B,
         }:
             return 16_000
@@ -1199,6 +1202,8 @@ class EmbeddingModelType(Enum):
 
     MISTRAL_EMBED = "mistral-embed"
 
+    GEMINI_EMBEDDING_EXP = "gemini-embedding-exp-03-07"
+
     @property
     def is_openai(self) -> bool:
         r"""Returns whether this type of models is an OpenAI-released model."""
@@ -1228,6 +1233,13 @@ class EmbeddingModelType(Enum):
         }
 
     @property
+    def is_gemini(self) -> bool:
+        r"""Returns whether this type of models is an Gemini-released model."""
+        return self in {
+            EmbeddingModelType.GEMINI_EMBEDDING_EXP,
+        }
+
+    @property
     def output_dim(self) -> int:
         if self in {
             EmbeddingModelType.JINA_COLBERT_V2,
@@ -1250,8 +1262,27 @@ class EmbeddingModelType(Enum):
             return 3072
         elif self is EmbeddingModelType.MISTRAL_EMBED:
             return 1024
+        elif self is EmbeddingModelType.GEMINI_EMBEDDING_EXP:
+            return 3072
         else:
             raise ValueError(f"Unknown model type {self}.")
+
+
+class GeminiEmbeddingTaskType(str, Enum):
+    r"""Task types for Gemini embedding models.
+
+    For more information, please refer to:
+    https://ai.google.dev/gemini-api/docs/embeddings#task-types
+    """
+
+    SEMANTIC_SIMILARITY = "SEMANTIC_SIMILARITY"
+    CLASSIFICATION = "CLASSIFICATION"
+    CLUSTERING = "CLUSTERING"
+    RETRIEVAL_DOCUMENT = "RETRIEVAL_DOCUMENT"
+    RETRIEVAL_QUERY = "RETRIEVAL_QUERY"
+    QUESTION_ANSWERING = "QUESTION_ANSWERING"
+    FACT_VERIFICATION = "FACT_VERIFICATION"
+    CODE_RETRIEVAL_QUERY = "CODE_RETRIEVAL_QUERY"
 
 
 class TaskType(Enum):
