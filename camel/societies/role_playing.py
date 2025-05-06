@@ -13,6 +13,8 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import logging
 from typing import Dict, List, Optional, Sequence, Tuple, Union
+from datetime import datetime
+import copy
 
 from camel.agents import (
     ChatAgent,
@@ -26,7 +28,7 @@ from camel.messages import BaseMessage
 from camel.models import BaseModelBackend
 from camel.prompts import TextPrompt
 from camel.responses import ChatAgentResponse
-from camel.types import RoleType, TaskType
+from camel.types import RoleType, TaskType, OpenAIBackendRole
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
@@ -51,6 +53,10 @@ class RolePlaying:
             agent. (default: :obj:`False`)
         with_critic_in_the_loop (bool, optional): Whether to include a critic
             in the loop. (default: :obj:`False`)
+        with_human_on_the_loop (bool, optional): Whether to allow human
+            intervention during the loop. (default: :obj:`False`)
+        human_role_name (str, optional): The name of the role played by the
+            human when intervening. (default: :obj:`"human"`)
         critic_criteria (str, optional): Critic criteria for the critic agent.
             If not specified, set the criteria to improve task performance.
         model (BaseModelBackend, optional): The model backend to use for
@@ -89,6 +95,8 @@ class RolePlaying:
         with_task_specify: bool = True,
         with_task_planner: bool = False,
         with_critic_in_the_loop: bool = False,
+        with_human_on_the_loop: bool = False,
+        human_role_name: str = "human",
         critic_criteria: Optional[str] = None,
         model: Optional[BaseModelBackend] = None,
         task_type: TaskType = TaskType.AI_SOCIETY,
@@ -111,6 +119,8 @@ class RolePlaying:
         self.with_task_specify = with_task_specify
         self.with_task_planner = with_task_planner
         self.with_critic_in_the_loop = with_critic_in_the_loop
+        self.with_human_on_the_loop = with_human_on_the_loop
+        self.human_role_name = human_role_name
         self.model = model
         self.task_type = task_type
         self.task_prompt = task_prompt
@@ -166,6 +176,11 @@ class RolePlaying:
             critic_criteria=critic_criteria,
             critic_kwargs=critic_kwargs,
         )
+        
+        # Dictionary to store memory checkpoints
+        self._memory_checkpoints = {}
+        # Conversation turn counter for checkpoint identification
+        self._conversation_turn = 0
 
     def _init_specified_task_prompt(
         self,
@@ -465,7 +480,10 @@ class RolePlaying:
             or "assistant",
             content=init_msg_content,
         )
-
+        
+        # Reset conversation turn counter
+        self._conversation_turn = 0
+        
         return init_msg
 
     async def ainit_chat(
@@ -501,8 +519,144 @@ class RolePlaying:
             or "assistant",
             content=init_msg_content,
         )
-
+        
+        # Reset conversation turn counter
+        self._conversation_turn = 0
+        
         return init_msg
+
+    def _create_checkpoint(self, checkpoint_name: str) -> None:
+        r"""Create a memory checkpoint by saving the current state of both agents' memories.
+        
+        Args:
+            checkpoint_name (str): Name to identify this checkpoint
+        """
+        # Create deep copies of agent memories to preserve their state
+        assistant_memory_records = [
+            record.memory_record for record in self.assistant_agent.memory.retrieve()
+        ]
+        user_memory_records = [
+            record.memory_record for record in self.user_agent.memory.retrieve()
+        ]
+        
+        # Ensure there are user messages before continuing
+        if not user_memory_records:
+            logger.warning(f"Cannot create checkpoint '{checkpoint_name}': No user messages")
+            return
+        
+        last_user_message = user_memory_records[-1].message.content
+        
+        # Check if a checkpoint with this name already exists
+        if checkpoint_name in self._memory_checkpoints:
+            logger.info(f"Overwriting existing checkpoint '{checkpoint_name}'")
+            # Preserve the original checkpoint's turn number
+            turn = self._memory_checkpoints[checkpoint_name].get("turn", self._conversation_turn)
+        else:
+            turn = self._conversation_turn
+        
+        self._memory_checkpoints[checkpoint_name] = {
+            "assistant": copy.deepcopy(assistant_memory_records),
+            "user": copy.deepcopy(user_memory_records),
+            "turn": turn,
+            "timestamp": datetime.now().timestamp(),
+            "user_message": last_user_message
+        }
+        
+        logger.info(f"Created checkpoint '{checkpoint_name}' at turn {turn}")
+    
+    def list_checkpoints(self) -> List[Dict]:
+        r"""List all available checkpoints with metadata.
+        
+        Returns:
+            List[Dict]: List of checkpoint metadata including name, turn, timestamp and user message
+        """
+        checkpoints = []
+        for name, data in self._memory_checkpoints.items():
+            checkpoint_info = {
+                "name": name,
+                "turn": data["turn"],
+                "timestamp": data["timestamp"],
+                "user_message": data["user_message"]
+            }
+            checkpoints.append(checkpoint_info)
+            
+        return checkpoints
+    
+    def rollback_to_checkpoint(self, checkpoint_name: str) -> bool:
+        r"""Roll back the conversation to a specific checkpoint.
+        
+        Args:
+            checkpoint_name (str): Name of the checkpoint to roll back to
+            
+        Returns:
+            bool: True if rollback successful, False otherwise
+        """
+        if checkpoint_name not in self._memory_checkpoints:
+            logger.warning(f"Checkpoint '{checkpoint_name}' not found")
+            return False
+        
+        # Get all checkpoints to keep and checkpoints to remove
+        rollback_turn = self._memory_checkpoints[checkpoint_name]["turn"]
+        checkpoints_to_remove = []
+        
+        # Find all checkpoints later than the rollback point
+        for name, data in self._memory_checkpoints.items():
+            if data["turn"] > rollback_turn and name != checkpoint_name:
+                checkpoints_to_remove.append(name)
+        
+        # Restore conversation turn counter
+        self._conversation_turn = rollback_turn
+        
+        # Clear current memories
+        self.assistant_agent.clear_memory()
+        self.user_agent.clear_memory()
+        
+        # Restore memories from checkpoint
+        for record in self._memory_checkpoints[checkpoint_name]["assistant"]:
+            self.assistant_agent.memory.write_record(record)
+        
+        # When we rollback, we only restore memories up to the previous turn (assistant's last message)
+        # This is because we're going to replace the user's message at this turn
+        user_memory_records = self._memory_checkpoints[checkpoint_name]["user"]
+        for i, record in enumerate(user_memory_records):
+            # Skip the last user message if this is not the first turn
+            # as we'll replace it with human intervention
+            if i < len(user_memory_records) - 1 or rollback_turn == 0:
+                self.user_agent.memory.write_record(record)
+        
+        # Delete all checkpoints later than the rollback point
+        for name in checkpoints_to_remove:
+            logger.info(f"Removing checkpoint '{name}' after rollback")
+            if name in self._memory_checkpoints:
+                del self._memory_checkpoints[name]
+        
+        logger.info(f"Rolled back to checkpoint '{checkpoint_name}' at turn {self._conversation_turn}")
+        return True
+    def human_intervene(self, message_content: str) -> BaseMessage:
+        r"""Allow human to intervene in the conversation by sending a message as the user.
+        
+        Args:
+            message_content (str): Content of the human message
+            
+        Returns:
+            BaseMessage: The human message
+        """
+        if not self.with_human_on_the_loop:
+            logger.warning("Human intervention requested but with_human_on_the_loop is False")
+        
+        # Create a message from the human
+        human_message = BaseMessage.make_user_message(
+            role_name=self.human_role_name,
+            content=message_content
+        )
+        
+        # Record the message in user agent's memory
+        # If we're replacing a message after rollback, the conversation still continues
+        # at the same turn number, so we don't need to increment _conversation_turn
+        self.user_agent.update_memory(human_message, OpenAIBackendRole.USER)
+        
+        logger.info(f"Human intervention at turn {self._conversation_turn}: {message_content[:50]}...")
+        return human_message
 
     def step(
         self,
@@ -529,16 +683,27 @@ class RolePlaying:
                 user agent terminated the conversation, and any additional user
                 information.
         """
-        user_response = self.user_agent.step(assistant_msg)
-        if user_response.terminated or user_response.msgs is None:
-            return (
-                ChatAgentResponse(msgs=[], terminated=False, info={}),
-                ChatAgentResponse(
-                    msgs=[],
-                    terminated=user_response.terminated,
-                    info=user_response.info,
-                ),
+        # Check if this is a human intervention message
+        is_human_intervention = False
+        if hasattr(assistant_msg, 'role_name') and assistant_msg.role_name == self.human_role_name:
+            user_msg = assistant_msg
+            user_response = ChatAgentResponse(
+                msgs=[user_msg], 
+                terminated=False, 
+                info={'source': 'human_intervention'}
             )
+            is_human_intervention = True
+        else:
+            user_response = self.user_agent.step(assistant_msg)
+            if user_response.terminated or user_response.msgs is None:
+                return (
+                    ChatAgentResponse(msgs=[], terminated=False, info={}),
+                    ChatAgentResponse(
+                        msgs=[],
+                        terminated=user_response.terminated,
+                        info=user_response.info,
+                    ),
+                )
         user_msg = self._reduce_message_options(user_response.msgs)
 
         # To prevent recording the same memory more than once (once in chat
@@ -572,6 +737,18 @@ class RolePlaying:
             and self.assistant_agent.model_backend.model_config_dict['n'] > 1
         ):
             self.assistant_agent.record_message(assistant_msg)
+
+        # Only increment turn counter and create new checkpoint for regular messages
+        if not is_human_intervention:
+            # Increment conversation turn counter
+            self._conversation_turn += 1
+            
+            # Create automatic checkpoint every turn
+            self._create_checkpoint(f"turn_{self._conversation_turn}")
+        # For human intervention, overwrite the checkpoint at current turn
+        else:
+            # Overwrite the checkpoint for the current turn
+            self._create_checkpoint(f"turn_{self._conversation_turn}")
 
         return (
             ChatAgentResponse(
@@ -612,16 +789,28 @@ class RolePlaying:
                 user agent terminated the conversation, and any additional user
                 information.
         """
-        user_response = await self.user_agent.astep(assistant_msg)
-        if user_response.terminated or user_response.msgs is None:
-            return (
-                ChatAgentResponse(msgs=[], terminated=False, info={}),
-                ChatAgentResponse(
-                    msgs=[],
-                    terminated=user_response.terminated,
-                    info=user_response.info,
-                ),
+        # Check if this is a human intervention message
+        is_human_intervention = False
+        if hasattr(assistant_msg, 'role_name') and assistant_msg.role_name == self.human_role_name:
+            user_msg = assistant_msg
+            user_response = ChatAgentResponse(
+                msgs=[user_msg], 
+                terminated=False, 
+                info={'source': 'human_intervention'}
             )
+            is_human_intervention = True
+        else:
+            user_response = await self.user_agent.astep(assistant_msg)
+
+            if user_response.terminated or user_response.msgs is None:
+                return (
+                    ChatAgentResponse(msgs=[], terminated=False, info={}),
+                    ChatAgentResponse(
+                        msgs=[],
+                        terminated=user_response.terminated,
+                        info=user_response.info,
+                    ),
+                )
         user_msg = self._reduce_message_options(user_response.msgs)
 
         # To prevent recording the same memory more than once (once in chat
@@ -655,6 +844,18 @@ class RolePlaying:
             and self.assistant_agent.model_backend.model_config_dict['n'] > 1
         ):
             self.assistant_agent.record_message(assistant_msg)
+
+        # Only increment turn counter and create new checkpoint for regular messages
+        if not is_human_intervention:
+            # Increment conversation turn counter
+            self._conversation_turn += 1
+            
+            # Create automatic checkpoint every turn
+            self._create_checkpoint(f"turn_{self._conversation_turn}")
+        # For human intervention, overwrite the checkpoint at current turn
+        else:
+            # Overwrite the checkpoint for the current turn
+            self._create_checkpoint(f"turn_{self._conversation_turn}")
 
         return (
             ChatAgentResponse(
