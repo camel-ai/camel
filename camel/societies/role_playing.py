@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import copy
-import logging
 from datetime import datetime
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
@@ -24,14 +23,14 @@ from camel.agents import (
 )
 from camel.generators import SystemMessageGenerator
 from camel.human import Human
+from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.models import BaseModelBackend
 from camel.prompts import TextPrompt
 from camel.responses import ChatAgentResponse
 from camel.types import OpenAIBackendRole, RoleType, TaskType
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.WARNING)
+logger = get_logger(__name__)
 
 
 class RolePlaying:
