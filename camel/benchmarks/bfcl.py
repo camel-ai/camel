@@ -569,6 +569,74 @@ def get_model(
     return model
 
 
+def create_bfcl_agent(
+    model_platform: Optional[str] = None,
+    model_type: Optional[str] = None,
+    api_key: Optional[str] = None,
+    base_url: Optional[str] = None,
+    system_message: Optional[str] = None,
+) -> Optional["ChatAgent"]:
+    """Create an agent for BFCL benchmark.
+
+    Args:
+        model_platform (str, optional): Model platform, e.g., openai,
+            anthropic, etc. If None, will read from environment variable
+            MODEL_PLATFORM, defaulting to openai.
+        model_type (str, optional): Model type, e.g., gpt-4, claude-3, etc.
+            If None, will read from environment variable MODEL_TYPE,
+            defaulting to gpt-4o.
+        api_key (str, optional): API key.
+            If None, will read from environment variable API_KEY.
+        base_url (str, optional): API endpoint URL.
+            If None, will read from environment variable BASE_URL.
+        system_message (str, optional): System message for the agent.
+            If None, a default system message for function calling is used.
+
+    Returns:
+        ChatAgent: Agent instance for BFCL benchmark,
+            or None if creation fails.
+    """
+    # Create a default system message if not provided
+    if system_message is None:
+        system_message = (
+            "You are an expert in function calling. "
+            "If the user request is not related to any function, "
+            "you should directly return a single string 'None' in "
+            "natural language instead of JSON format."
+            "You analyze user requests and call the appropriate "
+            "functions with the correct parameters. "
+            "Return the function call in JSON format with "
+            "function_call property."
+        )
+
+    # Create system message
+    system_message_obj = BaseMessage(
+        role_name="System",
+        role_type=RoleType.USER,
+        meta_dict=None,
+        content=system_message,
+    )
+
+    # Initialize the model
+    try:
+        model = get_model(
+            model_platform=model_platform,
+            model_type=model_type,
+            api_key=api_key,
+            url=base_url,
+        )
+
+        agent = ChatAgent(model=model, system_message=system_message_obj)
+        logger.info(
+            f"Created agent with model {model_type} on platform "
+            f"{model_platform}"
+        )
+        return agent
+    except Exception as e:
+        logger.error(f"Failed to create agent: {e}")
+        return None
+
+
 class BFCLBenchmark(BaseBenchmark):
     """Berkeley Function Call Leaderboard (BFCL) benchmark adapted from
     Gorilla-LLM's BFCL.
@@ -894,11 +962,6 @@ class BFCLBenchmark(BaseBenchmark):
         """
         # process parameters from kwargs
         category = kwargs.get("category", "simple")
-        model_platform = kwargs.get("model_platform")
-        model_type = kwargs.get("model_type")
-        api_key = kwargs.get("api_key")
-        base_url = kwargs.get("base_url")
-        system_message = kwargs.get("system_message")
 
         logger.info(f"Running BFCL benchmark on {category} category.")
         self.load(force_download=False, category=category)
@@ -914,56 +977,6 @@ class BFCLBenchmark(BaseBenchmark):
 
         # Initialize results storage
         self._results = []
-
-        # flag variable, used to track if a new agent needs to be created
-        need_create_agent = agent is None and (
-            model_platform or model_type or api_key or base_url
-        )
-
-        # Create a new agent if model parameters are provided
-        if need_create_agent:
-            logger.info("Creating new agent with provided model parameters")
-            # Create a default system message if not provided
-            if system_message is None:
-                system_message = (
-                    "You are an expert in function calling. "
-                    "If the user request is not related to any function, "
-                    "you should directly return a single string 'None' in "
-                    "natural language instead of JSON format."
-                    "You analyze user requests and call the appropriate "
-                    "functions with the correct parameters. "
-                    "Return the function call in JSON format with "
-                    "function_call property."
-                )
-
-            # Create system message
-            system_message_obj = BaseMessage(
-                role_name="System",
-                role_type=RoleType.USER,
-                meta_dict=None,
-                content=system_message,
-            )
-
-            # Initialize the model
-            try:
-                model = get_model(
-                    model_platform=model_platform,
-                    model_type=model_type,
-                    api_key=api_key,
-                    url=base_url,
-                )
-
-                agent = ChatAgent(
-                    model=model, system_message=system_message_obj
-                )
-                logger.info(
-                    f"Created agent with model {model_type} on platform "
-                    f"{model_platform}"
-                )
-            except Exception as e:
-                logger.error(f"Failed to create agent: {e}")
-                self._results = []
-                return self
 
         # ensure agent is not None
         if agent is None:
@@ -1095,8 +1108,18 @@ class BFCLBenchmark(BaseBenchmark):
                     correct = sum(1 for r in self._results if r["result"])
                     total = len(self._results)
                     model_name = "unknown"
-                    if model_type:
-                        model_name = model_type
+                    try:
+                        # Try to get model information from agent if possible
+                        if agent and hasattr(agent, "model_name"):
+                            model_name = agent.model_name
+                        elif (
+                            agent
+                            and hasattr(agent, "model")
+                            and hasattr(agent.model, "model_type")
+                        ):
+                            model_name = agent.model.model_type
+                    except Exception as e:
+                        logger.debug(f"Could not get model name: {e}")
                     logger.info(f"Model: {model_name}")
                     logger.info(f"Category: {category}")
                     logger.info(

@@ -32,6 +32,7 @@ except ImportError:
     )
 
 from camel.benchmarks import BFCLBenchmark
+from camel.benchmarks.bfcl import create_bfcl_agent
 
 logger = logging.getLogger(__name__)
 
@@ -94,16 +95,24 @@ def run_bfcl_benchmark(
         "Return the function call in JSON format with function_call property."
     )
 
-    benchmark.run(
-        agent=None,  # Will be created inside run method
-        category=category,
-        randomize=False,
-        subset=subset,
+    # Set up the agent to be benchmarked
+    agent = create_bfcl_agent(
         model_platform=model_platform,
         model_type=model_name,
         api_key=api_key,
         base_url=base_url,
         system_message=system_message,
+    )
+
+    if agent is None:
+        logger.error(f"Failed to create agent for model {model_name}")
+        return None
+
+    benchmark.run(
+        agent=agent,
+        category=category,
+        randomize=False,
+        subset=subset,
     )
 
     # Log results
