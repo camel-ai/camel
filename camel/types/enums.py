@@ -1202,6 +1202,8 @@ class EmbeddingModelType(Enum):
 
     MISTRAL_EMBED = "mistral-embed"
 
+    GEMINI_EMBEDDING_EXP = "gemini-embedding-exp-03-07"
+
     @property
     def is_openai(self) -> bool:
         r"""Returns whether this type of models is an OpenAI-released model."""
@@ -1231,6 +1233,13 @@ class EmbeddingModelType(Enum):
         }
 
     @property
+    def is_gemini(self) -> bool:
+        r"""Returns whether this type of models is an Gemini-released model."""
+        return self in {
+            EmbeddingModelType.GEMINI_EMBEDDING_EXP,
+        }
+
+    @property
     def output_dim(self) -> int:
         if self in {
             EmbeddingModelType.JINA_COLBERT_V2,
@@ -1253,8 +1262,27 @@ class EmbeddingModelType(Enum):
             return 3072
         elif self is EmbeddingModelType.MISTRAL_EMBED:
             return 1024
+        elif self is EmbeddingModelType.GEMINI_EMBEDDING_EXP:
+            return 3072
         else:
             raise ValueError(f"Unknown model type {self}.")
+
+
+class GeminiEmbeddingTaskType(str, Enum):
+    r"""Task types for Gemini embedding models.
+
+    For more information, please refer to:
+    https://ai.google.dev/gemini-api/docs/embeddings#task-types
+    """
+
+    SEMANTIC_SIMILARITY = "SEMANTIC_SIMILARITY"
+    CLASSIFICATION = "CLASSIFICATION"
+    CLUSTERING = "CLUSTERING"
+    RETRIEVAL_DOCUMENT = "RETRIEVAL_DOCUMENT"
+    RETRIEVAL_QUERY = "RETRIEVAL_QUERY"
+    QUESTION_ANSWERING = "QUESTION_ANSWERING"
+    FACT_VERIFICATION = "FACT_VERIFICATION"
+    CODE_RETRIEVAL_QUERY = "CODE_RETRIEVAL_QUERY"
 
 
 class TaskType(Enum):

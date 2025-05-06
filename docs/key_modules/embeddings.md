@@ -109,7 +109,7 @@ embeddings = azure_openai_embedding.embed_list(["Hello, world!", "Another exampl
 from camel.embeddings import TogetherEmbedding
 
 # Initialize the Together AI embedding with a specific model
-together_embedding = TogetherEmbedding(model_name="togethercomputer/m2-bert-80M-8k-retrieval")
+together_embedding = TogetherEmbedding(model_type="togethercomputer/m2-bert-80M-8k-retrieval")
 
 # Generate embeddings for a list of texts
 embeddings = together_embedding.embed_list(["Hello, world!", "Another example"])
