@@ -61,7 +61,7 @@ class MCPClient(BaseToolkit):
         env (Dict[str, str]): Environment variables for the stdio mode command.
             (default: :obj:`'None'`)
         timeout (Optional[float]): Connection timeout seconds.
-            (default: :obj:`'None'`)
+            (default: 30)
         headers (Dict[str, str]): Headers for the HTTP request.
             (default: :obj:`'None'`)
         strict (Optional[bool]): Whether to enforce strict mode for the
@@ -73,7 +73,7 @@ class MCPClient(BaseToolkit):
         command_or_url: str,
         args: Optional[List[str]] = None,
         env: Optional[Dict[str, str]] = None,
-        timeout: Optional[float] = None,
+        timeout: float = 30,
         headers: Optional[Dict[str, str]] = None,
         strict: Optional[bool] = False,
     ):
