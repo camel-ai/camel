@@ -18,6 +18,7 @@ from camel.agents import ChatAgent
 from camel.models import ModelFactory
 from camel.toolkits import SearchToolkit
 from camel.types import ModelPlatformType
+from camel.types.enums import ModelType
 
 # Prevent logging since MCP needs to use stdout
 root_logger = logging.getLogger()
@@ -30,20 +31,28 @@ root_logger.addHandler(logging.NullHandler())
 # ========================================================================
 
 # Define the model - replace with your preferred model configuration
-# Examples:
-# 1. OpenAI: model_platform=ModelPlatformType.OPENAI, model_type="gpt-4o"
-# 2. Anthropic: model_platform=ModelPlatformType.ANTHROPIC,
-#    model_type="claude-3-opus-20240229"
-model = ModelFactory.create(
-    url="https://openrouter.ai/api/v1",
-    api_key=os.getenv("OPENROUTER_API_KEY"),  # Set this environment variable
+chat_model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
     model_type="nvidia/llama-3.1-nemotron-70b-instruct:free",
+    url="https://openrouter.ai/api/v1",
+    api_key=os.getenv("OPENROUTER_API_KEY"),  # Set this environment variable
+)
+
+reasoning_model = ModelFactory.create(
+    model_platform=ModelPlatformType.DEEPSEEK,
+    model_type=ModelType.DEEPSEEK_REASONER,
+    api_key=os.getenv("DEEPSEEK_API_KEY"),  # Set this environment variable
+)
+
+search_model = ModelFactory.create(
+    model_platform=ModelPlatformType.OPENAI,
+    model_type=ModelType.GPT_4_1_MINI,
+    api_key=os.getenv("OPENAI_API_KEY"),  # Set this environment variable
 )
 
 # Create a default chat agent - customize as needed
 chat_agent = ChatAgent(
-    model=model,
+    model=chat_model,
     system_message="You are a helpful assistant.",
     # Uncomment to set a specific output language
     # output_language="en",  # or "zh", "es", "fr", etc.
@@ -55,10 +64,7 @@ with tasks.
 """
 
 reasoning_agent = ChatAgent(
-    model=ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI,
-        model_type="gpt-4o-mini",
-    ),
+    model=reasoning_model,
     system_message="You are a helpful assistant.",
 )
 
@@ -69,12 +75,9 @@ The reasoning agent is a helpful assistant that can reason about the world.
 
 # Create another agent for searching the web
 search_agent = ChatAgent(
-    model=ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI,
-        model_type="gpt-4o",
-    ),
+    model=search_model,
     system_message="You are a helpful assistant.",
-    tools=SearchToolkit().get_tools(),
+    tools=SearchToolkit().get_tools(), # Add search tool
 )
 
 search_agent_description = """
@@ -94,4 +97,3 @@ description_dict = {
     "search": search_agent_description,
     "reasoning": reasoning_agent_description,
 }
-# ========================================================================

@@ -4,7 +4,7 @@ This directory contains the implementation for exposing CAMEL agents through the
 
 ## What is MCP?
 
-The [Model Context Protocol (MCP)](https://modelcontextprotocol.io) lets you build servers that expose data and functionality to LLM applications in a secure, standardized way. It acts like a web API specifically designed for LLM interactions, allowing you to:
+The [Model Context Protocol (MCP)](https://modelcontextprotocol.io) lets you build servers that expose data and functionality to LLM applications in a standardized way. It acts like a web API specifically designed for LLM interactions, allowing you to:
 
 - Expose data through **Resources** (like GET endpoints to load information into LLM context)
 - Provide functionality through **Tools** (like POST endpoints to execute code or produce side effects)
@@ -14,7 +14,7 @@ The [Model Context Protocol (MCP)](https://modelcontextprotocol.io) lets you bui
 
 The CAMEL Agent MCP Server allows you to expose your CAMEL agents as MCP services, making them accessible to any MCP-compatible client like Claude Desktop. This enables seamless integration of CAMEL's powerful agent capabilities with various applications.
 
-> **IMPORTANT**: Before using the server, customize your agents in `agent_config.py` to set up your preferred models, system messages, and tools. The default configuration uses OpenRouter, but you can configure it to use any model supported by CAMEL.
+> **IMPORTANT**: Before using the server, customize your agents in `agent_config.py` to set up your preferred models, system messages, and tools. The default configuration uses 3 different model platforms, but you can configure it to use any model supported by CAMEL.
 
 ### Available Agents
 
@@ -63,7 +63,7 @@ Replace the paths and API keys with your own values. This configuration tells th
 ### Prerequisites
 
 - Python 3.10 or higher
-- CAMEL library (`pip install camel-ai`)
+- CAMEL library (`pip install camel-ai[all]`)
 - MCP library (`pip install mcp`)
 
 ### Configuration

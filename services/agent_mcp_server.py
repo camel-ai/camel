@@ -18,7 +18,7 @@ from mcp.server.fastmcp import Context, FastMCP
 from camel.utils import model_from_json_schema
 from services.agent_config import agents_dict, description_dict
 
-mcp = FastMCP("ChatAgentMCP", dependencies=["camel-ai"])
+mcp = FastMCP("ChatAgentMCP", dependencies=["camel-ai[all]"])
 
 
 @mcp.tool()
@@ -28,15 +28,17 @@ async def step(
     ctx: Context,
     response_format: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
-    """Execute a single step in the chat session with the agent.
+    r"""Execute a single step in the chat session with the agent.
 
     Args:
-        name: The name of the agent to use
-        message: The input message for the agent
-        response_format: Optional schema for structured response
+        name (str): The name of the agent to use.
+        message (str): The input message for the agent.
+        ctx (Context): The context object for the tool.
+        response_format (Optional[Dict[str, Any]]): Optional schema for 
+            structured response. (default: :obj:`None`)
 
     Returns:
-        A dictionary containing the response from the agent
+        Dict[str, Any]: A dictionary containing the response from the agent.
     """
     try:
         agent = agents_dict[name]
@@ -65,9 +67,14 @@ async def step(
 
 @mcp.tool()
 def reset(ctx: Context) -> Dict[str, str]:
-    """Reset the chat agent to its initial state.
+    r"""Reset the chat agent to its initial state.
+
+    Args:
+        ctx (Context): The context object for the tool.
+
     Returns:
-        A dictionary containing the status of the reset operation
+        Dict[str, str]: A dictionary containing the status of the reset 
+            operation.
     """
     for agent in agents_dict.values():
         agent.reset()
@@ -77,12 +84,15 @@ def reset(ctx: Context) -> Dict[str, str]:
 
 @mcp.tool()
 def set_output_language(language: str, ctx: Context) -> Dict[str, str]:
-    """Set the output language for the chat agent.
+    r"""Set the output language for the chat agent.
+
     Args:
-        language: The language to set the output language to
+        language (str): The language to set the output language to.
+        ctx (Context): The context object for the tool.
 
     Returns:
-        A dictionary containing the status of the language setting operation
+        Dict[str, str]: A dictionary containing the status of the language 
+            setting operation
     """
     for agent in agents_dict.values():
         agent.output_language = language
@@ -96,9 +106,10 @@ def set_output_language(language: str, ctx: Context) -> Dict[str, str]:
 @mcp.resource("agent://")
 @mcp.tool()
 def get_agents_info() -> Dict[str, Any]:
-    """Get information about all agents provided by the server.
+    r"""Get information about all agents provided by the server.
+
     Returns:
-        A dictionary containing information about all agents
+        Dict[str, Any]: A dictionary containing information about all agents.
     """
     return description_dict
 
@@ -106,12 +117,14 @@ def get_agents_info() -> Dict[str, Any]:
 @mcp.resource("history://{name}")
 @mcp.tool()
 def get_chat_history(name: str) -> Dict[str, Any]:
-    """Get the chat history for the given agent.
+    r"""Get the chat history for the given agent.
+
     Args:
-        name: The name of the agent to get the chat history for
+        name (str): The name of the agent to get the chat history for.
 
     Returns:
-        A dictionary containing the chat history for the given agent
+        Dict[str, Any]: A dictionary containing the chat history for the 
+            given agent.
     """
     try:
         agent = agents_dict[name]
@@ -126,12 +139,14 @@ def get_chat_history(name: str) -> Dict[str, Any]:
 @mcp.resource("agent://{name}")
 @mcp.tool()
 def get_agent_info(name: str) -> Dict[str, Any]:
-    """Get information about the given agent.
+    r"""Get information about the given agent.
+
     Args:
-        name: The name of the agent to get information for
+        name (str): The name of the agent to get information for.
 
     Returns:
-        A dictionary containing information about the given agent
+        Dict[str, Any]: A dictionary containing information about the given 
+            agent.
     """
     try:
         agent = agents_dict[name]
@@ -153,12 +168,13 @@ def get_agent_info(name: str) -> Dict[str, Any]:
 @mcp.resource("tool://{name}")
 @mcp.tool()
 def get_available_tools(name: str) -> Dict[str, Any]:
-    """Get a list of available internal tools.
+    r"""Get a list of available internal tools.
+
     Args:
-        name: The name of the agent to get the available tools for
+        name (str): The name of the agent to get the available tools for.
 
     Returns:
-        A dictionary containing the available internal tools
+        Dict[str, Any]: A dictionary containing the available internal tools.
     """
     try:
         agent = agents_dict[name]
