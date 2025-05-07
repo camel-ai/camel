@@ -684,17 +684,21 @@ class RolePlaying:
             ),
         )
 
-    def clone(self, task_prompt: str, with_memory: bool = False) -> 'RolePlaying':
+    def clone(
+        self, task_prompt: str, with_memory: bool = False
+    ) -> 'RolePlaying':
         r"""Creates a new instance of RolePlaying with the same configuration.
 
         Args:
-            with_memory (bool, optional): Whether to copy the memory (conversation 
-                history) to the new instance. If True, the new instance will have 
-                the same conversation history. If False, the new instance will have 
-                a fresh memory. (default: :obj:`False`)
+            with_memory (bool, optional): Whether to copy the memory
+                (conversation history) to the new instance. If True, the new
+                instance will have the same conversation history. If False,
+                the new instance will have a fresh memory.
+                (default: :obj:`False`)
 
         Returns:
-            RolePlaying: A new instance of RolePlaying with the same configuration.
+            RolePlaying: A new instance of RolePlaying with the same
+                configuration.
         """
 
         new_instance = RolePlaying(

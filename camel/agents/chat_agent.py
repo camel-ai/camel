@@ -1561,8 +1561,8 @@ class ChatAgent(BaseAgent):
         """
         self.model_backend.add_strategy(name, strategy_fn)
 
-    def clone(self, with_memory: bool = False) -> 'ChatAgent':
-        r"""Creates a new instance of :obj:`ChatAgent` with the same 
+    def clone(self, with_memory: bool = False) -> ChatAgent:
+        r"""Creates a new instance of :obj:`ChatAgent` with the same
         configuration as the current instance.
 
         Args:
@@ -1573,7 +1573,7 @@ class ChatAgent(BaseAgent):
                 only the system message. (default: :obj:`False`)
 
         Returns:
-            ChatAgent: A new instance of :obj:`ChatAgent` with the same 
+            ChatAgent: A new instance of :obj:`ChatAgent` with the same
                 configuration.
         """
         # Create a new instance with the same configuration
@@ -1585,7 +1585,7 @@ class ChatAgent(BaseAgent):
         new_agent = ChatAgent(
             system_message=system_message,
             model=self.model_backend.models,  # Pass the existing model_backend
-            memory=None,  # We'll create a new memory with the same configuration
+            memory=None,  # clone memory later
             message_window_size=getattr(self.memory, "window_size", None),
             token_limit=getattr(
                 self.memory.get_context_creator(), "token_limit", None
@@ -1598,7 +1598,7 @@ class ChatAgent(BaseAgent):
             response_terminators=self.response_terminators,
             scheduling_strategy=self.model_backend.scheduling_strategy.__name__,
             single_iteration=self.single_iteration,
-            stop_event=self.stop_event
+            stop_event=self.stop_event,
         )
 
         # Copy memory if requested
