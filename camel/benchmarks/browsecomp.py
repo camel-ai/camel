@@ -521,9 +521,9 @@ class BrowseCompBenchmark(BaseBenchmark):
     ) -> None:
         r"""Run the benchmark by processing each example in parallel.
 
-        This method applies the provided pipeline to each example in the dataset
-        using a process pool for parallel execution. It shows progress using tqdm
-        and stores the results in self._raw_results.
+        This method applies the provided pipeline to each example in the
+        dataset using a process pool for parallel execution. It shows progress
+        using tqdm and stores the results in self._raw_results.
 
         Args:
             pipeline_template: The template agent or framework to use for
