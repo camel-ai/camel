@@ -150,55 +150,51 @@ class ModelFactory:
             model_class = VolcanoModel
         elif model_platform.is_netmind:
             model_class = NetmindModel
-
-        elif model_platform.is_openai and model_type.is_openai:
+        elif model_platform.is_openai:
             model_class = OpenAIModel
-        elif model_platform.is_azure and model_type.is_azure_openai:
+        elif model_platform.is_azure:
             model_class = AzureOpenAIModel
-        elif model_platform.is_anthropic and model_type.is_anthropic:
+        elif model_platform.is_anthropic:
             model_class = AnthropicModel
-        elif model_platform.is_groq and model_type.is_groq:
+        elif model_platform.is_groq:
             model_class = GroqModel
-        elif model_platform.is_lmstudio and model_type.is_lmstudio:
+        elif model_platform.is_lmstudio:
             model_class = LMStudioModel
-        elif model_platform.is_openrouter and model_type.is_openrouter:
+        elif model_platform.is_openrouter:
             model_class = OpenRouterModel
-        elif model_platform.is_zhipuai and model_type.is_zhipuai:
+        elif model_platform.is_zhipuai:
             model_class = ZhipuAIModel
-        elif model_platform.is_gemini and model_type.is_gemini:
+        elif model_platform.is_gemini:
             model_class = GeminiModel
-        elif model_platform.is_mistral and model_type.is_mistral:
+        elif model_platform.is_mistral:
             model_class = MistralModel
-        elif model_platform.is_reka and model_type.is_reka:
+        elif model_platform.is_reka:
             model_class = RekaModel
-        elif model_platform.is_cohere and model_type.is_cohere:
+        elif model_platform.is_cohere:
             model_class = CohereModel
-        elif model_platform.is_yi and model_type.is_yi:
+        elif model_platform.is_yi:
             model_class = YiModel
-        elif model_platform.is_qwen and model_type.is_qwen:
+        elif model_platform.is_qwen:
             model_class = QwenModel
         elif model_platform.is_deepseek:
             model_class = DeepSeekModel
         elif model_platform.is_ppio:
             model_class = PPIOModel
-        elif model_platform.is_internlm and model_type.is_internlm:
+        elif model_platform.is_internlm:
             model_class = InternLMModel
-        elif model_platform.is_moonshot and model_type.is_moonshot:
+        elif model_platform.is_moonshot:
             model_class = MoonshotModel
         elif model_platform.is_modelscope:
             model_class = ModelScopeModel
         elif model_platform.is_novita:
             model_class = NovitaModel
+        elif model_platform.is_watsonx:
+            model_class = WatsonXModel
         elif model_type == ModelType.STUB:
             model_class = StubModel
-        elif model_type.is_watsonx:
-            model_class = WatsonXModel
 
         if model_class is None:
-            raise ValueError(
-                f"Unknown pair of model platform `{model_platform}` "
-                f"and model type `{model_type}`."
-            )
+            raise ValueError(f"Unknown model platform `{model_platform}`")
 
         return model_class(
             model_type=model_type,

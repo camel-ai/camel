@@ -71,7 +71,7 @@ class MCPClient(BaseToolkit):
         command_or_url: str,
         args: Optional[List[str]] = None,
         env: Optional[Dict[str, str]] = None,
-        timeout: float = 30,
+        timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
         strict: Optional[bool] = False,
     ):
