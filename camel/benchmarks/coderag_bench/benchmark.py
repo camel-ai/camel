@@ -51,6 +51,7 @@ from camel.retrievers.vector_retriever import VectorRetriever
 from camel.types import StorageType
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 class RetrieverFn(Protocol):
@@ -147,7 +148,7 @@ class CodeRAGBenchAutoRetriever(AutoRetriever):
         url_and_api_key: Optional[tuple] = None,
         overwrite: bool = False,
     ):
-        r"""Initializes the retriever with optional vector store config and 
+        r"""Initializes the retriever with optional vector store config and
         embedding model.
 
         Args:
@@ -161,7 +162,7 @@ class CodeRAGBenchAutoRetriever(AutoRetriever):
                 (default: :obj:`None`)
             overwrite (bool): Whether to re-index and overwrite existing
                 collection. (default: :obj:`False`)
-       """
+        """
         super().__init__(
             storage_type=storage_type,
             embedding_model=embedding_model,
@@ -170,7 +171,7 @@ class CodeRAGBenchAutoRetriever(AutoRetriever):
         )
         self.overwrite = overwrite
 
-    def run_vector_retriever(
+    def run_vector_retriever(  # type: ignore[override]
         self,
         query: str,
         contents: Union[Element, List[Element]],
@@ -441,24 +442,32 @@ def extract_code_pieces(
 
 def get_function_name(question: str, lang: str):
     r"""
-    Extracts the function name and the prefix (preceding lines) from a code prompt.
+    Extracts the function name and the prefix (preceding
+    lines) from a code prompt.
 
-    This is useful for evaluation purposes where the generated function needs to be
-    compared or executed with a known entry point name. The logic assumes a simple structure
-    where either the last Python function is the target, or in non-Python languages, the
-    function appears at the end enclosed in curly braces.
+    This is useful for evaluation purposes where the
+    generated function needs to be compared or executed
+    with a known entry point name. The logic assumes a
+    simple structure where either the last Python
+    function is the target, or in non-Python languages,
+    the function appears at the end enclosed in curly
+    braces.
 
     Args:
-        question (str): The full code prompt or question containing the function definition.
-        lang (str): The programming language (e.g., "python", "java").
+        question (str): The full code prompt or question
+            containing the function definition.
+        lang (str): The programming language (e.g.,
+            "python", "java").
 
     Returns:
-        Tuple[str, str]: A tuple of (function_name, function_prefix), where function_prefix
-                         is the code before the function definition.
+        Tuple[str, str]: A tuple of (function_name,
+            function_prefix), where function_prefix is the
+            code before the function definition.
 
     Notes:
         This function is adapted from:
-        https://github.com/code-rag-bench/code-rag-bench/blob/main/generation/eval/utils.py
+        https://github.com/code-rag-bench/code-rag-bench/blob/
+        main/generation/eval/utils.py
     """
     func_lines = [x for x in question.strip().split('\n') if x.strip()]
 
@@ -522,12 +531,10 @@ def extract_generation_code(output: str, question: str) -> str:
             extraction fails.
     """
 
-
     try:
         # Extract the content within ```python ... ``` block
         code_block = re.findall(
-            r"```(?:python)?\s*\n(.*?)```", output,
-            re.DOTALL | re.IGNORECASE
+            r"```(?:python)?\s*\n(.*?)```", output, re.DOTALL | re.IGNORECASE
         )[0]
 
         # Get the original function header from the prompt
@@ -556,26 +563,32 @@ def extract_generation_code(output: str, question: str) -> str:
 
 
 def stop_at_stop_token(decoded_string, stop_tokens):
-    r"""Produces the prefix of the decoded string that ends at the first occurrence
-    of any stop token.
+    r"""Produces the prefix of the decoded string that ends
+    at the first occurrence of any stop token.
 
-    This function searches for the earliest appearance of any provided stop token
-    in the decoded string and truncates the string at that point.
+    This function searches for the earliest appearance of
+    any provided stop token in the decoded string and
+    truncates the string at that point.
 
     Warning:
-        The `decoded_string` must not include the prompt itself, as the prompt may
-        contain stop tokens that should be ignored.
+        The `decoded_string` must not include the prompt
+        itself, as the prompt may contain stop tokens that
+        should be ignored.
 
     Note:
         This implementation is adapted from:
-        https://github.com/code-rag-bench/code-rag-bench/blob/main/generation/eval/tasks/humaneval.py
+        https://github.com/code-rag-bench/code-rag-bench/
+        blob/main/generation/eval/tasks/humaneval.py
 
     Args:
-        decoded_string (str): The generated text output to be processed.
-        stop_tokens (list[str]): A list of stop tokens to search for in the decoded text.
+        decoded_string (str): The generated text output to
+            be processed.
+        stop_tokens (list[str]): A list of stop tokens to
+            search for in the decoded text.
 
     Returns:
-        str: The truncated decoded string ending before the first occurrence of a stop token.
+        str: The truncated decoded string ending before the
+            first occurrence of a stop token.
     """
     min_stop_index = len(decoded_string)
     for stop_token in stop_tokens:
@@ -741,15 +754,20 @@ class CodeRAGBenchmark(BaseBenchmark):
             self.download()
 
     def run_retrieval(self, retrieve_fn, retrieval_top_k):
-        r"""Run top-k document retrieval and compute retrieval metrics.
+        r"""Run top-k document retrieval and compute retrieval
+        metrics.
 
         Args:
-            retrieve_fn (Callable): A callable retrieval function that takes
-                `query`, `contents`, `top_k`, and optionally other keyword arguments.
-            retrieval_top_k (int): Number of top documents to retrieve per query.
+            retrieve_fn (Callable): A callable retrieval
+                function that takes `query`, `contents`,
+                `top_k`, and optionally other keyword
+                arguments.
+            retrieval_top_k (int): Number of top documents
+                to retrieve per query.
 
         Returns:
-            dict: A dictionary containing retrieval evaluation metrics.
+            dict: A dictionary containing retrieval
+                evaluation metrics.
         """
 
         queries_list, docs_list, qrels_list = document2code(self.dataset)
@@ -884,7 +902,10 @@ class CodeRAGBenchmark(BaseBenchmark):
             "json", data_files=output_path, split="train"
         )
         # Evaluate using BEIR
-        from beir.retrieval.evaluation import EvaluateRetrieval
+
+        from beir.retrieval.evaluation import (  # type: ignore[import-untyped]
+            EvaluateRetrieval,
+        )
 
         retriever = EvaluateRetrieval(score_function="dot")
         k_values = [1, 5, 10]
@@ -928,7 +949,11 @@ class CodeRAGBenchmark(BaseBenchmark):
         return metrics
 
     def run_generation(
-        self, agent, n_generation_samples, allow_code_execution, generation_eval_k
+        self,
+        agent,
+        n_generation_samples,
+        allow_code_execution,
+        generation_eval_k,
     ):
         r"""Runs code generation and evaluation for the task.
 
@@ -963,7 +988,7 @@ class CodeRAGBenchmark(BaseBenchmark):
         # List[str]: one reference string per task
         all_references = []
 
-        for idx, data_i in enumerate(
+        for _, data_i in enumerate(
             tqdm(self.dataset["test"])
         ):  # data_i is equivalent to doc in <https://github.com/
             # code-rag-bench/code-rag-bench/blob/main/generation/
@@ -1093,14 +1118,14 @@ class CodeRAGBenchmark(BaseBenchmark):
 
             return pass_at_k
 
-    def run(
+    def run(  # type: ignore[override]
         self,
         agent: ChatAgent,
         retrieve_fn: Optional[RetrieverFn] = None,
         retrieval_top_k: int = 10,
         n_generation_samples: int = 1,
         allow_code_execution: bool = False,
-        generation_eval_k: List[int] = [1, 5, 10],
+        generation_eval_k: Optional[List[int]] = None,
     ):
         r"""Runs the CodeRAG-Bench benchmark: retrieval and eval.
 
@@ -1132,6 +1157,8 @@ class CodeRAGBenchmark(BaseBenchmark):
         Returns:
             Dict[str, Any]: Evaluation metrics.
         """
+        if generation_eval_k is None:
+            generation_eval_k = [1, 5, 10]
 
         output_metrics = {}
 
@@ -1142,6 +1169,7 @@ class CodeRAGBenchmark(BaseBenchmark):
             logger.info(
                 f"Using only first {self.subset_size} samples for testing."
             )
+            assert self.dataset is not None
             self.dataset["test"] = self.dataset["test"].select(
                 range(self.subset_size)
             )
@@ -1157,7 +1185,7 @@ class CodeRAGBenchmark(BaseBenchmark):
         if self.run_mode in ["generate", "retrieve_generate"]:
             logger.info("[INFO] Starting generation...")
             output_metrics['generation'] = self.run_generation(
-                agent = agent,
+                agent=agent,
                 n_generation_samples=n_generation_samples,
                 allow_code_execution=allow_code_execution,
                 generation_eval_k=generation_eval_k,

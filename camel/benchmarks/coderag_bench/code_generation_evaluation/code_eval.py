@@ -14,12 +14,14 @@
 
 # -------- Note on Original Attribution --------
 # This file is adapted from:
-# https://github.com/code-rag-bench/code-rag-bench/blob/main/generation/eval/tasks/custom_metrics/code_eval.py
+# https://github.com/code-rag-bench/code-rag-bench/blob/main/generation/eval/
+# tasks/custom_metrics/code_eval.py
 # under the Apache 2.0 License.
 # We thank the original authors for their implementation.
 
 # -------- Original License from code-rag-bench --------
-# Copyright 2020 The HuggingFace Datasets Authors and the current dataset script contributor.
+# Copyright 2020 The HuggingFace Datasets Authors and the current dataset
+# script contributor.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -74,38 +76,51 @@ and Sam McCandlish and Ilya Sutskever and Wojciech Zaremba},
 """
 
 _DESCRIPTION = """\
-This metric implements the evaluation harness for the HumanEval problem solving dataset
-described in the paper "Evaluating Large Language Models Trained on Code"
+This metric implements the evaluation harness for the HumanEval problem solving
+ dataset described in the paper "Evaluating Large Language Models Trained on 
+ Code"
 (https://arxiv.org/abs/2107.03374).
 """
 
 
 _KWARGS_DESCRIPTION = """
-Calculates how good are predictions given some references, using certain scores
+Calculates how good are predictions given some
+references, using certain scores
+
 Args:
-    predictions: list of candidates to evaluate. Each candidates should be a list
-        of strings with several code candidates to solve the problem.
-    references: a list with a test for each prediction. Each test should evaluate the
-        correctness of a code candidate.
-    k: number of code candidates to consider in the evaluation (Default: [1, 10, 100])
-    num_workers: number of workers used to evaluate the candidate programs (Default: 4).
+    predictions: list of candidates to evaluate.
+        Each candidates should be a list of strings with
+        several code candidates to solve the problem.
+    references: a list with a test for each prediction.
+        Each test should evaluate the correctness of a
+        code candidate.
+    k: number of code candidates to consider in the
+        evaluation (Default: [1, 10, 100])
+    num_workers: number of workers used to evaluate the
+        candidate programs (Default: 4).
     timeout:
+
 Returns:
     pass_at_k: dict with pass rates for each k
     results: dict with granular results of each unittest
+
 Examples:
     >>> test_cases = ["assert add(2,3)==5"]
-    >>> candidates = [["def add(a,b): return a*b", "def add(a, b): return a+b"]]
-    >>> pass_at_k, results = compute_code_eval(references=test_cases, predictions=candidates, k=[1, 2])
+    >>> candidates = [["def add(a,b): return a*b",
+    ...                "def add(a, b): return a+b"]]
+    >>> pass_at_k, results = compute_code_eval(
+    ...     references=test_cases,
+    ...     predictions=candidates,
+    ...     k=[1, 2])
     >>> print(pass_at_k)
     {'pass@1': 0.5, 'pass@2': 1.0}
 """
 
 
 _WARNING = """
-################################################################################
+##############################################################################
                                   !!!WARNING!!!
-################################################################################
+##############################################################################
 The "code_eval" metric executes untrusted model-generated code in Python.
 Although it is highly unlikely that model-generated code will do something
 overtly malicious in response to this test suite, model-generated code may act
@@ -116,13 +131,13 @@ information on how OpenAI sandboxes its code, see the paper "Evaluating Large
 Language Models Trained on Code" (https://arxiv.org/abs/2107.03374).
 
 Once you have read this disclaimer and taken appropriate precautions,
-set the environment variable HF_ALLOW_CODE_EVAL="1". Within Python you can to this
-with:
+set the environment variable HF_ALLOW_CODE_EVAL="1". Within Python you can to 
+this with:
 
 >>> import os
 >>> os.environ["HF_ALLOW_CODE_EVAL"] = "1"
 
-################################################################################\
+##############################################################################
 """
 
 _LICENSE = """The MIT License
@@ -149,9 +164,11 @@ THE SOFTWARE."""
 
 
 def compute_code_eval(
-    predictions, references, k=[1, 10, 100], num_workers=4, timeout=3.0
+    predictions, references, k=None, num_workers=4, timeout=3.0
 ):
     """Returns the scores"""
+    if k is None:
+        k = [1, 10, 100]
 
     if os.getenv("HF_ALLOW_CODE_EVAL", 0) != "1":
         raise ValueError(_WARNING)

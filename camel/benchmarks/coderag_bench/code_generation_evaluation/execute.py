@@ -13,7 +13,8 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 # -------- Original License and Attribution from code-rag-bench --------
-# Copyright 2020 The HuggingFace Datasets Authors and the current dataset script contributor.
+# Copyright 2020 The HuggingFace Datasets Authors and the current dataset
+# script contributor.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -77,7 +78,8 @@ def unsafe_execute(check_program, result, timeout):
         rmdir = os.rmdir
         chdir = os.chdir
 
-        # Disable functionalities that can make destructive changes to the test.
+        # Disable functionalities that can make destructive changes to the
+        # test.
         reliability_guard()
 
         # Run program.
@@ -148,7 +150,7 @@ class WriteOnlyStringIO(io.StringIO):
         return False
 
 
-class redirect_stdin(contextlib._RedirectStream):  # type: ignore
+class redirect_stdin(contextlib._RedirectStream):  # type: ignore[misc]
     _stream = "stdin"
 
 
@@ -242,7 +244,7 @@ def reliability_guard(maximum_memory_bytes=None):
 
     import subprocess
 
-    subprocess.Popen = None  # type: ignore
+    subprocess.Popen = None  # type: ignore[assignment]
 
     __builtins__["help"] = None
 
