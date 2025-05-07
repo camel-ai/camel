@@ -200,3 +200,57 @@ class CriticAgent(ChatAgent):
             terminated=False,
             info={},
         )
+
+    def clone(self, with_memory: bool = False) -> 'CriticAgent':
+        r"""Creates a new instance of :obj:`CriticAgent` with the same 
+        configuration as the current instance.
+
+        Args:
+            with_memory: bool
+                Whether to copy the memory (conversation history) to the new
+                agent. If True, the new agent will have the same conversation
+                history. If False, the new agent will have a fresh memory with
+                only the system message. (default: :obj:`False`)
+
+        Returns:
+            CriticAgent: A new instance of :obj:`CriticAgent` with the same 
+                configuration.
+        """
+
+        system_message = None if with_memory else self._original_system_message
+
+        new_agent = CriticAgent(
+            system_message=system_message,
+            model=self.model_backend.models,  # Pass the existing model_backend
+            memory=None,  # We'll create a new memory with the same configuration
+            message_window_size=getattr(self.memory, "window_size", None),
+            token_limit=getattr(
+                self.memory.get_context_creator(), "token_limit", None
+            ),
+            output_language=self._output_language,
+            tools=list(self._internal_tools.values()),
+            external_tools=[
+                schema for schema in self._external_tool_schemas.values()
+            ],
+            response_terminators=self.response_terminators,
+            scheduling_strategy=self.model_backend.scheduling_strategy.__name__,
+            single_iteration=self.single_iteration,
+            stop_event=self.stop_event,
+            retry_attempts=self.retry_attempts,
+            verbose=self.verbose,
+            logger_color=self.logger_color
+        )
+
+        # Copy memory if requested
+        if with_memory:
+            # Get all records from the current memory
+            context_records = self.memory.retrieve()
+            # Write them to the new agent's memory
+            for context_record in context_records:
+                new_agent.memory.write_record(context_record.memory_record)
+        # First, clone the base ChatAgent
+
+        # Copy CriticAgent-specific attributes
+        new_agent.options_dict = self.options_dict.copy()
+
+        return new_agent

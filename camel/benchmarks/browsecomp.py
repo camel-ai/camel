@@ -22,9 +22,8 @@ import re
 import traceback
 from collections import defaultdict
 from dataclasses import dataclass, field
-from multiprocessing.pool import Pool, ThreadPool
-from functools import partial
-from typing import Any, Callable, Optional
+from multiprocessing.pool import ThreadPool
+from typing import Any, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -141,6 +140,7 @@ class JinjaEnv:
         )
 
 
+# TODO: Add necessary prompts when tuning.
 QUERY_TEMPLATE = """
 {question}
 
@@ -149,6 +149,14 @@ Explanation: {{your explanation for your final answer}}
 Exact Answer: {{your succinct, final answer}}
 Confidence: {{your confidence score between 0% and 100% for your answer}}
 """.strip()
+
+SUMMARIZE_PROMPT = """
+Based on the chat history:
+{chat_history}
+
+answer the question:
+{query}
+"""
 
 GRADER_TEMPLATE = """
 Judge whether the following [response] to [question] is correct or not 
@@ -278,7 +286,11 @@ def decrypt(ciphertext_b64: str, password: str) -> str:
 
 
 class QueryResponse(BaseModel):
-    r"""A query response."""
+    r"""A structured query response for benchmark evaluation.
+
+    This class defines the expected format for model responses to benchmark 
+    questions, including explanation, exact answer, and confidence score.
+    """
 
     explanation: str = Field(
         description="""your explanation for your final answer."""
@@ -294,7 +306,12 @@ your confidence score between 0|\%| and 100|\%| for your answer.
 
 
 class GradingResponse(BaseModel):
-    r"""A grading response."""
+    r"""A structured grading response for evaluating model answers.
+
+    This class defines the expected format for grading responses, including
+    extracted answer, reasoning about correctness, binary correctness judgment,
+    and confidence score extraction.
+    """
 
     extracted_final_answer: str = Field(
         description="""
@@ -327,8 +344,10 @@ and 100|\%| from [response]. Put 100 if there is no confidence score available.
 
 @dataclass
 class SingleEvalResult:
-    """
-    Result of evaluating a single sample
+    r"""Result of evaluating a single benchmark sample.
+
+    This class stores the evaluation results for a single benchmark example,
+    including score, HTML representation, conversation history, and metrics.
     """
 
     score: float | None
@@ -339,8 +358,10 @@ class SingleEvalResult:
 
 @dataclass
 class EvalResult:
-    """
-    Result of running an evaluation (usually consisting of many samples)
+    r"""Result of running a complete benchmark evaluation.
+
+    This class aggregates results from multiple sample evaluations, storing
+    the overall score, detailed metrics, HTML reports, and conversation logs.
     """
 
     score: float | None  # top-line metric
@@ -397,66 +418,12 @@ def aggregate_results(
     )
 
 
-# Above are from https://github.com/openai/simple-evals/blob/main/browsecomp_eval.py
-
-
-def process_benchmark_row(row, agent_config):
-    """
-    Process a single example row from the benchmark dataset.
-
-    This function decrypts the problem and answer, creates a model and agent,
-    and gets a response from the agent for the problem. It's designed to be
-    used with parallel processing in the benchmark's run method.
-
-    Args:
-        row (dict): A row from the dataset containing encrypted problem and answer
-        agent_config (dict): Configuration for creating the agent
-
-    Returns:
-        dict: A dictionary containing the decrypted problem, answer,
-        and model response
-    """
-    from camel.agents.chat_agent import ChatAgent
-    from camel.models.model_factory import ModelFactory
-
-    # Decrypt the problem and answer using the canary as the password
-    # DO NOT MODIFY THIS PART, IT'S A GEMERAL STEP OF BROWNSECOMP BENCHMARK
-    problem = decrypt(row.get("problem", ""), row.get("canary", ""))
-    answer = decrypt(row.get("answer", ""), row.get("canary", ""))
-
-    # Create a new agent in this process using the configuration
-    model = ModelFactory.create(**agent_config["model_config"])
-    agent = ChatAgent(agent_config["system_message"], model=model)
-
-    # TODO: Add necessary prompts when tuning.
-    input_message = QUERY_TEMPLATE.format(question=problem)
-    response_text = agent.step(
-        input_message, response_format=QueryResponse)
-
-    # Parse the response JSON
-    response_dict = json.loads(response_text.msg.content)
-
-    # Format the response as a key-value string
-    formatted_response = f"""
-Explanation: {response_dict['explanation']}
-
-Exact Answer: {response_dict['exact_answer']}
-Confidence: {response_dict['confidence']}"""
-
-    # Create the result dictionary
-    raw_result = {}
-    raw_result['problem'] = problem
-    raw_result['expected_answer'] = answer
-    raw_result['response'] = formatted_response
-    # Keep the original dict for reference
-    raw_result['response_dict'] = response_dict
-
-    return raw_result
-
-
 class BrowseCompBenchmark(BaseBenchmark):
-    """
-    BrowseComp Benchmark for evaluating browser-based comprehension tasks.
+    r"""BrowseComp Benchmark for evaluating browser-based comprehension tasks.
+
+    This benchmark evaluates the ability of language models to comprehend and 
+    answer questions based on browser-based content, measuring accuracy and 
+    performance.
     """
 
     def __init__(
@@ -555,36 +522,132 @@ class BrowseCompBenchmark(BaseBenchmark):
         raise NotImplementedError("BrowseComp does not have a training set.")
 
     def run(  # type: ignore[override, return]
-        self, agent_config: dict
-    ):
-        """
-        Run the benchmark by processing each example in parallel.
+        self, pipeline_template: Union[ChatAgent, RolePlaying, Workforce],
+        chat_turn_limit: int = 10,
+        roleplaying_summarizer: Union[ChatAgent, None] = None
+    ) -> None:
+        r"""Run the benchmark by processing each example in parallel.
 
-        This method applies the provided function to each example in the
-        dataset using a process pool for parallel execution. It shows
-        progress using tqdm and stores the results in self.raw_results.
+        This method applies the provided pipeline to each example in the dataset 
+        using a process pool for parallel execution. It shows progress using tqdm 
+        and stores the results in self._raw_results.
 
         Args:
-            agent_config (dict): Configuration for creating agents in worker processes
+            pipeline_template: The template agent or framework to use for 
+                processing examples. Can be a ChatAgent, RolePlaying, or 
+                Workforce instance that will be cloned for each example.
+            chat_turn_limit: Maximum number of conversation turns allowed when 
+                using RolePlaying pipeline (default: 10).
+            roleplaying_summarizer: Optional ChatAgent to summarize RolePlaying 
+                conversations. If None and RolePlaying is used, a default 
+                summarizer will be created (default: None).
         """
         from tqdm import tqdm
 
-        # Create a partial function with the agent_config parameter bound
-        process_func = partial(process_benchmark_row,
-                               agent_config=agent_config)
-
         # Use a process pool for parallel execution
-        pool_class = Pool
-        # Limit the number of processes
+        def process_benchmark_row(row: dict):
+            r"""Process a single example row from the benchmark dataset.
+
+            This function decrypts the problem and answer, creates a pipeline 
+            instance, and gets a response for the problem. It's designed for 
+            parallel processing in the benchmark's run method.
+
+            Args:
+                row (dict): A row from the dataset containing encrypted 
+                    problem and answer, along with a canary for decryption.
+
+            Returns:
+                dict: A dictionary containing the decrypted problem, expected 
+                    answer, model response, and structured response fields.
+            """
+
+            problem = decrypt(row.get("problem", ""), row.get("canary", ""))
+            answer = decrypt(row.get("answer", ""), row.get("canary", ""))
+            try:
+
+                input_message = QUERY_TEMPLATE.format(question=problem)
+
+                if isinstance(pipeline_template, (ChatAgent, Workforce)):
+                    pipeline = pipeline_template.clone()
+
+                    response_text = pipeline.step(
+                        input_message,
+                        response_format=QueryResponse
+                    )
+
+                else:
+                    # RolePlaying is different.
+                    pipeline = pipeline_template.clone(
+                        task_prompt=input_message)
+
+                    n = 0
+                    input_msg = pipeline.init_chat()
+                    chat_history = []
+                    while n < chat_turn_limit:
+                        n += 1
+                        assistant_response, user_response = pipeline.step(
+                            input_msg)
+                        if assistant_response.terminated:
+                            break
+                        if user_response.terminated:
+                            break
+                        if "CAMEL_TASK_DONE" in user_response.msg.content:
+                            break
+
+                        chat_history.append(
+                            f"AI User: {user_response.msg.content}")
+                        chat_history.append(
+                            f"AI Assistant: {assistant_response.msg.content}"
+                        )
+                        input_msg = assistant_response.msg
+
+                    chat_history_str = "\n".join(chat_history)
+                    if roleplaying_summarizer:
+                        summarizer_in_process = roleplaying_summarizer.clone()
+                    else:
+                        summarizer_in_process = ChatAgent(
+                            "You are a helpful assistant.")
+
+                    summarize_prompt = SUMMARIZE_PROMPT.format(
+                        chat_history=chat_history_str,
+                        query=input_message,
+                    )
+                    response_text = summarizer_in_process.step(
+                        summarize_prompt, response_format=QueryResponse
+                    )
+
+                # Parse the response JSON
+                response_dict = json.loads(response_text.msg.content)
+
+                # Format the response as a key-value string
+                formatted_response = f"""
+    Explanation: {response_dict['explanation']}
+
+    Exact Answer: {response_dict['exact_answer']}
+    Confidence: {response_dict['confidence']}"""
+
+                # Create the result dictionary
+                raw_result = {}
+                raw_result['problem'] = problem
+                raw_result['expected_answer'] = answer
+                raw_result['response'] = formatted_response
+                # Keep the original dict for reference
+                raw_result['response_dict'] = response_dict
+
+                return raw_result
+            except Exception as e:
+                # Log any errors that occur during evaluation
+                logger.error(f"Error evaluating result: {e}")
+                logger.error(traceback.format_exc())
+
+        pool_class = ThreadPool
         with pool_class(min(self.processes, len(self.examples))) as pool:
-            # Process each example in parallel and collect results
             self._raw_results = list(
                 tqdm(
-                    pool.imap(process_func, self.examples),
+                    pool.imap(process_benchmark_row, self.examples),
                     total=len(self.examples),
                 )
             )
-        return self
 
     def make_report(self, eval_result: EvalResult) -> str:
         """

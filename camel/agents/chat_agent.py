@@ -1598,6 +1598,7 @@ class ChatAgent(BaseAgent):
             response_terminators=self.response_terminators,
             scheduling_strategy=self.model_backend.scheduling_strategy.__name__,
             single_iteration=self.single_iteration,
+            stop_event=self.stop_event
         )
 
         # Copy memory if requested
