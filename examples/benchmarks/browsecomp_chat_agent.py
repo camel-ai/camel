@@ -11,27 +11,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
 from camel.agents.chat_agent import ChatAgent
-from camel.benchmarks.browsecomp import BrowseCompBenchmark, decrypt
+from camel.benchmarks.browsecomp import BrowseCompBenchmark
 from camel.models.model_factory import ModelFactory
 from camel.types.enums import ModelPlatformType, ModelType
 
 
 if __name__ == '__main__':
-
-    # Define model configuration instead of creating the model directly
+    # Define model configuration
     model_config = {
-        "model_platform": ModelPlatformType.GEMINI,
-        "model_type": 'gemini-2.5-pro',
-        "url": "https://litellm-cloudrun-668429440317.us-central1.run.app"
+        "model_platform": ModelPlatformType.DEFAULT,
+        "model_type": ModelType.DEFAULT,
     }
 
-    # Define agent configuration
-    agent_config = {
-        "system_message": "You are a helpful assistant.",
-        "model_config": model_config
-    }
-    
+    grader_agent = ChatAgent(
+        "You are a helpful assistant.",
+        model=ModelFactory.create(**model_config),
+    )
+
     # Create a benchmark instance with output file "report.html"
     # it samples 2 examples and uses 2 parallel processes for efficiency
     # set num_example=None in case of running full benchmark.
@@ -39,14 +37,8 @@ if __name__ == '__main__':
 
     # This will process each example in parallel using separate agents
     # Pass the agent configuration instead of the agent itself
-    benchmark.run(agent_config=agent_config)
+    benchmark.run(pipeline_template=grader_agent)
 
-    # Create an agent for validation
-    grader_agent = ChatAgent(
-        "You are a helpful assistant.",
-        model=ModelFactory.create(**model_config)
-    )
-    
     # Validate the results using the configured model
     # This will generate a report.html file with the evaluation results
     # The output AGGRECATION METRICS are rates:
