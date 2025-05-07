@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from .base import BaseAgent
 from .chat_agent import ChatAgent
-from .code_agent import CodeAgent
+from .codeact_agent import CodeActAgent
 from .critic_agent import CriticAgent
 from .embodied_agent import EmbodiedAgent
 from .knowledge_graph_agent import KnowledgeGraphAgent
@@ -46,5 +46,5 @@ __all__ = [
     'KnowledgeGraphAgent',
     'MCPAgent',
     'RepoAgent',
-    'CodeAgent',
+    'CodeActAgent',
 ]
