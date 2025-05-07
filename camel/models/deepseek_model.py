@@ -15,20 +15,20 @@
 import os
 from typing import Any, Dict, List, Optional, Type, Union
 
-from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
+from openai import AsyncStream, Stream
 from pydantic import BaseModel
 
 from camel.configs import DEEPSEEK_API_PARAMS, DeepSeekConfig
 from camel.logger import get_logger
 from camel.messages import OpenAIMessage
 from camel.models._utils import try_modify_message_with_format
-from camel.models.base_model import BaseModelBackend
+from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
     ModelType,
 )
-from camel.utils import BaseTokenCounter, OpenAITokenCounter, api_keys_required
+from camel.utils import BaseTokenCounter, api_keys_required
 
 logger = get_logger(__name__)
 
@@ -43,8 +43,8 @@ REASONSER_UNSUPPORTED_PARAMS = [
 ]
 
 
-class DeepSeekModel(BaseModelBackend):
-    r"""DeepSeek API in a unified BaseModelBackend interface.
+class DeepSeekModel(OpenAICompatibleModel):
+    r"""DeepSeek API in a unified OpenAICompatibleModel interface.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is
@@ -60,6 +60,10 @@ class DeepSeekModel(BaseModelBackend):
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter`
             will be used. (default: :obj:`None`)
+        timeout (Optional[float], optional): The timeout value in seconds for
+            API calls. If not provided, will fall back to the MODEL_TIMEOUT
+            environment variable or default to 180 seconds.
+            (default: :obj:`None`)
 
     References:
         https://api-docs.deepseek.com/
@@ -77,6 +81,7 @@ class DeepSeekModel(BaseModelBackend):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
+        timeout: Optional[float] = None,
     ) -> None:
         if model_config_dict is None:
             model_config_dict = DeepSeekConfig().as_dict()
@@ -85,37 +90,15 @@ class DeepSeekModel(BaseModelBackend):
             "DEEPSEEK_API_BASE_URL",
             "https://api.deepseek.com",
         )
+        timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter
+            model_type=model_type,
+            model_config_dict=model_config_dict,
+            api_key=api_key,
+            url=url,
+            token_counter=token_counter,
+            timeout=timeout,
         )
-
-        self._client = OpenAI(
-            timeout=180,
-            max_retries=3,
-            api_key=self._api_key,
-            base_url=self._url,
-        )
-
-        self._async_client = AsyncOpenAI(
-            timeout=180,
-            max_retries=3,
-            api_key=self._api_key,
-            base_url=self._url,
-        )
-
-    @property
-    def token_counter(self) -> BaseTokenCounter:
-        r"""Initialize the token counter for the model backend.
-
-        Returns:
-            BaseTokenCounter: The token counter following the model's
-                tokenization style.
-        """
-        if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(
-                model=ModelType.GPT_4O_MINI
-            )
-        return self._token_counter
 
     def _prepare_request(
         self,
@@ -139,7 +122,11 @@ class DeepSeekModel(BaseModelBackend):
                 for key, value in request_config.items()
                 if key not in REASONSER_UNSUPPORTED_PARAMS
             }
+        import copy
 
+        request_config = copy.deepcopy(self.model_config_dict)
+        # Remove strict from each tool's function parameters since DeepSeek
+        # does not support them
         if tools:
             for tool in tools:
                 function_dict = tool.get('function', {})
@@ -260,13 +247,3 @@ class DeepSeekModel(BaseModelBackend):
                     f"Unexpected argument `{param}` is "
                     "input into DeepSeek model backend."
                 )
-
-    @property
-    def stream(self) -> bool:
-        r"""Returns whether the model is in stream mode, which sends partial
-        results each time.
-
-        Returns:
-            bool: Whether the model is in stream mode.
-        """
-        return self.model_config_dict.get("stream", False)

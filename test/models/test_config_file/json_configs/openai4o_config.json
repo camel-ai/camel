@@ -1,0 +1,11 @@
+{
+    "model_platform": "openai",
+    "model_type": "gpt-4o-mini",
+    "model_config_dict": {
+        "temperature": 0.7,
+        "max_tokens": 1500
+    },
+    "token_counter": null,
+    "api_key": "your_openai_api_key",
+    "url": "https://api.openai.com/v1"
+}

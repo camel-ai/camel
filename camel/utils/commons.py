@@ -11,8 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import asyncio
 import functools
 import importlib
+import inspect
 import logging
 import os
 import platform
@@ -161,7 +163,7 @@ def get_task_list(task_response: str) -> List[str]:
 
 
 def check_server_running(server_url: str) -> bool:
-    r"""Check whether the port refered by the URL to the server
+    r"""Check whether the port referred by the URL to the server
     is open.
 
     Args:
@@ -350,6 +352,8 @@ def api_keys_required(
                 key_way = "https://platform.lingyiwanwu.com/docs"
             elif env_var_name == 'ZHIPUAI_API_KEY':
                 key_way = "https://www.zhipuai.cn/"
+            elif env_var_name == 'KLAVIS_API_KEY':
+                key_way = "https://www.klavis.ai/docs"
 
             if missing_keys:
                 raise ValueError(
@@ -978,36 +982,54 @@ def with_timeout(timeout=None):
     """
 
     def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            # Determine the effective timeout value
-            effective_timeout = timeout
-            if effective_timeout is None and args:
-                effective_timeout = getattr(args[0], 'timeout', None)
+        if inspect.iscoroutinefunction(func):
 
-            # If no timeout value is provided, execute function normally
-            if effective_timeout is None:
-                return func(*args, **kwargs)
+            @functools.wraps(func)
+            async def async_wrapper(*args, **kwargs):
+                eff_timeout = timeout
+                if eff_timeout is None and args:
+                    eff_timeout = getattr(args[0], 'timeout', None)
 
-            # Container to hold the result of the function call
-            result_container = []
+                if eff_timeout is None:
+                    return await func(*args, **kwargs)
 
-            def target():
-                result_container.append(func(*args, **kwargs))
-
-            # Start the function in a new thread
-            thread = threading.Thread(target=target)
-            thread.start()
-            thread.join(effective_timeout)
-
-            # Check if the thread is still alive after the timeout
-            if thread.is_alive():
-                return (
-                    f"Function `{func.__name__}` execution timed out, "
-                    f"exceeded {effective_timeout} seconds."
+                return await asyncio.wait_for(
+                    func(*args, **kwargs), timeout=eff_timeout
                 )
-            else:
-                return result_container[0]
+
+            return async_wrapper
+        else:
+
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                # Determine the effective timeout value
+                effective_timeout = timeout
+                if effective_timeout is None and args:
+                    effective_timeout = getattr(args[0], 'timeout', None)
+
+                # If no timeout value is provided, execute function normally
+                if effective_timeout is None:
+                    return func(*args, **kwargs)
+
+                # Container to hold the result of the function call
+                result_container = []
+
+                def target():
+                    result_container.append(func(*args, **kwargs))
+
+                # Start the function in a new thread
+                thread = threading.Thread(target=target)
+                thread.start()
+                thread.join(effective_timeout)
+
+                # Check if the thread is still alive after the timeout
+                if thread.is_alive():
+                    return (
+                        f"Function `{func.__name__}` execution timed out, "
+                        f"exceeded {effective_timeout} seconds."
+                    )
+                else:
+                    return result_container[0]
 
         return wrapper
 
@@ -1018,3 +1040,66 @@ def with_timeout(timeout=None):
         return decorator(func)
 
     return decorator
+
+
+def browser_toolkit_save_auth_cookie(
+    cookie_json_path: str, url: str, wait_time: int = 60
+):
+    r"""Saves authentication cookies and browser storage state to a JSON file.
+
+    This function launches a browser window and navigates to the specified URL,
+    allowing the user to manually authenticate (log in) during a 60-second
+    wait period.After authentication, it saves all cookies, localStorage, and
+    sessionStorage data to the specified JSON file path, which can be used
+    later to maintain authenticated sessions without requiring manual login.
+
+    Args:
+        cookie_json_path (str): Path where the authentication cookies and
+            storage state will be saved as a JSON file. If the file already
+            exists, it will be loaded first and then overwritten with updated
+            state. The function checks if this file exists before attempting
+            to use it.
+        url (str): The URL to navigate to for authentication (e.g., a login
+            page).
+        wait_time (int): The time in seconds to wait for the user to manually
+            authenticate.
+
+    Usage:
+        1. The function opens a browser window and navigates to the specified
+            URL
+        2. User manually logs in during the wait_time wait period
+        3. Browser storage state (including auth cookies) is saved to the
+           specified file
+        4. The saved state can be used in subsequent browser sessions to
+           maintain authentication
+
+    Note:
+        The wait_time sleep is intentional to give the user enough time to
+        complete the manual authentication process before the storage state
+        is captured.
+    """
+    from playwright.sync_api import sync_playwright
+
+    playwright = sync_playwright().start()
+
+    # Launch visible browser window using Chromium
+    browser = playwright.chromium.launch(headless=False, channel="chromium")
+
+    # Check if cookie file exists before using it
+    storage_state = (
+        cookie_json_path if os.path.exists(cookie_json_path) else None
+    )
+
+    # Create browser context with proper typing
+    context = browser.new_context(
+        accept_downloads=True, storage_state=storage_state
+    )
+    page = context.new_page()
+    page.goto(url)  # Navigate to the authentication URL
+    # Wait for page to fully load
+    page.wait_for_load_state("load", timeout=1000)
+    time.sleep(wait_time)  # Wait 60 seconds for user to manually authenticate
+    # Save browser storage state (cookies, localStorage, etc.) to JSON file
+    context.storage_state(path=cookie_json_path)
+
+    browser.close()  # Close the browser when finished

@@ -36,7 +36,7 @@ class MilvusStorage(BaseVectorStorage):
     `Milvus <https://milvus.io/docs/overview.md/>`_
 
     Args:
-        vector_dim (int): The dimenstion of storing vectors.
+        vector_dim (int): The dimension of storing vectors.
         url_and_api_key (Tuple[str, str]): Tuple containing
            the URL and API key for connecting to a remote Milvus instance.
            URL maps to Milvus uri concept, typically "endpoint:port".
@@ -136,7 +136,7 @@ class MilvusStorage(BaseVectorStorage):
         schema.add_field(
             field_name="id",
             datatype=DataType.VARCHAR,
-            descrition='A unique identifier for the vector',
+            description='A unique identifier for the vector',
             is_primary=True,
             max_length=65535,
         )
@@ -359,15 +359,16 @@ class MilvusStorage(BaseVectorStorage):
             **kwargs,
         )
         query_results = []
-        for point in search_result:
-            query_results.append(
-                VectorDBQueryResult.create(
-                    similarity=(point[0]['distance']),
-                    id=str(point[0]['id']),
-                    payload=(point[0]['entity'].get('payload')),
-                    vector=point[0]['entity'].get('vector'),
+        for points in search_result:
+            for point in points:
+                query_results.append(
+                    VectorDBQueryResult.create(
+                        similarity=point['distance'],
+                        id=str(point['id']),
+                        payload=(point['entity'].get('payload')),
+                        vector=point['entity'].get('vector'),
+                    )
                 )
-            )
 
         return query_results
 

@@ -29,7 +29,8 @@ model = ModelFactory.create(
     ).as_dict(),
 )
 
-# Test Agent with the human toolkit
+# Example 1: Test Agent with the human toolkit (ask_human_via_console)
+print("\nExample 1: Using ask_human_via_console through an agent")
 agent = ChatAgent(
     system_message="You are a helpful assistant.",
     model=model,
@@ -41,6 +42,7 @@ response = agent.step(
 )
 
 print(response.msgs[0].content)
+
 """
 ==========================================================================
 What is the capital of France?
@@ -56,5 +58,30 @@ Your reply: Tokyo
 That's correct! Tokyo is the capital of Japan. Would you like to continue with
 another question?
 Your reply: no
+==========================================================================
+"""
+
+# Example 2: Agent using send_message_to_user through tools
+print("\nExample 2: Agent using send_message_to_user through tools")
+agent_with_message = ChatAgent(
+    system_message="You are an assistant that can send messages to the user.",
+    model=model,
+    tools=[*human_toolkit.get_tools()],
+)
+
+response = agent_with_message.step(
+    "Send me a notification about an upcoming meeting."
+)
+
+print(response.msgs[0].content)
+
+"""
+==========================================================================
+Agent Message:
+🔔 Reminder: You have an upcoming meeting scheduled. Please check your 
+calendar for details!
+
+I've sent you a notification about your upcoming meeting. Please check your 
+calendar for details!
 ==========================================================================
 """
