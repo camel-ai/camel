@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
+import urllib.parse
 from typing import Any, Dict, List, Optional
 
 import requests
@@ -208,7 +209,7 @@ class KlavisToolkit(BaseToolkit):
             Dict[str, Any]: Response containing the list of tools or an error.
         """
 
-        encoded_server_url = requests.utils.quote(server_url, safe='')
+        encoded_server_url = urllib.parse.quote(server_url, safe='')
         endpoint = f"/mcp-server/list-tools/{encoded_server_url}"
         return self._request('GET', endpoint)
 
@@ -218,7 +219,8 @@ class KlavisToolkit(BaseToolkit):
         tool_name: str,
         tool_args: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        r"""Calls a remote MCP server tool directly using the provided server URL.
+        r"""Calls a remote MCP server tool directly using the provided server
+        URL.
 
         Args:
             server_url (str): The full URL for connecting to the MCP server
@@ -226,18 +228,19 @@ class KlavisToolkit(BaseToolkit):
             tool_name (str): The name of the tool to call.
             tool_args (Optional[Dict[str, Any]]): The input parameters for
                 the tool. Defaults to None, which might be treated as empty
-                args by the server.
+                args by the server. (default: :obj:`None`)
 
         Returns:
             Dict[str, Any]: Response containing the result of the tool call
                 or an error.
         """
         endpoint = "/mcp-server/call-tool"
-        payload = {
+        payload: Dict[str, Any] = {
             "serverUrl": server_url,
             "toolName": tool_name,
         }
-        # Add toolArgs only if provided, otherwise server might expect empty dict
+        # Add toolArgs only if provided, otherwise server might expect empty
+        # dict
         if tool_args is not None:
             payload["toolArgs"] = tool_args
         else:

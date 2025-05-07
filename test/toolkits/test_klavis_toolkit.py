@@ -218,7 +218,7 @@ def test_set_auth_token(mock_request, klavis_toolkit):
     assert result == {"status": "token set"}
 
 
-@patch('requests.utils.quote', return_value='encoded_url')
+@patch('urllib.parse.quote', return_value='encoded_url')
 @patch.object(KlavisToolkit, '_request')
 def test_list_tools(mock_request, mock_quote, klavis_toolkit):
     mock_request.return_value = {"tools": ["toolA", "toolB"]}

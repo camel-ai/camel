@@ -71,7 +71,7 @@ class MCPClient(BaseToolkit):
         command_or_url: str,
         args: Optional[List[str]] = None,
         env: Optional[Dict[str, str]] = None,
-        timeout: float = 30,
+        timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
         strict: Optional[bool] = False,
     ):
@@ -142,7 +142,9 @@ class MCPClient(BaseToolkit):
 
             self._session = await self._exit_stack.enter_async_context(
                 ClientSession(
-                    read_stream, write_stream, timedelta(seconds=self.timeout)
+                    read_stream,
+                    write_stream,
+                    timedelta(seconds=self.timeout) if self.timeout else None,
                 )
             )
             await self._session.initialize()
