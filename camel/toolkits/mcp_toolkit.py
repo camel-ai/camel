@@ -142,7 +142,9 @@ class MCPClient(BaseToolkit):
 
             self._session = await self._exit_stack.enter_async_context(
                 ClientSession(
-                    read_stream, write_stream, timedelta(seconds=self.timeout)
+                    read_stream,
+                    write_stream,
+                    timedelta(seconds=self.timeout) if self.timeout else None,
                 )
             )
             await self._session.initialize()
