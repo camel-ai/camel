@@ -14,3 +14,5 @@
 
 
 from .code_eval import compute_code_eval
+
+__all__ = ["compute_code_eval"]
