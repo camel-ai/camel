@@ -18,7 +18,6 @@ import json
 import logging
 import os
 import random
-import re
 import traceback
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -288,16 +287,14 @@ def decrypt(ciphertext_b64: str, password: str) -> str:
 class QueryResponse(BaseModel):
     r"""A structured query response for benchmark evaluation.
 
-    This class defines the expected format for model responses to benchmark 
+    This class defines the expected format for model responses to benchmark
     questions, including explanation, exact answer, and confidence score.
     """
 
     explanation: str = Field(
         description="""your explanation for your final answer."""
     )
-    exact_answer: str = Field(
-        description="""your succinct, final answer."""
-    )
+    exact_answer: str = Field(description="""your succinct, final answer.""")
     confidence: str = Field(
         description="""
 your confidence score between 0|\%| and 100|\%| for your answer.
@@ -421,8 +418,8 @@ def aggregate_results(
 class BrowseCompBenchmark(BaseBenchmark):
     r"""BrowseComp Benchmark for evaluating browser-based comprehension tasks.
 
-    This benchmark evaluates the ability of language models to comprehend and 
-    answer questions based on browser-based content, measuring accuracy and 
+    This benchmark evaluates the ability of language models to comprehend and
+    answer questions based on browser-based content, measuring accuracy and
     performance.
     """
 
@@ -450,18 +447,13 @@ class BrowseCompBenchmark(BaseBenchmark):
         current_path = os.path.dirname(os.path.abspath(__file__))
 
         super().__init__("browsecomp", current_path, save_to, processes)
-        # Store configuration parameters
-        # Number of examples to sample (if None, use all)
         self.num_examples = num_examples
         self.n_repeats = n_repeats
         self.examples: list[dict[str, Any]] = []
-        # Load the examples from the dataset
         self.load()
-        # Initialize result storage
-        self._raw_results: list[Any] = []  # Will store raw evaluation results
-        # Will store validated results after LLM evaluation
+        self._raw_results: list[Any] = []
         self._validated_results: list[Any] = []
-        self._eval_result: EvalResult  # Will store final aggregated results
+        self._eval_result: EvalResult
         self.jinja_env = JinjaEnv.get_instance()
 
     def download(self):
@@ -522,24 +514,25 @@ class BrowseCompBenchmark(BaseBenchmark):
         raise NotImplementedError("BrowseComp does not have a training set.")
 
     def run(  # type: ignore[override, return]
-        self, pipeline_template: Union[ChatAgent, RolePlaying, Workforce],
+        self,
+        pipeline_template: Union[ChatAgent, RolePlaying, Workforce],
         chat_turn_limit: int = 10,
-        roleplaying_summarizer: Union[ChatAgent, None] = None
+        roleplaying_summarizer: Union[ChatAgent, None] = None,
     ) -> None:
         r"""Run the benchmark by processing each example in parallel.
 
-        This method applies the provided pipeline to each example in the dataset 
-        using a process pool for parallel execution. It shows progress using tqdm 
+        This method applies the provided pipeline to each example in the dataset
+        using a process pool for parallel execution. It shows progress using tqdm
         and stores the results in self._raw_results.
 
         Args:
-            pipeline_template: The template agent or framework to use for 
-                processing examples. Can be a ChatAgent, RolePlaying, or 
+            pipeline_template: The template agent or framework to use for
+                processing examples. Can be a ChatAgent, RolePlaying, or
                 Workforce instance that will be cloned for each example.
-            chat_turn_limit: Maximum number of conversation turns allowed when 
+            chat_turn_limit: Maximum number of conversation turns allowed when
                 using RolePlaying pipeline (default: 10).
-            roleplaying_summarizer: Optional ChatAgent to summarize RolePlaying 
-                conversations. If None and RolePlaying is used, a default 
+            roleplaying_summarizer: Optional ChatAgent to summarize RolePlaying
+                conversations. If None and RolePlaying is used, a default
                 summarizer will be created (default: None).
         """
         from tqdm import tqdm
@@ -548,37 +541,36 @@ class BrowseCompBenchmark(BaseBenchmark):
         def process_benchmark_row(row: dict):
             r"""Process a single example row from the benchmark dataset.
 
-            This function decrypts the problem and answer, creates a pipeline 
-            instance, and gets a response for the problem. It's designed for 
+            This function decrypts the problem and answer, creates a pipeline
+            instance, and gets a response for the problem. It's designed for
             parallel processing in the benchmark's run method.
 
             Args:
-                row (dict): A row from the dataset containing encrypted 
+                row (dict): A row from the dataset containing encrypted
                     problem and answer, along with a canary for decryption.
 
             Returns:
-                dict: A dictionary containing the decrypted problem, expected 
+                dict: A dictionary containing the decrypted problem, expected
                     answer, model response, and structured response fields.
             """
 
             problem = decrypt(row.get("problem", ""), row.get("canary", ""))
             answer = decrypt(row.get("answer", ""), row.get("canary", ""))
             try:
-
                 input_message = QUERY_TEMPLATE.format(question=problem)
 
                 if isinstance(pipeline_template, (ChatAgent, Workforce)):
                     pipeline = pipeline_template.clone()
 
                     response_text = pipeline.step(
-                        input_message,
-                        response_format=QueryResponse
+                        input_message, response_format=QueryResponse
                     )
 
                 else:
                     # RolePlaying is different.
                     pipeline = pipeline_template.clone(
-                        task_prompt=input_message)
+                        task_prompt=input_message
+                    )
 
                     n = 0
                     input_msg = pipeline.init_chat()
@@ -586,7 +578,8 @@ class BrowseCompBenchmark(BaseBenchmark):
                     while n < chat_turn_limit:
                         n += 1
                         assistant_response, user_response = pipeline.step(
-                            input_msg)
+                            input_msg
+                        )
                         if assistant_response.terminated:
                             break
                         if user_response.terminated:
@@ -595,7 +588,8 @@ class BrowseCompBenchmark(BaseBenchmark):
                             break
 
                         chat_history.append(
-                            f"AI User: {user_response.msg.content}")
+                            f"AI User: {user_response.msg.content}"
+                        )
                         chat_history.append(
                             f"AI Assistant: {assistant_response.msg.content}"
                         )
@@ -606,7 +600,8 @@ class BrowseCompBenchmark(BaseBenchmark):
                         summarizer_in_process = roleplaying_summarizer.clone()
                     else:
                         summarizer_in_process = ChatAgent(
-                            "You are a helpful assistant.")
+                            "You are a helpful assistant."
+                        )
 
                     summarize_prompt = SUMMARIZE_PROMPT.format(
                         chat_history=chat_history_str,
@@ -725,7 +720,9 @@ class BrowseCompBenchmark(BaseBenchmark):
                     ),
                     score=score,
                     correct_answer=raw_result['expected_answer'],
-                    extracted_answer=raw_result['response_dict']['exact_answer']
+                    extracted_answer=raw_result['response_dict'][
+                        'exact_answer'
+                    ],
                 )
 
                 # Create a conversation list for the result
