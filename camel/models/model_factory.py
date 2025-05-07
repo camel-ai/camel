@@ -62,6 +62,44 @@ class ModelFactory:
         ValueError: in case the provided model type is unknown.
     """
 
+    _MODEL_PLATFORM_TO_CLASS_MAP: Dict[
+        ModelPlatformType, Type[BaseModelBackend]
+    ] = {
+        ModelPlatformType.OLLAMA: OllamaModel,
+        ModelPlatformType.VLLM: VLLMModel,
+        ModelPlatformType.SGLANG: SGLangModel,
+        ModelPlatformType.OPENAI_COMPATIBLE_MODEL: OpenAICompatibleModel,
+        ModelPlatformType.SAMBA: SambaModel,
+        ModelPlatformType.TOGETHER: TogetherAIModel,
+        ModelPlatformType.LITELLM: LiteLLMModel,
+        ModelPlatformType.AWS_BEDROCK: AWSBedrockModel,
+        ModelPlatformType.NVIDIA: NvidiaModel,
+        ModelPlatformType.SILICONFLOW: SiliconFlowModel,
+        ModelPlatformType.AIML: AIMLModel,
+        ModelPlatformType.VOLCANO: VolcanoModel,
+        ModelPlatformType.NETMIND: NetmindModel,
+        ModelPlatformType.OPENAI: OpenAIModel,
+        ModelPlatformType.AZURE: AzureOpenAIModel,
+        ModelPlatformType.ANTHROPIC: AnthropicModel,
+        ModelPlatformType.GROQ: GroqModel,
+        ModelPlatformType.LMSTUDIO: LMStudioModel,
+        ModelPlatformType.OPENROUTER: OpenRouterModel,
+        ModelPlatformType.ZHIPU: ZhipuAIModel,
+        ModelPlatformType.GEMINI: GeminiModel,
+        ModelPlatformType.MISTRAL: MistralModel,
+        ModelPlatformType.REKA: RekaModel,
+        ModelPlatformType.COHERE: CohereModel,
+        ModelPlatformType.YI: YiModel,
+        ModelPlatformType.QWEN: QwenModel,
+        ModelPlatformType.DEEPSEEK: DeepSeekModel,
+        ModelPlatformType.PPIO: PPIOModel,
+        ModelPlatformType.INTERNLM: InternLMModel,
+        ModelPlatformType.MOONSHOT: MoonshotModel,
+        ModelPlatformType.MODELSCOPE: ModelScopeModel,
+        ModelPlatformType.NOVITA: NovitaModel,
+        ModelPlatformType.WATSONX: WatsonXModel,
+    }
+
     @staticmethod
     def create(
         model_platform: Union[ModelPlatformType, str],
@@ -124,73 +162,9 @@ class ModelFactory:
         model_class: Optional[Type[BaseModelBackend]] = None
         model_type = UnifiedModelType(model_type)
 
-        if model_platform.is_ollama:
-            model_class = OllamaModel
-        elif model_platform.is_vllm:
-            model_class = VLLMModel
-        elif model_platform.is_sglang:
-            model_class = SGLangModel
-        elif model_platform.is_openai_compatible_model:
-            model_class = OpenAICompatibleModel
-        elif model_platform.is_samba:
-            model_class = SambaModel
-        elif model_platform.is_together:
-            model_class = TogetherAIModel
-        elif model_platform.is_litellm:
-            model_class = LiteLLMModel
-        elif model_platform.is_aws_bedrock:
-            model_class = AWSBedrockModel
-        elif model_platform.is_nvidia:
-            model_class = NvidiaModel
-        elif model_platform.is_siliconflow:
-            model_class = SiliconFlowModel
-        elif model_platform.is_aiml:
-            model_class = AIMLModel
-        elif model_platform.is_volcano:
-            model_class = VolcanoModel
-        elif model_platform.is_netmind:
-            model_class = NetmindModel
-        elif model_platform.is_openai:
-            model_class = OpenAIModel
-        elif model_platform.is_azure:
-            model_class = AzureOpenAIModel
-        elif model_platform.is_anthropic:
-            model_class = AnthropicModel
-        elif model_platform.is_groq:
-            model_class = GroqModel
-        elif model_platform.is_lmstudio:
-            model_class = LMStudioModel
-        elif model_platform.is_openrouter:
-            model_class = OpenRouterModel
-        elif model_platform.is_zhipuai:
-            model_class = ZhipuAIModel
-        elif model_platform.is_gemini:
-            model_class = GeminiModel
-        elif model_platform.is_mistral:
-            model_class = MistralModel
-        elif model_platform.is_reka:
-            model_class = RekaModel
-        elif model_platform.is_cohere:
-            model_class = CohereModel
-        elif model_platform.is_yi:
-            model_class = YiModel
-        elif model_platform.is_qwen:
-            model_class = QwenModel
-        elif model_platform.is_deepseek:
-            model_class = DeepSeekModel
-        elif model_platform.is_ppio:
-            model_class = PPIOModel
-        elif model_platform.is_internlm:
-            model_class = InternLMModel
-        elif model_platform.is_moonshot:
-            model_class = MoonshotModel
-        elif model_platform.is_modelscope:
-            model_class = ModelScopeModel
-        elif model_platform.is_novita:
-            model_class = NovitaModel
-        elif model_platform.is_watsonx:
-            model_class = WatsonXModel
-        elif model_type == ModelType.STUB:
+        model_class = ModelFactory._MODEL_PLATFORM_TO_CLASS_MAP.get(model_platform)
+
+        if model_type == ModelType.STUB:
             model_class = StubModel
 
         if model_class is None:

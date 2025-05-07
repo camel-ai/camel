@@ -1399,6 +1399,7 @@ class ModelPlatformType(Enum):
     MISTRAL = "mistral"
     REKA = "reka"
     TOGETHER = "together"
+    STUB = "stub"
     OPENAI_COMPATIBLE_MODEL = "openai-compatible-model"
     SAMBA = "samba-nova"
     COHERE = "cohere"
