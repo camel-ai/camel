@@ -55,9 +55,11 @@ class RolePlayingWorker(Worker):
         user_role_name: str,
         assistant_agent_kwargs: Optional[Dict] = None,
         user_agent_kwargs: Optional[Dict] = None,
+        summarize_agent_kwargs: Optional[Dict] = None,
         chat_turn_limit: int = 3,
     ) -> None:
         super().__init__(description)
+        self.summarize_agent_kwargs = summarize_agent_kwargs
         summ_sys_msg = BaseMessage.make_assistant_message(
             role_name="Summarizer",
             content="You are a good summarizer. You will be presented with "
@@ -65,7 +67,8 @@ class RolePlayingWorker(Worker):
             "are trying to solve a task. Your job is summarizing the result "
             "of the task based on the chat history.",
         )
-        self.summarize_agent = ChatAgent(summ_sys_msg)
+        summarize_agent_kwargs['system_message'] = summ_sys_msg
+        self.summarize_agent = ChatAgent(**summarize_agent_kwargs)
         self.chat_turn_limit = chat_turn_limit
         self.assistant_role_name = assistant_role_name
         self.user_role_name = user_role_name

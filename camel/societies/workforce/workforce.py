@@ -202,6 +202,7 @@ class Workforce(BaseNode):
         user_role_name: str,
         assistant_agent_kwargs: Optional[Dict] = None,
         user_agent_kwargs: Optional[Dict] = None,
+        summarize_agent_kwargs: Optional[Dict] = None,
         chat_turn_limit: int = 3,
     ) -> Workforce:
         r"""Add a worker node to the workforce that uses `RolePlaying` system.
@@ -223,12 +224,13 @@ class Workforce(BaseNode):
             Workforce: The workforce node itself.
         """
         worker_node = RolePlayingWorker(
-            description,
-            assistant_role_name,
-            user_role_name,
-            assistant_agent_kwargs,
-            user_agent_kwargs,
-            chat_turn_limit,
+            description=description,
+            assistant_role_name=assistant_role_name,
+            user_role_name=user_role_name,
+            assistant_agent_kwargs=assistant_agent_kwargs,
+            user_agent_kwargs=user_agent_kwargs,
+            summarize_agent_kwargs=summarize_agent_kwargs,
+            chat_turn_limit=chat_turn_limit,
         )
         self._children.append(worker_node)
         return self
@@ -386,7 +388,8 @@ class Workforce(BaseNode):
             model_config_dict=model_config_dict,
         )
 
-        return ChatAgent(worker_sys_msg, model=model, tools=function_list)  # type: ignore[arg-type]
+        # type: ignore[arg-type]
+        return ChatAgent(worker_sys_msg, model=model, tools=function_list)
 
     async def _get_returned_task(self) -> Task:
         r"""Get the task that's published by this node and just get returned
@@ -501,3 +504,54 @@ class Workforce(BaseNode):
         for child_task in self._child_listening_tasks:
             child_task.cancel()
         self._running = False
+
+    def clone(self, with_memory: bool = False) -> 'Workforce':
+        r"""Creates a new instance of Workforce with the same configuration.
+
+        Args:
+            with_memory (bool, optional): Whether to copy the memory
+                (conversation history) to the new instance. If True, the new
+                instance will have the same conversation history. If False,
+                the new instance will have a fresh memory.
+                (default: :obj:`False`)
+
+        Returns:
+            Workforce: A new instance of Workforce with the same configuration.
+        """
+
+        # Create a new instance with the same configuration
+        new_instance = Workforce(
+            description=self.description,
+            coordinator_agent_kwargs={},
+            task_agent_kwargs={},
+            new_worker_agent_kwargs=self.new_worker_agent_kwargs,
+        )
+
+        new_instance.task_agent = self.task_agent.clone(with_memory)
+        new_instance.coordinator_agent = self.coordinator_agent.clone(
+            with_memory
+        )
+
+        for child in self._children:
+            if isinstance(child, SingleAgentWorker):
+                cloned_worker = child.worker.clone(with_memory)
+                new_instance.add_single_agent_worker(
+                    child.description, cloned_worker
+                )
+            elif isinstance(child, RolePlayingWorker):
+                new_instance.add_role_playing_worker(
+                    child.description,
+                    child.assistant_role_name,
+                    child.user_role_name,
+                    child.assistant_agent_kwargs,
+                    child.user_agent_kwargs,
+                    child.summarize_agent_kwargs,
+                    child.chat_turn_limit,
+                )
+            elif isinstance(child, Workforce):
+                new_instance.add_workforce(child.clone(with_memory))
+            else:
+                logger.warning(f"{type(child)} is not being cloned.")
+                continue
+
+        return new_instance

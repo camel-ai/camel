@@ -30,6 +30,7 @@ from camel.agents.chat_agent import ChatAgent
 from camel.benchmarks.base import BaseBenchmark
 from camel.societies.role_playing import RolePlaying
 from camel.societies.workforce.workforce import Workforce
+from camel.tasks.task import Task
 
 logger = logging.getLogger(__name__)
 
@@ -559,12 +560,18 @@ class BrowseCompBenchmark(BaseBenchmark):
             try:
                 input_message = QUERY_TEMPLATE.format(question=problem)
 
-                if isinstance(pipeline_template, (ChatAgent, Workforce)):
+                if isinstance(pipeline_template, (ChatAgent)):
                     pipeline = pipeline_template.clone()
 
                     response_text = pipeline.step(
                         input_message, response_format=QueryResponse
                     )
+                elif isinstance(pipeline_template, Workforce):
+                    pipeline = pipeline_template.clone()
+                    task = Task(content=input_message, id="0")
+                    task = pipeline.process_task(task)
+                    response_text = task.result
+                    print(response_text)
 
                 else:
                     # RolePlaying is different.
