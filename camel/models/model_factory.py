@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
-from typing import Dict, Optional, Type, Union
+from typing import ClassVar, Dict, Optional, Type, Union
 
 import yaml
 
@@ -62,8 +62,8 @@ class ModelFactory:
         ValueError: in case the provided model type is unknown.
     """
 
-    _MODEL_PLATFORM_TO_CLASS_MAP: Dict[
-        ModelPlatformType, Type[BaseModelBackend]
+    _MODEL_PLATFORM_TO_CLASS_MAP: ClassVar[
+        Dict[ModelPlatformType, Type[BaseModelBackend]]
     ] = {
         ModelPlatformType.OLLAMA: OllamaModel,
         ModelPlatformType.VLLM: VLLMModel,
@@ -162,7 +162,9 @@ class ModelFactory:
         model_class: Optional[Type[BaseModelBackend]] = None
         model_type = UnifiedModelType(model_type)
 
-        model_class = ModelFactory._MODEL_PLATFORM_TO_CLASS_MAP.get(model_platform)
+        model_class = ModelFactory._MODEL_PLATFORM_TO_CLASS_MAP.get(
+            model_platform
+        )
 
         if model_type == ModelType.STUB:
             model_class = StubModel

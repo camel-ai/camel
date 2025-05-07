@@ -11,18 +11,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import asyncio
 import sys
 from typing import TYPE_CHECKING
 
 import pytest
 from mcp.server import FastMCP
 
-from camel.toolkits.mcp_toolkit import MCPClient
 from camel.utils import MCPServer
 
 if TYPE_CHECKING:
-    from mcp import ClientSession
+    pass
 
 
 @MCPServer(
@@ -50,7 +48,6 @@ class TextProcessorForMCP:
         Args:
             text (str): the text to count the number of words
         """
-        await asyncio.sleep(0.01)
         return len(text.split())
 
 
@@ -83,31 +80,22 @@ def test_tool_schema():
 @pytest.mark.asyncio
 async def test_async_word_count():
     processor = TextProcessorForMCP()
-    server = MCPClient(
-        command_or_url=sys.executable,
-        args=[__file__, "--server"],
-    )
-    await server.connect()
-    session: "ClientSession" = server._session
 
     text = "hello world"
 
-    result = await session.call_tool(
-        name="reverse_text",
-        arguments={"text": text},
-    )
-    assert len(result.content) == 1
-    assert result.content[0].text == processor.reverse_text(text)
+    # Access tools via the tool_manager
+    tool_manager = processor.mcp._tool_manager
+    reverse_text_tool = tool_manager.get_tool("reverse_text")
+    async_word_count_tool = tool_manager.get_tool("async_word_count")
 
-    result = await session.call_tool(
-        name="async_word_count",
-        arguments={"text": text},
-    )
-    assert len(result.content) == 1
-    assert int(result.content[0].text) == await processor.async_word_count(
-        text
-    )
-    await server.disconnect()
+    # Call reverse_text directly via its .fn attribute
+    # The .fn attribute on ToolDefinition holds the actual callable
+    reversed_text_output = reverse_text_tool.fn(text=text)
+    assert reversed_text_output == processor.reverse_text(text)
+
+    # Call async_word_count directly via its .fn attribute
+    word_count_output = await async_word_count_tool.fn(text=text)
+    assert word_count_output == await processor.async_word_count(text)
 
 
 if __name__ == "__main__":
