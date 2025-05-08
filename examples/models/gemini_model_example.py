@@ -19,6 +19,7 @@ from camel.types import ModelPlatformType, ModelType
 # Define system message
 sys_msg = "You are a helpful assistant."
 
+
 # User message
 user_msg = """Say hi to CAMEL AI, one open-source community dedicated to the 
     study of autonomous and communicative agents."""
@@ -34,26 +35,18 @@ camel_agent_pro = ChatAgent(system_message=sys_msg, model=model_2_5_pro_pre)
 response_pro = camel_agent_pro.step(user_msg)
 print(response_pro.msgs[0].content)
 
-
-# Example of using the gemini-2.5-pro-exp model
-model_2_5_pro_exp = ModelFactory.create(
-    model_platform=ModelPlatformType.GEMINI,
-    model_type=ModelType.GEMINI_2_5_PRO_EXP,
-    model_config_dict=GeminiConfig(temperature=0.2).as_dict(),
-)
-camel_agent_pro = ChatAgent(system_message=sys_msg, model=model_2_5_pro_exp)
-response_pro = camel_agent_pro.step(user_msg)
-print(response_pro.msgs[0].content)
 '''
 ===============================================================================
 Hello CAMEL AI! 👋
 
-It's great to acknowledge you as an open-source community dedicated to 
-the fascinating and important study of autonomous and communicative agents.
-Your work in advancing this field is highly valuable.
-Wishing you all the best in your research and community building!
+A big, warm greeting to your fantastic open-source community! 
+It's wonderful to hear about your dedication to 
+the study of autonomous and communicative agents. 
+That's a truly exciting and important field.
+Keep up the great work, and best of luck with all your endeavors!
 ===============================================================================
 '''
+
 
 # Example of using the gemini-1.5-pro model
 model = ModelFactory.create(

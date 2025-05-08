@@ -178,7 +178,6 @@ class ModelType(UnifiedModelType, Enum):
 
     # Gemini models
     GEMINI_2_5_PRO_PREVIEW = "gemini-2.5-pro-preview-05-06"
-    GEMINI_2_5_PRO_EXP = "gemini-2.5-pro-exp-03-25"
     GEMINI_2_0_FLASH = "gemini-2.0-flash-exp"
     GEMINI_2_0_FLASH_THINKING = "gemini-2.0-flash-thinking-exp"
     GEMINI_2_0_PRO_EXP = "gemini-2.0-pro-exp-02-05"
@@ -616,7 +615,6 @@ class ModelType(UnifiedModelType, Enum):
         """
         return self in {
             ModelType.GEMINI_2_5_PRO_PREVIEW,
-            ModelType.GEMINI_2_5_PRO_EXP,
             ModelType.GEMINI_2_0_FLASH,
             ModelType.GEMINI_1_5_FLASH,
             ModelType.GEMINI_1_5_PRO,
@@ -1168,7 +1166,6 @@ class ModelType(UnifiedModelType, Enum):
             return 512_000
         elif self in {
             ModelType.GEMINI_2_5_PRO_PREVIEW,
-            ModelType.GEMINI_2_5_PRO_EXP,
             ModelType.GEMINI_2_0_FLASH,
             ModelType.GEMINI_1_5_FLASH,
             ModelType.GEMINI_1_5_PRO,
