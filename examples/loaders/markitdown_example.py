@@ -15,7 +15,7 @@
 import os
 import tempfile
 
-from camel.loaders import MarkItDownConverter
+from camel.loaders import MarkItDownLoader
 
 mock_files = {
     "demo.html": "<html><body><h1>Demo HTML</h1></body></html>",
@@ -33,7 +33,7 @@ with tempfile.TemporaryDirectory() as temp_dir:
             f.write(content)
         file_paths[filename] = file_path
 
-    converter = MarkItDownConverter()
+    converter = MarkItDownLoader()
 
     # Convert a single file
     try:
@@ -51,3 +51,20 @@ with tempfile.TemporaryDirectory() as temp_dir:
     converted = converter.convert_files(files, parallel=True, skip_failed=True)
     for path, md in converted.items():
         print(f"Markdown for {path}:\n{md}\n")
+
+"""
+===============================================================================
+# Demo HTML
+Markdown for /var/folders/93/f_71_t957cq9cmq2gsybs4_40000gn/T/tmp86hqcsxc/
+report.pdf:
+%PDF-1.4
+% Mock PDF content
+
+Markdown for /var/folders/93/f_71_t957cq9cmq2gsybs4_40000gn/T/tmp86hqcsxc/data.
+xlsx:
+Mock XLSX content
+
+Markdown for /var/folders/93/f_71_t957cq9cmq2gsybs4_40000gn/T/tmp86hqcsxc/
+presentation.pptx:
+===============================================================================
+"""
