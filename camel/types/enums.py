@@ -1204,7 +1204,7 @@ class ModelType(UnifiedModelType, Enum):
             return 10_000_000
         else:
             logger.warning(
-                f"Unknown model type {self}, default to " f"999_999_999 tokens"
+                f"Unknown model type {self}, default to 999_999_999 tokens"
             )
             return 999_999_999
 
