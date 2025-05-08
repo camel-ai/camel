@@ -18,7 +18,7 @@ from .chunkr_reader import ChunkrReader
 from .crawl4ai_reader import Crawl4AI
 from .firecrawl_reader import Firecrawl
 from .jina_url_reader import JinaURLReader
-from .markitdown import MarkItDownConverter
+from .markitdown import MarkItDownLoader
 from .mineru_extractor import MinerU
 from .pandas_reader import PandasReader
 from .scrapegraph_reader import ScrapeGraphAI
@@ -36,6 +36,6 @@ __all__ = [
     'PandasReader',
     'MinerU',
     'Crawl4AI',
-    'MarkItDownConverter',
+    'MarkItDownLoader',
     'ScrapeGraphAI',
 ]

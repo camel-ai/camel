@@ -436,20 +436,6 @@ wheels = [
 ]
 
 [[package]]
-name = "azure-ai-documentintelligence"
-version = "1.0.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "azure-core" },
-    { name = "isodate" },
-    { name = "typing-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/44/7b/8115cd713e2caa5e44def85f2b7ebd02a74ae74d7113ba20bdd41fd6dd80/azure_ai_documentintelligence-1.0.2.tar.gz", hash = "sha256:4d75a2513f2839365ebabc0e0e1772f5601b3a8c9a71e75da12440da13b63484", size = 170940 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/d9/75/c9ec040f23082f54ffb1977ff8f364c2d21c79a640a13d1c1809e7fd6b1a/azure_ai_documentintelligence-1.0.2-py3-none-any.whl", hash = "sha256:e1fb446abbdeccc9759d897898a0fe13141ed29f9ad11fc705f951925822ed59", size = 106005 },
-]
-
-[[package]]
 name = "azure-core"
 version = "1.33.0"
 source = { registry = "https://pypi.org/simple" }
@@ -461,22 +447,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/75/aa/7c9db8edd626f1a7d99d09ef7926f6f4fb34d5f9fa00dc394afdfe8e2a80/azure_core-1.33.0.tar.gz", hash = "sha256:f367aa07b5e3005fec2c1e184b882b0b039910733907d001c20fb08ebb8c0eb9", size = 295633 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/07/b7/76b7e144aa53bd206bf1ce34fa75350472c3f69bf30e5c8c18bc9881035d/azure_core-1.33.0-py3-none-any.whl", hash = "sha256:9b5b6d0223a1d38c37500e6971118c1e0f13f54951e6893968b38910bc9cda8f", size = 207071 },
-]
-
-[[package]]
-name = "azure-identity"
-version = "1.21.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "azure-core" },
-    { name = "cryptography" },
-    { name = "msal" },
-    { name = "msal-extensions" },
-    { name = "typing-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/b5/a1/f1a683672e7a88ea0e3119f57b6c7843ed52650fdcac8bfa66ed84e86e40/azure_identity-1.21.0.tar.gz", hash = "sha256:ea22ce6e6b0f429bc1b8d9212d5b9f9877bd4c82f1724bfa910760612c07a9a6", size = 266445 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/3d/9f/1f9f3ef4f49729ee207a712a5971a9ca747f2ca47d9cbf13cf6953e3478a/azure_identity-1.21.0-py3-none-any.whl", hash = "sha256:258ea6325537352440f71b35c3dffe9d240eae4a5126c1b7ce5efd5766bd9fd9", size = 189190 },
 ]
 
 [[package]]
@@ -646,6 +616,7 @@ all = [
     { name = "jupyter-client" },
     { name = "linkup-sdk" },
     { name = "litellm" },
+    { name = "markitdown" },
     { name = "math-verify" },
     { name = "mcp" },
     { name = "mem0ai" },
@@ -778,38 +749,21 @@ docs = [
     { name = "sphinxext-rediraffe" },
 ]
 document-tools = [
-    { name = "azure-ai-documentintelligence" },
-    { name = "azure-identity" },
     { name = "beautifulsoup4" },
-    { name = "cobble" },
-    { name = "coloredlogs" },
     { name = "crawl4ai" },
     { name = "docx" },
     { name = "docx2txt" },
-    { name = "flatbuffers" },
     { name = "fpdf" },
-    { name = "humanfriendly" },
-    { name = "magika" },
-    { name = "mammoth" },
-    { name = "markdownify" },
     { name = "markitdown" },
-    { name = "msal" },
-    { name = "msal-extensions" },
     { name = "numpy" },
-    { name = "onnxruntime" },
     { name = "openapi-spec-validator" },
     { name = "openpyxl" },
     { name = "pandasai" },
     { name = "prance" },
     { name = "pymupdf" },
-    { name = "pyreadline3" },
-    { name = "python-pptx" },
-    { name = "speechrecognition" },
     { name = "tabulate" },
     { name = "unstructured" },
     { name = "xls2xlsx" },
-    { name = "xlsxwriter" },
-    { name = "youtube-transcript-api" },
 ]
 huggingface = [
     { name = "accelerate" },
@@ -970,8 +924,6 @@ requires-dist = [
     { name = "arxiv", marker = "extra == 'research-tools'", specifier = ">=2.1.3,<3" },
     { name = "arxiv2text", marker = "extra == 'all'", specifier = ">=0.1.14,<0.2" },
     { name = "arxiv2text", marker = "extra == 'research-tools'", specifier = ">=0.1.14,<0.2" },
-    { name = "azure-ai-documentintelligence", marker = "extra == 'document-tools'", specifier = "==1.0.2" },
-    { name = "azure-identity", marker = "extra == 'document-tools'", specifier = "==1.21.0" },
     { name = "azure-storage-blob", marker = "extra == 'all'", specifier = ">=12.21.0,<13" },
     { name = "azure-storage-blob", marker = "extra == 'storage'", specifier = ">=12.21.0,<13" },
     { name = "beautifulsoup4", marker = "extra == 'all'", specifier = ">=4,<5" },
@@ -981,12 +933,10 @@ requires-dist = [
     { name = "botocore", marker = "extra == 'all'", specifier = ">=1.35.3,<2" },
     { name = "botocore", marker = "extra == 'storage'", specifier = ">=1.35.3,<2" },
     { name = "chunkr-ai", marker = "extra == 'owl'", specifier = ">=0.0.41" },
-    { name = "cobble", marker = "extra == 'document-tools'", specifier = "==0.1.4" },
     { name = "cohere", marker = "extra == 'all'", specifier = ">=5.11.0,<6" },
     { name = "cohere", marker = "extra == 'model-platforms'", specifier = ">=5.11.0,<6" },
     { name = "cohere", marker = "extra == 'rag'", specifier = ">=5.11.0,<6" },
     { name = "colorama", specifier = ">=0.4.6,<0.5" },
-    { name = "coloredlogs", marker = "extra == 'document-tools'", specifier = "==15.0.1" },
     { name = "crawl4ai", marker = "extra == 'all'", specifier = ">=0.3.745" },
     { name = "crawl4ai", marker = "extra == 'document-tools'", specifier = ">=0.3.745" },
     { name = "crawl4ai", marker = "extra == 'owl'", specifier = ">=0.3.745" },
@@ -1033,7 +983,6 @@ requires-dist = [
     { name = "firecrawl-py", marker = "extra == 'web-tools'", specifier = ">=1.0.0,<2" },
     { name = "fish-audio-sdk", marker = "extra == 'all'", specifier = ">=2024.12.5,<2025" },
     { name = "fish-audio-sdk", marker = "extra == 'model-platforms'", specifier = ">=2024.12.5,<2025" },
-    { name = "flatbuffers", marker = "extra == 'document-tools'", specifier = "==25.2.10" },
     { name = "fpdf", marker = "extra == 'all'", specifier = ">=1.7.2" },
     { name = "fpdf", marker = "extra == 'document-tools'", specifier = ">=1.7.2" },
     { name = "fpdf", marker = "extra == 'owl'", specifier = ">=1.7.2" },
@@ -1055,7 +1004,6 @@ requires-dist = [
     { name = "html2text", marker = "extra == 'owl'", specifier = ">=2024.2.26" },
     { name = "html2text", marker = "extra == 'web-tools'", specifier = ">=2024.2.26" },
     { name = "httpx", specifier = ">=0.28.0,<1.0.0.dev0" },
-    { name = "humanfriendly", marker = "extra == 'document-tools'", specifier = "==10.0" },
     { name = "ibm-watsonx-ai", marker = "extra == 'all'", specifier = ">=1.3.11" },
     { name = "ibm-watsonx-ai", marker = "extra == 'model-platforms'", specifier = ">=1.3.11" },
     { name = "imageio", extras = ["pyav"], marker = "extra == 'all'", specifier = ">=2.34.2,<3" },
@@ -1070,9 +1018,7 @@ requires-dist = [
     { name = "linkup-sdk", marker = "extra == 'web-tools'", specifier = ">=0.2.1,<0.3" },
     { name = "litellm", marker = "extra == 'all'", specifier = ">=1.38.1,<2" },
     { name = "litellm", marker = "extra == 'model-platforms'", specifier = ">=1.38.1,<2" },
-    { name = "magika", marker = "extra == 'document-tools'", specifier = "==0.6.1" },
-    { name = "mammoth", marker = "extra == 'document-tools'", specifier = "==1.9.0" },
-    { name = "markdownify", marker = "extra == 'document-tools'", specifier = "==1.1.0" },
+    { name = "markitdown", marker = "extra == 'all'", specifier = "==0.1.1" },
     { name = "markitdown", marker = "extra == 'document-tools'", specifier = "==0.1.1" },
     { name = "math-verify", marker = "extra == 'all'", specifier = ">=0.7.0,<0.8" },
     { name = "math-verify", marker = "extra == 'data-tools'", specifier = ">=0.7.0,<0.8" },
@@ -1088,8 +1034,6 @@ requires-dist = [
     { name = "mock", marker = "extra == 'all'", specifier = ">=5,<6" },
     { name = "mock", marker = "extra == 'dev'", specifier = ">=5,<6" },
     { name = "mock", marker = "extra == 'test'", specifier = ">=5,<6" },
-    { name = "msal", marker = "extra == 'document-tools'", specifier = "==1.32.0" },
-    { name = "msal-extensions", marker = "extra == 'document-tools'", specifier = "==1.3.1" },
     { name = "mypy", marker = "extra == 'all'", specifier = ">=1.5.1,<2" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.5.1,<2" },
     { name = "myst-parser", marker = "extra == 'docs'" },
@@ -1112,7 +1056,6 @@ requires-dist = [
     { name = "numpy", marker = "extra == 'document-tools'", specifier = "~=1.26" },
     { name = "numpy", marker = "extra == 'owl'", specifier = "~=1.26" },
     { name = "numpy", marker = "extra == 'rag'", specifier = "~=1.26" },
-    { name = "onnxruntime", marker = "extra == 'document-tools'", specifier = "==1.21.1" },
     { name = "openai", specifier = ">=1.68.0,<2" },
     { name = "openapi-spec-validator", marker = "extra == 'all'", specifier = ">=0.7.1,<0.8" },
     { name = "openapi-spec-validator", marker = "extra == 'document-tools'", specifier = ">=0.7.1,<0.8" },
@@ -1165,7 +1108,6 @@ requires-dist = [
     { name = "pyobvector", marker = "extra == 'storage'", specifier = ">=0.1.18" },
     { name = "pyowm", marker = "extra == 'all'", specifier = ">=3.3.0,<4" },
     { name = "pyowm", marker = "extra == 'web-tools'", specifier = ">=3.3.0,<4" },
-    { name = "pyreadline3", marker = "extra == 'document-tools'", specifier = "==3.5.4" },
     { name = "pytelegrambotapi", marker = "extra == 'all'", specifier = ">=4.18.0,<5" },
     { name = "pytelegrambotapi", marker = "extra == 'communication-tools'", specifier = ">=4.18.0,<5" },
     { name = "pytest", marker = "extra == 'all'", specifier = ">=7,<8" },
@@ -1177,7 +1119,6 @@ requires-dist = [
     { name = "pytest-cov", marker = "extra == 'all'", specifier = ">=4,<5" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4,<5" },
     { name = "python-dotenv", marker = "extra == 'owl'", specifier = ">=1.0.0,<2" },
-    { name = "python-pptx", marker = "extra == 'document-tools'", specifier = "==1.0.2" },
     { name = "pytidb-experimental", marker = "extra == 'all'", specifier = "==0.0.1.dev4" },
     { name = "pytidb-experimental", marker = "extra == 'rag'", specifier = "==0.0.1.dev4" },
     { name = "pytidb-experimental", marker = "extra == 'storage'", specifier = "==0.0.1.dev4" },
@@ -1217,7 +1158,6 @@ requires-dist = [
     { name = "soundfile", marker = "extra == 'all'", specifier = ">=0.13,<0.14" },
     { name = "soundfile", marker = "extra == 'huggingface'", specifier = ">=0.13,<0.14" },
     { name = "soundfile", marker = "extra == 'owl'", specifier = ">=0.13,<0.14" },
-    { name = "speechrecognition", marker = "extra == 'document-tools'", specifier = "==3.14.2" },
     { name = "sphinx", marker = "extra == 'docs'", specifier = ">=7,<8" },
     { name = "sphinx-book-theme", marker = "extra == 'docs'" },
     { name = "sphinxext-rediraffe", marker = "extra == 'docs'", specifier = ">=0.2.7,<0.3" },
@@ -1273,8 +1213,6 @@ requires-dist = [
     { name = "xls2xlsx", marker = "extra == 'all'", specifier = ">=0.2.0" },
     { name = "xls2xlsx", marker = "extra == 'document-tools'", specifier = ">=0.2.0" },
     { name = "xls2xlsx", marker = "extra == 'owl'", specifier = ">=0.2.0" },
-    { name = "xlsxwriter", marker = "extra == 'document-tools'", specifier = "==3.2.3" },
-    { name = "youtube-transcript-api", marker = "extra == 'document-tools'", specifier = "==1.0.3" },
     { name = "yt-dlp", marker = "extra == 'all'", specifier = ">=2024.11.4,<2025" },
     { name = "yt-dlp", marker = "extra == 'media-tools'", specifier = ">=2024.11.4,<2025" },
     { name = "yt-dlp", marker = "extra == 'owl'", specifier = ">=2024.11.4,<2025" },
@@ -1437,15 +1375,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/52/39/069100b84d7418bc358d81669d5748efb14b9cceacd2f9c75f550424132f/cloudpickle-3.1.1.tar.gz", hash = "sha256:b216fa8ae4019d5482a8ac3c95d8f6346115d8835911fd4aefd1a445e4242c64", size = 22113 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/7e/e8/64c37fadfc2816a7701fa8a6ed8d87327c7d54eacfbfb6edab14a2f2be75/cloudpickle-3.1.1-py3-none-any.whl", hash = "sha256:c8c5a44295039331ee9dad40ba100a9c7297b6f988e50e87ccdf3765a668350e", size = 20992 },
-]
-
-[[package]]
-name = "cobble"
-version = "0.1.4"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/54/7a/a507c709be2c96e1bb6102eb7b7f4026c5e5e223ef7d745a17d239e9d844/cobble-0.1.4.tar.gz", hash = "sha256:de38be1539992c8a06e569630717c485a5f91be2192c461ea2b220607dfa78aa", size = 3805 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/d5/e1/3714a2f371985215c219c2a70953d38e3eed81ef165aed061d21de0e998b/cobble-0.1.4-py3-none-any.whl", hash = "sha256:36c91b1655e599fd428e2b95fdd5f0da1ca2e9f1abb0bc871dec21a0e78a2b44", size = 3984 },
 ]
 
 [[package]]
@@ -3626,18 +3555,6 @@ wheels = [
 ]
 
 [[package]]
-name = "mammoth"
-version = "1.9.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "cobble" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/d6/a6/27a13ba068cf3ff764d631b8dd71dee1b33040aa8c143f66ce902b7d1da0/mammoth-1.9.0.tar.gz", hash = "sha256:74f5dae10ca240fd9b7a0e1a6deaebe0aad23bc590633ef6f5e868aa9b7042a6", size = 50906 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/d0/ab/f8e63fcabc127c6efd68b03633c189ee799a5304fa96c036a325a2894bcb/mammoth-1.9.0-py2.py3-none-any.whl", hash = "sha256:0eea277316586f0ca65d86834aec4de5a0572c83ec54b4991f9bb520a891150f", size = 52901 },
-]
-
-[[package]]
 name = "markdown-it-py"
 version = "3.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -3977,32 +3894,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/e0/47/dd32fa426cc72114383ac549964eecb20ecfd886d1e5ccf5340b55b02f57/mpmath-1.3.0.tar.gz", hash = "sha256:7a28eb2a9774d00c7bc92411c19a89209d5da7c4c9a9e227be8330a23a25b91f", size = 508106 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/43/e3/7d92a15f894aa0c9c4b49b8ee9ac9850d6e63b03c9c32c0367a13ae62209/mpmath-1.3.0-py3-none-any.whl", hash = "sha256:a0b2b9fe80bbcd81a6647ff13108738cfb482d481d826cc0e02f5b35e5c88d2c", size = 536198 },
-]
-
-[[package]]
-name = "msal"
-version = "1.32.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "cryptography" },
-    { name = "pyjwt", extra = ["crypto"] },
-    { name = "requests" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/aa/5f/ef42ef25fba682e83a8ee326a1a788e60c25affb58d014495349e37bce50/msal-1.32.0.tar.gz", hash = "sha256:5445fe3af1da6be484991a7ab32eaa82461dc2347de105b76af92c610c3335c2", size = 149817 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/93/5a/2e663ef56a5d89eba962941b267ebe5be8c5ea340a9929d286e2f5fac505/msal-1.32.0-py3-none-any.whl", hash = "sha256:9dbac5384a10bbbf4dae5c7ea0d707d14e087b92c5aa4954b3feaa2d1aa0bcb7", size = 114655 },
-]
-
-[[package]]
-name = "msal-extensions"
-version = "1.3.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "msal" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/01/99/5d239b6156eddf761a636bded1118414d161bd6b7b37a9335549ed159396/msal_extensions-1.3.1.tar.gz", hash = "sha256:c5b0fd10f65ef62b5f1d62f4251d51cbcaf003fcedae8c91b040a488614be1a4", size = 23315 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/5e/75/bd9b7bb966668920f06b200e84454c8f3566b102183bc55c5473d96cb2b9/msal_extensions-1.3.1-py3-none-any.whl", hash = "sha256:96d3de4d034504e969ac5e85bae8106c8373b5c6568e4c8fa7af2eca9dbe6bca", size = 20583 },
 ]
 
 [[package]]
@@ -5946,21 +5837,6 @@ wheels = [
 ]
 
 [[package]]
-name = "python-pptx"
-version = "1.0.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "lxml" },
-    { name = "pillow" },
-    { name = "typing-extensions" },
-    { name = "xlsxwriter" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/52/a9/0c0db8d37b2b8a645666f7fd8accea4c6224e013c42b1d5c17c93590cd06/python_pptx-1.0.2.tar.gz", hash = "sha256:479a8af0eaf0f0d76b6f00b0887732874ad2e3188230315290cd1f9dd9cc7095", size = 10109297 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/d9/4f/00be2196329ebbff56ce564aa94efb0fbc828d00de250b1980de1a34ab49/python_pptx-1.0.2-py3-none-any.whl", hash = "sha256:160838e0b8565a8b1f67947675886e9fea18aa5e795db7ae531606d68e785cba", size = 472788 },
-]
-
-[[package]]
 name = "python3-xlib"
 version = "0.15"
 source = { registry = "https://pypi.org/simple" }
@@ -6888,18 +6764,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/d7/ce/fbaeed4f9fb8b2daa961f90591662df6a86c1abf25c548329a86920aedfb/soupsieve-2.6.tar.gz", hash = "sha256:e2e68417777af359ec65daac1057404a3c8a5455bb8abc36f1a9866ab1a51abb", size = 101569 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d1/c2/fe97d779f3ef3b15f05c94a2f1e3d21732574ed441687474db9d342a7315/soupsieve-2.6-py3-none-any.whl", hash = "sha256:e72c4ff06e4fb6e4b5a9f0f55fe6e81514581fca1515028625d0f299c602ccc9", size = 36186 },
-]
-
-[[package]]
-name = "speechrecognition"
-version = "3.14.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "typing-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/a3/81/2f98238647f409d8faa209a0cbe9a1e2be74eeca5f739971698a2b54b12d/speechrecognition-3.14.2.tar.gz", hash = "sha256:2daa467f0b5686017ff3f9a64dcfa1a789ee10d1b0ada3be74bfad10eaef5f49", size = 32857832 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/10/7a/ef9a0a3ddd7e8b304906bf0d7b1f3cd92759d7ea8be10d284183b2e8f47c/speechrecognition-3.14.2-py3-none-any.whl", hash = "sha256:42940b95295b358fdd7415daa01260c8b20025d6b4000fbbaa3458f005d912b7", size = 32853272 },
 ]
 
 [[package]]
@@ -8124,15 +7988,6 @@ wheels = [
 ]
 
 [[package]]
-name = "xlsxwriter"
-version = "3.2.3"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/a7/d1/e026d33dd5d552e5bf3a873dee54dad66b550230df8290d79394f09b2315/xlsxwriter-3.2.3.tar.gz", hash = "sha256:ad6fd41bdcf1b885876b1f6b7087560aecc9ae5a9cc2ba97dcac7ab2e210d3d5", size = 209135 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/37/b1/a252d499f2760b314fcf264d2b36fcc4343a1ecdb25492b210cb0db70a68/XlsxWriter-3.2.3-py3-none-any.whl", hash = "sha256:593f8296e8a91790c6d0378ab08b064f34a642b3feb787cf6738236bd0a4860d", size = 169433 },
-]
-
-[[package]]
 name = "xmltodict"
 version = "0.14.2"
 source = { registry = "https://pypi.org/simple" }
@@ -8262,19 +8117,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/3b/2a/dd7ed1aa23fea996834278d7ff178f215b24324ee527df53d45e34d21d28/yarl-1.20.0-cp312-cp312-win32.whl", hash = "sha256:839de4c574169b6598d47ad61534e6981979ca2c820ccb77bf70f4311dd2cc64", size = 86355 },
     { url = "https://files.pythonhosted.org/packages/ca/c6/333fe0338305c0ac1c16d5aa7cc4841208d3252bbe62172e0051006b5445/yarl-1.20.0-cp312-cp312-win_amd64.whl", hash = "sha256:3d7dbbe44b443b0c4aa0971cb07dcb2c2060e4a9bf8d1301140a33a93c98e18c", size = 92904 },
     { url = "https://files.pythonhosted.org/packages/ea/1f/70c57b3d7278e94ed22d85e09685d3f0a38ebdd8c5c73b65ba4c0d0fe002/yarl-1.20.0-py3-none-any.whl", hash = "sha256:5d0fe6af927a47a230f31e6004621fd0959eaa915fc62acfafa67ff7229a3124", size = 46124 },
-]
-
-[[package]]
-name = "youtube-transcript-api"
-version = "1.0.3"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "defusedxml" },
-    { name = "requests" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/b0/32/f60d87a99c05a53604c58f20f670c7ea6262b55e0bbeb836ffe4550b248b/youtube_transcript_api-1.0.3.tar.gz", hash = "sha256:902baf90e7840a42e1e148335e09fe5575dbff64c81414957aea7038e8a4db46", size = 2153252 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/f0/44/40c03bb0f8bddfb9d2beff2ed31641f52d96c287ba881d20e0c074784ac2/youtube_transcript_api-1.0.3-py3-none-any.whl", hash = "sha256:d1874e57de65cf14c9d7d09b2b37c814d6287fa0e770d4922c4cd32a5b3f6c47", size = 2169911 },
 ]
 
 [[package]]

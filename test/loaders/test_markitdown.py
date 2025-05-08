@@ -17,7 +17,7 @@ from unittest.mock import patch
 
 import pytest
 
-from camel.loaders import MarkItDownConverter
+from camel.loaders import MarkItDownLoader
 
 
 @pytest.fixture
@@ -50,14 +50,14 @@ def mock_files():
 
 
 def test_convert_file_success(mock_files):
-    converter = MarkItDownConverter()
+    converter = MarkItDownLoader()
     markdown_text = converter.convert_file(mock_files["demo_html"])
     assert markdown_text is not None
     assert isinstance(markdown_text, str)
 
 
 def test_convert_file_not_found():
-    converter = MarkItDownConverter()
+    converter = MarkItDownLoader()
     with pytest.raises(
         FileNotFoundError, match="File not found: nonexistent.txt"
     ):
@@ -65,13 +65,13 @@ def test_convert_file_not_found():
 
 
 def test_convert_file_unsupported_format(mock_files):
-    converter = MarkItDownConverter()
+    converter = MarkItDownLoader()
     with pytest.raises(ValueError, match="Unsupported file format"):
         converter.convert_file(mock_files["unsupported_xxx"])
 
 
 def test_convert_file_conversion_error(mock_files):
-    converter = MarkItDownConverter()
+    converter = MarkItDownLoader()
     with patch.object(
         converter.converter,
         "convert",
@@ -82,7 +82,7 @@ def test_convert_file_conversion_error(mock_files):
 
 
 def test_convert_files_success(mock_files):
-    converter = MarkItDownConverter()
+    converter = MarkItDownLoader()
     file_paths = [mock_files["demo_html"], mock_files["report_pdf"]]
     results = converter.convert_files(file_paths)
     assert mock_files["demo_html"] in results
@@ -92,7 +92,7 @@ def test_convert_files_success(mock_files):
 
 
 def test_convert_files_with_errors(mock_files):
-    converter = MarkItDownConverter()
+    converter = MarkItDownLoader()
     file_paths = [
         mock_files["demo_html"],
         mock_files["report_pdf"],
@@ -107,7 +107,7 @@ def test_convert_files_with_errors(mock_files):
 
 
 def test_convert_files_skip_failed(mock_files):
-    converter = MarkItDownConverter()
+    converter = MarkItDownLoader()
     file_paths = [
         mock_files["demo_html"],
         mock_files["report_pdf"],
@@ -122,7 +122,7 @@ def test_convert_files_skip_failed(mock_files):
 
 
 def test_convert_files_parallel(mock_files):
-    converter = MarkItDownConverter()
+    converter = MarkItDownLoader()
     file_paths = [mock_files["demo_html"], mock_files["report_pdf"]]
     results = converter.convert_files(file_paths, parallel=True)
     assert mock_files["demo_html"] in results

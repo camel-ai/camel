@@ -348,9 +348,9 @@ print(response)
 Initialize the loader and pass in the path of the file to retrieve information, then print the response.
 
 ```python
-from camel.loaders import MarkItDownConverter
+from camel.loaders import MarkItDownLoader
 
-loader = MarkItDownConverter()
+loader = MarkItDownLoader()
 response = converter.convert_file("demo.html")
 
 print(response)
