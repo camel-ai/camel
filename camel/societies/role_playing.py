@@ -585,7 +585,6 @@ class RolePlaying:
         logger.info(f"Created checkpoint '{checkpoint_name}' at turn {turn}")
 
     def list_checkpoints(self) -> List[Dict[str, Union[str, int, float]]]:
-
         r"""List all available checkpoints with metadata.
 
         Returns:

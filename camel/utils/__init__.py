@@ -15,6 +15,7 @@
 from .commons import (
     AgentOpsMeta,
     BatchProcessor,
+    HumanInterventionManager,
     agentops_decorator,
     api_keys_required,
     browser_toolkit_save_auth_cookie,
@@ -25,6 +26,7 @@ from .commons import (
     download_tasks,
     func_string_to_callable,
     get_first_int,
+    get_human_intervention_manager,
     get_prompt_template_key_words,
     get_pydantic_major_version,
     get_pydantic_object_schema,
@@ -94,4 +96,7 @@ __all__ = [
     "MCPServer",
     "sanitize_filename",
     "browser_toolkit_save_auth_cookie",
+    # Human Intervention utilities
+    "HumanInterventionManager",
+    "get_human_intervention_manager",
 ]

@@ -21,12 +21,14 @@ import platform
 import re
 import socket
 import subprocess
+import sys
 import threading
 import time
 import zipfile
 from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
+from queue import Queue
 from typing import (
     Any,
     Callable,
@@ -44,6 +46,7 @@ from urllib.parse import urlparse
 
 import pydantic
 import requests
+from colorama import Fore
 from pydantic import BaseModel
 
 from camel.types import TaskType
@@ -1103,3 +1106,234 @@ def browser_toolkit_save_auth_cookie(
     context.storage_state(path=cookie_json_path)
 
     browser.close()  # Close the browser when finished
+
+
+class HumanInterventionManager:
+    r"""Class for managing human intervention in AI conversations.
+
+    This class encapsulates all functionality related to keyboard monitoring,
+    human interruption, and managing interventions in AI conversations.
+    Using a class allows us to better manage state and locking mechanisms.
+    """
+
+    _instance = None
+
+    @classmethod
+    def get_instance(cls):
+        r"""Get singleton instance of the manager."""
+        if cls._instance is None:
+            cls._instance = HumanInterventionManager()
+        return cls._instance
+
+    def __init__(self):
+        r"""Initialize manager with thread-safe state management."""
+        # Thread safety and state management
+        self.keyboard_input_queue = Queue()
+        self.should_exit = threading.Event()
+        self.keyboard_listener_active = False
+        self.interrupt_printing = threading.Event()
+        self.human_interrupt_requested = threading.Event()
+        self.print_lock = threading.Lock()
+        self.original_terminal_settings = None
+
+    def print_text_animated_interruptible(
+        self, text, delay: float = 0.02, end: str = ""
+    ):
+        r"""Prints the given text with an animated effect, but allows
+        for interruption.
+
+        This function periodically checks if the interrupt_printing flag is
+        set,and if so, it stops printing and returns immediately.
+
+        Args:
+            text (str): The text to print.
+            delay (float, optional): The delay between each character printed.
+                (default: :obj:`0.02`)
+            end (str, optional): The end character to print after each
+                character of text. (default: :obj:`""`)
+        """
+        for char in text:
+            # Check if printing should be interrupted
+            if self.interrupt_printing.is_set():
+                return
+
+            print(char, end=end, flush=True)
+
+            sleep_start = time.time()
+            while time.time() - sleep_start < delay:
+                if self.interrupt_printing.is_set():
+                    return
+                time.sleep(
+                    min(0.01, delay / 2)
+                )  # Check more frequently than the delay
+
+    def start_keyboard_listener(self):
+        r"""Start a keyboard listener thread to detect human interruption.
+
+        Returns:
+            bool: True if server was started successfully, False otherwise.
+        """
+        if self.keyboard_listener_active:
+            return True
+
+        try:
+
+            def unix_listener():
+                print(
+                    Fore.MAGENTA
+                    + "Keyboard listener started. Type 'h' and press "
+                    "Enter to enter human intervention mode."
+                )
+
+                try:
+                    while not self.should_exit.is_set():
+                        import select
+
+                        readable, _, _ = select.select(
+                            [sys.stdin], [], [], 0.1
+                        )
+                        if readable:
+                            user_input = sys.stdin.readline().strip()
+                            if (
+                                user_input == 'h'
+                                and not self.human_interrupt_requested.is_set()
+                            ):
+                                self.interrupt_printing.set()
+                                self.human_interrupt_requested.set()
+                                print(
+                                    Fore.MAGENTA
+                                    + "\n[Human intervention triggered]\n"
+                                )
+                        time.sleep(0.01)
+                except Exception as e:
+                    print(Fore.RED + f"Keyboard listener error: {e}")
+
+            listener_thread = threading.Thread(
+                target=unix_listener, daemon=True
+            )
+            listener_thread.start()
+            self.keyboard_listener_active = True
+            return True
+
+        except Exception as e:
+            print(Fore.RED + f"Keyboard listener init failed: {e}")
+            return False
+
+    def stop_keyboard_listener(self):
+        r"""Stop the keyboard listener thread"""
+        self.should_exit.set()
+        self.keyboard_listener_active = False
+
+    def clear_keyboard_queue(self):
+        r"""Clear the keyboard queue and reset interrupt flags"""
+        self.interrupt_printing.clear()
+        self.human_interrupt_requested.clear()
+
+    def print_checkpoints(self, checkpoints):
+        r"""Print the list of available checkpoints
+
+        Args:
+            checkpoints (list): A list of checkpoint dictionaries
+        """
+        print(Fore.YELLOW + "\nAvailable checkpoints:")
+        for i, checkpoint in enumerate(checkpoints):
+            print(
+                f"{i+1}: {checkpoint['name']} (Turn {checkpoint['turn']}, "
+                f"User Message: {checkpoint['user_message']})"
+            )
+
+    def human_intervention_handler(self, role_play_session):
+        r"""Handle the human intervention process
+
+        Args:
+            role_play_session: The role play session object
+
+        Returns:
+            Optional[Any]: The assistant's response message or None if
+                intervention failed
+        """
+        print(Fore.MAGENTA + "\n--- Human Intervention Mode Activated ---")
+        print(
+            Fore.MAGENTA
+            + "Preparing to rollback to a historical checkpoint..."
+        )
+
+        checkpoints = role_play_session.list_checkpoints()
+        self.print_checkpoints(checkpoints)
+
+        print(Fore.MAGENTA + "Enter checkpoint number to rollback to: ")
+
+        try:
+            checkpoint_idx = int(input().strip()) - 1
+            if 0 <= checkpoint_idx < len(checkpoints):
+                checkpoint_name = checkpoints[checkpoint_idx]["name"]
+                success = role_play_session.rollback_to_checkpoint(
+                    checkpoint_name
+                )
+                if success:
+                    print(
+                        Fore.MAGENTA
+                        + f"\nSuccessfully rolled back to checkpoint: "
+                        f"{checkpoint_name}"
+                    )
+
+                    print(
+                        Fore.MAGENTA
+                        + "Enter your new message to replace AI user: "
+                    )
+
+                    human_message = input().strip()
+
+                    human_msg = role_play_session.human_intervene(
+                        human_message
+                    )
+
+                    self.print_text_animated_interruptible(
+                        Fore.RED + f"Human User:\n\n{human_msg.content}\n"
+                    )
+
+                    assistant_response, _ = role_play_session.step(human_msg)
+
+                    if assistant_response.terminated:
+                        print(
+                            Fore.GREEN
+                            + (
+                                "AI Assistant terminated. Reason: "
+                                f"{assistant_response.info['termination_reasons']}."
+                            )
+                        )
+                        return None
+
+                    self.print_text_animated_interruptible(
+                        Fore.GREEN + "AI Assistant:\n\n"
+                        f"{assistant_response.msg.content}\n"
+                    )
+
+                    self.human_interrupt_requested.clear()
+
+                    return assistant_response.msg
+                else:
+                    print(Fore.RED + "Rollback failed!")
+            else:
+                print(Fore.RED + "Invalid checkpoint number!")
+        except ValueError:
+            print(Fore.RED + "Please enter a valid number!")
+
+        self.clear_keyboard_queue()
+
+        if self.keyboard_listener_active:
+            try:
+                import tty
+
+                fd = sys.stdin.fileno()
+                tty.setraw(fd)
+            except Exception as e:
+                print(Fore.RED + f"Failed to restore keyboard mode: {e}")
+
+        return None
+
+
+# Convenience function to get a manager instance
+def get_human_intervention_manager():
+    r"""Get the human intervention manager singleton instance."""
+    return HumanInterventionManager.get_instance()
