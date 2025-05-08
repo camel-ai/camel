@@ -567,15 +567,15 @@ class BrowseCompBenchmark(BaseBenchmark):
                 input_message = QUERY_TEMPLATE.format(question=problem)
 
                 if isinstance(pipeline_template, (ChatAgent)):
-                    pipeline = pipeline_template.clone()
+                    pipeline = pipeline_template.clone()  # type: ignore[assignment]
 
                     response_text = pipeline.step(
                         input_message, response_format=QueryResponse
                     )
                 elif isinstance(pipeline_template, Workforce):
-                    pipeline = pipeline_template.clone()
+                    pipeline = pipeline_template.clone() # type: ignore[assignment]
                     task = Task(content=input_message, id="0")
-                    task = pipeline.process_task(task)
+                    task = pipeline.process_task(task)  # type: ignore[attr-defined]
                     if task_json_formatter:
                         formatter_in_process = task_json_formatter.clone()
                     else:
@@ -589,32 +589,32 @@ class BrowseCompBenchmark(BaseBenchmark):
 
                 elif isinstance(pipeline_template, RolePlaying):
                     # RolePlaying is different.
-                    pipeline = pipeline_template.clone(
+                    pipeline = pipeline_template.clone(  # type: ignore[assignment]
                         task_prompt=input_message
                     )
 
                     n = 0
-                    input_msg = pipeline.init_chat()
+                    input_msg = pipeline.init_chat()  # type: ignore[attr-defined]
                     chat_history = []
                     while n < chat_turn_limit:
                         n += 1
                         assistant_response, user_response = pipeline.step(
                             input_msg
                         )
-                        if assistant_response.terminated:
+                        if assistant_response.terminated:  # type: ignore[attr-defined]
                             break
-                        if user_response.terminated:
+                        if user_response.terminated:  # type: ignore[attr-defined]
                             break
-                        if "CAMEL_TASK_DONE" in user_response.msg.content:
+                        if "CAMEL_TASK_DONE" in user_response.msg.content:  # type: ignore[attr-defined]
                             break
 
                         chat_history.append(
-                            f"AI User: {user_response.msg.content}"
+                            f"AI User: {user_response.msg.content}"  # type: ignore[attr-defined]
                         )
                         chat_history.append(
-                            f"AI Assistant: {assistant_response.msg.content}"
+                            f"AI Assistant: {assistant_response.msg.content}"  # type: ignore[attr-defined]
                         )
-                        input_msg = assistant_response.msg
+                        input_msg = assistant_response.msg  # type: ignore[attr-defined]
 
                     chat_history_str = "\n".join(chat_history)
                     if roleplaying_summarizer:
