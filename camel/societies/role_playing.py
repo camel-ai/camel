@@ -556,7 +556,10 @@ class RolePlaying:
 
         # Ensure there are user messages before continuing
         if not user_memory_records:
-            logger.warning("Cannot create checkpoint : No user messages")
+            logger.warning(
+                f"Cannot create checkpoint '{checkpoint_name}': No "
+                f"user messages"
+            )
             return
 
         last_user_message = user_memory_records[-1].message.content
