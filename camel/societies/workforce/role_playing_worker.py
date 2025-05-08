@@ -67,8 +67,9 @@ class RolePlayingWorker(Worker):
             "are trying to solve a task. Your job is summarizing the result "
             "of the task based on the chat history.",
         )
-        summarize_agent_kwargs['system_message'] = summ_sys_msg
-        self.summarize_agent = ChatAgent(**summarize_agent_kwargs)
+        summarize_agent_dict = summarize_agent_kwargs if summarize_agent_kwargs else {}
+        summarize_agent_dict['system_message'] = summ_sys_msg
+        self.summarize_agent = ChatAgent(**summarize_agent_dict)
         self.chat_turn_limit = chat_turn_limit
         self.assistant_role_name = assistant_role_name
         self.user_role_name = user_role_name

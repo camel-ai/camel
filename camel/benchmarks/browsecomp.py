@@ -150,12 +150,17 @@ Exact Answer: {{your succinct, final answer}}
 Confidence: {{your confidence score between 0% and 100% for your answer}}
 """.strip()
 
-SUMMARIZE_PROMPT = """
+SUMMARIZE_TEMPLATE = """
 Based on the chat history:
 {chat_history}
 
 answer the question:
 {query}
+"""
+
+FORMAT_JSON_TEMPLATE = """
+format content into json:
+{content}
 """
 
 GRADER_TEMPLATE = """
@@ -519,6 +524,7 @@ class BrowseCompBenchmark(BaseBenchmark):
         pipeline_template: Union[ChatAgent, RolePlaying, Workforce],
         chat_turn_limit: int = 10,
         roleplaying_summarizer: Union[ChatAgent, None] = None,
+        task_json_formatter: Union[ChatAgent, None] = None,
     ) -> None:
         r"""Run the benchmark by processing each example in parallel.
 
@@ -570,8 +576,16 @@ class BrowseCompBenchmark(BaseBenchmark):
                     pipeline = pipeline_template.clone()
                     task = Task(content=input_message, id="0")
                     task = pipeline.process_task(task)
-                    response_text = task.result
-                    print(response_text)
+                    if task_json_formatter:
+                        formatter_in_process = task_json_formatter.clone()
+                    else:
+                        formatter_in_process = ChatAgent(
+                            "You are a helpful assistant."
+                        )
+                    response_text = formatter_in_process.step(
+                        FORMAT_JSON_TEMPLATE.format(content=task.result),
+                        response_format=QueryResponse,
+                    )
 
                 else:
                     # RolePlaying is different.
@@ -610,7 +624,7 @@ class BrowseCompBenchmark(BaseBenchmark):
                             "You are a helpful assistant."
                         )
 
-                    summarize_prompt = SUMMARIZE_PROMPT.format(
+                    summarize_prompt = SUMMARIZE_TEMPLATE.format(
                         chat_history=chat_history_str,
                         query=input_message,
                     )

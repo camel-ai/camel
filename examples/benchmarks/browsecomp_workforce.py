@@ -24,9 +24,8 @@ from camel.types.enums import ModelPlatformType, ModelType
 if __name__ == '__main__':
     # Configure the model
     model_config = {
-        "model_platform": ModelPlatformType.GEMINI,
-        "model_type": 'gemini-2.5-pro',
-        "url": "https://litellm-cloudrun-668429440317.us-central1.run.app",
+        "model_platform": ModelPlatformType.DEFAULT,
+        "model_type": ModelType.DEFAULT,
     }
 
     # Create a model instance
@@ -38,12 +37,14 @@ if __name__ == '__main__':
         model=model,
     )
 
+    formatter_agent = ChatAgent('You are a helpful assistant.', model=model)
+
     # Create specialized agents for the workforce
     web_researcher_sys_msg = BaseMessage.make_assistant_message(
         role_name="Web Researcher",
         content="You are an expert at researching information on the web. "
-                "You can search for and analyze web content to extract accurate information. "
-                "You excel at understanding complex queries and finding precise answers.",
+        "You can search for and analyze web content to extract accurate information. "
+        "You excel at understanding complex queries and finding precise answers.",
     )
 
     # Create the agents with the model
@@ -57,13 +58,12 @@ if __name__ == '__main__':
         description="BrowseComp Research Team",
         coordinator_agent_kwargs=dict(model=model),
         task_agent_kwargs=dict(model=model),
-        new_worker_agent_kwargs=dict(model=model)
+        new_worker_agent_kwargs=dict(model=model),
     )
 
     # Add workers to the workforce
     workforce.add_single_agent_worker(
-        description="Web content researcher",
-        worker=web_researcher_agent
+        description="Web content researcher", worker=web_researcher_agent
     )
 
     # Add a role-playing worker for complex queries
@@ -74,18 +74,18 @@ if __name__ == '__main__':
         assistant_agent_kwargs=dict(model=model),
         user_agent_kwargs=dict(model=model),
         summarize_agent_kwargs=dict(model=model),
-        chat_turn_limit=3
+        chat_turn_limit=3,
     )
 
     # Create the BrowseComp benchmark
     benchmark = BrowseCompBenchmark(
-        "report_workforce.html", num_examples=1, processes=1
+        "report_workforce.html", num_examples=3, processes=2
     )
 
     # Run the benchmark with the workforce
     print("Running BrowseComp benchmark with workforce...")
     benchmark.run(
-        pipeline_template=workforce,
+        pipeline_template=workforce, task_json_formatter=formatter_agent
     )
 
     # Validate the results
