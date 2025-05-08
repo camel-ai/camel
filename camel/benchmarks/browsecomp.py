@@ -587,7 +587,7 @@ class BrowseCompBenchmark(BaseBenchmark):
                         response_format=QueryResponse,
                     )
 
-                else:
+                elif isinstance(pipeline_template, RolePlaying):
                     # RolePlaying is different.
                     pipeline = pipeline_template.clone(
                         task_prompt=input_message
@@ -631,7 +631,10 @@ class BrowseCompBenchmark(BaseBenchmark):
                     response_text = summarizer_in_process.step(
                         summarize_prompt, response_format=QueryResponse
                     )
-
+                else:
+                    logging.warning(
+                        f"{type(pipeline_template)} is not supported.")
+                    pass
                 # Parse the response JSON
                 response_dict = json.loads(response_text.msg.content)
 

@@ -18,7 +18,6 @@ from camel.models.model_factory import ModelFactory
 from camel.societies.role_playing import RolePlaying
 from camel.types.enums import ModelPlatformType, ModelType, TaskType
 
-
 if __name__ == '__main__':
     model_config = {
         "model_platform": ModelPlatformType.DEFAULT,

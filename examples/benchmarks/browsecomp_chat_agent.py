@@ -17,7 +17,6 @@ from camel.benchmarks.browsecomp import BrowseCompBenchmark
 from camel.models.model_factory import ModelFactory
 from camel.types.enums import ModelPlatformType, ModelType
 
-
 if __name__ == '__main__':
     # Define model configuration
     model_config = {

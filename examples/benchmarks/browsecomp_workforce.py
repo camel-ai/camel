@@ -17,9 +17,7 @@ from camel.benchmarks.browsecomp import BrowseCompBenchmark
 from camel.messages.base import BaseMessage
 from camel.models.model_factory import ModelFactory
 from camel.societies.workforce.workforce import Workforce
-from camel.toolkits import SearchToolkit
 from camel.types.enums import ModelPlatformType, ModelType
-
 
 if __name__ == '__main__':
     # Configure the model
@@ -42,9 +40,9 @@ if __name__ == '__main__':
     # Create specialized agents for the workforce
     web_researcher_sys_msg = BaseMessage.make_assistant_message(
         role_name="Web Researcher",
-        content="You are an expert at researching information on the web. "
-        "You can search for and analyze web content to extract accurate information. "
-        "You excel at understanding complex queries and finding precise answers.",
+        content="""You are an expert at researching information on the web. 
+You can search for and analyze web content to extract accurate information. 
+You excel at understanding complex queries and finding precise answers.""",
     )
 
     # Create the agents with the model
@@ -85,11 +83,12 @@ if __name__ == '__main__':
     # Run the benchmark with the workforce
     print("Running BrowseComp benchmark with workforce...")
     benchmark.run(
-        pipeline_template=workforce, task_json_formatter=formatter_agent
+        pipeline_template=workforce, 
+        roleplaying_summarizer=formatter_agent
     )
 
     # Validate the results
     print("Validating results...")
     benchmark.validate(grader=grader_agent)
 
-    print(f"Benchmark completed. Results saved to report_workforce.html")
+    print("Benchmark completed. Results saved to report_workforce.html")
