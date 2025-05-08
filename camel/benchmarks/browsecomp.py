@@ -633,7 +633,8 @@ class BrowseCompBenchmark(BaseBenchmark):
                     )
                 else:
                     logging.warning(
-                        f"{type(pipeline_template)} is not supported.")
+                        f"{type(pipeline_template)} is not supported."
+                    )
                     pass
                 # Parse the response JSON
                 response_dict = json.loads(response_text.msg.content)
@@ -662,7 +663,7 @@ class BrowseCompBenchmark(BaseBenchmark):
                     'problem': problem,
                     'expected_answer': answer,
                     'response': traceback.format_exc(),
-                    'response_dict': {}
+                    'response_dict': {},
                 }
 
         pool_class = ThreadPool
@@ -757,7 +758,8 @@ class BrowseCompBenchmark(BaseBenchmark):
                     score=score,
                     correct_answer=raw_result['expected_answer'],
                     extracted_answer=raw_result['response_dict'].get(
-                        'exact_answer', '')
+                        'exact_answer', ''
+                    ),
                 )
                 # Return the evaluation result
                 return SingleEvalResult(
@@ -783,7 +785,8 @@ class BrowseCompBenchmark(BaseBenchmark):
                     score=0,
                     correct_answer=raw_result['expected_answer'],
                     extracted_answer=raw_result['response_dict'].get(
-                        'exact_answer', '')
+                        'exact_answer', ''
+                    ),
                 )
                 return SingleEvalResult(
                     html=html,

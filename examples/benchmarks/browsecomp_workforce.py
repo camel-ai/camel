@@ -83,8 +83,7 @@ You excel at understanding complex queries and finding precise answers.""",
     # Run the benchmark with the workforce
     print("Running BrowseComp benchmark with workforce...")
     benchmark.run(
-        pipeline_template=workforce, 
-        roleplaying_summarizer=formatter_agent
+        pipeline_template=workforce, roleplaying_summarizer=formatter_agent
     )
 
     # Validate the results
