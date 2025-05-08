@@ -16,7 +16,7 @@ from __future__ import annotations
 import asyncio
 import json
 from collections import deque
-from typing import Deque, Dict, List, Optional, Callable, Any, Sequence
+from typing import Deque, Dict, List, Optional
 
 from colorama import Fore
 
