@@ -573,7 +573,7 @@ class BrowseCompBenchmark(BaseBenchmark):
                         input_message, response_format=QueryResponse
                     )
                 elif isinstance(pipeline_template, Workforce):
-                    pipeline = pipeline_template.clone() # type: ignore[assignment]
+                    pipeline = pipeline_template.clone()  # type: ignore[assignment]
                     task = Task(content=input_message, id="0")
                     task = pipeline.process_task(task)  # type: ignore[attr-defined]
                     if task_json_formatter:
