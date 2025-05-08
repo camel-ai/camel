@@ -79,7 +79,7 @@ camel.
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.MISTRAL,
-    model_type=ModelType.MISTRAL_MEDIUM,
+    model_type=ModelType.MISTRAL_MEDIUM_3,
     model_config_dict=MistralConfig(temperature=0.0).as_dict(),
 )
 
