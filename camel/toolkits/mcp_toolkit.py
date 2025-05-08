@@ -16,6 +16,7 @@ import json
 import os
 import shlex
 from contextlib import AsyncExitStack, asynccontextmanager
+from datetime import timedelta
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -52,14 +53,15 @@ class MCPClient(BaseToolkit):
 
     Attributes:
         command_or_url (str): URL for SSE mode or command executable for stdio
-            mode. (default: :obj:`'None'`)
+            mode. (default: :obj:`None`)
         args (List[str]): List of command-line arguments if stdio mode is used.
-            (default: :obj:`'None'`)
+            (default: :obj:`None`)
         env (Dict[str, str]): Environment variables for the stdio mode command.
-            (default: :obj:`'None'`)
-        timeout (Optional[float]): Connection timeout. (default: :obj:`'None'`)
+            (default: :obj:`None`)
+        timeout (Optional[float]): Connection timeout.
+            (default: :obj:`None`)
         headers (Dict[str, str]): Headers for the HTTP request.
-            (default: :obj:`'None'`)
+            (default: :obj:`None`)
         strict (Optional[bool]): Whether to enforce strict mode for the
             function call. (default: :obj:`False`)
     """
@@ -111,6 +113,7 @@ class MCPClient(BaseToolkit):
                     sse_client(
                         self.command_or_url,
                         headers=self.headers,
+                        timeout=self.timeout,
                     )
                 )
             else:
@@ -138,7 +141,11 @@ class MCPClient(BaseToolkit):
                 )
 
             self._session = await self._exit_stack.enter_async_context(
-                ClientSession(read_stream, write_stream)
+                ClientSession(
+                    read_stream,
+                    write_stream,
+                    timedelta(seconds=self.timeout) if self.timeout else None,
+                )
             )
             await self._session.initialize()
             list_tools_result = await self.list_mcp_tools()
