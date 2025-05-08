@@ -148,40 +148,42 @@ class FileWriteToolkit(BaseToolkit):
         document.save(str(file_path))
         logger.debug(f"Wrote DOCX to {file_path} with default formatting")
 
-    def _write_pdf_file(self, file_path: Path, content: str, **kwargs) -> None:
+    def _write_pdf_file(self, file_path: Path, content: str) -> None:
         r"""Write text content to a PDF file with default formatting.
+        pylatex is a Python wrapper library.
+        It doesn't provide compilation capabilities itself,
+        but depends on the LaTeX toolchain installed on the system
+        (such as pdflatex, xelatex, lualatex, etc.)
 
         Args:
             file_path (Path): The target file path.
             content (str): The text content to write.
 
         Raises:
-            RuntimeError: If the 'fpdf' library is not installed.
+            RuntimeError: If the 'pylatex' library is not installed.
         """
-        from fpdf import FPDF
+        from pylatex import (  # type: ignore[import-untyped]
+            Command,
+            Document,
+            Math,
+            Section,
+        )
+        from pylatex.utils import NoEscape  # type: ignore[import-untyped]
 
-        # Use default formatting values
-        font_family = 'Arial'
-        font_size = 12
-        font_style = ''
-        line_height = 10
-        margin = 10
+        doc = Document(documentclass="article")
+        doc.packages.append(Command('usepackage', 'amsmath'))
 
-        pdf = FPDF()
-        pdf.set_margins(margin, margin, margin)
+        with doc.create(Section('Generated Content')):
+            for line in content.split('\n'):
+                if '$' in line:
+                    doc.append(Math(data=line.strip('$')))
+                else:
+                    doc.append(NoEscape(line))
+                doc.append(NoEscape(r'\par'))
 
-        pdf.add_page()
-        pdf.set_font(font_family, style=font_style, size=font_size)
+        doc.generate_pdf(str(file_path), clean_tex=False)
 
-        # Split content into paragraphs and add them
-        for para in content.split('\n'):
-            if para.strip():  # Skip empty paragraphs
-                pdf.multi_cell(0, line_height, para)
-            else:
-                pdf.ln(line_height)  # Add empty line
-
-        pdf.output(str(file_path))
-        logger.debug(f"Wrote PDF to {file_path} with custom formatting")
+        logger.debug(f"Wrote PDF (with full LaTeX) to {file_path}")
 
     def _write_csv_file(
         self,
