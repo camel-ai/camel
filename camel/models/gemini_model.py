@@ -18,7 +18,6 @@ from openai import AsyncStream, Stream
 from pydantic import BaseModel
 
 from camel.configs import Gemini_API_PARAMS, GeminiConfig
-from camel.logger import get_logger
 from camel.messages import OpenAIMessage
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import (
@@ -30,8 +29,6 @@ from camel.utils import (
     BaseTokenCounter,
     api_keys_required,
 )
-
-logger = get_logger(__name__)
 
 
 class GeminiModel(OpenAICompatibleModel):
@@ -130,8 +127,8 @@ class GeminiModel(OpenAICompatibleModel):
         if response_format:
             if tools:
                 raise ValueError(
-                    "Gemini does not support Function calling with a "
-                    "response format, "
+                    "Gemini does not support function calling with "
+                    "response format."
                 )
             return self._request_parse(messages, response_format)
         else:
@@ -163,6 +160,11 @@ class GeminiModel(OpenAICompatibleModel):
         )
         messages = self._process_messages(messages)
         if response_format:
+            if tools:
+                raise ValueError(
+                    "Gemini does not support function calling with "
+                    "response format."
+                )
             return await self._arequest_parse(messages, response_format)
         else:
             return await self._arequest_chat_completion(messages, tools)
