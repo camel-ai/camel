@@ -196,6 +196,7 @@ class ModelType(UnifiedModelType, Enum):
     MISTRAL_MIXTRAL_8x22B = "open-mixtral-8x22b"
     MISTRAL_NEMO = "open-mistral-nemo"
     MISTRAL_PIXTRAL_12B = "pixtral-12b-2409"
+    MISTRAL_MEDIUM_3 = "mistral-medium-latest"
 
     # Reka models
     REKA_CORE = "reka-core"
@@ -475,6 +476,16 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4_TURBO,
             ModelType.GPT_4O,
             ModelType.GPT_4O_MINI,
+            ModelType.O1,
+            ModelType.O1_PREVIEW,
+            ModelType.O1_MINI,
+            ModelType.O3_MINI,
+            ModelType.GPT_4_5_PREVIEW,
+            ModelType.GPT_4_1,
+            ModelType.GPT_4_1_MINI,
+            ModelType.GPT_4_1_NANO,
+            ModelType.O4_MINI,
+            ModelType.O3,
         }
 
     @property
@@ -586,6 +597,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_PIXTRAL_12B,
             ModelType.MISTRAL_8B,
             ModelType.MISTRAL_3B,
+            ModelType.MISTRAL_MEDIUM_3,
         }
 
     @property
@@ -1094,6 +1106,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NETMIND_DEEPSEEK_R1,
             ModelType.NETMIND_DEEPSEEK_V3,
             ModelType.NOVITA_DEEPSEEK_V3_0324,
+            ModelType.MISTRAL_MEDIUM_3,
         }:
             return 128_000
         elif self in {
@@ -1389,6 +1402,7 @@ class ModelPlatformType(Enum):
     MISTRAL = "mistral"
     REKA = "reka"
     TOGETHER = "together"
+    STUB = "stub"
     OPENAI_COMPATIBLE_MODEL = "openai-compatible-model"
     SAMBA = "samba-nova"
     COHERE = "cohere"
@@ -1576,6 +1590,11 @@ class ModelPlatformType(Enum):
     def is_novita(self) -> bool:
         r"""Returns whether this platform is Novita."""
         return self is ModelPlatformType.NOVITA
+
+    @property
+    def is_watsonx(self) -> bool:
+        r"""Returns whether this platform is WatsonX."""
+        return self is ModelPlatformType.WATSONX
 
 
 class AudioModelType(Enum):
