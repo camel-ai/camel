@@ -1311,7 +1311,7 @@ class ChatAgent(BaseAgent):
         response_id: str = ""
         # All choices in one response share one role
         for chunk in response:
-            response_id = chunk.id
+            response_id = chunk.id if chunk.id else ""
             self._handle_chunk(
                 chunk, content_dict, finish_reasons_dict, output_messages
             )
