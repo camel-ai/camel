@@ -25,6 +25,9 @@ Firecrawl Reader provides a Python interface to interact with the Firecrawl API,
 ### 2.6. Jina_url Reader
 JinaURL Reader is a Python client for Jina AI's URL reading service, optimized to provide cleaner, LLM-friendly content from URLs. 
 
+### 2.7 MarkitDown Reader
+MarkItDown is a lightweight Python utility for converting various files to Markdown for use with LLMs and related text analysis pipelines.
+
 ## 3. Get Started
 
 ### 3.1. Using `Base IO`
@@ -339,6 +342,20 @@ response = jina_reader.read_content("https://docs.camel-ai.org/")
 
 print(response)
 ```
+
+### 3.6. Using `MarkitDown Reader`
+
+Initialize the loader and pass in the path of the file to retrieve information, then print the response.
+
+```python
+from camel.loaders import MarkItDownLoader
+
+loader = MarkItDownLoader()
+response = converter.convert_file("demo.html")
+
+print(response)
+```
+
 ```markdown
 >>>Welcome to CAMEL’s documentation! — CAMEL 0.2.57 documentation
 ===============
