@@ -658,6 +658,12 @@ class BrowseCompBenchmark(BaseBenchmark):
                 # Log any errors that occur during evaluation
                 logger.error(f"Error evaluating result: {e}")
                 logger.error(traceback.format_exc())
+                return {
+                    'problem': problem,
+                    'expected_answer': answer,
+                    'response': traceback.format_exc(),
+                    'response_dict': {}
+                }
 
         pool_class = ThreadPool
         with pool_class(min(self.processes, len(self.examples))) as pool:
@@ -678,7 +684,7 @@ class BrowseCompBenchmark(BaseBenchmark):
             htmls=eval_result.htmls,
         )
 
-    def validate(self, grader: ChatAgent | None = None):
+    def validate(self, grader: ChatAgent | None = None) -> None:
         r"""Validate the raw results using the GRADER_TEMPLATE and ChatAgent.
 
         This method evaluates the correctness of each response by
@@ -718,6 +724,12 @@ class BrowseCompBenchmark(BaseBenchmark):
             else:
                 grader_in_process = ChatAgent("You are a helpful assistant.")
 
+            # Create a conversation list for the result
+            convo = [
+                dict(content=raw_result['problem'], role="user"),
+                dict(content=raw_result['response'], role="assistant"),
+            ]
+
             try:
                 response = grader_in_process.step(
                     prompt, response_format=GradingResponse
@@ -744,17 +756,9 @@ class BrowseCompBenchmark(BaseBenchmark):
                     ),
                     score=score,
                     correct_answer=raw_result['expected_answer'],
-                    extracted_answer=raw_result['response_dict'][
-                        'exact_answer'
-                    ],
+                    extracted_answer=raw_result['response_dict'].get(
+                        'exact_answer', '')
                 )
-
-                # Create a conversation list for the result
-                convo = [
-                    dict(content=raw_result['problem'], role="user"),
-                    dict(content=raw_result['response'], role="assistant"),
-                ]
-
                 # Return the evaluation result
                 return SingleEvalResult(
                     html=html,
@@ -769,6 +773,27 @@ class BrowseCompBenchmark(BaseBenchmark):
                 # Log any errors that occur during evaluation
                 logger.error(f"Error evaluating result: {e}")
                 logger.error(traceback.format_exc())
+                html = self.jinja_env.from_string(HTML_JINJA).render(
+                    prompt_messages=dict(
+                        content=raw_result['problem'], role="user"
+                    ),
+                    next_message=dict(
+                        content=raw_result['response'], role="assistant"
+                    ),
+                    score=0,
+                    correct_answer=raw_result['expected_answer'],
+                    extracted_answer=raw_result['response_dict'].get(
+                        'exact_answer', '')
+                )
+                return SingleEvalResult(
+                    html=html,
+                    score=0,
+                    convo=convo,
+                    metrics={
+                        "is_correct": 0,
+                        "is_incorrect": 1,
+                    },
+                )
 
         pool_class = ThreadPool
         with pool_class(min(self.processes, len(self._raw_results))) as pool:
