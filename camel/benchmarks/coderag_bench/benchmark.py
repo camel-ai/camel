@@ -53,6 +53,68 @@ from camel.types import StorageType
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+EXAMPLE_PATCH_SWE_Bench = """
+I need you to solve this issue by generating a single patch file that I can
+apply directly to this repository using git apply. Please respond with a
+single patch file in the following format.
+<patch>
+--- a/file.py
++++ b/file.py
+@@ -1,27 +1,35 @@
+ def euclidean(a, b):
+-    while b:
+-        a, b = b, a % b
+-    return a
++    if b == 0:
++        return a
++    return euclidean(b, a % b)
+
+
+ def bresenham(x0, y0, x1, y1):
+     points = []
+     dx = abs(x1 - x0)
+     dy = abs(y1 - y0)
+-    sx = 1 if x0 < x1 else -1
+-    sy = 1 if y0 < y1 else -1
+-    err = dx - dy
++    x, y = x0, y0
++    sx = -1 if x0 > x1 else 1
++    sy = -1 if y0 > y1 else 1
+
+-    while True:
+-        points.append((x0, y0))
+-        if x0 == x1 and y0 == y1:
+-            break
+-        e2 = 2 * err
+-        if e2 > -dy:
++    if dx > dy:
++        err = dx / 2.0
++        while x != x1:
++            points.append((x, y))
+             err -= dy
+-            x0 += sx
+-        if e2 < dx:
+-            err += dx
+-            y0 += sy
++            if err < 0:
++                y += sy
++                err += dx
++            x += sx
++    else:
++        err = dy / 2.0
++        while y != y1:
++            points.append((x, y))
++            err -= dx
++            if err < 0:
++                x += sx
++                err += dy
++            y += sy
+
++    points.append((x, y))
+     return points
+</patch>
+"""
+
 
 class RetrieverFn(Protocol):
     r"""Protocol for a retrieval function used in benchmark evaluation.
@@ -706,7 +768,7 @@ class CodeRAGBenchmark(BaseBenchmark):
         self.subset_size = subset_size
 
         # Todo: Support other 6 tasks, e.g., mbpp, ds100,...
-        if self.task != "humaneval":
+        if self.task not in ["humaneval", "swe-bench_lite"]:
             raise NotImplementedError(
                 "Only canonical retrieval is supported for now."
             )
@@ -720,11 +782,17 @@ class CodeRAGBenchmark(BaseBenchmark):
         Returns:
             None
         """
-        if self.task == "humaneval":
+        if self.task in ["humaneval", "swe-bench_lite"]:
             logger.info(
                 f"Downloading and processing dataset for task: {self.task}"
             )
-            dataset = datasets.load_dataset("openai_humaneval")
+            dataset_name_map = {
+                "humaneval": "openai_humaneval",
+                "swe-bench_lite": "princeton-nlp/SWE-bench_Lite",
+            }
+            dataset = datasets.load_dataset(
+                dataset_name_map[self.task], cache_dir=self.data_dir
+            )
             self.dataset = dataset
 
         else:
@@ -954,6 +1022,7 @@ class CodeRAGBenchmark(BaseBenchmark):
         n_generation_samples,
         allow_code_execution,
         generation_eval_k,
+        split="test",
     ):
         r"""Runs code generation and evaluation for the task.
 
@@ -971,6 +1040,7 @@ class CodeRAGBenchmark(BaseBenchmark):
                 (default: :obj:`False`)
             generation_eval_k (List[int]): k values used in pass@k
                 computation. (default: :obj:`List[int]` with [1, 5, 10])
+            split (str): Split for the dataset. (default: :obj:`"test"`)
 
         Returns:
             Optional[Dict[str, float]]: Dictionary of pass@k
@@ -988,25 +1058,55 @@ class CodeRAGBenchmark(BaseBenchmark):
         # List[str]: one reference string per task
         all_references = []
 
-        for _, data_i in enumerate(
-            tqdm(self.dataset["test"])
-        ):  # data_i is equivalent to doc in <https://github.com/
+        for _, doc_i in enumerate(
+            tqdm(self.dataset[split])
+        ):  # doc_i is equivalent to doc in <https://github.com/
             # code-rag-bench/code-rag-bench/blob/main/generation/
             # eval/tasks/humaneval.py>
-            prompt = data_i["prompt"]
 
-            docs = data_i.get("docs", [])
-            context = "\n\n".join(
-                doc["text"] for doc in docs[:10]
-            )  # Top-10 Todo: allow customization of top-k retrieval!
+            # ===Generate Prompts======
+            if self.task == "humaneval":
+                prompt = doc_i["prompt"]
+            elif self.task == "swe-bench-lite":
+                # Note: This is the current implementation in CodeRAG-Bench
+                # Todo: maybe consider allowing users to customize prompts
+                # Todo: Maybe consider how to make use of `hints_text`
+                prompt = (
+                    "You will be provided with a partial code base and "
+                    "an issue statement explaining a problem to "
+                    "resolve.\n"
+                )
 
-            # Construct the final prompt for the agent
-            final_prompt = (
-                context + '\n\nPlease complete the following function based '
-                'on the example above, DO NOT REPEAT'
-                'PREVIOUS DEFINITIONS :\n' + '```python\n' + prompt
-            )
+                prompt += (
+                    "<issue>\n" + doc_i["problem_statement"] + "\n</issue>\n"
+                )
 
+            # RAG only: Get retrieved contexts,
+            # which is stored in the "docs" field
+            docs = doc_i.get("docs", [])
+            # Deal with retrieved contexts
+            if self.task == "humaneval":
+                context = "\n\n".join(doc["text"] for doc in docs)
+            elif self.task == "swe-bench-lite":
+                # Todo: deal with retrieved contexts for RAG
+                pass
+
+            # Construct the final prompt for the agent,
+            # Combining original context and  final context
+
+            if self.task == "humaneval":
+                final_prompt = (
+                    context
+                    + '\n\nPlease complete the following function based '
+                    'on the example above, DO NOT REPEAT'
+                    'PREVIOUS DEFINITIONS :\n' + '```python\n' + prompt
+                )
+            elif self.task == "swe-bench-lite":
+                # Note: This is the current implementation in CodeRAG-Bench
+                # Todo: maybe consider allowing users to customize prompts
+                final_prompt = prompt + EXAMPLE_PATCH_SWE_Bench
+
+            # A list of generated candidate codes
             candidates = []
             # Run generation using the agent
             for _ in range(n_generation_samples):
@@ -1014,42 +1114,78 @@ class CodeRAGBenchmark(BaseBenchmark):
                 generation = response.msg.content
                 logger.debug("GENERATION: %s", generation)
                 # === Postprocessing based on CodeRAG-Bench ===
-                stop_words = [
-                    "\nclass",
-                    "<file_sep>",
-                    "if __name__",
-                    "\nprint(",
-                    "\ndef",
-                ]
+                if self.task == "humaneval":
+                    stop_words = [
+                        "\nclass",
+                        "<file_sep>",
+                        "if __name__",
+                        "\nprint(",
+                        "\ndef",
+                    ]
+                elif self.task == "swe-bench-lite":
+                    stop_words = ["\n<issue>"]
+
                 generation = stop_at_stop_token(generation, stop_words)
-                generation = prompt + generation
-                logger.debug("%s", "=" * 40)
-                logger.debug("%s", generation)
-                logger.debug("%s", "=" * 40)
+                if self.task == "humaneval":
+                    generation = prompt + generation
+                    logger.debug("%s", "=" * 40)
+                    logger.debug("%s", generation)
+                    logger.debug("%s", "=" * 40)
 
-                generation = extract_generation_code(generation, prompt)
+                    generation = extract_generation_code(generation, prompt)
 
-                logger.debug("%s", "=" * 40)
-                logger.debug("%s", generation)
-                logger.debug("%s", "=" * 40)
+                    logger.debug("%s", "=" * 40)
+                    logger.debug("%s", generation)
+                    logger.debug("%s", "=" * 40)
+                elif self.task == "swe-bench-lite":
+                    if "```python\n" in generation:
+                        generation = extract_code_pieces(
+                            generation, prefix="```python"
+                        )
+                    elif "```\n" in generation:
+                        generation = extract_code_pieces(
+                            generation, prefix="```"
+                        )
+                    # Todo: it seems there are specific format requirements
+                    # for SWE-bench. The current code is not dealing with
+                    # that, and we are simply saving the generated patch as
+                    # a list. We should further adjust the format. Maybe we
+                    # should disallow multiple candidate generation for
+                    # SWE-bench (CodeRAG-Bench is allowing multiple-generation
+                    # candidates for simpler subtasks, but I have not yet
+                    # checked how it deals with SWE-Bench)
+
                 candidates.append(generation)
             all_generations.append(candidates)
 
-            # Build reference
-            test_func = data_i["test"]
-            entry_point = f"check({data_i['entry_point']})"
-            reference = "\n" + test_func + "\n" + entry_point
-            all_references.append(reference)
+            # Build reference solution
+            if self.task == "humaneval":
+                test_func = doc_i["test"]
+                entry_point = f"check({doc_i['entry_point']})"
+                reference = "\n" + test_func + "\n" + entry_point
+                all_references.append(reference)
+            elif self.task == "swe-bench-lite":
+                all_references = []
+                logger.info(
+                    "Warning: Reference solution is not applicable"
+                    "for swe-bench-lite"
+                )
 
+        # Save Generation Results
         with open(gen_path, "w") as f_gen:
             json.dump(all_generations, f_gen, indent=2)
             logger.info(f"Saved generations to {gen_path}")
 
-        with open(ref_path, "w") as f_ref:
-            json.dump(all_references, f_ref, indent=2)
-            logger.info(f"Saved references to {ref_path}")
+        # Save Generation Results
+        if self.task == "humaneval":
+            with open(ref_path, "w") as f_ref:
+                json.dump(all_references, f_ref, indent=2)
+                logger.info(f"Saved references to {ref_path}")
 
         # === Code Evaluation ===
+        # Todo: Think about if/how we want to do evaluation for SWE-Bench here.
+        # Todo: No code is implemented about SWE-Bench below this line for now.
+
         if not allow_code_execution:
             logger.warning(
                 "[SKIP] Code execution is disabled. "
