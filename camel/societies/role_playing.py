@@ -539,7 +539,7 @@ class RolePlaying:
 
     def _create_checkpoint(self, checkpoint_name: str) -> None:
         r"""Create a memory checkpoint by saving the current state of both
-            agents' memories.
+        agents' memories.
 
         Args:
             checkpoint_name (str): Name to identify this checkpoint
