@@ -111,9 +111,11 @@ class OpenAIModel(BaseModelBackend):
             ModelType.O1_MINI,
             ModelType.O1_PREVIEW,
             ModelType.O3_MINI,
+            ModelType.O3,
+            ModelType.O4_MINI,
         ]:
             warnings.warn(
-                "Warning: You are using an reasoning model (O1 or O3), "
+                "Warning: You are using an reasoning model (O series), "
                 "which has certain limitations, reference: "
                 "`https://platform.openai.com/docs/guides/reasoning`.",
                 UserWarning,
@@ -247,7 +249,9 @@ class OpenAIModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        request_config = self.model_config_dict.copy()
+        import copy
+
+        request_config = copy.deepcopy(self.model_config_dict)
 
         if tools:
             request_config["tools"] = tools
@@ -265,7 +269,9 @@ class OpenAIModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-        request_config = self.model_config_dict.copy()
+        import copy
+
+        request_config = copy.deepcopy(self.model_config_dict)
 
         if tools:
             request_config["tools"] = tools
@@ -284,9 +290,13 @@ class OpenAIModel(BaseModelBackend):
         response_format: Type[BaseModel],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ChatCompletion:
-        request_config = self.model_config_dict.copy()
+        import copy
+
+        request_config = copy.deepcopy(self.model_config_dict)
 
         request_config["response_format"] = response_format
+        # Remove stream from request config since OpenAI does not support it
+        # with structured response
         request_config.pop("stream", None)
         if tools is not None:
             request_config["tools"] = tools
@@ -305,9 +315,13 @@ class OpenAIModel(BaseModelBackend):
         response_format: Type[BaseModel],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ChatCompletion:
-        request_config = self.model_config_dict.copy()
+        import copy
+
+        request_config = copy.deepcopy(self.model_config_dict)
 
         request_config["response_format"] = response_format
+        # Remove stream from request config since OpenAI does not support it
+        # with structured response
         request_config.pop("stream", None)
         if tools is not None:
             request_config["tools"] = tools

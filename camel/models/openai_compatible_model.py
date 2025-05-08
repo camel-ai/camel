@@ -13,13 +13,16 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
+from json import JSONDecodeError
 from typing import Any, Dict, List, Optional, Type, Union
 
 from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
+from camel.logger import get_logger
 from camel.messages import OpenAIMessage
-from camel.models import BaseModelBackend
+from camel.models._utils import try_modify_message_with_format
+from camel.models.base_model import BaseModelBackend
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -29,6 +32,8 @@ from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
 )
+
+logger = get_logger(__name__)
 
 
 class OpenAICompatibleModel(BaseModelBackend):
@@ -177,18 +182,38 @@ class OpenAICompatibleModel(BaseModelBackend):
         response_format: Type[BaseModel],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ChatCompletion:
-        request_config = self.model_config_dict.copy()
+        import copy
 
+        request_config = copy.deepcopy(self.model_config_dict)
+        # Remove stream from request_config since OpenAI does not support it
+        # when structured response is used
         request_config["response_format"] = response_format
         request_config.pop("stream", None)
         if tools is not None:
             request_config["tools"] = tools
 
-        return self._client.beta.chat.completions.parse(
-            messages=messages,
-            model=self.model_type,
-            **request_config,
-        )
+        try:
+            return self._client.beta.chat.completions.parse(
+                messages=messages,
+                model=self.model_type,
+                **request_config,
+            )
+        except (ValidationError, JSONDecodeError) as e:
+            logger.warning(
+                f"Format validation error: {e}. "
+                f"Attempting fallback with JSON format."
+            )
+            try_modify_message_with_format(messages[-1], response_format)
+            request_config["response_format"] = {"type": "json_object"}
+            try:
+                return self._client.beta.chat.completions.parse(
+                    messages=messages,
+                    model=self.model_type,
+                    **request_config,
+                )
+            except Exception as e:
+                logger.error(f"Fallback attempt also failed: {e}")
+                raise
 
     async def _arequest_parse(
         self,
@@ -196,18 +221,38 @@ class OpenAICompatibleModel(BaseModelBackend):
         response_format: Type[BaseModel],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ChatCompletion:
-        request_config = self.model_config_dict.copy()
+        import copy
 
+        request_config = copy.deepcopy(self.model_config_dict)
+        # Remove stream from request_config since OpenAI does not support it
+        # when structured response is used
         request_config["response_format"] = response_format
         request_config.pop("stream", None)
         if tools is not None:
             request_config["tools"] = tools
 
-        return await self._async_client.beta.chat.completions.parse(
-            messages=messages,
-            model=self.model_type,
-            **request_config,
-        )
+        try:
+            return await self._async_client.beta.chat.completions.parse(
+                messages=messages,
+                model=self.model_type,
+                **request_config,
+            )
+        except (ValidationError, JSONDecodeError) as e:
+            logger.warning(
+                f"Format validation error: {e}. "
+                f"Attempting fallback with JSON format."
+            )
+            try_modify_message_with_format(messages[-1], response_format)
+            request_config["response_format"] = {"type": "json_object"}
+            try:
+                return await self._async_client.beta.chat.completions.parse(
+                    messages=messages,
+                    model=self.model_type,
+                    **request_config,
+                )
+            except Exception as e:
+                logger.error(f"Fallback attempt also failed: {e}")
+                raise
 
     @property
     def token_counter(self) -> BaseTokenCounter:

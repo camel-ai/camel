@@ -21,6 +21,9 @@ from .mineru_extractor import MinerULoader
 from .olmocr_reader import olmOCRLoader
 from .panda_reader import PandasLoader
 from .unstructured_io import UnstructuredIOLoader
+from .crawl4ai_reader import Crawl4AI
+from .markitdown import MarkItDownLoader
+from .scrapegraph_reader import ScrapeGraphAI
 
 __all__ = [
     'File',
@@ -34,4 +37,7 @@ __all__ = [
     'PandasLoader',
     'ApifyLoader',
     'olmOCRLoader',
+    'Crawl4AI',
+    'MarkItDownLoader',
+    'ScrapeGraphAI',
 ]
