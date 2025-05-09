@@ -227,16 +227,18 @@ class RolePlaying:
                     task_specify_agent_kwargs = {'model': self.model}
                 elif 'model' not in task_specify_agent_kwargs:
                     task_specify_agent_kwargs.update(dict(model=self.model))
-            task_specify_agent = TaskSpecifyAgent(
+            self.task_specify_agent = TaskSpecifyAgent(
                 task_type=self.task_type,
                 output_language=output_language,
                 **(task_specify_agent_kwargs or {}),
             )
-            self.specified_task_prompt = task_specify_agent.run(
+            self.specified_task_prompt = self.task_specify_agent.run(
                 self.task_prompt,
                 meta_dict=task_specify_meta_dict,
             )
             self.task_prompt = self.specified_task_prompt
+        else:
+            self.specified_task_prompt = None
 
     def _init_planned_task_prompt(
         self,
@@ -261,11 +263,13 @@ class RolePlaying:
                     task_planner_agent_kwargs = {'model': self.model}
                 elif 'model' not in task_planner_agent_kwargs:
                     task_planner_agent_kwargs.update(dict(model=self.model))
-            task_planner_agent = TaskPlannerAgent(
+            self.task_planner_agent = TaskPlannerAgent(
                 output_language=output_language,
                 **(task_planner_agent_kwargs or {}),
             )
-            self.planned_task_prompt = task_planner_agent.run(self.task_prompt)
+            self.planned_task_prompt = self.task_planner_agent.run(
+                self.task_prompt
+            )
             self.task_prompt = (
                 f"{self.task_prompt}\n" f"{self.planned_task_prompt}"
             )
@@ -574,13 +578,53 @@ class RolePlaying:
         else:
             turn = self._conversation_turn
 
-        self._memory_checkpoints[checkpoint_name] = {
+        checkpoint_data = {
             "assistant": copy.deepcopy(assistant_memory_records),
             "user": copy.deepcopy(user_memory_records),
             "turn": turn,
             "timestamp": datetime.now().timestamp(),
             "user_message": last_user_message,
         }
+
+        # Save critic agent state if enabled
+        if self.with_critic_in_the_loop and isinstance(
+            self.critic, CriticAgent
+        ):
+            critic_memory_records = [
+                record.memory_record
+                for record in self.critic.memory.retrieve()
+            ]
+            checkpoint_data["critic"] = copy.deepcopy(critic_memory_records)
+
+        # Save task planner agent state if enabled
+        if (
+            self.with_task_planner
+            and hasattr(self, 'task_planner_agent')
+            and hasattr(self.task_planner_agent, 'memory')
+        ):
+            task_planner_memory_records = [
+                record.memory_record
+                for record in self.task_planner_agent.memory.retrieve()
+            ]
+            checkpoint_data["task_planner"] = copy.deepcopy(
+                task_planner_memory_records
+            )
+
+        # Save task specify agent state if enabled
+        if (
+            self.with_task_specify
+            and hasattr(self, 'task_specify_agent')
+            and hasattr(self.task_specify_agent, 'memory')
+        ):
+            task_specify_memory_records = [
+                record.memory_record
+                for record in self.task_specify_agent.memory.retrieve()
+            ]
+            checkpoint_data["task_specify"] = copy.deepcopy(
+                task_specify_memory_records
+            )
+
+        self._memory_checkpoints[checkpoint_name] = checkpoint_data
 
         logger.info(f"Created checkpoint '{checkpoint_name}' at turn {turn}")
 
@@ -645,6 +689,42 @@ class RolePlaying:
             # as we'll replace it with human intervention
             if i < len(user_memory_records) - 1 or rollback_turn == 0:
                 self.user_agent.memory.write_record(record)
+
+        # Restore critic agent memories if available in checkpoint
+        if (
+            self.with_critic_in_the_loop
+            and isinstance(self.critic, CriticAgent)
+            and "critic" in self._memory_checkpoints[checkpoint_name]
+        ):
+            self.critic.clear_memory()
+            for record in self._memory_checkpoints[checkpoint_name]["critic"]:
+                self.critic.memory.write_record(record)
+
+        # Restore task planner agent memories if available in checkpoint
+        if (
+            self.with_task_planner
+            and hasattr(self, 'task_planner_agent')
+            and hasattr(self.task_planner_agent, 'memory')
+            and "task_planner" in self._memory_checkpoints[checkpoint_name]
+        ):
+            self.task_planner_agent.clear_memory()
+            for record in self._memory_checkpoints[checkpoint_name][
+                "task_planner"
+            ]:
+                self.task_planner_agent.memory.write_record(record)
+
+        # Restore task specify agent memories if available in checkpoint
+        if (
+            self.with_task_specify
+            and hasattr(self, 'task_specify_agent')
+            and hasattr(self.task_specify_agent, 'memory')
+            and "task_specify" in self._memory_checkpoints[checkpoint_name]
+        ):
+            self.task_specify_agent.clear_memory()
+            for record in self._memory_checkpoints[checkpoint_name][
+                "task_specify"
+            ]:
+                self.task_specify_agent.memory.write_record(record)
 
         # Delete all checkpoints later than the rollback point
         for name in checkpoints_to_remove:
