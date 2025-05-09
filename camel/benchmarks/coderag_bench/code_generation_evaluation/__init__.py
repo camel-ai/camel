@@ -12,22 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from .apibank import APIBankBenchmark
-from .apibench import APIBenchBenchmark
-from .base import BaseBenchmark
-from .coderag_bench import CodeRAGBenchAutoRetriever, CodeRAGBenchmark
-from .gaia import DefaultGAIARetriever, GAIABenchmark
-from .nexus import NexusBenchmark
-from .ragbench import RAGBenchBenchmark
 
-__all__ = [
-    "BaseBenchmark",
-    "GAIABenchmark",
-    "DefaultGAIARetriever",
-    "NexusBenchmark",
-    "APIBenchBenchmark",
-    "APIBankBenchmark",
-    "RAGBenchBenchmark",
-    "CodeRAGBenchmark",
-    "CodeRAGBenchAutoRetriever",
-]
+from .code_eval import compute_code_eval
+
+__all__ = ["compute_code_eval"]
