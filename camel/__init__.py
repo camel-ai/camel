@@ -18,7 +18,6 @@ __version__ = '0.2.57'
 
 __all__ = [
     '__version__',
-    'camel',
     'disable_logging',
     'enable_logging',
     'set_log_level',
