@@ -202,15 +202,45 @@ Tool calls: [ToolCallingRecord(tool_name='write_to_file', args={'content': '<!DO
 
 
 # Example 7: Please give me a  pdf file with RL learning latex maths content
-latex_pdf_query = (
-    """Please give me a  pdf file with RL learning latex maths content."""
-)
+# latex_pdf_query = (
+#     """Please give me a  pdf file with RL learning latex maths content."""
+# )
+
+# camel_agent.reset()
+# response = camel_agent.step(latex_pdf_query)
+# print(
+#     "Example 7: Please give me a  pdf file with RL learning latex maths content"
+# )
+# print(response.msgs[0].content)
+# print("Tool calls:", response.info['tool_calls'])
+# print("\n")
+
+
+# Example 8: what is multiagent?please export  them as pdf file
+pdf_query = """what is multiagent?please export them as pdf file"""
 
 camel_agent.reset()
-response = camel_agent.step(latex_pdf_query)
-print(
-    "Example 7: Please give me a  pdf file with RL learning latex maths content"
-)
+response = camel_agent.step(pdf_query)
+print("Example 7: what is multiagent?please export  them as pdf file")
 print(response.msgs[0].content)
 print("Tool calls:", response.info['tool_calls'])
 print("\n")
+
+
+'''
+===============================================================================
+
+Example 7: what is multiagent?please export  them as pdf file
+The information about multiagent systems has been successfully exported to a PDF file named "multiagent_overview.pdf". If you need any further assistance, feel free to ask!
+Tool calls: [ToolCallingRecord(tool_name='write_to_file', args={'content': '### What is Multiagent?\n\nMultiagent systems (MAS) are systems composed of multiple interacting intelligent agents. 
+These agents can be software programs, robots, or any entities that can perceive their environment and act upon it. The key characteristics of multiagent systems include:\n\n
+1. **Autonomy**: Each agent operates independently and makes its own decisions.\n2. **Social Ability**: Agents can communicate and interact with each other to achieve their goals.
+\n3. **Reactivity**: Agents can respond to changes in their environment in real-time.\n4. **Proactiveness**: Agents can take initiative and act in anticipation of future events.\n\n
+### Applications of Multiagent Systems\n\nMultiagent systems are used in various fields, including:\n- **Robotics**: Coordinating multiple robots to perform tasks.\n- **Distributed Control**: 
+# Managing resources in smart grids or traffic systems.\n- **Game Theory**: Analyzing strategies in competitive environments.\n- **Simulation**: Modeling complex systems in economics, biology, 
+# and social sciences.\n\n### Conclusion\n\nMultiagent systems provide a framework for understanding and designing systems where multiple agents interact, leading to complex behaviors and solutions to problems that are difficult for a single agent to solve alone.',
+#  'filename': 'multiagent_overview.pdf', 'encoding': None, 'use_latex': False}, result='Content successfully written to file: /Users/yifengwang/project/camel/file_write_outputs/multiagent_overview.pdf', tool_call_id='call_btYqjycX4aUfBNJUy8bpnHSV')]
+
+
+===============================================================================
+'''
