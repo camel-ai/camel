@@ -23,7 +23,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--mode",
-        choices=["stdio", "sse"],
+        choices=["stdio", "sse", "streamable-http"],
         default="stdio",
         help="MCP server mode (default: 'stdio')",
     )
