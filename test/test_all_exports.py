@@ -23,8 +23,11 @@ def test_all_exports_from_camel():
     assert 'disable_logging' in ns
     assert 'camel' not in ns
 
+
 def test_all_exports_type():
     import camel
+
     assert isinstance(camel.__all__, list)
+
     for item in camel.__all__:
         assert isinstance(item, str)
