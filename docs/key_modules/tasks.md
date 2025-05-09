@@ -115,7 +115,7 @@ task = Task(
 )
 
 
-new_tasks = task.decompose(agent=agent, template=TASK_DECOMPOSE_PROMPT)
+new_tasks = task.decompose(agent=agent)
 for t in new_tasks:
     print(t.to_string())
 ```

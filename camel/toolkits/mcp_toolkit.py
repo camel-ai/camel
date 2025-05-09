@@ -16,6 +16,7 @@ import json
 import os
 import shlex
 from contextlib import AsyncExitStack, asynccontextmanager
+from datetime import timedelta
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -41,7 +42,7 @@ logger = get_logger(__name__)
 
 class MCPClient(BaseToolkit):
     r"""Internal class that provides an abstraction layer to interact with
-    external tools using the Model Context Protocol (MCP). It supports two
+    external tools using the Model Context Protocol (MCP). It supports three
     modes of connection:
 
     1. stdio mode: Connects via standard input/output streams for local
@@ -50,16 +51,20 @@ class MCPClient(BaseToolkit):
     2. SSE mode (HTTP Server-Sent Events): Connects via HTTP for persistent,
        event-based interactions.
 
+    3. streamable-http mode: Connects via HTTP for persistent, streamable
+        interactions.
+
     Attributes:
         command_or_url (str): URL for SSE mode or command executable for stdio
-            mode. (default: :obj:`'None'`)
+            mode. (default: :obj:`None`)
         args (List[str]): List of command-line arguments if stdio mode is used.
-            (default: :obj:`'None'`)
+            (default: :obj:`None`)
         env (Dict[str, str]): Environment variables for the stdio mode command.
-            (default: :obj:`'None'`)
-        timeout (Optional[float]): Connection timeout. (default: :obj:`'None'`)
+            (default: :obj:`None`)
+        timeout (Optional[float]): Connection timeout.
+            (default: :obj:`None`)
         headers (Dict[str, str]): Headers for the HTTP request.
-            (default: :obj:`'None'`)
+            (default: :obj:`None`)
         strict (Optional[bool]): Whether to enforce strict mode for the
             function call. (default: :obj:`False`)
     """
@@ -111,6 +116,7 @@ class MCPClient(BaseToolkit):
                     sse_client(
                         self.command_or_url,
                         headers=self.headers,
+                        timeout=self.timeout,
                     )
                 )
             else:
@@ -138,7 +144,11 @@ class MCPClient(BaseToolkit):
                 )
 
             self._session = await self._exit_stack.enter_async_context(
-                ClientSession(read_stream, write_stream)
+                ClientSession(
+                    read_stream,
+                    write_stream,
+                    timedelta(seconds=self.timeout) if self.timeout else None,
+                )
             )
             await self._session.initialize()
             list_tools_result = await self.list_mcp_tools()
@@ -321,8 +331,6 @@ class MCPClient(BaseToolkit):
             "additionalProperties": False,
         }
 
-        # Because certain parameters in MCP may include keywords that are not
-        # supported by OpenAI, it is essential to set "strict" to False.
         return {
             "type": "function",
             "function": {
@@ -399,17 +407,20 @@ class MCPToolkit(BaseToolkit):
 
     Args:
         servers (Optional[List[MCPClient]]): List of MCPClient
-            instances to manage.
+            instances to manage. (default: :obj:`None`)
         config_path (Optional[str]): Path to a JSON configuration file
-            defining MCP servers.
+            defining MCP servers. (default: :obj:`None`)
+        config_dict (Optional[Dict[str, Any]]): Dictionary containing MCP
+            server configurations in the same format as the config file.
+            (default: :obj:`None`)
         strict (Optional[bool]): Whether to enforce strict mode for the
             function call. (default: :obj:`False`)
 
     Note:
-        Either `servers` or `config_path` must be provided. If both are
-        provided, servers from both sources will be combined.
+        Either `servers`, `config_path`, or `config_dict` must be provided.
+        If multiple are provided, servers from all sources will be combined.
 
-        For web servers in the config file, you can specify authorization
+        For web servers in the config, you can specify authorization
         headers using the "headers" field to connect to protected MCP server
         endpoints.
 
@@ -438,14 +449,19 @@ class MCPToolkit(BaseToolkit):
         self,
         servers: Optional[List[MCPClient]] = None,
         config_path: Optional[str] = None,
+        config_dict: Optional[Dict[str, Any]] = None,
         strict: Optional[bool] = False,
     ):
         super().__init__()
 
-        if servers and config_path:
+        sources_provided = sum(
+            1 for src in [servers, config_path, config_dict] if src is not None
+        )
+        if sources_provided > 1:
             logger.warning(
-                "Both servers and config_path are provided. "
-                "Servers from both sources will be combined."
+                "Multiple configuration sources provided "
+                f"({sources_provided}). Servers from all sources "
+                "will be combined."
             )
 
         self.servers: List[MCPClient] = servers or []
@@ -454,6 +470,9 @@ class MCPToolkit(BaseToolkit):
             self.servers.extend(
                 self._load_servers_from_config(config_path, strict)
             )
+
+        if config_dict:
+            self.servers.extend(self._load_servers_from_dict(config_dict))
 
         self._exit_stack = AsyncExitStack()
         self._connected = False
@@ -484,9 +503,25 @@ class MCPToolkit(BaseToolkit):
             logger.warning(f"Config file not found: '{config_path}'")
             raise e
 
+        return self._load_servers_from_dict(config=data, strict=strict)
+
+    def _load_servers_from_dict(
+        self, config: Dict[str, Any], strict: Optional[bool] = False
+    ) -> List[MCPClient]:
+        r"""Loads MCP server configurations from a dictionary.
+
+        Args:
+            config (Dict[str, Any]): Dictionary containing server
+                configurations.
+            strict (bool): Whether to enforce strict mode for the
+                function call. (default: :obj:`False`)
+
+        Returns:
+            List[MCPClient]: List of configured MCPClient instances.
+        """
         all_servers = []
 
-        mcp_servers = data.get("mcpServers", {})
+        mcp_servers = config.get("mcpServers", {})
         if not isinstance(mcp_servers, dict):
             logger.warning("'mcpServers' is not a dictionary, skipping...")
             mcp_servers = {}
@@ -505,11 +540,16 @@ class MCPToolkit(BaseToolkit):
                 )
                 continue
 
+            # Include headers if provided in the configuration
+            headers = cfg.get("headers", {})
+
+            cmd_or_url = cast(str, cfg.get("command") or cfg.get("url"))
             server = MCPClient(
-                command_or_url=cast(str, cfg.get("command") or cfg.get("url")),
+                command_or_url=cmd_or_url,
                 args=cfg.get("args", []),
                 env={**os.environ, **cfg.get("env", {})},
                 timeout=cfg.get("timeout", None),
+                headers=headers,
                 strict=strict,
             )
             all_servers.append(server)
