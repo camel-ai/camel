@@ -47,7 +47,11 @@ from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.toolkits.video_analysis_toolkit import VideoAnalysisToolkit
 from camel.types import ModelPlatformType, ModelType
-from camel.utils import dependencies_required, retry_on_error, with_timeout
+from camel.utils import (
+    dependencies_required,
+    retry_on_error,
+    sanitize_filename,
+)
 
 logger = get_logger(__name__)
 
@@ -139,7 +143,7 @@ def _get_str(d: Any, k: str) -> str:
     if isinstance(val, str):
         return val
     raise TypeError(
-        f"Expected a string for key '{k}', " f"but got {type(val).__name__}"
+        f"Expected a string for key '{k}', but got {type(val).__name__}"
     )
 
 
@@ -160,7 +164,7 @@ def _get_bool(d: Any, k: str) -> bool:
     if isinstance(val, bool):
         return val
     raise TypeError(
-        f"Expected a boolean for key '{k}', " f"but got {type(val).__name__}"
+        f"Expected a boolean for key '{k}', but got {type(val).__name__}"
     )
 
 
@@ -221,7 +225,7 @@ def _parse_json_output(text: str) -> Dict[str, Any]:
                 return {}
 
 
-def _reload_image(image: Image.Image):
+def _reload_image(image: Image.Image) -> Image.Image:
     buffer = io.BytesIO()
     image.save(buffer, format="PNG")
     buffer.seek(0)
@@ -434,6 +438,7 @@ class BaseBrowser:
         headless=True,
         cache_dir: Optional[str] = None,
         channel: Literal["chrome", "msedge", "chromium"] = "chromium",
+        cookie_json_path: Optional[str] = None,
     ):
         r"""Initialize the WebBrowser instance.
 
@@ -443,6 +448,10 @@ class BaseBrowser:
             channel (Literal["chrome", "msedge", "chromium"]): The browser
                 channel to use. Must be one of "chrome", "msedge", or
                 "chromium".
+            cookie_json_path (Optional[str]): Path to a JSON file containing
+                authentication cookies and browser storage state. If provided
+                and the file exists, the browser will load this state to maintain
+                authenticated sessions without requiring manual login.
 
         Returns:
             None
@@ -456,7 +465,8 @@ class BaseBrowser:
         self.channel = channel
         self._ensure_browser_installed()
         self.playwright = sync_playwright().start()
-        self.page_history: list = []
+        self.page_history: list = []  # stores the history of visited pages
+        self.cookie_json_path = cookie_json_path
 
         # Set the cache directory
         self.cache_dir = "tmp/" if cache_dir is None else cache_dir
@@ -481,8 +491,18 @@ class BaseBrowser:
         self.browser = self.playwright.chromium.launch(
             headless=self.headless, channel=self.channel
         )
-        # Create a new context
-        self.context = self.browser.new_context(accept_downloads=True)
+
+        # Check if cookie file exists before using it to maintain
+        # authenticated sessions. This prevents errors when the cookie file
+        # doesn't exist
+        if self.cookie_json_path and os.path.exists(self.cookie_json_path):
+            self.context = self.browser.new_context(
+                accept_downloads=True, storage_state=self.cookie_json_path
+            )
+        else:
+            self.context = self.browser.new_context(
+                accept_downloads=True,
+            )
         # Create a new page
         self.page = self.context.new_page()
 
@@ -554,12 +574,9 @@ class BaseBrowser:
             # Get url name to form a file name
             # Use urlparser for a safer extraction the url name
             parsed_url = urllib.parse.urlparse(self.page_url)
-            url_name = os.path.basename(str(parsed_url.path)) or "index"
-
-            for char in ['\\', '/', ':', '*', '?', '"', '<', '>', '|', '.']:
-                url_name = url_name.replace(char, "_")
-
-            # Get formatted time: mmddhhmmss
+            # Max length is set to 241 as there are 10 characters for the
+            # timestamp and 4 characters for the file extension:
+            url_name = sanitize_filename(str(parsed_url.path), max_length=241)
             timestamp = datetime.datetime.now().strftime("%m%d%H%M%S")
             fixed_part = f"_{timestamp}.png"
             # Get the absolute path of the cache directory (ensure it ends with a separator)
@@ -679,24 +696,25 @@ class BaseBrowser:
                 directory.
 
         Returns:
-            Tuple[Image.Image, str]: A tuple containing the screenshot image
-                and the path to the image file.
+            Tuple[Image.Image, Union[str, None]]: A tuple containing the screenshot image
+                and an optional path to the image file if saved, otherwise
+                :obj:`None`.
         """
 
         self._wait_for_load()
         screenshot, _ = self.get_screenshot(save_image=False)
         rects = self.get_interactive_elements()
 
-        file_path = None
-        comp, visible_rects, rects_above, rects_below = add_set_of_mark(
+        file_path: str | None = None
+        comp, _, _, _ = add_set_of_mark(
             screenshot,
             rects,  # type: ignore[arg-type]
         )
         if save_image:
             parsed_url = urllib.parse.urlparse(self.page_url)
-            url_name = os.path.basename(str(parsed_url.path)) or "index"
-            for char in ['\\', '/', ':', '*', '?', '"', '<', '>', '|', '.']:
-                url_name = url_name.replace(char, "_")
+            # Max length is set to 241 as there are 10 characters for the
+            # timestamp and 4 characters for the file extension:
+            url_name = sanitize_filename(str(parsed_url.path), max_length=241)
             timestamp = datetime.datetime.now().strftime("%m%d%H%M%S")
             fixed_part = f"_{timestamp}.png"
             # Get the absolute path of the cache directory, ensuring it ends with a separator
@@ -1018,6 +1036,7 @@ class BrowserToolkit(BaseToolkit):
         web_agent_model: Optional[BaseModelBackend] = None,
         planning_agent_model: Optional[BaseModelBackend] = None,
         output_language: str = "en",
+        cookie_json_path: Optional[str] = None,
     ):
         r"""Initialize the BrowserToolkit instance.
 
@@ -1035,10 +1054,18 @@ class BrowserToolkit(BaseToolkit):
                 backend for the planning agent.
             output_language (str): The language to use for output.
                 (default: :obj:`"en`")
+            cookie_json_path (Optional[str]): Path to a JSON file containing
+                authentication cookies and browser storage state. If provided
+                and the file exists, the browser will load this state to maintain
+                authenticated sessions without requiring manual login.
+                (default: :obj:`None`)
         """
 
         self.browser = BaseBrowser(
-            headless=headless, cache_dir=cache_dir, channel=channel
+            headless=headless,
+            cache_dir=cache_dir,
+            channel=channel,
+            cookie_json_path=cookie_json_path,
         )
 
         self.history_window = history_window
@@ -1130,7 +1157,7 @@ Here are the current available browser functions you can use:
 
 Here are the latest {self.history_window} trajectory (at most) you have taken:
 <history>
-{self.history[-self.history_window:]}
+{self.history[-self.history_window :]}
 </history>
 
 Your output should be in json format, including the following fields:
@@ -1349,36 +1376,6 @@ Please find the final answer, or give valuable insights and founds (e.g. if prev
         resp = self.web_agent.step(message)
         return resp.msgs[0].content
 
-    def _make_reflection(self, task_prompt: str) -> str:
-        r"""Make a reflection about the current state and the task prompt."""
-
-        reflection_prompt = f"""
-Now we are working on a complex task that requires multi-step browser interaction. The task is: <task>{task_prompt}</task>
-To achieve this goal, we have made a series of observations, reasonings, and actions. We have also made a reflection on previous states.
-
-Here are the global available browser functions we can use:
-{AVAILABLE_ACTIONS_PROMPT}
-
-Here are the latest {self.history_window} trajectory (at most) we have taken:
-<history>{self.history[-self.history_window:]}</history>
-
-The image provided is the current state of the browser, where we have marked interactive elements. 
-Please carefully examine the requirements of the task, and the current state of the browser, and then make reflections on the previous steps, thinking about whether they are helpful or not, and why, offering detailed feedback and suggestions for the next steps.
-Your output should be in json format, including the following fields:
-- `reflection`: The reflection about the previous steps, thinking about whether they are helpful or not, and why, offering detailed feedback.
-- `suggestion`: The suggestion for the next steps, offering detailed suggestions, including the common solutions to the overall task based on the current state of the browser.
-        """
-        som_image, _ = self.browser.get_som_screenshot()
-        img = _reload_image(som_image)
-
-        message = BaseMessage.make_user_message(
-            role_name='user', content=reflection_prompt, image_list=[img]
-        )
-
-        resp = self.web_agent.step(message)
-
-        return resp.msgs[0].content
-
     def _task_planning(self, task_prompt: str, start_url: str) -> str:
         r"""Plan the task based on the given task prompt."""
 
@@ -1423,7 +1420,7 @@ In order to solve the task, we made a detailed plan previously. Here is the deta
 <detailed plan>{detailed_plan}</detailed plan>
 
 According to the task above, we have made a series of observations, reasonings, and actions. Here are the latest {self.history_window} trajectory (at most) we have taken:
-<history>{self.history[-self.history_window:]}</history>
+<history>{self.history[-self.history_window :]}</history>
 
 However, the task is not completed yet. As the task is partially observable, we may need to replan the task based on the current state of the browser if necessary.
 Now please carefully examine the current task planning schema, and our history actions, and then judge whether the task needs to be fundamentally replanned. If so, please provide a detailed replanned schema (including the restated overall task).
@@ -1449,7 +1446,8 @@ Your output should be in json format, including the following fields:
     def browse_url(
         self, task_prompt: str, start_url: str, round_limit: int = 12
     ) -> str:
-        r"""A powerful toolkit which can simulate the browser interaction to solve the task which needs multi-step actions.
+        r"""A powerful toolkit which can simulate the browser interaction to
+        solve the task which needs multi-step actions.
 
         Args:
             task_prompt (str): The task prompt to solve.
@@ -1507,7 +1505,7 @@ Your output should be in json format, including the following fields:
                 }
                 self.history.append(trajectory_info)
 
-                # replan the task if necessary
+                # Replan the task if necessary
                 if_need_replan, replanned_schema = self._task_replanning(
                     task_prompt, detailed_plan
                 )
@@ -1518,7 +1516,7 @@ Your output should be in json format, including the following fields:
         if not task_completed:
             simulation_result = f"""
                 The task is not completed within the round limit. Please check the last round {self.history_window} information to see if there is any useful information:
-                <history>{self.history[-self.history_window:]}</history>
+                <history>{self.history[-self.history_window :]}</history>
             """
 
         else:

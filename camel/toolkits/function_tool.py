@@ -458,9 +458,11 @@ class FunctionTool:
         for param_name in properties.keys():
             param_dict = properties[param_name]
             if "description" not in param_dict:
-                warnings.warn(f"""Parameter description is missing for 
-                            {param_dict}. This may affect the quality of tool 
-                            calling.""")
+                warnings.warn(
+                    f"Parameter description is missing "
+                    f"for {param_dict}. This may affect the "
+                    f"quality of tool calling."
+                )
 
     def get_openai_tool_schema(self) -> Dict[str, Any]:
         r"""Gets the OpenAI tool schema for this function.
