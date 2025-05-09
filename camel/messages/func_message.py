@@ -15,17 +15,17 @@ import json
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
+from camel.data_schemas import (
+    ShareGPTMessage,
+    ToolCall,
+    ToolResponse,
+)
 from camel.messages import (
     BaseMessage,
     HermesFunctionFormatter,
     OpenAIAssistantMessage,
     OpenAIMessage,
     OpenAIToolMessageParam,
-)
-from camel.messages.conversion import (
-    ShareGPTMessage,
-    ToolCall,
-    ToolResponse,
 )
 from camel.messages.conversion.sharegpt.function_call_formatter import (
     FunctionCallFormatter,
@@ -100,7 +100,7 @@ class FunctionCallingMessage(BaseMessage):
                 self.func_name,  # type: ignore[arg-type]
                 self.args,  # type: ignore[arg-type]
             )
-            return ShareGPTMessage(from_="gpt", value=content)  # type: ignore[call-arg]
+            return ShareGPTMessage(from_="function_call", value=content)  # type: ignore[call-arg]
         else:
             # This is a function response
             # TODO: Allow for more flexible setting of tool role,
@@ -109,7 +109,7 @@ class FunctionCallingMessage(BaseMessage):
                 self.func_name,  # type: ignore[arg-type]
                 self.result,  # type: ignore[arg-type]
             )
-            return ShareGPTMessage(from_="tool", value=content)  # type: ignore[call-arg]
+            return ShareGPTMessage(from_="observation", value=content)  # type: ignore[call-arg]
 
     def to_openai_assistant_message(self) -> OpenAIAssistantMessage:
         r"""Converts the message to an :obj:`OpenAIAssistantMessage` object.
