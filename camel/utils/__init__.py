@@ -46,7 +46,7 @@ from .constants import Constants
 from .deduplication import DeduplicationResult, deduplicate_internally
 from .filename import sanitize_filename
 from .mcp import MCPServer
-from .response_format import get_pydantic_model
+from .response_format import get_pydantic_model, model_from_json_schema
 from .token_counting import (
     AnthropicTokenCounter,
     BaseTokenCounter,
@@ -94,6 +94,7 @@ __all__ = [
     "BatchProcessor",
     "with_timeout",
     "MCPServer",
+    "model_from_json_schema",
     "sanitize_filename",
     "browser_toolkit_save_auth_cookie",
     # Human Intervention utilities
