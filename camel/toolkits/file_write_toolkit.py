@@ -189,7 +189,7 @@ class FileWriteToolkit(BaseToolkit):
 
             doc.generate_pdf(str(file_path), clean_tex=False)
 
-            logger.debug(f"Wrote PDF (with full LaTeX) to {file_path}")
+            logger.debug(f"Wrote PDF (with  LaTeX) to {file_path}")
         else:
             from fpdf import FPDF
 
