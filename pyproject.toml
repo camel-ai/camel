@@ -367,7 +367,7 @@ all = [
     "ibm-watsonx-ai>=1.3.11",
     "google-genai>=1.13.0",
     "aci-sdk>=1.0.0b1",
-    "markitdown==0.1.1",
+    
 ]
 
 [project.urls]
