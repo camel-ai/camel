@@ -356,11 +356,6 @@ class TiDBStorage(BaseVectorStorage):
         r"""Searches for vector records in the storage based solely on payload
         filters,without performing any vector similarity computation.
 
-        This method uses the underlying table.query(filters=...) to retrieve
-        recordsthat satisfy the filtering conditions specified in the
-        `payload_filter` attributeof the provided `VectorDBSearch` object.
-        The returned similarity score is set to 0.
-
         Args:
             search (VectorDBSearch): The search object containing the payload
             filter(e.g. payload_filter={"label": "A"}) and optionally

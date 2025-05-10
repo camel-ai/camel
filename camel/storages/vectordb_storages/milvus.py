@@ -280,7 +280,20 @@ class MilvusStorage(BaseVectorStorage):
 
         Args:
             filter_dict (dict): filter dict
+        
+        Returns:
+            str: expr
         """
+
+        operator_map = {
+            "$eq":  lambda k, v: f'payload["{k}"] == {repr(v)}',
+            "$lt":  lambda k, v: f'payload["{k}"] < {v}',
+            "$lte": lambda k, v: f'payload["{k}"] <= {v}',
+            "$gt":  lambda k, v: f'payload["{k}"] > {v}',
+            "$gte": lambda k, v: f'payload["{k}"] >= {v}',
+            "$ne":  lambda k, v: f'payload["{k}"] != {repr(v)}',
+            "$in":  lambda k, v: f'payload["{k}"] in [{", ".join(repr(item) for item in v)}]',
+        }
 
         def convert_condition(k: str, cond: Any) -> str:
             """convert condition
@@ -293,21 +306,8 @@ class MilvusStorage(BaseVectorStorage):
             if isinstance(cond, dict):
                 expressions = []
                 for op, v in cond.items():
-                    if op == "$eq":
-                        expressions.append(f'payload["{k}"] == "{v}"')
-                    elif op == "$lt":
-                        expressions.append(f'payload["{k}"] < {v}')
-                    elif op == "$lte":
-                        expressions.append(f'payload["{k}"] <= {v}')
-                    elif op == "$gt":
-                        expressions.append(f'payload["{k}"] > {v}')
-                    elif op == "$gte":
-                        expressions.append(f'payload["{k}"] >= {v}')
-                    elif op == "$ne":
-                        expressions.append(f'payload["{k}"] != "{v}"')
-                    elif op == "$in":
-                        expr_list = ",".join(f'"{item}"' for item in v)
-                        expressions.append(f'payload["{k}"] in [{expr_list}]')
+                    if op in operator_map:
+                        expressions.append(operator_map[op](k, v))
                     else:
                         raise ValueError(f"Unsupported operator: {op}")
                 return " and ".join(expressions)

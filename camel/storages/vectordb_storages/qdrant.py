@@ -499,40 +499,41 @@ class QdrantStorage(BaseVectorStorage):
         )
 
         def parse_condition(key: str, value: Any) -> Condition:
-            """parse condition
+            """
+            Parse a single-field condition from a JSON-like filter spec.
 
             Args:
-                key (str): The key of the condition.
-                value (Any): The value of the condition.
+                key:   The field name to filter on.
+                value: Either a literal (for equality) or a dict
+                    mapping a single operator ('$eq', '$lt', etc.) to its operand.
 
             Returns:
-                Condition: The parsed condition.
+                A FieldCondition representing that filter.
+
+            Raises:
+                ValueError: If the dict is empty or contains an unsupported operator.
             """
+            # Map each operator to a constructor for the corresponding FieldCondition
+            _operator_map: Dict[str, Callable[[str, Any], FieldCondition]] = {
+                "$eq":  lambda key, v: FieldCondition(key=key, match=MatchValue(value=v)),
+                "$ne":  lambda key, v: FieldCondition(key=key, match=MatchValue(value=v)),
+                "$lt":  lambda key, v: FieldCondition(key=key, range=Range(lt=v)),
+                "$lte": lambda key, v: FieldCondition(key=key, range=Range(lte=v)),
+                "$gt":  lambda key, v: FieldCondition(key=key, range=Range(gt=v)),
+                "$gte": lambda key, v: FieldCondition(key=key, range=Range(gte=v)),
+            }
+            # If value is a dict, expect exactly one operator → operand mapping
             if isinstance(value, dict):
-                for op, v in value.items():
-                    if op == "$eq":
-                        return FieldCondition(
-                            key=key, match=MatchValue(value=v)
-                        )
-                    elif op == "$ne":
-                        return FieldCondition(
-                            key=key, match=MatchValue(value=v)
-                        )
-                    elif op == "$lt":
-                        return FieldCondition(key=key, range=Range(lt=v))
-                    elif op == "$lte":
-                        return FieldCondition(key=key, range=Range(lte=v))
-                    elif op == "$gt":
-                        return FieldCondition(key=key, range=Range(gt=v))
-                    elif op == "$gte":
-                        return FieldCondition(key=key, range=Range(gte=v))
-                    else:
-                        raise ValueError(f"Unsupported operator: {op}")
-                raise ValueError(
-                    f"No valid operator found in condition for key: {key}"
-                )
-            else:
-                return FieldCondition(key=key, match=MatchValue(value=value))
+                if not value:
+                    raise ValueError(f"No operator provided for field '{key}'")
+                op, v = next(iter(value.items()))
+                constructor = _operator_map.get(op)
+                if constructor is None:
+                    raise ValueError(f"Unsupported operator: {op}")
+                return constructor(key, v)
+
+            # Otherwise treat it as an equality match
+            return FieldCondition(key=key, match=MatchValue(value=value))
 
         def parse_logic(filter_dict: Dict[str, Any]) -> Filter:
             """handle the or and the and in filter_dict
