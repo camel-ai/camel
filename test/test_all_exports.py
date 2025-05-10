@@ -12,13 +12,22 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from camel.logger import disable_logging, enable_logging, set_log_level
 
-__version__ = '0.2.57'
+def test_all_exports_from_camel():
+    # Simulate `from camel import *` and capture the resulting namespace
+    ns = {}
+    exec("from camel import *", ns)
 
-__all__ = [
-    '__version__',
-    'disable_logging',
-    'enable_logging',
-    'set_log_level',
-]
+    assert 'set_log_level' in ns
+    assert 'enable_logging' in ns
+    assert 'disable_logging' in ns
+    assert 'camel' not in ns
+
+
+def test_all_exports_type():
+    import camel
+
+    assert isinstance(camel.__all__, list)
+
+    for item in camel.__all__:
+        assert isinstance(item, str)
