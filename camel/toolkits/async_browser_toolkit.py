@@ -536,10 +536,10 @@ class AsyncBaseBrowser:
         # Start Playwright asynchronously (only needed in async mode).
         if not getattr(self, "playwright_started", False):
             await self._ensure_browser_installed()
-            self.playwright = await self.playwright.start()
+            self.playwright_server = await self.playwright.start()
             self.playwright_started = True
         # Launch the browser asynchronously.
-        self.browser = await self.playwright.chromium.launch(
+        self.browser = await self.playwright_server.chromium.launch(
             headless=self.headless, channel=self.channel
         )
         # Check if cookie file exists before using it to maintain
@@ -621,7 +621,8 @@ class AsyncBaseBrowser:
         """
         current_url = self.get_url()
 
-        # Confirm with user before proceeding due to potential slow processing time
+        # Confirm with user before proceeding due to potential slow
+        # processing time
         confirmation_message = (
             f"Do you want to analyze the video on the current "
             f"page({current_url})? This operation may take a long time.(y/n): "
@@ -1171,7 +1172,7 @@ class AsyncBaseBrowser:
         await asyncio.sleep(1)
         await self.wait_for_load()
 
-    def back(self) -> Coroutine[Any, Any, str]:
+    def back(self) -> Coroutine[Any, Any, None]:
         r"""Navigate back to the previous page."""
         return self.async_back()
 
@@ -1478,7 +1479,7 @@ the text you want to find and skip massive amount of useless information.
 - Flexibly use interactive elements like slide down selection bar to filter
 out the information you need. Sometimes they are extremely useful.
 ```
-        """
+        """  # noqa: E501
 
         # get current state
         som_screenshot, _ = await self.browser.get_som_screenshot(
@@ -1638,7 +1639,7 @@ We are solving a complex web task which needs multi-step browser interaction. Af
 Here are all trajectory we have taken:
 <history>{self.history}</history>
 Please find the final answer, or give valuable insights and founds (e.g. if previous actions contain downloading files, your output should include the path of the downloaded file) about the overall task: <task>{task_prompt}</task>
-        """
+        """  # noqa: E501
 
         message = BaseMessage.make_user_message(
             role_name='user',
@@ -1651,7 +1652,8 @@ Please find the final answer, or give valuable insights and founds (e.g. if prev
     def _task_planning(self, task_prompt: str, start_url: str) -> str:
         r"""Plan the task based on the given task prompt."""
 
-        # Here are the available browser functions we can use: {AVAILABLE_ACTIONS_PROMPT}
+        # Here are the available browser functions we can
+        # use: {AVAILABLE_ACTIONS_PROMPT}
 
         planning_prompt = f"""
 <task>{task_prompt}</task>
@@ -1659,8 +1661,7 @@ According to the problem above, if we use browser interaction, what is the gener
 
 Please note that it can be viewed as Partially Observable MDP. Do not over-confident about your plan.
 Please first restate the task in detail, and then provide a detailed plan to solve the task.
-"""
-        # Here are some tips for you: Please note that we can only see a part of the full page because of the limited viewport after an action. Thus, do not forget to use methods like `scroll_up()` and `scroll_down()` to check the full content of the webpage, because the answer or next key step may be hidden in the content below.
+"""  # noqa: E501
 
         message = BaseMessage.make_user_message(
             role_name='user', content=planning_prompt
@@ -1684,7 +1685,8 @@ Please first restate the task in detail, and then provide a detailed plan to sol
                 schema.
         """
 
-        # Here are the available browser functions we can use: {AVAILABLE_ACTIONS_PROMPT}
+        # Here are the available browser functions we can
+        # use: {AVAILABLE_ACTIONS_PROMPT}
         replanning_prompt = f"""
 We are using browser interaction to solve a complex task which needs multi-step actions.
 Here are the overall task:
@@ -1702,7 +1704,7 @@ Now please carefully examine the current task planning schema, and our history a
 Your output should be in json format, including the following fields:
 - `if_need_replan`: bool, A boolean value indicating whether the task needs to be fundamentally replanned.
 - `replanned_schema`: str, The replanned schema for the task, which should not be changed too much compared with the original one. If the task does not need to be replanned, the value should be an empty string. 
-"""
+"""  # noqa: E501
         # Reset the history message of planning_agent.
         self.planning_agent.reset()
         resp = self.planning_agent.step(replanning_prompt)
