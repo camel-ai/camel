@@ -53,13 +53,11 @@ class BaseToolkit(metaclass=AgentOpsMeta):
         """
         raise NotImplementedError("Subclasses must implement this method.")
 
-    def run_mcp_server(
-        self, mode: Literal["stdio", "sse", "streamable-http"]
-    ) -> None:
+    def run_mcp_server(self, mode: Literal["stdio", "sse"]) -> None:
         r"""Run the MCP server in the specified mode.
 
         Args:
-            mode (Literal["stdio", "sse", "streamable-http"]): The mode to run
+            mode (Literal["stdio", "sse"]): The mode to run
                 the MCP server in.
         """
         self.mcp.run(mode)
