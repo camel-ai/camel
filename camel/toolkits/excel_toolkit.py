@@ -29,8 +29,7 @@ class ExcelToolkit(BaseToolkit):
     r"""A class representing a toolkit for extract detailed cell information
     from an Excel file.
 
-    This class provides method for processing docx, pdf, pptx, etc. It cannot
-    process excel files.
+    This class provides method for processing excel files.
     """
 
     def __init__(
