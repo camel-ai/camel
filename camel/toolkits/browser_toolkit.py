@@ -57,7 +57,6 @@ logger = get_logger(__name__)
 
 TOP_NO_LABEL_ZONE = 20
 
-MAX_PATH_LENGTH = 260
 
 AVAILABLE_ACTIONS_PROMPT = """
 1. `fill_input_id(identifier: Union[str, int], text: str)`: Fill an input
@@ -526,7 +525,6 @@ class BaseBrowser:
         self._wait_for_load()
 
     @retry_on_error()
-    @with_timeout(timeout=5)
     def visit_page(self, url: str) -> None:
         r"""Visit a page with the given URL."""
 
@@ -578,21 +576,9 @@ class BaseBrowser:
             # timestamp and 4 characters for the file extension:
             url_name = sanitize_filename(str(parsed_url.path), max_length=241)
             timestamp = datetime.datetime.now().strftime("%m%d%H%M%S")
-            fixed_part = f"_{timestamp}.png"
-            # Get the absolute path of the cache directory (ensure it ends with a separator)
-            base_path = os.path.join(os.path.abspath(self.cache_dir), "")
-            file_path = os.path.join(self.cache_dir, f"{url_name}{fixed_part}")
-
-            # If the generated file path exceeds the limit, truncate url_name accordingly
-            if len(file_path) > MAX_PATH_LENGTH:
-                allowed_name_length = (
-                    MAX_PATH_LENGTH - len(base_path) - len(fixed_part)
-                )
-                url_name = url_name[:allowed_name_length]
-                file_path = os.path.join(
-                    self.cache_dir, f"{url_name}{fixed_part}"
-                )
-
+            file_path = os.path.join(
+                self.cache_dir, f"{url_name}_{timestamp}.png"
+            )
             with open(file_path, "wb") as f:
                 image.save(f, "PNG")
             f.close()
@@ -716,20 +702,9 @@ class BaseBrowser:
             # timestamp and 4 characters for the file extension:
             url_name = sanitize_filename(str(parsed_url.path), max_length=241)
             timestamp = datetime.datetime.now().strftime("%m%d%H%M%S")
-            fixed_part = f"_{timestamp}.png"
-            # Get the absolute path of the cache directory, ensuring it ends with a separator
-            base_path = os.path.join(os.path.abspath(self.cache_dir), "")
-            file_path = os.path.join(self.cache_dir, f"{url_name}{fixed_part}")
-
-            # If the generated file path exceeds the limit, truncate url_name accordingly
-            if len(file_path) > MAX_PATH_LENGTH:
-                allowed_name_length = (
-                    MAX_PATH_LENGTH - len(base_path) - len(fixed_part)
-                )
-                url_name = url_name[:allowed_name_length]
-                file_path = os.path.join(
-                    self.cache_dir, f"{url_name}{fixed_part}"
-                )
+            file_path = os.path.join(
+                self.cache_dir, f"{url_name}_{timestamp}.png"
+            )
             with open(file_path, "wb") as f:
                 comp.save(f, "PNG")
             f.close()
