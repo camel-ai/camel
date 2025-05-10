@@ -136,3 +136,6 @@ class Human:
         content = self.parse_input(human_input)
         message = meta_chat_message.create_new_instance(content)
         return ChatAgentResponse(msgs=[message], terminated=False, info={})
+
+    def clone(self, with_memory: bool = False) -> 'Human':
+        return Human(name=self.name, logger_color=self.logger_color)
