@@ -202,7 +202,7 @@ class MCPAgent(ChatAgent):
         ),
         tools: Optional[List[Union[FunctionTool, Callable]]] = None,
         model: Optional[BaseModelBackend] = None,
-        function_calling_available: bool = False,
+        function_calling_available: bool = True,
         **kwargs,
     ):
         if model is None:

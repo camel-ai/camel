@@ -43,8 +43,8 @@ async def example_with_registry_config(
 
     # Create a model
     model = ModelFactory.create(
-        model_platform=ModelPlatformType.ANTHROPIC,
-        model_type=ModelType.CLAUDE_3_7_SONNET,
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4O,
     )
 
     # Create MCPAgent with registry configurations
@@ -69,7 +69,7 @@ async def main():
     smithery_config = SmitheryRegistryConfig(
         api_key=os.getenv("SMITHERY_API_KEY"),
         profile=os.getenv("SMITHERY_PROFILE"),
-        os="windows",
+        os="darwin",
     )
     # aci_config = ACIRegistryConfig(
     #     api_key=os.getenv("ACI_API_KEY"),

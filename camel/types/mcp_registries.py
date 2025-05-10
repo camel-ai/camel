@@ -119,7 +119,7 @@ class SmitheryRegistryConfig(BaseMCPRegistryConfig):
 
         cmd_config = self._prepare_command_args("npx", args)  # type: ignore[arg-type]
 
-        return {"toolbox": cmd_config}
+        return {"mcpServers": {"toolbox": cmd_config}}
 
 
 class ACIRegistryConfig(BaseMCPRegistryConfig):
@@ -148,5 +148,10 @@ class ACIRegistryConfig(BaseMCPRegistryConfig):
         cmd_config = self._prepare_command_args("uvx", args)
 
         return {
-            "aci-mcp-unified": {**cmd_config, "env": {"ACI_API_KEY": api_key}}
+            "mcpServers": {
+                "aci-mcp-unified": {
+                    **cmd_config,
+                    "env": {"ACI_API_KEY": api_key},
+                }
+            }
         }
