@@ -192,6 +192,7 @@ CAMEL provides a variety of built-in toolkits that you can use right away. Here'
 | WeatherToolkit | A toolkit for fetching weather data for cities using the OpenWeatherMap API. |
 | WhatsAppToolkit | A toolkit for interacting with the WhatsApp Business API, including sending messages, managing message templates, and accessing business profile information. |
 | ZapierToolkit | A toolkit for interacting with Zapier's NLA API to execute actions through natural language commands and automate workflows. |
+| KlavisToolkit | A toolkit for interacting with Kavis AI's API to create remote hosted production-ready MCP servers. |
 
 ## 4. Using Toolkits as MCP Servers
 
@@ -219,7 +220,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--mode",
-        choices=["stdio", "sse"],
+        choices=["stdio", "sse", "streamable-http"],
         default="stdio",
         help="MCP server mode (default: 'stdio')",
     )
@@ -235,7 +236,7 @@ if __name__ == "__main__":
     toolkit = ArxivToolkit(timeout=args.timeout)
 
     # Run the toolkit as an MCP server
-    toolkit.mcp.run(args.mode)
+    toolkit.run_mcp_server(mode=args.mode)
 ```
 
 The server can be run in two modes:

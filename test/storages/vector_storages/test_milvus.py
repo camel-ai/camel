@@ -41,6 +41,71 @@ def setup_mock_storage(mock_storage, vectors, query_result_id, payload):
     mock_storage.status.return_value = MagicMock(vector_count=0)
 
 
+@pytest.fixture
+def milvus_test_setup():
+    """Setup fixture for Milvus tests with mock search results.
+
+    This fixture provides common setup for testing Milvus query functionality,
+    including mock client, search results and storage instance.
+    """
+    # Mock search results structure: [[result1, result2, result3]]
+    mock_search_results = [
+        [
+            {
+                'id': '1',
+                'distance': 0.9,
+                'entity': {
+                    'vector': [0.1, 0.1, 0.1, 0.1],
+                    'payload': {'message': 'text1'},
+                },
+            },
+            {
+                'id': '2',
+                'distance': 0.8,
+                'entity': {
+                    'vector': [0.2, 0.2, 0.2, 0.2],
+                    'payload': {'message': 'text2'},
+                },
+            },
+            {
+                'id': '3',
+                'distance': 0.7,
+                'entity': {
+                    'vector': [0.3, 0.3, 0.3, 0.3],
+                    'payload': {'message': 'text3'},
+                },
+            },
+        ]
+    ]
+
+    # Mock Milvus client
+    with patch('pymilvus.MilvusClient') as MockMilvusClient:
+        mock_client = MockMilvusClient.return_value
+        mock_client.search.return_value = mock_search_results
+
+        # Set up storage instance
+        with (
+            patch(
+                'camel.storages.vectordb_storages.milvus.MilvusStorage._create_collection'
+            ),
+            patch(
+                'camel.storages.vectordb_storages.milvus.MilvusStorage._check_and_create_collection'
+            ),
+            patch(
+                'camel.storages.vectordb_storages.milvus.MilvusStorage._collection_exists',
+                return_value=True,
+            ),
+        ):
+            storage = MilvusStorage(
+                vector_dim=4,
+                url_and_api_key=("http://localhost:19530", "fake_api_key"),
+                collection_name="test_collection",
+            )
+            storage._client = mock_client
+
+            yield storage, mock_client, mock_search_results
+
+
 def test_multiple_remote_clients(mock_milvus_storage):
     mock_storage1, mock_storage2 = mock_milvus_storage
 
@@ -94,97 +159,96 @@ def test_multiple_remote_clients(mock_milvus_storage):
     assert status2.vector_count == 0
 
 
-def setup_mock_storage_for_search(
-    mock_storage, vectors, query_result_id, payload
-):
-    mock_query_result = MagicMock()
-    mock_query_result.record.id = query_result_id
-    mock_query_result.record.payload = payload
-    mock_storage.search.return_value = [mock_query_result]
-    mock_storage.add(vectors)
-    mock_storage.status.return_value = MagicMock(vector_count=0)
+def test_milvus_return_multiple_results(milvus_test_setup):
+    r"""Test that Milvus returns multiple results (top_k > 1)
+
+    This test verifies the fix for a previous bug:
+    In the previous implementation, the loop would only execute once because
+    the outer list only had one element, and it only took the first result of
+    each element (point[0]), which meant it could return at most one result.
+    The fixed code should be able to return the complete top_k results.
+    """
+    storage, mock_client, _ = milvus_test_setup
+
+    # Execute query
+    query = VectorDBQuery(query_vector=[0.1, 0.1, 0.1, 0.1], top_k=3)
+    results = storage.query(query)
+
+    # Verify results
+    assert len(results) == 3, "Should return all 3 results (top_k=3)"
+
+    # Verify the order and content of returned results
+    assert results[0].record.id == '1'
+    assert results[0].similarity == 0.9
+    assert results[0].record.payload == {'message': 'text1'}
+
+    assert results[1].record.id == '2'
+    assert results[1].similarity == 0.8
+    assert results[1].record.payload == {'message': 'text2'}
+
+    assert results[2].record.id == '3'
+    assert results[2].similarity == 0.7
+    assert results[2].record.payload == {'message': 'text3'}
+
+    # Verify search method was called correctly
+    mock_client.search.assert_called_once()
+    call_args = mock_client.search.call_args[1]
+    assert call_args['collection_name'] == "test_collection"
+    assert call_args['limit'] == 3
 
 
-def test_search_method(mock_milvus_storage):
-    # Use both mocked storages for testing search with more data
-    mock_storage1, mock_storage2 = mock_milvus_storage
+def test_milvus_bug_single_result(milvus_test_setup):
+    r"""Test the bug behavior of Milvus before fix, returning only one result
 
-    # Setup multiple vector records for database 1
-    vectors1 = [
-        VectorRecord(
-            vector=[0.5, 0.5, 0.5, 0.5],
-            payload={"category": "fruit", "color": "red", "message": "apple"},
-        ),
-        VectorRecord(
-            vector=[0.6, 0.6, 0.6, 0.6],
-            payload={"category": "fruit", "color": "red", "message": "cherry"},
-        ),
-        VectorRecord(
-            vector=[0.7, 0.7, 0.7, 0.7],
-            payload={"category": "fruit", "color": "green", "message": "pear"},
-        ),
-    ]
-    setup_mock_storage_for_search(
-        mock_storage1, vectors1, vectors1[0].id, vectors1[0].payload
-    )
+    This test simulates the code behavior before the fix, where even if
+    top_k=3 was specified, it would only return one result.
+    """
+    storage, mock_client, _ = milvus_test_setup
 
-    # Setup multiple vector records for database 2
-    vectors2 = [
-        VectorRecord(
-            vector=[-0.5, -0.5, -0.5, -0.5],
-            payload={
-                "category": "fruit",
-                "color": "red",
-                "message": "strawberry",
-            },
-        ),
-        VectorRecord(
-            vector=[-0.6, -0.6, -0.6, -0.6],
-            payload={
-                "category": "fruit",
-                "color": "red",
-                "message": "raspberry",
-            },
-        ),
-        VectorRecord(
-            vector=[-0.7, -0.7, -0.7, -0.7],
-            payload={
-                "category": "fruit",
-                "color": "yellow",
-                "message": "banana",
-            },
-        ),
-    ]
-    setup_mock_storage_for_search(
-        mock_storage2, vectors2, vectors2[0].id, vectors2[0].payload
-    )
+    # Mock old implementation - the way it was processed before the fix
+    def mock_buggy_query(query, **kwargs):
+        from camel.storages import VectorDBQueryResult
 
-    # Assert add method was called correctly
-    mock_storage1.add.assert_called_once_with(vectors1)
-    mock_storage2.add.assert_called_once_with(vectors2)
+        search_result = mock_client.search(
+            collection_name=storage.collection_name,
+            data=[query.query_vector],
+            limit=query.top_k,
+            output_fields=['vector', 'payload'],
+            **kwargs,
+        )
+        query_results = []
+        for point in search_result:
+            query_results.append(
+                VectorDBQueryResult.create(
+                    similarity=(point[0]['distance']),
+                    id=str(point[0]['id']),
+                    payload=(point[0]['entity'].get('payload')),
+                    vector=point[0]['entity'].get('vector'),
+                )
+            )
+        return query_results
 
-    search_query1 = VectorDBSearch(
-        payload_filter={"category": "fruit", "color": "red"}, top_k=1
-    )
-    search_query2 = VectorDBSearch(
-        payload_filter={"color": "yellow", "message": "banana"}, top_k=1
-    )
-    # Call the search method on both storages
-    search_results1 = mock_storage1.search(search_query1)
-    search_results2 = mock_storage2.search(search_query2)
+    # Replace query method with the buggy version
+    storage.query = mock_buggy_query
 
-    assert len(search_results1) == 1
-    assert search_results1[0].record.id == vectors1[0].id
-    assert search_results1[0].record.payload == {
-        "category": "fruit",
-        "color": "red",
-        "message": "apple",
-    }
+    # Execute query
+    query = VectorDBQuery(query_vector=[0.1, 0.1, 0.1, 0.1], top_k=3)
+    results = storage.query(query=query)
 
-    assert len(search_results2) == 1
-    assert search_results2[0].record.id == vectors2[0].id
-    assert search_results2[0].record.payload == {
-        "category": "fruit",
-        "color": "red",
-        "message": "strawberry",
-    }
+    # Verify results - before fix would only return 1 result
+    assert (
+        len(results) == 1
+    ), "Before the fix, should return only 1 result, even if top_k=3"
+
+    # Verify that it's the first result
+    assert results[0].record.id == '1'
+    assert results[0].similarity == 0.9
+    assert results[0].record.payload == {'message': 'text1'}
+
+    # Verify search method was called correctly
+    mock_client.search.assert_called_once()
+    call_args = mock_client.search.call_args[1]
+    assert call_args['collection_name'] == "test_collection"
+    assert (
+        call_args['limit'] == 3
+    )  # Even though limit=3, the buggy version only returns the first result

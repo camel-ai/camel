@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
 import sys
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import pytest
 from mcp.server import FastMCP
@@ -52,6 +52,17 @@ class TextProcessorForMCP:
         """
         await asyncio.sleep(0.01)
         return len(text.split())
+
+    def run_mcp_server(
+        self, mode: Literal["stdio", "sse", "streamable-http"]
+    ) -> None:
+        r"""Run the MCP server in the specified mode.
+
+        Args:
+            mode (Literal["stdio", "sse", "streamable-http"]): The mode to run
+                the MCP server in.
+        """
+        self.mcp.run(mode)
 
 
 def test_tool_schema():
@@ -113,4 +124,4 @@ async def test_async_word_count():
 if __name__ == "__main__":
     if "--server" in sys.argv:
         processor = TextProcessorForMCP()
-        processor.mcp.run("stdio")
+        processor.run_mcp_server("stdio")

@@ -17,6 +17,42 @@ from typing import Any, Callable, Optional
 
 
 class MCPServer:
+    r"""Decorator class for registering functions of a class as tools in an MCP
+    (Model Context Protocol) server.
+
+    This class is typically used to wrap a toolkit or service class and
+    automatically register specified methods (or methods derived from
+    `BaseToolkit`) with a FastMCP server.
+
+    Args:
+        function_names (Optional[list[str]]): A list of method names to expose
+            via the MCP server. If not provided and the class is a subclass of
+            `BaseToolkit`, method names will be inferred from the tools
+            returned by `get_tools()`.
+        server_name (Optional[str]): A name for the MCP server. If not
+            provided, the class name of the decorated object is used.
+
+    Example:
+        ```
+        @MCPServer(function_names=["run", "status"])
+        class MyTool:
+            def run(self): ...
+            def status(self): ...
+        ```
+        Or, with a class inheriting from BaseToolkit (no need to specify
+        `function_names`):
+        ```
+        @MCPServer()
+        class MyToolkit(BaseToolkit):
+            ...
+        ```
+
+    Raises:
+        ValueError: If no function names are provided and the class does not
+            inherit from BaseToolkit, or if any specified method is not found
+            or not callable.
+    """
+
     def __init__(
         self,
         function_names: Optional[list[str]] = None,
@@ -26,6 +62,19 @@ class MCPServer:
         self.server_name = server_name
 
     def make_wrapper(self, func: Callable[..., Any]) -> Callable[..., Any]:
+        r"""Wraps a function (sync or async) to preserve its signature and
+        metadata.
+
+        This is used to ensure the MCP server can correctly call and introspect
+        the method.
+
+        Args:
+            func (Callable[..., Any]): The function to wrap.
+
+        Returns:
+            Callable[..., Any]: The wrapped function, with preserved signature
+            and async support.
+        """
         if inspect.iscoroutinefunction(func):
 
             @functools.wraps(func)
@@ -41,6 +90,20 @@ class MCPServer:
         return wrapper
 
     def __call__(self, cls):
+        r"""Decorates a class by injecting an MCP server instance and
+        registering specified methods.
+
+        Args:
+            cls (type): The class being decorated.
+
+        Returns:
+            type: The modified class with MCP integration.
+
+        Raises:
+            ValueError: If function names are missing and the class is not a
+                `BaseToolkit` subclass,
+                or if a specified method cannot be found or is not callable.
+        """
         from mcp.server.fastmcp import FastMCP
 
         from camel.toolkits.base import BaseToolkit

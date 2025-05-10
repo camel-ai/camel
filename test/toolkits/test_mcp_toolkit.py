@@ -84,7 +84,7 @@ class TestMCPClient:
 
             # Verify mocks were called correctly
             mock_sse_client.assert_called_once_with(
-                "https://example.com/api", headers={}
+                "https://example.com/api", headers={}, timeout=None
             )
             mock_session.assert_called_once()
             mock_session_instance.initialize.assert_called_once()
@@ -264,7 +264,7 @@ class TestMCPClient:
             "function": {
                 "name": "test_function",
                 "description": "Test function description",
-                "strict": True,
+                "strict": False,
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -286,7 +286,7 @@ class TestMCPClient:
             "function": {
                 "name": "test_function",
                 "description": "No description provided.",
-                "strict": True,
+                "strict": False,
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -376,7 +376,7 @@ class TestMCPClient:
 
             # Verify mocks were called correctly
             mock_sse_client.assert_called_once_with(
-                "https://example.com/api", headers={}
+                "https://example.com/api", headers={}, timeout=None
             )
             mock_session.assert_called_once()
             mock_session_instance.initialize.assert_called_once()
