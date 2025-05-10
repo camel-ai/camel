@@ -255,8 +255,6 @@ class MCPAgent(ChatAgent):
         if self.local_config:
             config_dict.update(self.local_config)
 
-        # Wrap the config in a mcpServers key
-        config_dict = {"mcpServers": config_dict}
         return MCPToolkit(config_dict=config_dict)
 
     def add_registry(self, registry_config: BaseMCPRegistryConfig) -> None:

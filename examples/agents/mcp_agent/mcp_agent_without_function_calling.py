@@ -29,7 +29,7 @@ async def main():
 
     # Initialize the agent using the factory method (recommended)
     mcp_agent = await MCPAgent.create(
-        config_path=str(config_path),
+        local_config_path=str(config_path),
         model=model,
         function_calling_available=False,
     )
