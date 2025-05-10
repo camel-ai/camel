@@ -1,6 +1,9 @@
 ---
-title: 'Tic Tac Toe'
+title: "Tic Tac Toe"
 ---
+
+# Tic Tac Toe
+
 You can also open this on [Google Colab](https://colab.research.google.com/github/camel-ai/camel/blob/master/docs/cookbooks/loong/multi_step_rl.ipynb)
 
 In this cookbook, I want to show how Multi-Step environments work in CAMEL. Our RL modules were built to mimic OpenAI Gym, so if you're familiar with Gym's interface, you'll feel right at home.
@@ -13,9 +16,11 @@ First, we need to initialize our environment and set it up. Then we can call `re
 
 Let's install the CAMEL package with all its dependencies:
 
+
 ```python
-%pip install camel-ai[all]==0.2.45
+%pip install camel-ai[all]==0.2.46
 ```
+
 
 ```python
 import asyncio
@@ -34,6 +39,7 @@ print(obs.question)
 
 We will use GPT-4o-mini, so let's enter our API key.
 
+
 ```python
 import os
 from getpass import getpass
@@ -42,9 +48,24 @@ openai_api_key = getpass('Enter your API key: ')
 os.environ["OPENAI_API_KEY"] = openai_api_key
 ```
 
+Alternatively, if running on Colab, you could save your API keys and tokens as **Colab Secrets**, and use them across notebooks.
+
+To do so, **comment out** the above **manual** API key prompt code block(s), and **uncomment** the following codeblock.
+
+⚠️ Don't forget granting access to the API key you would be using to the current notebook.
+
+
+```python
+# import os
+# from google.colab import userdata
+
+# os.environ["OPENAI_API_KEY"] = userdata.get("OPENAI_API_KEY")
+```
+
 Let's next define the model-backend and the agent.
 
 You can also add a system prompt or equip your agent with tools, but for the sake of simplicity we just create a bare agent with GPT-4o-mini.
+
 
 ```python
 from camel.models import ModelFactory
@@ -62,6 +83,7 @@ agent = ChatAgent(model=model)
 ```
 
 Next, we will simulate one episode.
+
 
 ```python
 while not env.is_done():
@@ -89,6 +111,7 @@ while not env.is_done():
 We can also use this to eval a model on tic tac toe.
 
 Let's run it for 10 episodes and see how often we win, draw and lose.
+
 
 ```python
 wins = 0
@@ -121,11 +144,13 @@ print("\n=== Summary after 10 Episodes ===")
 print(f"Wins:   {wins}")
 print(f"Draws:  {draws}")
 print(f"Losses: {losses}")
+
 ```
 
 As you can see, GPT-4o-mini is quite bad!
 
 Finally, we close the environment.
+
 
 ```python
 await env.close()

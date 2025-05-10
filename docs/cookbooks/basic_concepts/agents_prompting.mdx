@@ -2,19 +2,23 @@
 title: "Prompting Cookbook"
 ---
 
+# Prompting Cookbook
+
+
 You can also check this cookbook in colab [here](https://colab.research.google.com/drive/1VcjPuy2UEYm0xLdriT7OMGt6I2yX9z32?usp=sharing).
 
-<div class="align-center">
-<div className="flex justify-center items-center gap-4 mb-8">
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
   <a href="https://www.camel-ai.org/">
-    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
   </a>
   <a href="https://discord.camel-ai.org">
-    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
-</div>
-⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
-</div>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
 
 This notebook demonstrates how to set up and leverage CAMEL's ability to use **Prompt** module. 
 
@@ -45,6 +49,24 @@ from getpass import getpass
 # Prompt for the API key securely
 openai_api_key = getpass('Enter your API key: ')
 os.environ["OPENAI_API_KEY"] = openai_api_key
+```
+
+Alternatively, if running on Colab, you could save your API keys and tokens as **Colab Secrets**,
+
+and use them across notebooks.
+
+To do so, **comment out** the above **manual** API key prompt code block(s),
+
+and **uncomment** the following codeblock.
+
+⚠️ Don't forget granting access to the API key you would be using to the current notebook.
+
+
+```python
+# import os
+# from google.colab import userdata
+
+# os.environ["OPENAI_API_KEY"] = userdata.get("OPENAI_API_KEY")
 ```
 
 ## Getting Started with Prompt Templates
@@ -78,8 +100,6 @@ specified_task_prompt = task_specify_agent.run(
 
 print(f"Specified task prompt:\n{specified_task_prompt}\n")
 ```
-    
-    
 
 ## Creating Custom Prompts
 CAMEL also allows you to create your own custom prompts. Here's an example of how to create and use a custom prompt template:
@@ -141,7 +161,6 @@ assistant_prompt = CodePromptTemplateDict.ASSISTANT_PROMPT.format(
 )
 print(f"Assistant prompt:\n{assistant_prompt}\n")
 ```
-      
 
 ### 2. Evaluation with EvaluationPromptTemplateDict
 
@@ -157,8 +176,6 @@ questions_prompt = EvaluationPromptTemplateDict.GENERATE_QUESTIONS.format(
 )
 print(f"Evaluation questions prompt:\n{questions_prompt}\n")
 ```
-    
-    
 
 ### 3. Object Recognition with ObjectRecognitionPromptTemplateDict
 
@@ -170,8 +187,6 @@ from camel.prompts import ObjectRecognitionPromptTemplateDict
 recognition_prompt = ObjectRecognitionPromptTemplateDict.ASSISTANT_PROMPT
 print(f"Object recognition prompt:\n{recognition_prompt}\n")
 ```
-    
-    
 
 ### 4. Translation with TranslationPromptTemplateDict
 
@@ -183,8 +198,6 @@ from camel.prompts import TranslationPromptTemplateDict
 translation_prompt = TranslationPromptTemplateDict.ASSISTANT_PROMPT.format(target_language="Spanish")
 print(f"Translation prompt:\n{translation_prompt}\n")
 ```
-    
-    
 
 ## 🌟 Highlights
 
@@ -212,15 +225,16 @@ Check out some of our other work:
 Thanks from everyone at 🐫 CAMEL-AI
 
 
-<div class="align-center">
-<div className="flex justify-center items-center gap-4 mb-8">
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
   <a href="https://www.camel-ai.org/">
-    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
   </a>
   <a href="https://discord.camel-ai.org">
-    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
-</div>
-⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
-</div>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
 

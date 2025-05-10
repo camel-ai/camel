@@ -1,19 +1,23 @@
 ---
 title: "Creating Your First Agent Society"
 ---
+
+# Creating Your First Agent Society
+
 You can also check this cookbook in colab [here](https://colab.research.google.com/drive/1cmWPxXEsyMbmjPhD2bWfHuhd_Uz6FaJQ?usp=sharing).
 
-<div class="align-center">
-<div className="flex justify-center items-center gap-4 mb-8">
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
   <a href="https://www.camel-ai.org/">
-    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
   </a>
   <a href="https://discord.camel-ai.org">
-    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
-</div>
-⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
-</div>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
 
 This notebook demonstrates how to set up and leverage CAMEL's ability to create your first agent society through `RolePlaying()`class.
 
@@ -41,6 +45,7 @@ In this section, we will take a spite of the task-oriented `RolePlaying()` class
 
 ## 📦 Installation
 
+
 ```python
 !pip install "camel-ai==0.2.16"
 ```
@@ -48,6 +53,7 @@ In this section, we will take a spite of the task-oriented `RolePlaying()` class
 ## 🔑 Setting Up API Keys
 
 You'll need to set up your API keys for OpenAI.
+
 
 ```python
 import os
@@ -58,7 +64,29 @@ openai_api_key = getpass('Enter your API key: ')
 os.environ["OPENAI_API_KEY"] = openai_api_key
 ```
 
+Alternatively, if running on Colab, you could save your API keys and tokens as **Colab Secrets**,
+
+and use them across notebooks.
+
+
+To do so, **comment out** the above **manual** API key prompt code block(s),
+
+and **uncomment** the following codeblock.
+
+
+⚠️ Don't forget granting access to the API key you would be using to the current notebook.
+
+
+```python
+# import os
+# from google.colab import userdata
+
+# os.environ["OPENAI_API_KEY"] = userdata.get("OPENAI_API_KEY")
+```
+
 ## Quick Start
+
+
 
 ```python
 # Import necessary classes
@@ -76,7 +104,9 @@ model = ModelFactory.create(
 
 ### 🕹 Step 1: Configure the Role-Playing Session
 
+
 #### Set the `Task` Arguments
+
 
 ```python
 task_kwargs = {
@@ -89,6 +119,7 @@ task_kwargs = {
 #### Set the `User` Arguments
 You may think the user as the `instruction sender`.
 
+
 ```python
 user_role_kwargs = {
     'user_role_name': 'an ambitious aspiring TIME TRAVELER',
@@ -98,6 +129,7 @@ user_role_kwargs = {
 
 #### Set the `Assistant` Arguments
 Again, you may think the assistant as the `instruction executor`.
+
 
 ```python
 assistant_role_kwargs = {
@@ -109,6 +141,7 @@ assistant_role_kwargs = {
 ### Step 2: Kickstart Your Society
 Putting them altogether – your role-playing session is ready to go!
 
+
 ```python
 society = RolePlaying(
     **task_kwargs,             # The task arguments
@@ -119,6 +152,7 @@ society = RolePlaying(
 
 ### Step 3: Solving Tasks with Your Society
 Hold your bytes. Prior to our travel, let's define a small helper function.
+
 
 ```python
 def is_terminated(response):
@@ -134,6 +168,7 @@ def is_terminated(response):
 ```
 
 Time to chart our course – writing a simple loop for our society to proceed:
+
 
 ```python
 def run(society, round_limit: int=10):
@@ -152,11 +187,11 @@ def run(society, round_limit: int=10):
             break
 
         # Get the results
-        print(f'[AI User] {user_response.msg.content}.\\n')
+        print(f'[AI User] {user_response.msg.content}.\n')
         # Check if the task is end
         if 'CAMEL_TASK_DONE' in user_response.msg.content:
             break
-        print(f'[AI Assistant] {assistant_response.msg.content}.\\n')
+        print(f'[AI Assistant] {assistant_response.msg.content}.\n')
 
 
 
@@ -165,6 +200,7 @@ def run(society, round_limit: int=10):
 
     return None
 ```
+
 
 ```python
 run(society)
@@ -180,7 +216,7 @@ Key tools utilized in this notebook include:
 
 * **Agent Society**: Enabling multi-agent communication for the task solving.
 
-That's everything: Got questions about 🐫 CAMEL-AI? Join us on [Discord](https://discord.camel-ai.org)! Whether you want to share feedback, explore the latest in multi-agent systems, get support, or connect with others on exciting projects, we'd love to have you in the community! 🤝
+That's everything: Got questions about 🐫 CAMEL-AI? Join us on [Discord](https://discord.camel-ai.org)! Whether you want to share feedback, explore the latest in multi-agent systems, get support, or connect with others on exciting projects, we’d love to have you in the community! 🤝
 
 Check out some of our other work:
 
@@ -197,16 +233,18 @@ Check out some of our other work:
 Thanks from everyone at 🐫 CAMEL-AI
 
 
-<div class="align-center">
-<div className="flex justify-center items-center gap-4 mb-8">
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
   <a href="https://www.camel-ai.org/">
-    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
   </a>
   <a href="https://discord.camel-ai.org">
-    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
-</div>
-⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
-</div>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
+
 
 

@@ -2,19 +2,11 @@
 title: "Develop Trading Bot with Role Playing"
 ---
 
+# Develop Trading Bot with Role Playing
+
 You can also check this cookbook in colab [here](https://drive.google.com/file/d/17_m8BPMSh4f9mmdYP2PLQCU639aGFSBj/view?usp=sharing)
 
-<div class="align-center">
-<div className="flex justify-center items-center gap-4 mb-8">
-  <a href="https://www.camel-ai.org/">
-    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
-  </a>
-  <a href="https://discord.camel-ai.org">
-    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
-  </a>
-</div>
 ⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
-</div>
 
 ### 1. Concept
 
@@ -48,7 +40,7 @@ When using `RolePlaying` framework in CAMEL, predefined prompts are used to crea
 - You must decline my instruction honestly if you cannot perform the instruction due to physical, moral, legal reasons or your capability and explain the reasons.
 
     *This prohibits the agent from producing harmful, false, illegal, and misleading information.*
-- Unless I say the task is completed, you should always start with: Solution: \<YOUR_SOLUTION\>. \<YOUR_SOLUTION\> should be specific, and provide preferable implementations and examples for task-solving.
+- Unless I say the task is completed, you should always start with: Solution: <YOUR_SOLUTION>. <YOUR_SOLUTION> should be specific, and provide preferable implementations and examples for task-solving.
 
     *This encourages the assistant to always responds in a consistent format, avoiding any deviation from the structure of the conversation, and preventing vague or incomplete responses, which we refer to as flake responses, such as "I will do something".*
 - Always end your solution with: Next request.
@@ -109,7 +101,19 @@ openai_api_key = getpass('Enter your API key: ')
 os.environ["OPENAI_API_KEY"] = openai_api_key
 ```
 
-    
+Alternatively, if running on Colab, you could save your API keys and tokens as **Colab Secrets**, and use them across notebooks.
+
+To do so, **comment out** the above **manual** API key prompt code block(s), and **uncomment** the following codeblock.
+
+⚠️ Don't forget granting access to the API key you would be using to the current notebook.
+
+
+```python
+# import os
+# from google.colab import userdata
+
+# os.environ["OPENAI_API_KEY"] = userdata.get("OPENAI_API_KEY")
+```
 
 ### 3.1. Using `RolePlaying`
 

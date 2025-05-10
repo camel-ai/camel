@@ -1,19 +1,24 @@
 ---
-title: 'Customer Service Discord Bot for Finance with OpenBB'
+title: "Customer Service Discord Bot for Finance with OpenBB"
 ---
+
+# Customer Service Discord Bot for Finance with OpenBB
+
+
 You can also check this cookbook in colab [here](https://colab.research.google.com/drive/1M0Zmynp5Mes1HP8zrDeF2_UI7aS9g3EJ?usp=sharing)
 
-<div class="align-center">
-<div className="flex justify-center items-center gap-4 mb-8">
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
   <a href="https://www.camel-ai.org/">
-    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
   </a>
   <a href="https://discord.camel-ai.org">
-    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
-</div>
-⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
-</div>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
 
 This notebook demonstrates how to build a custom financial assistant Discord bot using OpenBB and CAMEL-AI. By integrating real-time financial data and advanced AI-driven interactions, this tutorial showcases an innovative approach to delivering dynamic financial insights.
 
@@ -29,15 +34,17 @@ In this notebook, you'll explore:
 
 This setup not only demonstrates a practical application of AI-driven financial assistance but also provides a robust framework adaptable to other domains requiring multi-agent collaboration, real-time data integration, and natural language interfaces.
 
-![Customer Service Discord Bot for Finance with OpenBB](../../images/finance1.png)
+![Customer service bot.png](./images/finance_discord_bot/finance_discord_bot_1.png)
 
 ## 📦 Installation
 
 First, install the CAMEL package with all its dependencies:
 
+
 ```python
 !pip install "camel-ai[all]==0.2.16"
 ```
+
 
 ```python
 !pip install starlette
@@ -58,6 +65,7 @@ If you don't have a Qwen API key, you can obtain one by following these steps:
 
 For more details, you can also check the Qwen documentation: https://www.alibabacloud.com/help/en/model-studio/developer-reference/use-qwen-by-calling-api
 
+
 ```python
 import os
 from getpass import getpass
@@ -65,9 +73,23 @@ from getpass import getpass
 qwen_api_key = getpass('Enter your API key: ')
 os.environ["QWEN_API_KEY"] = qwen_api_key
 ```
-    
+
+Alternatively, if running on Colab, you could save your API keys and tokens as **Colab Secrets**, and use them across notebooks.
+
+To do so, **comment out** the above **manual** API key prompt code block(s), and **uncomment** the following codeblock.
+
+⚠️ Don't forget granting access to the API key you would be using to the current notebook.
+
+
+```python
+# import os
+# from google.colab import userdata
+
+# os.environ["QWEN_API_KEY"] = userdata.get("QWEN_API_KEY")
+```
 
 To use Qwen model with CAMEL, we need to set up the model first:
+
 
 ```python
 from camel.configs import QwenConfig, MistralConfig
@@ -97,9 +119,18 @@ To use the toolkit, we would need an OpenBB Personal Access Token (PAT).
 Before fetching financial data with OpenBB, please ensure you have set up the necessary API keys for data providers. For detailed instructions on saving your API keys to your OpenBB account, please refer to the [OpenBB Getting Started Guide](https://docs.openbb.co/platform/getting_started/api_keys).
 
 
+
 ```python
 openbb_pat = getpass("Enter your OpenBB PAT: ")
 os.environ["OPENBB_TOKEN"] = openbb_pat
+```
+
+
+```python
+# import os
+# from google.colab import userdata
+
+# os.environ["OPENBB_TOKEN"] = userdata.get("OPENBB_TOKEN")
 ```
 
 ## Set up Agent Equipped with OpenBB and date tools
@@ -108,6 +139,7 @@ In this step, we will define the tools and the system prompt for our `ChatAgent`
 Since the LLMs do not intrinsically know the current dates, we need to define a date tool to get the current date.
 
 Below we also set the prompt to pass into the agent for better tool calling and output formatting.
+
 
 ```python
 from camel.agents import ChatAgent
@@ -198,6 +230,7 @@ For example, we can ask:
 
 *What was the price of Tesla yesterday?*
 
+
 ```python
 print("Start chatting! Type 'exit' to end the conversation.")
 while True:
@@ -240,6 +273,7 @@ To grant the bot permissions:
 For more details, you can also check the official Discord bot documentation: https://discord.com/developers/docs/intro
 
 
+
 ```python
 import os
 from getpass import getpass
@@ -249,7 +283,16 @@ os.environ["DISCORD_BOT_TOKEN"] = discord_bot_token
 ```
 
 
+```python
+# import os
+# from google.colab import userdata
+
+# os.environ["DISCORD_BOT_TOKEN"] = userdata.get("DISCORD_BOT_TOKEN")
+```
+
+
 This code cell sets up a simple Discord bot using the DiscordApp class from the `camel.bots` library. The bot listens for messages in any channel it has access to and provides a response based on the input message.
+
 
 ```python
 from camel.bots import DiscordApp
@@ -286,11 +329,10 @@ discord_bot.run()
 
 Here is an example run of the bot -- with a concise and nicely formatted response!
 
-![Customer Service Discord Bot for Finance with OpenBB](../../images/finance2.png)
+![image.png](./images/finance_discord_bot/finance_discord_bot_2.png)
 
 And let's try another question
-
-![Customer Service Discord Bot for Finance with OpenBB](../../images/finance3.png)
+![image.png](./images/finance_discord_bot/finance_discord_bot_3.png)
 
 Here we go! In this cookbook, we’ve built a simple yet powerful financial data assistant bot using **OpenBB** tools, which enables quick access to the latest financial data through natural language queries.
 
@@ -306,14 +348,21 @@ Check out some of our other work:
 Thanks from everyone at 🐫 CAMEL-AI
 
 
-<div class="align-center">
-<div className="flex justify-center items-center gap-4 mb-8">
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
   <a href="https://www.camel-ai.org/">
-    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
   </a>
   <a href="https://discord.camel-ai.org">
-    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
+</div>  
+⭐ <i>Star us on </i><a href="https://github.com/camel-ai/camel">Github</a> </i>, join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)  ⭐
 </div>
-⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
-</div>
+
+
+
+<!-- Saved images:
+- finance_discord_bot_1.png: ./images/finance_discord_bot/finance_discord_bot_1.png
+- finance_discord_bot_2.png: ./images/finance_discord_bot/finance_discord_bot_2.png
+- finance_discord_bot_3.png: ./images/finance_discord_bot/finance_discord_bot_3.png
+-->

@@ -1,6 +1,9 @@
 ---
-title: 'Single Step Environment in Camel'
+title: "Single Step Environment in Camel"
 ---
+
+# Single Step Environment in Camel
+
 Single Step environments are the most widespread type of environment when doing RL with an LLM as policy.
 
 It's called *single step* environment, because the agent only does one step. It gets a question sampled from the dataset (the initial state / observation) and then answers. The answer is then scored according to the reward function. Recently, rules-based reward functions, i.e. functions without any learnable parameters, have been successfully used to do RL with LLMs as as policy.
@@ -11,9 +14,11 @@ For the sake of simplicity, we will start by loading the MATH dataset, remove un
 
 First, install the CAMEL package with all its dependencies:
 
+
 ```python
-%pip install camel-ai[all]==0.2.45
+%pip install camel-ai[all]==0.2.46
 ```
+
 
 ```python
 from datasets import load_dataset
@@ -43,6 +48,7 @@ Next, we will have to define an *extractor*. An extractor takes the LLM response
 In the case of the MATH dataset, the final answer is wrapped inside a `\boxed{...}`, hence we should use the pre-built `BoxedStrategy`.
 
 Sadly, MATH answers are rather complicated and a more general Math verifier to compare, for example, equations has not yet been implemented. Hence, we shall prune the dataset to only contain those rows where the content of `\boxed{...}` is an int. For the sake of simplicity, we shall also prune the ground truthes to the direct answer (such that they are python expressions). That way, we can do simple verification using the vanilla PythonVerifier!
+
 
 ```python
 from camel.extractors import BaseExtractor, BoxedStrategy
@@ -77,6 +83,7 @@ filtered_dataset = StaticDataset(valid_datapoints, seed=42)
 
 Let's create a Python verifier to later compare answers. Since we are reusing the same extractor from before, the PythonVerifier will expect solutions to be wrapped in `\boxed{...}`, too.
 
+
 ```python
 from camel.verifiers import PythonVerifier
 
@@ -87,6 +94,7 @@ await verifier.setup(uv=True)
 Let's now initialize the single step environment with our filtered dataset and our verifier. The verifier will later help with the correctness reward 
 
 We can then call `env.reset()` to draw from the initial state distribution and return an observation, which can then be fed into the agent.
+
 
 ```python
 from camel.environments import Action, SingleStepEnv
@@ -99,6 +107,7 @@ print(obs)
 ```
 
 The agent would then process this observation and select an action, which it would feed into the `step` function. An action in this case would simply be the answer to the question, wrapped in `\boxed{}` (since we initialized our verifier with an extractor that extracts from `\boxed{...}`)
+
 
 ```python
 await env.step(Action(index=0, llm_response="\\boxed{5}"))

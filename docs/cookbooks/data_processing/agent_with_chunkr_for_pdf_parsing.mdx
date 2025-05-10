@@ -2,6 +2,8 @@
 title: "Create AI Agents that work with your PDFs using Chunkr & Mistral AI"
 ---
 
+# Create AI Agents that work with your PDFs using Chunkr & Mistral AI
+
 You can also check this cookbook in colab [here](https://colab.research.google.com/drive/1vkSfFUl-5oVDinKt8P0GChnaSOis57ij?usp=sharing)
 
 In this blog, we’ll introduce Chunkr, a cutting-edge document processing API designed for seamless and scalable data extraction and preparation, ideal for Retrieval-Augmented Generation (RAG) workflows and large language models (LLMs). Chunkr has been integrated with CAMEL. We’ll explore its three core capabilities—Segment, OCR, and Structure—each optimized to enhance document understanding and make data integration effortless. Finally, we’ll wrap up with a conclusion and a call to action.
@@ -25,19 +27,20 @@ Key tools utilized in this notebook include:
 
 
 To run this, press "*Runtime*" and press "*Run all*" on a **free** Tesla T4 Google Colab instance!
-<div class="align-center">
-<div className="flex justify-center items-center gap-4 mb-8">
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
   <a href="https://www.camel-ai.org/">
-    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
   </a>
   <a href="https://discord.camel-ai.org">
-    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
-</div>
-⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
-</div>
+</div>  
 
-![Agent with Chunkr](../../images/agent_with_chunkr.png)
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
+
+![chunkrv2.png](./images/agent_with_chunkr_for_pdf_parsing/agent_with_chunkr_for_pdf_parsing_1.png)
 
 ## **Introduction**
 
@@ -80,6 +83,7 @@ In this blog, we will focus on the capability of digesting PDF file with Chunkr.
 
 First, install the CAMEL package with all its dependencies.
 
+
 ```python
  pip install "camel-ai[all]==0.2.11"
 ```
@@ -102,6 +106,7 @@ Go to [chunkr.ai ](https://www.chunkr.ai/)and sign up for an account.
 
 Once logged in, navigate to the API section of your account dashboard to find your API key. A new API key will be generated. Copy this key and store it securely.
 
+
 ```python
 import os
 from getpass import getpass
@@ -111,7 +116,22 @@ chunkr_api_key = getpass('Enter your API key: ')
 os.environ["CHUNKR_API_KEY"] = chunkr_api_key
 ```
 
+Alternatively, if running on Colab, you could save your API keys and tokens as **Colab Secrets**, and use them across notebooks.
+
+To do so, **comment out** the above **manual** API key prompt code block(s), and **uncomment** the following codeblock.
+
+⚠️ Don't forget granting access to the API key you would be using to the current notebook.
+
+
+```python
+# import os
+# from google.colab import userdata
+
+# os.environ["CHUNKR_API_KEY"] = userdata.get("CHUNKR_API_KEY")
+```
+
 Step 2: Let's load the example PDF file from https://arxiv.org/pdf/2303.17760.pdf. This will be our local example data.
+
 
 
 
@@ -128,6 +148,7 @@ with open('local_data/camel_paper.pdf', 'wb') as file:
 ```
 
 Step 3: Submit one task.
+
 
 ```python
 # Importing the ChunkrReader class from the camel.loaders module
@@ -155,6 +176,7 @@ The output of Chunkr is structured text and metadata from documents, including:
 
 4.   **Metadata**: Information like page numbers, file type, and document properties.
 
+
 ```python
 # Retrieving the output of a previously submitted task
 # The "max_retries" parameter determines the number of times to retry if the task output is not immediately available
@@ -177,6 +199,7 @@ If you don't have a Mistral API key, you can obtain one by following these steps
 
 For more details, you can also check the Mistral documentation: https://docs.mistral.ai/getting-started/quickstart/
 
+
 ```python
 import os
 from getpass import getpass
@@ -184,6 +207,15 @@ from getpass import getpass
 mistral_api_key = getpass('Enter your API key')
 os.environ["MISTRAL_API_KEY"] = mistral_api_key
 ```
+
+
+```python
+# import os
+# from google.colab import userdata
+
+# os.environ["MISTRAL_API_KEY"] = userdata.get("MISTRAL_API_KEY")
+```
+
 
 ```python
 from camel.configs import MistralConfig
@@ -199,6 +231,7 @@ mistral_model = ModelFactory.create(
 # Use Mistral model
 model = mistral_model
 ```
+
 
 ```python
 from camel.agents import ChatAgent
@@ -246,14 +279,19 @@ Check out some of our other work:
 Thanks from everyone at 🐫 CAMEL-AI
 
 
-<div class="align-center">
-<div className="flex justify-center items-center gap-4 mb-8">
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
   <a href="https://www.camel-ai.org/">
-    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
   </a>
   <a href="https://discord.camel-ai.org">
-    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
+</div>  
+⭐ <i>Star us on </i><a href="https://github.com/camel-ai/camel">Github</a> </i>, join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)  ⭐
 </div>
-⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
-</div>
+
+
+
+<!-- Saved images:
+- agent_with_chunkr_for_pdf_parsing_1.png: ./images/agent_with_chunkr_for_pdf_parsing/agent_with_chunkr_for_pdf_parsing_1.png
+-->

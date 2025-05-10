@@ -1,19 +1,23 @@
 ---
 title: "Distill Math Reasoning Data from DeepSeek R1 with CAMEL"
 ---
+
+#  Distill Math Reasoning Data from DeepSeek R1 with CAMEL
+
 You can also check this cookbook in colab [here](https://colab.research.google.com/drive/1BnV4iyWlXdizzpRQPYjmwIt70oVKziBw?usp=sharing)
 
-<div class="align-center">
-<div className="flex justify-center items-center gap-4 mb-8">
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
   <a href="https://www.camel-ai.org/">
-    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
   </a>
   <a href="https://discord.camel-ai.org">
-    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
-</div>
-⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
-</div>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
 
 
 
@@ -46,11 +50,12 @@ Through the use of our synthetic data generation pipeline, CAEML-AI has crafted 
 
 Perfect for those eager to explore AI-driven problem-solving or dive deep into mathematical reasoning! 🚀✨
 
-![Distill Math Reasoning Data from DeepSeek R1 with CAMEL](../../images/maths_dst_data_1.png)
+![di v2.png](./images/distill_math_reasoning_data_from_deepseek_r1/distill_math_reasoning_data_from_deepseek_r1_1.png)
 
 ## 📦 Installation
 
 Firstly, we need to install the camel-ai package for datagen pipeline
+
 
 ```python
 %%capture
@@ -65,20 +70,39 @@ Let's set the `FIREWORKS_API_KEY` or `DEEPSEEK_API_KEY` that will be used to dis
 
 ⭐ **NOTE**: You could also use other model provider like Together AI, SilionFlow
 
+
 ```python
 from getpass import getpass
 import os
 ```
+
 
 ```python
 FIREWORKS_API_KEY = getpass('Enter your FIREWORKS_API_KEY: ')
 os.environ["FIREWORKS_API_KEY"] = FIREWORKS_API_KEY
 ```
 
+
 ```python
 DEEPSEEK_API_KEY = getpass('Enter your DEEPSEEK_API_KEY: ')
 os.environ["DEEPSEEK_API_KEY"] = DEEPSEEK_API_KEY
 ```
+
+Alternatively, if running on Colab, you could save your API keys and tokens as **Colab Secrets**, and use them across notebooks.
+
+To do so, **comment out** the above **manual** API key prompt code block(s), and **uncomment** the following codeblock.
+
+⚠️ Don't forget granting access to the API key you would be using to the current notebook.
+
+
+```python
+# import os
+# from google.colab import userdata
+
+# os.environ["FIREWORKS_API_KEY"] = userdata.get("FIREWORKS_API_KEY")
+# os.environ["DEEPSEEK_API_KEY"] = userdata.get("DEEPSEEK_API_KEY")
+```
+
 
 ```python
 #to make deepseek r1 responds with thought process content,we should set the following environment variable
@@ -92,10 +116,12 @@ Now, lets start to prepare the original maths  data from Hugging Face ,which mai
 
 After we download these datasets, we will convert these datasets to the desired format which suitable to be used in **CAMEL's data distillation pipeline**.
 
+
 ```python
 # Set the number of problems to download from GSM8K in huggingface
 NUMBER_OF_PROBLEMS=10
 ```
+
 
 ```python
 import json
@@ -156,6 +182,7 @@ Cool! Now you have already got some desired format example data,lets move to sta
 
 Import required libraries:
 
+
 ```python
 import nest_asyncio
 nest_asyncio.apply()
@@ -171,6 +198,7 @@ from camel.types import ModelPlatformType, ModelType
 ```
 
 Next, let's set up the reasoning model and evaluate model. Since the DeepSeek's API service is currently unstable, we will also set DeepSeek R1 served by [Fireworks](https://fireworks.ai/). CAMEL's model manager to automatically switch models based on the success of the request.
+
 
 ```python
 # Set DeepSeek R1 served by Fireworks as reason model 1
@@ -191,6 +219,7 @@ reason_model_2 = ModelFactory.create(
 
 Now we can start to execute CAMEL's STaRPipeline,
 pay attention to the parameters setting like problems_path, output_path, max_iterations, rationalization. Some code is commented out since it's **optional**.
+
 
 ```python
 start_time = time.time()
@@ -262,6 +291,7 @@ print(f"Total execution time: {execution_time:.2f} seconds")
 
 Let's take a look at generated reasoning data!
 
+
 ```python
 with open('generated_data.json', 'r') as f:
     data = json.load(f)
@@ -273,6 +303,7 @@ with open('generated_data.json', 'r') as f:
 After we've distilled the desired data, let's upload it to Hugging Face and share it with more people!
 
 Define the dataset upload pipeline, including steps like creating records, generating a dataset card, and other necessary tasks.
+
 
 ```python
 # Import necessary modules and classes
@@ -419,18 +450,27 @@ def add_records_to_dataset(manager, dataset_name, records):
 
 You can go to [here](https://huggingface.co/settings/tokens/new?tokenType=write) to get API Key from Hugging Face, also make sure you have opened the write access to repository.
 
-![Huggingface Configs](../../images/maths_dst_data_2.png)
+![Screenshot 2025-02-01 at 07.06.07.png](./images/distill_math_reasoning_data_from_deepseek_r1/distill_math_reasoning_data_from_deepseek_r1_2.png)
 
 Then create a New Dataset in Hugging Face:
 
-![Huggingface Configs](../../images/maths_dst_data_3.png)
+![Screenshot 2025-02-01 at 07.17.57.png](./images/distill_math_reasoning_data_from_deepseek_r1/distill_math_reasoning_data_from_deepseek_r1_3.png)
+
 
 ```python
 # Get HuggingFace token and username
 HUGGING_FACE_TOKEN = getpass('Enter your HUGGING_FACE_TOKEN: ')
 os.environ["HUGGING_FACE_TOKEN"] = HUGGING_FACE_TOKEN
+
+# Alternatively, to retrieve HF token from Colab Secrets instead
+# import os
+# from google.colab import userdata
+
+# os.environ["HUGGING_FACE_TOKEN"] = userdata.get("HUGGING_FACE_TOKEN")
+
 username = input("Enter your HuggingFace username: ")
 dataset_name = input("Enter your dataset name:")
+
 
 # Load the star output data
 current_dir = os.getcwd()
@@ -446,7 +486,7 @@ print(f"You can view your dataset at: {dataset_url}")
 
 ## 📊 Final Uploaded Data Preview
 
-![Data Preview Huggingface](../../images/maths_dst_data_4.png)
+![Screenshot 2025-02-02 at 12.46.48.png](./images/distill_math_reasoning_data_from_deepseek_r1/distill_math_reasoning_data_from_deepseek_r1_4.png)
 
 ## 🌟 Highlights
 
@@ -475,14 +515,24 @@ Check out some of our other work:
 Thanks from everyone at 🐫 CAMEL-AI
 
 
-<div class="align-center">
-<div className="flex justify-center items-center gap-4 mb-8">
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
   <a href="https://www.camel-ai.org/">
-    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
   </a>
   <a href="https://discord.camel-ai.org">
-    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
-</div>
-⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
-</div>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
+
+
+
+<!-- Saved images:
+- distill_math_reasoning_data_from_deepseek_r1_1.png: ./images/distill_math_reasoning_data_from_deepseek_r1/distill_math_reasoning_data_from_deepseek_r1_1.png
+- distill_math_reasoning_data_from_deepseek_r1_2.png: ./images/distill_math_reasoning_data_from_deepseek_r1/distill_math_reasoning_data_from_deepseek_r1_2.png
+- distill_math_reasoning_data_from_deepseek_r1_3.png: ./images/distill_math_reasoning_data_from_deepseek_r1/distill_math_reasoning_data_from_deepseek_r1_3.png
+- distill_math_reasoning_data_from_deepseek_r1_4.png: ./images/distill_math_reasoning_data_from_deepseek_r1/distill_math_reasoning_data_from_deepseek_r1_4.png
+-->

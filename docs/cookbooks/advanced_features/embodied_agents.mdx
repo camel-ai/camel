@@ -1,19 +1,12 @@
 ---
-title: 'Embodied Agents'
+title: "Embodied Agents"
 ---
+
+# Embodied Agents
+
 You can also check this cookbook in colab [here](https://colab.research.google.com/drive/17qCB6ezYfva87dNWlGA3D3zQ20NI-Sfk?usp=sharing)
 
-<div class="align-center">
-<div className="flex justify-center items-center gap-4 mb-8">
-  <a href="https://www.camel-ai.org/">
-    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
-  </a>
-  <a href="https://discord.camel-ai.org">
-    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
-  </a>
-</div>
 ⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
-</div>
 
 ## Philosophical Bits
 
@@ -26,9 +19,11 @@ Let's first play with a `ChatAgent` instance by simply initialize it with a syst
 
 ### 🕹 Step 0: Preparations
 
+
 ```python
 %pip install "camel-ai==0.2.16"
 ```
+
 
 ```python
 from camel.agents import EmbodiedAgent
@@ -41,6 +36,7 @@ from camel.types import RoleType
 
 You'll need to set up your API keys for OpenAI.
 
+
 ```python
 import os
 from getpass import getpass
@@ -50,8 +46,23 @@ openai_api_key = getpass('Enter your API key: ')
 os.environ["OPENAI_API_KEY"] = openai_api_key
 ```
 
+Alternatively, if running on Colab, you could save your API keys and tokens as **Colab Secrets**, and use them across notebooks.
+
+To do so, **comment out** the above **manual** API key prompt code block(s), and **uncomment** the following codeblock.
+
+⚠️ Don't forget granting access to the API key you would be using to the current notebook.
+
+
+```python
+# import os
+# from google.colab import userdata
+
+# os.environ["OPENAI_API_KEY"] = userdata.get("OPENAI_API_KEY")
+```
+
 ### 🕹 Step 1: Define the Role
 We first need to set up the necessary information.
+
 
 ```python
 # Set the role name and the task
@@ -65,6 +76,8 @@ role_tuple = (role, RoleType.EMBODIMENT)
 
 The `meta_dict` and `role_type` will be used to generate the system message.
 
+
+
 ```python
 # Generate the system message based on this
 sys_msg = sys_msg_gen().from_dict(meta_dict=meta_dict, role_tuple=role_tuple)
@@ -72,6 +85,7 @@ sys_msg = sys_msg_gen().from_dict(meta_dict=meta_dict, role_tuple=role_tuple)
 
 ### 🕹 Step 2: Initialize the Agent 🐫
 Based on the system message, we are ready to initialize our embodied agent.
+
 
 ```python
 embodied_agent = EmbodiedAgent(system_message=sys_msg,
@@ -84,6 +98,7 @@ Be aware that the default argument values for `tool_agents` and `code_interprete
 
 ### 🕹 Step 3: Interact with the Agent with `.step()`
 Use the base message wrapper to generate the user message.
+
 
 ```python
 usr_msg = bm.make_user_message(
@@ -98,8 +113,16 @@ usr_msg = bm.make_user_message(
 
 And feed that into your agents:
 
+
 ```python
 response = embodied_agent.step(usr_msg)
 ```
 
 Under the hood, the agent will perform multiple actions within its action space in the OS to fulfill the user request. It will compose code to implement the action – no worries, it will ask for your permission before execution.
+
+Ideally you should get the output similar to this, if you allow the agent to perform actions:
+
+
+```python
+print(response.msg.content)
+```

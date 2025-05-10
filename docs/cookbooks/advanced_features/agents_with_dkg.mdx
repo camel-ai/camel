@@ -1,19 +1,23 @@
 ---
-title: '📊 Dynamic Knowledge Graph Construction for Financial Report with CAMEL'
+title: "📊 Dynamic Knowledge Graph Construction for Financial Report with CAMEL"
 ---
+
+# 📊 Dynamic Knowledge Graph Construction for Financial Report with CAMEL
+
 You can also check this cookbook in colab [here](https://drive.google.com/file/d/19EWVOVZl_nVCs0ERr6IEaxiXHGPObYS9/view?usp=sharing)
 
-<div class="align-center">
-<div className="flex justify-center items-center gap-4 mb-8">
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
   <a href="https://www.camel-ai.org/">
-    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
   </a>
   <a href="https://discord.camel-ai.org">
-    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
-</div>
-⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
-</div>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
 
 
 
@@ -34,6 +38,7 @@ This setup not only demonstrates a practical application of AI-driven knowledge 
 First, install the CAMEL package with all its dependencies:
 Second, make sure that Neo4j is running and accessible from your local machine.
 
+
 ```python
 pip install "camel-ai[rag]==0.2.22"
 ```
@@ -41,6 +46,7 @@ pip install "camel-ai[rag]==0.2.22"
 ## 🚀 Launch Service
 
 Start Neo4j service in the background((using Ubuntu as an example))
+
 
 ```python
 neo4j start
@@ -50,6 +56,7 @@ neo4j start
 
 You'll need to set up your API keys for Together and SambaVerse. This ensures that the tools can interact with external services securely.
 
+
 ```python
 import os
 import dotenv
@@ -58,6 +65,16 @@ from getpass import getpass
 
 dotenv.load_dotenv()
 
+print(
+    colorama.Fore.GREEN
+    + "✅ Loading environment variables successfully."
+    + colorama.Fore.RESET
+)
+
+```
+
+
+```python
 # Prompt for the TogetherAI API key securely
 together_api_key = getpass('Enter Together API key: ')
 os.environ["TOGETHER_API_KEY"] = together_api_key
@@ -69,13 +86,22 @@ os.environ["SAMBA_API_KEY"] = sambanova_api_key
 # Prompt for the OpenAI API key securely
 openai_api_key = getpass('Enter OpenAI API key: ')
 os.environ["OPENAI_API_KEY"] = openai_api_key
+```
 
-print(
-    colorama.Fore.GREEN
-    + "✅ Loading environment variables successfully."
-    + colorama.Fore.RESET
-)
+Alternatively, if running on Colab, you could save your API keys and tokens as **Colab Secrets**, and use them across notebooks.
 
+To do so, **comment out** the above **manual** API key prompt code block(s), and **uncomment** the following codeblock.
+
+⚠️ Don't forget granting access to the API key you would be using to the current notebook.
+
+
+```python
+# import os
+# from google.colab import userdata
+
+# os.environ["OPENAI_API_KEY"] = userdata.get("OPENAI_API_KEY")
+# os.environ["SAMBA_API_KEY"] = userdata.get("SAMBA_API_KEY")
+# os.environ["TOGETHER_API_KEY"] = userdata.get("TOGETHER_API_KEY")
 ```
 
 ## 🛠️ Setting Up Neo4j
@@ -86,6 +112,7 @@ To store and query the knowledge graph, you'll need a Neo4j instance. If you don
 2. **Cloud Setup**: Sign up for Neo4j Aura [here](https://neo4j.com/cloud/aura/).
 
 Once you have your Neo4j instance running, set up the connection details:
+
 
 ```python
 # Prompt for Neo4j securely
@@ -100,6 +127,7 @@ We will use CAMEL's Knowledge Graph Agent to parse PDF documents, extract entiti
 
 Replace the file path in the code below with your own data directory path
 example_file_dir = Path("/home/mi/daily/fin-camel/pdf_tmp")
+
 
 ```python
 from pathlib import Path
@@ -176,6 +204,7 @@ openai_kg_agent = KnowledgeGraphAgent(model=openai_model)
 
 The ID normalization process ensures compliant Neo4j identifiers by sanitizing input strings (replacing non-alphanumeric characters with underscores), ensuring no numeric prefixes, splitting/cleaning components, and applying SHA-1 hashing truncation to enforce a maximum 64-character limit while preserving uniqueness and readability.
 
+
 ```python
 import hashlib
 
@@ -200,6 +229,7 @@ def normalize_name(name: str, max_length: int = 64) -> str:
 ```
 
 Prompt we use for dynamic knowledge graph generation, which has timestamp in element.
+
 
 ```python
 custom_prompt = """
@@ -259,6 +289,7 @@ Relationship(subj=Node(id='John', type='Person'), obj=Node(id='New York City', t
 
 Here we iterate over each PDF file in the example_pdf_files list. For each file, it parses the content and chunks the elements based on titles, ensuring that each chunk does not exceed 2048 characters.Within the first loop, we process each chunked element. We run it through the openai_kg_agent to generate graph elements. Then, we iterate over each node in the graph element to adjust its type and normalize its ID.After processing the nodes, we prepare a list of node IDs to be used for embedding. This list will be used in the next step for deduplication.
 
+
 ```python
 from tqdm import tqdm
 
@@ -292,6 +323,7 @@ for file in example_pdf_files:
 
 Perform internal deduplication on the node texts using the deduplicate_internally function. We set a threshold of 0.65 and specify the embedding strategy as "top1". The result provides unique IDs of the nodes.
 
+
 ```python
 from camel.utils import deduplicate_internally
 from camel.embeddings import SentenceTransformerEncoder
@@ -312,6 +344,7 @@ unique_node_ids = {node_texts[i] for i in deduplication_result.unique_ids}
 
 Filter relationships to include only those where both the subject and object nodes are unique, as determined by the deduplication step.
 
+
 ```python
 unique_relationships = []
 for graph_unit in graph_element_list:
@@ -324,11 +357,13 @@ for graph_unit in graph_element_list:
 ```
 
 After running the program above, access results by navigating to https://console-preview.neo4j.io/tools/query in your web browser. Sign in using your Neo4j credentials (as specified in the configuration file), and you'll see the **knowledge graph with timestamps** displayed as shown below.
+![Peek 2025-02-25 10-20.gif](./images/agents_with_dkg/agents_with_dkg_1.gif)
+![2025-02-24 17-37-17屏幕截图.png](./images/agents_with_dkg/agents_with_dkg_2.png)
+![2025-02-24 17-36-39屏幕截图.png](./images/agents_with_dkg/agents_with_dkg_3.png)
 
-![Dynamic_Knowledge_Graph](../../images/dkg2.png)
-![Dynamic_Knowledge_Graph](../../images/dkg3.png)
 
 Add the unique relationships to a Neo4j graph. For each relationship, we generate a timestamp and add the triplet to the graph.
+
 
 ```python
 import time
@@ -348,6 +383,7 @@ for rel in unique_relationships:
 
 Now that the knowledge graph is built, we can query it to retrieve time-based relationships.
 
+
 ```python
 # Query all triplets
 all_triplets = neo4j_graph.get_triplet()
@@ -366,6 +402,7 @@ else:
 
 - `max_characters`: The maximum number of characters in a chunk.
 - `model`: The model to use for the knowledge graph agent. (TogetherAI or Samba Verse)
+
 
 ```python
 elements = uio.parse_file_or_url(str(example_pdf_files[0]))
@@ -392,6 +429,7 @@ for max_characters in [512, 1024, 2048]:
     )
 ```
 
+
 ```python
 limited_chunk_elements = uio.chunk_elements(
     elements, chunk_type="chunk_by_title", max_characters=1000
@@ -400,10 +438,12 @@ print(len(limited_chunk_elements))
 print(limited_chunk_elements[0].text)
 ```
 
+
 ```python
 print(len(limited_chunk_elements[0].text))
 print(limited_chunk_elements[0].text)
 ```
+
 
 ```python
 llama_kg_result = llama_405b_kg_agent.run(
@@ -411,16 +451,19 @@ llama_kg_result = llama_405b_kg_agent.run(
 )
 ```
 
+
 ```python
 print(len(llama_kg_result.nodes))
 print(llama_kg_result.nodes)
 ```
+
 
 ```python
 together_kg_result = together_kg_agent.run(
     limited_chunk_elements[0], parse_graph_elements=True
 )
 ```
+
 
 ```python
 print(len(together_kg_result.nodes))
@@ -440,14 +483,22 @@ Key tools utilized in this notebook include:
 
 This comprehensive setup allows you to adapt and expand the example for various scenarios requiring dynamic graph generation and querying.
 
-<div class="align-center">
-<div className="flex justify-center items-center gap-4 mb-8">
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
   <a href="https://www.camel-ai.org/">
-    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
   </a>
   <a href="https://discord.camel-ai.org">
-    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
-</div>
-⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
-</div>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
+
+
+<!-- Saved images:
+- agents_with_dkg_1.gif: ./images/agents_with_dkg/agents_with_dkg_1.gif
+- agents_with_dkg_2.png: ./images/agents_with_dkg/agents_with_dkg_2.png
+- agents_with_dkg_3.png: ./images/agents_with_dkg/agents_with_dkg_3.png
+-->

@@ -2,6 +2,8 @@
 title: "3 ways to ingest data from websites with Firecrawl"
 ---
 
+# 3 ways to ingest data from websites with Firecrawl
+
 You can also check this cookbook in colab [here](https://colab.research.google.com/drive/1lOmM3VmgR1hLwDKdeLGFve_75RFW0R9I?usp=sharing)
 
 In this notebook, we’ll introduce Firecrawl, a versatile web scraping and crawling tool designed to extract data efficiently from websites, which has been integrated with CAMEL. Today we’ll walk through three key features—Scrape, Crawl, and Map—each tailored with a CAMEL agent use case.
@@ -21,17 +23,18 @@ In this notebook, you'll explore:
 5.  Conclusion
 
 
-<div class="align-center">
-<div className="flex justify-center items-center gap-4 mb-8">
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
   <a href="https://www.camel-ai.org/">
-    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
   </a>
   <a href="https://discord.camel-ai.org">
-    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
-</div>
-⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
-</div>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
 
 
 
@@ -78,8 +81,6 @@ openai_api_key = getpass('Enter your API key: ')
 os.environ["OPENAI_API_KEY"] = openai_api_key
 ```
 
-    
-
 ## 🔥  **Firecrawl: To crawl**
 
 Let's get started with the exploration of the first feature of Firecrawl -  Crawl: Extracts content from all subpages in an LLM-ready format (markdown, structured data, screenshot, HTML, links, metadata) for easy analysis.
@@ -98,7 +99,20 @@ firecrawl_api_key = getpass('Enter your API key: ')
 os.environ["FIRECRAWL_API_KEY"] = firecrawl_api_key
 ```
 
-    
+Alternatively, if running on Colab, you could save your API keys and tokens as **Colab Secrets**, and use them across notebooks.
+
+To do so, **comment out** the above **manual** API key prompt code block(s), and **uncomment** the following codeblock.
+
+⚠️ Don't forget granting access to the API key you would be using to the current notebook.
+
+
+```python
+# import os
+# from google.colab import userdata
+
+# os.environ["OPENAI_API_KEY"] = userdata.get("OPENAI_API_KEY")
+# os.environ["FIRECRAWL_API_KEY"] = userdata.get("FIRECRAWL_API_KEY")
+```
 
 Step 2: Import necessary modules
 
@@ -128,8 +142,6 @@ print(firecrawl_response["data"][0]["markdown"])
 
 ```
 
-    
-
 Step 4: Interact with CAMEL agent
 
 
@@ -148,7 +160,6 @@ response = agent.step(f"Based on {firecrawl_response}, explain what CAMEL is.")
 print(response.msgs[0].content)
 
 ```
-    
 
 ## 🔥 Firecrawl: To Scrape
 
@@ -174,8 +185,6 @@ response = firecrawl.structured_scrape(
 
 print(response)
 ```
-
-    
 
 Let's have a look how the assistant CAMEL agent can answer our questions with the response from Firecrawl.
 
@@ -203,8 +212,6 @@ map_result = firecrawl.map_site(
 print(map_result)
 ```
 
-    
-
 
 ```python
 # Use the ChatAgent to generate a response based on the Firecrawl crawl data
@@ -213,8 +220,6 @@ response = agent.step(f"Based on {map_result}, which one is the main website for
 # Print the content of the first message in the response, which contains the assistant's answer
 print(response.msgs[0].content)
 ```
-
-    
 
 ## 🌟 Highlights
 
@@ -243,15 +248,16 @@ Check out some of our other work:
 Thanks from everyone at 🐫 CAMEL-AI
 
 
-<div class="align-center">
-<div className="flex justify-center items-center gap-4 mb-8">
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
   <a href="https://www.camel-ai.org/">
-    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
   </a>
   <a href="https://discord.camel-ai.org">
-    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
-</div>
-⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
-</div>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
 

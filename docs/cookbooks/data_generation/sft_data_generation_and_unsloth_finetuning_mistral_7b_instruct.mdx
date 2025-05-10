@@ -1,26 +1,31 @@
 ---
-title: "Agenetic SFT Data generation with CAMEL and finetuning Mistral models with Unsloth"
+title: "Sft Data Generation And Unsloth Finetuning Mistral 7B Instruct"
 ---
+
+### Agentic SFT Data generation with CAMEL and finetuning Mistral models with Unsloth
 
 For more detailed usage information, please refer to our [cookbook](https://colab.research.google.com/drive/1lYgArBw7ARVPSpdwgKLYnp_NEXiNDOd-?usp=sharing)
 
 To run this, press "*Runtime*" and press "*Run all*" on a **free** Tesla T4 Google Colab instance!
-<div class="align-center">
-  <div class="flex justify-center items-center gap-4 mb-8">
-    <a href="https://www.camel-ai.org/">
-      <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
-    </a>
-    <a href="https://discord.camel-ai.org">
-      <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
-    </a>
-  </div>
-</div>
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
+  <a href="https://www.camel-ai.org/">
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
+  </a>
+  <a href="https://discord.camel-ai.org">
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
+  </a>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
 
 CAMEL and Unsloth make an excellent pair. In this notebook we will combine the two to train a model to be proficient at content on a page
 
 You will learn how to do data generation with CAMEL, how to train, and how to run the model.
 
-![SFT_Data_generation_unsloth](../../images/SFT_Data_generation_unsloth.png)
+![SFT v2.png](./images/sft_data_generation_and_unsloth_finetuning_mistral_7b_instruct/sft_data_generation_and_unsloth_finetuning_mistral_7b_instruct_1.png)
+
 
 ```python
 %%capture
@@ -36,6 +41,7 @@ First we will set the OPENAI_API_KEY that will be used to generate the data.
 
 CAMEL supports many other models. See [here](https://docs.camel-ai.org/key_modules/models.html) for a list.
 
+
 ```python
 from getpass import getpass
 import os
@@ -48,7 +54,23 @@ firecrawl_api_key = getpass('Enter your Firecrawl API key: ')
 os.environ["FIRECRAWL_API_KEY"] = firecrawl_api_key
 ```
 
+Alternatively, if running on Colab, you could save your API keys and tokens as **Colab Secrets**, and use them across notebooks.
+
+To do so, **comment out** the above **manual** API key prompt code block(s), and **uncomment** the following codeblock.
+
+⚠️ Don't forget granting access to the API key you would be using to the current notebook.
+
+
+```python
+# import os
+# from google.colab import userdata
+
+# os.environ["OPENAI_API_KEY"] = userdata.get("OPENAI_API_KEY")
+# os.environ["FIRECRAWL_API_KEY"] = userdata.get("FIRECRAWL_API_KEY")
+```
+
 Next we will setup our model for training using Unsloth.
+
 
 ```python
 from unsloth import FastLanguageModel
@@ -79,6 +101,7 @@ model = FastLanguageModel.get_peft_model(
 
 Now as a control, lets see how this model does with our CAMEL-specific question
 
+
 ```python
 from camel.messages.conversion import AlpacaItem
 
@@ -97,6 +120,7 @@ inputs = tokenizer(
 outputs = temp_model.generate(**inputs, max_new_tokens = 512, use_cache = True)
 temp_model = None
 tokenizer.batch_decode(outputs)
+
 ```
 
 Note mistral 7b can handle this output format and follow instructions fine, though it is talking about the wrong project.
@@ -106,7 +130,9 @@ We want to generate data in the Alpaca format, so we can use CAMEL's built-in Al
 
 We will be using CAMEL's structured output to generate all of these items in one request, which is much faster and cheaper.
 
+
 Here we create a wrapper around the AlpacaItem to help the model know how many have been generated as it's going along, and another wrapper class that represents a list of these.
+
 
 ```python
 from pydantic import BaseModel
@@ -123,10 +149,12 @@ class AlpacaItemResponse(BaseModel):
     items: list[NumberedAlpacaItem]
 ```
 
+<a name="Data"></a>
 ### Data generation
 Next we define our data generation function. It takes a source content, and generates a list of instruction-input-response triplets around it.
 
 We will use this later to train our model to be proficient with the source content.
+
 
 ```python
 from typing import List
@@ -209,6 +237,7 @@ Now we point to the content that we wish to generate SFT data around and use CAM
 
 You can get a Firecrawl API key from [here](https://www.firecrawl.dev/app/api-keys)
 
+
 ```python
 import random
 firecrawl = Firecrawl()
@@ -240,6 +269,9 @@ save_json(alpaca_entries, 'alpaca_format_data.json')
 
 Now to define how each row is formatted
 
+
+
+
 ```python
 EOS_TOKEN = tokenizer.eos_token
 
@@ -263,6 +295,7 @@ dataset = dataset.map(formatting_prompts_func, batched = True,)
 ```
 
 Train the model
+
 
 ```python
 from trl import SFTTrainer
@@ -297,11 +330,15 @@ trainer = SFTTrainer(
 model = FastLanguageModel.for_training(model)
 ```
 
+
 ```python
 dtrainer_stats = trainer.train()
 ```
+
+<a name="Inference"></a>
 ### Inference
 Let's run the model! You can change the instruction and input - leave the output blank!
+
 
 ```python
 FastLanguageModel.for_inference(model) # Enable native 2x faster inference
@@ -322,6 +359,7 @@ tokenizer.batch_decode(outputs)
 
 **Summary**
 
+
 We have generated realistic user queries and responses from a real page and trained on them to produce a model that understands the underlying content.
 
 That's everything: Got questions about 🐫 CAMEL-AI? Join us on [Discord](https://discord.camel-ai.org)! Whether you want to share feedback, explore the latest in multi-agent systems, get support, or connect with others on exciting projects, we’d love to have you in the community! 🤝
@@ -329,21 +367,34 @@ That's everything: Got questions about 🐫 CAMEL-AI? Join us on [Discord](https
 Check out some of our other work:
 
 1. 🐫 Creating Your First CAMEL Agent [free Colab](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html)
-2. Graph RAG Cookbook [free Colab](https://colab.research.google.com/drive/1uZKQSuu0qW6ukkuSv9TukLB9bVaS1H0U?usp=sharing)
+
+2.  Graph RAG Cookbook [free Colab](https://colab.research.google.com/drive/1uZKQSuu0qW6ukkuSv9TukLB9bVaS1H0U?usp=sharing)
+
 3. 🧑‍⚖️ Create A Hackathon Judge Committee with Workforce [free Colab](https://colab.research.google.com/drive/18ajYUMfwDx3WyrjHow3EvUMpKQDcrLtr?usp=sharing)
+
 4. 🔥 3 ways to ingest data from websites with Firecrawl & CAMEL [free Colab](https://colab.research.google.com/drive/1lOmM3VmgR1hLwDKdeLGFve_75RFW0R9I?usp=sharing)
+
 5. 🦥 Agentic SFT Data Generation with CAMEL and Meta Models, Fine-Tuned with Unsloth [free Colab](https://colab.research.google.com/drive/1fdBns2QA1XNwF_tsvG3Hc27QGdViHH3b?usp=sharing)
+
 6. 🦥 Agentic SFT Data Generation with CAMEL and Qwen Models, Fine-Tuned with Unsloth [free Colab](https://colab.research.google.com/drive/1sMnWOvdmASEMhsRIOUSAeYuEywby6FRV?usp=sharing)
 
 Thanks from everyone at 🐫 CAMEL-AI
 
-<div class="align-center">
-  <div class="flex justify-center items-center gap-4 mb-8">
-    <a href="https://www.camel-ai.org/">
-      <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
-    </a>
-    <a href="https://discord.camel-ai.org">
-      <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
-    </a>
-  </div>
-</div>
+
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
+  <a href="https://www.camel-ai.org/">
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
+  </a>
+  <a href="https://discord.camel-ai.org">
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
+  </a>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
+
+
+<!-- Saved images:
+- sft_data_generation_and_unsloth_finetuning_mistral_7b_instruct_1.png: ./images/sft_data_generation_and_unsloth_finetuning_mistral_7b_instruct/sft_data_generation_and_unsloth_finetuning_mistral_7b_instruct_1.png
+-->

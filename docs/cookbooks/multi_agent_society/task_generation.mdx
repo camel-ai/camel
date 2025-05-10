@@ -2,19 +2,11 @@
 title: "Task Generation Cookbook"
 ---
 
+# Task Generation Cookbook
+
 You can also check this cookbook in colab [here](https://colab.research.google.com/drive/1n_SjiE7NRmpUUBcRge-gqKAv5mzWPcU0?usp=sharing)
 
-<div class="align-center">
-<div className="flex justify-center items-center gap-4 mb-8">
-  <a href="https://www.camel-ai.org/">
-    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
-  </a>
-  <a href="https://discord.camel-ai.org">
-    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
-  </a>
-</div>
 ⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
-</div>
 
 In this tutorial, we will focus on demonstrating how to use the task module in the CAMEL framework. We will guide you through creating, evolving, and decomposing tasks to illustrate how the task module can be utilized for efficient task management in agent-based systems.
 
@@ -63,7 +55,19 @@ openai_api_key = getpass('Enter your API key: ')
 os.environ["OPENAI_API_KEY"] = openai_api_key
 ```
 
-    
+Alternatively, if running on Colab, you could save your API keys and tokens as **Colab Secrets**, and use them across notebooks.
+
+To do so, **comment out** the above **manual** API key prompt code block(s), and **uncomment** the following codeblock.
+
+⚠️ Don't forget granting access to the API key you would be using to the current notebook.
+
+
+```python
+# import os
+# from google.colab import userdata
+
+# os.environ["OPENAI_API_KEY"] = userdata.get("OPENAI_API_KEY")
+```
 
 ## Step 2: Set up the Large Language Model (LLM)
 
@@ -112,9 +116,6 @@ task = Task(
 print(task.to_string())
 ```
 
-    
-    
-
 ### Evolve the Task
 
 We can evolve the task using the TaskManager, which allows the agent to potentially update or reframe the task based on its internal logic and context.
@@ -130,9 +131,6 @@ else:
     print("Evolved task is None.")
 ```
 
-    
-    
-
 ### Decompose the Task
 
 Sometimes, tasks are complex and need to be broken down into smaller subtasks. We use decompose() to allow the agent to split the original task into simpler parts.
@@ -143,6 +141,3 @@ new_tasks = task.decompose(agent=agent)
 for t in new_tasks:
     print(t.to_string())
 ```
-
-    
-    

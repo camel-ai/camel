@@ -1,19 +1,24 @@
 ---
-title: 'Dynamic Travel Planner Role-Playing: Multi-Agent System with Real-Time Insights Powered by Dappier'
+title: "Dynamic Travel Planner Role-Playing: Multi-Agent System with Real-Time Insights Powered by Dappier"
 ---
+
+# Dynamic Travel Planner Role-Playing: Multi-Agent System with Real-Time Insights Powered by Dappier
+
+
 You can also check this cookbook in colab [here](https://colab.research.google.com/drive/1yYFcgQ0rdAvepTclqLvZR8icqsW4uc-P?usp=sharing)
 
-<div class="align-center">
-<div className="flex justify-center items-center gap-4 mb-8">
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
   <a href="https://www.camel-ai.org/">
-    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
   </a>
   <a href="https://discord.camel-ai.org">
-    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
-</div>
-⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
-</div>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
 
 This notebook demonstrates how to set up and leverage CAMEL's Retrieval-Augmented Generation (RAG) combined with Dappier for dynamic travel planning. By combining real-time weather data and multi-agent role-playing, this notebook walks you through an innovative approach to creating adaptive travel plans.
 
@@ -27,7 +32,7 @@ In this notebook, you'll explore:
 
 This setup not only demonstrates a practical application of AI-driven dynamic travel planning but also provides a flexible framework that can be adapted to other real-world scenarios requiring real-time data integration from Dappier RAG models, multi-agent collaboration, and contextual reasoning.
 
-![Multi-Agent System with Real-Time Insights Powered by Dappier](../../images/trip_planner2.png)
+![DxC.png](./images/dynamic_travel_planner/dynamic_travel_planner_1.png)
 
 ## 📦 Installation
 
@@ -54,7 +59,6 @@ from getpass import getpass
 dappier_api_key = getpass('Enter your API key: ')
 os.environ["DAPPIER_API_KEY"] = dappier_api_key
 ```
-    
 
 Your can go to [here](https://platform.openai.com/settings/organization/api-keys) to get API Key from Open AI.
 
@@ -64,7 +68,6 @@ Your can go to [here](https://platform.openai.com/settings/organization/api-keys
 openai_api_key = getpass('Enter your API key: ')
 os.environ["OPENAI_API_KEY"] = openai_api_key
 ```
-    
 
 You can go to [here](https://app.agentops.ai/signin) to get **free** API Key from AgentOps
 
@@ -75,7 +78,22 @@ You can go to [here](https://app.agentops.ai/signin) to get **free** API Key fro
 agentops_api_key = getpass('Enter your API key: ')
 os.environ["AGENTOPS_API_KEY"] = agentops_api_key
 ```
-    
+
+Alternatively, if running on Colab, you could save your API keys and tokens as **Colab Secrets**, and use them across notebooks.
+
+To do so, **comment out** the above **manual** API key prompt code block(s), and **uncomment** the following codeblock.
+
+⚠️ Don't forget granting access to the API key you would be using to the current notebook.
+
+
+```python
+# import os
+# from google.colab import userdata
+
+# os.environ["DAPPIER_API_KEY"] = userdata.get("DAPPIER_API_KEY")
+# os.environ["OPENAI_API_KEY"] = userdata.get("OPENAI_API_KEY")
+# os.environ["AGENTOPS_API_KEY"] = userdata.get("AGENTOPS_API_KEY")
+```
 
 Set up the OpenAI GPT4o-mini using the CAMEL ModelFactory. You can also configure other models as needed.
 
@@ -116,7 +134,6 @@ response = DappierToolkit().search_real_time_data(
 
 print(response)
 ```
-    
 
 🎉 **Dappier effortlessly retrieves the latest news on CAMEL AI, providing valuable data for AI integration!**
 
@@ -196,7 +213,6 @@ role_play_session = RolePlaying(
     with_task_specify=False,
 )
 ```
-    
 
 Print the system message and task prompt
 
@@ -210,7 +226,7 @@ print(
 print(Fore.BLUE + f"AI User sys message:\n{role_play_session.user_sys_msg}\n")
 
 print(Fore.YELLOW + f"Original task prompt:\n{task_prompt}\n")
-```  
+```
 
 Set the termination rule and start the interaction between agents
 
@@ -264,7 +280,6 @@ while n < 20: # Limit the chat to 20 turns
 
     input_msg = assistant_response.msg
 ```
-    
 
 
 ```python
@@ -276,7 +291,7 @@ agentops.end_session("Success")
 
 **NOTE**: The AgentOps link is private and tied to the AgentOps account. To access the link, you'll need to run the session using your own AgentOps API Key, which will then allow you to open the link with the session's running information.
 
-![Multi-Agent System with Real-Time Insights Powered by Dappier](../../images/trip_planner.png)
+![Screenshot 2025-01-14 at 22.45.46.png](./images/dynamic_travel_planner/dynamic_travel_planner_2.png)
 
 ## 🌟 Highlights
 
@@ -306,14 +321,21 @@ Check out some of our other work:
 
 Thanks from everyone at 🐫 CAMEL-AI
 
-<div class="align-center">
-<div className="flex justify-center items-center gap-4 mb-8">
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
   <a href="https://www.camel-ai.org/">
-    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
   </a>
   <a href="https://discord.camel-ai.org">
-    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
-</div>
-⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
-</div>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
+
+
+<!-- Saved images:
+- dynamic_travel_planner_1.png: ./images/dynamic_travel_planner/dynamic_travel_planner_1.png
+- dynamic_travel_planner_2.png: ./images/dynamic_travel_planner/dynamic_travel_planner_2.png
+-->

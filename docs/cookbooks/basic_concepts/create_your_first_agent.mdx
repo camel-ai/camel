@@ -1,19 +1,23 @@
 ---
 title: "Creating Your First Agent"
 ---
+
+# Creating Your First Agent
+
 You can also check this cookbook in colab [here](https://colab.research.google.com/drive/1yxnAyaEmk4QCzX3duO3MIRghkIA_KDEZ?usp=sharing).
 
-<div class="align-center">
-<div className="flex justify-center items-center gap-4 mb-8">
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
   <a href="https://www.camel-ai.org/">
-    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
   </a>
   <a href="https://discord.camel-ai.org">
-    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
-</div>
-⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
-</div>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
 
 This notebook demonstrates how to set up and leverage CAMEL's ability to use `ChatAgent()` class. 
 
@@ -45,6 +49,7 @@ In our current implementation, we consider agents with the following key feature
 
 ## 📦 Installation
 
+
 ```python
 !pip install "camel-ai[all]==0.2.16"
 ```
@@ -52,6 +57,7 @@ In our current implementation, we consider agents with the following key feature
 ## 🔑 Setting Up API Keys
 
 You'll need to set up your API keys for OpenAI.
+
 
 ```python
 import os
@@ -62,11 +68,32 @@ openai_api_key = getpass('Enter your API key: ')
 os.environ["OPENAI_API_KEY"] = openai_api_key
 ```
 
+Alternatively, **Colab Secrets** is a good way for managing **API Keys** and **Tokens** without needing to enter it every time.
+
+Furthermore, you could use the secrets across Colab notebooks.
+
+It needs just two simple steps:
+
+1. Add the API key or token to the Colab Secrets
+2. Grant the secret access to the current notebook
+3. Access the secret by uncommenting the following codeblock.
+
+![Screenshot 2025-04-20 at 10.44.20 PM.png](./images/create_your_first_agent/create_your_first_agent_1.png)
+
+
+```python
+# import os
+# from google.colab import userdata
+
+# os.environ["OPENAI_API_KEY"] = userdata.get("OPENAI_API_KEY")
+```
+
 ## Quick Start
 Let's first play with a `ChatAgent` instance by simply initialize it with a system message and interact with user messages.
 
 ### 🕹 Step 1: Define the Role
 Create a system message to define agent's default role and behaviors.
+
 
 ```python
 sys_msg = 'You are a curious stone wondering about the universe.'
@@ -74,6 +101,7 @@ sys_msg = 'You are a curious stone wondering about the universe.'
 
 ### 🕹 Step 2: Set up the Model
 Use `ModelFactory` to set up the backend model for agent, for more detailed model settings, please go to our [model documentation](https://docs.camel-ai.org/key_modules/models.html).
+
 
 ```python
 from camel.models import ModelFactory
@@ -90,6 +118,7 @@ model = ModelFactory.create(
 
 Set `ChatAgent`
 
+
 ```python
 from camel.agents import ChatAgent
 agent = ChatAgent(
@@ -100,6 +129,7 @@ agent = ChatAgent(
 ```
 
 ### 🕹 Step 3: Interact with the Agent with `.step()`
+
 
 ```python
 # Define a user message
@@ -116,6 +146,7 @@ print(response.msgs[0].content)
 
 ### 🔧 Tool Usage
 For more detailed tool settings, please go to our [tools cookbook](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_tools.html).
+
 
 ```python
 # Import the necessary tools
@@ -146,11 +177,13 @@ By default our agent is initialized with `ChatHistoryMemory`, allowing agents to
 
 Assume that you have followed the setup in Quick Start. Let's first check what is inside its brain.
 
+
 ```python
 agent.memory.get_context()
 ```
 
 You may update/alter the agent's memory with any externally provided message in the format of `BaseMessage`; for example, use one new user message:
+
 
 ```python
 from camel.messages import BaseMessage
@@ -163,6 +196,7 @@ new_user_msg = BaseMessage.make_user_message(
 # Update the memory
 agent.record_message(new_user_msg)
 ```
+
 
 ```python
 # Check the current memory
@@ -216,16 +250,23 @@ Check out some of our other work:
 Thanks from everyone at 🐫 CAMEL-AI
 
 
-<div class="align-center">
-<div className="flex justify-center items-center gap-4 mb-8">
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
   <a href="https://www.camel-ai.org/">
-    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
   </a>
   <a href="https://discord.camel-ai.org">
-    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
-</div>
-⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
-</div>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
 
 
+
+
+
+<!-- Saved images:
+- create_your_first_agent_1.png: ./images/create_your_first_agent/create_your_first_agent_1.png
+-->

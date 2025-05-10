@@ -2,31 +2,27 @@
 title: "Create A Hackathon Judge Committee with Workforce"
 ---
 
-Workforce is a system where multiple agents collaborate to solve a given task. In this document, we will walk through it with a demo of a hackathon judge committee, where judges with different personas collaborate together to give scores to hackathon projects.
+# Create A Hackathon Judge Committee with Workforce
+
+Workforce is a system where multiple agents collaborate to solve a given task. In this notebook, we will walk through it with a demo of a hackathon judge committee, where judges with different personas collaborate together to give scores to hackathon projects.
 
 You can also check this cookbook in colab [here](https://colab.research.google.com/drive/18ajYUMfwDx3WyrjHow3EvUMpKQDcrLtr?usp=sharing)
 
-<div class="align-center">
-<div className="flex justify-center items-center gap-4 mb-8">
-  <a href="https://www.camel-ai.org/">
-    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
-  </a>
-  <a href="https://discord.camel-ai.org">
-    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
-  </a>
-</div>
 ⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
-</div>
 
 ## Dependency Installation
 
 To get started, make sure you have `camel-ai` installed.
+
+
+
 
 ```python
 %pip install "camel-ai[all]==0.2.16"
 ```
 
 Workforce employs an asynchronous design with coroutines. However, since **coroutines cannot directly run in notebooks**, we need to do specific handlings in this demo. Note that, under most normal cases (not inside notebook environment), we don't need to do this.
+
 
 ```python
 %pip install nest_asyncio
@@ -37,6 +33,7 @@ nest_asyncio.apply()
 ## Key Configuration
 
 In this demo, we will use tools related to web searching. Therefore, we need to configure the OpenAI API key, along with the Google API keys beforehand.
+
 
 ```python
 from getpass import getpass
@@ -52,9 +49,26 @@ search_engine_id = getpass("Please input your Search Engine ID: ")
 os.environ["SEARCH_ENGINE_ID"] = search_engine_id
 ```
 
+Alternatively, if running on Colab, you could save your API keys and tokens as **Colab Secrets**, and use them across notebooks.
+
+To do so, **comment out** the above **manual** API key prompt code block(s), and **uncomment** the following codeblock.
+
+⚠️ Don't forget granting access to the API key you would be using to the current notebook.
+
+
+```python
+# import os
+# from google.colab import userdata
+
+# os.environ["OPENAI_API_KEY"] = userdata.get("OPENAI_API_KEY")
+# os.environ["GOOGLE_API_KEY"] = userdata.get("GOOGLE_API_KEY")
+# os.environ["SEARCH_ENGINE_ID"] = userdata.get("SEARCH_ENGINE_ID")
+```
+
 ## Define a Function for Making Judge Agent
 
 In this demo, we will create multiple judge agents with different personas and scoring criteria. For reusability, we first create a function to make judge agents.
+
 
 ```python
 import textwrap
@@ -106,6 +120,7 @@ def make_judge(
 
 Then we will create a mocked hackathon project description, which will be later sent to the judges for scoring.
 
+
 ```python
 proj_content = textwrap.dedent(
     """\
@@ -127,6 +142,7 @@ proj_content = textwrap.dedent(
 Then we will create five unique agents that will later collaborate together. Among these five agents, one of them is the helper that will help collect information and summarize the final result. We add search functions to this agent so that it can obtain information from online searches.
 
 The other four agents, on the other hand, are judges with different personas and criteria. They will give scores to the project according to the description, along with the information collected by the helper.
+
 
 ```python
 # Create helper agent
@@ -287,6 +303,7 @@ Then we will do the most important part of the demo: create a workforce. Despite
 
 Note that, the description is very important in workforce, because it helps the coordinator agent in the workforce to do the task designation. Therefore, it's recommended to clearly mark the responsibility and capability of an agent when adding it to the workforce.
 
+
 ```python
 workforce = Workforce('Hackathon Judges')
 
@@ -322,6 +339,7 @@ The `additional_info` here is an optional field. It will come in handy when the 
 
 > Also note that, the `id` of a task is not something important and you can fill in whatever value you like (we suggest `"0"` though). This is due to some legacy problems in the `Task` design and will be fixed later.
 
+
 ```python
 task = Task(
     content="Evaluate the hackathon project. First, do some research on "
@@ -338,6 +356,7 @@ task = Task(
 
 Finally, run the task with `process_task()` function. You can see the whole process being shown in the console, and at last the final result of the task will be printed.
 
+
 ```python
 task = workforce.process_task(task)
 
@@ -346,7 +365,7 @@ print(task.result)
 
 ## 🌟 Highlights
 
-The power of multi-agent system lies in the diversity. This document has
+The power of multi-agent system lies in the diversity. This notebook has
 guided you through setting up and running a CAMEL Workforce for a hackathon
 judge committee, showcasing how multiple agents can collaborate to solve
 complex tasks. You can easily extend this example to other scenarios

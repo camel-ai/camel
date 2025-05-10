@@ -1,19 +1,23 @@
 ---
 title: "Agentic Data Generation, Evaluation & Filtering with Reward Models"
 ---
+
+#  Agentic Data Generation, Evaluation & Filtering with Reward Models
+
 You can also check this cookbook in colab [here](https://colab.research.google.com/drive/15Y4iDw_yeskG7ZXzqy6pnJDVtPjl3RVA?usp=sharing)
 
-<div class="align-center">
-<div className="flex justify-center items-center gap-4 mb-8">
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
   <a href="https://www.camel-ai.org/">
-    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
   </a>
   <a href="https://discord.camel-ai.org">
-    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
-</div>
-⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
-</div>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
 
 This notebook demonstrates how to set up and leverage CAMEL's reward model to evaluate and filter synthetic data.
 
@@ -25,7 +29,7 @@ In this notebook, you'll explore:
 
 This cookbook demonstrates CAMEL serves as a flexible framework that can be adapted for various scenarios requiring evaluation, filtering, and optimization of AI-generated content.
 
-![reward_models](../../images/reward_models.png)
+![image.png](./images/synthetic_dataevaluation&filter_with_reward_model/synthetic_dataevaluation&filter_with_reward_model_1.png)
 
 ## 📦 Installation
 
@@ -37,6 +41,7 @@ First, install the CAMEL package with its dependencies
 ```
 
 Next, we need to securely input and store the required API keys for accessing OpenAI, Firecrawl, and NVIDIA services.
+
 
 ```python
 from getpass import getpass
@@ -53,8 +58,25 @@ os.environ["FIRECRAWL_API_KEY"] = firecrawl_api_key
 nvidia_api_key = getpass('Enter your NVIDIA API key: ')
 os.environ["NVIDIA_API_KEY"] = nvidia_api_key
 ```
-   
+
+Alternatively, if running on Colab, you could save your API keys and tokens as **Colab Secrets**, and use them across notebooks.
+
+To do so, **comment out** the above **manual** API key prompt code block(s), and **uncomment** the following codeblock.
+
+⚠️ Don't forget granting access to the API key you would be using to the current notebook.
+
+
+```python
+# import os
+# from google.colab import userdata
+
+# os.environ["OPENAI_API_KEY"] = userdata.get("OPENAI_API_KEY")
+# os.environ["FIRECRAWL_API_KEY"] = userdata.get("FIRECRAWL_API_KEY")
+# os.environ["NVIDIA_API_KEY"] = userdata.get("NVIDIA_API_KEY")
+```
+
 To work effectively with the Alpaca format and manage items systematically, we define a set of models using Pydantic. These models ensure that the data is well-structured, type-safe, and validated.
+
 
 ```python
 from pydantic import BaseModel
@@ -76,6 +98,7 @@ class AlpacaItemResponse(BaseModel):
 Next, we define our data generation function. It takes a source content and generates a list of instruction-input-response triplets based on it.
 
 Later, we will use a reward model to filter this list.
+
 
 ```python
 from typing import List
@@ -144,6 +167,8 @@ examples = [
 ## 📊 Point to content and generate data!
 Now we point to the content that we wish to generate SFT data around and use CAMEL's Firecrawl integration to get this content in a nice markdown format.
 
+
+
 ```python
 import random
 from camel.loaders.firecrawl_reader import Firecrawl
@@ -173,12 +198,14 @@ for start in range(1, 51, 50):
 print(alpaca_entries)
 ```
 
+
 ```python
 len(alpaca_entries)
 ```
 
 ## 🔄 Code for Conversion to Reward Model Format
 Next, we transform the Alpaca-style entries into a format compatible with the reward model. Each entry will be converted into a structured list of instruction-input-response pairs that the reward model can evaluate.
+
 
 ```python
 messages_lists=[]
@@ -194,6 +221,8 @@ for item in alpaca_entries:
 
 ## ✨Test Reward Model
 Then, we can test the reward model to check its output format and use it as a reference to set the filtering criteria.
+
+
 
 ```python
 from camel.models.reward import Evaluator, NemotronRewardModel
@@ -224,7 +253,8 @@ for index, messages, scores in results:
 ## 🎯Filtering the Generated Data Using the Reward Model
  Finally, we utilize NVIDIA's Nemotron Reward Model to filter out low-quality instruction-input-response triplets. The model evaluates each response based on defined thresholds for metrics such as helpfulness and correctness.
 
- Let's use thresholds = \{"helpfulness": 2.5, "correctness": 2.5\} as an example of filter parameters. After filtering, some high-quality triplets are retained.
+ Let's use thresholds = {"helpfulness": 2.5, "correctness": 2.5} as an example of filter parameters. After filtering, some high-quality triplets are retained.
+
 
 ```python
 thresholds = {"helpfulness": 2.5, "correctness": 2.5}
@@ -238,10 +268,10 @@ print(len(filtered_messages_lists))
 
 ```
 
+
 ```python
 filtered_messages_lists
 ```
-
 
 ## 🌟 Highlights
 
@@ -261,14 +291,18 @@ Check out some of our other work:
 Thanks from everyone at 🐫 CAMEL-AI
 
 
-<div class="align-center">
-<div className="flex justify-center items-center gap-4 mb-8">
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
   <a href="https://www.camel-ai.org/">
-    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
   </a>
   <a href="https://discord.camel-ai.org">
-    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
+</div>  
+⭐ <i>Star us on </i><a href="https://github.com/camel-ai/camel">Github</a> </i>, join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)  ⭐
 </div>
-⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
-</div>
+
+
+<!-- Saved images:
+- synthetic_dataevaluation&filter_with_reward_model_1.png: ./images/synthetic_dataevaluation&filter_with_reward_model/synthetic_dataevaluation&filter_with_reward_model_1.png
+-->

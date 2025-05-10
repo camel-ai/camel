@@ -1,6 +1,9 @@
 ---
-title: 'Customer Service Discord Bot Using Local Models with Agentic RAG'
+title: "Customer Service Discord Bot Using Local Models with Agentic RAG"
 ---
+
+# Customer Service Discord Bot Using Local Models with Agentic RAG
+
 You can also check this cookbook in colab [here](https://colab.research.google.com/drive/1Knq9y5TQ6oeKumWdg9MlWT9gfSsTlqCZ?usp=sharing)
 
 To run this, press "*Runtime*" and press "*Run all*" on a **free** Tesla T4 Google Colab instance!
@@ -14,19 +17,18 @@ This notebook demonstrates how to build a customer service Discord bot powered b
 
 By following this notebook, you can build your own custom customer service bot that uses local models and a custom knowledge base.
 
-<div class="align-center">
-<div className="flex justify-center items-center gap-4 mb-8">
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
   <a href="https://www.camel-ai.org/">
-    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
   </a>
   <a href="https://discord.camel-ai.org">
-    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
-</div>
-⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
+</div>  
+  Join our Discord if you need help + ⭐ <i>Star us on </i><a href="https://github.com/camel-ai/camel">Github</a> </i> ⭐
 </div>
 
-![Customer Service Discord Bot Using Local Models with Agentic RAG](../../images/local1.png)
+![12345.png](./images/customer_service_Discord_bot_using_local_model_with_agentic_RAG/customer_service_Discord_bot_using_local_model_with_agentic_RAG_1.png)
 
 ## Installation and Setup
 First, install the CAMEL package with all its dependencies
@@ -52,7 +54,6 @@ from getpass import getpass
 
 firecrawl_api_url = getpass('Enter your API url: ')
 ```
-    
 
 ## Local setup
 
@@ -138,9 +139,6 @@ ollama_model = ModelFactory.create(
 )
 
 ```
-
-    2024-12-29 11:15:47,983 - camel - INFO - Camel library logging has been configured.
-    
 
 
 ```python
@@ -242,7 +240,20 @@ from getpass import getpass
 discord_bot_token = getpass('Enter your Discord bot token: ')
 os.environ["DISCORD_BOT_TOKEN"] = discord_bot_token
 ```
-    
+
+Alternatively, if running on Colab, you could save your API keys and tokens as **Colab Secrets**, and use them across notebooks.
+
+To do so, **comment out** the above **manual** API key prompt code block(s), and **uncomment** the following codeblock.
+
+⚠️ Don't forget granting access to the API key you would be using to the current notebook.
+
+
+```python
+# import os
+# from google.colab import userdata
+
+# os.environ["DISCORD_BOT_TOKEN"] = userdata.get("DISCORD_BOT_TOKEN")
+```
 
 This code cell sets up a simple Discord bot using the DiscordApp class from the camel.bots library. The bot listens for messages in any channel it has access to and provides a response based on the input message.
 
@@ -281,7 +292,7 @@ async def on_message(message: discord.Message):
 discord_bot.run()
 ```
 
-![Customer Service Discord Bot Using Local Models with Agentic RAG](../../images/local2.png)
+![image.png](./images/customer_service_Discord_bot_using_local_model_with_agentic_RAG/customer_service_Discord_bot_using_local_model_with_agentic_RAG_2.png)
 
 ## Integrating Qdrant for Large Files to build a more powerful Discord bot
 
@@ -371,7 +382,7 @@ async def on_message(message: discord.Message):
 discord_q_bot.run()
 ```
 
-![Customer Service Discord Bot Using Local Models with Agentic RAG](../../images/local3.png)
+![example_2.png](./images/customer_service_Discord_bot_using_local_model_with_agentic_RAG/customer_service_Discord_bot_using_local_model_with_agentic_RAG_3.png)
 
 That's everything: Got questions about 🐫 CAMEL-AI? Join us on [Discord](https://discord.camel-ai.org)! Whether you want to share feedback, explore the latest in multi-agent systems, get support, or connect with others on exciting projects, we’d love to have you in the community! 🤝
 
@@ -385,15 +396,21 @@ Check out some of our other work:
 Thanks from everyone at 🐫 CAMEL-AI
 
 
-<div class="align-center">
-<div className="flex justify-center items-center gap-4 mb-8">
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
   <a href="https://www.camel-ai.org/">
-    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" />
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
   </a>
   <a href="https://discord.camel-ai.org">
-    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" />
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
-</div>
-⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
+</div>  
+⭐ <i>Star us on </i><a href="https://github.com/camel-ai/camel">Github</a> </i>, join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)  ⭐
 </div>
 
+
+
+<!-- Saved images:
+- customer_service_Discord_bot_using_local_model_with_agentic_RAG_1.png: ./images/customer_service_Discord_bot_using_local_model_with_agentic_RAG/customer_service_Discord_bot_using_local_model_with_agentic_RAG_1.png
+- customer_service_Discord_bot_using_local_model_with_agentic_RAG_2.png: ./images/customer_service_Discord_bot_using_local_model_with_agentic_RAG/customer_service_Discord_bot_using_local_model_with_agentic_RAG_2.png
+- customer_service_Discord_bot_using_local_model_with_agentic_RAG_3.png: ./images/customer_service_Discord_bot_using_local_model_with_agentic_RAG/customer_service_Discord_bot_using_local_model_with_agentic_RAG_3.png
+-->
