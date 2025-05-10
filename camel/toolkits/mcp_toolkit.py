@@ -16,6 +16,7 @@ import json
 import os
 import shlex
 from contextlib import AsyncExitStack, asynccontextmanager
+from datetime import timedelta
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -41,7 +42,7 @@ logger = get_logger(__name__)
 
 class MCPClient(BaseToolkit):
     r"""Internal class that provides an abstraction layer to interact with
-    external tools using the Model Context Protocol (MCP). It supports two
+    external tools using the Model Context Protocol (MCP). It supports three
     modes of connection:
 
     1. stdio mode: Connects via standard input/output streams for local
@@ -49,6 +50,9 @@ class MCPClient(BaseToolkit):
 
     2. SSE mode (HTTP Server-Sent Events): Connects via HTTP for persistent,
        event-based interactions.
+
+    3. streamable-http mode: Connects via HTTP for persistent, streamable
+        interactions.
 
     Connection Lifecycle:
         There are three ways to manage the connection lifecycle:
@@ -80,16 +84,18 @@ class MCPClient(BaseToolkit):
            await client.disconnect()
            ```
 
+
     Attributes:
         command_or_url (str): URL for SSE mode or command executable for stdio
-            mode. (default: :obj:`'None'`)
+            mode. (default: :obj:`None`)
         args (List[str]): List of command-line arguments if stdio mode is used.
-            (default: :obj:`'None'`)
+            (default: :obj:`None`)
         env (Dict[str, str]): Environment variables for the stdio mode command.
-            (default: :obj:`'None'`)
-        timeout (Optional[float]): Connection timeout. (default: :obj:`'None'`)
+            (default: :obj:`None`)
+        timeout (Optional[float]): Connection timeout.
+            (default: :obj:`None`)
         headers (Dict[str, str]): Headers for the HTTP request.
-            (default: :obj:`'None'`)
+            (default: :obj:`None`)
         strict (Optional[bool]): Whether to enforce strict mode for the
             function call. (default: :obj:`False`)
     """
@@ -141,6 +147,7 @@ class MCPClient(BaseToolkit):
                     sse_client(
                         self.command_or_url,
                         headers=self.headers,
+                        timeout=self.timeout,
                     )
                 )
             else:
@@ -168,7 +175,11 @@ class MCPClient(BaseToolkit):
                 )
 
             self._session = await self._exit_stack.enter_async_context(
-                ClientSession(read_stream, write_stream)
+                ClientSession(
+                    read_stream,
+                    write_stream,
+                    timedelta(seconds=self.timeout) if self.timeout else None,
+                )
             )
             await self._session.initialize()
             list_tools_result = await self.list_mcp_tools()
@@ -351,8 +362,6 @@ class MCPClient(BaseToolkit):
             "additionalProperties": False,
         }
 
-        # Because certain parameters in MCP may include keywords that are not
-        # supported by OpenAI, it is essential to set "strict" to False.
         return {
             "type": "function",
             "function": {

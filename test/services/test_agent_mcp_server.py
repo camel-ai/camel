@@ -14,6 +14,7 @@
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+from mcp.server.fastmcp import Context
 
 from camel.messages import BaseMessage
 from camel.responses import ChatAgentResponse
@@ -46,6 +47,13 @@ def mock_agent():
 
 
 @pytest.fixture
+def mock_context():
+    context = Mock(spec=Context)
+    context.info = Mock()
+    return context
+
+
+@pytest.fixture
 def mock_message():
     message = Mock(spec=BaseMessage)
     message.to_dict.return_value = {
@@ -65,10 +73,10 @@ def mock_response(mock_message):
 
 
 @pytest.mark.asyncio
-async def test_step_success(mock_agent, mock_response):
+async def test_step_success(mock_agent, mock_response, mock_context):
     with patch.dict(agents_dict, {"test": mock_agent}):
         mock_agent.astep.return_value = mock_response
-        result = await step("test", "Hello")
+        result = await step("test", "Hello", mock_context)
 
         assert result["status"] == "success"
         assert len(result["messages"]) == 1
@@ -77,10 +85,11 @@ async def test_step_success(mock_agent, mock_response):
         assert result["info"] == {}
 
         mock_agent.astep.assert_called_once_with("Hello", None)
+        mock_context.info.assert_called_once()
 
 
 @pytest.mark.asyncio
-async def test_step_with_format(mock_agent, mock_response):
+async def test_step_with_format(mock_agent, mock_response, mock_context):
     response_format = {
         "type": "object",
         "properties": {"answer": {"type": "string"}},
@@ -88,37 +97,40 @@ async def test_step_with_format(mock_agent, mock_response):
 
     with patch.dict(agents_dict, {"test": mock_agent}):
         mock_agent.astep.return_value = mock_response
-        result = await step("test", "Hello", response_format)
+        result = await step("test", "Hello", mock_context, response_format)
 
         assert result["status"] == "success"
         mock_agent.astep.assert_called_once()
+        mock_context.info.assert_called_once()
 
 
 @pytest.mark.asyncio
-async def test_step_agent_not_found():
+async def test_step_agent_not_found(mock_context):
     # Ensure agents_dict is empty
     with patch.dict(agents_dict, {}, clear=True):
-        result = await step("nonexistent", "Hello")
+        result = await step("nonexistent", "Hello", mock_context)
         assert result["status"] == "error"
         assert "not found" in result["message"]
 
 
-def test_reset(mock_agent):
+def test_reset(mock_agent, mock_context):
     with patch.dict(agents_dict, {"test": mock_agent}):
-        result = reset()
+        result = reset(mock_context)
 
         assert result["status"] == "success"
         assert "successfully" in result["message"]
         mock_agent.reset.assert_called_once()
+        mock_context.info.assert_called_once()
 
 
-def test_set_output_language(mock_agent):
+def test_set_output_language(mock_agent, mock_context):
     with patch.dict(agents_dict, {"test": mock_agent}):
-        result = set_output_language("fr")
+        result = set_output_language("fr", mock_context)
 
         assert result["status"] == "success"
         assert "fr" in result["message"]
         assert mock_agent.output_language == "fr"
+        mock_context.info.assert_called_once()
 
 
 def test_get_agents_info():

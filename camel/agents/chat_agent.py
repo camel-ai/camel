@@ -762,7 +762,7 @@ class ChatAgent(BaseAgent):
             try:
                 openai_messages, num_tokens = self.memory.get_context()
             except RuntimeError as e:
-                return self._step_token_exceed(
+                return self._step_terminate(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
             # Get response from model backend
@@ -775,8 +775,8 @@ class ChatAgent(BaseAgent):
 
             # Terminate Agent if stop_event is set
             if self.stop_event and self.stop_event.is_set():
-                # Use the _step_token_exceed to terminate the agent with reason
-                return self._step_token_exceed(
+                # Use the _step_terminate to terminate the agent with reason
+                return self._step_terminate(
                     num_tokens, tool_call_records, "termination_triggered"
                 )
 
@@ -861,7 +861,7 @@ class ChatAgent(BaseAgent):
             try:
                 openai_messages, num_tokens = self.memory.get_context()
             except RuntimeError as e:
-                return self._step_token_exceed(
+                return self._step_terminate(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
 
@@ -874,8 +874,8 @@ class ChatAgent(BaseAgent):
 
             # Terminate Agent if stop_event is set
             if self.stop_event and self.stop_event.is_set():
-                # Use the _step_token_exceed to terminate the agent with reason
-                return self._step_token_exceed(
+                # Use the _step_terminate to terminate the agent with reason
+                return self._step_terminate(
                     num_tokens, tool_call_records, "termination_triggered"
                 )
 
@@ -1321,7 +1321,9 @@ class ChatAgent(BaseAgent):
         response_id: str = ""
         # All choices in one response share one role
         for chunk in response:
-            response_id = chunk.id
+            # Some model platforms like siliconflow may return None for the
+            # chunk.id
+            response_id = chunk.id if chunk.id else str(uuid.uuid4())
             self._handle_chunk(
                 chunk, content_dict, finish_reasons_dict, output_messages
             )
@@ -1361,7 +1363,9 @@ class ChatAgent(BaseAgent):
         response_id: str = ""
         # All choices in one response share one role
         async for chunk in response:
-            response_id = chunk.id
+            # Some model platforms like siliconflow may return None for the
+            # chunk.id
+            response_id = chunk.id if chunk.id else str(uuid.uuid4())
             self._handle_chunk(
                 chunk, content_dict, finish_reasons_dict, output_messages
             )
@@ -1406,24 +1410,30 @@ class ChatAgent(BaseAgent):
             )
             output_messages.append(chat_message)
 
-    def _step_token_exceed(
+    def _step_terminate(
         self,
         num_tokens: int,
         tool_calls: List[ToolCallingRecord],
         termination_reason: str,
     ) -> ChatAgentResponse:
-        r"""Return trivial response containing number of tokens and information
-        of called functions when the number of tokens exceeds.
+        r"""Create a response when the agent execution is terminated.
+
+        This method is called when the agent needs to terminate its execution
+        due to various reasons such as token limit exceeded, or other
+        termination conditions. It creates a response with empty messages but
+        includes termination information in the info dictionary.
 
         Args:
             num_tokens (int): Number of tokens in the messages.
             tool_calls (List[ToolCallingRecord]): List of information
                 objects of functions called in the current step.
-            termination_reason (str): String of termination reason.
+            termination_reason (str): String describing the reason for
+                termination.
 
         Returns:
-            ChatAgentResponse: The struct containing trivial outputs and
-                information about token number and called functions.
+            ChatAgentResponse: A response object with empty message list,
+                terminated flag set to True, and an info dictionary containing
+                termination details, token counts, and tool call information.
         """
         self.terminated = True
 
