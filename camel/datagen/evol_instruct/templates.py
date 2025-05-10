@@ -208,54 +208,54 @@ class MathEvolInstructTemplates(BaseEvolInstructTemplates):
     r"""Contains templates for MathEvolInstruct prompt transformations."""
 
     # Meta-instructions for in-depth evolving
-    INST_IN_DEPTH = (
-        "Please act as a math expert. Your objective is to create a new math "
-        "problem that is more challenging yet concise than the given math "
-        "problem. Ensure that the mathematical content (including any "
-        "equations or figures) is preserved, and rephrase the problem to "
-        "increase its complexity and depth. The generated problem should be "
-        "clearly stated, strictly mathematical, and suitable for solving with "
-        "symbolic computation (e.g., using sympy). You will be given a method "
-        "to guide your creation. Make sure to follow the method strictly. "
-        "Consolidate any multiple parts into one integrated question that "
-        "ask for one definitive answer. Respond with your generated problem "
-        "directly. "
-        "#Original Problem#:\n{prompt}\n"
-        "#Generated Problem#:\n"
-    ).lstrip()
+    INST_IN_DEPTH = """
+Please act as a math expert. Your objective is to create a new math problem
+that is more challenging yet concise than the given math problem. Modify the
+problem to increase its complexity and depth. The generated problem should be
+clearly stated, strictly mathematical, and suitable for solving with symbolic
+computation (e.g., using sympy). You will be given a method to guide your
+creation. Make sure to follow the method strictly. Consolidate any multiple
+parts into one integrated question that ask for one definitive answer. Do not
+include multiple-choice, true/false, or proof-based questions. The final
+answer should be a number or a formula. Respond with your generated problem
+directly. The difficulty should be based on the complexity of reasoning—i.e.,
+problems that require multi-step reasoning or clever methods to solve. The
+challenge of a problem should not stem purely from computational complexity;
+while complex calculations may be involved, a problem should not be considered
+difficult solely because lengthy computations increase solving time.
+#Original Problem#:
+{prompt}
+#Generated Problem#:
+"""
 
     EVOL_METHODS = {
-        "constraints": (
-            "Add one or more significant constraints or requirements into the "
-            "'#Given Prompt#'. The added constraints must meaningfully alter "
-            "how the model would respond. For example, specify additional "
-            "rules, contexts, or limitations that demand creative adjustments."
-        ),
-        "deepening": (
-            "Increase the difficulty of the #Given Prompt# by integrating "
-            "additional layers of reasoning and rigor. Refine the problem so "
-            "that all added difficulty is consolidated into a single coherent "
-            "question requiring one final answer, avoiding fragmentation into "
-            "multiple sub-problems."
-        ),
-        "expansion": (
-            "Expand the #Given Prompt# by incorporating additional "
-            "perspectives or layers of complexity into the problem statement. "
-            "Ensure that the revised problem remains a single, unified "
-            "question with one final answer, rather than a series of separate "
-            "sub-questions."
-        ),
-        "condense": (
-            "Reformulate the given math problem into a well-structured and "
-            "formally stated mathematical question.\n"
-            "- Present the problem in a structured and rigorous mathematical "
-            "format.\n"
-            "- Removing unnecessary instructions, explanations, or hints.\n"
-            "- If the given problem contains several sub-questions, make "
-            "necessary changes to let the problem could be answered with one "
-            "number or expression by removing the sub-questions or combining "
-            "them into one."
-        ),
+        "constraints": """
+Add one or more significant constraints or requirements into the
+'#Given Prompt#'. The added constraints must meaningfully alter how the model 
+would respond. For example, specify additional rules, contexts, or limitations 
+that demand creative adjustments. This method should make the problem more 
+challenging in the reasoning and the solution of it should be clever and 
+elegant.
+""",
+        "deepening": """
+Increase the difficulty of the #Given Prompt# by integrating additional layers 
+of reasoning and rigor. Refine the problem so that all added difficulty is 
+consolidated into a single coherent question requiring one final answer, 
+avoiding fragmentation into multiple sub-problems.
+""",
+        "expansion": """
+Expand the #Given Prompt# by incorporating additional perspectives or layers 
+of complexity into the problem statement. Ensure that the revised problem 
+remains a single, unified question with one final answer, rather than a 
+series of separate sub-questions.
+""",
+        "condense": """
+Reformulate the given math problem into a well-structured and formally stated 
+mathematical question. Remove unnecessary instructions, explanations, or hints. 
+If the given problem contains several sub-questions, make necessary changes 
+to let the problem could be answered with one number or one expression by 
+removing the sub-questions or combining them into one.
+""",
     }
 
     IN_DEPTH_KEYS = ['constraints', 'deepening', 'expansion']
