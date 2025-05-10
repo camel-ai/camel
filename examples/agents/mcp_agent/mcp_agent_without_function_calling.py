@@ -38,12 +38,12 @@ async def main():
         "I have 5 boxes, each of them containing 50 apples, "
         "how many apples in total."
     )
-    response = await mcp_agent.run(user_msg)
+    response = await mcp_agent.astep(user_msg)
 
     print(response.msgs[0].content)
 
     # Disconnect from all MCP servers and clean up resources.
-    await mcp_agent.close()
+    await mcp_agent.disconnect()
 
 
 if __name__ == "__main__":

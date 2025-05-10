@@ -18,8 +18,6 @@ from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field, model_validator
 
-from camel.utils.commons import api_keys_required
-
 
 class MCPRegistryType(Enum):
     r"""Enum for different types of MCP registries."""
@@ -100,11 +98,6 @@ class SmitheryRegistryConfig(BaseMCPRegistryConfig):
         ..., description="The profile to use for the registry."
     )
 
-    @api_keys_required(
-        [
-            (None, "SMITHERY_API_KEY"),
-        ]
-    )
     def get_config(self) -> Dict[str, Any]:
         r"""Generate configuration for Smithery registry.
 
@@ -137,11 +130,6 @@ class ACIRegistryConfig(BaseMCPRegistryConfig):
         ..., description="The owner ID of the linked account."
     )
 
-    @api_keys_required(
-        [
-            (None, "ACI_API_KEY"),
-        ]
-    )
     def get_config(self) -> Dict[str, Any]:
         r"""Generate configuration for ACI registry.
 
