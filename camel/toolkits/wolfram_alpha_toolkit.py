@@ -75,6 +75,11 @@ class WolframAlphaToolkit(BaseToolkit):
 
         return pased_result["final_answer"]
 
+    @api_keys_required(
+        [
+            (None, "WOLFRAMALPHA_APP_ID"),
+        ]
+    )
     def query_wolfram_llm(self, query: str) -> str:
         r"""Queries Wolfram|Alpha LLM API and returns the result.
 
