@@ -57,8 +57,6 @@ logger = get_logger(__name__)
 
 TOP_NO_LABEL_ZONE = 20
 
-MAX_PATH_LENGTH = 260
-
 AVAILABLE_ACTIONS_PROMPT = """
 1. `fill_input_id(identifier: Union[str, int], text: str)`: Fill an input
 field (e.g. search box) with the given text and press Enter.
@@ -162,23 +160,19 @@ def extract_function_name(s: str) -> str:
     Returns:
         str: Pure function name (e.g., `click_id`, `scroll_up`, `visit_page`)
     """
-    # Preprocessing steps
-    s = s.strip()  # Remove leading/trailing whitespace
+    # 1. Strip leading/trailing whitespace and enclosing backticks or quotes
+    s = s.strip().strip('`"\'')
 
-    # 1. Remove enclosing symbols (backticks, quotes)
-    s = s.strip('`"\'')
+    # Strip any leading numeric prefix like " 12. " or "3.   "
+    s = re.sub(r'^\s*\d+\.\s*', '', s)
 
-    # 2. Remove leading numbering (e.g., `12.` or `3.`)
-    if '.' in s[:5]:  # Check for numbering prefix
-        parts = s.split('.', 1)
-        s = parts[1].strip()
-
-    # 3. Extract core function name (using regular expression)
-    match = re.search(r'^(\w+)\s*\(', s)
+    # 3. Match a Python-valid identifier followed by an opening parenthesis
+    match = re.match(r'^([A-Za-z_]\w*)\s*\(', s)
     if match:
-        return match.group(1).strip()
-    else:
-        return s.split(' ')[0].split('(')[0].strip()
+        return match.group(1)
+
+    # 4. Fallback: take everything before the first space or '('
+    return re.split(r'[ (\n]', s, 1)[0]
 
 
 def _get_str(d: Any, k: str) -> str:
