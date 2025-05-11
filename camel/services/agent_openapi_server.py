@@ -25,6 +25,35 @@ from camel.types import ModelType, RoleType
 
 
 class InitRequest(BaseModel):
+    r"""Request schema for initializing a ChatAgent via the OpenAPI server.
+
+    Defines the configuration used to create a new agent, including the model,
+    system message, tool names, and generation parameters.
+
+    Args:
+        model (Optional[str]): The model type to use. Should match a key
+            supported by the model manager, e.g., "gpt-4o-mini".
+            (default: :obj:`"gpt-4o-mini"`)
+        tools_names (Optional[List[str]]): A list of tool names to load from
+            the tool registry. These tools will be available to the agent.
+            (default: :obj:`None`)
+        external_tools (Optional[List[Dict[str, Any]]]): Tool definitions
+            provided directly as dictionaries, bypassing the registry.
+            Currently not supported. (default: :obj:`None`)
+        agent_id (str): The unique identifier for the agent. Must be provided
+            explicitly to support multi-agent routing and control.
+        system_message (Optional[str]): The system prompt for the agent,
+            describing its behavior or role. (default: :obj:`None`)
+        message_window_size (Optional[int]): The number of recent messages to
+            retain in memory for context. (default: :obj:`None`)
+        token_limit (Optional[int]): The token budget for contextual memory.
+            (default: :obj:`None`)
+        output_language (Optional[str]): Preferred output language for the
+            agent's replies. (default: :obj:`None`)
+        single_iteration (Optional[bool]): Whether to force single-turn
+            interaction behavior. (default: :obj:`False`)
+    """
+
     model: Optional[str] = "gpt-4o-mini"
     tools_names: Optional[List[str]] = None
     external_tools: Optional[List[Dict[str, Any]]] = None
@@ -40,13 +69,37 @@ class InitRequest(BaseModel):
 
 
 class StepRequest(BaseModel):
+    r"""Request schema for sending a user message to a ChatAgent.
+
+    Supports plain text input or structured message dictionaries, with an
+    optional response format for controlling output structure.
+
+    Args:
+        input_message (Union[str, Dict[str, Any]]): The user message to send.
+            Can be a plain string or a message dict with role, content, etc.
+        response_format (Optional[str]): Optional format name that maps to a
+            registered response schema. Not currently in use.
+            (default: :obj:`None`)
+    """
+
     input_message: Union[str, Dict[str, Any]]
     response_format: Optional[str] = None  # reserved, not used yet
 
 
 class ChatAgentOpenAPIServer:
-    r"""A modular FastAPI server for ChatAgent with versioned routes and
-    multi-agent support.
+    r"""A FastAPI server wrapper for managing ChatAgents via OpenAPI routes.
+
+    This server exposes a versioned REST API for interacting with CAMEL
+    agents, supporting initialization, message passing, memory inspection,
+    and optional tool usage. It supports multi-agent use cases by mapping
+    unique agent IDs to active ChatAgent instances.
+
+    Typical usage includes initializing agents with system prompts and tools,
+    exchanging messages using /step or /astep endpoints, and inspecting agent
+    memory with /history.
+
+    Supports pluggable tool and response format registries for customizing
+    agent behavior or output schemas.
     """
 
     def __init__(
@@ -54,13 +107,20 @@ class ChatAgentOpenAPIServer:
         tool_registry: Optional[Dict[str, List[FunctionTool]]] = None,
         response_format_registry: Optional[Dict[str, Type[BaseModel]]] = None,
     ):
-        r"""
-        Initialize a ChatAgentOpenAPIServer instance.
+        r"""Initializes the OpenAPI server for managing ChatAgents.
+
+        Sets up internal agent storage, tool and response format registries,
+        and prepares versioned API routes.
+
         Args:
-            agent:
-            tool_registry: a dictionary mapping tool names to actual tools
-            response_format_registry: a dictionary mapping ChatAgent Response
-                format names to actual data models
+            tool_registry (Optional[Dict[str, List[FunctionTool]]]): A mapping
+                from tool names to lists of FunctionTool instances available
+                to agents via the "tools_names" field. If not provided, an
+                empty registry is used. (default: :obj:`None`)
+            response_format_registry (Optional[Dict[str, Type[BaseModel]]]):
+                A mapping from format names to Pydantic output schemas for
+                structured response parsing. Used for controlling the format
+                of step results. (default: :obj:`None`)
         """
 
         # Initialize FastAPI app and agent
@@ -71,26 +131,27 @@ class ChatAgentOpenAPIServer:
         self._setup_routes()
 
     def _setup_routes(self):
+        r"""Registers OpenAPI endpoints for agent creation and interaction.
+
+        This includes routes for initializing agents (/init), sending
+        messages (/step and /astep), resetting agent memory (/reset), and
+        retrieving conversation history (/history). All routes are added
+        under the /v1 namespace.
+        """
+
         router = APIRouter(prefix="/v1")
 
         @router.post("/init")
         def init_agent(request: InitRequest):
-            r"""
-            Note: The following ChatAgent parameters are currently
-            not supported via the init API:
+            r"""Initializes a ChatAgent instance with a model,
+            system message, and optional tools.
 
-            - (type of) memory
-            - response_terminators
-            - scheduling_strategy
-            - stop_event
-
-            These limitations may be relaxed in future
-            versions as needed
             Args:
-                request:
+                request (InitRequest): The agent config including
+                    model, tools, system message, and agent ID.
 
             Returns:
-
+                dict: A message with the agent ID and status.
             """
 
             agent_id = request.agent_id
@@ -120,12 +181,12 @@ class ChatAgentOpenAPIServer:
             model = ModelType(model)
             agent = ChatAgent(
                 model=model,
-                tools=tools,
+                tools=tools,  # type: ignore[arg-type]
                 system_message=system_message,
                 message_window_size=request.message_window_size,
                 token_limit=request.token_limit,
                 output_language=request.output_language,
-                single_iteration=request.single_iteration,
+                single_iteration=request.single_iteration,  # type: ignore[arg-type]
                 agent_id=agent_id,
             )
 
@@ -136,6 +197,14 @@ class ChatAgentOpenAPIServer:
         def _parse_input_message_for_step(
             raw: Union[str, dict],
         ) -> BaseMessage:
+            r"""Parses raw input into a BaseMessage object.
+
+            Args:
+                raw (str or dict): User input as plain text or dict.
+
+            Returns:
+                BaseMessage: Parsed input message.
+            """
             if isinstance(raw, str):
                 return BaseMessage.make_user_message(
                     role_name="User", content=raw
@@ -151,6 +220,14 @@ class ChatAgentOpenAPIServer:
         def _resolve_response_format_for_step(
             name: Optional[str],
         ) -> Optional[Type[BaseModel]]:
+            r"""Resolves the response format by name.
+
+            Args:
+                name (str or None): Optional format name.
+
+            Returns:
+                Optional[Type[BaseModel]]: Response schema class.
+            """
             if name is None:
                 return None
             if name not in self.response_format_registry:
@@ -163,6 +240,16 @@ class ChatAgentOpenAPIServer:
 
         @router.post("/astep/{agent_id}")
         async def astep_agent(agent_id: str, request: StepRequest):
+            r"""Runs one async step of agent response.
+
+            Args:
+                agent_id (str): The ID of the target agent.
+                request (StepRequest): The input message.
+
+            Returns:
+                dict: The model response in serialized form.
+            """
+
             if agent_id not in self.agents:
                 raise HTTPException(status_code=404, detail="Agent not found.")
 
@@ -181,6 +268,15 @@ class ChatAgentOpenAPIServer:
 
         @router.post("/step/{agent_id}")
         def step_agent(agent_id: str, request: StepRequest):
+            r"""Runs one step of synchronous agent response.
+
+            Args:
+                agent_id (str): The ID of the target agent.
+                request (StepRequest): The input message.
+
+            Returns:
+                dict: The model response in serialized form.
+            """
             if agent_id not in self.agents:
                 raise HTTPException(status_code=404, detail="Agent not found.")
 
@@ -199,6 +295,14 @@ class ChatAgentOpenAPIServer:
 
         @router.post("/reset/{agent_id}")
         def reset_agent(agent_id: str):
+            r"""Clears memory for a specific agent.
+
+            Args:
+                agent_id (str): The ID of the agent to reset.
+
+            Returns:
+                dict: A message confirming reset success.
+            """
             if agent_id not in self.agents:
                 raise HTTPException(status_code=404, detail="Agent not found.")
             self.agents[agent_id].reset()
@@ -206,6 +310,14 @@ class ChatAgentOpenAPIServer:
 
         @router.get("/history/{agent_id}")
         def get_agent_chat_history(agent_id: str):
+            r"""Returns the chat history of an agent.
+
+            Args:
+                agent_id (str): The ID of the agent to query.
+
+            Returns:
+                list: The list of conversation messages.
+            """
             if agent_id not in self.agents:
                 raise HTTPException(status_code=404, detail="Agent not found.")
             return self.agents[agent_id].chat_history
@@ -214,5 +326,9 @@ class ChatAgentOpenAPIServer:
         self.app.include_router(router)
 
     def get_app(self) -> FastAPI:
-        """Returns the FastAPI app instance for deployment."""
+        r"""Returns the FastAPI app instance.
+
+        Returns:
+            FastAPI: The wrapped application object.
+        """
         return self.app
