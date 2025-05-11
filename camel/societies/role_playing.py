@@ -690,6 +690,7 @@ class RolePlaying:
         r"""Creates a new instance of RolePlaying with the same configuration.
 
         Args:
+            task_prompt (str): The task prompt to be used by the new instance.
             with_memory (bool, optional): Whether to copy the memory
                 (conversation history) to the new instance. If True, the new
                 instance will have the same conversation history. If False,
@@ -713,15 +714,15 @@ class RolePlaying:
             model=self.model,
             task_type=self.task_type,
         )
-        tmp_msg = new_instance.assistant_sys_msg
+        tmp_assistant_sys_msg = new_instance.assistant_sys_msg
         new_instance.assistant_agent = self.assistant_agent.clone(with_memory)
-        new_instance.assistant_sys_msg = tmp_msg
-        new_instance.assistant_agent._system_message = tmp_msg
+        new_instance.assistant_sys_msg = tmp_assistant_sys_msg
+        new_instance.assistant_agent._system_message = tmp_assistant_sys_msg
 
-        tmp_msg = new_instance.user_sys_msg
+        tmp_user_sys_msg = new_instance.user_sys_msg
         new_instance.user_agent = self.user_agent.clone(with_memory)
-        new_instance.user_sys_msg = tmp_msg
-        new_instance.user_agent._system_message = tmp_msg
+        new_instance.user_sys_msg = tmp_user_sys_msg
+        new_instance.user_agent._system_message = tmp_user_sys_msg
 
         new_instance.with_critic_in_the_loop = self.with_critic_in_the_loop
         new_instance.critic_sys_msg = self.critic_sys_msg
