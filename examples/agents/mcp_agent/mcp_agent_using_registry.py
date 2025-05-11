@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,11 +19,11 @@ import os
 from camel.agents import MCPAgent
 from camel.models import ModelFactory
 from camel.types import (
-    # ACIRegistryConfig,
+    ACIRegistryConfig,
     BaseMCPRegistryConfig,
     ModelPlatformType,
     ModelType,
-    SmitheryRegistryConfig,
+    # SmitheryRegistryConfig,
 )
 
 # Configure logging
@@ -39,7 +38,7 @@ logger.setLevel(logging.DEBUG)
 async def example_with_registry_config(
     message: str, registry_config: BaseMCPRegistryConfig
 ):
-    """Example using MCPAgent with registry configurations."""
+    r"""Example using MCPAgent with registry configurations."""
 
     # Create a model
     model = ModelFactory.create(
@@ -65,23 +64,23 @@ async def example_with_registry_config(
 
 
 async def main():
-    """Run examples."""
-    smithery_config = SmitheryRegistryConfig(
-        api_key=os.getenv("SMITHERY_API_KEY"),
-        profile=os.getenv("SMITHERY_PROFILE"),
-        os="darwin",
-    )
-    # aci_config = ACIRegistryConfig(
-    #     api_key=os.getenv("ACI_API_KEY"),
-    #     linked_account_owner_id=os.getenv("ACI_LINKED_ACCOUNT_OWNER_ID")
+    r"""Run examples."""
+    # smithery_config = SmitheryRegistryConfig(
+    #     api_key=os.getenv("SMITHERY_API_KEY"),
+    #     profile=os.getenv("SMITHERY_PROFILE"),
+    #     os="darwin",
     # )
+    aci_config = ACIRegistryConfig(
+        api_key=os.getenv("ACI_API_KEY"),
+        linked_account_owner_id=os.getenv("ACI_LINKED_ACCOUNT_OWNER_ID"),
+    )
     # Registry configuration example
     message = "What MCP tools I can use for connecting to the Gmail?"
     # message = "Use Brave MCP search tools to search info about Camel-AI.org."
     await example_with_registry_config(
         message=message,
-        registry_config=smithery_config,
-        # registry_config=aci_config
+        registry_config=aci_config,
+        # registry_config=smithery_config,
     )
 
 
