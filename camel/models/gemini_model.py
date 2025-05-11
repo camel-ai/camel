@@ -111,13 +111,14 @@ class GeminiModel(OpenAICompatibleModel):
             messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
             response_format (Optional[Type[BaseModel]]): The format of the
-                response. Will be used for structured output.
+                response.
             tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
                 use for the request.
 
         Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk]]: The chat
-                completion response.
+            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+                `ChatCompletion` in the non-stream mode, or
+                `Stream[ChatCompletionChunk]` in the stream mode.
         """
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
