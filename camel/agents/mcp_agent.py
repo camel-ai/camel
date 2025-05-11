@@ -32,7 +32,17 @@ from camel.types import (
     ModelType,
     RoleType,
 )
-from camel.utils import track_agent
+
+# AgentOps decorator setting
+try:
+    import os
+
+    if os.getenv("AGENTOPS_API_KEY") is not None:
+        from agentops import track_agent
+    else:
+        raise ImportError
+except (ImportError, AttributeError):
+    from camel.utils import track_agent
 
 logger = get_logger(__name__)
 
@@ -79,7 +89,7 @@ Please answer me according to the result directly.
 
 @track_agent(name="MCPAgent")
 class MCPAgent(ChatAgent):
-    """A specialized agent designed to interact with MCP registries.
+    r"""A specialized agent designed to interact with MCP registries.
     The MCPAgent enhances a base ChatAgent by integrating MCP tools from
     various registries for search capabilities.
 
@@ -96,13 +106,101 @@ class MCPAgent(ChatAgent):
             the MCP agent. (default: :obj:`None`)
         local_config_path (Optional[str]): The path to the local configuration
             file for the MCP agent. (default: :obj:`None`)
-        auto_connect (bool): Whether to automatically connect to MCP servers
-            upon initialization. (default: :obj:`True`)
         function_calling_available (bool): Flag indicating whether the
             model is equipped with the function calling ability.
-            (default: :obj:`False`)
+            (default: :obj:`True`)
         **kwargs: Inherited from ChatAgent
     """
+
+    def __init__(
+        self,
+        system_message: Optional[Union[str, BaseMessage]] = (
+            "You are an assistant with search capabilities using MCP tools."
+        ),
+        model: Optional[BaseModelBackend] = None,
+        registry_configs: Optional[
+            Union[List[BaseMCPRegistryConfig], BaseMCPRegistryConfig]
+        ] = None,
+        local_config: Optional[Dict[str, Any]] = None,
+        local_config_path: Optional[str] = None,
+        tools: Optional[List[Union[FunctionTool, Callable]]] = None,
+        function_calling_available: bool = True,
+        **kwargs,
+    ):
+        if model is None:
+            model = ModelFactory.create(
+                model_platform=ModelPlatformType.DEFAULT,
+                model_type=ModelType.DEFAULT,
+            )
+
+        if isinstance(registry_configs, BaseMCPRegistryConfig):
+            self.registry_configs = [registry_configs]
+        else:
+            self.registry_configs = registry_configs or []
+
+        if local_config_path:
+            with open(local_config_path, 'r') as f:
+                local_config = json.load(f)
+
+        self.local_config = local_config
+        self.function_calling_available = function_calling_available
+
+        if function_calling_available:
+            sys_msg_content = "You are a helpful assistant, and you prefer "
+            "to use tools provided by the user to solve problems."
+        else:
+            sys_msg_content = SYS_MSG_CONTENT
+
+        system_message = BaseMessage(
+            role_name="MCPRouter",
+            role_type=RoleType.ASSISTANT,
+            meta_dict=None,
+            content=sys_msg_content,
+        )
+
+        # Initialize the toolkit if configuration is provided
+        self.mcp_toolkit = self._initialize_mcp_toolkit()
+
+        super().__init__(
+            system_message=system_message,
+            model=model,
+            tools=tools,
+            **kwargs,
+        )
+
+    def _initialize_mcp_toolkit(self) -> MCPToolkit:
+        r"""Initialize the MCP toolkit from the provided configuration."""
+        config_dict = {}
+        for registry_config in self.registry_configs:
+            config_dict.update(registry_config.get_config())
+
+        if self.local_config:
+            config_dict.update(self.local_config)
+
+        return MCPToolkit(config_dict=config_dict)
+
+    def add_registry(self, registry_config: BaseMCPRegistryConfig) -> None:
+        r"""Add a new registry configuration to the agent.
+
+        Args:
+            registry_config (BaseMCPRegistryConfig): The registry
+                configuration to add.
+        """
+        self.registry_configs.append(registry_config)
+        # Reinitialize the toolkit with the updated configurations
+        self.mcp_toolkit = self._initialize_mcp_toolkit()
+
+        # If already connected, reconnect to apply changes
+        if self.mcp_toolkit and self.mcp_toolkit.is_connected():
+            try:
+                asyncio.run(self.disconnect())
+                asyncio.run(self.connect())
+            except RuntimeError as e:
+                # Handle case where we're already in an event loop
+                logger.warning(
+                    f"Could not reconnect synchronously: {e}. "
+                    f"Manual reconnection may be required."
+                )
 
     @classmethod
     async def create(
@@ -115,20 +213,21 @@ class MCPAgent(ChatAgent):
         function_calling_available: bool = False,
         **kwargs,
     ) -> "MCPAgent":
-        """Create and connect an MCPAgent instance.
+        r"""Create and connect an MCPAgent instance.
 
         Args:
             config_path (Optional[str]): Path to the MCP configuration file.
                 If provided, will load registry configs from this file.
+                (default: :obj:`None`)
             registry_configs (Optional[Union[List[BaseMCPRegistryConfig],
                 BaseMCPRegistryConfig]]): Registry configurations to use.
                 Can be a single config or list of configs. If both config_path
                 and registry_configs are provided, configs from both sources
-                will be combined.
+                will be combined. (default: :obj:`None`)
             model (Optional[BaseModelBackend]): The model backend to use.
-                If None, will use the default model.
+                If None, will use the default model. (default: :obj:`None`)
             function_calling_available (bool): Whether the model supports
-                function calling. Defaults to False.
+                function calling. (default: :obj:`False`)
             **kwargs: Additional arguments to pass to MCPAgent constructor.
 
         Returns:
@@ -190,91 +289,8 @@ class MCPAgent(ChatAgent):
 
         return agent
 
-    def __init__(
-        self,
-        registry_configs: Optional[
-            Union[List[BaseMCPRegistryConfig], BaseMCPRegistryConfig]
-        ] = None,
-        local_config_path: Optional[str] = None,
-        local_config: Optional[Dict[str, Any]] = None,
-        system_message: Optional[Union[str, BaseMessage]] = (
-            "You are an assistant with search capabilities using MCP tools."
-        ),
-        tools: Optional[List[Union[FunctionTool, Callable]]] = None,
-        model: Optional[BaseModelBackend] = None,
-        function_calling_available: bool = True,
-        **kwargs,
-    ):
-        if model is None:
-            model = ModelFactory.create(
-                model_platform=ModelPlatformType.DEFAULT,
-                model_type=ModelType.DEFAULT,
-            )
-
-        if isinstance(registry_configs, BaseMCPRegistryConfig):
-            self.registry_configs = [registry_configs]
-        else:
-            self.registry_configs = registry_configs or []
-
-        if local_config_path:
-            with open(local_config_path, 'r') as f:
-                local_config = json.load(f)
-
-        self.local_config = local_config
-        self.function_calling_available = function_calling_available
-
-        if function_calling_available:
-            sys_msg_content = "You are a helpful assistant, and you prefer "
-            "to use tools provided by the user to solve problems."
-        else:
-            sys_msg_content = SYS_MSG_CONTENT
-
-        system_message = BaseMessage(
-            role_name="MCPRouter",
-            role_type=RoleType.ASSISTANT,
-            meta_dict=None,
-            content=sys_msg_content,
-        )
-
-        # Initialize the toolkit if configuration is provided
-        self.mcp_toolkit = self._initialize_mcp_toolkit()
-
-        super().__init__(
-            system_message=system_message,
-            model=model,
-            tools=tools,
-            **kwargs,
-        )
-
-    def _initialize_mcp_toolkit(self) -> MCPToolkit:
-        """Initialize the MCP toolkit from the provided configuration."""
-        config_dict = {}
-        for registry_config in self.registry_configs:
-            config_dict.update(registry_config.get_config())
-
-        if self.local_config:
-            config_dict.update(self.local_config)
-
-        return MCPToolkit(config_dict=config_dict)
-
-    def add_registry(self, registry_config: BaseMCPRegistryConfig) -> None:
-        """Add a new registry configuration to the agent.
-
-        Args:
-            registry_config (BaseMCPRegistryConfig): The registry
-                configuration to add.
-        """
-        self.registry_configs.append(registry_config)
-        # Reinitialize the toolkit with the updated configurations
-        self.mcp_toolkit = self._initialize_mcp_toolkit()
-
-        # If already connected, reconnect to apply changes
-        if self.mcp_toolkit and self.mcp_toolkit.is_connected():
-            asyncio.run(self.disconnect())
-            asyncio.run(self.connect())
-
     async def connect(self) -> None:
-        """Connect to the MCP servers."""
+        r"""Connect to the MCP servers."""
         if self.mcp_toolkit:
             await self.mcp_toolkit.connect()
             if self.function_calling_available:
@@ -291,16 +307,23 @@ class MCPAgent(ChatAgent):
                 )
 
     async def disconnect(self) -> None:
-        """Disconnect from the MCP servers."""
+        r"""Disconnect from the MCP servers."""
         if self.mcp_toolkit:
             await self.mcp_toolkit.disconnect()
 
     async def astep(
         self, input_message: Union[BaseMessage, str], *args, **kwargs
     ) -> ChatAgentResponse:
-        """Asynchronous step function.
+        r"""Asynchronous step function. Make sure MCP toolkit is connected
+        before proceeding.
 
-        Make sure MCP toolkit is connected before proceeding.
+        Args:
+            input_message (Union[BaseMessage, str]): The input message.
+            *args: Additional arguments.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            ChatAgentResponse: The response from the agent.
         """
         if self.mcp_toolkit and not self.mcp_toolkit.is_connected():
             await self.connect()
@@ -338,12 +361,45 @@ class MCPAgent(ChatAgent):
             else:
                 tools_results = []
                 for tool_call in tool_calls:
-                    server_idx = tool_call['server_idx']
-                    tool_name = tool_call['tool_name']
-                    tool_args = tool_call['tool_args']
-                    server = self.mcp_toolkit.servers[server_idx]
-                    result = await server.call_tool(tool_name, tool_args)
-                    tools_results.append({tool_name: result.content[0].text})
+                    try:
+                        server_idx = tool_call.get('server_idx')
+                        tool_name = tool_call.get('tool_name')
+                        tool_args = tool_call.get('tool_args', {})
+
+                        # Validate required fields
+                        if server_idx is None or tool_name is None:
+                            logger.warning(
+                                f"Missing required fields in tool "
+                                f"call: {tool_call}"
+                            )
+                            continue
+
+                        # Check server index is valid
+                        if (
+                            not isinstance(server_idx, int)
+                            or server_idx < 0
+                            or server_idx >= len(self.mcp_toolkit.servers)
+                        ):
+                            logger.warning(
+                                f"Invalid server index: {server_idx}"
+                            )
+                            continue
+
+                        server = self.mcp_toolkit.servers[server_idx]
+                        result = await server.call_tool(tool_name, tool_args)
+
+                        # Safely access content
+                        if result.content and len(result.content) > 0:
+                            tools_results.append(
+                                {tool_name: result.content[0].text}
+                            )
+                        else:
+                            tools_results.append(
+                                {tool_name: "No result content available"}
+                            )
+                    except Exception as e:
+                        logger.error(f"Error processing tool call: {e}")
+                        tools_results.append({"error": str(e)})
                 results = json.dumps(tools_results)
                 final_prompt = TextPrompt(FINAL_RESPONSE_PROMPT).format(
                     results=results
@@ -354,6 +410,17 @@ class MCPAgent(ChatAgent):
     def step(
         self, input_message: Union[BaseMessage, str], *args, **kwargs
     ) -> ChatAgentResponse:
+        r"""Synchronous step function. Make sure MCP toolkit is connected
+        before proceeding.
+
+        Args:
+            input_message (Union[BaseMessage, str]): The input message.
+            *args: Additional arguments.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            ChatAgentResponse: The response from the agent.
+        """
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
@@ -370,10 +437,10 @@ class MCPAgent(ChatAgent):
             return asyncio.run(self.astep(input_message, *args, **kwargs))
 
     async def __aenter__(self):
-        """Async context manager entry."""
+        r"""Async context manager entry."""
         await self.connect()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Async context manager exit."""
+        r"""Async context manager exit."""
         await self.disconnect()
