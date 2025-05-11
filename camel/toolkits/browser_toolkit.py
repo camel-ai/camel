@@ -542,10 +542,24 @@ class BaseBrowser:
         Returns:
             str: The answer to the question.
         """
-        video_analyzer = VideoAnalysisToolkit()
-        result = video_analyzer.ask_question_about_video(
-            self.page_url, question
+        current_url = self.get_url()
+
+        # Confirm with user before proceeding due to potential slow processing time
+        confirmation_message = (
+            f"Do you want to analyze the video on the current "
+            f"page({current_url})? This operation may take a long time.(y/n): "
         )
+        user_confirmation = input(confirmation_message)
+
+        if user_confirmation.lower() not in ['y', 'yes']:
+            return "User cancelled the video analysis."
+
+        model = None
+        if hasattr(self, 'web_agent_model'):
+            model = self.web_agent_model
+
+        video_analyzer = VideoAnalysisToolkit(model=model)
+        result = video_analyzer.ask_question_about_video(current_url, question)
         return result
 
     @retry_on_error()
