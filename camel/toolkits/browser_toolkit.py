@@ -57,6 +57,7 @@ logger = get_logger(__name__)
 
 TOP_NO_LABEL_ZONE = 20
 
+
 AVAILABLE_ACTIONS_PROMPT = """
 1. `fill_input_id(identifier: Union[str, int], text: str)`: Fill an input
 field (e.g. search box) with the given text and press Enter.
@@ -523,6 +524,7 @@ class BaseBrowser:
         self.page.mouse.click(0, 0)
         self._wait_for_load()
 
+    @retry_on_error()
     def visit_page(self, url: str) -> None:
         r"""Visit a page with the given URL."""
 
