@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import logging
 import textwrap
+import threading
 import uuid
 from collections import defaultdict
 from datetime import datetime
@@ -151,6 +152,9 @@ class ChatAgent(BaseAgent):
             model calling at each step. (default: :obj:`False`)
         agent_id (str, optional): The ID of the agent. If not provided, a
             random UUID will be generated. (default: :obj:`None`)
+        stop_event (Optional[threading.Event], optional): Event to signal
+            termination of the agent's operation. When set, the agent will
+            terminate its execution. (default: :obj:`None`)
     """
 
     def __init__(
@@ -182,6 +186,7 @@ class ChatAgent(BaseAgent):
         scheduling_strategy: str = "round_robin",
         single_iteration: bool = False,
         agent_id: Optional[str] = None,
+        stop_event: Optional[threading.Event] = None,
     ) -> None:
         # Resolve model backends and set up model manager
         resolved_models = self._resolve_models(model)
@@ -252,6 +257,7 @@ class ChatAgent(BaseAgent):
         self.terminated = False
         self.response_terminators = response_terminators or []
         self.single_iteration = single_iteration
+        self.stop_event = stop_event
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
@@ -436,6 +442,11 @@ class ChatAgent(BaseAgent):
         new_tool = convert_to_function_tool(tool)
         self._internal_tools[new_tool.get_function_name()] = new_tool
 
+    def add_tools(self, tools: List[Union[FunctionTool, Callable]]) -> None:
+        r"""Add a list of tools to the agent."""
+        for tool in tools:
+            self.add_tool(tool)
+
     def add_external_tool(
         self, tool: Union[FunctionTool, Callable, Dict[str, Any]]
     ) -> None:
@@ -455,6 +466,11 @@ class ChatAgent(BaseAgent):
             del self._internal_tools[tool_name]
             return True
         return False
+
+    def remove_tools(self, tool_names: List[str]) -> None:
+        r"""Remove a list of tools from the agent by name."""
+        for tool_name in tool_names:
+            self.remove_tool(tool_name)
 
     def remove_external_tool(self, tool_name: str) -> bool:
         r"""Remove an external tool from the agent by name.
@@ -746,7 +762,7 @@ class ChatAgent(BaseAgent):
             try:
                 openai_messages, num_tokens = self.memory.get_context()
             except RuntimeError as e:
-                return self._step_token_exceed(
+                return self._step_terminate(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
             # Get response from model backend
@@ -756,6 +772,13 @@ class ChatAgent(BaseAgent):
                 response_format,
                 self._get_full_tool_schemas(),
             )
+
+            # Terminate Agent if stop_event is set
+            if self.stop_event and self.stop_event.is_set():
+                # Use the _step_terminate to terminate the agent with reason
+                return self._step_terminate(
+                    num_tokens, tool_call_records, "termination_triggered"
+                )
 
             if tool_call_requests := response.tool_call_requests:
                 # Process all tool calls
@@ -838,7 +861,7 @@ class ChatAgent(BaseAgent):
             try:
                 openai_messages, num_tokens = self.memory.get_context()
             except RuntimeError as e:
-                return self._step_token_exceed(
+                return self._step_terminate(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
 
@@ -848,6 +871,13 @@ class ChatAgent(BaseAgent):
                 response_format,
                 self._get_full_tool_schemas(),
             )
+
+            # Terminate Agent if stop_event is set
+            if self.stop_event and self.stop_event.is_set():
+                # Use the _step_terminate to terminate the agent with reason
+                return self._step_terminate(
+                    num_tokens, tool_call_records, "termination_triggered"
+                )
 
             if tool_call_requests := response.tool_call_requests:
                 # Process all tool calls
@@ -1291,7 +1321,9 @@ class ChatAgent(BaseAgent):
         response_id: str = ""
         # All choices in one response share one role
         for chunk in response:
-            response_id = chunk.id
+            # Some model platforms like siliconflow may return None for the
+            # chunk.id
+            response_id = chunk.id if chunk.id else str(uuid.uuid4())
             self._handle_chunk(
                 chunk, content_dict, finish_reasons_dict, output_messages
             )
@@ -1331,7 +1363,9 @@ class ChatAgent(BaseAgent):
         response_id: str = ""
         # All choices in one response share one role
         async for chunk in response:
-            response_id = chunk.id
+            # Some model platforms like siliconflow may return None for the
+            # chunk.id
+            response_id = chunk.id if chunk.id else str(uuid.uuid4())
             self._handle_chunk(
                 chunk, content_dict, finish_reasons_dict, output_messages
             )
@@ -1376,24 +1410,30 @@ class ChatAgent(BaseAgent):
             )
             output_messages.append(chat_message)
 
-    def _step_token_exceed(
+    def _step_terminate(
         self,
         num_tokens: int,
         tool_calls: List[ToolCallingRecord],
         termination_reason: str,
     ) -> ChatAgentResponse:
-        r"""Return trivial response containing number of tokens and information
-        of called functions when the number of tokens exceeds.
+        r"""Create a response when the agent execution is terminated.
+
+        This method is called when the agent needs to terminate its execution
+        due to various reasons such as token limit exceeded, or other
+        termination conditions. It creates a response with empty messages but
+        includes termination information in the info dictionary.
 
         Args:
             num_tokens (int): Number of tokens in the messages.
             tool_calls (List[ToolCallingRecord]): List of information
                 objects of functions called in the current step.
-            termination_reason (str): String of termination reason.
+            termination_reason (str): String describing the reason for
+                termination.
 
         Returns:
-            ChatAgentResponse: The struct containing trivial outputs and
-                information about token number and called functions.
+            ChatAgentResponse: A response object with empty message list,
+                terminated flag set to True, and an info dictionary containing
+                termination details, token counts, and tool call information.
         """
         self.terminated = True
 

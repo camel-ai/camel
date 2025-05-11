@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-import xml.etree.ElementTree as ET
 from typing import Any, Dict, List, Literal, Optional, TypeAlias, Union, cast
 
 import requests
@@ -488,173 +487,6 @@ class SearchToolkit(BaseToolkit):
             responses.append({"error": "google search failed."})
         # If no answer found, return an empty list
         return responses
-
-    @dependencies_required("wolframalpha")
-    def query_wolfram_alpha(
-        self, query: str, is_detailed: bool = False
-    ) -> Union[str, Dict[str, Any]]:
-        r"""Queries Wolfram|Alpha and returns the result. Wolfram|Alpha is an
-        answer engine developed by Wolfram Research. It is offered as an online
-        service that answers factual queries by computing answers from
-        externally sourced data.
-
-        Args:
-            query (str): The query to send to Wolfram Alpha.
-            is_detailed (bool): Whether to include additional details
-                including step by step information in the result.
-                (default: :obj:`False`)
-
-        Returns:
-            Union[str, Dict[str, Any]]: The result from Wolfram Alpha.
-                Returns a string if `is_detailed` is False, otherwise returns
-                a dictionary with detailed information.
-        """
-        import wolframalpha
-
-        WOLFRAMALPHA_APP_ID = os.environ.get("WOLFRAMALPHA_APP_ID")
-        if not WOLFRAMALPHA_APP_ID:
-            raise ValueError(
-                "`WOLFRAMALPHA_APP_ID` not found in environment "
-                "variables. Get `WOLFRAMALPHA_APP_ID` here: `https://products.wolframalpha.com/api/`."
-            )
-
-        try:
-            client = wolframalpha.Client(WOLFRAMALPHA_APP_ID)
-            res = client.query(query)
-
-        except Exception as e:
-            return f"Wolfram Alpha wasn't able to answer it. Error: {e}"
-
-        pased_result = self._parse_wolfram_result(res)
-
-        if is_detailed:
-            step_info = self._get_wolframalpha_step_by_step_solution(
-                WOLFRAMALPHA_APP_ID, query
-            )
-            pased_result["steps"] = step_info
-            return pased_result
-
-        return pased_result["final_answer"]
-
-    def _parse_wolfram_result(self, result) -> Dict[str, Any]:
-        r"""Parses a Wolfram Alpha API result into a structured dictionary
-        format.
-
-        Args:
-            result: The API result returned from a Wolfram Alpha
-                query, structured with multiple pods, each containing specific
-                information related to the query.
-
-        Returns:
-            dict: A structured dictionary with the original query and the
-                final answer.
-        """
-
-        # Extract the original query
-        query = result.get("@inputstring", "")
-
-        # Initialize a dictionary to hold structured output
-        output = {"query": query, "pod_info": [], "final_answer": None}
-
-        # Loop through each pod to extract the details
-        for pod in result.get("pod", []):
-            # Handle the case where subpod might be a list
-            subpod_data = pod.get("subpod", {})
-            if isinstance(subpod_data, list):
-                # If it's a list, get the first item for 'plaintext' and 'img'
-                description, image_url = next(
-                    (
-                        (data["plaintext"], data["img"])
-                        for data in subpod_data
-                        if "plaintext" in data and "img" in data
-                    ),
-                    ("", ""),
-                )
-            else:
-                # Otherwise, handle it as a dictionary
-                description = subpod_data.get("plaintext", "")
-                image_url = subpod_data.get("img", {}).get("@src", "")
-
-            pod_info = {
-                "title": pod.get("@title", ""),
-                "description": description,
-                "image_url": image_url,
-            }
-
-            # For Results pod, collect all plaintext values from subpods
-            if pod.get("@title") == "Results":
-                results_text = []
-                if isinstance(subpod_data, list):
-                    for subpod in subpod_data:
-                        if subpod.get("plaintext"):
-                            results_text.append(subpod["plaintext"])
-                else:
-                    if description:
-                        results_text.append(description)
-                pod_info["description"] = "\n".join(results_text)
-
-            # Add to steps list
-            output["pod_info"].append(pod_info)
-
-            # Get final answer
-            if pod.get("@primary", False):
-                output["final_answer"] = description
-
-        return output
-
-    def _get_wolframalpha_step_by_step_solution(
-        self, app_id: str, query: str
-    ) -> dict:
-        r"""Retrieve a step-by-step solution from the Wolfram Alpha API for a
-        given query.
-
-        Args:
-            app_id (str): Your Wolfram Alpha API application ID.
-            query (str): The mathematical or computational query to solve.
-
-        Returns:
-            dict: The step-by-step solution response text from the Wolfram
-                Alpha API.
-        """
-        # Define the base URL
-        url = "https://api.wolframalpha.com/v2/query"
-
-        # Set up the query parameters
-        params = {
-            "appid": app_id,
-            "input": query,
-            "podstate": ["Result__Step-by-step solution", "Show all steps"],
-            "format": "plaintext",
-        }
-
-        # Send the request
-        response = requests.get(url, params=params)
-        root = ET.fromstring(response.text)
-
-        # Extracting step-by-step steps, including 'SBSStep' and 'SBSHintStep'
-        steps = []
-        # Find all subpods within the 'Results' pod
-        for subpod in root.findall(".//pod[@title='Results']//subpod"):
-            # Check if the subpod has the desired stepbystepcontenttype
-            content_type = subpod.find("stepbystepcontenttype")
-            if content_type is not None and content_type.text in [
-                "SBSStep",
-                "SBSHintStep",
-            ]:
-                plaintext = subpod.find("plaintext")
-                if plaintext is not None and plaintext.text:
-                    step_text = plaintext.text.strip()
-                    cleaned_step = step_text.replace(
-                        "Hint: |", ""
-                    ).strip()  # Remove 'Hint: |' if present
-                    steps.append(cleaned_step)
-
-        # Structuring the steps into a dictionary
-        structured_steps = {}
-        for i, step in enumerate(steps, start=1):
-            structured_steps[f"step{i}"] = step
-
-        return structured_steps
 
     def tavily_search(
         self, query: str, num_results: int = 5, **kwargs
@@ -1243,7 +1075,6 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.search_linkup),
             FunctionTool(self.search_google),
             FunctionTool(self.search_duckduckgo),
-            FunctionTool(self.query_wolfram_alpha),
             FunctionTool(self.tavily_search),
             FunctionTool(self.search_brave),
             FunctionTool(self.search_bocha),

@@ -19,7 +19,9 @@ from camel.types import ModelPlatformType
 model = ModelFactory.create(
     model_platform=ModelPlatformType.SILICONFLOW,
     model_type="deepseek-ai/DeepSeek-R1",
-    model_config_dict=SiliconFlowConfig(temperature=0.2).as_dict(),
+    model_config_dict=SiliconFlowConfig(
+        temperature=0.2, stream=True
+    ).as_dict(),
 )
 
 # Define system message
