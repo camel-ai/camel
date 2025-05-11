@@ -41,7 +41,7 @@ from camel.societies.workforce.utils import (
 )
 from camel.societies.workforce.worker import Worker
 from camel.tasks.task import Task, TaskState
-from camel.toolkits import GoogleMapsToolkit, SearchToolkit, WeatherToolkit
+from camel.toolkits import CodeExecutionToolkit, SearchToolkit, ThinkingToolkit
 from camel.types import ModelPlatformType, ModelType
 
 logger = get_logger(__name__)
@@ -370,9 +370,9 @@ class Workforce(BaseNode):
 
         # Default tools for a new agent
         function_list = [
-            *SearchToolkit().get_tools(),
-            *WeatherToolkit().get_tools(),
-            *GoogleMapsToolkit().get_tools(),
+            SearchToolkit().search_duckduckgo,
+            *CodeExecutionToolkit().get_tools(),
+            *ThinkingToolkit().get_tools(),
         ]
 
         model_config_dict = ChatGPTConfig(
