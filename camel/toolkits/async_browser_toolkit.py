@@ -172,7 +172,7 @@ def extract_function_name(s: str) -> str:
         return match.group(1)
 
     # 4. Fallback: take everything before the first space or '('
-    return re.split(r'[ (\n]', s, 1)[0]
+    return re.split(r'[ (\n]', s, maxsplit=1)[0]
 
 
 def _get_str(d: Any, k: str) -> str:
