@@ -19,7 +19,7 @@ import requests
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import MCPServer, dependencies_required
+from camel.utils import MCPServer, api_keys_required, dependencies_required
 
 
 @MCPServer()
@@ -31,6 +31,11 @@ class WolframAlphaToolkit(BaseToolkit):
     by computing answers from externally sourced data.
     """
 
+    @api_keys_required(
+        [
+            (None, "WOLFRAMALPHA_APP_ID"),
+        ]
+    )
     @dependencies_required("wolframalpha")
     def query_wolfram_alpha(
         self, query: str, is_detailed: bool = False
@@ -50,12 +55,7 @@ class WolframAlphaToolkit(BaseToolkit):
         """
         import wolframalpha
 
-        WOLFRAMALPHA_APP_ID = os.environ.get("WOLFRAMALPHA_APP_ID")
-        if not WOLFRAMALPHA_APP_ID:
-            raise ValueError(
-                "`WOLFRAMALPHA_APP_ID` not found in environment "
-                "variables. Get `WOLFRAMALPHA_APP_ID` here: `https://products.wolframalpha.com/api/`."
-            )
+        WOLFRAMALPHA_APP_ID = os.environ.get("WOLFRAMALPHA_APP_ID", "")
 
         try:
             client = wolframalpha.Client(WOLFRAMALPHA_APP_ID)
@@ -75,8 +75,6 @@ class WolframAlphaToolkit(BaseToolkit):
 
         return pased_result["final_answer"]
 
-    dependencies_required("wolframalpha")
-
     def query_wolfram_llm(self, query: str) -> str:
         r"""Queries Wolfram|Alpha LLM API and returns the result.
 
@@ -87,12 +85,7 @@ class WolframAlphaToolkit(BaseToolkit):
             str: The result from Wolfram Alpha as a string.
         """
 
-        WOLFRAMALPHA_APP_ID = os.environ.get("WOLFRAMALPHA_APP_ID")
-        if not WOLFRAMALPHA_APP_ID:
-            raise ValueError(
-                "`WOLFRAMALPHA_APP_ID` not found in environment "
-                "variables. Get `WOLFRAMALPHA_APP_ID` here: `https://products.wolframalpha.com/api/`."
-            )
+        WOLFRAMALPHA_APP_ID = os.environ.get("WOLFRAMALPHA_APP_ID", "")
 
         try:
             url = "https://www.wolframalpha.com/api/v1/llm-api"
@@ -115,8 +108,8 @@ class WolframAlphaToolkit(BaseToolkit):
                 information related to the query.
 
         Returns:
-            dict: A structured dictionary with the original query and the
-                final answer.
+            Dict[str, Any]: A structured dictionary with the original query
+                and the final answer.
         """
 
         # Extract the original query
