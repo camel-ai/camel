@@ -72,6 +72,7 @@ from .pulse_mcp_search_toolkit import PulseMCPSearchToolkit
 from .klavis_toolkit import KlavisToolkit
 from .aci_toolkit import ACIToolkit
 from .playwright_mcp_toolkit import PlaywrightMCPToolkit
+from .wolfram_alpha_toolkit import WolframAlphaToolkit
 
 
 __all__ = [
@@ -132,4 +133,5 @@ __all__ = [
     'KlavisToolkit',
     'ACIToolkit',
     'PlaywrightMCPToolkit',
+    'WolframAlphaToolkit',
 ]
