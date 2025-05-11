@@ -54,6 +54,37 @@ class MCPClient(BaseToolkit):
     3. streamable-http mode: Connects via HTTP for persistent, streamable
         interactions.
 
+    Connection Lifecycle:
+        There are three ways to manage the connection lifecycle:
+
+        1. Using the async context manager:
+           ```python
+           async with MCPClient(command_or_url="...") as client:
+               # Client is connected here
+               result = await client.some_tool()
+           # Client is automatically disconnected here
+           ```
+
+        2. Using the factory method:
+           ```python
+           client = await MCPClient.create(command_or_url="...")
+           # Client is connected here
+           result = await client.some_tool()
+           # Don't forget to disconnect when done!
+           await client.disconnect()
+           ```
+
+        3. Using explicit connect/disconnect:
+           ```python
+           client = MCPClient(command_or_url="...")
+           await client.connect()
+           # Client is connected here
+           result = await client.some_tool()
+           # Don't forget to disconnect when done!
+           await client.disconnect()
+           ```
+
+
     Attributes:
         command_or_url (str): URL for SSE mode or command executable for stdio
             mode. (default: :obj:`None`)
@@ -396,6 +427,70 @@ class MCPClient(BaseToolkit):
     def session(self) -> Optional["ClientSession"]:
         return self._session
 
+    @classmethod
+    async def create(
+        cls,
+        command_or_url: str,
+        args: Optional[List[str]] = None,
+        env: Optional[Dict[str, str]] = None,
+        timeout: Optional[float] = None,
+        headers: Optional[Dict[str, str]] = None,
+    ) -> "MCPClient":
+        r"""Factory method that creates and connects to the MCP server.
+
+        This async factory method ensures the connection to the MCP server is
+        established before the client object is fully constructed.
+
+        Args:
+            command_or_url (str): URL for SSE mode or command executable
+                for stdio mode.
+            args (Optional[List[str]]): List of command-line arguments if
+                stdio mode is used. (default: :obj:`None`)
+            env (Optional[Dict[str, str]]): Environment variables for
+                the stdio mode command. (default: :obj:`None`)
+            timeout (Optional[float]): Connection timeout.
+                (default: :obj:`None`)
+            headers (Optional[Dict[str, str]]): Headers for the HTTP request.
+                (default: :obj:`None`)
+
+        Returns:
+            MCPClient: A fully initialized and connected MCPClient instance.
+
+        Raises:
+            RuntimeError: If connection to the MCP server fails.
+        """
+        client = cls(
+            command_or_url=command_or_url,
+            args=args,
+            env=env,
+            timeout=timeout,
+            headers=headers,
+        )
+        try:
+            await client.connect()
+            return client
+        except Exception as e:
+            # Ensure cleanup on initialization failure
+            await client.disconnect()
+            logger.error(f"Failed to initialize MCPClient: {e}")
+            raise RuntimeError(f"Failed to initialize MCPClient: {e}") from e
+
+    async def __aenter__(self) -> "MCPClient":
+        r"""Async context manager entry point. Automatically connects to the
+        MCP server when used in an async with statement.
+
+        Returns:
+            MCPClient: Self with active connection.
+        """
+        await self.connect()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        r"""Async context manager exit point. Automatically disconnects from
+        the MCP server when exiting an async with statement.
+        """
+        await self.disconnect()
+
 
 class MCPToolkit(BaseToolkit):
     r"""MCPToolkit provides a unified interface for managing multiple
@@ -404,6 +499,36 @@ class MCPToolkit(BaseToolkit):
     This class handles the lifecycle of multiple MCP server connections and
     offers a centralized configuration mechanism for both local and remote
     MCP services.
+
+    Connection Lifecycle:
+        There are three ways to manage the connection lifecycle:
+
+        1. Using the async context manager:
+           ```python
+           async with MCPToolkit(config_path="config.json") as toolkit:
+               # Toolkit is connected here
+               tools = toolkit.get_tools()
+           # Toolkit is automatically disconnected here
+           ```
+
+        2. Using the factory method:
+           ```python
+           toolkit = await MCPToolkit.create(config_path="config.json")
+           # Toolkit is connected here
+           tools = toolkit.get_tools()
+           # Don't forget to disconnect when done!
+           await toolkit.disconnect()
+           ```
+
+        3. Using explicit connect/disconnect:
+           ```python
+           toolkit = MCPToolkit(config_path="config.json")
+           await toolkit.connect()
+           # Toolkit is connected here
+           tools = toolkit.get_tools()
+           # Don't forget to disconnect when done!
+           await toolkit.disconnect()
+           ```
 
     Args:
         servers (Optional[List[MCPClient]]): List of MCPClient
