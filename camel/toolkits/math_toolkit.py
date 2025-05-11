@@ -72,18 +72,6 @@ class MathToolkit(CodeExecutionToolkit):
         )
         self._install_packages()
 
-    def _round_result(self, value: float, decimal_places: int) -> float:
-        r"""Round a number to the specified number of decimal places.
-
-        Args:
-            value: The number to round.
-            decimal_places: Number of decimal places to round to.
-
-        Returns:
-            float: The rounded number.
-        """
-        return round(value, decimal_places)
-
     def add(self, a: Union[float, int], b: Union[float, int]) -> float:
         r"""Adds two numbers.
 
@@ -94,7 +82,7 @@ class MathToolkit(CodeExecutionToolkit):
         Returns:
             float: The sum of the two numbers.
         """
-        return float(a) + float(b)
+        return a + b
 
     def sub(self, a: Union[float, int], b: Union[float, int]) -> float:
         r"""Do subtraction between two numbers.
@@ -106,7 +94,7 @@ class MathToolkit(CodeExecutionToolkit):
         Returns:
             float: The result of subtracting :obj:`b` from :obj:`a`.
         """
-        return float(a) - float(b)
+        return a - b
 
     def multiply(
         self,
@@ -125,7 +113,7 @@ class MathToolkit(CodeExecutionToolkit):
         Returns:
             float: The product of the two numbers.
         """
-        return self._round_result(float(a) * float(b), decimal_places)
+        return round(a * b, decimal_places)
 
     def divide(
         self,
@@ -146,20 +134,18 @@ class MathToolkit(CodeExecutionToolkit):
         """
         if b == 0:
             raise ValueError("Division by zero is not allowed")
-        return self._round_result(float(a) / float(b), decimal_places)
+        return round(a / b, decimal_places)
 
-    def round(self, a: Union[float, int], decimal_places: int = 0) -> float:
-        r"""Round a number to the specified number of decimal places.
-
+    def round(self, a: float, decimal_places: int = 0) -> float:
+        r"""Rounds a number to a specified number of decimal places.
         Args:
-            a: The number to round.
-            decimal_places: Number of decimal places to round to.
-                Defaults to 0.
-
+            a (float): The number to be rounded.
+            decimal_places (int, optional): The number of decimal places
+                to round to. Defaults to 0.
         Returns:
             float: The rounded number.
         """
-        return self._round_result(float(a), decimal_places)
+        return round(a, decimal_places)
 
     def _install_packages(self) -> None:
         r"""Install required math packages using pip.
