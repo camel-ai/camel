@@ -15,7 +15,7 @@ A Streamlit app that leverages the [CAMEL-AI OWL framework](https://github.com/c
 
 ## 📋 Prerequisites
 
-- Python 3.8+
+- Python >=3.10,<3.13
 - Node.js & npm (for the MCP server plugin)
 - A valid OpenAI API key set in your environment:
   ```bash
@@ -47,12 +47,6 @@ A Streamlit app that leverages the [CAMEL-AI OWL framework](https://github.com/c
    pip install -r requirements.txt
    ```
 
-4. **Install the Airbnb MCP server**
-
-   ```bash
-   npm install -g @openbnb/mcp-server-airbnb
-   ```
-
 ---
 
 ## ⚙️ Configuration
@@ -75,11 +69,6 @@ A Streamlit app that leverages the [CAMEL-AI OWL framework](https://github.com/c
      }
    }
    ```
-
-3. **Logos**  
-   Place your two PNGs in `assets/` at the project root:
-   - `logo_camel_ai.png`
-   - `logo_airbnb_mcp.png`
 
 ---
 

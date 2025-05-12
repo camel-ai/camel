@@ -24,7 +24,7 @@ _A conversation where the user asks about the repo structure and README file._
 
 ## 📋 Prerequisites
 
-- Python 3.8+
+- Python >=3.10,<3.13
 - Node.js & npm (for MCP server plugin)
 - OpenAI API key in `.env`:
   ```bash
