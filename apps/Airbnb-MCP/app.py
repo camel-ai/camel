@@ -18,7 +18,7 @@ st.set_page_config(page_title="Airbnb Listings Search", layout="wide")
 
 # ——— Load & encode logos ———
 with open(assets/"logo_camel_ai.png", "rb") as f:
-    camel_bytes = f.read()
+with open("assets/logo_camel_ai.png", "rb") as f:
 with open(assets/"logo_airbnb_mcp.png", "rb") as f:
     airbnb_bytes = f.read()
 
