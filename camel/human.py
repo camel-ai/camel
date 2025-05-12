@@ -138,4 +138,15 @@ class Human:
         return ChatAgentResponse(msgs=[message], terminated=False, info={})
 
     def clone(self, with_memory: bool = False) -> 'Human':
+        r"""Creates a new instance of the Human class with the same
+        attributes.
+
+        Args:
+            with_memory (bool): Flag indicating whether to include memory in
+                the cloned instance. Currently not used.
+                (default: :obj:`False`)
+
+        Returns:
+            Human: A new Human instance with the same name and logger_color.
+        """
         return Human(name=self.name, logger_color=self.logger_color)
