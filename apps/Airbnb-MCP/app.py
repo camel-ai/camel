@@ -1,29 +1,42 @@
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
-import datetime
 import base64
+import datetime
 from pathlib import Path
 
 import streamlit as st
 from dotenv import load_dotenv
-from camel.logger import set_log_level
-from camel.toolkits import MCPToolkit
+
 from camel.agents import ChatAgent
+from camel.logger import set_log_level
 from camel.models import ModelFactory
+from camel.toolkits import MCPToolkit
 from camel.types import ModelPlatformType, ModelType
 
 # ——— Page config ———
 st.set_page_config(page_title="Airbnb Listings Search", layout="wide")
 
 
-
 # ——— Load & encode logos ———
-with open(assets/"logo_camel_ai.png", "rb") as f:
 with open("assets/logo_camel_ai.png", "rb") as f:
-with open(assets/"logo_airbnb_mcp.png", "rb") as f:
+    camel_bytes = f.read()
+with open("assets/logo_airbnb_mcp.png", "rb") as f:
     airbnb_bytes = f.read()
 
-camel_b64   = base64.b64encode(camel_bytes).decode()
-airbnb_b64  = base64.b64encode(airbnb_bytes).decode()
+camel_b64 = base64.b64encode(camel_bytes).decode()
+airbnb_b64 = base64.b64encode(airbnb_bytes).decode()
 
 # ——— Header with Logos ———
 st.markdown(
@@ -36,7 +49,7 @@ st.markdown(
         Powered by Camel-AI &amp; Airbnb MCP
       </p>
     </div>
-    """,
+    """,  # noqa: E501
     unsafe_allow_html=True,
 )
 
@@ -48,38 +61,42 @@ set_log_level("DEBUG")
 if "checkin" not in st.session_state:
     st.session_state.checkin = datetime.date.today()
 if "checkout" not in st.session_state:
-    st.session_state.checkout = datetime.date.today() + datetime.timedelta(days=1)
+    st.session_state.checkout = datetime.date.today() + datetime.timedelta(
+        days=1
+    )
 
 # ——— Sidebar inputs ———
 st.sidebar.header("Search parameters")
-city     = st.sidebar.text_input("City", "")
-checkin  = st.sidebar.date_input("Check-in", value=st.session_state.checkin)
+city = st.sidebar.text_input("City", "")
+checkin = st.sidebar.date_input("Check-in", value=st.session_state.checkin)
 checkout = st.sidebar.date_input("Check-out", value=st.session_state.checkout)
-adults   = st.sidebar.number_input("Adults", min_value=1, value=2)
+adults = st.sidebar.number_input("Adults", min_value=1, value=2)
 
 # ——— Main: show parameters & run search ———
 if st.sidebar.button("Search Listings"):
     # Save for next time
-    st.session_state.checkin  = checkin
+    st.session_state.checkin = checkin
     st.session_state.checkout = checkout
 
     # Quick summary on the main page
     st.subheader("🔍 You are searching for")
     cols = st.columns(4)
-    cols[0].metric("City",        city)
-    cols[1].metric("Check-in",    checkin.strftime("%Y-%m-%d"))
-    cols[2].metric("Check-out",   checkout.strftime("%Y-%m-%d"))
-    cols[3].metric("Adults",      adults)
+    cols[0].metric("City", city)
+    cols[1].metric("Check-in", checkin.strftime("%Y-%m-%d"))
+    cols[2].metric("Check-out", checkout.strftime("%Y-%m-%d"))
+    cols[3].metric("Adults", adults)
 
     # Build prompt
-    prompt = (
-        f"Find me the best Airbnb in {city} with a check-in date of {checkin:%Y-%m-%d} "
-        f"and a check-out date of {checkout:%Y-%m-%d} for {adults} adults. "
-        "Return the top 5 listings with their names, prices, and locations."
-    )
+    prompt = f"""
+        Find me the best Airbnb in {city} with a check-in date 
+        of {checkin:%Y-%m-%d} and a check-out date of 
+        {checkout:%Y-%m-%d} for {adults} adults. 
+        Return the top 5 listings with their names, prices, and locations.
+    """
 
     # Run the agent
     with st.spinner("Searching…"):
+
         async def run_task():
             config_path = Path(__file__).parent / "mcp_servers_config.json"
             mcp = MCPToolkit(config_path=str(config_path))
@@ -97,7 +114,7 @@ if st.sidebar.button("Search Listings"):
             res = await agent.astep(prompt)
             try:
                 await mcp.disconnect()
-            except:
+            except Exception:
                 pass
             return res
 

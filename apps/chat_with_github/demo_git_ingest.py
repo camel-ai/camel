@@ -1,14 +1,28 @@
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
-import logging
 import base64
+import logging
 from pathlib import Path
 
 import streamlit as st
 from dotenv import load_dotenv
-from camel.logger import set_log_level
-from camel.toolkits import MCPToolkit
+
 from camel.agents import ChatAgent
+from camel.logger import set_log_level
 from camel.models import ModelFactory
+from camel.toolkits import MCPToolkit
 from camel.types import ModelPlatformType, ModelType
 
 # Silence noisy asyncio cancellation messages
@@ -34,7 +48,7 @@ st.markdown(
       <img src='data:image/png;base64,{gh_b64}' width='80' alt='GitHub' style='margin:0 20px;'>
       <p style='font-size:14px; color:gray;'>Powered by Camel-AI &amp; Git-Ingest MCP</p>
     </div>
-    """,
+    """,  # noqa: E501
     unsafe_allow_html=True,
 )
 
@@ -44,8 +58,12 @@ set_log_level("DEBUG")
 
 # ——— Sidebar Inputs ———
 st.sidebar.header("Search parameters")
-repo_url = st.sidebar.text_input("GitHub Repo URL", "https://github.com/1sarthakbhardwaj/Ollama")
-query    = st.sidebar.text_area("Query", "Show me the directory tree of this repository.", height=100)
+repo_url = st.sidebar.text_input(
+    "GitHub Repo URL", "https://github.com/1sarthakbhardwaj/Ollama"
+)
+query = st.sidebar.text_area(
+    "Query", "Show me the directory tree of this repository.", height=100
+)
 
 # ——— Run query ———
 if st.sidebar.button("Run Query"):
@@ -84,14 +102,18 @@ if st.sidebar.button("Run Query"):
 
     raw = result.msgs[0].content or ""
     # strip fences
-    lines = [l for l in raw.splitlines() if not l.strip().startswith("```")]
+    lines = [
+        line for line in raw.splitlines() if not line.strip().startswith("```")
+    ]
     clean = "\n".join(lines).strip()
     st.code(clean)
 
     # tool calls
     st.markdown("### Tool Calls")
     for rec in result.info.get("tool_calls", []):
-        name = getattr(rec, "tool_name", None) or getattr(rec, "name", "<unknown>")
+        name = getattr(rec, "tool_name", None) or getattr(
+            rec, "name", "<unknown>"
+        )
         args = getattr(rec, "args", None) or getattr(rec, "arguments", {})
         st.markdown(f"- **{name}**: `{args}`")
 
@@ -100,6 +122,6 @@ st.markdown(
     """
     <hr>
     <p style='text-align:center; color:gray; font-size:0.8rem;'>Powered by Camel-AI &amp; GitHub MCP</p>
-    """,
+    """,  # noqa: E501
     unsafe_allow_html=True,
 )
