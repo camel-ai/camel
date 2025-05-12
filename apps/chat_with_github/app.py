@@ -19,6 +19,7 @@ st.set_page_config(page_title="Chat with your Repo", layout="wide")
 
 # ——— Load assets & logos ———
 ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parent
 ASSETS = ROOT / "assets"
 with open(ASSETS / "logo_camel_ai.png", "rb") as f:
     camel_b64 = base64.b64encode(f.read()).decode()
