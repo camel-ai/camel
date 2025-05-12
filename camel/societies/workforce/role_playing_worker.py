@@ -38,14 +38,17 @@ class RolePlayingWorker(Worker):
         description (str): Description of the node.
         assistant_role_name (str): The role name of the assistant agent.
         user_role_name (str): The role name of the user agent.
-        assistant_agent_kwargs (Optional[Dict], optional): The keyword
-            arguments to initialize the assistant agent in the role playing,
-            like the model name, etc. Defaults to None.
-        user_agent_kwargs (Optional[Dict], optional): The keyword arguments to
+        assistant_agent_kwargs (Optional[Dict]): The keyword arguments to
+            initialize the assistant agent in the role playing, like the model
+            name, etc. (default: :obj:`None`)
+        user_agent_kwargs (Optional[Dict]): The keyword arguments to
             initialize the user agent in the role playing, like the model name,
-            etc. Defaults to None.
-        chat_turn_limit (int, optional): The maximum number of chat turns in
-            the role playing. Defaults to 3.
+            etc. (default: :obj:`None`)
+        summarize_agent_kwargs (Optional[Dict]): The keyword arguments to
+            initialize the summarize agent, like the model name, etc.
+            (default: :obj:`None`)
+        chat_turn_limit (int): The maximum number of chat turns in the role
+            playing. (default: :obj:`3`)
     """
 
     def __init__(

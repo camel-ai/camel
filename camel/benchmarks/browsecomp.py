@@ -15,28 +15,114 @@
 import base64
 import hashlib
 import json
-import logging
 import os
 import random
 import traceback
 from collections import defaultdict
-from dataclasses import dataclass, field
 from multiprocessing.pool import ThreadPool
-from typing import Any, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pydantic import BaseModel, Field
 
 from camel.agents.chat_agent import ChatAgent
 from camel.benchmarks.base import BaseBenchmark
+from camel.logger import get_logger
 from camel.societies.role_playing import RolePlaying
 from camel.societies.workforce.workforce import Workforce
 from camel.tasks.task import Task
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
-Message = dict[str, Any]  # keys role, content
-MessageList = list[Message]
+class Message(BaseModel):
+    role: str
+    content: str
+    variant: Optional[str] = None
+
+
+MessageList = List[Message]
+
+
+class QueryResponse(BaseModel):
+    r"""A structured query response for benchmark evaluation.
+
+    This class defines the expected format for model responses to benchmark
+    questions, including explanation, exact answer, and confidence score.
+    """
+
+    explanation: str = Field(
+        description="""your explanation for your final answer."""
+    )
+    exact_answer: str = Field(description="""your succinct, final answer.""")
+    confidence: str = Field(
+        description="""
+your confidence score between 0|\%| and 100|\%| for your answer.
+"""
+    )
+
+
+class GradingResponse(BaseModel):
+    r"""A structured grading response for evaluating model answers.
+
+    This class defines the expected format for grading responses, including
+    extracted answer, reasoning about correctness, binary correctness judgment,
+    and confidence score extraction.
+    """
+
+    extracted_final_answer: str = Field(
+        description="""
+The final exact answer extracted from the [response].
+Put the extracted answer as 'None' if there is no exact, final answer to 
+extract from the response."""
+    )
+    reasoning: str = Field(
+        description="""
+Explain why the extracted_final_answer is correct or incorrect 
+based on [correct_answer], focusing only on if there are meaningful 
+differences between [correct_answer] and the extracted_final_answer. 
+Do not comment on any background to the problem, do not attempt 
+to solve the problem, do not argue for any answer different 
+than [correct_answer], focus only on whether the answers match."""
+    )
+    correct: str = Field(
+        description="""Answer 'yes' if extracted_final_answer matches the 
+[correct_answer] given above, or is within a small margin of error for 
+numerical problems. Answer 'no' otherwise, i.e. if there if there is any 
+inconsistency, ambiguity, non-equivalency, or if the extracted answer is 
+incorrect."""
+    )
+    confidence: str = Field(
+        description="""The extracted confidence score between 0|\%| 
+and 100|\%| from [response]. Put 100 if there is no confidence score available.
+"""
+    )
+
+
+class SingleEvalResult(BaseModel):
+    r"""Result of evaluating a single benchmark sample.
+
+    This class stores the evaluation results for a single benchmark example,
+    including score, HTML representation, conversation history, and metrics.
+    """
+
+    score: Optional[float] = None
+    html: str
+    convo: MessageList
+    metrics: Dict[str, float] = Field(default_factory=dict)
+
+
+class EvalResult(BaseModel):
+    r"""Result of running a complete benchmark evaluation.
+
+    This class aggregates results from multiple sample evaluations, storing
+    the overall score, detailed metrics, HTML reports, and conversation logs.
+    """
+
+    score: Optional[float] = None  # top-line metric
+    metrics: Optional[Dict[str, float]] = None  # other metrics
+    htmls: List[str]  # strings of valid HTML
+    convos: List[MessageList]  # sampled conversations
+
 
 # Define the message template first
 _message_template = """
@@ -50,95 +136,6 @@ _message_template = """
     </div>
 </div>
 """
-
-
-class JinjaEnv:
-    """A class that encapsulates the Jinja environment setup.
-
-    This class enables lazy importing of Jinja2, which means Jinja2 is only
-    imported when the class is actually used, not when the module is imported.
-    """
-
-    _instance: Optional['JinjaEnv'] = None
-    _env = None
-
-    def __new__(cls):
-        """Implement singleton pattern to ensure only one instance exists."""
-        if cls._instance is None:
-            cls._instance = super(JinjaEnv, cls).__new__(cls)
-            cls._instance._initialized = False
-        return cls._instance
-
-    def __init__(self):
-        """Initialize the JinjaEnv instance if not already initialized."""
-        if not getattr(self, '_initialized', False):
-            self._initialized = True
-
-    @classmethod
-    def get_instance(cls):
-        """Get the singleton instance of JinjaEnv.
-
-        Returns:
-            JinjaEnv: The singleton instance.
-        """
-        if cls._instance is None:
-            cls._instance = cls()
-        return cls._instance
-
-    @property
-    def env(self):
-        """Lazily initialize and return the Jinja environment.
-
-        Returns:
-            jinja2.Environment: The Jinja environment instance.
-        """
-        if self._env is None:
-            # Lazy import of jinja2
-            import jinja2
-
-            # Create the Jinja environment
-            self._env = jinja2.Environment(
-                loader=jinja2.BaseLoader(),
-                undefined=jinja2.StrictUndefined,
-                autoescape=jinja2.select_autoescape(["html", "xml"]),
-            )
-
-            # Register the message_to_html function
-            self._env.globals["message_to_html"] = self.message_to_html
-
-        return self._env
-
-    def from_string(self, template_str):
-        """Create a template from the given string.
-
-        Args:
-            template_str (str): The template string.
-
-        Returns:
-            jinja2.Template: The compiled template.
-        """
-        return self.env.from_string(template_str)
-
-    @staticmethod
-    def message_to_html(message: Message) -> str:
-        """Generate HTML snippet (inside a <div>) for a message.
-
-        Args:
-            message (Message): The message to convert to HTML.
-
-        Returns:
-            str: The HTML representation of the message.
-        """
-        return (
-            JinjaEnv.get_instance()
-            .from_string(_message_template)
-            .render(
-                role=message["role"],
-                content=message["content"],
-                variant=message.get("variant", None),
-            )
-        )
-
 
 # TODO: Add necessary prompts when tuning.
 QUERY_TEMPLATE = """
@@ -188,7 +185,7 @@ than [correct_answer], focus only on whether the answers match.
 
 correct: Answer 'yes' if extracted_final_answer matches the 
 [correct_answer] given above, or is within a small margin of error for 
-numerical problems. Answer 'no' otherwise, i.e. if there if there is any 
+numerical problems. Answer 'no' otherwise, i.e. if there is any 
 inconsistency, ambiguity, non-equivalency, or if the extracted answer is 
 incorrect.
 
@@ -274,8 +271,92 @@ _report_template = """<!DOCTYPE html>
 """
 
 
+class JinjaEnv:
+    r"""A class that encapsulates the Jinja environment setup."""
+
+    _instance: Optional['JinjaEnv'] = None
+    _env = None
+
+    def __init__(self):
+        r"""Initialize the JinjaEnv instance if not already initialized."""
+        if not getattr(self, '_initialized', False):
+            self._initialized = True
+
+    def __new__(cls):
+        r"""Implement singleton pattern to ensure only one instance exists."""
+        if cls._instance is None:
+            cls._instance = super(JinjaEnv, cls).__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+
+    @classmethod
+    def get_instance(cls):
+        r"""Get the singleton instance of JinjaEnv.
+
+        Returns:
+            JinjaEnv: The singleton instance.
+        """
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
+
+    @property
+    def env(self):
+        r"""Lazily initialize and return the Jinja environment.
+
+        Returns:
+            jinja2.Environment: The Jinja environment instance.
+        """
+        if self._env is None:
+            # Lazy import of jinja2
+            import jinja2
+
+            # Create the Jinja environment
+            self._env = jinja2.Environment(
+                loader=jinja2.BaseLoader(),
+                undefined=jinja2.StrictUndefined,
+                autoescape=jinja2.select_autoescape(["html", "xml"]),
+            )
+
+            # Register the message_to_html function
+            self._env.globals["message_to_html"] = self.message_to_html
+
+        return self._env
+
+    def from_string(self, template_str):
+        r"""Create a template from the given string.
+
+        Args:
+            template_str (str): The template string.
+
+        Returns:
+            jinja2.Template: The compiled template.
+        """
+        return self.env.from_string(template_str)
+
+    @staticmethod
+    def message_to_html(message: Message) -> str:
+        r"""Generate HTML snippet (inside a <div>) for a message.
+
+        Args:
+            message (Message): The message to convert to HTML.
+
+        Returns:
+            str: The HTML representation of the message.
+        """
+        return (
+            JinjaEnv.get_instance()
+            .from_string(_message_template)
+            .render(
+                role=message.role,
+                content=message.content,
+                variant=message.variant,
+            )
+        )
+
+
 def derive_key(password: str, length: int) -> bytes:
-    """Derive a fixed-length key from the password using SHA256."""
+    r"""Derive a fixed-length key from the password using SHA256."""
     hasher = hashlib.sha256()
     hasher.update(password.encode())
     key = hasher.digest()
@@ -283,94 +364,11 @@ def derive_key(password: str, length: int) -> bytes:
 
 
 def decrypt(ciphertext_b64: str, password: str) -> str:
-    """Decrypt base64-encoded ciphertext with XOR."""
+    r"""Decrypt base64-encoded ciphertext with XOR."""
     encrypted = base64.b64decode(ciphertext_b64)
     key = derive_key(password, len(encrypted))
     decrypted = bytes(a ^ b for a, b in zip(encrypted, key))
     return decrypted.decode()
-
-
-class QueryResponse(BaseModel):
-    r"""A structured query response for benchmark evaluation.
-
-    This class defines the expected format for model responses to benchmark
-    questions, including explanation, exact answer, and confidence score.
-    """
-
-    explanation: str = Field(
-        description="""your explanation for your final answer."""
-    )
-    exact_answer: str = Field(description="""your succinct, final answer.""")
-    confidence: str = Field(
-        description="""
-your confidence score between 0|\%| and 100|\%| for your answer.
-"""
-    )
-
-
-class GradingResponse(BaseModel):
-    r"""A structured grading response for evaluating model answers.
-
-    This class defines the expected format for grading responses, including
-    extracted answer, reasoning about correctness, binary correctness judgment,
-    and confidence score extraction.
-    """
-
-    extracted_final_answer: str = Field(
-        description="""
-The final exact answer extracted from the [response].
-Put the extracted answer as 'None' if there is no exact, final answer to 
-extract from the response."""
-    )
-    reasoning: str = Field(
-        description="""
-Explain why the extracted_final_answer is correct or incorrect 
-based on [correct_answer], focusing only on if there are meaningful 
-differences between [correct_answer] and the extracted_final_answer. 
-Do not comment on any background to the problem, do not attempt 
-to solve the problem, do not argue for any answer different 
-than [correct_answer], focus only on whether the answers match."""
-    )
-    correct: str = Field(
-        description="""Answer 'yes' if extracted_final_answer matches the 
-[correct_answer] given above, or is within a small margin of error for 
-numerical problems. Answer 'no' otherwise, i.e. if there if there is any 
-inconsistency, ambiguity, non-equivalency, or if the extracted answer is 
-incorrect."""
-    )
-    confidence: str = Field(
-        description="""The extracted confidence score between 0|\%| 
-and 100|\%| from [response]. Put 100 if there is no confidence score available.
-"""
-    )
-
-
-@dataclass
-class SingleEvalResult:
-    r"""Result of evaluating a single benchmark sample.
-
-    This class stores the evaluation results for a single benchmark example,
-    including score, HTML representation, conversation history, and metrics.
-    """
-
-    score: float | None
-    html: str
-    convo: MessageList
-    metrics: dict[str, float] = field(default_factory=dict)
-
-
-@dataclass
-class EvalResult:
-    r"""Result of running a complete benchmark evaluation.
-
-    This class aggregates results from multiple sample evaluations, storing
-    the overall score, detailed metrics, HTML reports, and conversation logs.
-    """
-
-    score: float | None  # top-line metric
-    metrics: dict[str, float] | None  # other metrics
-    htmls: list[str]  # strings of valid HTML
-    convos: list[MessageList]  # sampled conversations
 
 
 def _compute_stat(values: list, stat: str):
@@ -389,17 +387,28 @@ def _compute_stat(values: list, stat: str):
 
 
 def aggregate_results(
-    single_eval_results: list[SingleEvalResult],
-    default_stats: tuple[str, str] = ("mean", "std"),
-    name2stats: dict[str, tuple[str]] | None = None,
+    single_eval_results: List[SingleEvalResult],
+    default_stats: Tuple[str, str] = ("mean", "std"),
+    name2stats: Optional[Dict[str, Tuple[str]]] = None,
 ) -> EvalResult:
-    """
-    Aggregate results from multiple evaluations into a single EvalResult.
+    r"""Aggregate results from multiple evaluations into a single EvalResult.
+
+    Args:
+        single_eval_results (List[SingleEvalResult]): A list of
+            `SingleEvalResult` objects.
+        default_stats (Tuple[str, str]): A tuple of default statistics to
+            compute. (default: :obj:`("mean", "std")`)
+        name2stats (Optional[Dict[str, Tuple[str]]]): A dictionary mapping
+            metric names to statistics to compute. (default: :obj:`None`)
+
+    Returns:
+        EvalResult: An `EvalResult` object containing aggregated results.
     """
     name2stats = name2stats or {}
     name2values = defaultdict(list)
     htmls = []
     convos = []
+
     for single_eval_result in single_eval_results:
         for name, value in single_eval_result.metrics.items():
             name2values[name].append(value)
@@ -407,12 +416,14 @@ def aggregate_results(
             name2values["score"].append(single_eval_result.score)
         htmls.append(single_eval_result.html)
         convos.append(single_eval_result.convo)
+
     final_metrics = {}
     for name, values in name2values.items():
         stats = name2stats.get(name, default_stats)
         for stat in stats:
             key = name if stat == "mean" else f"{name}:{stat}"
             final_metrics[key] = _compute_stat(values, stat)
+
     return EvalResult(
         score=final_metrics.pop("score", None),
         metrics=final_metrics,
@@ -433,7 +444,7 @@ class BrowseCompBenchmark(BaseBenchmark):
         self,
         save_to: str,
         processes: int = 1,
-        num_examples: int | None = None,
+        num_examples: Optional[int] = None,
         n_repeats: int = 1,
     ):
         r"""Initialize the BrowseComp benchmark.
@@ -442,11 +453,12 @@ class BrowseCompBenchmark(BaseBenchmark):
             save_to (str): The file to save the results.
             processes (int, optional): The number of processes to use for
                 parallel processing. (default: :obj:`1`)
-            num_examples (int | None, optional): Number of examples to
-                evaluate. If None, all examples are used. Controls the
-                sample size for testing.
+            num_examples (Optional[int]): Number of examples to evaluate.
+                If None, all examples are used. Controls the sample size for
+                testing. (default: :obj:`None`)
             n_repeats (int, optional): Number of times to repeat each example.
                 Useful for evaluating consistency across multiple runs.
+                (default: :obj:`1`)
         """
         # Browsecomp benchmark won't download any data
         # use current path as the data_dir passing into super init
@@ -455,10 +467,10 @@ class BrowseCompBenchmark(BaseBenchmark):
         super().__init__("browsecomp", current_path, save_to, processes)
         self.num_examples = num_examples
         self.n_repeats = n_repeats
-        self.examples: list[dict[str, Any]] = []
+        self.examples: List[Dict[str, Any]] = []
         self.load()
-        self._raw_results: list[Any] = []
-        self._validated_results: list[Any] = []
+        self._raw_results: List[Any] = []
+        self._validated_results: List[SingleEvalResult] = []
         self._eval_result: EvalResult
         self.jinja_env = JinjaEnv.get_instance()
 
@@ -519,12 +531,12 @@ class BrowseCompBenchmark(BaseBenchmark):
         """
         raise NotImplementedError("BrowseComp does not have a training set.")
 
-    def run(  # type: ignore[override, return]
+    def run(  # type: ignore[override]
         self,
         pipeline_template: Union[ChatAgent, RolePlaying, Workforce],
         chat_turn_limit: int = 10,
-        roleplaying_summarizer: Union[ChatAgent, None] = None,
-        task_json_formatter: Union[ChatAgent, None] = None,
+        roleplaying_summarizer: Optional[ChatAgent] = None,
+        task_json_formatter: Optional[ChatAgent] = None,
     ) -> None:
         r"""Run the benchmark by processing each example in parallel.
 
@@ -533,32 +545,38 @@ class BrowseCompBenchmark(BaseBenchmark):
         using tqdm and stores the results in self._raw_results.
 
         Args:
-            pipeline_template: The template agent or framework to use for
-                processing examples. Can be a ChatAgent, RolePlaying, or
-                Workforce instance that will be cloned for each example.
-            chat_turn_limit: Maximum number of conversation turns allowed when
-                using RolePlaying pipeline (default: 10).
-            roleplaying_summarizer: Optional ChatAgent to summarize RolePlaying
-                conversations. If None and RolePlaying is used, a default
-                summarizer will be created (default: None).
+            pipeline_template (Union[ChatAgent, RolePlaying, Workforce]): The
+                template agent or framework to use for processing examples.
+                Can be a ChatAgent, RolePlaying, or Workforce instance that
+                will be cloned for each example.
+            chat_turn_limit (int): Maximum number of conversation turns allowed
+                when using RolePlaying pipeline. (default: :obj:`10`)
+            roleplaying_summarizer (Optional[ChatAgent]): Optional ChatAgent to
+                summarize RolePlaying conversations. If None and RolePlaying is
+                used, a default summarizer will be created.
+                (default: :obj:`None`)
+            task_json_formatter (Optional[ChatAgent]): Optional ChatAgent to
+                format task JSON. If None and Workforce is used, a default
+                formatter will be created. (default: :obj:`None`)
         """
         from tqdm import tqdm
 
         # Use a process pool for parallel execution
-        def process_benchmark_row(row: dict):
-            r"""Process a single example row from the benchmark dataset.
-
-            This function decrypts the problem and answer, creates a pipeline
-            instance, and gets a response for the problem. It's designed for
-            parallel processing in the benchmark's run method.
+        def process_benchmark_row(row: Dict[str, Any]) -> Dict[str, Any]:
+            r"""This inner function processes a single benchmark row by
+            extracting the problem and answer, creating a pipeline instance,
+            and generating a response using the appropriate method based on
+            the pipeline type.
 
             Args:
-                row (dict): A row from the dataset containing encrypted
-                    problem and answer, along with a canary for decryption.
+                row (Dict[str, Any]): A row from the dataset containing
+                    encrypted problem and answer, along with a canary for
+                    decryption.
 
             Returns:
-                dict: A dictionary containing the decrypted problem, expected
-                    answer, model response, and structured response fields.
+                Dict[str, Any]: A dictionary containing the decrypted problem,
+                    expected answer, model response, and structured response
+                    fields.
             """
 
             problem = decrypt(row.get("problem", ""), row.get("canary", ""))
@@ -632,10 +650,9 @@ class BrowseCompBenchmark(BaseBenchmark):
                         summarize_prompt, response_format=QueryResponse
                     )
                 else:
-                    logging.warning(
+                    raise NotImplementedError(
                         f"{type(pipeline_template)} is not supported."
                     )
-                    pass
                 # Parse the response JSON
                 response_dict = json.loads(response_text.msg.content)
 
@@ -676,16 +693,14 @@ class BrowseCompBenchmark(BaseBenchmark):
             )
 
     def make_report(self, eval_result: EvalResult) -> str:
-        """
-        Create a standalone HTML report from an EvalResult.
-        """
+        r"""Create a standalone HTML report from an EvalResult."""
         return self.jinja_env.from_string(_report_template).render(
             score=eval_result.score,
             metrics=eval_result.metrics,
             htmls=eval_result.htmls,
         )
 
-    def validate(self, grader: ChatAgent | None = None) -> None:
+    def validate(self, grader: Optional[ChatAgent] = None) -> None:
         r"""Validate the raw results using the GRADER_TEMPLATE and ChatAgent.
 
         This method evaluates the correctness of each response by
@@ -701,18 +716,18 @@ class BrowseCompBenchmark(BaseBenchmark):
         """
         from tqdm import tqdm
 
-        def validate_each_one(raw_result: dict):
+        def validate_each_one(raw_result: Dict[str, Any]) -> SingleEvalResult:
             r"""This inner function formats the prompt for the ChatAgent
             grader, sends it for evaluation, extracts the correctness
             assessment, and creates an HTML representation of the result.
 
             Args:
-                raw_result (dict): A dictionary containing 'problem',
-                    'response', and 'answer' keys
+                raw_result (Dict[str, Any]): A dictionary containing 'problem',
+                    'response', and 'expected_answer' keys.
 
             Returns:
                 SingleEvalResult: An evaluation result object with score,
-                    metrics, and HTML
+                    metrics, and HTML.
             """
             # Format the template
             prompt = GRADER_TEMPLATE.format(
@@ -727,8 +742,8 @@ class BrowseCompBenchmark(BaseBenchmark):
 
             # Create a conversation list for the result
             convo = [
-                dict(content=raw_result['problem'], role="user"),
-                dict(content=raw_result['response'], role="assistant"),
+                Message(content=raw_result['problem'], role="user"),
+                Message(content=raw_result['response'], role="assistant"),
             ]
 
             try:
@@ -749,15 +764,16 @@ class BrowseCompBenchmark(BaseBenchmark):
 
                 # Generate HTML representation of the result
                 html = self.jinja_env.from_string(HTML_JINJA).render(
-                    prompt_messages=dict(
-                        content=raw_result['problem'], role="user"
+                    prompt_messages=Message(
+                        content=raw_result.get('problem', ''), role="user"
                     ),
-                    next_message=dict(
-                        content=raw_result['response'], role="assistant"
+                    next_message=Message(
+                        content=raw_result.get('response', ''),
+                        role="assistant",
                     ),
                     score=score,
-                    correct_answer=raw_result['expected_answer'],
-                    extracted_answer=raw_result['response_dict'].get(
+                    correct_answer=raw_result.get('expected_answer', ''),
+                    extracted_answer=raw_result.get('response_dict', {}).get(
                         'exact_answer', ''
                     ),
                 )
@@ -776,15 +792,16 @@ class BrowseCompBenchmark(BaseBenchmark):
                 logger.error(f"Error evaluating result: {e}")
                 logger.error(traceback.format_exc())
                 html = self.jinja_env.from_string(HTML_JINJA).render(
-                    prompt_messages=dict(
-                        content=raw_result['problem'], role="user"
+                    prompt_messages=Message(
+                        content=raw_result.get('problem', ''), role="user"
                     ),
-                    next_message=dict(
-                        content=raw_result['response'], role="assistant"
+                    next_message=Message(
+                        content=raw_result.get('response', ''),
+                        role="assistant",
                     ),
                     score=0,
-                    correct_answer=raw_result['expected_answer'],
-                    extracted_answer=raw_result['response_dict'].get(
+                    correct_answer=raw_result.get('expected_answer', ''),
+                    extracted_answer=raw_result.get('response_dict', {}).get(
                         'exact_answer', ''
                     ),
                 )

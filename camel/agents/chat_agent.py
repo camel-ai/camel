@@ -1572,11 +1572,11 @@ class ChatAgent(BaseAgent):
         configuration as the current instance.
 
         Args:
-            with_memory: bool
-                Whether to copy the memory (conversation history) to the new
-                agent. If True, the new agent will have the same conversation
-                history. If False, the new agent will have a fresh memory with
-                only the system message. (default: :obj:`False`)
+            with_memory (bool): Whether to copy the memory (conversation
+                history) to the new agent. If True, the new agent will have
+                the same conversation history. If False, the new agent will
+                have a fresh memory with only the system message.
+                (default: :obj:`False`)
 
         Returns:
             ChatAgent: A new instance of :obj:`ChatAgent` with the same
