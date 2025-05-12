@@ -74,7 +74,7 @@ doing in this area. Keep up the great work! 🤖
 # Example of using the gemini-2.0-flash-exp model
 model_2_0_flash = ModelFactory.create(
     model_platform=ModelPlatformType.GEMINI,
-    model_type=ModelType.GEMINI_2_0_FLASH,
+    model_type=ModelType.GEMINI_2_0_FLASH_EXP,
     model_config_dict=GeminiConfig(temperature=0.2).as_dict(),
 )
 camel_agent_flash = ChatAgent(system_message=sys_msg, model=model_2_0_flash)
