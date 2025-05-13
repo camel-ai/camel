@@ -1191,7 +1191,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GEMINI_2_5_PRO_PREVIEW,
             ModelType.GEMINI_2_0_FLASH,
             ModelType.GEMINI_2_0_FLASH_EXP,
-            ModelType.GEMINI_2_0_FLASH_THINKING,            
+            ModelType.GEMINI_2_0_FLASH_THINKING,
             ModelType.GEMINI_2_0_FLASH_LITE,
             ModelType.GEMINI_2_0_FLASH_LITE_PREVIEW,
             ModelType.GEMINI_1_5_FLASH,
