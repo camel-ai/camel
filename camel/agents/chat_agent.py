@@ -442,6 +442,11 @@ class ChatAgent(BaseAgent):
         new_tool = convert_to_function_tool(tool)
         self._internal_tools[new_tool.get_function_name()] = new_tool
 
+    def add_tools(self, tools: List[Union[FunctionTool, Callable]]) -> None:
+        r"""Add a list of tools to the agent."""
+        for tool in tools:
+            self.add_tool(tool)
+
     def add_external_tool(
         self, tool: Union[FunctionTool, Callable, Dict[str, Any]]
     ) -> None:
@@ -461,6 +466,11 @@ class ChatAgent(BaseAgent):
             del self._internal_tools[tool_name]
             return True
         return False
+
+    def remove_tools(self, tool_names: List[str]) -> None:
+        r"""Remove a list of tools from the agent by name."""
+        for tool_name in tool_names:
+            self.remove_tool(tool_name)
 
     def remove_external_tool(self, tool_name: str) -> bool:
         r"""Remove an external tool from the agent by name.
