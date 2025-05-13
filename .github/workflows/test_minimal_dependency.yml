@@ -23,8 +23,6 @@ jobs:
           python-version: "3.10"
 
       - name: Create and activate virtual environment
-        env:
-          OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
         run: |
           python -m venv .venv
           source .venv/bin/activate
@@ -32,6 +30,8 @@ jobs:
           pip install -e .
 
       - name: Run integration test on minimal examples
+        env:
+          OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
         run: |
           source .venv/bin/activate
           pip install pytest dotenv
