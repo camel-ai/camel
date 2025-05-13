@@ -17,6 +17,7 @@ Advanced Features
    agents_with_memory
    agents_with_rag
    agents_with_graph_rag
+   agents_with_MCP
    agents_tracking
    critic_agents_and_tree_search
    embodied_agents
