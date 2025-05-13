@@ -16,7 +16,7 @@ import os
 from json import JSONDecodeError
 from typing import Any, Dict, List, Optional, Type, Union
 
-from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
+from openai import AsyncOpenAI, AsyncStream, BadRequestError, OpenAI, Stream
 from pydantic import BaseModel, ValidationError
 
 from camel.logger import get_logger
@@ -198,7 +198,7 @@ class OpenAICompatibleModel(BaseModelBackend):
                 model=self.model_type,
                 **request_config,
             )
-        except (ValidationError, JSONDecodeError) as e:
+        except (ValidationError, JSONDecodeError, BadRequestError) as e:
             logger.warning(
                 f"Format validation error: {e}. "
                 f"Attempting fallback with JSON format."
@@ -237,7 +237,7 @@ class OpenAICompatibleModel(BaseModelBackend):
                 model=self.model_type,
                 **request_config,
             )
-        except (ValidationError, JSONDecodeError) as e:
+        except (ValidationError, JSONDecodeError, BadRequestError) as e:
             logger.warning(
                 f"Format validation error: {e}. "
                 f"Attempting fallback with JSON format."
