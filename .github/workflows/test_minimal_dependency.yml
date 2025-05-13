@@ -1,4 +1,4 @@
-name: Test Minimal Install
+name: Test Minimal Dependency
 
 on:
   pull_request:
@@ -6,12 +6,12 @@ on:
       - "pyproject.toml"
       - "camel/**"
       - "examples/**"
-      - "test/integration/**"
+      - "test/integration_test/**"
       - ".github/workflows/test-minimal-install.yml"
 
 jobs:
-  minimal-install:
-    name: Minimal install test
+  minimal-dependency:
+    name: Minimal dependency check
     runs-on: ubuntu-latest
 
     steps:
@@ -33,4 +33,4 @@ jobs:
         run: |
           source .venv/bin/activate
           pip install pytest dotenv
-          pytest test/integration/test_minimal_examples.py
+          pytest test/integration/test_minimal_dependency.py
