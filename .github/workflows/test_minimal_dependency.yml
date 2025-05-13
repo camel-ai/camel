@@ -33,4 +33,4 @@ jobs:
         run: |
           source .venv/bin/activate
           pip install pytest dotenv
-          pytest test/integration/test_minimal_dependency.py
+          pytest test/integration_test/test_minimal_dependency.py
