@@ -459,6 +459,7 @@ module = [
     "huggingface_hub",
     "huggingface_hub.utils._errors",
     "huggingface_hub.errors",
+    "math-verify",
     "wikipedia",
     "linkup-sdk",
     "duckduckgo_search",
