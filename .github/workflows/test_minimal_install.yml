@@ -1,0 +1,36 @@
+name: Test Minimal Install
+
+on:
+  pull_request:
+    paths:
+      - "pyproject.toml"
+      - "camel/**"
+      - "examples/**"
+      - "test/integration/**"
+      - ".github/workflows/test-minimal-install.yml"
+
+jobs:
+  minimal-install:
+    name: Minimal install test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Create and activate virtual environment
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install --upgrade pip
+          pip install -e .
+
+      - name: Run integration test on minimal examples
+        run: |
+          source .venv/bin/activate
+          pip install pytest dotenv
+          pytest test/integration/test_minimal_examples.py
