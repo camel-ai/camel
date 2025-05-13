@@ -12,15 +12,21 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+# Enables postponed evaluation of annotations (for string-based type hints)
+from __future__ import annotations
+
 from dataclasses import asdict
 from datetime import datetime, timezone
-from typing import Any, ClassVar, Dict
+from typing import TYPE_CHECKING, Any, ClassVar, Dict
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
 from camel.types import OpenAIBackendRole
+
+if TYPE_CHECKING:
+    pass
 
 
 class MemoryRecord(BaseModel):
@@ -98,6 +104,19 @@ class MemoryRecord(BaseModel):
     def to_openai_message(self) -> OpenAIMessage:
         r"""Converts the record to an :obj:`OpenAIMessage` object."""
         return self.message.to_openai_message(self.role_at_backend)
+
+
+def _patch_image_for_pydantic():
+    try:
+        from PIL import Image
+
+        globals()["Image"] = Image
+    except ImportError:
+        pass
+
+
+_patch_image_for_pydantic()
+MemoryRecord.model_rebuild()
 
 
 class ContextRecord(BaseModel):

@@ -11,6 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
+# Enables postponed evaluation of annotations (for string-based type hints)
+from __future__ import annotations
+
 import asyncio
 import datetime
 import io
@@ -36,10 +40,11 @@ from typing import (
     cast,
 )
 
-from PIL import Image, ImageDraw, ImageFont
-
 if TYPE_CHECKING:
+    from PIL import Image, ImageDraw, ImageFont
+
     from camel.agents import ChatAgent
+
 from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.models import BaseModelBackend, ModelFactory
@@ -266,6 +271,8 @@ def _parse_json_output(text: str) -> Dict[str, Any]:
 
 
 def _reload_image(image: Image.Image):
+    from PIL import Image
+
     buffer = io.BytesIO()
     image.save(buffer, format="PNG")
     buffer.seek(0)
@@ -322,6 +329,8 @@ def add_set_of_mark(
     screenshot: Union[bytes, Image.Image, io.BufferedIOBase],
     ROIs: Dict[str, InteractiveRegion],
 ) -> Tuple[Image.Image, List[str], List[str], List[str]]:
+    from PIL import Image
+
     if isinstance(screenshot, Image.Image):
         return _add_set_of_mark(screenshot, ROIs)
 
@@ -351,6 +360,8 @@ def _add_set_of_mark(
             images, ROIs located above the visible area, and ROIs located below
             the visible area.
     """
+    from PIL import Image, ImageDraw, ImageFont
+
     visible_rects: List[str] = list()
     rects_above: List[str] = list()  # Scroll up to see
     rects_below: List[str] = list()  # Scroll down to see
@@ -649,6 +660,8 @@ class AsyncBaseBrowser:
             image and the path to the image file if saved, otherwise
             :obj:`None`.
         """
+        from PIL import Image
+
         image_data = await self.page.screenshot(timeout=60000)
         image = Image.open(io.BytesIO(image_data))
 

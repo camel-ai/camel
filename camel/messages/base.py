@@ -11,14 +11,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
+# Enables postponed evaluation of annotations (for string-based type hints)
+from __future__ import annotations
+
 import base64
 import io
 import re
+import types
+import warnings
 from dataclasses import dataclass
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import (
+    Any,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Union,
+)
 
-import numpy as np
-from PIL import Image
 from pydantic import BaseModel
 
 from camel.messages import (
@@ -38,6 +50,68 @@ from camel.types import (
     RoleType,
 )
 from camel.utils import Constants
+
+try:
+    from PIL import Image
+except ImportError:
+
+    class DummyImage:
+        r"""Placeholder class to address Pydantic type check issues
+        when Pillow is not installed. Provides a getattr and
+        setattr that issue a warning on first use.
+        """
+
+        warned = False
+
+        def __getattr__(self, name):
+            r"""Intercepts attribute access. Issues a warning the first time
+            an attribute is accessed if Pillow is not installed.
+
+            Args:
+               name (str): The name of the attribute being accessed.
+
+            Returns:
+               Any: Returns `None` or calls `super().__getattr__` if available.
+            """
+            if not DummyImage.warned:
+                warnings.warn(
+                    "Pillow library is not installed. Image "
+                    "processing functionality in camel will be "
+                    "limited or unavailable.",
+                    ImportWarning,
+                )
+                DummyImage.warned = True
+            try:
+                return super().__getattr__(name)
+            except AttributeError:
+                return None
+
+        def __setattr__(self, name, value):
+            r"""Intercepts attribute setting. Issues a warning the first time
+            an attribute is set if Pillow is not installed.
+
+            Args:
+                name (str): The name of the attribute to set.
+                value (Any): The value to assign to the attribute.
+            """
+            if not DummyImage.warned:
+                warnings.warn(
+                    "Pillow library is not installed. Setting "
+                    "attributes on dummy image object has no "
+                    "effect.",
+                    ImportWarning,
+                )
+                DummyImage.warned = True
+            super().__setattr__(name, value)
+
+    class DummyImageModule(types.ModuleType):
+        r"""A fake PIL.Image module to satisfy type checkers like mypy
+        and frameworks like Pydantic when Pillow is not installed.
+        """
+
+        Image = DummyImage
+
+    Image = DummyImageModule("PIL.Image")
 
 
 @dataclass
@@ -69,7 +143,7 @@ class BaseMessage:
     content: str
 
     video_bytes: Optional[bytes] = None
-    image_list: Optional[List[Image.Image]] = None
+    image_list: Optional[List["Image.Image"]] = None
     image_detail: Literal["auto", "low", "high"] = "auto"
     video_detail: Literal["auto", "low", "high"] = "low"
     parsed: Optional[Union[BaseModel, dict]] = None
@@ -424,6 +498,8 @@ class BaseMessage:
             }
         )
         if self.image_list and len(self.image_list) > 0:
+            from PIL import Image
+
             for image in self.image_list:
                 if image.format is None:
                     raise ValueError(
@@ -457,6 +533,8 @@ class BaseMessage:
 
         if self.video_bytes:
             import imageio.v3 as iio
+            import numpy as np
+            from PIL import Image
 
             base64Frames: List[str] = []
             frame_count = 0
