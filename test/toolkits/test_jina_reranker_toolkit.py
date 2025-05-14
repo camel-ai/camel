@@ -32,7 +32,7 @@ def reranker_toolkit(mock_model):
     with patch(
         'transformers.AutoModel.from_pretrained', return_value=mock_model
     ):
-        toolkit = JinaRerankerToolkit()
+        toolkit = JinaRerankerToolkit(use_api=False)
         # Replace the actual model with our mock
         toolkit.model = mock_model
         return toolkit
@@ -44,7 +44,7 @@ def test_init_with_default_params():
         'transformers.AutoModel.from_pretrained'
     ) as mock_from_pretrained:
         with patch('torch.cuda.is_available', return_value=False):
-            JinaRerankerToolkit()
+            JinaRerankerToolkit(use_api=False)
             mock_from_pretrained.assert_called_once_with(
                 'jinaai/jina-reranker-m0',
                 torch_dtype="auto",
@@ -61,7 +61,7 @@ def test_init_with_custom_device():
             model_mock = MagicMock()
             mock_from_pretrained.return_value = model_mock
 
-            JinaRerankerToolkit(device="cpu")
+            JinaRerankerToolkit(use_api=False, device="cpu")
 
             model_mock.to.assert_called_once_with("cpu")
             model_mock.eval.assert_called_once()
@@ -72,7 +72,7 @@ def test_init_with_custom_device():
 )
 def test_sort_documents():
     r"""Test the _sort_documents method."""
-    toolkit = JinaRerankerToolkit()
+    toolkit = JinaRerankerToolkit(use_api=False)
     documents = ["doc1", "doc2", "doc3"]
     scores = [0.5, 0.9, 0.1]
 
@@ -87,7 +87,7 @@ def test_sort_documents():
 )
 def test_sort_documents_with_mismatched_lengths():
     r"""Test _sort_documents with mismatched document and score lists."""
-    toolkit = JinaRerankerToolkit()
+    toolkit = JinaRerankerToolkit(use_api=False)
     documents = ["doc1", "doc2"]
     scores = [0.5, 0.9, 0.1]
 
@@ -140,7 +140,7 @@ def test_rerank_text_documents_with_custom_max_length(reranker_toolkit):
 )
 def test_rerank_text_documents_model_not_initialized():
     r"""Test reranking text documents when model is not initialized."""
-    toolkit = JinaRerankerToolkit()
+    toolkit = JinaRerankerToolkit(use_api=False)
     toolkit.model = None
 
     with pytest.raises(
