@@ -34,7 +34,7 @@ class JinaRerankerToolkit(BaseToolkit):
     def __init__(
         self,
         timeout: Optional[float] = None,
-        model_name: Optional[str] = "jina-reranker-m0",
+        model_name: Optional[str] = "jinaai/jina-reranker-m0",
         device: Optional[str] = None,
         use_api: bool = True,
     ) -> None:

@@ -117,7 +117,11 @@ def test_rerank_text_documents(reranker_toolkit):
     )
 
     # Check that the result is sorted correctly
-    assert result == [("doc3", 0.9), ("doc1", 0.7), ("doc2", 0.3)]
+    assert result == [
+        {'document': {'text': 'doc3'}, 'relevance_score': 0.9},
+        {'document': {'text': 'doc1'}, 'relevance_score': 0.7},
+        {'document': {'text': 'doc2'}, 'relevance_score': 0.3},
+    ]
 
 
 def test_rerank_text_documents_with_custom_max_length(reranker_toolkit):
@@ -137,8 +141,8 @@ def test_rerank_text_documents_with_custom_max_length(reranker_toolkit):
     )
 
     assert result == [
-        {"document": "doc2", "score": 0.8},
-        {"document": "doc1", "score": 0.6},
+        {'document': {'text': 'doc2'}, 'relevance_score': 0.8},
+        {'document': {'text': 'doc1'}, 'relevance_score': 0.6},
     ]
 
 
@@ -172,8 +176,8 @@ def test_rerank_image_documents(reranker_toolkit):
     )
 
     assert result == [
-        {"document": "image2.jpg", "score": 0.8},
-        {"document": "image1.jpg", "score": 0.4},
+        {'document': {'text': 'image2.jpg'}, 'relevance_score': 0.8},
+        {'document': {'text': 'image1.jpg'}, 'relevance_score': 0.4},
     ]
 
 
@@ -194,8 +198,8 @@ def test_rerank_image_documents_custom_max_length(reranker_toolkit):
     )
 
     assert result == [
-        {"document": "image2.jpg", "score": 0.8},
-        {"document": "image1.jpg", "score": 0.4},
+        {'document': {'text': 'image2.jpg'}, 'relevance_score': 0.8},
+        {'document': {'text': 'image1.jpg'}, 'relevance_score': 0.4},
     ]
 
 
@@ -219,8 +223,8 @@ def test_image_query_text_documents(reranker_toolkit):
     )
 
     assert result == [
-        {"document": "doc2", "score": 0.7},
-        {"document": "doc1", "score": 0.3},
+        {'document': {'text': 'doc2'}, 'relevance_score': 0.7},
+        {'document': {'text': 'doc1'}, 'relevance_score': 0.3},
     ]
 
 
@@ -244,8 +248,8 @@ def test_image_query_image_documents(reranker_toolkit):
     )
 
     assert result == [
-        {"document": "image1.jpg", "score": 0.6},
-        {"document": "image2.jpg", "score": 0.2},
+        {'document': {'text': 'image1.jpg'}, 'relevance_score': 0.6},
+        {'document': {'text': 'image2.jpg'}, 'relevance_score': 0.2},
     ]
 
 
