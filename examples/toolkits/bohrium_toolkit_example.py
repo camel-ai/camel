@@ -28,17 +28,17 @@ bohrium_toolkit = BohriumToolkit(
     api_key="30d196a1bb714421a89ccd595d23b1ef",
     project_id=617833,
     )
-a = bohrium_toolkit.submit_job()
-print(a)
-# # Create a ChatAgent with the audio toolkit tools
-# agent = ChatAgent(
-#     model=model,
-#     tools=[*bohrium_toolkit.get_tools()],
-# )
 
-# response = agent.step("Submit a job to Bohrium,and help me check the job status")
-# print(response.msgs[0].content)
-# print("\n")
+# Create a ChatAgent with the audio toolkit tools
+agent = ChatAgent(
+    model=model,
+    tools=[*bohrium_toolkit.get_tools()],
+)
+
+response = agent.step("Submit a job to Bohrium,and help me check the job status")
+print(response.msgs[0].content)
+print("\n")
+
 """
 ==========================================================================
 Your job has been submitted successfully with the following details:
