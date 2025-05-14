@@ -79,7 +79,11 @@ def test_sort_documents():
     result = toolkit._sort_documents(documents, scores)
 
     # Should be sorted by score in descending order
-    assert result == [("doc2", 0.9), ("doc1", 0.5), ("doc3", 0.1)]
+    assert result == [
+        {"document": "doc2", "score": 0.9},
+        {"document": "doc1", "score": 0.5},
+        {"document": "doc3", "score": 0.1},
+    ]
 
 
 @pytest.mark.skip(
@@ -132,7 +136,10 @@ def test_rerank_text_documents_with_custom_max_length(reranker_toolkit):
         [[query, doc] for doc in documents], max_length=512, doc_type="text"
     )
 
-    assert result == [("doc2", 0.8), ("doc1", 0.6)]
+    assert result == [
+        {"document": "doc2", "score": 0.8},
+        {"document": "doc1", "score": 0.6},
+    ]
 
 
 @pytest.mark.skip(
@@ -164,7 +171,10 @@ def test_rerank_image_documents(reranker_toolkit):
         [[query, doc] for doc in documents], max_length=2048, doc_type="image"
     )
 
-    assert result == [("image2.jpg", 0.8), ("image1.jpg", 0.4)]
+    assert result == [
+        {"document": "image2.jpg", "score": 0.8},
+        {"document": "image1.jpg", "score": 0.4},
+    ]
 
 
 def test_rerank_image_documents_custom_max_length(reranker_toolkit):
@@ -183,7 +193,10 @@ def test_rerank_image_documents_custom_max_length(reranker_toolkit):
         [[query, doc] for doc in documents], max_length=1024, doc_type="image"
     )
 
-    assert result == [("image2.jpg", 0.8), ("image1.jpg", 0.4)]
+    assert result == [
+        {"document": "image2.jpg", "score": 0.8},
+        {"document": "image1.jpg", "score": 0.4},
+    ]
 
 
 def test_image_query_text_documents(reranker_toolkit):
@@ -205,7 +218,10 @@ def test_image_query_text_documents(reranker_toolkit):
         doc_type="text",
     )
 
-    assert result == [("doc2", 0.7), ("doc1", 0.3)]
+    assert result == [
+        {"document": "doc2", "score": 0.7},
+        {"document": "doc1", "score": 0.3},
+    ]
 
 
 def test_image_query_image_documents(reranker_toolkit):
@@ -227,7 +243,10 @@ def test_image_query_image_documents(reranker_toolkit):
         doc_type="image",
     )
 
-    assert result == [("image1.jpg", 0.6), ("image2.jpg", 0.2)]
+    assert result == [
+        {"document": "image1.jpg", "score": 0.6},
+        {"document": "image2.jpg", "score": 0.2},
+    ]
 
 
 def test_with_inference_mode(reranker_toolkit):
