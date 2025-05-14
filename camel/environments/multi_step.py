@@ -220,6 +220,99 @@ class MultiStepEnv(ABC):
             },
         ).as_tuple()
 
+    def _normalize_actions(
+        self, action: Union[Action, List[Action], str, Dict[int, str]]
+    ) -> List[Action]:
+        r"""Normalize the user-provided action(s) into a validated list
+        of `Action` objects.
+
+        This method handles flexibility in input format by converting
+        raw strings (only allowed when batch size is 1) and dictionaries,
+        ensuring all necessary structure and integrity checks on
+        actions (e.g., index bounds, duplicates).
+
+        Args:
+            action (Union[Action, List[Action], str]):
+                The raw input action(s) provided by the agent. Can be:
+                - A single `Action` object.
+                - A list of `Action` objects.
+                - A raw string (if `batch_size == 1`), auto-wrapped
+                    in an `Action`.
+                - A dict mapping int indices to str responses
+
+        Returns:
+            List[Action]: A list of validated `Action` instances
+                ready for evaluation.
+
+        Raises:
+            ValueError: If:
+                - Action indices are invalid or duplicated,
+                - Action list is empty,
+                - Index mismatches expected values
+                    (e.g., 0 for batch size 1),
+                - Wrong structure is used (e.g.,
+                    string used with batch size > 1,
+                    dict used with batch size == 1).
+            TypeError: If the action is of an unsupported type.
+        """
+
+        if isinstance(action, str):
+            if self.current_batch_size != 1:
+                raise ValueError(
+                    "String input for action is only allowed"
+                    " when batch_size == 1"
+                )
+            logger.warning("Auto-converting from str to Action", stacklevel=2)
+            actions = [Action(index=0, llm_response=action)]
+
+        elif isinstance(action, dict):
+            if not all(isinstance(k, int) for k in action.keys()):
+                raise ValueError("All dictionary keys must be integers")
+
+            if self.current_batch_size == 1 and list(action.keys()) != [0]:
+                raise ValueError(
+                    "For batch_size=1, dict input must have exactly one key: 0"
+                )
+            actions = [
+                Action(index=k, llm_response=v) for k, v in action.items()
+            ]
+        elif isinstance(action, Action):
+            actions = [action]
+        elif isinstance(action, list):
+            if not action:
+                raise ValueError("Action list cannot be empty")
+            if not all(isinstance(a, Action) for a in action):
+                raise ValueError(
+                    "All elements in the list must be Action objects"
+                )
+            actions = action
+        else:
+            raise TypeError("Action must be a str, Action, or list of Actions")
+
+        if self.current_batch_size == 1 and len(actions) != 1:
+            raise ValueError(
+                "For batch_size=1, expect a single Action, a dictionary or a "
+                "list containing exactly one Action"
+            )
+
+        # Validate indices
+        for a in actions:
+            if not isinstance(a.index, int):
+                raise ValueError(
+                    f"Action index must be an integer, got {a.index}"
+                )
+            if self.current_batch_size == 1:
+                if a.index != 0:
+                    raise ValueError(
+                        "For batch_size=1, Action index must be 0"
+                    )
+
+        indices = [a.index for a in actions]
+        if len(set(indices)) != len(indices):
+            raise ValueError("Duplicate state indices in actions.")
+
+        return actions
+
     @abstractmethod
     def _get_initial_state(self) -> Dict[str, Any]:
         pass
