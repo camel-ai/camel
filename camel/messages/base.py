@@ -18,10 +18,9 @@ from __future__ import annotations
 import base64
 import io
 import re
-import types
-import warnings
 from dataclasses import dataclass
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
     List,
@@ -51,67 +50,8 @@ from camel.types import (
 )
 from camel.utils import Constants
 
-try:
+if TYPE_CHECKING:
     from PIL import Image
-except ImportError:
-
-    class DummyImage:
-        r"""Placeholder class to address Pydantic type check issues
-        when Pillow is not installed. Provides a getattr and
-        setattr that issue a warning on first use.
-        """
-
-        warned = False
-
-        def __getattr__(self, name):
-            r"""Intercepts attribute access. Issues a warning the first time
-            an attribute is accessed if Pillow is not installed.
-
-            Args:
-               name (str): The name of the attribute being accessed.
-
-            Returns:
-               Any: Returns `None` or calls `super().__getattr__` if available.
-            """
-            if not DummyImage.warned:
-                warnings.warn(
-                    "Pillow library is not installed. Image "
-                    "processing functionality in camel will be "
-                    "limited or unavailable.",
-                    ImportWarning,
-                )
-                DummyImage.warned = True
-            try:
-                return super().__getattr__(name)
-            except AttributeError:
-                return None
-
-        def __setattr__(self, name, value):
-            r"""Intercepts attribute setting. Issues a warning the first time
-            an attribute is set if Pillow is not installed.
-
-            Args:
-                name (str): The name of the attribute to set.
-                value (Any): The value to assign to the attribute.
-            """
-            if not DummyImage.warned:
-                warnings.warn(
-                    "Pillow library is not installed. Setting "
-                    "attributes on dummy image object has no "
-                    "effect.",
-                    ImportWarning,
-                )
-                DummyImage.warned = True
-            super().__setattr__(name, value)
-
-    class DummyImageModule(types.ModuleType):
-        r"""A fake PIL.Image module to satisfy type checkers like mypy
-        and frameworks like Pydantic when Pillow is not installed.
-        """
-
-        Image = DummyImage
-
-    Image = DummyImageModule("PIL.Image")
 
 
 @dataclass
