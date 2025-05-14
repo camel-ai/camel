@@ -715,7 +715,6 @@ class MCPToolkit(BaseToolkit):
         for server in self.servers:
             await server.disconnect()
         self._connected = False
-        await self._exit_stack.aclose()
 
     @asynccontextmanager
     async def connection(self) -> AsyncGenerator["MCPToolkit", None]:
