@@ -25,7 +25,7 @@ model = ModelFactory.create(
 # Create the BohriumToolkit with our reasoning model
 bohrium_toolkit = BohriumToolkit(
     yaml_path="examples/toolkits/bohrium_toolkit_example.yaml",
-    api_key="30d196a1bb714421a89ccd595d23b1ef",
+    api_key="xxx",
     project_id=617833,
     )
 
