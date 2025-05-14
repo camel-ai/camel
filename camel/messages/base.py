@@ -62,7 +62,7 @@ class BaseMessage:
         role_name (str): The name of the user or assistant role.
         role_type (RoleType): The type of role, either :obj:`RoleType.
             ASSISTANT` or :obj:`RoleType.USER`.
-        meta_dict (Optional[Dict[str, str]]): Additional metadata dictionary
+        meta_dict (Optional[Dict[str, Any]]): Additional metadata dictionary
             for the message.
         content (str): The content of the message.
         video_bytes (Optional[bytes]): Optional bytes of a video associated
@@ -95,7 +95,7 @@ class BaseMessage:
         content: str,
         meta_dict: Optional[Dict[str, str]] = None,
         video_bytes: Optional[bytes] = None,
-        image_list: Optional[List[Image.Image]] = None,
+        image_list: Optional[List["Image.Image"]] = None,
         image_detail: Union[
             OpenAIVisionDetailType, str
         ] = OpenAIVisionDetailType.AUTO,
@@ -140,7 +140,7 @@ class BaseMessage:
         content: str,
         meta_dict: Optional[Dict[str, str]] = None,
         video_bytes: Optional[bytes] = None,
-        image_list: Optional[List[Image.Image]] = None,
+        image_list: Optional[List["Image.Image"]] = None,
         image_detail: Union[
             OpenAIVisionDetailType, str
         ] = OpenAIVisionDetailType.AUTO,

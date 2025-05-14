@@ -37,10 +37,9 @@ repos:
       additional_dependencies:
       - tomli  # for python_version < '3.11'
 
-  - repo: local
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
     hooks:
-    - id: check-minimal-dependency
-      name: Check Minimal Dependency Workflow
-      entry: python -c "import sys; import yaml; f = open('.github/workflows/test_minimal_dependency.yml', 'r'); yaml.safe_load(f); f.close(); sys.exit(0)"
-      language: system
+    - id: check-yaml
+      name: Check YAML syntax for Minimal Dependency Workflow
       files: ^\.github/workflows/test_minimal_dependency\.yml$
