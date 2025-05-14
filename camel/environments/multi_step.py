@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from camel.environments.models import Action, Observation, StepResult
 from camel.extractors.base import BaseExtractor
@@ -101,15 +101,27 @@ class MultiStepEnv(ABC):
     async def _close(self) -> None:
         return
 
-    async def reset(self) -> Observation:
-        r"""Reset the environment to an initial state.
+    async def reset(
+        self, batch_size: int = 1, seed: Optional[int] = None
+    ) -> Union[Observation, List[Observation]]:
+        r"""Reset the environment and start new episodes.
+
+        Args:
+            batch_size (int): Number of parallel episodes to run.
+                (default: :obj:`1`)
+            seed (Optional[int]): Seed for deterministic behavior.
+                (default: :obj:`None`)
 
         Returns:
-            Observation: The initial observation for the episode.
+            Union[Observation, List[Observation]]: Initial observation(s)
+                for the episode(s).
 
         Raises:
-            RuntimeError: If we fail to get the initial observation.
+            RuntimeError: If called before setup or before previous batch
+                is done.
         """
+        if batch_size <= 0:
+            raise ValueError("Batch size must be positive")
 
         if not self._is_setup:
             logger.warning(
@@ -117,20 +129,22 @@ class MultiStepEnv(ABC):
             )
             await self.setup()
 
-        # Reset state
-        self._current_step = 0
-        self._episode_ended = False
-        self._episode_history = []
-        self._state = self._get_initial_state()
+        # Initialize batch tracking
+        self.current_batch_size = batch_size
+        self._states = [self._get_initial_state() for _ in range(batch_size)]
+        self._states_done = [False] * batch_size
+        self._current_steps = [0] * batch_size
+        self._episode_histories: List[List[Tuple[Observation, Action]]] = [
+            [] for _ in range(batch_size)
+        ]
 
-        # Get initial observation
-        observation = self._get_next_observation()
-        if observation is None:
-            raise RuntimeError("Failed to get initial observation")
+        # Get initial observations
+        observations = [
+            self._get_next_observation() for _ in range(batch_size)
+        ]
+        self._last_observations = observations
 
-        self._last_observation = observation
-
-        return observation
+        return observations[0] if batch_size == 1 else observations
 
     async def step(
         self, action: Action
