@@ -36,10 +36,3 @@ repos:
       exclude: ^(examples/usecases/)  # Ignore files under examples/usecases
       additional_dependencies:
       - tomli  # for python_version < '3.11'
-
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
-    hooks:
-    - id: check-yaml
-      name: Check YAML syntax for Minimal Dependency Workflow
-      files: ^\.github/workflows/test_minimal_dependency\.yml$

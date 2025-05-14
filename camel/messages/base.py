@@ -51,7 +51,7 @@ from camel.types import (
 from camel.utils import Constants
 
 if TYPE_CHECKING:
-    from PIL import Image
+    from PIL.Image import Image
 
 
 @dataclass
@@ -67,7 +67,7 @@ class BaseMessage:
         content (str): The content of the message.
         video_bytes (Optional[bytes]): Optional bytes of a video associated
             with the message. (default: :obj:`None`)
-        image_list (Optional[List[Image.Image]]): Optional list of PIL Image
+        image_list (Optional[List[Image]]): Optional list of PIL Image
             objects associated with the message. (default: :obj:`None`)
         image_detail (Literal["auto", "low", "high"]): Detail level of the
             images associated with the message. (default: :obj:`auto`)
@@ -83,7 +83,7 @@ class BaseMessage:
     content: str
 
     video_bytes: Optional[bytes] = None
-    image_list: Optional[List["Image.Image"]] = None
+    image_list: Optional[List["Image"]] = None
     image_detail: Literal["auto", "low", "high"] = "auto"
     video_detail: Literal["auto", "low", "high"] = "low"
     parsed: Optional[Union[BaseModel, dict]] = None
@@ -95,7 +95,7 @@ class BaseMessage:
         content: str,
         meta_dict: Optional[Dict[str, str]] = None,
         video_bytes: Optional[bytes] = None,
-        image_list: Optional[List["Image.Image"]] = None,
+        image_list: Optional[List["Image"]] = None,
         image_detail: Union[
             OpenAIVisionDetailType, str
         ] = OpenAIVisionDetailType.AUTO,
@@ -140,7 +140,7 @@ class BaseMessage:
         content: str,
         meta_dict: Optional[Dict[str, str]] = None,
         video_bytes: Optional[bytes] = None,
-        image_list: Optional[List["Image.Image"]] = None,
+        image_list: Optional[List["Image"]] = None,
         image_detail: Union[
             OpenAIVisionDetailType, str
         ] = OpenAIVisionDetailType.AUTO,
