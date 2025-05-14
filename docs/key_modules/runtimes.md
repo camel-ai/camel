@@ -25,15 +25,54 @@ remote servers, or guarded environments.
 Each runtime implementation provides a standardized interface for adding 
 tools, executing commands, and managing the execution lifecycle.
 
-### 2.1 `BaseRuntime`: The Foundation
+### 2.1 The Base Runtime: `BaseRuntime`
+All runtimes inherit from the BaseRuntime abstract class, which defines the following core methods:
 
-### 2.2 `UbuntuDockerRuntime`
+- `add(funcs)`: Registers one or more FunctionTool objects for execution
 
-### 2.3 `RemoteHttpRuntime`
+- `reset()`: Resets the runtime environment to its initial state
 
-### 2.4 `DaytonaRuntime`
+- `get_tools()`: Returns the list of tools managed by the runtime
 
-### 2.5 `LLMGuardRuntime`
+### 2.2 `LLMGuardRuntime`
+
+The `LLMGuardRuntime` is a runtime environment designed to evaluate 
+the potential risks associated with executing functions and tools, 
+particularly those that might be dynamically called by AI agents 
+(e.g., tool calls that write codes).
+`LLMGuardRuntime` leverages a customizable LLM to
+perform this risk assessment.
+
+**Key Features:**
+
+- Risk scores from 1 (safe) to 3 (dangerous)
+- Threshold control for execution permission
+- Pre-configured system prompt + structured tool for safety
+
+### 2.3 `DockerRuntime`
+
+The `DockerRuntime` provides a mechanism to
+execute CAMEL agents or arbitrary tasks
+within isolated Docker containers. This approach is highly beneficial
+for managing complex dependencies, 
+ensuring reproducibility of experiments or agent behavior, 
+and enhancing security by sandboxing execution.
+
+
+### 2.4 `UbuntuDockerRuntime`
+
+### 2.5 `RemoteHttpRuntime`
+
+The RemoteHttpRuntime facilitates the execution of functions on a separate,
+remote HTTP server. 
+This is particularly useful for distributing computational workloads, 
+accessing resources or services that are only available on a specific 
+server, or integrating CAMEL agents with existing microservices or 
+specialized remote workers.
+
+### 2.6 `DaytonaRuntime`
+
+
 
 ## 3. Get Started
 
