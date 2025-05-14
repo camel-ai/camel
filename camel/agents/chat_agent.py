@@ -776,7 +776,7 @@ class ChatAgent(BaseAgent):
             # Get response from model backend
             response = self._get_model_response(
                 openai_messages,
-                accumulated_context_tokens,  # This is cumulative context tokens
+                accumulated_context_tokens,  # Cumulative context tokens
                 response_format,
                 self._get_full_tool_schemas(),
             )
