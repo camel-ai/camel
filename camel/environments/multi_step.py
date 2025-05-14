@@ -331,8 +331,34 @@ class MultiStepEnv(ABC):
 
     @abstractmethod
     async def compute_reward(
-        self,
+        self, reward_dict: Dict[str, float]
     ) -> Tuple[float, Dict[str, float]]:
+        r"""Compute rewards for the current step and update the episode's
+        accumulated reward dictionary.
+
+        This method is called for a single episode/batch item at a time.
+        It is responsible for:
+        1. Calculating the reward components based on the action most recently
+           taken in the episode and the resulting state.
+        2. Modifying the passed-in `reward_dict` by adding/updating it with
+           the reward components from the current step.
+        3. Calculating the new total accumulated reward for the episode by
+           summing all values in the *updated* `reward_dict`.
+        4. Returning both the new total accumulated reward and the *updated*
+           `reward_dict`.
+
+        Args:
+            reward_dict (Dict[str, float]): The dictionary containing the
+                currently accumulated rewards for the specific episode/batch
+                item being processed. This dictionary will be modified
+                in-place or a new updated dictionary should be returned.
+
+        Returns:
+            Tuple[float, Dict[str, float]]: A tuple containing:
+                - The new total accumulated reward for the episode (a float).
+                - The updated `reward_dict` for the episode, including rewards
+                  from the current step.
+        """
         pass
 
     def is_done(self) -> bool:
