@@ -384,7 +384,8 @@ class ChatAgent(BaseAgent):
             # List of tuples (platform, type)
             resolved_models_list = []
             for model_spec in model_list:
-                platform, type_ = model_spec[0], model_spec[1]  # type: ignore[index]
+                # type: ignore[index]
+                platform, type_ = model_spec[0], model_spec[1]
                 resolved_models_list.append(
                     ModelFactory.create(
                         model_platform=platform, model_type=type_
@@ -442,6 +443,11 @@ class ChatAgent(BaseAgent):
         new_tool = convert_to_function_tool(tool)
         self._internal_tools[new_tool.get_function_name()] = new_tool
 
+    def add_tools(self, tools: List[Union[FunctionTool, Callable]]) -> None:
+        r"""Add a list of tools to the agent."""
+        for tool in tools:
+            self.add_tool(tool)
+
     def add_external_tool(
         self, tool: Union[FunctionTool, Callable, Dict[str, Any]]
     ) -> None:
@@ -461,6 +467,11 @@ class ChatAgent(BaseAgent):
             del self._internal_tools[tool_name]
             return True
         return False
+
+    def remove_tools(self, tool_names: List[str]) -> None:
+        r"""Remove a list of tools from the agent by name."""
+        for tool_name in tool_names:
+            self.remove_tool(tool_name)
 
     def remove_external_tool(self, tool_name: str) -> bool:
         r"""Remove an external tool from the agent by name.
@@ -752,7 +763,7 @@ class ChatAgent(BaseAgent):
             try:
                 openai_messages, num_tokens = self.memory.get_context()
             except RuntimeError as e:
-                return self._step_token_exceed(
+                return self._step_terminate(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
             # Get response from model backend
@@ -765,8 +776,8 @@ class ChatAgent(BaseAgent):
 
             # Terminate Agent if stop_event is set
             if self.stop_event and self.stop_event.is_set():
-                # Use the _step_token_exceed to terminate the agent with reason
-                return self._step_token_exceed(
+                # Use the _step_terminate to terminate the agent with reason
+                return self._step_terminate(
                     num_tokens, tool_call_records, "termination_triggered"
                 )
 
@@ -851,7 +862,7 @@ class ChatAgent(BaseAgent):
             try:
                 openai_messages, num_tokens = self.memory.get_context()
             except RuntimeError as e:
-                return self._step_token_exceed(
+                return self._step_terminate(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
 
@@ -864,8 +875,8 @@ class ChatAgent(BaseAgent):
 
             # Terminate Agent if stop_event is set
             if self.stop_event and self.stop_event.is_set():
-                # Use the _step_token_exceed to terminate the agent with reason
-                return self._step_token_exceed(
+                # Use the _step_terminate to terminate the agent with reason
+                return self._step_terminate(
                     num_tokens, tool_call_records, "termination_triggered"
                 )
 
@@ -1311,7 +1322,9 @@ class ChatAgent(BaseAgent):
         response_id: str = ""
         # All choices in one response share one role
         for chunk in response:
-            response_id = chunk.id
+            # Some model platforms like siliconflow may return None for the
+            # chunk.id
+            response_id = chunk.id if chunk.id else str(uuid.uuid4())
             self._handle_chunk(
                 chunk, content_dict, finish_reasons_dict, output_messages
             )
@@ -1351,7 +1364,9 @@ class ChatAgent(BaseAgent):
         response_id: str = ""
         # All choices in one response share one role
         async for chunk in response:
-            response_id = chunk.id
+            # Some model platforms like siliconflow may return None for the
+            # chunk.id
+            response_id = chunk.id if chunk.id else str(uuid.uuid4())
             self._handle_chunk(
                 chunk, content_dict, finish_reasons_dict, output_messages
             )
@@ -1396,24 +1411,30 @@ class ChatAgent(BaseAgent):
             )
             output_messages.append(chat_message)
 
-    def _step_token_exceed(
+    def _step_terminate(
         self,
         num_tokens: int,
         tool_calls: List[ToolCallingRecord],
         termination_reason: str,
     ) -> ChatAgentResponse:
-        r"""Return trivial response containing number of tokens and information
-        of called functions when the number of tokens exceeds.
+        r"""Create a response when the agent execution is terminated.
+
+        This method is called when the agent needs to terminate its execution
+        due to various reasons such as token limit exceeded, or other
+        termination conditions. It creates a response with empty messages but
+        includes termination information in the info dictionary.
 
         Args:
             num_tokens (int): Number of tokens in the messages.
             tool_calls (List[ToolCallingRecord]): List of information
                 objects of functions called in the current step.
-            termination_reason (str): String of termination reason.
+            termination_reason (str): String describing the reason for
+                termination.
 
         Returns:
-            ChatAgentResponse: The struct containing trivial outputs and
-                information about token number and called functions.
+            ChatAgentResponse: A response object with empty message list,
+                terminated flag set to True, and an info dictionary containing
+                termination details, token counts, and tool call information.
         """
         self.terminated = True
 
@@ -1559,6 +1580,56 @@ class ChatAgent(BaseAgent):
             strategy_fn (Callable): The scheduling strategy function.
         """
         self.model_backend.add_strategy(name, strategy_fn)
+
+    def clone(self, with_memory: bool = False) -> ChatAgent:
+        r"""Creates a new instance of :obj:`ChatAgent` with the same
+        configuration as the current instance.
+
+        Args:
+            with_memory (bool): Whether to copy the memory (conversation
+                history) to the new agent. If True, the new agent will have
+                the same conversation history. If False, the new agent will
+                have a fresh memory with only the system message.
+                (default: :obj:`False`)
+
+        Returns:
+            ChatAgent: A new instance of :obj:`ChatAgent` with the same
+                configuration.
+        """
+        # Create a new instance with the same configuration
+        # If with_memory is True, set system_message to None
+        # If with_memory is False, use the original system message
+        # To avoid duplicated system memory.
+        system_message = None if with_memory else self._original_system_message
+
+        new_agent = ChatAgent(
+            system_message=system_message,
+            model=self.model_backend.models,  # Pass the existing model_backend
+            memory=None,  # clone memory later
+            message_window_size=getattr(self.memory, "window_size", None),
+            token_limit=getattr(
+                self.memory.get_context_creator(), "token_limit", None
+            ),
+            output_language=self._output_language,
+            tools=list(self._internal_tools.values()),
+            external_tools=[
+                schema for schema in self._external_tool_schemas.values()
+            ],
+            response_terminators=self.response_terminators,
+            scheduling_strategy=self.model_backend.scheduling_strategy.__name__,
+            single_iteration=self.single_iteration,
+            stop_event=self.stop_event,
+        )
+
+        # Copy memory if requested
+        if with_memory:
+            # Get all records from the current memory
+            context_records = self.memory.retrieve()
+            # Write them to the new agent's memory
+            for context_record in context_records:
+                new_agent.memory.write_record(context_record.memory_record)
+
+        return new_agent
 
     def __repr__(self) -> str:
         r"""Returns a string representation of the :obj:`ChatAgent`.

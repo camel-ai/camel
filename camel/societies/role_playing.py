@@ -120,6 +120,9 @@ class RolePlaying:
         self.task_type = task_type
         self.task_prompt = task_prompt
 
+        self.task_specify_agent_kwargs = task_specify_agent_kwargs
+        self.task_planner_agent_kwargs = task_planner_agent_kwargs
+
         self.specified_task_prompt: Optional[TextPrompt] = None
         self._init_specified_task_prompt(
             assistant_role_name,
@@ -680,3 +683,50 @@ class RolePlaying:
                 info=user_response.info,
             ),
         )
+
+    def clone(
+        self, task_prompt: str, with_memory: bool = False
+    ) -> 'RolePlaying':
+        r"""Creates a new instance of RolePlaying with the same configuration.
+
+        Args:
+            task_prompt (str): The task prompt to be used by the new instance.
+            with_memory (bool, optional): Whether to copy the memory
+                (conversation history) to the new instance. If True, the new
+                instance will have the same conversation history. If False,
+                the new instance will have a fresh memory.
+                (default: :obj:`False`)
+
+        Returns:
+            RolePlaying: A new instance of RolePlaying with the same
+                configuration.
+        """
+
+        new_instance = RolePlaying(
+            assistant_role_name=self.assistant_agent.role_name,
+            user_role_name=self.user_agent.role_name,
+            task_prompt=task_prompt,
+            with_task_specify=self.with_task_specify,
+            task_specify_agent_kwargs=self.task_specify_agent_kwargs,
+            with_task_planner=self.with_task_planner,
+            task_planner_agent_kwargs=self.task_planner_agent_kwargs,
+            with_critic_in_the_loop=False,
+            model=self.model,
+            task_type=self.task_type,
+        )
+        tmp_assistant_sys_msg = new_instance.assistant_sys_msg
+        new_instance.assistant_agent = self.assistant_agent.clone(with_memory)
+        new_instance.assistant_sys_msg = tmp_assistant_sys_msg
+        new_instance.assistant_agent._system_message = tmp_assistant_sys_msg
+
+        tmp_user_sys_msg = new_instance.user_sys_msg
+        new_instance.user_agent = self.user_agent.clone(with_memory)
+        new_instance.user_sys_msg = tmp_user_sys_msg
+        new_instance.user_agent._system_message = tmp_user_sys_msg
+
+        new_instance.with_critic_in_the_loop = self.with_critic_in_the_loop
+        new_instance.critic_sys_msg = self.critic_sys_msg
+        if self.critic:
+            new_instance.critic = self.critic.clone(with_memory)
+
+        return new_instance

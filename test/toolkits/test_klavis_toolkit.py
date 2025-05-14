@@ -193,16 +193,6 @@ def test_delete_server_instance(mock_request, klavis_toolkit):
 
 
 @patch.object(KlavisToolkit, '_request')
-def test_get_server_tools(mock_request, klavis_toolkit):
-    mock_request.return_value = {"tools": ["tool1", "tool2"]}
-    result = klavis_toolkit.get_server_tools("test-server")
-    mock_request.assert_called_once_with(
-        'GET', '/mcp-server/tools/test-server'
-    )
-    assert result == {"tools": ["tool1", "tool2"]}
-
-
-@patch.object(KlavisToolkit, '_request')
 def test_get_all_servers(mock_request, klavis_toolkit):
     mock_request.return_value = {"servers": [{"name": "server1"}]}
     result = klavis_toolkit.get_all_servers()
@@ -228,20 +218,74 @@ def test_set_auth_token(mock_request, klavis_toolkit):
     assert result == {"status": "token set"}
 
 
+@patch('urllib.parse.quote', return_value='encoded_url')
+@patch.object(KlavisToolkit, '_request')
+def test_list_tools(mock_request, mock_quote, klavis_toolkit):
+    mock_request.return_value = {"tools": ["toolA", "toolB"]}
+    result = klavis_toolkit.list_tools("http://example.com/sse")
+    mock_quote.assert_called_once_with("http://example.com/sse", safe='')
+    mock_request.assert_called_once_with(
+        'GET', '/mcp-server/list-tools/encoded_url'
+    )
+    assert result == {"tools": ["toolA", "toolB"]}
+
+
+@patch.object(KlavisToolkit, '_request')
+def test_call_tool_with_args(mock_request, klavis_toolkit):
+    mock_request.return_value = {"result": "success"}
+    tool_args = {"param1": "value1"}
+    result = klavis_toolkit.call_tool(
+        "http://example.com/sse", "myTool", tool_args=tool_args
+    )
+    expected_payload = {
+        "serverUrl": "http://example.com/sse",
+        "toolName": "myTool",
+        "toolArgs": tool_args,
+    }
+    expected_headers = {'Content-Type': 'application/json'}
+    mock_request.assert_called_once_with(
+        'POST',
+        '/mcp-server/call-tool',
+        payload=expected_payload,
+        additional_headers=expected_headers,
+    )
+    assert result == {"result": "success"}
+
+
+@patch.object(KlavisToolkit, '_request')
+def test_call_tool_without_args(mock_request, klavis_toolkit):
+    mock_request.return_value = {"result": "success_no_args"}
+    result = klavis_toolkit.call_tool("http://example.com/sse", "myTool")
+    expected_payload = {
+        "serverUrl": "http://example.com/sse",
+        "toolName": "myTool",
+        "toolArgs": {},  # Ensure empty dict is sent when args are None
+    }
+    expected_headers = {'Content-Type': 'application/json'}
+    mock_request.assert_called_once_with(
+        'POST',
+        '/mcp-server/call-tool',
+        payload=expected_payload,
+        additional_headers=expected_headers,
+    )
+    assert result == {"result": "success_no_args"}
+
+
 # --------------------------
 # Test get_tools method
 # --------------------------
 def test_get_tools(klavis_toolkit):
     tools = klavis_toolkit.get_tools()
-    assert len(tools) == 7
+    assert len(tools) == 8  # Updated count
     expected_func_names = [
         'create_server_instance',
         'get_server_instance',
         'delete_auth_data',
         'delete_server_instance',
-        'get_server_tools',
         'get_all_servers',
         'set_auth_token',
+        'list_tools',  # Added
+        'call_tool',  # Added
     ]
     for i, tool in enumerate(tools):
         assert isinstance(tool, FunctionTool)

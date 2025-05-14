@@ -25,7 +25,7 @@ parametrize = pytest.mark.parametrize(
     'model',
     [
         ModelFactory.create(
-            ModelPlatformType.OPENAI,
+            ModelPlatformType.STUB,
             model_type=ModelType.STUB,
         ),
         pytest.param(None, marks=pytest.mark.model_backend),
@@ -42,7 +42,7 @@ def test_single_agent(model):
     'model',
     [
         ModelFactory.create(
-            ModelPlatformType.OPENAI,
+            ModelPlatformType.STUB,
             model_type=ModelType.STUB,
         )
     ],
