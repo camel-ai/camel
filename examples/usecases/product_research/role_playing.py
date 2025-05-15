@@ -27,10 +27,10 @@ from camel.toolkits import (
 
 )
 import os
-from camel.logger import get_logger, set_log_file,set_log_level
+
 from camel.types import ModelPlatformType, ModelType
 from camel.utils import print_text_animated
-
+from camel.logger import get_logger, set_log_file,set_log_level
 logger = get_logger(__name__)
 # Set logging
 set_log_file("product.log")
@@ -78,8 +78,9 @@ def main(
 ) -> None:
     task_prompt = (
         "please give me a product research report for Manus vs OWL.there are official web url are https://manus.im and https://github.com/camel-ai/owl. "
-        "and then put the content in markdown format.then using markdown-pdf to convert the markdown file into pdf file. refer:https://www.npmjs.com/package/markdown-pdf. "
-        "Finally,search the suitable local app to open this pdf by local app."
+        "\nFormat the report in pdf "
+        "Finally, open the PDF with a suitable local application."
+        "and then scroll the pdf page to the end."
     )
 
     tools_list = [

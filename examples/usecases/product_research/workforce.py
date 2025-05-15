@@ -40,12 +40,12 @@ workspace_dir = os.path.join(
 models = {
     "user": ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=ModelType.GPT_4O,
         model_config_dict=ChatGPTConfig(temperature=0.0).as_dict(),
     ),
     "assistant": ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=ModelType.GPT_4O,
         model_config_dict=ChatGPTConfig(temperature=0.0).as_dict(),
     ),
     "research": ModelFactory.create(
@@ -60,7 +60,7 @@ models = {
     ),
     "planning": ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=ModelType.GPT_4O,
         model_config_dict=ChatGPTConfig(temperature=0.0).as_dict(),
     ),
     "analyst": ModelFactory.create(
@@ -187,9 +187,9 @@ def main():
             "5. Market positioning "
             "6. Strengths and weaknesses "
             "7. Recommendations "
-            "\nFormat the report in markdown and then convert it to PDF using markdown-pdf "
-            "(https://www.npmjs.com/package/markdown-pdf). "
+            "\nFormat the report in pdf "
             "Finally, open the PDF with a suitable local application."
+            "and then scroll the pdf page to the end."
         ),
         id='product_comparison_001'
     )
