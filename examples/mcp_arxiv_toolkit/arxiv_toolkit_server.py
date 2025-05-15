@@ -19,7 +19,7 @@ from camel.toolkits import ArxivToolkit
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Run Arxiv Toolkit with MCP server mode.",
-        usage=f"python {sys.argv[0]} [--mode MODE]",
+        usage=f"python {sys.argv[0]} [--mode MODE] [--timeout TIMEOUT]",
     )
     parser.add_argument(
         "--mode",

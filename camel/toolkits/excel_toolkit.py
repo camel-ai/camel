@@ -29,7 +29,9 @@ class ExcelToolkit(BaseToolkit):
     r"""A class representing a toolkit for extract detailed cell information
     from an Excel file.
 
-    This class provides method for processing excel files.
+    This class provides methods extracting detailed content from Excel files
+    (including .xls, .xlsx,.csv), and converting the data into
+    Markdown formatted table.
     """
 
     def __init__(
