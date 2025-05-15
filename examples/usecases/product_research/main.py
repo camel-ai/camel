@@ -77,10 +77,10 @@ def main(
     chat_turn_limit=10,
 ) -> None:
     task_prompt = (
-        "please give me a product research report for Manus vs OWL.there are official web url are https://manus.im and https://github.com/camel-ai/owl. "
+        "please give me a product research report for OWL:https://github.com/camel-ai/owl. "
+        "let me know how to make it become an awesome commerical product."
         "\nFormat the report in pdf "
-        "Finally, open the PDF with a suitable local application."
-        "and then scroll the pdf page to the end."
+        "Finally, open the PDF and then scroll the pdf page to the end."
     )
 
     tools_list = [
