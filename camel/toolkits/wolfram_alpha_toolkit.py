@@ -81,7 +81,8 @@ class WolframAlphaToolkit(BaseToolkit):
         ]
     )
     def query_wolfram_llm(self, query: str) -> str:
-        r"""Queries Wolfram|Alpha LLM API and returns the result.
+        r"""Sends a query to the Wolfram|Alpha API optimized for language
+        model usage.
 
         Args:
             query (str): The query to send to Wolfram Alpha LLM.
