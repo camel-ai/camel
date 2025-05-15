@@ -989,9 +989,7 @@ class CodeRAGBenchmark(BaseBenchmark):
             prompt = data_i["prompt"]
 
             docs = data_i.get("docs", [])
-            context = "\n\n".join(
-                doc["text"] for doc in docs[:10]
-            )  # Top-10 Todo: allow customization of top-k retrieval!
+            context = "\n\n".join(doc["text"] for doc in docs)
 
             # Construct the final prompt for the agent
             final_prompt = (
