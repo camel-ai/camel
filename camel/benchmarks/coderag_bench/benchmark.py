@@ -40,13 +40,6 @@ from camel.benchmarks.coderag_bench.code_generation_evaluation import (
 )
 from camel.embeddings import OpenAIEmbedding
 from camel.retrievers.auto_retriever import AutoRetriever
-
-# === BEGIN: Temporary monkey patch for AutoRetriever metadata ===
-# This patch enables `.metadata.extra_info` in Element to be passed
-# to VectorRetriever.process(extra_info=...) when used with
-# AutoRetriever. Without this, structured metadata (e.g., doc_id)
-# may be silently discarded.
-# A formal enhancement PR will follow for upstream merge.
 from camel.retrievers.vector_retriever import VectorRetriever
 from camel.types import StorageType
 
