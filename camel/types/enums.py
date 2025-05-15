@@ -377,6 +377,9 @@ class ModelType(UnifiedModelType, Enum):
     )
     WATSONX_MISTRAL_LARGE = "mistralai/mistral-large"
 
+    # Crynux models
+    CRYNUX_QWEN_2_5_7B = "Qwen/Qwen2.5-7B"
+
     def __str__(self):
         return self.value
 
@@ -878,6 +881,12 @@ class ModelType(UnifiedModelType, Enum):
         }
 
     @property
+    def is_crynux(self) -> bool:
+        return self in {
+            ModelType.CRYNUX_QWEN_2_5_7B,
+        }
+
+    @property
     def is_aiml(self) -> bool:
         return self in {
             ModelType.AIML_MIXTRAL_8X7B,
@@ -977,6 +986,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NOVITA_GLM_4_32B_0414,
             ModelType.NOVITA_GLM_Z1_RUMINATION_32B_0414,
             ModelType.NOVITA_QWEN_2_5_7B,
+            ModelType.CRYNUX_QWEN_2_5_7B,
         }:
             return 32_000
         elif self in {
@@ -1428,6 +1438,7 @@ class ModelPlatformType(Enum):
     NETMIND = "netmind"
     NOVITA = "novita"
     WATSONX = "watsonx"
+    CRYNUX = "crynux"
 
     @classmethod
     def from_name(cls, name):
@@ -1602,6 +1613,11 @@ class ModelPlatformType(Enum):
     def is_watsonx(self) -> bool:
         r"""Returns whether this platform is WatsonX."""
         return self is ModelPlatformType.WATSONX
+
+    @property
+    def is_crynux(self) -> bool:
+        r"""Returns whether this platform is Crynux."""
+        return self is ModelPlatformType.CRYNUX
 
 
 class AudioModelType(Enum):
