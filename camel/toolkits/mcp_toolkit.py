@@ -194,8 +194,13 @@ class MCPClient(BaseToolkit):
 
     async def disconnect(self):
         r"""Explicitly disconnect from the MCP server."""
+        # If the server is not connected, do nothing
+        if not self._is_connected:
+            return
         self._is_connected = False
         await self._exit_stack.aclose()
+        # Reset the exit stack and session for future reuse purposes
+        self._exit_stack = AsyncExitStack()
         self._session = None
 
     @asynccontextmanager
@@ -599,7 +604,6 @@ class MCPToolkit(BaseToolkit):
         if config_dict:
             self.servers.extend(self._load_servers_from_dict(config_dict))
 
-        self._exit_stack = AsyncExitStack()
         self._connected = False
 
     def _load_servers_from_config(
@@ -691,7 +695,6 @@ class MCPToolkit(BaseToolkit):
             logger.warning("MCPToolkit is already connected")
             return self
 
-        self._exit_stack = AsyncExitStack()
         try:
             # Sequentially connect to each server
             for server in self.servers:
@@ -712,7 +715,6 @@ class MCPToolkit(BaseToolkit):
         for server in self.servers:
             await server.disconnect()
         self._connected = False
-        await self._exit_stack.aclose()
 
     @asynccontextmanager
     async def connection(self) -> AsyncGenerator["MCPToolkit", None]:
