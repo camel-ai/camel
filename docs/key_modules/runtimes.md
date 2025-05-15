@@ -26,7 +26,8 @@ Each runtime implementation provides a standardized interface for adding
 tools, executing commands, and managing the execution lifecycle.
 
 ### 2.1 The Base Runtime: `BaseRuntime`
-All runtimes inherit from the BaseRuntime abstract class, which defines the following core methods:
+All runtimes inherit from the BaseRuntime abstract class, which defines the 
+following core methods:
 
 - `add(funcs)`: Registers one or more FunctionTool objects for execution
 
@@ -58,12 +59,20 @@ for managing complex dependencies,
 ensuring reproducibility of experiments or agent behavior, 
 and enhancing security by sandboxing execution.
 
+**Key Features**
+
+- FastAPI server for tool exposure
+- 
+- Automatic container creation and teardown
 
 ### 2.4 `UbuntuDockerRuntime`
+A specialization of `DockerRuntime` optimized for Ubuntu containers. 
+Adds system package installation, Python version checks, 
+and support for full script execution
 
 ### 2.5 `RemoteHttpRuntime`
 
-The RemoteHttpRuntime facilitates the execution of functions on a separate,
+The `RemoteHttpRuntime` facilitates the execution of functions on a separate,
 remote HTTP server. 
 This is particularly useful for distributing computational workloads, 
 accessing resources or services that are only available on a specific 
@@ -71,6 +80,10 @@ server, or integrating CAMEL agents with existing microservices or
 specialized remote workers.
 
 ### 2.6 `DaytonaRuntime`
+
+Runs tool functions inside a Daytona cloud sandbox, 
+providing secure execution in a zero-trust, fully isolated environment.
+
 
 
 
