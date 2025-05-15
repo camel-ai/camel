@@ -18,7 +18,7 @@ from camel.models import ModelFactory
 from camel.societies.workforce import Workforce
 from camel.tasks.task import Task
 from camel.toolkits import (
-    BrowserToolkit,
+    AsyncBrowserToolkit,
     FileWriteToolkit,
     TerminalToolkit,
     PyAutoGUIToolkit,
@@ -72,7 +72,7 @@ models = {
 
 def main():
     tools_list = [
-        *BrowserToolkit(
+        *AsyncBrowserToolkit(
             headless=False,  # Set to True for headless mode (e.g., on remote servers)
             web_agent_model=models["browsing"],
             planning_agent_model=models["planning"],
