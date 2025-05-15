@@ -147,7 +147,7 @@ class MCPClient(BaseToolkit):
 
         try:
             if urlparse(self.command_or_url).scheme in ("http", "https"):
-                if self.mode == "sse":
+                if self.mode == "sse" or self.mode is None:
                     (
                         read_stream,
                         write_stream,
