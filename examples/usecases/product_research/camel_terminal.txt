@@ -3,3 +3,12 @@ CAMEL Terminal Session
 Working Directory: /Users/yifengwang/project/camel/examples/usecases/product_research
 ==================================================
 
+
+$ open -a 'WPS Office' '/Users/yifengwang/project/camel/examples/usecases/product_research/OWL_Product_Research_Report.pdf'
+
+Stderr Output:
+Unable to find application named 'WPS Office'
+
+
+$ open -a '/Applications/wpsoffice.app'
+

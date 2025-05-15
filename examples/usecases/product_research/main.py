@@ -45,43 +45,39 @@ workspace_dir = os.path.join(
 models = {
         "user": ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_4O_MINI,
+            model_type=ModelType.GPT_4_1,
             model_config_dict=ChatGPTConfig(temperature=0.0).as_dict(),
         ),
         "assistant": ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_4O_MINI,
-            model_config_dict=ChatGPTConfig(temperature=0.0).as_dict(),
-        ),
-        "document": ModelFactory.create(
-            model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_4O_MINI,
+            model_type=ModelType.GPT_4_1,
             model_config_dict=ChatGPTConfig(temperature=0.0).as_dict(),
         ),
         "browsing": ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_4O_MINI,
+            model_type=ModelType.GPT_4_1,
             model_config_dict=ChatGPTConfig(temperature=0.0).as_dict(),
         ),
         "planning": ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_4O_MINI,
+            model_type=ModelType.GPT_4_1,
             model_config_dict=ChatGPTConfig(temperature=0.0).as_dict(),
         ),
 
 
     }
 def main(
-    model_platform=ModelPlatformType.DEFAULT,
-    model_type=ModelType.DEFAULT,
-    chat_turn_limit=10,
+    chat_turn_limit=50,
 ) -> None:
     task_prompt = (
-        "please give me a product research report for OWL:https://github.com/camel-ai/owl. "
+        
+        "please give me a product research report for OWL:https://github.com/camel-ai/owl ."
         "let me know how to make it become an awesome commerical product."
-        "\nFormat the report in pdf "
-        "Finally, open the PDF and then scroll the pdf page to the end."
+        "then open the PDF by wps app in my local computer"
+        "and then make a screenshot of this pdf"
     )
+
+
 
     tools_list = [
     
@@ -101,17 +97,11 @@ def main(
         assistant_role_name="Searcher",
         user_role_name="Professor",
         assistant_agent_kwargs=dict(
-            model=ModelFactory.create(
-                model_platform=model_platform,
-                model_type=model_type,
-            ),
+            model=models["assistant"],
             tools=tools_list,
         ),
         user_agent_kwargs=dict(
-            model=ModelFactory.create(
-                model_platform=model_platform,
-                model_type=model_type,
-            ),
+            model=models["user"],
         ),
         task_prompt=task_prompt,
         with_task_specify=False,
