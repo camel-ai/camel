@@ -16,12 +16,14 @@ from .apibank import APIBankBenchmark
 from .apibench import APIBenchBenchmark
 from .base import BaseBenchmark
 from .coderag_bench import CodeRAGBenchAutoRetriever, CodeRAGBenchmark
+from .browsecomp import BrowseCompBenchmark
 from .gaia import DefaultGAIARetriever, GAIABenchmark
 from .nexus import NexusBenchmark
 from .ragbench import RAGBenchBenchmark
 
 __all__ = [
     "BaseBenchmark",
+    "BrowseCompBenchmark",
     "GAIABenchmark",
     "DefaultGAIARetriever",
     "NexusBenchmark",

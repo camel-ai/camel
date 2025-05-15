@@ -16,6 +16,7 @@ import json
 import os
 import shlex
 from contextlib import AsyncExitStack, asynccontextmanager
+from datetime import timedelta
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -33,6 +34,7 @@ from urllib.parse import urlparse
 if TYPE_CHECKING:
     from mcp import ClientSession, ListToolsResult, Tool
 
+
 from camel.logger import get_logger
 from camel.toolkits import BaseToolkit, FunctionTool
 
@@ -41,7 +43,7 @@ logger = get_logger(__name__)
 
 class MCPClient(BaseToolkit):
     r"""Internal class that provides an abstraction layer to interact with
-    external tools using the Model Context Protocol (MCP). It supports two
+    external tools using the Model Context Protocol (MCP). It supports three
     modes of connection:
 
     1. stdio mode: Connects via standard input/output streams for local
@@ -50,16 +52,54 @@ class MCPClient(BaseToolkit):
     2. SSE mode (HTTP Server-Sent Events): Connects via HTTP for persistent,
        event-based interactions.
 
+    3. streamable-http mode: Connects via HTTP for persistent, streamable
+        interactions.
+
+    Connection Lifecycle:
+        There are three ways to manage the connection lifecycle:
+
+        1. Using the async context manager:
+           ```python
+           async with MCPClient(command_or_url="...") as client:
+               # Client is connected here
+               result = await client.some_tool()
+           # Client is automatically disconnected here
+           ```
+
+        2. Using the factory method:
+           ```python
+           client = await MCPClient.create(command_or_url="...")
+           # Client is connected here
+           result = await client.some_tool()
+           # Don't forget to disconnect when done!
+           await client.disconnect()
+           ```
+
+        3. Using explicit connect/disconnect:
+           ```python
+           client = MCPClient(command_or_url="...")
+           await client.connect()
+           # Client is connected here
+           result = await client.some_tool()
+           # Don't forget to disconnect when done!
+           await client.disconnect()
+           ```
+
     Attributes:
         command_or_url (str): URL for SSE mode or command executable for stdio
-            mode. (default: :obj:`'None'`)
+            mode. (default: :obj:`None`)
         args (List[str]): List of command-line arguments if stdio mode is used.
-            (default: :obj:`'None'`)
+            (default: :obj:`None`)
         env (Dict[str, str]): Environment variables for the stdio mode command.
-            (default: :obj:`'None'`)
-        timeout (Optional[float]): Connection timeout. (default: :obj:`'None'`)
+            (default: :obj:`None`)
+        timeout (Optional[float]): Connection timeout.
+            (default: :obj:`None`)
         headers (Dict[str, str]): Headers for the HTTP request.
-            (default: :obj:`'None'`)
+            (default: :obj:`None`)
+        mode (Optional[str]): Connection mode. Can be "sse" for Server-Sent
+            Events, "streamable-http" for streaming HTTP,
+            or None for stdio mode.
+            (default: :obj:`None`)
         strict (Optional[bool]): Whether to enforce strict mode for the
             function call. (default: :obj:`False`)
     """
@@ -71,6 +111,7 @@ class MCPClient(BaseToolkit):
         env: Optional[Dict[str, str]] = None,
         timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
+        mode: Optional[str] = None,
         strict: Optional[bool] = False,
     ):
         from mcp import Tool
@@ -82,6 +123,7 @@ class MCPClient(BaseToolkit):
         self.env = env or {}
         self.headers = headers or {}
         self.strict = strict
+        self.mode = mode
 
         self._mcp_tools: List[Tool] = []
         self._session: Optional['ClientSession'] = None
@@ -97,6 +139,7 @@ class MCPClient(BaseToolkit):
         from mcp.client.session import ClientSession
         from mcp.client.sse import sse_client
         from mcp.client.stdio import StdioServerParameters, stdio_client
+        from mcp.client.streamable_http import streamablehttp_client
 
         if self._is_connected:
             logger.warning("Server is already connected")
@@ -104,15 +147,37 @@ class MCPClient(BaseToolkit):
 
         try:
             if urlparse(self.command_or_url).scheme in ("http", "https"):
-                (
-                    read_stream,
-                    write_stream,
-                ) = await self._exit_stack.enter_async_context(
-                    sse_client(
-                        self.command_or_url,
-                        headers=self.headers,
+                if self.mode == "sse" or self.mode is None:
+                    (
+                        read_stream,
+                        write_stream,
+                    ) = await self._exit_stack.enter_async_context(
+                        sse_client(
+                            self.command_or_url,
+                            headers=self.headers,
+                            timeout=self.timeout,
+                        )
                     )
-                )
+                elif self.mode == "streamable-http":
+                    try:
+                        (
+                            read_stream,
+                            write_stream,
+                            _,
+                        ) = await self._exit_stack.enter_async_context(
+                            streamablehttp_client(
+                                self.command_or_url,
+                                headers=self.headers,
+                                timeout=timedelta(seconds=self.timeout),
+                            )
+                        )
+                    except Exception as e:
+                        # Handle anyio task group errors
+                        logger.error(f"Streamable HTTP client error: {e}")
+                else:
+                    raise ValueError(
+                        f"Invalid mode '{self.mode}' for HTTP URL"
+                    )
             else:
                 command = self.command_or_url
                 arguments = self.args
@@ -138,7 +203,11 @@ class MCPClient(BaseToolkit):
                 )
 
             self._session = await self._exit_stack.enter_async_context(
-                ClientSession(read_stream, write_stream)
+                ClientSession(
+                    read_stream,
+                    write_stream,
+                    timedelta(seconds=self.timeout) if self.timeout else None,
+                )
             )
             await self._session.initialize()
             list_tools_result = await self.list_mcp_tools()
@@ -153,9 +222,18 @@ class MCPClient(BaseToolkit):
 
     async def disconnect(self):
         r"""Explicitly disconnect from the MCP server."""
+        # If the server is not connected, do nothing
+        if not self._is_connected:
+            return
         self._is_connected = False
-        await self._exit_stack.aclose()
-        self._session = None
+
+        try:
+            await self._exit_stack.aclose()
+        except Exception as e:
+            logger.warning(f"{e}")
+        finally:
+            self._exit_stack = AsyncExitStack()
+            self._session = None
 
     @asynccontextmanager
     async def connection(self):
@@ -171,7 +249,10 @@ class MCPClient(BaseToolkit):
             await self.connect()
             yield self
         finally:
-            await self.disconnect()
+            try:
+                await self.disconnect()
+            except Exception as e:
+                logger.warning(f"Error: {e}")
 
     async def list_mcp_tools(self) -> Union[str, "ListToolsResult"]:
         r"""Retrieves the list of available tools from the connected MCP
@@ -227,7 +308,7 @@ class MCPClient(BaseToolkit):
 
             func_params.append(param_name)
 
-        async def dynamic_function(**kwargs):
+        async def dynamic_function(**kwargs) -> str:
             r"""Auto-generated function for MCP Tool interaction.
 
             Args:
@@ -321,8 +402,6 @@ class MCPClient(BaseToolkit):
             "additionalProperties": False,
         }
 
-        # Because certain parameters in MCP may include keywords that are not
-        # supported by OpenAI, it is essential to set "strict" to False.
         return {
             "type": "function",
             "function": {
@@ -351,9 +430,112 @@ class MCPClient(BaseToolkit):
             for mcp_tool in self._mcp_tools
         ]
 
+    def get_text_tools(self) -> str:
+        r"""Returns a string containing the descriptions of the tools
+        in the toolkit.
+
+        Returns:
+            str: A string containing the descriptions of the tools
+                in the toolkit.
+        """
+        return "\n".join(
+            f"tool_name: {tool.name}\n"
+            + f"description: {tool.description or 'No description'}\n"
+            + f"input Schema: {tool.inputSchema}\n"
+            for tool in self._mcp_tools
+        )
+
+    async def call_tool(
+        self, tool_name: str, tool_args: Dict[str, Any]
+    ) -> Any:
+        r"""Calls the specified tool with the provided arguments.
+
+        Args:
+            tool_name (str): Name of the tool to call.
+            tool_args (Dict[str, Any]): Arguments to pass to the tool
+                (default: :obj:`{}`).
+
+        Returns:
+            Any: The result of the tool call.
+        """
+        if self._session is None:
+            raise RuntimeError("Session is not initialized.")
+
+        return await self._session.call_tool(tool_name, tool_args)
+
     @property
     def session(self) -> Optional["ClientSession"]:
         return self._session
+
+    @classmethod
+    async def create(
+        cls,
+        command_or_url: str,
+        args: Optional[List[str]] = None,
+        env: Optional[Dict[str, str]] = None,
+        timeout: Optional[float] = None,
+        headers: Optional[Dict[str, str]] = None,
+        mode: Optional[str] = None,
+    ) -> "MCPClient":
+        r"""Factory method that creates and connects to the MCP server.
+
+        This async factory method ensures the connection to the MCP server is
+        established before the client object is fully constructed.
+
+        Args:
+            command_or_url (str): URL for SSE mode or command executable
+                for stdio mode.
+            args (Optional[List[str]]): List of command-line arguments if
+                stdio mode is used. (default: :obj:`None`)
+            env (Optional[Dict[str, str]]): Environment variables for
+                the stdio mode command. (default: :obj:`None`)
+            timeout (Optional[float]): Connection timeout.
+                (default: :obj:`None`)
+            headers (Optional[Dict[str, str]]): Headers for the HTTP request.
+                (default: :obj:`None`)
+            mode (Optional[str]): Connection mode. Can be "sse" for
+                Server-Sent Events, "streamable-http" for
+                streaming HTTP, or None for stdio mode.
+                (default: :obj:`None`)
+
+        Returns:
+            MCPClient: A fully initialized and connected MCPClient instance.
+
+        Raises:
+            RuntimeError: If connection to the MCP server fails.
+        """
+        client = cls(
+            command_or_url=command_or_url,
+            args=args,
+            env=env,
+            timeout=timeout,
+            headers=headers,
+            mode=mode,
+        )
+        try:
+            await client.connect()
+            return client
+        except Exception as e:
+            # Ensure cleanup on initialization failure
+            await client.disconnect()
+            logger.error(f"Failed to initialize MCPClient: {e}")
+            raise RuntimeError(f"Failed to initialize MCPClient: {e}") from e
+
+    async def __aenter__(self) -> "MCPClient":
+        r"""Async context manager entry point. Automatically connects to the
+        MCP server when used in an async with statement.
+
+        Returns:
+            MCPClient: Self with active connection.
+        """
+        await self.connect()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        r"""Async context manager exit point. Automatically disconnects from
+        the MCP server when exiting an async with statement.
+        """
+        await self.disconnect()
 
 
 class MCPToolkit(BaseToolkit):
@@ -364,19 +546,52 @@ class MCPToolkit(BaseToolkit):
     offers a centralized configuration mechanism for both local and remote
     MCP services.
 
+    Connection Lifecycle:
+        There are three ways to manage the connection lifecycle:
+
+        1. Using the async context manager:
+           ```python
+           async with MCPToolkit(config_path="config.json") as toolkit:
+               # Toolkit is connected here
+               tools = toolkit.get_tools()
+           # Toolkit is automatically disconnected here
+           ```
+
+        2. Using the factory method:
+           ```python
+           toolkit = await MCPToolkit.create(config_path="config.json")
+           # Toolkit is connected here
+           tools = toolkit.get_tools()
+           # Don't forget to disconnect when done!
+           await toolkit.disconnect()
+           ```
+
+        3. Using explicit connect/disconnect:
+           ```python
+           toolkit = MCPToolkit(config_path="config.json")
+           await toolkit.connect()
+           # Toolkit is connected here
+           tools = toolkit.get_tools()
+           # Don't forget to disconnect when done!
+           await toolkit.disconnect()
+           ```
+
     Args:
         servers (Optional[List[MCPClient]]): List of MCPClient
-            instances to manage.
+            instances to manage. (default: :obj:`None`)
         config_path (Optional[str]): Path to a JSON configuration file
-            defining MCP servers.
+            defining MCP servers. (default: :obj:`None`)
+        config_dict (Optional[Dict[str, Any]]): Dictionary containing MCP
+            server configurations in the same format as the config file.
+            (default: :obj:`None`)
         strict (Optional[bool]): Whether to enforce strict mode for the
             function call. (default: :obj:`False`)
 
     Note:
-        Either `servers` or `config_path` must be provided. If both are
-        provided, servers from both sources will be combined.
+        Either `servers`, `config_path`, or `config_dict` must be provided.
+        If multiple are provided, servers from all sources will be combined.
 
-        For web servers in the config file, you can specify authorization
+        For web servers in the config, you can specify authorization
         headers using the "headers" field to connect to protected MCP server
         endpoints.
 
@@ -405,14 +620,19 @@ class MCPToolkit(BaseToolkit):
         self,
         servers: Optional[List[MCPClient]] = None,
         config_path: Optional[str] = None,
+        config_dict: Optional[Dict[str, Any]] = None,
         strict: Optional[bool] = False,
     ):
         super().__init__()
 
-        if servers and config_path:
+        sources_provided = sum(
+            1 for src in [servers, config_path, config_dict] if src is not None
+        )
+        if sources_provided > 1:
             logger.warning(
-                "Both servers and config_path are provided. "
-                "Servers from both sources will be combined."
+                "Multiple configuration sources provided "
+                f"({sources_provided}). Servers from all sources "
+                "will be combined."
             )
 
         self.servers: List[MCPClient] = servers or []
@@ -422,7 +642,9 @@ class MCPToolkit(BaseToolkit):
                 self._load_servers_from_config(config_path, strict)
             )
 
-        self._exit_stack = AsyncExitStack()
+        if config_dict:
+            self.servers.extend(self._load_servers_from_dict(config_dict))
+
         self._connected = False
 
     def _load_servers_from_config(
@@ -451,9 +673,25 @@ class MCPToolkit(BaseToolkit):
             logger.warning(f"Config file not found: '{config_path}'")
             raise e
 
+        return self._load_servers_from_dict(config=data, strict=strict)
+
+    def _load_servers_from_dict(
+        self, config: Dict[str, Any], strict: Optional[bool] = False
+    ) -> List[MCPClient]:
+        r"""Loads MCP server configurations from a dictionary.
+
+        Args:
+            config (Dict[str, Any]): Dictionary containing server
+                configurations.
+            strict (bool): Whether to enforce strict mode for the
+                function call. (default: :obj:`False`)
+
+        Returns:
+            List[MCPClient]: List of configured MCPClient instances.
+        """
         all_servers = []
 
-        mcp_servers = data.get("mcpServers", {})
+        mcp_servers = config.get("mcpServers", {})
         if not isinstance(mcp_servers, dict):
             logger.warning("'mcpServers' is not a dictionary, skipping...")
             mcp_servers = {}
@@ -472,11 +710,17 @@ class MCPToolkit(BaseToolkit):
                 )
                 continue
 
+            # Include headers if provided in the configuration
+            headers = cfg.get("headers", {})
+
+            cmd_or_url = cast(str, cfg.get("command") or cfg.get("url"))
             server = MCPClient(
-                command_or_url=cast(str, cfg.get("command") or cfg.get("url")),
+                command_or_url=cmd_or_url,
                 args=cfg.get("args", []),
                 env={**os.environ, **cfg.get("env", {})},
                 timeout=cfg.get("timeout", None),
+                headers=headers,
+                mode=cfg.get("mode", None),
                 strict=strict,
             )
             all_servers.append(server)
@@ -493,7 +737,6 @@ class MCPToolkit(BaseToolkit):
             logger.warning("MCPToolkit is already connected")
             return self
 
-        self._exit_stack = AsyncExitStack()
         try:
             # Sequentially connect to each server
             for server in self.servers:
@@ -514,7 +757,6 @@ class MCPToolkit(BaseToolkit):
         for server in self.servers:
             await server.disconnect()
         self._connected = False
-        await self._exit_stack.aclose()
 
     @asynccontextmanager
     async def connection(self) -> AsyncGenerator["MCPToolkit", None]:
@@ -548,3 +790,13 @@ class MCPToolkit(BaseToolkit):
         for server in self.servers:
             all_tools.extend(server.get_tools())
         return all_tools
+
+    def get_text_tools(self) -> str:
+        r"""Returns a string containing the descriptions of the tools
+        in the toolkit.
+
+        Returns:
+            str: A string containing the descriptions of the tools
+                in the toolkit.
+        """
+        return "\n".join(server.get_text_tools() for server in self.servers)

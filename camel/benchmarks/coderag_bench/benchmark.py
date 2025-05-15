@@ -40,13 +40,6 @@ from camel.benchmarks.coderag_bench.code_generation_evaluation import (
 )
 from camel.embeddings import OpenAIEmbedding
 from camel.retrievers.auto_retriever import AutoRetriever
-
-# === BEGIN: Temporary monkey patch for AutoRetriever metadata ===
-# This patch enables `.metadata.extra_info` in Element to be passed
-# to VectorRetriever.process(extra_info=...) when used with
-# AutoRetriever. Without this, structured metadata (e.g., doc_id)
-# may be silently discarded.
-# A formal enhancement PR will follow for upstream merge.
 from camel.retrievers.vector_retriever import VectorRetriever
 from camel.types import StorageType
 
@@ -1063,6 +1056,19 @@ class CodeRAGBenchmark(BaseBenchmark):
         ):  # doc_i is equivalent to doc in <https://github.com/
             # code-rag-bench/code-rag-bench/blob/main/generation/
             # eval/tasks/humaneval.py>
+
+            prompt = data_i["prompt"]
+
+            docs = data_i.get("docs", [])
+            context = "\n\n".join(doc["text"] for doc in docs)
+
+            # Construct the final prompt for the agent
+            final_prompt = (
+                context + '\n\nPlease complete the following function based '
+                'on the example above, DO NOT REPEAT'
+                'PREVIOUS DEFINITIONS :\n' + '```python\n' + prompt
+            )
+
 
             # ===Generate Prompts======
             if self.task == "humaneval":

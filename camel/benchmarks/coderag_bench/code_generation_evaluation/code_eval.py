@@ -11,20 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-
-# -------- Note on Original Attribution --------
-# This file is adapted from:
-# https://github.com/code-rag-bench/code-rag-bench/blob/main/generation/eval/
-# tasks/custom_metrics/code_eval.py
-# under the Apache 2.0 License.
-# We thank the original authors for their implementation.
-
-# -------- Original License from code-rag-bench --------
-# Copyright 2020 The HuggingFace Datasets Authors and the current dataset
-# script contributor.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
+# You may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
@@ -34,11 +23,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-"""The CodeEval metric estimates the pass@k metric for code synthesis.
-This is an evaluation harness for the HumanEval problem solving dataset
-described in the paper "Evaluating Large Language Models Trained on Code"
-(https://arxiv.org/abs/2107.03374)."""
+# ============================================================================
+#
+# This file is adapted from:
+# https://github.com/code-rag-bench/code-rag-bench/blob/main/generation/eval/
+#   tasks/custom_metrics/code_eval.py
+# which is based on OpenAI's HumanEval evaluation code:
+# https://github.com/openai/human-eval
+#
+# Original licenses: Apache 2.0 (code-rag-bench), MIT (OpenAI)
+# We thank the original authors for their implementation.
 
 import itertools
 import os
@@ -48,74 +42,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import numpy as np
 
 from .execute import check_correctness
-
-_CITATION = """\
-@misc{chen2021evaluating,
-      title={Evaluating Large Language Models Trained on Code},
-      author={Mark Chen and Jerry Tworek and Heewoo Jun and Qiming Yuan \
-and Henrique Ponde de Oliveira Pinto and Jared Kaplan and Harri Edwards \
-and Yuri Burda and Nicholas Joseph and Greg Brockman and Alex Ray \
-and Raul Puri and Gretchen Krueger and Michael Petrov and Heidy Khlaaf \
-and Girish Sastry and Pamela Mishkin and Brooke Chan and Scott Gray \
-and Nick Ryder and Mikhail Pavlov and Alethea Power and Lukasz Kaiser \
-and Mohammad Bavarian and Clemens Winter and Philippe Tillet \
-and Felipe Petroski Such and Dave Cummings and Matthias Plappert \
-and Fotios Chantzis and Elizabeth Barnes and Ariel Herbert-Voss \
-and William Hebgen Guss and Alex Nichol and Alex Paino and Nikolas Tezak \
-and Jie Tang and Igor Babuschkin and Suchir Balaji and Shantanu Jain \
-and William Saunders and Christopher Hesse and Andrew N. Carr \
-and Jan Leike and Josh Achiam and Vedant Misra and Evan Morikawa \
-and Alec Radford and Matthew Knight and Miles Brundage and Mira Murati \
-and Katie Mayer and Peter Welinder and Bob McGrew and Dario Amodei \
-and Sam McCandlish and Ilya Sutskever and Wojciech Zaremba},
-      year={2021},
-      eprint={2107.03374},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG}
-}
-"""
-
-_DESCRIPTION = """\
-This metric implements the evaluation harness for the HumanEval problem solving
- dataset described in the paper "Evaluating Large Language Models Trained on 
- Code"
-(https://arxiv.org/abs/2107.03374).
-"""
-
-
-_KWARGS_DESCRIPTION = """
-Calculates how good are predictions given some
-references, using certain scores
-
-Args:
-    predictions: list of candidates to evaluate.
-        Each candidates should be a list of strings with
-        several code candidates to solve the problem.
-    references: a list with a test for each prediction.
-        Each test should evaluate the correctness of a
-        code candidate.
-    k: number of code candidates to consider in the
-        evaluation (Default: [1, 10, 100])
-    num_workers: number of workers used to evaluate the
-        candidate programs (Default: 4).
-    timeout:
-
-Returns:
-    pass_at_k: dict with pass rates for each k
-    results: dict with granular results of each unittest
-
-Examples:
-    >>> test_cases = ["assert add(2,3)==5"]
-    >>> candidates = [["def add(a,b): return a*b",
-    ...                "def add(a, b): return a+b"]]
-    >>> pass_at_k, results = compute_code_eval(
-    ...     references=test_cases,
-    ...     predictions=candidates,
-    ...     k=[1, 2])
-    >>> print(pass_at_k)
-    {'pass@1': 0.5, 'pass@2': 1.0}
-"""
-
 
 _WARNING = """
 ##############################################################################
@@ -140,33 +66,33 @@ this with:
 ##############################################################################
 """
 
-_LICENSE = """The MIT License
-
-Copyright (c) OpenAI (https://openai.com)
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE."""
-
 
 def compute_code_eval(
     predictions, references, k=None, num_workers=4, timeout=3.0
 ):
-    """Returns the scores"""
+    r"""Compute pass@k metric for generated code using test scripts.
+
+    Args:
+        predictions (List[List[str]]): Model-generated code candidates.
+        references (List[str]): Test scripts for checking correctness.
+        k (Union[int, List[int]], optional): Values of k to evaluate.
+            Defaults to [1, 10, 100].
+        num_workers (int, optional): Number of threads for execution.
+            Defaults to 4.
+        timeout (float, optional): Timeout (in seconds) per run.
+            Defaults to 3.0.
+
+    Returns:
+        Tuple[Dict[str, float], Dict[int, List[Tuple[int, Dict]]]]:
+            pass@k scores and raw execution results per task.
+
+    Raises:
+        ValueError: If HF_ALLOW_CODE_EVAL is not set to "1".
+        NotImplementedError: If run on Windows platform.
+
+    Note:
+        This function executes untrusted code. Use sandboxing.
+    """
     if k is None:
         k = [1, 10, 100]
 
@@ -223,7 +149,16 @@ def compute_code_eval(
 
 
 def estimate_pass_at_k(num_samples, num_correct, k):
-    """Estimates pass@k of each problem and returns them in an array."""
+    r"""Estimate pass@k based on sample and correctness statistics.
+
+    Args:
+        num_samples (Union[int, Sequence[int]]): Number of candidates.
+        num_correct (Sequence[int]): Number of correct candidates.
+        k (int): Number of top candidates to consider.
+
+    Returns:
+        np.ndarray: Estimated pass@k for each task.
+    """
 
     def estimator(n: int, c: int, k: int) -> float:
         """Calculates 1 - comb(n - c, k) / comb(n, k)."""

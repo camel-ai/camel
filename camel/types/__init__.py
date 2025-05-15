@@ -14,6 +14,7 @@
 from .enums import (
     AudioModelType,
     EmbeddingModelType,
+    GeminiEmbeddingTaskType,
     HuggingFaceRepoType,
     ModelPlatformType,
     ModelType,
@@ -27,6 +28,12 @@ from .enums import (
     TerminationMode,
     VectorDistance,
     VoiceType,
+)
+from .mcp_registries import (
+    ACIRegistryConfig,
+    BaseMCPRegistryConfig,
+    MCPRegistryType,
+    SmitheryRegistryConfig,
 )
 from .openai_types import (
     NOT_GIVEN,
@@ -75,6 +82,11 @@ __all__ = [
     'UnifiedModelType',
     'ParsedChatCompletion',
     'HuggingFaceRepoType',
+    'GeminiEmbeddingTaskType',
     'NOT_GIVEN',
     'NotGiven',
+    'BaseMCPRegistryConfig',
+    'MCPRegistryType',
+    'SmitheryRegistryConfig',
+    'ACIRegistryConfig',
 ]
