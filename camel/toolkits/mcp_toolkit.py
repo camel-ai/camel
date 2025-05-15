@@ -34,7 +34,6 @@ from urllib.parse import urlparse
 if TYPE_CHECKING:
     from mcp import ClientSession, ListToolsResult, Tool
 
-from mcp.client.streamable_http import streamablehttp_client
 
 from camel.logger import get_logger
 from camel.toolkits import BaseToolkit, FunctionTool
@@ -140,6 +139,7 @@ class MCPClient(BaseToolkit):
         from mcp.client.session import ClientSession
         from mcp.client.sse import sse_client
         from mcp.client.stdio import StdioServerParameters, stdio_client
+        from mcp.client.streamable_http import streamablehttp_client
 
         if self._is_connected:
             logger.warning("Server is already connected")
