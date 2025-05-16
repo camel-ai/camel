@@ -18,6 +18,7 @@ import logging
 import os
 import re
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -30,8 +31,6 @@ from typing import (
 
 import datasets
 from datasets import Dataset
-from tqdm import tqdm
-from unstructured.documents.elements import Element, Title
 
 from camel.agents import ChatAgent
 from camel.benchmarks.base import BaseBenchmark
@@ -42,6 +41,9 @@ from camel.embeddings import OpenAIEmbedding
 from camel.retrievers.auto_retriever import AutoRetriever
 from camel.retrievers.vector_retriever import VectorRetriever
 from camel.types import StorageType
+
+if TYPE_CHECKING:
+    from unstructured.documents.elements import Element
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -204,6 +206,8 @@ class CodeRAGBenchAutoRetriever(AutoRetriever):
                 metadata entries
             }
         """
+        from unstructured.documents.elements import Element
+
         if isinstance(contents, Element):
             elements = [contents]
         elif isinstance(contents, list) and all(
@@ -319,6 +323,7 @@ def document2code(data, split="test"):
             - docs: List of dicts with "_id", "text", and "title".
             - qrels: List of dicts linking queries to relevant docs.
     """
+    from tqdm import tqdm
 
     data = data[split]
     queries, docs, qrels = [], [], []
@@ -792,8 +797,11 @@ class CodeRAGBenchmark(BaseBenchmark):
         #   (one per document),
         # and assign a consistent file_directory to group them into
         #   a single vector collection.
+        from unstructured.documents.elements import Title
+
         elements = []
         collection_name = f"{self.task}_collection"
+
         for doc_id, doc in corpus.items():
             element = Title(text=doc["text"])
             element.metadata.file_directory = collection_name
@@ -820,6 +828,7 @@ class CodeRAGBenchmark(BaseBenchmark):
             output_dir, f"{self.task}_retrieval_metrics.json"
         )
         import jsonlines
+        from tqdm import tqdm
 
         with jsonlines.open(output_path, mode='w') as writer:
             for example in tqdm(self.dataset["test"]):
@@ -969,6 +978,8 @@ class CodeRAGBenchmark(BaseBenchmark):
             Optional[Dict[str, float]]: Dictionary of pass@k
                 results if executed; otherwise None.
         """
+        from tqdm import tqdm
+
         generation_dir = os.path.join(self.save_to, "generation", self.task)
         os.makedirs(generation_dir, exist_ok=True)
 
