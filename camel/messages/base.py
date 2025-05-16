@@ -20,7 +20,6 @@ import io
 import re
 from dataclasses import dataclass
 from typing import (
-    TYPE_CHECKING,
     Any,
     Dict,
     List,
@@ -30,6 +29,7 @@ from typing import (
     Union,
 )
 
+from PIL import Image
 from pydantic import BaseModel
 
 from camel.messages import (
@@ -50,9 +50,6 @@ from camel.types import (
 )
 from camel.utils import Constants
 
-if TYPE_CHECKING:
-    from PIL.Image import Image
-
 
 @dataclass
 class BaseMessage:
@@ -67,7 +64,7 @@ class BaseMessage:
         content (str): The content of the message.
         video_bytes (Optional[bytes]): Optional bytes of a video associated
             with the message. (default: :obj:`None`)
-        image_list (Optional[List[Image]]): Optional list of PIL Image
+        image_list (Optional[List[Image.Image]]): Optional list of PIL Image
             objects associated with the message. (default: :obj:`None`)
         image_detail (Literal["auto", "low", "high"]): Detail level of the
             images associated with the message. (default: :obj:`auto`)
@@ -83,7 +80,7 @@ class BaseMessage:
     content: str
 
     video_bytes: Optional[bytes] = None
-    image_list: Optional[List["Image"]] = None
+    image_list: Optional[List[Image.Image]] = None
     image_detail: Literal["auto", "low", "high"] = "auto"
     video_detail: Literal["auto", "low", "high"] = "low"
     parsed: Optional[Union[BaseModel, dict]] = None
@@ -95,7 +92,7 @@ class BaseMessage:
         content: str,
         meta_dict: Optional[Dict[str, str]] = None,
         video_bytes: Optional[bytes] = None,
-        image_list: Optional[List["Image"]] = None,
+        image_list: Optional[List[Image.Image]] = None,
         image_detail: Union[
             OpenAIVisionDetailType, str
         ] = OpenAIVisionDetailType.AUTO,
@@ -140,7 +137,7 @@ class BaseMessage:
         content: str,
         meta_dict: Optional[Dict[str, str]] = None,
         video_bytes: Optional[bytes] = None,
-        image_list: Optional[List["Image"]] = None,
+        image_list: Optional[List[Image.Image]] = None,
         image_detail: Union[
             OpenAIVisionDetailType, str
         ] = OpenAIVisionDetailType.AUTO,
@@ -438,8 +435,6 @@ class BaseMessage:
             }
         )
         if self.image_list and len(self.image_list) > 0:
-            from PIL import Image
-
             for image in self.image_list:
                 if image.format is None:
                     raise ValueError(
@@ -474,7 +469,6 @@ class BaseMessage:
         if self.video_bytes:
             import imageio.v3 as iio
             import numpy as np
-            from PIL import Image
 
             base64Frames: List[str] = []
             frame_count = 0

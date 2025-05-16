@@ -26,7 +26,6 @@ import shutil
 import urllib.parse
 from copy import deepcopy
 from typing import (
-    TYPE_CHECKING,
     Any,
     BinaryIO,
     Coroutine,
@@ -40,11 +39,9 @@ from typing import (
     cast,
 )
 
-if TYPE_CHECKING:
-    from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont
 
-    from camel.agents import ChatAgent
-
+from camel.agents import ChatAgent
 from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.models import BaseModelBackend, ModelFactory
