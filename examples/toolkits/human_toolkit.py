@@ -85,3 +85,51 @@ I've sent you a notification about your upcoming meeting. Please check your
 calendar for details!
 ==========================================================================
 """
+
+# Example 3: Agent using provide_intermediate_information through tools
+print("\nExample 3: Agent using provide_intermediate_information")
+agent_with_info = ChatAgent(
+    system_message="You are an assistant that can send messages to users.",
+    model=model,
+    tools=[*human_toolkit.get_tools()],
+)
+
+response = agent_with_info.step(
+    "solve this math problem derivative of x ^ 3, "
+    "show me your intermediate workings also"
+)
+
+print(response.msgs[0].content)
+
+"""
+==========================================================================
+Intermediate Information from Agent
+Context: To find the derivative of the function f(x) = x^3, we will apply
+the power rule of differentiation, which states that if f(x) = x^n, then 
+f'(x) = n * x^(n-1). In this case, n = 3.
+
+
+Intermediate Information from Agent
+Context: Using the power rule:
+1. Identify n: Here, n = 3.
+2. Apply the formula: f'(x) = 3 * x^(3-1).
+3. Simplify: f'(x) = 3 * x^2.
+
+
+Agent Message:
+The derivative of x^3 is f'(x) = 3x^2.
+The derivative of \( x^3 \) is \( f'(x) = 3x^2 \). 
+
+Heres the breakdown of the steps:
+
+1. **Identify the power**: In this case, the exponent \( n = 3 \).
+2. **Apply the power rule**: The power rule states that if \( f(x) = x^n \),
+    then the derivative \( f'(x) = n \cdot x^{n-1} \).
+3. **Calculate the derivative**: 
+   \[
+   f'(x) = 3 \cdot x^{3-1} = 3 \cdot x^2
+   \]
+
+Thus, the final result is \( f'(x) = 3x^2 \).
+==========================================================================
+"""

@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import logging
-from typing import List
+from typing import List, Optional
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
@@ -52,6 +52,27 @@ class HumanToolkit(BaseToolkit):
         print(f"\nAgent Message:\n{message}")
         logger.info(f"\nAgent Message:\n{message}")
 
+    def provide_intermediate_information(
+        self, info: Optional[str] = None
+    ) -> None:
+        r"""Provide intermediate information to the user in a
+        structured format.
+
+        This method allows the agent to share critical data or status updates
+        during execution, such as intermediate results, decisions,
+        or debugging info.
+
+        Args:
+            info (Optional[str]): Optional information to share.
+        """
+        message = "\nIntermediate Information from Agent\n"
+        if info:
+            message += f"Context: {info}\n"
+        message += "==============================\n"
+
+        print(message)
+        logger.info(message)
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
@@ -63,4 +84,5 @@ class HumanToolkit(BaseToolkit):
         return [
             FunctionTool(self.ask_human_via_console),
             FunctionTool(self.send_message_to_user),
+            FunctionTool(self.provide_intermediate_information),
         ]
