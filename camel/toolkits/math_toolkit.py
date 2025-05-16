@@ -12,7 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import logging
+import subprocess
+import sys
 from typing import List, Literal, Optional, Union
 
 from camel.toolkits.code_execution import CodeExecutionToolkit
@@ -70,7 +71,6 @@ class MathToolkit(CodeExecutionToolkit):
             import_white_list=import_white_list,
             require_confirm=require_confirm,
         )
-        self._install_packages()
 
     def add(self, a: Union[float, int], b: Union[float, int]) -> float:
         r"""Adds two numbers.
@@ -150,69 +150,49 @@ class MathToolkit(CodeExecutionToolkit):
     def _install_packages(self) -> None:
         r"""Install required math packages using pip.
 
-        Attempts to import each package and installs it if not already
-        available. Skips the built-in `math` package.
+        First tries to use uv if available, falls back to pip if not.
+        Installs packages one at a time to better handle failures.
 
         Raises:
-            RuntimeError: If a package installation fails.
+            RuntimeError: If package installation fails.
         """
-        logger = logging.getLogger(__name__)
-        packages_to_install = [
-            pkg for pkg in self.math_packages if pkg != 'math'
-        ]
-        if not packages_to_install:
+        if not self.math_packages:
             return
 
-        for package in packages_to_install:
+        # Try uv first
+        try:
+            subprocess.run(
+                [sys.executable, '-m', 'uv', '--version'],
+                check=True,
+                capture_output=True,
+            )
+            installer = [sys.executable, '-m', 'uv', 'pip', 'install']
+        except subprocess.CalledProcessError:
+            # Fall back to pip
+            installer = [sys.executable, '-m', 'pip', 'install']
+
+        for package in self.math_packages:
+            if package == 'math':  # Skip built-in modules
+                continue
             try:
-                __import__(package)
-                logger.info(f"Package {package} is already installed.")
-            except ImportError:
-                logger.info(f"Installing {package}...")
-                install_code = f"""
-                import sys
-                import subprocess
-                try:
-                    subprocess.check_call([
-                        sys.executable,
-                        '-m', 'pip', 'install', '{package}'
-                    ])
-                except subprocess.CalledProcessError as e:
-                    raise RuntimeError(f'Failed to install {package}: {{e}}')
-                """
-                self.execute_code(install_code)
-                logger.info(f"Successfully installed {package}")
+                subprocess.run(
+                    [*installer, package], check=True, capture_output=True
+                )
+            except subprocess.CalledProcessError as e:
+                raise RuntimeError(
+                    f"Failed to install {package}: {e.stderr.decode()}"
+                )
 
     def _generate_imports(self) -> str:
         r"""Generate import statements for the specified math packages.
 
-        Uses standard aliases for common packages (e.g., `numpy as np`) and
-        simple `import` statements for others.
-
         Returns:
             str: A string containing import statements for all math packages.
         """
-        package_aliases = {
-            'math': 'import math',
-            'numpy': 'import numpy as np',
-            'sympy': 'import sympy as sp',
-            'scipy': 'from scipy import *',
-            'pandas': 'import pandas as pd',
-        }
-        imports = []
-        for pkg in self.math_packages:
-            if pkg in package_aliases:
-                imports.append(package_aliases[pkg])
-            else:
-                # For custom packages, use a simple import statement
-                imports.append(f"import {pkg}")
-        return '\n'.join(imports)
+        return '\n'.join(f'import {pkg}' for pkg in self.math_packages)
 
-    def solve_math(self, code: str) -> str:
+    def solve_math_with_code(self, code: str) -> str:
         r"""Execute mathematical computations using Python's math packages.
-
-        Combines the provided code with import statements for the specified
-        packages and executes it in a sandboxed environment.
 
         Args:
             code: Python code containing mathematical computations.
@@ -223,8 +203,37 @@ class MathToolkit(CodeExecutionToolkit):
         Raises:
             RuntimeError: If code execution fails or times out.
         """
+
         full_code = f"{self._generate_imports()}\n\n{code}"
         return self.execute_code(full_code)
+
+    def install_math_packages(
+        self, packages: Optional[List[str]] = None
+    ) -> str:
+        r"""Install specified math packages.
+
+        Args:
+            packages: Optional list of packages to install. If not provided,
+                     uses the packages specified during initialization.
+
+        Returns:
+            str: Message indicating success or failure.
+        """
+        if packages:
+            seen = set()
+            self.math_packages = []
+            for x in packages:
+                if x not in seen:
+                    self.math_packages.append(x)
+                    seen.add(x)
+
+        try:
+            self._install_packages()
+            packages_str = ', '.join(self.math_packages)
+            msg = f"Successfully installed packages: {packages_str}"
+            return msg
+        except Exception as e:
+            return f"Failed to install packages: {e!s}"
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Get a list of FunctionTool objects for the toolkit's methods.
@@ -232,7 +241,7 @@ class MathToolkit(CodeExecutionToolkit):
         Returns:
             List[FunctionTool]: A list of FunctionTool objects wrapping the
                 toolkit's methods (`add`, `sub`, `multiply`, `divide`, `round`,
-                `solve_math`).
+                `solve_math_with_code`, `install_math_packages`).
         """
         return [
             FunctionTool(self.add),
@@ -240,5 +249,6 @@ class MathToolkit(CodeExecutionToolkit):
             FunctionTool(self.multiply),
             FunctionTool(self.divide),
             FunctionTool(self.round),
-            FunctionTool(self.solve_math),
+            FunctionTool(self.solve_math_with_code),
+            FunctionTool(self.install_math_packages),
         ]
