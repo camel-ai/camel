@@ -20,6 +20,8 @@ from io import BytesIO
 from math import ceil
 from typing import TYPE_CHECKING, List, Optional
 
+from PIL import Image
+
 from camel.logger import get_logger
 from camel.types import (
     ModelType,
@@ -33,7 +35,6 @@ if TYPE_CHECKING:
     from mistral_common.protocol.instruct.request import (  # type:ignore[import-not-found]
         ChatCompletionRequest,
     )
-    from PIL import Image
 
     from camel.messages import OpenAIMessage
 

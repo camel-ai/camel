@@ -18,20 +18,17 @@ from __future__ import annotations
 import base64
 import io
 import os
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import Any, Optional, Union
 
 import requests
+from PIL import Image
 
 from camel.embeddings import BaseEmbedding
 from camel.types.enums import EmbeddingModelType
 from camel.utils import api_keys_required
 
-# Import only for type hints (not executed at runtime)
-if TYPE_CHECKING:
-    from PIL import Image
 
-
-class JinaEmbedding(BaseEmbedding[Union[str, "Image.Image"]]):
+class JinaEmbedding(BaseEmbedding[Union[str, Image.Image]]):
     r"""Provides text and image embedding functionalities using Jina AI's API.
 
     Args:

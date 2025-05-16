@@ -18,8 +18,6 @@ from __future__ import annotations
 import base64
 import io
 import re
-import types
-import warnings
 from dataclasses import dataclass
 from typing import (
     Any,
@@ -31,6 +29,7 @@ from typing import (
     Union,
 )
 
+from PIL import Image
 from pydantic import BaseModel
 
 from camel.messages import (
@@ -51,68 +50,6 @@ from camel.types import (
 )
 from camel.utils import Constants
 
-try:
-    from PIL import Image
-except ImportError:
-
-    class DummyImage:
-        r"""Placeholder class to address Pydantic type check issues
-        when Pillow is not installed. Provides a getattr and
-        setattr that issue a warning on first use.
-        """
-
-        warned = False
-
-        def __getattr__(self, name):
-            r"""Intercepts attribute access. Issues a warning the first time
-            an attribute is accessed if Pillow is not installed.
-
-            Args:
-               name (str): The name of the attribute being accessed.
-
-            Returns:
-               Any: Returns `None` or calls `super().__getattr__` if available.
-            """
-            if not DummyImage.warned:
-                warnings.warn(
-                    "Pillow library is not installed. Image "
-                    "processing functionality in camel will be "
-                    "limited or unavailable.",
-                    ImportWarning,
-                )
-                DummyImage.warned = True
-            try:
-                return super().__getattr__(name)
-            except AttributeError:
-                return None
-
-        def __setattr__(self, name, value):
-            r"""Intercepts attribute setting. Issues a warning the first time
-            an attribute is set if Pillow is not installed.
-
-            Args:
-                name (str): The name of the attribute to set.
-                value (Any): The value to assign to the attribute.
-            """
-            if not DummyImage.warned:
-                warnings.warn(
-                    "Pillow library is not installed. Setting "
-                    "attributes on dummy image object has no "
-                    "effect.",
-                    ImportWarning,
-                )
-                DummyImage.warned = True
-            super().__setattr__(name, value)
-
-    class DummyImageModule(types.ModuleType):
-        r"""A fake PIL.Image module to satisfy type checkers like mypy
-        and frameworks like Pydantic when Pillow is not installed.
-        """
-
-        Image = DummyImage
-
-    Image = DummyImageModule("PIL.Image")
-
 
 @dataclass
 class BaseMessage:
@@ -122,7 +59,7 @@ class BaseMessage:
         role_name (str): The name of the user or assistant role.
         role_type (RoleType): The type of role, either :obj:`RoleType.
             ASSISTANT` or :obj:`RoleType.USER`.
-        meta_dict (Optional[Dict[str, str]]): Additional metadata dictionary
+        meta_dict (Optional[Dict[str, Any]]): Additional metadata dictionary
             for the message.
         content (str): The content of the message.
         video_bytes (Optional[bytes]): Optional bytes of a video associated
@@ -143,7 +80,7 @@ class BaseMessage:
     content: str
 
     video_bytes: Optional[bytes] = None
-    image_list: Optional[List["Image.Image"]] = None
+    image_list: Optional[List[Image.Image]] = None
     image_detail: Literal["auto", "low", "high"] = "auto"
     video_detail: Literal["auto", "low", "high"] = "low"
     parsed: Optional[Union[BaseModel, dict]] = None
@@ -498,8 +435,6 @@ class BaseMessage:
             }
         )
         if self.image_list and len(self.image_list) > 0:
-            from PIL import Image
-
             for image in self.image_list:
                 if image.format is None:
                     raise ValueError(
@@ -534,7 +469,6 @@ class BaseMessage:
         if self.video_bytes:
             import imageio.v3 as iio
             import numpy as np
-            from PIL import Image
 
             base64Frames: List[str] = []
             frame_count = 0

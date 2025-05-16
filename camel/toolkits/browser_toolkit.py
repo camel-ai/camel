@@ -39,10 +39,7 @@ from typing import (
     cast,
 )
 
-if TYPE_CHECKING:
-    from PIL import Image, ImageDraw, ImageFont
-
-    from camel.agents import ChatAgent
+from PIL import Image, ImageDraw, ImageFont
 
 from camel.logger import get_logger
 from camel.messages import BaseMessage
@@ -56,6 +53,9 @@ from camel.utils import (
     retry_on_error,
     sanitize_filename,
 )
+
+if TYPE_CHECKING:
+    from camel.agents import ChatAgent
 
 logger = get_logger(__name__)
 
