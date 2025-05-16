@@ -15,8 +15,8 @@
 from .apibank import APIBankBenchmark
 from .apibench import APIBenchBenchmark
 from .base import BaseBenchmark
-from .coderag_bench import CodeRAGBenchAutoRetriever, CodeRAGBenchmark
 from .browsecomp import BrowseCompBenchmark
+from .coderag_bench import CodeRAGBenchAutoRetriever, CodeRAGBenchmark
 from .gaia import DefaultGAIARetriever, GAIABenchmark
 from .nexus import NexusBenchmark
 from .ragbench import RAGBenchBenchmark
