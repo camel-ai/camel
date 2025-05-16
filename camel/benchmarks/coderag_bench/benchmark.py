@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+from __future__ import annotations
 
 import inspect
 import json
@@ -169,7 +170,7 @@ class CodeRAGBenchAutoRetriever(AutoRetriever):
     def run_vector_retriever(  # type: ignore[override]
         self,
         query: str,
-        contents: Union[Element, List[Element]],
+        contents: Union["Element", List["Element"]],
         top_k: int = 5,
         similarity_threshold: float = 0.7,
         return_detailed_info: bool = False,
