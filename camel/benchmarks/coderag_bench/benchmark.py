@@ -78,7 +78,7 @@ class RetrieverFn(Protocol):
     def __call__(
         self,
         query: str,
-        contents: Union[Element, List[Element]],
+        contents: Union["Element", List["Element"]],
         top_k: int = 5,
         **kwargs,
     ) -> Dict: ...
