@@ -11,12 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import asyncio
 import inspect
 import json
 import os
 import shlex
+import threading
 from contextlib import AsyncExitStack, asynccontextmanager
 from datetime import timedelta
+from functools import wraps
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -86,16 +89,12 @@ class MCPClient(BaseToolkit):
            ```
 
     Attributes:
-        command_or_url (str): URL for SSE mode or command executable for stdio
-            mode. (default: :obj:`None`)
+        command_or_url (str): URL for SSE mode or command executable for
+            stdio mode.
         args (List[str]): List of command-line arguments if stdio mode is used.
-            (default: :obj:`None`)
         env (Dict[str, str]): Environment variables for the stdio mode command.
-            (default: :obj:`None`)
         timeout (Optional[float]): Connection timeout.
-            (default: :obj:`None`)
         headers (Dict[str, str]): Headers for the HTTP request.
-            (default: :obj:`None`)
         mode (Optional[str]): Connection mode. Can be "sse" for Server-Sent
             Events, "streamable-http" for streaming HTTP,
             or None for stdio mode.
@@ -486,9 +485,9 @@ class MCPClient(BaseToolkit):
             command_or_url (str): URL for SSE mode or command executable
                 for stdio mode.
             args (Optional[List[str]]): List of command-line arguments if
-                stdio mode is used. (default: :obj:`None`)
+                stdio mode is used.
             env (Optional[Dict[str, str]]): Environment variables for
-                the stdio mode command. (default: :obj:`None`)
+                the stdio mode command.
             timeout (Optional[float]): Connection timeout.
                 (default: :obj:`None`)
             headers (Optional[Dict[str, str]]): Headers for the HTTP request.
@@ -577,15 +576,13 @@ class MCPToolkit(BaseToolkit):
            ```
 
     Args:
-        servers (Optional[List[MCPClient]]): List of MCPClient
-            instances to manage. (default: :obj:`None`)
-        config_path (Optional[str]): Path to a JSON configuration file
-            defining MCP servers. (default: :obj:`None`)
+        servers (Optional[List[MCPClient]]): List of MCPClient instances
+            to manage.
+        config_path (Optional[str]): Path to a JSON configuration file.
         config_dict (Optional[Dict[str, Any]]): Dictionary containing MCP
-            server configurations in the same format as the config file.
-            (default: :obj:`None`)
-        strict (Optional[bool]): Whether to enforce strict mode for the
-            function call. (default: :obj:`False`)
+            server configurations.
+        strict (Optional[bool]): Whether to enforce strict mode for
+            function calls.
 
     Note:
         Either `servers`, `config_path`, or `config_dict` must be provided.
@@ -800,3 +797,275 @@ class MCPToolkit(BaseToolkit):
                 in the toolkit.
         """
         return "\n".join(server.get_text_tools() for server in self.servers)
+
+
+def run_async(func: Callable[..., Any]) -> Callable[..., Any]:
+    """Helper function to run async functions in synchronous context.
+
+    Args:
+        func (Callable[..., T]): The async function to wrap.
+
+    Returns:
+        Callable[..., T]: A synchronous wrapper for the async function.
+    """
+
+    @wraps(func)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        if loop.is_closed():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        return loop.run_until_complete(func(*args, **kwargs))
+
+    return wrapper
+
+
+class MCPClientSync:
+    """Synchronous wrapper for MCPClient.
+
+    This class provides a synchronous interface to the asynchronous MCPClient,
+    allowing it to be used in synchronous code contexts.
+    """
+
+    def __init__(self, client: MCPClient):
+        """Initialize the synchronous wrapper.
+
+        Args:
+            client (MCPClient): The async MCPClient instance to wrap.
+        """
+        self._client = client
+        self._thread_local = threading.local()
+
+    @property
+    def client(self) -> MCPClient:
+        """Get the underlying async MCPClient.
+
+        Returns:
+            MCPClient: The wrapped async client instance.
+        """
+        return self._client
+
+    def connect(self) -> 'MCPClientSync':
+        """Synchronously connect to the MCP server.
+
+        Returns:
+            MCPClientSync: Self for method chaining.
+        """
+        run_async(self._client.connect)()
+        return self
+
+    def disconnect(self) -> None:
+        """Synchronously disconnect from the MCP server."""
+        run_async(self._client.disconnect)()
+
+    def list_mcp_tools(self) -> Any:
+        """Synchronously list available MCP tools.
+
+        Returns:
+            Any: The result of listing MCP tools.
+        """
+        result = run_async(self._client.list_mcp_tools)()
+        if isinstance(result, str):
+            return result
+        return result.tools
+
+    def get_tools(self) -> List[FunctionTool]:
+        """Get available tools (synchronous wrapper).
+
+        Returns:
+            List[FunctionTool]: List of available function tools.
+        """
+        return self._client.get_tools()
+
+    def get_text_tools(self) -> str:
+        """Get text description of available tools (synchronous wrapper).
+
+        Returns:
+            str: Text description of available tools.
+        """
+        return self._client.get_text_tools()
+
+    def call_tool(self, tool_name: str, tool_args: Dict[str, Any]) -> Any:
+        """Synchronously call a tool.
+
+        Args:
+            tool_name (str): Name of the tool to call.
+            tool_args (Dict[str, Any]): Arguments to pass to the tool.
+
+        Returns:
+            Any: The result of the tool call.
+        """
+        return run_async(self._client.call_tool)(tool_name, tool_args)
+
+    def __enter__(self) -> 'MCPClientSync':
+        """Context manager entry.
+
+        Returns:
+            MCPClientSync: Self with active connection.
+        """
+        self.connect()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Context manager exit."""
+        self.disconnect()
+
+    @classmethod
+    def create(
+        cls,
+        command_or_url: str,
+        args: Optional[List[str]] = None,
+        env: Optional[Dict[str, str]] = None,
+        timeout: Optional[float] = None,
+        headers: Optional[Dict[str, str]] = None,
+        mode: Optional[str] = None,
+    ) -> 'MCPClientSync':
+        """Create and connect to an MCPClient synchronously.
+
+        Args:
+            command_or_url (str): URL for SSE mode or command executable for
+                stdio mode.
+            args (Optional[List[str]]): List of command-line arguments if
+                stdio mode is used.
+            env (Optional[Dict[str, str]]): Environment variables for the
+                stdio mode command.
+            timeout (Optional[float]): Connection timeout.
+            headers (Optional[Dict[str, str]]): Headers for the HTTP request.
+            mode (Optional[str]): Connection mode.
+
+        Returns:
+            MCPClientSync: A connected synchronous MCP client.
+        """
+        client = MCPClient(
+            command_or_url=command_or_url,
+            args=args,
+            env=env,
+            timeout=timeout,
+            headers=headers,
+            mode=mode,
+        )
+        sync_client = cls(client)
+        sync_client.connect()
+        return sync_client
+
+
+class MCPToolkitSync:
+    """Synchronous wrapper for MCPToolkit.
+
+    This class provides a synchronous interface to the asynchronous MCPToolkit,
+    allowing it to be used in synchronous code contexts.
+    """
+
+    def __init__(self, toolkit: MCPToolkit):
+        """Initialize the synchronous wrapper.
+
+        Args:
+            toolkit (MCPToolkit): The async MCPToolkit instance to wrap.
+        """
+        self._toolkit = toolkit
+
+    @property
+    def toolkit(self) -> MCPToolkit:
+        """Get the underlying async MCPToolkit.
+
+        Returns:
+            MCPToolkit: The wrapped async toolkit instance.
+        """
+        return self._toolkit
+
+    @property
+    def servers(self) -> List[MCPClient]:
+        """Get the list of MCPClient instances managed by this toolkit.
+
+        Returns:
+            List[MCPClient]: List of MCPClient instances.
+        """
+        return self._toolkit.servers
+
+    def connect(self) -> 'MCPToolkitSync':
+        """Synchronously connect to all MCP servers.
+
+        Returns:
+            MCPToolkitSync: Self for method chaining.
+        """
+        run_async(self._toolkit.connect)()
+        return self
+
+    def disconnect(self) -> None:
+        """Synchronously disconnect from all MCP servers."""
+        run_async(self._toolkit.disconnect)()
+
+    def is_connected(self) -> bool:
+        """Check if all managed servers are connected.
+
+        Returns:
+            bool: True if all servers are connected, False otherwise.
+        """
+        return self._toolkit.is_connected()
+
+    def get_tools(self) -> List[FunctionTool]:
+        """Get all available tools.
+
+        Returns:
+            List[FunctionTool]: List of all available function tools.
+        """
+        return self._toolkit.get_tools()
+
+    def get_text_tools(self) -> str:
+        """Get text description of all available tools.
+
+        Returns:
+            str: Text description of all available tools.
+        """
+        return self._toolkit.get_text_tools()
+
+    def __enter__(self) -> 'MCPToolkitSync':
+        """Context manager entry.
+
+        Returns:
+            MCPToolkitSync: Self with active connections.
+        """
+        self.connect()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Context manager exit."""
+        self.disconnect()
+
+    @classmethod
+    def create(
+        cls,
+        servers: Optional[List[MCPClient]] = None,
+        config_path: Optional[str] = None,
+        config_dict: Optional[Dict[str, Any]] = None,
+        strict: Optional[bool] = False,
+    ) -> 'MCPToolkitSync':
+        """Create and connect to an MCPToolkit synchronously.
+
+        Args:
+            servers (Optional[List[MCPClient]]): List of MCPClient instances
+                to manage.
+            config_path (Optional[str]): Path to a JSON configuration file.
+            config_dict (Optional[Dict[str, Any]]): Dictionary containing MCP
+                server configurations.
+            strict (Optional[bool]): Whether to enforce strict mode for
+                function calls.
+
+        Returns:
+            MCPToolkitSync: A connected synchronous MCP toolkit.
+        """
+        toolkit = MCPToolkit(
+            servers=servers,
+            config_path=config_path,
+            config_dict=config_dict,
+            strict=strict,
+        )
+        sync_toolkit = cls(toolkit)
+        sync_toolkit.connect()
+        return sync_toolkit
