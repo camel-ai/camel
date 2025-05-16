@@ -19,8 +19,8 @@ from mcp.server.fastmcp import Context
 from camel.messages import BaseMessage
 from camel.responses import ChatAgentResponse
 from camel.toolkits import FunctionTool
-from services.agent_config import agents_dict, description_dict
-from services.agent_mcp_server import (
+from services.agent_mcp.config import agents_dict, description_dict
+from services.agent_mcp.server import (
     get_agent_info,
     get_agents_info,
     get_available_tools,

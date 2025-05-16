@@ -16,7 +16,7 @@ from typing import Any, Dict, Optional
 from mcp.server.fastmcp import Context, FastMCP
 
 from camel.utils import model_from_json_schema
-from services.agent_config import agents_dict, description_dict
+from services.agent_mcp.agent_config import agents_dict, description_dict
 
 mcp = FastMCP("ChatAgentMCP", dependencies=["camel-ai[all]"])
 
