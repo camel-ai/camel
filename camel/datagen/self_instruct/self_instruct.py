@@ -12,15 +12,14 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import json
-import os
 import random
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
+from camel.datagen.base import BaseDataGenPipeline
 from camel.logger import get_logger
 
 from .filter import RougeSimilarityFilter
@@ -30,17 +29,18 @@ from .templates import SelfInstructTemplates
 logger = get_logger(__name__)
 
 
-class SelfInstructPipeline:
+class SelfInstructPipeline(BaseDataGenPipeline):
     r"""A pipeline to generate and manage machine-generated instructions for
     tasks, combining human and machine task samples.
 
     Args:
         agent (ChatAgent): The agent used to interact and generate
             instructions.
-        seed (str): The path to the human-written instructions.
+        seed (Union[str, List[Dict]]): The path to the human-written
+            instructions or a list of human tasks directly.
         num_machine_instructions (int): Number of machine-generated
             instructions to generate. (default::obj:`5`)
-        data_output_path (Optional[str]): Path to save the generated data.
+        output_path (Optional[str]): Path to save the generated data.
             (default::obj:`./data_output.json`)
         human_to_machine_ratio (tuple): Ratio of human to machine tasks used
             for instruction generation. (default::obj:`(6, 2)`)
@@ -51,26 +51,36 @@ class SelfInstructPipeline:
             (default::obj:`None`)
         stop_on_first_failure (bool): If True, stops checking filters after
             the first failure.
+        batch_size (Optional[int]): Batch size for processing instructions.
+            (default::obj:`None`)
+        max_workers (Optional[int]): Maximum number of worker threads.
+            (default::obj:`None`)
+        save_intermediate (bool): Whether to save intermediate results.
+            (default::obj:`False`)
     """
 
     def __init__(
         self,
         agent: ChatAgent,
-        seed: str,
+        seed: Union[str, List[Dict]],
         num_machine_instructions: int = 5,
-        data_output_path: Optional[str] = './data_output.json',
+        output_path: Optional[str] = './data_output.json',
         human_to_machine_ratio: tuple = (6, 2),
         instruction_filter: Optional[InstructionFilter] = None,
         filter_config: Optional[Dict[str, Dict[str, Any]]] = None,
         stop_on_first_failure: bool = False,
+        save_intermediate: bool = False,
     ):
+        super().__init__(
+            output_path=output_path,
+            save_intermediate=save_intermediate,
+        )
         self.agent = agent
         self.num_machine_instructions = num_machine_instructions
-        self.data_output_path = data_output_path
         self.human_to_machine_ratio = human_to_machine_ratio
         self.human_tasks: List[Dict] = []
         self.machine_tasks: List[Dict] = []
-        self.load_seed(seed)
+        self.human_tasks = self.load_data(seed)
         default_config: Dict[str, Dict[str, Any]] = {
             "length": {},
             "keyword": {},
@@ -90,26 +100,6 @@ class SelfInstructPipeline:
             self.instruction_filter = InstructionFilter(
                 config_to_use, stop_on_first_failure
             )
-
-    def load_seed(self, path: str):
-        r"""Load seed tasks from a file. Defaults to a predefined seed file if
-        no path is provided.
-
-        Args:
-            path (str): Path to the seed file.
-
-        Raises:
-            FileNotFoundError: If the seed file does not exist.
-        """
-
-        if os.path.exists(path):
-            with open(path, 'r') as f:
-                for line in f:
-                    line = line.strip()
-                    if line:
-                        self.human_tasks.append(json.loads(line))
-        else:
-            raise FileNotFoundError(f"Seed file not found at path: {path}")
 
     def sample_human_tasks(self, count: int) -> List[dict]:
         r"""Sample a specified number of human tasks from the loaded seed.
@@ -134,6 +124,7 @@ class SelfInstructPipeline:
             List[dict]: A list of sampled machine tasks, with placeholders if
                 insufficient tasks are available.
         """
+
         available_machine_tasks = len(self.machine_tasks)
         if available_machine_tasks < count:
             sampled_tasks = self.machine_tasks.copy()
@@ -198,6 +189,7 @@ class SelfInstructPipeline:
             bool: True if the instruction is a classification task,
                 otherwise False.
         """
+
         clf_prompt = (
             SelfInstructTemplates.clf_template
             + f"Task: {instruction}\nIs it classification?"
@@ -208,14 +200,44 @@ class SelfInstructPipeline:
         )
         response = self.agent.step(clf_prompt)
         self.agent.reset()
+
+        content = response.msgs[0].content.strip()
+
+        # Try direct parsing with model_validate_json
         try:
-            structured_response = AgentResponse.parse_raw(
-                response.msgs[0].content.strip()
-            )
+            structured_response = AgentResponse.model_validate_json(content)
             return structured_response.answer
-        except ValueError as e:
-            logger.error(f"Error parsing agent response: {e}")
-            return False
+        except ValueError:
+            # continue to next approach
+            pass
+
+        # Try to extract from markdown code block and parse
+        if "```" in content:
+            try:
+                # Extract content between code block markers
+                parts = content.split("```")
+                if len(parts) >= 2:
+                    markdown_content = parts[1].strip()
+                    # Remove language identifier if present
+                    if markdown_content.startswith("json"):
+                        markdown_content = markdown_content[4:].strip()
+                    elif "\n" in markdown_content:
+                        # If first line might be language identifier, remove it
+                        markdown_content = "\n".join(
+                            markdown_content.split("\n")[1:]
+                        ).strip()
+
+                    # Try parsing the extracted content
+                    structured_response = AgentResponse.model_validate_json(
+                        markdown_content
+                    )
+                    return structured_response.answer
+            except ValueError:
+                pass
+
+        # If all parsing attempts fail, log the error and return default
+        logger.error("Failed to parse classification response")
+        return False
 
     def generate_machine_instances(self):
         r"""Generate instances for each machine task based on its
@@ -227,15 +249,22 @@ class SelfInstructPipeline:
         )
         attempt_count = 0
         for instruction in self.machine_tasks:
-            instance = self.generate_machine_instance(
-                instruction['instruction'], instruction['is_classification']
-            )
-            instruction['instances'] = instance
+            if not instruction['instruction']:
+                continue
+
             attempt_count += 1
-            logger.info(
-                f"Attempt[Output]: Progress {attempt_count}/"
-                f"{len(self.machine_tasks)} instructions"
+            logger.info(f"[{attempt_count}] Processing: {instruction}")
+
+            is_classification = self.identify_instruction(
+                instruction['instruction']
             )
+            instruction["is_classification"] = is_classification
+
+            if 'instances' not in instruction:
+                instances = self.generate_machine_instance(
+                    instruction['instruction'], is_classification
+                )
+                instruction['instances'] = instances
 
     def generate_machine_instance(
         self, instruction: str, classification: bool
@@ -250,6 +279,7 @@ class SelfInstructPipeline:
         Returns:
             List[dict]: A list of generated instances in input-output format.
         """
+
         if classification:
             prompt = (
                 SelfInstructTemplates.output_first_template_for_clf.format(
@@ -261,14 +291,18 @@ class SelfInstructPipeline:
                 instruction=instruction
             )
 
-        response = self.agent.step(prompt)
-        self.agent.reset()
-        generated_text = response.msgs[0].content.strip()
+        try:
+            response = self.agent.step(prompt)
+            self.agent.reset()
+            text = response.msgs[0].content.strip()
 
-        if classification:
-            return self.parse_classification_output(generated_text)
-        else:
-            return self.parse_non_classification_output(generated_text)
+            if classification:
+                return self.parse_classification_output(text)
+            else:
+                return self.parse_non_classification_output(text)
+        except Exception as e:
+            logger.error(f"Error generating instances: {e}")
+            return []
 
     def parse_classification_output(
         self, generated_text: str
@@ -284,6 +318,7 @@ class SelfInstructPipeline:
             List[Dict[str, str]]: A list of dictionaries with 'input' and
                 'output' keys.
         """
+
         instances = []
         lines = generated_text.split("\n")
         current_label = None
@@ -334,6 +369,7 @@ class SelfInstructPipeline:
             List[Dict[str, str]]: A list of dictionaries with 'input' and
                 'output' keys.
         """
+
         instances = []
         prev = 0
         lines = generated_text.split("\n")
@@ -376,43 +412,45 @@ class SelfInstructPipeline:
         return instances
 
     def construct_data(self):
-        r"""Save the machine-generated tasks to the specified output path
-        in JSON format.
-        """
-        with open(self.data_output_path, 'w') as f:
-            json.dump(self.machine_tasks, f, indent=4, ensure_ascii=False)
+        r"""Construct data output from generated tasks and instances."""
+        self.generate_machine_instances()
 
-    def generate(self, timeout_minutes=600):
-        r"""Execute the entire pipeline to generate machine instructions
-        and instances.
+    def generate(self, timeout_minutes=600) -> List[Dict[str, Any]]:
+        r"""Generate machine instructions and instances.
+
+        Core implementation that performs the generation logic.
 
         Args:
             timeout_minutes (int): Maximum time in minutes to run the
                 generation process before timing out. (default: :obj:`600`)
+
+        Returns:
+            List[Dict[str, Any]]: The generated machine tasks with instances.
         """
+
+        logger.info(f"Timeout set to {timeout_minutes} minutes")
+
         start_time = time.time()
         timeout_seconds = timeout_minutes * 60
-        logger.info(
-            f"Starting instruction generation: target "
-            f"{self.num_machine_instructions} instructions"
-        )
+
+        # Generate instructions
         while len(self.machine_tasks) < self.num_machine_instructions:
             # Check for timeout
             elapsed = time.time() - start_time
             if elapsed > timeout_seconds:
-                logger.info(
-                    f"Generation timed out after {elapsed / 60:.1f} minutes. "
-                    f"Generated {len(self.machine_tasks)}/"
-                    f"{self.num_machine_instructions} instructions."
-                )
+                logger.info(f"Timeout reached after {elapsed/60:.2f} minutes")
                 break
+
             prompt, instruction = self.generate_machine_instruction()
             existing_instructions = [
                 t["instruction"] for t in self.human_tasks
             ] + [t["instruction"] for t in self.machine_tasks]
+
+            # Apply filters
             for f in self.instruction_filter.filters:
                 if isinstance(f, RougeSimilarityFilter):
                     f.existing_instructions = existing_instructions
+
             if self.instruction_filter.filter(prompt, instruction):
                 instruction_dict = {
                     "id": f"machine_task_{len(self.machine_tasks) + 1}",
@@ -422,19 +460,31 @@ class SelfInstructPipeline:
                     ),
                 }
                 self.machine_tasks.append(instruction_dict)
-                logger.info(
-                    f"Attempt[Instruction]: Progress "
-                    f"{len(self.machine_tasks)}/"
-                    f"{self.num_machine_instructions} "
-                    f"instructions"
-                )
-            else:
-                logger.warning(
-                    f"Instruction failed filters. Skipping instruction: "
-                    f"{instruction}"
-                )
+
+                # Call the intermediate result hook
+                self.save_intermediate_results(self.machine_tasks)
+
+        # Generate instances for each instruction
         self.generate_machine_instances()
         self.construct_data()
+
+        return self.machine_tasks
+
+    def execute(self, timeout_minutes=600) -> List[Dict[str, Any]]:
+        r"""Execute the self-instruct data generation pipeline.
+
+        The main entry point for running the pipeline. Handles logging,
+        time measurement, and result saving.
+
+        Args:
+            timeout_minutes (int): Maximum time in minutes to run the
+                generation process before timing out. (default: :obj:`600`)
+
+        Returns:
+            List[Dict[str, Any]]: The generated machine tasks with instances.
+        """
+
+        return super().execute(timeout_minutes=timeout_minutes)
 
 
 class AgentResponse(BaseModel):

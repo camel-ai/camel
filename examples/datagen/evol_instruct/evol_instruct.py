@@ -32,7 +32,8 @@ def main():
     evolution.
     """
     # Load data
-    file_path = "./examples/datagen/evol_instruct/input.json"
+    file_path = "input.json"
+    output_path = "results.json"
     prompts = json.loads(open(file_path, "r", encoding="utf-8").read())
 
     # Define parameters
@@ -54,10 +55,11 @@ def main():
     pipeline = EvolInstructPipeline(
         agent=agent,
         templates=MathEvolInstructTemplates,
+        output_path=output_path,
     )
 
     # Execute the data generation pipeline
-    results = pipeline.generate(
+    pipeline.execute(
         prompts=prompts,
         evolution_spec=evol_spec,
         num_iterations=4,
@@ -65,12 +67,7 @@ def main():
         scorer=MathScorer(),
     )
 
-    # Save the generated results to a file
-    results_path = "./examples/datagen/evol_instruct/results.json"
-    with open(results_path, mode="w", encoding="utf-8") as file:
-        json.dump(results, file, indent=4, ensure_ascii=False)
-
-    logger.info(f"Results saved to '{results_path}'.")
+    logger.info(f"Results saved to {output_path}.")
 
 
 if __name__ == "__main__":

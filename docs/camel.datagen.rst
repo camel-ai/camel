@@ -7,6 +7,7 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
+   camel.datagen.evol_instruct
    camel.datagen.self_instruct
    camel.datagen.source2synth
 

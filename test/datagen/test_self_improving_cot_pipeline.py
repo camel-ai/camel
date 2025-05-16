@@ -488,6 +488,64 @@ class TestSelfImprovingCoTPipeline(unittest.TestCase):
             expected_trace = problem_to_trace[problem_text]
             self.assertEqual(result["final_trace"], expected_trace)
 
+    @patch('time.time', side_effect=[100, 120, 120.5, 121, 121.5, 122])
+    @patch("json.dump")
+    def test_execute(self, mock_dump, mock_time):
+        """Test that execute() correctly calls generate()
+        and handles output."""
+        # Create expected results from generate()
+        expected_results = [
+            {
+                "id": "problem_0",
+                "problem": "Test problem",
+                "final_trace": "Final reasoning trace",
+                "improvement_history": [
+                    {
+                        "iteration": 0,
+                        "trace": "Initial trace",
+                        "evaluation": {
+                            "correctness": 0.8,
+                            "clarity": 0.7,
+                            "completeness": 0.9,
+                            "feedback": "Good work",
+                        },
+                    }
+                ],
+            }
+        ]
+
+        # Setup test pipeline with mocked generate method
+        pipeline = SelfImprovingCoTPipeline(
+            reason_agent=self.mock_reason_agent,
+            evaluate_agent=self.mock_evaluate_agent,
+            problems=self.test_problems,
+            output_path="test_output.json",
+        )
+
+        # Mock the generate method to return our expected results
+        with patch.object(
+            pipeline, 'generate', side_effect=[expected_results]
+        ) as mock_generate:
+            # Execute the pipeline
+            results = pipeline.execute()
+
+            # Verify generate was called with correct parameters
+            mock_generate.assert_called_once_with(rationalization=False)
+
+            # Verify results were returned correctly
+            self.assertEqual(results, expected_results)
+
+            # Verify results were saved
+            mock_dump.assert_called()
+            args, kwargs = mock_dump.call_args
+            saved_data = args[0]
+            self.assertEqual(saved_data["traces"], expected_results)
+
+            # Verify execution time measurement occurred
+            # (implicitly tested by the mock_time patches)
+            self.assertEqual(mock_time.call_count, 4)
+            # Time is measured multiple times in the implementation
+
 
 if __name__ == "__main__":
     unittest.main()

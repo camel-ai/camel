@@ -13,11 +13,13 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
+import logging
 import os
 import time
 
 from camel.agents import ChatAgent
 from camel.datagen import SelfImprovingCoTPipeline
+from camel.logger import enable_logging, get_logger, set_log_level
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
@@ -26,6 +28,11 @@ please set the below os environment:
 export DEEPSEEK_API_KEY=""
 export GET_REASONING_CONTENT="true"
 """
+
+# Configure logging
+enable_logging()
+set_log_level(logging.INFO)
+logger = get_logger(__name__)
 
 evaluate_model = ModelFactory.create(
     model_platform=ModelPlatformType.DEFAULT,
@@ -116,17 +123,18 @@ def main():
         output_path=output_path,
         max_iterations=0,
         score_threshold=score_threshold,
+        rationalization=False,
         # reward_model=reward_model,  # To use a reward model (optional)
     )
 
-    results = pipeline.generate(rationalization=False)
+    results = pipeline.execute()
 
     end_time = time.time()
     execution_time = end_time - start_time
 
-    print(f"\nProcessed {len(results)} problems")
-    print(f"Results saved to: {output_path}")
-    print(f"Total execution time: {execution_time:.2f} seconds")
+    logger.info(f"Processed {len(results)} problems")
+    logger.info(f"Results saved to: {output_path}")
+    logger.info(f"Total execution time: {execution_time:.2f} seconds")
 
 
 if __name__ == "__main__":

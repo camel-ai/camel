@@ -13,15 +13,17 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import random
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 from tqdm import tqdm
 
 from camel.agents.multi_hop_generator_agent import MultiHopGeneratorAgent
+from camel.datagen.base import BaseDataGenPipeline
 from camel.datagen.source2synth.user_data_processor_config import (
     ProcessorConfig,
 )
 from camel.logger import get_logger
+from camel.utils import BatchProcessor
 
 logger = get_logger(__name__)
 
@@ -173,6 +175,10 @@ class ExampleConstructor:
         examples = []
 
         for data in tqdm(raw_data, desc="Constructing examples"):
+            # Ensure data is a dictionary
+            if not isinstance(data, dict):
+                continue
+
             # 1. Text preprocessing
             processed_text = self._preprocess_text(data.get('text', ''))
             if not processed_text:
@@ -536,3 +542,150 @@ class DataCurator:
             return examples
 
         return self.rng.sample(examples, self.config.dataset_size)
+
+
+class Source2SynthDataGenPipeline(BaseDataGenPipeline):
+    r"""Pipeline for generating multi-hop question-answer pairs
+    from source data.
+
+    Attributes:
+        processor (UserDataProcessor): Data processor for generating QA pairs.
+    """
+
+    def __init__(
+        self,
+        config: Optional[ProcessorConfig] = None,
+        output_path: Optional[str] = None,
+        batch_size: Optional[int] = None,
+        max_workers: Optional[int] = None,
+        save_intermediate: bool = False,
+    ):
+        r"""Initialize the source-to-synthesis data generation pipeline.
+
+        Args:
+            config (Optional[ProcessorConfig]): Configuration for data
+                processing. (default: :obj:`None`)
+            output_path (Optional[str]): Path to save generated data.
+                (default: :obj:`None`)
+            batch_size (Optional[int]): Batch size for processing.
+                (default: :obj:`None`)
+            max_workers (Optional[int]): Maximum number of worker threads.
+                (default: :obj:`None`)
+            save_intermediate (bool): Whether to save intermediate results.
+                (default: :obj:`False`)
+        """
+        super().__init__(
+            output_path=output_path,
+            save_intermediate=save_intermediate,
+        )
+
+        self.processor = UserDataProcessor(config)
+
+        # Setup batch processor
+        if batch_size is not None or max_workers is not None:
+            self.batch_processor = BatchProcessor(max_workers, batch_size)
+        else:
+            self.batch_processor = BatchProcessor()
+
+        # Initialize output file with empty results if path is specified
+        if self.output_path:
+            self.save_results([], results_key="examples")
+
+    def generate(
+        self,
+        data: Union[str, List[str], List[Dict[str, Any]]],
+    ) -> List[Dict[str, Any]]:
+        r"""Generate multi-hop question-answer pairs from input data.
+
+        Core implementation that performs the generation logic.
+
+        Args:
+            data: Input data, which can be:
+                - A single text string
+                - A list of text strings
+                - A list of dictionaries with 'text' and optional 'source' keys
+
+        Returns:
+            List[Dict[str, Any]]: Generated examples with QA pairs
+                and metadata.
+        """
+        if isinstance(data, str):
+            # Single text string
+            results = self.processor.process_text(data)
+        elif isinstance(data, list):
+            if not data:
+                return []
+
+            # Check if the list is a list of strings or a list of dictionaries
+            if all(isinstance(item, str) for item in data):
+                # List of text strings
+                string_texts: List[str] = [
+                    item for item in data if isinstance(item, str)
+                ]
+                results = self.processor.process_batch(string_texts)
+            elif all(isinstance(item, dict) for item in data):
+                # List of dictionaries
+                texts: List[str] = []
+                sources: List[str] = []
+
+                for item in data:
+                    if isinstance(item, dict):
+                        texts.append(item.get('text', ''))
+                        sources.append(item.get('source', 'user_input'))
+
+                # Only process if we have text items
+                if texts:
+                    results = self.processor.process_batch(texts, sources)
+                else:
+                    results = []
+            else:
+                # Handle mixed list - extract only the valid string
+                # and dict items
+                valid_texts: List[str] = []
+                valid_sources: List[str] = []
+
+                for item in data:
+                    if isinstance(item, str):
+                        valid_texts.append(item)
+                        valid_sources.append('user_input')
+                    elif isinstance(item, dict) and 'text' in item:
+                        valid_texts.append(item.get('text', ''))
+                        valid_sources.append(item.get('source', 'user_input'))
+
+                if valid_texts:
+                    results = self.processor.process_batch(
+                        valid_texts, valid_sources
+                    )
+                else:
+                    results = []
+        else:
+            raise ValueError(
+                "Data must be a string, list of strings, or list of "
+                "dictionaries"
+            )
+
+        if self.save_intermediate:
+            self.save_intermediate_results(results)
+
+        return results
+
+    def execute(
+        self,
+        data: Union[str, List[str], List[Dict[str, Any]]],
+    ) -> List[Dict[str, Any]]:
+        r"""Execute the Source2Synth data generation pipeline.
+
+        The main entry point for running the pipeline. Handles logging,
+        time measurement, and result saving.
+
+        Args:
+            data: Input data, which can be:
+                - A single text string
+                - A list of text strings
+                - A list of dictionaries with 'text' and optional 'source' keys
+
+        Returns:
+            List[Dict[str, Any]]: List of final curated examples.
+        """
+
+        return super().execute(data=data, results_key="examples")

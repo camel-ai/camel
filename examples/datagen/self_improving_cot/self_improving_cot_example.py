@@ -13,12 +13,13 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
+import logging
 import os
-import time
 
 from camel.agents import ChatAgent
 from camel.configs import DeepSeekConfig
 from camel.datagen import SelfImprovingCoTPipeline
+from camel.logger import enable_logging, get_logger, set_log_level
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
@@ -29,17 +30,19 @@ please set the below os environment:
 export DEEPSEEK_API_KEY=""
 """
 
+# Configure logging
+enable_logging()
+set_log_level(logging.INFO)
+logger = get_logger(__name__)
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.DEEPSEEK,
     model_type=ModelType.DEEPSEEK_CHAT,
-    model_config_dict=DeepSeekConfig(temperature=0).as_dict(),
+    model_config_dict=DeepSeekConfig(temperature=0.7).as_dict(),
 )
 
 
 def main():
-    start_time = time.time()
-
     current_dir = os.path.dirname(os.path.abspath(__file__))
     problems_path = os.path.join(current_dir, 'gsm8k_dataset.json')
     output_path = os.path.join(current_dir, 'self_improving_cot_output.json')
@@ -81,17 +84,11 @@ def main():
         output_path=output_path,
         max_iterations=3,
         score_threshold=score_threshold,
+        rationalization=False,
         # reward_model=reward_model,  # To use a reward model (optional)
     )
 
-    results = pipeline.generate(rationalization=False)
-
-    end_time = time.time()
-    execution_time = end_time - start_time
-
-    print(f"\nProcessed {len(results)} problems")
-    print(f"Results saved to: {output_path}")
-    print(f"Total execution time: {execution_time:.2f} seconds")
+    pipeline.execute()
 
 
 if __name__ == "__main__":

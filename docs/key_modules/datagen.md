@@ -6,6 +6,26 @@ This document describes CAMEL's key data generation modules that enable high-qua
 - Self-Instruct: Creates diverse instruction-following data
 - Source2Synth: Converts source code into natural language
 - Self-Improving CoT: Iteratively refines reasoning chains through self-critique
+- Evol-Instruct: Evolves prompts using different evolution strategies
+
+## Common Pipeline Interface
+
+All data generation pipelines in CAMEL follow a consistent interface pattern with two primary methods:
+
+- **generate()**: Contains the core data generation logic
+- **execute()**: Main entry point that handles logging, timing, and result saving
+
+This separation of concerns allows for better testing, flexibility, and code maintenance:
+
+```python
+# Using execute() for full pipeline with logging and file output
+results = pipeline.execute(data)
+
+# Using generate() for just the core generation logic
+results = pipeline.generate(data)
+```
+
+All pipelines inherit from BaseDataGenPipeline which provides common functionality for loading data from various formats and saving results.
 
 ## Chain of Thought (CoT) Data Generation
 
@@ -58,8 +78,11 @@ cot_generator = CoTDataGenerator(
     search_limit=100
 )
 
-# Generate solution
-solution = cot_generator.solve("question1")
+# Execute the pipeline to generate solutions
+solutions = cot_generator.execute(["question1", "question2"])
+
+# Alternatively, use the generate method for core logic only (without logging or saving)
+# solutions = cot_generator.generate(["question1", "question2"])
 ```
 
 #### Data Import/Export
@@ -95,7 +118,11 @@ cot_generator.export_solutions("solutions.json")
 - `search_limit`: Maximum number of search iterations (default: 100)
 - `generator_agent`: Specialized agent for answer generation
 - `verifier_agent`: Specialized agent for answer verification
-- `golden_answers`: Pre-defined correct answers for validation
+- `golden_answers`: Reference answers for verification in multiple formats:
+  - Dictionary mapping questions to answers
+  - File path to a JSONL file with question-answer pairs
+  - JSONL string with question-answer pairs
+  - List of dictionaries with 'question' and 'answer' fields
 
 ### Output Format
 
@@ -157,8 +184,11 @@ pipeline = SelfInstructPipeline(
     human_to_machine_ratio=(6, 2)  # Use 6 human tasks and 2 machine tasks for generation
 )
 
-# Generate instructions
-pipeline.generate()
+# Execute the pipeline
+results = pipeline.execute()
+
+# Alternatively, use the generate method for core logic only
+# results = pipeline.generate()
 ```
 
 #### Custom Filtering
@@ -307,7 +337,7 @@ Features:
 
 ```python
 from camel.datagen.source2synth import (
-    UserDataProcessor,
+    Source2SynthDataGenPipeline,
     ProcessorConfig
 )
 
@@ -321,19 +351,23 @@ config = ProcessorConfig(
     use_ai_model=True,
 )
 
-# Initialize processor
-processor = UserDataProcessor(config)
+# Initialize the pipeline
+pipeline = Source2SynthDataGenPipeline(
+    config=config,
+    output_path="source2synth_output.json"
+)
 
 # Process a single text
-result = processor.process_text(
-    "Your source text here",
-    source="example_source"
-)
+results = pipeline.execute("Your source text here")
 
 # Process multiple texts
 texts = ["Text 1", "Text 2", "Text 3"]
 sources = ["source1", "source2", "source3"]
-batch_results = processor.process_batch(texts, sources)
+batch_data = [{"text": text, "source": source} for text, source in zip(texts, sources)]
+batch_results = pipeline.execute(batch_data)
+
+# Alternatively, use the generate method for core logic only
+# results = pipeline.generate("Your source text here")
 ```
 
 ### Configuration Options
@@ -433,7 +467,10 @@ pipeline = SelfImprovingCoTPipeline(
     output_path="star_output.json"
 )
 
-results = pipeline.generate()
+results = pipeline.execute()
+
+# Alternatively, use the generate method for core logic only
+# results = pipeline.generate()
 ```
 
 #### Advanced Usage with External Reward Models
