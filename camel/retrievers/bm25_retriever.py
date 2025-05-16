@@ -13,8 +13,6 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import Any, Dict, List
 
-import numpy as np
-
 from camel.loaders import UnstructuredIO
 from camel.retrievers import BaseRetriever
 from camel.utils import dependencies_required
@@ -106,6 +104,7 @@ class BM25Retriever(BaseRetriever):
                 model has not been initialized by calling `process`
                 first.
         """
+        import numpy as np
 
         if top_k <= 0:
             raise ValueError("top_k must be a positive integer.")

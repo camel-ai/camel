@@ -11,17 +11,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from typing import Any, List, Optional, Union
 
-from PIL import Image
+# Enables postponed evaluation of annotations (for string-based type hints)
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 from camel.embeddings import BaseEmbedding
 from camel.logger import get_logger
 
+# Import only for type hints (not executed at runtime)
+if TYPE_CHECKING:
+    from PIL import Image
+
 logger = get_logger(__name__)
 
 
-class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
+class VisionLanguageEmbedding(BaseEmbedding[Union[str, "Image.Image"]]):
     r"""Provides image embedding functionalities using multimodal model.
 
     Args:
@@ -98,7 +104,10 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
 
         result_list = []
         for obj in objs:
-            if isinstance(obj, Image.Image):
+            if (
+                obj.__class__.__module__ == "PIL.Image"
+                and obj.__class__.__name__ == "Image"
+            ):
                 image_input = self.processor(
                     images=obj,
                     return_tensors="pt",

@@ -14,8 +14,6 @@
 import json
 from typing import ClassVar, Dict, Optional, Type, Union
 
-import yaml
-
 from camel.models.aiml_model import AIMLModel
 from camel.models.anthropic_model import AnthropicModel
 from camel.models.aws_bedrock_model import AWSBedrockModel
@@ -221,6 +219,8 @@ class ModelFactory:
 
     @classmethod
     def __load_yaml(cls, filepath: str) -> Dict:
+        import yaml
+
         r"""Loads and parses a YAML file into a dictionary.
 
         Args:

@@ -15,8 +15,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from numpy import ndarray
-
 from camel.embeddings.base import BaseEmbedding
 
 
@@ -61,6 +59,8 @@ class SentenceTransformerEncoder(BaseEmbedding[str]):
             list[list[float]]: A list that represents the generated embedding
                 as a list of floating-point numbers.
         """
+        from numpy import ndarray
+
         if not objs:
             raise ValueError("Input text list is empty")
         embeddings = self.model.encode(

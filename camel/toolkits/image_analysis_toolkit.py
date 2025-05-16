@@ -12,12 +12,14 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+# Enables postponed evaluation of annotations (for string-based type hints)
+from __future__ import annotations
+
 from io import BytesIO
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 from urllib.parse import urlparse
 
 import requests
-from PIL import Image
 
 from camel.logger import get_logger
 from camel.messages import BaseMessage
@@ -26,6 +28,10 @@ from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 from camel.types import ModelPlatformType, ModelType
 from camel.utils import MCPServer
+
+# Import only for type hints (not executed at runtime)
+if TYPE_CHECKING:
+    from PIL import Image
 
 logger = get_logger(__name__)
 
@@ -134,6 +140,8 @@ class ImageAnalysisToolkit(BaseToolkit):
             ValueError: For invalid paths/URLs or unreadable images.
             requests.exceptions.RequestException: For URL fetch failures.
         """
+        from PIL import Image
+
         parsed = urlparse(image_path)
 
         if parsed.scheme in ("http", "https"):
