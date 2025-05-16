@@ -29,6 +29,7 @@ from .linkedin_toolkit import LinkedInToolkit
 from .reddit_toolkit import RedditToolkit
 from .meshy_toolkit import MeshyToolkit
 from .openbb_toolkit import OpenBBToolkit
+from .bohrium_toolkit import BohriumToolkit
 
 from .base import BaseToolkit
 from .google_maps_toolkit import GoogleMapsToolkit
@@ -136,4 +137,5 @@ __all__ = [
     'ACIToolkit',
     'PlaywrightMCPToolkit',
     'WolframAlphaToolkit',
+    'BohriumToolkit',
 ]
