@@ -26,6 +26,7 @@ import time
 import urllib.parse
 from copy import deepcopy
 from typing import (
+    TYPE_CHECKING,
     Any,
     BinaryIO,
     Dict,
@@ -40,7 +41,6 @@ from typing import (
 
 from PIL import Image, ImageDraw, ImageFont
 
-from camel.agents import ChatAgent
 from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.models import BaseModelBackend, ModelFactory
@@ -53,6 +53,9 @@ from camel.utils import (
     retry_on_error,
     sanitize_filename,
 )
+
+if TYPE_CHECKING:
+    from camel.agents import ChatAgent
 
 logger = get_logger(__name__)
 

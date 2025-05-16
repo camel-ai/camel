@@ -26,6 +26,7 @@ import shutil
 import urllib.parse
 from copy import deepcopy
 from typing import (
+    TYPE_CHECKING,
     Any,
     BinaryIO,
     Coroutine,
@@ -41,7 +42,8 @@ from typing import (
 
 from PIL import Image, ImageDraw, ImageFont
 
-from camel.agents import ChatAgent
+if TYPE_CHECKING:
+    from camel.agents import ChatAgent
 from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.models import BaseModelBackend, ModelFactory
@@ -1346,7 +1348,7 @@ class AsyncBrowserToolkit(BaseToolkit):
 
     def _initialize_agent(self) -> Tuple["ChatAgent", "ChatAgent"]:
         r"""Initialize the agent."""
-        from camel.agents import ChatAgent
+        from camel.agents.chat_agent import ChatAgent
 
         if self.web_agent_model is None:
             web_agent_model = ModelFactory.create(
