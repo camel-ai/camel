@@ -21,6 +21,7 @@ import numpy as np
 from PIL import Image
 from pydantic import BaseModel
 
+from camel.data_schemas import ShareGPTMessage
 from camel.messages import (
     FunctionCallFormatter,
     HermesFunctionFormatter,
@@ -29,7 +30,6 @@ from camel.messages import (
     OpenAISystemMessage,
     OpenAIUserMessage,
 )
-from camel.messages.conversion import ShareGPTMessage
 from camel.prompts import CodePrompt, TextPrompt
 from camel.types import (
     OpenAIBackendRole,
@@ -303,10 +303,10 @@ class BaseMessage:
 
         if role_mapping is None:
             role_mapping = {
-                "system": ["system", RoleType.USER],
                 "human": ["user", RoleType.USER],
                 "gpt": ["assistant", RoleType.ASSISTANT],
-                "tool": ["assistant", RoleType.ASSISTANT],
+                "function_call": ["assistant", RoleType.ASSISTANT],
+                "observation": ["assistant", RoleType.ASSISTANT],
             }
         role_name, role_type = role_mapping[message.from_]
 
@@ -314,7 +314,7 @@ class BaseMessage:
             function_format = HermesFunctionFormatter()
 
         # Check if this is a function-related message
-        if message.from_ == "gpt":
+        if message.from_ == "function_call":
             func_info = function_format.extract_tool_calls(message.value)
             if (
                 func_info and len(func_info) == 1
@@ -336,7 +336,7 @@ class BaseMessage:
                     func_name=func_info[0].__dict__["name"],
                     args=func_info[0].__dict__["arguments"],
                 )
-        elif message.from_ == "tool":
+        elif message.from_ == "observation":
             func_r_info = function_format.extract_tool_response(message.value)
             if func_r_info:
                 return FunctionCallingMessage(
@@ -358,25 +358,29 @@ class BaseMessage:
 
     def to_sharegpt(
         self,
-        function_format: Optional[FunctionCallFormatter] = None,
     ) -> ShareGPTMessage:
-        r"""Convert BaseMessage to ShareGPT message
+        r"""Convert BaseMessage to ShareGPT message.
 
         Args:
             function_format (FunctionCallFormatter): Function call formatter
                 to use. Defaults to Hermes.
+
+        Raises:
+            ValueError: If attempting to convert a system message, as
+            ShareGPTMessage no longer allows _from = 'system'.
+
+        Returns:
+            ShareGPTMessage: The converted message.
         """
+        if self.role_name == "system":
+            raise ValueError(
+                "ShareGPTMessage data model has been refactored (issue #1316) "
+                "and no longer allows _from = 'system'. Consider converting "
+                "'system' message separately when generating ShareGPTData."
+            )
 
-        if function_format is None:
-            function_format = HermesFunctionFormatter()
+        from_ = "human" if self.role_type == RoleType.USER else "gpt"
 
-        # Convert role type to ShareGPT 'from' field
-        if self.role_type == RoleType.USER:
-            from_ = "system" if self.role_name == "system" else "human"
-        else:  # RoleType.ASSISTANT
-            from_ = "gpt"
-
-        # Function conversion code in FunctionCallingMessage
         return ShareGPTMessage(from_=from_, value=self.content)  # type: ignore[call-arg]
 
     def to_openai_message(
