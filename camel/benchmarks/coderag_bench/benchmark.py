@@ -30,9 +30,6 @@ from typing import (
     Union,
 )
 
-import datasets
-from datasets import Dataset
-
 from camel.agents import ChatAgent
 from camel.benchmarks.base import BaseBenchmark
 from camel.benchmarks.coderag_bench.code_generation_evaluation import (
@@ -44,6 +41,7 @@ from camel.retrievers.vector_retriever import VectorRetriever
 from camel.types import StorageType
 
 if TYPE_CHECKING:
+    from datasets import Dataset
     from unstructured.documents.elements import Element
 
 logger = logging.getLogger(__name__)
@@ -719,6 +717,8 @@ class CodeRAGBenchmark(BaseBenchmark):
         Returns:
             None
         """
+        import datasets
+
         if self.task == "humaneval":
             logger.info(
                 f"Downloading and processing dataset for task: {self.task}"
@@ -900,6 +900,8 @@ class CodeRAGBenchmark(BaseBenchmark):
                 example_with_docs = dict(example)
                 example_with_docs["docs"] = doc_entries
                 writer.write(example_with_docs)
+
+        import datasets
 
         self.dataset["test"] = datasets.load_dataset(
             "json", data_files=output_path, split="train"
