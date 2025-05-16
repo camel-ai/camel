@@ -1,0 +1,1387 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>camel.benchmarks.browsecomp &#8212; CAMEL 0.2.59 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=3c972f42" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../../_static/documentation_options.js?v=b51f7387"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/camel/benchmarks/browsecomp';</script>
+    <link rel="icon" href="https://raw.githubusercontent.com/camel-ai/camel/master/misc/favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png" class="logo__image only-light" alt=""/>
+    <script>document.write(`<img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png" class="logo__image only-dark" alt=""/>`);</script>
+  
+  
+    <p class="title logo__title">CAMEL 0.2.59</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Get Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../get_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../get_started/setup.html">API Setup</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Key Modules</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/agents.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/datagen.html">Data Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/messages.html">Message</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/memory.html">Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/tools.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/prompts.html">Prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/tasks.html">Task</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/loaders.html">Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/storages.html">Storages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/society.html">Society</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/embeddings.html">Embeddings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/retrievers.html">Retrievers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/workforce.html">Workforce</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Cookbooks</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/basic_concepts/index.html">Basic Concepts</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/create_your_first_agent.html">Creating Your First Agent</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/create_your_first_agents_society.html">Creating Your First Agent Society</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/agents_message.html">Message Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/agents_prompting.html">Prompting Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/model_speed_comparison.html">Model Speed Comparison Cookbook</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/advanced_features/index.html">Advanced Features</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_tools.html">Tools Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_tools_from_ACI.html">Using Tools from ACI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_tools_from_Composio.html">Using Tools from Composio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_human_in_loop_and_tool_approval.html">Agents with Human-in-loop and Tool Approval from HumanLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_memory.html">Memory Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_rag.html">RAG Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_graph_rag.html">Graph RAG Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_MCP.html">CAMEL MCP Cookbook</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_tracking.html">Track CAMEL Agents with AgentOps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/critic_agents_and_tree_search.html">Critic Agents and Tree Search</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/embodied_agents.html">Embodied Agents</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/multi_agent_society/index.html">Multi-agent Society</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/multi_agent_society/agents_society.html">Develop Trading Bot with Role Playing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/multi_agent_society/workforce_judge_committee.html">Create A Hackathon Judge Committee with Workforce</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/multi_agent_society/task_generation.html">Task Generation Cookbook</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/data_generation/index.html">Agentic Data Generation</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_mistral_7b_instruct.html">Agentic SFT Data generation with CAMEL and finetuning Mistral models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B.html">Agentic Data generation with CAMEL and finetuning Qwen models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_tinyllama.html">Agentic SFT Data generation with CAMEL and finetuning Meta models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/data_gen_with_real_function_calls_and_hermes_format.html">Real Function Calls and Hermes Format Data Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/self_instruct_data_generation.html">Self-instruct Data Generation Using Qwen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/cot_data_gen_sft_qwen_unsolth_upload_huggingface.html">CoT Data Generation and SFT Qwen With Unsloth</a></li>
+
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/synthetic_dataevaluation%26filter_with_reward_model.html">Agentic Data Generation, Evaluation &amp; Filtering with Reward Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/data_model_generation_and_structured_output_with_qwen.html">Agentic Data Model Generation and Structured Output Powered by CAMEL &amp; Qwen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/distill_math_reasoning_data_from_deepseek_r1.html">Distill Math Reasoning Data from DeepSeek R1 with CAMEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/self_improving_math_reasoning_data_distillation_from_deepSeek_r1.html">Self-Improving Math Reasoning Data Distillation from DeepSeek R1 with CAMEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/self_improving_cot_generation.html">Deep Dive into CAMEL’s Practices for Self-Improving CoT Generation 🚀</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/applications/index.html">Applications</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/roleplaying_scraper.html">Role-Playing Scraper for Report &amp; Knowledge Graph Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/dynamic_travel_planner.html">Dynamic Travel Planner Role-Playing: Multi-Agent System with Real-Time Insights Powered by Dappier</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/customer_service_Discord_bot_with_agentic_RAG.html">Customer Service Discord Bot with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/customer_service_Discord_bot_using_SambaNova_with_agentic_RAG.html">Customer Service Discord Bot Using SambaNova with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/customer_service_Discord_bot_using_local_model_with_agentic_RAG.html">Customer Service Discord Bot Using Local Models with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/finance_discord_bot.html">Customer Service Discord Bot for Finance with OpenBB</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/data_processing/index.html">Data Processing and Analysis</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_processing/video_analysis.html">Video Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_processing/agent_with_chunkr_for_pdf_parsing.html">Create AI Agents that work with your PDFs using Chunkr &amp; Mistral AI</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_processing/ingest_data_from_websites_with_Firecrawl.html">3 ways to ingest data from websites with Firecrawl</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../modules.html">camel</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../camel.html">camel package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.agents.html">camel.agents package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.agents.tool_agents.html">camel.agents.tool_agents package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.configs.html">camel.configs package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.datagen.html">camel.datagen package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.datagen.self_instruct.html">camel.datagen.self_instruct package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.datagen.source2synth.html">camel.datagen.source2synth package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.embeddings.html">camel.embeddings package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.interpreters.html">camel.interpreters package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.loaders.html">camel.loaders package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.memories.html">camel.memories package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.memories.blocks.html">camel.memories.blocks package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.memories.context_creators.html">camel.memories.context_creators package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.messages.html">camel.messages package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.models.html">camel.models package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.prompts.html">camel.prompts package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.responses.html">camel.responses package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.retrievers.html">camel.retrievers package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.societies.html">camel.societies package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.societies.workforce.html">camel.societies.workforce package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.storages.html">camel.storages package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.graph_storages.html">camel.storages.graph_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.key_value_storages.html">camel.storages.key_value_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.object_storages.html">camel.storages.object_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.vectordb_storages.html">camel.storages.vectordb_storages package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.tasks.html">camel.tasks package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.terminators.html">camel.terminators package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.toolkits.html">camel.toolkits package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.types.html">camel.types package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.utils.html">camel.utils package</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/camel-ai/camel" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/camel-ai/camel/issues/new?title=Issue%20on%20page%20%2F_modules/camel/benchmarks/browsecomp.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for camel.benchmarks.browsecomp</h1><div class="highlight"><pre>
+<span></span><span class="c1"># ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1"># ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">base64</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">hashlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">traceback</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">multiprocessing.pool</span><span class="w"> </span><span class="kn">import</span> <span class="n">ThreadPool</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.agents.chat_agent</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatAgent</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.benchmarks.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseBenchmark</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.societies.role_playing</span><span class="w"> </span><span class="kn">import</span> <span class="n">RolePlaying</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.societies.workforce.workforce</span><span class="w"> </span><span class="kn">import</span> <span class="n">Workforce</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.tasks.task</span><span class="w"> </span><span class="kn">import</span> <span class="n">Task</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Message</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">role</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">content</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">variant</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="n">MessageList</span> <span class="o">=</span> <span class="n">List</span><span class="p">[</span><span class="n">Message</span><span class="p">]</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">QueryResponse</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;A structured query response for benchmark evaluation.</span>
+
+<span class="sd">    This class defines the expected format for model responses to benchmark</span>
+<span class="sd">    questions, including explanation, exact answer, and confidence score.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">explanation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;your explanation for your final answer.&quot;&quot;&quot;</span>
+    <span class="p">)</span>
+    <span class="n">exact_answer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;your succinct, final answer.&quot;&quot;&quot;</span><span class="p">)</span>
+    <span class="n">confidence</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">your confidence score between 0|\%| and 100|\%| for your answer.</span>
+<span class="s2">&quot;&quot;&quot;</span>
+    <span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">GradingResponse</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;A structured grading response for evaluating model answers.</span>
+
+<span class="sd">    This class defines the expected format for grading responses, including</span>
+<span class="sd">    extracted answer, reasoning about correctness, binary correctness judgment,</span>
+<span class="sd">    and confidence score extraction.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">extracted_final_answer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">The final exact answer extracted from the [response].</span>
+<span class="s2">Put the extracted answer as &#39;None&#39; if there is no exact, final answer to </span>
+<span class="s2">extract from the response.&quot;&quot;&quot;</span>
+    <span class="p">)</span>
+    <span class="n">reasoning</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">Explain why the extracted_final_answer is correct or incorrect </span>
+<span class="s2">based on [correct_answer], focusing only on if there are meaningful </span>
+<span class="s2">differences between [correct_answer] and the extracted_final_answer. </span>
+<span class="s2">Do not comment on any background to the problem, do not attempt </span>
+<span class="s2">to solve the problem, do not argue for any answer different </span>
+<span class="s2">than [correct_answer], focus only on whether the answers match.&quot;&quot;&quot;</span>
+    <span class="p">)</span>
+    <span class="n">correct</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;Answer &#39;yes&#39; if extracted_final_answer matches the </span>
+<span class="s2">[correct_answer] given above, or is within a small margin of error for </span>
+<span class="s2">numerical problems. Answer &#39;no&#39; otherwise, i.e. if there if there is any </span>
+<span class="s2">inconsistency, ambiguity, non-equivalency, or if the extracted answer is </span>
+<span class="s2">incorrect.&quot;&quot;&quot;</span>
+    <span class="p">)</span>
+    <span class="n">confidence</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;The extracted confidence score between 0|\%| </span>
+<span class="s2">and 100|\%| from [response]. Put 100 if there is no confidence score available.</span>
+<span class="s2">&quot;&quot;&quot;</span>
+    <span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">SingleEvalResult</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Result of evaluating a single benchmark sample.</span>
+
+<span class="sd">    This class stores the evaluation results for a single benchmark example,</span>
+<span class="sd">    including score, HTML representation, conversation history, and metrics.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">score</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">html</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">convo</span><span class="p">:</span> <span class="n">MessageList</span>
+    <span class="n">metrics</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">EvalResult</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Result of running a complete benchmark evaluation.</span>
+
+<span class="sd">    This class aggregates results from multiple sample evaluations, storing</span>
+<span class="sd">    the overall score, detailed metrics, HTML reports, and conversation logs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">score</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># top-line metric</span>
+    <span class="n">metrics</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># other metrics</span>
+    <span class="n">htmls</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>  <span class="c1"># strings of valid HTML</span>
+    <span class="n">convos</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">MessageList</span><span class="p">]</span>  <span class="c1"># sampled conversations</span>
+
+
+<span class="c1"># Define the message template first</span>
+<span class="n">_message_template</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">&lt;div class=&quot;message {{ role }}&quot;&gt;</span>
+<span class="s2">    &lt;div class=&quot;role&quot;&gt;</span>
+<span class="s2">    {{ role }}</span>
+<span class="s2">    {</span><span class="si">% i</span><span class="s2">f variant %}&lt;span class=&quot;variant&quot;&gt;({{ variant }})&lt;/span&gt;{</span><span class="si">% e</span><span class="s2">ndif %}</span>
+<span class="s2">    &lt;/div&gt;</span>
+<span class="s2">    &lt;div class=&quot;content&quot;&gt;</span>
+<span class="s2">    &lt;pre&gt;{{ content }}&lt;/pre&gt;</span>
+<span class="s2">    &lt;/div&gt;</span>
+<span class="s2">&lt;/div&gt;</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="c1"># TODO: Add necessary prompts when tuning.</span>
+<span class="n">QUERY_TEMPLATE</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="si">{question}</span>
+
+<span class="s2">Your response should be in the following format:</span>
+<span class="s2">Explanation: {{your explanation for your final answer}}</span>
+<span class="s2">Exact Answer: {{your succinct, final answer}}</span>
+<span class="s2">Confidence: {{your confidence score between 0</span><span class="si">% a</span><span class="s2">nd 100</span><span class="si">% f</span><span class="s2">or your answer}}</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+<span class="n">SUMMARIZE_TEMPLATE</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">Based on the chat history:</span>
+<span class="si">{chat_history}</span>
+
+<span class="s2">answer the question:</span>
+<span class="si">{query}</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="n">FORMAT_JSON_TEMPLATE</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">format content into json:</span>
+<span class="si">{content}</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="n">GRADER_TEMPLATE</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">Judge whether the following [response] to [question] is correct or not </span>
+<span class="s2">based on the precise and unambiguous [correct_answer] below.</span>
+
+<span class="s2">[question]: </span><span class="si">{question}</span>
+
+<span class="s2">[response]: </span><span class="si">{response}</span>
+
+<span class="s2">Your judgement must be in the format and criteria specified below:</span>
+
+<span class="s2">extracted_final_answer: The final exact answer extracted from the [response].</span>
+<span class="s2">Put the extracted answer as &#39;None&#39; if there is no exact, final answer to </span>
+<span class="s2">extract from the response.</span>
+
+<span class="s2">[correct_answer]: </span><span class="si">{correct_answer}</span>
+
+<span class="s2">reasoning: Explain why the extracted_final_answer is correct or incorrect </span>
+<span class="s2">based on [correct_answer], focusing only on if there are meaningful </span>
+<span class="s2">differences between [correct_answer] and the extracted_final_answer. </span>
+<span class="s2">Do not comment on any background to the problem, do not attempt </span>
+<span class="s2">to solve the problem, do not argue for any answer different </span>
+<span class="s2">than [correct_answer], focus only on whether the answers match.</span>
+
+<span class="s2">correct: Answer &#39;yes&#39; if extracted_final_answer matches the </span>
+<span class="s2">[correct_answer] given above, or is within a small margin of error for </span>
+<span class="s2">numerical problems. Answer &#39;no&#39; otherwise, i.e. if there is any </span>
+<span class="s2">inconsistency, ambiguity, non-equivalency, or if the extracted answer is </span>
+<span class="s2">incorrect.</span>
+
+
+<span class="s2">confidence: The extracted confidence score between 0|\%| and 100|\%| </span>
+<span class="s2">from [response]. Put 100 if there is no confidence score available.</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+
+<span class="n">HTML_JINJA</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">&lt;h3&gt;Question:&lt;/h3&gt;</span>
+<span class="s2">{{ message_to_html(prompt_messages) | safe }}</span>
+<span class="s2">&lt;h3&gt;Sampled message&lt;/h3&gt;</span>
+<span class="s2">{{ message_to_html(next_message) | safe }}</span>
+<span class="s2">&lt;h3&gt;Results&lt;/h3&gt;</span>
+<span class="s2">&lt;p&gt;Correct Answer: {{ correct_answer }}&lt;/p&gt;</span>
+<span class="s2">&lt;p&gt;Extracted Answer: {{ extracted_answer }}&lt;/p&gt;</span>
+<span class="s2">&lt;p&gt;Score: {{ score }}&lt;/p&gt;</span>
+<span class="s2">&quot;&quot;&quot;</span>
+<span class="n">_report_template</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;&lt;!DOCTYPE html&gt;</span>
+<span class="s2">&lt;html&gt;</span>
+<span class="s2">    &lt;head&gt;</span>
+<span class="s2">        &lt;style&gt;</span>
+<span class="s2">            .message {</span>
+<span class="s2">                padding: 8px 16px;</span>
+<span class="s2">                margin-bottom: 8px;</span>
+<span class="s2">                border-radius: 4px;</span>
+<span class="s2">            }</span>
+<span class="s2">            .message.user {</span>
+<span class="s2">                background-color: #B2DFDB;</span>
+<span class="s2">                color: #00695C;</span>
+<span class="s2">            }</span>
+<span class="s2">            .message.assistant {</span>
+<span class="s2">                background-color: #B39DDB;</span>
+<span class="s2">                color: #4527A0;</span>
+<span class="s2">            }</span>
+<span class="s2">            .message.system {</span>
+<span class="s2">                background-color: #EEEEEE;</span>
+<span class="s2">                color: #212121;</span>
+<span class="s2">            }</span>
+<span class="s2">            .role {</span>
+<span class="s2">                font-weight: bold;</span>
+<span class="s2">                margin-bottom: 4px;</span>
+<span class="s2">            }</span>
+<span class="s2">            .variant {</span>
+<span class="s2">                color: #795548;</span>
+<span class="s2">            }</span>
+<span class="s2">            table, th, td {</span>
+<span class="s2">                border: 1px solid black;</span>
+<span class="s2">            }</span>
+<span class="s2">            pre {</span>
+<span class="s2">                white-space: pre-wrap;</span>
+<span class="s2">            }</span>
+<span class="s2">        &lt;/style&gt;</span>
+<span class="s2">    &lt;/head&gt;</span>
+<span class="s2">    &lt;body&gt;</span>
+<span class="s2">    {</span><span class="si">% i</span><span class="s2">f metrics %}</span>
+<span class="s2">    &lt;h1&gt;Metrics&lt;/h1&gt;</span>
+<span class="s2">    &lt;table&gt;</span>
+<span class="s2">    &lt;tr&gt;</span>
+<span class="s2">        &lt;th&gt;Metric&lt;/th&gt;</span>
+<span class="s2">        &lt;th&gt;Value&lt;/th&gt;</span>
+<span class="s2">    &lt;/tr&gt;</span>
+<span class="s2">    &lt;tr&gt;</span>
+<span class="s2">        &lt;td&gt;&lt;b&gt;Score&lt;/b&gt;&lt;/td&gt;</span>
+<span class="s2">        &lt;td&gt;{{ score | float | round(3) }}&lt;/td&gt;</span>
+<span class="s2">    &lt;/tr&gt;</span>
+<span class="s2">    {</span><span class="si">% f</span><span class="s2">or name, value in metrics.items() %}</span>
+<span class="s2">    &lt;tr&gt;</span>
+<span class="s2">        &lt;td&gt;{{ name }}&lt;/td&gt;</span>
+<span class="s2">        &lt;td&gt;{{ value }}&lt;/td&gt;</span>
+<span class="s2">    &lt;/tr&gt;</span>
+<span class="s2">    {</span><span class="si">% e</span><span class="s2">ndfor %}</span>
+<span class="s2">    &lt;/table&gt;</span>
+<span class="s2">    {</span><span class="si">% e</span><span class="s2">ndif %}</span>
+<span class="s2">    &lt;h1&gt;Examples&lt;/h1&gt;</span>
+<span class="s2">    {</span><span class="si">% f</span><span class="s2">or html in htmls %}</span>
+<span class="s2">    {{ html | safe }}</span>
+<span class="s2">    &lt;hr&gt;</span>
+<span class="s2">    {</span><span class="si">% e</span><span class="s2">ndfor %}</span>
+<span class="s2">    &lt;/body&gt;</span>
+<span class="s2">&lt;/html&gt;</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">JinjaEnv</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;A class that encapsulates the Jinja environment setup.&quot;&quot;&quot;</span>
+
+    <span class="n">_instance</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">&#39;JinjaEnv&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_env</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Initialize the JinjaEnv instance if not already initialized.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_initialized&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_initialized</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Implement singleton pattern to ensure only one instance exists.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_instance</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">_instance</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">JinjaEnv</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">_instance</span><span class="o">.</span><span class="n">_initialized</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_instance</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_instance</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Get the singleton instance of JinjaEnv.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            JinjaEnv: The singleton instance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_instance</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">_instance</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_instance</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">env</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Lazily initialize and return the Jinja environment.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            jinja2.Environment: The Jinja environment instance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_env</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Lazy import of jinja2</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">jinja2</span>
+
+            <span class="c1"># Create the Jinja environment</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_env</span> <span class="o">=</span> <span class="n">jinja2</span><span class="o">.</span><span class="n">Environment</span><span class="p">(</span>
+                <span class="n">loader</span><span class="o">=</span><span class="n">jinja2</span><span class="o">.</span><span class="n">BaseLoader</span><span class="p">(),</span>
+                <span class="n">undefined</span><span class="o">=</span><span class="n">jinja2</span><span class="o">.</span><span class="n">StrictUndefined</span><span class="p">,</span>
+                <span class="n">autoescape</span><span class="o">=</span><span class="n">jinja2</span><span class="o">.</span><span class="n">select_autoescape</span><span class="p">([</span><span class="s2">&quot;html&quot;</span><span class="p">,</span> <span class="s2">&quot;xml&quot;</span><span class="p">]),</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Register the message_to_html function</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">globals</span><span class="p">[</span><span class="s2">&quot;message_to_html&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">message_to_html</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_env</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">template_str</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Create a template from the given string.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            template_str (str): The template string.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            jinja2.Template: The compiled template.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="n">template_str</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">message_to_html</span><span class="p">(</span><span class="n">message</span><span class="p">:</span> <span class="n">Message</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Generate HTML snippet (inside a &lt;div&gt;) for a message.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            message (Message): The message to convert to HTML.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The HTML representation of the message.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">JinjaEnv</span><span class="o">.</span><span class="n">get_instance</span><span class="p">()</span>
+            <span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="n">_message_template</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">render</span><span class="p">(</span>
+                <span class="n">role</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">role</span><span class="p">,</span>
+                <span class="n">content</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">content</span><span class="p">,</span>
+                <span class="n">variant</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">variant</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">derive_key</span><span class="p">(</span><span class="n">password</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">length</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Derive a fixed-length key from the password using SHA256.&quot;&quot;&quot;</span>
+    <span class="n">hasher</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">()</span>
+    <span class="n">hasher</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">password</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="n">hasher</span><span class="o">.</span><span class="n">digest</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">key</span> <span class="o">*</span> <span class="p">(</span><span class="n">length</span> <span class="o">//</span> <span class="nb">len</span><span class="p">(</span><span class="n">key</span><span class="p">))</span> <span class="o">+</span> <span class="n">key</span><span class="p">[:</span> <span class="n">length</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">key</span><span class="p">)]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">decrypt</span><span class="p">(</span><span class="n">ciphertext_b64</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">password</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Decrypt base64-encoded ciphertext with XOR.&quot;&quot;&quot;</span>
+    <span class="n">encrypted</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64decode</span><span class="p">(</span><span class="n">ciphertext_b64</span><span class="p">)</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="n">derive_key</span><span class="p">(</span><span class="n">password</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">encrypted</span><span class="p">))</span>
+    <span class="n">decrypted</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">(</span><span class="n">a</span> <span class="o">^</span> <span class="n">b</span> <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">encrypted</span><span class="p">,</span> <span class="n">key</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">decrypted</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_compute_stat</span><span class="p">(</span><span class="n">values</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">stat</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+    <span class="k">if</span> <span class="n">stat</span> <span class="o">==</span> <span class="s2">&quot;mean&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">stat</span> <span class="o">==</span> <span class="s2">&quot;std&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">stat</span> <span class="o">==</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">stat</span> <span class="o">==</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown </span><span class="si">{</span><span class="n">stat</span><span class="w"> </span><span class="si">=}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">aggregate_results</span><span class="p">(</span>
+    <span class="n">single_eval_results</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">SingleEvalResult</span><span class="p">],</span>
+    <span class="n">default_stats</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">),</span>
+    <span class="n">name2stats</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EvalResult</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Aggregate results from multiple evaluations into a single EvalResult.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        single_eval_results (List[SingleEvalResult]): A list of</span>
+<span class="sd">            `SingleEvalResult` objects.</span>
+<span class="sd">        default_stats (Tuple[str, str]): A tuple of default statistics to</span>
+<span class="sd">            compute. (default: :obj:`(&quot;mean&quot;, &quot;std&quot;)`)</span>
+<span class="sd">        name2stats (Optional[Dict[str, Tuple[str]]]): A dictionary mapping</span>
+<span class="sd">            metric names to statistics to compute. (default: :obj:`None`)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        EvalResult: An `EvalResult` object containing aggregated results.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name2stats</span> <span class="o">=</span> <span class="n">name2stats</span> <span class="ow">or</span> <span class="p">{}</span>
+    <span class="n">name2values</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">htmls</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">convos</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">single_eval_result</span> <span class="ow">in</span> <span class="n">single_eval_results</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">single_eval_result</span><span class="o">.</span><span class="n">metrics</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">name2values</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">single_eval_result</span><span class="o">.</span><span class="n">score</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">name2values</span><span class="p">[</span><span class="s2">&quot;score&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">single_eval_result</span><span class="o">.</span><span class="n">score</span><span class="p">)</span>
+        <span class="n">htmls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">single_eval_result</span><span class="o">.</span><span class="n">html</span><span class="p">)</span>
+        <span class="n">convos</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">single_eval_result</span><span class="o">.</span><span class="n">convo</span><span class="p">)</span>
+
+    <span class="n">final_metrics</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">values</span> <span class="ow">in</span> <span class="n">name2values</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">stats</span> <span class="o">=</span> <span class="n">name2stats</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">default_stats</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">stat</span> <span class="ow">in</span> <span class="n">stats</span><span class="p">:</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">name</span> <span class="k">if</span> <span class="n">stat</span> <span class="o">==</span> <span class="s2">&quot;mean&quot;</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">stat</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">final_metrics</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">_compute_stat</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">stat</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">EvalResult</span><span class="p">(</span>
+        <span class="n">score</span><span class="o">=</span><span class="n">final_metrics</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;score&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+        <span class="n">metrics</span><span class="o">=</span><span class="n">final_metrics</span><span class="p">,</span>
+        <span class="n">htmls</span><span class="o">=</span><span class="n">htmls</span><span class="p">,</span>
+        <span class="n">convos</span><span class="o">=</span><span class="n">convos</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<div class="viewcode-block" id="BrowseCompBenchmark">
+<a class="viewcode-back" href="../../../camel.benchmarks.html#camel.benchmarks.BrowseCompBenchmark">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BrowseCompBenchmark</span><span class="p">(</span><span class="n">BaseBenchmark</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;BrowseComp Benchmark for evaluating browser-based comprehension tasks.</span>
+
+<span class="sd">    This benchmark evaluates the ability of language models to comprehend and</span>
+<span class="sd">    answer questions based on browser-based content, measuring accuracy and</span>
+<span class="sd">    performance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">save_to</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">processes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">num_examples</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">n_repeats</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Initialize the BrowseComp benchmark.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            save_to (str): The file to save the results.</span>
+<span class="sd">            processes (int, optional): The number of processes to use for</span>
+<span class="sd">                parallel processing. (default: :obj:`1`)</span>
+<span class="sd">            num_examples (Optional[int]): Number of examples to evaluate.</span>
+<span class="sd">                If None, all examples are used. Controls the sample size for</span>
+<span class="sd">                testing. (default: :obj:`None`)</span>
+<span class="sd">            n_repeats (int, optional): Number of times to repeat each example.</span>
+<span class="sd">                Useful for evaluating consistency across multiple runs.</span>
+<span class="sd">                (default: :obj:`1`)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Browsecomp benchmark won&#39;t download any data</span>
+        <span class="c1"># use current path as the data_dir passing into super init</span>
+        <span class="n">current_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;browsecomp&quot;</span><span class="p">,</span> <span class="n">current_path</span><span class="p">,</span> <span class="n">save_to</span><span class="p">,</span> <span class="n">processes</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_examples</span> <span class="o">=</span> <span class="n">num_examples</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_repeats</span> <span class="o">=</span> <span class="n">n_repeats</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">examples</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_raw_results</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validated_results</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">SingleEvalResult</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_eval_result</span><span class="p">:</span> <span class="n">EvalResult</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">jinja_env</span> <span class="o">=</span> <span class="n">JinjaEnv</span><span class="o">.</span><span class="n">get_instance</span><span class="p">()</span>
+
+<div class="viewcode-block" id="BrowseCompBenchmark.download">
+<a class="viewcode-back" href="../../../camel.benchmarks.html#camel.benchmarks.BrowseCompBenchmark.download">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">download</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Download the BrowseComp dataset.</span>
+
+<span class="sd">        This method is implemented to maintain compatibility</span>
+<span class="sd">        with the BaseBenchmark interface, but BrowseComp doesn&#39;t</span>
+<span class="sd">        require downloading data separately.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            self: The benchmark instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;BrowseComp benchmark does not require downloading data.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+<div class="viewcode-block" id="BrowseCompBenchmark.load">
+<a class="viewcode-back" href="../../../camel.benchmarks.html#camel.benchmarks.BrowseCompBenchmark.load">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Load the BrowseComp dataset.</span>
+
+<span class="sd">        This method loads the dataset from a remote CSV file, converts each</span>
+<span class="sd">        row to a dictionary, and applies sampling if num_examples is</span>
+<span class="sd">        specified. It also handles repeating examples if n_repeats &gt; 1.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            self: The benchmark instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Load dataset from remote CSV</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span>
+
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
+            <span class="s2">&quot;https://openaipublic.blob.core.windows.net/simple-evals/browse_comp_test_set.csv&quot;</span>
+        <span class="p">)</span>
+        <span class="c1"># Convert each row to a dictionary</span>
+        <span class="n">examples</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">iterrows</span><span class="p">()]</span>
+
+        <span class="c1"># Sample examples if num_examples is specified</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_examples</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">n_repeats</span> <span class="o">==</span> <span class="mi">1</span>
+            <span class="p">),</span> <span class="s2">&quot;n_repeats only supported when max_examples = None&quot;</span>
+            <span class="n">rng</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">Random</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># Use fixed seed for reproducibility</span>
+            <span class="n">examples</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">examples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_examples</span><span class="p">)</span>
+
+        <span class="c1"># Repeat examples if n_repeats &gt; 1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">examples</span> <span class="o">=</span> <span class="n">examples</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_repeats</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Get the training set.</span>
+
+<span class="sd">        This property is implemented to maintain compatibility with</span>
+<span class="sd">        the BaseBenchmark interface, but BrowseComp doesn&#39;t have a</span>
+<span class="sd">        training set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            NotImplementedError: BrowseComp does not have a training set.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;BrowseComp does not have a training set.&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BrowseCompBenchmark.run">
+<a class="viewcode-back" href="../../../camel.benchmarks.html#camel.benchmarks.BrowseCompBenchmark.run">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span>  <span class="c1"># type: ignore[override]</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">pipeline_template</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ChatAgent</span><span class="p">,</span> <span class="n">RolePlaying</span><span class="p">,</span> <span class="n">Workforce</span><span class="p">],</span>
+        <span class="n">chat_turn_limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+        <span class="n">roleplaying_summarizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ChatAgent</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">task_json_formatter</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ChatAgent</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Run the benchmark by processing each example in parallel.</span>
+
+<span class="sd">        This method applies the provided pipeline to each example in the</span>
+<span class="sd">        dataset using a process pool for parallel execution. It shows progress</span>
+<span class="sd">        using tqdm and stores the results in self._raw_results.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pipeline_template (Union[ChatAgent, RolePlaying, Workforce]): The</span>
+<span class="sd">                template agent or framework to use for processing examples.</span>
+<span class="sd">                Can be a ChatAgent, RolePlaying, or Workforce instance that</span>
+<span class="sd">                will be cloned for each example.</span>
+<span class="sd">            chat_turn_limit (int): Maximum number of conversation turns allowed</span>
+<span class="sd">                when using RolePlaying pipeline. (default: :obj:`10`)</span>
+<span class="sd">            roleplaying_summarizer (Optional[ChatAgent]): Optional ChatAgent to</span>
+<span class="sd">                summarize RolePlaying conversations. If None and RolePlaying is</span>
+<span class="sd">                used, a default summarizer will be created.</span>
+<span class="sd">                (default: :obj:`None`)</span>
+<span class="sd">            task_json_formatter (Optional[ChatAgent]): Optional ChatAgent to</span>
+<span class="sd">                format task JSON. If None and Workforce is used, a default</span>
+<span class="sd">                formatter will be created. (default: :obj:`None`)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
+
+        <span class="c1"># Use a process pool for parallel execution</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">process_benchmark_row</span><span class="p">(</span><span class="n">row</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">            </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;This inner function processes a single benchmark row by</span>
+<span class="sd">            extracting the problem and answer, creating a pipeline instance,</span>
+<span class="sd">            and generating a response using the appropriate method based on</span>
+<span class="sd">            the pipeline type.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                row (Dict[str, Any]): A row from the dataset containing</span>
+<span class="sd">                    encrypted problem and answer, along with a canary for</span>
+<span class="sd">                    decryption.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                Dict[str, Any]: A dictionary containing the decrypted problem,</span>
+<span class="sd">                    expected answer, model response, and structured response</span>
+<span class="sd">                    fields.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+
+            <span class="n">problem</span> <span class="o">=</span> <span class="n">decrypt</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;problem&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;canary&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+            <span class="n">answer</span> <span class="o">=</span> <span class="n">decrypt</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;answer&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;canary&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">input_message</span> <span class="o">=</span> <span class="n">QUERY_TEMPLATE</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">question</span><span class="o">=</span><span class="n">problem</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pipeline_template</span><span class="p">,</span> <span class="p">(</span><span class="n">ChatAgent</span><span class="p">)):</span>
+                    <span class="n">pipeline</span> <span class="o">=</span> <span class="n">pipeline_template</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>  <span class="c1"># type: ignore[assignment]</span>
+
+                    <span class="n">response_text</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">step</span><span class="p">(</span>
+                        <span class="n">input_message</span><span class="p">,</span> <span class="n">response_format</span><span class="o">=</span><span class="n">QueryResponse</span>
+                    <span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pipeline_template</span><span class="p">,</span> <span class="n">Workforce</span><span class="p">):</span>
+                    <span class="n">pipeline</span> <span class="o">=</span> <span class="n">pipeline_template</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>  <span class="c1"># type: ignore[assignment]</span>
+                    <span class="n">task</span> <span class="o">=</span> <span class="n">Task</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">input_message</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;0&quot;</span><span class="p">)</span>
+                    <span class="n">task</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">process_task</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>  <span class="c1"># type: ignore[attr-defined]</span>
+                    <span class="k">if</span> <span class="n">task_json_formatter</span><span class="p">:</span>
+                        <span class="n">formatter_in_process</span> <span class="o">=</span> <span class="n">task_json_formatter</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">formatter_in_process</span> <span class="o">=</span> <span class="n">ChatAgent</span><span class="p">(</span>
+                            <span class="s2">&quot;You are a helpful assistant.&quot;</span>
+                        <span class="p">)</span>
+                    <span class="n">response_text</span> <span class="o">=</span> <span class="n">formatter_in_process</span><span class="o">.</span><span class="n">step</span><span class="p">(</span>
+                        <span class="n">FORMAT_JSON_TEMPLATE</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">task</span><span class="o">.</span><span class="n">result</span><span class="p">),</span>
+                        <span class="n">response_format</span><span class="o">=</span><span class="n">QueryResponse</span><span class="p">,</span>
+                    <span class="p">)</span>
+
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pipeline_template</span><span class="p">,</span> <span class="n">RolePlaying</span><span class="p">):</span>
+                    <span class="c1"># RolePlaying is different.</span>
+                    <span class="n">pipeline</span> <span class="o">=</span> <span class="n">pipeline_template</span><span class="o">.</span><span class="n">clone</span><span class="p">(</span>  <span class="c1"># type: ignore[assignment]</span>
+                        <span class="n">task_prompt</span><span class="o">=</span><span class="n">input_message</span>
+                    <span class="p">)</span>
+
+                    <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="n">input_msg</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">init_chat</span><span class="p">()</span>  <span class="c1"># type: ignore[attr-defined]</span>
+                    <span class="n">chat_history</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">while</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="n">chat_turn_limit</span><span class="p">:</span>
+                        <span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span>
+                        <span class="n">assistant_response</span><span class="p">,</span> <span class="n">user_response</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">step</span><span class="p">(</span>
+                            <span class="n">input_msg</span>
+                        <span class="p">)</span>
+                        <span class="k">if</span> <span class="n">assistant_response</span><span class="o">.</span><span class="n">terminated</span><span class="p">:</span>  <span class="c1"># type: ignore[attr-defined]</span>
+                            <span class="k">break</span>
+                        <span class="k">if</span> <span class="n">user_response</span><span class="o">.</span><span class="n">terminated</span><span class="p">:</span>  <span class="c1"># type: ignore[attr-defined]</span>
+                            <span class="k">break</span>
+                        <span class="k">if</span> <span class="s2">&quot;CAMEL_TASK_DONE&quot;</span> <span class="ow">in</span> <span class="n">user_response</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">content</span><span class="p">:</span>  <span class="c1"># type: ignore[attr-defined]</span>
+                            <span class="k">break</span>
+
+                        <span class="n">chat_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;AI User: </span><span class="si">{</span><span class="n">user_response</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">content</span><span class="si">}</span><span class="s2">&quot;</span>  <span class="c1"># type: ignore[attr-defined]</span>
+                        <span class="p">)</span>
+                        <span class="n">chat_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;AI Assistant: </span><span class="si">{</span><span class="n">assistant_response</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">content</span><span class="si">}</span><span class="s2">&quot;</span>  <span class="c1"># type: ignore[attr-defined]</span>
+                        <span class="p">)</span>
+                        <span class="n">input_msg</span> <span class="o">=</span> <span class="n">assistant_response</span><span class="o">.</span><span class="n">msg</span>  <span class="c1"># type: ignore[attr-defined]</span>
+
+                    <span class="n">chat_history_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">chat_history</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">roleplaying_summarizer</span><span class="p">:</span>
+                        <span class="n">summarizer_in_process</span> <span class="o">=</span> <span class="n">roleplaying_summarizer</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">summarizer_in_process</span> <span class="o">=</span> <span class="n">ChatAgent</span><span class="p">(</span>
+                            <span class="s2">&quot;You are a helpful assistant.&quot;</span>
+                        <span class="p">)</span>
+
+                    <span class="n">summarize_prompt</span> <span class="o">=</span> <span class="n">SUMMARIZE_TEMPLATE</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">chat_history</span><span class="o">=</span><span class="n">chat_history_str</span><span class="p">,</span>
+                        <span class="n">query</span><span class="o">=</span><span class="n">input_message</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="n">response_text</span> <span class="o">=</span> <span class="n">summarizer_in_process</span><span class="o">.</span><span class="n">step</span><span class="p">(</span>
+                        <span class="n">summarize_prompt</span><span class="p">,</span> <span class="n">response_format</span><span class="o">=</span><span class="n">QueryResponse</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">pipeline_template</span><span class="p">)</span><span class="si">}</span><span class="s2"> is not supported.&quot;</span>
+                    <span class="p">)</span>
+                <span class="c1"># Parse the response JSON</span>
+                <span class="n">response_dict</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response_text</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+
+                <span class="c1"># Format the response as a key-value string</span>
+                <span class="n">formatted_response</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    Explanation: </span><span class="si">{</span><span class="n">response_dict</span><span class="p">[</span><span class="s1">&#39;explanation&#39;</span><span class="p">]</span><span class="si">}</span>
+
+<span class="s2">    Exact Answer: </span><span class="si">{</span><span class="n">response_dict</span><span class="p">[</span><span class="s1">&#39;exact_answer&#39;</span><span class="p">]</span><span class="si">}</span>
+<span class="s2">    Confidence: </span><span class="si">{</span><span class="n">response_dict</span><span class="p">[</span><span class="s1">&#39;confidence&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;&quot;&quot;</span>
+
+                <span class="c1"># Create the result dictionary</span>
+                <span class="n">raw_result</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="n">raw_result</span><span class="p">[</span><span class="s1">&#39;problem&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">problem</span>
+                <span class="n">raw_result</span><span class="p">[</span><span class="s1">&#39;expected_answer&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">answer</span>
+                <span class="n">raw_result</span><span class="p">[</span><span class="s1">&#39;response&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">formatted_response</span>
+                <span class="c1"># Keep the original dict for reference</span>
+                <span class="n">raw_result</span><span class="p">[</span><span class="s1">&#39;response_dict&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">response_dict</span>
+
+                <span class="k">return</span> <span class="n">raw_result</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="c1"># Log any errors that occur during evaluation</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error evaluating result: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">())</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s1">&#39;problem&#39;</span><span class="p">:</span> <span class="n">problem</span><span class="p">,</span>
+                    <span class="s1">&#39;expected_answer&#39;</span><span class="p">:</span> <span class="n">answer</span><span class="p">,</span>
+                    <span class="s1">&#39;response&#39;</span><span class="p">:</span> <span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">(),</span>
+                    <span class="s1">&#39;response_dict&#39;</span><span class="p">:</span> <span class="p">{},</span>
+                <span class="p">}</span>
+
+        <span class="n">pool_class</span> <span class="o">=</span> <span class="n">ThreadPool</span>
+        <span class="k">with</span> <span class="n">pool_class</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">processes</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">examples</span><span class="p">)))</span> <span class="k">as</span> <span class="n">pool</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_raw_results</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
+                <span class="n">tqdm</span><span class="p">(</span>
+                    <span class="n">pool</span><span class="o">.</span><span class="n">imap</span><span class="p">(</span><span class="n">process_benchmark_row</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">examples</span><span class="p">),</span>
+                    <span class="n">total</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">examples</span><span class="p">),</span>
+                <span class="p">)</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BrowseCompBenchmark.make_report">
+<a class="viewcode-back" href="../../../camel.benchmarks.html#camel.benchmarks.BrowseCompBenchmark.make_report">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">make_report</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">eval_result</span><span class="p">:</span> <span class="n">EvalResult</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Create a standalone HTML report from an EvalResult.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">jinja_env</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="n">_report_template</span><span class="p">)</span><span class="o">.</span><span class="n">render</span><span class="p">(</span>
+            <span class="n">score</span><span class="o">=</span><span class="n">eval_result</span><span class="o">.</span><span class="n">score</span><span class="p">,</span>
+            <span class="n">metrics</span><span class="o">=</span><span class="n">eval_result</span><span class="o">.</span><span class="n">metrics</span><span class="p">,</span>
+            <span class="n">htmls</span><span class="o">=</span><span class="n">eval_result</span><span class="o">.</span><span class="n">htmls</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BrowseCompBenchmark.validate">
+<a class="viewcode-back" href="../../../camel.benchmarks.html#camel.benchmarks.BrowseCompBenchmark.validate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">grader</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ChatAgent</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Validate the raw results using the GRADER_TEMPLATE and ChatAgent.</span>
+
+<span class="sd">        This method evaluates the correctness of each response by</span>
+<span class="sd">        multi-threading. A dedicated chat agent is created in each thread.</span>
+<span class="sd">        The chat agent will compare raw result with the expected answer. The</span>
+<span class="sd">        grading results will be aggregated in a report.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            grader: The ChatAgent used for validation. If None, a default</span>
+<span class="sd">                agent will be created in each thread. If provided, the</span>
+<span class="sd">                provided agent will be used as a template and be cloned into</span>
+<span class="sd">                new agents in each thread. (default: :obj:`None`)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">validate_each_one</span><span class="p">(</span><span class="n">raw_result</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">SingleEvalResult</span><span class="p">:</span>
+<span class="w">            </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;This inner function formats the prompt for the ChatAgent</span>
+<span class="sd">            grader, sends it for evaluation, extracts the correctness</span>
+<span class="sd">            assessment, and creates an HTML representation of the result.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                raw_result (Dict[str, Any]): A dictionary containing &#39;problem&#39;,</span>
+<span class="sd">                    &#39;response&#39;, and &#39;expected_answer&#39; keys.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                SingleEvalResult: An evaluation result object with score,</span>
+<span class="sd">                    metrics, and HTML.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="c1"># Format the template</span>
+            <span class="n">prompt</span> <span class="o">=</span> <span class="n">GRADER_TEMPLATE</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">question</span><span class="o">=</span><span class="n">raw_result</span><span class="p">[</span><span class="s1">&#39;problem&#39;</span><span class="p">],</span>
+                <span class="n">response</span><span class="o">=</span><span class="n">raw_result</span><span class="p">[</span><span class="s1">&#39;response&#39;</span><span class="p">],</span>
+                <span class="n">correct_answer</span><span class="o">=</span><span class="n">raw_result</span><span class="p">[</span><span class="s1">&#39;expected_answer&#39;</span><span class="p">],</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">grader</span><span class="p">:</span>
+                <span class="n">grader_in_process</span> <span class="o">=</span> <span class="n">grader</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">grader_in_process</span> <span class="o">=</span> <span class="n">ChatAgent</span><span class="p">(</span><span class="s2">&quot;You are a helpful assistant.&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Create a conversation list for the result</span>
+            <span class="n">convo</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">Message</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">raw_result</span><span class="p">[</span><span class="s1">&#39;problem&#39;</span><span class="p">],</span> <span class="n">role</span><span class="o">=</span><span class="s2">&quot;user&quot;</span><span class="p">),</span>
+                <span class="n">Message</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">raw_result</span><span class="p">[</span><span class="s1">&#39;response&#39;</span><span class="p">],</span> <span class="n">role</span><span class="o">=</span><span class="s2">&quot;assistant&quot;</span><span class="p">),</span>
+            <span class="p">]</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="n">grader_in_process</span><span class="o">.</span><span class="n">step</span><span class="p">(</span>
+                    <span class="n">prompt</span><span class="p">,</span> <span class="n">response_format</span><span class="o">=</span><span class="n">GradingResponse</span>
+                <span class="p">)</span>
+
+                <span class="n">content</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+
+                <span class="n">grade_result</span> <span class="o">=</span> <span class="n">content</span><span class="p">[</span><span class="s1">&#39;correct&#39;</span><span class="p">]</span>
+
+                <span class="c1"># Convert to binary metrics (1 for correct, 0 for incorrect)</span>
+                <span class="n">is_correct</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">grade_result</span> <span class="o">==</span> <span class="s2">&quot;yes&quot;</span><span class="p">)</span>
+                <span class="n">is_incorrect</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">grade_result</span> <span class="o">==</span> <span class="s2">&quot;no&quot;</span><span class="p">)</span>
+
+                <span class="c1"># Set the score (1 for correct, 0 for incorrect)</span>
+                <span class="n">score</span> <span class="o">=</span> <span class="n">is_correct</span>
+
+                <span class="c1"># Generate HTML representation of the result</span>
+                <span class="n">html</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">jinja_env</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="n">HTML_JINJA</span><span class="p">)</span><span class="o">.</span><span class="n">render</span><span class="p">(</span>
+                    <span class="n">prompt_messages</span><span class="o">=</span><span class="n">Message</span><span class="p">(</span>
+                        <span class="n">content</span><span class="o">=</span><span class="n">raw_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;problem&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span> <span class="n">role</span><span class="o">=</span><span class="s2">&quot;user&quot;</span>
+                    <span class="p">),</span>
+                    <span class="n">next_message</span><span class="o">=</span><span class="n">Message</span><span class="p">(</span>
+                        <span class="n">content</span><span class="o">=</span><span class="n">raw_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;response&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+                        <span class="n">role</span><span class="o">=</span><span class="s2">&quot;assistant&quot;</span><span class="p">,</span>
+                    <span class="p">),</span>
+                    <span class="n">score</span><span class="o">=</span><span class="n">score</span><span class="p">,</span>
+                    <span class="n">correct_answer</span><span class="o">=</span><span class="n">raw_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;expected_answer&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+                    <span class="n">extracted_answer</span><span class="o">=</span><span class="n">raw_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;response_dict&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                        <span class="s1">&#39;exact_answer&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span>
+                    <span class="p">),</span>
+                <span class="p">)</span>
+                <span class="c1"># Return the evaluation result</span>
+                <span class="k">return</span> <span class="n">SingleEvalResult</span><span class="p">(</span>
+                    <span class="n">html</span><span class="o">=</span><span class="n">html</span><span class="p">,</span>
+                    <span class="n">score</span><span class="o">=</span><span class="n">score</span><span class="p">,</span>
+                    <span class="n">convo</span><span class="o">=</span><span class="n">convo</span><span class="p">,</span>
+                    <span class="n">metrics</span><span class="o">=</span><span class="p">{</span>
+                        <span class="s2">&quot;is_correct&quot;</span><span class="p">:</span> <span class="n">is_correct</span><span class="p">,</span>
+                        <span class="s2">&quot;is_incorrect&quot;</span><span class="p">:</span> <span class="n">is_incorrect</span><span class="p">,</span>
+                    <span class="p">},</span>
+                <span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="c1"># Log any errors that occur during evaluation</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error evaluating result: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">())</span>
+                <span class="n">html</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">jinja_env</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="n">HTML_JINJA</span><span class="p">)</span><span class="o">.</span><span class="n">render</span><span class="p">(</span>
+                    <span class="n">prompt_messages</span><span class="o">=</span><span class="n">Message</span><span class="p">(</span>
+                        <span class="n">content</span><span class="o">=</span><span class="n">raw_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;problem&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span> <span class="n">role</span><span class="o">=</span><span class="s2">&quot;user&quot;</span>
+                    <span class="p">),</span>
+                    <span class="n">next_message</span><span class="o">=</span><span class="n">Message</span><span class="p">(</span>
+                        <span class="n">content</span><span class="o">=</span><span class="n">raw_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;response&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+                        <span class="n">role</span><span class="o">=</span><span class="s2">&quot;assistant&quot;</span><span class="p">,</span>
+                    <span class="p">),</span>
+                    <span class="n">score</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                    <span class="n">correct_answer</span><span class="o">=</span><span class="n">raw_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;expected_answer&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+                    <span class="n">extracted_answer</span><span class="o">=</span><span class="n">raw_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;response_dict&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                        <span class="s1">&#39;exact_answer&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span>
+                    <span class="p">),</span>
+                <span class="p">)</span>
+                <span class="k">return</span> <span class="n">SingleEvalResult</span><span class="p">(</span>
+                    <span class="n">html</span><span class="o">=</span><span class="n">html</span><span class="p">,</span>
+                    <span class="n">score</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                    <span class="n">convo</span><span class="o">=</span><span class="n">convo</span><span class="p">,</span>
+                    <span class="n">metrics</span><span class="o">=</span><span class="p">{</span>
+                        <span class="s2">&quot;is_correct&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                        <span class="s2">&quot;is_incorrect&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="p">},</span>
+                <span class="p">)</span>
+
+        <span class="n">pool_class</span> <span class="o">=</span> <span class="n">ThreadPool</span>
+        <span class="k">with</span> <span class="n">pool_class</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">processes</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_raw_results</span><span class="p">)))</span> <span class="k">as</span> <span class="n">pool</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validated_results</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
+                <span class="n">tqdm</span><span class="p">(</span>
+                    <span class="n">pool</span><span class="o">.</span><span class="n">imap</span><span class="p">(</span><span class="n">validate_each_one</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw_results</span><span class="p">),</span>
+                    <span class="n">total</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_raw_results</span><span class="p">),</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="n">aggregate_metrics</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;is_correct&quot;</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;is_correct&quot;</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validated_results</span>
+            <span class="p">)</span>
+            <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_validated_results</span><span class="p">),</span>
+            <span class="s2">&quot;is_incorrect&quot;</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;is_incorrect&quot;</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validated_results</span>
+            <span class="p">)</span>
+            <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_validated_results</span><span class="p">),</span>
+        <span class="p">}</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;AGGREGATE METRICS&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">aggregate_metrics</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;##################&quot;</span><span class="p">)</span>
+
+        <span class="n">output_d</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;accuracy&quot;</span><span class="p">:</span> <span class="n">aggregate_metrics</span><span class="p">[</span><span class="s2">&quot;is_correct&quot;</span><span class="p">],</span>
+        <span class="p">}</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Accuracy: </span><span class="si">{</span><span class="n">output_d</span><span class="p">[</span><span class="s1">&#39;accuracy&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_eval_result</span> <span class="o">=</span> <span class="n">aggregate_results</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_validated_results</span><span class="p">)</span>
+        <span class="c1"># ^^^ how to use a sampler</span>
+        <span class="n">report_filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_to</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Writing report to </span><span class="si">{</span><span class="n">report_filename</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">report_filename</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fh</span><span class="p">:</span>
+            <span class="n">fh</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">make_report</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_eval_result</span><span class="p">))</span></div>
+</div>
+
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By CAMEL-AI.org
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, CAMEL-AI.org.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

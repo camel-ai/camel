@@ -1,0 +1,1639 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>camel.toolkits.search_toolkit &#8212; CAMEL 0.2.59 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=3c972f42" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../../_static/documentation_options.js?v=b51f7387"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/camel/toolkits/search_toolkit';</script>
+    <link rel="icon" href="https://raw.githubusercontent.com/camel-ai/camel/master/misc/favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png" class="logo__image only-light" alt=""/>
+    <script>document.write(`<img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png" class="logo__image only-dark" alt=""/>`);</script>
+  
+  
+    <p class="title logo__title">CAMEL 0.2.59</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Get Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../get_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../get_started/setup.html">API Setup</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Key Modules</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/agents.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/datagen.html">Data Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/messages.html">Message</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/memory.html">Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/tools.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/prompts.html">Prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/tasks.html">Task</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/loaders.html">Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/storages.html">Storages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/society.html">Society</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/embeddings.html">Embeddings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/retrievers.html">Retrievers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/workforce.html">Workforce</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Cookbooks</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/basic_concepts/index.html">Basic Concepts</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/create_your_first_agent.html">Creating Your First Agent</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/create_your_first_agents_society.html">Creating Your First Agent Society</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/agents_message.html">Message Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/agents_prompting.html">Prompting Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/model_speed_comparison.html">Model Speed Comparison Cookbook</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/advanced_features/index.html">Advanced Features</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_tools.html">Tools Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_tools_from_ACI.html">Using Tools from ACI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_tools_from_Composio.html">Using Tools from Composio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_human_in_loop_and_tool_approval.html">Agents with Human-in-loop and Tool Approval from HumanLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_memory.html">Memory Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_rag.html">RAG Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_graph_rag.html">Graph RAG Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_MCP.html">CAMEL MCP Cookbook</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_tracking.html">Track CAMEL Agents with AgentOps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/critic_agents_and_tree_search.html">Critic Agents and Tree Search</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/embodied_agents.html">Embodied Agents</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/multi_agent_society/index.html">Multi-agent Society</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/multi_agent_society/agents_society.html">Develop Trading Bot with Role Playing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/multi_agent_society/workforce_judge_committee.html">Create A Hackathon Judge Committee with Workforce</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/multi_agent_society/task_generation.html">Task Generation Cookbook</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/data_generation/index.html">Agentic Data Generation</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_mistral_7b_instruct.html">Agentic SFT Data generation with CAMEL and finetuning Mistral models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B.html">Agentic Data generation with CAMEL and finetuning Qwen models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_tinyllama.html">Agentic SFT Data generation with CAMEL and finetuning Meta models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/data_gen_with_real_function_calls_and_hermes_format.html">Real Function Calls and Hermes Format Data Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/self_instruct_data_generation.html">Self-instruct Data Generation Using Qwen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/cot_data_gen_sft_qwen_unsolth_upload_huggingface.html">CoT Data Generation and SFT Qwen With Unsloth</a></li>
+
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/synthetic_dataevaluation%26filter_with_reward_model.html">Agentic Data Generation, Evaluation &amp; Filtering with Reward Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/data_model_generation_and_structured_output_with_qwen.html">Agentic Data Model Generation and Structured Output Powered by CAMEL &amp; Qwen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/distill_math_reasoning_data_from_deepseek_r1.html">Distill Math Reasoning Data from DeepSeek R1 with CAMEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/self_improving_math_reasoning_data_distillation_from_deepSeek_r1.html">Self-Improving Math Reasoning Data Distillation from DeepSeek R1 with CAMEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/self_improving_cot_generation.html">Deep Dive into CAMEL’s Practices for Self-Improving CoT Generation 🚀</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/applications/index.html">Applications</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/roleplaying_scraper.html">Role-Playing Scraper for Report &amp; Knowledge Graph Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/dynamic_travel_planner.html">Dynamic Travel Planner Role-Playing: Multi-Agent System with Real-Time Insights Powered by Dappier</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/customer_service_Discord_bot_with_agentic_RAG.html">Customer Service Discord Bot with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/customer_service_Discord_bot_using_SambaNova_with_agentic_RAG.html">Customer Service Discord Bot Using SambaNova with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/customer_service_Discord_bot_using_local_model_with_agentic_RAG.html">Customer Service Discord Bot Using Local Models with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/finance_discord_bot.html">Customer Service Discord Bot for Finance with OpenBB</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/data_processing/index.html">Data Processing and Analysis</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_processing/video_analysis.html">Video Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_processing/agent_with_chunkr_for_pdf_parsing.html">Create AI Agents that work with your PDFs using Chunkr &amp; Mistral AI</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_processing/ingest_data_from_websites_with_Firecrawl.html">3 ways to ingest data from websites with Firecrawl</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../modules.html">camel</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../camel.html">camel package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.agents.html">camel.agents package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.agents.tool_agents.html">camel.agents.tool_agents package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.configs.html">camel.configs package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.datagen.html">camel.datagen package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.datagen.self_instruct.html">camel.datagen.self_instruct package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.datagen.source2synth.html">camel.datagen.source2synth package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.embeddings.html">camel.embeddings package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.interpreters.html">camel.interpreters package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.loaders.html">camel.loaders package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.memories.html">camel.memories package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.memories.blocks.html">camel.memories.blocks package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.memories.context_creators.html">camel.memories.context_creators package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.messages.html">camel.messages package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.models.html">camel.models package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.prompts.html">camel.prompts package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.responses.html">camel.responses package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.retrievers.html">camel.retrievers package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.societies.html">camel.societies package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.societies.workforce.html">camel.societies.workforce package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.storages.html">camel.storages package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.graph_storages.html">camel.storages.graph_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.key_value_storages.html">camel.storages.key_value_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.object_storages.html">camel.storages.object_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.vectordb_storages.html">camel.storages.vectordb_storages package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.tasks.html">camel.tasks package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.terminators.html">camel.terminators package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.toolkits.html">camel.toolkits package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.types.html">camel.types package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.utils.html">camel.utils package</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/camel-ai/camel" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/camel-ai/camel/issues/new?title=Issue%20on%20page%20%2F_modules/camel/toolkits/search_toolkit.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for camel.toolkits.search_toolkit</h1><div class="highlight"><pre>
+<span></span><span class="c1"># ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1"># ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">TypeAlias</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">cast</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.toolkits.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseToolkit</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.toolkits.function_tool</span><span class="w"> </span><span class="kn">import</span> <span class="n">FunctionTool</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">MCPServer</span><span class="p">,</span> <span class="n">api_keys_required</span><span class="p">,</span> <span class="n">dependencies_required</span>
+
+
+<div class="viewcode-block" id="SearchToolkit">
+<a class="viewcode-back" href="../../../camel.toolkits.html#camel.toolkits.search_toolkit.SearchToolkit">[docs]</a>
+<span class="nd">@MCPServer</span><span class="p">()</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SearchToolkit</span><span class="p">(</span><span class="n">BaseToolkit</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;A class representing a toolkit for web search.</span>
+
+<span class="sd">    This class provides methods for searching information on the web using</span>
+<span class="sd">    search engines like Google, DuckDuckGo, Wikipedia and Wolfram Alpha, Brave.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="SearchToolkit.search_wiki">
+<a class="viewcode-back" href="../../../camel.toolkits.html#camel.toolkits.search_toolkit.SearchToolkit.search_wiki">[docs]</a>
+    <span class="nd">@dependencies_required</span><span class="p">(</span><span class="s2">&quot;wikipedia&quot;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">search_wiki</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Search the entity in WikiPedia and return the summary of the</span>
+<span class="sd">            required page, containing factual information about</span>
+<span class="sd">            the given entity.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            entity (str): The entity to be searched.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The search result. If the page corresponding to the entity</span>
+<span class="sd">                exists, return the summary of this entity in a string.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">wikipedia</span>
+
+        <span class="n">result</span><span class="p">:</span> <span class="nb">str</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">wikipedia</span><span class="o">.</span><span class="n">summary</span><span class="p">(</span><span class="n">entity</span><span class="p">,</span> <span class="n">sentences</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">auto_suggest</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">wikipedia</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">DisambiguationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">wikipedia</span><span class="o">.</span><span class="n">summary</span><span class="p">(</span>
+                <span class="n">e</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">sentences</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">auto_suggest</span><span class="o">=</span><span class="kc">False</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="n">wikipedia</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">PageError</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="s2">&quot;There is no page in Wikipedia corresponding to entity &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">entity</span><span class="si">}</span><span class="s2">, please specify another word to describe the&quot;</span>
+                <span class="s2">&quot; entity to be searched.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="n">wikipedia</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">WikipediaException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;An exception occurred during the search: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="SearchToolkit.search_linkup">
+<a class="viewcode-back" href="../../../camel.toolkits.html#camel.toolkits.search_toolkit.SearchToolkit.search_linkup">[docs]</a>
+    <span class="nd">@dependencies_required</span><span class="p">(</span><span class="s2">&quot;linkup&quot;</span><span class="p">)</span>
+    <span class="nd">@api_keys_required</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;LINKUP_API_KEY&quot;</span><span class="p">),</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">search_linkup</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">depth</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;standard&quot;</span><span class="p">,</span> <span class="s2">&quot;deep&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;standard&quot;</span><span class="p">,</span>
+        <span class="n">output_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span>
+            <span class="s2">&quot;searchResults&quot;</span><span class="p">,</span> <span class="s2">&quot;sourcedAnswer&quot;</span><span class="p">,</span> <span class="s2">&quot;structured&quot;</span>
+        <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;searchResults&quot;</span><span class="p">,</span>
+        <span class="n">structured_output_schema</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Search for a query in the Linkup API and return results in various</span>
+<span class="sd">        formats.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            query (str): The search query.</span>
+<span class="sd">            depth (Literal[&quot;standard&quot;, &quot;deep&quot;]): The depth of the search.</span>
+<span class="sd">                &quot;standard&quot; for a straightforward search, &quot;deep&quot; for a more</span>
+<span class="sd">                comprehensive search.</span>
+<span class="sd">            output_type (Literal[&quot;searchResults&quot;, &quot;sourcedAnswer&quot;,</span>
+<span class="sd">                &quot;structured&quot;]): The type of output:</span>
+<span class="sd">                - &quot;searchResults&quot; for raw search results,</span>
+<span class="sd">                - &quot;sourcedAnswer&quot; for an answer with supporting sources,</span>
+<span class="sd">                - &quot;structured&quot; for output based on a provided schema.</span>
+<span class="sd">            structured_output_schema (Optional[str]): If `output_type` is</span>
+<span class="sd">                &quot;structured&quot;, specify the schema of the output. Must be a</span>
+<span class="sd">                string representing a valid object JSON schema.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dict[str, Any]: A dictionary representing the search result. The</span>
+<span class="sd">                structure depends on the `output_type`. If an error occurs,</span>
+<span class="sd">                returns an error message.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">linkup</span><span class="w"> </span><span class="kn">import</span> <span class="n">LinkupClient</span>
+
+            <span class="c1"># Initialize the Linkup client with the API key</span>
+            <span class="n">LINKUP_API_KEY</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;LINKUP_API_KEY&quot;</span><span class="p">)</span>
+            <span class="n">client</span> <span class="o">=</span> <span class="n">LinkupClient</span><span class="p">(</span><span class="n">api_key</span><span class="o">=</span><span class="n">LINKUP_API_KEY</span><span class="p">)</span>
+
+            <span class="c1"># Perform the search using the specified output_type</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
+                <span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">,</span>
+                <span class="n">depth</span><span class="o">=</span><span class="n">depth</span><span class="p">,</span>
+                <span class="n">output_type</span><span class="o">=</span><span class="n">output_type</span><span class="p">,</span>
+                <span class="n">structured_output_schema</span><span class="o">=</span><span class="n">structured_output_schema</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">output_type</span> <span class="o">==</span> <span class="s2">&quot;searchResults&quot;</span><span class="p">:</span>
+                <span class="n">results</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="n">item</span><span class="o">.</span><span class="vm">__dict__</span>
+                    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;results&#39;</span><span class="p">,</span> <span class="p">[])</span>
+                <span class="p">]</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;results&quot;</span><span class="p">:</span> <span class="n">results</span><span class="p">}</span>
+
+            <span class="k">elif</span> <span class="n">output_type</span> <span class="o">==</span> <span class="s2">&quot;sourcedAnswer&quot;</span><span class="p">:</span>
+                <span class="n">answer</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;answer&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+                <span class="n">sources</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="n">item</span><span class="o">.</span><span class="vm">__dict__</span>
+                    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;sources&#39;</span><span class="p">,</span> <span class="p">[])</span>
+                <span class="p">]</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;answer&quot;</span><span class="p">:</span> <span class="n">answer</span><span class="p">,</span> <span class="s2">&quot;sources&quot;</span><span class="p">:</span> <span class="n">sources</span><span class="p">}</span>
+
+            <span class="k">elif</span> <span class="n">output_type</span> <span class="o">==</span> <span class="s2">&quot;structured&quot;</span> <span class="ow">and</span> <span class="n">structured_output_schema</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="vm">__dict__</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Invalid output_type: </span><span class="si">{</span><span class="n">output_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;An unexpected error occurred: </span><span class="si">{</span><span class="n">e</span><span class="si">!s}</span><span class="s2">&quot;</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="SearchToolkit.search_duckduckgo">
+<a class="viewcode-back" href="../../../camel.toolkits.html#camel.toolkits.search_toolkit.SearchToolkit.search_duckduckgo">[docs]</a>
+    <span class="nd">@dependencies_required</span><span class="p">(</span><span class="s2">&quot;duckduckgo_search&quot;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">search_duckduckgo</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="n">max_results</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Use DuckDuckGo search engine to search information for</span>
+<span class="sd">        the given query.</span>
+
+<span class="sd">        This function queries the DuckDuckGo API for related topics to</span>
+<span class="sd">        the given search term. The results are formatted into a list of</span>
+<span class="sd">        dictionaries, each representing a search result.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            query (str): The query to be searched.</span>
+<span class="sd">            source (str): The type of information to query (e.g., &quot;text&quot;,</span>
+<span class="sd">                &quot;images&quot;, &quot;videos&quot;). Defaults to &quot;text&quot;.</span>
+<span class="sd">            max_results (int): Max number of results, defaults to `5`.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[Dict[str, Any]]: A list of dictionaries where each dictionary</span>
+<span class="sd">                represents a search result.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">duckduckgo_search</span><span class="w"> </span><span class="kn">import</span> <span class="n">DDGS</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">requests.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">RequestException</span>
+
+        <span class="n">ddgs</span> <span class="o">=</span> <span class="n">DDGS</span><span class="p">()</span>
+        <span class="n">responses</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="n">source</span> <span class="o">==</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">results</span> <span class="o">=</span> <span class="n">ddgs</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">keywords</span><span class="o">=</span><span class="n">query</span><span class="p">,</span> <span class="n">max_results</span><span class="o">=</span><span class="n">max_results</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">RequestException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="c1"># Handle specific exceptions or general request exceptions</span>
+                <span class="n">responses</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;duckduckgo search failed.</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">})</span>
+
+            <span class="c1"># Iterate over results found</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">result</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+                <span class="c1"># Creating a response object with a similar structure</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;result_id&quot;</span><span class="p">:</span> <span class="n">i</span><span class="p">,</span>
+                    <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;body&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;href&quot;</span><span class="p">],</span>
+                <span class="p">}</span>
+                <span class="n">responses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">source</span> <span class="o">==</span> <span class="s2">&quot;images&quot;</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">results</span> <span class="o">=</span> <span class="n">ddgs</span><span class="o">.</span><span class="n">images</span><span class="p">(</span><span class="n">keywords</span><span class="o">=</span><span class="n">query</span><span class="p">,</span> <span class="n">max_results</span><span class="o">=</span><span class="n">max_results</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">RequestException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="c1"># Handle specific exceptions or general request exceptions</span>
+                <span class="n">responses</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;duckduckgo search failed.</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">})</span>
+
+            <span class="c1"># Iterate over results found</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">result</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+                <span class="c1"># Creating a response object with a similar structure</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;result_id&quot;</span><span class="p">:</span> <span class="n">i</span><span class="p">,</span>
+                    <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;image&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;url&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;source&quot;</span><span class="p">],</span>
+                <span class="p">}</span>
+                <span class="n">responses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">source</span> <span class="o">==</span> <span class="s2">&quot;videos&quot;</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">results</span> <span class="o">=</span> <span class="n">ddgs</span><span class="o">.</span><span class="n">videos</span><span class="p">(</span><span class="n">keywords</span><span class="o">=</span><span class="n">query</span><span class="p">,</span> <span class="n">max_results</span><span class="o">=</span><span class="n">max_results</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">RequestException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="c1"># Handle specific exceptions or general request exceptions</span>
+                <span class="n">responses</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;duckduckgo search failed.</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">})</span>
+
+            <span class="c1"># Iterate over results found</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">result</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+                <span class="c1"># Creating a response object with a similar structure</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;result_id&quot;</span><span class="p">:</span> <span class="n">i</span><span class="p">,</span>
+                    <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;description&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;embed_url&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;embed_url&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;publisher&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;publisher&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;duration&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;duration&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;published&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;published&quot;</span><span class="p">],</span>
+                <span class="p">}</span>
+                <span class="n">responses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+        <span class="c1"># If no answer found, return an empty list</span>
+        <span class="k">return</span> <span class="n">responses</span></div>
+
+
+<div class="viewcode-block" id="SearchToolkit.search_brave">
+<a class="viewcode-back" href="../../../camel.toolkits.html#camel.toolkits.search_toolkit.SearchToolkit.search_brave">[docs]</a>
+    <span class="nd">@api_keys_required</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;BRAVE_API_KEY&#39;</span><span class="p">),</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">search_brave</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">q</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">country</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;US&quot;</span><span class="p">,</span>
+        <span class="n">search_lang</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;en&quot;</span><span class="p">,</span>
+        <span class="n">ui_lang</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;en-US&quot;</span><span class="p">,</span>
+        <span class="n">count</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
+        <span class="n">offset</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">safesearch</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;moderate&quot;</span><span class="p">,</span>
+        <span class="n">freshness</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">text_decorations</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">spellcheck</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">result_filter</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">goggles_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">units</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">extra_snippets</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">summary</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;This function queries the Brave search engine API and returns a</span>
+<span class="sd">        dictionary, representing a search result.</span>
+<span class="sd">        See https://api.search.brave.com/app/documentation/web-search/query</span>
+<span class="sd">        for more details.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            q (str): The user&#39;s search query term. Query cannot be empty.</span>
+<span class="sd">                Maximum of 400 characters and 50 words in the query.</span>
+<span class="sd">            country (str): The search query country where results come from.</span>
+<span class="sd">                The country string is limited to 2 character country codes of</span>
+<span class="sd">                supported countries. For a list of supported values, see</span>
+<span class="sd">                Country Codes. (default: :obj:`US `)</span>
+<span class="sd">            search_lang (str): The search language preference. The 2 or more</span>
+<span class="sd">                character language code for which search results are provided.</span>
+<span class="sd">                For a list of possible values, see Language Codes.</span>
+<span class="sd">            ui_lang (str): User interface language preferred in response.</span>
+<span class="sd">                Usually of the format &#39;&lt;language_code&gt;-&lt;country_code&gt;&#39;. For</span>
+<span class="sd">                more, see RFC 9110. For a list of supported values, see UI</span>
+<span class="sd">                Language Codes.</span>
+<span class="sd">            count (int): The number of search results returned in response.</span>
+<span class="sd">                The maximum is 20. The actual number delivered may be less than</span>
+<span class="sd">                requested. Combine this parameter with offset to paginate</span>
+<span class="sd">                search results.</span>
+<span class="sd">            offset (int): The zero based offset that indicates number of search</span>
+<span class="sd">                results per page (count) to skip before returning the result.</span>
+<span class="sd">                The maximum is 9. The actual number delivered may be less than</span>
+<span class="sd">                requested based on the query. In order to paginate results use</span>
+<span class="sd">                this parameter together with count. For example, if your user</span>
+<span class="sd">                interface displays 20 search results per page, set count to 20</span>
+<span class="sd">                and offset to 0 to show the first page of results. To get</span>
+<span class="sd">                subsequent pages, increment offset by 1 (e.g. 0, 1, 2). The</span>
+<span class="sd">                results may overlap across multiple pages.</span>
+<span class="sd">            safesearch (str): Filters search results for adult content.</span>
+<span class="sd">                The following values are supported:</span>
+<span class="sd">                - &#39;off&#39;: No filtering is done.</span>
+<span class="sd">                - &#39;moderate&#39;: Filters explicit content, like images and videos,</span>
+<span class="sd">                    but allows adult domains in the search results.</span>
+<span class="sd">                - &#39;strict&#39;: Drops all adult content from search results.</span>
+<span class="sd">            freshness (Optional[str]): Filters search results by when they were</span>
+<span class="sd">                discovered:</span>
+<span class="sd">                - &#39;pd&#39;: Discovered within the last 24 hours.</span>
+<span class="sd">                - &#39;pw&#39;: Discovered within the last 7 Days.</span>
+<span class="sd">                - &#39;pm&#39;: Discovered within the last 31 Days.</span>
+<span class="sd">                - &#39;py&#39;: Discovered within the last 365 Days.</span>
+<span class="sd">                - &#39;YYYY-MM-DDtoYYYY-MM-DD&#39;: Timeframe is also supported by</span>
+<span class="sd">                    specifying the date range e.g. &#39;2022-04-01to2022-07-30&#39;.</span>
+<span class="sd">            text_decorations (bool): Whether display strings (e.g. result</span>
+<span class="sd">                snippets) should include decoration markers (e.g. highlighting</span>
+<span class="sd">                characters).</span>
+<span class="sd">            spellcheck (bool): Whether to spellcheck provided query. If the</span>
+<span class="sd">                spellchecker is enabled, the modified query is always used for</span>
+<span class="sd">                search. The modified query can be found in altered key from the</span>
+<span class="sd">                query response model.</span>
+<span class="sd">            result_filter (Optional[str]): A comma delimited string of result</span>
+<span class="sd">                types to include in the search response. Not specifying this</span>
+<span class="sd">                parameter will return back all result types in search response</span>
+<span class="sd">                where data is available and a plan with the corresponding</span>
+<span class="sd">                option is subscribed. The response always includes query and</span>
+<span class="sd">                type to identify any query modifications and response type</span>
+<span class="sd">                respectively. Available result filter values are:</span>
+<span class="sd">                - &#39;discussions&#39;</span>
+<span class="sd">                - &#39;faq&#39;</span>
+<span class="sd">                - &#39;infobox&#39;</span>
+<span class="sd">                - &#39;news&#39;</span>
+<span class="sd">                - &#39;query&#39;</span>
+<span class="sd">                - &#39;summarizer&#39;</span>
+<span class="sd">                - &#39;videos&#39;</span>
+<span class="sd">                - &#39;web&#39;</span>
+<span class="sd">                - &#39;locations&#39;</span>
+<span class="sd">            goggles_id (Optional[str]): Goggles act as a custom re-ranking on</span>
+<span class="sd">                top of Brave&#39;s search index. For more details, refer to the</span>
+<span class="sd">                Goggles repository.</span>
+<span class="sd">            units (Optional[str]): The measurement units. If not provided,</span>
+<span class="sd">                units are derived from search country. Possible values are:</span>
+<span class="sd">                - &#39;metric&#39;: The standardized measurement system</span>
+<span class="sd">                - &#39;imperial&#39;: The British Imperial system of units.</span>
+<span class="sd">            extra_snippets (Optional[bool]): A snippet is an excerpt from a</span>
+<span class="sd">                page you get as a result of the query, and extra_snippets</span>
+<span class="sd">                allow you to get up to 5 additional, alternative excerpts. Only</span>
+<span class="sd">                available under Free AI, Base AI, Pro AI, Base Data, Pro Data</span>
+<span class="sd">                and Custom plans.</span>
+<span class="sd">            summary (Optional[bool]): This parameter enables summary key</span>
+<span class="sd">                generation in web search results. This is required for</span>
+<span class="sd">                summarizer to be enabled.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dict[str, Any]: A dictionary representing a search result.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+
+        <span class="n">BRAVE_API_KEY</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;BRAVE_API_KEY&quot;</span><span class="p">)</span>
+
+        <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;https://api.search.brave.com/res/v1/web/search&quot;</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;Content-Type&quot;</span><span class="p">:</span> <span class="s2">&quot;application/json&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;X-BCP-APIV&quot;</span><span class="p">:</span> <span class="s2">&quot;1.0&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;X-Subscription-Token&quot;</span><span class="p">:</span> <span class="n">BRAVE_API_KEY</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="n">ParamsType</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">[</span>
+            <span class="nb">str</span><span class="p">,</span>
+            <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span> <span class="kc">None</span><span class="p">],</span>
+        <span class="p">]</span>
+
+        <span class="n">params</span><span class="p">:</span> <span class="n">ParamsType</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;q&quot;</span><span class="p">:</span> <span class="n">q</span><span class="p">,</span>
+            <span class="s2">&quot;country&quot;</span><span class="p">:</span> <span class="n">country</span><span class="p">,</span>
+            <span class="s2">&quot;search_lang&quot;</span><span class="p">:</span> <span class="n">search_lang</span><span class="p">,</span>
+            <span class="s2">&quot;ui_lang&quot;</span><span class="p">:</span> <span class="n">ui_lang</span><span class="p">,</span>
+            <span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="n">count</span><span class="p">,</span>
+            <span class="s2">&quot;offset&quot;</span><span class="p">:</span> <span class="n">offset</span><span class="p">,</span>
+            <span class="s2">&quot;safesearch&quot;</span><span class="p">:</span> <span class="n">safesearch</span><span class="p">,</span>
+            <span class="s2">&quot;freshness&quot;</span><span class="p">:</span> <span class="n">freshness</span><span class="p">,</span>
+            <span class="s2">&quot;text_decorations&quot;</span><span class="p">:</span> <span class="n">text_decorations</span><span class="p">,</span>
+            <span class="s2">&quot;spellcheck&quot;</span><span class="p">:</span> <span class="n">spellcheck</span><span class="p">,</span>
+            <span class="s2">&quot;result_filter&quot;</span><span class="p">:</span> <span class="n">result_filter</span><span class="p">,</span>
+            <span class="s2">&quot;goggles_id&quot;</span><span class="p">:</span> <span class="n">goggles_id</span><span class="p">,</span>
+            <span class="s2">&quot;units&quot;</span><span class="p">:</span> <span class="n">units</span><span class="p">,</span>
+            <span class="s2">&quot;extra_snippets&quot;</span><span class="p">:</span> <span class="n">extra_snippets</span><span class="p">,</span>
+            <span class="s2">&quot;summary&quot;</span><span class="p">:</span> <span class="n">summary</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;web&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">data</span></div>
+
+
+<div class="viewcode-block" id="SearchToolkit.search_google">
+<a class="viewcode-back" href="../../../camel.toolkits.html#camel.toolkits.search_toolkit.SearchToolkit.search_google">[docs]</a>
+    <span class="nd">@api_keys_required</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;GOOGLE_API_KEY&#39;</span><span class="p">),</span>
+            <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;SEARCH_ENGINE_ID&#39;</span><span class="p">),</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">search_google</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">num_result_pages</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Use Google search engine to search information for the given query.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            query (str): The query to be searched.</span>
+<span class="sd">            num_result_pages (int): The number of result pages to retrieve.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[Dict[str, Any]]: A list of dictionaries where each dictionary</span>
+<span class="sd">            represents a website.</span>
+<span class="sd">                Each dictionary contains the following keys:</span>
+<span class="sd">                - &#39;result_id&#39;: A number in order.</span>
+<span class="sd">                - &#39;title&#39;: The title of the website.</span>
+<span class="sd">                - &#39;description&#39;: A brief description of the website.</span>
+<span class="sd">                - &#39;long_description&#39;: More detail of the website.</span>
+<span class="sd">                - &#39;url&#39;: The URL of the website.</span>
+
+<span class="sd">                Example:</span>
+<span class="sd">                {</span>
+<span class="sd">                    &#39;result_id&#39;: 1,</span>
+<span class="sd">                    &#39;title&#39;: &#39;OpenAI&#39;,</span>
+<span class="sd">                    &#39;description&#39;: &#39;An organization focused on ensuring that</span>
+<span class="sd">                    artificial general intelligence benefits all of humanity.&#39;,</span>
+<span class="sd">                    &#39;long_description&#39;: &#39;OpenAI is a non-profit artificial</span>
+<span class="sd">                    intelligence research company. Our goal is to advance</span>
+<span class="sd">                    digital intelligence in the way that is most likely to</span>
+<span class="sd">                    benefit humanity as a whole&#39;,</span>
+<span class="sd">                    &#39;url&#39;: &#39;https://www.openai.com&#39;</span>
+<span class="sd">                }</span>
+<span class="sd">            title, description, url of a website.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+
+        <span class="c1"># https://developers.google.com/custom-search/v1/overview</span>
+        <span class="n">GOOGLE_API_KEY</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;GOOGLE_API_KEY&quot;</span><span class="p">)</span>
+        <span class="c1"># https://cse.google.com/cse/all</span>
+        <span class="n">SEARCH_ENGINE_ID</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;SEARCH_ENGINE_ID&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Using the first page</span>
+        <span class="n">start_page_idx</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="c1"># Different language may get different result</span>
+        <span class="n">search_language</span> <span class="o">=</span> <span class="s2">&quot;en&quot;</span>
+        <span class="c1"># How many pages to return</span>
+        <span class="n">num_result_pages</span> <span class="o">=</span> <span class="n">num_result_pages</span>
+        <span class="c1"># Constructing the URL</span>
+        <span class="c1"># Doc: https://developers.google.com/custom-search/v1/using_rest</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;https://www.googleapis.com/customsearch/v1?&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;key=</span><span class="si">{</span><span class="n">GOOGLE_API_KEY</span><span class="si">}</span><span class="s2">&amp;cx=</span><span class="si">{</span><span class="n">SEARCH_ENGINE_ID</span><span class="si">}</span><span class="s2">&amp;q=</span><span class="si">{</span><span class="n">query</span><span class="si">}</span><span class="s2">&amp;start=&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">start_page_idx</span><span class="si">}</span><span class="s2">&amp;lr=</span><span class="si">{</span><span class="n">search_language</span><span class="si">}</span><span class="s2">&amp;num=</span><span class="si">{</span><span class="n">num_result_pages</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+        <span class="n">responses</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Fetch the results given the URL</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Make the get</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+
+            <span class="c1"># Get the result items</span>
+            <span class="k">if</span> <span class="s2">&quot;items&quot;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="n">search_items</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;items&quot;</span><span class="p">)</span>
+
+                <span class="c1"># Iterate over 10 results found</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">search_item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">search_items</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+                    <span class="c1"># Check metatags are present</span>
+                    <span class="k">if</span> <span class="s2">&quot;pagemap&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">search_item</span><span class="p">:</span>
+                        <span class="k">continue</span>
+                    <span class="k">if</span> <span class="s2">&quot;metatags&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">search_item</span><span class="p">[</span><span class="s2">&quot;pagemap&quot;</span><span class="p">]:</span>
+                        <span class="k">continue</span>
+                    <span class="k">if</span> <span class="p">(</span>
+                        <span class="s2">&quot;og:description&quot;</span>
+                        <span class="ow">in</span> <span class="n">search_item</span><span class="p">[</span><span class="s2">&quot;pagemap&quot;</span><span class="p">][</span><span class="s2">&quot;metatags&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="p">):</span>
+                        <span class="n">long_description</span> <span class="o">=</span> <span class="n">search_item</span><span class="p">[</span><span class="s2">&quot;pagemap&quot;</span><span class="p">][</span><span class="s2">&quot;metatags&quot;</span><span class="p">][</span>
+                            <span class="mi">0</span>
+                        <span class="p">][</span><span class="s2">&quot;og:description&quot;</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">long_description</span> <span class="o">=</span> <span class="s2">&quot;N/A&quot;</span>
+                    <span class="c1"># Get the page title</span>
+                    <span class="n">title</span> <span class="o">=</span> <span class="n">search_item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">)</span>
+                    <span class="c1"># Page snippet</span>
+                    <span class="n">snippet</span> <span class="o">=</span> <span class="n">search_item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;snippet&quot;</span><span class="p">)</span>
+
+                    <span class="c1"># Extract the page url</span>
+                    <span class="n">link</span> <span class="o">=</span> <span class="n">search_item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;link&quot;</span><span class="p">)</span>
+                    <span class="n">response</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;result_id&quot;</span><span class="p">:</span> <span class="n">i</span><span class="p">,</span>
+                        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">title</span><span class="p">,</span>
+                        <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="n">snippet</span><span class="p">,</span>
+                        <span class="s2">&quot;long_description&quot;</span><span class="p">:</span> <span class="n">long_description</span><span class="p">,</span>
+                        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="n">link</span><span class="p">,</span>
+                    <span class="p">}</span>
+                    <span class="n">responses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">responses</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;google search failed.&quot;</span><span class="p">})</span>
+
+        <span class="k">except</span> <span class="n">requests</span><span class="o">.</span><span class="n">RequestException</span><span class="p">:</span>
+            <span class="c1"># Handle specific exceptions or general request exceptions</span>
+            <span class="n">responses</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;google search failed.&quot;</span><span class="p">})</span>
+        <span class="c1"># If no answer found, return an empty list</span>
+        <span class="k">return</span> <span class="n">responses</span></div>
+
+
+<div class="viewcode-block" id="SearchToolkit.tavily_search">
+<a class="viewcode-back" href="../../../camel.toolkits.html#camel.toolkits.search_toolkit.SearchToolkit.tavily_search">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tavily_search</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">num_results</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Use Tavily Search API to search information for the given query.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            query (str): The query to be searched.</span>
+<span class="sd">            num_results (int): The number of search results to retrieve</span>
+<span class="sd">                (default is `5`).</span>
+<span class="sd">            **kwargs: Additional optional parameters supported by Tavily&#39;s API:</span>
+<span class="sd">                - search_depth (str): &quot;basic&quot; or &quot;advanced&quot; search depth.</span>
+<span class="sd">                - topic (str): The search category, e.g., &quot;general&quot; or &quot;news.&quot;</span>
+<span class="sd">                - days (int): Time frame in days for news-related searches.</span>
+<span class="sd">                - max_results (int): Max number of results to return</span>
+<span class="sd">                  (overrides `num_results`).</span>
+<span class="sd">                See https://docs.tavily.com/docs/python-sdk/tavily-search/</span>
+<span class="sd">                api-reference for details.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[Dict[str, Any]]: A list of dictionaries representing search</span>
+<span class="sd">                results. Each dictionary contains:</span>
+<span class="sd">                - &#39;result_id&#39; (int): The result&#39;s index.</span>
+<span class="sd">                - &#39;title&#39; (str): The title of the result.</span>
+<span class="sd">                - &#39;description&#39; (str): A brief description of the result.</span>
+<span class="sd">                - &#39;long_description&#39; (str): Detailed information, if available.</span>
+<span class="sd">                - &#39;url&#39; (str): The URL of the result.</span>
+<span class="sd">                - &#39;content&#39; (str): Relevant content from the search result.</span>
+<span class="sd">                - &#39;images&#39; (list): A list of related images (if</span>
+<span class="sd">                  `include_images` is True).</span>
+<span class="sd">                - &#39;published_date&#39; (str): Publication date for news topics</span>
+<span class="sd">                  (if available).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">tavily</span><span class="w"> </span><span class="kn">import</span> <span class="n">TavilyClient</span>  <span class="c1"># type: ignore[import-untyped]</span>
+
+        <span class="n">Tavily_API_KEY</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;TAVILY_API_KEY&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">Tavily_API_KEY</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;`TAVILY_API_KEY` not found in environment variables. &quot;</span>
+                <span class="s2">&quot;Get `TAVILY_API_KEY` here: `https://www.tavily.com/api/`.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">client</span> <span class="o">=</span> <span class="n">TavilyClient</span><span class="p">(</span><span class="n">Tavily_API_KEY</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">max_results</span><span class="o">=</span><span class="n">num_results</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">results</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;An unexpected error occurred: </span><span class="si">{</span><span class="n">e</span><span class="si">!s}</span><span class="s2">&quot;</span><span class="p">}]</span></div>
+
+
+<div class="viewcode-block" id="SearchToolkit.search_bocha">
+<a class="viewcode-back" href="../../../camel.toolkits.html#camel.toolkits.search_toolkit.SearchToolkit.search_bocha">[docs]</a>
+    <span class="nd">@api_keys_required</span><span class="p">([(</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;BOCHA_API_KEY&#39;</span><span class="p">)])</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">search_bocha</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">freshness</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;noLimit&quot;</span><span class="p">,</span>
+        <span class="n">summary</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">count</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+        <span class="n">page</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Query the Bocha AI search API and return search results.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            query (str): The search query.</span>
+<span class="sd">            freshness (str): Time frame filter for search results. Default</span>
+<span class="sd">                is &quot;noLimit&quot;. Options include:</span>
+<span class="sd">                - &#39;noLimit&#39;: no limit (default).</span>
+<span class="sd">                - &#39;oneDay&#39;: past day.</span>
+<span class="sd">                - &#39;oneWeek&#39;: past week.</span>
+<span class="sd">                - &#39;oneMonth&#39;: past month.</span>
+<span class="sd">                - &#39;oneYear&#39;: past year.</span>
+<span class="sd">            summary (bool): Whether to include text summaries in results.</span>
+<span class="sd">                Default is False.</span>
+<span class="sd">            count (int): Number of results to return (1-50). Default is 10.</span>
+<span class="sd">            page (int): Page number of results. Default is 1.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dict[str, Any]: A dictionary containing search results, including</span>
+<span class="sd">                web pages, images, and videos if available. The structure</span>
+<span class="sd">                follows the Bocha AI search API response format.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+        <span class="n">BOCHA_API_KEY</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;BOCHA_API_KEY&quot;</span><span class="p">)</span>
+
+        <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;https://api.bochaai.com/v1/web-search&quot;</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;Authorization&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Bearer </span><span class="si">{</span><span class="n">BOCHA_API_KEY</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Content-Type&quot;</span><span class="p">:</span> <span class="s2">&quot;application/json&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="n">payload</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;query&quot;</span><span class="p">:</span> <span class="n">query</span><span class="p">,</span>
+                <span class="s2">&quot;freshness&quot;</span><span class="p">:</span> <span class="n">freshness</span><span class="p">,</span>
+                <span class="s2">&quot;summary&quot;</span><span class="p">:</span> <span class="n">summary</span><span class="p">,</span>
+                <span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="n">count</span><span class="p">,</span>
+                <span class="s2">&quot;page&quot;</span><span class="p">:</span> <span class="n">page</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">payload</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Bocha API failed with </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="si">}</span><span class="s2">: &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                <span class="p">}</span>
+            <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;data&quot;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="n">requests</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">RequestException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Bocha AI search failed: </span><span class="si">{</span><span class="n">e</span><span class="si">!s}</span><span class="s2">&quot;</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="SearchToolkit.search_baidu">
+<a class="viewcode-back" href="../../../camel.toolkits.html#camel.toolkits.search_toolkit.SearchToolkit.search_baidu">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">search_baidu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">max_results</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Search Baidu using web scraping to retrieve relevant search</span>
+<span class="sd">        results. This method queries Baidu&#39;s search engine and extracts search</span>
+<span class="sd">        results including titles, descriptions, and URLs.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            query (str): Search query string to submit to Baidu.</span>
+<span class="sd">            max_results (int): Maximum number of results to return.</span>
+<span class="sd">                (default: :obj:`5`)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dict[str, Any]: A dictionary containing search results or error</span>
+<span class="sd">                message.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">bs4</span><span class="w"> </span><span class="kn">import</span> <span class="n">BeautifulSoup</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;https://www.baidu.com/s&quot;</span>
+            <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;User-Agent&quot;</span><span class="p">:</span> <span class="p">(</span>
+                    <span class="s2">&quot;Mozilla/5.0 (Windows NT 10.0; Win64; x64) &quot;</span>
+                    <span class="s2">&quot;AppleWebKit/537.36 (KHTML, like Gecko) &quot;</span>
+                    <span class="s2">&quot;Chrome/120.0.0.0 Safari/537.36&quot;</span>
+                <span class="p">),</span>
+                <span class="s2">&quot;Referer&quot;</span><span class="p">:</span> <span class="s2">&quot;https://www.baidu.com&quot;</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;wd&quot;</span><span class="p">:</span> <span class="n">query</span><span class="p">,</span> <span class="s2">&quot;rn&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">max_results</span><span class="p">)}</span>
+
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
+            <span class="n">response</span><span class="o">.</span><span class="n">encoding</span> <span class="o">=</span> <span class="s2">&quot;utf-8&quot;</span>
+
+            <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;html.parser&quot;</span><span class="p">)</span>
+
+            <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">soup</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;.result&quot;</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="n">title_element</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">select_one</span><span class="p">(</span><span class="s2">&quot;h3 &gt; a&quot;</span><span class="p">)</span>
+                <span class="n">title</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">title_element</span><span class="o">.</span><span class="n">get_text</span><span class="p">(</span><span class="n">strip</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">if</span> <span class="n">title_element</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+                <span class="p">)</span>
+
+                <span class="n">link</span> <span class="o">=</span> <span class="n">title_element</span><span class="p">[</span><span class="s2">&quot;href&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">title_element</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+
+                <span class="n">desc_element</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">select_one</span><span class="p">(</span><span class="s2">&quot;.c-abstract, .c-span-last&quot;</span><span class="p">)</span>
+                <span class="n">desc</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">desc_element</span><span class="o">.</span><span class="n">get_text</span><span class="p">(</span><span class="n">strip</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">if</span> <span class="n">desc_element</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+                <span class="p">)</span>
+
+                <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;result_id&quot;</span><span class="p">:</span> <span class="n">idx</span><span class="p">,</span>
+                        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">title</span><span class="p">,</span>
+                        <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="n">desc</span><span class="p">,</span>
+                        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="n">link</span><span class="p">,</span>
+                    <span class="p">}</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">max_results</span><span class="p">:</span>
+                    <span class="k">break</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">results</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span>
+                    <span class="s2">&quot;Warning: No results found. Check &quot;</span>
+                    <span class="s2">&quot;if Baidu HTML structure has changed.&quot;</span>
+                <span class="p">)</span>
+
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;results&quot;</span><span class="p">:</span> <span class="n">results</span><span class="p">}</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Baidu scraping error: </span><span class="si">{</span><span class="n">e</span><span class="si">!s}</span><span class="s2">&quot;</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="SearchToolkit.search_bing">
+<a class="viewcode-back" href="../../../camel.toolkits.html#camel.toolkits.search_toolkit.SearchToolkit.search_bing">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">search_bing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">max_results</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Use Bing search engine to search information for the given query.</span>
+
+<span class="sd">        This function queries the Chinese version of Bing search engine (cn.</span>
+<span class="sd">        bing.com) using web scraping to retrieve relevant search results. It</span>
+<span class="sd">        extracts search results including titles, snippets, and URLs. This</span>
+<span class="sd">        function is particularly useful when the query is in Chinese or when</span>
+<span class="sd">        Chinese search results are desired.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            query (str): The search query string to submit to Bing. Works best</span>
+<span class="sd">                with Chinese queries or when Chinese results are preferred.</span>
+<span class="sd">            max_results (int): Maximum number of results to return.</span>
+<span class="sd">                (default: :obj:`5`)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dict ([str, Any]): A dictionary containing either:</span>
+<span class="sd">                - &#39;results&#39;: A list of dictionaries, each with:</span>
+<span class="sd">                    - &#39;result_id&#39;: The index of the result.</span>
+<span class="sd">                    - &#39;snippet&#39;: A brief description of the search result.</span>
+<span class="sd">                    - &#39;title&#39;: The title of the search result.</span>
+<span class="sd">                    - &#39;link&#39;: The URL of the search result.</span>
+<span class="sd">                - or &#39;error&#39;: An error message if something went wrong.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">cast</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">urllib.parse</span><span class="w"> </span><span class="kn">import</span> <span class="n">urlencode</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">bs4</span><span class="w"> </span><span class="kn">import</span> <span class="n">BeautifulSoup</span><span class="p">,</span> <span class="n">Tag</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="n">urlencode</span><span class="p">({</span><span class="s2">&quot;q&quot;</span><span class="p">:</span> <span class="n">query</span><span class="p">})</span>
+            <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;https://cn.bing.com/search?</span><span class="si">{</span><span class="n">query</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;User-Agent&quot;</span><span class="p">:</span> <span class="p">(</span>
+                    <span class="s2">&quot;Mozilla/5.0 (Windows NT 10.0; Win64; x64) &quot;</span>
+                    <span class="s2">&quot;AppleWebKit/537.36 (KHTML, like Gecko) &quot;</span>
+                    <span class="s2">&quot;Chrome/120.0.0.0 Safari/537.36&quot;</span>
+                <span class="p">),</span>
+            <span class="p">}</span>
+            <span class="c1"># Add timeout to prevent hanging</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+
+            <span class="c1"># Check if the request was successful</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Bing returned status code: &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                <span class="p">}</span>
+
+            <span class="n">response</span><span class="o">.</span><span class="n">encoding</span> <span class="o">=</span> <span class="s1">&#39;utf-8&#39;</span>
+            <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="s1">&#39;html.parser&#39;</span><span class="p">)</span>
+
+            <span class="n">b_results_element</span> <span class="o">=</span> <span class="n">soup</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;ol&quot;</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;b_results&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">b_results_element</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;results&quot;</span><span class="p">:</span> <span class="p">[]}</span>
+
+            <span class="c1"># Ensure b_results is a Tag and find all li elements</span>
+            <span class="n">b_results_tag</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">Tag</span><span class="p">,</span> <span class="n">b_results_element</span><span class="p">)</span>
+            <span class="n">result_items</span> <span class="o">=</span> <span class="n">b_results_tag</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s2">&quot;li&quot;</span><span class="p">)</span>
+
+            <span class="n">results</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">result_items</span><span class="p">),</span> <span class="n">max_results</span><span class="p">)):</span>
+                <span class="n">row</span> <span class="o">=</span> <span class="n">result_items</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">Tag</span><span class="p">):</span>
+                    <span class="k">continue</span>
+
+                <span class="n">h2_element</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;h2&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">h2_element</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">h2_tag</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">Tag</span><span class="p">,</span> <span class="n">h2_element</span><span class="p">)</span>
+
+                <span class="n">title</span> <span class="o">=</span> <span class="n">h2_tag</span><span class="o">.</span><span class="n">get_text</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+                <span class="n">link_tag_element</span> <span class="o">=</span> <span class="n">h2_tag</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">link_tag_element</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">link_tag</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">Tag</span><span class="p">,</span> <span class="n">link_tag_element</span><span class="p">)</span>
+
+                <span class="n">link</span> <span class="o">=</span> <span class="n">link_tag</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;href&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">link</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">continue</span>
+
+                <span class="n">content_element</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;p&quot;</span><span class="p">,</span> <span class="n">class_</span><span class="o">=</span><span class="s2">&quot;b_algoSlug&quot;</span><span class="p">)</span>
+                <span class="n">content_text</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+                <span class="k">if</span> <span class="n">content_element</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span>
+                    <span class="n">content_element</span><span class="p">,</span> <span class="n">Tag</span>
+                <span class="p">):</span>
+                    <span class="n">content_text</span> <span class="o">=</span> <span class="n">content_element</span><span class="o">.</span><span class="n">get_text</span><span class="p">()</span>
+
+                <span class="n">row_data</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;result_id&quot;</span><span class="p">:</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s2">&quot;snippet&quot;</span><span class="p">:</span> <span class="n">content_text</span><span class="p">,</span>
+                    <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">title</span><span class="p">,</span>
+                    <span class="s2">&quot;link&quot;</span><span class="p">:</span> <span class="n">link</span><span class="p">,</span>
+                <span class="p">}</span>
+                <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row_data</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">results</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s2">&quot;warning&quot;</span><span class="p">:</span> <span class="s2">&quot;No results found. Check if &quot;</span>
+                    <span class="s2">&quot;Bing HTML structure has changed.&quot;</span>
+                <span class="p">}</span>
+
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;results&quot;</span><span class="p">:</span> <span class="n">results</span><span class="p">}</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Bing scraping error: </span><span class="si">{</span><span class="n">e</span><span class="si">!s}</span><span class="s2">&quot;</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="SearchToolkit.search_exa">
+<a class="viewcode-back" href="../../../camel.toolkits.html#camel.toolkits.search_toolkit.SearchToolkit.search_exa">[docs]</a>
+    <span class="nd">@api_keys_required</span><span class="p">([(</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;EXA_API_KEY&#39;</span><span class="p">)])</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">search_exa</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">search_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="s2">&quot;neural&quot;</span><span class="p">,</span> <span class="s2">&quot;keyword&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+        <span class="n">category</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span>
+            <span class="n">Literal</span><span class="p">[</span>
+                <span class="s2">&quot;company&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;research paper&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;news&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;pdf&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;github&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;tweet&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;personal site&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;linkedin profile&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;financial report&quot;</span><span class="p">,</span>
+            <span class="p">]</span>
+        <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">num_results</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+        <span class="n">include_text</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">exclude_text</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">use_autoprompt</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">text</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Use Exa search API to perform intelligent web search with optional</span>
+<span class="sd">        content extraction.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            query (str): The search query string.</span>
+<span class="sd">            search_type (Literal[&quot;auto&quot;, &quot;neural&quot;, &quot;keyword&quot;]): The type of</span>
+<span class="sd">                search to perform. &quot;auto&quot; automatically decides between keyword</span>
+<span class="sd">                and neural search. (default: :obj:`&quot;auto&quot;`)</span>
+<span class="sd">            category (Optional[Literal]): Category to focus the search on, such</span>
+<span class="sd">                as &quot;research paper&quot; or &quot;news&quot;. (default: :obj:`None`)</span>
+<span class="sd">            num_results (int): Number of results to return (max 100).</span>
+<span class="sd">                (default: :obj:`10`)</span>
+<span class="sd">            include_text (Optional[List[str]]): Strings that must be present in</span>
+<span class="sd">                webpage text. Limited to 1 string of up to 5 words.</span>
+<span class="sd">                (default: :obj:`None`)</span>
+<span class="sd">            exclude_text (Optional[List[str]]): Strings that must not be</span>
+<span class="sd">                present in webpage text. Limited to 1 string of up to 5 words.</span>
+<span class="sd">                (default: :obj:`None`)</span>
+<span class="sd">            use_autoprompt (bool): Whether to use Exa&#39;s autoprompt feature to</span>
+<span class="sd">                enhance the query. (default: :obj:`True`)</span>
+<span class="sd">            text (bool): Whether to include webpage contents in results.</span>
+<span class="sd">                (default: :obj:`False`)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dict[str, Any]: A dict containing search results and metadata:</span>
+<span class="sd">                - requestId (str): Unique identifier for the request</span>
+<span class="sd">                - autopromptString (str): Generated autoprompt if enabled</span>
+<span class="sd">                - autoDate (str): Timestamp of autoprompt generation</span>
+<span class="sd">                - resolvedSearchType (str): The actual search type used</span>
+<span class="sd">                - results (List[Dict]): List of search results with metadata</span>
+<span class="sd">                - searchType (str): The search type that was selected</span>
+<span class="sd">                - costDollars (Dict): Breakdown of API costs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">exa_py</span><span class="w"> </span><span class="kn">import</span> <span class="n">Exa</span>
+
+        <span class="n">EXA_API_KEY</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;EXA_API_KEY&quot;</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">exa</span> <span class="o">=</span> <span class="n">Exa</span><span class="p">(</span><span class="n">EXA_API_KEY</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">num_results</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">num_results</span> <span class="o">&lt;=</span> <span class="mi">100</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;num_results must be between 1 and 100&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">include_text</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">include_text</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;include_text can only contain 1 string&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">include_text</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">5</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s2">&quot;include_text string cannot be longer than 5 words&quot;</span>
+                    <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">exclude_text</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">exclude_text</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;exclude_text can only contain 1 string&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">exclude_text</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">5</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s2">&quot;exclude_text string cannot be longer than 5 words&quot;</span>
+                    <span class="p">)</span>
+
+            <span class="c1"># Call Exa API with direct parameters</span>
+            <span class="k">if</span> <span class="n">text</span><span class="p">:</span>
+                <span class="n">results</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
+                    <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+                    <span class="n">exa</span><span class="o">.</span><span class="n">search_and_contents</span><span class="p">(</span>
+                        <span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">,</span>
+                        <span class="nb">type</span><span class="o">=</span><span class="n">search_type</span><span class="p">,</span>
+                        <span class="n">category</span><span class="o">=</span><span class="n">category</span><span class="p">,</span>
+                        <span class="n">num_results</span><span class="o">=</span><span class="n">num_results</span><span class="p">,</span>
+                        <span class="n">include_text</span><span class="o">=</span><span class="n">include_text</span><span class="p">,</span>
+                        <span class="n">exclude_text</span><span class="o">=</span><span class="n">exclude_text</span><span class="p">,</span>
+                        <span class="n">use_autoprompt</span><span class="o">=</span><span class="n">use_autoprompt</span><span class="p">,</span>
+                        <span class="n">text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="p">),</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">results</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
+                    <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+                    <span class="n">exa</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
+                        <span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">,</span>
+                        <span class="nb">type</span><span class="o">=</span><span class="n">search_type</span><span class="p">,</span>
+                        <span class="n">category</span><span class="o">=</span><span class="n">category</span><span class="p">,</span>
+                        <span class="n">num_results</span><span class="o">=</span><span class="n">num_results</span><span class="p">,</span>
+                        <span class="n">include_text</span><span class="o">=</span><span class="n">include_text</span><span class="p">,</span>
+                        <span class="n">exclude_text</span><span class="o">=</span><span class="n">exclude_text</span><span class="p">,</span>
+                        <span class="n">use_autoprompt</span><span class="o">=</span><span class="n">use_autoprompt</span><span class="p">,</span>
+                    <span class="p">),</span>
+                <span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">results</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Exa search failed: </span><span class="si">{</span><span class="n">e</span><span class="si">!s}</span><span class="s2">&quot;</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="SearchToolkit.search_alibaba_tongxiao">
+<a class="viewcode-back" href="../../../camel.toolkits.html#camel.toolkits.search_toolkit.SearchToolkit.search_alibaba_tongxiao">[docs]</a>
+    <span class="nd">@api_keys_required</span><span class="p">([(</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;TONGXIAO_API_KEY&#39;</span><span class="p">)])</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">search_alibaba_tongxiao</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">time_range</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span>
+            <span class="s2">&quot;OneDay&quot;</span><span class="p">,</span> <span class="s2">&quot;OneWeek&quot;</span><span class="p">,</span> <span class="s2">&quot;OneMonth&quot;</span><span class="p">,</span> <span class="s2">&quot;OneYear&quot;</span><span class="p">,</span> <span class="s2">&quot;NoLimit&quot;</span>
+        <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;NoLimit&quot;</span><span class="p">,</span>
+        <span class="n">industry</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span>
+            <span class="n">Literal</span><span class="p">[</span>
+                <span class="s2">&quot;finance&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;law&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;medical&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;internet&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;tax&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;news_province&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;news_center&quot;</span><span class="p">,</span>
+            <span class="p">]</span>
+        <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">page</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">return_main_text</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">return_markdown_text</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">enable_rerank</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Query the Alibaba Tongxiao search API and return search results.</span>
+
+<span class="sd">        A powerful search API optimized for Chinese language queries with</span>
+<span class="sd">        features:</span>
+<span class="sd">        - Enhanced Chinese language understanding</span>
+<span class="sd">        - Industry-specific filtering (finance, law, medical, etc.)</span>
+<span class="sd">        - Structured data with markdown formatting</span>
+<span class="sd">        - Result reranking for relevance</span>
+<span class="sd">        - Time-based filtering</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            query (str): The search query string (length &gt;= 1 and &lt;= 100).</span>
+<span class="sd">            time_range (Literal[&quot;OneDay&quot;, &quot;OneWeek&quot;, &quot;OneMonth&quot;, &quot;OneYear&quot;,</span>
+<span class="sd">                &quot;NoLimit&quot;]): Time frame filter for search results.</span>
+<span class="sd">                (default: :obj:`&quot;NoLimit&quot;`)</span>
+<span class="sd">            industry (Optional[Literal[&quot;finance&quot;, &quot;law&quot;, &quot;medical&quot;,</span>
+<span class="sd">                &quot;internet&quot;, &quot;tax&quot;, &quot;news_province&quot;, &quot;news_center&quot;]]):</span>
+<span class="sd">                Industry-specific search filter. When specified, only returns</span>
+<span class="sd">                results from sites in the specified industries. Multiple</span>
+<span class="sd">                industries can be comma-separated.</span>
+<span class="sd">                (default: :obj:`None`)</span>
+<span class="sd">            page (int): Page number for results pagination.</span>
+<span class="sd">                (default: :obj:`1`)</span>
+<span class="sd">            return_main_text (bool): Whether to include the main text of the</span>
+<span class="sd">                webpage in results. (default: :obj:`True`)</span>
+<span class="sd">            return_markdown_text (bool): Whether to include markdown formatted</span>
+<span class="sd">                content in results. (default: :obj:`True`)</span>
+<span class="sd">            enable_rerank (bool): Whether to enable result reranking. If</span>
+<span class="sd">                response time is critical, setting this to False can reduce</span>
+<span class="sd">                response time by approximately 140ms. (default: :obj:`True`)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dict[str, Any]: A dictionary containing either search results with</span>
+<span class="sd">                &#39;requestId&#39; and &#39;results&#39; keys, or an &#39;error&#39; key with error</span>
+<span class="sd">                message. Each result contains title, snippet, url and other</span>
+<span class="sd">                metadata.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">TONGXIAO_API_KEY</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;TONGXIAO_API_KEY&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Validate query length</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">query</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">query</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">100</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Query length must be between 1 and 100 characters&quot;</span>
+            <span class="p">}</span>
+
+        <span class="c1"># API endpoint and parameters</span>
+        <span class="n">base_url</span> <span class="o">=</span> <span class="s2">&quot;https://cloud-iqs.aliyuncs.com/search/genericSearch&quot;</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;X-API-Key&quot;</span><span class="p">:</span> <span class="n">TONGXIAO_API_KEY</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="c1"># Convert boolean parameters to string for compatibility with requests</span>
+        <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;query&quot;</span><span class="p">:</span> <span class="n">query</span><span class="p">,</span>
+            <span class="s2">&quot;timeRange&quot;</span><span class="p">:</span> <span class="n">time_range</span><span class="p">,</span>
+            <span class="s2">&quot;page&quot;</span><span class="p">:</span> <span class="n">page</span><span class="p">,</span>
+            <span class="s2">&quot;returnMainText&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">return_main_text</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span>
+            <span class="s2">&quot;returnMarkdownText&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">return_markdown_text</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span>
+            <span class="s2">&quot;enableRerank&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">enable_rerank</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span>
+        <span class="p">}</span>
+
+        <span class="c1"># Only add industry parameter if specified</span>
+        <span class="k">if</span> <span class="n">industry</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="s2">&quot;industry&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">industry</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Send GET request with proper typing for params</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="n">base_url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">10</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Check response status</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Alibaba Tongxiao API request failed with status &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;code </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                <span class="p">}</span>
+
+            <span class="c1"># Parse JSON response</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+
+            <span class="c1"># Extract and format pageItems</span>
+            <span class="n">page_items</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pageItems&quot;</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">page_items</span><span class="p">):</span>
+                <span class="c1"># Create a simplified result structure</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;result_id&quot;</span><span class="p">:</span> <span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;snippet&quot;</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;snippet&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;link&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;hostname&quot;</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;hostname&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                <span class="p">}</span>
+
+                <span class="c1"># Only include additional fields if they exist and are</span>
+                <span class="c1"># requested</span>
+                <span class="k">if</span> <span class="s2">&quot;summary&quot;</span> <span class="ow">in</span> <span class="n">item</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;summary&quot;</span><span class="p">):</span>
+                    <span class="n">result</span><span class="p">[</span><span class="s2">&quot;summary&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;summary&quot;</span><span class="p">]</span>
+                <span class="k">elif</span> <span class="p">(</span>
+                    <span class="n">return_main_text</span>
+                    <span class="ow">and</span> <span class="s2">&quot;mainText&quot;</span> <span class="ow">in</span> <span class="n">item</span>
+                    <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mainText&quot;</span><span class="p">)</span>
+                <span class="p">):</span>
+                    <span class="n">result</span><span class="p">[</span><span class="s2">&quot;summary&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;mainText&quot;</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="n">return_main_text</span>
+                    <span class="ow">and</span> <span class="s2">&quot;mainText&quot;</span> <span class="ow">in</span> <span class="n">item</span>
+                    <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mainText&quot;</span><span class="p">)</span>
+                <span class="p">):</span>
+                    <span class="n">result</span><span class="p">[</span><span class="s2">&quot;main_text&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;mainText&quot;</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="n">return_markdown_text</span>
+                    <span class="ow">and</span> <span class="s2">&quot;markdownText&quot;</span> <span class="ow">in</span> <span class="n">item</span>
+                    <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;markdownText&quot;</span><span class="p">)</span>
+                <span class="p">):</span>
+                    <span class="n">result</span><span class="p">[</span><span class="s2">&quot;markdown_text&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;markdownText&quot;</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="s2">&quot;score&quot;</span> <span class="ow">in</span> <span class="n">item</span><span class="p">:</span>
+                    <span class="n">result</span><span class="p">[</span><span class="s2">&quot;score&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;score&quot;</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="s2">&quot;publishTime&quot;</span> <span class="ow">in</span> <span class="n">item</span><span class="p">:</span>
+                    <span class="n">result</span><span class="p">[</span><span class="s2">&quot;publish_time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;publishTime&quot;</span><span class="p">]</span>
+
+                <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+            <span class="c1"># Return a simplified structure</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s2">&quot;request_id&quot;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;requestId&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                <span class="s2">&quot;results&quot;</span><span class="p">:</span> <span class="n">results</span><span class="p">,</span>
+            <span class="p">}</span>
+
+        <span class="k">except</span> <span class="n">requests</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">RequestException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Alibaba Tongxiao search request failed: </span><span class="si">{</span><span class="n">e</span><span class="si">!s}</span><span class="s2">&quot;</span><span class="p">}</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Unexpected error during Alibaba Tongxiao &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;search: </span><span class="si">{</span><span class="n">e</span><span class="si">!s}</span><span class="s2">&quot;</span>
+            <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="SearchToolkit.get_tools">
+<a class="viewcode-back" href="../../../camel.toolkits.html#camel.toolkits.search_toolkit.SearchToolkit.get_tools">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_tools</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">FunctionTool</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Returns a list of FunctionTool objects representing the</span>
+<span class="sd">        functions in the toolkit.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[FunctionTool]: A list of FunctionTool objects</span>
+<span class="sd">                representing the functions in the toolkit.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="n">FunctionTool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">search_wiki</span><span class="p">),</span>
+            <span class="n">FunctionTool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">search_linkup</span><span class="p">),</span>
+            <span class="n">FunctionTool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">search_google</span><span class="p">),</span>
+            <span class="n">FunctionTool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">search_duckduckgo</span><span class="p">),</span>
+            <span class="n">FunctionTool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tavily_search</span><span class="p">),</span>
+            <span class="n">FunctionTool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">search_brave</span><span class="p">),</span>
+            <span class="n">FunctionTool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">search_bocha</span><span class="p">),</span>
+            <span class="n">FunctionTool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">search_baidu</span><span class="p">),</span>
+            <span class="n">FunctionTool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">search_bing</span><span class="p">),</span>
+            <span class="n">FunctionTool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">search_exa</span><span class="p">),</span>
+            <span class="n">FunctionTool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">search_alibaba_tongxiao</span><span class="p">),</span>
+        <span class="p">]</span></div>
+</div>
+
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By CAMEL-AI.org
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, CAMEL-AI.org.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

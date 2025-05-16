@@ -1,0 +1,1399 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>camel.verifiers.physics_verifier &#8212; CAMEL 0.2.59 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=3c972f42" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../../_static/documentation_options.js?v=b51f7387"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/camel/verifiers/physics_verifier';</script>
+    <link rel="icon" href="https://raw.githubusercontent.com/camel-ai/camel/master/misc/favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png" class="logo__image only-light" alt=""/>
+    <script>document.write(`<img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png" class="logo__image only-dark" alt=""/>`);</script>
+  
+  
+    <p class="title logo__title">CAMEL 0.2.59</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Get Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../get_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../get_started/setup.html">API Setup</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Key Modules</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/agents.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/datagen.html">Data Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/messages.html">Message</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/memory.html">Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/tools.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/prompts.html">Prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/tasks.html">Task</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/loaders.html">Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/storages.html">Storages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/society.html">Society</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/embeddings.html">Embeddings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/retrievers.html">Retrievers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/workforce.html">Workforce</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Cookbooks</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/basic_concepts/index.html">Basic Concepts</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/create_your_first_agent.html">Creating Your First Agent</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/create_your_first_agents_society.html">Creating Your First Agent Society</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/agents_message.html">Message Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/agents_prompting.html">Prompting Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/model_speed_comparison.html">Model Speed Comparison Cookbook</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/advanced_features/index.html">Advanced Features</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_tools.html">Tools Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_tools_from_ACI.html">Using Tools from ACI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_tools_from_Composio.html">Using Tools from Composio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_human_in_loop_and_tool_approval.html">Agents with Human-in-loop and Tool Approval from HumanLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_memory.html">Memory Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_rag.html">RAG Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_graph_rag.html">Graph RAG Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_MCP.html">CAMEL MCP Cookbook</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_tracking.html">Track CAMEL Agents with AgentOps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/critic_agents_and_tree_search.html">Critic Agents and Tree Search</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/embodied_agents.html">Embodied Agents</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/multi_agent_society/index.html">Multi-agent Society</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/multi_agent_society/agents_society.html">Develop Trading Bot with Role Playing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/multi_agent_society/workforce_judge_committee.html">Create A Hackathon Judge Committee with Workforce</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/multi_agent_society/task_generation.html">Task Generation Cookbook</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/data_generation/index.html">Agentic Data Generation</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_mistral_7b_instruct.html">Agentic SFT Data generation with CAMEL and finetuning Mistral models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B.html">Agentic Data generation with CAMEL and finetuning Qwen models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_tinyllama.html">Agentic SFT Data generation with CAMEL and finetuning Meta models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/data_gen_with_real_function_calls_and_hermes_format.html">Real Function Calls and Hermes Format Data Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/self_instruct_data_generation.html">Self-instruct Data Generation Using Qwen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/cot_data_gen_sft_qwen_unsolth_upload_huggingface.html">CoT Data Generation and SFT Qwen With Unsloth</a></li>
+
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/synthetic_dataevaluation%26filter_with_reward_model.html">Agentic Data Generation, Evaluation &amp; Filtering with Reward Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/data_model_generation_and_structured_output_with_qwen.html">Agentic Data Model Generation and Structured Output Powered by CAMEL &amp; Qwen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/distill_math_reasoning_data_from_deepseek_r1.html">Distill Math Reasoning Data from DeepSeek R1 with CAMEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/self_improving_math_reasoning_data_distillation_from_deepSeek_r1.html">Self-Improving Math Reasoning Data Distillation from DeepSeek R1 with CAMEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/self_improving_cot_generation.html">Deep Dive into CAMEL’s Practices for Self-Improving CoT Generation 🚀</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/applications/index.html">Applications</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/roleplaying_scraper.html">Role-Playing Scraper for Report &amp; Knowledge Graph Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/dynamic_travel_planner.html">Dynamic Travel Planner Role-Playing: Multi-Agent System with Real-Time Insights Powered by Dappier</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/customer_service_Discord_bot_with_agentic_RAG.html">Customer Service Discord Bot with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/customer_service_Discord_bot_using_SambaNova_with_agentic_RAG.html">Customer Service Discord Bot Using SambaNova with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/customer_service_Discord_bot_using_local_model_with_agentic_RAG.html">Customer Service Discord Bot Using Local Models with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/finance_discord_bot.html">Customer Service Discord Bot for Finance with OpenBB</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/data_processing/index.html">Data Processing and Analysis</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_processing/video_analysis.html">Video Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_processing/agent_with_chunkr_for_pdf_parsing.html">Create AI Agents that work with your PDFs using Chunkr &amp; Mistral AI</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_processing/ingest_data_from_websites_with_Firecrawl.html">3 ways to ingest data from websites with Firecrawl</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../modules.html">camel</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../camel.html">camel package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.agents.html">camel.agents package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.agents.tool_agents.html">camel.agents.tool_agents package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.configs.html">camel.configs package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.datagen.html">camel.datagen package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.datagen.self_instruct.html">camel.datagen.self_instruct package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.datagen.source2synth.html">camel.datagen.source2synth package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.embeddings.html">camel.embeddings package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.interpreters.html">camel.interpreters package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.loaders.html">camel.loaders package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.memories.html">camel.memories package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.memories.blocks.html">camel.memories.blocks package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.memories.context_creators.html">camel.memories.context_creators package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.messages.html">camel.messages package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.models.html">camel.models package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.prompts.html">camel.prompts package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.responses.html">camel.responses package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.retrievers.html">camel.retrievers package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.societies.html">camel.societies package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.societies.workforce.html">camel.societies.workforce package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.storages.html">camel.storages package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.graph_storages.html">camel.storages.graph_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.key_value_storages.html">camel.storages.key_value_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.object_storages.html">camel.storages.object_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.vectordb_storages.html">camel.storages.vectordb_storages package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.tasks.html">camel.tasks package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.terminators.html">camel.terminators package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.toolkits.html">camel.toolkits package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.types.html">camel.types package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.utils.html">camel.utils package</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/camel-ai/camel" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/camel-ai/camel/issues/new?title=Issue%20on%20page%20%2F_modules/camel/verifiers/physics_verifier.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for camel.verifiers.physics_verifier</h1><div class="highlight"><pre>
+<span></span><span class="c1"># ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1"># ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.extractors.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseExtractor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">VerificationOutcome</span><span class="p">,</span> <span class="n">VerificationResult</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.python_verifier</span><span class="w"> </span><span class="kn">import</span> <span class="n">PythonVerifier</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">UnitParser</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Class for handling unit parsing and manipulation operations.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">sympy.physics</span><span class="w"> </span><span class="kn">import</span> <span class="n">units</span>
+
+        <span class="c1"># Base unit dictionary</span>
+        <span class="n">extra_allowed_units</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;hrs&#39;</span><span class="p">:</span> <span class="n">units</span><span class="o">.</span><span class="n">hour</span><span class="p">,</span>
+            <span class="s1">&#39;min&#39;</span><span class="p">:</span> <span class="n">units</span><span class="o">.</span><span class="n">minute</span><span class="p">,</span>
+            <span class="s1">&#39;Joule&#39;</span><span class="p">:</span> <span class="n">units</span><span class="o">.</span><span class="n">joule</span><span class="p">,</span>
+            <span class="s1">&#39;Joules&#39;</span><span class="p">:</span> <span class="n">units</span><span class="o">.</span><span class="n">joule</span><span class="p">,</span>
+            <span class="s1">&#39;circ&#39;</span><span class="p">:</span> <span class="n">units</span><span class="o">.</span><span class="n">degree</span><span class="p">,</span>
+            <span class="s2">&quot;Omega&quot;</span><span class="p">:</span> <span class="n">units</span><span class="o">.</span><span class="n">ohm</span><span class="p">,</span>
+            <span class="s1">&#39;%&#39;</span><span class="p">:</span> <span class="n">units</span><span class="o">.</span><span class="n">Unit</span><span class="p">(</span><span class="s1">&#39;percent&#39;</span><span class="p">),</span>
+        <span class="p">}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">allowed_units</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_sympy_units</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">allowed_units</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">extra_allowed_units</span><span class="p">)</span>
+
+        <span class="c1"># Add SI prefixed units</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_add_si_prefixes</span><span class="p">()</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_load_sympy_units</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Load all available units from sympy.physics.units.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dict[str, Any]: Dictionary mapping unit names to their</span>
+<span class="sd">                corresponding sympy Quantity objects.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">sympy.physics</span><span class="w"> </span><span class="kn">import</span> <span class="n">units</span>
+
+        <span class="n">sympy_units</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">attr_name</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">units</span><span class="p">):</span>
+            <span class="n">unit_obj</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">units</span><span class="p">,</span> <span class="n">attr_name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">unit_obj</span><span class="p">,</span> <span class="n">units</span><span class="o">.</span><span class="n">Quantity</span><span class="p">):</span>
+                <span class="n">sympy_units</span><span class="p">[</span><span class="n">attr_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">unit_obj</span>
+
+        <span class="k">return</span> <span class="n">sympy_units</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_add_si_prefixes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Add SI prefixed units (like km, MHz, etc.) to the allowed units.&quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">sympy.physics.units.prefixes</span><span class="w"> </span><span class="kn">import</span> <span class="n">PREFIXES</span>
+
+        <span class="n">prefixed_units</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">prefix_obj</span> <span class="ow">in</span> <span class="n">PREFIXES</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">unit_name</span><span class="p">,</span> <span class="n">base_unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">allowed_units</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">prefixed_unit_name</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}{</span><span class="n">unit_name</span><span class="si">}</span><span class="s2">&quot;</span>  <span class="c1"># Example: &quot;MJ&quot;, &quot;kN&quot;</span>
+                <span class="p">)</span>
+                <span class="n">prefixed_units</span><span class="p">[</span><span class="n">prefixed_unit_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">prefix_obj</span><span class="o">.</span><span class="n">scale_factor</span> <span class="o">*</span> <span class="n">base_unit</span>
+                <span class="p">)</span>
+
+        <span class="c1"># Add only new prefixed units that don&#39;t conflict with existing ones</span>
+        <span class="n">prefixed_units</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span> <span class="n">v</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">prefixed_units</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">allowed_units</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">allowed_units</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">prefixed_units</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_unit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">unit_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Parse a unit string into a SymPy expression using the appropriate</span>
+<span class="sd">        method.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            unit_str (str): The unit string to parse.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Optional[Any]: SymPy expression representing the unit, or None</span>
+<span class="sd">                if parsing fails or the unit is dimensionless.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="kn">import</span><span class="w"> </span><span class="nn">sympy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sp</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">sympy.parsing.sympy_parser</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse_expr</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">unit_str</span> <span class="ow">or</span> <span class="n">unit_str</span> <span class="o">==</span> <span class="s2">&quot;dimensionless&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="s2">&quot;$&quot;</span> <span class="ow">in</span> <span class="n">unit_str</span> <span class="ow">or</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span> <span class="ow">in</span> <span class="n">unit_str</span><span class="p">:</span>
+            <span class="c1"># Likely a LaTeX formatted string</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_unit_with_latex</span><span class="p">(</span><span class="n">unit_str</span><span class="p">)</span>
+
+        <span class="c1"># Standard unit string</span>
+        <span class="n">processed_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprocess_unit_string</span><span class="p">(</span><span class="n">unit_str</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">expr</span> <span class="o">=</span> <span class="n">parse_expr</span><span class="p">(</span>
+                <span class="n">processed_str</span><span class="p">,</span> <span class="n">local_dict</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">allowed_units</span><span class="p">,</span> <span class="n">evaluate</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">sp</span><span class="o">.</span><span class="n">simplify</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Failed to parse unit &#39;</span><span class="si">{</span><span class="n">unit_str</span><span class="si">}</span><span class="s2">&#39; (processed a&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;s &#39;</span><span class="si">{</span><span class="n">processed_str</span><span class="si">}</span><span class="s2">&#39;): </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_unit_with_latex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">unit_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Parse a unit string using SymPy&#39;s LaTeX parser.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            unit_str (str): The unit string in LaTeX format.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Any: SymPy expression representing the unit, or the</span>
+<span class="sd">                original string if parsing fails.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="kn">import</span><span class="w"> </span><span class="nn">sympy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sp</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">sympy.parsing.latex</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse_latex</span>
+
+        <span class="c1"># Clean the LaTeX string</span>
+        <span class="n">unit_str</span> <span class="o">=</span> <span class="n">unit_str</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;$&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">&quot;$&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;^&quot;</span><span class="p">)</span>
+        <span class="n">unit_str</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">mathrm\{([^}]*)\}&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;{</span><span class="se">\\</span><span class="s1">\1}&#39;</span><span class="p">,</span> <span class="n">unit_str</span><span class="p">)</span>
+        <span class="n">unit_str</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">text\{(.*?)\}&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;\1&#39;</span><span class="p">,</span> <span class="n">unit_str</span><span class="p">)</span>
+        <span class="n">unit_str</span> <span class="o">=</span> <span class="n">unit_str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;~&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">expr</span> <span class="o">=</span> <span class="n">parse_latex</span><span class="p">(</span><span class="n">unit_str</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Parsed LaTeX unit: </span><span class="si">{</span><span class="n">expr</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to parse LaTeX unit &#39;</span><span class="si">{</span><span class="n">unit_str</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">unit_str</span>
+
+        <span class="c1"># Substitute allowed unit symbols</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">unit_obj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">allowed_units</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">sym</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">symbols</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">subs</span><span class="p">(</span><span class="n">sym</span><span class="p">,</span> <span class="n">unit_obj</span><span class="p">)</span>
+
+        <span class="n">simplified_expr</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">simplify</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Simplified LaTeX unit: </span><span class="si">{</span><span class="n">simplified_expr</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">simplified_expr</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">detect_scaling_factor</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">unit_expr</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Detect a scaling factor in the unit expression.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            unit_expr (Any): The unit expression.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tuple[Union[int, float, Any], Any]: Tuple of scale</span>
+<span class="sd">                factor and base unit.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="kn">import</span><span class="w"> </span><span class="nn">sympy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sp</span>
+
+        <span class="n">value</span><span class="p">,</span> <span class="n">base_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extract_value_and_unit</span><span class="p">(</span><span class="n">unit_expr</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">Number</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="n">value</span><span class="p">,</span> <span class="n">base_unit</span>
+        <span class="k">return</span> <span class="mi">1</span><span class="p">,</span> <span class="n">unit_expr</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">preprocess_unit_string</span><span class="p">(</span><span class="n">unit_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Preprocess a unit string to replace &#39;^&#39; with &#39;**&#39; for</span>
+<span class="sd">        exponentiation.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            unit_str (str): The unit string to preprocess.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Preprocessed unit string.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">superscript_map</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;</span><span class="se">\u00b2</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;2&quot;</span><span class="p">,</span>  <span class="c1"># Superscript ²</span>
+            <span class="s2">&quot;</span><span class="se">\u00b3</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;3&quot;</span><span class="p">,</span>  <span class="c1"># Superscript ³</span>
+            <span class="s2">&quot;</span><span class="se">\u2070</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;</span><span class="se">\u2071</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;</span><span class="se">\u2074</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;4&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;</span><span class="se">\u2075</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;5&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;</span><span class="se">\u2076</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;6&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;</span><span class="se">\u2077</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;7&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;</span><span class="se">\u2078</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;8&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;</span><span class="se">\u2079</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;9&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="k">for</span> <span class="n">unicode_char</span><span class="p">,</span> <span class="n">normal_char</span> <span class="ow">in</span> <span class="n">superscript_map</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">unit_str</span> <span class="o">=</span> <span class="n">unit_str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">unicode_char</span><span class="p">,</span> <span class="s2">&quot;**&quot;</span> <span class="o">+</span> <span class="n">normal_char</span><span class="p">)</span>
+
+        <span class="n">unit_str</span> <span class="o">=</span> <span class="n">unit_str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;^&#39;</span><span class="p">,</span> <span class="s1">&#39;**&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">unit_str</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">unit_is_none</span><span class="p">(</span><span class="n">unit_str</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Check if a unit string represents &#39;no unit&#39; or is empty.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            unit_str (Optional[str]): The unit string to check.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the unit is None or represents &#39;no unit&#39;.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">unit_str</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">unit_str</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">unit_str</span> <span class="o">=</span> <span class="n">unit_str</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="n">unit_str</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;dimensionless&#39;</span><span class="p">,</span> <span class="s1">&#39;unitless&#39;</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">extract_value_and_unit</span><span class="p">(</span>
+        <span class="n">expr</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Extract numerical value and unit components from a SymPy</span>
+<span class="sd">        expression.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            expr (Any): SymPy expression with units.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tuple[Union[int, float, Any], Any]: Numerical</span>
+<span class="sd">                value and unit expression.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="kn">import</span><span class="w"> </span><span class="nn">sympy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sp</span>
+
+        <span class="n">factors</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">Mul</span><span class="o">.</span><span class="n">make_args</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
+        <span class="n">numeric_terms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">unit_terms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">factors</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">term</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">Number</span><span class="p">)):</span>
+                <span class="n">numeric_terms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">term</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">term</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">Symbol</span><span class="p">):</span>
+                <span class="n">unit_terms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">term</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">term</span><span class="p">,</span> <span class="s1">&#39;is_commutative&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">term</span><span class="o">.</span><span class="n">is_commutative</span><span class="p">:</span>
+                <span class="c1"># For other expressions like powers</span>
+                <span class="n">unit_terms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">term</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># For complex expressions, try to separate</span>
+                <span class="n">unit_terms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">term</span><span class="p">)</span>
+
+        <span class="n">value</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">Mul</span><span class="p">(</span><span class="o">*</span><span class="n">numeric_terms</span><span class="p">)</span> <span class="k">if</span> <span class="n">numeric_terms</span> <span class="k">else</span> <span class="mi">1</span>
+        <span class="n">unit_expr</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">Mul</span><span class="p">(</span><span class="o">*</span><span class="n">unit_terms</span><span class="p">)</span> <span class="k">if</span> <span class="n">unit_terms</span> <span class="k">else</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="n">value</span><span class="p">,</span> <span class="n">unit_expr</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">detect_unit_args</span><span class="p">(</span><span class="n">unit_expr</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Extract the base units from a composite SymPy unit expression.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            unit_expr (Any): SymPy expression representing a composite unit.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[Any]: List of SymPy base unit components.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="kn">import</span><span class="w"> </span><span class="nn">sympy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sp</span>
+
+        <span class="n">factors</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">Mul</span><span class="o">.</span><span class="n">make_args</span><span class="p">(</span><span class="n">unit_expr</span><span class="p">)</span>
+        <span class="n">base_units</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">factor</span><span class="o">.</span><span class="n">base</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">factor</span><span class="p">,</span> <span class="s1">&#39;is_Pow&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">factor</span><span class="o">.</span><span class="n">is_Pow</span>
+            <span class="k">else</span> <span class="n">factor</span>
+            <span class="k">for</span> <span class="n">factor</span> <span class="ow">in</span> <span class="n">factors</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="n">base_units</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PhysicsSolutionComparator</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Class for compare solutions and reference answers that contains value</span>
+<span class="sd">    and units.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        solution (str): The output from running the solution code.</span>
+<span class="sd">        reference_answer (str): The reference answer to compare against.</span>
+<span class="sd">        float_tolerance (Optional[float], optional): The tolerance for</span>
+<span class="sd">            floating point comparisons. (default: :obj:`None`)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">solution</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">reference_answer</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">float_tolerance</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">solution</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">solution</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reference_answer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">reference_answer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tolerance</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="nb">float</span><span class="p">(</span><span class="n">float_tolerance</span><span class="p">)</span> <span class="k">if</span> <span class="n">float_tolerance</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mf">1e-2</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unit_parser</span><span class="p">:</span> <span class="n">UnitParser</span> <span class="o">=</span> <span class="n">UnitParser</span><span class="p">()</span>
+
+        <span class="c1"># Initialize fields that will be set in _get_value_unit_pairs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gt_value</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gt_unit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sol_value</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sol_unit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gt_unit_expr</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sol_unit_expr</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_split_value_unit</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Split a string into value and unit components.</span>
+<span class="sd">        Handles LaTeX-style units enclosed in dollar signs.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            s (str): The input string.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tuple[str, str]: Tuple of (value, unit) as strings.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check if we have a LaTeX unit at the end (pattern: $ followed by</span>
+        <span class="c1"># anything up to $)</span>
+        <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span> <span class="s1">&#39;&#39;</span>
+
+        <span class="n">latex_unit_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\s(\$[^$]*\$)$&#39;</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">latex_unit_match</span><span class="p">:</span>
+            <span class="c1"># Extract the LaTeX unit part</span>
+            <span class="n">unit</span> <span class="o">=</span> <span class="n">latex_unit_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="c1"># Remove the unit part from the original string to get the value</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">s</span><span class="p">[:</span> <span class="n">latex_unit_match</span><span class="o">.</span><span class="n">start</span><span class="p">()]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">value</span><span class="p">,</span> <span class="n">unit</span>
+
+        <span class="c1"># If no LaTeX unit, fall back to the original logic</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span> <span class="n">parts</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_clean_answer</span><span class="p">(</span><span class="n">raw_answer</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Clean a raw answer string by removing LaTeX formatting.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            raw_answer (str): The raw answer string potentially containing</span>
+<span class="sd">                LaTeX formatting.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The cleaned answer string without LaTeX formatting.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Remove whitespace</span>
+        <span class="n">answer</span> <span class="o">=</span> <span class="n">raw_answer</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+        <span class="c1"># Remove dollar signs that indicate LaTeX math mode</span>
+        <span class="k">if</span> <span class="n">answer</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;$&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">answer</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;$&quot;</span><span class="p">):</span>
+            <span class="n">answer</span> <span class="o">=</span> <span class="n">answer</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+        <span class="c1"># Replace LaTeX scientific notation format (e.g., 1 \times 10^{14})</span>
+        <span class="n">answer</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span>
+            <span class="sa">r</span><span class="s1">&#39;([\d.]+)\s*</span><span class="se">\\</span><span class="s1">times\s*10\^\{(\d+)\}&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;\1e\2&#39;</span><span class="p">,</span> <span class="n">answer</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Remove \mathrm commands</span>
+        <span class="n">answer</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">mathrm\{([^}]*)\}&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;\1&#39;</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span>
+
+        <span class="c1"># Remove other common LaTeX formatting</span>
+        <span class="c1"># answer = answer.replace(&#39;\\&#39;, &#39;&#39;)</span>
+
+        <span class="k">return</span> <span class="n">answer</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_parse_expression</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Parse an expression into a SymPy expression.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            expr (Any): Expression to parse, can be a string, number, or other</span>
+<span class="sd">                type.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Any: Parsed SymPy expression.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="kn">import</span><span class="w"> </span><span class="nn">sympy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sp</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">sympy.parsing.sympy_parser</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse_expr</span>
+
+        <span class="c1"># If already a number, return as is</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="n">sp</span><span class="o">.</span><span class="n">Float</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
+
+        <span class="c1"># If not a string, try to convert to string first</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">expr</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to convert expression to string: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">expr</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Replace common symbols with their SymPy equivalents</span>
+            <span class="n">replacements</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">sp</span><span class="o">.</span><span class="n">Symbol</span><span class="p">(</span><span class="s1">&#39;pi&#39;</span><span class="p">):</span> <span class="n">sp</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span>
+                <span class="n">sp</span><span class="o">.</span><span class="n">Symbol</span><span class="p">(</span><span class="s1">&#39;e&#39;</span><span class="p">):</span> <span class="n">sp</span><span class="o">.</span><span class="n">E</span><span class="p">,</span>
+            <span class="p">}</span>
+
+            <span class="n">parsed_expr</span> <span class="o">=</span> <span class="n">parse_expr</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">old</span><span class="p">,</span> <span class="n">new</span> <span class="ow">in</span> <span class="n">replacements</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">parsed_expr</span> <span class="o">=</span> <span class="n">parsed_expr</span><span class="o">.</span><span class="n">subs</span><span class="p">(</span><span class="n">old</span><span class="p">,</span> <span class="n">new</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">parsed_expr</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to parse expression &#39;</span><span class="si">{</span><span class="n">expr</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">expr</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_is_number</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Check if a value can be converted to a number.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            s (Any): Value to check.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the value can be converted to a number.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_detect_tolerance</span><span class="p">(</span><span class="n">default_tolerance</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">&#39;e&#39;</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
+            <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;(-?\d*\.?\d*)[eE]&#39;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+            <span class="n">significant_part</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">match</span> <span class="k">else</span> <span class="n">value</span>
+            <span class="n">exponent_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;[eE]([+-]?\d+)&#39;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+            <span class="n">exponent</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">exponent_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span> <span class="k">if</span> <span class="n">exponent_match</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exponent</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">significant_part</span> <span class="o">=</span> <span class="n">value</span>
+
+        <span class="k">if</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">factor</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">factor</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s1">&#39;.&#39;</span> <span class="ow">in</span> <span class="n">significant_part</span><span class="p">:</span>
+            <span class="n">decimal_places</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">significant_part</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">rel_tol</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span>
+                <span class="nb">abs</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="mi">10</span> <span class="o">**</span> <span class="p">(</span><span class="n">exponent</span> <span class="o">-</span> <span class="n">decimal_places</span><span class="p">)</span> <span class="o">/</span> <span class="n">factor</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rel_tol</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="mi">10</span><span class="o">**</span><span class="n">exponent</span> <span class="o">/</span> <span class="n">factor</span><span class="p">,</span> <span class="mi">2</span><span class="p">)))</span>
+
+        <span class="c1"># limit the maximum tolerance to (default_tolerance, 10 *</span>
+        <span class="c1"># default_tolerance)</span>
+        <span class="n">rel_tol</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">rel_tol</span><span class="p">,</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">default_tolerance</span><span class="p">)</span>
+        <span class="n">rel_tol</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">rel_tol</span><span class="p">,</span> <span class="n">default_tolerance</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Detected tolerance: </span><span class="si">{</span><span class="n">rel_tol</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">rel_tol</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_convert_units</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Convert the solution units to match gt units&quot;&quot;&quot;</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">sympy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sp</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">sympy.physics</span><span class="w"> </span><span class="kn">import</span> <span class="n">units</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">sol_with_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sol_value</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sol_unit_expr</span>
+
+            <span class="c1"># Get scaling factor and base gt units</span>
+            <span class="n">scaling_factor</span><span class="p">,</span> <span class="n">base_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit_parser</span><span class="o">.</span><span class="n">detect_scaling_factor</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">gt_unit_expr</span>
+            <span class="p">)</span>
+
+            <span class="n">gt_unit_args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit_parser</span><span class="o">.</span><span class="n">detect_unit_args</span><span class="p">(</span><span class="n">base_unit</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">gt_unit_args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Ground truth unit is a composite unit &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;with: </span><span class="si">{</span><span class="n">gt_unit_args</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
+            <span class="c1"># Perform the unit conversion</span>
+            <span class="n">converted_sol_expr</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">convert_to</span><span class="p">(</span><span class="n">sol_with_unit</span><span class="p">,</span> <span class="n">gt_unit_args</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Converted solution expr: </span><span class="si">{</span><span class="n">converted_sol_expr</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">sol_value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sol_unit_expr</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">unit_parser</span><span class="o">.</span><span class="n">extract_value_and_unit</span><span class="p">(</span><span class="n">converted_sol_expr</span><span class="p">)</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sol_value</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">Number</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Failed to extract value from converted &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;value: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sol_value</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">sol_value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sol_value</span><span class="p">)</span>
+
+            <span class="c1"># Apply scaling factor if needed</span>
+            <span class="k">if</span> <span class="n">scaling_factor</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Applying scaling factor </span><span class="si">{</span><span class="n">scaling_factor</span><span class="si">}</span><span class="s2"> for &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;ground truth units&quot;</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sol_value</span> <span class="o">/=</span> <span class="n">scaling_factor</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sol_unit_expr</span> <span class="o">*=</span> <span class="n">scaling_factor</span>
+
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Converted solution value: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sol_value</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Converted solution unit: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sol_unit_expr</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unit conversion failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">verify_unit</span><span class="p">(</span><span class="n">sol_unit_expr</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">gt_unit_expr</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">sympy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sp</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">sympy.physics</span><span class="w"> </span><span class="kn">import</span> <span class="n">units</span>
+
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Comparing response unit (</span><span class="si">{</span><span class="n">sol_unit_expr</span><span class="si">}</span><span class="s2">) with answer &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;unit (</span><span class="si">{</span><span class="n">gt_unit_expr</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="p">)</span>
+            <span class="c1"># Case 1: Both are Quantity objects - compare numerically</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sol_unit_expr</span><span class="p">,</span> <span class="n">units</span><span class="o">.</span><span class="n">Quantity</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span>
+                <span class="n">gt_unit_expr</span><span class="p">,</span> <span class="n">units</span><span class="o">.</span><span class="n">Quantity</span>
+            <span class="p">):</span>
+                <span class="n">diff</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">simplify</span><span class="p">(</span><span class="n">sol_unit_expr</span> <span class="o">-</span> <span class="n">gt_unit_expr</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">diff</span> <span class="o">==</span> <span class="mi">0</span>
+            <span class="c1"># Case 2: Both are general SymPy expressions (like Mul, Add,</span>
+            <span class="c1"># Symbol) - try symbolic comparison</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sol_unit_expr</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">Expr</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span>
+                <span class="n">gt_unit_expr</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">Expr</span>
+            <span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="c1"># Attempt to simplify the difference, handles compatible</span>
+                    <span class="c1"># symbolic units</span>
+                    <span class="n">diff</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">simplify</span><span class="p">(</span><span class="n">sol_unit_expr</span> <span class="o">-</span> <span class="n">gt_unit_expr</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="n">diff</span> <span class="o">==</span> <span class="mi">0</span>
+                <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+                    <span class="c1"># If subtraction fails (e.g., incompatible symbolic</span>
+                    <span class="c1"># units), compare directly</span>
+                    <span class="k">return</span> <span class="n">sp</span><span class="o">.</span><span class="n">simplify</span><span class="p">(</span><span class="n">sol_unit_expr</span><span class="p">)</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span>
+                        <span class="n">sp</span><span class="o">.</span><span class="n">simplify</span><span class="p">(</span><span class="n">gt_unit_expr</span><span class="p">)</span>
+                    <span class="p">)</span>
+            <span class="c1"># Case 3: Both are strings - compare directly</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sol_unit_expr</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span>
+                <span class="n">gt_unit_expr</span><span class="p">,</span> <span class="nb">str</span>
+            <span class="p">):</span>
+                <span class="k">return</span> <span class="n">sol_unit_expr</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="n">gt_unit_expr</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="c1"># Case 4: Mixed or other types - cannot compare</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Cannot compare units of incompatible &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;types: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">sol_unit_expr</span><span class="p">)</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">gt_unit_expr</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Failed to compare units: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">compare_solution_to_reference</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">VerificationResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compare the solution output to the reference answer.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            VerificationResult with comparison status.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_value_unit_pairs</span><span class="p">()</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Solution value: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sol_value</span><span class="si">}</span><span class="s2">; Ground truth &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;value: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">gt_value</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Solution unit: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sol_unit_expr</span><span class="si">}</span><span class="s2">; Ground truth &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;unit: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">gt_unit_expr</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_number</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gt_value</span><span class="p">):</span>
+                <span class="c1"># Ensure values are strings before calling string methods</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sol_value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">gt_value</span><span class="p">,</span> <span class="nb">str</span>
+                <span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">sol_value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gt_value</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">sol_value</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">gt_value</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span>
+                    <span class="p">)</span>
+                <span class="n">result_match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compare_numeric_values</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">result_match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compare_symbolic_values</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit_parser</span><span class="o">.</span><span class="n">unit_is_none</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gt_unit</span><span class="p">):</span>
+                <span class="c1"># If the answer is dimensionless, the response should also be</span>
+                <span class="c1"># dimensionless</span>
+                <span class="n">unit_match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit_parser</span><span class="o">.</span><span class="n">unit_is_none</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sol_unit</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">sol_unit_expr</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">gt_unit_expr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">unit_match</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">unit_match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">verify_unit</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">sol_unit_expr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gt_unit_expr</span>
+                <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">result_match</span> <span class="ow">and</span> <span class="n">unit_match</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">VerificationResult</span><span class="p">(</span>
+                    <span class="n">status</span><span class="o">=</span><span class="n">VerificationOutcome</span><span class="o">.</span><span class="n">SUCCESS</span><span class="p">,</span>
+                    <span class="n">result</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sol_value</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sol_unit_expr</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="n">result_match</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">VerificationResult</span><span class="p">(</span>
+                    <span class="n">status</span><span class="o">=</span><span class="n">VerificationOutcome</span><span class="o">.</span><span class="n">FAILURE</span><span class="p">,</span>
+                    <span class="n">result</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sol_value</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sol_unit_expr</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                    <span class="n">error_message</span><span class="o">=</span><span class="s2">&quot;Units do not match.&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="n">unit_match</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">VerificationResult</span><span class="p">(</span>
+                    <span class="n">status</span><span class="o">=</span><span class="n">VerificationOutcome</span><span class="o">.</span><span class="n">FAILURE</span><span class="p">,</span>
+                    <span class="n">result</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sol_value</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sol_unit_expr</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                    <span class="n">error_message</span><span class="o">=</span><span class="s2">&quot;Values do not match.&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">VerificationResult</span><span class="p">(</span>
+                    <span class="n">status</span><span class="o">=</span><span class="n">VerificationOutcome</span><span class="o">.</span><span class="n">FAILURE</span><span class="p">,</span>
+                    <span class="n">result</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sol_value</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sol_unit_expr</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                    <span class="n">error_message</span><span class="o">=</span><span class="s2">&quot;Both values and units do not match.&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">VerificationResult</span><span class="p">(</span>
+                <span class="n">status</span><span class="o">=</span><span class="n">VerificationOutcome</span><span class="o">.</span><span class="n">ERROR</span><span class="p">,</span>
+                <span class="n">result</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">solution</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                <span class="n">error_message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Comparison failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_value_unit_pairs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gt_value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gt_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_split_value_unit</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reference_answer</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gt_unit</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sol_value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sol_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">solution</span><span class="p">,</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sol_value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sol_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_split_value_unit</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">solution</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">gt_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_clean_answer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gt_value</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit_parser</span><span class="o">.</span><span class="n">unit_is_none</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gt_unit</span>
+        <span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit_parser</span><span class="o">.</span><span class="n">unit_is_none</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sol_unit</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gt_unit_expr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sol_unit_expr</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gt_unit_expr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit_parser</span><span class="o">.</span><span class="n">parse_unit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gt_unit</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sol_unit_expr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit_parser</span><span class="o">.</span><span class="n">parse_unit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sol_unit</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_compare_numeric_values</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compare numerical values, with unit conversion if needed.&quot;&quot;&quot;</span>
+        <span class="n">rel_tol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_detect_tolerance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tolerance</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gt_value</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gt_value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gt_value</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_number</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sol_value</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sol_value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sol_value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;Convert output expr </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sol_value</span><span class="si">}</span><span class="s1"> into numerical.&#39;</span>
+            <span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">sol_expr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_expression</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sol_value</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sol_value</span> <span class="o">=</span> <span class="n">sol_expr</span><span class="o">.</span><span class="n">evalf</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Failed to evaluate output </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sol_value</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gt_unit_expr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">sol_unit_expr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">verify_unit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gt_unit_expr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sol_unit_expr</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s1">&#39;Units do not match directly. Attempting conversion...&#39;</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_convert_units</span><span class="p">()</span>
+
+        <span class="c1"># try:</span>
+        <span class="c1"># Compare numerical values</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Solution value: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sol_value</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Ground truth value: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">gt_value</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sol_value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gt_value</span><span class="p">,</span> <span class="n">rel_tol</span><span class="o">=</span><span class="n">rel_tol</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_compare_symbolic_values</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compare symbolic expressions for equivalence.&quot;&quot;&quot;</span>
+
+        <span class="kn">import</span><span class="w"> </span><span class="nn">sympy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sp</span>
+
+        <span class="n">gt_expr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_expression</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gt_value</span><span class="p">)</span>
+        <span class="n">sol_expr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_expression</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sol_value</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Solution expression: </span><span class="si">{</span><span class="n">sol_expr</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Ground truth expression: </span><span class="si">{</span><span class="n">gt_expr</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="n">sol_symbols</span> <span class="o">=</span> <span class="n">sol_expr</span><span class="o">.</span><span class="n">free_symbols</span>
+        <span class="n">gt_symbols</span> <span class="o">=</span> <span class="n">gt_expr</span><span class="o">.</span><span class="n">free_symbols</span>
+
+        <span class="k">if</span> <span class="n">sol_symbols</span> <span class="o">!=</span> <span class="n">gt_symbols</span><span class="p">:</span>
+            <span class="n">symbol_mapping</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">gt_sym</span> <span class="ow">in</span> <span class="n">gt_symbols</span><span class="p">:</span>
+                <span class="n">gt_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">gt_sym</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">sol_sym</span> <span class="ow">in</span> <span class="n">sol_symbols</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">sol_sym</span><span class="p">)</span> <span class="o">==</span> <span class="n">gt_name</span><span class="p">:</span>
+                        <span class="n">symbol_mapping</span><span class="p">[</span><span class="n">gt_sym</span><span class="p">]</span> <span class="o">=</span> <span class="n">sol_sym</span>
+                        <span class="k">break</span>
+            <span class="n">gt_expr</span> <span class="o">=</span> <span class="n">gt_expr</span><span class="o">.</span><span class="n">subs</span><span class="p">(</span><span class="n">symbol_mapping</span><span class="p">)</span>
+
+        <span class="c1"># Handle Equalities</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sol_expr</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">Eq</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gt_expr</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">Eq</span><span class="p">):</span>
+            <span class="n">sol_expr</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">simplify</span><span class="p">(</span><span class="n">sol_expr</span><span class="o">.</span><span class="n">rhs</span><span class="p">)</span>
+            <span class="n">gt_expr</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">simplify</span><span class="p">(</span><span class="n">gt_expr</span><span class="o">.</span><span class="n">rhs</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sol_expr</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">Eq</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span>
+            <span class="n">gt_expr</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">Eq</span>
+        <span class="p">):</span>
+            <span class="n">sol_expr</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">simplify</span><span class="p">(</span><span class="n">sol_expr</span><span class="p">)</span>
+            <span class="n">gt_expr</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">simplify</span><span class="p">(</span><span class="n">gt_expr</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Cannot compare an equation with a non-equation &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;directly: </span><span class="si">{</span><span class="n">sol_expr</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">gt_expr</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sol_value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span>
+                <span class="n">sol_expr</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sol_expr</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">Number</span><span class="p">))</span>
+                <span class="k">else</span> <span class="n">sol_expr</span><span class="o">.</span><span class="n">evalf</span><span class="p">()</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gt_value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span>
+                <span class="n">gt_expr</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gt_expr</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">Number</span><span class="p">))</span>
+                <span class="k">else</span> <span class="n">gt_expr</span><span class="o">.</span><span class="n">evalf</span><span class="p">()</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sol_value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gt_value</span><span class="p">,</span> <span class="n">rel_tol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tolerance</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">sol_expr</span><span class="p">,</span> <span class="n">gt_expr</span><span class="p">,</span> <span class="n">rel_tol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tolerance</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">sol_expr</span> <span class="o">==</span> <span class="n">gt_expr</span>
+
+
+<div class="viewcode-block" id="PhysicsVerifier">
+<a class="viewcode-back" href="../../../camel.verifiers.html#camel.verifiers.PhysicsVerifier">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PhysicsVerifier</span><span class="p">(</span><span class="n">PythonVerifier</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;The PhysicsVerifier inherits PythonVerifier and makes it able to</span>
+<span class="sd">    compare and convert units.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        extractor (Optional[BaseExtractor]): The extractor to use for</span>
+<span class="sd">            extracting code from messages. (default: :obj:`None`)</span>
+<span class="sd">        timeout (Optional[float]): The timeout for code execution in seconds.</span>
+<span class="sd">            (default: :obj:`30.0`)</span>
+<span class="sd">        required_packages (Optional[List[str]]): The required packages for code</span>
+<span class="sd">            execution. (default: :obj:`None`)</span>
+<span class="sd">        float_tolerance (Optional[float]): The relative tolerance used to</span>
+<span class="sd">            compare numerical values. (default: :obj:`None`)</span>
+<span class="sd">        **kwargs: Additional keyword arguments to pass to the parent class.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">extractor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">BaseExtractor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">30.0</span><span class="p">,</span>
+        <span class="n">required_packages</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">float_tolerance</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">extractor</span><span class="o">=</span><span class="n">extractor</span><span class="p">,</span>
+            <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">,</span>
+            <span class="n">required_packages</span><span class="o">=</span><span class="n">required_packages</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tolerance</span> <span class="o">=</span> <span class="n">float_tolerance</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_verify_implementation</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">solution</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">reference_answer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">VerificationResult</span><span class="p">:</span>
+        <span class="c1"># Check for virtual environment setup</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">venv_path</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">VerificationResult</span><span class="p">(</span>
+                <span class="n">status</span><span class="o">=</span><span class="n">VerificationOutcome</span><span class="o">.</span><span class="n">ERROR</span><span class="p">,</span>
+                <span class="n">result</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+                <span class="n">error_message</span><span class="o">=</span><span class="s2">&quot;Virtual environment is not set up.&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="c1"># run the code block,</span>
+        <span class="c1"># which should already include a print(...) in the end</span>
+        <span class="n">venv_python</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">venv_path</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bin_dir</span><span class="p">,</span>
+            <span class="s2">&quot;python.exe&quot;</span> <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;nt&#39;</span> <span class="k">else</span> <span class="s2">&quot;python&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">venv_python</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">VerificationResult</span><span class="p">(</span>
+                <span class="n">status</span><span class="o">=</span><span class="n">VerificationOutcome</span><span class="o">.</span><span class="n">ERROR</span><span class="p">,</span>
+                <span class="n">result</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+                <span class="n">error_message</span><span class="o">=</span><span class="s2">&quot;Python binary not found in virtual environment&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">sol_out</span><span class="p">,</span> <span class="n">sol_err</span><span class="p">,</span> <span class="n">sol_code</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_code_block</span><span class="p">(</span>
+                <span class="n">solution</span><span class="p">,</span> <span class="n">venv_python</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">sol_code</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">VerificationResult</span><span class="p">(</span>
+                    <span class="n">status</span><span class="o">=</span><span class="n">VerificationOutcome</span><span class="o">.</span><span class="n">ERROR</span><span class="p">,</span>
+                    <span class="n">result</span><span class="o">=</span><span class="n">sol_out</span><span class="p">,</span>
+                    <span class="n">error_message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Solution code error:</span><span class="se">\n</span><span class="si">{</span><span class="n">sol_err</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Solution: </span><span class="si">{</span><span class="n">sol_out</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">reference_answer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">VerificationResult</span><span class="p">(</span>
+                    <span class="n">status</span><span class="o">=</span><span class="n">VerificationOutcome</span><span class="o">.</span><span class="n">ERROR</span><span class="p">,</span>
+                    <span class="n">result</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+                    <span class="n">error_message</span><span class="o">=</span><span class="p">(</span>
+                        <span class="s2">&quot;Reference answer is required for physics &quot;</span>
+                        <span class="s2">&quot;verification.&quot;</span>
+                    <span class="p">),</span>
+                <span class="p">)</span>
+
+            <span class="n">comparator</span> <span class="o">=</span> <span class="n">PhysicsSolutionComparator</span><span class="p">(</span>
+                <span class="n">sol_out</span><span class="p">,</span> <span class="n">reference_answer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tolerance</span>
+            <span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">comparator</span><span class="o">.</span><span class="n">compare_solution_to_reference</span><span class="p">()</span>
+
+        <span class="k">except</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">TimeoutError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">VerificationResult</span><span class="p">(</span>
+                <span class="n">status</span><span class="o">=</span><span class="n">VerificationOutcome</span><span class="o">.</span><span class="n">TIMEOUT</span><span class="p">,</span>
+                <span class="n">result</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+                <span class="n">error_message</span><span class="o">=</span><span class="s2">&quot;Execution timed out.&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">VerificationResult</span><span class="p">(</span>
+                <span class="n">status</span><span class="o">=</span><span class="n">VerificationOutcome</span><span class="o">.</span><span class="n">ERROR</span><span class="p">,</span>
+                <span class="n">result</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+                <span class="n">error_message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Unexpected error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="p">)</span></div>
+
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By CAMEL-AI.org
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, CAMEL-AI.org.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
