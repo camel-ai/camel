@@ -14,45 +14,37 @@
 import random
 
 from camel.storages.vectordb_storages import (
-    TiDBStorage,
+    QdrantStorage,
     VectorDBQuery,
     VectorDBSearch,
     VectorRecord,
 )
 
 """
-Before the DATABASE_URL, you can setup the a TiDB database cluster first:
+Before using the DATABASE_URL, you can set up a Qdrant vector database cluster:
 
-(Option 1): TiDB Serverless
+(Option 1): ☁️ Qdrant Cloud (Official Hosted Service)
 
-1. Go to [TiDB Cloud](https://tidbcloud.com/console/clusters) to create 
-    a serverless cluster
-2. Click the **Connect** button
-3. Select "SQLAlchemy" > "PyMySQL" for the **Connect With** option, then 
-    you can get the DATABASE_URL like:
+1. Visit [Qdrant Cloud](https://cloud.qdrant.io) and sign up or log in.
+2. Create a free or paid cluster.
+3. Go to the **Connect** section of your cluster dashboard.
+4. Copy your **Cluster URL** (e.g., https://your-cluster.cloud.qdrant.io).
+5. Generate an **API Key** in the "Settings" > "API Keys" section.
+6. Set up your connection using:
 
-DATABASE_URL="mysql+pymysql://<USERNAME>:<PASSWORD>@<HOST>:4000/test&ssl_verify_cert=true&ssl_verify_identity=true"
+   DATABASE_URL = ("https://your-cluster.cloud.qdrant.io", "your-api-key")
 
-(Option 2): TiDB playground cluster on local
 
-1. Install TiUP via command:
-
-```
-curl --proto '=https' --tlsv1.2 -sSf \
-    https://tiup-mirrors.pingcap.com/install.sh | sh
-```
-
-2. Deploy a playground cluster via command: `tiup playground`
-3. The DATABASE_URL should be like: "mysql+pymysql://root:@localhost:4000/test"
 """
-
-DATABASE_URL = "mysql+pymysql://root:@localhost:4000/test"
+uri = "https://132b2d40-b5d8-4e50-9235-781c30d92956.us-west-1-0.aws.cloud.qdrant.io"
+token = "replace-this-with-your-api-key"
+DATABASE_URL = (uri, token)
 
 
 def main():
-    # Create an instance of TiDBStorage with dimension = 4
-    tidb_storage = TiDBStorage(
-        url_and_api_key=(DATABASE_URL, ""),
+    # Create an instance of MilvusStorage with dimension = 4
+    qdrant_storage = QdrantStorage(
+        url_and_api_key=(DATABASE_URL),
         vector_dim=4,
         collection_name="my_collection",
     )
@@ -63,10 +55,12 @@ def main():
         vector = [random.uniform(-1, 1) for _ in range(4)]
         payload = {"group": "A" if i % 2 == 0 else "B", "index": i}
         records.append(VectorRecord(vector=vector, payload=payload))
-    tidb_storage.add(records)
+    qdrant_storage.add(records)
+
+    qdrant_storage.load()
 
     # Query similar vectors
-    query_results = tidb_storage.query(
+    query_results = qdrant_storage.query(
         VectorDBQuery(query_vector=[0.1, 0.2, 0.1, 0.1], top_k=1)
     )
     for result in query_results:
@@ -74,10 +68,10 @@ def main():
 
     """
     Output:
-    {'group': 'A', 'index': 70} 0.972551598645325
+    {'group': 'B', 'index': 59} 0.9667742848396301
     """
 
-    search_results = tidb_storage.search(
+    search_results = qdrant_storage.search(
         VectorDBSearch(
             payload_filter={"group": {"$eq": "A"}},
             top_k=2,
@@ -89,10 +83,8 @@ def main():
     """
     Output:
     {'group': 'A', 'index': 98}
-    {'group': 'A', 'index': 26}
+    {'group': 'A', 'index': 6}
     """
-    # Clear all vectors
-    tidb_storage.clear()
 
 
 if __name__ == "__main__":
