@@ -260,7 +260,7 @@ Please reach out to us on [CAMEL discord](https://discord.camel-ai.org/) if you 
 
 <div align="center">
   <a href="https://docs.camel-ai.org">
-    <img src="docs/images/techstack.png" alt="TechStack">
+    <img src="https://camel-ai.github.io/camel_asset/graphics/techstack.png" alt="TechStack">
   </a>
 </div>
 
@@ -422,7 +422,7 @@ For more information please contact camel-ai@eigent.ai
 - **WeChat Community:** Scan the QR code below to join our WeChat community.
 
   <div align="center">
-    <img src="misc/wechat.jpg" alt="WeChat QR Code" width="200">
+    <img src="misc/wechat.jpeg" alt="WeChat QR Code" width="200">
   </div>
 
 
