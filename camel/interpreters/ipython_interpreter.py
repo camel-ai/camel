@@ -42,11 +42,12 @@ class JupyterKernelInterpreter(BaseInterpreter):
         require_confirm: bool = True,
         print_stdout: bool = False,
         print_stderr: bool = True,
+        default_timeout: int = 60,
     ) -> None:
         self.require_confirm = require_confirm
         self.print_stdout = print_stdout
         self.print_stderr = print_stderr
-
+        self.default_timeout = default_timeout
         self.kernel_manager: Optional[KernelManager] = None
         self.client: Optional[BlockingKernelClient] = None
 
@@ -118,7 +119,7 @@ class JupyterKernelInterpreter(BaseInterpreter):
         exec_result = "\n".join(outputs)
         return self._clean_ipython_output(exec_result)
 
-    def run(self, code: str, code_type: str) -> str:
+    def run(self, code: str, code_type: str, timeout:int = None) -> str:
         r"""Executes the given code in the Jupyter kernel.
 
         Args:
@@ -138,7 +139,7 @@ class JupyterKernelInterpreter(BaseInterpreter):
         if code_type == "bash":
             code = f"%%bash\n({code})"
         try:
-            result = self._execute(code, timeout=TIMEOUT)
+            result = self._execute(code, timeout=timeout or self.default_timeout)
         except Exception as e:
             raise InterpreterError(f"Execution failed: {e!s}")
 

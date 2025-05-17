@@ -88,6 +88,7 @@ class SubprocessInterpreter(BaseInterpreter):
         self,
         file: Path,
         code_type: str,
+        timeout: int = None
     ) -> str:
         r"""Executes a code file in a subprocess and captures its output.
 
