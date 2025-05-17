@@ -724,6 +724,26 @@ class ChatAgent(BaseAgent):
             message.content = response.output_messages[0].content
             self._try_format_message(message, response_format)
 
+    def get_batch_status(self, response: Any) -> Union[str, Dict[str, Any]]:
+        """
+        Returns the batch process status by checking the batch response.
+        Args:
+            response (Any): The batch response object from a batch run.
+        """
+        # Check if the model supports batch status check
+        if hasattr(
+            self.model_backend.current_model, "check_batch_process_status"
+        ):
+            return self.model_backend.current_model.check_batch_process_status(
+                response
+            )
+        else:
+            # Return default info if the method is unsupported
+            return {
+                "status": "unsupported",
+                "detail": "Batch status check is not supported.",
+            }
+
     def step(
         self,
         input_message: Union[BaseMessage, str],
@@ -745,6 +765,25 @@ class ChatAgent(BaseAgent):
             ChatAgentResponse: Contains output messages, a termination status
                 flag, and session information.
         """
+
+        # If input_message is a JSONL file (indicated by a '.jsonl' suffix),
+        # directly run the batch process
+        if isinstance(input_message, str) and input_message.endswith('.jsonl'):
+            # Check if the model supports _batch_run
+            if hasattr(self.model_backend.current_model, "_batch_run"):
+                return self.model_backend.current_model._batch_run(
+                    batch_str=input_message
+                )
+            else:
+                # Return a message if batch run is not supported
+                return ChatAgentResponse(
+                    msgs=[],
+                    terminated=True,
+                    info={
+                        "status": "unsupported",
+                        "detail": "Batch run is not supported.",
+                    },
+                )
 
         # Convert input message to BaseMessage if necessary
         if isinstance(input_message, str):
