@@ -16,7 +16,7 @@ from __future__ import annotations
 import asyncio
 import json
 from collections import deque
-from typing import Deque, Dict, List, Optional
+from typing import Any, Deque, Dict, List, Optional
 
 from colorama import Fore
 
@@ -82,6 +82,8 @@ class Workforce(BaseNode):
         new_worker_agent_kwargs: Optional[Dict] = None,
     ) -> None:
         super().__init__(description)
+        self.shared_context: Dict[str, Dict[str, Any]] = {}
+        self.shared_channel: TaskChannel = TaskChannel()
         self._child_listening_tasks: Deque[asyncio.Task] = deque()
         self._children = children or []
         self.new_worker_agent_kwargs = new_worker_agent_kwargs
@@ -176,6 +178,70 @@ class Workforce(BaseNode):
         asyncio.run(self.start())
 
         return task
+
+    @check_if_running(False)
+    async def process_task_sequence_async(
+        self, tasks: List[Task]
+    ) -> List[Task]:
+        r"""Asynchronous method to process a sequence of tasks
+        with shared context.
+        This method will initialize the shared channel,
+        maintain a shared context
+        across tasks, and process each task
+        and its subtasks in order.
+
+        The result of each task will be stored in `self.shared_context`
+        under the key `task_{task.id}`.
+
+        Args:
+            tasks (List[Task]): A list of tasks to be processed sequentially.
+
+        Returns:
+            List[Task]: A list of updated tasks with results populated.
+        """
+        self.reset()
+        self.set_channel(self.shared_channel)
+
+        results = []
+
+        for task in tasks:
+            self._task = task
+            task.state = TaskState.FAILED
+
+            subtasks = self._decompose_task(task)
+            self._pending_tasks.clear()
+            self._pending_tasks.append(task)
+            self._pending_tasks.extendleft(reversed(subtasks))
+
+            await self.start()
+
+            # share context between tasks in list
+            self.shared_context[f"task_{task.id}"] = {
+                "content": task.content,
+                "result": task.result,
+            }
+
+            results.append(task)
+
+        return results
+
+    @check_if_running(False)
+    def process_task_sequence(self, tasks: List[Task]) -> List[Task]:
+        r"""The main entry point for the workforce to process
+        a sequence of tasks.
+        It will process all tasks in order, sharing context
+        across them, and return the updated list of tasks.
+
+        Internally it runs the asynchronous method
+        `process_task_sequence_async`.
+
+        Args:
+            tasks (List[Task]): A list of tasks to be processed sequentially.
+
+        Returns:
+            List[Task]: A list of updated tasks with results populated.
+        """
+        return asyncio.run(self.process_task_sequence_async(tasks))
 
     @check_if_running(False)
     def add_single_agent_worker(
