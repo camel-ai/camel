@@ -14,11 +14,10 @@
 
 from camel.logger import disable_logging, enable_logging, set_log_level
 
-__version__ = '0.2.49'
+__version__ = '0.2.59'
 
 __all__ = [
     '__version__',
-    'camel',
     'disable_logging',
     'enable_logging',
     'set_log_level',

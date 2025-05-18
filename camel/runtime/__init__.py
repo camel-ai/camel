@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from .base import BaseRuntime
 from .configs import TaskConfig
+from .daytona_runtime import DaytonaRuntime
 from .docker_runtime import DockerRuntime
 from .llm_guard_runtime import LLMGuardRuntime
 from .remote_http_runtime import RemoteHttpRuntime
@@ -28,4 +29,5 @@ __all__ = [
     "LLMGuardRuntime",
     "TaskConfig",
     "UbuntuDockerRuntime",
+    "DaytonaRuntime",
 ]
