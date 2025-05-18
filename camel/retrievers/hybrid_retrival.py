@@ -13,8 +13,6 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import Any, Collection, Dict, List, Optional, Sequence, Union
 
-import numpy as np
-
 from camel.embeddings import BaseEmbedding
 from camel.retrievers import BaseRetriever, BM25Retriever, VectorRetriever
 from camel.storages import BaseVectorStorage
@@ -96,6 +94,8 @@ class HybridRetriever(BaseRetriever):
             https://medium.com/@devalshah1619/mathematical-intuition-behind-reciprocal-rank-fusion-rrf-explained-in-2-mins-002df0cc5e2a
             https://colab.research.google.com/drive/1iwVJrN96fiyycxN1pBqWlEr_4EPiGdGy#scrollTo=0qh83qGV2dY8
         """
+        import numpy as np
+
         text_to_id = {}
         id_to_info = {}
         current_id = 1

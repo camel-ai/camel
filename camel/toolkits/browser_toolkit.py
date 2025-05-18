@@ -12,6 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+# Enables postponed evaluation of annotations (for string-based type hints)
+from __future__ import annotations
+
 import datetime
 import io
 import json
@@ -38,8 +41,6 @@ from typing import (
 
 from PIL import Image, ImageDraw, ImageFont
 
-if TYPE_CHECKING:
-    from camel.agents import ChatAgent
 from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.models import BaseModelBackend, ModelFactory
@@ -52,6 +53,9 @@ from camel.utils import (
     retry_on_error,
     sanitize_filename,
 )
+
+if TYPE_CHECKING:
+    from camel.agents import ChatAgent
 
 logger = get_logger(__name__)
 
@@ -577,7 +581,6 @@ class BaseBrowser:
             image and the path to the image file if saved, otherwise
             :obj:`None`.
         """
-
         image_data = self.page.screenshot(timeout=60000)
         image = Image.open(io.BytesIO(image_data))
 
