@@ -945,7 +945,8 @@ class BaseBrowser:
         self._wait_for_load()
 
     def close(self):
-        self.browser.close()
+        if self.browser and self.browser is not None:
+            self.browser.close()
 
     # ruff: noqa: E501
     def show_interactive_elements(self):
@@ -1073,6 +1074,27 @@ class BrowserToolkit(BaseToolkit):
         self.planning_agent.reset()
         self.history = []
         os.makedirs(self.browser.cache_dir, exist_ok=True)
+
+    def terminate_browser(self):
+        r"""Reset and Terminate Playwright Instance.
+
+        returns:
+            Tuple[bool, str]: A tuple containing a boolean indicating
+            whether the action was successful, and the message to
+            be returned.
+        """
+        try:
+            self._reset()
+            if self.browser and self.browser is not None:
+                self.browser.close()
+            if self.browser.playwright and self.browser.playwright is not None:
+                self.browser.playwright.stop()
+            return (
+                True,
+                "Successfully terminated browser and playwright instances.",
+            )
+        except Exception as e:
+            return (False, f"Error while terminating browser: {e}.")
 
     def _initialize_agent(self) -> Tuple["ChatAgent", "ChatAgent"]:
         r"""Initialize the agent."""
@@ -1517,4 +1539,7 @@ Your output should be in json format, including the following fields:
         return simulation_result
 
     def get_tools(self) -> List[FunctionTool]:
-        return [FunctionTool(self.browse_url)]
+        return [
+            FunctionTool(self.browse_url),
+            FunctionTool(self.terminate_browser),
+        ]
