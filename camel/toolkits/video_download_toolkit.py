@@ -43,7 +43,6 @@ def _capture_screenshot(video_file: str, timestamp: float) -> Image.Image:
         Image.Image: The captured screenshot in the form of Image.Image.
     """
     import ffmpeg
-    from PIL import Image
 
     try:
         out, _ = (

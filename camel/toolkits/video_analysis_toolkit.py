@@ -439,8 +439,6 @@ class VideoAnalysisToolkit(BaseToolkit):
         Returns:
             List[Image.Image]: List of normalized frames.
         """
-        from PIL import Image
-
         normalized_frames: List[Image.Image] = []
 
         for frame in frames:

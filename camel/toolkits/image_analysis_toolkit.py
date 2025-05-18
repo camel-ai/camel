@@ -137,8 +137,6 @@ class ImageAnalysisToolkit(BaseToolkit):
             ValueError: For invalid paths/URLs or unreadable images.
             requests.exceptions.RequestException: For URL fetch failures.
         """
-        from PIL import Image
-
         parsed = urlparse(image_path)
 
         if parsed.scheme in ("http", "https"):

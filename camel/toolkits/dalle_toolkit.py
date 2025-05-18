@@ -61,8 +61,6 @@ class DalleToolkit(BaseToolkit):
             Optional[Image.Image]: The PIL Image object or None if conversion
                 fails.
         """
-        from PIL import Image
-
         try:
             # Decode the base64 string to get the image data
             image_data = base64.b64decode(base64_string)

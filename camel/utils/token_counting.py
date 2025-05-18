@@ -188,8 +188,6 @@ class OpenAITokenCounter(BaseTokenCounter):
                                 )
                             )
                         elif item["type"] == "image_url":
-                            from PIL import Image
-
                             image_str: str = item["image_url"]["url"]
                             detail = item["image_url"]["detail"]
 
