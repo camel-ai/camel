@@ -17,13 +17,16 @@ Apify Reader provides a Python interface to interact with the Apify platform for
 It includes functionalities for client initialization, actor management, dataset operation.
 
 ### 2.4. Chunkr Reader
-Chunkr Reader is a Python client for interacting with the Chunkr API, which processes documents and returns content in various formats. It includes functionalities for client intialization, task management, formating response.
+Chunkr Reader is a Python client for interacting with the Chunkr API, which processes documents and returns content in various formats. It includes functionalities for client initialization, task management, formatting response.
 
 ### 2.5. Firecrawl Reader
 Firecrawl Reader provides a Python interface to interact with the Firecrawl API, allowing users to turn websites into large language model (LLM)-ready markdown format.
 
 ### 2.6. Jina_url Reader
 JinaURL Reader is a Python client for Jina AI's URL reading service, optimized to provide cleaner, LLM-friendly content from URLs. 
+
+### 2.7 MarkitDown Reader
+MarkItDown is a lightweight Python utility for converting various files to Markdown for use with LLMs and related text analysis pipelines.
 
 ## 3. Get Started
 
@@ -170,7 +173,7 @@ org is the 1st LLM multi-agent framework and an open-source community dedicated
  to finding the scaling law of agents.', 'author': None, 'keywords': None, 'lan
  guageCode': 'en', 'openGraph': [{'property': 'og:title', 'content': 'CAMEL-AI'
  }, {'property': 'og:description', 'content': 'CAMEL-AI.org is the 1st LLM mult
- i-agent framework and an open-source community dedicated to finding the scalin
+ i-agent framework and an open-source community dedicated to finding the scaling
  g law of agents.'}, {'property': 'twitter:title', 'content': 'CAMEL-AI'}, {'pr
  operty': 'twitter:description', 'content': 'CAMEL-AI.org is the 1st LLM multi-
  agent framework and an open-source community dedicated to finding the scaling 
@@ -233,7 +236,7 @@ shared_invite/zt-1vy8u9lbo-ZQmhIAyWSEfSwLCl2r2eKA)
 
 ### 3.5. Using `Chunkr Reader`
 
-Initialize the client and set the local PDF file path, then use the generated task id to featch the output.
+Initialize the client and set the local PDF file path, then use the generated task id to fetch the output.
 
 ```python
 from camel.loaders import ChunkrReader
@@ -253,7 +256,7 @@ print(task_id)
 >>>"7becf001-6f07-4f63-bddf-5633df363bbb"
 ```
 
-Featch the output.
+Fetch the output.
 ```python
 task_output = chunkr.get_task_output(
     task_id="7becf001-6f07-4f63-bddf-5633df363bbb"
@@ -339,15 +342,29 @@ response = jina_reader.read_content("https://docs.camel-ai.org/")
 
 print(response)
 ```
+
+### 3.6. Using `MarkitDown Reader`
+
+Initialize the loader and pass in the path of the file to retrieve information, then print the response.
+
+```python
+from camel.loaders import MarkItDownLoader
+
+loader = MarkItDownLoader()
+response = converter.convert_file("demo.html")
+
+print(response)
+```
+
 ```markdown
->>>Welcome to CAMEL’s documentation! — CAMEL 0.2.38 documentation
+>>>Welcome to CAMEL’s documentation! — CAMEL 0.2.59 documentation
 ===============
 
 [Skip to main content](https://docs.camel-ai.org/#main-content)
 
 Back to top Ctrl+K
 
- [![Image 1](https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png) ![Image 2](https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png)CAMEL 0.2.38](https://docs.camel-ai.org/#)
+ [![Image 1](https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png) ![Image 2](https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png)CAMEL 0.2.59](https://docs.camel-ai.org/#)
 
 Search Ctrl+K
 

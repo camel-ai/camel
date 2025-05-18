@@ -16,10 +16,12 @@ from typing import Any, Dict, List, Optional, Union
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
+from camel.utils import MCPServer
 
 logger = logging.getLogger(__name__)
 
 
+@MCPServer()
 class DataCommonsToolkit(BaseToolkit):
     r"""A class representing a toolkit for Data Commons.
 

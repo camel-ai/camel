@@ -15,28 +15,43 @@
 from __future__ import annotations
 
 import json
-import logging
 import os
 from typing import TYPE_CHECKING, List, Optional
 
 from camel.toolkits.base import BaseToolkit
+from camel.utils import MCPServer
 
 if TYPE_CHECKING:
     from ssl import SSLContext
 
     from slack_sdk import WebClient
 
+from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
+@MCPServer()
 class SlackToolkit(BaseToolkit):
     r"""A class representing a toolkit for Slack operations.
 
     This class provides methods for Slack operations such as creating a new
     channel, joining an existing channel, leaving a channel.
     """
+
+    def __init__(
+        self,
+        timeout: Optional[float] = None,
+    ):
+        r"""Initializes a new instance of the SlackToolkit class.
+
+        Args:
+            timeout (Optional[float]): The timeout value for API requests
+                in seconds. If None, no timeout is applied.
+                (default: :obj:`None`)
+        """
+        super().__init__(timeout=timeout)
 
     def _login_slack(
         self,

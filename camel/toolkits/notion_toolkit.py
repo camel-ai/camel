@@ -16,6 +16,7 @@ from typing import List, Optional, cast
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
+from camel.utils import MCPServer, api_keys_required
 
 
 def get_plain_text_from_rich_text(rich_text: List[dict]) -> str:
@@ -66,6 +67,7 @@ def get_media_source_text(block: dict) -> str:
     return source
 
 
+@MCPServer()
 class NotionToolkit(BaseToolkit):
     r"""A toolkit for retrieving information from the user's notion pages.
 
@@ -76,6 +78,11 @@ class NotionToolkit(BaseToolkit):
             the notion APIs.
     """
 
+    @api_keys_required(
+        [
+            ("notion_token", 'NOTION_TOKEN'),
+        ]
+    )
     def __init__(
         self,
         notion_token: Optional[str] = None,

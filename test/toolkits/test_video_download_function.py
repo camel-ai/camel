@@ -11,15 +11,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Mock the dotenv functionality to prevent the TypeError
+import sys
 from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
 
 from camel.toolkits.video_download_toolkit import VideoDownloaderToolkit
 
+sys.modules['dotenv'] = MagicMock()
+sys.modules['dotenv.main'] = MagicMock()
+sys.modules['dotenv.parser'] = MagicMock()
+
 
 @pytest.fixture
 def mock_downloader():
+    # Mock the FastMCP class to avoid dotenv loading issues
     with (
         patch("builtins.open", mock_open(read_data=b"test")),
         patch("yt_dlp.YoutubeDL") as mock_youtube_dl,
@@ -28,6 +35,11 @@ def mock_downloader():
         patch('ffmpeg.input') as mock_ffmpeg_input,
         patch('ffmpeg.probe') as mock_ffmpeg_probe,
         patch('PIL.Image.open'),
+        patch('mcp.server.fastmcp.server.FastMCP') as mock_fastmcp,
+        patch(
+            'pydantic_settings.sources.DotEnvSettingsSource._read_env_files',
+            return_value={},
+        ),
     ):
         mock_ydl_instance = MagicMock()
         mock_ydl_instance.prepare_filename.return_value = "test.mp4"
@@ -42,6 +54,11 @@ def mock_downloader():
         mock_ffmpeg.run.return_value = (b"test", b"test")
 
         mock_ffmpeg_probe.return_value = {'format': {'duration': 10}}
+
+        # Configure the FastMCP mock
+        mock_fastmcp_instance = MagicMock()
+        mock_fastmcp.return_value = mock_fastmcp_instance
+        mock_fastmcp_instance.tool.return_value = lambda x: x
 
         yield VideoDownloaderToolkit()
 
