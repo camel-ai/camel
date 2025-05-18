@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 from openai import AsyncStream
 
 from camel.configs import MISTRAL_API_PARAMS, MistralConfig
+from camel.logger import get_logger
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.models._utils import try_modify_message_with_format
@@ -35,6 +36,8 @@ from camel.utils import (
     api_keys_required,
     dependencies_required,
 )
+
+logger = get_logger(__name__)
 
 try:
     if os.getenv("AGENTOPS_API_KEY") is not None:
@@ -235,7 +238,38 @@ class MistralModel(BaseModelBackend):
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-        raise NotImplementedError("Mistral does not support async inference.")
+        logger.warning(
+            "Mistral does not support async inference, using sync "
+            "inference instead."
+        )
+        request_config = self._prepare_request(
+            messages, response_format, tools
+        )
+        mistral_messages = self._to_mistral_chatmessage(messages)
+
+        response = self._client.chat.complete(
+            messages=mistral_messages,
+            model=self.model_type,
+            **request_config,
+        )
+
+        openai_response = self._to_openai_response(response)  # type: ignore[arg-type]
+
+        # Add AgentOps LLM Event tracking
+        if LLMEvent:
+            llm_event = LLMEvent(
+                thread_id=openai_response.id,
+                prompt=" ".join(
+                    [message.get("content") for message in messages]  # type: ignore[misc]
+                ),
+                prompt_tokens=openai_response.usage.prompt_tokens,  # type: ignore[union-attr]
+                completion=openai_response.choices[0].message.content,
+                completion_tokens=openai_response.usage.completion_tokens,  # type: ignore[union-attr]
+                model=self.model_type,
+            )
+            record(llm_event)
+
+        return openai_response
 
     def _run(
         self,

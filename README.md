@@ -260,7 +260,7 @@ Please reach out to us on [CAMEL discord](https://discord.camel-ai.org/) if you 
 
 <div align="center">
   <a href="https://docs.camel-ai.org">
-    <img src="docs/images/techstack.png" alt="TechStack">
+    <img src="https://camel-ai.github.io/camel_asset/graphics/techstack.png" alt="TechStack">
   </a>
 </div>
 
