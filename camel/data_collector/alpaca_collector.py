@@ -18,7 +18,8 @@ from typing_extensions import Self
 
 from camel.agents import ChatAgent
 from camel.data_collector.base import BaseDataCollector
-from camel.messages import AlpacaItem, BaseMessage
+from camel.data_schemas import AlpacaItem
+from camel.messages import BaseMessage
 from camel.schemas import OpenAISchemaConverter
 
 # ruff: noqa: E501
