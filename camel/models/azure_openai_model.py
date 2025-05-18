@@ -61,6 +61,9 @@ class AzureOpenAIModel(BaseModelBackend):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
+        extra_headers: Optional[Dict[str, str]]: Extra headers to use for the
+            model. (default: :obj:`None`)
+
 
     References:
         https://learn.microsoft.com/en-us/azure/ai-services/openai/
@@ -78,6 +81,7 @@ class AzureOpenAIModel(BaseModelBackend):
         azure_deployment_name: Optional[str] = None,
         azure_ad_token_provider: Optional["AzureADTokenProvider"] = None,
         azure_ad_token: Optional[str] = None,
+        extra_headers: Optional[Dict[str, str]] = None,
     ) -> None:
         if model_config_dict is None:
             model_config_dict = ChatGPTConfig().as_dict()
@@ -96,6 +100,7 @@ class AzureOpenAIModel(BaseModelBackend):
             "AZURE_AD_TOKEN"
         )
         self.azure_ad_token_provider = azure_ad_token_provider
+        self.extra_headers = extra_headers or {}
         if self.api_version is None:
             raise ValueError(
                 "Must provide either the `api_version` argument "
@@ -212,6 +217,7 @@ class AzureOpenAIModel(BaseModelBackend):
         return self._client.chat.completions.create(
             messages=messages,
             model=self._azure_deployment_name,  # type:ignore[arg-type]
+            extra_headers=self.extra_headers,
             **request_config,
         )
 
@@ -228,6 +234,7 @@ class AzureOpenAIModel(BaseModelBackend):
         return await self._async_client.chat.completions.create(
             messages=messages,
             model=self._azure_deployment_name,  # type:ignore[arg-type]
+            extra_headers=self.extra_headers,
             **request_config,
         )
 
@@ -251,6 +258,7 @@ class AzureOpenAIModel(BaseModelBackend):
         return self._client.beta.chat.completions.parse(
             messages=messages,
             model=self._azure_deployment_name,  # type:ignore[arg-type]
+            extra_headers=self.extra_headers,
             **request_config,
         )
 
@@ -274,6 +282,7 @@ class AzureOpenAIModel(BaseModelBackend):
         return await self._async_client.beta.chat.completions.parse(
             messages=messages,
             model=self._azure_deployment_name,  # type:ignore[arg-type]
+            extra_headers=self.extra_headers,
             **request_config,
         )
 
