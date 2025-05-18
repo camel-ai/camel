@@ -19,18 +19,15 @@ import base64
 import os
 import uuid
 from io import BytesIO
-from typing import TYPE_CHECKING, List, Optional
+from typing import List, Optional
 
 from openai import OpenAI
+from PIL import Image
 
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 from camel.utils import MCPServer
-
-# Import only for type hints (not executed at runtime)
-if TYPE_CHECKING:
-    from PIL import Image
 
 logger = get_logger(__name__)
 
@@ -64,8 +61,6 @@ class DalleToolkit(BaseToolkit):
             Optional[Image.Image]: The PIL Image object or None if conversion
                 fails.
         """
-        from PIL import Image
-
         try:
             # Decode the base64 string to get the image data
             image_data = base64.b64decode(base64_string)

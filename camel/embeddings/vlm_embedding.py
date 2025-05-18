@@ -15,19 +15,17 @@
 # Enables postponed evaluation of annotations (for string-based type hints)
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, List, Optional, Union
+from typing import Any, List, Optional, Union
+
+from PIL import Image
 
 from camel.embeddings import BaseEmbedding
 from camel.logger import get_logger
 
-# Import only for type hints (not executed at runtime)
-if TYPE_CHECKING:
-    from PIL import Image
-
 logger = get_logger(__name__)
 
 
-class VisionLanguageEmbedding(BaseEmbedding[Union[str, "Image.Image"]]):
+class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
     r"""Provides image embedding functionalities using multimodal model.
 
     Args:
@@ -76,7 +74,7 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, "Image.Image"]]):
     def embed_list(
         self, objs: List[Union[Image.Image, str]], **kwargs: Any
     ) -> List[List[float]]:
-        """Generates embeddings for the given images or texts.
+        r"""Generates embeddings for the given images or texts.
 
         Args:
             objs (List[Image.Image|str]): The list of images or texts for

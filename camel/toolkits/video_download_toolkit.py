@@ -18,17 +18,15 @@ from __future__ import annotations
 import io
 import tempfile
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
+from typing import List, Optional
 from urllib.parse import urlparse
+
+from PIL import Image
 
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.utils import MCPServer, dependencies_required
-
-# Import only for type hints (not executed at runtime)
-if TYPE_CHECKING:
-    from PIL import Image
 
 logger = get_logger(__name__)
 
@@ -45,7 +43,6 @@ def _capture_screenshot(video_file: str, timestamp: float) -> Image.Image:
         Image.Image: The captured screenshot in the form of Image.Image.
     """
     import ffmpeg
-    from PIL import Image
 
     try:
         out, _ = (

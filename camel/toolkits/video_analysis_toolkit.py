@@ -19,7 +19,9 @@ import io
 import os
 import tempfile
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
+from typing import List, Optional
+
+from PIL import Image
 
 from camel.logger import get_logger
 from camel.messages import BaseMessage
@@ -32,10 +34,6 @@ from .video_download_toolkit import (
     VideoDownloaderToolkit,
     _capture_screenshot,
 )
-
-# Import only for type hints (not executed at runtime)
-if TYPE_CHECKING:
-    from PIL import Image
 
 logger = get_logger(__name__)
 
@@ -441,8 +439,6 @@ class VideoAnalysisToolkit(BaseToolkit):
         Returns:
             List[Image.Image]: List of normalized frames.
         """
-        from PIL import Image
-
         normalized_frames: List[Image.Image] = []
 
         for frame in frames:
