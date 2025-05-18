@@ -34,7 +34,7 @@ class CrynuxModel(OpenAICompatibleModel):
             :obj:`None`, :obj:`CrynuxConfig().as_dict()` will be used.
             (default: :obj:`None`)
         api_key (Optional[str], optional): The API key for authenticating with
-            the Crynux service. (default: :obj:`None`)
+            the Crynux service. (default: :obj:`FREEBIE_API_KEY`)
         url (Optional[str], optional): The url to the Crynux service.
             If not provided, "https://bridge.crynux.ai/v1/llm" will be used.
             (default: :obj:`None`)
@@ -56,7 +56,7 @@ class CrynuxModel(OpenAICompatibleModel):
         self,
         model_type: Union[ModelType, str],
         model_config_dict: Optional[Dict[str, Any]] = None,
-        api_key: Optional[str] = None,
+        api_key: Optional[str] = "Rfx0SUNqUBovo5MZpArUbzIT3dJpm2JyEd7-6SgikW4=",
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,

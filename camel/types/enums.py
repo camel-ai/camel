@@ -378,7 +378,7 @@ class ModelType(UnifiedModelType, Enum):
     WATSONX_MISTRAL_LARGE = "mistralai/mistral-large"
 
     # Crynux models
-    CRYNUX_QWEN_2_5_7B = "Qwen/Qwen2.5-7B"
+    CRYNUX_QWEN_2_5_7B_INSTRUCT = "Qwen/Qwen2.5-7B-Instruct"
 
     def __str__(self):
         return self.value
@@ -883,7 +883,7 @@ class ModelType(UnifiedModelType, Enum):
     @property
     def is_crynux(self) -> bool:
         return self in {
-            ModelType.CRYNUX_QWEN_2_5_7B,
+            ModelType.CRYNUX_QWEN_2_5_7B_INSTRUCT,
         }
 
     @property
@@ -986,7 +986,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NOVITA_GLM_4_32B_0414,
             ModelType.NOVITA_GLM_Z1_RUMINATION_32B_0414,
             ModelType.NOVITA_QWEN_2_5_7B,
-            ModelType.CRYNUX_QWEN_2_5_7B,
+            ModelType.CRYNUX_QWEN_2_5_7B_INSTRUCT,
         }:
             return 32_000
         elif self in {
