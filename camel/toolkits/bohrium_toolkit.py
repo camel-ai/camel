@@ -11,18 +11,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import logging
+import os
+from typing import Any, Dict, List, Optional
+
 import yaml
-from typing import Dict, List, Optional, Any
 
-from bohrium._client import Bohrium
-from bohrium.resources import Job
-
+from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import MCPServer, dependencies_required
+from camel.utils import MCPServer, api_keys_required, dependencies_required
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @MCPServer()
@@ -30,36 +29,46 @@ class BohriumToolkit(BaseToolkit):
     r"""A class representing a toolkit for interacting with Bohrium services.
 
     Args:
-        timeout (Optional[float], optional): The timeout for the Bohrium client.
-           (default: :obj:`None`    )
-        api_key (Optional[str], optional): The API key for the Bohrium client.
+        timeout (Optional[float], optional): The timeout for BohriumToolkit.
            (default: :obj:`None`)
-        project_id (Optional[int], optional): The project ID for the Bohrium client.
+        api_key (Optional[str], optional): The API key for Bohrium client.
            (default: :obj:`None`)
-        yaml_path (Optional[str], optional): The path to the YAML file containing the job parameters.
-           (default: :obj:`None`)
+        project_id (Optional[int], optional): The project ID for Bohrium
+            client. (default: :obj:`None`)
+        yaml_path (Optional[str], optional): The path to the YAML file
+            containing the job parameters. (default: :obj:`None`)
     """
 
     @dependencies_required("bohriumsdk")
+    @api_keys_required(
+        [
+            ("api_key", "BOHRIUM_API_KEY"),
+        ]
+    )
     def __init__(
-        self, 
+        self,
         timeout: Optional[float] = None,
         api_key: Optional[str] = None,
         project_id: Optional[int] = None,
         yaml_path: Optional[str] = None,
-        ):
+    ):
         super().__init__(timeout=timeout)
-        self._client = Bohrium(access_key = api_key, project_id = project_id)
+
+        from bohrium._client import Bohrium
+        from bohrium.resources import Job
+
+        api_key = api_key or os.environ.get("BOHRIUM_API_KEY")
+        self._client = Bohrium(access_key=api_key, project_id=project_id)
         self._job = Job(self._client)
         self._project_id = project_id
         self._yaml_path = yaml_path
-        
+
         # refactor insert method
         self._job.insert = self._custom_insert
-    
+
     def _custom_insert(self, data):
         r"""refactor insert method, ensure return jobId information"""
-        
+
         response = self._client.post("/openapi/v2/job/add", json=data)
         result = response.json()
 
@@ -67,25 +76,40 @@ class BohriumToolkit(BaseToolkit):
 
     def submit_job(
         self,
+        job_name: str = "bohr-job",
+        machine_type: str = "c2_m4_cpu",
+        cmd: str = "mpirun -n 2 lmp_mpi -i in.shear",
+        image_address: str = "registry.dp.tech/dptech/lammps:29Sep2021",
     ) -> Dict[str, Any]:
         r"""Submit a job to Bohrium.
 
         Args:
-            None
+            job_name (str): The name of the job.
+                (default: :obj:`bohr-job`)
+            machine_type (str): The type of machine to use.
+                (default: :obj:`c2_m4_cpu`)
+            cmd (str): The command to run.
+                (default: :obj:`mpirun -n 2 lmp_mpi -i in.shear`)
+            image_address (str): The address of the image to use.
+                (default: :obj:`registry.dp.tech/dptech/lammps:29Sep2021`)
 
         Returns:
             Dict[str, Any]: The result of the job submission.
         """
         # Initialize params with default values
-        params : Dict[str, Any] = {
+        params: Dict[str, Any] = {
             "project_id": self._project_id,
+            "job_name": job_name,
+            "machine_type": machine_type,
+            "cmd": cmd,
+            "image_address": image_address,
             "work_dir": "",
             "result": "",
             "dataset_path": [],
             "log_files": [],
             "out_files": [],
         }
-        
+
         # First load from YAML file if provided
         if self._yaml_path:
             try:
@@ -95,21 +119,13 @@ class BohriumToolkit(BaseToolkit):
                         params.update(yaml_params)
             except yaml.YAMLError as e:
                 logger.error(f"Error parsing YAML file: {e}")
-                return {"error": f"YAML parsing error: {str(e)}"}
+                return {"error": f"YAML parsing error: {e!s}"}
             except FileNotFoundError:
                 logger.error(f"YAML file not found: {self._yaml_path}")
                 return {"error": f"File not found: {self._yaml_path}"}
             except Exception as e:
                 logger.error(f"Error loading YAML file: {e}")
                 return {"error": str(e)}
-        
-        # Validate required parameters
-        required_params = ['project_id', 'job_name', 'machine_type', 'cmd', 'image_address']
-        missing_params = [param for param in required_params if param not in params]
-        if missing_params:
-            error_msg = f"Missing required parameters: {', '.join(missing_params)}"
-            logger.error(error_msg)
-            return {"error": error_msg}
 
         try:
             result = self._job.submit(
@@ -127,7 +143,7 @@ class BohriumToolkit(BaseToolkit):
             )
 
             return {"status": "Job submitted successfully", "result": result}
-                
+
         except Exception as e:
             logger.error(f"Error submitting job: {e}")
             return {"error": str(e)}
@@ -180,15 +196,22 @@ class BohriumToolkit(BaseToolkit):
             return {"error": str(e)}
 
     def get_job_logs(
-        self, job_id: int, log_file: str = "STDOUTERR", page: int = -1, page_size: int = 8192
+        self,
+        job_id: int,
+        log_file: str = "STDOUTERR",
+        page: int = -1,
+        page_size: int = 8192,
     ) -> str:
         r"""Get logs for a specific job.
 
         Args:
             job_id (int): The ID of the job.
-            log_file (str, optional): The log file to get. Defaults to "STDOUTERR".
-            page (int, optional): The page number. Defaults to -1.
-            page_size (int, optional): The page size. Defaults to 8192.
+            log_file (str, optional): The log file to get.
+                (default: :obj:`STDOUTERR`)
+            page (int, optional): The page number.
+                (default: :obj:`-1`)
+            page_size (int, optional): The page size.
+                (default: :obj:`8192`)
 
         Returns:
             str: The log contents.
@@ -199,9 +222,11 @@ class BohriumToolkit(BaseToolkit):
             )
         except Exception as e:
             logger.error(f"Error getting job logs: {e}")
-            return f"Error retrieving logs: {str(e)}"
+            return f"Error retrieving logs: {e!s}"
 
-    def create_job_group(self, project_id: int, job_group_name: str) -> Dict[str, Any]:
+    def create_job_group(
+        self, project_id: int, job_group_name: str
+    ) -> Dict[str, Any]:
         r"""Create a job group.
 
         Args:
@@ -218,7 +243,9 @@ class BohriumToolkit(BaseToolkit):
             logger.error(f"Error creating job group: {e}")
             return {"error": str(e)}
 
-    def download_job_results(self, job_id: int, save_path: str) -> Dict[str, Any]:
+    def download_job_results(
+        self, job_id: int, save_path: str
+    ) -> Dict[str, Any]:
         r"""Download the results of a job.
 
         Args:
@@ -230,7 +257,10 @@ class BohriumToolkit(BaseToolkit):
         """
         try:
             self._job.download(job_id, save_path)
-            return {"status": "Job results downloaded successfully", "path": save_path}
+            return {
+                "status": "Job results downloaded successfully",
+                "path": save_path,
+            }
         except Exception as e:
             logger.error(f"Error downloading job results: {e}")
             return {"error": str(e)}

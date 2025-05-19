@@ -19,15 +19,15 @@ from camel.types import ModelPlatformType, ModelType
 
 # Convert the example input into audio and store it locally
 model = ModelFactory.create(
-    model_platform=ModelPlatformType.QWEN,
-    model_type=ModelType.QWEN_2_5_72B,
+    model_platform=ModelPlatformType.DEFAULT,
+    model_type=ModelType.DEFAULT,
 )
 # Create the BohriumToolkit with our reasoning model
 bohrium_toolkit = BohriumToolkit(
     yaml_path="examples/toolkits/bohrium_toolkit_example.yaml",
     api_key="xxx",
     project_id=617833,
-    )
+)
 
 # Create a ChatAgent with the audio toolkit tools
 agent = ChatAgent(
@@ -35,7 +35,9 @@ agent = ChatAgent(
     tools=[*bohrium_toolkit.get_tools()],
 )
 
-response = agent.step("Submit a job to Bohrium,and help me check the job status")
+response = agent.step(
+    "Submit a job to Bohrium,and help me check the job status"
+)
 print(response.msgs[0].content)
 print("\n")
 
