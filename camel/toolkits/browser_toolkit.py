@@ -12,6 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+# Enables postponed evaluation of annotations (for string-based type hints)
+from __future__ import annotations
+
 import datetime
 import io
 import json
@@ -38,8 +41,6 @@ from typing import (
 
 from PIL import Image, ImageDraw, ImageFont
 
-if TYPE_CHECKING:
-    from camel.agents import ChatAgent
 from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.models import BaseModelBackend, ModelFactory
@@ -53,9 +54,13 @@ from camel.utils import (
     sanitize_filename,
 )
 
+if TYPE_CHECKING:
+    from camel.agents import ChatAgent
+
 logger = get_logger(__name__)
 
 TOP_NO_LABEL_ZONE = 20
+
 
 AVAILABLE_ACTIONS_PROMPT = """
 1. `fill_input_id(identifier: Union[str, int], text: str)`: Fill an input
@@ -523,6 +528,7 @@ class BaseBrowser:
         self.page.mouse.click(0, 0)
         self._wait_for_load()
 
+    @retry_on_error()
     def visit_page(self, url: str) -> None:
         r"""Visit a page with the given URL."""
 
@@ -540,10 +546,24 @@ class BaseBrowser:
         Returns:
             str: The answer to the question.
         """
-        video_analyzer = VideoAnalysisToolkit()
-        result = video_analyzer.ask_question_about_video(
-            self.page_url, question
+        current_url = self.get_url()
+
+        # Confirm with user before proceeding due to potential slow processing time
+        confirmation_message = (
+            f"Do you want to analyze the video on the current "
+            f"page({current_url})? This operation may take a long time.(y/n): "
         )
+        user_confirmation = input(confirmation_message)
+
+        if user_confirmation.lower() not in ['y', 'yes']:
+            return "User cancelled the video analysis."
+
+        model = None
+        if hasattr(self, 'web_agent_model'):
+            model = self.web_agent_model
+
+        video_analyzer = VideoAnalysisToolkit(model=model)
+        result = video_analyzer.ask_question_about_video(current_url, question)
         return result
 
     @retry_on_error()
@@ -561,7 +581,6 @@ class BaseBrowser:
             image and the path to the image file if saved, otherwise
             :obj:`None`.
         """
-
         image_data = self.page.screenshot(timeout=60000)
         image = Image.open(io.BytesIO(image_data))
 

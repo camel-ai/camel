@@ -16,7 +16,7 @@ import json
 from copy import deepcopy
 from io import BytesIO
 from typing import List
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from openai.types.chat.chat_completion import Choice
@@ -1076,7 +1076,7 @@ async def test_tool_calling_math_async(step_call_count=3):
         ),
     )
 
-    model.run = MagicMock(
+    model.arun = AsyncMock(
         side_effect=[
             model_backend_rsp_tool,
             model_backend_rsp_tool1,

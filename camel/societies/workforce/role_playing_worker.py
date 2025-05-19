@@ -38,14 +38,17 @@ class RolePlayingWorker(Worker):
         description (str): Description of the node.
         assistant_role_name (str): The role name of the assistant agent.
         user_role_name (str): The role name of the user agent.
-        assistant_agent_kwargs (Optional[Dict], optional): The keyword
-            arguments to initialize the assistant agent in the role playing,
-            like the model name, etc. Defaults to None.
-        user_agent_kwargs (Optional[Dict], optional): The keyword arguments to
+        assistant_agent_kwargs (Optional[Dict]): The keyword arguments to
+            initialize the assistant agent in the role playing, like the model
+            name, etc. (default: :obj:`None`)
+        user_agent_kwargs (Optional[Dict]): The keyword arguments to
             initialize the user agent in the role playing, like the model name,
-            etc. Defaults to None.
-        chat_turn_limit (int, optional): The maximum number of chat turns in
-            the role playing. Defaults to 3.
+            etc. (default: :obj:`None`)
+        summarize_agent_kwargs (Optional[Dict]): The keyword arguments to
+            initialize the summarize agent, like the model name, etc.
+            (default: :obj:`None`)
+        chat_turn_limit (int): The maximum number of chat turns in the role
+            playing. (default: :obj:`3`)
     """
 
     def __init__(
@@ -55,9 +58,11 @@ class RolePlayingWorker(Worker):
         user_role_name: str,
         assistant_agent_kwargs: Optional[Dict] = None,
         user_agent_kwargs: Optional[Dict] = None,
+        summarize_agent_kwargs: Optional[Dict] = None,
         chat_turn_limit: int = 3,
     ) -> None:
         super().__init__(description)
+        self.summarize_agent_kwargs = summarize_agent_kwargs
         summ_sys_msg = BaseMessage.make_assistant_message(
             role_name="Summarizer",
             content="You are a good summarizer. You will be presented with "
@@ -65,7 +70,11 @@ class RolePlayingWorker(Worker):
             "are trying to solve a task. Your job is summarizing the result "
             "of the task based on the chat history.",
         )
-        self.summarize_agent = ChatAgent(summ_sys_msg)
+        summarize_agent_dict = (
+            summarize_agent_kwargs if summarize_agent_kwargs else {}
+        )
+        summarize_agent_dict['system_message'] = summ_sys_msg
+        self.summarize_agent = ChatAgent(**summarize_agent_dict)
         self.chat_turn_limit = chat_turn_limit
         self.assistant_role_name = assistant_role_name
         self.user_role_name = user_role_name

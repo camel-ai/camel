@@ -74,4 +74,4 @@ class CohereConfig(BaseConfig):
     p: Optional[float] = None
 
 
-COHERE_API_PARAMS = {param for param in CohereConfig().model_fields.keys()}
+COHERE_API_PARAMS = {param for param in CohereConfig.model_fields.keys()}

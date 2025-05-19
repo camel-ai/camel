@@ -65,7 +65,7 @@ class SambaVerseAPIConfig(BaseConfig):
 
 
 SAMBA_VERSE_API_PARAMS = {
-    param for param in SambaVerseAPIConfig().model_fields.keys()
+    param for param in SambaVerseAPIConfig.model_fields.keys()
 }
 
 
@@ -160,5 +160,5 @@ class SambaCloudAPIConfig(BaseConfig):
 
 
 SAMBA_CLOUD_API_PARAMS = {
-    param for param in SambaCloudAPIConfig().model_fields.keys()
+    param for param in SambaCloudAPIConfig.model_fields.keys()
 }

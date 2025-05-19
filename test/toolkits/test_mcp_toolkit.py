@@ -13,7 +13,6 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
 import tempfile
-from contextlib import AsyncExitStack
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -417,8 +416,9 @@ class TestMCPClient:
 
         # Setup connected state
         server._is_connected = True
-        server._exit_stack = AsyncMock()
-        server._exit_stack.aclose = AsyncMock()
+        # Assign an AsyncMock to _exit_stack to check its aclose method
+        mock_exit_stack = AsyncMock()
+        server._exit_stack = mock_exit_stack
         server._session = MagicMock()
 
         # Test disconnect
@@ -427,20 +427,36 @@ class TestMCPClient:
         # Verify results
         assert server._is_connected is False
         assert server.session is None
-        server._exit_stack.aclose.assert_called_once()
+        # Assert that aclose was called on the original mock_exit_stack
+        mock_exit_stack.aclose.assert_called_once()
 
         # Test disconnecting when not connected
-        server._exit_stack.aclose.reset_mock()
-
-        # Set up disconnected state
-        server._is_connected = False
         server._exit_stack = AsyncMock()
         server._exit_stack.aclose = AsyncMock()
 
         await server.disconnect()
 
         # Verify exit stack is still closed even when not connected
-        server._exit_stack.aclose.assert_called_once()
+        server._exit_stack.aclose.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_disconnect_without_connection(self):
+        r"""Test explicit disconnect method without connection."""
+        # Create server
+        server = MCPClient("test_command")
+
+        # Setup not connected state
+        server._is_connected = False
+        # Store the mock session to assert its identity
+        initial_mock_session = MagicMock()
+        server._session = initial_mock_session
+
+        # Test disconnect
+        await server.disconnect()
+
+        # Verify results
+        assert server._is_connected is False
+        assert server.session is initial_mock_session
 
 
 class TestMCPToolkit:
@@ -454,7 +470,6 @@ class TestMCPToolkit:
         toolkit = MCPToolkit(servers=[server1, server2])
 
         assert toolkit.servers == [server1, server2]
-        assert isinstance(toolkit._exit_stack, AsyncExitStack)
         assert toolkit._connected is False
 
         # Test with both servers and config_path
@@ -601,11 +616,11 @@ class TestMCPToolkit:
         # Test connection context manager
         async with toolkit.connection() as connected_toolkit:
             assert connected_toolkit._connected is True
-            assert isinstance(connected_toolkit._exit_stack, AsyncExitStack)
+            for server_mock in [server1, server2]:
+                server_mock.connect.assert_called_once()
 
         # Verify context exit cleans up properly
         assert toolkit._connected is False
-        assert isinstance(toolkit._exit_stack, AsyncExitStack)
 
     def test_is_connected(self):
         r"""Test is_connected method."""
@@ -656,9 +671,8 @@ class TestMCPToolkit:
         # Verify results
         assert result == toolkit
         assert toolkit._connected is True
-        assert toolkit._exit_stack is not None
-        server1.connect.assert_called_once()
-        server2.connect.assert_called_once()
+        for server_mock in [server1, server2]:
+            server_mock.connect.assert_called_once()
 
         # Test connecting when already connected
         with patch("camel.toolkits.mcp_toolkit.logger") as mock_logger:
@@ -710,8 +724,6 @@ class TestMCPToolkit:
 
         # Setup connected state
         toolkit._connected = True
-        toolkit._exit_stack = AsyncMock()
-        toolkit._exit_stack.aclose = AsyncMock()
 
         # Test disconnect
         await toolkit.disconnect()
@@ -720,16 +732,13 @@ class TestMCPToolkit:
         assert toolkit._connected is False
         server1.disconnect.assert_called_once()
         server2.disconnect.assert_called_once()
-        toolkit._exit_stack.aclose.assert_called_once()
 
         # Test disconnecting when not connected
         server1.disconnect.reset_mock()
         server2.disconnect.reset_mock()
-        toolkit._exit_stack.aclose.reset_mock()
 
         await toolkit.disconnect()
 
         # Verify no actions taken when not connected
         server1.disconnect.assert_not_called()
         server2.disconnect.assert_not_called()
-        toolkit._exit_stack.aclose.assert_not_called()

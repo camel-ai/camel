@@ -138,7 +138,7 @@ def load_roles(path: str) -> List[str]:
                 role = match.group(1)
                 roles.append(role)
             else:
-                logger.warn("No match")
+                logger.warning("No match")
     return roles
 
 

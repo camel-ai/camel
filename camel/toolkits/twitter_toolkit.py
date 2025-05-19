@@ -18,7 +18,6 @@ from http.client import responses
 from typing import Any, Dict, List, Optional, Union
 
 import requests
-from requests_oauthlib import OAuth1
 
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
@@ -76,6 +75,8 @@ def create_tweet(
     Reference:
         https://developer.x.com/en/docs/x-api/tweets/manage-tweets/api-reference/post-tweets
     """
+    from requests_oauthlib import OAuth1
+
     auth = OAuth1(
         os.getenv("TWITTER_CONSUMER_KEY"),
         os.getenv("TWITTER_CONSUMER_SECRET"),
@@ -160,6 +161,8 @@ def delete_tweet(tweet_id: str) -> str:
     Reference:
         https://developer.x.com/en/docs/x-api/tweets/manage-tweets/api-reference/delete-tweets-id
     """
+    from requests_oauthlib import OAuth1
+
     auth = OAuth1(
         os.getenv("TWITTER_CONSUMER_KEY"),
         os.getenv("TWITTER_CONSUMER_SECRET"),
@@ -263,6 +266,8 @@ def _get_user_info(username: Optional[str] = None) -> str:
     Returns:
         str: A formatted report of the user's Twitter profile information.
     """
+    from requests_oauthlib import OAuth1
+
     oauth = OAuth1(
         os.getenv("TWITTER_CONSUMER_KEY"),
         os.getenv("TWITTER_CONSUMER_SECRET"),

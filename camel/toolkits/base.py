@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from camel.toolkits import FunctionTool
 from camel.utils import AgentOpsMeta, with_timeout
@@ -52,3 +52,14 @@ class BaseToolkit(metaclass=AgentOpsMeta):
                 representing the functions in the toolkit.
         """
         raise NotImplementedError("Subclasses must implement this method.")
+
+    def run_mcp_server(
+        self, mode: Literal["stdio", "sse", "streamable-http"]
+    ) -> None:
+        r"""Run the MCP server in the specified mode.
+
+        Args:
+            mode (Literal["stdio", "sse", "streamable-http"]): The mode to run
+                the MCP server in.
+        """
+        self.mcp.run(mode)

@@ -74,6 +74,7 @@ if __name__ == "__main__":
     main()
 
 """
+===============================================================================
 Example output:
 
 Example 1: Single URL extraction
@@ -94,4 +95,5 @@ Download URL: https://cdn-mineru.openxlab.org.cn/pdf/690a7956-eaaa-4fb2-ad7d-605
 Document: doc2
 Filename: 2310.07298.pdf
 Download URL: https://cdn-mineru.openxlab.org.cn/pdf/250a3762-406e-4279-aa80-47e5ea934509.zip
+===============================================================================
 """

@@ -355,12 +355,16 @@ To quickly run only local isolated unit and integration tests:
 pytest --fast-test-mode .
 ```
 
-If you're developing with VSCode, make sure to create a `.env` file in the repository root and include your OpenAI API key:
+If you're developing with VSCode, make sure to:
+
+Add your API keys to the existing `.env` file at the repository root, for example:
 
 ```
 OPENAI_API_KEY=sk-XXXXXXXX
 OPENAI_API_BASE_URL=https://XXXXXXXX (Should you utilize an OpenAI proxy service, kindly specify this)
 ```
+
+The `conftest.py` file is already configured to automatically load the `.env` file, so you can run `pytest .` directly without extra setup.
 
 ## Documentation 📚
 

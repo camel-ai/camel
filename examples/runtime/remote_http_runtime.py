@@ -23,7 +23,7 @@ if __name__ == "__main__":
     print("Waiting for runtime to be ready...")
     runtime.wait()
     print("Runtime is ready.")
-    add, sub, mul = runtime.get_tools()
+    add, sub, mul = runtime.get_tools()[:3]
     print(f"Add 1 + 2: {add.func(1, 2)}")
     print(f"Subtract 5 - 3: {sub.func(5, 3)}")
     print(f"Multiply 2 * 3: {mul.func(2, 3)}")
@@ -34,7 +34,7 @@ if __name__ == "__main__":
     # time.sleep(60)
 
     # call runtime.stop() if you want to stop the runtime manually
-    # atherwise it will be stopped automatically when the program ends
+    # otherwise it will be stopped automatically when the program ends
 
 
 """

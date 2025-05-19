@@ -125,6 +125,11 @@ class GeminiModel(OpenAICompatibleModel):
         )
         messages = self._process_messages(messages)
         if response_format:
+            if tools:
+                raise ValueError(
+                    "Gemini does not support function calling with "
+                    "response format."
+                )
             return self._request_parse(messages, response_format)
         else:
             return self._request_chat_completion(messages, tools)
@@ -155,6 +160,11 @@ class GeminiModel(OpenAICompatibleModel):
         )
         messages = self._process_messages(messages)
         if response_format:
+            if tools:
+                raise ValueError(
+                    "Gemini does not support function calling with "
+                    "response format."
+                )
             return await self._arequest_parse(messages, response_format)
         else:
             return await self._arequest_chat_completion(messages, tools)

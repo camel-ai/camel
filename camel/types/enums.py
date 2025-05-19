@@ -15,7 +15,10 @@ import os
 from enum import Enum, EnumMeta
 from typing import cast
 
+from camel.logger import get_logger
 from camel.types.unified_model_type import UnifiedModelType
+
+logger = get_logger(__name__)
 
 
 class RoleType(Enum):
@@ -177,10 +180,13 @@ class ModelType(UnifiedModelType, Enum):
     NVIDIA_LLAMA3_3_70B_INSTRUCT = "meta/llama-3.3-70b-instruct"
 
     # Gemini models
-    GEMINI_2_5_PRO_EXP = "gemini-2.5-pro-exp-03-25"
-    GEMINI_2_0_FLASH = "gemini-2.0-flash-exp"
+    GEMINI_2_5_FLASH_PREVIEW = "gemini-2.5-flash-preview-04-17"
+    GEMINI_2_5_PRO_PREVIEW = "gemini-2.5-pro-preview-05-06"
+    GEMINI_2_0_FLASH = "gemini-2.0-flash"
+    GEMINI_2_0_FLASH_EXP = "gemini-2.0-flash-exp"
     GEMINI_2_0_FLASH_THINKING = "gemini-2.0-flash-thinking-exp"
     GEMINI_2_0_PRO_EXP = "gemini-2.0-pro-exp-02-05"
+    GEMINI_2_0_FLASH_LITE = "gemini-2.0-flash-lite"
     GEMINI_2_0_FLASH_LITE_PREVIEW = "gemini-2.0-flash-lite-preview-02-05"
     GEMINI_1_5_FLASH = "gemini-1.5-flash"
     GEMINI_1_5_PRO = "gemini-1.5-pro"
@@ -626,13 +632,16 @@ class ModelType(UnifiedModelType, Enum):
             bool: Whether this type of models is gemini.
         """
         return self in {
-            ModelType.GEMINI_2_5_PRO_EXP,
+            ModelType.GEMINI_2_5_FLASH_PREVIEW,
+            ModelType.GEMINI_2_5_PRO_PREVIEW,
             ModelType.GEMINI_2_0_FLASH,
-            ModelType.GEMINI_1_5_FLASH,
-            ModelType.GEMINI_1_5_PRO,
+            ModelType.GEMINI_2_0_FLASH_EXP,
             ModelType.GEMINI_2_0_FLASH_THINKING,
             ModelType.GEMINI_2_0_PRO_EXP,
+            ModelType.GEMINI_2_0_FLASH_LITE,
             ModelType.GEMINI_2_0_FLASH_LITE_PREVIEW,
+            ModelType.GEMINI_1_5_FLASH,
+            ModelType.GEMINI_1_5_PRO,
         }
 
     @property
@@ -1178,12 +1187,15 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 512_000
         elif self in {
-            ModelType.GEMINI_2_5_PRO_EXP,
+            ModelType.GEMINI_2_5_FLASH_PREVIEW,
+            ModelType.GEMINI_2_5_PRO_PREVIEW,
             ModelType.GEMINI_2_0_FLASH,
+            ModelType.GEMINI_2_0_FLASH_EXP,
+            ModelType.GEMINI_2_0_FLASH_THINKING,
+            ModelType.GEMINI_2_0_FLASH_LITE,
+            ModelType.GEMINI_2_0_FLASH_LITE_PREVIEW,
             ModelType.GEMINI_1_5_FLASH,
             ModelType.GEMINI_1_5_PRO,
-            ModelType.GEMINI_2_0_FLASH_THINKING,
-            ModelType.GEMINI_2_0_FLASH_LITE_PREVIEW,
             ModelType.GEMINI_2_0_PRO_EXP,  # Not given in doc, assume the same
             ModelType.GLM_4_LONG,
             ModelType.TOGETHER_LLAMA_4_MAVERICK,
@@ -1200,7 +1212,11 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 10_000_000
         else:
-            raise ValueError("Unknown model type")
+            logger.warning(
+                f"Unknown model type {self}, set maximum token limit "
+                f"to 999_999_999"
+            )
+            return 999_999_999
 
 
 class EmbeddingModelType(Enum):
