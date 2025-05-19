@@ -80,7 +80,7 @@ class WolframAlphaToolkit(BaseToolkit):
             (None, "WOLFRAMALPHA_APP_ID"),
         ]
     )
-    def query_wolfram_llm(self, query: str) -> str:
+    def query_wolfram_alpha_llm(self, query: str) -> str:
         r"""Sends a query to the Wolfram|Alpha API optimized for language
         model usage.
 
@@ -234,5 +234,5 @@ class WolframAlphaToolkit(BaseToolkit):
         """
         return [
             FunctionTool(self.query_wolfram_alpha),
-            FunctionTool(self.query_wolfram_llm),
+            FunctionTool(self.query_wolfram_alpha_llm),
         ]
