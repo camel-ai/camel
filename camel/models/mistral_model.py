@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 from openai import AsyncStream
 
 from camel.configs import MISTRAL_API_PARAMS, MistralConfig
+from camel.logger import get_logger
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.models._utils import try_modify_message_with_format
@@ -35,6 +36,8 @@ from camel.utils import (
     api_keys_required,
     dependencies_required,
 )
+
+logger = get_logger(__name__)
 
 try:
     if os.getenv("AGENTOPS_API_KEY") is not None:
@@ -62,6 +65,10 @@ class MistralModel(BaseModelBackend):
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter` will
             be used. (default: :obj:`None`)
+        timeout (Optional[float], optional): The timeout value in seconds for
+            API calls. If not provided, will fall back to the MODEL_TIMEOUT
+            environment variable or default to 180 seconds.
+            (default: :obj:`None`)
     """
 
     @api_keys_required(
@@ -77,6 +84,7 @@ class MistralModel(BaseModelBackend):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
+        timeout: Optional[float] = None,
     ) -> None:
         from mistralai import Mistral
 
@@ -85,10 +93,17 @@ class MistralModel(BaseModelBackend):
 
         api_key = api_key or os.environ.get("MISTRAL_API_KEY")
         url = url or os.environ.get("MISTRAL_API_BASE_URL")
+        timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter
+            model_type, model_config_dict, api_key, url, token_counter, timeout
         )
-        self._client = Mistral(api_key=self._api_key, server_url=self._url)
+        self._client = Mistral(
+            timeout_ms=int(self._timeout * 1000)
+            if self._timeout is not None
+            else None,
+            api_key=self._api_key,
+            server_url=self._url,
+        )
 
     def _to_openai_response(
         self, response: 'ChatCompletionResponse'
@@ -223,7 +238,38 @@ class MistralModel(BaseModelBackend):
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-        raise NotImplementedError("Mistral does not support async inference.")
+        logger.warning(
+            "Mistral does not support async inference, using sync "
+            "inference instead."
+        )
+        request_config = self._prepare_request(
+            messages, response_format, tools
+        )
+        mistral_messages = self._to_mistral_chatmessage(messages)
+
+        response = self._client.chat.complete(
+            messages=mistral_messages,
+            model=self.model_type,
+            **request_config,
+        )
+
+        openai_response = self._to_openai_response(response)  # type: ignore[arg-type]
+
+        # Add AgentOps LLM Event tracking
+        if LLMEvent:
+            llm_event = LLMEvent(
+                thread_id=openai_response.id,
+                prompt=" ".join(
+                    [message.get("content") for message in messages]  # type: ignore[misc]
+                ),
+                prompt_tokens=openai_response.usage.prompt_tokens,  # type: ignore[union-attr]
+                completion=openai_response.choices[0].message.content,
+                completion_tokens=openai_response.usage.completion_tokens,  # type: ignore[union-attr]
+                model=self.model_type,
+            )
+            record(llm_event)
+
+        return openai_response
 
     def _run(
         self,

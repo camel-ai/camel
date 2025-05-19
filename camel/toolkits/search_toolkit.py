@@ -12,8 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-import xml.etree.ElementTree as ET
-from typing import Any, Dict, List, Literal, Optional, TypeAlias, Union
+from typing import Any, Dict, List, Literal, Optional, TypeAlias, Union, cast
 
 import requests
 
@@ -489,173 +488,6 @@ class SearchToolkit(BaseToolkit):
         # If no answer found, return an empty list
         return responses
 
-    @dependencies_required("wolframalpha")
-    def query_wolfram_alpha(
-        self, query: str, is_detailed: bool = False
-    ) -> Union[str, Dict[str, Any]]:
-        r"""Queries Wolfram|Alpha and returns the result. Wolfram|Alpha is an
-        answer engine developed by Wolfram Research. It is offered as an online
-        service that answers factual queries by computing answers from
-        externally sourced data.
-
-        Args:
-            query (str): The query to send to Wolfram Alpha.
-            is_detailed (bool): Whether to include additional details
-                including step by step information in the result.
-                (default: :obj:`False`)
-
-        Returns:
-            Union[str, Dict[str, Any]]: The result from Wolfram Alpha.
-                Returns a string if `is_detailed` is False, otherwise returns
-                a dictionary with detailed information.
-        """
-        import wolframalpha
-
-        WOLFRAMALPHA_APP_ID = os.environ.get("WOLFRAMALPHA_APP_ID")
-        if not WOLFRAMALPHA_APP_ID:
-            raise ValueError(
-                "`WOLFRAMALPHA_APP_ID` not found in environment "
-                "variables. Get `WOLFRAMALPHA_APP_ID` here: `https://products.wolframalpha.com/api/`."
-            )
-
-        try:
-            client = wolframalpha.Client(WOLFRAMALPHA_APP_ID)
-            res = client.query(query)
-
-        except Exception as e:
-            return f"Wolfram Alpha wasn't able to answer it. Error: {e}"
-
-        pased_result = self._parse_wolfram_result(res)
-
-        if is_detailed:
-            step_info = self._get_wolframalpha_step_by_step_solution(
-                WOLFRAMALPHA_APP_ID, query
-            )
-            pased_result["steps"] = step_info
-            return pased_result
-
-        return pased_result["final_answer"]
-
-    def _parse_wolfram_result(self, result) -> Dict[str, Any]:
-        r"""Parses a Wolfram Alpha API result into a structured dictionary
-        format.
-
-        Args:
-            result: The API result returned from a Wolfram Alpha
-                query, structured with multiple pods, each containing specific
-                information related to the query.
-
-        Returns:
-            dict: A structured dictionary with the original query and the
-                final answer.
-        """
-
-        # Extract the original query
-        query = result.get("@inputstring", "")
-
-        # Initialize a dictionary to hold structured output
-        output = {"query": query, "pod_info": [], "final_answer": None}
-
-        # Loop through each pod to extract the details
-        for pod in result.get("pod", []):
-            # Handle the case where subpod might be a list
-            subpod_data = pod.get("subpod", {})
-            if isinstance(subpod_data, list):
-                # If it's a list, get the first item for 'plaintext' and 'img'
-                description, image_url = next(
-                    (
-                        (data["plaintext"], data["img"])
-                        for data in subpod_data
-                        if "plaintext" in data and "img" in data
-                    ),
-                    ("", ""),
-                )
-            else:
-                # Otherwise, handle it as a dictionary
-                description = subpod_data.get("plaintext", "")
-                image_url = subpod_data.get("img", {}).get("@src", "")
-
-            pod_info = {
-                "title": pod.get("@title", ""),
-                "description": description,
-                "image_url": image_url,
-            }
-
-            # For Results pod, collect all plaintext values from subpods
-            if pod.get("@title") == "Results":
-                results_text = []
-                if isinstance(subpod_data, list):
-                    for subpod in subpod_data:
-                        if subpod.get("plaintext"):
-                            results_text.append(subpod["plaintext"])
-                else:
-                    if description:
-                        results_text.append(description)
-                pod_info["description"] = "\n".join(results_text)
-
-            # Add to steps list
-            output["pod_info"].append(pod_info)
-
-            # Get final answer
-            if pod.get("@primary", False):
-                output["final_answer"] = description
-
-        return output
-
-    def _get_wolframalpha_step_by_step_solution(
-        self, app_id: str, query: str
-    ) -> dict:
-        r"""Retrieve a step-by-step solution from the Wolfram Alpha API for a
-        given query.
-
-        Args:
-            app_id (str): Your Wolfram Alpha API application ID.
-            query (str): The mathematical or computational query to solve.
-
-        Returns:
-            dict: The step-by-step solution response text from the Wolfram
-                Alpha API.
-        """
-        # Define the base URL
-        url = "https://api.wolframalpha.com/v2/query"
-
-        # Set up the query parameters
-        params = {
-            "appid": app_id,
-            "input": query,
-            "podstate": ["Result__Step-by-step solution", "Show all steps"],
-            "format": "plaintext",
-        }
-
-        # Send the request
-        response = requests.get(url, params=params)
-        root = ET.fromstring(response.text)
-
-        # Extracting step-by-step steps, including 'SBSStep' and 'SBSHintStep'
-        steps = []
-        # Find all subpods within the 'Results' pod
-        for subpod in root.findall(".//pod[@title='Results']//subpod"):
-            # Check if the subpod has the desired stepbystepcontenttype
-            content_type = subpod.find("stepbystepcontenttype")
-            if content_type is not None and content_type.text in [
-                "SBSStep",
-                "SBSHintStep",
-            ]:
-                plaintext = subpod.find("plaintext")
-                if plaintext is not None and plaintext.text:
-                    step_text = plaintext.text.strip()
-                    cleaned_step = step_text.replace(
-                        "Hint: |", ""
-                    ).strip()  # Remove 'Hint: |' if present
-                    steps.append(cleaned_step)
-
-        # Structuring the steps into a dictionary
-        structured_steps = {}
-        for i, step in enumerate(steps, start=1):
-            structured_steps[f"step{i}"] = step
-
-        return structured_steps
-
     def tavily_search(
         self, query: str, num_results: int = 5, **kwargs
     ) -> List[Dict[str, Any]]:
@@ -947,6 +779,289 @@ class SearchToolkit(BaseToolkit):
         except Exception as e:
             return {"error": f"Bing scraping error: {e!s}"}
 
+    @api_keys_required([(None, 'EXA_API_KEY')])
+    def search_exa(
+        self,
+        query: str,
+        search_type: Literal["auto", "neural", "keyword"] = "auto",
+        category: Optional[
+            Literal[
+                "company",
+                "research paper",
+                "news",
+                "pdf",
+                "github",
+                "tweet",
+                "personal site",
+                "linkedin profile",
+                "financial report",
+            ]
+        ] = None,
+        num_results: int = 10,
+        include_text: Optional[List[str]] = None,
+        exclude_text: Optional[List[str]] = None,
+        use_autoprompt: bool = True,
+        text: bool = False,
+    ) -> Dict[str, Any]:
+        r"""Use Exa search API to perform intelligent web search with optional
+        content extraction.
+
+        Args:
+            query (str): The search query string.
+            search_type (Literal["auto", "neural", "keyword"]): The type of
+                search to perform. "auto" automatically decides between keyword
+                and neural search. (default: :obj:`"auto"`)
+            category (Optional[Literal]): Category to focus the search on, such
+                as "research paper" or "news". (default: :obj:`None`)
+            num_results (int): Number of results to return (max 100).
+                (default: :obj:`10`)
+            include_text (Optional[List[str]]): Strings that must be present in
+                webpage text. Limited to 1 string of up to 5 words.
+                (default: :obj:`None`)
+            exclude_text (Optional[List[str]]): Strings that must not be
+                present in webpage text. Limited to 1 string of up to 5 words.
+                (default: :obj:`None`)
+            use_autoprompt (bool): Whether to use Exa's autoprompt feature to
+                enhance the query. (default: :obj:`True`)
+            text (bool): Whether to include webpage contents in results.
+                (default: :obj:`False`)
+
+        Returns:
+            Dict[str, Any]: A dict containing search results and metadata:
+                - requestId (str): Unique identifier for the request
+                - autopromptString (str): Generated autoprompt if enabled
+                - autoDate (str): Timestamp of autoprompt generation
+                - resolvedSearchType (str): The actual search type used
+                - results (List[Dict]): List of search results with metadata
+                - searchType (str): The search type that was selected
+                - costDollars (Dict): Breakdown of API costs
+        """
+        from exa_py import Exa
+
+        EXA_API_KEY = os.getenv("EXA_API_KEY")
+
+        try:
+            exa = Exa(EXA_API_KEY)
+
+            if num_results is not None and not 0 < num_results <= 100:
+                raise ValueError("num_results must be between 1 and 100")
+
+            if include_text is not None:
+                if len(include_text) > 1:
+                    raise ValueError("include_text can only contain 1 string")
+                if len(include_text[0].split()) > 5:
+                    raise ValueError(
+                        "include_text string cannot be longer than 5 words"
+                    )
+
+            if exclude_text is not None:
+                if len(exclude_text) > 1:
+                    raise ValueError("exclude_text can only contain 1 string")
+                if len(exclude_text[0].split()) > 5:
+                    raise ValueError(
+                        "exclude_text string cannot be longer than 5 words"
+                    )
+
+            # Call Exa API with direct parameters
+            if text:
+                results = cast(
+                    Dict[str, Any],
+                    exa.search_and_contents(
+                        query=query,
+                        type=search_type,
+                        category=category,
+                        num_results=num_results,
+                        include_text=include_text,
+                        exclude_text=exclude_text,
+                        use_autoprompt=use_autoprompt,
+                        text=True,
+                    ),
+                )
+            else:
+                results = cast(
+                    Dict[str, Any],
+                    exa.search(
+                        query=query,
+                        type=search_type,
+                        category=category,
+                        num_results=num_results,
+                        include_text=include_text,
+                        exclude_text=exclude_text,
+                        use_autoprompt=use_autoprompt,
+                    ),
+                )
+
+            return results
+
+        except Exception as e:
+            return {"error": f"Exa search failed: {e!s}"}
+
+    @api_keys_required([(None, 'TONGXIAO_API_KEY')])
+    def search_alibaba_tongxiao(
+        self,
+        query: str,
+        time_range: Literal[
+            "OneDay", "OneWeek", "OneMonth", "OneYear", "NoLimit"
+        ] = "NoLimit",
+        industry: Optional[
+            Literal[
+                "finance",
+                "law",
+                "medical",
+                "internet",
+                "tax",
+                "news_province",
+                "news_center",
+            ]
+        ] = None,
+        page: int = 1,
+        return_main_text: bool = False,
+        return_markdown_text: bool = True,
+        enable_rerank: bool = True,
+    ) -> Dict[str, Any]:
+        r"""Query the Alibaba Tongxiao search API and return search results.
+
+        A powerful search API optimized for Chinese language queries with
+        features:
+        - Enhanced Chinese language understanding
+        - Industry-specific filtering (finance, law, medical, etc.)
+        - Structured data with markdown formatting
+        - Result reranking for relevance
+        - Time-based filtering
+
+        Args:
+            query (str): The search query string (length >= 1 and <= 100).
+            time_range (Literal["OneDay", "OneWeek", "OneMonth", "OneYear",
+                "NoLimit"]): Time frame filter for search results.
+                (default: :obj:`"NoLimit"`)
+            industry (Optional[Literal["finance", "law", "medical",
+                "internet", "tax", "news_province", "news_center"]]):
+                Industry-specific search filter. When specified, only returns
+                results from sites in the specified industries. Multiple
+                industries can be comma-separated.
+                (default: :obj:`None`)
+            page (int): Page number for results pagination.
+                (default: :obj:`1`)
+            return_main_text (bool): Whether to include the main text of the
+                webpage in results. (default: :obj:`True`)
+            return_markdown_text (bool): Whether to include markdown formatted
+                content in results. (default: :obj:`True`)
+            enable_rerank (bool): Whether to enable result reranking. If
+                response time is critical, setting this to False can reduce
+                response time by approximately 140ms. (default: :obj:`True`)
+
+        Returns:
+            Dict[str, Any]: A dictionary containing either search results with
+                'requestId' and 'results' keys, or an 'error' key with error
+                message. Each result contains title, snippet, url and other
+                metadata.
+        """
+        TONGXIAO_API_KEY = os.getenv("TONGXIAO_API_KEY")
+
+        # Validate query length
+        if not query or len(query) > 100:
+            return {
+                "error": "Query length must be between 1 and 100 characters"
+            }
+
+        # API endpoint and parameters
+        base_url = "https://cloud-iqs.aliyuncs.com/search/genericSearch"
+        headers = {
+            "X-API-Key": TONGXIAO_API_KEY,
+        }
+
+        # Convert boolean parameters to string for compatibility with requests
+        params: Dict[str, Union[str, int]] = {
+            "query": query,
+            "timeRange": time_range,
+            "page": page,
+            "returnMainText": str(return_main_text).lower(),
+            "returnMarkdownText": str(return_markdown_text).lower(),
+            "enableRerank": str(enable_rerank).lower(),
+        }
+
+        # Only add industry parameter if specified
+        if industry is not None:
+            params["industry"] = industry
+
+        try:
+            # Send GET request with proper typing for params
+            response = requests.get(
+                base_url, headers=headers, params=params, timeout=10
+            )
+
+            # Check response status
+            if response.status_code != 200:
+                return {
+                    "error": (
+                        f"Alibaba Tongxiao API request failed with status "
+                        f"code {response.status_code}: {response.text}"
+                    )
+                }
+
+            # Parse JSON response
+            data = response.json()
+
+            # Extract and format pageItems
+            page_items = data.get("pageItems", [])
+            results = []
+            for idx, item in enumerate(page_items):
+                # Create a simplified result structure
+                result = {
+                    "result_id": idx + 1,
+                    "title": item.get("title", ""),
+                    "snippet": item.get("snippet", ""),
+                    "url": item.get("link", ""),
+                    "hostname": item.get("hostname", ""),
+                }
+
+                # Only include additional fields if they exist and are
+                # requested
+                if "summary" in item and item.get("summary"):
+                    result["summary"] = item["summary"]
+                elif (
+                    return_main_text
+                    and "mainText" in item
+                    and item.get("mainText")
+                ):
+                    result["summary"] = item["mainText"]
+
+                if (
+                    return_main_text
+                    and "mainText" in item
+                    and item.get("mainText")
+                ):
+                    result["main_text"] = item["mainText"]
+
+                if (
+                    return_markdown_text
+                    and "markdownText" in item
+                    and item.get("markdownText")
+                ):
+                    result["markdown_text"] = item["markdownText"]
+
+                if "score" in item:
+                    result["score"] = item["score"]
+
+                if "publishTime" in item:
+                    result["publish_time"] = item["publishTime"]
+
+                results.append(result)
+
+            # Return a simplified structure
+            return {
+                "request_id": data.get("requestId", ""),
+                "results": results,
+            }
+
+        except requests.exceptions.RequestException as e:
+            return {"error": f"Alibaba Tongxiao search request failed: {e!s}"}
+        except Exception as e:
+            return {
+                "error": f"Unexpected error during Alibaba Tongxiao "
+                f"search: {e!s}"
+            }
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
@@ -960,10 +1075,11 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.search_linkup),
             FunctionTool(self.search_google),
             FunctionTool(self.search_duckduckgo),
-            FunctionTool(self.query_wolfram_alpha),
             FunctionTool(self.tavily_search),
             FunctionTool(self.search_brave),
             FunctionTool(self.search_bocha),
             FunctionTool(self.search_baidu),
             FunctionTool(self.search_bing),
+            FunctionTool(self.search_exa),
+            FunctionTool(self.search_alibaba_tongxiao),
         ]

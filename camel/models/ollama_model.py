@@ -13,24 +13,18 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import subprocess
-from typing import Any, Dict, List, Optional, Type, Union
-
-from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
-from pydantic import BaseModel
+from typing import Any, Dict, Optional, Union
 
 from camel.configs import OLLAMA_API_PARAMS, OllamaConfig
-from camel.messages import OpenAIMessage
-from camel.models import BaseModelBackend
-from camel.models._utils import try_modify_message_with_format
-from camel.types import (
-    ChatCompletion,
-    ChatCompletionChunk,
-    ModelType,
-)
-from camel.utils import BaseTokenCounter, OpenAITokenCounter
+from camel.logger import get_logger
+from camel.models.openai_compatible_model import OpenAICompatibleModel
+from camel.types import ModelType
+from camel.utils import BaseTokenCounter
+
+logger = get_logger(__name__)
 
 
-class OllamaModel(BaseModelBackend):
+class OllamaModel(OpenAICompatibleModel):
     r"""Ollama service interface.
 
     Args:
@@ -69,25 +63,20 @@ class OllamaModel(BaseModelBackend):
     ) -> None:
         if model_config_dict is None:
             model_config_dict = OllamaConfig().as_dict()
-        url = url or os.environ.get("OLLAMA_BASE_URL")
+        self._url = url or os.environ.get("OLLAMA_BASE_URL")
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
-        super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter, timeout
-        )
+        self._model_type = model_type
+
         if not self._url:
             self._start_server()
-        # Use OpenAI client as interface call Ollama
-        self._client = OpenAI(
-            timeout=self._timeout,
-            max_retries=3,
-            api_key="Set-but-ignored",  # required but ignored
-            base_url=self._url,
-        )
-        self._async_client = AsyncOpenAI(
-            timeout=self._timeout,
-            max_retries=3,
-            api_key="Set-but-ignored",  # required but ignored
-            base_url=self._url,
+
+        super().__init__(
+            model_type=self._model_type,
+            model_config_dict=model_config_dict,
+            api_key="Not_Used",
+            url=self._url,
+            token_counter=token_counter,
+            timeout=timeout,
         )
 
     def _start_server(self) -> None:
@@ -99,24 +88,12 @@ class OllamaModel(BaseModelBackend):
                 stderr=subprocess.PIPE,
             )
             self._url = "http://localhost:11434/v1"
-            print(
+            logger.info(
                 f"Ollama server started on {self._url} "
-                f"for {self.model_type} model."
+                f"for {self._model_type} model."
             )
         except Exception as e:
-            print(f"Failed to start Ollama server: {e}.")
-
-    @property
-    def token_counter(self) -> BaseTokenCounter:
-        r"""Initialize the token counter for the model backend.
-
-        Returns:
-            BaseTokenCounter: The token counter following the model's
-                tokenization style.
-        """
-        if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
-        return self._token_counter
+            logger.error(f"Failed to start Ollama server: {e}.")
 
     def check_model_config(self):
         r"""Check whether the model configuration contains any
@@ -132,162 +109,3 @@ class OllamaModel(BaseModelBackend):
                     f"Unexpected argument `{param}` is "
                     "input into Ollama model backend."
                 )
-
-    def _run(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        r"""Runs inference of Ollama chat completion.
-
-        Args:
-            messages (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format.
-            response_format (Optional[Type[BaseModel]]): The format of the
-                response.
-            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
-                use for the request.
-
-        Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-                `ChatCompletion` in the non-stream mode, or
-                `Stream[ChatCompletionChunk]` in the stream mode.
-        """
-        response_format = response_format or self.model_config_dict.get(
-            "response_format", None
-        )
-        # For Ollama, the tool calling will be broken with response_format
-        if response_format and not tools:
-            return self._request_parse(messages, response_format, tools)
-        else:
-            return self._request_chat_completion(
-                messages, response_format, tools
-            )
-
-    async def _arun(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-        r"""Runs inference of Ollama chat completion in async mode.
-
-        Args:
-            messages (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format.
-            response_format (Optional[Type[BaseModel]]): The format of the
-                response.
-            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
-                use for the request.
-
-        Returns:
-            Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-                `ChatCompletion` in the non-stream mode, or
-                `AsyncStream[ChatCompletionChunk]` in the stream mode.
-        """
-        response_format = response_format or self.model_config_dict.get(
-            "response_format", None
-        )
-        if response_format:
-            return await self._arequest_parse(messages, response_format, tools)
-        else:
-            return await self._arequest_chat_completion(
-                messages, response_format, tools
-            )
-
-    def _prepare_chat_completion_config(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Dict[str, Any]:
-        request_config = self.model_config_dict.copy()
-
-        if tools:
-            request_config["tools"] = tools
-        if response_format:
-            try_modify_message_with_format(messages[-1], response_format)
-            request_config["response_format"] = {"type": "json_object"}
-
-        return request_config
-
-    def _request_chat_completion(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        request_config = self._prepare_chat_completion_config(
-            messages, response_format, tools
-        )
-
-        return self._client.chat.completions.create(
-            messages=messages,
-            model=self.model_type,
-            **request_config,
-        )
-
-    async def _arequest_chat_completion(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-        request_config = self._prepare_chat_completion_config(
-            messages, response_format, tools
-        )
-
-        return await self._async_client.chat.completions.create(
-            messages=messages,
-            model=self.model_type,
-            **request_config,
-        )
-
-    def _request_parse(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Type[BaseModel],
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> ChatCompletion:
-        request_config = self.model_config_dict.copy()
-
-        request_config["response_format"] = response_format
-        request_config.pop("stream", None)
-        if tools is not None:
-            request_config["tools"] = tools
-
-        return self._client.beta.chat.completions.parse(
-            messages=messages,
-            model=self.model_type,
-            **request_config,
-        )
-
-    async def _arequest_parse(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Type[BaseModel],
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> ChatCompletion:
-        request_config = self.model_config_dict.copy()
-
-        request_config["response_format"] = response_format
-        request_config.pop("stream", None)
-        if tools is not None:
-            request_config["tools"] = tools
-
-        return await self._async_client.beta.chat.completions.parse(
-            messages=messages,
-            model=self.model_type,
-            **request_config,
-        )
-
-    @property
-    def stream(self) -> bool:
-        r"""Returns whether the model is in stream mode, which sends partial
-        results each time.
-
-        Returns:
-            bool: Whether the model is in stream mode.
-        """
-        return self.model_config_dict.get('stream', False)

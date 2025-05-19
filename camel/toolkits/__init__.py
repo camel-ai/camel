@@ -35,6 +35,7 @@ from .google_maps_toolkit import GoogleMapsToolkit
 from .code_execution import CodeExecutionToolkit
 from .github_toolkit import GithubToolkit
 from .google_scholar_toolkit import GoogleScholarToolkit
+from .google_calendar_toolkit import GoogleCalendarToolkit
 from .arxiv_toolkit import ArxivToolkit
 from .slack_toolkit import SlackToolkit
 from .whatsapp_toolkit import WhatsAppToolkit
@@ -58,13 +59,21 @@ from .video_analysis_toolkit import VideoAnalysisToolkit
 from .image_analysis_toolkit import ImageAnalysisToolkit
 from .mcp_toolkit import MCPToolkit
 from .browser_toolkit import BrowserToolkit
+from .async_browser_toolkit import AsyncBrowserToolkit
 from .file_write_toolkit import FileWriteToolkit
 from .terminal_toolkit import TerminalToolkit
 from .pubmed_toolkit import PubMedToolkit
 from .data_commons_toolkit import DataCommonsToolkit
 from .thinking_toolkit import ThinkingToolkit
+from .pyautogui_toolkit import PyAutoGUIToolkit
 from .openai_agent_toolkit import OpenAIAgentToolkit
 from .searxng_toolkit import SearxNGToolkit
+from .jina_reranker_toolkit import JinaRerankerToolkit
+from .pulse_mcp_search_toolkit import PulseMCPSearchToolkit
+from .klavis_toolkit import KlavisToolkit
+from .aci_toolkit import ACIToolkit
+from .playwright_mcp_toolkit import PlaywrightMCPToolkit
+from .wolfram_alpha_toolkit import WolframAlphaToolkit
 
 
 __all__ = [
@@ -91,6 +100,7 @@ __all__ = [
     'AskNewsToolkit',
     'AsyncAskNewsToolkit',
     'GoogleScholarToolkit',
+    'GoogleCalendarToolkit',
     'NotionToolkit',
     'ArxivToolkit',
     'HumanToolkit',
@@ -111,11 +121,19 @@ __all__ = [
     'VideoAnalysisToolkit',
     'ImageAnalysisToolkit',
     'BrowserToolkit',
+    'AsyncBrowserToolkit',
     'FileWriteToolkit',
     'TerminalToolkit',
     'PubMedToolkit',
     'DataCommonsToolkit',
     'ThinkingToolkit',
+    'PyAutoGUIToolkit',
     'OpenAIAgentToolkit',
     'SearxNGToolkit',
+    'JinaRerankerToolkit',
+    'PulseMCPSearchToolkit',
+    'KlavisToolkit',
+    'ACIToolkit',
+    'PlaywrightMCPToolkit',
+    'WolframAlphaToolkit',
 ]

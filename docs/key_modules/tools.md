@@ -161,10 +161,12 @@ CAMEL provides a variety of built-in toolkits that you can use right away. Here'
 | FunctionTool | A base toolkit for creating function-based tools that OpenAI chat models can call, with support for schema parsing and synthesis. |
 | FileWriteTool | A toolkit for creating, writing, and modifying text in files. |
 | GitHubToolkit | A toolkit for interacting with GitHub repositories, including retrieving issues and creating pull requests. |
+| GoogleCalendarToolkit | A toolkit for creating events, retrieving events, updating events, and deleting events from a Google Calendar |
 | GoogleMapsToolkit | A toolkit for accessing Google Maps services, including address validation, elevation data, and timezone information. |
 | GoogleScholarToolkit | A toolkit for retrieving information about authors and their publications from Google Scholar. |
 | HumanToolkit | A toolkit for facilitating human-in-the-loop interactions and feedback in AI systems. |
 | ImageAnalysisToolkit | A toolkit for comprehensive image analysis and understanding using vision-capable language models. |
+| JinaRerankerToolkit | A toolkit for reranking documents (text or images) based on their relevance to a given query using the Jina Reranker model. |
 | LinkedInToolkit | A toolkit for LinkedIn operations including creating posts, deleting posts, and retrieving user profile information. |
 | MathToolkit | A toolkit for performing basic mathematical operations such as addition, subtraction, and multiplication. |
 | MCPToolkit | A toolkit for interacting with external tools using the Model Context Protocol (MCP).  |
@@ -190,6 +192,7 @@ CAMEL provides a variety of built-in toolkits that you can use right away. Here'
 | WeatherToolkit | A toolkit for fetching weather data for cities using the OpenWeatherMap API. |
 | WhatsAppToolkit | A toolkit for interacting with the WhatsApp Business API, including sending messages, managing message templates, and accessing business profile information. |
 | ZapierToolkit | A toolkit for interacting with Zapier's NLA API to execute actions through natural language commands and automate workflows. |
+| KlavisToolkit | A toolkit for interacting with Kavis AI's API to create remote hosted production-ready MCP servers. |
 
 ## 4. Using Toolkits as MCP Servers
 
@@ -213,11 +216,11 @@ from camel.toolkits import ArxivToolkit
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Run Arxiv Toolkit with MCP server mode.",
-        usage=f"python {sys.argv[0]} [--mode MODE]",
+        usage=f"python {sys.argv[0]} [--mode MODE] [--timeout TIMEOUT]",
     )
     parser.add_argument(
         "--mode",
-        choices=["stdio", "sse"],
+        choices=["stdio", "sse", "streamable-http"],
         default="stdio",
         help="MCP server mode (default: 'stdio')",
     )
@@ -233,7 +236,7 @@ if __name__ == "__main__":
     toolkit = ArxivToolkit(timeout=args.timeout)
 
     # Run the toolkit as an MCP server
-    toolkit.mcp.run(args.mode)
+    toolkit.run_mcp_server(mode=args.mode)
 ```
 
 The server can be run in two modes:
