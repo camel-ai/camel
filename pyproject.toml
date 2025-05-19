@@ -67,7 +67,7 @@ docs = [
     "sphinxext-rediraffe>=0.2.7,<0.3",
 ]
 rag = [
-    "numpy~=1.26",
+    "numpy>=1.2,<=2.2",
     "sentence-transformers>=3.0.1,<4",
     "qdrant-client>=1.9.0,<2",
     "pymilvus>=2.4.0,<3",
@@ -107,7 +107,7 @@ web_tools = [
     "scrapegraph-py>=1.12.0,<2",
 ]
 document_tools = [
-    "numpy~=1.26",
+    "numpy>=1.2,<=2.2",
     "beautifulsoup4>=4,<5",
     "docx2txt>=0.8,<0.9",
     "PyMuPDF>=1.22.5,<2",
@@ -141,7 +141,7 @@ communication_tools = [
     "praw>=7.7.1,<8",
 ]
 data_tools = [
-    "numpy~=1.26",
+    "numpy>=1.2,<=2.2",
     "pandas>=1.5.3,<2",
     "textblob>=0.17.1,<0.18",
     "datacommons>=1.4.3,<2",
@@ -203,7 +203,7 @@ storage = [
     "pyobvector>=0.1.18",
 ]
 owl = [
-    "numpy~=1.26",
+    "numpy>=1.2,<=2.2",
     "chunkr-ai>=0.0.41",
     "mcp-simple-arxiv==0.2.2",
     "mcp-server-fetch==2025.1.17",
@@ -250,7 +250,7 @@ owl = [
     "aci-sdk>=1.0.0b1",
 ]
 all = [
-    "numpy~=1.26",
+    "numpy>=1.2,<=2.2",
     "transformers>=4,<5",
     "diffusers>=0.25.0,<0.26",
     "accelerate>=0.26.0,<0.27",
