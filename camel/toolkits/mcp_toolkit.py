@@ -34,6 +34,7 @@ from urllib.parse import urlparse
 if TYPE_CHECKING:
     from mcp import ClientSession, ListToolsResult, Tool
 
+
 from camel.logger import get_logger
 from camel.toolkits import BaseToolkit, FunctionTool
 
@@ -84,7 +85,6 @@ class MCPClient(BaseToolkit):
            await client.disconnect()
            ```
 
-
     Attributes:
         command_or_url (str): URL for SSE mode or command executable for stdio
             mode. (default: :obj:`None`)
@@ -95,6 +95,10 @@ class MCPClient(BaseToolkit):
         timeout (Optional[float]): Connection timeout.
             (default: :obj:`None`)
         headers (Dict[str, str]): Headers for the HTTP request.
+            (default: :obj:`None`)
+        mode (Optional[str]): Connection mode. Can be "sse" for Server-Sent
+            Events, "streamable-http" for streaming HTTP,
+            or None for stdio mode.
             (default: :obj:`None`)
         strict (Optional[bool]): Whether to enforce strict mode for the
             function call. (default: :obj:`False`)
@@ -107,6 +111,7 @@ class MCPClient(BaseToolkit):
         env: Optional[Dict[str, str]] = None,
         timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
+        mode: Optional[str] = None,
         strict: Optional[bool] = False,
     ):
         from mcp import Tool
@@ -118,6 +123,7 @@ class MCPClient(BaseToolkit):
         self.env = env or {}
         self.headers = headers or {}
         self.strict = strict
+        self.mode = mode
 
         self._mcp_tools: List[Tool] = []
         self._session: Optional['ClientSession'] = None
@@ -133,6 +139,7 @@ class MCPClient(BaseToolkit):
         from mcp.client.session import ClientSession
         from mcp.client.sse import sse_client
         from mcp.client.stdio import StdioServerParameters, stdio_client
+        from mcp.client.streamable_http import streamablehttp_client
 
         if self._is_connected:
             logger.warning("Server is already connected")
@@ -140,16 +147,37 @@ class MCPClient(BaseToolkit):
 
         try:
             if urlparse(self.command_or_url).scheme in ("http", "https"):
-                (
-                    read_stream,
-                    write_stream,
-                ) = await self._exit_stack.enter_async_context(
-                    sse_client(
-                        self.command_or_url,
-                        headers=self.headers,
-                        timeout=self.timeout,
+                if self.mode == "sse" or self.mode is None:
+                    (
+                        read_stream,
+                        write_stream,
+                    ) = await self._exit_stack.enter_async_context(
+                        sse_client(
+                            self.command_or_url,
+                            headers=self.headers,
+                            timeout=self.timeout,
+                        )
                     )
-                )
+                elif self.mode == "streamable-http":
+                    try:
+                        (
+                            read_stream,
+                            write_stream,
+                            _,
+                        ) = await self._exit_stack.enter_async_context(
+                            streamablehttp_client(
+                                self.command_or_url,
+                                headers=self.headers,
+                                timeout=timedelta(seconds=self.timeout),
+                            )
+                        )
+                    except Exception as e:
+                        # Handle anyio task group errors
+                        logger.error(f"Streamable HTTP client error: {e}")
+                else:
+                    raise ValueError(
+                        f"Invalid mode '{self.mode}' for HTTP URL"
+                    )
             else:
                 command = self.command_or_url
                 arguments = self.args
@@ -198,10 +226,14 @@ class MCPClient(BaseToolkit):
         if not self._is_connected:
             return
         self._is_connected = False
-        await self._exit_stack.aclose()
-        # Reset the exit stack and session for future reuse purposes
-        self._exit_stack = AsyncExitStack()
-        self._session = None
+
+        try:
+            await self._exit_stack.aclose()
+        except Exception as e:
+            logger.warning(f"{e}")
+        finally:
+            self._exit_stack = AsyncExitStack()
+            self._session = None
 
     @asynccontextmanager
     async def connection(self):
@@ -217,7 +249,10 @@ class MCPClient(BaseToolkit):
             await self.connect()
             yield self
         finally:
-            await self.disconnect()
+            try:
+                await self.disconnect()
+            except Exception as e:
+                logger.warning(f"Error: {e}")
 
     async def list_mcp_tools(self) -> Union[str, "ListToolsResult"]:
         r"""Retrieves the list of available tools from the connected MCP
@@ -440,6 +475,7 @@ class MCPClient(BaseToolkit):
         env: Optional[Dict[str, str]] = None,
         timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
+        mode: Optional[str] = None,
     ) -> "MCPClient":
         r"""Factory method that creates and connects to the MCP server.
 
@@ -457,6 +493,10 @@ class MCPClient(BaseToolkit):
                 (default: :obj:`None`)
             headers (Optional[Dict[str, str]]): Headers for the HTTP request.
                 (default: :obj:`None`)
+            mode (Optional[str]): Connection mode. Can be "sse" for
+                Server-Sent Events, "streamable-http" for
+                streaming HTTP, or None for stdio mode.
+                (default: :obj:`None`)
 
         Returns:
             MCPClient: A fully initialized and connected MCPClient instance.
@@ -470,6 +510,7 @@ class MCPClient(BaseToolkit):
             env=env,
             timeout=timeout,
             headers=headers,
+            mode=mode,
         )
         try:
             await client.connect()
@@ -679,6 +720,7 @@ class MCPToolkit(BaseToolkit):
                 env={**os.environ, **cfg.get("env", {})},
                 timeout=cfg.get("timeout", None),
                 headers=headers,
+                mode=cfg.get("mode", None),
                 strict=strict,
             )
             all_servers.append(server)
