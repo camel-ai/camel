@@ -2,7 +2,7 @@
 
 ## 1. Concept
 The runtime module in CAMEL allows functions and tools to be executed in 
-controlled environments, enabling safe and isolated execution of code.
+controlled environments, enabling the safe and isolated execution of code.
 Modern AI systems, especially those involving autonomous agents, often 
 require more than just a simple Python interpreter. They may need to:
 
@@ -67,7 +67,7 @@ and enhancing security by sandboxing execution.
 ### 2.4 `UbuntuDockerRuntime`
 A specialization of `DockerRuntime` optimized for Ubuntu containers. 
 Adds system package installation, Python version checks, 
-and support for full script execution
+and support for full script execution.
 
 **Key Features**
 
@@ -100,11 +100,12 @@ handling.
 
 ## 3. Get Started
 
-We use `RemoteHttpRuntime` as a quick examples for using `Runtime` module.
+We'll use `RemoteHttpRuntime` as a quick examples of how to use 
+`runtime` module.
 
-The a runtime can be initialized with the code below. Here we use
+A runtime can be initialized with the following code. Here we use
 `MathToolkit` as an example for our tools. You can use any arbitrary tools as
-long as they follow `FunctionTool` type defined by CAMEL (see [tools](
+long as they follow the `FunctionTool` type defined by CAMEL (see [tools](
 ./tools.md) 
 module document for more details.)
 ```
@@ -132,7 +133,8 @@ The tools can then be called using the code below,
 following the same syntax as normal tool calls without a runtime.
 
 ```
-    # There are more tools imported from MathToolkit, we use only "add" tool here
+    # There are more tools imported from MathToolkit. 
+    # For simplicity, we use only "add" tool here
     add = runtime.get_tools()[:1]  
     print(f"Add 1 + 2: {add.func(1, 2)}")
     
@@ -150,7 +152,7 @@ self-contained, and can serve as starting points for real use cases.
 Currently, the runtime system is mainly designed to sandbox registered tool 
 functions only. If other parts of your agent involve 
 risky execution (e.g., direct code generation
-and execution), you should consider handling sandboxing logics separately.
+and execution), you should consider handling sandboxing logic separately.
 
 **Exception**: UbuntuDockerRuntime supports full Python script execution 
 through exec_python_file(). This makes it suitable for broader agent-level 
