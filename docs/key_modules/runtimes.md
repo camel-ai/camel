@@ -62,32 +62,97 @@ and enhancing security by sandboxing execution.
 **Key Features**
 
 - FastAPI server for tool exposure
-- 
-- Automatic container creation and teardown
+- Automatic container lifecycle management via Python interface
 
 ### 2.4 `UbuntuDockerRuntime`
 A specialization of `DockerRuntime` optimized for Ubuntu containers. 
 Adds system package installation, Python version checks, 
 and support for full script execution
 
+**Key Features**
+
+- Preconfigures environment variables like `PYTHON_EXECUTABLE` and `PYTHONPATH`
+- Supports full `.py` script execution with `exec_python_file()`
+- Maintains all capabilities of DockerRuntime.
 ### 2.5 `RemoteHttpRuntime`
 
 The `RemoteHttpRuntime` facilitates the execution of functions on a separate,
 remote HTTP server. 
-This is particularly useful for distributing computational workloads, 
-accessing resources or services that are only available on a specific 
-server, or integrating CAMEL agents with existing microservices or 
-specialized remote workers.
+
+**Key Features**
+
+- Enables remote execution of tools via simple HTTP APIs
+- Built on FastAPI for easy integration and rapid deployment
+ of HTTP-based function execution endpoints
 
 ### 2.6 `DaytonaRuntime`
 
-Runs tool functions inside a Daytona cloud sandbox, 
-providing secure execution in a zero-trust, fully isolated environment.
+`DaytonaRuntime` uses the official daytona_sdk to create sandboxes and run user
+functions inside them securely.
+Each tool is uploaded as source code and executed with controlled input/output
+handling.
 
+**Key Features**
+- Uploads and runs source code remotely
+- Cloud-managed runtime with safety guarantees
 
 
 
 ## 3. Get Started
 
+We use `RemoteHttpRuntime` as a quick examples for using `Runtime` module.
+
+The a runtime can be initialized with the code below. Here we use
+`MathToolkit` as an example for our tools. You can use any arbitrary tools as
+long as they follow `FunctionTool` type defined by CAMEL (see [tools](
+./tools.md) 
+module document for more details.)
+```
+from camel.runtime import RemoteHttpRuntime
+from camel.toolkits import MathToolkit
+
+if __name__ == "__main__":
+    runtime = (
+        RemoteHttpRuntime("localhost")
+        .add(MathToolkit().get_tools(), "camel.toolkits.MathToolkit")
+        .build()
+    )
+    
+    # It might take sometime for the runtime to start
+    print("Waiting for runtime to be ready...")
+    runtime.wait()
+    print("Runtime is ready.")
+    # Example Output:
+    # Waiting for runtime to be ready...
+    # Runtime is ready.
+```
+
+
+The tools can then be called using the code below, 
+following the same syntax as normal tool calls without a runtime.
+
+```
+    # There are more tools imported from MathToolkit, we use only "add" tool here
+    add = runtime.get_tools()[:1]  
+    print(f"Add 1 + 2: {add.func(1, 2)}")
+    
+    # Example Output:
+    # Add 1 + 2: 3
+```
+
+
 ## 4. More Examples
- 
+Additional runtime usage examples can be found under the `examples/runtime/` 
+directory in our main repository. Each script demonstrates how to initialize 
+and use a specific runtime in CAMEL. These examples are simple, 
+self-contained, and can serve as starting points for real use cases.
+## 5. Final Note
+Currently, the runtime system is mainly designed to sandbox registered tool 
+functions only. If other parts of your agent involve 
+risky execution (e.g., direct code generation
+and execution), you should consider handling sandboxing logics separately.
+
+**Exception**: UbuntuDockerRuntime supports full Python script execution 
+through exec_python_file(). This makes it suitable for broader agent-level 
+sandboxing beyond `FunctionTool`, such as executing dynamically generated code
+within a controlled container environment.
