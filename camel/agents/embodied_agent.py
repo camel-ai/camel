@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Dict
 
 from colorama import Fore
 
@@ -21,6 +21,7 @@ from camel.interpreters import (
     BaseInterpreter,
     InternalPythonInterpreter,
     SubprocessInterpreter,
+    DatabaseInterpreter,
 )
 from camel.messages import BaseMessage
 from camel.models import BaseModelBackend
@@ -51,32 +52,43 @@ class EmbodiedAgent(ChatAgent):
         message_window_size (int, optional): The maximum number of previous
             messages to include in the context window. If `None`, no windowing
             is performed. (default: :obj:`None`)
-        tool_agents (List[BaseToolAgent], optional): The tools agents to use in
+        tool_agents (List[BaseToolAgent], optional): The tool agents to use in
             the embodied agent. (default: :obj:`None`)
         code_interpreter (BaseInterpreter, optional): The code interpreter to
-            execute codes. If `code_interpreter` and `tool_agent` are both
+            execute codes. If `code_interpreter` and `tool_agents` are both
             `None`, default to `SubProcessInterpreter`. If `code_interpreter`
             is `None` and `tool_agents` is not `None`, default to
-            `InternalPythonInterpreter`.  (default: :obj:`None`)
+            `InternalPythonInterpreter`. (default: :obj:`None`)
+        database (Dict[str, Any], optional): Configuration for a database
+            backend. Automatically creates a code interpreter to support SQL
+            queries. Supports "sqlite" or "postgres".
+            Example: {"type": "sqlite", "path": "./db.sqlite"} or
+                     {"type": "postgres", "host": ..., "user": ...,
+                     "password": ..., "database": ...}
         verbose (bool, optional): Whether to print the critic's messages.
         logger_color (Any): The color of the logger displayed to the user.
             (default: :obj:`Fore.MAGENTA`)
     """
 
     def __init__(
-        self,
-        system_message: BaseMessage,
-        model: Optional[BaseModelBackend] = None,
-        message_window_size: Optional[int] = None,
-        tool_agents: Optional[List[BaseToolAgent]] = None,
-        code_interpreter: Optional[BaseInterpreter] = None,
-        verbose: bool = False,
-        logger_color: Any = Fore.MAGENTA,
+            self,
+            system_message: BaseMessage,
+            model: Optional[BaseModelBackend] = None,
+            message_window_size: Optional[int] = None,
+            tool_agents: Optional[List[BaseToolAgent]] = None,
+            code_interpreter: Optional[BaseInterpreter] = None,
+            database: Optional[Dict[str, Any]] = None,
+            verbose: bool = False,
+            logger_color: Any = Fore.MAGENTA,
     ) -> None:
         self.tool_agents = tool_agents
-        self.code_interpreter: BaseInterpreter
+        self.verbose = verbose
+        self.logger_color = logger_color
+
         if code_interpreter is not None:
             self.code_interpreter = code_interpreter
+        elif database is not None:
+            self.code_interpreter = DatabaseInterpreter(database)
         elif self.tool_agents:
             self.code_interpreter = InternalPythonInterpreter()
         else:
@@ -84,8 +96,7 @@ class EmbodiedAgent(ChatAgent):
 
         if self.tool_agents:
             system_message = self._set_tool_agents(system_message)
-        self.verbose = verbose
-        self.logger_color = logger_color
+
         super().__init__(
             system_message=system_message,
             model=model,
@@ -133,7 +144,9 @@ class EmbodiedAgent(ChatAgent):
             return []
 
     # ruff: noqa: E501
-    def step(self, input_message: BaseMessage) -> ChatAgentResponse:  # type: ignore[override]
+    def step(self,
+             input_message: BaseMessage) -> ChatAgentResponse:  # type:
+        # ignore[override]
         r"""Performs a step in the conversation.
 
         Args:
@@ -153,7 +166,7 @@ class EmbodiedAgent(ChatAgent):
 
         # NOTE: Only single output messages are supported
         explanations, codes = response.msg.extract_text_and_code_prompts()
-
+        print(explanations, codes)
         if self.verbose:
             for explanation, code in zip(explanations, codes):
                 print_text_animated(
@@ -176,9 +189,9 @@ class EmbodiedAgent(ChatAgent):
                         code, code.code_type
                     )
                     content += (
-                        f"Executing code block {block_idx}: {{\n"
-                        + executed_output
-                        + "}\n"
+                            f"Executing code block {block_idx}: {{\n"
+                            + executed_output
+                            + "}\n"
                     )
             except InterruptedError as e:
                 content = (
