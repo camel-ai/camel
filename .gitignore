@@ -432,5 +432,13 @@ benchmark/gaia/results.jsonl
 # Secret files for docker
 .container/.env
 
+<<<<<<< HEAD
 # Environment variables file
 .env
+=======
+# Extra
+.aider*
+.env
+.cache_ggshield
+my_dev
+>>>>>>> origin
