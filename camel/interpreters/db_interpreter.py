@@ -23,7 +23,6 @@ from camel.agents.tool_agents.base import BaseToolAgent
 from camel.interpreters.interpreter_error import InterpreterError
 
 
-
 class DatabaseConnector(ABC):
     r"""Abstract base class for database connectors."""
 
@@ -31,6 +30,8 @@ class DatabaseConnector(ABC):
     def run_query(self, query: str) -> str:
         r"""Execute a SQL query and return results as a string."""
         pass
+
+
 class SQLiteConnector(DatabaseConnector):
     r"""SQLite connector for executing SQL queries.
 
@@ -47,7 +48,8 @@ class SQLiteConnector(DatabaseConnector):
             cursor = conn.cursor()
             cursor.execute(query)
             rows = cursor.fetchall()
-            column_names = [desc[0] for desc in cursor.description] if cursor.description else []
+            column_names = [desc[0] for desc in
+                            cursor.description] if cursor.description else []
 
             conn.commit()
             conn.close()
@@ -74,7 +76,8 @@ class PostgresConnector(DatabaseConnector):
         database (str): Name of the database to connect to.
     """
 
-    def __init__(self, host: str, port: int, user: str, password: str, database: str):
+    def __init__(self, host: str, port: int, user: str, password: str,
+                 database: str):
         self.conn_info = {
             "host": host,
             "port": port,
@@ -89,7 +92,8 @@ class PostgresConnector(DatabaseConnector):
             cursor = conn.cursor()
             cursor.execute(query)
             rows = cursor.fetchall()
-            column_names = [desc[0] for desc in cursor.description] if cursor.description else []
+            column_names = [desc[0] for desc in
+                            cursor.description] if cursor.description else []
 
             conn.commit()
             conn.close()
@@ -103,11 +107,14 @@ class PostgresConnector(DatabaseConnector):
         except Exception as e:
             return f"PostgreSQL query failed: {e}"
 
+
 class SQLQueryInterpreter(BaseInterpreter):
-    r"""Interpreter that executes SQL code blocks on a given database connector.
+    r"""Interpreter that executes SQL code blocks on a given database
+    connector.
 
     Args:
-        connector (DatabaseConnector): An object capable of executing SQL queries.
+        connector (DatabaseConnector): An object capable of executing SQL
+        queries.
 
     Supported code_type: "sql"
     """
@@ -126,7 +133,8 @@ class SQLQueryInterpreter(BaseInterpreter):
     def supported_code_types(self) -> List[str]:
         return ["sql"]
 
-    def update_action_space(self, action_space: Dict[str, BaseToolAgent]) -> None:
+    def update_action_space(self,
+                            action_space: Dict[str, BaseToolAgent]) -> None:
         pass  # No-op
 
 
@@ -138,7 +146,8 @@ def DatabaseInterpreter(db_config: Dict[str, Any]) -> BaseInterpreter:
             For SQLite: {"type": "sqlite", "path": "./db.sqlite"}
             For Postgres: {
                 "type": "postgres",
-                "host": ..., "port": ..., "user": ..., "password": ..., "database": ...
+                "host": ..., "port": ..., "user": ..., "password": ...,
+                "database": ...
             }
 
     Returns:
