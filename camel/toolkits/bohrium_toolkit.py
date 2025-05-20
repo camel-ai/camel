@@ -14,7 +14,11 @@
 import os
 from typing import Any, Dict, List, Optional
 
-import yaml
+try:
+    import yaml
+    HAS_YAML = True
+except ImportError:
+    HAS_YAML = False
 
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
@@ -84,13 +88,20 @@ class BohriumToolkit(BaseToolkit):
         r"""Submit a job to Bohrium.
 
         Args:
-            job_name (str): The name of the job.
+            job_name (str): The name of the job. It will be updated when yaml
+                file is provided. The yaml file might be set when initialize
+                BohriumToolkit. 
                 (default: :obj:`bohr-job`)
-            machine_type (str): The type of machine to use.
+            machine_type (str): The type of machine to use. It will be updated
+                when yaml file is provided. The yaml file might be set when
+                initialize BohriumToolkit. 
                 (default: :obj:`c2_m4_cpu`)
-            cmd (str): The command to run.
+            cmd (str): The command to run. It will be updated when yaml file
+                is provided. The yaml file might be set when initialize
                 (default: :obj:`mpirun -n 2 lmp_mpi -i in.shear`)
-            image_address (str): The address of the image to use.
+            image_address (str): The address of the image to use. It will be
+                updated when yaml file is provided. The yaml file might be set
+                when initialize BohriumToolkit. 
                 (default: :obj:`registry.dp.tech/dptech/lammps:29Sep2021`)
 
         Returns:
@@ -111,7 +122,7 @@ class BohriumToolkit(BaseToolkit):
         }
 
         # First load from YAML file if provided
-        if self._yaml_path:
+        if self._yaml_path and HAS_YAML:
             try:
                 with open(self._yaml_path, 'r') as file:
                     yaml_params = yaml.safe_load(file)
@@ -126,6 +137,9 @@ class BohriumToolkit(BaseToolkit):
             except Exception as e:
                 logger.error(f"Error loading YAML file: {e}")
                 return {"error": str(e)}
+        elif self._yaml_path and not HAS_YAML:
+            logger.warning("PyYAML is not installed. YAML file will be ignored.")
+            return {"warning": "PyYAML is not installed. YAML file ignored."}
 
         try:
             result = self._job.submit(
