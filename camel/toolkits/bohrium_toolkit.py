@@ -44,7 +44,7 @@ class BohriumToolkit(BaseToolkit):
             containing the job parameters. (default: :obj:`None`)
     """
 
-    @dependencies_required("bohriumsdk")
+    @dependencies_required("bohrium")
     @api_keys_required(
         [
             ("api_key", "BOHRIUM_API_KEY"),
