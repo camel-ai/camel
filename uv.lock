@@ -532,6 +532,11 @@ css = [
 ]
 
 [[package]]
+name = "bohrium"
+version = "0.1.0"
+source = { git = "https://github.com/dptech-corp/bohrium-openapi-python-sdk#37bbd97fdfb0fcdee03a1d272325ffbc19906fe3" }
+
+[[package]]
 name = "botocore"
 version = "1.38.19"
 source = { registry = "https://pypi.org/simple" }
@@ -583,6 +588,7 @@ all = [
     { name = "arxiv2text" },
     { name = "azure-storage-blob" },
     { name = "beautifulsoup4" },
+    { name = "bohrium" },
     { name = "botocore" },
     { name = "cohere" },
     { name = "crawl4ai" },
@@ -858,6 +864,7 @@ rag = [
 research-tools = [
     { name = "arxiv" },
     { name = "arxiv2text" },
+    { name = "bohrium" },
     { name = "scholarly", extra = ["tor"] },
 ]
 storage = [
@@ -929,6 +936,8 @@ requires-dist = [
     { name = "beautifulsoup4", marker = "extra == 'document-tools'", specifier = ">=4,<5" },
     { name = "beautifulsoup4", marker = "extra == 'owl'", specifier = ">=4,<5" },
     { name = "beautifulsoup4", marker = "extra == 'web-tools'", specifier = ">=4,<5" },
+    { name = "bohrium", marker = "extra == 'all'", git = "https://github.com/dptech-corp/bohrium-openapi-python-sdk" },
+    { name = "bohrium", marker = "extra == 'research-tools'", git = "https://github.com/dptech-corp/bohrium-openapi-python-sdk" },
     { name = "botocore", marker = "extra == 'all'", specifier = ">=1.35.3,<2" },
     { name = "botocore", marker = "extra == 'storage'", specifier = ">=1.35.3,<2" },
     { name = "chunkr-ai", marker = "extra == 'owl'", specifier = ">=0.0.41" },
