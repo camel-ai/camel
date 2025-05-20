@@ -62,6 +62,7 @@ class AzureOpenAIModel(BaseModelBackend):
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
 
+
     References:
         https://learn.microsoft.com/en-us/azure/ai-services/openai/
     """
