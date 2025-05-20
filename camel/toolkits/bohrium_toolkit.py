@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional
 
 try:
     import yaml
+
     HAS_YAML = True
 except ImportError:
     HAS_YAML = False
@@ -90,18 +91,18 @@ class BohriumToolkit(BaseToolkit):
         Args:
             job_name (str): The name of the job. It will be updated when yaml
                 file is provided. The yaml file might be set when initialize
-                BohriumToolkit. 
+                BohriumToolkit.
                 (default: :obj:`bohr-job`)
             machine_type (str): The type of machine to use. It will be updated
                 when yaml file is provided. The yaml file might be set when
-                initialize BohriumToolkit. 
+                initialize BohriumToolkit.
                 (default: :obj:`c2_m4_cpu`)
             cmd (str): The command to run. It will be updated when yaml file
                 is provided. The yaml file might be set when initialize
                 (default: :obj:`mpirun -n 2 lmp_mpi -i in.shear`)
             image_address (str): The address of the image to use. It will be
                 updated when yaml file is provided. The yaml file might be set
-                when initialize BohriumToolkit. 
+                when initialize BohriumToolkit.
                 (default: :obj:`registry.dp.tech/dptech/lammps:29Sep2021`)
 
         Returns:
@@ -138,7 +139,9 @@ class BohriumToolkit(BaseToolkit):
                 logger.error(f"Error loading YAML file: {e}")
                 return {"error": str(e)}
         elif self._yaml_path and not HAS_YAML:
-            logger.warning("PyYAML is not installed. YAML file will be ignored.")
+            logger.warning(
+                "PyYAML is not installed. YAML file will be ignored."
+            )
             return {"warning": "PyYAML is not installed. YAML file ignored."}
 
         try:
