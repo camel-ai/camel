@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import xml.etree.ElementTree as ET
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
 
 import requests
 
@@ -37,21 +37,14 @@ class WolframAlphaToolkit(BaseToolkit):
         ]
     )
     @dependencies_required("wolframalpha")
-    def query_wolfram_alpha(
-        self, query: str, is_detailed: bool = False
-    ) -> Union[str, Dict[str, Any]]:
-        r"""Queries Wolfram|Alpha and returns the result.
+    def query_wolfram_alpha(self, query: str) -> str:
+        r"""Queries Wolfram|Alpha and returns the result as a simple answer.
 
         Args:
             query (str): The query to send to Wolfram Alpha.
-            is_detailed (bool): Whether to include additional details
-                including step by step information in the result.
-                (default: :obj:`False`)
 
         Returns:
-            Union[str, Dict[str, Any]]: The result from Wolfram Alpha.
-                Returns a string if `is_detailed` is False, otherwise returns
-                a dictionary with detailed information.
+            str: The result from Wolfram Alpha as a simple answer.
         """
         import wolframalpha
 
@@ -64,16 +57,45 @@ class WolframAlphaToolkit(BaseToolkit):
         except Exception as e:
             return f"Wolfram Alpha wasn't able to answer it. Error: {e}"
 
-        pased_result = self._parse_wolfram_result(res)
+        parsed_result = self._parse_wolfram_result(res)
+        return parsed_result["final_answer"]
 
-        if is_detailed:
-            step_info = self._get_wolframalpha_step_by_step_solution(
-                WOLFRAMALPHA_APP_ID, query
-            )
-            pased_result["steps"] = step_info
-            return pased_result
+    @api_keys_required(
+        [
+            (None, "WOLFRAMALPHA_APP_ID"),
+        ]
+    )
+    @dependencies_required("wolframalpha")
+    def query_wolfram_alpha_step_by_step(self, query: str) -> Dict[str, Any]:
+        r"""Queries Wolfram|Alpha and returns detailed results with
+        step-by-step solution.
 
-        return pased_result["final_answer"]
+        Args:
+            query (str): The query to send to Wolfram Alpha.
+
+        Returns:
+            Dict[str, Any]: A dictionary with detailed information including
+                step-by-step solution.
+        """
+        import wolframalpha
+
+        WOLFRAMALPHA_APP_ID = os.environ.get("WOLFRAMALPHA_APP_ID", "")
+
+        try:
+            client = wolframalpha.Client(WOLFRAMALPHA_APP_ID)
+            res = client.query(query)
+
+        except Exception as e:
+            return {
+                "error": f"Wolfram Alpha wasn't able to answer it. Error: {e}"
+            }
+
+        parsed_result = self._parse_wolfram_result(res)
+        step_info = self._get_wolframalpha_step_by_step_solution(
+            WOLFRAMALPHA_APP_ID, query
+        )
+        parsed_result["steps"] = step_info
+        return parsed_result
 
     @api_keys_required(
         [
@@ -234,5 +256,6 @@ class WolframAlphaToolkit(BaseToolkit):
         """
         return [
             FunctionTool(self.query_wolfram_alpha),
+            FunctionTool(self.query_wolfram_alpha_step_by_step),
             FunctionTool(self.query_wolfram_alpha_llm),
         ]
