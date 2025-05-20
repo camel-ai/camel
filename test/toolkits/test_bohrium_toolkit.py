@@ -76,8 +76,8 @@ def sample_yaml_file():
         os.remove(temp_path)
 
 
-@patch("camel.toolkits.bohrium_toolkit.Bohrium", autospec=True)
-@patch("camel.toolkits.bohrium_toolkit.Job", autospec=True)
+@patch("bohrium._client.Bohrium", autospec=True)
+@patch("bohrium.resources.Job", autospec=True)
 def test_init(mock_job_class, mock_bohrium_class):
     """Test initialization of BohriumToolkit."""
 
@@ -101,8 +101,8 @@ def test_init(mock_job_class, mock_bohrium_class):
     assert hasattr(toolkit, '_custom_insert')
 
 
-@patch("camel.toolkits.bohrium_toolkit.Bohrium", autospec=True)
-@patch("camel.toolkits.bohrium_toolkit.Job", autospec=True)
+@patch("bohrium._client.Bohrium", autospec=True)
+@patch("bohrium.resources.Job", autospec=True)
 def test_submit_job_with_yaml(
     mock_job_class, mock_bohrium_class, sample_yaml_file
 ):
@@ -151,8 +151,8 @@ def test_submit_job_with_yaml(
         raise AssertionError(f"Unexpected result structure: {result}")
 
 
-@patch("camel.toolkits.bohrium_toolkit.Bohrium", autospec=True)
-@patch("camel.toolkits.bohrium_toolkit.Job", autospec=True)
+@patch("bohrium._client.Bohrium", autospec=True)
+@patch("bohrium.resources.Job", autospec=True)
 def test_submit_job_missing_parameters(mock_job_class, mock_bohrium_class):
     """Test submitting a job with missing parameters."""
     # Setup mocks
@@ -174,8 +174,8 @@ def test_submit_job_missing_parameters(mock_job_class, mock_bohrium_class):
     assert result["status"] == "Job submitted successfully"
 
 
-@patch("camel.toolkits.bohrium_toolkit.Bohrium", autospec=True)
-@patch("camel.toolkits.bohrium_toolkit.Job", autospec=True)
+@patch("bohrium._client.Bohrium", autospec=True)
+@patch("bohrium.resources.Job", autospec=True)
 def test_get_job_details(mock_job_class, mock_bohrium_class):
     """Test getting job details."""
     # Setup mocks
@@ -203,8 +203,8 @@ def test_get_job_details(mock_job_class, mock_bohrium_class):
     assert result["status"] == "PENDING"
 
 
-@patch("camel.toolkits.bohrium_toolkit.Bohrium", autospec=True)
-@patch("camel.toolkits.bohrium_toolkit.Job", autospec=True)
+@patch("bohrium._client.Bohrium", autospec=True)
+@patch("bohrium.resources.Job", autospec=True)
 def test_terminate_job(mock_job_class, mock_bohrium_class):
     """Test terminating a job."""
     # Setup mocks
@@ -224,8 +224,8 @@ def test_terminate_job(mock_job_class, mock_bohrium_class):
     assert result["status"] == "Job terminated successfully"
 
 
-@patch("camel.toolkits.bohrium_toolkit.Bohrium", autospec=True)
-@patch("camel.toolkits.bohrium_toolkit.Job", autospec=True)
+@patch("bohrium._client.Bohrium", autospec=True)
+@patch("bohrium.resources.Job", autospec=True)
 def test_kill_job(mock_job_class, mock_bohrium_class):
     """Test killing a job."""
     # Setup mocks
@@ -245,8 +245,8 @@ def test_kill_job(mock_job_class, mock_bohrium_class):
     assert result["status"] == "Job killed successfully"
 
 
-@patch("camel.toolkits.bohrium_toolkit.Bohrium", autospec=True)
-@patch("camel.toolkits.bohrium_toolkit.Job", autospec=True)
+@patch("bohrium._client.Bohrium", autospec=True)
+@patch("bohrium.resources.Job", autospec=True)
 def test_get_job_logs(mock_job_class, mock_bohrium_class):
     """Test getting job logs."""
     # Setup mocks
@@ -269,8 +269,8 @@ def test_get_job_logs(mock_job_class, mock_bohrium_class):
     assert result == "Test log output"
 
 
-@patch("camel.toolkits.bohrium_toolkit.Bohrium", autospec=True)
-@patch("camel.toolkits.bohrium_toolkit.Job", autospec=True)
+@patch("bohrium._client.Bohrium", autospec=True)
+@patch("bohrium.resources.Job", autospec=True)
 def test_create_job_group(mock_job_class, mock_bohrium_class):
     """Test creating a job group."""
     # Setup mocks
@@ -290,8 +290,8 @@ def test_create_job_group(mock_job_class, mock_bohrium_class):
     assert result["status"] == "Job group created successfully"
 
 
-@patch("camel.toolkits.bohrium_toolkit.Bohrium", autospec=True)
-@patch("camel.toolkits.bohrium_toolkit.Job", autospec=True)
+@patch("bohrium._client.Bohrium", autospec=True)
+@patch("bohrium.resources.Job", autospec=True)
 def test_download_job_results(mock_job_class, mock_bohrium_class):
     """Test downloading job results."""
     # Setup mocks
@@ -312,8 +312,8 @@ def test_download_job_results(mock_job_class, mock_bohrium_class):
     assert result["path"] == "/tmp/results"
 
 
-@patch("camel.toolkits.bohrium_toolkit.Bohrium", autospec=True)
-@patch("camel.toolkits.bohrium_toolkit.Job", autospec=True)
+@patch("bohrium._client.Bohrium", autospec=True)
+@patch("bohrium.resources.Job", autospec=True)
 def test_get_tools(mock_job_class, mock_bohrium_class):
     """Test getting available tools."""
     # Initialize toolkit
