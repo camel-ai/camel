@@ -25,7 +25,7 @@ def run_example():
     mcp_toolkit.connect_sync()
 
     # call the server to list the available tools
-    mcp_client = MCPClient(mcp_toolkit.servers[0])
+    mcp_client: MCPClient = mcp_toolkit.servers[0]
     res = mcp_client.list_mcp_tools_sync()
     if isinstance(res, str):
         raise Exception(res)
