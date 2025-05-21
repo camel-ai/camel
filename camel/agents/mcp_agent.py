@@ -292,7 +292,7 @@ class MCPAgent(ChatAgent):
     async def connect(self) -> None:
         r"""Connect to the MCP servers."""
         if self.mcp_toolkit:
-            await self.mcp_toolkit.aconnect()
+            await self.mcp_toolkit.connect()
             if self.function_calling_available:
                 self.add_tools(
                     cast(
@@ -309,7 +309,7 @@ class MCPAgent(ChatAgent):
     async def disconnect(self) -> None:
         r"""Disconnect from the MCP servers."""
         if self.mcp_toolkit:
-            await self.mcp_toolkit.adisconnect()
+            await self.mcp_toolkit.disconnect()
 
     async def astep(
         self, input_message: Union[BaseMessage, str], *args, **kwargs
