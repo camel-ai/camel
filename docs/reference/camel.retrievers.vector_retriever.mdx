@@ -1,0 +1,122 @@
+---
+title: "camel.retrievers.vector_retriever"
+description: "Documentation for the camel.retrievers.vector_retriever module"
+---
+
+<a id="camel.retrievers.vector_retriever"></a>
+
+# camel.retrievers.vector\_retriever
+
+<a id="camel.retrievers.vector_retriever.VectorRetriever"></a>
+
+## VectorRetriever Objects
+
+```python
+class VectorRetriever(BaseRetriever)
+```
+
+An implementation of the `BaseRetriever` by using vector storage and
+embedding model.
+
+This class facilitates the retriever of relevant information using a
+query-based approach, backed by vector embeddings.
+
+**Attributes**:
+
+- `embedding_model` _BaseEmbedding_ - Embedding model used to generate
+  vector embeddings.
+- `storage` _BaseVectorStorage_ - Vector storage to query.
+- `unstructured_modules` _UnstructuredIO_ - A module for parsing files and
+  URLs and chunking content based on specified parameters.
+
+<a id="camel.retrievers.vector_retriever.VectorRetriever.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(embedding_model: Optional[BaseEmbedding] = None,
+             storage: Optional[BaseVectorStorage] = None) -> None
+```
+
+Initializes the retriever class with an optional embedding model.
+
+**Arguments**:
+
+- `embedding_model` _Optional[BaseEmbedding]_ - The embedding model
+  instance. Defaults to `OpenAIEmbedding` if not provided.
+- `storage` _BaseVectorStorage_ - Vector storage to query.
+
+<a id="camel.retrievers.vector_retriever.VectorRetriever.process"></a>
+
+#### process
+
+```python
+def process(content: Union[str, "Element", IO[bytes]],
+            chunk_type: str = "chunk_by_title",
+            max_characters: int = 500,
+            embed_batch: int = 50,
+            should_chunk: bool = True,
+            extra_info: Optional[dict] = None,
+            metadata_filename: Optional[str] = None,
+            chunker: Optional[BaseChunker] = None,
+            **kwargs: Any) -> None
+```
+
+Processes content from local file path, remote URL, string
+content, Element object, or a binary file object, divides it into
+chunks by using `Unstructured IO`, and stores their embeddings in the
+specified vector storage.
+
+**Arguments**:
+
+- `content` _Union[str, Element, IO[bytes]]_ - Local file path, remote
+  URL, string content, Element object, or a binary file object.
+- `chunk_type` _str_ - Type of chunking going to apply. Defaults to
+  "chunk_by_title".
+- `max_characters` _int_ - Max number of characters in each chunk.
+  Defaults to `500`.
+- `embed_batch` _int_ - Size of batch for embeddings. Defaults to `50`.
+- `should_chunk` _bool_ - If True, divide the content into chunks,
+  otherwise skip chunking. Defaults to True.
+- `extra_info` _Optional[dict]_ - Extra information to be added
+  to the payload. Defaults to None.
+- `metadata_filename` _Optional[str]_ - The metadata filename to be
+  used for storing metadata. Defaults to None.
+- `**kwargs` _Any_ - Additional keyword arguments for content parsing.
+
+<a id="camel.retrievers.vector_retriever.VectorRetriever.query"></a>
+
+#### query
+
+```python
+def query(
+    query: str,
+    top_k: int = Constants.DEFAULT_TOP_K_RESULTS,
+    similarity_threshold: float = Constants.DEFAULT_SIMILARITY_THRESHOLD
+) -> List[Dict[str, Any]]
+```
+
+Executes a query in vector storage and compiles the retrieved
+results into a dictionary.
+
+**Arguments**:
+
+- `query` _str_ - Query string for information retriever.
+- `similarity_threshold` _float, optional_ - The similarity threshold
+  for filtering results. Defaults to
+  `DEFAULT_SIMILARITY_THRESHOLD`.
+- `top_k` _int, optional_ - The number of top results to return during
+  retriever. Must be a positive integer. Defaults to
+  `DEFAULT_TOP_K_RESULTS`.
+  
+
+**Returns**:
+
+  List[Dict[str, Any]]: Concatenated list of the query results.
+  
+
+**Raises**:
+
+- `ValueError` - If 'top_k' is less than or equal to 0, if vector
+  storage is empty, if payload of vector storage is None.
+

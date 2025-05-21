@@ -1,0 +1,60 @@
+---
+title: "camel.models.deepseek_model"
+description: "Documentation for the camel.models.deepseek_model module"
+---
+
+<a id="camel.models.deepseek_model"></a>
+
+# camel.models.deepseek\_model
+
+<a id="camel.models.deepseek_model.DeepSeekModel"></a>
+
+## DeepSeekModel Objects
+
+```python
+class DeepSeekModel(OpenAICompatibleModel)
+```
+
+DeepSeek API in a unified OpenAICompatibleModel interface.
+
+**Arguments**:
+
+- `model_type` _Union[ModelType, str]_ - Model for which a backend is
+  created.
+- `model_config_dict` _Optional[Dict[str, Any]], optional_ - A dictionary
+  that will be fed into:obj:`openai.ChatCompletion.create()`. If
+  :obj:`None`, :obj:`DeepSeekConfig().as_dict()` will be used.
+- `(default` - :obj:`None`)
+- `api_key` _Optional[str], optional_ - The API key for authenticating with
+  the DeepSeek service. (default: :obj:`None`)
+- `url` _Optional[str], optional_ - The url to the DeepSeek service.
+- `(default` - :obj:`https://api.deepseek.com`)
+- `token_counter` _Optional[BaseTokenCounter], optional_ - Token counter to
+  use for the model. If not provided, :obj:`OpenAITokenCounter`
+  will be used. (default: :obj:`None`)
+- `timeout` _Optional[float], optional_ - The timeout value in seconds for
+  API calls. If not provided, will fall back to the MODEL_TIMEOUT
+  environment variable or default to 180 seconds.
+- `(default` - :obj:`None`)
+  
+
+**References**:
+
+  https://api-docs.deepseek.com/
+
+<a id="camel.models.deepseek_model.DeepSeekModel.check_model_config"></a>
+
+#### check\_model\_config
+
+```python
+def check_model_config()
+```
+
+Check whether the model configuration contains any
+unexpected arguments to DeepSeek API.
+
+**Raises**:
+
+- `ValueError` - If the model configuration dictionary contains any
+  unexpected arguments to DeepSeek API.
+

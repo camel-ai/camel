@@ -1,0 +1,97 @@
+---
+title: "camel.toolkits.file_write_toolkit"
+description: "Documentation for the camel.toolkits.file_write_toolkit module"
+---
+
+<a id="camel.toolkits.file_write_toolkit"></a>
+
+# camel.toolkits.file\_write\_toolkit
+
+<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit"></a>
+
+## FileWriteToolkit Objects
+
+```python
+@MCPServer()
+class FileWriteToolkit(BaseToolkit)
+```
+
+A toolkit for creating, writing, and modifying text in files.
+
+This class provides cross-platform (macOS, Linux, Windows) support for
+writing to various file formats (Markdown, DOCX, PDF, and plaintext),
+replacing text in existing files, automatic backups, custom encoding,
+and enhanced formatting options for specialized formats.
+
+<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(output_dir: str = "./",
+             timeout: Optional[float] = None,
+             default_encoding: str = "utf-8",
+             backup_enabled: bool = True) -> None
+```
+
+Initialize the FileWriteToolkit.
+
+**Arguments**:
+
+- `output_dir` _str_ - The default directory for output files.
+  Defaults to the current working directory.
+- `timeout` _Optional[float]_ - The timeout for the toolkit.
+- `(default` - :obj: `None`)
+- `default_encoding` _str_ - Default character encoding for text
+  operations. (default: :obj: `utf-8`)
+- `backup_enabled` _bool_ - Whether to create backups of existing files
+  before overwriting. (default: :obj: `True`)
+
+<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit.write_to_file"></a>
+
+#### write\_to\_file
+
+```python
+def write_to_file(content: Union[str, List[List[str]]],
+                  filename: str,
+                  encoding: Optional[str] = None) -> str
+```
+
+Write the given content to a file.
+
+If the file exists, it will be overwritten. Supports multiple formats:
+Markdown (.md, .markdown, default), Plaintext (.txt), CSV (.csv),
+DOC/DOCX (.doc, .docx), PDF (.pdf), JSON (.json), YAML (.yml, .yaml),
+and HTML (.html, .htm).
+
+**Arguments**:
+
+- `content` _Union[str, List[List[str]]]_ - The content to write to the
+  file. For all formats, content must be a string or list in the
+  appropriate format.
+- `filename` _str_ - The name or path of the file. If a relative path is
+  supplied, it is resolved to self.output_dir.
+- `encoding` _Optional[str]_ - The character encoding to use. (default:
+- `:obj` - `None`)
+  
+
+**Returns**:
+
+- `str` - A message indicating success or error details.
+
+<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit.get_tools"></a>
+
+#### get\_tools
+
+```python
+def get_tools() -> List[FunctionTool]
+```
+
+Return a list of FunctionTool objects representing the functions
+in the toolkit.
+
+**Returns**:
+
+- `List[FunctionTool]` - A list of FunctionTool objects representing
+  the available functions in this toolkit.
+

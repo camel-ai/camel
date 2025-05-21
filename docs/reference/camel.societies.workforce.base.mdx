@@ -1,0 +1,67 @@
+---
+title: "camel.societies.workforce.base"
+description: "Documentation for the camel.societies.workforce.base module"
+---
+
+<a id="camel.societies.workforce.base"></a>
+
+# camel.societies.workforce.base
+
+<a id="camel.societies.workforce.base.BaseNode"></a>
+
+## BaseNode Objects
+
+```python
+class BaseNode(ABC)
+```
+
+Base class for all nodes in the workforce.
+
+**Arguments**:
+
+- `description` _str_ - Description of the node.
+
+<a id="camel.societies.workforce.base.BaseNode.reset"></a>
+
+#### reset
+
+```python
+@check_if_running(False)
+def reset(*args: Any, **kwargs: Any) -> Any
+```
+
+Resets the node to its initial state.
+
+<a id="camel.societies.workforce.base.BaseNode.set_channel"></a>
+
+#### set\_channel
+
+```python
+@abstractmethod
+def set_channel(channel: TaskChannel)
+```
+
+Sets the channel for the node.
+
+<a id="camel.societies.workforce.base.BaseNode.start"></a>
+
+#### start
+
+```python
+@abstractmethod
+async def start()
+```
+
+Start the node.
+
+<a id="camel.societies.workforce.base.BaseNode.stop"></a>
+
+#### stop
+
+```python
+@abstractmethod
+def stop()
+```
+
+Stop the node.
+

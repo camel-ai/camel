@@ -1,0 +1,233 @@
+---
+title: "camel.toolkits.networkx_toolkit"
+description: "Documentation for the camel.toolkits.networkx_toolkit module"
+---
+
+<a id="camel.toolkits.networkx_toolkit"></a>
+
+# camel.toolkits.networkx\_toolkit
+
+<a id="camel.toolkits.networkx_toolkit.NetworkXToolkit"></a>
+
+## NetworkXToolkit Objects
+
+```python
+@MCPServer()
+class NetworkXToolkit(BaseToolkit)
+```
+
+<a id="camel.toolkits.networkx_toolkit.NetworkXToolkit.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(timeout: Optional[float] = None,
+             graph_type: Literal['graph', 'digraph', 'multigraph',
+                                 'multidigraph'] = 'graph')
+```
+
+Initializes the NetworkX graph client.
+
+**Arguments**:
+
+  graph_type (Literal['graph', 'digraph', 'multigraph',
+  'multidigraph']):
+  Type of graph to create. Options are:
+  - 'graph': Undirected graph
+  - 'digraph': Directed graph
+  - 'multigraph': Undirected graph with parallel edges
+  - 'multidigraph': Directed graph with parallel edges
+- `(default` - :obj:`'graph'`)
+- `timeout` _Optional[float]_ - The timeout value for API requests
+  in seconds. If None, no timeout is applied.
+- `(default` - :obj:`None`)
+
+<a id="camel.toolkits.networkx_toolkit.NetworkXToolkit.add_node"></a>
+
+#### add\_node
+
+```python
+def add_node(node_id: str, **attributes: Any) -> None
+```
+
+Adds a node to the graph.
+
+**Arguments**:
+
+- `node_id` _str_ - The ID of the node.
+- `attributes` _dict_ - Additional node attributes.
+
+<a id="camel.toolkits.networkx_toolkit.NetworkXToolkit.add_edge"></a>
+
+#### add\_edge
+
+```python
+def add_edge(source: str, target: str, **attributes: Any) -> None
+```
+
+Adds an edge to the graph.
+
+**Arguments**:
+
+- `source` _str_ - Source node ID.
+- `target` _str_ - Target node ID.
+- `attributes` _dict_ - Additional edge attributes.
+
+<a id="camel.toolkits.networkx_toolkit.NetworkXToolkit.get_nodes"></a>
+
+#### get\_nodes
+
+```python
+def get_nodes() -> List[str]
+```
+
+Returns all nodes in the graph.
+
+**Returns**:
+
+- `List[str]` - A list of node IDs.
+
+<a id="camel.toolkits.networkx_toolkit.NetworkXToolkit.get_edges"></a>
+
+#### get\_edges
+
+```python
+def get_edges() -> List[Tuple[str, str]]
+```
+
+Returns all edges in the graph.
+
+**Returns**:
+
+  List[Tuple[str, str]]: A list of edges as (source, target).
+
+<a id="camel.toolkits.networkx_toolkit.NetworkXToolkit.get_shortest_path"></a>
+
+#### get\_shortest\_path
+
+```python
+def get_shortest_path(
+        source: str,
+        target: str,
+        weight: Optional[Union[str, Callable]] = None,
+        method: Literal['dijkstra', 'bellman-ford'] = 'dijkstra') -> List[str]
+```
+
+Finds the shortest path between two nodes.
+
+**Arguments**:
+
+- `source` _str_ - The source node ID.
+- `target` _str_ - The target node ID.
+- `weight` _None, str or function, optional_ - Edge weights/distances.
+  If None, every edge has weight/distance/cost 1.
+  If string, use this edge attribute as the edge weight.
+  If function, the weight of an edge is the value returned by
+  the function. The function must accept three positional
+- `arguments` - the two endpoints and the edge attribute
+  dictionary. (default: :obj:`None`)
+- `method` _Literal['dijkstra', 'bellman-ford'], optional_ - Algorithm
+  to compute the path. Ignored if weight is None. (default:
+  :obj:`'dijkstra'`)
+  
+
+**Returns**:
+
+- `List[str]` - A list of nodes in the shortest path.
+
+<a id="camel.toolkits.networkx_toolkit.NetworkXToolkit.compute_centrality"></a>
+
+#### compute\_centrality
+
+```python
+def compute_centrality() -> Dict[str, float]
+```
+
+Computes centrality measures for the graph.
+
+**Returns**:
+
+  Dict[str, float]: Centrality values for each node.
+
+<a id="camel.toolkits.networkx_toolkit.NetworkXToolkit.serialize_graph"></a>
+
+#### serialize\_graph
+
+```python
+def serialize_graph() -> str
+```
+
+Serializes the graph to a JSON string.
+
+**Returns**:
+
+- `str` - The serialized graph in JSON format.
+
+<a id="camel.toolkits.networkx_toolkit.NetworkXToolkit.deserialize_graph"></a>
+
+#### deserialize\_graph
+
+```python
+def deserialize_graph(data: str) -> None
+```
+
+Loads a graph from a serialized JSON string.
+
+**Arguments**:
+
+- `data` _str_ - The JSON string representing the graph.
+
+<a id="camel.toolkits.networkx_toolkit.NetworkXToolkit.export_to_file"></a>
+
+#### export\_to\_file
+
+```python
+def export_to_file(file_path: str) -> None
+```
+
+Exports the graph to a file in JSON format.
+
+**Arguments**:
+
+- `file_path` _str_ - The file path to save the graph.
+
+<a id="camel.toolkits.networkx_toolkit.NetworkXToolkit.import_from_file"></a>
+
+#### import\_from\_file
+
+```python
+def import_from_file(file_path: str) -> None
+```
+
+Imports a graph from a JSON file.
+
+**Arguments**:
+
+- `file_path` _str_ - The file path to load the graph from.
+
+<a id="camel.toolkits.networkx_toolkit.NetworkXToolkit.clear_graph"></a>
+
+#### clear\_graph
+
+```python
+def clear_graph() -> None
+```
+
+Clears the current graph.
+
+<a id="camel.toolkits.networkx_toolkit.NetworkXToolkit.get_tools"></a>
+
+#### get\_tools
+
+```python
+def get_tools() -> List[FunctionTool]
+```
+
+Returns a list of FunctionTool objects representing the
+functions in the toolkit.
+
+**Returns**:
+
+- `List[FunctionTool]` - A list of FunctionTool objects for the
+  toolkit methods.
+

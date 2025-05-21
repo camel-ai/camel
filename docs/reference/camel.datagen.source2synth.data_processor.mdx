@@ -1,0 +1,206 @@
+---
+title: "camel.datagen.source2synth.data_processor"
+description: "Documentation for the camel.datagen.source2synth.data_processor module"
+---
+
+<a id="camel.datagen.source2synth.data_processor"></a>
+
+# camel.datagen.source2synth.data\_processor
+
+<a id="camel.datagen.source2synth.data_processor.UserDataProcessor"></a>
+
+## UserDataProcessor Objects
+
+```python
+class UserDataProcessor()
+```
+
+A processor for generating multi-hop question-answer pairs from user
+data.
+
+This class handles the processing of text data to generate multi-hop
+question-answer pairs using either an AI model or rule-based approaches.
+It manages the entire pipeline from text preprocessing to dataset curation.
+
+**Attributes**:
+
+- `config` _ProcessorConfig_ - Configuration for data processing parameters.
+- `rng` _random.Random_ - Random number generator for reproducibility.
+- `multi_hop_agent` _Optional[MultiHopGeneratorAgent]_ - Agent for
+  generating QA pairs.
+
+<a id="camel.datagen.source2synth.data_processor.UserDataProcessor.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(config: Optional[ProcessorConfig] = None)
+```
+
+Initialize the UserDataProcessor.
+
+**Arguments**:
+
+- `config` _Optional[ProcessorConfig], optional_ - Configuration for
+  data processing. (default: :obj:`None`)
+
+<a id="camel.datagen.source2synth.data_processor.UserDataProcessor.process_text"></a>
+
+#### process\_text
+
+```python
+def process_text(text: str,
+                 source: str = "user_input") -> List[Dict[str, Any]]
+```
+
+Process a single text to generate multi-hop QA pairs.
+
+**Arguments**:
+
+- `text` _str_ - The input text to process.
+- `source` _str, optional_ - Source identifier for the text.
+- `(default` - :obj:`"user_input"`)
+  
+
+**Returns**:
+
+  List[Dict[str, Any]]: List of processed examples with QA pairs and
+  metadata.
+
+<a id="camel.datagen.source2synth.data_processor.UserDataProcessor.process_batch"></a>
+
+#### process\_batch
+
+```python
+def process_batch(texts: List[str],
+                  sources: Optional[List[str]] = None) -> List[Dict[str, Any]]
+```
+
+Process multiple texts in batch to generate multi-hop QA pairs.
+
+**Arguments**:
+
+- `texts` _List[str]_ - List of input texts to process.
+- `sources` _Optional[List[str]], optional_ - List of source
+  identifiers. (default: :obj:`None`)
+  
+
+**Returns**:
+
+  List[Dict[str, Any]]: List of processed examples with QA pairs and
+  metadata.
+  
+
+**Raises**:
+
+- `ValueError` - If length of sources doesn't match length of texts.
+
+<a id="camel.datagen.source2synth.data_processor.ExampleConstructor"></a>
+
+## ExampleConstructor Objects
+
+```python
+class ExampleConstructor()
+```
+
+Constructs training examples from raw text data.
+
+This class handles the construction of training examples by preprocessing
+text, extracting information pairs, and generating question-answer pairs.
+
+**Attributes**:
+
+- `config` _ProcessorConfig_ - Configuration for example construction.
+- `multi_hop_agent` _Optional[MultiHopGeneratorAgent]_ - Agent for QA
+  generation.
+
+<a id="camel.datagen.source2synth.data_processor.ExampleConstructor.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(config: ProcessorConfig,
+             multi_hop_agent: Optional[MultiHopGeneratorAgent] = None)
+```
+
+Initialize the ExampleConstructor.
+
+**Arguments**:
+
+- `config` _ProcessorConfig_ - Configuration for example construction.
+  multi_hop_agent (Optional[MultiHopGeneratorAgent], optional):
+  Agent for generating multi-hop QA pairs. (default: :obj:`None`)
+
+<a id="camel.datagen.source2synth.data_processor.ExampleConstructor.construct_examples"></a>
+
+#### construct\_examples
+
+```python
+def construct_examples(raw_data: List[Dict[str, Any]]) -> List[Dict[str, Any]]
+```
+
+Construct training examples from raw data.
+
+**Arguments**:
+
+- `raw_data` _List[Dict[str, Any]]_ - List of raw data dictionaries
+  containing text and metadata.
+  
+
+**Returns**:
+
+  List[Dict[str, Any]]: List of constructed examples with QA pairs
+  and metadata.
+
+<a id="camel.datagen.source2synth.data_processor.DataCurator"></a>
+
+## DataCurator Objects
+
+```python
+class DataCurator()
+```
+
+Manages and curates datasets of multi-hop question-answer pairs.
+
+This class handles dataset management tasks including quality filtering,
+complexity filtering, deduplication, and dataset sampling.
+
+**Attributes**:
+
+- `config` _ProcessorConfig_ - Configuration for data curation parameters.
+- `rng` _random.Random_ - Random number generator for reproducible sampling.
+
+<a id="camel.datagen.source2synth.data_processor.DataCurator.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(config: ProcessorConfig, rng: random.Random)
+```
+
+Initialize the DataCurator.
+
+**Arguments**:
+
+- `config` _ProcessorConfig_ - Configuration for data curation.
+- `rng` _random.Random_ - Random number generator for reproducibility.
+
+<a id="camel.datagen.source2synth.data_processor.DataCurator.curate_dataset"></a>
+
+#### curate\_dataset
+
+```python
+def curate_dataset(examples: List[Dict[str, Any]]) -> List[Dict[str, Any]]
+```
+
+Manage and curate a dataset through multiple filtering stages.
+
+**Arguments**:
+
+- `examples` _List[Dict[str, Any]]_ - List of examples to curate.
+  
+
+**Returns**:
+
+  List[Dict[str, Any]]: Curated dataset meeting quality criteria.
+

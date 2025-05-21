@@ -1,0 +1,69 @@
+---
+title: "camel.configs.litellm_config"
+description: "Documentation for the camel.configs.litellm_config module"
+---
+
+<a id="camel.configs.litellm_config"></a>
+
+# camel.configs.litellm\_config
+
+<a id="camel.configs.litellm_config.LiteLLMConfig"></a>
+
+## LiteLLMConfig Objects
+
+```python
+class LiteLLMConfig(BaseConfig)
+```
+
+Defines the parameters for generating chat completions using the
+LiteLLM API.
+
+**Arguments**:
+
+- `timeout` _Optional[Union[float, str]], optional_ - Request timeout.
+- `(default` - :obj:`None`)
+- `temperature` _Optional[float], optional_ - Temperature parameter for
+  controlling randomness. (default: :obj:`None`)
+- `top_p` _Optional[float], optional_ - Top-p parameter for nucleus
+  sampling. (default: :obj:`None`)
+- `n` _Optional[int], optional_ - Number of completions to generate.
+- `(default` - :obj:`None`)
+- `stream` _Optional[bool], optional_ - Whether to return a streaming
+  response. (default: :obj:`None`)
+- `stream_options` _Optional[dict], optional_ - Options for the streaming
+  response. (default: :obj:`None`)
+- `stop` _Optional[Union[str, List[str]]], optional_ - Sequences where the
+  API will stop generating further tokens. (default: :obj:`None`)
+- `max_tokens` _Optional[int], optional_ - Maximum number of tokens to
+  generate. (default: :obj:`None`)
+- `presence_penalty` _Optional[float], optional_ - Penalize new tokens
+  based on their existence in the text so far. (default: :obj:`None`)
+- `frequency_penalty` _Optional[float], optional_ - Penalize new tokens
+  based on their frequency in the text so far. (default: :obj:`None`)
+- `logit_bias` _Optional[dict], optional_ - Modify the probability of
+  specific tokens appearing in the completion. (default: :obj:`None`)
+- `user` _Optional[str], optional_ - A unique identifier representing the
+  end-user. (default: :obj:`None`)
+- `response_format` _Optional[dict], optional_ - Response format
+  parameters. (default: :obj:`None`)
+- `seed` _Optional[int], optional_ - Random seed. (default: :obj:`None`)
+- `tools` _Optional[List], optional_ - List of tools. (default: :obj:`None`)
+- `tool_choice` _Optional[Union[str, dict]], optional_ - Tool choice
+  parameters. (default: :obj:`None`)
+- `logprobs` _Optional[bool], optional_ - Whether to return log
+  probabilities of the output tokens. (default: :obj:`None`)
+- `top_logprobs` _Optional[int], optional_ - Number of most likely tokens
+  to return at each token position. (default: :obj:`None`)
+- `deployment_id` _Optional[str], optional_ - Deployment ID.
+- `(default` - :obj:`None`)
+- `extra_headers` _Optional[dict], optional_ - Additional headers for the
+  request. (default: :obj:`None`)
+- `api_version` _Optional[str], optional_ - API version.
+- `(default` - :obj:`None`)
+- `mock_response` _Optional[str], optional_ - Mock completion response for
+  testing or debugging. (default: :obj:`None`)
+- `custom_llm_provider` _Optional[str], optional_ - Non-OpenAI LLM
+  provider. (default: :obj:`None`)
+- `max_retries` _Optional[int], optional_ - Maximum number of retries.
+- `(default` - :obj:`None`)
+

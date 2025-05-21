@@ -1,0 +1,71 @@
+---
+title: "camel.embeddings.openai_embedding"
+description: "Documentation for the camel.embeddings.openai_embedding module"
+---
+
+<a id="camel.embeddings.openai_embedding"></a>
+
+# camel.embeddings.openai\_embedding
+
+<a id="camel.embeddings.openai_embedding.OpenAIEmbedding"></a>
+
+## OpenAIEmbedding Objects
+
+```python
+class OpenAIEmbedding(BaseEmbedding[str])
+```
+
+Provides text embedding functionalities using OpenAI's models.
+
+**Arguments**:
+
+- `model_type` _EmbeddingModelType_ - The model type to be used for text
+  embeddings.
+- `(default` - :obj:`TEXT_EMBEDDING_3_SMALL`)
+- `url` _Optional[str]_ - The url to the OpenAI service.
+- `(default` - :obj:`None`)
+- `api_key` _Optional[str]_ - The API key for authenticating with
+  the OpenAI service. (default: :obj:`None`)
+- `dimensions` _Union[int, NotGiven]_ - The text embedding output
+  dimensions. (default: :obj:`NOT_GIVEN`)
+  
+
+**Raises**:
+
+- `RuntimeError` - If an unsupported model type is specified.
+
+<a id="camel.embeddings.openai_embedding.OpenAIEmbedding.embed_list"></a>
+
+#### embed\_list
+
+```python
+def embed_list(objs: list[str], **kwargs: Any) -> list[list[float]]
+```
+
+Generates embeddings for the given texts.
+
+**Arguments**:
+
+- `objs` _list[str]_ - The texts for which to generate the embeddings.
+- `**kwargs` _Any_ - Extra kwargs passed to the embedding API.
+  
+
+**Returns**:
+
+- `list[list[float]]` - A list that represents the generated embedding
+  as a list of floating-point numbers.
+
+<a id="camel.embeddings.openai_embedding.OpenAIEmbedding.get_output_dim"></a>
+
+#### get\_output\_dim
+
+```python
+def get_output_dim() -> int
+```
+
+Returns the output dimension of the embeddings.
+
+**Returns**:
+
+- `int` - The dimensionality of the embedding for the current model.
+

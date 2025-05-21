@@ -1,0 +1,39 @@
+---
+title: "camel.toolkits.base"
+description: "Documentation for the camel.toolkits.base module"
+---
+
+<a id="camel.toolkits.base"></a>
+
+# camel.toolkits.base
+
+<a id="camel.toolkits.base.BaseToolkit"></a>
+
+## BaseToolkit Objects
+
+```python
+class BaseToolkit(metaclass=AgentOpsMeta)
+```
+
+Base class for toolkits.
+
+**Arguments**:
+
+- `timeout` _Optional[float]_ - The timeout for the toolkit.
+
+<a id="camel.toolkits.base.BaseToolkit.get_tools"></a>
+
+#### get\_tools
+
+```python
+def get_tools() -> List[FunctionTool]
+```
+
+Returns a list of FunctionTool objects representing the
+functions in the toolkit.
+
+**Returns**:
+
+- `List[FunctionTool]` - A list of FunctionTool objects
+  representing the functions in the toolkit.
+

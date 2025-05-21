@@ -1,0 +1,215 @@
+---
+title: "camel.toolkits.google_calendar_toolkit"
+description: "Documentation for the camel.toolkits.google_calendar_toolkit module"
+---
+
+<a id="camel.toolkits.google_calendar_toolkit"></a>
+
+# camel.toolkits.google\_calendar\_toolkit
+
+<a id="camel.toolkits.google_calendar_toolkit.GoogleCalendarToolkit"></a>
+
+## GoogleCalendarToolkit Objects
+
+```python
+@MCPServer()
+class GoogleCalendarToolkit(BaseToolkit)
+```
+
+A class representing a toolkit for Google Calendar operations.
+
+This class provides methods for creating events, retrieving events,
+updating events, and deleting events from a Google Calendar.
+
+<a id="camel.toolkits.google_calendar_toolkit.GoogleCalendarToolkit.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(timeout: Optional[float] = None)
+```
+
+Initializes a new instance of the GoogleCalendarToolkit class.
+
+**Arguments**:
+
+- `timeout` _Optional[float]_ - The timeout value for API requests
+  in seconds. If None, no timeout is applied.
+- `(default` - :obj:`None`)
+
+<a id="camel.toolkits.google_calendar_toolkit.GoogleCalendarToolkit.create_event"></a>
+
+#### create\_event
+
+```python
+def create_event(event_title: str,
+                 start_time: str,
+                 end_time: str,
+                 description: str = "",
+                 location: str = "",
+                 attendees_email: Optional[List[str]] = None,
+                 timezone: str = "UTC") -> Dict[str, Any]
+```
+
+Creates an event in the user's primary Google Calendar.
+
+**Arguments**:
+
+- `event_title` _str_ - Title of the event.
+- `start_time` _str_ - Start time in ISO format (YYYY-MM-DDTHH:MM:SS).
+- `end_time` _str_ - End time in ISO format (YYYY-MM-DDTHH:MM:SS).
+- `description` _str, optional_ - Description of the event.
+- `location` _str, optional_ - Location of the event.
+- `attendees_email` _List[str], optional_ - List of email addresses.
+- `(default` - :obj:`None`)
+- `timezone` _str, optional_ - Timezone for the event.
+- `(default` - :obj:`UTC`)
+  
+
+**Returns**:
+
+- `dict` - A dictionary containing details of the created event.
+  
+
+**Raises**:
+
+- `ValueError` - If the event creation fails.
+
+<a id="camel.toolkits.google_calendar_toolkit.GoogleCalendarToolkit.get_events"></a>
+
+#### get\_events
+
+```python
+def get_events(
+    max_results: int = 10,
+    time_min: Optional[str] = None
+) -> Union[List[Dict[str, Any]], Dict[str, Any]]
+```
+
+Retrieves upcoming events from the user's primary Google Calendar.
+
+**Arguments**:
+
+- `max_results` _int, optional_ - Maximum number of events to retrieve.
+- `(default` - :obj:`10`)
+- `time_min` _str, optional_ - The minimum time to fetch events from.
+  If not provided, defaults to the current time.
+- `(default` - :obj:`None`)
+  
+
+**Returns**:
+
+  Union[List[Dict[str, Any]], Dict[str, Any]]: A list of
+  dictionaries, each containing details of an event, or a
+  dictionary with an error message.
+  
+
+**Raises**:
+
+- `ValueError` - If the event retrieval fails.
+
+<a id="camel.toolkits.google_calendar_toolkit.GoogleCalendarToolkit.update_event"></a>
+
+#### update\_event
+
+```python
+def update_event(
+        event_id: str,
+        event_title: Optional[str] = None,
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = None,
+        description: Optional[str] = None,
+        location: Optional[str] = None,
+        attendees_email: Optional[List[str]] = None) -> Dict[str, Any]
+```
+
+Updates an existing event in the user's primary Google Calendar.
+
+**Arguments**:
+
+- `event_id` _str_ - The ID of the event to update.
+- `event_title` _Optional[str]_ - New title of the event.
+- `(default` - :obj:`None`)
+- `start_time` _Optional[str]_ - New start time in ISO format
+  (YYYY-MM-DDTHH:MM:SSZ).
+- `(default` - :obj:`None`)
+- `end_time` _Optional[str]_ - New end time in ISO format
+  (YYYY-MM-DDTHH:MM:SSZ).
+- `(default` - :obj:`None`)
+- `description` _Optional[str]_ - New description of the event.
+- `(default` - :obj:`None`)
+- `location` _Optional[str]_ - New location of the event.
+- `(default` - :obj:`None`)
+- `attendees_email` _Optional[List[str]]_ - List of email addresses.
+- `(default` - :obj:`None`)
+  
+
+**Returns**:
+
+  Dict[str, Any]: A dictionary containing details of the updated
+  event.
+  
+
+**Raises**:
+
+- `ValueError` - If the event update fails.
+
+<a id="camel.toolkits.google_calendar_toolkit.GoogleCalendarToolkit.delete_event"></a>
+
+#### delete\_event
+
+```python
+def delete_event(event_id: str) -> str
+```
+
+Deletes an event from the user's primary Google Calendar.
+
+**Arguments**:
+
+- `event_id` _str_ - The ID of the event to delete.
+  
+
+**Returns**:
+
+- `str` - A message indicating the result of the deletion.
+  
+
+**Raises**:
+
+- `ValueError` - If the event deletion fails.
+
+<a id="camel.toolkits.google_calendar_toolkit.GoogleCalendarToolkit.get_calendar_details"></a>
+
+#### get\_calendar\_details
+
+```python
+def get_calendar_details() -> Dict[str, Any]
+```
+
+Retrieves details about the user's primary Google Calendar.
+
+**Returns**:
+
+- `dict` - A dictionary containing details about the calendar.
+  
+
+**Raises**:
+
+- `ValueError` - If the calendar details retrieval fails.
+
+<a id="camel.toolkits.google_calendar_toolkit.GoogleCalendarToolkit.get_tools"></a>
+
+#### get\_tools
+
+```python
+def get_tools() -> List[FunctionTool]
+```
+
+Returns a list of FunctionTool objects representing the
+functions in the toolkit.
+
+**Returns**:
+
+- `List[FunctionTool]` - A list of FunctionTool objects
+  representing the functions in the toolkit.
+

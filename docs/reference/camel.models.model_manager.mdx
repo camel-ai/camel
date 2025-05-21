@@ -1,0 +1,266 @@
+---
+title: "camel.models.model_manager"
+description: "Documentation for the camel.models.model_manager module"
+---
+
+<a id="camel.models.model_manager"></a>
+
+# camel.models.model\_manager
+
+<a id="camel.models.model_manager.ModelProcessingError"></a>
+
+## ModelProcessingError Objects
+
+```python
+class ModelProcessingError(Exception)
+```
+
+Raised when an error occurs during model processing.
+
+<a id="camel.models.model_manager.ModelManager"></a>
+
+## ModelManager Objects
+
+```python
+class ModelManager()
+```
+
+ModelManager choosing a model from provided list.
+Models are picked according to defined strategy.
+
+**Arguments**:
+
+  models(Union[BaseModelBackend, List[BaseModelBackend]]):
+  model backend or list of model backends
+  (e.g., model instances, APIs)
+- `scheduling_strategy` _str_ - name of function that defines how
+  to select the next model. (default: :str:`round_robin`)
+
+<a id="camel.models.model_manager.ModelManager.model_type"></a>
+
+#### model\_type
+
+```python
+@property
+def model_type() -> UnifiedModelType
+```
+
+Return type of the current model.
+
+**Returns**:
+
+  Union[ModelType, str]: Current model type.
+
+<a id="camel.models.model_manager.ModelManager.model_config_dict"></a>
+
+#### model\_config\_dict
+
+```python
+@property
+def model_config_dict() -> Dict[str, Any]
+```
+
+Return model_config_dict of the current model.
+
+**Returns**:
+
+  Dict[str, Any]: Config dictionary of the current model.
+
+<a id="camel.models.model_manager.ModelManager.model_config_dict"></a>
+
+#### model\_config\_dict
+
+```python
+@model_config_dict.setter
+def model_config_dict(model_config_dict: Dict[str, Any])
+```
+
+Set model_config_dict to the current model.
+
+**Arguments**:
+
+- `model_config_dict` _Dict[str, Any]_ - Config dictionary to be set at
+  current model.
+
+<a id="camel.models.model_manager.ModelManager.current_model_index"></a>
+
+#### current\_model\_index
+
+```python
+@property
+def current_model_index() -> int
+```
+
+Return the index of current model in self.models list.
+
+**Returns**:
+
+- `int` - index of current model in given list of models.
+
+<a id="camel.models.model_manager.ModelManager.num_models"></a>
+
+#### num\_models
+
+```python
+@property
+def num_models() -> int
+```
+
+Return the number of models in the manager.
+
+**Returns**:
+
+- `int` - The number of models available in the model manager.
+
+<a id="camel.models.model_manager.ModelManager.token_limit"></a>
+
+#### token\_limit
+
+```python
+@property
+def token_limit()
+```
+
+Returns the maximum token limit for current model.
+
+This method retrieves the maximum token limit either from the
+`model_config_dict` or from the model's default token limit.
+
+**Returns**:
+
+- `int` - The maximum token limit for the given model.
+
+<a id="camel.models.model_manager.ModelManager.token_counter"></a>
+
+#### token\_counter
+
+```python
+@property
+def token_counter() -> BaseTokenCounter
+```
+
+Return token_counter of the current model.
+
+**Returns**:
+
+- `BaseTokenCounter` - The token counter following the model's
+  tokenization style.
+
+<a id="camel.models.model_manager.ModelManager.add_strategy"></a>
+
+#### add\_strategy
+
+```python
+def add_strategy(name: str, strategy_fn: Callable)
+```
+
+Add a scheduling strategy method provided by user in case when none
+of existent strategies fits.
+When custom strategy is provided, it will be set as
+"self.scheduling_strategy" attribute.
+
+**Arguments**:
+
+- `name` _str_ - The name of the strategy.
+- `strategy_fn` _Callable_ - The scheduling strategy function.
+
+<a id="camel.models.model_manager.ModelManager.round_robin"></a>
+
+#### round\_robin
+
+```python
+def round_robin() -> BaseModelBackend
+```
+
+Return models one by one in simple round-robin fashion.
+
+**Returns**:
+
+  BaseModelBackend for processing incoming messages.
+
+<a id="camel.models.model_manager.ModelManager.always_first"></a>
+
+#### always\_first
+
+```python
+def always_first() -> BaseModelBackend
+```
+
+Always return the first model from self.models.
+
+**Returns**:
+
+  BaseModelBackend for processing incoming messages.
+
+<a id="camel.models.model_manager.ModelManager.random_model"></a>
+
+#### random\_model
+
+```python
+def random_model() -> BaseModelBackend
+```
+
+Return random model from self.models list.
+
+**Returns**:
+
+  BaseModelBackend for processing incoming messages.
+
+<a id="camel.models.model_manager.ModelManager.run"></a>
+
+#### run
+
+```python
+def run(
+    messages: List[OpenAIMessage],
+    response_format: Optional[Type[BaseModel]] = None,
+    tools: Optional[List[Dict[str, Any]]] = None
+) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]
+```
+
+Process a list of messages by selecting a model based on
+the scheduling strategy.
+Sends the entire list of messages to the selected model,
+and returns a single response.
+
+**Arguments**:
+
+- `messages` _List[OpenAIMessage]_ - Message list with the chat
+  history in OpenAI API format.
+  
+
+**Returns**:
+
+  Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+  `ChatCompletion` in the non-stream mode, or
+  `Stream[ChatCompletionChunk]` in the stream mode.
+
+<a id="camel.models.model_manager.ModelManager.arun"></a>
+
+#### arun
+
+```python
+async def arun(
+    messages: List[OpenAIMessage],
+    response_format: Optional[Type[BaseModel]] = None,
+    tools: Optional[List[Dict[str, Any]]] = None
+) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]
+```
+
+Process a list of messages by selecting a model based on
+the scheduling strategy.
+Sends the entire list of messages to the selected model,
+and returns a single response.
+
+**Arguments**:
+
+- `messages` _List[OpenAIMessage]_ - Message list with the chat
+  history in OpenAI API format.
+  
+
+**Returns**:
+
+  Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+  `ChatCompletion` in the non-stream mode, or
+  `AsyncStream[ChatCompletionChunk]` in the stream mode.
+

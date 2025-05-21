@@ -1,0 +1,301 @@
+---
+title: "camel.types.unified_model_type"
+description: "Documentation for the camel.types.unified_model_type module"
+---
+
+<a id="camel.types.unified_model_type"></a>
+
+# camel.types.unified\_model\_type
+
+<a id="camel.types.unified_model_type.UnifiedModelType"></a>
+
+## UnifiedModelType Objects
+
+```python
+class UnifiedModelType(str)
+```
+
+Class used for support both :obj:`ModelType` and :obj:`str` to be used
+to represent a model type in a unified way. This class is a subclass of
+:obj:`str` so that it can be used as string seamlessly.
+
+**Arguments**:
+
+- `value` _Union[ModelType, str]_ - The value of the model type.
+
+<a id="camel.types.unified_model_type.UnifiedModelType.value_for_tiktoken"></a>
+
+#### value\_for\_tiktoken
+
+```python
+@property
+def value_for_tiktoken() -> str
+```
+
+Returns the model name for TikToken.
+
+<a id="camel.types.unified_model_type.UnifiedModelType.token_limit"></a>
+
+#### token\_limit
+
+```python
+@property
+def token_limit() -> int
+```
+
+Returns the token limit for the model. Here we set the default
+value as `999_999_999` if it's not provided from `model_config_dict`
+
+<a id="camel.types.unified_model_type.UnifiedModelType.is_openai"></a>
+
+#### is\_openai
+
+```python
+@property
+def is_openai() -> bool
+```
+
+Returns whether the model is an OpenAI model.
+
+<a id="camel.types.unified_model_type.UnifiedModelType.is_aws_bedrock"></a>
+
+#### is\_aws\_bedrock
+
+```python
+@property
+def is_aws_bedrock() -> bool
+```
+
+Returns whether the model is an AWS Bedrock model.
+
+<a id="camel.types.unified_model_type.UnifiedModelType.is_anthropic"></a>
+
+#### is\_anthropic
+
+```python
+@property
+def is_anthropic() -> bool
+```
+
+Returns whether the model is an Anthropic model.
+
+<a id="camel.types.unified_model_type.UnifiedModelType.is_azure_openai"></a>
+
+#### is\_azure\_openai
+
+```python
+@property
+def is_azure_openai() -> bool
+```
+
+Returns whether the model is an Azure OpenAI model.
+
+<a id="camel.types.unified_model_type.UnifiedModelType.is_groq"></a>
+
+#### is\_groq
+
+```python
+@property
+def is_groq() -> bool
+```
+
+Returns whether the model is a Groq served model.
+
+<a id="camel.types.unified_model_type.UnifiedModelType.is_openrouter"></a>
+
+#### is\_openrouter
+
+```python
+@property
+def is_openrouter() -> bool
+```
+
+Returns whether the model is a OpenRouter served model.
+
+<a id="camel.types.unified_model_type.UnifiedModelType.is_lmstudio"></a>
+
+#### is\_lmstudio
+
+```python
+@property
+def is_lmstudio() -> bool
+```
+
+Returns whether the model is a LMStudio served model.
+
+<a id="camel.types.unified_model_type.UnifiedModelType.is_ppio"></a>
+
+#### is\_ppio
+
+```python
+@property
+def is_ppio() -> bool
+```
+
+Returns whether the model is a PPIO served model.
+
+<a id="camel.types.unified_model_type.UnifiedModelType.is_zhipuai"></a>
+
+#### is\_zhipuai
+
+```python
+@property
+def is_zhipuai() -> bool
+```
+
+Returns whether the model is a Zhipuai model.
+
+<a id="camel.types.unified_model_type.UnifiedModelType.is_gemini"></a>
+
+#### is\_gemini
+
+```python
+@property
+def is_gemini() -> bool
+```
+
+Returns whether the model is a Gemini model.
+
+<a id="camel.types.unified_model_type.UnifiedModelType.is_mistral"></a>
+
+#### is\_mistral
+
+```python
+@property
+def is_mistral() -> bool
+```
+
+Returns whether the model is a Mistral model.
+
+<a id="camel.types.unified_model_type.UnifiedModelType.is_netmind"></a>
+
+#### is\_netmind
+
+```python
+@property
+def is_netmind() -> bool
+```
+
+Returns whether the model is a Netmind model.
+
+<a id="camel.types.unified_model_type.UnifiedModelType.is_reka"></a>
+
+#### is\_reka
+
+```python
+@property
+def is_reka() -> bool
+```
+
+Returns whether the model is a Reka model.
+
+<a id="camel.types.unified_model_type.UnifiedModelType.is_cohere"></a>
+
+#### is\_cohere
+
+```python
+@property
+def is_cohere() -> bool
+```
+
+Returns whether the model is a Cohere model.
+
+<a id="camel.types.unified_model_type.UnifiedModelType.is_yi"></a>
+
+#### is\_yi
+
+```python
+@property
+def is_yi() -> bool
+```
+
+Returns whether the model is a Yi model.
+
+<a id="camel.types.unified_model_type.UnifiedModelType.is_qwen"></a>
+
+#### is\_qwen
+
+```python
+@property
+def is_qwen() -> bool
+```
+
+Returns whether the model is a Qwen model.
+
+<a id="camel.types.unified_model_type.UnifiedModelType.is_internlm"></a>
+
+#### is\_internlm
+
+```python
+@property
+def is_internlm() -> bool
+```
+
+Returns whether the model is a InternLM model.
+
+<a id="camel.types.unified_model_type.UnifiedModelType.is_modelscope"></a>
+
+#### is\_modelscope
+
+```python
+@property
+def is_modelscope() -> bool
+```
+
+Returns whether the model is a ModelScope serverd model.
+
+<a id="camel.types.unified_model_type.UnifiedModelType.is_moonshot"></a>
+
+#### is\_moonshot
+
+```python
+@property
+def is_moonshot() -> bool
+```
+
+Returns whether this platform is Moonshot model.
+
+<a id="camel.types.unified_model_type.UnifiedModelType.is_novita"></a>
+
+#### is\_novita
+
+```python
+@property
+def is_novita() -> bool
+```
+
+Returns whether the model is a Novita served model.
+
+<a id="camel.types.unified_model_type.UnifiedModelType.is_watsonx"></a>
+
+#### is\_watsonx
+
+```python
+@property
+def is_watsonx() -> bool
+```
+
+Returns whether the model is a WatsonX served model.
+
+<a id="camel.types.unified_model_type.UnifiedModelType.support_native_structured_output"></a>
+
+#### support\_native\_structured\_output
+
+```python
+@property
+def support_native_structured_output() -> bool
+```
+
+Returns whether the model supports native structured output.
+
+<a id="camel.types.unified_model_type.UnifiedModelType.support_native_tool_calling"></a>
+
+#### support\_native\_tool\_calling
+
+```python
+@property
+def support_native_tool_calling() -> bool
+```
+
+Returns whether the model supports native tool calling.
+

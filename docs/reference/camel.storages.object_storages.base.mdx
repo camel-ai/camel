@@ -1,0 +1,100 @@
+---
+title: "camel.storages.object_storages.base"
+description: "Documentation for the camel.storages.object_storages.base module"
+---
+
+<a id="camel.storages.object_storages.base"></a>
+
+# camel.storages.object\_storages.base
+
+<a id="camel.storages.object_storages.base.BaseObjectStorage"></a>
+
+## BaseObjectStorage Objects
+
+```python
+class BaseObjectStorage(ABC)
+```
+
+<a id="camel.storages.object_storages.base.BaseObjectStorage.object_exists"></a>
+
+#### object\_exists
+
+```python
+def object_exists(file_path: PurePath) -> bool
+```
+
+Check if the object exists in the storage.
+
+**Arguments**:
+
+- `file_path` _PurePath_ - The path to the object in the storage.
+  
+
+**Returns**:
+
+- `bool` - True if the object exists, False otherwise.
+
+<a id="camel.storages.object_storages.base.BaseObjectStorage.put_file"></a>
+
+#### put\_file
+
+```python
+def put_file(file_path: PurePath, file: File) -> None
+```
+
+Put a file to the object storage.
+
+**Arguments**:
+
+- `file_path` _PurePath_ - The path to the object in the storage.
+- `file` _File_ - The file to be put.
+
+<a id="camel.storages.object_storages.base.BaseObjectStorage.get_file"></a>
+
+#### get\_file
+
+```python
+def get_file(file_path: PurePath) -> File
+```
+
+Get a file from the object storage.
+
+**Arguments**:
+
+- `file_path` _PurePath_ - The path to the object in the storage.
+  
+
+**Returns**:
+
+- `File` - The file object get from the storage.
+
+<a id="camel.storages.object_storages.base.BaseObjectStorage.upload_file"></a>
+
+#### upload\_file
+
+```python
+def upload_file(local_file_path: Path, remote_file_path: PurePath) -> None
+```
+
+Upload a local file to the object storage.
+
+**Arguments**:
+
+- `local_file_path` _Path_ - The path to the local file to be uploaded.
+- `remote_file_path` _PurePath_ - The path to the object in storage.
+
+<a id="camel.storages.object_storages.base.BaseObjectStorage.download_file"></a>
+
+#### download\_file
+
+```python
+def download_file(local_file_path: Path, remote_file_path: PurePath) -> None
+```
+
+Download a file from the object storage to the local system.
+
+**Arguments**:
+
+- `local_file_path` _Path_ - The path to the local file to be saved.
+- `remote_file_path` _PurePath_ - The path to the object in storage.
+

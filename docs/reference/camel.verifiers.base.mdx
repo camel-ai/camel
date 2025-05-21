@@ -1,0 +1,185 @@
+---
+title: "camel.verifiers.base"
+description: "Documentation for the camel.verifiers.base module"
+---
+
+<a id="camel.verifiers.base"></a>
+
+# camel.verifiers.base
+
+<a id="camel.verifiers.base.BaseVerifier"></a>
+
+## BaseVerifier Objects
+
+```python
+class BaseVerifier(ABC)
+```
+
+Base class for all verifiers.
+
+**Example**:
+
+    ```python
+    verifier = MyVerifier()
+    await verifier.setup()
+    result = await verifier.verify(response)
+    await verifier.cleanup()
+    ```
+  
+  Key Features:
+  - Async verification with retry logic
+  - Comprehensive error handling and logging
+  - Configurable batch processing
+  - Resource monitoring for adaptive scaling
+
+<a id="camel.verifiers.base.BaseVerifier.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(extractor: Optional[BaseExtractor] = None,
+             max_parallel: Optional[int] = None,
+             timeout: Optional[float] = None,
+             max_retries: int = 3,
+             retry_delay: float = 1.0,
+             initial_batch_size: Optional[int] = None,
+             cpu_threshold: float = 80.0,
+             memory_threshold: float = 85.0,
+             **kwargs)
+```
+
+Initialize the verifier with configuration parameters.
+
+**Arguments**:
+
+- `max_parallel` - Maximum number of parallel verifications. If None,
+  determined dynamically based on system resources.
+- `(default` - :obj:`None`)
+- `timeout` - Timeout in seconds for each verification. (default:
+  :obj:`None`)
+- `max_retries` - Maximum number of retry attempts. (default: :obj:`3`)
+- `retry_delay` - Delay between retries in seconds. (default:
+  :obj:`1.0`)
+- `initial_batch_size` - Initial size for batch processing. If None,
+  defaults to 10. (default: :obj:`None`)
+- `cpu_threshold` - CPU usage percentage threshold for scaling down.
+- `(default` - :obj:`80.0`)
+- `memory_threshold` - Memory usage percentage threshold for scaling
+  down. (default: :obj:`85.0`)
+- `**kwargs` - Additional verifier parameters.
+
+<a id="camel.verifiers.base.BaseVerifier.setup"></a>
+
+#### setup
+
+```python
+async def setup(**kwargs) -> None
+```
+
+Set up the verifier with necessary resources.
+
+Initializes:
+1. Batch processor with validated parameters
+2. Any verifier-specific resources
+
+**Raises**:
+
+- `RuntimeError` - If setup fails or resources cannot be initialized.
+
+<a id="camel.verifiers.base.BaseVerifier.cleanup"></a>
+
+#### cleanup
+
+```python
+async def cleanup() -> None
+```
+
+Clean up verifier resources.
+
+Ensures:
+1. Batch processor is reset
+2. All internal states are cleared
+
+**Raises**:
+
+- `RuntimeError` - If cleanup fails.
+
+<a id="camel.verifiers.base.BaseVerifier.verify"></a>
+
+#### verify
+
+```python
+async def verify(solution: str,
+                 reference_answer: Optional[str]) -> VerificationResult
+```
+
+Perform verification with full error handling.
+
+This method verifies the correctness of a generated solution by
+comparing it against the provided ground truth. It handles
+execution errors, timeouts, and retry attempts to ensure robust
+validation.
+
+**Arguments**:
+
+- `solution` _str_ - The generated response that needs verification.
+- `reference_answer` _Optional[str]_ - The expected correct answer to
+  compare against.
+  
+
+**Returns**:
+
+- `VerificationResult` - A structured object containing:
+  - status (SUCCESS/FAILURE/ERROR/TIMEOUT)
+  - result (str): The verification outcome or processed output.
+  - duration (float): Time taken for verification.
+  - metadata (dict): Additional details such as retry attempts.
+  - error_message (Optional[str]): Error description,
+  if applicable.
+  
+
+**Raises**:
+
+- `RuntimeError` - If verification fails unexpectedly.
+- `asyncio.TimeoutError` - If verification exceeds the time limit.
+
+<a id="camel.verifiers.base.BaseVerifier.verify_batch"></a>
+
+#### verify\_batch
+
+```python
+async def verify_batch(
+        solutions: List[str],
+        reference_answers: List[Optional[str]],
+        raise_on_error: bool = False) -> List[VerificationResult]
+```
+
+Verify multiple solutions in parallel with controlled concurrency.
+
+This method verifies multiple generated solutions against their
+respective ground truths using parallel execution. It handles
+timeouts, execution errors, and batch processing optimizations.
+
+**Arguments**:
+
+- `solutions` _List[str]_ - A list of generated solutions to be
+  verified.
+- `reference_answers` _List[Optional[str]]_ - A list of expected outputs
+  for comparison. Each element corresponds to a solution.
+- `raise_on_error` _bool, optional_ - If True, raises an exception if
+  any verification fails. (default: :obj:`False`)
+  
+
+**Returns**:
+
+- `List[VerificationResult]` - A list of verification results, one per
+  input solution.
+  
+
+**Raises**:
+
+- `RuntimeError` - If any verification fails and `raise_on_error` is
+  True.
+- `asyncio.TimeoutError` - If verifications time out after maximum
+  retries.
+

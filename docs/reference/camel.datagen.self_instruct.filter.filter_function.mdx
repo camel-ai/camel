@@ -1,0 +1,250 @@
+---
+title: "camel.datagen.self_instruct.filter.filter_function"
+description: "Documentation for the camel.datagen.self_instruct.filter.filter_function module"
+---
+
+<a id="camel.datagen.self_instruct.filter.filter_function"></a>
+
+# camel.datagen.self\_instruct.filter.filter\_function
+
+<a id="camel.datagen.self_instruct.filter.filter_function.FilterFunction"></a>
+
+## FilterFunction Objects
+
+```python
+class FilterFunction(ABC)
+```
+
+A base abstract class for filter functions.
+
+Subclasses must implement the `apply` method, which determines whether
+a given instruction passes the filter criteria.
+
+<a id="camel.datagen.self_instruct.filter.filter_function.FilterFunction.apply"></a>
+
+#### apply
+
+```python
+@abstractmethod
+def apply(instruction: str) -> bool
+```
+
+Evaluate the given instruction based on the filter's criteria.
+
+**Arguments**:
+
+- `instruction` _str_ - The instruction to evaluate.
+  
+
+**Returns**:
+
+- `bool` - True if the instruction passes the filter, False otherwise.
+
+<a id="camel.datagen.self_instruct.filter.filter_function.LengthFilter"></a>
+
+## LengthFilter Objects
+
+```python
+class LengthFilter(FilterFunction)
+```
+
+Filters instructions based on their word count.
+
+**Arguments**:
+
+- `min_len` _int_ - The minimum word count required for an instruction.
+  (default::obj:`5`)
+- `max_len` _int_ - The maximum word count allowed for an instruction.
+  (default::obj:`200`)
+
+<a id="camel.datagen.self_instruct.filter.filter_function.LengthFilter.apply"></a>
+
+#### apply
+
+```python
+def apply(instruction: str) -> bool
+```
+
+Filter the instruction
+
+**Arguments**:
+
+- `instruction` _str_ - the instruction to be filtered.
+  
+
+**Returns**:
+
+- `bool` - True if the length of the instruction is within the range
+  of [min_len, max_len]
+
+<a id="camel.datagen.self_instruct.filter.filter_function.KeywordFilter"></a>
+
+## KeywordFilter Objects
+
+```python
+class KeywordFilter(FilterFunction)
+```
+
+Filters instructions that contain specific undesirable keywords.
+
+**Arguments**:
+
+- `keywords` _List[str]_ - A list of keywords to filter out.
+
+<a id="camel.datagen.self_instruct.filter.filter_function.KeywordFilter.apply"></a>
+
+#### apply
+
+```python
+def apply(instruction: str) -> bool
+```
+
+Filter the instruction
+
+**Arguments**:
+
+- `instruction` _str_ - the instruction to be filtered.
+  
+
+**Returns**:
+
+- `bool` - True Instruction must NOT contain any of the keywords.
+
+<a id="camel.datagen.self_instruct.filter.filter_function.PunctuationFilter"></a>
+
+## PunctuationFilter Objects
+
+```python
+class PunctuationFilter(FilterFunction)
+```
+
+Filters instructions that begin with a non-alphanumeric character.
+
+<a id="camel.datagen.self_instruct.filter.filter_function.PunctuationFilter.apply"></a>
+
+#### apply
+
+```python
+def apply(instruction: str) -> bool
+```
+
+Filter the instruction
+
+**Arguments**:
+
+- `instruction` _str_ - the instruction to be filtered.
+  
+
+**Returns**:
+
+- `bool` - True if the instruction does not start with punctuation.
+
+<a id="camel.datagen.self_instruct.filter.filter_function.NonEnglishFilter"></a>
+
+## NonEnglishFilter Objects
+
+```python
+class NonEnglishFilter(FilterFunction)
+```
+
+Filters instructions that do not begin with English letters.
+
+<a id="camel.datagen.self_instruct.filter.filter_function.NonEnglishFilter.apply"></a>
+
+#### apply
+
+```python
+def apply(instruction: str) -> bool
+```
+
+Filter the instruction
+
+**Arguments**:
+
+- `instruction` _str_ - the instruction to be filtered.
+  
+
+**Returns**:
+
+- `bool` - True if the instruction starts with an English letter.
+
+<a id="camel.datagen.self_instruct.filter.filter_function.RougeSimilarityFilter"></a>
+
+## RougeSimilarityFilter Objects
+
+```python
+class RougeSimilarityFilter(FilterFunction)
+```
+
+Filters instructions that are too similar to existing instructions
+based on ROUGE scores.
+
+**Arguments**:
+
+- `existing_instructions` _List[str]_ - A list of existing instructions to
+  compare against.
+- `threshold` _float_ - The similarity threshold for filtering.
+  (default::obj:`0.7`)
+
+<a id="camel.datagen.self_instruct.filter.filter_function.RougeSimilarityFilter.apply"></a>
+
+#### apply
+
+```python
+def apply(instruction: str) -> bool
+```
+
+Filter the instruction
+
+**Arguments**:
+
+- `instruction` _str_ - the instruction to be filtered.
+  
+
+**Returns**:
+
+- `bool` - True if the instruction's similarity to any existing
+  instruction is below the threshold.
+
+<a id="camel.datagen.self_instruct.filter.filter_function.RewardModelFilter"></a>
+
+## RewardModelFilter Objects
+
+```python
+class RewardModelFilter(FilterFunction)
+```
+
+Filters instructions based on scores provided by a reward model.
+
+**Arguments**:
+
+- `reward_model` _BaseRewardModel_ - The reward model used to evaluate
+  the instructions.
+- `threshold` _float_ - The minimum score required for an instruction
+  to pass the filter.
+
+<a id="camel.datagen.self_instruct.filter.filter_function.RewardModelFilter.apply"></a>
+
+#### apply
+
+```python
+def apply(instruction: str) -> bool
+```
+
+Filter the instruction
+
+**Arguments**:
+
+- `instruction` _str_ - The instruction to be filtered.
+  
+
+**Returns**:
+
+- `bool` - True if the instruction's score is above the threshold.
+  
+
+**Raises**:
+
+- `ValueError` - ValueError: If `score_types` is empty or if the
+  required score is not found in `scores`.
+

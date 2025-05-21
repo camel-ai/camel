@@ -1,0 +1,33 @@
+---
+title: "camel.societies.workforce.role_playing_worker"
+description: "Documentation for the camel.societies.workforce.role_playing_worker module"
+---
+
+<a id="camel.societies.workforce.role_playing_worker"></a>
+
+# camel.societies.workforce.role\_playing\_worker
+
+<a id="camel.societies.workforce.role_playing_worker.RolePlayingWorker"></a>
+
+## RolePlayingWorker Objects
+
+```python
+class RolePlayingWorker(Worker)
+```
+
+A worker node that contains a role playing.
+
+**Arguments**:
+
+- `description` _str_ - Description of the node.
+- `assistant_role_name` _str_ - The role name of the assistant agent.
+- `user_role_name` _str_ - The role name of the user agent.
+- `assistant_agent_kwargs` _Optional[Dict], optional_ - The keyword
+  arguments to initialize the assistant agent in the role playing,
+  like the model name, etc. Defaults to None.
+- `user_agent_kwargs` _Optional[Dict], optional_ - The keyword arguments to
+  initialize the user agent in the role playing, like the model name,
+  etc. Defaults to None.
+- `chat_turn_limit` _int, optional_ - The maximum number of chat turns in
+  the role playing. Defaults to 3.
+

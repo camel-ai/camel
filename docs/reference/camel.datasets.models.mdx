@@ -1,0 +1,62 @@
+---
+title: "camel.datasets.models"
+description: "Documentation for the camel.datasets.models module"
+---
+
+<a id="camel.datasets.models"></a>
+
+# camel.datasets.models
+
+<a id="camel.datasets.models.DataPoint"></a>
+
+## DataPoint Objects
+
+```python
+class DataPoint(BaseModel)
+```
+
+A single data point in the dataset.
+
+**Attributes**:
+
+- `question` _str_ - The primary question or issue to be addressed.
+- `final_answer` _str_ - The final answer.
+- `rationale` _Optional[str]_ - Logical reasoning or explanation behind the
+  answer. (default: :obj:`None`)
+- `metadata` _Optional[Dict[str, Any]]_ - Additional metadata about the data
+  point. (default: :obj:`None`)
+
+<a id="camel.datasets.models.DataPoint.to_dict"></a>
+
+#### to\_dict
+
+```python
+def to_dict() -> Dict[str, Any]
+```
+
+Convert DataPoint to a dictionary.
+
+**Returns**:
+
+  Dict[str, Any]: Dictionary representation of the DataPoint.
+
+<a id="camel.datasets.models.DataPoint.from_dict"></a>
+
+#### from\_dict
+
+```python
+@classmethod
+def from_dict(cls, data: Dict[str, Any]) -> 'DataPoint'
+```
+
+Create a DataPoint from a dictionary.
+
+**Arguments**:
+
+- `data` _Dict[str, Any]_ - Dictionary containing DataPoint fields.
+  
+
+**Returns**:
+
+- `DataPoint` - New DataPoint instance.
+

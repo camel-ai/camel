@@ -1,0 +1,48 @@
+---
+title: "camel.bots.telegram_bot"
+description: "Documentation for the camel.bots.telegram_bot module"
+---
+
+<a id="camel.bots.telegram_bot"></a>
+
+# camel.bots.telegram\_bot
+
+<a id="camel.bots.telegram_bot.TelegramBot"></a>
+
+## TelegramBot Objects
+
+```python
+class TelegramBot()
+```
+
+Represents a Telegram bot that is powered by an agent.
+
+**Attributes**:
+
+- `chat_agent` _ChatAgent_ - Chat agent that will power the bot.
+- `telegram_token` _str, optional_ - The bot token.
+
+<a id="camel.bots.telegram_bot.TelegramBot.run"></a>
+
+#### run
+
+```python
+def run() -> None
+```
+
+Start the Telegram bot.
+
+<a id="camel.bots.telegram_bot.TelegramBot.on_message"></a>
+
+#### on\_message
+
+```python
+def on_message(message: 'Message') -> None
+```
+
+Handles incoming messages from the user.
+
+**Arguments**:
+
+- `message` _types.Message_ - The incoming message object.
+

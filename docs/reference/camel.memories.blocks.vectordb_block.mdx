@@ -1,0 +1,80 @@
+---
+title: "camel.memories.blocks.vectordb_block"
+description: "Documentation for the camel.memories.blocks.vectordb_block module"
+---
+
+<a id="camel.memories.blocks.vectordb_block"></a>
+
+# camel.memories.blocks.vectordb\_block
+
+<a id="camel.memories.blocks.vectordb_block.VectorDBBlock"></a>
+
+## VectorDBBlock Objects
+
+```python
+class VectorDBBlock(MemoryBlock)
+```
+
+An implementation of the :obj:`MemoryBlock` abstract base class for
+maintaining and retrieving information using vector embeddings within a
+vector database.
+
+**Arguments**:
+
+- `storage` _Optional[BaseVectorStorage], optional_ - The storage mechanism
+  for the vector database. Defaults to in-memory :obj:`Qdrant` if not
+  provided. (default: :obj:`None`)
+- `embedding` _Optional[BaseEmbedding], optional_ - Embedding mechanism to
+  convert chat messages into vector representations. Defaults to
+  :obj:`OpenAiEmbedding` if not provided. (default: :obj:`None`)
+
+<a id="camel.memories.blocks.vectordb_block.VectorDBBlock.retrieve"></a>
+
+#### retrieve
+
+```python
+def retrieve(keyword: str, limit: int = 3) -> List[ContextRecord]
+```
+
+Retrieves similar records from the vector database based on the
+content of the keyword.
+
+**Arguments**:
+
+- `keyword` _str_ - This string will be converted into a vector
+  representation to query the database.
+- `limit` _int, optional_ - The maximum number of similar messages to
+  retrieve. (default: :obj:`3`).
+  
+
+**Returns**:
+
+- `List[ContextRecord]` - A list of memory records retrieved from the
+  vector database based on similarity to :obj:`current_state`.
+
+<a id="camel.memories.blocks.vectordb_block.VectorDBBlock.write_records"></a>
+
+#### write\_records
+
+```python
+def write_records(records: List[MemoryRecord]) -> None
+```
+
+Converts the provided chat messages into vector representations and
+writes them to the vector database.
+
+**Arguments**:
+
+- `records` _List[MemoryRecord]_ - Memory records to be added to the
+  memory.
+
+<a id="camel.memories.blocks.vectordb_block.VectorDBBlock.clear"></a>
+
+#### clear
+
+```python
+def clear() -> None
+```
+
+Removes all records from the vector database memory.
+

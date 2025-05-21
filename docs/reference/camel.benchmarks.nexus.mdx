@@ -1,0 +1,209 @@
+---
+title: "camel.benchmarks.nexus"
+description: "Documentation for the camel.benchmarks.nexus module"
+---
+
+<a id="camel.benchmarks.nexus"></a>
+
+# camel.benchmarks.nexus
+
+<a id="camel.benchmarks.nexus.NexusSample"></a>
+
+## NexusSample Objects
+
+```python
+@dataclass
+class NexusSample()
+```
+
+Nexus benchmark dataset sample.
+
+<a id="camel.benchmarks.nexus.NexusTool"></a>
+
+## NexusTool Objects
+
+```python
+@dataclass
+class NexusTool()
+```
+
+Nexus benchmark tool
+
+<a id="camel.benchmarks.nexus.NexusBenchmark"></a>
+
+## NexusBenchmark Objects
+
+```python
+class NexusBenchmark(BaseBenchmark)
+```
+
+Nexus Function Calling Benchmark adapted from `NexusRaven V2
+Function Calling Benchmark`
+<https://huggingface.co/collections/Nexusflow/nexusraven-v2-function-calling-benchmark-657a597fb84dbe7a09ebfc3e>.
+
+**Arguments**:
+
+- `data_dir` _str_ - The directory to save the data.
+- `save_to` _str_ - The file to save the results.
+- `processes` _int, optional_ - The number of processes to use.
+- `(default` - :obj:`1`)
+
+<a id="camel.benchmarks.nexus.NexusBenchmark.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(data_dir: str, save_to: str, processes: int = 1)
+```
+
+Initialize the Nexus Function Calling benchmark.
+
+**Arguments**:
+
+- `data_dir` _str_ - The directory to save the data.
+- `save_to` _str_ - The file to save the results.
+- `processes` _int, optional_ - The number of processes to use for
+  parallel processing. (default: :obj:`1`)
+
+<a id="camel.benchmarks.nexus.NexusBenchmark.download"></a>
+
+#### download
+
+```python
+def download()
+```
+
+Download the Nexus Functional Calling Benchmark dataset.
+
+<a id="camel.benchmarks.nexus.NexusBenchmark.load"></a>
+
+#### load
+
+```python
+def load(dataset_name: str, force_download: bool = False)
+```
+
+Load the Nexus Benchmark dataset.
+
+**Arguments**:
+
+- `dataset_name` _str_ - Name of the specific dataset to be loaded.
+- `force_download` _bool_ - Whether to force download the data.
+
+<a id="camel.benchmarks.nexus.NexusBenchmark.train"></a>
+
+#### train
+
+```python
+@property
+def train()
+```
+
+Get the training set.
+
+<a id="camel.benchmarks.nexus.NexusBenchmark.run"></a>
+
+#### run
+
+```python
+def run(agent: ChatAgent,
+        task: Literal[
+            "NVDLibrary",
+            "VirusTotal",
+            "OTX",
+            "PlacesAPI",
+            "ClimateAPI",
+            "VirusTotal-ParallelCalls",
+            "VirusTotal-NestedCalls",
+            "NVDLibrary-NestedCalls",
+        ],
+        randomize: bool = False,
+        subset: Optional[int] = None) -> Dict[str, Any]
+```
+
+Run the benchmark.
+
+**Arguments**:
+
+- `agent` _ChatAgent_ - The agent to run the benchmark.
+  task (Literal["NVDLibrary", "VirusTotal", "OTX",
+  "PlacesAPI", "ClimateAPI", "VirusTotal-ParallelCalls",
+  "VirusTotal-NestedCalls",
+- `"NVDLibrary-NestedCalls"])` - The task to run the benchmark.
+- `randomize` _bool, optional_ - Whether to randomize the data.
+- `(default` - :obj:`False`)
+- `subset` _Optional[int], optional_ - The subset of data to run.
+- `(default` - :obj:`None`)
+  
+
+**Returns**:
+
+  Dict[str, Any]: The results of the benchmark.
+
+<a id="camel.benchmarks.nexus.construct_tool_descriptions"></a>
+
+#### construct\_tool\_descriptions
+
+```python
+def construct_tool_descriptions(dataset_name: str) -> str
+```
+
+Construct tool descriptions from function definitions and
+descriptions.
+
+<a id="camel.benchmarks.nexus.construct_prompt"></a>
+
+#### construct\_prompt
+
+```python
+def construct_prompt(input: str, tools: str) -> str
+```
+
+Construct prompt from tools and input.
+
+<a id="camel.benchmarks.nexus.parse_function_call"></a>
+
+#### parse\_function\_call
+
+```python
+def parse_function_call(
+    call: str
+) -> Tuple[Optional[str], Optional[List[Any]], Optional[Dict[str, Any]]]
+```
+
+Parse a function call string to extract the function name,
+positional arguments, and keyword arguments, including
+nested function calls.
+
+**Arguments**:
+
+- `call` _str_ - A string in the format `func(arg1, arg2, kwarg=value)`.
+  
+
+**Returns**:
+
+- `tuple` - (function_name (str), positional_args (list),
+  keyword_args (dict)) or (None, None, None).
+
+<a id="camel.benchmarks.nexus.compare_function_calls"></a>
+
+#### compare\_function\_calls
+
+```python
+def compare_function_calls(agent_call: str, ground_truth_call: str) -> bool
+```
+
+Compare the function name and arguments of
+agent_call and ground_truth_call.
+
+**Arguments**:
+
+- `agent_call` _str_ - Function call by agent.
+- `ground_truth_call` _str_ - Ground truth function call.
+  
+
+**Returns**:
+
+  - `True` if the function names and arguments match.
+  - `False` otherwise.
+

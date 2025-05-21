@@ -1,0 +1,77 @@
+---
+title: "camel.storages.key_value_storages.mem0_cloud"
+description: "Documentation for the camel.storages.key_value_storages.mem0_cloud module"
+---
+
+<a id="camel.storages.key_value_storages.mem0_cloud"></a>
+
+# camel.storages.key\_value\_storages.mem0\_cloud
+
+<a id="camel.storages.key_value_storages.mem0_cloud.Mem0Storage"></a>
+
+## Mem0Storage Objects
+
+```python
+class Mem0Storage(BaseKeyValueStorage)
+```
+
+A concrete implementation of the :obj:`BaseKeyValueStorage` using Mem0
+as the backend. This storage system uses Mem0's text capabilities to store,
+search, and manage text with context.
+
+**Arguments**:
+
+- `agent_id` _str_ - Default agent ID to associate memories with.
+- `api_key` _str, optional_ - The API key for authentication. If not
+  provided, will try to get from environment variable MEM0_API_KEY
+- `(default` - :obj:`None`).
+- `user_id` _str, optional_ - Default user ID to associate memories with
+- `(default` - :obj:`None`).
+- `metadata` _Dict[str, Any], optional_ - Default metadata to include with
+  all memories (default: :obj:`None`).
+  
+
+**References**:
+
+  https://docs.mem0.ai
+
+<a id="camel.storages.key_value_storages.mem0_cloud.Mem0Storage.save"></a>
+
+#### save
+
+```python
+def save(records: List[Dict[str, Any]]) -> None
+```
+
+Saves a batch of records to the Mem0 storage system.
+
+**Arguments**:
+
+- `records` _List[Dict[str, Any]]_ - A list of dictionaries, where each
+  dictionary represents a unique record to be stored.
+
+<a id="camel.storages.key_value_storages.mem0_cloud.Mem0Storage.load"></a>
+
+#### load
+
+```python
+def load() -> List[Dict[str, Any]]
+```
+
+Loads all stored records from the Mem0 storage system.
+
+**Returns**:
+
+  List[Dict[str, Any]]: A list of dictionaries, where each dictionary
+  represents a stored record.
+
+<a id="camel.storages.key_value_storages.mem0_cloud.Mem0Storage.clear"></a>
+
+#### clear
+
+```python
+def clear() -> None
+```
+
+Removes all records from the Mem0 storage system.
+

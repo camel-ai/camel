@@ -1,0 +1,77 @@
+---
+title: "camel.embeddings.base"
+description: "Documentation for the camel.embeddings.base module"
+---
+
+<a id="camel.embeddings.base"></a>
+
+# camel.embeddings.base
+
+<a id="camel.embeddings.base.BaseEmbedding"></a>
+
+## BaseEmbedding Objects
+
+```python
+class BaseEmbedding(ABC, Generic[T])
+```
+
+Abstract base class for text embedding functionalities.
+
+<a id="camel.embeddings.base.BaseEmbedding.embed_list"></a>
+
+#### embed\_list
+
+```python
+@abstractmethod
+def embed_list(objs: list[T], **kwargs: Any) -> list[list[float]]
+```
+
+Generates embeddings for the given texts.
+
+**Arguments**:
+
+- `objs` _list[T]_ - The objects for which to generate the embeddings.
+- `**kwargs` _Any_ - Extra kwargs passed to the embedding API.
+  
+
+**Returns**:
+
+- `list[list[float]]` - A list that represents the
+  generated embedding as a list of floating-point numbers.
+
+<a id="camel.embeddings.base.BaseEmbedding.embed"></a>
+
+#### embed
+
+```python
+def embed(obj: T, **kwargs: Any) -> list[float]
+```
+
+Generates an embedding for the given text.
+
+**Arguments**:
+
+- `obj` _T_ - The object for which to generate the embedding.
+- `**kwargs` _Any_ - Extra kwargs passed to the embedding API.
+  
+
+**Returns**:
+
+- `list[float]` - A list of floating-point numbers representing the
+  generated embedding.
+
+<a id="camel.embeddings.base.BaseEmbedding.get_output_dim"></a>
+
+#### get\_output\_dim
+
+```python
+@abstractmethod
+def get_output_dim() -> int
+```
+
+Returns the output dimension of the embeddings.
+
+**Returns**:
+
+- `int` - The dimensionality of the embedding for the current model.
+

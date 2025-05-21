@@ -1,0 +1,94 @@
+---
+title: "camel.datagen.evol_instruct.evol_instruct"
+description: "Documentation for the camel.datagen.evol_instruct.evol_instruct module"
+---
+
+<a id="camel.datagen.evol_instruct.evol_instruct"></a>
+
+# camel.datagen.evol\_instruct.evol\_instruct
+
+<a id="camel.datagen.evol_instruct.evol_instruct.EvolInstructPipeline"></a>
+
+## EvolInstructPipeline Objects
+
+```python
+class EvolInstructPipeline()
+```
+
+Pipeline for evolving prompts using the Evol-Instruct methodology.
+
+Supports custom templates defining evolution strategies and methods. The
+pipeline leverages language models to iteratively refine prompts through
+specified evolution strategies.
+
+**Arguments**:
+
+- `templates` _Type[EvolInstructTemplates]_ - Template class containing
+  evolution strategy and method definitions. Must provide
+  `EVOL_METHODS` and `STRATEGY` attributes.
+- `(default` - :obj:`EvolInstructTemplates`)
+- `agent` _Optional[ChatAgent]_ - Chat agent instance for LLM interaction.
+  If :obj:`None`, initializes with a default ChatAgent.
+- `(default` - :obj:`None`)
+
+<a id="camel.datagen.evol_instruct.evol_instruct.EvolInstructPipeline.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(templates: Type = EvolInstructTemplates,
+             agent: Optional[ChatAgent] = None) -> None
+```
+
+Initialize pipeline with templates and language model agent.
+
+**Arguments**:
+
+- `templates` _Type[EvolInstructTemplates]_ - Template class containing
+  evolution strategy configurations.
+- `(default` - :obj:`EvolInstructTemplates`)
+- `agent` _Optional[ChatAgent]_ - Preconfigured chat agent instance.
+  Creates a default ChatAgent if not provided.
+- `(default` - :obj:`None`)
+
+<a id="camel.datagen.evol_instruct.evol_instruct.EvolInstructPipeline.generate"></a>
+
+#### generate
+
+```python
+def generate(prompts: List[str],
+             evolution_spec: Union[str, List[Union[str, List[str]]]],
+             num_generations: int = 2,
+             num_iterations: Optional[int] = None,
+             keep_original: bool = True,
+             scorer: Optional[BaseScorer] = None,
+             num_chunks: int = 1,
+             retry_limit: int = 3,
+             retry_delay: float = 1.0,
+             num_threads: int = 10) -> List[Dict[int, List[Dict[str, Any]]]]
+```
+
+Evolve a batch of prompts through iterative refinement.
+
+**Arguments**:
+
+- `prompts` _List[str]_ - Seed prompts to evolve.
+  evolution_spec (Union[str, List[Union[str, List[str]]]]):
+  Evolution method specification.
+  If a list is provided and num_iterations is None, then
+  num_iterations is set to the length of the list.
+- `num_generations` _int_ - Candidates to generate per iteration.
+- `num_iterations` _Optional[int]_ - Number of evolution iterations.
+  Defaults to the length of evolution_spec.
+- `keep_original` _bool_ - Include original prompts in results.
+- `scorer` _Optional[BaseScorer]_ - Scoring model for candidate.
+- `num_chunks` _int_ - Number of parallel processing chunks.
+- `retry_limit` _int_ - Max retries for failed generations.
+- `retry_delay` _float_ - Delay between retries in seconds.
+- `num_threads` _int_ - Number of threads for parallel processing.
+  
+
+**Returns**:
+
+  List[Dict[int, List[Dict[str, Any]]]]: Evolution results.
+

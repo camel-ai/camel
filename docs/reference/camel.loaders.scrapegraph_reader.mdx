@@ -1,0 +1,94 @@
+---
+title: "camel.loaders.scrapegraph_reader"
+description: "Documentation for the camel.loaders.scrapegraph_reader module"
+---
+
+<a id="camel.loaders.scrapegraph_reader"></a>
+
+# camel.loaders.scrapegraph\_reader
+
+<a id="camel.loaders.scrapegraph_reader.ScrapeGraphAI"></a>
+
+## ScrapeGraphAI Objects
+
+```python
+class ScrapeGraphAI()
+```
+
+ScrapeGraphAI allows you to perform AI-powered web scraping and
+searching.
+
+**Arguments**:
+
+- `api_key` _Optional[str]_ - API key for authenticating with the
+  ScrapeGraphAI API.
+  
+
+**References**:
+
+  https://scrapegraph.ai/
+
+<a id="camel.loaders.scrapegraph_reader.ScrapeGraphAI.search"></a>
+
+#### search
+
+```python
+def search(user_prompt: str) -> Dict[str, Any]
+```
+
+Perform an AI-powered web search using ScrapeGraphAI.
+
+**Arguments**:
+
+- `user_prompt` _str_ - The search query or instructions.
+  
+
+**Returns**:
+
+  Dict[str, Any]: The search results including answer and reference
+  URLs.
+  
+
+**Raises**:
+
+- `RuntimeError` - If the search process fails.
+
+<a id="camel.loaders.scrapegraph_reader.ScrapeGraphAI.scrape"></a>
+
+#### scrape
+
+```python
+def scrape(website_url: str,
+           user_prompt: str,
+           website_html: Optional[str] = None) -> Dict[str, Any]
+```
+
+Perform AI-powered web scraping using ScrapeGraphAI.
+
+**Arguments**:
+
+- `website_url` _str_ - The URL to scrape.
+- `user_prompt` _str_ - Instructions for what data to extract.
+- `website_html` _Optional[str]_ - Optional HTML content to use instead
+  of fetching from the URL.
+  
+
+**Returns**:
+
+  Dict[str, Any]: The scraped data including request ID and result.
+  
+
+**Raises**:
+
+- `RuntimeError` - If the scrape process fails.
+
+<a id="camel.loaders.scrapegraph_reader.ScrapeGraphAI.close"></a>
+
+#### close
+
+```python
+def close() -> None
+```
+
+Close the ScrapeGraphAI client connection.
+

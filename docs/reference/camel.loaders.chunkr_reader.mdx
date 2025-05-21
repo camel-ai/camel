@@ -1,0 +1,87 @@
+---
+title: "camel.loaders.chunkr_reader"
+description: "Documentation for the camel.loaders.chunkr_reader module"
+---
+
+<a id="camel.loaders.chunkr_reader"></a>
+
+# camel.loaders.chunkr\_reader
+
+<a id="camel.loaders.chunkr_reader.ChunkrReader"></a>
+
+## ChunkrReader Objects
+
+```python
+class ChunkrReader()
+```
+
+Chunkr Reader for processing documents and returning content
+in various formats.
+
+**Arguments**:
+
+- `api_key` _Optional[str], optional_ - The API key for Chunkr API. If not
+  provided, it will be retrieved from the environment variable
+  `CHUNKR_API_KEY`. (default: :obj:`None`)
+- `url` _Optional[str], optional_ - The url to the Chunkr service.
+- `(default` - :obj:`https://api.chunkr.ai/api/v1/task`)
+- `timeout` _int, optional_ - The maximum time in seconds to wait for the
+  API responses. (default: :obj:`30`)
+- `**kwargs` _Any_ - Additional keyword arguments for request headers.
+
+<a id="camel.loaders.chunkr_reader.ChunkrReader.submit_task"></a>
+
+#### submit\_task
+
+```python
+def submit_task(file_path: str,
+                model: str = "Fast",
+                ocr_strategy: str = "Auto",
+                target_chunk_length: str = "512") -> str
+```
+
+Submits a file to the Chunkr API and returns the task ID.
+
+**Arguments**:
+
+- `file_path` _str_ - The path to the file to be uploaded.
+- `model` _str, optional_ - The model to be used for the task.
+- `(default` - :obj:`Fast`)
+- `ocr_strategy` _str, optional_ - The OCR strategy. Defaults to 'Auto'.
+- `target_chunk_length` _str, optional_ - The target chunk length.
+- `(default` - :obj:`512`)
+  
+
+**Returns**:
+
+- `str` - The task ID.
+
+<a id="camel.loaders.chunkr_reader.ChunkrReader.get_task_output"></a>
+
+#### get\_task\_output
+
+```python
+def get_task_output(task_id: str, max_retries: int = 5) -> str
+```
+
+Polls the Chunkr API to check the task status and returns the task
+result.
+
+**Arguments**:
+
+- `task_id` _str_ - The task ID to check the status for.
+- `max_retries` _int, optional_ - Maximum number of retry attempts.
+- `(default` - :obj:`5`)
+  
+
+**Returns**:
+
+- `str` - The formatted task result in JSON format.
+  
+
+**Raises**:
+
+- `ValueError` - If the task status cannot be retrieved.
+- `RuntimeError` - If the maximum number of retries is reached without
+  a successful task completion.
+

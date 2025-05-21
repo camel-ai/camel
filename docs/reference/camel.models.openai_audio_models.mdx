@@ -1,0 +1,143 @@
+---
+title: "camel.models.openai_audio_models"
+description: "Documentation for the camel.models.openai_audio_models module"
+---
+
+<a id="camel.models.openai_audio_models"></a>
+
+# camel.models.openai\_audio\_models
+
+<a id="camel.models.openai_audio_models.OpenAIAudioModels"></a>
+
+## OpenAIAudioModels Objects
+
+```python
+class OpenAIAudioModels(BaseAudioModel)
+```
+
+Provides access to OpenAI's Text-to-Speech (TTS) and Speech_to_Text
+(STT) models.
+
+<a id="camel.models.openai_audio_models.OpenAIAudioModels.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(api_key: Optional[str] = None,
+             url: Optional[str] = None,
+             timeout: Optional[float] = None) -> None
+```
+
+Initialize an instance of OpenAI.
+
+<a id="camel.models.openai_audio_models.OpenAIAudioModels.text_to_speech"></a>
+
+#### text\_to\_speech
+
+```python
+def text_to_speech(
+    input: str,
+    *,
+    model_type: AudioModelType = AudioModelType.TTS_1,
+    voice: VoiceType = VoiceType.ALLOY,
+    storage_path: Optional[str] = None,
+    **kwargs: Any
+) -> Union[
+        List[_legacy_response.HttpxBinaryResponseContent],
+        _legacy_response.HttpxBinaryResponseContent,
+]
+```
+
+Convert text to speech using OpenAI's TTS model. This method
+converts the given input text to speech using the specified model and
+voice.
+
+**Arguments**:
+
+- `input` _str_ - The text to be converted to speech.
+- `model_type` _AudioModelType, optional_ - The TTS model to use.
+  Defaults to `AudioModelType.TTS_1`.
+- `voice` _VoiceType, optional_ - The voice to be used for generating
+  speech. Defaults to `VoiceType.ALLOY`.
+- `storage_path` _str, optional_ - The local path to store the
+  generated speech file if provided, defaults to `None`.
+- `**kwargs` _Any_ - Extra kwargs passed to the TTS API.
+  
+
+**Returns**:
+
+  Union[List[_legacy_response.HttpxBinaryResponseContent],
+- `_legacy_response.HttpxBinaryResponseContent]` - List of response
+  content object from OpenAI if input characters more than 4096,
+  single response content if input characters less than 4096.
+  
+
+**Raises**:
+
+- `Exception` - If there's an error during the TTS API call.
+
+<a id="camel.models.openai_audio_models.OpenAIAudioModels.speech_to_text"></a>
+
+#### speech\_to\_text
+
+```python
+def speech_to_text(audio_file_path: str,
+                   translate_into_english: bool = False,
+                   **kwargs: Any) -> str
+```
+
+Convert speech audio to text.
+
+**Arguments**:
+
+- `audio_file_path` _str_ - The audio file path, supporting one of
+  these formats: flac, mp3, mp4, mpeg, mpga, m4a, ogg, wav, or
+  webm.
+- `translate_into_english` _bool, optional_ - Whether to translate the
+  speech into English. Defaults to `False`.
+- `**kwargs` _Any_ - Extra keyword arguments passed to the
+  Speech-to-Text (STT) API.
+  
+
+**Returns**:
+
+- `str` - The output text.
+  
+
+**Raises**:
+
+- `ValueError` - If the audio file format is not supported.
+- `Exception` - If there's an error during the STT API call.
+
+<a id="camel.models.openai_audio_models.OpenAIAudioModels.audio_question_answering"></a>
+
+#### audio\_question\_answering
+
+```python
+def audio_question_answering(audio_file_path: str,
+                             question: str,
+                             model: str = "gpt-4o-mini-audio-preview",
+                             **kwargs: Any) -> str
+```
+
+Answer a question directly using the audio content.
+
+**Arguments**:
+
+- `audio_file_path` _str_ - The path to the audio file.
+- `question` _str_ - The question to ask about the audio content.
+- `model` _str, optional_ - The model to use for audio question
+  answering. (default: :obj:`"gpt-4o-mini-audio-preview"`)
+- `**kwargs` _Any_ - Extra keyword arguments passed to the chat
+  completions API.
+  
+
+**Returns**:
+
+- `str` - The model's response to the question.
+  
+
+**Raises**:
+
+- `Exception` - If there's an error during the API call.
+

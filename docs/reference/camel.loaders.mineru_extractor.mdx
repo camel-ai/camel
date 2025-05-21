@@ -1,0 +1,185 @@
+---
+title: "camel.loaders.mineru_extractor"
+description: "Documentation for the camel.loaders.mineru_extractor module"
+---
+
+<a id="camel.loaders.mineru_extractor"></a>
+
+# camel.loaders.mineru\_extractor
+
+<a id="camel.loaders.mineru_extractor.MinerU"></a>
+
+## MinerU Objects
+
+```python
+class MinerU()
+```
+
+Document extraction service supporting OCR, formula recognition
+and tables.
+
+**Arguments**:
+
+- `api_key` _str, optional_ - Authentication key for MinerU API service.
+  If not provided, will use MINERU_API_KEY environment variable.
+- `(default` - :obj:`None`)
+- `api_url` _str, optional_ - Base URL endpoint for the MinerU API service.
+- `(default` - :obj:`"https://mineru.net/api/v4"`)
+  
+
+**Notes**:
+
+  - Single file size limit: 200MB
+  - Page limit per file: 600 pages
+  - Daily high-priority parsing quota: 2000 pages
+  - Some URLs (GitHub, AWS) may timeout due to network restrictions
+
+<a id="camel.loaders.mineru_extractor.MinerU.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+@api_keys_required([
+    ("api_key", "MINERU_API_KEY"),
+])
+def __init__(api_key: Optional[str] = None,
+             api_url: Optional[str] = "https://mineru.net/api/v4",
+             is_ocr: bool = False,
+             enable_formula: bool = False,
+             enable_table: bool = True,
+             layout_model: str = "doclayout_yolo",
+             language: str = "en") -> None
+```
+
+Initialize MinerU extractor.
+
+**Arguments**:
+
+- `api_key` _str, optional_ - Authentication key for MinerU API service.
+  If not provided, will use MINERU_API_KEY environment variable.
+- `api_url` _str, optional_ - Base URL endpoint for MinerU API service.
+- `(default` - "https://mineru.net/api/v4")
+- `is_ocr` _bool, optional_ - Enable optical character recognition.
+- `(default` - :obj:`False`)
+- `enable_formula` _bool, optional_ - Enable formula recognition.
+- `(default` - :obj:`False`)
+- `enable_table` _bool, optional_ - Enable table detection, extraction.
+- `(default` - :obj:`True`)
+- `layout_model` _str, optional_ - Model for document layout detection.
+  Options are 'doclayout_yolo' or 'layoutlmv3'.
+- `(default` - :obj:`"doclayout_yolo"`)
+- `language` _str, optional_ - Primary language of the document.
+- `(default` - :obj:`"en"`)
+
+<a id="camel.loaders.mineru_extractor.MinerU.extract_url"></a>
+
+#### extract\_url
+
+```python
+def extract_url(url: str) -> Dict
+```
+
+Extract content from a URL document.
+
+**Arguments**:
+
+- `url` _str_ - Document URL to extract content from.
+  
+
+**Returns**:
+
+- `Dict` - Task identifier for tracking extraction progress.
+
+<a id="camel.loaders.mineru_extractor.MinerU.batch_extract_urls"></a>
+
+#### batch\_extract\_urls
+
+```python
+def batch_extract_urls(files: List[Dict[str, Union[str, bool]]]) -> str
+```
+
+Extract content from multiple document URLs in batch.
+
+**Arguments**:
+
+- `files` _List[Dict[str, Union[str, bool]]]_ - List of document
+  configurations. Each document requires 'url' and optionally
+  'is_ocr' and 'data_id' parameters.
+  
+
+**Returns**:
+
+- `str` - Batch identifier for tracking extraction progress.
+
+<a id="camel.loaders.mineru_extractor.MinerU.get_task_status"></a>
+
+#### get\_task\_status
+
+```python
+def get_task_status(task_id: str) -> Dict
+```
+
+Retrieve status of a single extraction task.
+
+**Arguments**:
+
+- `task_id` _str_ - Unique identifier of the extraction task.
+  
+
+**Returns**:
+
+- `Dict` - Current task status and results if completed.
+
+<a id="camel.loaders.mineru_extractor.MinerU.get_batch_status"></a>
+
+#### get\_batch\_status
+
+```python
+def get_batch_status(batch_id: str) -> Dict
+```
+
+Retrieve status of a batch extraction task.
+
+**Arguments**:
+
+- `batch_id` _str_ - Unique identifier of the batch extraction task.
+  
+
+**Returns**:
+
+- `Dict` - Current status and results for all documents in the batch.
+
+<a id="camel.loaders.mineru_extractor.MinerU.wait_for_completion"></a>
+
+#### wait\_for\_completion
+
+```python
+def wait_for_completion(task_id: str,
+                        is_batch: bool = False,
+                        timeout: float = 100,
+                        check_interval: float = 5) -> Dict
+```
+
+Monitor task until completion or timeout.
+
+**Arguments**:
+
+- `task_id` _str_ - Unique identifier of the task or batch.
+- `is_batch` _bool, optional_ - Indicates if task is a batch operation.
+- `(default` - :obj:`False`)
+- `timeout` _float, optional_ - Maximum wait time in seconds.
+- `(default` - :obj:`100`)
+- `check_interval` _float, optional_ - Time between status checks in
+  seconds. (default: :obj:`5`)
+  
+
+**Returns**:
+
+- `Dict` - Final task status and extraction results.
+  
+
+**Raises**:
+
+- `TimeoutError` - If task exceeds specified timeout duration.
+- `RuntimeError` - If task fails or encounters processing error.
+

@@ -1,0 +1,48 @@
+---
+title: "camel.schemas.base"
+description: "Documentation for the camel.schemas.base module"
+---
+
+<a id="camel.schemas.base"></a>
+
+# camel.schemas.base
+
+<a id="camel.schemas.base.BaseConverter"></a>
+
+## BaseConverter Objects
+
+```python
+class BaseConverter(ABC)
+```
+
+A base class for schema outputs that includes functionality
+for managing the response format.
+
+**Arguments**:
+
+- `output_schema` _Optional[Type[BaseModel]], optional_ - The expected
+  format of the response. (default: :obj:`None`)
+
+<a id="camel.schemas.base.BaseConverter.convert"></a>
+
+#### convert
+
+```python
+@abstractmethod
+def convert(content: str, *args: Any, **kwargs: Dict[str, Any]) -> Any
+```
+
+Structures the input text into the expected response format.
+
+**Arguments**:
+
+- `text` _str_ - The input text to be structured.
+  output_schema (Optional[Type[BaseModel]], optional):
+  The expected format of the response. Defaults to None.
+- `prompt` _Optional[str], optional_ - The prompt to be used.
+  
+
+**Returns**:
+
+- `Any` - The converted response.
+

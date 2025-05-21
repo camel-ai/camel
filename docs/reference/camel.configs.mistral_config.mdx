@@ -1,0 +1,49 @@
+---
+title: "camel.configs.mistral_config"
+description: "Documentation for the camel.configs.mistral_config module"
+---
+
+<a id="camel.configs.mistral_config"></a>
+
+# camel.configs.mistral\_config
+
+<a id="camel.configs.mistral_config.MistralConfig"></a>
+
+## MistralConfig Objects
+
+```python
+class MistralConfig(BaseConfig)
+```
+
+Defines the parameters for generating chat completions using the
+Mistral API.
+
+reference: https://github.com/mistralai/client-python/blob/9d238f88c41689821d7b08570f13b43426f97fd6/src/mistralai/client.py#L195
+
+`TODO`: Support stream mode
+
+**Arguments**:
+
+- `temperature` _Optional[float], optional_ - temperature the temperature
+  to use for sampling, e.g. 0.5. (default: :obj:`None`)
+- `top_p` _Optional[float], optional_ - the cumulative probability of
+  tokens to generate, e.g. 0.9. (default: :obj:`None`)
+- `max_tokens` _Optional[int], optional_ - the maximum number of tokens to
+  generate, e.g. 100. (default: :obj:`None`)
+- `stop` _Optional[Union[str,list[str]]]_ - Stop generation if this token
+  is detected. Or if one of these tokens is detected when providing
+  a string list. (default: :obj:`None`)
+- `random_seed` _Optional[int], optional_ - the random seed to use for
+  sampling, e.g. 42. (default: :obj:`None`)
+- `safe_prompt` _bool, optional_ - whether to use safe prompt, e.g. true.
+- `(default` - :obj:`None`)
+- `response_format` _Union[Dict[str, str], ResponseFormat_ - format of the
+  response.
+- `tool_choice` _str, optional_ - Controls which (if
+  any) tool is called by the model. :obj:`"none"` means the model
+  will not call any tool and instead generates a message.
+  :obj:`"auto"` means the model can pick between generating a
+  message or calling one or more tools.  :obj:`"any"` means the
+  model must call one or more tools. :obj:`"auto"` is the default
+  value.
+

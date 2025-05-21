@@ -1,0 +1,450 @@
+---
+title: "camel.toolkits.browser_toolkit"
+description: "Documentation for the camel.toolkits.browser_toolkit module"
+---
+
+<a id="camel.toolkits.browser_toolkit"></a>
+
+# camel.toolkits.browser\_toolkit
+
+<a id="camel.toolkits.browser_toolkit.dom_rectangle_from_dict"></a>
+
+#### dom\_rectangle\_from\_dict
+
+```python
+def dom_rectangle_from_dict(rect: Dict[str, Any]) -> DOMRectangle
+```
+
+Create a DOMRectangle object from a dictionary.
+
+<a id="camel.toolkits.browser_toolkit.interactive_region_from_dict"></a>
+
+#### interactive\_region\_from\_dict
+
+```python
+def interactive_region_from_dict(region: Dict[str, Any]) -> InteractiveRegion
+```
+
+Create an :class:`InteractiveRegion` object from a dictionary.
+
+<a id="camel.toolkits.browser_toolkit.visual_viewport_from_dict"></a>
+
+#### visual\_viewport\_from\_dict
+
+```python
+def visual_viewport_from_dict(viewport: Dict[str, Any]) -> VisualViewport
+```
+
+Create a :class:`VisualViewport` object from a dictionary.
+
+<a id="camel.toolkits.browser_toolkit.BaseBrowser"></a>
+
+## BaseBrowser Objects
+
+```python
+class BaseBrowser()
+```
+
+<a id="camel.toolkits.browser_toolkit.BaseBrowser.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(headless=True,
+             cache_dir: Optional[str] = None,
+             channel: Literal["chrome", "msedge", "chromium"] = "chromium",
+             cookie_json_path: Optional[str] = None)
+```
+
+Initialize the WebBrowser instance.
+
+**Arguments**:
+
+- `headless` _bool_ - Whether to run the browser in headless mode.
+- `cache_dir` _Union[str, None]_ - The directory to store cache files.
+- `channel` _Literal["chrome", "msedge", "chromium"]_ - The browser
+  channel to use. Must be one of "chrome", "msedge", or
+  "chromium".
+- `cookie_json_path` _Optional[str]_ - Path to a JSON file containing
+  authentication cookies and browser storage state. If provided
+  and the file exists, the browser will load this state to maintain
+  authenticated sessions without requiring manual login.
+  
+
+**Returns**:
+
+  None
+
+<a id="camel.toolkits.browser_toolkit.BaseBrowser.init"></a>
+
+#### init
+
+```python
+def init() -> None
+```
+
+Initialize the browser.
+
+<a id="camel.toolkits.browser_toolkit.BaseBrowser.clean_cache"></a>
+
+#### clean\_cache
+
+```python
+def clean_cache() -> None
+```
+
+Delete the cache directory and its contents.
+
+<a id="camel.toolkits.browser_toolkit.BaseBrowser.click_blank_area"></a>
+
+#### click\_blank\_area
+
+```python
+def click_blank_area() -> None
+```
+
+Click a blank area of the page to unfocus the current element.
+
+<a id="camel.toolkits.browser_toolkit.BaseBrowser.visit_page"></a>
+
+#### visit\_page
+
+```python
+def visit_page(url: str) -> None
+```
+
+Visit a page with the given URL.
+
+<a id="camel.toolkits.browser_toolkit.BaseBrowser.ask_question_about_video"></a>
+
+#### ask\_question\_about\_video
+
+```python
+def ask_question_about_video(question: str) -> str
+```
+
+Ask a question about the video on the current page,
+such as YouTube video.
+
+**Arguments**:
+
+- `question` _str_ - The question to ask.
+  
+
+**Returns**:
+
+- `str` - The answer to the question.
+
+<a id="camel.toolkits.browser_toolkit.BaseBrowser.get_screenshot"></a>
+
+#### get\_screenshot
+
+```python
+@retry_on_error()
+def get_screenshot(
+        save_image: bool = False) -> Tuple[Image.Image, Union[str, None]]
+```
+
+Get a screenshot of the current page.
+
+**Arguments**:
+
+- `save_image` _bool_ - Whether to save the image to the cache
+  directory.
+  
+
+**Returns**:
+
+  Tuple[Image.Image, str]: A tuple containing the screenshot
+  image and the path to the image file if saved, otherwise
+  :obj:`None`.
+
+<a id="camel.toolkits.browser_toolkit.BaseBrowser.capture_full_page_screenshots"></a>
+
+#### capture\_full\_page\_screenshots
+
+```python
+def capture_full_page_screenshots(scroll_ratio: float = 0.8) -> List[str]
+```
+
+Capture full page screenshots by scrolling the page with a buffer
+zone.
+
+**Arguments**:
+
+- `scroll_ratio` _float_ - The ratio of viewport height to scroll each
+  step. (default: :obj:`0.8`)
+  
+
+**Returns**:
+
+- `List[str]` - A list of paths to the screenshot files.
+
+<a id="camel.toolkits.browser_toolkit.BaseBrowser.get_visual_viewport"></a>
+
+#### get\_visual\_viewport
+
+```python
+def get_visual_viewport() -> VisualViewport
+```
+
+Get the visual viewport of the current page.
+
+**Returns**:
+
+- `VisualViewport` - The visual viewport of the current page.
+
+<a id="camel.toolkits.browser_toolkit.BaseBrowser.get_interactive_elements"></a>
+
+#### get\_interactive\_elements
+
+```python
+def get_interactive_elements() -> Dict[str, InteractiveRegion]
+```
+
+Get the interactive elements of the current page.
+
+**Returns**:
+
+  Dict[str, InteractiveRegion]: A dictionary of interactive elements.
+
+<a id="camel.toolkits.browser_toolkit.BaseBrowser.get_som_screenshot"></a>
+
+#### get\_som\_screenshot
+
+```python
+def get_som_screenshot(
+        save_image: bool = False) -> Tuple[Image.Image, Union[str, None]]
+```
+
+Get a screenshot of the current viewport with interactive elements
+marked.
+
+**Arguments**:
+
+- `save_image` _bool_ - Whether to save the image to the cache
+  directory.
+  
+
+**Returns**:
+
+  Tuple[Image.Image, Union[str, None]]: A tuple containing the screenshot image
+  and an optional path to the image file if saved, otherwise
+  :obj:`None`.
+
+<a id="camel.toolkits.browser_toolkit.BaseBrowser.scroll_up"></a>
+
+#### scroll\_up
+
+```python
+def scroll_up() -> None
+```
+
+Scroll up the page.
+
+<a id="camel.toolkits.browser_toolkit.BaseBrowser.scroll_down"></a>
+
+#### scroll\_down
+
+```python
+def scroll_down() -> None
+```
+
+Scroll down the page.
+
+<a id="camel.toolkits.browser_toolkit.BaseBrowser.get_url"></a>
+
+#### get\_url
+
+```python
+def get_url() -> str
+```
+
+Get the URL of the current page.
+
+<a id="camel.toolkits.browser_toolkit.BaseBrowser.click_id"></a>
+
+#### click\_id
+
+```python
+def click_id(identifier: Union[str, int]) -> None
+```
+
+Click an element with the given identifier.
+
+<a id="camel.toolkits.browser_toolkit.BaseBrowser.extract_url_content"></a>
+
+#### extract\_url\_content
+
+```python
+def extract_url_content() -> str
+```
+
+Extract the content of the current page.
+
+<a id="camel.toolkits.browser_toolkit.BaseBrowser.download_file_id"></a>
+
+#### download\_file\_id
+
+```python
+def download_file_id(identifier: Union[str, int]) -> str
+```
+
+Download a file with the given selector.
+
+**Arguments**:
+
+- `identifier` _str_ - The identifier of the file to download.
+- `file_path` _str_ - The path to save the downloaded file.
+  
+
+**Returns**:
+
+- `str` - The result of the action.
+
+<a id="camel.toolkits.browser_toolkit.BaseBrowser.fill_input_id"></a>
+
+#### fill\_input\_id
+
+```python
+def fill_input_id(identifier: Union[str, int], text: str) -> str
+```
+
+Fill an input field with the given text, and then press Enter.
+
+**Arguments**:
+
+- `identifier` _str_ - The identifier of the input field.
+- `text` _str_ - The text to fill.
+  
+
+**Returns**:
+
+- `str` - The result of the action.
+
+<a id="camel.toolkits.browser_toolkit.BaseBrowser.hover_id"></a>
+
+#### hover\_id
+
+```python
+def hover_id(identifier: Union[str, int]) -> str
+```
+
+Hover over an element with the given identifier.
+
+**Arguments**:
+
+- `identifier` _str_ - The identifier of the element to hover over.
+  
+
+**Returns**:
+
+- `str` - The result of the action.
+
+<a id="camel.toolkits.browser_toolkit.BaseBrowser.find_text_on_page"></a>
+
+#### find\_text\_on\_page
+
+```python
+def find_text_on_page(search_text: str) -> str
+```
+
+Find the next given text on the page, and scroll the page to the
+targeted text. It is equivalent to pressing Ctrl + F and searching for
+the text.
+
+<a id="camel.toolkits.browser_toolkit.BaseBrowser.back"></a>
+
+#### back
+
+```python
+def back()
+```
+
+Navigate back to the previous page.
+
+<a id="camel.toolkits.browser_toolkit.BaseBrowser.show_interactive_elements"></a>
+
+#### show\_interactive\_elements
+
+```python
+def show_interactive_elements()
+```
+
+Show simple interactive elements on the current page.
+
+<a id="camel.toolkits.browser_toolkit.BrowserToolkit"></a>
+
+## BrowserToolkit Objects
+
+```python
+class BrowserToolkit(BaseToolkit)
+```
+
+A class for browsing the web and interacting with web pages.
+
+This class provides methods for browsing the web and interacting with web
+pages.
+
+<a id="camel.toolkits.browser_toolkit.BrowserToolkit.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(headless: bool = False,
+             cache_dir: Optional[str] = None,
+             channel: Literal["chrome", "msedge", "chromium"] = "chromium",
+             history_window: int = 5,
+             web_agent_model: Optional[BaseModelBackend] = None,
+             planning_agent_model: Optional[BaseModelBackend] = None,
+             output_language: str = "en",
+             cookie_json_path: Optional[str] = None)
+```
+
+Initialize the BrowserToolkit instance.
+
+**Arguments**:
+
+- `headless` _bool_ - Whether to run the browser in headless mode.
+- `cache_dir` _Union[str, None]_ - The directory to store cache files.
+- `channel` _Literal["chrome", "msedge", "chromium"]_ - The browser
+  channel to use. Must be one of "chrome", "msedge", or
+  "chromium".
+- `history_window` _int_ - The window size for storing the history of
+  actions.
+- `web_agent_model` _Optional[BaseModelBackend]_ - The model backend
+  for the web agent.
+- `planning_agent_model` _Optional[BaseModelBackend]_ - The model
+  backend for the planning agent.
+- `output_language` _str_ - The language to use for output.
+- `(default` - :obj:`"en`")
+- `cookie_json_path` _Optional[str]_ - Path to a JSON file containing
+  authentication cookies and browser storage state. If provided
+  and the file exists, the browser will load this state to maintain
+  authenticated sessions without requiring manual login.
+- `(default` - :obj:`None`)
+
+<a id="camel.toolkits.browser_toolkit.BrowserToolkit.browse_url"></a>
+
+#### browse\_url
+
+```python
+@dependencies_required("playwright")
+def browse_url(task_prompt: str, start_url: str, round_limit: int = 12) -> str
+```
+
+A powerful toolkit which can simulate the browser interaction to
+solve the task which needs multi-step actions.
+
+**Arguments**:
+
+- `task_prompt` _str_ - The task prompt to solve.
+- `start_url` _str_ - The start URL to visit.
+- `round_limit` _int_ - The round limit to solve the task.
+- `(default` - :obj:`12`).
+  
+
+**Returns**:
+
+- `str` - The simulation result to the task.
+

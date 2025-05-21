@@ -1,0 +1,49 @@
+---
+title: "camel.verifiers.models"
+description: "Documentation for the camel.verifiers.models module"
+---
+
+<a id="camel.verifiers.models"></a>
+
+# camel.verifiers.models
+
+<a id="camel.verifiers.models.VerificationOutcome"></a>
+
+## VerificationOutcome Objects
+
+```python
+class VerificationOutcome(Enum)
+```
+
+Enum representing the status of a verification.
+
+<a id="camel.verifiers.models.VerificationOutcome.__bool__"></a>
+
+#### \_\_bool\_\_
+
+```python
+def __bool__()
+```
+
+Only VerificationOutcome.SUCCESS is truthy; others are falsy.
+
+<a id="camel.verifiers.models.VerificationResult"></a>
+
+## VerificationResult Objects
+
+```python
+class VerificationResult(BaseModel)
+```
+
+Structured result from a verification.
+
+<a id="camel.verifiers.models.VerifierConfig"></a>
+
+## VerifierConfig Objects
+
+```python
+class VerifierConfig(BaseModel)
+```
+
+Configuration for verifier behavior.
+

@@ -1,0 +1,279 @@
+---
+title: "camel.runtime.docker_runtime"
+description: "Documentation for the camel.runtime.docker_runtime module"
+---
+
+<a id="camel.runtime.docker_runtime"></a>
+
+# camel.runtime.docker\_runtime
+
+<a id="camel.runtime.docker_runtime.DockerRuntime"></a>
+
+## DockerRuntime Objects
+
+```python
+class DockerRuntime(BaseRuntime)
+```
+
+A class representing a runtime environment using Docker.
+This class automatically wraps functions to be executed
+in a Docker container.
+
+**Arguments**:
+
+- `image` _str_ - The name of the Docker image to use for the runtime.
+- `port` _int_ - The port number to use for the runtime API. (default: :obj:
+  `8000`)
+- `remove` _bool_ - Whether to remove the container after stopping it. '
+- `(default` - :obj: `True`)
+- `kwargs` _dict_ - Additional keyword arguments to pass to the
+  Docker client.
+
+<a id="camel.runtime.docker_runtime.DockerRuntime.mount"></a>
+
+#### mount
+
+```python
+def mount(path: str, mount_path: str) -> "DockerRuntime"
+```
+
+Mount a local directory to the container.
+
+**Arguments**:
+
+- `path` _str_ - The local path to mount.
+- `mount_path` _str_ - The path to mount the local directory to in the
+  container.
+  
+
+**Returns**:
+
+- `DockerRuntime` - The DockerRuntime instance.
+
+<a id="camel.runtime.docker_runtime.DockerRuntime.copy"></a>
+
+#### copy
+
+```python
+def copy(source: str, dest: str) -> "DockerRuntime"
+```
+
+Copy a file or directory to the container.
+
+**Arguments**:
+
+- `source` _str_ - The local path to the file.
+- `dest` _str_ - The path to copy the file to in the container.
+  
+
+**Returns**:
+
+- `DockerRuntime` - The DockerRuntime instance.
+
+<a id="camel.runtime.docker_runtime.DockerRuntime.add_task"></a>
+
+#### add\_task
+
+```python
+def add_task(task: TaskConfig) -> "DockerRuntime"
+```
+
+Add a task to run a command inside the container when building.
+Similar to `docker exec`.
+
+**Arguments**:
+
+- `task` _TaskConfig_ - The configuration for the task.
+  
+
+**Returns**:
+
+- `DockerRuntime` - The DockerRuntime instance.
+
+<a id="camel.runtime.docker_runtime.DockerRuntime.exec_run"></a>
+
+#### exec\_run
+
+```python
+def exec_run(task: TaskConfig) -> Any
+```
+
+Run a command inside this container. Similar to `docker exec`.
+
+**Arguments**:
+
+- `task` _TaskConfig_ - The configuration for the task.
+  
+
+**Returns**:
+
+- `(ExecResult)` - A tuple of (exit_code, output)
+- `exit_code` - (int):
+  Exit code for the executed command or `None` if
+  either `stream` or `socket` is `True`.
+- `output` - (generator, bytes, or tuple):
+  If `stream=True`, a generator yielding response chunks.
+  If `socket=True`, a socket object for the connection.
+  If `demux=True`, a tuple of two bytes: stdout and stderr.
+  A bytestring containing response data otherwise.
+  
+
+**Raises**:
+
+- `RuntimeError` - If the container does not exist.
+
+<a id="camel.runtime.docker_runtime.DockerRuntime.build"></a>
+
+#### build
+
+```python
+def build(time_out: int = 15) -> "DockerRuntime"
+```
+
+Build the Docker container and start it.
+
+**Arguments**:
+
+- `time_out` _int_ - The number of seconds to wait for the container to
+  start. (default: :obj: `15`)
+  
+
+**Returns**:
+
+- `DockerRuntime` - The DockerRuntime instance.
+
+<a id="camel.runtime.docker_runtime.DockerRuntime.add"></a>
+
+#### add
+
+```python
+def add(funcs: Union[FunctionTool, List[FunctionTool]],
+        entrypoint: str,
+        redirect_stdout: bool = False,
+        arguments: Optional[Dict[str, Any]] = None) -> "DockerRuntime"
+```
+
+Add a function or list of functions to the runtime.
+
+**Arguments**:
+
+- `funcs` _Union[FunctionTool, List[FunctionTool]]_ - The function or
+  list of functions to add.
+- `entrypoint` _str_ - The entrypoint for the function.
+- `redirect_stdout` _bool_ - Whether to return the stdout of
+  the function. (default: :obj: `False`)
+- `arguments` _Optional[Dict[str, Any]]_ - The arguments for the
+  function. (default: :obj: `None`)
+  
+
+**Returns**:
+
+- `DockerRuntime` - The DockerRuntime instance.
+
+<a id="camel.runtime.docker_runtime.DockerRuntime.reset"></a>
+
+#### reset
+
+```python
+def reset() -> "DockerRuntime"
+```
+
+Reset the DockerRuntime instance.
+
+**Returns**:
+
+- `DockerRuntime` - The DockerRuntime instance.
+
+<a id="camel.runtime.docker_runtime.DockerRuntime.stop"></a>
+
+#### stop
+
+```python
+def stop(remove: Optional[bool] = None) -> "DockerRuntime"
+```
+
+stop the Docker container.
+
+**Arguments**:
+
+- `remove` _Optional[bool]_ - Whether to remove the container
+  after stopping it. (default: :obj: `None`)
+  
+
+**Returns**:
+
+- `DockerRuntime` - The DockerRuntime instance.
+
+<a id="camel.runtime.docker_runtime.DockerRuntime.ok"></a>
+
+#### ok
+
+```python
+@property
+def ok() -> bool
+```
+
+Check if the API Server is running.
+
+**Returns**:
+
+- `bool` - Whether the API Server is running.
+
+<a id="camel.runtime.docker_runtime.DockerRuntime.wait"></a>
+
+#### wait
+
+```python
+def wait(timeout: int = 10) -> bool
+```
+
+Wait for the API Server to be ready.
+
+**Arguments**:
+
+- `timeout` _int_ - The number of seconds to wait. (default: :obj: `10`)
+  
+
+**Returns**:
+
+- `bool` - Whether the API Server is ready.
+
+<a id="camel.runtime.docker_runtime.DockerRuntime.__enter__"></a>
+
+#### \_\_enter\_\_
+
+```python
+def __enter__() -> "DockerRuntime"
+```
+
+Enter the context manager.
+
+**Returns**:
+
+- `DockerRuntime` - The DockerRuntime instance.
+
+<a id="camel.runtime.docker_runtime.DockerRuntime.__exit__"></a>
+
+#### \_\_exit\_\_
+
+```python
+def __exit__(exc_type, exc_val, exc_tb)
+```
+
+Exit the context manager.
+
+<a id="camel.runtime.docker_runtime.DockerRuntime.docs"></a>
+
+#### docs
+
+```python
+@property
+def docs() -> str
+```
+
+Get the URL for the API documentation.
+
+**Returns**:
+
+- `str` - The URL for the API documentation.
+

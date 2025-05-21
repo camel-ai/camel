@@ -1,0 +1,182 @@
+---
+title: "camel.societies.role_playing"
+description: "Documentation for the camel.societies.role_playing module"
+---
+
+<a id="camel.societies.role_playing"></a>
+
+# camel.societies.role\_playing
+
+<a id="camel.societies.role_playing.RolePlaying"></a>
+
+## RolePlaying Objects
+
+```python
+class RolePlaying()
+```
+
+Role playing between two agents.
+
+**Arguments**:
+
+- `assistant_role_name` _str_ - The name of the role played by the
+  assistant.
+- `user_role_name` _str_ - The name of the role played by the user.
+- `critic_role_name` _str, optional_ - The name of the role played by the
+  critic. Role name with :obj:`"human"` will set critic as a
+  :obj:`Human` agent, else will create a :obj:`CriticAgent`.
+- `(default` - :obj:`"critic"`)
+- `task_prompt` _str, optional_ - A prompt for the task to be performed.
+- `(default` - :obj:`""`)
+- `with_task_specify` _bool, optional_ - Whether to use a task specify
+  agent. (default: :obj:`True`)
+- `with_task_planner` _bool, optional_ - Whether to use a task planner
+  agent. (default: :obj:`False`)
+- `with_critic_in_the_loop` _bool, optional_ - Whether to include a critic
+  in the loop. (default: :obj:`False`)
+- `critic_criteria` _str, optional_ - Critic criteria for the critic agent.
+  If not specified, set the criteria to improve task performance.
+- `model` _BaseModelBackend, optional_ - The model backend to use for
+  generating responses. If specified, it will override the model in
+  all agents if not specified in agent-specific kwargs. (default:
+  :obj:`OpenAIModel` with `GPT_4O_MINI`)
+- `task_type` _TaskType, optional_ - The type of task to perform.
+- `(default` - :obj:`TaskType.AI_SOCIETY`)
+- `assistant_agent_kwargs` _Dict, optional_ - Additional arguments to pass
+  to the assistant agent. (default: :obj:`None`)
+- `user_agent_kwargs` _Dict, optional_ - Additional arguments to pass to
+  the user agent. (default: :obj:`None`)
+- `task_specify_agent_kwargs` _Dict, optional_ - Additional arguments to
+  pass to the task specify agent. (default: :obj:`None`)
+- `task_planner_agent_kwargs` _Dict, optional_ - Additional arguments to
+  pass to the task planner agent. (default: :obj:`None`)
+- `critic_kwargs` _Dict, optional_ - Additional arguments to pass to the
+  critic. (default: :obj:`None`)
+- `sys_msg_generator_kwargs` _Dict, optional_ - Additional arguments to
+  pass to the system message generator. (default: :obj:`None`)
+- `extend_sys_msg_meta_dicts` _List[Dict], optional_ - A list of dicts to
+  extend the system message meta dicts with. (default: :obj:`None`)
+- `extend_task_specify_meta_dict` _Dict, optional_ - A dict to extend the
+  task specify meta dict with. (default: :obj:`None`)
+- `output_language` _str, optional_ - The language to be output by the
+  agents. (default: :obj:`None`)
+- `stop_event` _Optional[threading.Event], optional_ - Event to signal
+  termination of the agent's operation. When set, the agent will
+  terminate its execution. (default: :obj:`None`)
+
+<a id="camel.societies.role_playing.RolePlaying.init_chat"></a>
+
+#### init\_chat
+
+```python
+def init_chat(init_msg_content: Optional[str] = None) -> BaseMessage
+```
+
+Initializes the chat by resetting both of the assistant and user
+agents. Returns an initial message for the role-playing session.
+
+**Arguments**:
+
+- `init_msg_content` _str, optional_ - A user-specified initial message.
+  Will be sent to the role-playing session as the initial
+  message. (default: :obj:`None`)
+  
+
+**Returns**:
+
+- `BaseMessage` - A single `BaseMessage` representing the initial
+  message.
+
+<a id="camel.societies.role_playing.RolePlaying.ainit_chat"></a>
+
+#### ainit\_chat
+
+```python
+async def ainit_chat(init_msg_content: Optional[str] = None) -> BaseMessage
+```
+
+Asynchronously initializes the chat by resetting both of the
+assistant and user agents. Returns an initial message for the
+role-playing session.
+
+**Arguments**:
+
+- `init_msg_content` _str, optional_ - A user-specified initial message.
+  Will be sent to the role-playing session as the initial
+  message. (default: :obj:`None`)
+  
+
+**Returns**:
+
+- `BaseMessage` - A single `BaseMessage` representing the initial
+  message.
+
+<a id="camel.societies.role_playing.RolePlaying.step"></a>
+
+#### step
+
+```python
+def step(
+        assistant_msg: BaseMessage
+) -> Tuple[ChatAgentResponse, ChatAgentResponse]
+```
+
+Advances the conversation by taking a message from the assistant,
+processing it using the user agent, and then processing the resulting
+message using the assistant agent. Returns a tuple containing the
+resulting assistant message, whether the assistant agent terminated
+the conversation, and any additional assistant information, as well as
+a tuple containing the resulting user message, whether the user agent
+terminated the conversation, and any additional user information.
+
+**Arguments**:
+
+- `assistant_msg` - A `BaseMessage` representing the message from the
+  assistant.
+  
+
+**Returns**:
+
+  Tuple[ChatAgentResponse, ChatAgentResponse]: A tuple containing two
+- `ChatAgentResponse` - the first struct contains the resulting
+  assistant message, whether the assistant agent terminated the
+  conversation, and any additional assistant information; the
+  second struct contains the resulting user message, whether the
+  user agent terminated the conversation, and any additional user
+  information.
+
+<a id="camel.societies.role_playing.RolePlaying.astep"></a>
+
+#### astep
+
+```python
+async def astep(
+        assistant_msg: BaseMessage
+) -> Tuple[ChatAgentResponse, ChatAgentResponse]
+```
+
+Asynchronously advances the conversation by taking a message from
+the assistant, processing it using the user agent, and then processing
+the resulting message using the assistant agent. Returns a tuple
+containing the resulting assistant message, whether the assistant
+agent terminated the conversation, and any additional assistant
+information, as well as a tuple containing the resulting user message,
+whether the user agent terminated the conversation, and any additional
+user information.
+
+**Arguments**:
+
+- `assistant_msg` - A `BaseMessage` representing the message from the
+  assistant.
+  
+
+**Returns**:
+
+  Tuple[ChatAgentResponse, ChatAgentResponse]: A tuple containing two
+- `ChatAgentResponse` - the first struct contains the resulting
+  assistant message, whether the assistant agent terminated the
+  conversation, and any additional assistant information; the
+  second struct contains the resulting user message, whether the
+  user agent terminated the conversation, and any additional user
+  information.
+

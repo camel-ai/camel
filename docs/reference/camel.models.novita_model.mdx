@@ -1,0 +1,57 @@
+---
+title: "camel.models.novita_model"
+description: "Documentation for the camel.models.novita_model module"
+---
+
+<a id="camel.models.novita_model"></a>
+
+# camel.models.novita\_model
+
+<a id="camel.models.novita_model.NovitaModel"></a>
+
+## NovitaModel Objects
+
+```python
+class NovitaModel(OpenAICompatibleModel)
+```
+
+Constructor for Novita backend with OpenAI compatibility.
+
+**Arguments**:
+
+- `model_type` _Union[ModelType, str]_ - Model for which a backend is
+  created, supported model can be found here:
+  https://novita.ai/models?utm_source=github_owl&utm_campaign=github_link
+- `model_config_dict` _Optional[Dict[str, Any]], optional_ - A dictionary
+  that will be fed into:obj:`openai.ChatCompletion.create()`. If
+  :obj:`None`, :obj:`NovitaConfig().as_dict()` will be used.
+- `(default` - :obj:`None`)
+- `api_key` _Optional[str], optional_ - The API key for authenticating with
+  the Novita service. (default: :obj:`None`)
+- `url` _Optional[str], optional_ - The url to the Novita service.
+  If not provided, "https://api.novita.ai/v3/openai" will be used.
+- `(default` - :obj:`None`)
+- `token_counter` _Optional[BaseTokenCounter], optional_ - Token counter to
+  use for the model. If not provided, :obj:`OpenAITokenCounter(
+  ModelType.GPT_4O_MINI)` will be used.
+- `timeout` _Optional[float], optional_ - The timeout value in seconds for
+  API calls. If not provided, will fall back to the MODEL_TIMEOUT
+  environment variable or default to 180 seconds.
+- `(default` - :obj:`None`)
+
+<a id="camel.models.novita_model.NovitaModel.check_model_config"></a>
+
+#### check\_model\_config
+
+```python
+def check_model_config()
+```
+
+Check whether the model configuration contains any
+unexpected arguments to Novita API.
+
+**Raises**:
+
+- `ValueError` - If the model configuration dictionary contains any
+  unexpected arguments to Novita API.
+

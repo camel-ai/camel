@@ -1,0 +1,94 @@
+---
+title: "camel.toolkits.retrieval_toolkit"
+description: "Documentation for the camel.toolkits.retrieval_toolkit module"
+---
+
+<a id="camel.toolkits.retrieval_toolkit"></a>
+
+# camel.toolkits.retrieval\_toolkit
+
+<a id="camel.toolkits.retrieval_toolkit.RetrievalToolkit"></a>
+
+## RetrievalToolkit Objects
+
+```python
+@MCPServer()
+class RetrievalToolkit(BaseToolkit)
+```
+
+A class representing a toolkit for information retrieval.
+
+This class provides methods for retrieving information from a local vector
+storage system based on a specified query.
+
+<a id="camel.toolkits.retrieval_toolkit.RetrievalToolkit.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(auto_retriever: Optional[AutoRetriever] = None,
+             timeout: Optional[float] = None) -> None
+```
+
+Initializes a new instance of the RetrievalToolkit class.
+
+<a id="camel.toolkits.retrieval_toolkit.RetrievalToolkit.information_retrieval"></a>
+
+#### information\_retrieval
+
+```python
+def information_retrieval(
+    query: str,
+    contents: Union[str, List[str]],
+    top_k: int = Constants.DEFAULT_TOP_K_RESULTS,
+    similarity_threshold: float = Constants.DEFAULT_SIMILARITY_THRESHOLD
+) -> str
+```
+
+Retrieves information from a local vector storage based on the
+specified query. This function connects to a local vector storage
+system and retrieves relevant information by processing the input
+query. It is essential to use this function when the answer to a
+question requires external knowledge sources.
+
+**Arguments**:
+
+- `query` _str_ - The question or query for which an answer is required.
+- `contents` _Union[str, List[str]]_ - Local file paths, remote URLs or
+  string contents.
+- `top_k` _int, optional_ - The number of top results to return during
+  retrieve. Must be a positive integer. Defaults to
+  `DEFAULT_TOP_K_RESULTS`.
+- `similarity_threshold` _float, optional_ - The similarity threshold
+  for filtering results. Defaults to
+  `DEFAULT_SIMILARITY_THRESHOLD`.
+  
+
+**Returns**:
+
+- `str` - The information retrieved in response to the query, aggregated
+  and formatted as a string.
+  
+
+**Example**:
+
+  # Retrieve information about CAMEL AI.
+  information_retrieval(query = "How to contribute to CAMEL AI?",
+  contents="https://github.com/camel-ai/camel/blob/master/CONTRIBUTING.md")
+
+<a id="camel.toolkits.retrieval_toolkit.RetrievalToolkit.get_tools"></a>
+
+#### get\_tools
+
+```python
+def get_tools() -> List[FunctionTool]
+```
+
+Returns a list of FunctionTool objects representing the
+functions in the toolkit.
+
+**Returns**:
+
+- `List[FunctionTool]` - A list of FunctionTool objects
+  representing the functions in the toolkit.
+

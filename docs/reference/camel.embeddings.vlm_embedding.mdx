@@ -1,0 +1,90 @@
+---
+title: "camel.embeddings.vlm_embedding"
+description: "Documentation for the camel.embeddings.vlm_embedding module"
+---
+
+<a id="camel.embeddings.vlm_embedding"></a>
+
+# camel.embeddings.vlm\_embedding
+
+<a id="camel.embeddings.vlm_embedding.VisionLanguageEmbedding"></a>
+
+## VisionLanguageEmbedding Objects
+
+```python
+class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]])
+```
+
+Provides image embedding functionalities using multimodal model.
+
+**Arguments**:
+
+  model_name : The model type to be used for generating embeddings.
+  And the default value is: obj:`openai/clip-vit-base-patch32`.
+  
+
+**Raises**:
+
+- `RuntimeError` - If an unsupported model type is specified.
+
+<a id="camel.embeddings.vlm_embedding.VisionLanguageEmbedding.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(model_name: str = "openai/clip-vit-base-patch32") -> None
+```
+
+Initializes the: obj: `VisionLanguageEmbedding` class with a
+specified model and return the dimension of embeddings.
+
+**Arguments**:
+
+- `model_name` _str, optional_ - The version name of the model to use.
+- `(default` - :obj:`openai/clip-vit-base-patch32`)
+
+<a id="camel.embeddings.vlm_embedding.VisionLanguageEmbedding.embed_list"></a>
+
+#### embed\_list
+
+```python
+def embed_list(objs: List[Union[Image.Image, str]],
+               **kwargs: Any) -> List[List[float]]
+```
+
+Generates embeddings for the given images or texts.
+
+**Arguments**:
+
+- `objs` _List[Image.Image|str]_ - The list of images or texts for
+  which to generate the embeddings.
+- `image_processor_kwargs` - Extra kwargs passed to the image processor.
+- `tokenizer_kwargs` - Extra kwargs passed to the text tokenizer
+  (processor).
+- `model_kwargs` - Extra kwargs passed to the main model.
+  
+
+**Returns**:
+
+- `List[List[float]]` - A list that represents the generated embedding
+  as a list of floating-point numbers.
+  
+
+**Raises**:
+
+- `ValueError` - If the input type is not `Image.Image` or `str`.
+
+<a id="camel.embeddings.vlm_embedding.VisionLanguageEmbedding.get_output_dim"></a>
+
+#### get\_output\_dim
+
+```python
+def get_output_dim() -> int
+```
+
+Returns the output dimension of the embeddings.
+
+**Returns**:
+
+- `int` - The dimensionality of the embedding for the current model.
+
