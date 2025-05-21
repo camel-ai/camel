@@ -2,8 +2,6 @@
 title: "Batched Single Step Environment in Camel"
 ---
 
-# Batched Single Step Environment in Camel
-
 Single Step environments are the most widespread type of environment when doing RL with an LLM as policy.
 
 It's called *single step* environment, because the agent only does one step. It gets a question sampled from the dataset (the initial state / observation) and then answers. The answer is then scored according to the reward function. Recently, rules-based reward functions, i.e. functions without any learnable parameters, have been successfully used to do RL with LLMs as as policy.
