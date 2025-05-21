@@ -22,7 +22,7 @@ model = ModelFactory.create(
     model_type=ModelType.DEFAULT,
 )
 
-reranker_toolkit = JinaRerankerToolkit(device="cpu")
+reranker_toolkit = JinaRerankerToolkit(device="cpu", use_api=False)
 reranker_tool = reranker_toolkit.get_tools()
 
 agent = ChatAgent(model=model, tools=reranker_tool)

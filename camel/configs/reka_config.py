@@ -66,4 +66,4 @@ class RekaConfig(BaseConfig):
     use_search_engine: Optional[bool] = None
 
 
-REKA_API_PARAMS = {param for param in RekaConfig().model_fields.keys()}
+REKA_API_PARAMS = {param for param in RekaConfig.model_fields.keys()}
