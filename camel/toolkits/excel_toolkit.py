@@ -12,14 +12,19 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import List, Optional
+# Enables postponed evaluation of annotations (for string-based type hints)
+from __future__ import annotations
 
-import pandas as pd
+from typing import TYPE_CHECKING, List, Optional
 
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.utils import MCPServer
+
+# Import only for type hints (not executed at runtime)
+if TYPE_CHECKING:
+    import pandas as pd
 
 logger = get_logger(__name__)
 
@@ -29,7 +34,9 @@ class ExcelToolkit(BaseToolkit):
     r"""A class representing a toolkit for extract detailed cell information
     from an Excel file.
 
-    This class provides method for processing excel files.
+    This class provides methods extracting detailed content from Excel files
+    (including .xls, .xlsx,.csv), and converting the data into
+    Markdown formatted table.
     """
 
     def __init__(
@@ -69,6 +76,7 @@ class ExcelToolkit(BaseToolkit):
         Returns:
             str: Extracted excel information, including details of each sheet.
         """
+        import pandas as pd
         from openpyxl import load_workbook
         from xls2xlsx import XLS2XLSX
 
