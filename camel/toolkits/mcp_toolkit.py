@@ -11,12 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import asyncio
 import inspect
 import json
 import os
 import shlex
 from contextlib import AsyncExitStack, asynccontextmanager
 from datetime import timedelta
+from functools import wraps
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -39,6 +41,31 @@ from camel.logger import get_logger
 from camel.toolkits import BaseToolkit, FunctionTool
 
 logger = get_logger(__name__)
+
+
+def run_async(func: Callable[..., Any]) -> Callable[..., Any]:
+    """Helper function to run async functions in synchronous context.
+    Args:
+        func (Callable[..., T]): The async function to wrap.
+    Returns:
+        Callable[..., T]: A synchronous wrapper for the async function.
+    """
+
+    @wraps(func)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        if loop.is_closed():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        return loop.run_until_complete(func(*args, **kwargs))
+
+    return wrapper
 
 
 class MCPClient(BaseToolkit):
@@ -220,6 +247,10 @@ class MCPClient(BaseToolkit):
             logger.error(f"Failed to connect to MCP server: {e}")
             raise e
 
+    def connect_sync(self):
+        r"""Synchronously connect to the MCP server."""
+        return run_async(self.connect)()
+
     async def disconnect(self):
         r"""Explicitly disconnect from the MCP server."""
         # If the server is not connected, do nothing
@@ -234,6 +265,10 @@ class MCPClient(BaseToolkit):
         finally:
             self._exit_stack = AsyncExitStack()
             self._session = None
+
+    def disconnect_sync(self):
+        r"""Synchronously disconnect from the MCP server."""
+        return run_async(self.disconnect)()
 
     @asynccontextmanager
     async def connection(self):
@@ -254,6 +289,10 @@ class MCPClient(BaseToolkit):
             except Exception as e:
                 logger.warning(f"Error: {e}")
 
+    def connection_sync(self):
+        r"""Synchronously connect to the MCP server."""
+        return run_async(self.connection)()
+
     async def list_mcp_tools(self) -> Union[str, "ListToolsResult"]:
         r"""Retrieves the list of available tools from the connected MCP
         server.
@@ -268,6 +307,11 @@ class MCPClient(BaseToolkit):
         except Exception as e:
             logger.exception("Failed to list MCP tools")
             raise e
+
+    def list_mcp_tools_sync(self) -> Union[str, "ListToolsResult"]:
+        r"""Synchronously list the available tools from the connected MCP
+        server."""
+        return run_async(self.list_mcp_tools)()
 
     def generate_function_from_mcp_tool(self, mcp_tool: "Tool") -> Callable:
         r"""Dynamically generates a Python callable function corresponding to
@@ -390,6 +434,10 @@ class MCPClient(BaseToolkit):
 
         return dynamic_function
 
+    def generate_function_from_mcp_tool_sync(self, mcp_tool: "Tool") -> Any:
+        r"""Synchronously generate a function from an MCP tool."""
+        return run_async(self.generate_function_from_mcp_tool)(mcp_tool)
+
     def _build_tool_schema(self, mcp_tool: "Tool") -> Dict[str, Any]:
         input_schema = mcp_tool.inputSchema
         properties = input_schema.get("properties", {})
@@ -463,6 +511,10 @@ class MCPClient(BaseToolkit):
 
         return await self._session.call_tool(tool_name, tool_args)
 
+    def call_tool_sync(self, tool_name: str, tool_args: Dict[str, Any]) -> Any:
+        r"""Synchronously call a tool."""
+        return run_async(self.call_tool)(tool_name, tool_args)
+
     @property
     def session(self) -> Optional["ClientSession"]:
         return self._session
@@ -521,6 +573,20 @@ class MCPClient(BaseToolkit):
             logger.error(f"Failed to initialize MCPClient: {e}")
             raise RuntimeError(f"Failed to initialize MCPClient: {e}") from e
 
+    def create_sync(
+        self,
+        command_or_url: str,
+        args: Optional[List[str]] = None,
+        env: Optional[Dict[str, str]] = None,
+        timeout: Optional[float] = None,
+        headers: Optional[Dict[str, str]] = None,
+        mode: Optional[str] = None,
+    ) -> "MCPClient":
+        r"""Synchronously create and connect to the MCP server."""
+        return run_async(self.create)(
+            command_or_url, args, env, timeout, headers, mode
+        )
+
     async def __aenter__(self) -> "MCPClient":
         r"""Async context manager entry point. Automatically connects to the
         MCP server when used in an async with statement.
@@ -531,11 +597,19 @@ class MCPClient(BaseToolkit):
         await self.connect()
         return self
 
+    def __enter__(self) -> "MCPClient":
+        r"""Synchronously enter the async context manager."""
+        return run_async(self.__aenter__)()
+
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         r"""Async context manager exit point. Automatically disconnects from
         the MCP server when exiting an async with statement.
         """
         await self.disconnect()
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        r"""Synchronously exit the async context manager."""
+        return run_async(self.__aexit__)(exc_type, exc_val, exc_tb)
 
 
 class MCPToolkit(BaseToolkit):
@@ -749,6 +823,10 @@ class MCPToolkit(BaseToolkit):
             logger.error(f"Failed to connect to one or more MCP servers: {e}")
             raise e
 
+    def connect_sync(self):
+        r"""Synchronously connect to all MCP servers."""
+        return run_async(self.connect)()
+
     async def disconnect(self):
         r"""Explicitly disconnect from all MCP servers."""
         if not self._connected:
@@ -757,6 +835,10 @@ class MCPToolkit(BaseToolkit):
         for server in self.servers:
             await server.disconnect()
         self._connected = False
+
+    def disconnect_sync(self):
+        r"""Synchronously disconnect from all MCP servers."""
+        return run_async(self.disconnect)()
 
     @asynccontextmanager
     async def connection(self) -> AsyncGenerator["MCPToolkit", None]:
@@ -771,6 +853,10 @@ class MCPToolkit(BaseToolkit):
             yield self
         finally:
             await self.disconnect()
+
+    def connection_sync(self):
+        r"""Synchronously connect to all MCP servers."""
+        return run_async(self.connection)()
 
     def is_connected(self) -> bool:
         r"""Checks if all the managed servers are connected.
