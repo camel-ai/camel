@@ -136,7 +136,7 @@ following the same syntax as normal tool calls without a runtime.
 ```
     # There are more tools imported from MathToolkit. 
     # For simplicity, we use only "add" tool here
-    add = runtime.get_tools()[:1]  
+    add = runtime.get_tools()[0]  
     print(f"Add 1 + 2: {add.func(1, 2)}")
     
     # Example Output:
