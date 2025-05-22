@@ -1712,25 +1712,26 @@ class ChatAgent(BaseAgent):
 
     def to_mcp(
         self,
-        name: str = "default",
-        description: str = "A helpful assistant using the Camel AI framework.",
+        name: str = "CAMEL-ChatAgent",
+        description: str = "A helpful assistant using the CAMEL AI framework.",
         dependencies: Optional[list] = None,
-        host: str = 'localhost',
+        host: str = "localhost",
         port: int = 8000,
     ):
-       r"""Expose this ChatAgent as an MCP server.
+        r"""Expose this ChatAgent as an MCP server.
 
         Args:
             name (str, optional): Name of the MCP server.
-                Defaults to "default".
+                (default: :obj:`CAMEL-ChatAgent`)
             description (str, optional): Description of the agent. If None, a
-                generic description is used. Defaults to None.
+                generic description is used. (default: :obj:`A helpful 
+                assistant using the CAMEL AI framework.`)
             dependencies (list, optional): Additional dependencies for the MCP
-                server. Defaults to None.
+                server. (default: :obj:`None`)
             host (str, optional): Host to bind to for HTTP transport.
-                Defaults to 'localhost'.
+                (default: :obj:`localhost`)
             port (int, optional): Port to bind to for HTTP transport.
-                Defaults to 8000.
+                (default: :obj:`8000`)
 
         Returns:
             FastMCP: An MCP server instance that can be run.
@@ -1749,7 +1750,7 @@ class ChatAgent(BaseAgent):
             all_dependencies.extend(dependencies)
 
         mcp_server = FastMCP(
-            f"ChatAgent-{name}",
+            name,
             dependencies=all_dependencies,
             host=host,
             port=port,
@@ -1760,7 +1761,7 @@ class ChatAgent(BaseAgent):
 
         # Define functions first
         async def step(message, response_format=None):
-            """Execute a single step in the chat session with the agent."""
+            r"""Execute a single step in the chat session with the agent."""
             format_cls = None
             if response_format:
                 format_cls = model_from_json_schema(
@@ -1776,13 +1777,13 @@ class ChatAgent(BaseAgent):
 
         # Reset tool
         def reset():
-            """Reset the chat agent to its initial state."""
+            r"""Reset the chat agent to its initial state."""
             agent_instance.reset()
             return {"status": "success", "message": "Agent reset successfully"}
 
         # Set language tool
         def set_output_language(language):
-            """Set the output language for the chat agent."""
+            r"""Set the output language for the chat agent."""
             agent_instance.output_language = language
             return {
                 "status": "success",
@@ -1791,7 +1792,7 @@ class ChatAgent(BaseAgent):
 
         # Agent info resource and tool
         def get_agent_info():
-            """Get information about the agent."""
+            r"""Get information about the agent."""
             info = {
                 "agent_id": self.agent_id,
                 "model_type": self.model_type.__repr__(),
@@ -1804,7 +1805,7 @@ class ChatAgent(BaseAgent):
 
         # Chat history resource and tool
         def get_chat_history():
-            """Get the chat history for the agent."""
+            r"""Get the chat history for the agent."""
             # Convert messages to simple serializable format
             messages = []
             for msg in agent_instance.chat_history:
@@ -1824,7 +1825,7 @@ class ChatAgent(BaseAgent):
 
         # Available tools resource and tool
         def get_available_tools():
-            """Get a list of available internal tools."""
+            r"""Get a list of available internal tools."""
             tool_info = {}
             for name, tool in agent_instance.tool_dict.items():
                 tool_info[name] = {
