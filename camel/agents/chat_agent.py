@@ -1718,7 +1718,7 @@ class ChatAgent(BaseAgent):
         host: str = 'localhost',
         port: int = 8000,
     ):
-        """Expose this ChatAgent as an MCP server.
+       r"""Expose this ChatAgent as an MCP server.
 
         Args:
             name (str, optional): Name of the MCP server.
