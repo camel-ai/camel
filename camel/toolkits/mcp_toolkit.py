@@ -11,14 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import asyncio
 import inspect
 import json
 import os
 import shlex
 from contextlib import AsyncExitStack, asynccontextmanager
 from datetime import timedelta
-from functools import wraps
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -39,33 +37,9 @@ if TYPE_CHECKING:
 
 from camel.logger import get_logger
 from camel.toolkits import BaseToolkit, FunctionTool
+from camel.utils.commons import run_async
 
 logger = get_logger(__name__)
-
-
-def run_async(func: Callable[..., Any]) -> Callable[..., Any]:
-    """Helper function to run async functions in synchronous context.
-    Args:
-        func (Callable[..., T]): The async function to wrap.
-    Returns:
-        Callable[..., T]: A synchronous wrapper for the async function.
-    """
-
-    @wraps(func)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
-        try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
-        if loop.is_closed():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
-        return loop.run_until_complete(func(*args, **kwargs))
-
-    return wrapper
 
 
 class MCPClient(BaseToolkit):
@@ -573,6 +547,7 @@ class MCPClient(BaseToolkit):
             logger.error(f"Failed to initialize MCPClient: {e}")
             raise RuntimeError(f"Failed to initialize MCPClient: {e}") from e
 
+    @classmethod
     def create_sync(
         self,
         command_or_url: str,
@@ -601,15 +576,30 @@ class MCPClient(BaseToolkit):
         r"""Synchronously enter the async context manager."""
         return run_async(self.__aenter__)()
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+    async def __aexit__(self) -> None:
         r"""Async context manager exit point. Automatically disconnects from
         the MCP server when exiting an async with statement.
+
+        Returns:
+            None
         """
         await self.disconnect()
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        r"""Synchronously exit the async context manager."""
-        return run_async(self.__aexit__)(exc_type, exc_val, exc_tb)
+        r"""Synchronously exit the async context manager.
+
+        Args:
+            exc_type (Optional[Type[Exception]]): The type of exception that
+                occurred during the execution of the with statement.
+            exc_val (Optional[Exception]): The exception that occurred during
+                the execution of the with statement.
+            exc_tb (Optional[TracebackType]): The traceback of the exception
+                that occurred during the execution of the with statement.
+
+        Returns:
+            None
+        """
+        return run_async(self.__aexit__)()
 
 
 class MCPToolkit(BaseToolkit):
