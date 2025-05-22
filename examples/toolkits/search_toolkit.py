@@ -17,48 +17,6 @@ from pydantic import BaseModel
 from camel.agents import ChatAgent
 from camel.toolkits import FunctionTool, SearchToolkit
 
-res_simple = SearchToolkit().query_wolfram_alpha(
-    query="solve 3x-7=11", is_detailed=False
-)
-
-print(res_simple)
-'''
-===============================================================================
-x = 6
-===============================================================================
-'''
-
-res_detailed = SearchToolkit().query_wolfram_alpha(
-    query="solve 3x-7=11", is_detailed=True
-)
-
-print(res_detailed)
-'''
-===============================================================================
-{'query': 'solve 3x-7=11', 'pod_info': [{'title': 'Input interpretation',
-'description': 'solve 3 x - 7 = 11', 'image_url': 'https://www6b3.wolframalpha.
-com/Calculate/MSP/MSP37741a3dc67f338579ff00003fih94dg39300iaf?
-MSPStoreType=image/gif&s=18'}, {'title': 'Result', 'description': 'x = 6',
-'image_url': 'https://www6b3.wolframalpha.com/Calculate/MSP/
-MSP37751a3dc67f338579ff00001dg4gbdcd0f10i3f?MSPStoreType=image/gif&s=18'},
-{'title': 'Plot', 'description': None, 'image_url': 'https://www6b3.
-wolframalpha.com/Calculate/MSP/MSP37761a3dc67f338579ff0000374484g95bh3ah3e?
-MSPStoreType=image/gif&s=18'}, {'title': 'Number line', 'description': None,
-'image_url': 'https://www6b3.wolframalpha.com/Calculate/MSP/
-MSP37771a3dc67f338579ff00005573c3a87ahg8dbc?MSPStoreType=image/gif&s=18'}],
-'final_answer': 'x = 6', 'steps': {'step1': 'Isolate terms with x to the left
-hand side.\nAdd 7 to both sides:\n3 x + (7 - 7) = 7 + 11', 'step2': 'Look for
-the difference of two identical terms.\n7 - 7 = 0:\n3 x = 11 + 7', 'step3':
-'Evaluate 11 + 7.\n11 + 7 = 18:\n3 x = 18', 'step4': 'Divide both sides by a
-constant to simplify the equation.\nDivide both sides of 3 x = 18 by 3:\n(3 x)/
-3 = 18/3', 'step5': 'Any nonzero number divided by itself is one.\n3/3 = 1:\nx
-= 18/3', 'step6': 'Reduce 18/3 to lowest terms. Start by finding the greatest
-common divisor of 18 and 3.\nThe greatest common divisor of 18 and 3 is 3, so
-factor out 3 from both the numerator and denominator: 18/3 = (3x6)/(3x1) = 3/3
-x 6 = 6\nAnswer: | \n | x = 6'}}
-===============================================================================
-'''
-
 res_brave = SearchToolkit().search_brave(
     q="What is the weather in Tokyo?",
     search_lang="en",
@@ -392,5 +350,31 @@ traditional surface codes while achieving similar error thresholds.
 
 These studies reflect ongoing advances in quantum error correction, focusing 
 on improving efficiency, fault tolerance, and minimizing resource overheads.
+===============================================================================
+"""
+
+search_alibaba_tongxiao_response = SearchToolkit().search_alibaba_tongxiao(
+    query="Alibaba's chip investment for 2025", time_range="OneMonth"
+)
+print(search_alibaba_tongxiao_response)
+# ruff: noqa: RUF001
+"""
+===============================================================================
+{'request_id': '78a77a7e004dd97bc18bd907b90d152b', 'results': [
+{'result_id': 1, 'title': 'Investor Relations', 'snippet':
+ 'Stock Information Alibaba Group(BABA)-NYSE 112.280 1.690（-1.483%） 
+ 2025-04-15T20:01 EDT Prices shown in USD The data service is provided
+   by Alibaba Cloud,with a delay of at least 15 minutes. Alibaba 
+   Group(9988)-H...', 'url': 'https://www.alibabagroup.com/
+   en-US/investor-relations', 'hostname': 'www.alibabagroup.com', 
+   'summary': 'February 20, 2025\nAlibaba Group Will Announce December
+   Quarter 2024 Results on February 20, 2025April 2, 2025\nAlibaba Group 
+   Announces December Quarter 2024 Results\nFebruary 20, 2025Stock 
+   Information\nAlibaba Group (BABA) - NYSE\n$\n112.280\n-$1.690（-1.483%
+   2025-04-15T20:01 EDTAlibaba Group (9988) - HKEX\nHK$\n104.400\n-HK$5.500
+   （-5.005%）\n2025-04-16T12:00 HKT\nPrices shown in HKD', 
+   'score': 0.33736322991609163, 'publish_time': 1744646400000},
+{'result_id': 2, 'title': 'technode'.....}
+]}
 ===============================================================================
 """
