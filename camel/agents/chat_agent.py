@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import logging
 import textwrap
+import threading
 import uuid
 from collections import defaultdict
 from datetime import datetime
@@ -28,6 +29,7 @@ from typing import (
     List,
     Optional,
     Set,
+    Tuple,
     Type,
     Union,
 )
@@ -73,11 +75,13 @@ from camel.types import (
     RoleType,
 )
 from camel.types.agents import ToolCallingRecord
-from camel.utils import get_model_encoding
+from camel.utils import (
+    get_model_encoding,
+    model_from_json_schema,
+)
 
 if TYPE_CHECKING:
     from camel.terminators import ResponseTerminator
-
 
 logger = logging.getLogger(__name__)
 
@@ -110,10 +114,17 @@ class ChatAgent(BaseAgent):
 
     Args:
         system_message (Union[BaseMessage, str], optional): The system message
-            for the chat agent.
-        model (BaseModelBackend, optional): The model backend to use for
-            generating responses. (default: :obj:`ModelPlatformType.DEFAULT`
-            with `ModelType.DEFAULT`)
+            for the chat agent. (default: :obj:`None`)
+        model (Union[BaseModelBackend, Tuple[str, str], str, ModelType,
+            Tuple[ModelPlatformType, ModelType], List[BaseModelBackend],
+            List[str], List[ModelType], List[Tuple[str, str]],
+            List[Tuple[ModelPlatformType, ModelType]]], optional):
+            The model backend(s) to use. Can be a single instance,
+            a specification (string, enum, tuple), or a list of instances
+            or specifications to be managed by `ModelManager`. If a list of
+            specifications (not `BaseModelBackend` instances) is provided,
+            they will be instantiated using `ModelFactory`. (default:
+            :obj:`ModelPlatformType.DEFAULT` with `ModelType.DEFAULT`)
         memory (AgentMemory, optional): The agent memory for managing chat
             messages. If `None`, a :obj:`ChatHistoryMemory` will be used.
             (default: :obj:`None`)
@@ -144,13 +155,27 @@ class ChatAgent(BaseAgent):
             model calling at each step. (default: :obj:`False`)
         agent_id (str, optional): The ID of the agent. If not provided, a
             random UUID will be generated. (default: :obj:`None`)
+        stop_event (Optional[threading.Event], optional): Event to signal
+            termination of the agent's operation. When set, the agent will
+            terminate its execution. (default: :obj:`None`)
     """
 
     def __init__(
         self,
         system_message: Optional[Union[BaseMessage, str]] = None,
         model: Optional[
-            Union[BaseModelBackend, List[BaseModelBackend]]
+            Union[
+                BaseModelBackend,
+                Tuple[str, str],
+                str,
+                ModelType,
+                Tuple[ModelPlatformType, ModelType],
+                List[BaseModelBackend],
+                List[str],
+                List[ModelType],
+                List[Tuple[str, str]],
+                List[Tuple[ModelPlatformType, ModelType]],
+            ]
         ] = None,
         memory: Optional[AgentMemory] = None,
         message_window_size: Optional[int] = None,
@@ -164,20 +189,16 @@ class ChatAgent(BaseAgent):
         scheduling_strategy: str = "round_robin",
         single_iteration: bool = False,
         agent_id: Optional[str] = None,
+        stop_event: Optional[threading.Event] = None,
     ) -> None:
-        # Set up model backend
+        # Resolve model backends and set up model manager
+        resolved_models = self._resolve_models(model)
         self.model_backend = ModelManager(
-            (
-                model
-                if model is not None
-                else ModelFactory.create(
-                    model_platform=ModelPlatformType.DEFAULT,
-                    model_type=ModelType.DEFAULT,
-                )
-            ),
+            resolved_models,
             scheduling_strategy=scheduling_strategy,
         )
         self.model_type = self.model_backend.model_type
+
         # Assign unique ID
         self.agent_id = agent_id if agent_id else str(uuid.uuid4())
 
@@ -239,6 +260,7 @@ class ChatAgent(BaseAgent):
         self.terminated = False
         self.response_terminators = response_terminators or []
         self.single_iteration = single_iteration
+        self.stop_event = stop_event
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
@@ -246,6 +268,137 @@ class ChatAgent(BaseAgent):
         self.init_messages()
         for terminator in self.response_terminators:
             terminator.reset()
+
+    def _resolve_models(
+        self,
+        model: Optional[
+            Union[
+                BaseModelBackend,
+                Tuple[str, str],
+                str,
+                ModelType,
+                Tuple[ModelPlatformType, ModelType],
+                List[BaseModelBackend],
+                List[str],
+                List[ModelType],
+                List[Tuple[str, str]],
+                List[Tuple[ModelPlatformType, ModelType]],
+            ]
+        ],
+    ) -> Union[BaseModelBackend, List[BaseModelBackend]]:
+        r"""Resolves model specifications into model backend instances.
+
+        This method handles various input formats for model specifications and
+        returns the appropriate model backend(s).
+
+        Args:
+            model: Model specification in various formats including single
+                model, list of models, or model type specifications.
+
+        Returns:
+            Union[BaseModelBackend, List[BaseModelBackend]]: Resolved model
+                backend(s).
+
+        Raises:
+            TypeError: If the model specification format is not supported.
+        """
+        if model is None:
+            # Default single model if none provided
+            return ModelFactory.create(
+                model_platform=ModelPlatformType.DEFAULT,
+                model_type=ModelType.DEFAULT,
+            )
+        elif isinstance(model, BaseModelBackend):
+            # Already a single pre-instantiated model
+            return model
+        elif isinstance(model, list):
+            return self._resolve_model_list(model)
+        elif isinstance(model, (ModelType, str)):
+            # Single string or ModelType -> use default platform
+            model_platform = ModelPlatformType.DEFAULT
+            model_type = model
+            logger.warning(
+                f"Model type '{model_type}' provided without a platform. "
+                f"Using platform '{model_platform}'. Note: platform "
+                "is not automatically inferred based on model type."
+            )
+            return ModelFactory.create(
+                model_platform=model_platform,
+                model_type=model_type,
+            )
+        elif isinstance(model, tuple) and len(model) == 2:
+            # Single tuple (platform, type)
+            model_platform, model_type = model  # type: ignore[assignment]
+            return ModelFactory.create(
+                model_platform=model_platform,
+                model_type=model_type,
+            )
+        else:
+            raise TypeError(
+                f"Unsupported type for model parameter: {type(model)}"
+            )
+
+    def _resolve_model_list(
+        self, model_list: list
+    ) -> Union[BaseModelBackend, List[BaseModelBackend]]:
+        r"""Resolves a list of model specifications into model backend
+        instances.
+
+        Args:
+            model_list (list): List of model specifications in various formats.
+
+        Returns:
+            Union[BaseModelBackend, List[BaseModelBackend]]: Resolved model
+                backend(s).
+
+        Raises:
+            TypeError: If the list elements format is not supported.
+        """
+        if not model_list:  # Handle empty list
+            logger.warning(
+                "Empty list provided for model, using default model."
+            )
+            return ModelFactory.create(
+                model_platform=ModelPlatformType.DEFAULT,
+                model_type=ModelType.DEFAULT,
+            )
+        elif isinstance(model_list[0], BaseModelBackend):
+            # List of pre-instantiated models
+            return model_list  # type: ignore[return-value]
+        elif isinstance(model_list[0], (str, ModelType)):
+            # List of strings or ModelTypes -> use default platform
+            model_platform = ModelPlatformType.DEFAULT
+            logger.warning(
+                f"List of model types {model_list} provided without "
+                f"platforms. Using platform '{model_platform}' for all. "
+                "Note: platform is not automatically inferred based on "
+                "model type."
+            )
+            resolved_models_list = []
+            for model_type_item in model_list:
+                resolved_models_list.append(
+                    ModelFactory.create(
+                        model_platform=model_platform,
+                        model_type=model_type_item,  # type: ignore[arg-type]
+                    )
+                )
+            return resolved_models_list
+        elif isinstance(model_list[0], tuple) and len(model_list[0]) == 2:
+            # List of tuples (platform, type)
+            resolved_models_list = []
+            for model_spec in model_list:
+                platform, type_ = model_spec[0], model_spec[1]  # type: ignore[index]
+                resolved_models_list.append(
+                    ModelFactory.create(
+                        model_platform=platform, model_type=type_
+                    )
+                )
+            return resolved_models_list
+        else:
+            raise TypeError(
+                "Unsupported type for list elements in model: "
+                f"{type(model_list[0])}"
+            )
 
     @property
     def system_message(self) -> Optional[BaseMessage]:
@@ -292,6 +445,11 @@ class ChatAgent(BaseAgent):
         new_tool = convert_to_function_tool(tool)
         self._internal_tools[new_tool.get_function_name()] = new_tool
 
+    def add_tools(self, tools: List[Union[FunctionTool, Callable]]) -> None:
+        r"""Add a list of tools to the agent."""
+        for tool in tools:
+            self.add_tool(tool)
+
     def add_external_tool(
         self, tool: Union[FunctionTool, Callable, Dict[str, Any]]
     ) -> None:
@@ -311,6 +469,11 @@ class ChatAgent(BaseAgent):
             del self._internal_tools[tool_name]
             return True
         return False
+
+    def remove_tools(self, tool_names: List[str]) -> None:
+        r"""Remove a list of tools from the agent by name."""
+        for tool_name in tool_names:
+            self.remove_tool(tool_name)
 
     def remove_external_tool(self, tool_name: str) -> bool:
         r"""Remove an external tool from the agent by name.
@@ -598,20 +761,42 @@ class ChatAgent(BaseAgent):
         tool_call_records: List[ToolCallingRecord] = []
         external_tool_call_requests: Optional[List[ToolCallRequest]] = None
 
+        accumulated_context_tokens = (
+            0  # This tracks cumulative context tokens, not API usage tokens
+        )
+
+        # Initialize token usage tracker
+        step_token_usage = self._create_token_usage_tracker()
+
         while True:
             try:
                 openai_messages, num_tokens = self.memory.get_context()
+                accumulated_context_tokens += num_tokens
             except RuntimeError as e:
-                return self._step_token_exceed(
+                return self._step_terminate(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
             # Get response from model backend
             response = self._get_model_response(
                 openai_messages,
-                num_tokens,
+                accumulated_context_tokens,  # Cumulative context tokens
                 response_format,
                 self._get_full_tool_schemas(),
             )
+
+            # Accumulate API token usage
+            self._update_token_usage_tracker(
+                step_token_usage, response.usage_dict
+            )
+
+            # Terminate Agent if stop_event is set
+            if self.stop_event and self.stop_event.is_set():
+                # Use the _step_terminate to terminate the agent with reason
+                return self._step_terminate(
+                    accumulated_context_tokens,
+                    tool_call_records,
+                    "termination_triggered",
+                )
 
             if tool_call_requests := response.tool_call_requests:
                 # Process all tool calls
@@ -646,8 +831,11 @@ class ChatAgent(BaseAgent):
         return self._convert_to_chatagent_response(
             response,
             tool_call_records,
-            num_tokens,
+            accumulated_context_tokens,
             external_tool_call_requests,
+            step_token_usage["prompt_tokens"],
+            step_token_usage["completion_tokens"],
+            step_token_usage["total_tokens"],
         )
 
     @property
@@ -690,20 +878,36 @@ class ChatAgent(BaseAgent):
 
         tool_call_records: List[ToolCallingRecord] = []
         external_tool_call_requests: Optional[List[ToolCallRequest]] = None
+        accumulated_context_tokens = (
+            0  # This tracks cumulative context tokens, not API usage tokens
+        )
+
+        # Initialize token usage tracker
+        step_token_usage = self._create_token_usage_tracker()
         while True:
             try:
                 openai_messages, num_tokens = self.memory.get_context()
+                accumulated_context_tokens += num_tokens
             except RuntimeError as e:
-                return self._step_token_exceed(
+                return self._step_terminate(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
 
             response = await self._aget_model_response(
                 openai_messages,
-                num_tokens,
+                accumulated_context_tokens,
                 response_format,
                 self._get_full_tool_schemas(),
             )
+
+            # Terminate Agent if stop_event is set
+            if self.stop_event and self.stop_event.is_set():
+                # Use the _step_terminate to terminate the agent with reason
+                return self._step_terminate(
+                    accumulated_context_tokens,
+                    tool_call_records,
+                    "termination_triggered",
+                )
 
             if tool_call_requests := response.tool_call_requests:
                 # Process all tool calls
@@ -715,11 +919,11 @@ class ChatAgent(BaseAgent):
                         if external_tool_call_requests is None:
                             external_tool_call_requests = []
                         external_tool_call_requests.append(tool_call_request)
-
-                    tool_call_record = await self._aexecute_tool(
-                        tool_call_request
-                    )
-                    tool_call_records.append(tool_call_record)
+                    else:
+                        tool_call_record = await self._aexecute_tool(
+                            tool_call_request
+                        )
+                        tool_call_records.append(tool_call_record)
 
                 # If we found an external tool call, break the loop
                 if external_tool_call_requests:
@@ -736,28 +940,68 @@ class ChatAgent(BaseAgent):
         await self._aformat_response_if_needed(response, response_format)
         self._record_final_output(response.output_messages)
 
+        # Create token usage tracker for this step
+        step_token_usage = self._create_token_usage_tracker()
+
+        # Update with response usage
+        self._update_token_usage_tracker(step_token_usage, response.usage_dict)
+
         return self._convert_to_chatagent_response(
             response,
             tool_call_records,
-            num_tokens,
+            accumulated_context_tokens,
             external_tool_call_requests,
+            step_token_usage["prompt_tokens"],
+            step_token_usage["completion_tokens"],
+            step_token_usage["total_tokens"],
         )
+
+    def _create_token_usage_tracker(self) -> Dict[str, int]:
+        r"""Creates a fresh token usage tracker for a step.
+
+        Returns:
+            Dict[str, int]: A dictionary for tracking token usage.
+        """
+        return {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+
+    def _update_token_usage_tracker(
+        self, tracker: Dict[str, int], usage_dict: Dict[str, int]
+    ) -> None:
+        r"""Updates a token usage tracker with values from a usage dictionary.
+
+        Args:
+            tracker (Dict[str, int]): The token usage tracker to update.
+            usage_dict (Dict[str, int]): The usage dictionary with new values.
+        """
+        tracker["prompt_tokens"] += usage_dict.get("prompt_tokens", 0)
+        tracker["completion_tokens"] += usage_dict.get("completion_tokens", 0)
+        tracker["total_tokens"] += usage_dict.get("total_tokens", 0)
 
     def _convert_to_chatagent_response(
         self,
         response: ModelResponse,
         tool_call_records: List[ToolCallingRecord],
-        num_tokens: int,
+        num_tokens: int,  # Context tokens from the last call in step
         external_tool_call_requests: Optional[List[ToolCallRequest]],
+        step_api_prompt_tokens: int = 0,
+        step_api_completion_tokens: int = 0,
+        step_api_total_tokens: int = 0,
     ) -> ChatAgentResponse:
         r"""Parse the final model response into the chat agent response."""
+        # Create usage_dict for the current step's API calls
+        step_api_usage_dict = {
+            "prompt_tokens": step_api_prompt_tokens,
+            "completion_tokens": step_api_completion_tokens,
+            "total_tokens": step_api_total_tokens,
+        }
+
         info = self._step_get_info(
             response.output_messages,
             response.finish_reasons,
-            response.usage_dict,
+            step_api_usage_dict,  # Pass step-specific API usage here
             response.response_id,
             tool_call_records,
-            num_tokens,
+            num_tokens,  # This is context tokens, not API usage
             external_tool_call_requests,
         )
 
@@ -1147,7 +1391,9 @@ class ChatAgent(BaseAgent):
         response_id: str = ""
         # All choices in one response share one role
         for chunk in response:
-            response_id = chunk.id
+            # Some model platforms like siliconflow may return None for the
+            # chunk.id
+            response_id = chunk.id if chunk.id else str(uuid.uuid4())
             self._handle_chunk(
                 chunk, content_dict, finish_reasons_dict, output_messages
             )
@@ -1187,7 +1433,9 @@ class ChatAgent(BaseAgent):
         response_id: str = ""
         # All choices in one response share one role
         async for chunk in response:
-            response_id = chunk.id
+            # Some model platforms like siliconflow may return None for the
+            # chunk.id
+            response_id = chunk.id if chunk.id else str(uuid.uuid4())
             self._handle_chunk(
                 chunk, content_dict, finish_reasons_dict, output_messages
             )
@@ -1232,24 +1480,30 @@ class ChatAgent(BaseAgent):
             )
             output_messages.append(chat_message)
 
-    def _step_token_exceed(
+    def _step_terminate(
         self,
         num_tokens: int,
         tool_calls: List[ToolCallingRecord],
         termination_reason: str,
     ) -> ChatAgentResponse:
-        r"""Return trivial response containing number of tokens and information
-        of called functions when the number of tokens exceeds.
+        r"""Create a response when the agent execution is terminated.
+
+        This method is called when the agent needs to terminate its execution
+        due to various reasons such as token limit exceeded, or other
+        termination conditions. It creates a response with empty messages but
+        includes termination information in the info dictionary.
 
         Args:
             num_tokens (int): Number of tokens in the messages.
             tool_calls (List[ToolCallingRecord]): List of information
                 objects of functions called in the current step.
-            termination_reason (str): String of termination reason.
+            termination_reason (str): String describing the reason for
+                termination.
 
         Returns:
-            ChatAgentResponse: The struct containing trivial outputs and
-                information about token number and called functions.
+            ChatAgentResponse: A response object with empty message list,
+                terminated flag set to True, and an info dictionary containing
+                termination details, token counts, and tool call information.
         """
         self.terminated = True
 
@@ -1396,6 +1650,56 @@ class ChatAgent(BaseAgent):
         """
         self.model_backend.add_strategy(name, strategy_fn)
 
+    def clone(self, with_memory: bool = False) -> ChatAgent:
+        r"""Creates a new instance of :obj:`ChatAgent` with the same
+        configuration as the current instance.
+
+        Args:
+            with_memory (bool): Whether to copy the memory (conversation
+                history) to the new agent. If True, the new agent will have
+                the same conversation history. If False, the new agent will
+                have a fresh memory with only the system message.
+                (default: :obj:`False`)
+
+        Returns:
+            ChatAgent: A new instance of :obj:`ChatAgent` with the same
+                configuration.
+        """
+        # Create a new instance with the same configuration
+        # If with_memory is True, set system_message to None
+        # If with_memory is False, use the original system message
+        # To avoid duplicated system memory.
+        system_message = None if with_memory else self._original_system_message
+
+        new_agent = ChatAgent(
+            system_message=system_message,
+            model=self.model_backend.models,  # Pass the existing model_backend
+            memory=None,  # clone memory later
+            message_window_size=getattr(self.memory, "window_size", None),
+            token_limit=getattr(
+                self.memory.get_context_creator(), "token_limit", None
+            ),
+            output_language=self._output_language,
+            tools=list(self._internal_tools.values()),
+            external_tools=[
+                schema for schema in self._external_tool_schemas.values()
+            ],
+            response_terminators=self.response_terminators,
+            scheduling_strategy=self.model_backend.scheduling_strategy.__name__,
+            single_iteration=self.single_iteration,
+            stop_event=self.stop_event,
+        )
+
+        # Copy memory if requested
+        if with_memory:
+            # Get all records from the current memory
+            context_records = self.memory.retrieve()
+            # Write them to the new agent's memory
+            for context_record in context_records:
+                new_agent.memory.write_record(context_record.memory_record)
+
+        return new_agent
+
     def __repr__(self) -> str:
         r"""Returns a string representation of the :obj:`ChatAgent`.
 
@@ -1405,3 +1709,147 @@ class ChatAgent(BaseAgent):
         return (
             f"ChatAgent({self.role_name}, {self.role_type}, {self.model_type})"
         )
+
+    def to_mcp(
+        self,
+        name: str = "CAMEL-ChatAgent",
+        description: str = "A helpful assistant using the CAMEL AI framework.",
+        dependencies: Optional[List[str]] = None,
+        host: str = "localhost",
+        port: int = 8000,
+    ):
+        r"""Expose this ChatAgent as an MCP server.
+
+        Args:
+            name (str): Name of the MCP server.
+                (default: :obj:`CAMEL-ChatAgent`)
+            description (Optional[List[str]]): Description of the agent. If
+                None, a generic description is used. (default: :obj:`A helpful
+                assistant using the CAMEL AI framework.`)
+            dependencies (Optional[List[str]]): Additional
+                dependencies for the MCP server. (default: :obj:`None`)
+            host (str): Host to bind to for HTTP transport.
+                (default: :obj:`localhost`)
+            port (int): Port to bind to for HTTP transport.
+                (default: :obj:`8000`)
+
+        Returns:
+            FastMCP: An MCP server instance that can be run.
+        """
+        try:
+            from mcp.server.fastmcp import FastMCP
+        except ImportError:
+            raise ImportError(
+                "The 'mcp' package is required to use the to_mcp method. "
+                "Install it with 'pip install mcp'."
+            )
+
+        # Combine dependencies
+        all_dependencies = ["camel-ai[all]"]
+        if dependencies:
+            all_dependencies.extend(dependencies)
+
+        mcp_server = FastMCP(
+            name,
+            dependencies=all_dependencies,
+            host=host,
+            port=port,
+        )
+
+        # Store agent reference
+        agent_instance = self
+
+        # Define functions first
+        async def step(message, response_format=None):
+            r"""Execute a single step in the chat session with the agent."""
+            format_cls = None
+            if response_format:
+                format_cls = model_from_json_schema(
+                    "DynamicResponseFormat", response_format
+                )
+            response = await agent_instance.astep(message, format_cls)
+            return {
+                "status": "success",
+                "messages": [msg.to_dict() for msg in response.msgs],
+                "terminated": response.terminated,
+                "info": response.info,
+            }
+
+        # Reset tool
+        def reset():
+            r"""Reset the chat agent to its initial state."""
+            agent_instance.reset()
+            return {"status": "success", "message": "Agent reset successfully"}
+
+        # Set language tool
+        def set_output_language(language):
+            r"""Set the output language for the chat agent."""
+            agent_instance.output_language = language
+            return {
+                "status": "success",
+                "message": f"Output language set to '{language}'",
+            }
+
+        # Agent info resource and tool
+        def get_agent_info():
+            r"""Get information about the agent."""
+            info = {
+                "agent_id": agent_instance.agent_id,
+                "model_type": str(agent_instance.model_type),
+                "role_name": agent_instance.role_name,
+                "role_type": str(agent_instance.role_type),
+                "output_language": agent_instance.output_language or "None",
+                "description": description,
+            }
+            return info
+
+        # Chat history resource and tool
+        def get_chat_history():
+            r"""Get the chat history for the agent."""
+            # Convert messages to simple serializable format
+            messages = []
+            for msg in agent_instance.chat_history:
+                # Create a simplified version of each message
+                msg_dict = {
+                    "role": msg.get("role", ""),
+                    "content": msg.get("content", ""),
+                }
+                # Include function calls if present
+                if "function_call" in msg:
+                    msg_dict["function_call"] = {
+                        "name": msg["function_call"].get("name", ""),
+                        "arguments": msg["function_call"].get("arguments", ""),
+                    }
+                messages.append(msg_dict)
+            return messages
+
+        # Available tools resource and tool
+        def get_available_tools():
+            r"""Get a list of available internal tools."""
+            tool_info = {}
+            for name, tool in agent_instance.tool_dict.items():
+                tool_info[name] = {
+                    "name": name,
+                    "description": tool.get_function_description() or "",
+                    "parameters": [
+                        {"name": param_name, "type": str(param_type)}
+                        for param_name, param_type in tool.get_parameters().items()  # noqa: E501
+                    ],
+                }
+            return tool_info
+
+        # Now register everything using decorators
+        mcp_server.tool()(step)
+        mcp_server.tool()(reset)
+        mcp_server.tool()(set_output_language)
+
+        mcp_server.resource("agent://")(get_agent_info)
+        mcp_server.tool()(get_agent_info)
+
+        mcp_server.resource("history://")(get_chat_history)
+        mcp_server.tool()(get_chat_history)
+
+        mcp_server.resource("tools://")(get_available_tools)
+        mcp_server.tool()(get_available_tools)
+
+        return mcp_server

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.44"
+version = "0.2.60"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -30,7 +30,9 @@ dependencies = [
     "pydantic>=2.10.6",
     "httpx>=0.28.0,<1.0.0dev",
     "psutil>=5.9.8,<6",
+    "pillow>=10.1.0,<11.0.0",
 ]
+
 
 [project.optional-dependencies]
 test = [
@@ -65,7 +67,7 @@ docs = [
     "sphinxext-rediraffe>=0.2.7,<0.3",
 ]
 rag = [
-    "numpy~=1.26",
+    "numpy>=1.2,<=2.2",
     "sentence-transformers>=3.0.1,<4",
     "qdrant-client>=1.9.0,<2",
     "pymilvus>=2.4.0,<3",
@@ -79,6 +81,8 @@ rag = [
     "unstructured==0.16.20",
     "pandasai>=2.3.0,<3",
     "crawl4ai>=0.3.745",
+    "pyobvector>=0.1.18",
+    "google-genai>=1.13.0",
 ]
 web_tools = [
     "duckduckgo-search>=6.3.5,<7",
@@ -101,10 +105,11 @@ web_tools = [
     "playwright>=1.50.0",
     "html2text>=2024.2.26",
     "beautifulsoup4>=4,<5",
-    "exa-py>=1.10.0,<2"
+    "exa-py>=1.10.0,<2",
+    "scrapegraph-py>=1.12.0,<2",
 ]
 document_tools = [
-    "numpy~=1.26",
+    "numpy>=1.2,<=2.2",
     "beautifulsoup4>=4,<5",
     "docx2txt>=0.8,<0.9",
     "PyMuPDF>=1.22.5,<2",
@@ -118,15 +123,16 @@ document_tools = [
     "docx>=0.2.4",
     "fpdf>=1.7.2",
     "crawl4ai>=0.3.745",
+    "markitdown==0.1.1",
 ]
 media_tools = [
     "imageio[pyav]>=2.34.2,<3",
-    "pillow>=10.1.0,<11.0.0",
     "pydub>=0.25.1,<0.26",
     "yt-dlp>=2024.11.4,<2025",
     "ffmpeg-python>=0.2.0,<0.3",
     "scenedetect>=0.6.5.2",
 ]
+
 communication_tools = [
     "slack-sdk>=3.27.2,<4",
     "slack-bolt>=1.20.1,<2",
@@ -137,7 +143,7 @@ communication_tools = [
     "praw>=7.7.1,<8",
 ]
 data_tools = [
-    "numpy~=1.26",
+    "numpy>=1.2,<=2.2",
     "pandas>=1.5.3,<2",
     "textblob>=0.17.1,<0.18",
     "datacommons>=1.4.3,<2",
@@ -152,6 +158,7 @@ research_tools = [
     "arxiv>=2.1.3,<3",
     "arxiv2text>=0.1.14,<0.2",
     "scholarly[tor]==1.7.11",
+    "bohrium",
 ]
 dev_tools = [
     "docker>=7.1.0,<8",
@@ -163,6 +170,8 @@ dev_tools = [
     "tree-sitter>=0.23.2,<0.24",
     "typer>=0.15.2",
     "mcp>=1.3.0",
+    "daytona-sdk==0.14.0",
+    "aci-sdk>=1.0.0b1",
 ]
 model_platforms = [
     "litellm>=1.38.1,<2",
@@ -171,6 +180,7 @@ model_platforms = [
     "anthropic>=0.47.0,<0.50.0",
     "cohere>=5.11.0,<6",
     "fish-audio-sdk>=2024.12.5,<2025",
+    "ibm-watsonx-ai>=1.3.11",
 ]
 huggingface = [
     "transformers>=4,<5",
@@ -194,10 +204,11 @@ storage = [
     "azure-storage-blob>=12.21.0,<13",
     "google-cloud-storage>=2.18.0,<3",
     "botocore>=1.35.3,<2",
-    "mem0ai>=0.1.73"
+    "mem0ai>=0.1.73",
+    "pyobvector>=0.1.18",
 ]
 owl = [
-    "numpy~=1.26",
+    "numpy>=1.2,<=2.2",
     "chunkr-ai>=0.0.41",
     "mcp-simple-arxiv==0.2.2",
     "mcp-server-fetch==2025.1.17",
@@ -210,7 +221,6 @@ owl = [
     "soundfile>=0.13,<0.14",
     "pydub>=0.25.1,<0.26",
     "ffmpeg-python>=0.2.0,<0.3",
-    "pillow>=10.1.0,<11.0.0",
     "opencv-python>=4,<5",
     "imageio[pyav]>=2.34.2,<3",
     "yt-dlp>=2024.11.4,<2025",
@@ -240,9 +250,12 @@ owl = [
     "pandas>=1.5.3,<2",
     "rouge>=1.0.1,<2",
     "crawl4ai>=0.3.745",
+    "scrapegraph-py>=1.12.0,<2",
+    "pyautogui>=0.9.54,<0.10",
+    "aci-sdk>=1.0.0b1",
 ]
 all = [
-    "numpy~=1.26",
+    "numpy>=1.2,<=2.2",
     "transformers>=4,<5",
     "diffusers>=0.25.0,<0.26",
     "accelerate>=0.26.0,<0.27",
@@ -279,7 +292,6 @@ all = [
     "arxiv>=2.1.3,<3",
     "arxiv2text>=0.1.14,<0.2",
     "imageio[pyav]>=2.34.2,<3",
-    "pillow>=10.1.0,<11.0.0",
     "slack-sdk>=3.27.2,<4",
     "slack-bolt>=1.20.1,<2",
     "pydub>=0.25.1,<0.26",
@@ -313,6 +325,7 @@ all = [
     "cohere>=5.11.0,<6",
     "sentence-transformers>=3.0.1,<4",
     "neo4j>=5.18.0,<6",
+    "markitdown==0.1.1",
     "nebula3-python==3.8.2",
     "rank-bm25>=0.2.2,<0.3",
     "litellm>=1.38.1,<2",
@@ -352,6 +365,15 @@ all = [
     "math-verify>=0.7.0,<0.8",
     "exa-py>=1.10.0,<2",
     "crawl4ai>=0.3.745",
+    "pyautogui>=0.9.54,<0.10",
+    "pyobvector>=0.1.18",
+    "scrapegraph-py>=1.12.0,<2",
+    "daytona-sdk==0.14.0",
+    "ibm-watsonx-ai>=1.3.11",
+    "google-genai>=1.13.0",
+    "aci-sdk>=1.0.0b1",
+    "bohrium",
+    
 ]
 
 [project.urls]
@@ -364,6 +386,9 @@ default-groups = [
     "dev",
     "docs",
 ]
+
+[tool.uv.sources]
+bohrium = { git = "https://github.com/dptech-corp/bohrium-openapi-python-sdk" }
 
 [tool.hatch.build.targets.sdist]
 include = ["camel"]
@@ -515,7 +540,7 @@ module = [
     "networkx",
     "pandasai",
     "sklearn.metrics.pairwise",
-    "sympy",
+    "sympy.*",
     "astor",
     "tqdm",
     "colorama",
@@ -537,6 +562,14 @@ module = [
     "math_verify.*",
     "exa_py",
     "crawl4ai.*",
+    "pyautogui",
+    "pyobvector.*",
+    "daytona_sdk",
+    "scrapegraph_py.*",
+    "ibm_watsonx_ai.*",
+    "google_genai",
+    "aci-sdk.*",
+    "bohrium.*",
 ]
 ignore_missing_imports = true
 
@@ -544,8 +577,8 @@ ignore_missing_imports = true
 # Ref: https://github.com/codespell-project/codespell#using-a-config-file
 # the .py file needs to be listed twice since pre-commit and codespell treat
 # that path differently.
-skip = '.git*,*.pdf,*.svg,*.lock,*.css,examples/toolkits/semantic_scholar_toolkit.py,./examples/toolkits/semantic_scholar_toolkit.py'
+skip = '.git*,*.pdf,*.svg,*.lock,*.css,examples/toolkits/semantic_scholar_toolkit.py,./examples/toolkits/semantic_scholar_toolkit.py,examples/usecases,./examples/usecases'
 check-hidden = true
 # Ignore long lines as usually some kind of base64 encodings e.g. in ipynb
 ignore-regex = '^\s*"image/\S+": ".*|^.{300,}|\b(NotIn|Unsupport)\b'
-ignore-words-list = 'ans,datas,rouge'
+ignore-words-list = 'ans,datas,rouge,doubleClick,OCE,ACI,aci'

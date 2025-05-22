@@ -12,6 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+# Enables postponed evaluation of annotations (for string-based type hints)
+from __future__ import annotations
+
 from io import BytesIO
 from typing import List, Optional
 from urllib.parse import urlparse
@@ -36,7 +39,11 @@ class ImageAnalysisToolkit(BaseToolkit):
     The toolkit uses vision-capable language models to perform these tasks.
     """
 
-    def __init__(self, model: Optional[BaseModelBackend] = None):
+    def __init__(
+        self,
+        model: Optional[BaseModelBackend] = None,
+        timeout: Optional[float] = None,
+    ):
         r"""Initialize the ImageAnalysisToolkit.
 
         Args:
@@ -45,7 +52,11 @@ class ImageAnalysisToolkit(BaseToolkit):
                 images for tasks like image description and visual question
                 answering. If None, a default model will be created using
                 ModelFactory. (default: :obj:`None`)
+            timeout (Optional[float]): The timeout value for API requests
+                in seconds. If None, no timeout is applied.
+                (default: :obj:`None`)
         """
+        super().__init__(timeout=timeout)
         if model:
             self.model = model
         else:

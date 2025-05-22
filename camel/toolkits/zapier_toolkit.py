@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import requests
 
@@ -33,6 +33,9 @@ class ZapierToolkit(BaseToolkit):
     Attributes:
         api_key (str): The API key for authenticating with Zapier's API.
         base_url (str): The base URL for Zapier's API endpoints.
+        timeout (Optional[float]): The timeout value for API requests
+            in seconds. If None, no timeout is applied.
+            (default: :obj:`None`)
     """
 
     @dependencies_required("requests")
@@ -41,7 +44,8 @@ class ZapierToolkit(BaseToolkit):
             (None, "ZAPIER_NLA_API_KEY"),
         ]
     )
-    def __init__(self) -> None:
+    def __init__(self, timeout: Optional[float] = None) -> None:
+        super().__init__(timeout=timeout)
         r"""Initialize the ZapierToolkit with API client. The API key is
         retrieved from environment variables.
         """

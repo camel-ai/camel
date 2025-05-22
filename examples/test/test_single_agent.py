@@ -13,11 +13,11 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import pytest
 
+import examples.agents.single_agent
 import examples.code.generate_meta_data
 import examples.code.task_generation
 import examples.evaluation.single_agent
 import examples.misalignment.single_agent
-import examples.single_agent
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
@@ -25,7 +25,7 @@ parametrize = pytest.mark.parametrize(
     'model',
     [
         ModelFactory.create(
-            ModelPlatformType.OPENAI,
+            ModelPlatformType.STUB,
             model_type=ModelType.STUB,
         ),
         pytest.param(None, marks=pytest.mark.model_backend),
@@ -35,14 +35,14 @@ parametrize = pytest.mark.parametrize(
 
 @parametrize
 def test_single_agent(model):
-    examples.single_agent.main(model=model)
+    examples.agents.single_agent.main(model=model)
 
 
 @pytest.mark.parametrize(
     'model',
     [
         ModelFactory.create(
-            ModelPlatformType.OPENAI,
+            ModelPlatformType.STUB,
             model_type=ModelType.STUB,
         )
     ],

@@ -16,7 +16,7 @@ import json
 from copy import deepcopy
 from io import BytesIO
 from typing import List
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from openai.types.chat.chat_completion import Choice
@@ -35,7 +35,7 @@ from camel.configs import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
 from camel.memories import MemoryRecord
 from camel.messages import BaseMessage
-from camel.models import ModelFactory
+from camel.models import AnthropicModel, ModelFactory, OpenAIModel
 from camel.terminators import ResponseWordsTerminator
 from camel.toolkits import (
     FunctionTool,
@@ -370,6 +370,150 @@ def test_chat_agent_step_with_external_tools(step_call_count=3):
 
 
 @pytest.mark.model_backend
+@pytest.mark.asyncio
+async def test_chat_agent_astep_with_external_tools(step_call_count=3):
+    internal_tools = [FunctionTool(SearchToolkit().search_wiki)]
+    external_tools = MathToolkit().get_tools()
+    tool_list = internal_tools + external_tools
+
+    model_config_dict = ChatGPTConfig(
+        tools=tool_list,
+        temperature=0.0,
+    ).as_dict()
+
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4O_MINI,
+        model_config_dict=model_config_dict,
+    )
+    model_backend_external1 = ChatCompletion(
+        id='mock_id_123456',
+        choices=[
+            Choice(
+                finish_reason='tool_calls',
+                index=0,
+                logprobs=None,
+                message=ChatCompletionMessage(
+                    content=None,
+                    refusal=None,
+                    role='assistant',
+                    audio=None,
+                    function_call=None,
+                    tool_calls=[
+                        ChatCompletionMessageToolCall(
+                            id='call_mock_123456',
+                            function=Function(
+                                arguments='{ \
+                                    "entity": "Portal game release year" \
+                                }',
+                                name='search_wiki',
+                            ),
+                            type='function',
+                        ),
+                        ChatCompletionMessageToolCall(
+                            id='call_mock_123457',
+                            function=Function(
+                                arguments='{ \
+                                    "entity": "United States founding year" \
+                                }',
+                                name='search_wiki',
+                            ),
+                            type='function',
+                        ),
+                    ],
+                ),
+            )
+        ],
+        created=1730745899,
+        model='gpt-4o-mini-2024-07-18',
+        object='chat.completion',
+        service_tier=None,
+        usage=CompletionUsage(
+            completion_tokens=56, prompt_tokens=292, total_tokens=348
+        ),
+    )
+
+    model_backend_external2 = ChatCompletion(
+        id='chatcmpl-mock_id_123456',
+        choices=[
+            Choice(
+                finish_reason='tool_calls',
+                index=0,
+                logprobs=None,
+                message=ChatCompletionMessage(
+                    content=None,
+                    refusal=None,
+                    role='assistant',
+                    audio=None,
+                    function_call=None,
+                    tool_calls=[
+                        ChatCompletionMessageToolCall(
+                            id='call_mock_123456',
+                            function=Function(
+                                arguments='{"a":1776,"b":2007}', name='sub'
+                            ),
+                            type='function',
+                        )
+                    ],
+                ),
+            )
+        ],
+        created=1730745902,
+        model='gpt-4o-mini-2024-07-18',
+        object='chat.completion',
+        service_tier=None,
+        usage=CompletionUsage(
+            completion_tokens=19, prompt_tokens=991, total_tokens=1010
+        ),
+    )
+
+    # Mock the arun method with an async function that returns the
+    # ChatCompletion objects
+    async def mock_arun(*args, **kwargs):
+        # Alternate between the two responses
+        if mock_arun.call_count % 2 == 0:
+            mock_arun.call_count += 1
+            return model_backend_external1
+        else:
+            mock_arun.call_count += 1
+            return model_backend_external2
+
+    # Initialize the counter
+    mock_arun.call_count = 0
+
+    # Assign the mock function
+    model.arun = mock_arun
+
+    # Set external_tools
+    external_tool_agent = ChatAgent(
+        system_message=BaseMessage.make_assistant_message(
+            role_name="Tools calling operator",
+            content="You are a helpful assistant",
+        ),
+        model=model,
+        tools=internal_tools,
+        external_tools=external_tools,
+    )
+
+    usr_msg = BaseMessage.make_user_message(
+        role_name="User",
+        content="What's the result of the release year of Portal subtracted "
+        "from the year that United States was founded?",
+    )
+
+    for i in range(step_call_count):
+        response = await external_tool_agent.astep(usr_msg)
+        assert not response.msg.content
+
+        external_tool_call_requests = response.info[
+            "external_tool_call_requests"
+        ]
+        assert (
+            external_tool_call_requests[0].tool_name == "sub"
+        ), f"Error in calling round {i+1}"
+
+
+@pytest.mark.model_backend
 def test_chat_agent_messages_window():
     system_msg = BaseMessage(
         role_name="assistant",
@@ -552,15 +696,7 @@ def test_chat_agent_multiple_return_message_error(n, step_call_count=3):
     )
     for _ in range(step_call_count):
         assistant_response = assistant.step(user_msg)
-
-        with pytest.raises(
-            RuntimeError,
-            match=(
-                "Property msg is only available "
-                "for a single message in msgs."
-            ),
-        ):
-            _ = assistant_response.msg
+        assert assistant_response.msg is None
 
 
 @pytest.mark.model_backend
@@ -852,10 +988,12 @@ async def test_tool_calling_math_async(step_call_count=3):
         meta_dict=None,
         content="You are a help assistant.",
     )
+    model_config = ChatGPTConfig(temperature=0)
     math_funcs = sync_funcs_to_async([FunctionTool(MathToolkit().multiply)])
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
+        model_config_dict=model_config.as_dict(),
     )
     agent = ChatAgent(
         system_message=system_message,
@@ -871,7 +1009,7 @@ async def test_tool_calling_math_async(step_call_count=3):
         role_name="User",
         role_type=RoleType.USER,
         meta_dict=dict(),
-        content="Calculate the result of: 2*8",
+        content="Calculate the result of: 2*8 with decimal places 0",
     )
 
     model_backend_rsp_tool = ChatCompletion(
@@ -938,7 +1076,7 @@ async def test_tool_calling_math_async(step_call_count=3):
         ),
     )
 
-    model.run = MagicMock(
+    model.arun = AsyncMock(
         side_effect=[
             model_backend_rsp_tool,
             model_backend_rsp_tool1,
@@ -1151,3 +1289,49 @@ def test_chat_agent_vision(step_call_count=3):
         assert (
             agent_response.msgs[0].content == "Yes."
         ), f"Error in calling round {i+1}"
+
+
+@pytest.mark.model_backend
+def test_chat_agent_creation_methods():
+    r"""Test different ways to create a ChatAgent with various model
+    specifications.
+    """
+    # Method 1: Initialize with just a string (model name)
+    agent_1 = ChatAgent("You are a helpful assistant.", model="gpt-4o-mini")
+    assert agent_1.model_type.value == "gpt-4o-mini"
+    assert isinstance(agent_1.model_backend.models[0], OpenAIModel)
+
+    # Method 2: Initialize with just a ModelType enum
+    agent_2 = ChatAgent(
+        "You are a helpful assistant.", model=ModelType.GPT_4O_MINI
+    )
+    assert agent_2.model_type.value == "gpt-4o-mini"
+    assert isinstance(agent_2.model_backend.models[0], OpenAIModel)
+
+    # Method 3: Initialize with a tuple of strings (platform, model)
+    agent_3 = ChatAgent(
+        "You are a helpful assistant.",
+        model=("anthropic", "claude-3-5-sonnet-latest"),
+    )
+    assert agent_3.model_type.value == "claude-3-5-sonnet-latest"
+    assert (
+        agent_3.model_backend.models[0].model_type.value
+        == "claude-3-5-sonnet-latest"
+    )
+    assert isinstance(agent_3.model_backend.models[0], AnthropicModel)
+
+    # Method 4: Initialize with a tuple of enums
+    agent_4 = ChatAgent(
+        "You are a helpful assistant.",
+        model=(ModelPlatformType.ANTHROPIC, ModelType.CLAUDE_3_5_SONNET),
+    )
+    assert agent_4.model_type.value == "claude-3-5-sonnet-latest"
+    assert isinstance(agent_4.model_backend.models[0], AnthropicModel)
+
+    # Method 5: Default model when none is specified
+    agent_5 = ChatAgent("You are a helpful assistant.")
+    assert agent_5.model_type.value == ModelType.DEFAULT.value
+
+    # All agents should have the same system message
+    for agent in [agent_1, agent_2, agent_3, agent_4, agent_5]:
+        assert "You are a helpful assistant." in agent.system_message.content

@@ -11,31 +11,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import argparse
-import sys
+from camel.agents import ChatAgent
 
-from camel.toolkits import ArxivToolkit
+# Create a chat agent with a model
+agent = ChatAgent(model="gpt-4o-mini")
 
+
+# Create an MCP server from the agent
+mcp_server = agent.to_mcp(
+    name="demo", description="A demonstration of ChatAgent to MCP conversion"
+)
+
+# Run the server
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Run Arxiv Toolkit with MCP server mode.",
-        usage=f"python {sys.argv[0]} [--mode MODE]",
-    )
-    parser.add_argument(
-        "--mode",
-        choices=["stdio", "sse"],
-        default="stdio",
-        help="MCP server mode (default: 'stdio')",
-    )
-    parser.add_argument(
-        "--timeout",
-        type=float,
-        default=None,
-        help="Timeout for the MCP server (default: None)",
-    )
-
-    args = parser.parse_args()
-
-    toolkit = ArxivToolkit(timeout=args.timeout)
-
-    toolkit.mcp.run(args.mode)
+    print("Starting MCP server on http://localhost:8000")
+    mcp_server.run(transport="streamable-http")

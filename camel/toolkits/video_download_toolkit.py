@@ -12,6 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+# Enables postponed evaluation of annotations (for string-based type hints)
+from __future__ import annotations
+
 import io
 import tempfile
 from pathlib import Path
@@ -102,10 +105,17 @@ class VideoDownloaderToolkit(BaseToolkit):
         Cleans up the downloaded video if they are stored in a temporary
         directory.
         """
-        import shutil
-
         if self._cleanup:
-            shutil.rmtree(self._download_directory, ignore_errors=True)
+            try:
+                import sys
+
+                if getattr(sys, 'modules', None) is not None:
+                    import shutil
+
+                    shutil.rmtree(self._download_directory, ignore_errors=True)
+            except (ImportError, AttributeError):
+                # Skip cleanup if interpreter is shutting down
+                pass
 
     def download_video(self, url: str) -> str:
         r"""Download the video and optionally split it into chunks.
