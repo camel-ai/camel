@@ -1714,23 +1714,23 @@ class ChatAgent(BaseAgent):
         self,
         name: str = "CAMEL-ChatAgent",
         description: str = "A helpful assistant using the CAMEL AI framework.",
-        dependencies: Optional[list] = None,
+        dependencies: Optional[List[str]] = None,
         host: str = "localhost",
         port: int = 8000,
     ):
         r"""Expose this ChatAgent as an MCP server.
 
         Args:
-            name (str, optional): Name of the MCP server.
+            name (str): Name of the MCP server.
                 (default: :obj:`CAMEL-ChatAgent`)
-            description (str, optional): Description of the agent. If None, a
-                generic description is used. (default: :obj:`A helpful
+            description (Optional[List[str]]): Description of the agent. If
+                None, a generic description is used. (default: :obj:`A helpful
                 assistant using the CAMEL AI framework.`)
-            dependencies (list, optional): Additional dependencies for the MCP
-                server. (default: :obj:`None`)
-            host (str, optional): Host to bind to for HTTP transport.
+            dependencies (Optional[List[str]]): Additional
+                dependencies for the MCP server. (default: :obj:`None`)
+            host (str): Host to bind to for HTTP transport.
                 (default: :obj:`localhost`)
-            port (int, optional): Port to bind to for HTTP transport.
+            port (int): Port to bind to for HTTP transport.
                 (default: :obj:`8000`)
 
         Returns:
@@ -1794,9 +1794,9 @@ class ChatAgent(BaseAgent):
         def get_agent_info():
             r"""Get information about the agent."""
             info = {
-                "agent_id": self.agent_id,
-                "model_type": self.model_type.__repr__(),
-                "role_name": self.role_name,
+                "agent_id": agent_instance.agent_id,
+                "model_type": str(agent_instance.model_type),
+                "role_name": agent_instance.role_name,
                 "role_type": str(agent_instance.role_type),
                 "output_language": agent_instance.output_language or "None",
                 "description": description,
