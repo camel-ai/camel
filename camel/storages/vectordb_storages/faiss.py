@@ -29,7 +29,7 @@ from camel.types import VectorDistance
 from camel.utils import dependencies_required
 
 if TYPE_CHECKING:
-    import numpy as np
+    from numpy import ndarray
 
 logger = get_logger(__name__)
 
@@ -693,15 +693,17 @@ class FaissStorage(BaseVectorStorage):
                 return False
         return True
 
-    def _normalize_vector(self, vector: np.ndarray) -> np.ndarray:
+    def _normalize_vector(self, vector: "ndarray") -> "ndarray":
         r"""Normalizes a vector to unit length for cosine similarity.
 
         Args:
-            vector (np.ndarray): Vector to normalize, either 1D or 2D array.
+            vector (ndarray): Vector to normalize, either 1D or 2D array.
 
         Returns:
-            np.ndarray: Normalized vector with the same shape as input.
+            ndarray: Normalized vector with the same shape as input.
         """
+        import numpy as np
+
         if vector.ndim == 1:
             vector = vector.reshape(1, -1)
         norm = np.linalg.norm(vector, axis=1, keepdims=True)
