@@ -32,7 +32,6 @@ class GithubToolkit(BaseToolkit):
         specific issues, and creating pull requests in a GitHub repository.
 
     Args:
-        repo_name (str): The name of the GitHub repository.
         access_token (str, optional): The access token to authenticate with
             GitHub. If not provided, it will be obtained using the
             `get_github_access_token` method.
@@ -41,7 +40,6 @@ class GithubToolkit(BaseToolkit):
     @dependencies_required('github')
     def __init__(
         self,
-        repo_name: str,
         access_token: Optional[str] = None,
         timeout: Optional[float] = None,
     ) -> None:
@@ -61,7 +59,6 @@ class GithubToolkit(BaseToolkit):
             access_token = self.get_github_access_token()
 
         self.github = Github(auth=Token(access_token))
-        self.repo = self.github.get_repo(repo_name)
 
     def get_github_access_token(self) -> str:
         r"""Retrieve the GitHub access token from environment variables.
@@ -85,6 +82,7 @@ class GithubToolkit(BaseToolkit):
 
     def create_pull_request(
         self,
+        repo_name: str,
         file_path: str,
         new_content: str,
         pr_title: str,
@@ -98,6 +96,7 @@ class GithubToolkit(BaseToolkit):
         description contains information about the issue title and number.
 
         Args:
+            repo_name (str): The name of the GitHub repository.
             file_path (str): The path of the file to be updated in the
                 repository.
             new_content (str): The specified new content of the specified file.
@@ -111,12 +110,13 @@ class GithubToolkit(BaseToolkit):
             str: A formatted report of whether the pull request was created
                 successfully or not.
         """
-        sb = self.repo.get_branch(self.repo.default_branch)
+        repo = self.github.get_repo(repo_name)
+        default_branch = repo.get_branch(repo.default_branch)
         from github.GithubException import GithubException
 
         try:
-            self.repo.create_git_ref(
-                ref=f"refs/heads/{branch_name}", sha=sb.commit.sha
+            repo.create_git_ref(
+                ref=f"refs/heads/{branch_name}", sha=default_branch.commit.sha
             )
         except GithubException as e:
             if e.message == "Reference already exists":
@@ -128,19 +128,19 @@ class GithubToolkit(BaseToolkit):
             else:
                 raise
 
-        file = self.repo.get_contents(file_path)
+        file = repo.get_contents(file_path)
 
         from github.ContentFile import ContentFile
 
         if isinstance(file, ContentFile):
-            self.repo.update_file(
+            repo.update_file(
                 file.path, body, new_content, file.sha, branch=branch_name
             )
-            pr = self.repo.create_pull(
+            pr = repo.create_pull(
                 title=pr_title,
                 body=body,
                 head=branch_name,
-                base=self.repo.default_branch,
+                base=repo.default_branch,
             )
 
             if pr is not None:
@@ -151,11 +151,12 @@ class GithubToolkit(BaseToolkit):
             raise ValueError("PRs with multiple files aren't supported yet.")
 
     def get_issue_list(
-        self, state: Literal["open", "closed", "all"] = "all"
+        self, repo_name: str, state: Literal["open", "closed", "all"] = "all"
     ) -> List[Dict[str, object]]:
         r"""Retrieves all issues from the GitHub repository.
 
         Args:
+            repo_name (str): The name of the GitHub repository.
             state (Literal["open", "closed", "all"]): The state of pull
                 requests to retrieve. (default: :obj: `all`)
                 Options are:
@@ -167,35 +168,39 @@ class GithubToolkit(BaseToolkit):
             List[Dict[str, object]]: A list of dictionaries where each
                 dictionary contains the issue number and title.
         """
+        repo = self.github.get_repo(repo_name)
         issues_info = []
-        issues = self.repo.get_issues(state=state)
+        issues = repo.get_issues(state=state)
 
         for issue in issues:
             issues_info.append({"number": issue.number, "title": issue.title})
 
         return issues_info
 
-    def get_issue_content(self, issue_number: int) -> str:
+    def get_issue_content(self, repo_name: str, issue_number: int) -> str:
         r"""Retrieves the content of a specific issue by its number.
 
         Args:
+            repo_name (str): The name of the GitHub repository.
             issue_number (int): The number of the issue to retrieve.
 
         Returns:
             str: issues content details.
         """
         try:
-            issue = self.repo.get_issue(number=issue_number)
+            repo = self.github.get_repo(repo_name)
+            issue = repo.get_issue(number=issue_number)
             return issue.body
         except Exception as e:
             return f"can't get Issue number {issue_number}: {e!s}"
 
     def get_pull_request_list(
-        self, state: Literal["open", "closed", "all"] = "all"
+        self, repo_name: str, state: Literal["open", "closed", "all"] = "all"
     ) -> List[Dict[str, object]]:
         r"""Retrieves all pull requests from the GitHub repository.
 
         Args:
+            repo_name (str): The name of the GitHub repository.
             state (Literal["open", "closed", "all"]): The state of pull
                 requests to retrieve. (default: :obj: `all`)
                 Options are:
@@ -207,18 +212,22 @@ class GithubToolkit(BaseToolkit):
             list: A list of dictionaries where each dictionary contains the
                 pull request number and title.
         """
+        repo = self.github.get_repo(repo_name)
         pull_requests_info = []
-        pull_requests = self.repo.get_pulls(state=state)
+        pull_requests = repo.get_pulls(state=state)
 
         for pr in pull_requests:
             pull_requests_info.append({"number": pr.number, "title": pr.title})
 
         return pull_requests_info
 
-    def get_pull_request_code(self, pr_number: int) -> List[Dict[str, str]]:
+    def get_pull_request_code(
+        self, repo_name: str, pr_number: int
+    ) -> List[Dict[str, str]]:
         r"""Retrieves the code changes of a specific pull request.
 
         Args:
+            repo_name (str): The name of the GitHub repository.
             pr_number (int): The number of the pull request to retrieve.
 
         Returns:
@@ -226,8 +235,9 @@ class GithubToolkit(BaseToolkit):
                 contains the file name and the corresponding code changes
                 (patch).
         """
+        repo = self.github.get_repo(repo_name)
         # Retrieve the specific pull request
-        pr = self.repo.get_pull(number=pr_number)
+        pr = repo.get_pull(number=pr_number)
 
         # Collect the file changes from the pull request
         files_changed = []
@@ -244,19 +254,21 @@ class GithubToolkit(BaseToolkit):
         return files_changed
 
     def get_pull_request_comments(
-        self, pr_number: int
+        self, repo_name: str, pr_number: int
     ) -> List[Dict[str, str]]:
         r"""Retrieves the comments from a specific pull request.
 
         Args:
+            repo_name (str): The name of the GitHub repository.
             pr_number (int): The number of the pull request to retrieve.
 
         Returns:
             List[Dict[str, str]]: A list of dictionaries where each dictionary
                 contains the user ID and the comment body.
         """
+        repo = self.github.get_repo(repo_name)
         # Retrieve the specific pull request
-        pr = self.repo.get_pull(number=pr_number)
+        pr = repo.get_pull(number=pr_number)
 
         # Collect the comments from the pull request
         comments = []
@@ -266,10 +278,11 @@ class GithubToolkit(BaseToolkit):
 
         return comments
 
-    def get_all_file_paths(self, path: str = "") -> List[str]:
+    def get_all_file_paths(self, repo_name: str, path: str = "") -> List[str]:
         r"""Recursively retrieves all file paths in the GitHub repository.
 
         Args:
+            repo_name (str): The name of the GitHub repository.
             path (str): The repository path to start the traversal from.
                 empty string means starts from the root directory.
                 (default: :obj: `""`)
@@ -280,11 +293,13 @@ class GithubToolkit(BaseToolkit):
         """
         from github.ContentFile import ContentFile
 
+        repo = self.github.get_repo(repo_name)
+
         files: List[str] = []
 
         # Retrieves all contents of the current directory
-        contents: Union[List[ContentFile], ContentFile] = (
-            self.repo.get_contents(path)
+        contents: Union[List[ContentFile], ContentFile] = repo.get_contents(
+            path
         )
 
         if isinstance(contents, ContentFile):
@@ -299,10 +314,11 @@ class GithubToolkit(BaseToolkit):
                     files.append(content.path)
         return files
 
-    def retrieve_file_content(self, file_path: str) -> str:
+    def retrieve_file_content(self, repo_name: str, file_path: str) -> str:
         r"""Retrieves the content of a file from the GitHub repository.
 
         Args:
+            repo_name (str): The name of the GitHub repository.
             file_path (str): The path of the file to retrieve.
 
         Returns:
@@ -310,7 +326,9 @@ class GithubToolkit(BaseToolkit):
         """
         from github.ContentFile import ContentFile
 
-        file_content = self.repo.get_contents(file_path)
+        repo = self.github.get_repo(repo_name)
+
+        file_content = repo.get_contents(file_path)
         if isinstance(file_content, ContentFile):
             return file_content.decoded_content.decode()
         else:

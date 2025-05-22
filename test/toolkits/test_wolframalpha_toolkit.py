@@ -29,6 +29,44 @@ def test_query_wolfram_alpha(mock_get_env, mock_client, mock_requests_get):
             {
                 '@title': 'Limit',
                 'subpod': {'plaintext': 'lim_(x->0) (sin^2(x))/x = 0'},
+                '@primary': 'true',
+            },
+            {
+                '@title': 'Plot',
+                'subpod': {'plaintext': None},
+            },
+        ],
+    }[key]
+
+    mock_instance = MagicMock()
+    mock_instance.query.return_value = mock_res
+    mock_client.return_value = mock_instance
+
+    result = WolframAlphaToolkit().query_wolfram_alpha(
+        "calculate limit of sinx^2/x"
+    )
+
+    expected_output = "lim_(x->0) (sin^2(x))/x = 0"
+
+    assert result == expected_output
+
+
+@patch('requests.get')
+@patch('wolframalpha.Client')
+@patch('os.environ.get')
+def test_query_wolfram_alpha_step_by_step(
+    mock_get_env, mock_client, mock_requests_get
+):
+    mock_get_env.return_value = 'FAKE_APP_ID'
+
+    mock_res = MagicMock()
+    mock_res.get.side_effect = lambda key, default: {
+        '@inputstring': 'calculate limit of sinx^2/x',
+        'pod': [
+            {
+                '@title': 'Limit',
+                'subpod': {'plaintext': 'lim_(x->0) (sin^2(x))/x = 0'},
+                '@primary': 'true',
             },
             {
                 '@title': 'Plot',
@@ -44,8 +82,9 @@ def test_query_wolfram_alpha(mock_get_env, mock_client, mock_requests_get):
     mock_requests_get.return_value = MagicMock(status_code=200)
     mock_requests_get.return_value.text = """
     <queryresult success="true" error="false">
-        <pod title="Limit">
+        <pod title="Results">
             <subpod>
+                <stepbystepcontenttype>SBSStep</stepbystepcontenttype>
                 <plaintext>lim_(x->0) (sin^2(x))/x = 0</plaintext>
             </subpod>
         </pod>
@@ -57,8 +96,8 @@ def test_query_wolfram_alpha(mock_get_env, mock_client, mock_requests_get):
     </queryresult>
     """
 
-    result = WolframAlphaToolkit().query_wolfram_alpha(
-        "calculate limit of sinx^2/x", True
+    result = WolframAlphaToolkit().query_wolfram_alpha_step_by_step(
+        "calculate limit of sinx^2/x"
     )
 
     expected_output = {
@@ -75,8 +114,8 @@ def test_query_wolfram_alpha(mock_get_env, mock_client, mock_requests_get):
                 "image_url": '',
             },
         ],
-        "final_answer": None,
-        "steps": {},
+        "final_answer": "lim_(x->0) (sin^2(x))/x = 0",
+        "steps": {"step1": "lim_(x->0) (sin^2(x))/x = 0"},
     }
 
     assert result == expected_output
