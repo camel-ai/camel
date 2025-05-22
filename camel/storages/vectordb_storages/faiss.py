@@ -15,9 +15,7 @@
 import os
 import pickle
 from datetime import datetime
-from typing import Any, Dict, List, Optional, cast
-
-import numpy as np
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
 
 from camel.logger import get_logger
 from camel.storages.vectordb_storages import (
@@ -29,6 +27,9 @@ from camel.storages.vectordb_storages import (
 )
 from camel.types import VectorDistance
 from camel.utils import dependencies_required
+
+if TYPE_CHECKING:
+    import numpy as np
 
 logger = get_logger(__name__)
 
@@ -94,6 +95,7 @@ class FaissStorage(BaseVectorStorage):
             **kwargs: Additional parameters
         """
         import faiss
+        import numpy as np
 
         self.vector_dim = vector_dim
         self.index_type = index_type
@@ -294,6 +296,8 @@ class FaissStorage(BaseVectorStorage):
         Raises:
             RuntimeError: If there was an error in the addition process.
         """
+        import numpy as np
+
         if not records:
             return
 
@@ -428,6 +432,7 @@ class FaissStorage(BaseVectorStorage):
               will be applied (vectors matching either will be deleted).
         """
         import faiss
+        import numpy as np
 
         if not ids and not payload_filter:
             raise ValueError(
@@ -574,6 +579,8 @@ class FaissStorage(BaseVectorStorage):
             List[VectorDBQueryResult]: A list of query results ordered by
                 similarity.
         """
+        import numpy as np
+
         if self._index.ntotal == 0:
             return []
 
