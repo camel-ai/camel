@@ -134,67 +134,67 @@ tool_call_id='call_e6gApIh8ohCARb4fb9WDxEsq')]
 ===============================================================================
 '''
 
-res_llm = WolframAlphaToolkit().query_wolfram_alpha_llm(
-    query="10 densest elemental metals"
+tools = [WolframAlphaToolkit().query_wolfram_alpha_llm]
+
+agent = ChatAgent(
+    system_message=system_message,
+    model=model,
+    tools=tools,
 )
 
-print(res_llm)
+response = agent.step("What's 10 densest elemental metals")
+
+print(response.msgs[0].content)
+print("\nTool calls:")
+print(response.info['tool_calls'])
 '''
 ===============================================================================
-Query:
-"10 densest elemental metals"
+The 10 densest elemental metals, measured by mass density, are:
 
-Input interpretation:
-10 densest metallic elements | by mass density
+1. **Hassium (Hs)** - 41 g/cm³
+2. **Meitnerium (Mt)** - 37.4 g/cm³
+3. **Bohrium (Bh)** - 37.1 g/cm³
+4. **Seaborgium (Sg)** - 35.3 g/cm³
+5. **Darmstadtium (Ds)** - 34.8 g/cm³
+6. **Dubnium (Db)** - 29.3 g/cm³
+7. **Roentgenium (Rg)** - 28.7 g/cm³
+8. **Rutherfordium (Rf)** - 23.2 g/cm³
+9. **Osmium (Os)** - 22.59 g/cm³
+10. **Iridium (Ir)** - 22.56 g/cm³
 
-Periodic table location:
-image: https://www6b3.wolframalpha.com/Calculate/MSP/
-MSP7491501b77df5bhaaci0000454bh00124146c46?MSPStoreType=image/png&s=11
+These values represent the density of each metal at standard conditions.
 
-Images:
-image: https://www6b3.wolframalpha.com/Calculate/MSP/
-MSP7501501b77df5bhaaci00005i7f8c1e0a7hebi0?MSPStoreType=image/png&s=11
-Wolfram Language code: Dataset[EntityValue[{Entity["Element", "Hassium"], 
-Entity["Element", "Meitnerium"], Entity["Element", "Bohrium"], Entity
-["Element", "Seaborgium"], Entity["Element", "Darmstadtium"], Entity
-["Element", "Dubnium"], Entity["Element", "Roentgenium"], Entity["Element", 
-"Rutherfordium"], Entity["Element", "Osmium"], Entity["Element", "Iridium"]}, 
-EntityProperty["Element", "Image"], "EntityAssociation"]]
-
-Basic elemental properties:
-image: https://www6b3.wolframalpha.com/Calculate/MSP/
-MSP7511501b77df5bhaaci00004h1d0hfh1hh25agh?MSPStoreType=image/png&s=11
-
-Result:
-image: https://www6b3.wolframalpha.com/Calculate/MSP/
-MSP7521501b77df5bhaaci00002746fi9b03h6c9ad?MSPStoreType=image/png&s=11
-
-Thermodynamic properties:
-phase at STP | all | solid
-(properties at standard conditions)
-
-Material properties:
-image: https://www6b3.wolframalpha.com/Calculate/MSP/
-MSP7531501b77df5bhaaci000044egfd69a7iegeb1?MSPStoreType=image/png&s=11
-
-Reactivity:
-image: https://www6b3.wolframalpha.com/Calculate/MSP/
-MSP7541501b77df5bhaaci00005g6dh3eg2301d31g?MSPStoreType=image/png&s=11
-
-Atomic properties:
-term symbol | all | ^2S_(1/2) | ^3D_3 | ^3F_2 | ^4F_(3/2) | ^4F_(9/2) | 
-^5D_0 | ^5D_4 | ^6S_(5/2)
-(electronic ground state properties)
-
-Abundances:
-image: https://www6b3.wolframalpha.com/Calculate/MSP/
-MSP7551501b77df5bhaaci00003832d90bfgacadb8?MSPStoreType=image/png&s=11
-
-Nuclear properties:
-image: https://www6b3.wolframalpha.com/Calculate/MSP/
-MSP7561501b77df5bhaaci00002b2e7b10873hfgge?MSPStoreType=image/png&s=11
-
-Wolfram|Alpha website result for "10 densest elemental metals":
-https://www6b3.wolframalpha.com/input?i=10+densest+elemental+metals
+Tool calls:
+[ToolCallingRecord(tool_name='query_wolfram_alpha_llm', args={'query': '10 
+densest elemental metals'}, result='Query:\n"10 densest elemental 
+metals"\n\nInput interpretation:\n10 densest metallic elements | by mass 
+density\n\nBasic elemental properties:\natomic symbol | all | Bh | Db | Ds | 
+Hs | Ir | Mt | Os | Rf | Rg | Sg\natomic number | median | 106.5\n | highest | 
+111 (roentgenium)\n | lowest | 76 (osmium)\n | distribution | \natomic mass | 
+median | 269 u\n | highest | 282 u (roentgenium)\n | lowest | 190.23 u (osmium)
+\n | distribution | \nhalf-life | median | 78 min\n | highest | 13 h 
+(rutherfordium)\n | lowest | 4 min (darmstadtium)\n | distribution | 
+\n\nResult:\n1 | hassium | 41 g/cm^3 | \n2 | meitnerium | 37.4 g/cm^3 | \n3 | 
+bohrium | 37.1 g/cm^3 | \n4 | seaborgium | 35.3 g/cm^3 | \n5 | darmstadtium | 
+34.8 g/cm^3 | \n6 | dubnium | 29.3 g/cm^3 | \n7 | roentgenium | 28.7 g/cm^3 | 
+\n8 | rutherfordium | 23.2 g/cm^3 | \n9 | osmium | 22.59 g/cm^3 | \n10 | 
+iridium | 22.56 g/cm^3 | \n\nThermodynamic properties:\nphase at STP | all | 
+solid\n(properties at standard conditions)\n\nMaterial properties:\nmass 
+density | median | 32.1 g/cm^3\n | highest | 41 g/cm^3 (hassium)\n | lowest | 
+22.56 g/cm^3 (iridium)\n | distribution | \n(properties at standard conditions)
+\n\nReactivity:\nvalence | median | 6\n | highest | 7 (bohrium)\n | lowest | 4 
+(rutherfordium)\n | distribution | \n\nAtomic properties:\nterm symbol | all | 
+^2S_(1/2) | ^3D_3 | ^3F_2 | ^4F_(3/2) | ^4F_(9/2) | ^5D_0 | ^5D_4 | ^6S_(5/2)\n
+(electronic ground state properties)\n\nAbundances:\ncrust abundance | 
+median | 0 mass%\n | highest | 1.8×10^-7 mass% (osmium)\n | lowest | 0 mass% 
+(8 elements)\nhuman abundance | median | 0 mass%\n | highest | 0 mass% (8 
+elements)\n | lowest | 0 mass% (8 elements)\n\nNuclear 
+properties:\nhalf-life | median | 78 min\n | highest | 13 h (rutherfordium)
+\n | lowest | 4 min (darmstadtium)\n | distribution | \nspecific 
+radioactivity | highest | 6.123×10^6 TBq/g (darmstadtium)\n | lowest | 33169 
+TBq/g (rutherfordium)\n | median | 366018 TBq/g\n | distribution | \n\nWolfram|
+Alpha website result for "10 densest elemental metals":\nhttps://www6b3.
+wolframalpha.com/input?i=10+densest+elemental+metals', 
+tool_call_id='call_b2FBtvFoRpP17UPOXDEvQg5Q')]
 ===============================================================================
 '''
