@@ -117,7 +117,11 @@ class WolframAlphaToolkit(BaseToolkit):
 
         try:
             url = "https://www.wolframalpha.com/api/v1/llm-api"
-            params = {"input": query, "appid": WOLFRAMALPHA_APP_ID}
+            params = {
+                "input": query,
+                "appid": WOLFRAMALPHA_APP_ID,
+                "format": "plaintext",
+            }
 
             response = requests.get(url, params=params)
             response.raise_for_status()
