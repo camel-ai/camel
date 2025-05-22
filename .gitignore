@@ -431,3 +431,6 @@ benchmark/gaia/results.jsonl
 
 # Secret files for docker
 .container/.env
+
+# Environment variables file
+.env
