@@ -23,6 +23,7 @@ from .milvus import MilvusStorage
 from .oceanbase import OceanBaseStorage
 from .qdrant import QdrantStorage
 from .tidb import TiDBStorage
+from .faiss import FaissStorage
 
 __all__ = [
     'BaseVectorStorage',
@@ -31,6 +32,7 @@ __all__ = [
     'QdrantStorage',
     'MilvusStorage',
     "TiDBStorage",
+    'FaissStorage',
     'OceanBaseStorage',
     'VectorRecord',
     'VectorDBStatus',

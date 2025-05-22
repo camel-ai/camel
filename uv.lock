@@ -604,6 +604,8 @@ all = [
     { name = "docx2txt" },
     { name = "duckduckgo-search" },
     { name = "e2b-code-interpreter" },
+    { name = "faiss-cpu" },
+    { name = "faiss-gpu" },  
     { name = "exa-py" },
     { name = "fastapi" },
     { name = "ffmpeg-python" },
@@ -848,7 +850,9 @@ owl = [
 rag = [
     { name = "cohere" },
     { name = "crawl4ai" },
-    { name = "google-genai" },
+    { name = "faiss-cpu" },
+    { name = "faiss-gpu" },
+    { name = "google-genai" }
     { name = "nebula3-python" },
     { name = "neo4j" },
     { name = "numpy" },
@@ -870,6 +874,8 @@ research-tools = [
 storage = [
     { name = "azure-storage-blob" },
     { name = "botocore" },
+    { name = "faiss-cpu" },
+    { name = "faiss-gpu" },
     { name = "google-cloud-storage" },
     { name = "mem0ai" },
     { name = "nebula3-python" },
@@ -982,6 +988,12 @@ requires-dist = [
     { name = "e2b-code-interpreter", marker = "extra == 'owl'", specifier = ">=1.0.3,<2" },
     { name = "exa-py", marker = "extra == 'all'", specifier = ">=1.10.0,<2" },
     { name = "exa-py", marker = "extra == 'web-tools'", specifier = ">=1.10.0,<2" },
+    { name = "faiss-cpu", marker = "extra == 'all'", specifier = ">=1.7.2,<2" },
+    { name = "faiss-cpu", marker = "extra == 'rag'", specifier = ">=1.7.2,<2" },
+    { name = "faiss-cpu", marker = "extra == 'storage'", specifier = ">=1.7.2,<2" },
+    { name = "faiss-gpu", marker = "extra == 'all'", specifier = ">=1.7.2,<2" },
+    { name = "faiss-gpu", marker = "extra == 'rag'", specifier = ">=1.7.2,<2" },
+    { name = "faiss-gpu", marker = "extra == 'storage'", specifier = ">=1.7.2,<2" },
     { name = "fastapi", marker = "extra == 'all'", specifier = ">=0.115.11" },
     { name = "fastapi", marker = "extra == 'web-tools'", specifier = ">=0.115.11" },
     { name = "ffmpeg-python", marker = "extra == 'all'", specifier = ">=0.2.0,<0.3" },
@@ -2100,6 +2112,36 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/d9/b1/82df1201efdf0216f656caf7f7052f2fedf6bbb86998cac8e8926bca621e/Faker-19.13.0.tar.gz", hash = "sha256:14ccb0aec342d33aa3889a864a56e5b3c2d56bce1b89f9189f4fbc128b9afc1e", size = 1699872 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/18/d6/314868f573b09d9f0590a2c2f7dd7463153d3dab1049f0ba5e7008776d91/Faker-19.13.0-py3-none-any.whl", hash = "sha256:da880a76322db7a879c848a0771e129338e0a680a9f695fd9a3e7a6ac82b45e1", size = 1737393 },
+]
+
+[[package]]
+name = "faiss-cpu"
+version = "1.9.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy", version = ">=1.17.0" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b0/e4/71e3ce81a1902aaca10beee28830b7d0273d2231462e26b1be236a32afeb/faiss_cpu-1.9.0.tar.gz", hash = "sha256:2ab59a5678c39b1624c7e1bcd77c83a9672aa500494bf7a62e88c7ffcfd9f41e", size = 3346556 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a3/e0/c8384aebcb3d7139a17bf5dd06bccbdd2071c1dbad7a15d07bca1e764fc5/faiss_cpu-1.9.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b0e337ffeaa56eefc8c43ea989cb80d4263bbec4e9d0c8d593ce61b7aa5826ea", size = 10282377 },
+    { url = "https://files.pythonhosted.org/packages/86/af/38f945bde305c4a83f11cec1bbff43d929a3bb6d2a370a827cf1481605b7/faiss_cpu-1.9.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:10b9e096aa9a803a19e5152f5291ec3b3e87a6c40f854b5fcc97009f85455292", size = 10282379 },
+    { url = "https://files.pythonhosted.org/packages/e8/a9/0f7eb0f8eb5def2018482e85b3d201e7a31420a9bae24486c499f1c9c988/faiss_cpu-1.9.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:39c89dbf3c9d37789c522e049105d547ee5e2a83eeb06e5a1a82d8685a424d59", size = 10282379 },
+    { url = "https://files.pythonhosted.org/packages/f9/55/a3c5c9d4f4bbb685d9a1a9bbf87f89302eadbd3a77e2ffe0de3b75253950/faiss_cpu-1.9.0-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:08166ebbe5ed3d5e29f3b9c0839313196994174a7cb5bb460499a7e8659a8022", size = 10282379 },
+]
+
+[[package]]
+name = "faiss-gpu"
+version = "1.9.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy", version = ">=1.17.0" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c4/a0/799c9b3842d95fb23d6b6a0ee9c2324508dc15919efcbd3ae7ee89fd241e/faiss_gpu-1.9.0.tar.gz", hash = "sha256:9f27c17ebad005326db4303e9d82791ac25e58c5ece14d18c1d929e2c93ec67b", size = 3477882 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8c/60/842222c53fa7d2399204e1c5c020fe9b08dc7699e76797280bda67308921/faiss_gpu-1.9.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8dc14011b2c8a8fe380b1e4c22b973e3d8090caf49c1ec39ecbfff9c88aacbb9", size = 41365306 },
+    { url = "https://files.pythonhosted.org/packages/f8/71/f494e6c2a6c8f7406d8f8efc120716a4ffbbb13e7370be022e805781bc19/faiss_gpu-1.9.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9354f365989de4432c96616b7448d6c6855fb424ff4e7f5618bfe7d6a215be42", size = 41365307 },
+    { url = "https://files.pythonhosted.org/packages/e4/8d/ff5be0776623bbacfe74ebc70c6916911ca317f404592e136676e37a9b58/faiss_gpu-1.9.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:1681a34a89a082e81f9dcac43eb9e67f90c859c584701ba789f3b48d9ca8304b", size = 41365307 },
+    { url = "https://files.pythonhosted.org/packages/45/cf/9199e49b31507c395f7d0d970acfa93641d45e4ae82be14760dbfd409380/faiss_gpu-1.9.0-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4279f5c4574bdcc002c5d3ea9f4b5cc71f8513d3cbf1e28e3ea9f632c8de7ce5", size = 41365307 },
 ]
 
 [[package]]
