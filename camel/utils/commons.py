@@ -1107,8 +1107,10 @@ def browser_toolkit_save_auth_cookie(
 
 def run_async(func: Callable[..., Any]) -> Callable[..., Any]:
     r"""Helper function to run async functions in synchronous context.
+
     Args:
         func (Callable[..., Any]): The async function to wrap.
+
     Returns:
         Callable[..., Any]: A synchronous wrapper for the async function.
     """
