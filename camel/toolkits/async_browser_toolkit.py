@@ -11,6 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
+# Enables postponed evaluation of annotations (for string-based type hints)
+from __future__ import annotations
+
 import asyncio
 import datetime
 import io
@@ -1336,7 +1340,7 @@ class AsyncBrowserToolkit(BaseToolkit):
 
     def _initialize_agent(self) -> Tuple["ChatAgent", "ChatAgent"]:
         r"""Initialize the agent."""
-        from camel.agents import ChatAgent
+        from camel.agents.chat_agent import ChatAgent
 
         if self.web_agent_model is None:
             web_agent_model = ModelFactory.create(

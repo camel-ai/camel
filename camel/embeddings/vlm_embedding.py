@@ -11,6 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
+# Enables postponed evaluation of annotations (for string-based type hints)
+from __future__ import annotations
+
 from typing import Any, List, Optional, Union
 
 from PIL import Image
@@ -70,7 +74,7 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
     def embed_list(
         self, objs: List[Union[Image.Image, str]], **kwargs: Any
     ) -> List[List[float]]:
-        """Generates embeddings for the given images or texts.
+        r"""Generates embeddings for the given images or texts.
 
         Args:
             objs (List[Image.Image|str]): The list of images or texts for
@@ -98,7 +102,10 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
 
         result_list = []
         for obj in objs:
-            if isinstance(obj, Image.Image):
+            if (
+                obj.__class__.__module__ == "PIL.Image"
+                and obj.__class__.__name__ == "Image"
+            ):
                 image_input = self.processor(
                     images=obj,
                     return_tensors="pt",
