@@ -1724,7 +1724,7 @@ class ChatAgent(BaseAgent):
             name (str, optional): Name of the MCP server.
                 (default: :obj:`CAMEL-ChatAgent`)
             description (str, optional): Description of the agent. If None, a
-                generic description is used. (default: :obj:`A helpful 
+                generic description is used. (default: :obj:`A helpful
                 assistant using the CAMEL AI framework.`)
             dependencies (list, optional): Additional dependencies for the MCP
                 server. (default: :obj:`None`)
