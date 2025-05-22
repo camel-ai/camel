@@ -1715,7 +1715,6 @@ class ChatAgent(BaseAgent):
         name: str = "default",
         description: str = "A helpful assistant using the Camel AI framework.",
         dependencies: Optional[list] = None,
-        transport: str = 'streamable-http',
         host: str = 'localhost',
         port: int = 8000,
     ):
@@ -1728,8 +1727,6 @@ class ChatAgent(BaseAgent):
                 generic description is used. Defaults to None.
             dependencies (list, optional): Additional dependencies for the MCP
                 server. Defaults to None.
-            transport (str, optional): Transport protocol to use.
-                Defaults to 'streamable-http'.
             host (str, optional): Host to bind to for HTTP transport.
                 Defaults to 'localhost'.
             port (int, optional): Port to bind to for HTTP transport.
