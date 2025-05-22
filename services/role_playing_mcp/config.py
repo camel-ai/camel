@@ -13,11 +13,11 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import logging
 import os
+from typing import Dict
 
 from camel.models import ModelFactory
-from camel.societies.role_playing import RolePlaying
-from camel.types import ModelPlatformType, TaskType
-from camel.types.enums import ModelType
+from camel.societies import RolePlaying
+from camel.types import ModelPlatformType, ModelType, TaskType
 
 # Prevent logging since MCP needs to use stdout
 root_logger = logging.getLogger()
@@ -62,14 +62,14 @@ DEFAULT_ROLE_SCENARIOS = {
             "Work on developing a short story concept with compelling "
             "characters and plot."
         ),
-        "task_type": TaskType.CREATIVE_WRITING,
+        "task_type": TaskType.AI_SOCIETY,
         "model": default_model,
     },
     "business_planning": {
         "assistant_role_name": "Business Consultant",
         "user_role_name": "Entrepreneur",
         "task_prompt": "Develop a business plan for a new technology startup.",
-        "task_type": TaskType.OPEN_DOMAIN,
+        "task_type": TaskType.AI_SOCIETY,
         "model": default_model,
     },
     "scientific_discussion": {
@@ -79,7 +79,7 @@ DEFAULT_ROLE_SCENARIOS = {
             "Discuss recent advancements in artificial intelligence and "
             "their implications."
         ),
-        "task_type": TaskType.OPEN_DOMAIN,
+        "task_type": TaskType.AI_SOCIETY,
         "model": openrouter_model,
     },
 }
@@ -88,7 +88,7 @@ DEFAULT_ROLE_SCENARIOS = {
 default_assistant_role = "AI Assistant"
 default_user_role = "Human User"
 default_task_prompt = "Have a helpful and informative conversation."
-default_task_type = TaskType.OPEN_DOMAIN
+default_task_type = TaskType.AI_SOCIETY
 
 # Create a default instance of RolePlaying
 role_playing = RolePlaying(
@@ -102,4 +102,4 @@ role_playing = RolePlaying(
 )
 
 # Map of active role playing sessions
-active_sessions = {}
+active_sessions: Dict[str, RolePlaying] = {}

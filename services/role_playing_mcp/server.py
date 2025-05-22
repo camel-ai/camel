@@ -16,8 +16,9 @@ from typing import Any, Dict, Optional
 
 from mcp.server.fastmcp import Context, FastMCP
 
-from camel.messages.base import BaseMessage
-from camel.societies.role_playing import RolePlaying
+from camel.messages import BaseMessage
+from camel.models import BaseModelBackend
+from camel.societies import RolePlaying
 from camel.types import TaskType
 from services.role_playing_mcp.config import (
     DEFAULT_ROLE_SCENARIOS,
@@ -80,36 +81,40 @@ def create_session(
     # If a scenario name is provided, use that configuration
     if scenario_name and scenario_name in DEFAULT_ROLE_SCENARIOS:
         scenario_config = DEFAULT_ROLE_SCENARIOS[scenario_name]
-        assistant_role = scenario_config["assistant_role_name"]
-        user_role = scenario_config["user_role_name"]
-        prompt = scenario_config["task_prompt"]
+        assistant_role = str(scenario_config["assistant_role_name"])
+        user_role = str(scenario_config["user_role_name"])
+        prompt = str(scenario_config["task_prompt"])
         task_type_val = scenario_config["task_type"]
-        model = scenario_config.get("model", default_model)
+        if not isinstance(task_type_val, TaskType):
+            task_type_val = default_task_type
+        model_val = scenario_config.get("model", default_model)
+        if not isinstance(model_val, BaseModelBackend):
+            model_val = default_model
     else:
         # Otherwise use provided or default values
-        assistant_role = assistant_role_name or default_assistant_role
-        user_role = user_role_name or default_user_role
-        prompt = task_prompt or default_task_prompt
+        assistant_role = str(assistant_role_name or default_assistant_role)
+        user_role = str(user_role_name or default_user_role)
+        prompt = str(task_prompt or default_task_prompt)
         # Convert task_type string to TaskType enum if provided
         task_type_val = default_task_type
         if task_type:
-            for t in TaskType:
-                if t.name == task_type:
-                    task_type_val = t
-                    break
-        model = default_model
+            try:
+                task_type_val = TaskType[task_type]
+            except (KeyError, ValueError):
+                task_type_val = default_task_type
+        model_val = default_model
 
     # Create a new RolePlaying instance
     new_session = RolePlaying(
         assistant_role_name=assistant_role,
         user_role_name=user_role,
         task_prompt=prompt,
-        with_task_specify=with_task_specify,
-        with_task_planner=with_task_planner,
-        with_critic_in_the_loop=with_critic,
+        with_task_specify=bool(with_task_specify),
+        with_task_planner=bool(with_task_planner),
+        with_critic_in_the_loop=bool(with_critic),
         task_type=task_type_val,
-        model=model,
-        output_language=output_language,
+        model=model_val,
+        output_language=str(output_language) if output_language else None,
     )
 
     # Generate a unique session ID
@@ -129,7 +134,7 @@ def create_session(
 
 
 @mcp.tool()
-def chat_step(
+async def chat_step(
     session_id: str,
     message: str,
     ctx: Context,
@@ -155,7 +160,7 @@ def chat_step(
         content=message,
     )
 
-    ctx.info("Processing message...")
+    await ctx.info("Processing message...")
 
     # Advance the conversation
     (assistant_response, user_response) = session.step(assistant_msg)
@@ -211,7 +216,7 @@ async def chat_step_async(
     )
 
     await ctx.report_progress(0, 1)
-    ctx.info("Processing message...")
+    await ctx.info("Processing message...")
 
     # Advance the conversation asynchronously
     result = await session.astep(assistant_msg)

@@ -22,8 +22,7 @@ from camel.toolkits import (
     SearchToolkit,
     ThinkingToolkit,
 )
-from camel.types import ModelPlatformType
-from camel.types.enums import ModelType
+from camel.types import ModelPlatformType, ModelType
 
 # Prevent logging since MCP needs to use stdout
 root_logger = logging.getLogger()

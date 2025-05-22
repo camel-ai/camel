@@ -16,10 +16,10 @@ from typing import Any, Dict, List, Optional
 from mcp.server.fastmcp import Context, FastMCP
 
 from camel.agents import ChatAgent
-from camel.messages.base import BaseMessage
+from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.societies.workforce import RolePlayingWorker, SingleAgentWorker
-from camel.tasks.task import Task
+from camel.tasks import Task
 from camel.toolkits import CodeExecutionToolkit, SearchToolkit, ThinkingToolkit
 from camel.types import ModelPlatformType
 
@@ -31,10 +31,10 @@ mcp = FastMCP("WorkforceMCP", dependencies=["camel-ai[all]"])
 
 
 @mcp.tool()
-def process_task(
+async def process_task(
     content: str,
+    ctx: Context,
     additional_info: Optional[str] = None,
-    ctx: Context = None,
 ) -> Dict[str, Any]:
     """Process a task using the CAMEL Workforce system.
 
@@ -46,8 +46,7 @@ def process_task(
     Returns:
         Dict containing the task result and details
     """
-    if ctx:
-        ctx.info(f"Processing task: {content}")
+    await ctx.info(f"Processing task: {content}")
 
     # Create a new task
     task = Task(content=content, additional_info=additional_info or "")
@@ -112,12 +111,12 @@ def get_workforce_info() -> Dict[str, Any]:
 
 
 @mcp.tool()
-def add_single_agent_worker(
+async def add_single_agent_worker(
     description: str,
     system_message: str,
+    ctx: Context,
     model_name: Optional[str] = None,
     tools: Optional[List[str]] = None,
-    ctx: Context = None,
 ) -> Dict[str, Any]:
     """Add a new single agent worker to the workforce.
 
@@ -131,8 +130,7 @@ def add_single_agent_worker(
     Returns:
         Dict containing the result of the operation
     """
-    if ctx:
-        ctx.info(f"Adding new single agent worker: {description}")
+    await ctx.info(f"Adding new single agent worker: {description}")
 
     # Set up the tools for the worker
     worker_tools = []
@@ -179,12 +177,12 @@ def add_single_agent_worker(
 
 
 @mcp.tool()
-def add_role_playing_worker(
+async def add_role_playing_worker(
     description: str,
     assistant_role_name: str,
     user_role_name: str,
+    ctx: Context,
     chat_turn_limit: int = 3,
-    ctx: Context = None,
 ) -> Dict[str, Any]:
     """Add a new role-playing worker to the workforce.
 
@@ -194,12 +192,10 @@ def add_role_playing_worker(
         user_role_name: Role name for the user
         chat_turn_limit: Maximum number of chat turns
         ctx: The MCP context object
-
     Returns:
         Dict containing the result of the operation
     """
-    if ctx:
-        ctx.info(f"Adding new role-playing worker: {description}")
+    await ctx.info(f"Adding new role-playing worker: {description}")
 
     workforce.add_role_playing_worker(
         description=description,
@@ -216,7 +212,7 @@ def add_role_playing_worker(
 
 
 @mcp.tool()
-def reset_workforce(ctx: Context = None) -> Dict[str, str]:
+async def reset_workforce(ctx: Context) -> Dict[str, str]:
     """Reset the workforce to its initial state.
 
     Args:
@@ -225,8 +221,7 @@ def reset_workforce(ctx: Context = None) -> Dict[str, str]:
     Returns:
         Dict containing the status of the reset operation
     """
-    if ctx:
-        ctx.info("Resetting workforce")
+    await ctx.info("Resetting workforce")
 
     workforce.reset()
 
@@ -237,8 +232,9 @@ def reset_workforce(ctx: Context = None) -> Dict[str, str]:
 
 
 @mcp.tool()
-def clone_workforce(
-    with_memory: bool = False, ctx: Context = None
+async def clone_workforce(
+    ctx: Context,
+    with_memory: bool = False,
 ) -> Dict[str, Any]:
     """Create a clone of the current workforce.
 
@@ -249,8 +245,7 @@ def clone_workforce(
     Returns:
         Dict containing information about the cloned workforce
     """
-    if ctx:
-        ctx.info(f"Cloning workforce (with_memory={with_memory})")
+    await ctx.info(f"Cloning workforce (with_memory={with_memory})")
 
     # Create a clone of the workforce
     cloned_workforce = workforce.clone(with_memory=with_memory)

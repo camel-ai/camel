@@ -17,8 +17,7 @@ import os
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
 from camel.toolkits import SearchToolkit
-from camel.types import ModelPlatformType
-from camel.types.enums import ModelType
+from camel.types import ModelPlatformType, ModelType
 
 # Prevent logging since MCP needs to use stdout
 root_logger = logging.getLogger()
@@ -77,7 +76,7 @@ The reasoning agent is a helpful assistant that can reason about the world.
 search_agent = ChatAgent(
     model=search_model,
     system_message="You are a helpful assistant.",
-    tools=SearchToolkit().get_tools(),  # Add search tool
+    tools=list(SearchToolkit().get_tools()),
 )
 
 search_agent_description = """
