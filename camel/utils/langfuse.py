@@ -68,8 +68,8 @@ def configure_langfuse(
         )
 
         logger.debug(
-            f"Configuration values - public_key: {
-                '***' + public_key[-4:] if public_key else None}, "
+            f"Configuration values - public_key: "
+            f"{'***' + public_key[-4:] if public_key else None}, "
             f"secret_key: {'***' + secret_key[-4:] if secret_key else None}, "
             f"host: {host}, debug: {debug}, enabled: {enabled}"
         )
