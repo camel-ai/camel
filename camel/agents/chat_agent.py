@@ -378,7 +378,8 @@ class ChatAgent(BaseAgent):
             # List of tuples (platform, type)
             resolved_models_list = []
             for model_spec in model_list:
-                platform, type_ = model_spec[0], model_spec[1]  # type: ignore[index]
+                platform = model_spec[0]  # type: ignore[index]
+                type_ = model_spec[1]  # type: ignore[index]
                 resolved_models_list.append(
                     ModelFactory.create(
                         model_platform=platform, model_type=type_
@@ -1549,3 +1550,223 @@ class ChatAgent(BaseAgent):
         return (
             f"ChatAgent({self.role_name}, {self.role_type}, {self.model_type})"
         )
+
+    def to_openai_compatible_server(self):
+        r"""Create an OpenAI-compatible FastAPI server for this ChatAgent.
+
+        Returns:
+            FastAPI: A FastAPI application that can be served to provide
+                OpenAI-compatible API endpoints for this ChatAgent.
+
+        Example:
+            ```python
+            agent = ChatAgent(model="gpt-4")
+            app = agent.to_openai_compatible_server()
+
+            # Serve with uvicorn
+            import uvicorn
+            uvicorn.run(app, host="0.0.0.0", port=8000)
+            ```
+        """
+        try:
+            import asyncio
+            import json
+            import time
+
+            from fastapi import FastAPI
+            from fastapi.responses import JSONResponse, StreamingResponse
+            from pydantic import BaseModel
+        except ImportError as e:
+            raise ImportError(
+                f"Required dependencies for OpenAI-compatible server not "
+                f"found: {e}. Please install them with: "
+                "pip install fastapi uvicorn"
+            ) from e
+
+        # Define Pydantic models for request/response
+        class ChatMessage(BaseModel):
+            role: str
+            content: str = ""
+            name: Optional[str] = None
+            function_call: Optional[Dict[str, Any]] = None
+
+        app = FastAPI(
+            title="CAMEL OpenAI-compatible API",
+            description="OpenAI-compatible API for CAMEL ChatAgent",
+        )
+
+        @app.post("/v1/chat/completions")
+        async def chat_completions(request_data: dict):
+            try:
+                # Parse request data manually to avoid Pydantic issues
+                messages = request_data.get("messages", [])
+                model = request_data.get("model", "camel-model")
+                stream = request_data.get("stream", False)
+                functions = request_data.get("functions")
+                tools = request_data.get("tools")
+
+                # Convert OpenAI messages to CAMEL format
+                camel_messages = []
+                for msg in messages:
+                    msg_role = msg.get("role", "")
+                    msg_content = msg.get("content", "")
+
+                    if msg_role == "user":
+                        camel_messages.append(msg_content)
+                    elif msg_role == "assistant":
+                        # Record previous assistant messages
+                        assistant_msg = BaseMessage.make_assistant_message(
+                            role_name="Assistant", content=msg_content
+                        )
+                        self.record_message(assistant_msg)
+                    elif msg_role == "function":
+                        # Handle function messages if needed
+                        pass
+
+                # Process tools/functions if provided
+                if tools or functions:
+                    tools_to_use = tools if tools else functions
+                    # Type guard to ensure tools_to_use is not None
+                    if tools_to_use is not None:
+                        for tool in tools_to_use:
+                            # Convert to CAMEL tool format and add to agent
+                            if "function" in tool:
+                                self.add_external_tool(tool)
+                            else:
+                                self.add_external_tool({"function": tool})
+
+                # Get the response from the agent
+                if len(camel_messages) > 0:
+                    last_message = camel_messages[-1]
+
+                    if stream:
+                        return StreamingResponse(
+                            _stream_response(last_message, request_data),
+                            media_type="text/event-stream",
+                        )
+                    else:
+                        agent_response = self.step(last_message)
+
+                        # Convert CAMEL response to OpenAI format
+                        if not agent_response.msgs:
+                            # Empty response or error
+                            content = "No response generated"
+                            finish_reason = "error"
+                        else:
+                            content = agent_response.msgs[0].content
+                            finish_reason = "stop"
+
+                        # Check for tool calls
+                        function_call_response = None
+                        external_tool_requests = agent_response.info.get(
+                            "external_tool_call_requests"
+                        )
+                        if external_tool_requests:
+                            tool_call = external_tool_requests[0]
+                            function_call_response = {
+                                "name": tool_call.tool_name,
+                                "arguments": json.dumps(tool_call.args),
+                            }
+                            finish_reason = "function_call"
+
+                        usage = agent_response.info.get("token_usage") or {
+                            "prompt_tokens": agent_response.info.get(
+                                "prompt_tokens", 0
+                            ),
+                            "completion_tokens": agent_response.info.get(
+                                "completion_tokens", 0
+                            ),
+                            "total_tokens": agent_response.info.get(
+                                "total_tokens", 0
+                            ),
+                        }
+
+                        response = {
+                            "id": agent_response.info.get(
+                                "response_id", f"chatcmpl-{int(time.time())}"
+                            ),
+                            "object": "chat.completion",
+                            "created": int(time.time()),
+                            "model": model,
+                            "choices": [
+                                {
+                                    "index": 0,
+                                    "message": {
+                                        "role": "assistant",
+                                        "content": (
+                                            content
+                                            if not function_call_response
+                                            else None
+                                        ),
+                                        "function_call": function_call_response,  # noqa: E501
+                                    },
+                                    "finish_reason": finish_reason,
+                                }
+                            ],
+                            "usage": usage,
+                        }
+
+                        return response
+                else:
+                    # No message provided
+                    return JSONResponse(
+                        status_code=400,
+                        content={"error": "No user message provided"},
+                    )
+            except Exception as e:
+                return JSONResponse(
+                    status_code=500,
+                    content={"error": f"Internal server error: {e!s}"},
+                )
+
+        async def _stream_response(message: str, request_data: dict):
+            # Start a separate task for the agent processing
+            agent_response = self.step(message)
+
+            if not agent_response.msgs:
+                # Stream an error message if no response
+                error_data = {'error': 'No response generated'}
+                yield f"data: {json.dumps(error_data)}\n\n"
+                return
+
+            content = agent_response.msgs[0].content
+            tokens = content.split(" ")
+
+            # Send the first event with model info
+            first_chunk = {
+                'id': f'chatcmpl-{int(time.time())}',
+                'object': 'chat.completion.chunk',
+                'created': int(time.time()),
+                'model': request_data.get("model", "camel-model"),
+                'choices': [
+                    {
+                        'index': 0,
+                        'delta': {'role': 'assistant'},
+                        'finish_reason': None,
+                    }
+                ],
+            }
+            yield f"data: {json.dumps(first_chunk)}\n\n"
+
+            # Stream the content word by word
+            for token in tokens:
+                token_chunk = {
+                    'choices': [
+                        {
+                            'index': 0,
+                            'delta': {'content': token + ' '},
+                            'finish_reason': None,
+                        }
+                    ]
+                }
+                yield f"data: {json.dumps(token_chunk)}\n\n"
+                await asyncio.sleep(0.05)
+
+            # Send the final event
+            final_chunk = {
+                'choices': [{'index': 0, 'delta': {}, 'finish_reason': 'stop'}]
+            }
+            yield f"data: {json.dumps(final_chunk)}\n\n"
+            yield "data: [DONE]\n\n"
+
+        return app
