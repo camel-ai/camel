@@ -56,6 +56,8 @@ class ModelType(UnifiedModelType, Enum):
     AWS_LLAMA_3_3_70B_INSTRUCT = "us.meta.llama3-3-70b-instruct-v1:0"
     AWS_LLAMA_3_2_90B_INSTRUCT = "us.meta.llama3-2-90b-instruct-v1:0"
     AWS_LLAMA_3_2_11B_INSTRUCT = "us.meta.llama3-2-11b-instruct-v1:0"
+    AWS_CLAUDE_SONNET_4 = "anthropic.claude-sonnet-4-20250514-v1:0"
+    AWS_CLAUDE_OPUS_4 = "anthropic.claude-opus-4-20250514-v1:0"
 
     GLM_4 = "glm-4"
     GLM_4V = "glm-4v"
@@ -145,13 +147,15 @@ class ModelType(UnifiedModelType, Enum):
     CLAUDE_2_0 = "claude-2.0"
     CLAUDE_INSTANT_1_2 = "claude-instant-1.2"
 
-    # Claude3 models
+    # Claude models
     CLAUDE_3_OPUS = "claude-3-opus-latest"
     CLAUDE_3_SONNET = "claude-3-sonnet-20240229"
     CLAUDE_3_HAIKU = "claude-3-haiku-20240307"
     CLAUDE_3_5_SONNET = "claude-3-5-sonnet-latest"
     CLAUDE_3_5_HAIKU = "claude-3-5-haiku-latest"
     CLAUDE_3_7_SONNET = "claude-3-7-sonnet-latest"
+    CLAUDE_SONNET_4 = "claude-sonnet-4-20250514"
+    CLAUDE_OPUS_4 = "claude-opus-4-20250514"
 
     # Netmind models
     NETMIND_LLAMA_4_MAVERICK_17B_128E_INSTRUCT = (
@@ -469,6 +473,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.AWS_LLAMA_3_3_70B_INSTRUCT,
             ModelType.AWS_LLAMA_3_2_90B_INSTRUCT,
             ModelType.AWS_LLAMA_3_2_11B_INSTRUCT,
+            ModelType.AWS_CLAUDE_SONNET_4,
+            ModelType.AWS_CLAUDE_OPUS_4,
         }
 
     @property
@@ -530,6 +536,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_5_SONNET,
             ModelType.CLAUDE_3_5_HAIKU,
             ModelType.CLAUDE_3_7_SONNET,
+            ModelType.CLAUDE_SONNET_4,
+            ModelType.CLAUDE_OPUS_4,
         }
 
     @property
@@ -1162,11 +1170,15 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_5_SONNET,
             ModelType.CLAUDE_3_5_HAIKU,
             ModelType.CLAUDE_3_7_SONNET,
+            ModelType.CLAUDE_SONNET_4,
+            ModelType.CLAUDE_OPUS_4,
             ModelType.YI_MEDIUM_200K,
             ModelType.AWS_CLAUDE_3_5_SONNET,
             ModelType.AWS_CLAUDE_3_HAIKU,
             ModelType.AWS_CLAUDE_3_SONNET,
             ModelType.AWS_CLAUDE_3_7_SONNET,
+            ModelType.AWS_CLAUDE_SONNET_4,
+            ModelType.AWS_CLAUDE_OPUS_4,
             ModelType.O4_MINI,
             ModelType.O3,
         }:
