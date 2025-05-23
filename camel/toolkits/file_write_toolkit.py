@@ -175,7 +175,9 @@ class FileWriteToolkit(BaseToolkit):
                 Math,
                 Section,
             )
-            from pylatex.utils import NoEscape  # type: ignore[import-untyped]
+            from pylatex.utils import (  # type: ignore[import-untyped]
+                NoEscape,
+            )
 
             doc = Document(documentclass="article")
             doc.packages.append(Command('usepackage', 'amsmath'))
