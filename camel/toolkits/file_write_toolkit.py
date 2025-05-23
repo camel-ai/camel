@@ -183,6 +183,112 @@ class FileWriteToolkit(BaseToolkit):
         pdf.output(str(file_path))
         logger.debug(f"Wrote PDF to {file_path} with custom formatting")
 
+    def _write_pptx_file(
+        self, file_path: Path, content: Union[str, list]
+    ) -> None:
+        r"""Write text content to a PPTX file with enhanced formatting.
+
+        Args:
+            file_path (Path): The target file path.
+            content (Union[str, list]): The content to write to the PPTX file.
+
+        """
+
+        import io
+
+        import pptx
+        import requests
+        from pptx.dml.color import RGBColor
+        from pptx.util import Inches, Pt
+
+        presentation = pptx.Presentation()
+
+        # Define standard dimensions and margins
+        slide_width = Inches(10)
+        margin_left = Inches(0.5)
+        margin_top = Inches(1)
+        image_width = Inches(4)
+        image_height = Inches(3)
+
+        # Handle the first slide (title slide)
+        if isinstance(content, list) and content:
+            start_slide = content.pop(0)
+            layout = presentation.slide_layouts[0]
+            slide = presentation.slides.add_slide(layout)
+
+            # Set title
+            title = slide.shapes.title
+            title.text = start_slide.get("title", "")
+            for paragraph in title.text_frame.paragraphs:
+                for run in paragraph.runs:
+                    run.font.name = 'Arial'
+                    run.font.size = Pt(44)
+                    run.font.bold = True
+                    run.font.color.rgb = RGBColor(0, 0, 0)
+
+            # Set subtitle
+            subtitle = slide.placeholders[1]
+            subtitle.text = start_slide.get("subtitle", "")
+            for paragraph in subtitle.text_frame.paragraphs:
+                for run in paragraph.runs:
+                    run.font.name = 'Arial'
+                    run.font.size = Pt(24)
+                    run.font.color.rgb = RGBColor(64, 64, 64)
+
+            # Add content slides
+            for slide_data in content:
+                layout = presentation.slide_layouts[1]
+                slide = presentation.slides.add_slide(layout)
+
+                # Set title
+                title = slide.shapes.title
+                title.text = slide_data.get("title", "")
+                for paragraph in title.text_frame.paragraphs:
+                    for run in paragraph.runs:
+                        run.font.name = 'Arial'
+                        run.font.size = Pt(36)
+                        run.font.bold = True
+                        run.font.color.rgb = RGBColor(0, 0, 0)
+
+                # Set content text
+                text = slide_data.get("text", "")
+                if text:
+                    content_placeholder = slide.placeholders[1]
+                    content_placeholder.text = text
+                    for paragraph in content_placeholder.text_frame.paragraphs:
+                        for run in paragraph.runs:
+                            run.font.name = 'Arial'
+                            run.font.size = Pt(18)
+                            run.font.color.rgb = RGBColor(64, 64, 64)
+
+                # Add image if present
+                image_url = slide_data.get("image")
+                if image_url:
+                    try:
+                        response = requests.get(image_url)
+                        response.raise_for_status()
+                        image_stream = io.BytesIO(response.content)
+
+                        left = slide_width - image_width - margin_left
+                        top = margin_top + Inches(1.5)
+
+                        # Add the image
+                        slide.shapes.add_picture(
+                            image_stream,
+                            left,
+                            top,
+                            width=image_width,
+                            height=image_height,
+                        )
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to load image from {image_url}: {e}"
+                        )
+
+        # Save the presentation
+        presentation.save(str(file_path))
+        logger.debug(f"Wrote PPTX to {file_path} with enhanced formatting")
+
     def _write_csv_file(
         self,
         file_path: Path,
