@@ -567,6 +567,7 @@ module = [
     "google_genai",
     "aci-sdk.*",
     "bohrium.*",
+    "PyLaTeX"
 ]
 ignore_missing_imports = true
 
