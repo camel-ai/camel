@@ -35,6 +35,7 @@ from .commons import (
     json_to_function_code,
     print_text_animated,
     retry_on_error,
+    run_async,
     text_extract_from_web,
     to_pascal,
     track_agent,
@@ -95,4 +96,5 @@ __all__ = [
     "model_from_json_schema",
     "sanitize_filename",
     "browser_toolkit_save_auth_cookie",
+    "run_async",
 ]
