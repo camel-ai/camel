@@ -17,12 +17,12 @@ import os
 import pytest
 from PIL import Image
 
-from camel.toolkits import DalleToolkit
+from camel.toolkits import OpenAIImageToolkit
 
 
 @pytest.fixture
-def dalle_toolkit():
-    return DalleToolkit()
+def image_toolkit():
+    return OpenAIImageToolkit()
 
 
 @pytest.fixture
@@ -43,24 +43,24 @@ def test_image_path():
         print(f"Error: {e.strerror}")
 
 
-def test_base64_to_image_valid(dalle_toolkit):
+def test_base64_to_image_valid(image_toolkit):
     valid_base64_string = "iVBORw0KGgoAAAANSUhEUgAAAAUA\
                             AAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO\
                             9TXL0Y4OHwAAAABJRU5ErkJggg=="
     if valid_base64_string.startswith('data:image/png;base64,'):
         valid_base64_string = valid_base64_string[22:]
 
-    image = dalle_toolkit.base64_to_image(valid_base64_string)
+    image = image_toolkit.base64_to_image(valid_base64_string)
 
     assert isinstance(
         image, Image.Image
     ), "The function should return a PIL Image object"
 
 
-def test_base64_to_image_invalid(dalle_toolkit):
+def test_base64_to_image_invalid(image_toolkit):
     invalid_base64_string = "invalid_base64_string"
 
-    image = dalle_toolkit.base64_to_image(invalid_base64_string)
+    image = image_toolkit.base64_to_image(invalid_base64_string)
 
     # Check response is None
     assert (
@@ -68,9 +68,9 @@ def test_base64_to_image_invalid(dalle_toolkit):
     ), "The function should return None for an invalid base64 string"
 
 
-def test_image_path_to_base64(test_image_path, dalle_toolkit):
+def test_image_path_to_base64(test_image_path, image_toolkit):
     # Obtain the Base64 encoded string of the test image
-    base64_encoded_string = dalle_toolkit.image_path_to_base64(test_image_path)
+    base64_encoded_string = image_toolkit.image_path_to_base64(test_image_path)
     # Decode the Base64 string back to binary data for validation
     decoded_binary_data = base64.b64decode(base64_encoded_string)
     # Verify if the decoded data matches the original binary content of
@@ -83,13 +83,13 @@ def test_image_path_to_base64(test_image_path, dalle_toolkit):
     ), "The Base64 encoded string does not match the original image content."
 
 
-def test_image_to_base64_with_invalid_input(dalle_toolkit):
+def test_image_to_base64_with_invalid_input(image_toolkit):
     # Intentionally pass a non-image object to simulate an error condition
     invalid_input = "This is not an image"
 
     # Expect the function to return an error message when an error occurs
     # during encoding
-    result = dalle_toolkit.image_to_base64(invalid_input)
+    result = image_toolkit.image_to_base64(invalid_input)
 
     # Assert that the function correctly returns an error message for invalid
     # inputs

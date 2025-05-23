@@ -33,16 +33,16 @@ logger = get_logger(__name__)
 
 
 @MCPServer()
-class DalleToolkit(BaseToolkit):
+class OpenAIImageToolkit(BaseToolkit):
     r"""A class representing a toolkit for image generation using OpenAI's
-    DALL-E model.
+    Image Generation API..
     """
 
     def __init__(
         self,
         timeout: Optional[float] = None,
     ):
-        r"""Initializes a new instance of the DalleToolkit class.
+        r"""Initializes a new instance of the OpenAIImageToolkit class.
 
         Args:
             timeout (Optional[float]): The timeout value for API requests
@@ -123,11 +123,14 @@ class DalleToolkit(BaseToolkit):
             logger.error(error_msg)
             return error_msg
 
-    def get_dalle_img(self, prompt: str, image_dir: str = "img") -> str:
-        r"""Generate an image using OpenAI's DALL-E model.
+    def get_img(
+        self, prompt: str, image_dir: str = "img", model: str = "gpt-image-1"
+    ) -> str:
+        r"""Generate an image using OpenAI's Image Generation model.
             The generated image is saved to the specified directory.
 
         Args:
+            model (str): The model to use. Defaults to 'gpt-image-1'
             prompt (str): The text prompt based on which the image is
                 generated.
             image_dir (str): The directory to save the generated image.
@@ -137,17 +140,13 @@ class DalleToolkit(BaseToolkit):
             str: The path to the saved image.
         """
 
-        dalle_client = OpenAI()
-        response = dalle_client.images.generate(
-            model="dall-e-3",
+        client = OpenAI()
+        response = client.images.generate(
+            model=model,
             prompt=prompt,
-            size="1024x1792",
-            quality="standard",
-            n=1,  # NOTE: now dall-e-3 only supports n=1
-            response_format="b64_json",
         )
         if response.data is None or len(response.data) == 0:
-            error_msg = "No image data returned from DALL-E API."
+            error_msg = "No image data returned from OPENAI API."
             logger.error(error_msg)
             return error_msg
         image_b64 = response.data[0].b64_json
@@ -164,6 +163,65 @@ class DalleToolkit(BaseToolkit):
 
         return image_path
 
+    def edit_img(
+        self,
+        prompt: str,
+        image_path: str,
+        mask_path: Optional[str] = None,
+        image_dir: str = "img",
+        model: str = "gpt-image-1",
+    ) -> str:
+        r"""Edit an existing image using OpenAI's image generation API.
+
+        Args:
+            prompt (str): The text prompt describing the modifications to the
+                image.
+            image_path (str): The file path to the input image to be edited.
+            mask_path (Optional[str]): The file path to an optional mask image
+                specifying editable regions. If None, the entire image may be
+                modified based on the prompt and model. Defaults to None.
+            image_dir (str): The directory to save the edited image.
+            model (str): The OpenAI model to use for editing.
+                Defaults to 'gpt-image-1'.
+
+        Returns:
+            str: The path to the saved image.
+        """
+        client = OpenAI()
+        try:
+            with open(image_path, "rb") as image_file:
+                image = image_file.read()
+            if mask_path:
+                with open(mask_path, "rb") as mask_file:
+                    mask = mask_file.read()
+            response = client.images.edit(
+                model=model,
+                prompt=prompt,
+                image=image,
+                mask=mask,
+                n=1,
+                response_format="b64_json",
+            )
+            if response.data is None or len(response.data) == 0:
+                error_msg = "No image data returned from OpenAI API."
+                logger.error(error_msg)
+                return error_msg
+            image_b64 = response.data[0].b64_json
+            edited_image = self.base64_to_image(image_b64)  # type: ignore[arg-type]
+            if edited_image is None:
+                error_msg = "Failed to convert base64 string to edited image."
+                logger.error(error_msg)
+                return error_msg
+
+            os.makedirs(image_dir, exist_ok=True)
+            image_path = os.path.join(image_dir, f"{uuid.uuid4()}.png")
+            edited_image.save(image_path)
+            return image_path
+        except Exception as e:
+            error_msg = f"An error occurred while editing image: {e}"
+            logger.error(error_msg)
+            return error_msg
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
@@ -172,4 +230,4 @@ class DalleToolkit(BaseToolkit):
             List[FunctionTool]: A list of FunctionTool objects
                 representing the functions in the toolkit.
         """
-        return [FunctionTool(self.get_dalle_img)]
+        return [FunctionTool(self.get_img), FunctionTool(self.edit_img)]
