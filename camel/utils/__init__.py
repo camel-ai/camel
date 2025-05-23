@@ -43,6 +43,15 @@ from .commons import (
 from .constants import Constants
 from .deduplication import DeduplicationResult, deduplicate_internally
 from .filename import sanitize_filename
+from .langfuse import (
+    conditional_observe,
+    configure_langfuse,
+    get_langfuse_context,
+    get_langfuse_status,
+    is_langfuse_available,
+    update_langfuse_observation,
+    update_langfuse_output,
+)
 from .mcp import MCPServer
 from .response_format import get_pydantic_model, model_from_json_schema
 from .token_counting import (
@@ -95,4 +104,11 @@ __all__ = [
     "model_from_json_schema",
     "sanitize_filename",
     "browser_toolkit_save_auth_cookie",
+    "configure_langfuse",
+    "is_langfuse_available",
+    "get_langfuse_context",
+    "conditional_observe",
+    "update_langfuse_observation",
+    "update_langfuse_output",
+    "get_langfuse_status",
 ]
