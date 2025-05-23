@@ -16,7 +16,7 @@ import json
 from copy import deepcopy
 from io import BytesIO
 from typing import List
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from openai.types.chat.chat_completion import Choice
@@ -696,15 +696,7 @@ def test_chat_agent_multiple_return_message_error(n, step_call_count=3):
     )
     for _ in range(step_call_count):
         assistant_response = assistant.step(user_msg)
-
-        with pytest.raises(
-            RuntimeError,
-            match=(
-                "Property msg is only available "
-                "for a single message in msgs."
-            ),
-        ):
-            _ = assistant_response.msg
+        assert assistant_response.msg is None
 
 
 @pytest.mark.model_backend
@@ -1084,7 +1076,7 @@ async def test_tool_calling_math_async(step_call_count=3):
         ),
     )
 
-    model.run = MagicMock(
+    model.arun = AsyncMock(
         side_effect=[
             model_backend_rsp_tool,
             model_backend_rsp_tool1,
