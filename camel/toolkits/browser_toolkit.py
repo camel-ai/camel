@@ -17,9 +17,7 @@ from __future__ import annotations
 
 import datetime
 import io
-import json
 import os
-import random
 import re
 import shutil
 import time
@@ -28,18 +26,16 @@ from copy import deepcopy
 from typing import (
     TYPE_CHECKING,
     Any,
-    BinaryIO,
     Dict,
     List,
     Literal,
     Optional,
     Tuple,
-    TypedDict,
     Union,
     cast,
 )
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image
 
 from camel.logger import get_logger
 from camel.messages import BaseMessage
@@ -58,7 +54,6 @@ from camel.utils import (
 from .browser_toolkit_commons import (
     ACTION_WITH_FEEDBACK_LIST,
     AVAILABLE_ACTIONS_PROMPT,
-    DOMRectangle,
     InteractiveRegion,
     VisualViewport,
     _add_set_of_mark,
@@ -69,14 +64,15 @@ from .browser_toolkit_commons import (
 )
 
 if TYPE_CHECKING:
-    from camel.agents import ChatAgent
     from playwright.sync_api import (
         Browser,
         BrowserContext,
+        FloatRect,
         Page,
         Playwright,
-        FloatRect,
     )
+
+    from camel.agents import ChatAgent
 
 logger = get_logger(__name__)
 
@@ -134,7 +130,8 @@ class BaseBrowser:
                 "chromium".
             cookie_json_path (Optional[str]): Path to a JSON file containing
                 authentication cookies and browser storage state. If provided
-                and the file exists, the browser will load this state to maintain
+                and the file exists, the browser will load this state to
+                maintain
                 authenticated sessions without requiring manual login.
 
         Returns:
@@ -149,7 +146,9 @@ class BaseBrowser:
         self.channel = channel
         self._ensure_browser_installed()
         self.playwright: Playwright = sync_playwright().start()
-        self.page_history: List[str] = []  # stores the history of visited pages
+        self.page_history: List[
+            str
+        ] = []  # stores the history of visited pages
         self.cookie_json_path = cookie_json_path
 
         # Set the cache directory
@@ -172,7 +171,9 @@ class BaseBrowser:
         self.context: Optional[BrowserContext] = None
         self.page: Optional[Page] = None
         self.page_url: Optional[str] = None
-        self.web_agent_model: Optional[BaseModelBackend] = None # Added for type hinting
+        self.web_agent_model: Optional[BaseModelBackend] = (
+            None  # Added for type hinting
+        )
 
     def init(self) -> None:
         r"""Initialize the browser."""
@@ -238,7 +239,8 @@ class BaseBrowser:
         """
         current_url = self.get_url()
 
-        # Confirm with user before proceeding due to potential slow processing time
+        # Confirm with user before proceeding due to potential slow
+        # processing time
         confirmation_message = (
             f"Do you want to analyze the video on the current "
             f"page({current_url})? This operation may take a long time.(y/n): "
@@ -249,7 +251,10 @@ class BaseBrowser:
             return "User cancelled the video analysis."
 
         model = None
-        if hasattr(self, 'web_agent_model') and self.web_agent_model is not None:
+        if (
+            hasattr(self, 'web_agent_model')
+            and self.web_agent_model is not None
+        ):
             model = self.web_agent_model
 
         video_analyzer = VideoAnalysisToolkit(model=model)
@@ -307,10 +312,13 @@ class BaseBrowser:
         Returns:
             List[str]: A list of paths to the screenshot files.
         """
-        screenshots: List[str] = [] # Ensure screenshots is typed
+        screenshots: List[str] = []  # Ensure screenshots is typed
         assert self.page is not None
         scroll_height_eval = self.page.evaluate("document.body.scrollHeight")
-        scroll_height = cast(float, scroll_height_eval) # Ensure scroll_height is float
+        scroll_height = cast(
+            float, scroll_height_eval
+        )  # Ensure scroll_height is
+        # float
 
         assert self.page.viewport_size is not None
         viewport_height = self.page.viewport_size["height"]
@@ -321,7 +329,7 @@ class BaseBrowser:
         max_height = scroll_height - viewport_height
         scroll_step = int(viewport_height * scroll_ratio)
 
-        last_height = 0.0 # Initialize last_height as float
+        last_height = 0.0  # Initialize last_height as float
 
         while True:
             logger.debug(
@@ -330,7 +338,8 @@ class BaseBrowser:
             )
 
             _, file_path = self.get_screenshot(save_image=True)
-            if file_path is not None: # Ensure file_path is not None before appending
+            if file_path is not None:  # Ensure file_path is not None before
+                # appending
                 screenshots.append(file_path)
 
             self.page.evaluate(f"window.scrollBy(0, {scroll_step})")
@@ -360,8 +369,12 @@ class BaseBrowser:
         except Exception as e:
             logger.warning(f"Error evaluating page script: {e}")
 
-        visual_viewport_eval = self.page.evaluate("MultimodalWebSurfer.getVisualViewport();")
-        return visual_viewport_from_dict(cast(Dict[str, Any], visual_viewport_eval))
+        visual_viewport_eval = self.page.evaluate(
+            "MultimodalWebSurfer.getVisualViewport();"
+        )
+        return visual_viewport_from_dict(
+            cast(Dict[str, Any], visual_viewport_eval)
+        )
 
     def get_interactive_elements(self) -> Dict[str, InteractiveRegion]:
         r"""Get the interactive elements of the current page.
@@ -398,7 +411,8 @@ class BaseBrowser:
                 directory.
 
         Returns:
-            Tuple[Image.Image, Union[str, None]]: A tuple containing the screenshot image
+            Tuple[Image.Image, Union[str, None]]: A tuple containing the
+            screenshot image
                 and an optional path to the image file if saved, otherwise
                 :obj:`None`.
         """
@@ -452,7 +466,8 @@ class BaseBrowser:
 
         try:
             target.wait_for(timeout=5000)
-        except Exception as e: # Consider using playwright specific TimeoutError
+        except Exception as e:  # Consider using playwright specific
+            # TimeoutError
             logger.debug(f"Error during click operation: {e}")
             raise ValueError("No such element.") from None
 
@@ -463,7 +478,10 @@ class BaseBrowser:
             with self.page.expect_event("popup", timeout=1000) as page_info:
                 box: Optional[FloatRect] = target.bounding_box()
                 if box is None:
-                    logger.warning(f"Bounding box not found for element '{identifier}'. Cannot click.")
+                    logger.warning(
+                        f"Bounding box not found for element '{identifier}'. "
+                        f"Cannot click."
+                    )
                     return
                 self.page.mouse.click(
                     box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
@@ -475,7 +493,8 @@ class BaseBrowser:
                     self.page_history.append(deepcopy(self.page.url))
                     self.page = new_page
 
-        except Exception as e: # Consider using playwright specific TimeoutError
+        except Exception as e:  # Consider using playwright specific
+            # TimeoutError
             logger.debug(f"Error during click operation: {e}")
             pass
 
@@ -501,7 +520,8 @@ class BaseBrowser:
             identifier = str(identifier)
         try:
             target = self.page.locator(f"[__elementId='{identifier}']")
-        except Exception as e: # Consider using playwright specific TimeoutError
+        except Exception as e:  # Consider using playwright specific
+            # TimeoutError
             logger.debug(f"Error during download operation: {e}")
             logger.warning(
                 f"Element with identifier '{identifier}' not found."
@@ -524,7 +544,8 @@ class BaseBrowser:
 
             return f"Downloaded file to path '{file_path_val}'."
 
-        except Exception as e: # Consider using playwright specific TimeoutError
+        except Exception as e:  # Consider using playwright specific
+            # TimeoutError
             logger.debug(f"Error during download operation: {e}")
             return f"Failed to download file with identifier '{identifier}'."
 
@@ -544,7 +565,8 @@ class BaseBrowser:
 
         try:
             target = self.page.locator(f"[__elementId='{identifier}']")
-        except Exception as e: # Consider using playwright specific TimeoutError
+        except Exception as e:  # Consider using playwright specific
+            # TimeoutError
             logger.debug(f"Error during fill operation: {e}")
             logger.warning(
                 f"Element with identifier '{identifier}' not found."
@@ -555,7 +577,8 @@ class BaseBrowser:
         target.focus()
         try:
             target.fill(text)
-        except Exception as e: # Consider using playwright specific TimeoutError
+        except Exception as e:  # Consider using playwright specific
+            # TimeoutError
             logger.debug(f"Error during fill operation: {e}")
             target.press_sequentially(text)
 
@@ -592,7 +615,8 @@ class BaseBrowser:
             identifier = str(identifier)
         try:
             target = self.page.locator(f"[__elementId='{identifier}']")
-        except Exception as e: # Consider using playwright specific TimeoutError
+        except Exception as e:  # Consider using playwright specific
+            # TimeoutError
             logger.debug(f"Error during hover operation: {e}")
             logger.warning(
                 f"Element with identifier '{identifier}' not found."
@@ -616,10 +640,12 @@ class BaseBrowser:
             let text = "{search_text}";
             let found = window.find(text);
             if (!found) {{
-                let elements = document.querySelectorAll("*:not(script):not(style)"); 
+                let elements = document.querySelectorAll("*:not(script):not(
+                style)"); 
                 for (let el of elements) {{
                     if (el.innerText && el.innerText.includes(text)) {{
-                        el.scrollIntoView({{behavior: "smooth", block: "center"}});
+                        el.scrollIntoView({{behavior: "smooth", block: 
+                        "center"}});
                         el.style.backgroundColor = "yellow";
                         el.style.border = '2px solid red';
                         return true;
@@ -631,7 +657,7 @@ class BaseBrowser:
         }})();
         """
         found_eval = self.page.evaluate(script)
-        found = cast(bool, found_eval) # Ensure found is bool
+        found = cast(bool, found_eval)  # Ensure found is bool
         self._wait_for_load()
         if found:
             return f"Found text '{search_text}' on the page."
@@ -661,7 +687,7 @@ class BaseBrowser:
         assert self.browser is not None
         self.browser.close()
         if self.playwright:
-             self.playwright.stop() # Stop playwright instance
+            self.playwright.stop()  # Stop playwright instance
 
     # ruff: noqa: E501
     def show_interactive_elements(self):
@@ -670,7 +696,9 @@ class BaseBrowser:
         self.page.evaluate(self.page_script)
         self.page.evaluate("""
         () => {
-            document.querySelectorAll('a, button, input, select, textarea, [tabindex]:not([tabindex="-1"]), [contenteditable="true"]').forEach(el => {
+            document.querySelectorAll('a, button, input, select, textarea, 
+            [tabindex]:not([tabindex="-1"]), 
+            [contenteditable="true"]').forEach(el => {
                 el.style.border = '2px solid red';
             });
             }
@@ -679,6 +707,7 @@ class BaseBrowser:
     @retry_on_error()
     def get_webpage_content(self) -> str:
         from html2text import html2text
+
         assert self.page is not None
         self._wait_for_load()
         html_content = self.page.content()
@@ -765,28 +794,32 @@ class BrowserToolkit(BaseToolkit):
                 (default: :obj:`"en`")
             cookie_json_path (Optional[str]): Path to a JSON file containing
                 authentication cookies and browser storage state. If provided
-                and the file exists, the browser will load this state to maintain
+                and the file exists, the browser will load this state to
+                maintain
                 authenticated sessions without requiring manual login.
                 (default: :obj:`None`)
         """
-        super().__init__() # Call to super().__init__() added
+        super().__init__()  # Call to super().__init__() added
         self.browser = BaseBrowser(
             headless=headless,
             cache_dir=cache_dir,
             channel=channel,
             cookie_json_path=cookie_json_path,
         )
-        self.browser.web_agent_model = web_agent_model # Pass model to BaseBrowser instance
+        self.browser.web_agent_model = web_agent_model  # Pass model to
+        # BaseBrowser instance
 
         self.history_window = history_window
         self.web_agent_model = web_agent_model
         self.planning_agent_model = planning_agent_model
         self.output_language = output_language
 
-        self.history: List[Dict[str, Any]] = [] # Typed history list
+        self.history: List[Dict[str, Any]] = []  # Typed history list
         self.web_agent: ChatAgent
         self.planning_agent: ChatAgent
-        self.web_agent, self.planning_agent = self._initialize_agent(web_agent_model, planning_agent_model)
+        self.web_agent, self.planning_agent = self._initialize_agent(
+            web_agent_model, planning_agent_model
+        )
 
     def _reset(self):
         self.web_agent.reset()
@@ -794,12 +827,16 @@ class BrowserToolkit(BaseToolkit):
         self.history = []
         os.makedirs(self.browser.cache_dir, exist_ok=True)
 
-    def _initialize_agent(self, web_agent_model_backend: Optional[BaseModelBackend], planning_agent_model_backend: Optional[BaseModelBackend]) -> Tuple[ChatAgent, ChatAgent]:
+    def _initialize_agent(
+        self,
+        web_agent_model_backend: Optional[BaseModelBackend],
+        planning_agent_model_backend: Optional[BaseModelBackend],
+    ) -> Tuple[ChatAgent, ChatAgent]:
         r"""Initialize the agent."""
         from camel.agents import ChatAgent
 
         if web_agent_model_backend is None:
-            web_agent_model_instance = ModelFactory.create( 
+            web_agent_model_instance = ModelFactory.create(
                 model_platform=ModelPlatformType.OPENAI,
                 model_type=ModelType.GPT_4_1,
                 model_config_dict={"temperature": 0, "top_p": 1},
@@ -823,7 +860,7 @@ users achieve their goals.
 
         web_agent = ChatAgent(
             system_message=system_prompt,
-            model=web_agent_model_instance, 
+            model=web_agent_model_instance,
             output_language=self.output_language,
         )
 
@@ -843,7 +880,8 @@ tasks which need multi-step browser interaction.
     def _observe(
         self, task_prompt: str, detailed_plan: Optional[str] = None
     ) -> Tuple[str, str, str]:
-        r"""Let agent observe the current environment, and get the next action."""
+        r"""Let agent observe the current environment, and get the next
+        action."""
 
         detailed_plan_prompt = ""
 
@@ -892,8 +930,10 @@ Here is two example of the output:
 }}
 
 {{
-    "observation":  "The current page is a CAPTCHA verification page on Amazon. It asks the user to ..",
-    "reasoning": "To proceed with the task of searching for products, I need to complete..",
+    "observation":  "The current page is a CAPTCHA verification page on 
+    Amazon. It asks the user to ..",
+    "reasoning": "To proceed with the task of searching for products, 
+    I need to complete..",
     "action_code": "fill_input_id(3, 'AUXPMR')"
 }}
 
@@ -946,7 +986,8 @@ out the information you need. Sometimes they are extremely useful.
 
         resp_content = resp.msgs[0].content
 
-        resp_dict = _parse_json_output(resp_content, logger) # Pass logger to _parse_json_output
+        resp_dict = _parse_json_output(resp_content, logger)  # Pass logger to
+        # _parse_json_output
         observation_result: str = resp_dict.get("observation", "")
         reasoning_result: str = resp_dict.get("reasoning", "")
         action_code: str = resp_dict.get("action_code", "")
@@ -967,7 +1008,10 @@ out the information you need. Sometimes they are extremely useful.
                         id_part = (
                             parts[0].replace("fill_input_id(", "").strip()
                         )
-                        action_code = f"fill_input_id({id_part}, 'Please fill the text here.')"
+                        action_code = (
+                            f"fill_input_id({id_part}, 'Please "
+                            f"fill the text here.')"
+                        )
 
         action_code = action_code.replace("`", "").strip()
 
@@ -1069,22 +1113,29 @@ out the information you need. Sometimes they are extremely useful.
             )
 
     def _get_final_answer(self, task_prompt: str) -> str:
-        r"""Get the final answer based on the task prompt and current browser state.
-        It is used when the agent thinks that the task can be completed without any further action, and answer can be directly found in the current viewport.
+        r"""Get the final answer based on the task prompt and current
+        browser state.
+        It is used when the agent thinks that the task can be completed
+        without any further action, and answer can be directly found in the
+        current viewport.
         """
 
         prompt = f"""
-We are solving a complex web task which needs multi-step browser interaction. After the multi-step observation, reasoning and acting with web browser, we think that the task is currently solved.
+We are solving a complex web task which needs multi-step browser 
+interaction. After the multi-step observation, reasoning and acting with web 
+browser, we think that the task is currently solved.
 Here are all trajectory we have taken:
 <history>{self.history}</history>
-Please find the final answer, or give valuable insights and founds (e.g. if previous actions contain downloading files, your output should include the path of the downloaded file) about the overall task: <task>{task_prompt}</task>
+Please find the final answer, or give valuable insights and founds (e.g. if 
+previous actions contain downloading files, your output should include the 
+path of the downloaded file) about the overall task: <task>{task_prompt}</task>
         """
 
         message = BaseMessage.make_user_message(
             role_name='user',
             content=prompt,
         )
-        self.web_agent.reset() # Reset before step
+        self.web_agent.reset()  # Reset before step
         resp = self.web_agent.step(message)
         return resp.msgs[0].content
 
@@ -1093,16 +1144,19 @@ Please find the final answer, or give valuable insights and founds (e.g. if prev
 
         planning_prompt = f"""
 <task>{task_prompt}</task>
-According to the problem above, if we use browser interaction, what is the general process of the interaction after visiting the webpage `{start_url}`? 
+According to the problem above, if we use browser interaction, what is the 
+general process of the interaction after visiting the webpage `{start_url}`? 
 
-Please note that it can be viewed as Partially Observable MDP. Do not over-confident about your plan.
-Please first restate the task in detail, and then provide a detailed plan to solve the task.
+Please note that it can be viewed as Partially Observable MDP. Do not 
+over-confident about your plan.
+Please first restate the task in detail, and then provide a detailed plan to 
+solve the task.
 """
 
         message = BaseMessage.make_user_message(
             role_name='user', content=planning_prompt
         )
-        self.planning_agent.reset() # Reset before step
+        self.planning_agent.reset()  # Reset before step
         resp = self.planning_agent.step(message)
         return resp.msgs[0].content
 
@@ -1116,34 +1170,49 @@ Please first restate the task in detail, and then provide a detailed plan to sol
             detailed_plan (str): The detailed plan to replan.
 
         Returns:
-            Tuple[bool, str]: A tuple containing a boolean indicating whether the task needs to be replanned, and the replanned schema.
+            Tuple[bool, str]: A tuple containing a boolean indicating
+            whether the task needs to be replanned, and the replanned schema.
         """
 
         replanning_prompt = f"""
-We are using browser interaction to solve a complex task which needs multi-step actions.
+We are using browser interaction to solve a complex task which needs 
+multi-step actions.
 Here are the overall task:
 <overall_task>{task_prompt}</overall_task>
 
-In order to solve the task, we made a detailed plan previously. Here is the detailed plan:
+In order to solve the task, we made a detailed plan previously. Here is the 
+detailed plan:
 <detailed plan>{detailed_plan}</detailed plan>
 
-According to the task above, we have made a series of observations, reasonings, and actions. Here are the latest {self.history_window} trajectory (at most) we have taken:
+According to the task above, we have made a series of observations, 
+reasonings, and actions. Here are the latest {self.history_window} 
+trajectory (at most) we have taken:
 <history>{self.history[-self.history_window :]}</history>
 
-However, the task is not completed yet. As the task is partially observable, we may need to replan the task based on the current state of the browser if necessary.
-Now please carefully examine the current task planning schema, and our history actions, and then judge whether the task needs to be fundamentally replanned. If so, please provide a detailed replanned schema (including the restated overall task).
+However, the task is not completed yet. As the task is partially observable, 
+we may need to replan the task based on the current state of the browser if 
+necessary.
+Now please carefully examine the current task planning schema, and our 
+history actions, and then judge whether the task needs to be fundamentally 
+replanned. If so, please provide a detailed replanned schema (including the 
+restated overall task).
 
 Your output should be in json format, including the following fields:
-- `if_need_replan`: bool, A boolean value indicating whether the task needs to be fundamentally replanned.
-- `replanned_schema`: str, The replanned schema for the task, which should not be changed too much compared with the original one. If the task does not need to be replanned, the value should be an empty string. 
+- `if_need_replan`: bool, A boolean value indicating whether the task needs 
+to be fundamentally replanned.
+- `replanned_schema`: str, The replanned schema for the task, which should 
+not be changed too much compared with the original one. If the task does not 
+need to be replanned, the value should be an empty string. 
 """
         # Reset the history message of planning_agent.
         self.planning_agent.reset()
         resp = self.planning_agent.step(replanning_prompt)
-        resp_dict = _parse_json_output(resp.msgs[0].content, logger) # Pass logger
+        resp_dict = _parse_json_output(
+            resp.msgs[0].content, logger
+        )  # Pass logger
 
         if_need_replan_eval = resp_dict.get("if_need_replan", False)
-        if_need_replan = cast(bool, if_need_replan_eval) # Ensure bool
+        if_need_replan = cast(bool, if_need_replan_eval)  # Ensure bool
         replanned_schema: str = resp_dict.get("replanned_schema", "")
 
         if if_need_replan:
@@ -1186,7 +1255,7 @@ Your output should be in json format, including the following fields:
 
             if "stop" in action_code:
                 task_completed = True
-                trajectory_info: Dict[str, Any] = { # Typed trajectory_info
+                trajectory_info: Dict[str, Any] = {  # Typed trajectory_info
                     "round": i,
                     "observation": observation,
                     "thought": reasoning,
@@ -1203,7 +1272,7 @@ Your output should be in json format, including the following fields:
                 if not success:
                     logger.warning(f"Error while executing the action: {info}")
 
-                trajectory_info: Dict[str, Any] = { # Typed trajectory_info
+                trajectory_info: Dict[str, Any] = {  # Typed trajectory_info
                     "round": i,
                     "observation": observation,
                     "thought": reasoning,
@@ -1225,14 +1294,17 @@ Your output should be in json format, including the following fields:
         simulation_result: str
         if not task_completed:
             simulation_result = f"""
-                The task is not completed within the round limit. Please check the last round {self.history_window} information to see if there is any useful information:
+                The task is not completed within the round limit. Please 
+                check the last round {self.history_window} information to 
+                see if there is any useful information:
                 <history>{self.history[-self.history_window :]}</history>
             """
 
         else:
             simulation_result = self._get_final_answer(task_prompt)
-        
-        self.browser.close() # Close browser after task completion or limit reached
+
+        self.browser.close()  # Close browser after task completion or limit
+        # reached
         return simulation_result
 
     def get_tools(self) -> List[FunctionTool]:

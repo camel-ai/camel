@@ -143,7 +143,9 @@ def _get_bool(d: Any, k: str) -> bool:
     )
 
 
-def _parse_json_output(text: str, logger: Any) -> Dict[str, Any]: # Added logger argument
+def _parse_json_output(
+        text: str, logger: Any
+) -> Dict[str, Any]:  # Added logger argument
     r"""Extract JSON output from a string."""
 
     markdown_pattern = r'```(?:json)?\\s*(.*?)\\s*```'
@@ -160,16 +162,24 @@ def _parse_json_output(text: str, logger: Any) -> Dict[str, Any]: # Added logger
         return json.loads(text)
     except json.JSONDecodeError:
         try:
-            # Attempt to fix common JSON issues like unquoted keys or using single quotes
-            # This is a simplified fix, more robust parsing might be needed for complex cases
-            fixed_text = re.sub(r"(\w+)(?=\s*:)", r'"\1"', text)  # Add quotes to keys
-            fixed_text = fixed_text.replace("'", '"') # Replace single quotes with double
+            # Attempt to fix common JSON issues like unquoted keys or using
+            # single quotes
+            # This is a simplified fix, more robust parsing might be needed
+            # for complex cases
+            fixed_text = re.sub(
+                r"(\w+)(?=\s*:)", r'"\1"', text
+            )  # Add quotes to keys
+            fixed_text = fixed_text.replace("'", '"')  # Replace single quotes
+            # with double
             # Handle boolean values not in lowercase
-            fixed_text = re.sub(r':\s*True', ': true', fixed_text, flags=re.IGNORECASE)
-            fixed_text = re.sub(r':\s*False', ': false', fixed_text, flags=re.IGNORECASE)
+            fixed_text = re.sub(
+                r':\s*True', ': true', fixed_text, flags=re.IGNORECASE
+            )
+            fixed_text = re.sub(
+                r':\s*False', ': false', fixed_text, flags=re.IGNORECASE
+            )
             # Remove trailing commas
             fixed_text = re.sub(r",\s*([\}\]])", r"\1", fixed_text)
-
 
             return json.loads(fixed_text)
         except json.JSONDecodeError:
@@ -196,21 +206,25 @@ def _parse_json_output(text: str, logger: Any) -> Dict[str, Any]: # Added logger
                         result[key.strip('"')] = int(value)
                     except ValueError:
                         result[key.strip('"')] = float(value)
-                
+
                 # Extract empty string values
                 empty_str_pattern = r'"?(\w+)"?\s*:\s*""'
                 for match in re.finditer(empty_str_pattern, text):
                     key = match.group(1)
                     result[key.strip('"')] = ""
 
-
                 if result:
                     return result
-                
-                logger.warning(f"Failed to parse JSON output after multiple attempts: {text}")
+
+                logger.warning(
+                    f"Failed to parse JSON output after multiple attempts: "
+                    f"{text}"
+                )
                 return {}
             except Exception as e:
-                logger.warning(f"Error during regex extraction from JSON-like string: {e}")
+                logger.warning(
+                    f"Error during regex extraction from JSON-like string: {e}"
+                )
                 return {}
 
 
@@ -238,7 +252,9 @@ def dom_rectangle_from_dict(rect: Dict[str, Any]) -> DOMRectangle:
 def interactive_region_from_dict(region: Dict[str, Any]) -> InteractiveRegion:
     r"""Create an :class:`InteractiveRegion` object from a dictionary."""
     typed_rects: List[DOMRectangle] = []
-    for rect_data in region["rects"]: # Renamed rect to rect_data to avoid conflict
+    for rect_data in region[
+        "rects"
+    ]:  # Renamed rect to rect_data to avoid conflict
         typed_rects.append(dom_rectangle_from_dict(rect_data))
 
     return InteractiveRegion(
@@ -268,8 +284,8 @@ def visual_viewport_from_dict(viewport: Dict[str, Any]) -> VisualViewport:
 
 
 def add_set_of_mark(
-    screenshot: Union[bytes, Image.Image, io.BufferedIOBase],
-    ROIs: Dict[str, InteractiveRegion],
+        screenshot: Union[bytes, Image.Image, io.BufferedIOBase],
+        ROIs: Dict[str, InteractiveRegion],
 ) -> Tuple[Image.Image, List[str], List[str], List[str]]:
     if isinstance(screenshot, Image.Image):
         return _add_set_of_mark(screenshot, ROIs)
@@ -286,7 +302,7 @@ def add_set_of_mark(
 
 
 def _add_set_of_mark(
-    screenshot: Image.Image, ROIs: Dict[str, InteractiveRegion]
+        screenshot: Image.Image, ROIs: Dict[str, InteractiveRegion]
 ) -> Tuple[Image.Image, List[str], List[str], List[str]]:
     r"""Add a set of marks to the screenshot.
 
@@ -309,10 +325,14 @@ def _add_set_of_mark(
     overlay = Image.new("RGBA", base.size)
 
     draw = ImageDraw.Draw(overlay)
-    for r_key in ROIs: # Renamed r to r_key
-        for rect_item in ROIs[r_key]["rects"]: # Renamed rect to rect_item
+    for r_key in ROIs:  # Renamed r to r_key
+        for rect_item in ROIs[r_key]["rects"]:  # Renamed rect to rect_item
             # Empty rectangles
-            if not rect_item or rect_item["width"] == 0 or rect_item["height"] == 0:
+            if (
+                    not rect_item
+                    or rect_item["width"] == 0
+                    or rect_item["height"] == 0
+            ):
                 continue
 
             # TODO: add scroll left and right?
@@ -337,10 +357,11 @@ def _add_set_of_mark(
 
 
 def _draw_roi(
-    draw: ImageDraw.ImageDraw,
-    idx: int,
-    font: Union[ImageFont.FreeTypeFont, ImageFont.ImageFont], # Made Union explicit
-    rect: DOMRectangle,
+        draw: ImageDraw.ImageDraw,
+        idx: int,
+        font: Union[ImageFont.FreeTypeFont, ImageFont.ImageFont],
+        # Made Union explicit
+        rect: DOMRectangle,
 ) -> None:
     r"""Draw a ROI on the image.
 
@@ -387,7 +408,7 @@ def _draw_roi(
 
 
 def _get_text_color(
-    bg_color: Tuple[int, int, int, int],
+        bg_color: Tuple[int, int, int, int],
 ) -> Tuple[int, int, int, int]:
     r"""Determine the ideal text color (black or white) for contrast.
 
@@ -411,11 +432,11 @@ def _get_random_color(identifier: int) -> Tuple[int, int, int, int]:
         A tuple representing (R, G, B, A) values.
     """
     rnd = random.Random(int(identifier))
-    r_val = rnd.randint(0, 255) # Renamed r to r_val
-    g_val = rnd.randint(125, 255) # Renamed g to g_val
-    b_val = rnd.randint(0, 50) # Renamed b to b_val
+    r_val = rnd.randint(0, 255)  # Renamed r to r_val
+    g_val = rnd.randint(125, 255)  # Renamed g to g_val
+    b_val = rnd.randint(0, 50)  # Renamed b to b_val
     color = [r_val, g_val, b_val]
     # TODO: check why shuffle is needed?
     rnd.shuffle(color)
     color.append(255)
-    return cast(Tuple[int, int, int, int], tuple(color)) 
+    return cast(Tuple[int, int, int, int], tuple(color))

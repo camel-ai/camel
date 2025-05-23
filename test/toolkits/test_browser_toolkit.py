@@ -22,10 +22,10 @@ from PIL import Image
 from camel.toolkits.browser_toolkit import (
     BaseBrowser,
     BrowserToolkit,
-    dom_rectangle_from_dict,
     interactive_region_from_dict,
     visual_viewport_from_dict,
 )
+from camel.toolkits.browser_toolkit_commons import dom_rectangle_from_dict
 
 TEST_URL = "https://example.com"
 
