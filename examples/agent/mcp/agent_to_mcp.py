@@ -11,29 +11,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+from camel.agents import ChatAgent
 
-from .base import (
-    BaseVectorStorage,
-    VectorDBQuery,
-    VectorDBQueryResult,
-    VectorDBStatus,
-    VectorRecord,
+# Create a chat agent with a model
+agent = ChatAgent(model="gpt-4o-mini")
+
+
+# Create an MCP server from the agent
+mcp_server = agent.to_mcp(
+    name="demo", description="A demonstration of ChatAgent to MCP conversion"
 )
-from .faiss import FaissStorage
-from .milvus import MilvusStorage
-from .oceanbase import OceanBaseStorage
-from .qdrant import QdrantStorage
-from .tidb import TiDBStorage
 
-__all__ = [
-    'BaseVectorStorage',
-    'VectorDBQuery',
-    'VectorDBQueryResult',
-    'QdrantStorage',
-    'MilvusStorage',
-    "TiDBStorage",
-    'FaissStorage',
-    'OceanBaseStorage',
-    'VectorRecord',
-    'VectorDBStatus',
-]
+# Run the server
+if __name__ == "__main__":
+    print("Starting MCP server on http://localhost:8000")
+    mcp_server.run(transport="streamable-http")
