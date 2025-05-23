@@ -169,13 +169,13 @@ class FileWriteToolkit(BaseToolkit):
             when use_latex=False.
         """
         if use_latex:
-            from pylatex import (  # type: ignore[import-untyped] # type: ignore[import-not-found]
+            from pylatex import (  # type: ignore[import-untyped]
                 Command,
                 Document,
                 Math,
                 Section,
             )
-            from pylatex.utils import (  # type: ignore[import-untyped] # type: ignore[import-not-found]
+            from pylatex.utils import (  # type: ignore[import-untyped]
                 NoEscape,
             )
 
