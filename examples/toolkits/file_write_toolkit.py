@@ -208,9 +208,7 @@ latex_pdf_query = (
 
 camel_agent.reset()
 response = camel_agent.step(latex_pdf_query)
-print(
-    "Example 7: Please give me a  pdf file with formulas of advanced mathematics"
-)
+print(f"Example 7: {latex_pdf_query}")
 print(response.msgs[0].content)
 print("Tool calls:", response.info['tool_calls'])
 print("\n")
@@ -292,11 +290,11 @@ tool_call_id='call_uKqOpAl5Wm1O8dUYJc5yZf4U')]
 
 
 # Example 8: what is multiagent?please export  them as pdf file
-pdf_query = """what is multiagent?please export them as pdf file"""
+pdf_query = """what is multiagent?Please export them as pdf file"""
 
 camel_agent.reset()
 response = camel_agent.step(pdf_query)
-print("Example 7: what is multiagent?please export  them as pdf file")
+print(f"Example 8: {pdf_query}")
 print(response.msgs[0].content)
 print("Tool calls:", response.info['tool_calls'])
 print("\n")

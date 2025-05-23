@@ -21,7 +21,7 @@ from typing import List, Optional, Union
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import MCPServer
+from camel.utils import MCPServer, dependencies_required
 
 logger = get_logger(__name__)
 
@@ -148,6 +148,7 @@ class FileWriteToolkit(BaseToolkit):
         document.save(str(file_path))
         logger.debug(f"Wrote DOCX to {file_path} with default formatting")
 
+    @dependencies_required('pylatex', 'fpdf')
     def _write_pdf_file(
         self, file_path: Path, content: str, use_latex: bool = False
     ) -> None:
