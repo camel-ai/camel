@@ -22,13 +22,14 @@ Preparation before running:
 
 Note:
 - Tracing will only be enabled if LANGFUSE_ENABLED=true is set
-- If Langfuse keys are not set, the code will still run normally, just without tracing
 """
 
 import os
+
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
+from camel.utils import get_langfuse_status
 
 # Enable Langfuse tracing (optional)
 os.environ["LANGFUSE_ENABLED"] = "true"
@@ -38,7 +39,6 @@ model = ModelFactory.create(
     model_type=ModelType.GPT_4_1_MINI,
 )
 
-from camel.utils import get_langfuse_status
 status = get_langfuse_status()
 print("Configuration successful:", status.get("configured"))
 
@@ -49,7 +49,10 @@ sys_msg = "You are a helpful AI assistant, skilled at answering questions."
 camel_agent = ChatAgent(system_message=sys_msg, model=model)
 
 # User message
-user_msg = "Please introduce the CAMEL AI open-source community and explain its main features."
+user_msg = (
+    "Please introduce the CAMEL AI open-source community "
+    "and explain its main features."
+)
 
 # Get response (if Langfuse is configured, it will automatically trace)
 response = camel_agent.step(user_msg)
