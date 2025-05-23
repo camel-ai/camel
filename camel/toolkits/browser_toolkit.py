@@ -54,88 +54,33 @@ from camel.utils import (
     sanitize_filename,
 )
 
+# Import shared components from browser_toolkit_commons
+from .browser_toolkit_commons import (
+    ACTION_WITH_FEEDBACK_LIST,
+    AVAILABLE_ACTIONS_PROMPT,
+    DOMRectangle,
+    InteractiveRegion,
+    VisualViewport,
+    _add_set_of_mark,
+    _parse_json_output,
+    _reload_image,
+    interactive_region_from_dict,
+    visual_viewport_from_dict,
+)
+
 if TYPE_CHECKING:
     from camel.agents import ChatAgent
+    from playwright.sync_api import (
+        Browser,
+        BrowserContext,
+        Page,
+        Playwright,
+        FloatRect,
+    )
 
 logger = get_logger(__name__)
 
 TOP_NO_LABEL_ZONE = 20
-
-
-AVAILABLE_ACTIONS_PROMPT = """
-1. `fill_input_id(identifier: Union[str, int], text: str)`: Fill an input
-field (e.g. search box) with the given text and press Enter.
-2. `click_id(identifier: Union[str, int])`: Click an element with the given ID.
-3. `hover_id(identifier: Union[str, int])`: Hover over an element with the
-given ID.
-4. `download_file_id(identifier: Union[str, int])`: Download a file with the
-given ID. It returns the path to the downloaded file. If the file is
-successfully downloaded, you can stop the simulation and report the path to
-the downloaded file for further processing.
-5. `scroll_to_bottom()`: Scroll to the bottom of the page.
-6. `scroll_to_top()`: Scroll to the top of the page.
-7. `scroll_up()`: Scroll up the page. It is suitable when you want to see the
-elements above the current viewport.
-8. `scroll_down()`: Scroll down the page. It is suitable when you want to see
-the elements below the current viewport. If the webpage does not change, It
-means that the webpage has scrolled to the bottom.
-9. `back()`: Navigate back to the previous page. This is useful when you want
-to go back to the previous page, as current page is not useful.
-10. `stop()`: Stop the action process, because the task is completed or failed
-(impossible to find the answer). In this situation, you should provide your
-answer in your output.
-11. `get_url()`: Get the current URL of the current page.
-12. `find_text_on_page(search_text: str)`: Find the next given text on the
-current whole page, and scroll the page to the targeted text. It is equivalent
-to pressing Ctrl + F and searching for the text, and is powerful when you want
-to fast-check whether the current page contains some specific text.
-13. `visit_page(url: str)`: Go to the specific url page.
-14. `click_blank_area()`: Click a blank area of the page to unfocus the
-current element. It is useful when you have clicked an element but it cannot
-unfocus itself (e.g. Menu bar) to automatically render the updated webpage.
-15. `ask_question_about_video(question: str)`: Ask a question about the
-current webpage which contains video, e.g. youtube websites.
-"""
-
-ACTION_WITH_FEEDBACK_LIST = [
-    'ask_question_about_video',
-    'download_file_id',
-    'find_text_on_page',
-]
-
-
-# Code from magentic-one
-class DOMRectangle(TypedDict):
-    x: Union[int, float]
-    y: Union[int, float]
-    width: Union[int, float]
-    height: Union[int, float]
-    top: Union[int, float]
-    right: Union[int, float]
-    bottom: Union[int, float]
-    left: Union[int, float]
-
-
-class VisualViewport(TypedDict):
-    height: Union[int, float]
-    width: Union[int, float]
-    offsetLeft: Union[int, float]
-    offsetTop: Union[int, float]
-    pageLeft: Union[int, float]
-    pageTop: Union[int, float]
-    scale: Union[int, float]
-    clientWidth: Union[int, float]
-    clientHeight: Union[int, float]
-    scrollWidth: Union[int, float]
-    scrollHeight: Union[int, float]
-
-
-class InteractiveRegion(TypedDict):
-    tag_name: str
-    role: str
-    aria_name: str
-    v_scrollable: bool
-    rects: List[DOMRectangle]
 
 
 def _get_str(d: Any, k: str) -> str:
@@ -171,270 +116,6 @@ def _get_bool(d: Any, k: str) -> bool:
     )
 
 
-def _parse_json_output(text: str) -> Dict[str, Any]:
-    r"""Extract JSON output from a string."""
-
-    markdown_pattern = r'```(?:json)?\s*(.*?)\s*```'
-    markdown_match = re.search(markdown_pattern, text, re.DOTALL)
-    if markdown_match:
-        text = markdown_match.group(1).strip()
-
-    triple_quotes_pattern = r'"""(?:json)?\s*(.*?)\s*"""'
-    triple_quotes_match = re.search(triple_quotes_pattern, text, re.DOTALL)
-    if triple_quotes_match:
-        text = triple_quotes_match.group(1).strip()
-
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        try:
-            fixed_text = re.sub(
-                r'`([^`]*?)`(?=\s*[:,\[\]{}]|$)', r'"\1"', text
-            )
-            return json.loads(fixed_text)
-        except json.JSONDecodeError:
-            result = {}
-            try:
-                bool_pattern = r'"(\w+)"\s*:\s*(true|false)'
-                for match in re.finditer(bool_pattern, text, re.IGNORECASE):
-                    key, value = match.groups()
-                    result[key] = value.lower() == "true"
-
-                str_pattern = r'"(\w+)"\s*:\s*"([^"]*)"'
-                for match in re.finditer(str_pattern, text):
-                    key, value = match.groups()
-                    result[key] = value
-
-                num_pattern = r'"(\w+)"\s*:\s*(-?\d+(?:\.\d+)?)'
-                for match in re.finditer(num_pattern, text):
-                    key, value = match.groups()
-                    try:
-                        result[key] = int(value)
-                    except ValueError:
-                        result[key] = float(value)
-
-                empty_str_pattern = r'"(\w+)"\s*:\s*""'
-                for match in re.finditer(empty_str_pattern, text):
-                    key = match.group(1)
-                    result[key] = ""
-
-                if result:
-                    return result
-
-                logger.warning(f"Failed to parse JSON output: {text}")
-                return {}
-            except Exception as e:
-                logger.warning(f"Error while extracting fields from JSON: {e}")
-                return {}
-
-
-def _reload_image(image: Image.Image) -> Image.Image:
-    buffer = io.BytesIO()
-    image.save(buffer, format="PNG")
-    buffer.seek(0)
-    return Image.open(buffer)
-
-
-def dom_rectangle_from_dict(rect: Dict[str, Any]) -> DOMRectangle:
-    r"""Create a DOMRectangle object from a dictionary."""
-    return DOMRectangle(
-        x=_get_number(rect, "x"),
-        y=_get_number(rect, "y"),
-        width=_get_number(rect, "width"),
-        height=_get_number(rect, "height"),
-        top=_get_number(rect, "top"),
-        right=_get_number(rect, "right"),
-        bottom=_get_number(rect, "bottom"),
-        left=_get_number(rect, "left"),
-    )
-
-
-def interactive_region_from_dict(region: Dict[str, Any]) -> InteractiveRegion:
-    r"""Create an :class:`InteractiveRegion` object from a dictionary."""
-    typed_rects: List[DOMRectangle] = []
-    for rect in region["rects"]:
-        typed_rects.append(dom_rectangle_from_dict(rect))
-
-    return InteractiveRegion(
-        tag_name=_get_str(region, "tag_name"),
-        role=_get_str(region, "role"),
-        aria_name=_get_str(region, "aria-name"),
-        v_scrollable=_get_bool(region, "v-scrollable"),
-        rects=typed_rects,
-    )
-
-
-def visual_viewport_from_dict(viewport: Dict[str, Any]) -> VisualViewport:
-    r"""Create a :class:`VisualViewport` object from a dictionary."""
-    return VisualViewport(
-        height=_get_number(viewport, "height"),
-        width=_get_number(viewport, "width"),
-        offsetLeft=_get_number(viewport, "offsetLeft"),
-        offsetTop=_get_number(viewport, "offsetTop"),
-        pageLeft=_get_number(viewport, "pageLeft"),
-        pageTop=_get_number(viewport, "pageTop"),
-        scale=_get_number(viewport, "scale"),
-        clientWidth=_get_number(viewport, "clientWidth"),
-        clientHeight=_get_number(viewport, "clientHeight"),
-        scrollWidth=_get_number(viewport, "scrollWidth"),
-        scrollHeight=_get_number(viewport, "scrollHeight"),
-    )
-
-
-def add_set_of_mark(
-    screenshot: Union[bytes, Image.Image, io.BufferedIOBase],
-    ROIs: Dict[str, InteractiveRegion],
-) -> Tuple[Image.Image, List[str], List[str], List[str]]:
-    if isinstance(screenshot, Image.Image):
-        return _add_set_of_mark(screenshot, ROIs)
-
-    if isinstance(screenshot, bytes):
-        screenshot = io.BytesIO(screenshot)
-
-    image = Image.open(cast(BinaryIO, screenshot))
-    comp, visible_rects, rects_above, rects_below = _add_set_of_mark(
-        image, ROIs
-    )
-    image.close()
-    return comp, visible_rects, rects_above, rects_below
-
-
-def _add_set_of_mark(
-    screenshot: Image.Image, ROIs: Dict[str, InteractiveRegion]
-) -> Tuple[Image.Image, List[str], List[str], List[str]]:
-    r"""Add a set of marks to the screenshot.
-
-    Args:
-        screenshot (Image.Image): The screenshot to add marks to.
-        ROIs (Dict[str, InteractiveRegion]): The regions to add marks to.
-
-    Returns:
-        Tuple[Image.Image, List[str], List[str], List[str]]: A tuple
-            containing the screenshot with marked ROIs, ROIs fully within the
-            images, ROIs located above the visible area, and ROIs located below
-            the visible area.
-    """
-    visible_rects: List[str] = list()
-    rects_above: List[str] = list()  # Scroll up to see
-    rects_below: List[str] = list()  # Scroll down to see
-
-    fnt = ImageFont.load_default(14)
-    base = screenshot.convert("L").convert("RGBA")
-    overlay = Image.new("RGBA", base.size)
-
-    draw = ImageDraw.Draw(overlay)
-    for r in ROIs:
-        for rect in ROIs[r]["rects"]:
-            # Empty rectangles
-            if not rect or rect["width"] == 0 or rect["height"] == 0:
-                continue
-
-            # TODO: add scroll left and right?
-            horizontal_center = (rect["right"] + rect["left"]) / 2.0
-            vertical_center = (rect["top"] + rect["bottom"]) / 2.0
-            is_within_horizon = 0 <= horizontal_center < base.size[0]
-            is_above_viewport = vertical_center < 0
-            is_below_viewport = vertical_center >= base.size[1]
-
-            if is_within_horizon:
-                if is_above_viewport:
-                    rects_above.append(r)
-                elif is_below_viewport:
-                    rects_below.append(r)
-                else:  # Fully visible
-                    visible_rects.append(r)
-                    _draw_roi(draw, int(r), fnt, rect)
-
-    comp = Image.alpha_composite(base, overlay)
-    overlay.close()
-    return comp, visible_rects, rects_above, rects_below
-
-
-def _draw_roi(
-    draw: ImageDraw.ImageDraw,
-    idx: int,
-    font: ImageFont.FreeTypeFont | ImageFont.ImageFont,
-    rect: DOMRectangle,
-) -> None:
-    r"""Draw a ROI on the image.
-
-    Args:
-        draw (ImageDraw.ImageDraw): The draw object.
-        idx (int): The index of the ROI.
-        font (ImageFont.FreeTypeFont | ImageFont.ImageFont): The font.
-        rect (DOMRectangle): The DOM rectangle.
-    """
-    color = _get_random_color(idx)
-    text_color = _get_text_color(color)
-
-    roi = ((rect["left"], rect["top"]), (rect["right"], rect["bottom"]))
-
-    label_location = (rect["right"], rect["top"])
-    label_anchor = "rb"
-
-    if label_location[1] <= TOP_NO_LABEL_ZONE:
-        label_location = (rect["right"], rect["bottom"])
-        label_anchor = "rt"
-
-    draw.rectangle(
-        roi, outline=color, fill=(color[0], color[1], color[2], 48), width=2
-    )
-
-    bbox = draw.textbbox(
-        label_location,
-        str(idx),
-        font=font,
-        anchor=label_anchor,
-        align="center",
-    )
-    bbox = (bbox[0] - 3, bbox[1] - 3, bbox[2] + 3, bbox[3] + 3)
-    draw.rectangle(bbox, fill=color)
-
-    draw.text(
-        label_location,
-        str(idx),
-        fill=text_color,
-        font=font,
-        anchor=label_anchor,
-        align="center",
-    )
-
-
-def _get_text_color(
-    bg_color: Tuple[int, int, int, int],
-) -> Tuple[int, int, int, int]:
-    r"""Determine the ideal text color (black or white) for contrast.
-
-    Args:
-        bg_color: The background color (R, G, B, A).
-
-    Returns:
-        A tuple representing black or white color for text.
-    """
-    luminance = bg_color[0] * 0.3 + bg_color[1] * 0.59 + bg_color[2] * 0.11
-    return (0, 0, 0, 255) if luminance > 120 else (255, 255, 255, 255)
-
-
-def _get_random_color(identifier: int) -> Tuple[int, int, int, int]:
-    r"""Generate a consistent random RGBA color based on the identifier.
-
-    Args:
-        identifier: The ID used as a seed to ensure color consistency.
-
-    Returns:
-        A tuple representing (R, G, B, A) values.
-    """
-    rnd = random.Random(int(identifier))
-    r = rnd.randint(0, 255)
-    g = rnd.randint(125, 255)
-    b = rnd.randint(0, 50)
-    color = [r, g, b]
-    # TODO: check why shuffle is needed?
-    rnd.shuffle(color)
-    color.append(255)
-    return cast(Tuple[int, int, int, int], tuple(color))
-
-
 class BaseBrowser:
     def __init__(
         self,
@@ -463,12 +144,12 @@ class BaseBrowser:
             sync_playwright,
         )
 
-        self.history: list = []
+        self.history: List[Any] = []
         self.headless = headless
         self.channel = channel
         self._ensure_browser_installed()
-        self.playwright = sync_playwright().start()
-        self.page_history: list = []  # stores the history of visited pages
+        self.playwright: Playwright = sync_playwright().start()
+        self.page_history: List[str] = []  # stores the history of visited pages
         self.cookie_json_path = cookie_json_path
 
         # Set the cache directory
@@ -487,10 +168,16 @@ class BaseBrowser:
             raise FileNotFoundError(
                 f"Page script file not found at path: {page_script_path}"
             )
+        self.browser: Optional[Browser] = None
+        self.context: Optional[BrowserContext] = None
+        self.page: Optional[Page] = None
+        self.page_url: Optional[str] = None
+        self.web_agent_model: Optional[BaseModelBackend] = None # Added for type hinting
 
     def init(self) -> None:
         r"""Initialize the browser."""
         # Launch the browser, if headless is False, the browser will display
+        assert self.playwright is not None
         self.browser = self.playwright.chromium.launch(
             headless=self.headless, channel=self.channel
         )
@@ -498,6 +185,7 @@ class BaseBrowser:
         # Check if cookie file exists before using it to maintain
         # authenticated sessions. This prevents errors when the cookie file
         # doesn't exist
+        assert self.browser is not None
         if self.cookie_json_path and os.path.exists(self.cookie_json_path):
             self.context = self.browser.new_context(
                 accept_downloads=True, storage_state=self.cookie_json_path
@@ -507,6 +195,7 @@ class BaseBrowser:
                 accept_downloads=True,
             )
         # Create a new page
+        assert self.context is not None
         self.page = self.context.new_page()
 
     def clean_cache(self) -> None:
@@ -517,7 +206,7 @@ class BaseBrowser:
     def _wait_for_load(self, timeout: int = 20) -> None:
         r"""Wait for a certain amount of time for the page to load."""
         timeout_ms = timeout * 1000
-
+        assert self.page is not None
         self.page.wait_for_load_state("load", timeout=timeout_ms)
 
         # TODO: check if this is needed
@@ -525,13 +214,14 @@ class BaseBrowser:
 
     def click_blank_area(self) -> None:
         r"""Click a blank area of the page to unfocus the current element."""
+        assert self.page is not None
         self.page.mouse.click(0, 0)
         self._wait_for_load()
 
     @retry_on_error()
     def visit_page(self, url: str) -> None:
         r"""Visit a page with the given URL."""
-
+        assert self.page is not None
         self.page.goto(url)
         self._wait_for_load()
         self.page_url = url
@@ -559,7 +249,7 @@ class BaseBrowser:
             return "User cancelled the video analysis."
 
         model = None
-        if hasattr(self, 'web_agent_model'):
+        if hasattr(self, 'web_agent_model') and self.web_agent_model is not None:
             model = self.web_agent_model
 
         video_analyzer = VideoAnalysisToolkit(model=model)
@@ -581,6 +271,7 @@ class BaseBrowser:
             image and the path to the image file if saved, otherwise
             :obj:`None`.
         """
+        assert self.page is not None
         image_data = self.page.screenshot(timeout=60000)
         image = Image.open(io.BytesIO(image_data))
 
@@ -588,6 +279,7 @@ class BaseBrowser:
         if save_image:
             # Get url name to form a file name
             # Use urlparser for a safer extraction the url name
+            assert self.page_url is not None
             parsed_url = urllib.parse.urlparse(self.page_url)
             # Max length is set to 241 as there are 10 characters for the
             # timestamp and 4 characters for the file extension:
@@ -615,17 +307,21 @@ class BaseBrowser:
         Returns:
             List[str]: A list of paths to the screenshot files.
         """
-        screenshots = []
-        scroll_height = self.page.evaluate("document.body.scrollHeight")
+        screenshots: List[str] = [] # Ensure screenshots is typed
+        assert self.page is not None
+        scroll_height_eval = self.page.evaluate("document.body.scrollHeight")
+        scroll_height = cast(float, scroll_height_eval) # Ensure scroll_height is float
+
         assert self.page.viewport_size is not None
         viewport_height = self.page.viewport_size["height"]
-        current_scroll = 0
-        screenshot_index = 1
+        current_scroll_eval = self.page.evaluate("window.scrollY")
+        current_scroll = cast(float, current_scroll_eval)
+        # screenshot_index = 1 # This variable is not used
 
         max_height = scroll_height - viewport_height
         scroll_step = int(viewport_height * scroll_ratio)
 
-        last_height = 0
+        last_height = 0.0 # Initialize last_height as float
 
         while True:
             logger.debug(
@@ -634,19 +330,21 @@ class BaseBrowser:
             )
 
             _, file_path = self.get_screenshot(save_image=True)
-            screenshots.append(file_path)
+            if file_path is not None: # Ensure file_path is not None before appending
+                screenshots.append(file_path)
 
             self.page.evaluate(f"window.scrollBy(0, {scroll_step})")
             # Allow time for content to load
             time.sleep(0.5)
 
-            current_scroll = self.page.evaluate("window.scrollY")
+            current_scroll_eval = self.page.evaluate("window.scrollY")
+            current_scroll = cast(float, current_scroll_eval)
             # Break if there is no significant scroll
             if abs(current_scroll - last_height) < viewport_height * 0.1:
                 break
 
             last_height = current_scroll
-            screenshot_index += 1
+            # screenshot_index += 1 # This variable is not used
 
         return screenshots
 
@@ -656,14 +354,14 @@ class BaseBrowser:
         Returns:
             VisualViewport: The visual viewport of the current page.
         """
+        assert self.page is not None
         try:
             self.page.evaluate(self.page_script)
         except Exception as e:
             logger.warning(f"Error evaluating page script: {e}")
 
-        return visual_viewport_from_dict(
-            self.page.evaluate("MultimodalWebSurfer.getVisualViewport();")
-        )
+        visual_viewport_eval = self.page.evaluate("MultimodalWebSurfer.getVisualViewport();")
+        return visual_viewport_from_dict(cast(Dict[str, Any], visual_viewport_eval))
 
     def get_interactive_elements(self) -> Dict[str, InteractiveRegion]:
         r"""Get the interactive elements of the current page.
@@ -671,6 +369,7 @@ class BaseBrowser:
         Returns:
             Dict[str, InteractiveRegion]: A dictionary of interactive elements.
         """
+        assert self.page is not None
         try:
             self.page.evaluate(self.page_script)
         except Exception as e:
@@ -685,7 +384,7 @@ class BaseBrowser:
         for k in result:
             typed_results[k] = interactive_region_from_dict(result[k])
 
-        return typed_results  # type: ignore[return-value]
+        return typed_results
 
     def get_som_screenshot(
         self,
@@ -709,11 +408,12 @@ class BaseBrowser:
         rects = self.get_interactive_elements()
 
         file_path: str | None = None
-        comp, _, _, _ = add_set_of_mark(
+        comp, _, _, _ = _add_set_of_mark(
             screenshot,
-            rects,  # type: ignore[arg-type]
+            rects,
         )
         if save_image:
+            assert self.page_url is not None
             parsed_url = urllib.parse.urlparse(self.page_url)
             # Max length is set to 241 as there are 10 characters for the
             # timestamp and 4 characters for the file extension:
@@ -730,25 +430,29 @@ class BaseBrowser:
 
     def scroll_up(self) -> None:
         r"""Scroll up the page."""
+        assert self.page is not None
         self.page.keyboard.press("PageUp")
 
     def scroll_down(self) -> None:
         r"""Scroll down the page."""
+        assert self.page is not None
         self.page.keyboard.press("PageDown")
 
     def get_url(self) -> str:
         r"""Get the URL of the current page."""
+        assert self.page is not None
         return self.page.url
 
     def click_id(self, identifier: Union[str, int]) -> None:
         r"""Click an element with the given identifier."""
+        assert self.page is not None
         if isinstance(identifier, int):
             identifier = str(identifier)
         target = self.page.locator(f"[__elementId='{identifier}']")
 
         try:
             target.wait_for(timeout=5000)
-        except (TimeoutError, Exception) as e:
+        except Exception as e: # Consider using playwright specific TimeoutError
             logger.debug(f"Error during click operation: {e}")
             raise ValueError("No such element.") from None
 
@@ -757,7 +461,10 @@ class BaseBrowser:
         new_page = None
         try:
             with self.page.expect_event("popup", timeout=1000) as page_info:
-                box = cast(Dict[str, Union[int, float]], target.bounding_box())
+                box: Optional[FloatRect] = target.bounding_box()
+                if box is None:
+                    logger.warning(f"Bounding box not found for element '{identifier}'. Cannot click.")
+                    return
                 self.page.mouse.click(
                     box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
                 )
@@ -768,7 +475,7 @@ class BaseBrowser:
                     self.page_history.append(deepcopy(self.page.url))
                     self.page = new_page
 
-        except (TimeoutError, Exception) as e:
+        except Exception as e: # Consider using playwright specific TimeoutError
             logger.debug(f"Error during click operation: {e}")
             pass
 
@@ -776,6 +483,7 @@ class BaseBrowser:
 
     def extract_url_content(self) -> str:
         r"""Extract the content of the current page."""
+        assert self.page is not None
         content = self.page.content()
         return content
 
@@ -784,17 +492,16 @@ class BaseBrowser:
 
         Args:
             identifier (str): The identifier of the file to download.
-            file_path (str): The path to save the downloaded file.
 
         Returns:
             str: The result of the action.
         """
-
+        assert self.page is not None
         if isinstance(identifier, int):
             identifier = str(identifier)
         try:
             target = self.page.locator(f"[__elementId='{identifier}']")
-        except (TimeoutError, Exception) as e:
+        except Exception as e: # Consider using playwright specific TimeoutError
             logger.debug(f"Error during download operation: {e}")
             logger.warning(
                 f"Element with identifier '{identifier}' not found."
@@ -803,7 +510,7 @@ class BaseBrowser:
 
         target.scroll_into_view_if_needed()
 
-        file_path = os.path.join(self.cache_dir)
+        file_path_val = os.path.join(self.cache_dir)
         self._wait_for_load()
 
         try:
@@ -812,12 +519,12 @@ class BaseBrowser:
                 download = download_info.value
                 file_name = download.suggested_filename
 
-                file_path = os.path.join(file_path, file_name)
-                download.save_as(file_path)
+                file_path_val = os.path.join(file_path_val, file_name)
+                download.save_as(file_path_val)
 
-            return f"Downloaded file to path '{file_path}'."
+            return f"Downloaded file to path '{file_path_val}'."
 
-        except (TimeoutError, Exception) as e:
+        except Exception as e: # Consider using playwright specific TimeoutError
             logger.debug(f"Error during download operation: {e}")
             return f"Failed to download file with identifier '{identifier}'."
 
@@ -831,12 +538,13 @@ class BaseBrowser:
         Returns:
             str: The result of the action.
         """
+        assert self.page is not None
         if isinstance(identifier, int):
             identifier = str(identifier)
 
         try:
             target = self.page.locator(f"[__elementId='{identifier}']")
-        except (TimeoutError, Exception) as e:
+        except Exception as e: # Consider using playwright specific TimeoutError
             logger.debug(f"Error during fill operation: {e}")
             logger.warning(
                 f"Element with identifier '{identifier}' not found."
@@ -847,7 +555,7 @@ class BaseBrowser:
         target.focus()
         try:
             target.fill(text)
-        except (TimeoutError, Exception) as e:
+        except Exception as e: # Consider using playwright specific TimeoutError
             logger.debug(f"Error during fill operation: {e}")
             target.press_sequentially(text)
 
@@ -859,11 +567,13 @@ class BaseBrowser:
         )
 
     def scroll_to_bottom(self) -> str:
+        assert self.page is not None
         self.page.evaluate("window.scrollTo(0, document.body.scrollHeight);")
         self._wait_for_load()
         return "Scrolled to the bottom of the page."
 
     def scroll_to_top(self) -> str:
+        assert self.page is not None
         self.page.evaluate("window.scrollTo(0, 0);")
         self._wait_for_load()
         return "Scrolled to the top of the page."
@@ -877,11 +587,12 @@ class BaseBrowser:
         Returns:
             str: The result of the action.
         """
+        assert self.page is not None
         if isinstance(identifier, int):
             identifier = str(identifier)
         try:
             target = self.page.locator(f"[__elementId='{identifier}']")
-        except (TimeoutError, Exception) as e:
+        except Exception as e: # Consider using playwright specific TimeoutError
             logger.debug(f"Error during hover operation: {e}")
             logger.warning(
                 f"Element with identifier '{identifier}' not found."
@@ -899,8 +610,9 @@ class BaseBrowser:
         the text.
         """
         # ruff: noqa: E501
+        assert self.page is not None
         script = f"""
-        (function() {{
+        (function() {{ 
             let text = "{search_text}";
             let found = window.find(text);
             if (!found) {{
@@ -918,7 +630,8 @@ class BaseBrowser:
             return true;
         }})();
         """
-        found = self.page.evaluate(script)
+        found_eval = self.page.evaluate(script)
+        found = cast(bool, found_eval) # Ensure found is bool
         self._wait_for_load()
         if found:
             return f"Found text '{search_text}' on the page."
@@ -927,7 +640,7 @@ class BaseBrowser:
 
     def back(self):
         r"""Navigate back to the previous page."""
-
+        assert self.page is not None
         page_url_before = self.page.url
         self.page.go_back()
 
@@ -945,11 +658,15 @@ class BaseBrowser:
         self._wait_for_load()
 
     def close(self):
+        assert self.browser is not None
         self.browser.close()
+        if self.playwright:
+             self.playwright.stop() # Stop playwright instance
 
     # ruff: noqa: E501
     def show_interactive_elements(self):
         r"""Show simple interactive elements on the current page."""
+        assert self.page is not None
         self.page.evaluate(self.page_script)
         self.page.evaluate("""
         () => {
@@ -962,7 +679,7 @@ class BaseBrowser:
     @retry_on_error()
     def get_webpage_content(self) -> str:
         from html2text import html2text
-
+        assert self.page is not None
         self._wait_for_load()
         html_content = self.page.content()
 
@@ -1052,21 +769,24 @@ class BrowserToolkit(BaseToolkit):
                 authenticated sessions without requiring manual login.
                 (default: :obj:`None`)
         """
-
+        super().__init__() # Call to super().__init__() added
         self.browser = BaseBrowser(
             headless=headless,
             cache_dir=cache_dir,
             channel=channel,
             cookie_json_path=cookie_json_path,
         )
+        self.browser.web_agent_model = web_agent_model # Pass model to BaseBrowser instance
 
         self.history_window = history_window
         self.web_agent_model = web_agent_model
         self.planning_agent_model = planning_agent_model
         self.output_language = output_language
 
-        self.history: list = []
-        self.web_agent, self.planning_agent = self._initialize_agent()
+        self.history: List[Dict[str, Any]] = [] # Typed history list
+        self.web_agent: ChatAgent
+        self.planning_agent: ChatAgent
+        self.web_agent, self.planning_agent = self._initialize_agent(web_agent_model, planning_agent_model)
 
     def _reset(self):
         self.web_agent.reset()
@@ -1074,26 +794,26 @@ class BrowserToolkit(BaseToolkit):
         self.history = []
         os.makedirs(self.browser.cache_dir, exist_ok=True)
 
-    def _initialize_agent(self) -> Tuple["ChatAgent", "ChatAgent"]:
+    def _initialize_agent(self, web_agent_model_backend: Optional[BaseModelBackend], planning_agent_model_backend: Optional[BaseModelBackend]) -> Tuple[ChatAgent, ChatAgent]:
         r"""Initialize the agent."""
         from camel.agents import ChatAgent
 
-        if self.web_agent_model is None:
-            web_agent_model = ModelFactory.create(
+        if web_agent_model_backend is None:
+            web_agent_model_instance = ModelFactory.create( 
                 model_platform=ModelPlatformType.OPENAI,
                 model_type=ModelType.GPT_4_1,
                 model_config_dict={"temperature": 0, "top_p": 1},
             )
         else:
-            web_agent_model = self.web_agent_model
+            web_agent_model_instance = web_agent_model_backend
 
-        if self.planning_agent_model is None:
+        if planning_agent_model_backend is None:
             planning_model = ModelFactory.create(
                 model_platform=ModelPlatformType.OPENAI,
                 model_type=ModelType.O3_MINI,
             )
         else:
-            planning_model = self.planning_agent_model
+            planning_model = planning_agent_model_backend
 
         system_prompt = """
 You are a helpful web agent that can assist users in browsing the web.
@@ -1103,7 +823,7 @@ users achieve their goals.
 
         web_agent = ChatAgent(
             system_message=system_prompt,
-            model=web_agent_model,
+            model=web_agent_model_instance, 
             output_language=self.output_language,
         )
 
@@ -1226,7 +946,7 @@ out the information you need. Sometimes they are extremely useful.
 
         resp_content = resp.msgs[0].content
 
-        resp_dict = _parse_json_output(resp_content)
+        resp_dict = _parse_json_output(resp_content, logger) # Pass logger to _parse_json_output
         observation_result: str = resp_dict.get("observation", "")
         reasoning_result: str = resp_dict.get("reasoning", "")
         action_code: str = resp_dict.get("action_code", "")
@@ -1364,14 +1084,12 @@ Please find the final answer, or give valuable insights and founds (e.g. if prev
             role_name='user',
             content=prompt,
         )
-
+        self.web_agent.reset() # Reset before step
         resp = self.web_agent.step(message)
         return resp.msgs[0].content
 
     def _task_planning(self, task_prompt: str, start_url: str) -> str:
         r"""Plan the task based on the given task prompt."""
-
-        # Here are the available browser functions we can use: {AVAILABLE_ACTIONS_PROMPT}
 
         planning_prompt = f"""
 <task>{task_prompt}</task>
@@ -1380,12 +1098,11 @@ According to the problem above, if we use browser interaction, what is the gener
 Please note that it can be viewed as Partially Observable MDP. Do not over-confident about your plan.
 Please first restate the task in detail, and then provide a detailed plan to solve the task.
 """
-        # Here are some tips for you: Please note that we can only see a part of the full page because of the limited viewport after an action. Thus, do not forget to use methods like `scroll_up()` and `scroll_down()` to check the full content of the webpage, because the answer or next key step may be hidden in the content below.
 
         message = BaseMessage.make_user_message(
             role_name='user', content=planning_prompt
         )
-
+        self.planning_agent.reset() # Reset before step
         resp = self.planning_agent.step(message)
         return resp.msgs[0].content
 
@@ -1402,7 +1119,6 @@ Please first restate the task in detail, and then provide a detailed plan to sol
             Tuple[bool, str]: A tuple containing a boolean indicating whether the task needs to be replanned, and the replanned schema.
         """
 
-        # Here are the available browser functions we can use: {AVAILABLE_ACTIONS_PROMPT}
         replanning_prompt = f"""
 We are using browser interaction to solve a complex task which needs multi-step actions.
 Here are the overall task:
@@ -1424,10 +1140,11 @@ Your output should be in json format, including the following fields:
         # Reset the history message of planning_agent.
         self.planning_agent.reset()
         resp = self.planning_agent.step(replanning_prompt)
-        resp_dict = _parse_json_output(resp.msgs[0].content)
+        resp_dict = _parse_json_output(resp.msgs[0].content, logger) # Pass logger
 
-        if_need_replan = resp_dict.get("if_need_replan", False)
-        replanned_schema = resp_dict.get("replanned_schema", "")
+        if_need_replan_eval = resp_dict.get("if_need_replan", False)
+        if_need_replan = cast(bool, if_need_replan_eval) # Ensure bool
+        replanned_schema: str = resp_dict.get("replanned_schema", "")
 
         if if_need_replan:
             return True, replanned_schema
@@ -1469,7 +1186,7 @@ Your output should be in json format, including the following fields:
 
             if "stop" in action_code:
                 task_completed = True
-                trajectory_info = {
+                trajectory_info: Dict[str, Any] = { # Typed trajectory_info
                     "round": i,
                     "observation": observation,
                     "thought": reasoning,
@@ -1486,7 +1203,7 @@ Your output should be in json format, including the following fields:
                 if not success:
                     logger.warning(f"Error while executing the action: {info}")
 
-                trajectory_info = {
+                trajectory_info: Dict[str, Any] = { # Typed trajectory_info
                     "round": i,
                     "observation": observation,
                     "thought": reasoning,
@@ -1505,6 +1222,7 @@ Your output should be in json format, including the following fields:
                     detailed_plan = replanned_schema
                     logger.debug(f"Replanned schema: {replanned_schema}")
 
+        simulation_result: str
         if not task_completed:
             simulation_result = f"""
                 The task is not completed within the round limit. Please check the last round {self.history_window} information to see if there is any useful information:
@@ -1513,7 +1231,8 @@ Your output should be in json format, including the following fields:
 
         else:
             simulation_result = self._get_final_answer(task_prompt)
-
+        
+        self.browser.close() # Close browser after task completion or limit reached
         return simulation_result
 
     def get_tools(self) -> List[FunctionTool]:
