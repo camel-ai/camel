@@ -191,15 +191,69 @@ class FileWriteToolkit(BaseToolkit):
         Args:
             file_path (Path): The target file path.
             content (Union[str, list]): The content to write to the PPTX file.
+                Must be a list of dictionaries where:
+                - First element: Title slide with keys 'title' and 'subtitle'
+                - Subsequent elements: Content slides with keys 'title', 'text' (optional), 'image' (optional)
+                
+                Example format:
+                [
+                    {
+                        "title": "Presentation Title",
+                        "subtitle": "Presentation Subtitle"
+                    },
+                    {
+                        "title": "Slide 1 Title",
+                        "text": "Slide content text",
+                        "image": "https://example.com/image.jpg"  # optional
+                    },
+                    {
+                        "title": "Slide 2 Title", 
+                        "text": "More content text"
+                        # image field is optional
+                    }
+                ]
 
+        Raises:
+            ValueError: If content is not a list.
         """
-
         import io
 
         import pptx
         import requests
         from pptx.dml.color import RGBColor
         from pptx.util import Inches, Pt
+
+        def format_text_runs(text_frame, font_name: str, font_size: int, bold: bool, color):
+            """Apply formatting to all text runs in a text frame."""
+            for paragraph in text_frame.paragraphs:
+                for run in paragraph.runs:
+                    run.font.name = font_name
+                    run.font.size = Pt(font_size)
+                    run.font.bold = bold
+                    run.font.color.rgb = color
+
+        def add_image_to_slide(slide, image_url: str):
+            """Download and add an image to a slide with error handling."""
+            try:
+                response = requests.get(image_url, timeout=10)
+                response.raise_for_status()
+                image_stream = io.BytesIO(response.content)
+
+                # Position image on the right side
+                left = slide_width - image_width - margin_left
+                top = margin_top + Inches(1.5)
+
+                slide.shapes.add_picture(
+                    image_stream, left, top, width=image_width, height=image_height
+                )
+            except Exception as e:
+                logger.warning(f"Failed to load image from {image_url}: {e}")
+
+        # Input validation
+        if not isinstance(content, list):
+            raise ValueError(
+                f"PPTX content must be a list of dictionaries, got {type(content).__name__}"
+            )
 
         presentation = pptx.Presentation()
 
@@ -210,80 +264,58 @@ class FileWriteToolkit(BaseToolkit):
         image_width = Inches(4)
         image_height = Inches(3)
 
-        # Handle the first slide (title slide)
-        if isinstance(content, list) and content:
-            start_slide = content.pop(0)
-            layout = presentation.slide_layouts[0]
-            slide = presentation.slides.add_slide(layout)
+        # Process slides
+        if content:
+            # Title slide (first element)
+            title_slide_data = content.pop(0) if content else {}
+            title_layout = presentation.slide_layouts[0]
+            title_slide = presentation.slides.add_slide(title_layout)
 
-            # Set title
-            title = slide.shapes.title
-            title.text = start_slide.get("title", "")
-            for paragraph in title.text_frame.paragraphs:
-                for run in paragraph.runs:
-                    run.font.name = 'Arial'
-                    run.font.size = Pt(44)
-                    run.font.bold = True
-                    run.font.color.rgb = RGBColor(0, 0, 0)
+            # Set title and subtitle
+            if title_slide.shapes.title:
+                title_slide.shapes.title.text = title_slide_data.get("title", "")
+                format_text_runs(
+                    title_slide.shapes.title.text_frame, 
+                    'Arial', 44, True, RGBColor(0, 0, 0)
+                )
 
-            # Set subtitle
-            subtitle = slide.placeholders[1]
-            subtitle.text = start_slide.get("subtitle", "")
-            for paragraph in subtitle.text_frame.paragraphs:
-                for run in paragraph.runs:
-                    run.font.name = 'Arial'
-                    run.font.size = Pt(24)
-                    run.font.color.rgb = RGBColor(64, 64, 64)
+            if len(title_slide.placeholders) > 1:
+                subtitle = title_slide.placeholders[1]
+                subtitle.text = title_slide_data.get("subtitle", "")
+                format_text_runs(
+                    subtitle.text_frame, 'Arial', 24, False, RGBColor(64, 64, 64)
+                )
 
-            # Add content slides
+            # Content slides
             for slide_data in content:
-                layout = presentation.slide_layouts[1]
-                slide = presentation.slides.add_slide(layout)
+                if not isinstance(slide_data, dict):
+                    continue
+                    
+                content_layout = presentation.slide_layouts[1]
+                content_slide = presentation.slides.add_slide(content_layout)
 
-                # Set title
-                title = slide.shapes.title
-                title.text = slide_data.get("title", "")
-                for paragraph in title.text_frame.paragraphs:
-                    for run in paragraph.runs:
-                        run.font.name = 'Arial'
-                        run.font.size = Pt(36)
-                        run.font.bold = True
-                        run.font.color.rgb = RGBColor(0, 0, 0)
+                # Set slide title
+                if content_slide.shapes.title:
+                    content_slide.shapes.title.text = slide_data.get("title", "")
+                    format_text_runs(
+                        content_slide.shapes.title.text_frame,
+                        'Arial', 36, True, RGBColor(0, 0, 0)
+                    )
 
-                # Set content text
-                text = slide_data.get("text", "")
-                if text:
-                    content_placeholder = slide.placeholders[1]
-                    content_placeholder.text = text
-                    for paragraph in content_placeholder.text_frame.paragraphs:
-                        for run in paragraph.runs:
-                            run.font.name = 'Arial'
-                            run.font.size = Pt(18)
-                            run.font.color.rgb = RGBColor(64, 64, 64)
+                # Set slide text
+                slide_text = slide_data.get("text", "")
+                if slide_text and len(content_slide.placeholders) > 1:
+                    text_placeholder = content_slide.placeholders[1]
+                    text_placeholder.text = slide_text
+                    format_text_runs(
+                        text_placeholder.text_frame,
+                        'Arial', 18, False, RGBColor(64, 64, 64)
+                    )
 
                 # Add image if present
                 image_url = slide_data.get("image")
                 if image_url:
-                    try:
-                        response = requests.get(image_url)
-                        response.raise_for_status()
-                        image_stream = io.BytesIO(response.content)
-
-                        left = slide_width - image_width - margin_left
-                        top = margin_top + Inches(1.5)
-
-                        # Add the image
-                        slide.shapes.add_picture(
-                            image_stream,
-                            left,
-                            top,
-                            width=image_width,
-                            height=image_height,
-                        )
-                    except Exception as e:
-                        logger.warning(
-                            f"Failed to load image from {image_url}: {e}"
-                        )
+                    add_image_to_slide(content_slide, image_url)
 
         # Save the presentation
         presentation.save(str(file_path))
@@ -397,13 +429,18 @@ class FileWriteToolkit(BaseToolkit):
 
         If the file exists, it will be overwritten. Supports multiple formats:
         Markdown (.md, .markdown, default), Plaintext (.txt), CSV (.csv),
-        DOC/DOCX (.doc, .docx), PDF (.pdf), JSON (.json), YAML (.yml, .yaml),
+        DOC/DOCX (.doc, .docx), PDF (.pdf), PPTX (.pptx), JSON (.json), YAML (.yml, .yaml),
         and HTML (.html, .htm).
 
         Args:
             content (Union[str, List[List[str]]]): The content to write to the
-                file. For all formats, content must be a string or list in the
-                appropriate format.
+                file. Content format varies by file type:
+                - Text formats (txt, md, html, yaml): string
+                - CSV: string or list of lists
+                - JSON: string or serializable object
+                - PPTX: list of dictionaries with specific structure:
+                  * First dict: title slide {"title": str, "subtitle": str}
+                  * Other dicts: content slides {"title": str, "text": str (optional), "image": str URL (optional)}
             filename (str): The name or path of the file. If a relative path is
                 supplied, it is resolved to self.output_dir.
             encoding (Optional[str]): The character encoding to use. (default:
@@ -433,6 +470,8 @@ class FileWriteToolkit(BaseToolkit):
                 self._write_docx_file(file_path, str(content))
             elif extension == ".pdf":
                 self._write_pdf_file(file_path, str(content))
+            elif extension == ".pptx":
+                self._write_pptx_file(file_path, content)
             elif extension == ".csv":
                 self._write_csv_file(
                     file_path, content, encoding=file_encoding
