@@ -3,14 +3,10 @@ name: Build and deploy camel documents
 on:
   push:
     branches: [ "master", "qa" ]
-  pull_request:
-    paths:
-      - 'docs/**/*.ipynb'
   workflow_dispatch:
 
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
   docs:
@@ -19,8 +15,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Set up Python environment and install dependencies
         uses: ./.github/actions/camel_install
@@ -30,43 +24,12 @@ jobs:
       - name: Install Pandoc
         run: sudo apt-get install -y pandoc
 
-      - name: Process modified ipynb files
-        if: github.event_name == 'pull_request'
-        run: |
-          source .venv/bin/activate
-          git fetch origin ${{ github.base_ref }}
-          MODIFIED_FILES=$(git diff --name-only origin/${{ github.base_ref }} HEAD | grep '\.ipynb$' || true)
-          
-          if [ -n "$MODIFIED_FILES" ]; then
-            echo "Processing modified ipynb files:"
-            echo "$MODIFIED_FILES"
-            
-            for file in $MODIFIED_FILES; do
-              if [ -f "$file" ]; then
-                echo "Converting $file"
-                python docs/convert_to_mdx.py --input "$(dirname "$file")" --output "$(dirname "$file")" --images "$(dirname "$file")/images" --keep-outputs
-              fi
-            done
-            
-            if git diff --quiet; then
-              echo "No changes to commit"
-            else
-              git config --global user.name "github-actions[bot]"
-              git config --global user.email "github-actions[bot]@users.noreply.github.com"
-              git add .
-              git commit -m "chore: convert modified ipynb files to mdx format"
-              git push
-            fi
-          else
-            echo "No ipynb files modified"
-          fi
-
       - name: Sphinx build
         run: |
           source .venv/bin/activate
           cd docs
           make html
-
+            
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v4
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
@@ -76,3 +39,13 @@ jobs:
           publish_dir: docs/_build/html/
           force_orphan: true
           cname: docs.camel-ai.org
+
+      - name: Convert Notebooks and Update Mintlify Config
+        run: |
+          source .venv/bin/activate
+          python docs/mintlify/convert_notebook2mdx.py \
+            --input docs/cookbooks \
+            --output docs/mintlify_content/cookbooks \
+            --update-docs-json docs/mintlify/mintlify.json \
+            --docs-path-prefix "" \
+            --verbose
