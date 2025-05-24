@@ -1103,3 +1103,30 @@ def browser_toolkit_save_auth_cookie(
     context.storage_state(path=cookie_json_path)
 
     browser.close()  # Close the browser when finished
+
+
+def run_async(func: Callable[..., Any]) -> Callable[..., Any]:
+    r"""Helper function to run async functions in synchronous context.
+
+    Args:
+        func (Callable[..., Any]): The async function to wrap.
+
+    Returns:
+        Callable[..., Any]: A synchronous wrapper for the async function.
+    """
+
+    @wraps(func)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        if loop.is_closed():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        return loop.run_until_complete(func(*args, **kwargs))
+
+    return wrapper

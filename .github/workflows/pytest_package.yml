@@ -76,6 +76,7 @@ jobs:
         WATSONX_API_KEY: "${{ secrets.WATSONX_API_KEY }}"
         WATSONX_PROJECT_ID: "${{ secrets.WATSONX_PROJECT_ID }}"
         ACI_API_KEY: "${{ secrets.ACI_API_KEY }}"
+        BOHRIUM_API_KEY: "${{ secrets.BOHRIUM_API_KEY }}"
       run: |
         source .venv/bin/activate
         uv pip install -e ".[all, dev, docs]"
@@ -144,6 +145,7 @@ jobs:
         WATSONX_API_KEY: "${{ secrets.WATSONX_API_KEY }}"
         WATSONX_PROJECT_ID: "${{ secrets.WATSONX_PROJECT_ID }}"
         ACI_API_KEY: "${{ secrets.ACI_API_KEY }}"
+        BOHRIUM_API_KEY: "${{ secrets.BOHRIUM_API_KEY }}"
       run: |
         source .venv/bin/activate
         uv pip install -e ".[all, dev, docs]"
@@ -210,6 +212,7 @@ jobs:
         WATSONX_API_KEY: "${{ secrets.WATSONX_API_KEY }}"
         WATSONX_PROJECT_ID: "${{ secrets.WATSONX_PROJECT_ID }}"
         ACI_API_KEY: "${{ secrets.ACI_API_KEY }}"
+        BOHRIUM_API_KEY: "${{ secrets.BOHRIUM_API_KEY }}"
       run: |
         source .venv/bin/activate
         uv pip install -e ".[all, dev, docs]"

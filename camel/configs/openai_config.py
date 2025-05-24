@@ -104,6 +104,8 @@ class ChatGPTConfig(BaseConfig):
         parallel_tool_calls (bool, optional): A parameter specifying whether
             the model should call tools in parallel or not.
             (default: :obj:`None`)
+        extra_headers: Optional[Dict[str, str]]: Extra headers to use for the
+            model. (default: :obj:`None`)
     """
 
     temperature: Optional[float] = None
@@ -120,6 +122,7 @@ class ChatGPTConfig(BaseConfig):
     tool_choice: Optional[Union[Dict[str, str], str]] = None
     reasoning_effort: Optional[str] = None
     parallel_tool_calls: Optional[bool] = None
+    extra_headers: Optional[Dict[str, str]] = None
 
 
 OPENAI_API_PARAMS = {param for param in ChatGPTConfig.model_fields.keys()}

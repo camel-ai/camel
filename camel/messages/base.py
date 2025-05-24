@@ -11,13 +11,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
+# Enables postponed evaluation of annotations (for string-based type hints)
+from __future__ import annotations
+
 import base64
 import io
 import re
 from dataclasses import dataclass
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import (
+    Any,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Union,
+)
 
-import numpy as np
 from PIL import Image
 from pydantic import BaseModel
 
@@ -48,7 +59,7 @@ class BaseMessage:
         role_name (str): The name of the user or assistant role.
         role_type (RoleType): The type of role, either :obj:`RoleType.
             ASSISTANT` or :obj:`RoleType.USER`.
-        meta_dict (Optional[Dict[str, str]]): Additional metadata dictionary
+        meta_dict (Optional[Dict[str, Any]]): Additional metadata dictionary
             for the message.
         content (str): The content of the message.
         video_bytes (Optional[bytes]): Optional bytes of a video associated
@@ -457,6 +468,7 @@ class BaseMessage:
 
         if self.video_bytes:
             import imageio.v3 as iio
+            import numpy as np
 
             base64Frames: List[str] = []
             frame_count = 0
