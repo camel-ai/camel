@@ -27,6 +27,8 @@ import re
 import shutil
 import subprocess
 from pathlib import Path
+import json
+from collections import defaultdict
 
 import nbformat
 from nbconvert import MarkdownExporter
@@ -617,6 +619,154 @@ def process_directory(
     return converted_files
 
 
+def generate_navigation_from_files(output_dir, relative_path_prefix=""):
+    """
+    Generate navigation structure for docs.json based on converted files.
+    """
+    output_dir = Path(output_dir)
+    
+    # Define group mapping and order
+    group_mapping = {
+        'basic_concepts': 'Basic Concepts',
+        'advanced_features': 'Advanced Features', 
+        'applications': 'Applications',
+        'data_generation': 'Data Generation',
+        'data_processing': 'Data Processing',
+        'loong': 'Loong',
+        'multi_agent_society': 'Multi Agent Society',
+        'mcp': 'MCP'
+    }
+    
+    # Group order (adding mcp to the list)
+    group_order = [
+        'basic_concepts',
+        'advanced_features', 
+        'applications',
+        'data_generation',
+        'data_processing',
+        'loong',
+        'multi_agent_society',
+        'mcp'
+    ]
+    
+    # Collect all mdx files organized by group
+    groups = defaultdict(list)
+    
+    # Look for cookbooks directory structure
+    cookbooks_dir = output_dir / "cookbooks" if (output_dir / "cookbooks").exists() else output_dir
+    
+    if cookbooks_dir.exists():
+        if cookbooks_dir.name == "cookbooks":
+            # Standard structure: output_dir/cookbooks/group_name/files.mdx
+            for group_dir in cookbooks_dir.iterdir():
+                if group_dir.is_dir() and group_dir.name != "images":
+                    group_name = group_dir.name
+                    
+                    # Find all mdx files in this group
+                    for file_path in group_dir.glob("*.mdx"):
+                        # Skip index files for now
+                        if file_path.stem != "index":
+                            # Create relative path for docs.json
+                            rel_path = f"{relative_path_prefix}cookbooks/{group_name}/{file_path.stem}"
+                            groups[group_name].append(rel_path)
+        else:
+            # Check if this directory itself is a group directory
+            # Extract group name from the path
+            path_parts = output_dir.parts
+            group_name = None
+            
+            # Look for cookbooks in the path to find the group name
+            if "cookbooks" in path_parts:
+                cookbooks_idx = path_parts.index("cookbooks")
+                if cookbooks_idx + 1 < len(path_parts):
+                    group_name = path_parts[cookbooks_idx + 1]
+            
+            if group_name:
+                # Direct output to a specific group directory
+                for file_path in output_dir.glob("*.mdx"):
+                    if file_path.stem != "index":
+                        rel_path = f"{relative_path_prefix}cookbooks/{group_name}/{file_path.stem}"
+                        groups[group_name].append(rel_path)
+    
+    # Generate navigation structure
+    navigation_groups = []
+    
+    for group_key in group_order:
+        if group_key in groups and groups[group_key]:
+            # Sort files alphabetically
+            sorted_pages = sorted(groups[group_key])
+            
+            group_config = {
+                "group": group_mapping.get(group_key, group_key.replace('_', ' ').title()),
+                "pages": sorted_pages
+            }
+            navigation_groups.append(group_config)
+    
+    # Also check for any additional groups not in the predefined order
+    for group_name in groups:
+        if group_name not in group_order and groups[group_name]:
+            sorted_pages = sorted(groups[group_name])
+            group_config = {
+                "group": group_mapping.get(group_name, group_name.replace('_', ' ').title()),
+                "pages": sorted_pages
+            }
+            navigation_groups.append(group_config)
+    
+    return navigation_groups
+
+
+def update_docs_json(docs_json_path, output_dir, relative_path_prefix=""):
+    """
+    Update docs.json file with newly converted files.
+    """
+    docs_json_path = Path(docs_json_path)
+    
+    if not docs_json_path.exists():
+        print(f"Warning: docs.json not found at {docs_json_path}")
+        return False
+    
+    try:
+        # Read current docs.json
+        with open(docs_json_path, 'r', encoding='utf-8') as f:
+            docs_config = json.load(f)
+        
+        # Generate new navigation for cookbooks
+        new_cookbooks_nav = generate_navigation_from_files(output_dir, relative_path_prefix)
+        
+        if not new_cookbooks_nav:
+            print("No cookbooks navigation to update")
+            return False
+        
+        # Find and update the Cookbooks section in navigation
+        updated = False
+        for tab in docs_config.get("navigation", {}).get("tabs", []):
+            if tab.get("tab") == "Documentation":
+                for group in tab.get("groups", []):
+                    if group.get("group") == "Cookbooks":
+                        # Update the pages structure
+                        group["pages"] = new_cookbooks_nav
+                        updated = True
+                        print(f"Updated Cookbooks navigation with {len(new_cookbooks_nav)} groups")
+                        break
+                if updated:
+                    break
+        
+        if not updated:
+            print("Could not find Cookbooks section in docs.json to update")
+            return False
+        
+        # Write updated docs.json
+        with open(docs_json_path, 'w', encoding='utf-8') as f:
+            json.dump(docs_config, f, indent=2, ensure_ascii=False)
+        
+        print(f"Successfully updated {docs_json_path}")
+        return True
+        
+    except Exception as e:
+        print(f"Error updating docs.json: {e}")
+        return False
+
+
 def main():
     parser = argparse.ArgumentParser(
         description='Convert IPYNB and MD files to MDX format'
@@ -646,6 +796,17 @@ def main():
     parser.add_argument(
         '--verbose', '-v', action='store_true', help='Show detailed logs'
     )
+    parser.add_argument(
+        '--update-docs-json',
+        '-u',
+        help='Path to docs.json file to update with new navigation structure',
+    )
+    parser.add_argument(
+        '--docs-path-prefix',
+        '-p',
+        default='',
+        help='Path prefix for docs.json navigation entries (e.g., "docs/")',
+    )
 
     args = parser.parse_args()
 
@@ -663,6 +824,19 @@ def main():
         print("Conversion details:")
         for source, dest in converted_files:
             print(f"{source} -> {dest}")
+    
+    # Update docs.json if requested
+    if args.update_docs_json and args.output:
+        print("\nUpdating docs.json...")
+        success = update_docs_json(
+            args.update_docs_json, 
+            args.output,
+            args.docs_path_prefix
+        )
+        if success:
+            print("docs.json update completed successfully")
+        else:
+            print("docs.json update failed")
 
 
 if __name__ == "__main__":
