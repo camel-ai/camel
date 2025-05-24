@@ -62,11 +62,11 @@ def test_base_browser_initialization_order():
     with patch('playwright.sync_api.sync_playwright'):
         browser = BaseBrowser(headless=True)  # __init__ called
         assert browser.browser is None  # browser not launched yet
-        assert not hasattr(browser, 'page')  # page not created yet
+        assert browser.page is None  # page not created yet
 
         browser.init()  # explicit init() call
-        assert hasattr(browser, 'browser')  # browser launched
-        assert hasattr(browser, 'page')  # page created
+        assert browser.browser is not None  # browser launched
+        assert browser.page is not None  # page created
 
 
 @pytest.mark.parametrize(
