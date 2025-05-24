@@ -1,0 +1,27 @@
+<a id="camel.prompts.misalignment"></a>
+
+<a id="camel.prompts.misalignment.MisalignmentPromptTemplateDict"></a>
+
+## MisalignmentPromptTemplateDict Objects
+
+```python
+class MisalignmentPromptTemplateDict(TextPromptDict)
+```
+
+A dictionary containing :obj:`TextPrompt` used in the `Misalignment`
+task.
+
+**Attributes**:
+
+- `DAN_PROMPT` _TextPrompt_ - A prompt for jail breaking.
+- `GENERATE_TASKS` _TextPrompt_ - A prompt to list unique malicious that
+  the AI assistant can assist AI user with.
+- `TASK_SPECIFY_PROMPT` _TextPrompt_ - A prompt to specify a task in more
+  detail.
+- `ASSISTANT_PROMPT` _TextPrompt_ - A system prompt for the AI assistant
+  that outlines the rules of the conversation and provides
+  instructions for completing tasks.
+- `USER_PROMPT` _TextPrompt_ - A system prompt for the AI user that
+  outlines the rules of the conversation and provides instructions
+  for giving instructions to the AI assistant.
+

@@ -1,0 +1,167 @@
+<a id="camel.toolkits.meshy_toolkit"></a>
+
+<a id="camel.toolkits.meshy_toolkit.MeshyToolkit"></a>
+
+## MeshyToolkit Objects
+
+```python
+@MCPServer()
+class MeshyToolkit(BaseToolkit)
+```
+
+A class representing a toolkit for 3D model generation using Meshy.
+
+This class provides methods that handle text/image to 3D model
+generation using Meshy.
+
+Call the generate_3d_model_complete method to generate a refined 3D model.
+
+Ref:
+https://docs.meshy.ai/api-text-to-3d-beta#create-a-text-to-3d-preview-task
+
+<a id="camel.toolkits.meshy_toolkit.MeshyToolkit.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+@api_keys_required([
+    (None, 'MESHY_API_KEY'),
+])
+def __init__(timeout: Optional[float] = None)
+```
+
+Initializes the MeshyToolkit with the API key from the
+environment.
+
+<a id="camel.toolkits.meshy_toolkit.MeshyToolkit.generate_3d_preview"></a>
+
+#### generate\_3d\_preview
+
+```python
+def generate_3d_preview(prompt: str, art_style: str,
+                        negative_prompt: str) -> Dict[str, Any]
+```
+
+Generates a 3D preview using the Meshy API.
+
+**Arguments**:
+
+- `prompt` _str_ - Description of the object.
+- `art_style` _str_ - Art style for the 3D model.
+- `negative_prompt` _str_ - What the model should not look like.
+  
+
+**Returns**:
+
+  Dict[str, Any]: The result property of the response contains the
+  task id of the newly created Text to 3D task.
+
+<a id="camel.toolkits.meshy_toolkit.MeshyToolkit.refine_3d_model"></a>
+
+#### refine\_3d\_model
+
+```python
+def refine_3d_model(preview_task_id: str) -> Dict[str, Any]
+```
+
+Refines a 3D model using the Meshy API.
+
+**Arguments**:
+
+- `preview_task_id` _str_ - The task ID of the preview to refine.
+  
+
+**Returns**:
+
+  Dict[str, Any]: The response from the Meshy API.
+
+<a id="camel.toolkits.meshy_toolkit.MeshyToolkit.get_task_status"></a>
+
+#### get\_task\_status
+
+```python
+def get_task_status(task_id: str) -> Dict[str, Any]
+```
+
+Retrieves the status or result of a specific 3D model generation
+task using the Meshy API.
+
+**Arguments**:
+
+- `task_id` _str_ - The ID of the task to retrieve.
+  
+
+**Returns**:
+
+  Dict[str, Any]: The response from the Meshy API.
+
+<a id="camel.toolkits.meshy_toolkit.MeshyToolkit.wait_for_task_completion"></a>
+
+#### wait\_for\_task\_completion
+
+```python
+def wait_for_task_completion(task_id: str,
+                             polling_interval: int = 10,
+                             timeout: int = 3600) -> Dict[str, Any]
+```
+
+Waits for a task to complete by polling its status.
+
+**Arguments**:
+
+- `task_id` _str_ - The ID of the task to monitor.
+- `polling_interval` _int_ - Seconds to wait between status checks.
+- `(default` - :obj:`10`)
+- `timeout` _int_ - Maximum seconds to wait before timing out.
+- `(default` - :obj:`3600`)
+  
+
+**Returns**:
+
+  Dict[str, Any]: Final response from the API when task completes.
+  
+
+**Raises**:
+
+- `TimeoutError` - If task doesn't complete within timeout period.
+- `RuntimeError` - If task fails or is canceled.
+
+<a id="camel.toolkits.meshy_toolkit.MeshyToolkit.generate_3d_model_complete"></a>
+
+#### generate\_3d\_model\_complete
+
+```python
+def generate_3d_model_complete(prompt: str, art_style: str,
+                               negative_prompt: str) -> Dict[str, Any]
+```
+
+Generates a complete 3D model by handling preview and refinement
+stages
+
+**Arguments**:
+
+- `prompt` _str_ - Description of the object.
+- `art_style` _str_ - Art style for the 3D model.
+- `negative_prompt` _str_ - What the model should not look like.
+  
+
+**Returns**:
+
+  Dict[str, Any]: The final refined 3D model response.
+
+<a id="camel.toolkits.meshy_toolkit.MeshyToolkit.get_tools"></a>
+
+#### get\_tools
+
+```python
+def get_tools() -> List[FunctionTool]
+```
+
+Returns a list of FunctionTool objects representing the
+functions in the toolkit.
+
+**Returns**:
+
+- `List[FunctionTool]` - A list of FunctionTool objects
+  representing the functions in the toolkit.
+

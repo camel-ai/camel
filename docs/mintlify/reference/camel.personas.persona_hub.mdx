@@ -1,0 +1,146 @@
+<a id="camel.personas.persona_hub"></a>
+
+<a id="camel.personas.persona_hub.PersonaHub"></a>
+
+## PersonaHub Objects
+
+```python
+class PersonaHub()
+```
+
+The PersonaHub adapted from `"Scaling Synthetic Data Creation with 1,
+000,000,000 Personas"
+<https://github.com/tencent-ailab/persona-hub>`_.
+
+PersonaHub proposes a novel persona-driven data synthesis methodology
+that leverages various perspectives within a large language model (LLM) to
+create diverse synthetic data. By showcasing PersonaHub's use cases in
+synthesizing high-quality mathematical and logical reasoning problems,
+instructions (i.e., user prompts), knowledge-rich texts, game NPCs and
+tools (functions) at scale, the authors demonstrate persona-driven data
+synthesis is versatile, scalable, flexible, and easy to use, potentially
+driving a paradigm shift in synthetic data creation and applications in
+practice, which may have a profound impact on LLM research and development.
+Please refer to the paper for more details: https://arxiv.org/pdf/2406.20094.
+
+**Arguments**:
+
+- `model` _BaseModelBackend, optional_ - The model to use for persona
+  generation and manipulation. (default: :obj:`None`)
+
+<a id="camel.personas.persona_hub.PersonaHub.__setitem__"></a>
+
+#### \_\_setitem\_\_
+
+```python
+def __setitem__(persona: Persona)
+```
+
+Add a persona to the group.
+
+**Arguments**:
+
+- `persona` _Persona_ - The persona to add.
+
+<a id="camel.personas.persona_hub.PersonaHub.__delitem__"></a>
+
+#### \_\_delitem\_\_
+
+```python
+def __delitem__(persona_id: uuid.UUID)
+```
+
+Remove a persona from the group by ID.
+
+**Arguments**:
+
+- `persona_id` _uuid.UUID_ - The ID of the persona to remove.
+
+<a id="camel.personas.persona_hub.PersonaHub.__getitem__"></a>
+
+#### \_\_getitem\_\_
+
+```python
+def __getitem__(persona_id: uuid.UUID) -> Persona
+```
+
+Get a persona by ID.
+
+**Arguments**:
+
+- `persona_id` _uuid.UUID_ - The ID of the persona to retrieve.
+
+<a id="camel.personas.persona_hub.PersonaHub.text_to_persona"></a>
+
+#### text\_to\_persona
+
+```python
+def text_to_persona(
+        text: str,
+        action: Literal["read", "write", "like",
+                        "dislike"] = "read") -> Persona
+```
+
+Infers a specific persona who is likely to [read|write|like|dislike
+|...] the given text.
+
+**Arguments**:
+
+- `text` _str_ - The input text for which to infer a persona.
+- `action` _str_ - The action associated with the persona (default is
+  "read").
+  
+
+**Returns**:
+
+- `Persona` - The inferred persona.
+
+<a id="camel.personas.persona_hub.PersonaHub.persona_to_persona"></a>
+
+#### persona\_to\_persona
+
+```python
+def persona_to_persona(persona: Persona) -> Dict[uuid.UUID, Persona]
+```
+
+Derives additional personas based on interpersonal relationships
+from this persona.
+
+**Arguments**:
+
+- `persona` _Persona_ - The persona from which to derive related
+  personas.
+  
+
+**Returns**:
+
+  Dict[uuid.UUID, Persona]: A dictionary of related personas.
+
+<a id="camel.personas.persona_hub.PersonaHub.deduplicate"></a>
+
+#### deduplicate
+
+```python
+def deduplicate(embedding_model: Optional[BaseEmbedding] = None,
+                similarity_threshold: float = 0.85) -> None
+```
+
+Remove similar personas from the group.
+
+**Arguments**:
+
+- `embedding_model` _BaseEmbedding_ - The embedding model
+  for similarity compairsion. (default is `None`).
+- `similarity_threshold` _float_ - The similarity threshold for
+  deduplication (default is `0.85`).
+
+<a id="camel.personas.persona_hub.PersonaHub.get_all_personas"></a>
+
+#### get\_all\_personas
+
+```python
+def get_all_personas() -> List[Persona]
+```
+
+Return a list of all personas.
+

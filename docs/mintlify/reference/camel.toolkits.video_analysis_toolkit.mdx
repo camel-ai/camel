@@ -1,0 +1,83 @@
+<a id="camel.toolkits.video_analysis_toolkit"></a>
+
+<a id="camel.toolkits.video_analysis_toolkit.VideoAnalysisToolkit"></a>
+
+## VideoAnalysisToolkit Objects
+
+```python
+@MCPServer()
+class VideoAnalysisToolkit(BaseToolkit)
+```
+
+A class for analysing videos with vision-language model.
+
+**Arguments**:
+
+- `download_directory` _Optional[str], optional_ - The directory where the
+  video will be downloaded to. If not provided, video will be stored
+  in a temporary directory and will be cleaned up after use.
+- `(default` - :obj:`None`)
+- `model` _Optional[BaseModelBackend], optional_ - The model to use for
+  visual analysis. (default: :obj:`None`)
+- `use_audio_transcription` _bool, optional_ - Whether to enable audio
+  transcription using OpenAI's audio models. Requires a valid OpenAI
+  API key. When disabled, video analysis will be based solely on
+  visual content. (default: :obj:`False`)
+- `frame_interval` _float, optional_ - Interval in seconds between frames
+  to extract from the video. (default: :obj:`4.0`)
+- `output_language` _str, optional_ - The language for output responses.
+- `(default` - :obj:`"English"`)
+- `cookies_path` _Optional[str]_ - The path to the cookies file
+  for the video service in Netscape format. (default: :obj:`None`)
+- `timeout` _Optional[float]_ - The timeout value for API requests
+  in seconds. If None, no timeout is applied.
+- `(default` - :obj:`None`)
+
+<a id="camel.toolkits.video_analysis_toolkit.VideoAnalysisToolkit.__del__"></a>
+
+#### \_\_del\_\_
+
+```python
+def __del__()
+```
+
+Clean up temporary directories and files when the object is
+destroyed.
+
+<a id="camel.toolkits.video_analysis_toolkit.VideoAnalysisToolkit.ask_question_about_video"></a>
+
+#### ask\_question\_about\_video
+
+```python
+def ask_question_about_video(video_path: str, question: str) -> str
+```
+
+Ask a question about the video.
+
+**Arguments**:
+
+- `video_path` _str_ - The path to the video file.
+  It can be a local file or a URL (such as Youtube website).
+- `question` _str_ - The question to ask about the video.
+  
+
+**Returns**:
+
+- `str` - The answer to the question.
+
+<a id="camel.toolkits.video_analysis_toolkit.VideoAnalysisToolkit.get_tools"></a>
+
+#### get\_tools
+
+```python
+def get_tools() -> List[FunctionTool]
+```
+
+Returns a list of FunctionTool objects representing the
+functions in the toolkit.
+
+**Returns**:
+
+- `List[FunctionTool]` - A list of FunctionTool objects representing
+  the functions in the toolkit.
+

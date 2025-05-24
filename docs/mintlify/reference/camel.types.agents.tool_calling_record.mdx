@@ -1,0 +1,47 @@
+<a id="camel.types.agents.tool_calling_record"></a>
+
+<a id="camel.types.agents.tool_calling_record.ToolCallingRecord"></a>
+
+## ToolCallingRecord Objects
+
+```python
+class ToolCallingRecord(BaseModel)
+```
+
+Historical records of tools called in the conversation.
+
+**Attributes**:
+
+- `func_name` _str_ - The name of the tool being called.
+- `args` _Dict[str, Any]_ - The dictionary of arguments passed to the tool.
+- `result` _Any_ - The execution result of calling this tool.
+- `tool_call_id` _str_ - The ID of the tool call, if available.
+
+<a id="camel.types.agents.tool_calling_record.ToolCallingRecord.__str__"></a>
+
+#### \_\_str\_\_
+
+```python
+def __str__() -> str
+```
+
+Overridden version of the string function.
+
+**Returns**:
+
+- `str` - Modified string to represent the tool calling.
+
+<a id="camel.types.agents.tool_calling_record.ToolCallingRecord.as_dict"></a>
+
+#### as\_dict
+
+```python
+def as_dict() -> dict[str, Any]
+```
+
+Returns the tool calling record as a dictionary.
+
+**Returns**:
+
+  dict[str, Any]: The tool calling record as a dictionary.
+

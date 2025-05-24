@@ -1,0 +1,118 @@
+<a id="camel.types.mcp_registries"></a>
+
+<a id="camel.types.mcp_registries.MCPRegistryType"></a>
+
+## MCPRegistryType Objects
+
+```python
+class MCPRegistryType(Enum)
+```
+
+Enum for different types of MCP registries.
+
+<a id="camel.types.mcp_registries.BaseMCPRegistryConfig"></a>
+
+## BaseMCPRegistryConfig Objects
+
+```python
+class BaseMCPRegistryConfig(BaseModel)
+```
+
+Base configuration for an MCP registry.
+
+**Attributes**:
+
+- `type` _MCPRegistryType_ - The type of the registry.
+- `os` _Literal["darwin", "linux", "windows"]_ - The operating system. It
+  is automatically set to "darwin" for MacOS, "linux" for Linux, and
+  "windows" for Windows.
+- `api_key` _Optional[str]_ - API key for the registry.
+
+<a id="camel.types.mcp_registries.BaseMCPRegistryConfig.get_config"></a>
+
+#### get\_config
+
+```python
+def get_config() -> Dict[str, Any]
+```
+
+Generate configuration based on registry type and API key.
+
+**Returns**:
+
+  Dict[str, Any]: The complete configuration for the registry.
+
+<a id="camel.types.mcp_registries.BaseMCPRegistryConfig.set_default_os"></a>
+
+#### set\_default\_os
+
+```python
+@model_validator(mode='before')
+@classmethod
+def set_default_os(cls, values: Dict) -> Dict
+```
+
+Set the default OS based on the current platform if not provided.
+
+**Arguments**:
+
+- `values` _Dict_ - The values dictionary from the model validation.
+  
+
+**Returns**:
+
+- `Dict` - The updated values dictionary with the OS set.
+  
+
+**Raises**:
+
+- `ValueError` - If the current system is not supported.
+
+<a id="camel.types.mcp_registries.SmitheryRegistryConfig"></a>
+
+## SmitheryRegistryConfig Objects
+
+```python
+class SmitheryRegistryConfig(BaseMCPRegistryConfig)
+```
+
+Configuration for Smithery registry.
+
+<a id="camel.types.mcp_registries.SmitheryRegistryConfig.get_config"></a>
+
+#### get\_config
+
+```python
+def get_config() -> Dict[str, Any]
+```
+
+Generate configuration for Smithery registry.
+
+**Returns**:
+
+  Dict[str, Any]: The complete configuration for the registry.
+
+<a id="camel.types.mcp_registries.ACIRegistryConfig"></a>
+
+## ACIRegistryConfig Objects
+
+```python
+class ACIRegistryConfig(BaseMCPRegistryConfig)
+```
+
+Configuration for ACI registry.
+
+<a id="camel.types.mcp_registries.ACIRegistryConfig.get_config"></a>
+
+#### get\_config
+
+```python
+def get_config() -> Dict[str, Any]
+```
+
+Generate configuration for ACI registry.
+
+**Returns**:
+
+  Dict[str, Any]: The complete configuration for the registry.
+

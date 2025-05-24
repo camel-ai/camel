@@ -1,0 +1,85 @@
+---
+title: "MCP Overview"
+---
+
+## Purpose
+
+<div>
+  <img
+    src="images/mcp_architecture_detail.jpeg"
+    alt="MCP architecture: remote services, MCP protocol, clients, and local data sources"
+    style={{ maxWidth: '100%' }}
+  />
+  <p style={{ textAlign: 'center' }}><strong>Visualization of MCP as an intermediate protocol layer</strong></p>
+</div>
+
+Model Context Protocol (MCP) is an open, vendor‑agnostic standard for connecting AI assistants to the systems where your data lives—content repositories, business tools, development environments, and more. As AI models advance in reasoning and quality, they still remain siloed from real‑world data.
+
+Every new integration traditionally requires bespoke code, creating an M × N explosion of connectors. MCP replaces that fragmentation with a single, universal protocol—think of it as the “USB for AI”—so that any AI application can securely and reliably access any MCP‑enabled data source or tool.
+
+> Read the original announcement on Anthropic’s blog:  
+> <Link href="https://www.anthropic.com/news/model-context-protocol">Introducing the Model Context Protocol</Link>
+
+---
+
+## Key Points
+
+- **Solves the M×N problem**  
+  Instead of writing M connectors for N systems, you build N MCP servers (one per system) and M MCP clients (one per AI host).
+
+- **Client–server architecture**  
+  - **Hosts** run the AI application (e.g., Claude Desktop, IDE assistants, custom agents).  
+  - **Clients** live inside the host and speak the wire‑level MCP spec.  
+  - **Servers** expose tools, resources, and prompts over standard MCP endpoints.
+
+- **Pre‑built ecosystem**  
+  Anthropic and the community provide reference MCP servers for Google Drive, Slack, GitHub, Postgres, Puppeteer, and more—so your model “just plugs in.”
+
+- **Security & flexibility**  
+  A clear handshake, capability discovery, and metadata schema make it easier to audit, swap LLM providers, and enforce access controls.
+
+---
+
+## Visual Overview
+
+<div>
+  <img
+    src="images/mcp_comparison.png"
+    alt="Comparison: Without MCP direct connectors; With MCP a single protocol mediates connections"
+    style={{ maxWidth: '100%' }}
+  />
+  <p style={{ textAlign: 'center' }}><strong>Without vs With MCP comparison</strong></p>
+</div>
+
+---
+
+## General Architecture
+
+<div>
+  <img
+    src="images/mcp_architecture.png"
+    alt="MCP client–server architecture showing host, clients, and servers with protocol connections"
+    style={{ maxWidth: '100%' }}
+  />
+  <p style={{ textAlign: 'center' }}><strong>MCP client–server architecture</strong></p>
+</div>
+
+1. **Initialization**  
+   Host application spins up one MCP client per server configuration.
+
+2. **Discovery**  
+   Clients ask servers “what tools, resources, and prompts do you offer?” and receive a standardized capability manifest.
+
+3. **Context Provision & Invocation**  
+   The host injects retrieved context into the LLM prompt. If the LLM decides to call a tool, the client marshals that request to the appropriate server.
+
+4. **Execution & Response**  
+   The server executes the action (e.g., fetch GitHub issues, read a database row) and returns results—all over the same MCP wire format.
+
+---
+
+## Resources
+
+- **Anthropic Blog Post**: <Link href="https://www.anthropic.com/news/model-context-protocol">Introducing the Model Context Protocol</Link>  
+- **Official MCP Spec & SDKs**: <Link href="https://docs.anthropic.com/en/docs/agents-and-tools/mcp">docs.anthropic.com/en/docs/agents-and-tools/mcp</Link>  
+

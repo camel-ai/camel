@@ -1,0 +1,28 @@
+<a id="camel.personas.persona"></a>
+
+<a id="camel.personas.persona.Persona"></a>
+
+## Persona Objects
+
+```python
+class Persona(BaseModel)
+```
+
+A persona is a character in the society.
+
+**Attributes**:
+
+- `name` _Optional[str]_ - Name of the persona.
+- `description` _Optional[str]_ - Description of the persona.
+- `text_to_persona_prompt` _Union[TextPrompt, str]_ - The prompt to convert
+  text into a persona.
+- `persona_to_persona_prompt` _Union[TextPrompt, str]_ - Persona-to-Persona
+  interaction prompt.
+- `id` _uuid.UUID_ - The unique identifier for the persona, automatically
+  generated.
+- `_id` _uuid.UUID_ - Internal unique identifier for the persona,
+  generated lazily using `uuid.uuid4`.
+- `model_config` _ClassVar[ConfigDict]_ - Configuration for the Pydantic
+  model. Allows arbitrary types and includes custom JSON schema
+  settings.
+

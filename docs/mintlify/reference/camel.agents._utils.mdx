@@ -1,0 +1,107 @@
+<a id="camel.agents._utils"></a>
+
+<a id="camel.agents._utils.generate_tool_prompt"></a>
+
+#### generate\_tool\_prompt
+
+```python
+def generate_tool_prompt(tool_schema_list: List[Dict[str, Any]]) -> str
+```
+
+Generates a tool prompt based on the provided tool schema list.
+
+**Returns**:
+
+- `str` - A string representing the tool prompt.
+
+<a id="camel.agents._utils.extract_tool_call"></a>
+
+#### extract\_tool\_call
+
+```python
+def extract_tool_call(content: str) -> Optional[Dict[str, Any]]
+```
+
+Extract the tool call from the model response, if present.
+
+**Arguments**:
+
+- `response` _Any_ - The model's response object.
+  
+
+**Returns**:
+
+  Optional[Dict[str, Any]]: The parsed tool call if present,
+  otherwise None.
+
+<a id="camel.agents._utils.safe_model_dump"></a>
+
+#### safe\_model\_dump
+
+```python
+def safe_model_dump(obj) -> Dict[str, Any]
+```
+
+Safely dump a Pydantic model to a dictionary.
+
+This method attempts to use the `model_dump` method if available,
+otherwise it falls back to the `dict` method.
+
+<a id="camel.agents._utils.convert_to_function_tool"></a>
+
+#### convert\_to\_function\_tool
+
+```python
+def convert_to_function_tool(
+        tool: Union[FunctionTool, Callable]) -> FunctionTool
+```
+
+Convert a tool to a FunctionTool from Callable.
+
+<a id="camel.agents._utils.convert_to_schema"></a>
+
+#### convert\_to\_schema
+
+```python
+def convert_to_schema(
+        tool: Union[FunctionTool, Callable, Dict[str, Any]]) -> Dict[str, Any]
+```
+
+Convert a tool to a schema from Callable or FunctionTool.
+
+<a id="camel.agents._utils.get_info_dict"></a>
+
+#### get\_info\_dict
+
+```python
+def get_info_dict(
+    session_id: Optional[str],
+    usage: Optional[Dict[str, int]],
+    termination_reasons: List[str],
+    num_tokens: int,
+    tool_calls: List[ToolCallingRecord],
+    external_tool_call_requests: Optional[List[ToolCallRequest]] = None
+) -> Dict[str, Any]
+```
+
+Returns a dictionary containing information about the chat session.
+
+**Arguments**:
+
+- `session_id` _str, optional_ - The ID of the chat session.
+- `usage` _Dict[str, int], optional_ - Information about the usage of
+  the LLM.
+- `termination_reasons` _List[str]_ - The reasons for the termination
+  of the chat session.
+- `num_tokens` _int_ - The number of tokens used in the chat session.
+- `tool_calls` _List[ToolCallingRecord]_ - The list of function
+  calling records, containing the information of called tools.
+- `external_tool_call_requests` _Optional[List[ToolCallRequest]]_ - The
+  requests for external tool calls.
+  
+  
+
+**Returns**:
+
+  Dict[str, Any]: The chat session information.
+

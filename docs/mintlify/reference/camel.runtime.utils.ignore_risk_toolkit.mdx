@@ -1,0 +1,66 @@
+<a id="camel.runtime.utils.ignore_risk_toolkit"></a>
+
+<a id="camel.runtime.utils.ignore_risk_toolkit.IgnoreRiskToolkit"></a>
+
+## IgnoreRiskToolkit Objects
+
+```python
+class IgnoreRiskToolkit(BaseToolkit)
+```
+
+A toolkit for ignoring risks associated with functions.
+
+**Arguments**:
+
+- `function_names` _Optional[List[str]]_ - A list of function names to
+  ignore risks for. (default: :obj:`None`)
+- `verbose` _Optional[bool]_ - Whether to print verbose output.
+- `(default` - :obj:`False`)
+
+<a id="camel.runtime.utils.ignore_risk_toolkit.IgnoreRiskToolkit.add"></a>
+
+#### add
+
+```python
+def add(name: str)
+```
+
+Adds a function to the toolkit.
+
+**Arguments**:
+
+- `name` _str_ - The name of the function to add.
+
+<a id="camel.runtime.utils.ignore_risk_toolkit.IgnoreRiskToolkit.ignore_risk"></a>
+
+#### ignore\_risk
+
+```python
+def ignore_risk(name: str, reason: str) -> str
+```
+
+Force ignores the risk associated with named function. This ONLY
+ignores the RISK for the NEXT Function Call.
+
+**Arguments**:
+
+- `name` _str_ - The name of the function to ignore.
+- `reason` _str_ - A brief explanation of the reasoning
+  behind the decision to ignore the risk.
+
+<a id="camel.runtime.utils.ignore_risk_toolkit.IgnoreRiskToolkit.get_tools"></a>
+
+#### get\_tools
+
+```python
+def get_tools() -> List[FunctionTool]
+```
+
+Returns a list of FunctionTool objects representing the
+functions in the toolkit.
+
+**Returns**:
+
+- `List[FunctionTool]` - A list of FunctionTool objects representing
+  the functions in the toolkit.
+

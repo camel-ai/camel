@@ -1,0 +1,125 @@
+<a id="camel.human"></a>
+
+<a id="camel.human.Human"></a>
+
+## Human Objects
+
+```python
+class Human()
+```
+
+A class representing a human user.
+
+**Arguments**:
+
+- `name` _str_ - The name of the human user.
+- `(default` - :obj:`"Kill Switch Engineer"`).
+- `logger_color` _Any_ - The color of the menu options displayed to the
+  user. (default: :obj:`Fore.MAGENTA`)
+  
+
+**Attributes**:
+
+- `name` _str_ - The name of the human user.
+- `logger_color` _Any_ - The color of the menu options displayed to the
+  user.
+- `input_button` _str_ - The text displayed for the input button.
+- `kill_button` _str_ - The text displayed for the kill button.
+- `options_dict` _Dict[str, str]_ - A dictionary containing the options
+  displayed to the user.
+
+<a id="camel.human.Human.display_options"></a>
+
+#### display\_options
+
+```python
+def display_options(messages: Sequence[BaseMessage]) -> None
+```
+
+Displays the options to the user.
+
+**Arguments**:
+
+- `messages` _Sequence[BaseMessage]_ - A list of `BaseMessage` objects.
+  
+
+**Returns**:
+
+  None
+
+<a id="camel.human.Human.get_input"></a>
+
+#### get\_input
+
+```python
+def get_input() -> str
+```
+
+Gets the input from the user.
+
+**Returns**:
+
+- `str` - The user's input.
+
+<a id="camel.human.Human.parse_input"></a>
+
+#### parse\_input
+
+```python
+def parse_input(human_input: str) -> str
+```
+
+Parses the user's input and returns a `BaseMessage` object.
+
+**Arguments**:
+
+- `human_input` _str_ - The user's input.
+  
+
+**Returns**:
+
+- `content` - A `str` object representing the user's input.
+
+<a id="camel.human.Human.reduce_step"></a>
+
+#### reduce\_step
+
+```python
+def reduce_step(messages: Sequence[BaseMessage]) -> ChatAgentResponse
+```
+
+Performs one step of the conversation by displaying options to the
+user, getting their input, and parsing their choice.
+
+**Arguments**:
+
+- `messages` _Sequence[BaseMessage]_ - A list of BaseMessage objects.
+  
+
+**Returns**:
+
+- `ChatAgentResponse` - A `ChatAgentResponse` object representing the
+  user's choice.
+
+<a id="camel.human.Human.clone"></a>
+
+#### clone
+
+```python
+def clone(with_memory: bool = False) -> 'Human'
+```
+
+Creates a new instance of the Human class with the same
+attributes.
+
+**Arguments**:
+
+- `with_memory` _bool_ - Flag indicating whether to include memory in
+  the cloned instance. Currently not used.
+- `(default` - :obj:`False`)
+  
+
+**Returns**:
+
+- `Human` - A new Human instance with the same name and logger_color.
+

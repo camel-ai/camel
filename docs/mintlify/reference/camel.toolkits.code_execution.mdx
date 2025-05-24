@@ -1,0 +1,61 @@
+<a id="camel.toolkits.code_execution"></a>
+
+<a id="camel.toolkits.code_execution.CodeExecutionToolkit"></a>
+
+## CodeExecutionToolkit Objects
+
+```python
+@MCPServer()
+class CodeExecutionToolkit(BaseToolkit)
+```
+
+A toolkit for code execution.
+
+**Arguments**:
+
+- `sandbox` _str_ - The environment type used to execute code.
+- `(default` - `subprocess`)
+- `verbose` _bool_ - Whether to print the output of the code execution.
+- `(default` - :obj:`False`)
+- `unsafe_mode` _bool_ - If `True`, the interpreter runs the code
+  by `eval()` without any security check. (default: :obj:`False`)
+- `import_white_list` _ Optional[List[str]]_ - A list of allowed imports.
+- `(default` - :obj:`None`)
+- `require_confirm` _bool_ - Whether to require confirmation before executing code.
+- `(default` - :obj:`False`)
+
+<a id="camel.toolkits.code_execution.CodeExecutionToolkit.execute_code"></a>
+
+#### execute\_code
+
+```python
+def execute_code(code: str) -> str
+```
+
+Execute a given code snippet.
+
+**Arguments**:
+
+- `code` _str_ - The input code to the Code Interpreter tool call.
+  
+
+**Returns**:
+
+- `str` - The text output from the Code Interpreter tool call.
+
+<a id="camel.toolkits.code_execution.CodeExecutionToolkit.get_tools"></a>
+
+#### get\_tools
+
+```python
+def get_tools() -> List[FunctionTool]
+```
+
+Returns a list of FunctionTool objects representing the
+functions in the toolkit.
+
+**Returns**:
+
+- `List[FunctionTool]` - A list of FunctionTool objects
+  representing the functions in the toolkit.
+

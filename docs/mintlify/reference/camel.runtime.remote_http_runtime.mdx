@@ -1,0 +1,149 @@
+<a id="camel.runtime.remote_http_runtime"></a>
+
+<a id="camel.runtime.remote_http_runtime.RemoteHttpRuntime"></a>
+
+## RemoteHttpRuntime Objects
+
+```python
+class RemoteHttpRuntime(BaseRuntime)
+```
+
+A runtime that runs functions in a remote HTTP server.
+You need to run the API server in the remote server first.
+
+**Arguments**:
+
+- `host` _str_ - The host of the remote server.
+- `port` _int_ - The port of the remote server. (default: :obj: `8000`)
+- `python_exec` _str_ - The python executable to run the API server.
+- `(default` - :obj: `python3`)
+
+<a id="camel.runtime.remote_http_runtime.RemoteHttpRuntime.build"></a>
+
+#### build
+
+```python
+def build() -> "RemoteHttpRuntime"
+```
+
+Build the API server.
+
+**Returns**:
+
+- `RemoteHttpRuntime` - The current runtime.
+
+<a id="camel.runtime.remote_http_runtime.RemoteHttpRuntime.add"></a>
+
+#### add
+
+```python
+def add(funcs: Union[FunctionTool, List[FunctionTool]],
+        entrypoint: str,
+        redirect_stdout: bool = False,
+        arguments: Optional[Dict[str, Any]] = None) -> "RemoteHttpRuntime"
+```
+
+Add a function or list of functions to the runtime.
+
+**Arguments**:
+
+- `funcs` _Union[FunctionTool, List[FunctionTool]]_ - The function or
+  list of functions to add.
+- `entrypoint` _str_ - The entrypoint for the function.
+- `redirect_stdout` _bool_ - Whether to return the stdout of
+  the function. (default: :obj: `False`)
+- `arguments` _Optional[Dict[str, Any]]_ - The arguments for the
+  function. (default: :obj: `None`)
+  
+
+**Returns**:
+
+- `RemoteHttpRuntime` - The current runtime.
+
+<a id="camel.runtime.remote_http_runtime.RemoteHttpRuntime.ok"></a>
+
+#### ok
+
+```python
+@property
+def ok() -> bool
+```
+
+Check if the API Server is running.
+
+**Returns**:
+
+- `bool` - Whether the API Server is running.
+
+<a id="camel.runtime.remote_http_runtime.RemoteHttpRuntime.wait"></a>
+
+#### wait
+
+```python
+def wait(timeout: int = 10) -> bool
+```
+
+Wait for the API Server to be ready.
+
+**Arguments**:
+
+- `timeout` _int_ - The number of seconds to wait. (default: :obj: `10`)
+  
+
+**Returns**:
+
+- `bool` - Whether the API Server is ready.
+
+<a id="camel.runtime.remote_http_runtime.RemoteHttpRuntime.__del__"></a>
+
+#### \_\_del\_\_
+
+```python
+def __del__()
+```
+
+Clean up the API server when the object is deleted.
+
+<a id="camel.runtime.remote_http_runtime.RemoteHttpRuntime.stop"></a>
+
+#### stop
+
+```python
+def stop() -> "RemoteHttpRuntime"
+```
+
+Stop the API server.
+
+**Returns**:
+
+- `RemoteHttpRuntime` - The current runtime.
+
+<a id="camel.runtime.remote_http_runtime.RemoteHttpRuntime.reset"></a>
+
+#### reset
+
+```python
+def reset() -> "RemoteHttpRuntime"
+```
+
+Reset the API server.
+
+**Returns**:
+
+- `RemoteHttpRuntime` - The current runtime.
+
+<a id="camel.runtime.remote_http_runtime.RemoteHttpRuntime.docs"></a>
+
+#### docs
+
+```python
+@property
+def docs() -> str
+```
+
+Get the URL for the API documentation.
+
+**Returns**:
+
+- `str` - The URL for the API documentation.
+

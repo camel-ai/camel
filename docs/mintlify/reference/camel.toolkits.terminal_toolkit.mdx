@@ -1,0 +1,215 @@
+<a id="camel.toolkits.terminal_toolkit"></a>
+
+<a id="camel.toolkits.terminal_toolkit.TerminalToolkit"></a>
+
+## TerminalToolkit Objects
+
+```python
+@MCPServer()
+class TerminalToolkit(BaseToolkit)
+```
+
+A toolkit for terminal operations across multiple operating systems.
+
+This toolkit provides a set of functions for terminal operations such as
+searching for files by name or content, executing shell commands, and
+managing terminal sessions.
+
+**Arguments**:
+
+- `timeout` _Optional[float]_ - The timeout for terminal operations.
+- `shell_sessions` _Optional[Dict[str, Any]]_ - A dictionary to store
+  shell session information. If None, an empty dictionary will be
+  used. (default: :obj:`{}`)
+- `working_dir` _str_ - The working directory for operations.
+  If specified, all execution and write operations will be restricted
+  to this directory. Read operations can access paths outside this
+- `directory.(default` - :obj:`"./workspace"`)
+- `need_terminal` _bool_ - Whether to create a terminal interface.
+- `(default` - :obj:`True`)
+- `use_shell_mode` _bool_ - Whether to use shell mode for command execution.
+- `(default` - :obj:`True`)
+- `clone_current_env` _bool_ - Whether to clone the current Python
+- `environment.(default` - :obj:`False`)
+- `safe_mode` _bool_ - Whether to enable safe mode to restrict operations.
+- `(default` - :obj:`True`)
+  
+
+**Notes**:
+
+  Most functions are compatible with Unix-based systems (macOS, Linux).
+  For Windows compatibility, additional implementation details are
+  needed.
+
+<a id="camel.toolkits.terminal_toolkit.TerminalToolkit.file_find_in_content"></a>
+
+#### file\_find\_in\_content
+
+```python
+def file_find_in_content(file: str, regex: str, sudo: bool = False) -> str
+```
+
+Search for matching text within file content.
+
+**Arguments**:
+
+- `file` _str_ - Absolute path of the file to search within.
+- `regex` _str_ - Regular expression pattern to match.
+- `sudo` _bool, optional_ - Whether to use sudo privileges. Defaults to
+  False. Note: Using sudo requires the process to have
+  appropriate permissions.
+  
+
+**Returns**:
+
+- `str` - Matching content found in the file.
+
+<a id="camel.toolkits.terminal_toolkit.TerminalToolkit.file_find_by_name"></a>
+
+#### file\_find\_by\_name
+
+```python
+def file_find_by_name(path: str, glob: str) -> str
+```
+
+Find files by name pattern in specified directory.
+
+**Arguments**:
+
+- `path` _str_ - Absolute path of directory to search.
+- `glob` _str_ - Filename pattern using glob syntax wildcards.
+  
+
+**Returns**:
+
+- `str` - List of files matching the pattern.
+
+<a id="camel.toolkits.terminal_toolkit.TerminalToolkit.shell_exec"></a>
+
+#### shell\_exec
+
+```python
+def shell_exec(id: str, command: str) -> str
+```
+
+Execute commands. This can be used to execute various commands,
+such as writing code, executing code, and running commands.
+
+**Arguments**:
+
+- `id` _str_ - Unique identifier of the target shell session.
+- `command` _str_ - Shell command to execute.
+  
+
+**Returns**:
+
+- `str` - Output of the command execution or error message.
+
+<a id="camel.toolkits.terminal_toolkit.TerminalToolkit.shell_view"></a>
+
+#### shell\_view
+
+```python
+def shell_view(id: str) -> str
+```
+
+View the content of a specified shell session.
+
+**Arguments**:
+
+- `id` _str_ - Unique identifier of the target shell session.
+  
+
+**Returns**:
+
+- `str` - Current output content of the shell session.
+
+<a id="camel.toolkits.terminal_toolkit.TerminalToolkit.shell_wait"></a>
+
+#### shell\_wait
+
+```python
+def shell_wait(id: str, seconds: Optional[int] = None) -> str
+```
+
+Wait for the running process in a specified shell session to
+return.
+
+**Arguments**:
+
+- `id` _str_ - Unique identifier of the target shell session.
+- `seconds` _Optional[int], optional_ - Wait duration in seconds.
+  If None, wait indefinitely. Defaults to None.
+  
+
+**Returns**:
+
+- `str` - Final output content after waiting.
+
+<a id="camel.toolkits.terminal_toolkit.TerminalToolkit.shell_write_to_process"></a>
+
+#### shell\_write\_to\_process
+
+```python
+def shell_write_to_process(id: str, input: str, press_enter: bool) -> str
+```
+
+Write input to a running process in a specified shell session.
+
+**Arguments**:
+
+- `id` _str_ - Unique identifier of the target shell session.
+- `input` _str_ - Input content to write to the process.
+- `press_enter` _bool_ - Whether to press Enter key after input.
+  
+
+**Returns**:
+
+- `str` - Status message indicating whether the input was sent.
+
+<a id="camel.toolkits.terminal_toolkit.TerminalToolkit.shell_kill_process"></a>
+
+#### shell\_kill\_process
+
+```python
+def shell_kill_process(id: str) -> str
+```
+
+Terminate a running process in a specified shell session.
+
+**Arguments**:
+
+- `id` _str_ - Unique identifier of the target shell session.
+  
+
+**Returns**:
+
+- `str` - Status message indicating whether the process was terminated.
+
+<a id="camel.toolkits.terminal_toolkit.TerminalToolkit.__del__"></a>
+
+#### \_\_del\_\_
+
+```python
+def __del__()
+```
+
+Clean up resources when the object is being destroyed.
+Terminates all running processes and closes any open file handles.
+
+<a id="camel.toolkits.terminal_toolkit.TerminalToolkit.get_tools"></a>
+
+#### get\_tools
+
+```python
+def get_tools() -> List[FunctionTool]
+```
+
+Returns a list of FunctionTool objects representing the functions
+in the toolkit.
+
+**Returns**:
+
+- `List[FunctionTool]` - A list of FunctionTool objects representing the
+  functions in the toolkit.
+

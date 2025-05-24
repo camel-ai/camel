@@ -1,0 +1,193 @@
+<a id="camel.toolkits.semantic_scholar_toolkit"></a>
+
+<a id="camel.toolkits.semantic_scholar_toolkit.SemanticScholarToolkit"></a>
+
+## SemanticScholarToolkit Objects
+
+```python
+@MCPServer()
+class SemanticScholarToolkit(BaseToolkit)
+```
+
+A toolkit for interacting with the Semantic Scholar
+API to fetch paper and author data.
+
+<a id="camel.toolkits.semantic_scholar_toolkit.SemanticScholarToolkit.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(timeout: Optional[float] = None)
+```
+
+Initializes the SemanticScholarToolkit.
+
+<a id="camel.toolkits.semantic_scholar_toolkit.SemanticScholarToolkit.fetch_paper_data_title"></a>
+
+#### fetch\_paper\_data\_title
+
+```python
+def fetch_paper_data_title(paper_title: str,
+                           fields: Optional[List[str]] = None) -> dict
+```
+
+Fetches a SINGLE paper from the Semantic Scholar
+API based on a paper title.
+
+**Arguments**:
+
+- `paper_title` _str_ - The title of the paper to fetch.
+- `fields` _Optional[List[str]], optional_ - The fields to include in
+  the response (default: :obj:`None`). If not provided defaults
+  to ["title", "abstract", "authors", "year", "citationCount",
+  "publicationTypes", "publicationDate", "openAccessPdf"].
+  
+
+**Returns**:
+
+- `dict` - The response data from the API or error information if the
+  request fails.
+
+<a id="camel.toolkits.semantic_scholar_toolkit.SemanticScholarToolkit.fetch_paper_data_id"></a>
+
+#### fetch\_paper\_data\_id
+
+```python
+def fetch_paper_data_id(paper_id: str,
+                        fields: Optional[List[str]] = None) -> dict
+```
+
+Fetches a SINGLE paper from the Semantic Scholar
+API based on a paper ID.
+
+**Arguments**:
+
+- `paper_id` _str_ - The ID of the paper to fetch.
+- `fields` _Optional[List[str]], optional_ - The fields to include in
+  the response (default: :obj:`None`). If not provided defaults
+  to ["title", "abstract", "authors", "year", "citationCount",
+  "publicationTypes", "publicationDate", "openAccessPdf"].
+  
+
+**Returns**:
+
+- `dict` - The response data from the API or error information
+  if the request fails.
+
+<a id="camel.toolkits.semantic_scholar_toolkit.SemanticScholarToolkit.fetch_bulk_paper_data"></a>
+
+#### fetch\_bulk\_paper\_data
+
+```python
+def fetch_bulk_paper_data(query: str,
+                          year: str = "2023-",
+                          fields: Optional[List[str]] = None) -> dict
+```
+
+Fetches MULTIPLE papers at once from the Semantic Scholar
+API based on a related topic.
+
+**Arguments**:
+
+- `query` _str_ - The text query to match against the paper's title and
+  abstract. For example, you can use the following operators and
+  techniques to construct your query: Example 1: ((cloud
+  computing) | virtualization) +security -privacy This will
+  match papers whose title or abstract contains "cloud" and
+  "computing", or contains the word "virtualization". The papers
+  must also include the term "security" but exclude papers that
+  contain the word "privacy".
+- `year` _str, optional_ - The year filter for papers (default:
+  :obj:`"2023-"`).
+- `fields` _Optional[List[str]], optional_ - The fields to include in
+  the response (default: :obj:`None`). If not provided defaults
+  to ["title", "url", "publicationTypes", "publicationDate",
+  "openAccessPdf"].
+  
+
+**Returns**:
+
+- `dict` - The response data from the API or error information if the
+  request fails.
+
+<a id="camel.toolkits.semantic_scholar_toolkit.SemanticScholarToolkit.fetch_recommended_papers"></a>
+
+#### fetch\_recommended\_papers
+
+```python
+def fetch_recommended_papers(positive_paper_ids: List[str],
+                             negative_paper_ids: List[str],
+                             fields: Optional[List[str]] = None,
+                             limit: int = 500,
+                             save_to_file: bool = False) -> dict
+```
+
+Fetches recommended papers from the Semantic Scholar
+API based on the positive and negative paper IDs.
+
+**Arguments**:
+
+- `positive_paper_ids` _list_ - A list of paper IDs (as strings)
+  that are positively correlated to the recommendation.
+- `negative_paper_ids` _list_ - A list of paper IDs (as strings)
+  that are negatively correlated to the recommendation.
+- `fields` _Optional[List[str]], optional_ - The fields to include in
+  the response (default: :obj:`None`). If not provided defaults
+  to ["title", "url", "citationCount", "authors",
+  "publicationTypes", "publicationDate", "openAccessPdf"].
+- `limit` _int, optional_ - The maximum number of recommended papers to
+  return (default: :obj:`500`).
+- `save_to_file` _bool, optional_ - If True, saves the response data to
+  a file (default: :obj:`False`).
+  
+
+**Returns**:
+
+- `dict` - A dictionary containing recommended papers sorted by
+  citation count.
+
+<a id="camel.toolkits.semantic_scholar_toolkit.SemanticScholarToolkit.fetch_author_data"></a>
+
+#### fetch\_author\_data
+
+```python
+def fetch_author_data(ids: List[str],
+                      fields: Optional[List[str]] = None,
+                      save_to_file: bool = False) -> dict
+```
+
+Fetches author information from the Semantic Scholar
+API based on author IDs.
+
+**Arguments**:
+
+- `ids` _list_ - A list of author IDs (as strings) to fetch
+  data for.
+- `fields` _Optional[List[str]], optional_ - The fields to include in
+  the response (default: :obj:`None`). If not provided defaults
+  to ["name", "url", "paperCount", "hIndex", "papers"].
+- `save_to_file` _bool, optional_ - Whether to save the results to a
+  file (default: :obj:`False`).
+  
+
+**Returns**:
+
+- `dict` - The response data from the API or error information if
+  the request fails.
+
+<a id="camel.toolkits.semantic_scholar_toolkit.SemanticScholarToolkit.get_tools"></a>
+
+#### get\_tools
+
+```python
+def get_tools() -> List[FunctionTool]
+```
+
+Returns a list of FunctionTool objects representing the
+functions in the toolkit.
+
+**Returns**:
+
+- `List[FunctionTool]` - A list of FunctionTool objects
+  representing the functions in the toolkit.
+

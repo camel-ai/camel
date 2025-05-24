@@ -1,0 +1,212 @@
+<a id="camel.verifiers.physics_verifier"></a>
+
+<a id="camel.verifiers.physics_verifier.UnitParser"></a>
+
+## UnitParser Objects
+
+```python
+class UnitParser()
+```
+
+Class for handling unit parsing and manipulation operations.
+
+<a id="camel.verifiers.physics_verifier.UnitParser.parse_unit"></a>
+
+#### parse\_unit
+
+```python
+def parse_unit(unit_str: str) -> Optional[Any]
+```
+
+Parse a unit string into a SymPy expression using the appropriate
+method.
+
+**Arguments**:
+
+- `unit_str` _str_ - The unit string to parse.
+  
+
+**Returns**:
+
+- `Optional[Any]` - SymPy expression representing the unit, or None
+  if parsing fails or the unit is dimensionless.
+
+<a id="camel.verifiers.physics_verifier.UnitParser.parse_unit_with_latex"></a>
+
+#### parse\_unit\_with\_latex
+
+```python
+def parse_unit_with_latex(unit_str: str) -> Any
+```
+
+Parse a unit string using SymPy's LaTeX parser.
+
+**Arguments**:
+
+- `unit_str` _str_ - The unit string in LaTeX format.
+  
+
+**Returns**:
+
+- `Any` - SymPy expression representing the unit, or the
+  original string if parsing fails.
+
+<a id="camel.verifiers.physics_verifier.UnitParser.detect_scaling_factor"></a>
+
+#### detect\_scaling\_factor
+
+```python
+def detect_scaling_factor(
+        unit_expr: Any) -> Tuple[Union[int, float, Any], Any]
+```
+
+Detect a scaling factor in the unit expression.
+
+**Arguments**:
+
+- `unit_expr` _Any_ - The unit expression.
+  
+
+**Returns**:
+
+  Tuple[Union[int, float, Any], Any]: Tuple of scale
+  factor and base unit.
+
+<a id="camel.verifiers.physics_verifier.UnitParser.preprocess_unit_string"></a>
+
+#### preprocess\_unit\_string
+
+```python
+@staticmethod
+def preprocess_unit_string(unit_str: str) -> str
+```
+
+Preprocess a unit string to replace '^' with '**' for
+exponentiation.
+
+**Arguments**:
+
+- `unit_str` _str_ - The unit string to preprocess.
+  
+
+**Returns**:
+
+- `str` - Preprocessed unit string.
+
+<a id="camel.verifiers.physics_verifier.UnitParser.unit_is_none"></a>
+
+#### unit\_is\_none
+
+```python
+@staticmethod
+def unit_is_none(unit_str: Optional[str]) -> bool
+```
+
+Check if a unit string represents 'no unit' or is empty.
+
+**Arguments**:
+
+- `unit_str` _Optional[str]_ - The unit string to check.
+  
+
+**Returns**:
+
+- `bool` - True if the unit is None or represents 'no unit'.
+
+<a id="camel.verifiers.physics_verifier.UnitParser.extract_value_and_unit"></a>
+
+#### extract\_value\_and\_unit
+
+```python
+@staticmethod
+def extract_value_and_unit(expr: Any) -> Tuple[Union[int, float, Any], Any]
+```
+
+Extract numerical value and unit components from a SymPy
+expression.
+
+**Arguments**:
+
+- `expr` _Any_ - SymPy expression with units.
+  
+
+**Returns**:
+
+  Tuple[Union[int, float, Any], Any]: Numerical
+  value and unit expression.
+
+<a id="camel.verifiers.physics_verifier.UnitParser.detect_unit_args"></a>
+
+#### detect\_unit\_args
+
+```python
+@staticmethod
+def detect_unit_args(unit_expr: Any) -> List[Any]
+```
+
+Extract the base units from a composite SymPy unit expression.
+
+**Arguments**:
+
+- `unit_expr` _Any_ - SymPy expression representing a composite unit.
+  
+
+**Returns**:
+
+- `List[Any]` - List of SymPy base unit components.
+
+<a id="camel.verifiers.physics_verifier.PhysicsSolutionComparator"></a>
+
+## PhysicsSolutionComparator Objects
+
+```python
+class PhysicsSolutionComparator()
+```
+
+Class for compare solutions and reference answers that contains value
+and units.
+
+**Arguments**:
+
+- `solution` _str_ - The output from running the solution code.
+- `reference_answer` _str_ - The reference answer to compare against.
+- `float_tolerance` _Optional[float], optional_ - The tolerance for
+  floating point comparisons. (default: :obj:`None`)
+
+<a id="camel.verifiers.physics_verifier.PhysicsSolutionComparator.compare_solution_to_reference"></a>
+
+#### compare\_solution\_to\_reference
+
+```python
+def compare_solution_to_reference() -> VerificationResult
+```
+
+Compare the solution output to the reference answer.
+
+**Returns**:
+
+  VerificationResult with comparison status.
+
+<a id="camel.verifiers.physics_verifier.PhysicsVerifier"></a>
+
+## PhysicsVerifier Objects
+
+```python
+class PhysicsVerifier(PythonVerifier)
+```
+
+The PhysicsVerifier inherits PythonVerifier and makes it able to
+compare and convert units.
+
+**Arguments**:
+
+- `extractor` _Optional[BaseExtractor]_ - The extractor to use for
+  extracting code from messages. (default: :obj:`None`)
+- `timeout` _Optional[float]_ - The timeout for code execution in seconds.
+- `(default` - :obj:`30.0`)
+- `required_packages` _Optional[List[str]]_ - The required packages for code
+  execution. (default: :obj:`None`)
+- `float_tolerance` _Optional[float]_ - The relative tolerance used to
+  compare numerical values. (default: :obj:`None`)
+- `**kwargs` - Additional keyword arguments to pass to the parent class.
+

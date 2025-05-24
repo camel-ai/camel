@@ -1,0 +1,204 @@
+<a id="camel.environments.single_step"></a>
+
+<a id="camel.environments.single_step.SingleStepEnv"></a>
+
+## SingleStepEnv Objects
+
+```python
+class SingleStepEnv()
+```
+
+A lightweight environment for single-step RL with LLMs as policy.
+
+This environment models a single interaction between an LLM-based agent
+and a problem drawn from a dataset—such as a question-answering or
+math problem—where the agent produces one response and receives feedback.
+
+Core Flow:
+    - A question is sampled from a (possibly infinitely long) dataset.
+    - The LLM generates a single-step response (the action).
+    - The response is verified against the ground truth.
+    - A reward is computed based on correctness and optional custom logic.
+
+Key Features:
+    - Batched evaluation with per-sample state tracking.
+    - Async setup and teardown for verifiers and related resources.
+    - Supports deterministic sampling via local RNG (optional seed).
+    - Extensible reward computation via subclassing.
+
+<a id="camel.environments.single_step.SingleStepEnv.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(dataset: Union[StaticDataset, BaseGenerator],
+             verifier: BaseVerifier,
+             timeout: Optional[float] = 180.0,
+             **kwargs) -> None
+```
+
+Initialize the SingleStepEnv.
+
+**Arguments**:
+
+- `dataset` _Union[StaticDataset, BaseGenerator]_ - Dataset to sample
+  problems from.
+- `verifier` _BaseVerifier_ - Verifier used to evaluate LLM responses
+  against ground-truth answers.
+- `timeout` _Optional[float], optional_ - The execution timeout in
+  seconds. (default: :obj:`180.0`)
+- `**kwargs` - Optional metadata or configuration values.
+  
+
+**Notes**:
+
+  This class assumes all interactions are single-step: one question,
+  one LLM response, one reward.
+
+<a id="camel.environments.single_step.SingleStepEnv.setup"></a>
+
+#### setup
+
+```python
+async def setup() -> None
+```
+
+Set up the environment by initializing the verifier.
+
+This method ensures that the environment is ready for interaction.
+It sets up necessary components, including the verifier.
+
+**Raises**:
+
+- `Exception` - If setup fails due to an internal error.
+
+<a id="camel.environments.single_step.SingleStepEnv.close"></a>
+
+#### close
+
+```python
+async def close() -> None
+```
+
+Clean up and close all resources used by the environment.
+
+This method shuts down the verifier, resets the internal
+state, and ensures that the environment is properly closed.
+
+**Raises**:
+
+- `Exception` - If an error occurs while closing the environment.
+
+<a id="camel.environments.single_step.SingleStepEnv.reset"></a>
+
+#### reset
+
+```python
+async def reset(
+        batch_size: int = 1,
+        seed: Optional[int] = None) -> Union[Observation, List[Observation]]
+```
+
+Resets the environment and starts a new episode.
+
+This method samples a new batch of data points from the dataset and
+returns the corresponding initial observations.
+
+If a seed is provided, a local random number generator is initialized
+for deterministic sampling. The global random state is not affected.
+
+**Arguments**:
+
+- `batch_size` _int_ - Number of data points to sample.
+- `(default` - :obj:`1`)
+- `seed` _Optional[int]_ - Seed for deterministic sampling. If None,
+  sampling is non-deterministic. (default: :obj:`None`)
+  
+
+**Returns**:
+
+  Observation or List[Observation]: Initial observation(s) for the
+  episode.
+  
+
+**Raises**:
+
+- `RuntimeError` - If called before all previous states are processed.
+- `ValueError` - If batch size exceeds dataset size.
+- `TypeError` - If the dataset is of an unsupported type.
+
+<a id="camel.environments.single_step.SingleStepEnv.step"></a>
+
+#### step
+
+```python
+async def step(
+    action: Union[Action, List[Action], str, Dict[int, str]]
+) -> Union[
+        Tuple[Observation, float, bool, Dict[str, Any]],
+        List[Tuple[Observation, float, bool, Dict[str, Any]]],
+]
+```
+
+Execute one interaction step in the environment using the
+proposed solution.
+
+This method processes the agent's response(s) to the current
+observation(s), verifies the correctness of the responses using
+the verifier, computes rewards, and returns the resulting
+state transition(s).
+
+The environment is strictly single-step. Once an action is
+submitted for a state, that state is marked as done, and
+the observation will not change.
+
+**Arguments**:
+
+  action (Union[Action, List[Action], str, Dict[int, str]]):
+  The action(s) taken by the agent,
+  which should contain the response(s)
+  to the observation(s). Can be:
+  - A single `Action` object (for batch size 1),
+  - A list of `Action` objects (for batched evaluation),
+  - A raw string (only allowed when batch size is 1).
+  - A dict that maps indices to their `llm_response`
+  (for batched evaluation)
+  
+
+**Returns**:
+
+  Union[Tuple[Observation, float, bool, Dict[str, Any]], List[...]]:
+  A tuple or list of tuples containing:
+  - `Observation`: Placeholder indicating episode end.
+  - `float`: The reward for the response.
+  - `bool`: Whether the episode is done
+  (always `True` in this case).
+  - `dict`: Additional info including the proposed solution,
+  verification result, and original data point.
+  
+
+**Raises**:
+
+- `RuntimeError` - If the environment has not been set up,
+  or if `reset()` has not been called.
+- `ValueError` - If invalid action format, duplicate indices,
+  or out-of-bounds indices are detected.
+- `asyncio.TimeoutError` - If the step execution exceeds the timeout.
+
+<a id="camel.environments.single_step.SingleStepEnv.metadata"></a>
+
+#### metadata
+
+```python
+@property
+def metadata() -> Dict[str, Any]
+```
+
+Retrieve the metadata of the environment.
+
+This provides additional parameters and configuration details.
+
+**Returns**:
+
+  Dict[str, Any]: A copy of the environment's metadata.
+

@@ -1,0 +1,106 @@
+<a id="camel.loaders.markitdown"></a>
+
+<a id="camel.loaders.markitdown.MarkItDownLoader"></a>
+
+## MarkItDownLoader Objects
+
+```python
+class MarkItDownLoader()
+```
+
+MarkitDown convert various file types into Markdown format.
+
+Supported Input Formats:
+    - PDF
+    - Microsoft Office documents:
+        - Word (.doc, .docx)
+        - Excel (.xls, .xlsx)
+        - PowerPoint (.ppt, .pptx)
+    - EPUB
+    - HTML
+    - Images (with EXIF metadata and OCR support)
+    - Audio files (with EXIF metadata and speech transcription)
+    - Text-based formats:
+        - CSV
+        - JSON
+        - XML
+    - ZIP archives (iterates over contents)
+    - YouTube URLs (via transcript extraction)
+
+<a id="camel.loaders.markitdown.MarkItDownLoader.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(llm_client: Optional[object] = None,
+             llm_model: Optional[str] = None)
+```
+
+Initializes the Converter.
+
+**Arguments**:
+
+- `llm_client` _Optional[object]_ - Optional client for LLM integration.
+- `(default` - :obj:`None`)
+- `llm_model` _Optional[str]_ - Optional model name for the LLM.
+- `(default` - :obj:`None`)
+
+<a id="camel.loaders.markitdown.MarkItDownLoader.convert_file"></a>
+
+#### convert\_file
+
+```python
+def convert_file(file_path: str) -> str
+```
+
+Converts the given file to Markdown format.
+
+**Arguments**:
+
+- `file_path` _str_ - Path to the input file.
+  
+
+**Returns**:
+
+- `str` - Converted Markdown text.
+  
+
+**Raises**:
+
+- `FileNotFoundError` - If the specified file does not exist.
+- `ValueError` - If the file format is not supported.
+- `Exception` - For other errors during conversion.
+
+<a id="camel.loaders.markitdown.MarkItDownLoader.convert_files"></a>
+
+#### convert\_files
+
+```python
+def convert_files(file_paths: List[str],
+                  parallel: bool = False,
+                  skip_failed: bool = False) -> Dict[str, str]
+```
+
+Converts multiple files to Markdown format.
+
+**Arguments**:
+
+- `file_paths` _List[str]_ - List of file paths to convert.
+- `parallel` _bool_ - Whether to process files in parallel.
+- `(default` - :obj:`False`)
+- `skip_failed` _bool_ - Whether to skip failed files instead
+  of including error messages.
+- `(default` - :obj:`False`)
+  
+
+**Returns**:
+
+  Dict[str, str]: Dictionary mapping file paths to their
+  converted Markdown text.
+  
+
+**Raises**:
+
+- `Exception` - For errors during conversion of any file if
+  skip_failed is False.
+

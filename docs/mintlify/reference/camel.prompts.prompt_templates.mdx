@@ -1,0 +1,111 @@
+<a id="camel.prompts.prompt_templates"></a>
+
+<a id="camel.prompts.prompt_templates.PromptTemplateGenerator"></a>
+
+## PromptTemplateGenerator Objects
+
+```python
+class PromptTemplateGenerator()
+```
+
+A class for generating prompt templates for tasks.
+
+**Arguments**:
+
+  task_prompt_template_dict (TaskPromptTemplateDict, optional):
+  A dictionary of task prompt templates for each task type. If not
+  provided, an empty dictionary is used as default.
+
+<a id="camel.prompts.prompt_templates.PromptTemplateGenerator.get_prompt_from_key"></a>
+
+#### get\_prompt\_from\_key
+
+```python
+def get_prompt_from_key(task_type: TaskType, key: Any) -> TextPrompt
+```
+
+Generates a text prompt using the specified :obj:`task_type` and
+:obj:`key`.
+
+**Arguments**:
+
+- `task_type` _TaskType_ - The type of task.
+- `key` _Any_ - The key used to generate the prompt.
+  
+
+**Returns**:
+
+- `TextPrompt` - The generated text prompt.
+  
+
+**Raises**:
+
+- `KeyError` - If failed to generate prompt using the specified
+  :obj:`task_type` and :obj:`key`.
+
+<a id="camel.prompts.prompt_templates.PromptTemplateGenerator.get_system_prompt"></a>
+
+#### get\_system\_prompt
+
+```python
+def get_system_prompt(task_type: TaskType, role_type: RoleType) -> TextPrompt
+```
+
+Generates a text prompt for the system role, using the specified
+:obj:`task_type` and :obj:`role_type`.
+
+**Arguments**:
+
+- `task_type` _TaskType_ - The type of task.
+- `role_type` _RoleType_ - The type of role, either "USER" or
+  "ASSISTANT".
+  
+
+**Returns**:
+
+- `TextPrompt` - The generated text prompt.
+  
+
+**Raises**:
+
+- `KeyError` - If failed to generate prompt using the specified
+  :obj:`task_type` and :obj:`role_type`.
+
+<a id="camel.prompts.prompt_templates.PromptTemplateGenerator.get_generate_tasks_prompt"></a>
+
+#### get\_generate\_tasks\_prompt
+
+```python
+def get_generate_tasks_prompt(task_type: TaskType) -> TextPrompt
+```
+
+Gets the prompt for generating tasks for a given task type.
+
+**Arguments**:
+
+- `task_type` _TaskType_ - The type of the task.
+  
+
+**Returns**:
+
+- `TextPrompt` - The generated prompt for generating tasks.
+
+<a id="camel.prompts.prompt_templates.PromptTemplateGenerator.get_task_specify_prompt"></a>
+
+#### get\_task\_specify\_prompt
+
+```python
+def get_task_specify_prompt(task_type: TaskType) -> TextPrompt
+```
+
+Gets the prompt for specifying a task for a given task type.
+
+**Arguments**:
+
+- `task_type` _TaskType_ - The type of the task.
+  
+
+**Returns**:
+
+- `TextPrompt` - The generated prompt for specifying a task.
+

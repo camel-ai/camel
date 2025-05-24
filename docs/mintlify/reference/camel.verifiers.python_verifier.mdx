@@ -1,0 +1,49 @@
+<a id="camel.verifiers.python_verifier"></a>
+
+<a id="camel.verifiers.python_verifier.PythonVerifier"></a>
+
+## PythonVerifier Objects
+
+```python
+class PythonVerifier(BaseVerifier)
+```
+
+The PythonVerifier class verifies Python-based implementations
+by executing them in an isolated virtual environment.
+
+Features:
+- Creates a virtual environment with a specified Python version.
+- Installs required packages before executing the provided script.
+- Executes the script and compares the output against a ground truth,
+  if supplied.
+- Automatically cleans up the virtual environment after execution.
+
+The verification process ensures that the code runs in a controlled
+environment, minimizing external dependencies and conflicts.
+
+<a id="camel.verifiers.python_verifier.PythonVerifier.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(extractor: Optional[BaseExtractor] = None,
+             timeout: Optional[float] = 30.0,
+             required_packages: Optional[List[str]] = None,
+             float_tolerance: Optional[float] = None,
+             **kwargs)
+```
+
+Initializes the PythonVerifier.
+
+**Arguments**:
+
+- `extractor` _Optional[BaseExtractor], optional_ - The extractor to use
+  for extracting code from the solution. (default: :obj:`None`)
+- `timeout` _Optional[float], optional_ - The execution timeout in
+  seconds. (default: :obj:`30.0`)
+- `required_packages` _Optional[List[str]], optional_ - A list of
+  packages to install in the virtual environment.
+- `(default` - :obj:`None`)
+- `float_tolerance` _Optional[float], optional_ - The tolerance for
+  floating point comparisons. (default: :obj:`None`)
+

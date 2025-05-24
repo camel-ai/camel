@@ -1,0 +1,48 @@
+<a id="camel.utils.chunker.uio_chunker"></a>
+
+<a id="camel.utils.chunker.uio_chunker.UnstructuredIOChunker"></a>
+
+## UnstructuredIOChunker Objects
+
+```python
+class UnstructuredIOChunker(BaseChunker)
+```
+
+A class for chunking text while respecting structure and
+character limits.
+
+This class ensures that structured elements, such as document sections
+and titles, are not arbitrarily split across chunks. It utilizes the
+`UnstructuredIO` class to process and segment elements while maintaining
+readability and coherence. The chunking method can be adjusted based on
+the provided `chunk_type` parameter.
+
+**Arguments**:
+
+- `chunk_type` _str, optional_ - The method used for chunking text.
+- `(default` - :obj:`"chunk_by_title"`)
+- `max_characters` _int, optional_ - The maximum number of characters
+  allowed per chunk. (default: :obj:`500`)
+- `metadata_filename` _Optional[str], optional_ - An optional filename
+  for storing metadata related to chunking. (default: :obj:`None`)
+
+<a id="camel.utils.chunker.uio_chunker.UnstructuredIOChunker.chunk"></a>
+
+#### chunk
+
+```python
+def chunk(content: List["Element"]) -> List["Element"]
+```
+
+Splits the content into smaller chunks while preserving
+structure and adhering to token constraints.
+
+**Arguments**:
+
+- `content` _List[Element]_ - The content to be chunked.
+  
+
+**Returns**:
+
+- `List[Element]` - A list of chunked text segments.
+

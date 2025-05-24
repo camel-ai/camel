@@ -1,0 +1,58 @@
+<a id="camel.configs.siliconflow_config"></a>
+
+<a id="camel.configs.siliconflow_config.SiliconFlowConfig"></a>
+
+## SiliconFlowConfig Objects
+
+```python
+class SiliconFlowConfig(BaseConfig)
+```
+
+Defines the parameters for generating chat completions using the
+SiliconFlow API.
+
+**Arguments**:
+
+- `temperature` _float, optional_ - Determines the degree of randomness
+  in the response. (default: :obj:`None`)
+- `top_p` _float, optional_ - The top_p (nucleus) parameter is used to
+  dynamically adjust the number of choices for each predicted token
+  based on the cumulative probabilities. (default: :obj:`None`)
+- `n` _int, optional_ - Number of generations to return.
+- `(default` - :obj:`None`)
+- `response_format` _object, optional_ - An object specifying the format
+  that the model must output. (default: :obj:`None`)
+- `stream` _bool, optional_ - If set, tokens are returned as Server-Sent
+  Events as they are made available. (default: :obj:`None`)
+- `stop` _str or list, optional_ - Up to :obj:`4` sequences where the API
+  will stop generating further tokens. (default: :obj:`None`)
+- `max_tokens` _int, optional_ - The maximum number of tokens to generate.
+- `(default` - :obj:`None`)
+- `frequency_penalty` _float, optional_ - Number between :obj:`-2.0` and
+  :obj:`2.0`. Positive values penalize new tokens based on their
+  existing frequency in the text so far, decreasing the model's
+  likelihood to repeat the same line verbatim. See more information
+  about frequency and presence penalties. (default: :obj:`None`)
+- `tools` _list[FunctionTool], optional_ - A list of tools the model may
+  call. Currently, only functions are supported as a tool. Use this
+  to provide a list of functions the model may generate JSON inputs
+  for. A max of 128 functions are supported. (default: :obj:`None`)
+
+<a id="camel.configs.siliconflow_config.SiliconFlowConfig.as_dict"></a>
+
+#### as\_dict
+
+```python
+def as_dict() -> dict[str, Any]
+```
+
+Convert the current configuration to a dictionary.
+
+This method converts the current configuration object to a dictionary
+representation, which can be used for serialization or other purposes.
+
+**Returns**:
+
+  dict[str, Any]: A dictionary representation of the current
+  configuration.
+
