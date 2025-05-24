@@ -76,8 +76,6 @@ if TYPE_CHECKING:
 
 logger = get_logger(__name__)
 
-TOP_NO_LABEL_ZONE = 20
-
 
 def _get_str(d: Any, k: str) -> str:
     r"""Safely retrieve a string value from a dictionary."""
