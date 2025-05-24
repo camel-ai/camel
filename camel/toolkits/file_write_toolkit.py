@@ -16,7 +16,10 @@
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import TYPE_CHECKING, List, Optional, Union
+
+if TYPE_CHECKING:
+    from PIL import Image
 
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
@@ -31,12 +34,13 @@ DEFAULT_FORMAT = '.md'
 
 @MCPServer()
 class FileWriteToolkit(BaseToolkit):
-    r"""A toolkit for creating, writing, and modifying text in files.
+    """A toolkit for creating, writing, and modifying text and image files.
 
     This class provides cross-platform (macOS, Linux, Windows) support for
-    writing to various file formats (Markdown, DOCX, PDF, and plaintext),
-    replacing text in existing files, automatic backups, custom encoding,
-    and enhanced formatting options for specialized formats.
+    writing to various file formats including text formats (Markdown, DOCX,
+    PDF, plaintext) and image formats (PNG, JPG, JPEG, etc.), replacing content
+    in existing files, automatic backups, custom encoding, and enhanced
+    formatting options for specialized formats.
     """
 
     def __init__(
@@ -281,23 +285,80 @@ class FileWriteToolkit(BaseToolkit):
             f.write(content)
         logger.debug(f"Wrote Markdown to {file_path} with {encoding} encoding")
 
+    def _write_image_file(
+        self, file_path: Path, content: Union[bytes, str, Image.Image]
+    ) -> None:
+        r"""Write image content to a file.
+
+        Args:
+            file_path (Path): The target file path.
+            content (Union[bytes, str, Image.Image]): The image content
+                to write. Can be bytes, base64 string, or PIL Image object.
+
+        Raises:
+            ValueError: If the content type is not supported.
+        """
+        import base64
+        from io import BytesIO
+
+        from PIL import Image
+
+        try:
+            img = None
+            if isinstance(content, Image.Image):
+                img = content
+            elif isinstance(content, bytes):
+                img = Image.open(BytesIO(content))
+            elif isinstance(content, str):
+                # Try to decode as base64
+                try:
+                    img_data = base64.b64decode(content)
+                    img = Image.open(BytesIO(img_data))
+                except Exception:
+                    # If not base64, try to open as file path
+                    try:
+                        img = Image.open(content)
+                    except Exception as e:
+                        raise ValueError(
+                            "String content must be a valid base64 encoded"
+                            "image or a file path to an image."
+                        ) from e
+            else:
+                raise ValueError(
+                    "Content must be bytes, base64 string, PIL Image"
+                )
+
+            # Ensure the directory exists
+            file_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Save the image in the format based on file extension
+            img.save(file_path)
+            logger.debug(f"Wrote image to {file_path}")
+
+        except Exception as e:
+            error_msg = f"Failed to write image to {file_path}: {e!s}"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg) from e
+
     def write_to_file(
         self,
-        content: Union[str, List[List[str]]],
+        content: str,
         filename: str,
         encoding: Optional[str] = None,
     ) -> str:
         r"""Write the given content to a file.
 
         If the file exists, it will be overwritten. Supports multiple formats:
-        Markdown (.md, .markdown, default), Plaintext (.txt), CSV (.csv),
-        DOC/DOCX (.doc, .docx), PDF (.pdf), JSON (.json), YAML (.yml, .yaml),
-        and HTML (.html, .htm).
+        - Text formats: Markdown (.md, .markdown, default), Plaintext (.txt)
+        - Data formats: CSV (.csv), JSON (.json), YAML (.yml, .yaml)
+        - Document formats: DOC/DOCX (.doc, .docx), PDF (.pdf),
+          HTML (.html, .htm)
+        - Image formats: PNG (.png), JPEG (.jpg, .jpeg), GIF (.gif),
+          BMP (.bmp), TIFF (.tiff, .tif)
 
         Args:
-            content (Union[str, List[List[str]]]): The content to write to the
-                file. For all formats, content must be a string or list in the
-                appropriate format.
+            content (str): The content to write to the
+                file.
             filename (str): The name or path of the file. If a relative path is
                 supplied, it is resolved to self.output_dir.
             encoding (Optional[str]): The character encoding to use. (default:
@@ -323,10 +384,23 @@ class FileWriteToolkit(BaseToolkit):
             # Get encoding or use default
             file_encoding = encoding or self.default_encoding
 
-            if extension in [".doc", ".docx"]:
+            # Image formats
+            if extension in [
+                ".png",
+                ".jpg",
+                ".jpeg",
+                ".gif",
+                ".bmp",
+                ".tiff",
+                ".tif",
+            ]:
+                self._write_image_file(file_path, content)
+            # Document formats
+            elif extension in [".doc", ".docx"]:
                 self._write_docx_file(file_path, str(content))
             elif extension == ".pdf":
                 self._write_pdf_file(file_path, str(content))
+            # Data formats
             elif extension == ".csv":
                 self._write_csv_file(
                     file_path, content, encoding=file_encoding
@@ -341,6 +415,7 @@ class FileWriteToolkit(BaseToolkit):
                 self._write_yaml_file(
                     file_path, str(content), encoding=file_encoding
                 )
+            # Text formats
             elif extension in [".html", ".htm"]:
                 self._write_html_file(
                     file_path, str(content), encoding=file_encoding
