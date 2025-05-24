@@ -61,7 +61,7 @@ def test_base_browser_init(base_browser_fixture):
 def test_base_browser_initialization_order():
     with patch('playwright.sync_api.sync_playwright'):
         browser = BaseBrowser(headless=True)  # __init__ called
-        assert not hasattr(browser, 'browser')  # browser not launched yet
+        assert browser.browser is None  # browser not launched yet
         assert not hasattr(browser, 'page')  # page not created yet
 
         browser.init()  # explicit init() call

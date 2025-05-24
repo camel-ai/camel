@@ -1252,10 +1252,10 @@ need to be replanned, the value should be an empty string.
             logger.debug(f"Observation: {observation}")
             logger.debug(f"Reasoning: {reasoning}")
             logger.debug(f"Action code: {action_code}")
-
+            trajectory_info: Dict[str, Any]
             if "stop" in action_code:
                 task_completed = True
-                trajectory_info: Dict[str, Any] = {  # Typed trajectory_info
+                trajectory_info = {  # Typed trajectory_info
                     "round": i,
                     "observation": observation,
                     "thought": reasoning,
@@ -1272,7 +1272,7 @@ need to be replanned, the value should be an empty string.
                 if not success:
                     logger.warning(f"Error while executing the action: {info}")
 
-                trajectory_info: Dict[str, Any] = {  # Typed trajectory_info
+                trajectory_info = {  # Typed trajectory_info
                     "round": i,
                     "observation": observation,
                     "thought": reasoning,
