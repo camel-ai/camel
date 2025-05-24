@@ -42,11 +42,13 @@ class MathToolkit(CodeExecutionToolkit):
             (default: :obj:`None`)
         require_confirm (bool): Whether to require confirmation before
             executing code. (default: :obj:`False`)
+        auto_install (bool): If True, automatically install required packages
+            during initialization. (default: :obj:`False`)
     """
 
     def __init__(
         self,
-        math_packages: Optional[List[str]] = None,
+        math_packages: Optional[Union[List[str], str]] = None,
         sandbox: Literal[
             "internal_python", "jupyter", "docker", "subprocess", "e2b"
         ] = "subprocess",
@@ -54,12 +56,20 @@ class MathToolkit(CodeExecutionToolkit):
         unsafe_mode: bool = False,
         import_white_list: Optional[List[str]] = None,
         require_confirm: bool = False,
+        auto_install: bool = False,
     ) -> None:
         self.math_packages = [
             'math'
         ]  # Always include the built-in math module
+
+        # Support a single string or a list of strings
         if math_packages:
-            self.math_packages.extend([pkg.lower() for pkg in math_packages])
+            if isinstance(math_packages, str):
+                self.math_packages.append(math_packages.lower())
+            else:
+                self.math_packages.extend(
+                    [pkg.lower() for pkg in math_packages]
+                )
 
         import_white_list = list(
             set(import_white_list or []) | set(self.math_packages)
@@ -71,6 +81,10 @@ class MathToolkit(CodeExecutionToolkit):
             import_white_list=import_white_list,
             require_confirm=require_confirm,
         )
+
+        # Optionally install packages during initialization
+        if auto_install:
+            self._install_packages()
 
     def add(self, a: Union[float, int], b: Union[float, int]) -> float:
         r"""Adds two numbers.
