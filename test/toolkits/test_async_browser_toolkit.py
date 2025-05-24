@@ -87,13 +87,13 @@ async def test_async_base_browser_initialization_order_async(
 ):
     browser = async_base_browser_fixture
 
-    assert not hasattr(browser, 'browser')
-    assert not hasattr(browser, 'page')
+    assert browser.browser is None
+    assert browser.page is None
 
     await browser.async_init()
 
-    assert hasattr(browser, 'browser')
-    assert hasattr(browser, 'page')
+    assert browser.browser is not None
+    assert browser.page is not None
 
 
 @pytest.mark.asyncio
