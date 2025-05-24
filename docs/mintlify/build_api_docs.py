@@ -11,7 +11,7 @@ from pathlib import Path
 import argparse
 from collections import defaultdict
 
-# 模块名到显示名称的映射
+# Module name to display name mapping
 MODULE_NAME_DISPLAY = {
     "agents": "Agents",
     "configs": "Configs",
@@ -44,7 +44,7 @@ MODULE_NAME_DISPLAY = {
     "extractors": "Extractors"
 }
 
-# 自定义顺序，这决定了顶级模块的显示顺序
+# Custom order, this determines the display order of top-level modules
 MODULE_ORDER = [
     "agents",
     "configs",
@@ -74,7 +74,7 @@ MODULE_ORDER = [
 ]
 
 def create_config_file(output_path="pydoc-markdown.yml"):
-    """创建pydoc-markdown配置文件"""
+    """Create pydoc-markdown configuration file"""
     config = """loader:
   type: python
   search_path: ["."]
@@ -110,43 +110,43 @@ processors:
     return output_path
 
 def get_module_display_name(module_name):
-    """获取模块的美观显示名称"""
+    """Get the beautiful display name for a module"""
     if module_name in MODULE_NAME_DISPLAY:
         return MODULE_NAME_DISPLAY[module_name]
-    # 如果没有映射，则将snake_case转换为title case
+    # If no mapping exists, convert snake_case to title case
     return module_name.replace('_', ' ').title()
 
 def get_all_modules(package_name="camel", recursive=True):
-    """获取包中的所有模块"""
+    """Get all modules in the package"""
     modules = []
     
     try:
-        # 导入主包
+        # Import main package
         package = importlib.import_module(package_name)
         modules.append(package_name)
         
-        # 获取包的路径
+        # Get package path
         package_path = os.path.dirname(package.__file__)
         
-        # 遍历包中的所有Python文件
+        # Traverse all Python files in the package
         for root, dirs, files in os.walk(package_path):
             if not recursive and root != package_path:
                 continue
                 
             for file in files:
                 if file.endswith(".py") and file != "__init__.py":
-                    # 计算模块的相对路径
+                    # Calculate relative path of the module
                     rel_path = os.path.relpath(os.path.join(root, file), os.path.dirname(package_path))
-                    # 转换为模块名称
+                    # Convert to module name
                     module_name = os.path.splitext(rel_path)[0].replace(os.sep, ".")
                     modules.append(module_name)
             
-            # 处理子包
+            # Handle subpackages
             for dir_name in dirs:
                 if os.path.isfile(os.path.join(root, dir_name, "__init__.py")):
-                    # 计算子包的相对路径
+                    # Calculate relative path of the subpackage
                     rel_path = os.path.relpath(os.path.join(root, dir_name), os.path.dirname(package_path))
-                    # 转换为包名称
+                    # Convert to package name
                     subpackage_name = rel_path.replace(os.sep, ".")
                     modules.append(subpackage_name)
     
@@ -156,32 +156,32 @@ def get_all_modules(package_name="camel", recursive=True):
     return sorted(modules)
 
 def get_changed_modules(package_name="camel", since_hours=24):
-    """获取最近修改的模块（用于增量更新）"""
+    """Get recently modified modules (for incremental updates)"""
     changed_modules = []
     
     try:
-        # 导入主包
+        # Import main package
         package = importlib.import_module(package_name)
         package_path = os.path.dirname(package.__file__)
         
-        # 计算时间阈值
+        # Calculate time threshold
         time_threshold = time.time() - (since_hours * 3600)
         
-        # 遍历包中的所有Python文件
+        # Traverse all Python files in the package
         for root, dirs, files in os.walk(package_path):
             for file in files:
                 if file.endswith(".py"):
                     file_path = os.path.join(root, file)
                     
-                    # 检查文件修改时间
+                    # Check file modification time
                     if os.path.getmtime(file_path) > time_threshold:
                         if file == "__init__.py":
-                            # 处理包
+                            # Handle package
                             rel_path = os.path.relpath(root, os.path.dirname(package_path))
                             module_name = rel_path.replace(os.sep, ".")
                             changed_modules.append(module_name)
                         else:
-                            # 处理模块
+                            # Handle module
                             rel_path = os.path.relpath(file_path, os.path.dirname(package_path))
                             module_name = os.path.splitext(rel_path)[0].replace(os.sep, ".")
                             changed_modules.append(module_name)
@@ -191,78 +191,39 @@ def get_changed_modules(package_name="camel", since_hours=24):
     
     return sorted(list(set(changed_modules)))
 
-def clean_generated_mdx(content, module_name):
-    """清理生成的MDX内容，移除不需要的模块标题和格式化"""
-    lines = content.split('\n')
-    cleaned_lines = []
-    
-    i = 0
-    while i < len(lines):
-        line = lines[i]
-        
-        # 跳过模块标题行（形如 "# camel.agents.\_utils"）
-        if line.startswith('# camel.') and '\\' in line:
-            i += 1
-            continue
-        
-        # 跳过空的锚点行后面紧跟的模块标题
-        if line.startswith('<a id="camel.') and line.endswith('"></a>'):
-            # 检查下一行是否为空行
-            if i + 1 < len(lines) and lines[i + 1].strip() == '':
-                # 检查下下行是否是对应的模块标题
-                if i + 2 < len(lines) and lines[i + 2].startswith('# camel.'):
-                    # 保留锚点，跳过空行和标题
-                    cleaned_lines.append(line)
-                    i += 3
-                    continue
-        
-        cleaned_lines.append(line)
-        i += 1
-    
-    # 移除开头的多余空行
-    while cleaned_lines and not cleaned_lines[0].strip():
-        cleaned_lines.pop(0)
-    
-    # 确保文件以换行符结尾
-    content = '\n'.join(cleaned_lines)
-    if content and not content.endswith('\n'):
-        content += '\n'
-    
-    return content
-
 def is_content_substantial(content):
-    """检查内容是否足够实质性，避免生成空文档"""
+    """Check if content is substantial enough to avoid generating empty documentation"""
     if not content.strip():
         return False
     
-    # 移除空行和常见的无用内容
+    # Remove empty lines and common useless content
     lines = [line.strip() for line in content.split('\n') if line.strip()]
     
-    # 过滤掉只有标题的情况
+    # Filter out cases with only headers
     substantial_lines = []
     for line in lines:
-        # 跳过标题行
+        # Skip header lines
         if line.startswith('#'):
             continue
-        # 跳过只有模块ID的行
+        # Skip lines with only module IDs
         if line.startswith('<a id='):
             continue
-        # 跳过空的代码块
+        # Skip empty code blocks
         if line in ['```', '```python']:
             continue
         substantial_lines.append(line)
     
-    # 如果实质内容少于3行，认为不够实质性
+    # If substantial content is less than 3 lines, consider it insufficient
     return len(substantial_lines) >= 3
 
 def generate_mdx_docs(module_name, output_dir):
-    """为指定模块生成MDX文档"""
+    """Generate MDX documentation for the specified module"""
     os.makedirs(output_dir, exist_ok=True)
     
-    # 输出文件路径
+    # Output file path
     output_file = os.path.join(output_dir, f"{module_name}.mdx")
     
-    # 使用pydoc-markdown生成文档
+    # Use pydoc-markdown to generate documentation
     try:
         result = subprocess.run(
             ["pydoc-markdown", "-I", ".", "-m", module_name],
@@ -273,17 +234,14 @@ def generate_mdx_docs(module_name, output_dir):
         
         content = result.stdout
         
-        # 清理内容
-        cleaned_content = clean_generated_mdx(content, module_name)
-        
-        # 检查清理后的内容是否足够实质性
-        if not is_content_substantial(cleaned_content):
+        # Check if content is substantial enough
+        if not is_content_substantial(content):
             print(f"    Skipped {module_name} (insufficient content)")
             return None
         
-        # 将输出写入文件
+        # Write output to file
         with open(output_file, "w", encoding="utf-8") as f:
-            f.write(cleaned_content)
+            f.write(content)
         
         return output_file
     except subprocess.CalledProcessError as e:
@@ -293,48 +251,48 @@ def generate_mdx_docs(module_name, output_dir):
         return None
 
 def build_module_tree(mdx_files):
-    """根据MDX文件名构建模块树"""
-    # 创建新的子模块字典的工厂函数
+    """Build module tree based on MDX file names"""
+    # Factory function to create new submodule dictionary
     def new_module_dict():
         return {"pages": [], "submodules": defaultdict(new_module_dict)}
     
-    # 使用嵌套的defaultdict构建树结构
+    # Build tree structure using nested defaultdict
     module_tree = new_module_dict()
     
     for file in mdx_files:
-        # 从文件名获取模块路径
-        module_path = file.stem  # 去掉.mdx后缀
+        # Get module path from file name
+        module_path = file.stem  # Remove .mdx suffix
         
-        # 通常我们期望文件名是"camel.xxx.yyy"这样的格式
+        # Usually we expect file names in "camel.xxx.yyy" format
         if not module_path.startswith("camel."):
-            # 如果不是camel模块，跳过
+            # If not a camel module, skip
             continue
         
-        # 分割模块路径
+        # Split module path
         parts = module_path.split('.')
         
-        # 构建引用路径
+        # Build reference path
         reference_path = f"reference/{module_path}"
         
-        # 如果只是camel模块本身
+        # If it's just the camel module itself
         if len(parts) == 1:
             module_tree["pages"].append(reference_path)
             continue
         
-        # 处理子模块
+        # Handle submodules
         current = module_tree
-        for i, part in enumerate(parts[:-1]):  # 不包括最后一个部分，它是文件名
-            if i == 0:  # camel根模块
+        for i, part in enumerate(parts[:-1]):  # Exclude the last part, which is the file name
+            if i == 0:  # camel root module
                 continue
                 
-            # 导航到子模块
+            # Navigate to submodule
             current = current["submodules"][part]
         
-        # 确保pages列表存在
+        # Ensure pages list exists
         if "pages" not in current:
             current["pages"] = []
         
-        # 确保目录页（如camel.agents/camel.agents.mdx）出现在其子模块之前
+        # Ensure directory pages (like camel.agents/camel.agents.mdx) appear before their submodules
         if parts[-1] == parts[-2]:
             current["pages"].insert(0, reference_path)
         else:
@@ -343,46 +301,46 @@ def build_module_tree(mdx_files):
     return module_tree
 
 def convert_tree_to_navigation(module_tree):
-    """将模块树转换为mint.json的navigation格式"""
+    """Convert module tree to mint.json navigation format"""
     navigation = []
     
-    # 首先添加顶级camel模块
+    # First add top-level camel module
     if "camel" in [Path(p).stem.split('.')[-1] for p in module_tree["pages"]]:
         navigation.append("reference/camel")
     
-    # 按自定义顺序添加子模块
+    # Add submodules in custom order
     for module_name in MODULE_ORDER:
         if module_name in module_tree["submodules"]:
             submodule = module_tree["submodules"][module_name]
             
-            # 获取子模块的漂亮显示名称
+            # Get pretty display name for submodule
             display_name = get_module_display_name(module_name)
             
-            # 创建导航组
+            # Create navigation group
             nav_group = {
                 "group": display_name,
                 "pages": []
             }
             
-            # 添加该模块的直接页面
+            # Add direct pages for this module
             if "pages" in submodule:
                 nav_group["pages"].extend(sorted(submodule["pages"]))
             
-            # 递归处理子模块
+            # Recursively handle submodules
             if "submodules" in submodule and submodule["submodules"]:
                 for sub_name, sub_data in sorted(submodule["submodules"].items()):
                     if "pages" in sub_data and sub_data["pages"]:
-                        # 直接扁平化子模块的页面
+                        # Directly flatten submodule pages
                         nav_group["pages"].extend(sorted(sub_data["pages"]))
             
-            # 只有当有页面时才添加组
+            # Only add group if it has pages
             if nav_group["pages"]:
                 navigation.append(nav_group)
     
     return navigation
 
 def update_mint_json(mint_json_path, navigation):
-    """更新mint.json文件中的API Reference导航部分"""
+    """Update the API Reference navigation section in mint.json file"""
     if not Path(mint_json_path).exists():
         print(f"Error: {mint_json_path} not found")
         return False
@@ -390,54 +348,18 @@ def update_mint_json(mint_json_path, navigation):
     with open(mint_json_path, "r", encoding="utf-8") as f:
         mint_data = json.load(f)
     
-    # 找到API Reference tab并更新其groups
+    # Find API Reference tab and update its groups
     tabs = mint_data.get("navigation", {}).get("tabs", [])
     for tab in tabs:
         if tab.get("tab") == "API Reference":
             tab["groups"] = navigation
             break
     
-    # 保存更新后的mint.json
+    # Save updated mint.json
     with open(mint_json_path, "w", encoding="utf-8") as f:
         json.dump(mint_data, f, indent=2, ensure_ascii=False)
     
     return True
-
-def clean_existing_mdx_files(output_dir):
-    """清理现有的MDX文件，移除不需要的模块标题"""
-    mdx_files = list(Path(output_dir).glob("*.mdx"))
-    if not mdx_files:
-        print(f"No MDX files found in {output_dir}")
-        return 0
-    
-    cleaned_count = 0
-    
-    for i, file_path in enumerate(mdx_files):
-        module_name = file_path.stem  # 获取不带扩展名的文件名作为模块名
-        print(f"  [{i+1}/{len(mdx_files)}] Cleaning {file_path.name}...")
-        
-        try:
-            # 读取现有内容
-            with open(file_path, "r", encoding="utf-8") as f:
-                original_content = f.read()
-            
-            # 应用清理
-            cleaned_content = clean_generated_mdx(original_content, module_name)
-            
-            # 检查是否有变化
-            if cleaned_content != original_content:
-                # 写回清理后的内容
-                with open(file_path, "w", encoding="utf-8") as f:
-                    f.write(cleaned_content)
-                print(f"    ✓ Cleaned {file_path.name}")
-                cleaned_count += 1
-            else:
-                print(f"    - No changes needed for {file_path.name}")
-                
-        except Exception as e:
-            print(f"    ✗ Error cleaning {file_path.name}: {e}")
-    
-    return cleaned_count
 
 def main():
     parser = argparse.ArgumentParser(description="Generate API documentation and update mint.json configuration")
@@ -449,8 +371,6 @@ def main():
                        help="Package name to generate documentation for")
     parser.add_argument("--clean", action="store_true",
                        help="Clean output directory before generating new files")
-    parser.add_argument("--clean_existing", action="store_true",
-                       help="Clean existing MDX files without regenerating them")
     parser.add_argument("--skip_generation", action="store_true",
                        help="Skip API documentation generation, only update mint.json")
     parser.add_argument("--incremental", action="store_true",
@@ -459,15 +379,8 @@ def main():
                        help="Hours to look back for changed files (used with --incremental)")
     args = parser.parse_args()
     
-    # 如果只是清理现有文件
-    if args.clean_existing:
-        print(f"Cleaning existing MDX files in {args.output_dir}...")
-        cleaned_count = clean_existing_mdx_files(args.output_dir)
-        print(f"\nCleaning completed: {cleaned_count} files were modified")
-        return
-    
     if not args.skip_generation:
-        # 检查pydoc-markdown是否已安装
+        # Check if pydoc-markdown is installed
         try:
             subprocess.run(["pydoc-markdown", "--version"], 
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
@@ -476,19 +389,19 @@ def main():
             print("  pip install pydoc-markdown")
             sys.exit(1)
         
-        # 创建配置文件
+        # Create configuration file
         config_file = create_config_file()
         
-        # 创建输出目录
+        # Create output directory
         os.makedirs(args.output_dir, exist_ok=True)
         
-        # 清理输出目录（如有需要）
+        # Clean output directory (if needed)
         if args.clean:
             print(f"Cleaning output directory: {args.output_dir}")
             for file in glob.glob(os.path.join(args.output_dir, "*.mdx")):
                 os.remove(file)
         
-        # 获取要处理的模块
+        # Get modules to process
         if args.incremental:
             print(f"Looking for modules changed in the last {args.since_hours} hours...")
             modules = get_changed_modules(args.package, args.since_hours)
@@ -500,7 +413,7 @@ def main():
             print(f"Discovering all modules in {args.package}...")
             modules = get_all_modules(args.package)
         
-        # 生成文档
+        # Generate documentation
         print(f"Generating documentation for {len(modules)} modules...")
         generated_count = 0
         skipped_count = 0
@@ -514,16 +427,16 @@ def main():
             else:
                 skipped_count += 1
         
-        # 清理配置文件
+        # Clean up configuration file
         if os.path.exists(config_file):
             os.remove(config_file)
         
         print(f"\nGenerated: {generated_count} files, Skipped: {skipped_count} files")
     
-    # 构建模块树和更新mint.json
+    # Build module tree and update mint.json
     print("\nUpdating mint.json configuration...")
     
-    # 获取生成的MDX文件
+    # Get generated MDX files
     mdx_files = list(Path(args.output_dir).glob("*.mdx"))
     if not mdx_files:
         print(f"No MDX files found in {args.output_dir}")
@@ -531,17 +444,17 @@ def main():
     
     print(f"Found {len(mdx_files)} MDX files")
     
-    # 构建模块树
+    # Build module tree
     module_tree = build_module_tree(mdx_files)
     
-    # 转换为navigation格式
+    # Convert to navigation format
     navigation = convert_tree_to_navigation(module_tree)
     
-    # 更新mint.json
+    # Update mint.json
     if update_mint_json(args.mint_json, navigation):
         print(f"Updated {args.mint_json} with {len(navigation)} navigation groups")
     
-    # 打印navigation结构摘要
+    # Print navigation structure summary
     print("\nNavigation structure summary:")
     for item in navigation:
         if isinstance(item, str):
