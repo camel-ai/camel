@@ -1,0 +1,45 @@
+<a id="camel.storages.object_storages.azure_blob"></a>
+
+<a id="camel.storages.object_storages.azure_blob.AzureBlobStorage"></a>
+
+## AzureBlobStorage Objects
+
+```python
+class AzureBlobStorage(BaseObjectStorage)
+```
+
+A class to connect to Azure Blob Storage. It will connect to one
+container in the storage account.
+
+**Arguments**:
+
+- `storage_account_name` _str_ - The name of the storage account.
+- `container_name` _str_ - The name of the container.
+- `access_key` _Optional[str], optional_ - The access key of the storage
+  account. Defaults to None.
+  
+
+**References**:
+
+  https://azure.microsoft.com/en-us/products/storage/blobs
+
+<a id="camel.storages.object_storages.azure_blob.AzureBlobStorage.canonicalize_path"></a>
+
+#### canonicalize\_path
+
+```python
+@staticmethod
+def canonicalize_path(file_path: PurePath) -> Tuple[str, str]
+```
+
+Canonicalize file path for Azure Blob Storage.
+
+**Arguments**:
+
+- `file_path` _PurePath_ - The path to be canonicalized.
+  
+
+**Returns**:
+
+  Tuple[str, str]: The canonicalized file key and file name.
+

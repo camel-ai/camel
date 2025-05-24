@@ -1,0 +1,52 @@
+<a id="camel.storages.object_storages.google_cloud"></a>
+
+<a id="camel.storages.object_storages.google_cloud.GoogleCloudStorage"></a>
+
+## GoogleCloudStorage Objects
+
+```python
+class GoogleCloudStorage(BaseObjectStorage)
+```
+
+A class to connect to Google Cloud Storage. It will connect to one
+bucket in the storage account.
+
+Note that Google Cloud Storage does not support api key authentication.
+Therefore, before using this class, you need to log in with gcloud command
+line tool and save the credentials first.
+
+**Arguments**:
+
+- `bucket_name` _str_ - The name of the bucket.
+- `create_if_not_exists` _bool, optional_ - Whether to create the bucket if
+  it does not exist. Defaults to True.
+- `anonymous` _bool, optional_ - Whether to use anonymous access. Defaults
+  to False.
+  
+
+**References**:
+
+  https://cloud.google.com/storage
+  
+  https://cloud.google.com/docs/authentication/api-keys
+
+<a id="camel.storages.object_storages.google_cloud.GoogleCloudStorage.canonicalize_path"></a>
+
+#### canonicalize\_path
+
+```python
+@staticmethod
+def canonicalize_path(file_path: PurePath) -> Tuple[str, str]
+```
+
+Canonicalize the path for Google Cloud Storage.
+
+**Arguments**:
+
+- `file_path` _PurePath_ - The path to be canonicalized.
+  
+
+**Returns**:
+
+  Tuple[str, str]: The canonicalized file key and file name.
+

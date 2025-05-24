@@ -1,0 +1,174 @@
+---
+title: "Model Speed Comparison Cookbook"
+---
+
+You can also check this cookbook in colab [here](https://colab.research.google.com/drive/1oZfsgYfPPLVtMeA6DhsCd5jbdiAzEQSW?usp=sharing).
+
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
+  <a href="https://www.camel-ai.org/">
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
+  </a>
+  <a href="https://discord.camel-ai.org">
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
+  </a>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
+
+This notebook demonstrates how to set up and leverage CAMEL's ability to explore the speed of different AI models by creating instances of `ChatAgent` and measuring their response times to user prompts.
+
+In this notebook, you'll explore:
+
+* **CAMEL**: A powerful multi-agent framework that enables Retrieval-Augmented Generation and multi-agent role-playing scenarios, allowing for sophisticated AI-driven tasks.
+
+* **ChatAgent()**: The class is a cornerstone of CAMEL. 
+
+* **BaseMessage**: The base class for message objects used in the CAMEL chat system.
+
+## 📦 Installation
+
+Ensure you have CAMEL AI installed in your Python environment:
+
+
+```python
+!pip install "camel-ai==0.2.16"
+```
+
+## 🔑 Setting Up API Keys
+
+You'll need to set up your API keys for OpenAI and SambaNova.
+
+
+```python
+import os
+from getpass import getpass
+
+# Prompt for the API key securely
+openai_api_key = getpass('Enter your OpenAI API key: ')
+os.environ["OPENAI_API_KEY"] = openai_api_key
+
+sambanova_api_key = getpass('Enter your SambaNova API key: ')
+os.environ["SAMBA_API_KEY"] = sambanova_api_key
+```
+
+Alternatively, if running on Colab, you could save your API keys and tokens as **Colab Secrets**,
+
+and use them across notebooks.
+
+To do so, **comment out** the above **manual** API key prompt code block(s),
+
+and **uncomment** the following codeblock.
+
+⚠️ Don't forget granting access to the API key you would be using to the current notebook.
+
+
+```python
+# import os
+# from google.colab import userdata
+
+# os.environ["OPENAI_API_KEY"] = userdata.get("OPENAI_API_KEY")
+# os.environ["SAMBA_API_KEY"] = userdata.get("SAMBA_API_KEY")
+```
+
+
+```python
+import time
+import matplotlib.pyplot as plt
+from camel.agents import ChatAgent
+from camel.configs import SambaCloudAPIConfig, ChatGPTConfig
+from camel.messages import BaseMessage
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType, ModelType
+
+# Create model instances
+def create_models():
+    model_configs = [
+        (ModelPlatformType.OPENAI, ModelType.GPT_4O_MINI, ChatGPTConfig(temperature=0.0, max_tokens=2000), "OpenAI GPT-4O Mini"),
+        (ModelPlatformType.OPENAI, ModelType.GPT_4O, ChatGPTConfig(temperature=0.0, max_tokens=2000), "OpenAI GPT-4O"),
+        # NOTE: OpenAI O1 model requires additional additional credentials
+        (ModelPlatformType.OPENAI, ModelType.O1_PREVIEW, ChatGPTConfig(temperature=0.0), "OpenAI O1 Preview"),
+        (ModelPlatformType.SAMBA, "Meta-Llama-3.1-8B-Instruct", SambaCloudAPIConfig(temperature=0.0, max_tokens=2000), "SambaNova Llama 8B"),
+        (ModelPlatformType.SAMBA, "Meta-Llama-3.1-70B-Instruct", SambaCloudAPIConfig(temperature=0.0, max_tokens=2000), "SambaNova Llama 70B"),
+        (ModelPlatformType.SAMBA, "Meta-Llama-3.1-405B-Instruct", SambaCloudAPIConfig(temperature=0.0, max_tokens=2000), "SambaNova Llama 405B")
+    ]
+
+    models = [(ModelFactory.create(model_platform=platform, model_type=model_type, model_config_dict=config.as_dict(), url="https://api.sambanova.ai/v1" if platform == ModelPlatformType.SAMBA else None), name)
+              for platform, model_type, config, name in model_configs]
+    return models
+
+# Define messages
+def create_messages():
+    sys_msg = BaseMessage.make_assistant_message(role_name="Assistant", content="You are a helpful assistant.")
+    user_msg = BaseMessage.make_user_message(role_name="User", content="Tell me a long story.")
+    return sys_msg, user_msg
+
+# Initialize ChatAgent instances
+def initialize_agents(models, sys_msg):
+    return [(ChatAgent(system_message=sys_msg, model=model), name) for model, name in models]
+
+# Measure response time for a given agent
+def measure_response_time(agent, message):
+    start_time = time.time()
+    response = agent.step(message)
+    end_time = time.time()
+    tokens_per_second = response.info['usage']["completion_tokens"] / (end_time - start_time)
+    return tokens_per_second
+
+# Visualize results
+def plot_results(model_names, tokens_per_sec):
+    plt.figure(figsize=(10, 6))
+    plt.barh(model_names, tokens_per_sec, color='skyblue')
+    plt.xlabel("Tokens per Second")
+    plt.title("Model Speed Comparison: Tokens per Second")
+    plt.gca().invert_yaxis()
+    plt.show()
+
+# Main execution
+models = create_models()
+sys_msg, user_msg = create_messages()
+agents = initialize_agents(models, sys_msg)
+
+# Measure response times and collect data
+model_names = []
+tokens_per_sec = []
+
+for agent, model_name in agents:
+    model_names.append(model_name)
+    tokens_per_sec.append(measure_response_time(agent, user_msg))
+
+# Visualize the results
+plot_results(model_names, tokens_per_sec)
+```
+
+That's everything: Got questions about 🐫 CAMEL-AI? Join us on [Discord](https://discord.camel-ai.org)! Whether you want to share feedback, explore the latest in multi-agent systems, get support, or connect with others on exciting projects, we’d love to have you in the community! 🤝
+
+Check out some of our other work:
+
+1. 🐫 Creating Your First CAMEL Agent [free Colab](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html)
+
+2.  Graph RAG Cookbook [free Colab](https://colab.research.google.com/drive/1uZKQSuu0qW6ukkuSv9TukLB9bVaS1H0U?usp=sharing)
+
+3. 🧑‍⚖️ Create A Hackathon Judge Committee with Workforce [free Colab](https://colab.research.google.com/drive/18ajYUMfwDx3WyrjHow3EvUMpKQDcrLtr?usp=sharing)
+
+4. 🔥 3 ways to ingest data from websites with Firecrawl & CAMEL [free Colab](https://colab.research.google.com/drive/1lOmM3VmgR1hLwDKdeLGFve_75RFW0R9I?usp=sharing)
+
+5. 🦥 Agentic SFT Data Generation with CAMEL and Mistral Models, Fine-Tuned with Unsloth [free Colab](https://colab.research.google.com/drive/1lYgArBw7ARVPSpdwgKLYnp_NEXiNDOd-?usp=sharingg)
+
+Thanks from everyone at 🐫 CAMEL-AI
+
+
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
+  <a href="https://www.camel-ai.org/">
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
+  </a>
+  <a href="https://discord.camel-ai.org">
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
+  </a>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
+

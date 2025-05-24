@@ -1,0 +1,61 @@
+<a id="camel.memories.context_creators.score_based"></a>
+
+<a id="camel.memories.context_creators.score_based.ScoreBasedContextCreator"></a>
+
+## ScoreBasedContextCreator Objects
+
+```python
+class ScoreBasedContextCreator(BaseContextCreator)
+```
+
+A default implementation of context creation strategy, which inherits
+from :obj:`BaseContextCreator`.
+
+This class provides a strategy to generate a conversational context from
+a list of chat history records while ensuring the total token count of
+the context does not exceed a specified limit. It prunes messages based
+on their score if the total token count exceeds the limit.
+
+**Arguments**:
+
+- `token_counter` _BaseTokenCounter_ - An instance responsible for counting
+  tokens in a message.
+- `token_limit` _int_ - The maximum number of tokens allowed in the
+  generated context.
+
+<a id="camel.memories.context_creators.score_based.ScoreBasedContextCreator.create_context"></a>
+
+#### create\_context
+
+```python
+def create_context(
+        records: List[ContextRecord]) -> Tuple[List[OpenAIMessage], int]
+```
+
+Constructs conversation context from chat history while respecting
+token limits.
+
+Key strategies:
+1. System message is always prioritized and preserved
+2. Truncation removes low-score messages first
+3. Final output maintains chronological order and in history memory,
+the score of each message decreases according to keep_rate. The
+newer the message, the higher the score.
+
+**Arguments**:
+
+- `records` _List[ContextRecord]_ - List of context records with scores
+  and timestamps.
+  
+
+**Returns**:
+
+  Tuple[List[OpenAIMessage], int]:
+  - Ordered list of OpenAI messages
+  - Total token count of the final context
+  
+
+**Raises**:
+
+- `RuntimeError` - If system message alone exceeds token limit
+

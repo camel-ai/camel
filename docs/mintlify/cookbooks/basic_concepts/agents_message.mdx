@@ -1,0 +1,319 @@
+---
+title: "Message Cookbook"
+---
+
+You can also check this cookbook in colab [here](https://colab.research.google.com/drive/1qyi4bnAbnYink-FKaAlJG9OipyEWXEsT?usp=sharing).
+
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
+  <a href="https://www.camel-ai.org/">
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
+  </a>
+  <a href="https://discord.camel-ai.org">
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
+  </a>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
+
+This notebook demonstrates how to set up and leverage CAMEL's ability to use `BaseMessage` class.
+
+In this notebook, you'll explore:
+
+* **CAMEL**: A powerful multi-agent framework that enables Retrieval-Augmented Generation and multi-agent role-playing scenarios, allowing for sophisticated AI-driven tasks.
+
+* **BaseMessage**: The base class for message objects used in the CAMEL chat system. It is designed to provide a consistent structure for the messages in the system and allow for easy conversion between different message types.
+
+In this tutorial, we will explore the `BaseMessage` class. The topics covered include:
+
+1. Introduction to the `BaseMessage` class.
+2. Creating a `BaseMessage` instance.
+3. Understanding the properties of the `BaseMessage` class.
+4. Using the methods of the `BaseMessage` class.
+5. Give message to `ChatAgent`
+
+## 📦 Installation
+
+First, install the CAMEL package with all its dependencies:
+
+
+```python
+!pip install "camel-ai==0.2.16"
+```
+
+## 🔑 Setting Up API Keys
+
+You'll need to set up your API keys for OpenAI. This ensures that the tools can interact with external services securely.
+
+
+```python
+import os
+from getpass import getpass
+
+# Prompt for the API key securely
+openai_api_key = getpass('Enter your API key: ')
+os.environ["OPENAI_API_KEY"] = openai_api_key
+```
+
+You can go to [here](https://app.agentops.ai/signin) to get **free** API Key from AgentOps
+
+
+
+```python
+import os
+from getpass import getpass
+
+# Prompt for the AgentOps API key securely
+agentops_api_key = getpass('Enter your API key: ')
+os.environ["AGENTOPS_API_KEY"] = agentops_api_key
+```
+
+Your can go to [here](https://console.mistral.ai/api-keys/) to get API Key from Mistral AI with **free** credits.
+
+
+```python
+# Prompt for the API key securely
+mistral_api_key = getpass('Enter your API key: ')
+os.environ["MISTRAL_API_KEY"] = mistral_api_key
+```
+
+Alternatively, if running on Colab, you could save your API keys and tokens as **Colab Secrets**,
+
+and use them across notebooks.
+
+To do so, **comment out** the above **manual** API key prompt code block(s),
+
+and **uncomment** the following codeblock.
+
+⚠️ Don't forget granting access to the API key you would be using to the current notebook.
+
+
+```python
+# import os
+# from google.colab import userdata
+
+# os.environ["OPENAI_API_KEY"] = userdata.get("OPENAI_API_KEY")
+# os.environ["AGENTOPS_API_KEY"] = userdata.get("AGENTOPS_API_KEY")
+# os.environ["MISTRAL_API_KEY"] = userdata.get("MISTRAL_API_KEY")
+```
+
+## Give message to `ChatAgent` directly
+You can simply pass text message to `ChatAgent`
+
+
+```python
+from camel.agents import ChatAgent
+
+# Define system message
+sys_msg = "You are a helpful assistant."
+
+# Set agent
+camel_agent = ChatAgent(system_message=sys_msg)
+
+# Set user message
+user_msg = """Say hi to CAMEL AI, one open-source community dedicated to the
+    study of autonomous and communicative agents."""
+
+# Get response information
+response = camel_agent.step(user_msg)
+print(response.msgs[0].content)
+```
+
+## Give message to `ChatAgent` via `BaseMessage`
+
+For more complex message usage like multi-modal message, we suggest using `BaseMessage`
+
+### Creating a `BaseMessage` Instance
+
+To create a `BaseMessage` instance, you need to provide the following arguments:
+
+- `role_name`: The name of the user or assistant role.
+- `role_type`: The type of role, either `RoleType.ASSISTANT` or `RoleType.USER`.
+- `content`: The content of the message.
+- `meta_dict`: An metadata dictionary for the message.
+
+Below are optional arguments you can pass:
+
+- `video_bytes`: Optional bytes of a video associated with the message.
+- `image_list`: Optional list of PIL Image objects associated with the message.
+- `image_detail`: Detail level of the images associated with the message. Default is "auto".
+- `video_detail`: Detail level of the videos associated with the message. Default is "low".
+
+Here's an example of creating a `BaseMessage` instance:
+
+
+```python
+from camel.messages import BaseMessage
+from camel.types import RoleType
+
+message = BaseMessage(
+    role_name="test_user",
+    role_type=RoleType.USER,
+    content="test content",
+    meta_dict={}
+)
+```
+
+Additionally, the BaseMessage class provides class methods to easily create user and assistant agent messages:
+
+1. Creating a user agent message:
+
+
+```python
+from camel.messages import BaseMessage
+
+user_message = BaseMessage.make_user_message(
+    role_name="user_name",
+    content="test content for user",
+)
+```
+
+2. Creating an assistant agent message:
+
+
+```python
+from camel.messages import BaseMessage
+
+assistant_message = BaseMessage.make_assistant_message(
+    role_name="assistant_name",
+    content="test content for assistant",
+)
+```
+
+## Using the Methods of the `BaseMessage` Class
+
+The `BaseMessage` class offers several methods:
+
+1. Creating a new instance with updated content:
+
+
+```python
+new_message = message.create_new_instance("new test content")
+print(isinstance(new_message, BaseMessage))
+```
+
+2. Converting to an `OpenAIMessage` object:
+
+
+```python
+from camel.types import OpenAIBackendRole
+openai_message = message.to_openai_message(role_at_backend=OpenAIBackendRole.USER)
+print(openai_message == {"role": "user", "content": "test content"})
+```
+
+3. Converting to an `OpenAISystemMessage` object:
+
+
+```python
+openai_system_message = message.to_openai_system_message()
+print(openai_system_message == {"role": "system", "content": "test content"})
+```
+
+4. Converting to an `OpenAIUserMessage` object:
+
+
+```python
+openai_user_message = message.to_openai_user_message()
+print(openai_user_message == {"role": "user", "content": "test content"})
+```
+
+5. Converting to an `OpenAIAssistantMessage` object:
+
+
+```python
+openai_assistant_message = message.to_openai_assistant_message()
+print(openai_assistant_message == {"role": "assistant", "content": "test content"})
+```
+
+6. Converting to a dictionary:
+
+
+```python
+message_dict = message.to_dict()
+print(message_dict == {
+    "role_name": "test_user",
+    "role_type": "USER",
+    "content": "test content"
+})
+```
+
+These methods allow you to convert a `BaseMessage` instance into different message types depending on your needs.
+
+## Give `BaseMessage` to `ChatAgent`
+
+
+```python
+from io import BytesIO
+
+import requests
+from PIL import Image
+
+from camel.agents import ChatAgent
+from camel.messages import BaseMessage
+# URL of the image
+url = "https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png"
+response = requests.get(url)
+img = Image.open(BytesIO(response.content))
+
+# Define system message
+sys_msg = BaseMessage.make_assistant_message(
+    role_name="Assistant",
+    content="You are a helpful assistant.",
+)
+
+# Set agent
+camel_agent = ChatAgent(system_message=sys_msg)
+
+# Set user message
+user_msg = BaseMessage.make_user_message(
+    role_name="User", content="""what's in the image?""", image_list=[img]
+)
+
+# Get response information
+response = camel_agent.step(user_msg)
+print(response.msgs[0].content)
+```
+
+## 🌟 Highlights
+
+This notebook has guided you through setting up and converting `BaseMessage` to different types of messages. These components play essential roles in the CAMEL chat system, facilitating the creation, management, and interpretation of messages with clarity.
+
+Key tools utilized in this notebook include:
+
+*   **CAMEL**: A powerful multi-agent framework that enables Retrieval-Augmented Generation and multi-agent role-playing scenarios, allowing for sophisticated AI-driven tasks.
+*   **BaseMessage**: The base class for message objects used in the CAMEL chat system. It is designed to provide a consistent structure for the messages in the system and allow for easy conversion between different message types.
+
+
+
+
+That's everything: Got questions about 🐫 CAMEL-AI? Join us on [Discord](https://discord.camel-ai.org)! Whether you want to share feedback, explore the latest in multi-agent systems, get support, or connect with others on exciting projects, we’d love to have you in the community! 🤝
+
+Check out some of our other work:
+
+1. 🐫 Creating Your First CAMEL Agent [free Colab](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html)
+
+2.  Graph RAG Cookbook [free Colab](https://colab.research.google.com/drive/1uZKQSuu0qW6ukkuSv9TukLB9bVaS1H0U?usp=sharing)
+
+3. 🧑‍⚖️ Create A Hackathon Judge Committee with Workforce [free Colab](https://colab.research.google.com/drive/18ajYUMfwDx3WyrjHow3EvUMpKQDcrLtr?usp=sharing)
+
+4. 🔥 3 ways to ingest data from websites with Firecrawl & CAMEL [free Colab](https://colab.research.google.com/drive/1lOmM3VmgR1hLwDKdeLGFve_75RFW0R9I?usp=sharing)
+
+5. 🦥 Agentic SFT Data Generation with CAMEL and Mistral Models, Fine-Tuned with Unsloth [free Colab](https://colab.research.google.com/drive/1lYgArBw7ARVPSpdwgKLYnp_NEXiNDOd-?usp=sharingg)
+
+Thanks from everyone at 🐫 CAMEL-AI
+
+
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
+  <a href="https://www.camel-ai.org/">
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
+  </a>
+  <a href="https://discord.camel-ai.org">
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
+  </a>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
+

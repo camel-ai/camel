@@ -1,0 +1,163 @@
+<a id="camel.environments.multi_step"></a>
+
+<a id="camel.environments.multi_step.MultiStepEnv"></a>
+
+## MultiStepEnv Objects
+
+```python
+class MultiStepEnv(ABC)
+```
+
+A multi-step environment for reinforcement learning with LLMs.
+
+<a id="camel.environments.multi_step.MultiStepEnv.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(extractor: BaseExtractor,
+             max_steps: Optional[int] = None,
+             **kwargs) -> None
+```
+
+Initialize the environment.
+
+**Arguments**:
+
+- `extractor` - Extractor to process LLM responses.
+- `max_steps` - Maximum steps per episode.
+- `**kwargs` - Additional environment parameters.
+
+<a id="camel.environments.multi_step.MultiStepEnv.setup"></a>
+
+#### setup
+
+```python
+async def setup() -> None
+```
+
+Set up the environment by initializing the verifier and extractor.
+
+This method ensures that the environment is ready for interaction.
+It sets up necessary components, including the verifier and extractor.
+
+**Raises**:
+
+- `Exception` - If setup fails due to an internal error.
+
+<a id="camel.environments.multi_step.MultiStepEnv.close"></a>
+
+#### close
+
+```python
+async def close() -> None
+```
+
+Clean up and close all resources used by the environment.
+This method shuts down the verifier, calls the internal
+close function that is implemented in any MultiStepEnv,
+and ensures that the environment is properly closed.
+
+**Raises**:
+
+- `Exception` - If an error occurs while closing the environment.
+
+<a id="camel.environments.multi_step.MultiStepEnv.reset"></a>
+
+#### reset
+
+```python
+async def reset() -> Observation
+```
+
+Reset the environment to an initial state.
+
+**Returns**:
+
+- `Observation` - The initial observation for the episode.
+  
+
+**Raises**:
+
+- `RuntimeError` - If we fail to get the initial observation.
+
+<a id="camel.environments.multi_step.MultiStepEnv.step"></a>
+
+#### step
+
+```python
+async def step(
+        action: Action) -> Tuple[Observation, float, bool, Dict[str, Any]]
+```
+
+Take a step in the environment using the given action.
+
+This method updates the environment state based on the LLM's response,
+computes rewards, checks if the episode is done, and based on that
+gets the next or final observation.
+
+**Arguments**:
+
+- `action` _Action_ - The action containing the LLM response.
+  
+
+**Returns**:
+
+  StepResult containing next observation, total reward, a dictionary
+  of rewards, done flag, and info.
+  
+
+**Raises**:
+
+- `RuntimeError` - If the environment is not set up, the episode has
+  ended, or there is no valid current observation.
+
+<a id="camel.environments.multi_step.MultiStepEnv.is_done"></a>
+
+#### is\_done
+
+```python
+def is_done() -> bool
+```
+
+Check if the episode should terminate.
+
+This function terminates the episode if the maximum number of
+steps is reached or if any other terminating criterion is met.
+
+**Returns**:
+
+- `bool` - A boolean flag.
+
+<a id="camel.environments.multi_step.MultiStepEnv.metadata"></a>
+
+#### metadata
+
+```python
+@property
+def metadata() -> Dict[str, Any]
+```
+
+Retrieve the metadata of the environment.
+
+This provides additional parameters and configuration details.
+
+**Returns**:
+
+  Dict[str, Any]: A copy of the environment's metadata.
+
+<a id="camel.environments.multi_step.MultiStepEnv.current_step"></a>
+
+#### current\_step
+
+```python
+@property
+def current_step() -> int
+```
+
+Get the current step number.
+
+**Returns**:
+
+- `int` - The number of the step we are currently in.
+

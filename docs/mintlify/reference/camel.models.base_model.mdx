@@ -1,0 +1,228 @@
+<a id="camel.models.base_model"></a>
+
+<a id="camel.models.base_model.ModelBackendMeta"></a>
+
+## ModelBackendMeta Objects
+
+```python
+class ModelBackendMeta(abc.ABCMeta)
+```
+
+Metaclass that automatically preprocesses messages in run method.
+
+Automatically wraps the run method of any class inheriting from
+BaseModelBackend to preprocess messages (remove <think> tags) before they
+are sent to the model.
+
+<a id="camel.models.base_model.ModelBackendMeta.__new__"></a>
+
+#### \_\_new\_\_
+
+```python
+def __new__(mcs, name, bases, namespace)
+```
+
+Wraps run method with preprocessing if it exists in the class.
+
+<a id="camel.models.base_model.BaseModelBackend"></a>
+
+## BaseModelBackend Objects
+
+```python
+class BaseModelBackend(ABC, metaclass=ModelBackendMeta)
+```
+
+Base class for different model backends.
+It may be OpenAI API, a local LLM, a stub for unit tests, etc.
+
+**Arguments**:
+
+- `model_type` _Union[ModelType, str]_ - Model for which a backend is
+  created.
+- `model_config_dict` _Optional[Dict[str, Any]], optional_ - A config
+  dictionary. (default: :obj:`{}`)
+- `api_key` _Optional[str], optional_ - The API key for authenticating
+  with the model service. (default: :obj:`None`)
+- `url` _Optional[str], optional_ - The url to the model service.
+- `(default` - :obj:`None`)
+- `token_counter` _Optional[BaseTokenCounter], optional_ - Token
+  counter to use for the model. If not provided,
+  :obj:`OpenAITokenCounter` will be used. (default: :obj:`None`)
+- `timeout` _Optional[float], optional_ - The timeout value in seconds for
+  API calls. (default: :obj:`None`)
+
+<a id="camel.models.base_model.BaseModelBackend.token_counter"></a>
+
+#### token\_counter
+
+```python
+@property
+@abstractmethod
+def token_counter() -> BaseTokenCounter
+```
+
+Initialize the token counter for the model backend.
+
+**Returns**:
+
+- `BaseTokenCounter` - The token counter following the model's
+  tokenization style.
+
+<a id="camel.models.base_model.BaseModelBackend.preprocess_messages"></a>
+
+#### preprocess\_messages
+
+```python
+def preprocess_messages(messages: List[OpenAIMessage]) -> List[OpenAIMessage]
+```
+
+Preprocess messages before sending to model API.
+Removes thinking content from assistant and user messages.
+Automatically formats messages for parallel tool calls if tools are
+detected.
+
+**Arguments**:
+
+- `messages` _List[OpenAIMessage]_ - Original messages.
+  
+
+**Returns**:
+
+- `List[OpenAIMessage]` - Preprocessed messages
+
+<a id="camel.models.base_model.BaseModelBackend.run"></a>
+
+#### run
+
+```python
+def run(
+    messages: List[OpenAIMessage],
+    response_format: Optional[Type[BaseModel]] = None,
+    tools: Optional[List[Dict[str, Any]]] = None
+) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]
+```
+
+Runs the query to the backend model.
+
+**Arguments**:
+
+- `messages` _List[OpenAIMessage]_ - Message list with the chat history
+  in OpenAI API format.
+- `response_format` _Optional[Type[BaseModel]]_ - The response format
+  to use for the model. (default: :obj:`None`)
+- `tools` _Optional[List[Tool]]_ - The schema of tools to use for the
+  model for this request. Will override the tools specified in
+  the model configuration (but not change the configuration).
+- `(default` - :obj:`None`)
+  
+
+**Returns**:
+
+  Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+  `ChatCompletion` in the non-stream mode, or
+  `Stream[ChatCompletionChunk]` in the stream mode.
+
+<a id="camel.models.base_model.BaseModelBackend.arun"></a>
+
+#### arun
+
+```python
+async def arun(
+    messages: List[OpenAIMessage],
+    response_format: Optional[Type[BaseModel]] = None,
+    tools: Optional[List[Dict[str, Any]]] = None
+) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]
+```
+
+Runs the query to the backend model asynchronously.
+
+**Arguments**:
+
+- `messages` _List[OpenAIMessage]_ - Message list with the chat history
+  in OpenAI API format.
+- `response_format` _Optional[Type[BaseModel]]_ - The response format
+  to use for the model. (default: :obj:`None`)
+- `tools` _Optional[List[Tool]]_ - The schema of tools to use for the
+  model for this request. Will override the tools specified in
+  the model configuration (but not change the configuration).
+- `(default` - :obj:`None`)
+  
+
+**Returns**:
+
+  Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+  `ChatCompletion` in the non-stream mode, or
+  `AsyncStream[ChatCompletionChunk]` in the stream mode.
+
+<a id="camel.models.base_model.BaseModelBackend.check_model_config"></a>
+
+#### check\_model\_config
+
+```python
+@abstractmethod
+def check_model_config()
+```
+
+Check whether the input model configuration contains unexpected
+arguments
+
+**Raises**:
+
+- `ValueError` - If the model configuration dictionary contains any
+  unexpected argument for this model class.
+
+<a id="camel.models.base_model.BaseModelBackend.count_tokens_from_messages"></a>
+
+#### count\_tokens\_from\_messages
+
+```python
+def count_tokens_from_messages(messages: List[OpenAIMessage]) -> int
+```
+
+Count the number of tokens in the messages using the specific
+tokenizer.
+
+**Arguments**:
+
+- `messages` _List[Dict]_ - message list with the chat history
+  in OpenAI API format.
+  
+
+**Returns**:
+
+- `int` - Number of tokens in the messages.
+
+<a id="camel.models.base_model.BaseModelBackend.token_limit"></a>
+
+#### token\_limit
+
+```python
+@property
+def token_limit() -> int
+```
+
+Returns the maximum token limit for a given model.
+
+This method retrieves the maximum token limit either from the
+`model_config_dict` or from the model's default token limit.
+
+**Returns**:
+
+- `int` - The maximum token limit for the given model.
+
+<a id="camel.models.base_model.BaseModelBackend.stream"></a>
+
+#### stream
+
+```python
+@property
+def stream() -> bool
+```
+
+Returns whether the model is in stream mode, which sends partial
+results each time.
+
+**Returns**:
+
+- `bool` - Whether the model is in stream mode.
+

@@ -1,0 +1,238 @@
+<a id="camel.storages.vectordb_storages.faiss"></a>
+
+<a id="camel.storages.vectordb_storages.faiss.FaissStorage"></a>
+
+## FaissStorage Objects
+
+```python
+class FaissStorage(BaseVectorStorage)
+```
+
+An implementation of the `BaseVectorStorage` using FAISS,
+Facebook AI's Similarity Search library for efficient vector search.
+
+The detailed information about FAISS is available at:
+`FAISS <https://github.com/facebookresearch/faiss>`_
+
+**Arguments**:
+
+- `vector_dim` _int_ - The dimension of storing vectors.
+- `index_type` _str, optional_ - Type of FAISS index to create.
+  Options include 'Flat', 'IVF', 'HNSW', etc. (default:
+  :obj:`'Flat'`)
+- `collection_name` _Optional[str], optional_ - Name for the collection.
+  If not provided, set it to the current time with iso format.
+- `(default` - :obj:`None`)
+- `storage_path` _Optional[str], optional_ - Path to directory where
+  the index will be stored. If None, index will only exist in memory.
+- `(default` - :obj:`None`)
+- `distance` _VectorDistance, optional_ - The distance metric for vector
+  comparison (default: :obj:`VectorDistance.COSINE`)
+- `nlist` _int, optional_ - Number of cluster centroids for IVF indexes.
+  Only used if index_type includes 'IVF'. (default: :obj:`100`)
+- `m` _int, optional_ - HNSW parameter. Number of connections per node.
+  Only used if index_type includes 'HNSW'. (default: :obj:`16`)
+- `**kwargs` _Any_ - Additional keyword arguments.
+  
+
+**Notes**:
+
+  - FAISS offers various index types optimized for different use cases:
+  - 'Flat': Exact search, but slowest for large datasets
+  - 'IVF': Inverted file index, good balance of speed and recall
+  - 'HNSW': Hierarchical Navigable Small World, fast with high recall
+  - 'PQ': Product Quantization for memory-efficient storage
+  - The choice of index should be based on your specific requirements
+  for search speed, memory usage, and accuracy.
+
+<a id="camel.storages.vectordb_storages.faiss.FaissStorage.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+@dependencies_required('faiss')
+def __init__(vector_dim: int,
+             index_type: str = 'Flat',
+             collection_name: Optional[str] = None,
+             storage_path: Optional[str] = None,
+             distance: VectorDistance = VectorDistance.COSINE,
+             nlist: int = 100,
+             m: int = 16,
+             **kwargs: Any) -> None
+```
+
+Initialize the FAISS vector storage.
+
+**Arguments**:
+
+- `vector_dim` - Dimension of vectors to be stored
+- `index_type` - FAISS index type ('Flat', 'IVF', 'HNSW', etc.)
+- `collection_name` - Name of the collection (defaults to timestamp)
+- `storage_path` - Directory to save the index (None for in-memory only)
+- `distance` - Vector distance metric
+- `nlist` - Number of clusters for IVF indexes
+- `m` - HNSW parameter for connections per node
+- `**kwargs` - Additional parameters
+
+<a id="camel.storages.vectordb_storages.faiss.FaissStorage.add"></a>
+
+#### add
+
+```python
+def add(records: List[VectorRecord], **kwargs) -> None
+```
+
+Adds a list of vectors to the index.
+
+**Arguments**:
+
+- `records` _List[VectorRecord]_ - List of vector records to be added.
+- `**kwargs` _Any_ - Additional keyword arguments.
+  
+
+**Raises**:
+
+- `RuntimeError` - If there was an error in the addition process.
+
+<a id="camel.storages.vectordb_storages.faiss.FaissStorage.update_payload"></a>
+
+#### update\_payload
+
+```python
+def update_payload(ids: List[str], payload: Dict[str, Any],
+                   **kwargs: Any) -> None
+```
+
+Updates the payload of the vectors identified by their IDs.
+
+**Arguments**:
+
+- `ids` _List[str]_ - List of unique identifiers for the vectors to be
+  updated.
+- `payload` _Dict[str, Any]_ - Payload to be updated for all specified
+  IDs.
+- `**kwargs` _Any_ - Additional keyword arguments.
+  
+
+**Raises**:
+
+- `KeyError` - If any of the provided IDs does not exist in the index.
+
+<a id="camel.storages.vectordb_storages.faiss.FaissStorage.delete_collection"></a>
+
+#### delete\_collection
+
+```python
+def delete_collection() -> None
+```
+
+Deletes the entire collection (index and metadata).
+
+<a id="camel.storages.vectordb_storages.faiss.FaissStorage.delete"></a>
+
+#### delete
+
+```python
+def delete(ids: Optional[List[str]] = None,
+           payload_filter: Optional[Dict[str, Any]] = None,
+           **kwargs: Any) -> None
+```
+
+Deletes vectors from the index based on either IDs or payload
+filters.
+
+**Arguments**:
+
+- `ids` _Optional[List[str]], optional_ - List of unique identifiers
+  for the vectors to be deleted.
+- `payload_filter` _Optional[Dict[str, Any]], optional_ - A filter for
+  the payload to delete points matching specific conditions.
+- `**kwargs` _Any_ - Additional keyword arguments.
+  
+
+**Raises**:
+
+- `ValueError` - If neither `ids` nor `payload_filter` is provided.
+- `RuntimeError` - If the FAISS index does not support removal.
+  
+
+**Notes**:
+
+  - FAISS does not support efficient single vector removal for most
+  index types. This implementation recreates the index without the
+  deleted vectors, which can be inefficient for large datasets.
+  - If both `ids` and `payload_filter` are provided, both filters
+  will be applied (vectors matching either will be deleted).
+
+<a id="camel.storages.vectordb_storages.faiss.FaissStorage.status"></a>
+
+#### status
+
+```python
+def status() -> VectorDBStatus
+```
+
+Returns the status of the vector database.
+
+**Returns**:
+
+- `VectorDBStatus` - Current status of the vector database.
+
+<a id="camel.storages.vectordb_storages.faiss.FaissStorage.query"></a>
+
+#### query
+
+```python
+def query(query: VectorDBQuery,
+          filter_conditions: Optional[Dict[str, Any]] = None,
+          **kwargs: Any) -> List[VectorDBQueryResult]
+```
+
+Searches for similar vectors in the storage based on the provided
+query.
+
+**Arguments**:
+
+- `query` _VectorDBQuery_ - The query object containing the search
+  vector and the number of top similar vectors to retrieve.
+- `filter_conditions` _Optional[Dict[str, Any]], optional_ - A
+  dictionary specifying conditions to filter the query results.
+- `**kwargs` _Any_ - Additional keyword arguments.
+  
+
+**Returns**:
+
+- `List[VectorDBQueryResult]` - A list of query results ordered by
+  similarity.
+
+<a id="camel.storages.vectordb_storages.faiss.FaissStorage.clear"></a>
+
+#### clear
+
+```python
+def clear() -> None
+```
+
+Remove all vectors from the storage.
+
+<a id="camel.storages.vectordb_storages.faiss.FaissStorage.load"></a>
+
+#### load
+
+```python
+def load() -> None
+```
+
+Load the index from disk if storage_path is provided.
+
+<a id="camel.storages.vectordb_storages.faiss.FaissStorage.client"></a>
+
+#### client
+
+```python
+@property
+def client() -> Any
+```
+
+Provides access to the underlying FAISS client.
+

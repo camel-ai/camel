@@ -1,0 +1,116 @@
+<a id="camel.models.model_factory"></a>
+
+<a id="camel.models.model_factory.ModelFactory"></a>
+
+## ModelFactory Objects
+
+```python
+class ModelFactory()
+```
+
+Factory of backend models.
+
+**Raises**:
+
+- `ValueError` - in case the provided model type is unknown.
+
+<a id="camel.models.model_factory.ModelFactory.create"></a>
+
+#### create
+
+```python
+@staticmethod
+def create(model_platform: Union[ModelPlatformType, str],
+           model_type: Union[ModelType, str, UnifiedModelType],
+           model_config_dict: Optional[Dict] = None,
+           token_counter: Optional[BaseTokenCounter] = None,
+           api_key: Optional[str] = None,
+           url: Optional[str] = None,
+           timeout: Optional[float] = None,
+           **kwargs) -> BaseModelBackend
+```
+
+Creates an instance of `BaseModelBackend` of the specified type.
+
+**Arguments**:
+
+- `model_platform` _Union[ModelPlatformType, str]_ - Platform from
+  which the model originates. Can be a string or
+  ModelPlatformType enum.
+- `model_type` _Union[ModelType, str, UnifiedModelType]_ - Model for
+  which a backend is created. Can be a string, ModelType enum, or
+  UnifiedModelType.
+- `model_config_dict` _Optional[Dict]_ - A dictionary that will be fed
+  into the backend constructor. (default: :obj:`None`)
+- `token_counter` _Optional[BaseTokenCounter], optional_ - Token
+  counter to use for the model. If not provided,
+  :obj:`OpenAITokenCounter(ModelType.GPT_4O_MINI)`
+  will be used if the model platform didn't provide official
+  token counter. (default: :obj:`None`)
+- `api_key` _Optional[str], optional_ - The API key for authenticating
+  with the model service. (default: :obj:`None`)
+- `url` _Optional[str], optional_ - The url to the model service.
+- `(default` - :obj:`None`)
+- `timeout` _Optional[float], optional_ - The timeout value in seconds
+  for API calls. (default: :obj:`None`)
+- `**kwargs` - Additional model-specific parameters that will be passed
+  to the model constructor. For example, Azure OpenAI models may
+  require `api_version`, `azure_deployment_name`,
+  `azure_ad_token_provider`, and `azure_ad_token`.
+  
+
+**Returns**:
+
+- `BaseModelBackend` - The initialized backend.
+  
+
+**Raises**:
+
+- `ValueError` - If there is no backend for the model.
+
+<a id="camel.models.model_factory.ModelFactory.create_from_yaml"></a>
+
+#### create\_from\_yaml
+
+```python
+@classmethod
+def create_from_yaml(cls, filepath: str) -> BaseModelBackend
+```
+
+Creates and returns a model base backend instance
+from a YAML configuration file.
+
+**Arguments**:
+
+- `filepath` _str_ - Path to the YAML file containing model
+  configuration.
+  
+
+**Returns**:
+
+- `BaseModelBackend` - An instance of the model backend based on the
+  configuration.
+
+<a id="camel.models.model_factory.ModelFactory.create_from_json"></a>
+
+#### create\_from\_json
+
+```python
+@classmethod
+def create_from_json(cls, filepath: str) -> BaseModelBackend
+```
+
+Creates and returns a base model backend instance
+from a JSON configuration file.
+
+**Arguments**:
+
+- `filepath` _str_ - Path to the JSON file containing model
+  configuration.
+  
+
+**Returns**:
+
+- `BaseModelBackend` - An instance of the model backend based on the
+  configuration.
+

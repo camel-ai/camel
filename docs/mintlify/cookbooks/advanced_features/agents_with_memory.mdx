@@ -1,0 +1,196 @@
+---
+title: "Memory Cookbook"
+---
+
+You can also check this cookbook in colab [here](https://colab.research.google.com/drive/1ixGItEqQGkp09_TuV_8SGmz65WHBr5r5?usp=sharing)
+
+⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
+
+## Overview
+
+The Memory module in CAMEL provides a flexible and powerful system for storing, retrieving, and managing information for AI agents. It enables agents to maintain context across conversations and retrieve relevant information from past interactions, enhancing the coherence and relevance of AI responses.
+
+## Getting Started
+
+
+### Installation
+
+Ensure you have CAMEL AI installed in your Python environment:
+
+
+```python
+!pip install "camel-ai[all]==0.2.16"
+```
+
+### 🔑 Setting Up API Keys
+
+You'll need to set up your API keys for OpenAI.
+
+
+```python
+import os
+from getpass import getpass
+
+# Prompt for the API key securely
+openai_api_key = getpass('Enter your API key: ')
+os.environ["OPENAI_API_KEY"] = openai_api_key
+```
+
+Alternatively, if running on Colab, you could save your API keys and tokens as **Colab Secrets**, and use them across notebooks.
+
+To do so, **comment out** the above **manual** API key prompt code block(s), and **uncomment** the following codeblock.
+
+⚠️ Don't forget granting access to the API key you would be using to the current notebook.
+
+
+```python
+# import os
+# from google.colab import userdata
+
+# os.environ["OPENAI_API_KEY"] = userdata.get("OPENAI_API_KEY")
+```
+
+## Usage
+
+To use the Memory module in your agent:
+
+1. Choose an appropriate AgentMemory implementation (`ChatHistoryMemory`, `VectorDBMemory`, or `LongtermAgentMemory`).
+2. Initialize the memory with a context creator and any necessary parameters.
+3. Use `write_records()` to add new information to the memory.
+4. Use `retrieve()` to get relevant context for the agent's next action.
+5. Use `get_context()` to obtain the formatted context for the agent.
+
+### Setting `LongtermAgentMemory`:
+
+Import required modules
+
+
+```python
+from camel.memories import (
+    ChatHistoryBlock,
+    LongtermAgentMemory,
+    MemoryRecord,
+    ScoreBasedContextCreator,
+    VectorDBBlock,
+)
+from camel.messages import BaseMessage
+from camel.types import ModelType, OpenAIBackendRole
+from camel.utils import OpenAITokenCounter
+```
+
+
+```python
+# Initialize the memory
+memory = LongtermAgentMemory(
+    context_creator=ScoreBasedContextCreator(
+        token_counter=OpenAITokenCounter(ModelType.GPT_4O_MINI),
+        token_limit=1024,
+    ),
+    chat_history_block=ChatHistoryBlock(),
+    vector_db_block=VectorDBBlock(),
+)
+
+# Create and write new records
+records = [
+    MemoryRecord(
+        message=BaseMessage.make_user_message(
+            role_name="User",
+            content="What is CAMEL AI?",
+        ),
+        role_at_backend=OpenAIBackendRole.USER,
+    ),
+    MemoryRecord(
+        message=BaseMessage.make_assistant_message(
+            role_name="Agent",
+            content="CAMEL-AI.org is the 1st LLM multi-agent framework and "
+            "an open-source community dedicated to finding the scaling law "
+            "of agents.",
+        ),
+        role_at_backend=OpenAIBackendRole.ASSISTANT,
+    ),
+]
+memory.write_records(records)
+
+# Get context for the agent
+context, token_count = memory.get_context()
+
+print(context)
+```
+
+
+```python
+print(token_count)
+```
+
+### Adding `LongtermAgentMemory` to your `ChatAgent`:
+
+
+```python
+from camel.agents import ChatAgent
+
+# Define system message for the agent
+sys_msg = "You are a curious agent wondering about the universe."
+
+# Initialize agent
+agent = ChatAgent(system_message=sys_msg)
+
+# Set memory to the agent
+agent.memory = memory
+
+
+# Define a user message
+usr_msg = "Tell me which is the 1st LLM multi-agent framework based on what we have discussed"
+
+# Sending the message to the agent
+response = agent.step(usr_msg)
+
+# Check the response (just for illustrative purpose)
+print(response.msgs[0].content)
+```
+
+## Advanced Topics
+
+### Customizing Context Creator
+
+You can create custom context creators by subclassing `BaseContextCreator`:
+
+
+```python
+from camel.memories import BaseContextCreator
+
+class MyCustomContextCreator(BaseContextCreator):
+    @property
+    def token_counter(self):
+        # Implement your token counting logic
+        return
+
+    @property
+    def token_limit(self):
+        return 1000  # Or any other limit
+
+    def create_context(self, records):
+        # Implement your context creation logic
+        pass
+```
+
+### Customizing Vector Database Block
+
+For `VectorDBBlock`, you can customize it by adjusting the embedding models or vector storages:
+
+
+```python
+from camel.embeddings import OpenAIEmbedding
+from camel.memories import VectorDBBlock
+from camel.storages import QdrantStorage
+
+vector_db = VectorDBBlock(
+    embedding=OpenAIEmbedding(),
+    storage=QdrantStorage(vector_dim=OpenAIEmbedding().get_output_dim()),
+)
+```
+
+### Performance Considerations
+
+- For large-scale applications, consider using persistent storage backends instead of in-memory storage.
+- Optimize your context creator to balance between context relevance and token limits.
+- When using `VectorDBMemory`, be mindful of the trade-off between retrieval accuracy and speed as the database grows.

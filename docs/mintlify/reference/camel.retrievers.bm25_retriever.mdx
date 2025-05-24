@@ -1,0 +1,93 @@
+<a id="camel.retrievers.bm25_retriever"></a>
+
+<a id="camel.retrievers.bm25_retriever.BM25Retriever"></a>
+
+## BM25Retriever Objects
+
+```python
+class BM25Retriever(BaseRetriever)
+```
+
+An implementation of the `BaseRetriever` using the `BM25` model.
+
+This class facilitates the retriever of relevant information using a
+query-based approach, it ranks documents based on the occurrence and
+frequency of the query terms.
+
+**Attributes**:
+
+- `bm25` _BM25Okapi_ - An instance of the BM25Okapi class used for
+  calculating document scores.
+- `content_input_path` _str_ - The path to the content that has been
+  processed and stored.
+- `unstructured_modules` _UnstructuredIO_ - A module for parsing files and
+  URLs and chunking content based on specified parameters.
+  
+
+**References**:
+
+  https://github.com/dorianbrown/rank_bm25
+
+<a id="camel.retrievers.bm25_retriever.BM25Retriever.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+@dependencies_required('rank_bm25')
+def __init__() -> None
+```
+
+Initializes the BM25Retriever.
+
+<a id="camel.retrievers.bm25_retriever.BM25Retriever.process"></a>
+
+#### process
+
+```python
+def process(content_input_path: str,
+            chunk_type: str = "chunk_by_title",
+            **kwargs: Any) -> None
+```
+
+Processes content from a file or URL, divides it into chunks by
+using `Unstructured IO`,then stored internally. This method must be
+called before executing queries with the retriever.
+
+**Arguments**:
+
+- `content_input_path` _str_ - File path or URL of the content to be
+  processed.
+- `chunk_type` _str_ - Type of chunking going to apply. Defaults to
+  "chunk_by_title".
+- `**kwargs` _Any_ - Additional keyword arguments for content parsing.
+
+<a id="camel.retrievers.bm25_retriever.BM25Retriever.query"></a>
+
+#### query
+
+```python
+def query(query: str,
+          top_k: int = DEFAULT_TOP_K_RESULTS) -> List[Dict[str, Any]]
+```
+
+Executes a query and compiles the results.
+
+**Arguments**:
+
+- `query` _str_ - Query string for information retriever.
+- `top_k` _int, optional_ - The number of top results to return during
+  retriever. Must be a positive integer. Defaults to
+  `DEFAULT_TOP_K_RESULTS`.
+  
+
+**Returns**:
+
+- `List[Dict[str]]` - Concatenated list of the query results.
+  
+
+**Raises**:
+
+- `ValueError` - If `top_k` is less than or equal to 0, if the BM25
+  model has not been initialized by calling `process`
+  first.
+

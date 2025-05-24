@@ -1,0 +1,89 @@
+<a id="camel.interpreters.docker_interpreter"></a>
+
+<a id="camel.interpreters.docker_interpreter.DockerInterpreter"></a>
+
+## DockerInterpreter Objects
+
+```python
+class DockerInterpreter(BaseInterpreter)
+```
+
+A class for executing code files or code strings in a docker container.
+
+This class handles the execution of code in different scripting languages
+(currently Python and Bash) within a docker container, capturing their
+stdout and stderr streams, and allowing user checking before executing code
+strings.
+
+**Arguments**:
+
+- `require_confirm` _bool, optional_ - If `True`, prompt user before
+  running code strings for security. Defaults to `True`.
+- `print_stdout` _bool, optional_ - If `True`, print the standard
+  output of the executed code. Defaults to `False`.
+- `print_stderr` _bool, optional_ - If `True`, print the standard error
+  of the executed code. Defaults to `True`.
+
+<a id="camel.interpreters.docker_interpreter.DockerInterpreter.__del__"></a>
+
+#### \_\_del\_\_
+
+```python
+def __del__() -> None
+```
+
+Destructor for the DockerInterpreter class.
+
+This method ensures that the Docker container is removed when the
+interpreter is deleted.
+
+<a id="camel.interpreters.docker_interpreter.DockerInterpreter.run"></a>
+
+#### run
+
+```python
+def run(code: str, code_type: str) -> str
+```
+
+Executes the given code in the container attached to the
+interpreter, and captures the stdout and stderr streams.
+
+**Arguments**:
+
+- `code` _str_ - The code string to execute.
+- `code_type` _str_ - The type of code to execute (e.g., 'python',
+  'bash').
+  
+
+**Returns**:
+
+- `str` - A string containing the captured stdout and stderr of the
+  executed code.
+  
+
+**Raises**:
+
+- `InterpreterError` - If the user declines to run the code, or the
+  code type is unsupported, or there is an error in the docker
+  API/container
+
+<a id="camel.interpreters.docker_interpreter.DockerInterpreter.supported_code_types"></a>
+
+#### supported\_code\_types
+
+```python
+def supported_code_types() -> List[str]
+```
+
+Provides supported code types by the interpreter.
+
+<a id="camel.interpreters.docker_interpreter.DockerInterpreter.update_action_space"></a>
+
+#### update\_action\_space
+
+```python
+def update_action_space(action_space: Dict[str, Any]) -> None
+```
+
+Updates action space for *python* interpreter
+

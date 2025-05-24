@@ -1,0 +1,47 @@
+<a id="camel.toolkits.base"></a>
+
+<a id="camel.toolkits.base.BaseToolkit"></a>
+
+## BaseToolkit Objects
+
+```python
+class BaseToolkit(metaclass=AgentOpsMeta)
+```
+
+Base class for toolkits.
+
+**Arguments**:
+
+- `timeout` _Optional[float]_ - The timeout for the toolkit.
+
+<a id="camel.toolkits.base.BaseToolkit.get_tools"></a>
+
+#### get\_tools
+
+```python
+def get_tools() -> List[FunctionTool]
+```
+
+Returns a list of FunctionTool objects representing the
+functions in the toolkit.
+
+**Returns**:
+
+- `List[FunctionTool]` - A list of FunctionTool objects
+  representing the functions in the toolkit.
+
+<a id="camel.toolkits.base.BaseToolkit.run_mcp_server"></a>
+
+#### run\_mcp\_server
+
+```python
+def run_mcp_server(mode: Literal["stdio", "sse", "streamable-http"]) -> None
+```
+
+Run the MCP server in the specified mode.
+
+**Arguments**:
+
+- `mode` _Literal["stdio", "sse", "streamable-http"]_ - The mode to run
+  the MCP server in.
+

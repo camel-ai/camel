@@ -1,0 +1,150 @@
+<a id="camel.toolkits.reddit_toolkit"></a>
+
+<a id="camel.toolkits.reddit_toolkit.RedditToolkit"></a>
+
+## RedditToolkit Objects
+
+```python
+@MCPServer()
+class RedditToolkit(BaseToolkit)
+```
+
+A class representing a toolkit for Reddit operations.
+
+This toolkit provides methods to interact with the Reddit API, allowing
+users to collect top posts, perform sentiment analysis on comments, and
+track keyword discussions across multiple subreddits.
+
+**Attributes**:
+
+- `retries` _int_ - Number of retries for API requests in case of failure.
+- `delay` _float_ - Delay between retries in seconds.
+- `reddit` _Reddit_ - An instance of the Reddit client.
+
+<a id="camel.toolkits.reddit_toolkit.RedditToolkit.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(retries: int = 3,
+             delay: float = 0.0,
+             timeout: Optional[float] = None)
+```
+
+Initializes the RedditToolkit with the specified number of retries
+and delay.
+
+**Arguments**:
+
+- `retries` _int_ - Number of times to retry the request in case of
+  failure. Defaults to `3`.
+- `delay` _int_ - Time in seconds to wait between retries. Defaults to
+  `0`.
+- `timeout` _float_ - Timeout for API requests in seconds. Defaults to
+  `None`.
+
+<a id="camel.toolkits.reddit_toolkit.RedditToolkit.collect_top_posts"></a>
+
+#### collect\_top\_posts
+
+```python
+@retry_on_error()
+def collect_top_posts(
+        subreddit_name: str,
+        post_limit: int = 5,
+        comment_limit: int = 5) -> Union[List[Dict[str, Any]], str]
+```
+
+Collects the top posts and their comments from a specified
+subreddit.
+
+**Arguments**:
+
+- `subreddit_name` _str_ - The name of the subreddit to collect posts
+  from.
+- `post_limit` _int_ - The maximum number of top posts to collect.
+  Defaults to `5`.
+- `comment_limit` _int_ - The maximum number of top comments to collect
+  per post. Defaults to `5`.
+  
+
+**Returns**:
+
+  Union[List[Dict[str, Any]], str]: A list of dictionaries, each
+  containing the post title and its top comments if success.
+  String warming if credentials are not set.
+
+<a id="camel.toolkits.reddit_toolkit.RedditToolkit.perform_sentiment_analysis"></a>
+
+#### perform\_sentiment\_analysis
+
+```python
+def perform_sentiment_analysis(
+        data: List[Dict[str, Any]]) -> List[Dict[str, Any]]
+```
+
+Performs sentiment analysis on the comments collected from Reddit
+posts.
+
+**Arguments**:
+
+- `data` _List[Dict[str, Any]]_ - A list of dictionaries containing
+  Reddit post data and comments.
+  
+
+**Returns**:
+
+  List[Dict[str, Any]]: The original data with an added 'Sentiment
+  Score' for each comment.
+
+<a id="camel.toolkits.reddit_toolkit.RedditToolkit.track_keyword_discussions"></a>
+
+#### track\_keyword\_discussions
+
+```python
+def track_keyword_discussions(
+        subreddits: List[str],
+        keywords: List[str],
+        post_limit: int = 10,
+        comment_limit: int = 10,
+        sentiment_analysis: bool = False) -> Union[List[Dict[str, Any]], str]
+```
+
+Tracks discussions about specific keywords in specified subreddits.
+
+**Arguments**:
+
+- `subreddits` _List[str]_ - A list of subreddit names to search within.
+- `keywords` _List[str]_ - A list of keywords to track in the subreddit
+  discussions.
+- `post_limit` _int_ - The maximum number of top posts to collect per
+  subreddit. Defaults to `10`.
+- `comment_limit` _int_ - The maximum number of top comments to collect
+  per post. Defaults to `10`.
+- `sentiment_analysis` _bool_ - If True, performs sentiment analysis on
+  the comments. Defaults to `False`.
+  
+
+**Returns**:
+
+  Union[List[Dict[str, Any]], str]: A list of dictionaries
+  containing the subreddit name, post title, comment body, and
+  upvotes for each comment that contains the specified keywords
+  if success. String warming if credentials are not set.
+
+<a id="camel.toolkits.reddit_toolkit.RedditToolkit.get_tools"></a>
+
+#### get\_tools
+
+```python
+def get_tools() -> List[FunctionTool]
+```
+
+Returns a list of FunctionTool objects representing the
+functions in the toolkit.
+
+**Returns**:
+
+- `List[FunctionTool]` - A list of FunctionTool objects for the
+  toolkit methods.
+

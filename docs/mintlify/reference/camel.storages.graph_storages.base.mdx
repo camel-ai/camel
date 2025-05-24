@@ -1,0 +1,118 @@
+<a id="camel.storages.graph_storages.base"></a>
+
+<a id="camel.storages.graph_storages.base.BaseGraphStorage"></a>
+
+## BaseGraphStorage Objects
+
+```python
+class BaseGraphStorage(ABC)
+```
+
+An abstract base class for graph storage systems.
+
+<a id="camel.storages.graph_storages.base.BaseGraphStorage.get_client"></a>
+
+#### get\_client
+
+```python
+@property
+@abstractmethod
+def get_client() -> Any
+```
+
+Get the underlying graph storage client.
+
+<a id="camel.storages.graph_storages.base.BaseGraphStorage.get_schema"></a>
+
+#### get\_schema
+
+```python
+@property
+@abstractmethod
+def get_schema() -> str
+```
+
+Get the schema of the graph storage
+
+<a id="camel.storages.graph_storages.base.BaseGraphStorage.get_structured_schema"></a>
+
+#### get\_structured\_schema
+
+```python
+@property
+@abstractmethod
+def get_structured_schema() -> Dict[str, Any]
+```
+
+Get the structured schema of the graph storage
+
+<a id="camel.storages.graph_storages.base.BaseGraphStorage.refresh_schema"></a>
+
+#### refresh\_schema
+
+```python
+@abstractmethod
+def refresh_schema() -> None
+```
+
+Refreshes the graph schema information.
+
+<a id="camel.storages.graph_storages.base.BaseGraphStorage.add_triplet"></a>
+
+#### add\_triplet
+
+```python
+@abstractmethod
+def add_triplet(subj: str, obj: str, rel: str) -> None
+```
+
+Adds a relationship (triplet) between two entities in the database.
+
+**Arguments**:
+
+- `subj` _str_ - The identifier for the subject entity.
+- `obj` _str_ - The identifier for the object entity.
+- `rel` _str_ - The relationship between the subject and object.
+
+<a id="camel.storages.graph_storages.base.BaseGraphStorage.delete_triplet"></a>
+
+#### delete\_triplet
+
+```python
+@abstractmethod
+def delete_triplet(subj: str, obj: str, rel: str) -> None
+```
+
+Deletes a specific triplet from the graph, comprising a subject,
+object and relationship.
+
+**Arguments**:
+
+- `subj` _str_ - The identifier for the subject entity.
+- `obj` _str_ - The identifier for the object entity.
+- `rel` _str_ - The relationship between the subject and object.
+
+<a id="camel.storages.graph_storages.base.BaseGraphStorage.query"></a>
+
+#### query
+
+```python
+@abstractmethod
+def query(query: str,
+          params: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]
+```
+
+Query the graph store with statement and parameters.
+
+**Arguments**:
+
+- `query` _str_ - The query to be executed.
+- `params` _Optional[Dict[str, Any]]_ - A dictionary of parameters to
+  be used in the query. Defaults to `None`.
+  
+
+**Returns**:
+
+  List[Dict[str, Any]]: A list of dictionaries, each
+  dictionary represents a row of results from the query.
+

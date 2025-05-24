@@ -1,0 +1,238 @@
+<a id="camel.agents.repo_agent"></a>
+
+<a id="camel.agents.repo_agent.GitHubFile"></a>
+
+## GitHubFile Objects
+
+```python
+class GitHubFile(BaseModel)
+```
+
+Model to hold GitHub file information.
+
+**Attributes**:
+
+- `content` _str_ - The content of the GitHub text.
+- `file_path` _str_ - The path of the file.
+- `html_url` _str_ - The actual url of the file.
+
+<a id="camel.agents.repo_agent.RepositoryInfo"></a>
+
+## RepositoryInfo Objects
+
+```python
+class RepositoryInfo(BaseModel)
+```
+
+Model to hold GitHub repository information.
+
+**Attributes**:
+
+- `repo_name` _str_ - The full name of the repository.
+- `repo_url` _str_ - The URL of the repository.
+- `contents` _list_ - A list to hold the repository contents.
+
+<a id="camel.agents.repo_agent.RepoAgent"></a>
+
+## RepoAgent Objects
+
+```python
+@track_agent(name="RepoAgent")
+class RepoAgent(ChatAgent)
+```
+
+A specialized agent designed to interact with GitHub repositories for
+code generation tasks.
+The RepoAgent enhances a base ChatAgent by integrating context from
+one or more GitHub repositories. It supports two processing modes:
+- FULL_CONTEXT: loads and injects full repository content into the
+prompt.
+- RAG (Retrieval-Augmented Generation): retrieves relevant
+code/documentation chunks using a vector store when context
+length exceeds a specified token limit.
+
+**Attributes**:
+
+- `vector_retriever` _VectorRetriever_ - Retriever used to
+  perform semantic search in RAG mode. Required if repo content
+  exceeds context limit.
+- `system_message` _Optional[str]_ - The system message
+  for the chat agent. (default: :str:`"You are a code assistant
+  with repo context."`)
+- `repo_paths` _Optional[List[str]]_ - List of GitHub repository URLs to
+  load during initialization. (default: :obj:`None`)
+- `model` _BaseModelBackend_ - The model backend to use for generating
+  responses. (default: :obj:`ModelPlatformType.DEFAULT`
+  with `ModelType.DEFAULT`)
+- `max_context_tokens` _Optional[int]_ - Maximum number of tokens allowed
+  before switching to RAG mode. (default: :obj:`2000`)
+- `github_auth_token` _Optional[str]_ - GitHub personal access token
+  for accessing private or rate-limited repositories. (default:
+  :obj:`None`)
+- `chunk_size` _Optional[int]_ - Maximum number of characters per code chunk
+  when indexing files for RAG. (default: :obj:`8192`)
+- `top_k` _int_ - Number of top-matching chunks to retrieve from the vector
+  store in RAG mode. (default: :obj:`5`)
+- `similarity` _Optional[float]_ - Minimum similarity score required to
+  include a chunk in the RAG context. (default: :obj:`0.6`)
+- `collection_name` _Optional[str]_ - Name of the vector database
+  collection to use for storing and retrieving chunks. (default:
+  :obj:`None`)
+- `**kwargs` - Inherited from ChatAgent
+  
+
+**Notes**:
+
+  The current implementation of RAG mode requires using Qdrant as the
+  vector storage backend. The VectorRetriever defaults to QdrantStorage
+  if no storage is explicitly provided. Other vector storage backends
+  are not currently supported for the RepoAgent's RAG functionality.
+
+<a id="camel.agents.repo_agent.RepoAgent.parse_url"></a>
+
+#### parse\_url
+
+```python
+def parse_url(url: str) -> Tuple[str, str]
+```
+
+Parse the GitHub URL and return the (owner, repo_name) tuple.
+
+**Arguments**:
+
+- `url` _str_ - The URL to be parsed.
+  
+
+**Returns**:
+
+  Tuple[str, str]: The (owner, repo_name) tuple.
+
+<a id="camel.agents.repo_agent.RepoAgent.load_repositories"></a>
+
+#### load\_repositories
+
+```python
+def load_repositories(repo_urls: List[str]) -> List[RepositoryInfo]
+```
+
+Load the content of a GitHub repository.
+
+**Arguments**:
+
+- `repo_urls` _str_ - The list of Repo URLs.
+  
+
+**Returns**:
+
+- `List[RepositoryInfo]` - A list of objects containing information
+  about the all repositories, including the contents.
+
+<a id="camel.agents.repo_agent.RepoAgent.load_repository"></a>
+
+#### load\_repository
+
+```python
+def load_repository(repo_url: str, github_client: "Github") -> RepositoryInfo
+```
+
+Load the content of a GitHub repository.
+
+**Arguments**:
+
+- `repo_urls` _str_ - The Repo URL to be loaded.
+- `github_client` _GitHub_ - The established GitHub client.
+  
+
+**Returns**:
+
+- `RepositoryInfo` - The object containing information
+  about the repository, including the contents.
+
+<a id="camel.agents.repo_agent.RepoAgent.count_tokens"></a>
+
+#### count\_tokens
+
+```python
+def count_tokens() -> int
+```
+
+To count the tokens that's currently in the memory
+
+**Returns**:
+
+- `int` - The number of tokens
+
+<a id="camel.agents.repo_agent.RepoAgent.construct_full_text"></a>
+
+#### construct\_full\_text
+
+```python
+def construct_full_text()
+```
+
+Construct full context text from repositories by concatenation.
+
+<a id="camel.agents.repo_agent.RepoAgent.add_repositories"></a>
+
+#### add\_repositories
+
+```python
+def add_repositories(repo_urls: List[str])
+```
+
+Add a GitHub repository to the list of repositories.
+
+**Arguments**:
+
+- `repo_urls` _str_ - The Repo URL to be added.
+
+<a id="camel.agents.repo_agent.RepoAgent.check_switch_mode"></a>
+
+#### check\_switch\_mode
+
+```python
+def check_switch_mode() -> bool
+```
+
+Check if the current context exceeds the context window; if so,
+switch to RAG mode.
+
+**Returns**:
+
+- `bool` - True if the mode was switched, False otherwise.
+
+<a id="camel.agents.repo_agent.RepoAgent.step"></a>
+
+#### step
+
+```python
+def step(input_message: Union[BaseMessage, str], *args,
+         **kwargs) -> ChatAgentResponse
+```
+
+Overrides `ChatAgent.step()` to first retrieve relevant context
+from the vector store before passing the input to the language model.
+
+<a id="camel.agents.repo_agent.RepoAgent.search_by_file_path"></a>
+
+#### search\_by\_file\_path
+
+```python
+def search_by_file_path(file_path: str) -> str
+```
+
+Search for all payloads in the vector database where
+file_path matches the given value (the same file),
+then sort by piece_num and concatenate text fields to return a
+complete result.
+
+**Arguments**:
+
+- `file_path` _str_ - The `file_path` value to filter the payloads.
+  
+
+**Returns**:
+
+- `str` - A concatenated string of the `text` fields sorted by
+  `piece_num`.
+

@@ -1,0 +1,237 @@
+---
+title: "Prompting Cookbook"
+---
+
+You can also check this cookbook in colab [here](https://colab.research.google.com/drive/1VcjPuy2UEYm0xLdriT7OMGt6I2yX9z32?usp=sharing).
+
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
+  <a href="https://www.camel-ai.org/">
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
+  </a>
+  <a href="https://discord.camel-ai.org">
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
+  </a>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
+
+This notebook demonstrates how to set up and leverage CAMEL's ability to use **Prompt** module. 
+
+In this notebook, you'll explore:
+
+* **CAMEL**: A powerful multi-agent framework that enables Retrieval-Augmented Generation and multi-agent role-playing scenarios, allowing for sophisticated AI-driven tasks.
+
+* **Prompt**: Interface to communicate with models with various templates, create custom prompts, and leverage different prompt dictionaries for tasks ranging from role-playing to code generation, evaluation, and more. By mastering the Prompt module, you can significantly enhance your AI agents' capabilities and tailor them to specific tasks.
+
+## 📦 Installation
+
+Ensure you have CAMEL AI installed in your Python environment:
+
+
+```python
+!pip install "camel-ai==0.2.16"
+```
+
+## 🔑 Setting Up API Keys
+
+You'll need to set up your API keys for OpenAI.
+
+
+```python
+import os
+from getpass import getpass
+
+# Prompt for the API key securely
+openai_api_key = getpass('Enter your API key: ')
+os.environ["OPENAI_API_KEY"] = openai_api_key
+```
+
+Alternatively, if running on Colab, you could save your API keys and tokens as **Colab Secrets**,
+
+and use them across notebooks.
+
+To do so, **comment out** the above **manual** API key prompt code block(s),
+
+and **uncomment** the following codeblock.
+
+⚠️ Don't forget granting access to the API key you would be using to the current notebook.
+
+
+```python
+# import os
+# from google.colab import userdata
+
+# os.environ["OPENAI_API_KEY"] = userdata.get("OPENAI_API_KEY")
+```
+
+## Getting Started with Prompt Templates
+CAMEL offers a wide range of pre-defined prompt templates that you can use to quickly create specialized AI agents. Let's start with a basic example using the TaskSpecifyAgent with the AI_SOCIETY task type.
+
+
+```python
+from camel.agents import TaskSpecifyAgent
+from camel.configs import ChatGPTConfig
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType, ModelType, TaskType
+
+# Set up the model
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.OPENAI,
+    model_type=ModelType.GPT_4O_MINI,
+)
+
+# Create a task specify agent
+task_specify_agent = TaskSpecifyAgent(
+    model=model, task_type=TaskType.AI_SOCIETY
+)
+
+# Run the agent with a task prompt
+specified_task_prompt = task_specify_agent.run(
+    task_prompt="Improving stage presence and performance skills",
+    meta_dict=dict(
+        assistant_role="Musician", user_role="Student", word_limit=100
+    ),
+)
+
+print(f"Specified task prompt:\n{specified_task_prompt}\n")
+```
+
+## Creating Custom Prompts
+CAMEL also allows you to create your own custom prompts. Here's an example of how to create and use a custom prompt template:
+
+
+```python
+from camel.agents import TaskSpecifyAgent
+from camel.configs import ChatGPTConfig
+from camel.models import ModelFactory
+from camel.prompts import TextPrompt
+from camel.types import ModelPlatformType, ModelType
+
+# Set up the model
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.OPENAI,
+    model_type=ModelType.GPT_4O_MINI,
+)
+
+# Create a custom prompt template
+my_prompt_template = TextPrompt(
+    'Here is a task: I\'m a {occupation} and I want to {task}. Help me to make this task more specific.'
+)
+
+# Create a task specify agent with the custom prompt
+task_specify_agent = TaskSpecifyAgent(
+    model=model, task_specify_prompt=my_prompt_template
+)
+
+# Run the agent with a task prompt
+response = task_specify_agent.run(
+    task_prompt="get promotion",
+    meta_dict=dict(occupation="Software Engineer"),
+)
+
+print(response)
+```
+
+## Advanced Prompt Usage
+CAMEL provides various prompt dictionaries for different purposes. Let's explore some advanced uses of these prompt templates:
+
+### 1. Code Generation with CodePromptTemplateDict
+
+
+```python
+from camel.prompts import CodePromptTemplateDict
+
+# Generate programming languages
+languages_prompt = CodePromptTemplateDict.GENERATE_LANGUAGES.format(num_languages=5)
+print(f"Languages prompt:\n{languages_prompt}\n")
+
+# Generate coding tasks
+tasks_prompt = CodePromptTemplateDict.GENERATE_TASKS.format(num_tasks=3)
+print(f"Tasks prompt:\n{tasks_prompt}\n")
+
+# Create an AI coding assistant prompt
+assistant_prompt = CodePromptTemplateDict.ASSISTANT_PROMPT.format(
+    assistant_role="Python Expert",
+    task_description="Implement a binary search algorithm",
+)
+print(f"Assistant prompt:\n{assistant_prompt}\n")
+```
+
+### 2. Evaluation with EvaluationPromptTemplateDict
+
+
+```python
+from camel.prompts import EvaluationPromptTemplateDict
+
+# Generate evaluation questions
+questions_prompt = EvaluationPromptTemplateDict.GENERATE_QUESTIONS.format(
+    num_questions=5,
+    field="Machine Learning",
+    examples="1. What is the difference between supervised and unsupervised learning?\n2. Explain the concept of overfitting.",
+)
+print(f"Evaluation questions prompt:\n{questions_prompt}\n")
+```
+
+### 3. Object Recognition with ObjectRecognitionPromptTemplateDict
+
+
+```python
+from camel.prompts import ObjectRecognitionPromptTemplateDict
+
+# Create an object recognition assistant prompt
+recognition_prompt = ObjectRecognitionPromptTemplateDict.ASSISTANT_PROMPT
+print(f"Object recognition prompt:\n{recognition_prompt}\n")
+```
+
+### 4. Translation with TranslationPromptTemplateDict
+
+
+```python
+from camel.prompts import TranslationPromptTemplateDict
+
+# Create a translation assistant prompt
+translation_prompt = TranslationPromptTemplateDict.ASSISTANT_PROMPT.format(target_language="Spanish")
+print(f"Translation prompt:\n{translation_prompt}\n")
+```
+
+## 🌟 Highlights
+
+This notebook has guided you through setting up and use **Prompt** module. The CAMEL Prompt module provides a powerful and flexible way to guide AI models in producing desired outputs. By using pre-defined prompt templates, creating custom prompts, and leveraging different prompt dictionaries, you can create highly specialized AI agents tailored to your specific needs.
+
+Key tools utilized in this notebook include:
+
+*   **CAMEL**: A powerful multi-agent framework that enables Retrieval-Augmented Generation and multi-agent role-playing scenarios, allowing for sophisticated AI-driven tasks.
+*   **Prompt**: Interface to communicate with models with various templates, create custom prompts, and leverage different prompt dictionaries for tasks ranging from role-playing to code generation, evaluation, and more. By mastering the Prompt module, you can significantly enhance your AI agents' capabilities and tailor them to specific tasks.
+
+That's everything: Got questions about 🐫 CAMEL-AI? Join us on [Discord](https://discord.camel-ai.org)! Whether you want to share feedback, explore the latest in multi-agent systems, get support, or connect with others on exciting projects, we’d love to have you in the community! 🤝
+
+Check out some of our other work:
+
+1. 🐫 Creating Your First CAMEL Agent [free Colab](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html)
+
+2.  Graph RAG Cookbook [free Colab](https://colab.research.google.com/drive/1uZKQSuu0qW6ukkuSv9TukLB9bVaS1H0U?usp=sharing)
+
+3. 🧑‍⚖️ Create A Hackathon Judge Committee with Workforce [free Colab](https://colab.research.google.com/drive/18ajYUMfwDx3WyrjHow3EvUMpKQDcrLtr?usp=sharing)
+
+4. 🔥 3 ways to ingest data from websites with Firecrawl & CAMEL [free Colab](https://colab.research.google.com/drive/1lOmM3VmgR1hLwDKdeLGFve_75RFW0R9I?usp=sharing)
+
+5. 🦥 Agentic SFT Data Generation with CAMEL and Mistral Models, Fine-Tuned with Unsloth [free Colab](https://colab.research.google.com/drive/1lYgArBw7ARVPSpdwgKLYnp_NEXiNDOd-?usp=sharingg)
+
+Thanks from everyone at 🐫 CAMEL-AI
+
+
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
+  <a href="https://www.camel-ai.org/">
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
+  </a>
+  <a href="https://discord.camel-ai.org">
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
+  </a>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
+

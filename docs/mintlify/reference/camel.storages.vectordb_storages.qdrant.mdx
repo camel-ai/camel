@@ -1,0 +1,224 @@
+<a id="camel.storages.vectordb_storages.qdrant"></a>
+
+<a id="camel.storages.vectordb_storages.qdrant.QdrantStorage"></a>
+
+## QdrantStorage Objects
+
+```python
+class QdrantStorage(BaseVectorStorage)
+```
+
+An implementation of the `BaseVectorStorage` for interacting with
+Qdrant, a vector search engine.
+
+The detailed information about Qdrant is available at:
+`Qdrant <https://qdrant.tech/>`_
+
+**Arguments**:
+
+- `vector_dim` _int_ - The dimension of storing vectors.
+- `collection_name` _Optional[str], optional_ - Name for the collection in
+  the Qdrant. If not provided, set it to the current time with iso
+  format. (default: :obj:`None`)
+- `url_and_api_key` _Optional[Tuple[str, str]], optional_ - Tuple containing
+  the URL and API key for connecting to a remote Qdrant instance.
+- `(default` - :obj:`None`)
+- `path` _Optional[str], optional_ - Path to a directory for initializing a
+  local Qdrant client. (default: :obj:`None`)
+- `distance` _VectorDistance, optional_ - The distance metric for vector
+  comparison (default: :obj:`VectorDistance.COSINE`)
+- `delete_collection_on_del` _bool, optional_ - Flag to determine if the
+  collection should be deleted upon object destruction.
+- `(default` - :obj:`False`)
+- `**kwargs` _Any_ - Additional keyword arguments for initializing
+  `QdrantClient`.
+  
+
+**Notes**:
+
+  - If `url_and_api_key` is provided, it takes priority and the client
+  will attempt to connect to the remote Qdrant instance using the URL
+  endpoint.
+  - If `url_and_api_key` is not provided and `path` is given, the client
+  will use the local path to initialize Qdrant.
+  - If neither `url_and_api_key` nor `path` is provided, the client will
+  be initialized with an in-memory storage (`":memory:"`).
+
+<a id="camel.storages.vectordb_storages.qdrant.QdrantStorage.__del__"></a>
+
+#### \_\_del\_\_
+
+```python
+def __del__()
+```
+
+Deletes the collection if :obj:`del_collection` is set to
+:obj:`True`.
+
+<a id="camel.storages.vectordb_storages.qdrant.QdrantStorage.close_client"></a>
+
+#### close\_client
+
+```python
+def close_client(**kwargs)
+```
+
+Closes the client connection to the Qdrant storage.
+
+<a id="camel.storages.vectordb_storages.qdrant.QdrantStorage.add"></a>
+
+#### add
+
+```python
+def add(records: List[VectorRecord], **kwargs) -> None
+```
+
+Adds a list of vectors to the specified collection.
+
+**Arguments**:
+
+- `vectors` _List[VectorRecord]_ - List of vectors to be added.
+- `**kwargs` _Any_ - Additional keyword arguments.
+  
+
+**Raises**:
+
+- `RuntimeError` - If there was an error in the addition process.
+
+<a id="camel.storages.vectordb_storages.qdrant.QdrantStorage.update_payload"></a>
+
+#### update\_payload
+
+```python
+def update_payload(ids: List[str], payload: Dict[str, Any],
+                   **kwargs: Any) -> None
+```
+
+Updates the payload of the vectors identified by their IDs.
+
+**Arguments**:
+
+- `ids` _List[str]_ - List of unique identifiers for the vectors to be
+  updated.
+- `payload` _Dict[str, Any]_ - List of payloads to be updated.
+- `**kwargs` _Any_ - Additional keyword arguments.
+  
+
+**Raises**:
+
+- `RuntimeError` - If there is an error during the update process.
+
+<a id="camel.storages.vectordb_storages.qdrant.QdrantStorage.delete_collection"></a>
+
+#### delete\_collection
+
+```python
+def delete_collection() -> None
+```
+
+Deletes the entire collection in the Qdrant storage.
+
+<a id="camel.storages.vectordb_storages.qdrant.QdrantStorage.delete"></a>
+
+#### delete
+
+```python
+def delete(ids: Optional[List[str]] = None,
+           payload_filter: Optional[Dict[str, Any]] = None,
+           **kwargs: Any) -> None
+```
+
+Deletes points from the collection based on either IDs or payload
+filters.
+
+**Arguments**:
+
+- `ids` _Optional[List[str]], optional_ - List of unique identifiers
+  for the vectors to be deleted.
+- `payload_filter` _Optional[Dict[str, Any]], optional_ - A filter for
+  the payload to delete points matching specific conditions. If
+  `ids` is provided, `payload_filter` will be ignored unless both
+  are combined explicitly.
+- `**kwargs` _Any_ - Additional keyword arguments pass to `QdrantClient.
+  delete`.
+  
+
+**Examples**:
+
+  >>> # Delete points with IDs "1", "2", and "3"
+  >>> storage.delete(ids=["1", "2", "3"])
+  >>> # Delete points with payload filter
+  >>> storage.delete(payload_filter={"name": "Alice"})
+  
+
+**Raises**:
+
+- `ValueError` - If neither `ids` nor `payload_filter` is provided.
+- `RuntimeError` - If there is an error during the deletion process.
+  
+
+**Notes**:
+
+  - If `ids` is provided, the points with these IDs will be deleted
+  directly, and the `payload_filter` will be ignored.
+  - If `ids` is not provided but `payload_filter` is, then points
+  matching the `payload_filter` will be deleted.
+
+<a id="camel.storages.vectordb_storages.qdrant.QdrantStorage.query"></a>
+
+#### query
+
+```python
+def query(query: VectorDBQuery,
+          filter_conditions: Optional[Dict[str, Any]] = None,
+          **kwargs: Any) -> List[VectorDBQueryResult]
+```
+
+Searches for similar vectors in the storage based on the provided
+query.
+
+**Arguments**:
+
+- `query` _VectorDBQuery_ - The query object containing the search
+  vector and the number of top similar vectors to retrieve.
+- `filter_conditions` _Optional[Dict[str, Any]], optional_ - A
+  dictionary specifying conditions to filter the query results.
+- `**kwargs` _Any_ - Additional keyword arguments.
+  
+
+**Returns**:
+
+- `List[VectorDBQueryResult]` - A list of vectors retrieved from the
+  storage based on similarity to the query vector.
+
+<a id="camel.storages.vectordb_storages.qdrant.QdrantStorage.clear"></a>
+
+#### clear
+
+```python
+def clear() -> None
+```
+
+Remove all vectors from the storage.
+
+<a id="camel.storages.vectordb_storages.qdrant.QdrantStorage.load"></a>
+
+#### load
+
+```python
+def load() -> None
+```
+
+Load the collection hosted on cloud service.
+
+<a id="camel.storages.vectordb_storages.qdrant.QdrantStorage.client"></a>
+
+#### client
+
+```python
+@property
+def client() -> "QdrantClient"
+```
+
+Provides access to the underlying vector database client.
+

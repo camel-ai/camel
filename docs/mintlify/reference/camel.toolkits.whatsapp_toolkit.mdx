@@ -1,0 +1,107 @@
+<a id="camel.toolkits.whatsapp_toolkit"></a>
+
+<a id="camel.toolkits.whatsapp_toolkit.WhatsAppToolkit"></a>
+
+## WhatsAppToolkit Objects
+
+```python
+@MCPServer()
+class WhatsAppToolkit(BaseToolkit)
+```
+
+A class representing a toolkit for WhatsApp operations.
+
+This toolkit provides methods to interact with the WhatsApp Business API,
+allowing users to send messages, retrieve message templates, and get
+business profile information.
+
+**Attributes**:
+
+- `retries` _int_ - Number of retries for API requests in case of failure.
+- `delay` _int_ - Delay between retries in seconds.
+- `base_url` _str_ - Base URL for the WhatsApp Business API.
+- `version` _str_ - API version.
+
+<a id="camel.toolkits.whatsapp_toolkit.WhatsAppToolkit.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(timeout: Optional[float] = None)
+```
+
+Initializes the WhatsAppToolkit.
+
+<a id="camel.toolkits.whatsapp_toolkit.WhatsAppToolkit.send_message"></a>
+
+#### send\_message
+
+```python
+@retry_on_error()
+def send_message(to: str, message: str) -> Union[Dict[str, Any], str]
+```
+
+Sends a text message to a specified WhatsApp number.
+
+**Arguments**:
+
+- `to` _str_ - The recipient's WhatsApp number in international format.
+- `message` _str_ - The text message to send.
+  
+
+**Returns**:
+
+  Union[Dict[str, Any], str]: A dictionary containing
+  the API response if successful, or an error message string if
+  failed.
+
+<a id="camel.toolkits.whatsapp_toolkit.WhatsAppToolkit.get_message_templates"></a>
+
+#### get\_message\_templates
+
+```python
+@retry_on_error()
+def get_message_templates() -> Union[List[Dict[str, Any]], str]
+```
+
+Retrieves all message templates for the WhatsApp Business account.
+
+**Returns**:
+
+  Union[List[Dict[str, Any]], str]: A list of dictionaries containing
+  template information if successful, or an error message string
+  if failed.
+
+<a id="camel.toolkits.whatsapp_toolkit.WhatsAppToolkit.get_business_profile"></a>
+
+#### get\_business\_profile
+
+```python
+@retry_on_error()
+def get_business_profile() -> Union[Dict[str, Any], str]
+```
+
+Retrieves the WhatsApp Business profile information.
+
+**Returns**:
+
+  Union[Dict[str, Any], str]: A dictionary containing the business
+  profile information if successful, or an error message string
+  if failed.
+
+<a id="camel.toolkits.whatsapp_toolkit.WhatsAppToolkit.get_tools"></a>
+
+#### get\_tools
+
+```python
+def get_tools() -> List[FunctionTool]
+```
+
+Returns a list of FunctionTool objects representing the
+functions in the toolkit.
+
+**Returns**:
+
+- `List[FunctionTool]` - A list of FunctionTool objects for the
+  toolkit methods.
+

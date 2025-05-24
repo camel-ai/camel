@@ -1,0 +1,47 @@
+<a id="camel.verifiers.math_verifier"></a>
+
+<a id="camel.verifiers.math_verifier.MathVerifier"></a>
+
+## MathVerifier Objects
+
+```python
+class MathVerifier(BaseVerifier)
+```
+
+Verifier for mathematical expressions using Math-Verify.
+
+Features:
+- Supports LaTeX and plain mathematical expressions
+- Handles complex numbers, matrices, and sets
+- Configurable precision for floating-point comparisons
+- Optional LaTeX wrapping to ensure proper parsing and rendering
+- Comprehensive error handling and logging
+
+<a id="camel.verifiers.math_verifier.MathVerifier.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(extractor: Optional[BaseExtractor] = None,
+             timeout: Optional[float] = 30.0,
+             float_rounding: int = 6,
+             numeric_precision: int = 15,
+             enable_wrapping: Optional[bool] = False,
+             **kwargs)
+```
+
+Initializes the MathVerifier.
+
+**Arguments**:
+
+- `extractor` _Optional[BaseExtractor], optional_ - The extractor to use
+  for extracting code from the solution. (default: :obj:`None`)
+- `timeout` _Optional[float], optional_ - The execution timeout in
+  seconds. (default: :obj:`30.0`)
+- `float_rounding` _int, optional_ - The number of decimal places to
+  round floating-point numbers. (default: :obj:`6`)
+- `numeric_precision` _int, optional_ - The numeric precision for
+  floating-point comparisons. (default: :obj:`15`)
+- `enable_wrapping` _Optional[bool], optional_ - Whether to wrap LaTeX
+  expressions in math mode delimiters. (default: :obj:`False`)
+

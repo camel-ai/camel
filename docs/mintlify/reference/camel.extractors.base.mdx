@@ -1,0 +1,192 @@
+<a id="camel.extractors.base"></a>
+
+<a id="camel.extractors.base.BaseExtractorStrategy"></a>
+
+## BaseExtractorStrategy Objects
+
+```python
+class BaseExtractorStrategy(ABC)
+```
+
+Abstract base class for extraction strategies.
+
+<a id="camel.extractors.base.BaseExtractorStrategy.extract"></a>
+
+#### extract
+
+```python
+@abstractmethod
+async def extract(text: str) -> Optional[str]
+```
+
+Asynchronously extracts relevant parts from text.
+
+**Arguments**:
+
+- `text` _str_ - The input text to process.
+  
+
+**Returns**:
+
+- `Optional[str]` - Extracted str if successful, otherwise None.
+
+<a id="camel.extractors.base.BaseExtractor"></a>
+
+## BaseExtractor Objects
+
+```python
+class BaseExtractor()
+```
+
+Base class for response extractors with a fixed strategy pipeline.
+
+This extractor:
+- Uses a **fixed multi-stage pipeline** of extraction strategies.
+- Tries **each strategy in order** within a stage until one succeeds.
+- Feeds the **output of one stage into the next** for processing.
+- Supports **async execution** for efficient processing.
+- Provides **batch processing and resource monitoring** options.
+
+<a id="camel.extractors.base.BaseExtractor.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(pipeline: List[List[BaseExtractorStrategy]],
+             cache_templates: bool = True,
+             max_cache_size: int = 1000,
+             extraction_timeout: float = 30.0,
+             batch_size: int = 10,
+             monitoring_interval: float = 5.0,
+             cpu_threshold: float = 80.0,
+             memory_threshold: float = 85.0,
+             **kwargs)
+```
+
+Initialize the extractor with a multi-stage strategy pipeline.
+
+**Arguments**:
+
+  pipeline (List[List[BaseExtractorStrategy]]):
+  A fixed list of lists where each list represents a stage
+  containing extractor strategies executed in order.
+- `cache_templates` _bool_ - Whether to cache extraction templates.
+- `(default` - :obj:`True`)
+- `max_cache_size` _int_ - Maximum number of templates to cache.
+- `(default` - :obj:`1000`)
+- `extraction_timeout` _float_ - Maximum time for extraction in seconds.
+- `(default` - :obj:`30.0`)
+- `batch_size` _int_ - Size of batches for parallel extraction.
+- `(default` - :obj:`10`)
+- `monitoring_interval` _float_ - Interval in seconds between resource
+  checks. (default: :obj:`5.0`)
+- `cpu_threshold` _float_ - CPU usage percentage threshold for scaling
+  down. (default: :obj:`80.0`)
+- `memory_threshold` _float_ - Memory usage percentage threshold for
+  scaling down. (default: :obj:`85.0`)
+- `**kwargs` - Additional extractor parameters.
+
+<a id="camel.extractors.base.BaseExtractor.setup"></a>
+
+#### setup
+
+```python
+async def setup() -> None
+```
+
+Set up the extractor with necessary resources.
+
+This method:
+1. Initializes template cache if enabled
+2. Sets up any parallel processing resources
+3. Validates extraction patterns
+
+**Raises**:
+
+- `RuntimeError` - If initialization fails
+
+<a id="camel.extractors.base.BaseExtractor.cleanup"></a>
+
+#### cleanup
+
+```python
+async def cleanup() -> None
+```
+
+Clean up extractor resources.
+
+This method handles cleanup of resources and resets the extractor
+state.
+It ensures:
+1. All resources are properly released
+2. Template cache is cleared
+3. Parallel processing resources are shutdown
+4. State is reset to initial
+5. Cleanup happens even if errors occur
+
+**Raises**:
+
+- `RuntimeError` - If cleanup fails (after resetting initialization
+  state).
+
+<a id="camel.extractors.base.BaseExtractor.__aenter__"></a>
+
+#### \_\_aenter\_\_
+
+```python
+async def __aenter__() -> "BaseExtractor"
+```
+
+Async context manager entry.
+
+**Returns**:
+
+- `BaseExtractor` - The initialized extractor instance.
+
+<a id="camel.extractors.base.BaseExtractor.__aexit__"></a>
+
+#### \_\_aexit\_\_
+
+```python
+async def __aexit__(exc_type: Optional[Type[BaseException]],
+                    exc_val: Optional[BaseException],
+                    exc_tb: Optional[TracebackType]) -> None
+```
+
+Async context manager exit.
+
+**Arguments**:
+
+- `exc_type` _Optional[Type[BaseException]]_ - Exception type if an
+  error occurred.
+- `exc_val` _Optional[BaseException]_ - Exception value if an error
+  occurred.
+- `exc_tb` _Optional[TracebackType]_ - Exception traceback if an error
+  occurred.
+
+<a id="camel.extractors.base.BaseExtractor.extract"></a>
+
+#### extract
+
+```python
+async def extract(response: str) -> Optional[str]
+```
+
+Extracts a normalized, comparable part of the LLM response
+using the fixed multi-stage strategy pipeline.
+
+**Arguments**:
+
+- `response` _str_ - The raw response text.
+  
+
+**Returns**:
+
+- `Optional[str]` - Extracted data if successful, otherwise None.
+  
+
+**Raises**:
+
+- `ValueError` - If response is empty or invalid.
+- `RuntimeError` - If extractor is not initialized.
+

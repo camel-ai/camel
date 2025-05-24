@@ -29,7 +29,7 @@ jobs:
           source .venv/bin/activate
           cd docs
           make html
-
+            
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v4
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
@@ -39,3 +39,13 @@ jobs:
           publish_dir: docs/_build/html/
           force_orphan: true
           cname: docs.camel-ai.org
+
+      - name: Convert Notebooks and Update Mintlify Config
+        run: |
+          source .venv/bin/activate
+          python docs/mintlify/convert_notebook2mdx.py \
+            --input docs/cookbooks \
+            --output docs/mintlify_content/cookbooks \
+            --update-docs-json docs/mintlify/mintlify.json \
+            --docs-path-prefix "" \
+            --verbose

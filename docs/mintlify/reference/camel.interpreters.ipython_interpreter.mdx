@@ -1,0 +1,93 @@
+<a id="camel.interpreters.ipython_interpreter"></a>
+
+<a id="camel.interpreters.ipython_interpreter.JupyterKernelInterpreter"></a>
+
+## JupyterKernelInterpreter Objects
+
+```python
+class JupyterKernelInterpreter(BaseInterpreter)
+```
+
+A class for executing code strings in a Jupyter Kernel.
+
+**Arguments**:
+
+- `require_confirm` _bool, optional_ - If `True`, prompt user before
+  running code strings for security. Defaults to `True`.
+- `print_stdout` _bool, optional_ - If `True`, print the standard
+  output of the executed code. Defaults to `False`.
+- `print_stderr` _bool, optional_ - If `True`, print the standard error
+  of the executed code. Defaults to `True`.
+
+<a id="camel.interpreters.ipython_interpreter.JupyterKernelInterpreter.__del__"></a>
+
+#### \_\_del\_\_
+
+```python
+def __del__() -> None
+```
+
+Clean up the kernel and client.
+
+<a id="camel.interpreters.ipython_interpreter.JupyterKernelInterpreter.run"></a>
+
+#### run
+
+```python
+def run(code: str, code_type: str) -> str
+```
+
+Executes the given code in the Jupyter kernel.
+
+**Arguments**:
+
+- `code` _str_ - The code string to execute.
+- `code_type` _str_ - The type of code to execute (e.g., 'python',
+  'bash').
+  
+
+**Returns**:
+
+- `str` - A string containing the captured result of the
+  executed code.
+  
+
+**Raises**:
+
+- `InterpreterError` - If there is an error when doing code execution.
+
+<a id="camel.interpreters.ipython_interpreter.JupyterKernelInterpreter.supported_code_types"></a>
+
+#### supported\_code\_types
+
+```python
+def supported_code_types() -> List[str]
+```
+
+Provides supported code types by the interpreter.
+
+**Returns**:
+
+- `List[str]` - Supported code types.
+
+<a id="camel.interpreters.ipython_interpreter.JupyterKernelInterpreter.update_action_space"></a>
+
+#### update\_action\_space
+
+```python
+def update_action_space(action_space: Dict[str, Any]) -> None
+```
+
+Updates the action space for the interpreter.
+
+**Arguments**:
+
+- `action_space` _Dict[str, Any]_ - A dictionary representing the
+  new or updated action space.
+  
+
+**Raises**:
+
+- `RuntimeError` - Always raised because `JupyterKernelInterpreter`
+  does not support updating the action space.
+

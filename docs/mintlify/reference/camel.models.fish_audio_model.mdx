@@ -1,0 +1,99 @@
+<a id="camel.models.fish_audio_model"></a>
+
+<a id="camel.models.fish_audio_model.FishAudioModel"></a>
+
+## FishAudioModel Objects
+
+```python
+class FishAudioModel(BaseAudioModel)
+```
+
+Provides access to FishAudio's Text-to-Speech (TTS) and Speech_to_Text
+(STT) models.
+
+<a id="camel.models.fish_audio_model.FishAudioModel.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(api_key: Optional[str] = None, url: Optional[str] = None) -> None
+```
+
+Initialize an instance of FishAudioModel.
+
+**Arguments**:
+
+- `api_key` _Optional[str]_ - API key for FishAudio service. If not
+  provided, the environment variable `FISHAUDIO_API_KEY` will be
+  used.
+- `url` _Optional[str]_ - Base URL for FishAudio API. If not provided,
+  the environment variable `FISHAUDIO_API_BASE_URL` will be used.
+
+<a id="camel.models.fish_audio_model.FishAudioModel.text_to_speech"></a>
+
+#### text\_to\_speech
+
+```python
+def text_to_speech(input: str,
+                   *,
+                   storage_path: Optional[str] = None,
+                   reference_id: Optional[str] = None,
+                   reference_audio: Optional[str] = None,
+                   reference_audio_text: Optional[str] = None,
+                   **kwargs: Any) -> Any
+```
+
+Convert text to speech and save the output to a file.
+
+**Arguments**:
+
+- `input` _str_ - The text to convert to speech.
+- `storage_path` _Optional[str]_ - The file path where the resulting
+  speech will be saved. (default: :obj:`None`)
+- `reference_id` _Optional[str]_ - An optional reference ID to
+  associate with the request. (default: :obj:`None`)
+- `reference_audio` _Optional[str]_ - Path to an audio file for
+  reference speech. (default: :obj:`None`)
+- `reference_audio_text` _Optional[str]_ - Text for the reference audio.
+- `(default` - :obj:`None`)
+- `**kwargs` _Any_ - Additional parameters to pass to the TTS request.
+  
+
+**Raises**:
+
+- `FileNotFoundError` - If the reference audio file cannot be found.
+- `ValueError` - If storage_path is not provided or if reference_audio
+  is provided without reference_audio_text.
+
+<a id="camel.models.fish_audio_model.FishAudioModel.speech_to_text"></a>
+
+#### speech\_to\_text
+
+```python
+def speech_to_text(audio_file_path: str,
+                   language: Optional[str] = None,
+                   ignore_timestamps: Optional[bool] = None,
+                   **kwargs: Any) -> str
+```
+
+Convert speech to text from an audio file.
+
+**Arguments**:
+
+- `audio_file_path` _str_ - The path to the audio file to transcribe.
+- `language` _Optional[str]_ - The language of the audio. (default:
+  :obj:`None`)
+- `ignore_timestamps` _Optional[bool]_ - Whether to ignore timestamps.
+- `(default` - :obj:`None`)
+- `**kwargs` _Any_ - Additional parameters to pass to the STT request.
+  
+
+**Returns**:
+
+- `str` - The transcribed text from the audio.
+  
+
+**Raises**:
+
+- `FileNotFoundError` - If the audio file cannot be found.
+

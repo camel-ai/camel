@@ -1,0 +1,148 @@
+---
+title: "Batched Single Step Environment in Camel"
+---
+
+Single Step environments are the most widespread type of environment when doing RL with an LLM as policy.
+
+It's called *single step* environment, because the agent only does one step. It gets a question sampled from the dataset (the initial state / observation) and then answers. The answer is then scored according to the reward function. Recently, rules-based reward functions, i.e. functions without any learnable parameters, have been successfully used to do RL with LLMs as as policy.
+
+Since many RL algorithms (such as GRPO) need multiple rollouts at each step, batching is important to guarantee concurrency / parallelism. This notebook will show how to use batched environments.
+
+First, we have to load a dataset from which we will sample questions. The dataset can be either a `StaticDataset`, which is finite and the length is known at runtime, or it can be a `BaseGenerator`, which is an infinite supply of question - answer pairs, synthetically generated in some way (depending on the implementation).
+
+For the sake of simplicity, we will start by loading the MATH dataset, remove unnecessary columns and rename the remaining ones, such that we can easily turn it into a `StaticDataset`, which `SingleStepEnv` can deal with. 
+
+First, install the CAMEL package with all its dependencies:
+
+
+```python
+%pip install camel-ai[all]==0.2.46
+```
+
+
+```python
+from datasets import load_dataset
+
+from camel.datasets import StaticDataset
+from camel.logger import get_logger
+
+logger = get_logger(__name__)
+
+
+dataset = load_dataset("EleutherAI/hendrycks_math", "algebra")
+
+# Preprocess
+dataset["train"] = dataset["train"].rename_column("problem", "question")
+dataset["train"] = dataset["train"].rename_column("solution", "final_answer")
+dataset["train"] = dataset["train"].remove_columns(["type", "level"])
+
+# This should now print "['question', 'final_answer']"
+print(dataset["train"].column_names)
+seed_dataset = StaticDataset(dataset['train'])
+
+print("Example datapoint:", seed_dataset[0])
+```
+
+Next, we will have to define an *extractor*. An extractor takes the LLM response and extracts the verifiable part out of it. Extractors can be initialized with different strategies which modifies the extraction behavior.
+
+In the case of the MATH dataset, the final answer is wrapped inside a `\boxed{...}`, hence we should use the pre-built `BoxedStrategy`.
+
+Sadly, MATH answers are rather complicated and a more general Math verifier to compare, for example, equations has not yet been implemented. Hence, we shall prune the dataset to only contain those rows where the content of `\boxed{...}` is an int. For the sake of simplicity, we shall also prune the ground truthes to the direct answer (such that they are python expressions). That way, we can do simple verification using the vanilla PythonVerifier!
+
+
+```python
+from camel.extractors import BaseExtractor, BoxedStrategy
+
+# Initialize extractor
+extractor = BaseExtractor([[BoxedStrategy()]])
+await extractor.setup()
+
+valid_datapoints = []
+
+# Iterate through dataset, checking for datapoints with integer answers
+for datapoint in seed_dataset:
+    extracted_value = await extractor.extract(response=datapoint.final_answer)
+
+    if not extracted_value:
+        continue
+    if extracted_value.isdigit() or (
+        extracted_value.startswith('-') and extracted_value[1:].isdigit()
+    ):
+        valid_datapoints.append(
+            {
+                "question": datapoint.question,
+                "final_answer": extracted_value,
+            }
+        )
+
+# We should now have `1228` valid data points.
+print(f"Number of datapoints with integer answers: {len(valid_datapoints)}")
+
+filtered_dataset = StaticDataset(valid_datapoints, seed=42)
+```
+
+Let's create a Python verifier to later compare answers. Since we are reusing the same extractor from before, the PythonVerifier will expect solutions to be wrapped in `\boxed{...}`, too.
+
+
+```python
+from camel.verifiers import PythonVerifier
+
+verifier = PythonVerifier(extractor=extractor)
+await verifier.setup(uv=True)
+```
+
+Let's now initialize the single step environment with our filtered dataset and our verifier. The verifier will later help with the correctness reward 
+
+We can then call `env.reset(batch_size=4)` to draw from the initial state distribution (the dataset) and return `batch_size` many observations, which can then be fed into the agent.
+
+
+```python
+from camel.environments import Action, SingleStepEnv
+
+env = SingleStepEnv(filtered_dataset, verifier)
+
+obs = await env.reset(batch_size=4, seed=42)
+
+for ob in obs:
+    print(ob)
+```
+
+The agent would then process these observation and select an action for each observation, which it would feed into the `step` function. An action in this case would simply be the answer to the question, wrapped in `\boxed{}` (since we initialized our verifier with an extractor that extracts from `\boxed{...}`).
+
+Since we are dealing with batches here, it's assign an index to each question, such that it matches up with the observation that the observation came from. This way, we support microbatching and out-of-order execution!
+
+Let's suppose we deal with $2$ microbatches in reverse order:
+
+
+```python
+microbatch1 = [Action(index=2, llm_response="\\boxed{-5}"), Action(index=3, llm_response="\\boxed{128}")]
+
+await env.step(microbatch1)
+```
+
+We have already received rewards for actions 2 and 3 of our environment. Let's next finish this environment. 
+
+
+```python
+print(f"Is the batch done?: {env._batch_done()}")
+```
+
+
+```python
+microbatch2 = [Action(index=0, llm_response="\\boxed{5}"), Action(index=1, llm_response="\\boxed{-4}")]
+
+await env.step(microbatch2)
+```
+
+
+```python
+print(f"Is the batch done?: {env._batch_done()}")
+```
+
+As you can see, the output of the `step` function contains the next observation (which in this case is just a placeholder, since the episode is over), a reward, as well as a reward dict, showing exactly which rubric brought which reward, a `done` flag, indicating that the episode is over and some additional info.
+
+In this case, we get a reward of $10$, which is the reward for a correct final answer. This can be accessed and changed via the `self.ACCURACY_REWARD` attribute.
+
+Since we did not implement any other reward components, such as a formatting reward, the accuracy reward is our total reward.
+
+This is how to use the batched Single Step environment!

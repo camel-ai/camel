@@ -1,0 +1,203 @@
+<a id="camel.toolkits.bohrium_toolkit"></a>
+
+<a id="camel.toolkits.bohrium_toolkit.BohriumToolkit"></a>
+
+## BohriumToolkit Objects
+
+```python
+@MCPServer()
+class BohriumToolkit(BaseToolkit)
+```
+
+A class representing a toolkit for interacting with Bohrium services.
+
+**Arguments**:
+
+- `timeout` _Optional[float], optional_ - The timeout for BohriumToolkit.
+- `(default` - :obj:`None`)
+- `api_key` _Optional[str], optional_ - The API key for Bohrium client.
+- `(default` - :obj:`None`)
+- `project_id` _Optional[int], optional_ - The project ID for Bohrium
+  client. (default: :obj:`None`)
+- `yaml_path` _Optional[str], optional_ - The path to the YAML file
+  containing the job parameters. (default: :obj:`None`)
+
+<a id="camel.toolkits.bohrium_toolkit.BohriumToolkit.submit_job"></a>
+
+#### submit\_job
+
+```python
+def submit_job(
+    job_name: str = "bohr-job",
+    machine_type: str = "c2_m4_cpu",
+    cmd: str = "mpirun -n 2 lmp_mpi -i in.shear",
+    image_address: str = "registry.dp.tech/dptech/lammps:29Sep2021"
+) -> Dict[str, Any]
+```
+
+Submit a job to Bohrium.
+
+**Arguments**:
+
+- `job_name` _str_ - The name of the job. It will be updated when yaml
+  file is provided. The yaml file might be set when initialize
+  BohriumToolkit.
+- `(default` - :obj:`bohr-job`)
+- `machine_type` _str_ - The type of machine to use. It will be updated
+  when yaml file is provided. The yaml file might be set when
+  initialize BohriumToolkit.
+- `(default` - :obj:`c2_m4_cpu`)
+- `cmd` _str_ - The command to run. It will be updated when yaml file
+  is provided. The yaml file might be set when initialize
+- `(default` - :obj:`mpirun -n 2 lmp_mpi -i in.shear`)
+- `image_address` _str_ - The address of the image to use. It will be
+  updated when yaml file is provided. The yaml file might be set
+  when initialize BohriumToolkit.
+- `(default` - :obj:`registry.dp.tech/dptech/lammps:29Sep2021`)
+  
+
+**Returns**:
+
+  Dict[str, Any]: The result of the job submission.
+
+<a id="camel.toolkits.bohrium_toolkit.BohriumToolkit.get_job_details"></a>
+
+#### get\_job\_details
+
+```python
+def get_job_details(job_id: int) -> Dict[str, Any]
+```
+
+Get details for a specific job.
+
+**Arguments**:
+
+- `job_id` _int_ - The ID of the job.
+  
+
+**Returns**:
+
+  Dict[str, Any]: The job details.
+
+<a id="camel.toolkits.bohrium_toolkit.BohriumToolkit.terminate_job"></a>
+
+#### terminate\_job
+
+```python
+def terminate_job(job_id: int) -> Dict[str, Any]
+```
+
+Terminate a running job.
+
+**Arguments**:
+
+- `job_id` _int_ - The ID of the job to terminate.
+  
+
+**Returns**:
+
+  Dict[str, Any]: The result of the termination request.
+
+<a id="camel.toolkits.bohrium_toolkit.BohriumToolkit.kill_job"></a>
+
+#### kill\_job
+
+```python
+def kill_job(job_id: int) -> Dict[str, Any]
+```
+
+Kill a running job.
+
+**Arguments**:
+
+- `job_id` _int_ - The ID of the job to kill.
+  
+
+**Returns**:
+
+  Dict[str, Any]: The result of the kill request.
+
+<a id="camel.toolkits.bohrium_toolkit.BohriumToolkit.get_job_logs"></a>
+
+#### get\_job\_logs
+
+```python
+def get_job_logs(job_id: int,
+                 log_file: str = "STDOUTERR",
+                 page: int = -1,
+                 page_size: int = 8192) -> str
+```
+
+Get logs for a specific job.
+
+**Arguments**:
+
+- `job_id` _int_ - The ID of the job.
+- `log_file` _str, optional_ - The log file to get.
+- `(default` - :obj:`STDOUTERR`)
+- `page` _int, optional_ - The page number.
+- `(default` - :obj:`-1`)
+- `page_size` _int, optional_ - The page size.
+- `(default` - :obj:`8192`)
+  
+
+**Returns**:
+
+- `str` - The log contents.
+
+<a id="camel.toolkits.bohrium_toolkit.BohriumToolkit.create_job_group"></a>
+
+#### create\_job\_group
+
+```python
+def create_job_group(project_id: int, job_group_name: str) -> Dict[str, Any]
+```
+
+Create a job group.
+
+**Arguments**:
+
+- `project_id` _int_ - The ID of the project.
+- `job_group_name` _str_ - The name of the job group.
+  
+
+**Returns**:
+
+  Dict[str, Any]: The result of the job group creation.
+
+<a id="camel.toolkits.bohrium_toolkit.BohriumToolkit.download_job_results"></a>
+
+#### download\_job\_results
+
+```python
+def download_job_results(job_id: int, save_path: str) -> Dict[str, Any]
+```
+
+Download the results of a job.
+
+**Arguments**:
+
+- `job_id` _int_ - The ID of the job.
+- `save_path` _str_ - The path to save the results to.
+  
+
+**Returns**:
+
+  Dict[str, Any]: The result of the download request.
+
+<a id="camel.toolkits.bohrium_toolkit.BohriumToolkit.get_tools"></a>
+
+#### get\_tools
+
+```python
+def get_tools() -> List[FunctionTool]
+```
+
+Returns a list of FunctionTool objects representing the
+functions in the toolkit.
+
+**Returns**:
+
+- `List[FunctionTool]` - A list of FunctionTool objects
+  representing the functions in the toolkit.
+

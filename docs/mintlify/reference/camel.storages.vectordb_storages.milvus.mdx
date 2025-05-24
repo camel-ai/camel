@@ -1,0 +1,158 @@
+<a id="camel.storages.vectordb_storages.milvus"></a>
+
+<a id="camel.storages.vectordb_storages.milvus.MilvusStorage"></a>
+
+## MilvusStorage Objects
+
+```python
+class MilvusStorage(BaseVectorStorage)
+```
+
+An implementation of the `BaseVectorStorage` for interacting with
+Milvus, a cloud-native vector search engine.
+
+The detailed information about Milvus is available at:
+`Milvus <https://milvus.io/docs/overview.md/>`_
+
+**Arguments**:
+
+- `vector_dim` _int_ - The dimension of storing vectors.
+- `url_and_api_key` _Tuple[str, str]_ - Tuple containing
+  the URL and API key for connecting to a remote Milvus instance.
+  URL maps to Milvus uri concept, typically "endpoint:port".
+  API key maps to Milvus token concept, for self-hosted it's
+  "username:pwd", for Zilliz Cloud (fully-managed Milvus) it's API
+  Key.
+- `collection_name` _Optional[str], optional_ - Name for the collection in
+  the Milvus. If not provided, set it to the current time with iso
+  format. (default: :obj:`None`)
+- `**kwargs` _Any_ - Additional keyword arguments for initializing
+  `MilvusClient`.
+  
+
+**Raises**:
+
+- `ImportError` - If `pymilvus` package is not installed.
+
+<a id="camel.storages.vectordb_storages.milvus.MilvusStorage.add"></a>
+
+#### add
+
+```python
+def add(records: List[VectorRecord], **kwargs) -> None
+```
+
+Adds a list of vectors to the specified collection.
+
+**Arguments**:
+
+- `records` _List[VectorRecord]_ - List of vectors to be added.
+- `**kwargs` _Any_ - Additional keyword arguments pass to insert.
+  
+
+**Raises**:
+
+- `RuntimeError` - If there was an error in the addition process.
+
+<a id="camel.storages.vectordb_storages.milvus.MilvusStorage.delete"></a>
+
+#### delete
+
+```python
+def delete(ids: List[str], **kwargs: Any) -> None
+```
+
+Deletes a list of vectors identified by their IDs from the
+storage. If unsure of ids you can first query the collection to grab
+the corresponding data.
+
+**Arguments**:
+
+- `ids` _List[str]_ - List of unique identifiers for the vectors to be
+  deleted.
+- `**kwargs` _Any_ - Additional keyword arguments passed to delete.
+  
+
+**Raises**:
+
+- `RuntimeError` - If there is an error during the deletion process.
+
+<a id="camel.storages.vectordb_storages.milvus.MilvusStorage.status"></a>
+
+#### status
+
+```python
+def status() -> VectorDBStatus
+```
+
+Retrieves the current status of the Milvus collection. This method
+provides information about the collection, including its vector
+dimensionality and the total number of vectors stored.
+
+**Returns**:
+
+- `VectorDBStatus` - An object containing information about the
+  collection's status.
+
+<a id="camel.storages.vectordb_storages.milvus.MilvusStorage.query"></a>
+
+#### query
+
+```python
+def query(query: VectorDBQuery, **kwargs: Any) -> List[VectorDBQueryResult]
+```
+
+Searches for similar vectors in the storage based on the provided
+query.
+
+**Arguments**:
+
+- `query` _VectorDBQuery_ - The query object containing the search
+  vector and the number of top similar vectors to retrieve.
+- `**kwargs` _Any_ - Additional keyword arguments passed to search.
+  
+
+**Returns**:
+
+- `List[VectorDBQueryResult]` - A list of vectors retrieved from the
+  storage based on similarity to the query vector.
+
+<a id="camel.storages.vectordb_storages.milvus.MilvusStorage.clear"></a>
+
+#### clear
+
+```python
+def clear() -> None
+```
+
+Removes all vectors from the Milvus collection. This method
+deletes the existing collection and then recreates it with the same
+schema to effectively remove all stored vectors.
+
+<a id="camel.storages.vectordb_storages.milvus.MilvusStorage.load"></a>
+
+#### load
+
+```python
+def load() -> None
+```
+
+Load the collection hosted on cloud service.
+
+<a id="camel.storages.vectordb_storages.milvus.MilvusStorage.client"></a>
+
+#### client
+
+```python
+@property
+def client() -> Any
+```
+
+Provides direct access to the Milvus client. This property allows
+for direct interactions with the Milvus client for operations that are
+not covered by the `MilvusStorage` class.
+
+**Returns**:
+
+- `Any` - The Milvus client instance.
+

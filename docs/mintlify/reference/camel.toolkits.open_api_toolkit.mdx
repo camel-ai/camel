@@ -1,0 +1,258 @@
+<a id="camel.toolkits.open_api_toolkit"></a>
+
+<a id="camel.toolkits.open_api_toolkit.OpenAPIToolkit"></a>
+
+## OpenAPIToolkit Objects
+
+```python
+class OpenAPIToolkit()
+```
+
+A class representing a toolkit for interacting with OpenAPI APIs.
+
+This class provides methods for interacting with APIs based on OpenAPI
+specifications. It dynamically generates functions for each API operation
+defined in the OpenAPI specification, allowing users to make HTTP requests
+to the API endpoints.
+
+<a id="camel.toolkits.open_api_toolkit.OpenAPIToolkit.parse_openapi_file"></a>
+
+#### parse\_openapi\_file
+
+```python
+def parse_openapi_file(openapi_spec_path: str) -> Optional[Dict[str, Any]]
+```
+
+Load and parse an OpenAPI specification file.
+
+This function utilizes the `prance.ResolvingParser` to parse and
+resolve the given OpenAPI specification file, returning the parsed
+OpenAPI specification as a dictionary.
+
+**Arguments**:
+
+- `openapi_spec_path` _str_ - The file path or URL to the OpenAPI
+  specification.
+  
+
+**Returns**:
+
+  Optional[Dict[str, Any]]: The parsed OpenAPI specification
+  as a dictionary. :obj:`None` if the package is not installed.
+
+<a id="camel.toolkits.open_api_toolkit.OpenAPIToolkit.openapi_spec_to_openai_schemas"></a>
+
+#### openapi\_spec\_to\_openai\_schemas
+
+```python
+def openapi_spec_to_openai_schemas(
+        api_name: str, openapi_spec: Dict[str, Any]) -> List[Dict[str, Any]]
+```
+
+Convert OpenAPI specification to OpenAI schema format.
+
+This function iterates over the paths and operations defined in an
+OpenAPI specification, filtering out deprecated operations. For each
+operation, it constructs a schema in a format suitable for OpenAI,
+including operation metadata such as function name, description,
+parameters, and request bodies. It raises a ValueError if an operation
+lacks a description or summary.
+
+**Arguments**:
+
+- `api_name` _str_ - The name of the API, used to prefix generated
+  function names.
+- `openapi_spec` _Dict[str, Any]_ - The OpenAPI specification as a
+  dictionary.
+  
+
+**Returns**:
+
+  List[Dict[str, Any]]: A list of dictionaries, each representing a
+  function in the OpenAI schema format, including details about
+  the function's name, description, and parameters.
+  
+
+**Raises**:
+
+- `ValueError` - If an operation in the OpenAPI specification
+  does not have a description or summary.
+  
+
+**Notes**:
+
+  This function assumes that the OpenAPI specification
+  follows the 3.0+ format.
+  
+  Reference:
+  https://swagger.io/specification/
+
+<a id="camel.toolkits.open_api_toolkit.OpenAPIToolkit.openapi_function_decorator"></a>
+
+#### openapi\_function\_decorator
+
+```python
+def openapi_function_decorator(api_name: str, base_url: str, path: str,
+                               method: str, openapi_security: List[Dict[str,
+                                                                        Any]],
+                               sec_schemas: Dict[str, Dict[str, Any]],
+                               operation: Dict[str, Any]) -> Callable
+```
+
+Decorate a function to make HTTP requests based on OpenAPI
+specification details.
+
+This decorator dynamically constructs and executes an API request based
+on the provided OpenAPI operation specifications, security
+requirements, and parameters.  It supports operations secured with
+`apiKey` type security schemes and automatically injects the necessary
+API keys from environment variables. Parameters in `path`, `query`,
+`header`, and `cookie` are also supported.
+
+**Arguments**:
+
+- `api_name` _str_ - The name of the API, used to retrieve API key names
+  and URLs from the configuration.
+- `base_url` _str_ - The base URL for the API.
+- `path` _str_ - The path for the API endpoint,
+  relative to the base URL.
+- `method` _str_ - The HTTP method (e.g., 'get', 'post')
+  for the request.
+- `openapi_security` _List[Dict[str, Any]]_ - The global security
+  definitions as specified in the OpenAPI specs.
+- `sec_schemas` _Dict[str, Dict[str, Any]]_ - Detailed security schemes.
+- `operation` _Dict[str, Any]_ - A dictionary containing the OpenAPI
+  operation details, including parameters and request body
+  definitions.
+  
+
+**Returns**:
+
+- `Callable` - A decorator that, when applied to a function, enables the
+  function to make HTTP requests based on the provided OpenAPI
+  operation details.
+  
+
+**Raises**:
+
+- `TypeError` - If the security requirements include unsupported types.
+- `ValueError` - If required API keys are missing from environment
+  variables or if the content type of the request body is
+  unsupported.
+
+<a id="camel.toolkits.open_api_toolkit.OpenAPIToolkit.generate_openapi_funcs"></a>
+
+#### generate\_openapi\_funcs
+
+```python
+def generate_openapi_funcs(api_name: str,
+                           openapi_spec: Dict[str, Any]) -> List[Callable]
+```
+
+Generates a list of Python functions based on
+OpenAPI specification.
+
+This function dynamically creates a list of callable functions that
+represent the API operations defined in an OpenAPI specification
+document. Each function is designed to perform an HTTP request
+corresponding to an API operation (e.g., GET, POST) as defined in
+the specification. The functions are decorated with
+`openapi_function_decorator`, which configures them to construct and
+send the HTTP requests with appropriate parameters, headers, and body
+content.
+
+**Arguments**:
+
+- `api_name` _str_ - The name of the API, used to prefix generated
+  function names.
+- `openapi_spec` _Dict[str, Any]_ - The OpenAPI specification as a
+  dictionary.
+  
+
+**Returns**:
+
+- `List[Callable]` - A list containing the generated functions. Each
+  function, when called, will make an HTTP request according to
+  its corresponding API operation defined in the OpenAPI
+  specification.
+  
+
+**Raises**:
+
+- `ValueError` - If the OpenAPI specification does not contain server
+  information, which is necessary for determining the base URL
+  for the API requests.
+
+<a id="camel.toolkits.open_api_toolkit.OpenAPIToolkit.apinames_filepaths_to_funs_schemas"></a>
+
+#### apinames\_filepaths\_to\_funs\_schemas
+
+```python
+def apinames_filepaths_to_funs_schemas(
+    apinames_filepaths: List[Tuple[str, str]]
+) -> Tuple[List[Callable], List[Dict[str, Any]]]
+```
+
+Combines functions and schemas from multiple OpenAPI
+specifications, using API names as keys.
+
+This function iterates over tuples of API names and OpenAPI spec file
+paths, parsing each spec to generate callable functions and schema
+dictionaries, all organized by API name.
+
+**Arguments**:
+
+- `apinames_filepaths` _List[Tuple[str, str]]_ - A list of tuples, where
+  each tuple consists of:
+  - The API name (str) as the first element.
+  - The file path (str) to the API's OpenAPI specification file as
+  the second element.
+  
+
+**Returns**:
+
+  Tuple[List[Callable], List[Dict[str, Any]]]:: one of callable
+  functions for API operations, and another of dictionaries
+  representing the schemas from the specifications.
+
+<a id="camel.toolkits.open_api_toolkit.OpenAPIToolkit.generate_apinames_filepaths"></a>
+
+#### generate\_apinames\_filepaths
+
+```python
+def generate_apinames_filepaths() -> List[Tuple[str, str]]
+```
+
+Generates a list of tuples containing API names and their
+corresponding file paths.
+
+This function iterates over the OpenAPIName enum, constructs the file
+path for each API's OpenAPI specification file, and appends a tuple of
+the API name and its file path to the list. The file paths are relative
+to the 'open_api_specs' directory located in the same directory as this
+script.
+
+**Returns**:
+
+  List[Tuple[str, str]]: A list of tuples where each tuple contains
+  two elements. The first element of each tuple is a string
+  representing the name of an API, and the second element is a
+  string that specifies the file path to that API's OpenAPI
+  specification file.
+
+<a id="camel.toolkits.open_api_toolkit.OpenAPIToolkit.get_tools"></a>
+
+#### get\_tools
+
+```python
+def get_tools() -> List[FunctionTool]
+```
+
+Returns a list of FunctionTool objects representing the
+functions in the toolkit.
+
+**Returns**:
+
+- `List[FunctionTool]` - A list of FunctionTool objects
+  representing the functions in the toolkit.
+

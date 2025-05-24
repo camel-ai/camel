@@ -1,0 +1,47 @@
+<a id="camel.societies.workforce.utils"></a>
+
+<a id="camel.societies.workforce.utils.WorkerConf"></a>
+
+## WorkerConf Objects
+
+```python
+class WorkerConf(BaseModel)
+```
+
+The configuration of a worker.
+
+<a id="camel.societies.workforce.utils.TaskResult"></a>
+
+## TaskResult Objects
+
+```python
+class TaskResult(BaseModel)
+```
+
+The result of a task.
+
+<a id="camel.societies.workforce.utils.TaskAssignResult"></a>
+
+## TaskAssignResult Objects
+
+```python
+class TaskAssignResult(BaseModel)
+```
+
+The result of task assignment.
+
+<a id="camel.societies.workforce.utils.check_if_running"></a>
+
+#### check\_if\_running
+
+```python
+def check_if_running(running: bool) -> Callable
+```
+
+Check if the workforce is (not) running, specified the boolean value.
+If the workforce is not in the expected status, raise an exception.
+
+**Raises**:
+
+- `RuntimeError` - If the workforce is not in the expected status.
+

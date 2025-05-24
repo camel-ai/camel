@@ -1,0 +1,70 @@
+<a id="camel.toolkits.excel_toolkit"></a>
+
+<a id="camel.toolkits.excel_toolkit.ExcelToolkit"></a>
+
+## ExcelToolkit Objects
+
+```python
+@MCPServer()
+class ExcelToolkit(BaseToolkit)
+```
+
+A class representing a toolkit for extract detailed cell information
+from an Excel file.
+
+This class provides methods extracting detailed content from Excel files
+(including .xls, .xlsx,.csv), and converting the data into
+Markdown formatted table.
+
+<a id="camel.toolkits.excel_toolkit.ExcelToolkit.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+def __init__(timeout: Optional[float] = None)
+```
+
+Initializes a new instance of the ExcelToolkit class.
+
+**Arguments**:
+
+- `timeout` _Optional[float]_ - The timeout value for API requests
+  in seconds. If None, no timeout is applied.
+- `(default` - :obj:`None`)
+
+<a id="camel.toolkits.excel_toolkit.ExcelToolkit.extract_excel_content"></a>
+
+#### extract\_excel\_content
+
+```python
+def extract_excel_content(document_path: str) -> str
+```
+
+Extract detailed cell information from an Excel file, including
+multiple sheets.
+
+**Arguments**:
+
+- `document_path` _str_ - The path of the Excel file.
+  
+
+**Returns**:
+
+- `str` - Extracted excel information, including details of each sheet.
+
+<a id="camel.toolkits.excel_toolkit.ExcelToolkit.get_tools"></a>
+
+#### get\_tools
+
+```python
+def get_tools() -> List[FunctionTool]
+```
+
+Returns a list of FunctionTool objects representing the functions
+in the toolkit.
+
+**Returns**:
+
+- `List[FunctionTool]` - A list of FunctionTool objects representing
+  the functions in the toolkit.
+

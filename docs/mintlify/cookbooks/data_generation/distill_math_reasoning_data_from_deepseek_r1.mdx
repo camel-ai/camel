@@ -1,0 +1,528 @@
+---
+title: "Distill Math Reasoning Data from DeepSeek R1 with CAMEL"
+---
+
+You can also check this cookbook in colab [here](https://colab.research.google.com/drive/1BnV4iyWlXdizzpRQPYjmwIt70oVKziBw?usp=sharing)
+
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
+  <a href="https://www.camel-ai.org/">
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
+  </a>
+  <a href="https://discord.camel-ai.org">
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
+  </a>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
+
+
+
+This notebook provides a comprehensive guide on configuring and utilizing CAMEL's data distillation pipeline to generate high-quality mathematical reasoning datasets featuring detailed thought processes (Long Chain-of-Thought data).
+
+
+In this notebook, you'll explore:
+
+- **CAMEL**: A powerful multi-agent framework that enables synthetic data generation and multi-agent role-playing scenarios, enabling advanced AI-driven applications.
+- **Data distillation pipeline**: A systematic approach for extracting and refining high-quality reasoning datasets with detailed thought processes from models like DeepSeek R1.
+- **Hugging Face Integration**: A streamlined process for uploading and sharing distilled datasets on the Hugging Face platform.
+
+
+
+Through the use of our synthetic data generation pipeline, CAEML-AI has crafted three comprehensive datasets that are now available to enhance your mathematical reasoning and problem-solving skills. These datasets are hosted on Hugging Face for easy access:
+
+- **📚 AMC AIME STaR Dataset**
+
+  A dataset of 4K advanced mathematical problems and solutions, distilled with improvement history showing how the solution was iteratively refined.
+  🔗 [Explore the Dataset](https://huggingface.co/datasets/camel-ai/amc_aime_star)  
+
+- **📚 AMC AIME Distilled Dataset**
+
+  A dataset of 4K advanced mathematical problems and solutions, distilled with clear step-by-step solutions. 🔗 [Explore the Dataset](https://huggingface.co/datasets/camel-ai/amc_aime_distilled)  
+
+- **📚 GSM8K Distilled Dataset**
+
+  A dataset of 7K high quality linguistically diverse grade school math word problems and solutions, distilled with clear step-by-step solutions. 🔗 [Explore the Dataset](https://huggingface.co/datasets/camel-ai/gsm8k_distilled)   
+
+
+Perfect for those eager to explore AI-driven problem-solving or dive deep into mathematical reasoning! 🚀✨
+
+![di v2.png](./images/distill_math_reasoning_data_from_deepseek_r1_1.png)
+
+## 📦 Installation
+
+Firstly, we need to install the camel-ai package for datagen pipeline
+
+
+```python
+%%capture
+!pip install "git+https://github.com/camel-ai/camel.git@f028e39fb2fbedcd30f43036899d3d13e5c25b01#egg=camel-ai"
+!pip install datasets
+!pip install rouge
+```
+
+## 🔑 Setting Up API Keys
+
+Let's set the `FIREWORKS_API_KEY` or `DEEPSEEK_API_KEY` that will be used to distill the maths reasoning data with thought process.
+
+⭐ **NOTE**: You could also use other model provider like Together AI, SilionFlow
+
+
+```python
+from getpass import getpass
+import os
+```
+
+
+```python
+FIREWORKS_API_KEY = getpass('Enter your FIREWORKS_API_KEY: ')
+os.environ["FIREWORKS_API_KEY"] = FIREWORKS_API_KEY
+```
+
+
+```python
+DEEPSEEK_API_KEY = getpass('Enter your DEEPSEEK_API_KEY: ')
+os.environ["DEEPSEEK_API_KEY"] = DEEPSEEK_API_KEY
+```
+
+Alternatively, if running on Colab, you could save your API keys and tokens as **Colab Secrets**, and use them across notebooks.
+
+To do so, **comment out** the above **manual** API key prompt code block(s), and **uncomment** the following codeblock.
+
+⚠️ Don't forget granting access to the API key you would be using to the current notebook.
+
+
+```python
+# import os
+# from google.colab import userdata
+
+# os.environ["FIREWORKS_API_KEY"] = userdata.get("FIREWORKS_API_KEY")
+# os.environ["DEEPSEEK_API_KEY"] = userdata.get("DEEPSEEK_API_KEY")
+```
+
+
+```python
+#to make deepseek r1 responds with thought process content,we should set the following environment variable
+os.environ["GET_REASONING_CONTENT"]="True"
+```
+
+## 📥 Download Dataset from Hugging Face and Convert to the Desired Format
+
+
+Now, lets start to prepare the original maths  data from Hugging Face ,which mainly have two important key: questions and answers. We will use GSM8K as example.
+
+After we download these datasets, we will convert these datasets to the desired format which suitable to be used in **CAMEL's data distillation pipeline**.
+
+
+```python
+# Set the number of problems to download from GSM8K in huggingface
+NUMBER_OF_PROBLEMS=10
+```
+
+
+```python
+import json
+from pathlib import Path
+import uuid
+from datasets import load_dataset
+
+def download_gsm8k_dataset():
+    try:
+        # Load the dataset using the datasets library
+        dataset = load_dataset("openai/gsm8k", "main")
+
+        # Get the items from train split
+        data = dataset['train'].select(range(NUMBER_OF_PROBLEMS))
+
+        # Convert to the desired format
+        formatted_data = []
+        for item in data:
+            # Extract the final answer from the solution
+            solution = item['answer']
+            if solution:
+                # GSM8K solutions typically end with "#### number"
+                import re
+
+                match = re.search(r'####\s*(\d+)', solution)
+                if match:
+                    number = match.group(1)
+                    # Replace the "#### number" with "\boxed{number}"
+                    solution = re.sub(
+                        r'####\s*\d+', f'\\\\boxed{{{number}}}', solution
+                    )
+
+            formatted_item = {
+                "id": str(uuid.uuid4()),  # GSM8K doesn't provide IDs
+                "problem": item['question'],
+                "type": "openai/gsm8k",  # All problems are from GSM8K
+                "solution": solution,  # Use the modified solution with \boxed
+            }
+            formatted_data.append(formatted_item)
+
+        # Save to a file
+        output = formatted_data
+        output_file = "downloaded_gsm8k_10.json"
+        with open(output_file, "w") as f:
+            json.dump(output, f, indent=2)
+
+        print(f"Successfully downloaded and saved GSM8K dataset to {output_file}")
+    except Exception as e:
+        print(f"Error downloading GSM8K dataset: {e}")
+
+if __name__ == "__main__":
+    download_gsm8k_dataset()
+```
+
+Cool! Now you have already got some desired format example data,lets move to start to distill some maths reasoning data with thought process.
+
+## 🚀 Begin Distilling Mathematical Reasoning Data with Thought Process (Long CoT Data).
+
+Import required libraries:
+
+
+```python
+import nest_asyncio
+nest_asyncio.apply()
+
+import json
+import os
+import time
+
+from camel.agents import ChatAgent
+from camel.datagen import SelfImprovingCoTPipeline
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType, ModelType
+```
+
+Next, let's set up the reasoning model and evaluate model. Since the DeepSeek's API service is currently unstable, we will also set DeepSeek R1 served by [Fireworks](https://fireworks.ai/). CAMEL's model manager to automatically switch models based on the success of the request.
+
+
+```python
+# Set DeepSeek R1 served by Fireworks as reason model 1
+reason_model_1 = ModelFactory.create(
+    model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
+    model_type="accounts/fireworks/models/deepseek-r1",
+    api_key=os.environ["FIREWORKS_API_KEY"],
+    url="https://api.fireworks.ai/inference/v1",
+    model_config_dict={"max_tokens": 4096}, # Config the max_token carefully
+)
+
+# Set DeepSeek R1 served by deepseek cloud as reason model 2
+reason_model_2 = ModelFactory.create(
+    model_platform=ModelPlatformType.DEEPSEEK,
+    model_type=ModelType.DEEPSEEK_REASONER,
+)
+```
+
+Now we can start to execute CAMEL's STaRPipeline,
+pay attention to the parameters setting like problems_path, output_path, max_iterations, rationalization. Some code is commented out since it's **optional**.
+
+
+```python
+start_time = time.time()
+problems_path = "downloaded_gsm8k_10.json"
+output_path = "generated_data.json"
+
+# Load problems from JSON file
+with open(problems_path, 'r') as f:
+    problems = json.load(f)
+
+# Initialize agent
+reason_agent_system_message = """Answer my question and give your
+final answer within \\boxed{}."""
+evaluate_agent_system_message = """You are a highly critical teacher who
+evaluates the student's answers with a meticulous and demanding approach.
+"""
+
+# Set up reason agent
+reason_agent = ChatAgent(
+    system_message=reason_agent_system_message,
+    model=[reason_model_1, reason_model_2], # add models to the list, You can also switch to other models
+)
+
+# # Set up evaluate agent(optional)
+# evaluate_agent = ChatAgent(
+#     system_message=evaluate_agent_system_message
+# )
+
+# # Initialize reward model (optional)
+# reward_model = NemotronRewardModel(
+#     model_type=ModelType.NVIDIA_NEMOTRON_340B_REWARD,
+#     url="https://integrate.api.nvidia.com/v1",
+#     api_key=os.environ.get("NVIDIA_API_KEY"),
+# )
+
+# # Set score thresholds for different dimensions (optional)
+# score_threshold = {
+#     "correctness": 1.0,
+#     "clarity": 0.0,
+#     "completeness": 0.0,
+# }
+# # Or use a single threshold for all dimensions:
+# score_threshold = 0.9
+
+
+# Create and run pipeline
+pipeline = SelfImprovingCoTPipeline(
+    reason_agent=reason_agent,
+    problems=problems,  # Pass problems list directly
+    output_path=output_path,
+    max_iterations=0,
+    batch_size=100, # Size of batch to process the data (optional)
+    # evaluate_agent=evaluate_agent, # To use evaluate agent(optional)
+    # score_threshold=score_threshold, # Score thresholds for agent evaluation (optional)
+    # reward_model=reward_model,  # To use a reward model (optional)
+)
+
+print("Start generation! May take some time, please wait..")
+
+results = pipeline.generate(rationalization=False)
+
+end_time = time.time()
+execution_time = end_time - start_time
+
+print(f"\nProcessed {len(results)} problems")
+print(f"Results saved to: {output_path}")
+print(f"Total execution time: {execution_time:.2f} seconds")
+```
+
+Let's take a look at generated reasoning data!
+
+
+```python
+with open('generated_data.json', 'r') as f:
+    data = json.load(f)
+    print(json.dumps(data, indent=2))
+```
+
+##  📤 Upload the Data to Hugging Face
+
+After we've distilled the desired data, let's upload it to Hugging Face and share it with more people!
+
+Define the dataset upload pipeline, including steps like creating records, generating a dataset card, and other necessary tasks.
+
+
+```python
+# Import necessary modules and classes
+from camel.datahubs.huggingface import HuggingFaceDatasetManager  # Manages interactions with Hugging Face datasets
+from camel.datahubs.models import Record  # Represents a single record in the dataset
+from datetime import datetime  # Handles date and time operations
+import json  # For reading JSON files
+
+def load_star_output(file_path):
+    r"""Load and parse the star output JSON file.
+
+    Args:
+        file_path (str): Path to the star_output.json file.
+
+    Returns:
+        list: List of traces from the JSON file.
+    """
+    with open(file_path, 'r') as f:
+        data = json.load(f)
+    return data['traces']
+
+# Main function: Upload dataset to Hugging Face
+def upload_to_huggingface(transformed_data, username, dataset_name=None):
+    r"""Uploads transformed data to the Hugging Face dataset platform.
+
+    Args:
+        transformed_data (list): Transformed data, typically a list of dictionaries.
+        username (str): Hugging Face username.
+        dataset_name (str, optional): Custom dataset name.
+
+    Returns:
+        str: URL of the uploaded dataset.
+    """
+    # Initialize HuggingFaceDatasetManager to interact with Hugging Face datasets
+    manager = HuggingFaceDatasetManager()
+
+    # Generate or validate the dataset name
+    dataset_name = generate_or_validate_dataset_name(username, dataset_name)
+
+    # Create the dataset on Hugging Face and get the dataset URL
+    dataset_url = create_dataset(manager, dataset_name)
+
+    # Create a dataset card to add metadata
+    create_dataset_card(manager, dataset_name, username)
+
+    # Convert the transformed data into a list of Record objects
+    records = create_records(transformed_data)
+
+    # Add the Record objects to the dataset
+    add_records_to_dataset(manager, dataset_name, records)
+
+    # Return the dataset URL
+    return dataset_url
+
+# Generate or validate the dataset name
+def generate_or_validate_dataset_name(username, dataset_name):
+    r"""Generates a default dataset name or validates and formats a user-provided name.
+
+    Args:
+        username (str): Hugging Face username.
+        dataset_name (str, optional): User-provided custom dataset name.
+
+    Returns:
+        str: Formatted dataset name.
+    """
+    if dataset_name is None:
+        # If no dataset name is provided, generate a default name with the username and current date
+        current_date = datetime.now().strftime("%Y%m%d")
+        dataset_name = f"star_traces_{current_date}"
+
+    # Format the dataset name to include the username
+    return f"{username}/{dataset_name}"
+
+# Create a dataset on Hugging Face
+def create_dataset(manager, dataset_name):
+    r"""Creates a new dataset on Hugging Face and returns the dataset URL.
+
+    Args:
+        manager (HuggingFaceDatasetManager): Instance of HuggingFaceDatasetManager.
+        dataset_name (str): Name of the dataset.
+
+    Returns:
+        str: URL of the created dataset.
+    """
+    dataset_url = manager.create_dataset(dataset_name)
+    return dataset_url
+
+# Create a dataset card with metadata
+def create_dataset_card(manager, dataset_name, username):
+    r"""Creates a dataset card to add metadata
+
+    Args:
+        manager (HuggingFaceDatasetManager): Instance of HuggingFaceDatasetManager.
+        dataset_name (str): Name of the dataset.
+        username (str): Hugging Face username.
+    """
+    manager.create_dataset_card(
+        dataset_name=dataset_name,
+        description="A dataset containing mathematical problem-solving traces with step-by-step solutions and improvement history. Each record includes a mathematical problem, its final solution, and the iterative improvement process.",
+        license="mit",  # Using lowercase 'mit' as required by HuggingFace
+        tags=["math", "problem-solving", "step-by-step", "traces"],
+        authors=[username],
+        language=["en"],
+        task_categories=["text-generation"],
+        content="This dataset contains mathematical problem-solving traces generated using the CAMEL framework. Each entry includes:\n\n"
+                "- A mathematical problem statement\n"
+                "- A detailed step-by-step solution\n"
+    )
+
+# Convert transformed data into Record objects
+def create_records(transformed_data):
+    r"""Converts transformed data into a list of Record objects.
+
+    Args:
+        transformed_data (list): List of trace dictionaries from star_output.json.
+
+    Returns:
+        list: List of Record objects.
+    """
+    records = []
+    for trace in transformed_data:
+        record = Record(
+            source_type=trace['type'],
+            problem=trace['problem'],
+            solution=trace['final_trace'],
+        )
+        records.append(record)
+    return records
+
+# Add Record objects to the dataset
+def add_records_to_dataset(manager, dataset_name, records):
+    r"""Adds a list of Record objects to the dataset.
+
+    Args:
+        manager (HuggingFaceDatasetManager): Instance of HuggingFaceDatasetManager.
+        dataset_name (str): Name of the dataset.
+        records (list): List of Record objects.
+    """
+    manager.add_records(dataset_name, records)
+
+```
+
+### 🔑 Config Access Token of Hugging Face and Upload the Data
+
+You can go to [here](https://huggingface.co/settings/tokens/new?tokenType=write) to get API Key from Hugging Face, also make sure you have opened the write access to repository.
+
+![Screenshot 2025-02-01 at 07.06.07.png](./images/distill_math_reasoning_data_from_deepseek_r1_2.png)
+
+Then create a New Dataset in Hugging Face:
+
+![Screenshot 2025-02-01 at 07.17.57.png](./images/distill_math_reasoning_data_from_deepseek_r1_3.png)
+
+
+```python
+# Get HuggingFace token and username
+HUGGING_FACE_TOKEN = getpass('Enter your HUGGING_FACE_TOKEN: ')
+os.environ["HUGGING_FACE_TOKEN"] = HUGGING_FACE_TOKEN
+
+# Alternatively, to retrieve HF token from Colab Secrets instead
+# import os
+# from google.colab import userdata
+
+# os.environ["HUGGING_FACE_TOKEN"] = userdata.get("HUGGING_FACE_TOKEN")
+
+username = input("Enter your HuggingFace username: ")
+dataset_name = input("Enter your dataset name:")
+
+
+# Load the star output data
+current_dir = os.getcwd()
+star_output_path = os.path.join(current_dir, './generated_data.json')
+traces = load_star_output(star_output_path)
+
+# Upload the data to HuggingFace
+dataset_url = upload_to_huggingface(traces, username, dataset_name)
+print(f"\nDataset uploaded successfully!")
+print(f"You can view your dataset at: {dataset_url}")
+
+```
+
+## 📊 Final Uploaded Data Preview
+
+![Screenshot 2025-02-02 at 12.46.48.png](./images/distill_math_reasoning_data_from_deepseek_r1_4.png)
+
+## 🌟 Highlights
+
+- **High-Quality Synthetic Data Generation:** CAMEL’s pipeline distills mathematical reasoning datasets with detailed step-by-step solutions, ideal for synthetic data generation.
+  
+- **Public Datasets:** Includes the **AMC AIME STaR**, **AMC AIME Distilled**, and **GSM8K Distilled Datasets**, providing diverse problems and reasoning solutions across various math topics.
+
+- **Hugging Face Integration:** Easily share and access datasets on Hugging Face for collaborative research and development.
+
+- **Customizable & Scalable:** Supports parallel processing, customizable agents, and reward models for efficient, large-scale data generation.
+
+That's everything: Got questions about 🐫 CAMEL-AI? Join us on [Discord](https://discord.camel-ai.org)! Whether you want to share feedback, explore the latest in multi-agent systems, get support, or connect with others on exciting projects, we’d love to have you in the community! 🤝
+
+Check out some of our other work:
+
+1. 🐫 Creating Your First CAMEL Agent [free Colab](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html)
+
+2.  Graph RAG Cookbook [free Colab](https://colab.research.google.com/drive/1uZKQSuu0qW6ukkuSv9TukLB9bVaS1H0U?usp=sharing)
+
+3. 🧑‍⚖️ Create A Hackathon Judge Committee with Workforce [free Colab](https://colab.research.google.com/drive/18ajYUMfwDx3WyrjHow3EvUMpKQDcrLtr?usp=sharing)
+
+4. 🔥 3 ways to ingest data from websites with Firecrawl & CAMEL [free Colab](https://colab.research.google.com/drive/1lOmM3VmgR1hLwDKdeLGFve_75RFW0R9I?usp=sharing)
+
+5. 🦥 Agentic SFT Data Generation with CAMEL and Mistral Models, Fine-Tuned with Unsloth [free Colab](https://colab.research.google.com/drive/1lYgArBw7ARVPSpdwgKLYnp_NEXiNDOd-?usp=sharingg)
+
+Thanks from everyone at 🐫 CAMEL-AI
+
+
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
+  <a href="https://www.camel-ai.org/">
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
+  </a>
+  <a href="https://discord.camel-ai.org">
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
+  </a>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
+

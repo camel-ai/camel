@@ -1,0 +1,261 @@
+---
+title: "3 ways to ingest data from websites with Firecrawl"
+---
+
+You can also check this cookbook in colab [here](https://colab.research.google.com/drive/1lOmM3VmgR1hLwDKdeLGFve_75RFW0R9I?usp=sharing)
+
+In this notebook, we’ll introduce Firecrawl, a versatile web scraping and crawling tool designed to extract data efficiently from websites, which has been integrated with CAMEL. Today we’ll walk through three key features—Scrape, Crawl, and Map—each tailored with a CAMEL agent use case.
+
+In this notebook, you'll explore:
+
+* **CAMEL**: A powerful multi-agent framework that enables Retrieval-Augmented Generation and multi-agent role-playing scenarios, allowing for sophisticated AI-driven tasks.
+
+* **Firecrawl**: A data ingestion tool that simplifies web data extraction through web scraping, API integration, and automated browser actions.
+
+## Table of Content:
+
+1.   Introduction
+2.  🔥 Firecrawl: To crawl
+3.  🔥 Firecrawl: To Scrape
+4.  🔥 Firecrawl: To Map
+5.  Conclusion
+
+
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
+  <a href="https://www.camel-ai.org/">
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
+  </a>
+  <a href="https://discord.camel-ai.org">
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
+  </a>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
+
+
+
+
+## **Introduction**
+
+**Firecrawl** developed by the Mendable.ai team, is a data ingestion tool that streamlines web data extraction using web scraping, API access, and automated browser interactions. It’s ideal for collecting structured and unstructured data from websites for analytics.
+
+It effectively manages complex tasks such as handling reverse proxies, implementing caching strategies, adhering to rate limits, and accessing content blocked by JavaScript.
+
+### **Features of Firecrawl**:
+
+**Crawl**: Collects content from all URLs within a web page, converting it into an LLM-ready format for seamless analysis.
+
+**Scrape**: Extracts content from a single URL, delivering it in formats ready for LLMs, including markdown, structured data (via LLM Extract), screenshots, and HTML.
+
+**Map**: Inputs a website and retrieves all URLs associated with it at high speed, enabling a comprehensive and efficient site overview.
+
+
+
+All the above features make it ideal for collecting structured and unstructured data from websites for agentic workflows.
+***CAMEL-AI has integrated Firecrawl to enhance its web data extraction capabilities***.
+
+
+## 📦 Installation
+
+First, install the CAMEL package with all its dependencies and input the OPENAI API Key.
+
+
+
+```python
+pip install "camel-ai[all]==0.2.16"
+```
+
+## 🔑 Setting Up API Keys
+
+
+```python
+import os
+from getpass import getpass
+
+# Prompt for the API key securely
+openai_api_key = getpass('Enter your API key: ')
+os.environ["OPENAI_API_KEY"] = openai_api_key
+```
+
+## 🔥  **Firecrawl: To crawl**
+
+Let's get started with the exploration of the first feature of Firecrawl -  Crawl: Extracts content from all subpages in an LLM-ready format (markdown, structured data, screenshot, HTML, links, metadata) for easy analysis.
+
+Step 1: Set up your firecrawl API key
+
+You just need to go to this link and sign in to get your API Key: https://www.firecrawl.dev/app/api-keys
+
+
+```python
+import os
+from getpass import getpass
+
+# Prompt for the Firecrawl API key securely
+firecrawl_api_key = getpass('Enter your API key: ')
+os.environ["FIRECRAWL_API_KEY"] = firecrawl_api_key
+```
+
+Alternatively, if running on Colab, you could save your API keys and tokens as **Colab Secrets**, and use them across notebooks.
+
+To do so, **comment out** the above **manual** API key prompt code block(s), and **uncomment** the following codeblock.
+
+⚠️ Don't forget granting access to the API key you would be using to the current notebook.
+
+
+```python
+# import os
+# from google.colab import userdata
+
+# os.environ["OPENAI_API_KEY"] = userdata.get("OPENAI_API_KEY")
+# os.environ["FIRECRAWL_API_KEY"] = userdata.get("FIRECRAWL_API_KEY")
+```
+
+Step 2: Import necessary modules
+
+
+```python
+from camel.loaders import Firecrawl
+```
+
+Step 3: Crawl the website
+
+It will crawl the CAMEL-AI website and generate the LLM-friendly output as shown in markdown below.
+
+
+```python
+# Initialize the Firecrawl instance
+firecrawl = Firecrawl()
+
+# Use the `crawl` method to retrieve content from the specified URL
+firecrawl_response = firecrawl.crawl(
+    url="https://www.camel-ai.org/about"  # Target URL to crawl for content
+)
+
+print(firecrawl_response["status"])
+
+# Print the markdown content from the first page in the crawled data
+print(firecrawl_response["data"][0]["markdown"])
+
+```
+
+Step 4: Interact with CAMEL agent
+
+
+```python
+from camel.agents import ChatAgent
+
+# Initialize a ChatAgent
+agent = ChatAgent(
+    system_message="You're a helpful assistant",  # Define the agent's role or purpose
+)
+
+# Use the ChatAgent to generate a response based on the Firecrawl crawl data
+response = agent.step(f"Based on {firecrawl_response}, explain what CAMEL is.")
+
+# Print the content of the first message in the response, which contains the assistant's answer
+print(response.msgs[0].content)
+
+```
+
+## 🔥 Firecrawl: To Scrape
+
+
+Scrape: This feature allows you to extract content from a single URL and convert it into various formats optimized for LLMs. The data is delivered in markdown, structured data (via LLM Extract), screenshots, or raw HTML, making it versatile for analysis and integration with other AI applications.
+
+
+
+
+
+
+```python
+# Define the schema
+class ExtractSchema(BaseModel):
+    company_mission: str
+    is_open_source: bool
+
+# Perform the structured scrape
+response = firecrawl.structured_scrape(
+    url='https://www.camel-ai.org/about', # URL to scrape data from
+    response_format=ExtractSchema
+)
+
+print(response)
+```
+
+Let's have a look how the assistant CAMEL agent can answer our questions with the response from Firecrawl.
+
+
+```python
+# Use the ChatAgent to generate a response based on the Firecrawl crawl data
+response = agent.step(f"Based on {response}, explain what the company mission of CAMEL is.")
+
+# Print the content of the first message in the response, which contains the assistant's answer
+print(response.msgs[0].content)
+```
+
+## 🔥 Firecrawl: To Map
+
+Map: This feature takes a website as input and rapidly retrieves all associated URLs, providing a quick and comprehensive overview of the site’s structure. This high-speed mapping is ideal for efficient content discovery and organization.
+
+
+```python
+# Call the `map_site` function from Firecrawl to retrieve all URLs from the specified website
+map_result = firecrawl.map_site(
+    url="https://www.camel-ai.org"  # Target URL to map
+)
+
+# Print the resulting map, which should contain all associated URLs from the website
+print(map_result)
+```
+
+
+```python
+# Use the ChatAgent to generate a response based on the Firecrawl crawl data
+response = agent.step(f"Based on {map_result}, which one is the main website for CAMEL-AI.")
+
+# Print the content of the first message in the response, which contains the assistant's answer
+print(response.msgs[0].content)
+```
+
+## 🌟 Highlights
+
+This notebook has guided you through streamlining the process of web data extraction and enhances your agents capabilities using Firecrawl within the CAMEL framework. With Firecrawl’s powerful features like Scrape, Crawl, and Map, you can efficiently gather content in formats ready for LLMs to use, directly feeding into CAMEL-AI’s multi-agent workflows. This setup not only simplifies data collection but also enables more intelligent and insightful agents.
+
+Key tools utilized in this notebook include:
+
+*   **CAMEL**: A powerful multi-agent framework that enables Retrieval-Augmented Generation and multi-agent role-playing scenarios, allowing for sophisticated AI-driven tasks.
+*   **Firecrawl**: A data ingestion tool that streamlines web data extraction using web scraping, API access, and automated browser interactions.
+
+
+That's everything: Got questions about 🐫 CAMEL-AI? Join us on [Discord](https://discord.camel-ai.org)! Whether you want to share feedback, explore the latest in multi-agent systems, get support, or connect with others on exciting projects, we’d love to have you in the community! 🤝
+
+Check out some of our other work:
+
+1. 🐫 Creating Your First CAMEL Agent [free Colab](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html)
+
+2.  Graph RAG Cookbook [free Colab](https://colab.research.google.com/drive/1uZKQSuu0qW6ukkuSv9TukLB9bVaS1H0U?usp=sharing)
+
+3. 🧑‍⚖️ Create A Hackathon Judge Committee with Workforce [free Colab](https://colab.research.google.com/drive/18ajYUMfwDx3WyrjHow3EvUMpKQDcrLtr?usp=sharing)
+
+4. 🔥 3 ways to ingest data from websites with Firecrawl & CAMEL [free Colab](https://colab.research.google.com/drive/1lOmM3VmgR1hLwDKdeLGFve_75RFW0R9I?usp=sharing)
+
+5. 🦥 Agentic SFT Data Generation with CAMEL and Mistral Models, Fine-Tuned with Unsloth [free Colab](https://colab.research.google.com/drive/1lYgArBw7ARVPSpdwgKLYnp_NEXiNDOd-?usp=sharingg)
+
+Thanks from everyone at 🐫 CAMEL-AI
+
+
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
+  <a href="https://www.camel-ai.org/">
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
+  </a>
+  <a href="https://discord.camel-ai.org">
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
+  </a>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
+

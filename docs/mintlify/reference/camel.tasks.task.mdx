@@ -1,0 +1,399 @@
+<a id="camel.tasks.task"></a>
+
+<a id="camel.tasks.task.parse_response"></a>
+
+#### parse\_response
+
+```python
+def parse_response(response: str,
+                   task_id: Optional[str] = None) -> List["Task"]
+```
+
+Parse Tasks from a response.
+
+**Arguments**:
+
+- `response` _str_ - The model response.
+- `task_id` _str, optional_ - a parent task id,
+  the default value is "0"
+  
+
+**Returns**:
+
+- `List[Task]` - A list of tasks which is :obj:`Task` instance.
+
+<a id="camel.tasks.task.Task"></a>
+
+## Task Objects
+
+```python
+class Task(BaseModel)
+```
+
+Task is specific assignment that can be passed to a agent.
+
+**Attributes**:
+
+- `content` - string content for task.
+- `id` - An unique string identifier for the task. This should
+  ideally be provided by the provider/model which created the task.
+- `state` - The state which should be OPEN, RUNNING, DONE or DELETED.
+- `type` - task type
+- `parent` - The parent task, None for root task.
+- `subtasks` - The childrent sub-tasks for the task.
+- `result` - The answer for the task.
+
+<a id="camel.tasks.task.Task.from_message"></a>
+
+#### from\_message
+
+```python
+@classmethod
+def from_message(cls, message: BaseMessage) -> "Task"
+```
+
+Create a task from a message.
+
+**Arguments**:
+
+- `message` _BaseMessage_ - The message to the task.
+  
+
+**Returns**:
+
+  Task
+
+<a id="camel.tasks.task.Task.to_message"></a>
+
+#### to\_message
+
+```python
+@staticmethod
+def to_message()
+```
+
+Convert a Task to a Message.
+
+<a id="camel.tasks.task.Task.reset"></a>
+
+#### reset
+
+```python
+def reset()
+```
+
+Reset Task to initial state.
+
+<a id="camel.tasks.task.Task.update_result"></a>
+
+#### update\_result
+
+```python
+def update_result(result: str)
+```
+
+Set task result and mark the task as DONE.
+
+**Arguments**:
+
+- `result` _str_ - The task result.
+
+<a id="camel.tasks.task.Task.set_id"></a>
+
+#### set\_id
+
+```python
+def set_id(id: str)
+```
+
+Set the id of the task.
+
+**Arguments**:
+
+- `id` _str_ - The id of the task.
+
+<a id="camel.tasks.task.Task.set_state"></a>
+
+#### set\_state
+
+```python
+def set_state(state: TaskState)
+```
+
+Recursively set the state of the task and its subtasks.
+
+**Arguments**:
+
+- `state` _TaskState_ - The giving state.
+
+<a id="camel.tasks.task.Task.add_subtask"></a>
+
+#### add\_subtask
+
+```python
+def add_subtask(task: "Task")
+```
+
+Add a subtask to the current task.
+
+**Arguments**:
+
+- `task` _Task_ - The subtask to be added.
+
+<a id="camel.tasks.task.Task.remove_subtask"></a>
+
+#### remove\_subtask
+
+```python
+def remove_subtask(id: str)
+```
+
+Remove a subtask from the current task.
+
+**Arguments**:
+
+- `id` _str_ - The id of the subtask to be removed.
+
+<a id="camel.tasks.task.Task.get_running_task"></a>
+
+#### get\_running\_task
+
+```python
+def get_running_task() -> Optional["Task"]
+```
+
+Get RUNNING task.
+
+<a id="camel.tasks.task.Task.to_string"></a>
+
+#### to\_string
+
+```python
+def to_string(indent: str = "", state: bool = False) -> str
+```
+
+Convert task to a string.
+
+**Arguments**:
+
+- `indent` _str_ - The ident for hierarchical tasks.
+- `state` _bool_ - Include or not task state.
+  
+
+**Returns**:
+
+- `str` - The printable task string.
+
+<a id="camel.tasks.task.Task.get_result"></a>
+
+#### get\_result
+
+```python
+def get_result(indent: str = "") -> str
+```
+
+Get task result to a string.
+
+**Arguments**:
+
+- `indent` _str_ - The ident for hierarchical tasks.
+  
+
+**Returns**:
+
+- `str` - The printable task string.
+
+<a id="camel.tasks.task.Task.decompose"></a>
+
+#### decompose
+
+```python
+def decompose(
+    agent: ChatAgent,
+    prompt: Optional[str] = None,
+    task_parser: Callable[[str, str], List["Task"]] = parse_response
+) -> List["Task"]
+```
+
+Decompose a task to a list of sub-tasks. It can be used for data
+generation and planner of agent.
+
+**Arguments**:
+
+- `agent` _ChatAgent_ - An agent that used to decompose the task.
+- `prompt` _str, optional_ - A prompt to decompose the task. If not
+  provided, the default prompt will be used.
+- `task_parser` _Callable[[str, str], List[Task]], optional_ - A
+  function to extract Task from response. If not provided,
+  the default parse_response will be used.
+  
+
+**Returns**:
+
+- `List[Task]` - A list of tasks which are :obj:`Task` instances.
+
+<a id="camel.tasks.task.Task.compose"></a>
+
+#### compose
+
+```python
+def compose(agent: ChatAgent,
+            template: TextPrompt = TASK_COMPOSE_PROMPT,
+            result_parser: Optional[Callable[[str], str]] = None)
+```
+
+compose task result by the sub-tasks.
+
+**Arguments**:
+
+- `agent` _ChatAgent_ - An agent that used to compose the task result.
+- `template` _TextPrompt, optional_ - The prompt template to compose
+  task. If not provided, the default template will be used.
+- `result_parser` _Callable[[str, str], List[Task]], optional_ - A
+  function to extract Task from response.
+
+<a id="camel.tasks.task.Task.get_depth"></a>
+
+#### get\_depth
+
+```python
+def get_depth() -> int
+```
+
+Get current task depth.
+
+<a id="camel.tasks.task.TaskManager"></a>
+
+## TaskManager Objects
+
+```python
+class TaskManager()
+```
+
+TaskManager is used to manage tasks.
+
+**Attributes**:
+
+- `root_task` - The root task.
+- `tasks` - The ordered tasks.
+- `task_map` - A map for task.id to Task.
+- `current_task_id` - The current "RUNNING" task.id.
+  
+
+**Arguments**:
+
+- `task` _Task_ - The root Task.
+
+<a id="camel.tasks.task.TaskManager.gen_task_id"></a>
+
+#### gen\_task\_id
+
+```python
+def gen_task_id() -> str
+```
+
+Generate a new task id.
+
+<a id="camel.tasks.task.TaskManager.exist"></a>
+
+#### exist
+
+```python
+def exist(task_id: str) -> bool
+```
+
+Check if a task with the given id exists.
+
+<a id="camel.tasks.task.TaskManager.current_task"></a>
+
+#### current\_task
+
+```python
+@property
+def current_task() -> Optional[Task]
+```
+
+Get the current task.
+
+<a id="camel.tasks.task.TaskManager.topological_sort"></a>
+
+#### topological\_sort
+
+```python
+@staticmethod
+def topological_sort(tasks: List[Task]) -> List[Task]
+```
+
+Sort a list of tasks by topological way.
+
+**Arguments**:
+
+- `tasks` _List[Task]_ - The giving list of tasks.
+  
+
+**Returns**:
+
+  The sorted list of tasks.
+
+<a id="camel.tasks.task.TaskManager.set_tasks_dependence"></a>
+
+#### set\_tasks\_dependence
+
+```python
+@staticmethod
+def set_tasks_dependence(root: Task,
+                         others: List[Task],
+                         type: Literal["serial", "parallel"] = "parallel")
+```
+
+Set relationship between root task and other tasks.
+Two relationships are currently supported: serial and parallel.
+`serial` :  root -> other1 -> other2
+`parallel`: root -> other1
+-> other2
+
+**Arguments**:
+
+- `root` _Task_ - A root task.
+- `others` _List[Task]_ - A list of tasks.
+
+<a id="camel.tasks.task.TaskManager.add_tasks"></a>
+
+#### add\_tasks
+
+```python
+def add_tasks(tasks: Union[Task, List[Task]]) -> None
+```
+
+self.tasks and self.task_map will be updated by the input tasks.
+
+<a id="camel.tasks.task.TaskManager.evolve"></a>
+
+#### evolve
+
+```python
+def evolve(
+    task: Task,
+    agent: ChatAgent,
+    template: Optional[TextPrompt] = None,
+    task_parser: Optional[Callable[[str, str], List[Task]]] = None
+) -> Optional[Task]
+```
+
+Evolve a task to a new task.
+Evolve is only used for data generation.
+
+**Arguments**:
+
+- `task` _Task_ - A given task.
+- `agent` _ChatAgent_ - An agent that used to evolve the task.
+- `template` _TextPrompt, optional_ - A prompt template to evolve task.
+  If not provided, the default template will be used.
+- `task_parser` _Callable, optional_ - A function to extract Task from
+  response. If not provided, the default parser will be used.
+  
+
+**Returns**:
+
+- `Task` - The created :obj:`Task` instance or None.
+

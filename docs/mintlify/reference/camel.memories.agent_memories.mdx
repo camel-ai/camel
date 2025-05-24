@@ -1,0 +1,138 @@
+<a id="camel.memories.agent_memories"></a>
+
+<a id="camel.memories.agent_memories.ChatHistoryMemory"></a>
+
+## ChatHistoryMemory Objects
+
+```python
+class ChatHistoryMemory(AgentMemory)
+```
+
+An agent memory wrapper of :obj:`ChatHistoryBlock`.
+
+**Arguments**:
+
+- `context_creator` _BaseContextCreator_ - A model context creator.
+- `storage` _BaseKeyValueStorage, optional_ - A storage backend for storing
+  chat history. If `None`, an :obj:`InMemoryKeyValueStorage`
+  will be used. (default: :obj:`None`)
+- `window_size` _int, optional_ - The number of recent chat messages to
+  retrieve. If not provided, the entire chat history will be
+  retrieved.  (default: :obj:`None`)
+- `agent_id` _str, optional_ - The ID of the agent associated with the chat
+  history.
+
+<a id="camel.memories.agent_memories.VectorDBMemory"></a>
+
+## VectorDBMemory Objects
+
+```python
+class VectorDBMemory(AgentMemory)
+```
+
+An agent memory wrapper of :obj:`VectorDBBlock`. This memory queries
+messages stored in the vector database. Notice that the most recent
+messages will not be added to the context.
+
+**Arguments**:
+
+- `context_creator` _BaseContextCreator_ - A model context creator.
+- `storage` _BaseVectorStorage, optional_ - A vector storage storage. If
+  `None`, an :obj:`QdrantStorage` will be used.
+- `(default` - :obj:`None`)
+- `retrieve_limit` _int, optional_ - The maximum number of messages
+  to be added into the context.  (default: :obj:`3`)
+- `agent_id` _str, optional_ - The ID of the agent associated with
+  the messages stored in the vector database.
+
+<a id="camel.memories.agent_memories.VectorDBMemory.clear"></a>
+
+#### clear
+
+```python
+def clear() -> None
+```
+
+Removes all records from the vector database memory.
+
+<a id="camel.memories.agent_memories.LongtermAgentMemory"></a>
+
+## LongtermAgentMemory Objects
+
+```python
+class LongtermAgentMemory(AgentMemory)
+```
+
+An implementation of the :obj:`AgentMemory` abstract base class for
+augmenting ChatHistoryMemory with VectorDBMemory.
+
+**Arguments**:
+
+- `context_creator` _BaseContextCreator_ - A model context creator.
+- `chat_history_block` _Optional[ChatHistoryBlock], optional_ - A chat
+  history block. If `None`, a :obj:`ChatHistoryBlock` will be used.
+- `(default` - :obj:`None`)
+- `vector_db_block` _Optional[VectorDBBlock], optional_ - A vector database
+  block. If `None`, a :obj:`VectorDBBlock` will be used.
+- `(default` - :obj:`None`)
+- `retrieve_limit` _int, optional_ - The maximum number of messages
+  to be added into the context.  (default: :obj:`3`)
+- `agent_id` _str, optional_ - The ID of the agent associated with the chat
+  history and the messages stored in the vector database.
+
+<a id="camel.memories.agent_memories.LongtermAgentMemory.get_context_creator"></a>
+
+#### get\_context\_creator
+
+```python
+def get_context_creator() -> BaseContextCreator
+```
+
+Returns the context creator used by the memory.
+
+**Returns**:
+
+- `BaseContextCreator` - The context creator used by the memory.
+
+<a id="camel.memories.agent_memories.LongtermAgentMemory.retrieve"></a>
+
+#### retrieve
+
+```python
+def retrieve() -> List[ContextRecord]
+```
+
+Retrieves context records from both the chat history and the vector
+database.
+
+**Returns**:
+
+- `List[ContextRecord]` - A list of context records retrieved from both
+  the chat history and the vector database.
+
+<a id="camel.memories.agent_memories.LongtermAgentMemory.write_records"></a>
+
+#### write\_records
+
+```python
+def write_records(records: List[MemoryRecord]) -> None
+```
+
+Converts the provided chat messages into vector representations and
+writes them to the vector database.
+
+**Arguments**:
+
+- `records` _List[MemoryRecord]_ - Messages to be added to the vector
+  database.
+
+<a id="camel.memories.agent_memories.LongtermAgentMemory.clear"></a>
+
+#### clear
+
+```python
+def clear() -> None
+```
+
+Removes all records from the memory.
+

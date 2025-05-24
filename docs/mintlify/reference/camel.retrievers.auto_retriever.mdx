@@ -1,0 +1,74 @@
+<a id="camel.retrievers.auto_retriever"></a>
+
+<a id="camel.retrievers.auto_retriever.AutoRetriever"></a>
+
+## AutoRetriever Objects
+
+```python
+class AutoRetriever()
+```
+
+Facilitates the automatic retrieval of information using a
+query-based approach with pre-defined elements.
+
+**Attributes**:
+
+- `url_and_api_key` _Optional[Tuple[str, str]]_ - URL and API key for
+  accessing the vector storage remotely.
+- `vector_storage_local_path` _Optional[str]_ - Local path for vector
+  storage, if applicable.
+- `storage_type` _Optional[StorageType]_ - The type of vector storage to
+  use. Defaults to `StorageType.QDRANT`.
+- `embedding_model` _Optional[BaseEmbedding]_ - Model used for embedding
+  queries and documents. Defaults to `OpenAIEmbedding()`.
+
+<a id="camel.retrievers.auto_retriever.AutoRetriever.run_vector_retriever"></a>
+
+#### run\_vector\_retriever
+
+```python
+def run_vector_retriever(
+        query: str,
+        contents: Union[str, List[str], "Element", List["Element"]],
+        top_k: int = Constants.DEFAULT_TOP_K_RESULTS,
+        similarity_threshold: float = Constants.DEFAULT_SIMILARITY_THRESHOLD,
+        return_detailed_info: bool = False,
+        max_characters: int = 500) -> dict[str, Sequence[Collection[str]]]
+```
+
+Executes the automatic vector retriever process using vector
+storage.
+
+**Arguments**:
+
+- `query` _str_ - Query string for information retriever.
+- `contents` _Union[str, List[str], Element, List[Element]]_ - Local
+  file paths, remote URLs, string contents or Element objects.
+- `top_k` _int, optional_ - The number of top results to return during
+  retrieve. Must be a positive integer. Defaults to
+  `DEFAULT_TOP_K_RESULTS`.
+- `similarity_threshold` _float, optional_ - The similarity threshold
+  for filtering results. Defaults to
+  `DEFAULT_SIMILARITY_THRESHOLD`.
+- `return_detailed_info` _bool, optional_ - Whether to return detailed
+  information including similarity score, content path and
+  metadata. Defaults to `False`.
+- `max_characters` _int_ - Max number of characters in each chunk.
+  Defaults to `500`.
+  
+
+**Returns**:
+
+  dict[str, Sequence[Collection[str]]]: By default, returns
+  only the text information. If `return_detailed_info` is
+  `True`, return detailed information including similarity
+  score, content path and metadata.
+  
+
+**Raises**:
+
+- `ValueError` - If there's an vector storage existing with content
+  name in the vector path but the payload is None. If
+  `contents` is empty.
+- `RuntimeError` - If any errors occur during the retrieve process.
+

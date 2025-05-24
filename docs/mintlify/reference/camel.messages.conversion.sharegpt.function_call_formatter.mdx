@@ -1,0 +1,57 @@
+<a id="camel.messages.conversion.sharegpt.function_call_formatter"></a>
+
+<a id="camel.messages.conversion.sharegpt.function_call_formatter.FunctionCallFormatter"></a>
+
+## FunctionCallFormatter Objects
+
+```python
+class FunctionCallFormatter(ABC, Generic[CallT, ResponseT])
+```
+
+Abstract base class for function calling formats
+
+<a id="camel.messages.conversion.sharegpt.function_call_formatter.FunctionCallFormatter.extract_tool_calls"></a>
+
+#### extract\_tool\_calls
+
+```python
+@abstractmethod
+def extract_tool_calls(message: str) -> List[CallT]
+```
+
+Extract function call info from a message string
+
+<a id="camel.messages.conversion.sharegpt.function_call_formatter.FunctionCallFormatter.extract_tool_response"></a>
+
+#### extract\_tool\_response
+
+```python
+@abstractmethod
+def extract_tool_response(message: str) -> Optional[ResponseT]
+```
+
+Extract function response info from a message string
+
+<a id="camel.messages.conversion.sharegpt.function_call_formatter.FunctionCallFormatter.format_tool_call"></a>
+
+#### format\_tool\_call
+
+```python
+@abstractmethod
+def format_tool_call(content: str, func_name: str, args: Dict[str,
+                                                              Any]) -> str
+```
+
+Format a function call into a message string
+
+<a id="camel.messages.conversion.sharegpt.function_call_formatter.FunctionCallFormatter.format_tool_response"></a>
+
+#### format\_tool\_response
+
+```python
+@abstractmethod
+def format_tool_response(func_name: str, result: Any) -> str
+```
+
+Format a function response into a message string
+

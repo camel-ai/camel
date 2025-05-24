@@ -1,0 +1,54 @@
+<a id="camel.terminators.response_terminator"></a>
+
+<a id="camel.terminators.response_terminator.ResponseWordsTerminator"></a>
+
+## ResponseWordsTerminator Objects
+
+```python
+class ResponseWordsTerminator(ResponseTerminator)
+```
+
+Terminate agent when some words reached to occurrence
+limit by any message of the response.
+
+**Arguments**:
+
+- `words_dict` _dict_ - Dictionary of words and its occurrence
+  threshold.
+- `case_sensitive` _bool_ - Whether count the words as
+  case-sensitive. (default: :obj:`False`)
+- `mode` _TerminationMode_ - Whether terminate agent if any
+  or all pre-set words reached the threshold.
+- `(default` - :obj:`TerminationMode.ANY`)
+
+<a id="camel.terminators.response_terminator.ResponseWordsTerminator.is_terminated"></a>
+
+#### is\_terminated
+
+```python
+def is_terminated(messages: List[BaseMessage]) -> Tuple[bool, Optional[str]]
+```
+
+Whether terminate the agent by checking the occurrence
+of specified words reached to preset thresholds.
+
+**Arguments**:
+
+- `messages` _list_ - List of :obj:`BaseMessage` from a response.
+  
+
+**Returns**:
+
+- `tuple` - A tuple containing whether the agent should be
+  terminated and a string of termination reason.
+
+<a id="camel.terminators.response_terminator.ResponseWordsTerminator.reset"></a>
+
+#### reset
+
+```python
+def reset()
+```
+
+Reset the terminator.
+

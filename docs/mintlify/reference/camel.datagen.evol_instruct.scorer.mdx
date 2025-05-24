@@ -1,0 +1,83 @@
+<a id="camel.datagen.evol_instruct.scorer"></a>
+
+<a id="camel.datagen.evol_instruct.scorer.BaseScorer"></a>
+
+## BaseScorer Objects
+
+```python
+class BaseScorer(ABC)
+```
+
+<a id="camel.datagen.evol_instruct.scorer.BaseScorer.score"></a>
+
+#### score
+
+```python
+@abstractmethod
+def score(reference_prompt: str, candidate_prompt: str) -> Dict[str, int]
+```
+
+Compare a candidate prompt against a reference prompt and
+return a tuple of scores. The higher the score, the better.
+For example, (diversity, difficulty, feasibility).
+
+<a id="camel.datagen.evol_instruct.scorer.MathScorer"></a>
+
+## MathScorer Objects
+
+```python
+class MathScorer(BaseScorer)
+```
+
+<a id="camel.datagen.evol_instruct.scorer.MathScorer.score"></a>
+
+#### score
+
+```python
+def score(reference_problem: str, new_problem: str) -> Dict[str, int]
+```
+
+Evaluates the new math problem relative to the reference math
+problem.
+
+**Arguments**:
+
+- `reference_problem` _str_ - The reference math problem.
+- `new_problem` _str_ - The new or evolved math problem.
+  
+
+**Returns**:
+
+  Dict[str, int]: A dictionary with scores for diversity, difficulty,
+  validity, and solvability.
+
+<a id="camel.datagen.evol_instruct.scorer.GeneralScorer"></a>
+
+## GeneralScorer Objects
+
+```python
+class GeneralScorer(BaseScorer)
+```
+
+<a id="camel.datagen.evol_instruct.scorer.GeneralScorer.score"></a>
+
+#### score
+
+```python
+def score(reference_problem: str, new_problem: str) -> Dict[str, int]
+```
+
+Evaluates the new problem against the reference problem using
+structured scoring.
+
+**Arguments**:
+
+- `reference_problem` _str_ - The original problem.
+- `new_problem` _str_ - The evolved or new problem.
+  
+
+**Returns**:
+
+  Dict[str, int]: A dictionary with scores for diversity, complexity,
+  and validity.
+

@@ -1,0 +1,254 @@
+<a id="camel.bots.discord.discord_app"></a>
+
+<a id="camel.bots.discord.discord_app.DiscordApp"></a>
+
+## DiscordApp Objects
+
+```python
+class DiscordApp()
+```
+
+A class representing a Discord app that uses the `discord.py` library
+to interact with Discord servers.
+
+This bot can respond to messages in specific channels and only reacts to
+messages that mention the bot.
+
+**Attributes**:
+
+- `channel_ids` _Optional[List[int]]_ - A list of allowed channel IDs. If
+  provided, the bot will only respond to messages in these channels.
+- `token` _Optional[str]_ - The Discord bot token used for authentication.
+
+<a id="camel.bots.discord.discord_app.DiscordApp.__init__"></a>
+
+#### \_\_init\_\_
+
+```python
+@dependencies_required('discord')
+@api_keys_required([
+    ("token", "DISCORD_BOT_TOKEN"),
+])
+def __init__(channel_ids: Optional[List[int]] = None,
+             token: Optional[str] = None,
+             client_id: Optional[str] = None,
+             client_secret: Optional[str] = None,
+             redirect_uri: Optional[str] = None,
+             installation_store: Optional[DiscordBaseInstallationStore] = None,
+             intents: Optional[discord.Intents] = None) -> None
+```
+
+Initialize the DiscordApp instance by setting up the Discord client
+and event handlers.
+
+**Arguments**:
+
+- `channel_ids` _Optional[List[int]]_ - A list of allowed channel IDs.
+  The bot will only respond to messages in these channels if
+  provided. (default: :obj:`None`)
+- `token` _Optional[str]_ - The Discord bot token for authentication.
+  If not provided, the token will be retrieved from the
+  environment variable `DISCORD_TOKEN`. (default: :obj:`None`)
+- `client_id` _str, optional_ - The client ID for Discord OAuth.
+- `(default` - :obj:`None`)
+- `client_secret` _Optional[str]_ - The client secret for Discord OAuth.
+- `(default` - :obj:`None`)
+- `redirect_uri` _str_ - The redirect URI for OAuth callbacks.
+- `(default` - :obj:`None`)
+- `installation_store` _DiscordAsyncInstallationStore_ - The database
+  stores all information of all installations.
+- `(default` - :obj:`None`)
+- `intents` _discord.Intents_ - The Discord intents of this app.
+- `(default` - :obj:`None`)
+  
+
+**Raises**:
+
+- `ValueError` - If the `DISCORD_BOT_TOKEN` is not found in environment
+  variables.
+
+<a id="camel.bots.discord.discord_app.DiscordApp.start"></a>
+
+#### start
+
+```python
+async def start()
+```
+
+Asynchronously start the Discord bot using its token.
+
+This method starts the bot and logs into Discord asynchronously using
+the provided token. It should be awaited when used in an async
+environment.
+
+<a id="camel.bots.discord.discord_app.DiscordApp.run"></a>
+
+#### run
+
+```python
+def run() -> None
+```
+
+Start the Discord bot using its token.
+
+This method starts the bot and logs into Discord synchronously using
+the provided token. It blocks execution and keeps the bot running.
+
+<a id="camel.bots.discord.discord_app.DiscordApp.exchange_code_for_token_response"></a>
+
+#### exchange\_code\_for\_token\_response
+
+```python
+async def exchange_code_for_token_response(code: str) -> Optional[str]
+```
+
+Exchange the authorization code for an access token.
+
+**Arguments**:
+
+- `code` _str_ - The authorization code received from Discord after
+  user authorization.
+  
+
+**Returns**:
+
+- `Optional[str]` - The access token if successful, otherwise None.
+  
+
+**Raises**:
+
+- `ValueError` - If OAuth configuration is incomplete or invalid.
+- `httpx.RequestError` - If there is a network issue during the request.
+
+<a id="camel.bots.discord.discord_app.DiscordApp.get_user_info"></a>
+
+#### get\_user\_info
+
+```python
+async def get_user_info(access_token: str) -> Optional[dict]
+```
+
+Retrieve user information using the access token.
+
+**Arguments**:
+
+- `access_token` _str_ - The access token received from Discord.
+  
+
+**Returns**:
+
+- `dict` - The user information retrieved from Discord.
+
+<a id="camel.bots.discord.discord_app.DiscordApp.refresh_access_token"></a>
+
+#### refresh\_access\_token
+
+```python
+async def refresh_access_token(refresh_token: str) -> Optional[str]
+```
+
+Refresh the access token using a refresh token.
+
+**Arguments**:
+
+- `refresh_token` _str_ - The refresh token issued by Discord that
+  can be used to obtain a new access token.
+  
+
+**Returns**:
+
+- `Optional[str]` - The new access token if successful, otherwise None.
+
+<a id="camel.bots.discord.discord_app.DiscordApp.get_valid_access_token"></a>
+
+#### get\_valid\_access\_token
+
+```python
+async def get_valid_access_token(guild_id: str) -> Optional[str]
+```
+
+Retrieve a valid access token for the specified guild.
+
+This method attempts to retrieve an access token for a specific guild.
+If the current access token is expired, it will refresh the token using
+the refresh token.
+
+**Arguments**:
+
+- `guild_id` _str_ - The ID of the guild to retrieve the access
+  token for.
+  
+
+**Returns**:
+
+- `Optional[str]` - The valid access token if successful,
+  otherwise None.
+
+<a id="camel.bots.discord.discord_app.DiscordApp.save_installation"></a>
+
+#### save\_installation
+
+```python
+async def save_installation(guild_id: str, access_token: str,
+                            refresh_token: str, expires_in: int)
+```
+
+Save the installation information for a given guild.
+
+**Arguments**:
+
+- `guild_id` _str_ - The ID of the guild where the bot is installed.
+- `access_token` _str_ - The access token for the guild.
+- `refresh_token` _str_ - The refresh token for the guild.
+- `expires_in` - (int): The expiration time of the
+  access token.
+
+<a id="camel.bots.discord.discord_app.DiscordApp.remove_installation"></a>
+
+#### remove\_installation
+
+```python
+async def remove_installation(guild: discord.Guild)
+```
+
+Remove the installation for a given guild.
+
+**Arguments**:
+
+- `guild` _discord.Guild_ - The guild from which the bot is
+  being removed.
+
+<a id="camel.bots.discord.discord_app.DiscordApp.on_ready"></a>
+
+#### on\_ready
+
+```python
+async def on_ready() -> None
+```
+
+Event handler that is called when the bot has successfully
+connected to the Discord server.
+
+When the bot is ready and logged into Discord, it prints a message
+displaying the bot's username.
+
+<a id="camel.bots.discord.discord_app.DiscordApp.on_message"></a>
+
+#### on\_message
+
+```python
+async def on_message(message: 'Message') -> None
+```
+
+Event handler for processing incoming messages.
+
+This method is called whenever a new message is received by the bot. It
+will ignore messages sent by the bot itself, only respond to messages
+in allowed channels (if specified), and only to messages that mention
+the bot.
+
+**Arguments**:
+
+- `message` _discord.Message_ - The message object received from
+  Discord.
+
