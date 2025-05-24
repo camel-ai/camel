@@ -30,6 +30,9 @@ from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
     api_keys_required,
+    conditional_observe,
+    update_langfuse_observation,
+    update_langfuse_output,
 )
 
 UNSUPPORTED_PARAMS = {
@@ -90,18 +93,53 @@ class OpenAIModel(BaseModelBackend):
             model_type, model_config_dict, api_key, url, token_counter, timeout
         )
 
-        self._client = OpenAI(
-            timeout=self._timeout,
-            max_retries=3,
-            base_url=self._url,
-            api_key=self._api_key,
-        )
-        self._async_client = AsyncOpenAI(
-            timeout=self._timeout,
-            max_retries=3,
-            base_url=self._url,
-            api_key=self._api_key,
-        )
+        try:
+            from camel.utils import is_langfuse_available
+
+            if is_langfuse_available():
+                from langfuse.openai import AsyncOpenAI as LangfuseAsyncOpenAI
+                from langfuse.openai import OpenAI as LangfuseOpenAI
+
+                self._client = LangfuseOpenAI(
+                    timeout=self._timeout,
+                    max_retries=3,
+                    base_url=self._url,
+                    api_key=self._api_key,
+                )
+                self._async_client = LangfuseAsyncOpenAI(
+                    timeout=self._timeout,
+                    max_retries=3,
+                    base_url=self._url,
+                    api_key=self._api_key,
+                )
+            else:
+                # Use regular OpenAI clients
+                self._client = OpenAI(
+                    timeout=self._timeout,
+                    max_retries=3,
+                    base_url=self._url,
+                    api_key=self._api_key,
+                )
+                self._async_client = AsyncOpenAI(
+                    timeout=self._timeout,
+                    max_retries=3,
+                    base_url=self._url,
+                    api_key=self._api_key,
+                )
+        except ImportError:
+            # Fallback to regular OpenAI clients
+            self._client = OpenAI(
+                timeout=self._timeout,
+                max_retries=3,
+                base_url=self._url,
+                api_key=self._api_key,
+            )
+            self._async_client = AsyncOpenAI(
+                timeout=self._timeout,
+                max_retries=3,
+                base_url=self._url,
+                api_key=self._api_key,
+            )
 
     def _sanitize_config(self, config_dict: Dict[str, Any]) -> Dict[str, Any]:
         r"""Sanitize the model configuration for O1 models."""
@@ -185,6 +223,7 @@ class OpenAIModel(BaseModelBackend):
             self._token_counter = OpenAITokenCounter(self.model_type)
         return self._token_counter
 
+    @conditional_observe(as_type="generation")
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -206,15 +245,26 @@ class OpenAIModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
+        # Update Langfuse observation if available
+        update_langfuse_observation(None)(self, messages, tools)
+
         messages = self._adapt_messages_for_o1_models(messages)
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
         )
         if response_format:
-            return self._request_parse(messages, response_format, tools)
+            result: Union[ChatCompletion, Stream[ChatCompletionChunk]] = (
+                self._request_parse(messages, response_format, tools)
+            )
         else:
-            return self._request_chat_completion(messages, tools)
+            result = self._request_chat_completion(messages, tools)
 
+        # Update observation with output
+        update_langfuse_output(result)
+
+        return result
+
+    @conditional_observe(as_type="generation")
     async def _arun(
         self,
         messages: List[OpenAIMessage],
@@ -236,13 +286,24 @@ class OpenAIModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
+        # Update Langfuse observation if available
+        update_langfuse_observation(None)(self, messages, tools)
+
+        messages = self._adapt_messages_for_o1_models(messages)
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
         )
         if response_format:
-            return await self._arequest_parse(messages, response_format, tools)
+            result: Union[
+                ChatCompletion, AsyncStream[ChatCompletionChunk]
+            ] = await self._arequest_parse(messages, response_format, tools)
         else:
-            return await self._arequest_chat_completion(messages, tools)
+            result = await self._arequest_chat_completion(messages, tools)
+
+        # Update observation with output
+        update_langfuse_output(result)
+
+        return result
 
     def _request_chat_completion(
         self,

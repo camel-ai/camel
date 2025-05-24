@@ -50,7 +50,7 @@ from camel.models.watsonx_model import WatsonXModel
 from camel.models.yi_model import YiModel
 from camel.models.zhipuai_model import ZhipuAIModel
 from camel.types import ModelPlatformType, ModelType, UnifiedModelType
-from camel.utils import BaseTokenCounter
+from camel.utils import BaseTokenCounter, configure_langfuse
 
 
 class ModelFactory:
@@ -142,6 +142,9 @@ class ModelFactory:
         Raises:
             ValueError: If there is no backend for the model.
         """
+        # Auto-configure Langfuse if environment variables are available
+        configure_langfuse()
+
         # Convert string to ModelPlatformType enum if needed
         if isinstance(model_platform, str):
             try:
