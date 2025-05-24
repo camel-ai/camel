@@ -33,6 +33,132 @@ from PIL import Image, ImageDraw, ImageFont
 # Constants
 TOP_NO_LABEL_ZONE = 20
 
+WEB_AGENT_SYSTEM_PROMPT = """
+You are a helpful web agent that can assist users in browsing the web.
+Given a high-level task, you can leverage predefined browser tools to help
+users achieve their goals.
+        """
+
+PLANNING_AGENT_SYSTEM_PROMPT = """
+You are a helpful planning agent that can assist users in planning complex
+tasks which need multi-step browser interaction.
+        """
+
+OBSERVE_PROMPT_TEMPLATE = """
+Please act as a web agent to help me complete the following high-level task:
+<task>{task_prompt}</task>
+Now, I have made screenshot (only the current viewport, not the full webpage)
+based on the current browser state, and marked interactive elements in the
+webpage.
+Please carefully examine the requirements of the task, and current state of
+the browser, and provide the next appropriate action to take.
+
+{detailed_plan_prompt}
+
+Here are the current available browser functions you can use:
+{AVAILABLE_ACTIONS_PROMPT}
+
+Here are the latest {history_window} trajectory (at most) you have taken:
+<history>
+{history}
+</history>
+
+Your output should be in json format, including the following fields:
+- `observation`: The detailed image description about the current viewport. Do
+not over-confident about the correctness of the history actions. You should
+always check the current viewport to make sure the correctness of the next
+action.
+- `reasoning`: The reasoning about the next action you want to take, and the
+possible obstacles you may encounter, and how to solve them. Do not forget to
+check the history actions to avoid the same mistakes.
+- `action_code`: The action code you want to take. It is only one step action
+code, without any other texts (such as annotation)
+
+Here is two example of the output:
+```json
+{{
+    "observation": [IMAGE_DESCRIPTION],
+    "reasoning": [YOUR_REASONING],
+    "action_code": "fill_input_id([ID], [TEXT])"
+}}
+
+{{
+    "observation":  "The current page is a CAPTCHA verification page on Amazon. It asks the user to ..",
+    "reasoning": "To proceed with the task of searching for products, I need to complete..",
+    "action_code": "fill_input_id(3, 'AUXPMR')"
+}}
+
+Here are some tips for you:
+- Never forget the overall question: **{task_prompt}**
+- Maybe after a certain operation (e.g. click_id), the page content has not
+changed. You can check whether the action step is successful by looking at the
+`success` of the action step in the history. If successful, it means that the
+page content is indeed the same after the click. You need to try other methods.
+- If using one way to solve the problem is not successful, try other ways.
+Make sure your provided ID is correct!
+- Some cases are very complex and need to be achieve by an iterative process.
+You can use the `back()` function to go back to the previous page to try other
+methods.
+- There are many links on the page, which may be useful for solving the
+problem. You can use the `click_id()` function to click on the link to see if
+it is useful.
+- Always keep in mind that your action must be based on the ID shown in the
+current image or viewport, not the ID shown in the history.
+- Do not use `stop()` lightly. Always remind yourself that the image only
+shows a part of the full page. If you cannot find the answer, try to use
+functions like `scroll_up()` and `scroll_down()` to check the full content of
+the webpage before doing anything else, because the answer or next key step
+may be hidden in the content below.
+- If the webpage needs human verification, you must avoid processing it.
+Please use `back()` to go back to the previous page, and try other ways.
+- If you have tried everything and still cannot resolve the issue, please stop
+the simulation, and report issues you have encountered.
+- Check the history actions carefully, detect whether you have repeatedly made
+the same actions or not.
+- When dealing with wikipedia revision history related tasks, you need to
+think about the solution flexibly. First, adjust the browsing history
+displayed on a single page to the maximum, and then make use of the
+find_text_on_page function. This is extremely useful which can quickly locate
+the text you want to find and skip massive amount of useless information.
+- Flexibly use interactive elements like slide down selection bar to filter
+out the information you need. Sometimes they are extremely useful.
+```
+"""  # noqa: E501
+
+GET_FINAL_ANSWER_PROMPT_TEMPLATE = """
+We are solving a complex web task which needs multi-step browser interaction. After the multi-step observation, reasoning and acting with web browser, we think that the task is currently solved.
+Here are all trajectory we have taken:
+<history>{history}</history>
+Please find the final answer, or give valuable insights and founds (e.g. if previous actions contain downloading files, your output should include the path of the downloaded file) about the overall task: <task>{task_prompt}</task>
+        """  # noqa: E501
+
+TASK_PLANNING_PROMPT_TEMPLATE = """
+<task>{task_prompt}</task>
+According to the problem above, if we use browser interaction, what is the general process of the interaction after visiting the webpage `{start_url}`? 
+
+Please note that it can be viewed as Partially Observable MDP. Do not over-confident about your plan.
+Please first restate the task in detail, and then provide a detailed plan to solve the task.
+"""  # noqa: E501
+
+TASK_REPLANNING_PROMPT_TEMPLATE = """
+We are using browser interaction to solve a complex task which needs multi-step actions.
+Here are the overall task:
+<overall_task>{task_prompt}</overall_task>
+
+In order to solve the task, we made a detailed plan previously. Here is the detailed plan:
+<detailed plan>{detailed_plan}</detailed plan>
+
+According to the task above, we have made a series of observations, reasonings, and actions. Here are the latest {history_window} trajectory (at most) we have taken:
+<history>{history}</history>
+
+However, the task is not completed yet. As the task is partially observable, we may need to replan the task based on the current state of the browser if necessary.
+Now please carefully examine the current task planning schema, and our history actions, and then judge whether the task needs to be fundamentally replanned. If so, please provide a detailed replanned schema (including the restated overall task).
+
+Your output should be in json format, including the following fields:
+- `if_need_replan`: bool, A boolean value indicating whether the task needs to be fundamentally replanned.
+- `replanned_schema`: str, The replanned schema for the task, which should not be changed too much compared with the original one. If the task does not need to be replanned, the value should be an empty string. 
+"""  # noqa: E501
+
 AVAILABLE_ACTIONS_PROMPT = """
 1. `fill_input_id(identifier: Union[str, int], text: str)`: Fill an input
 field (e.g. search box) with the given text and press Enter.
@@ -144,7 +270,7 @@ def _get_bool(d: Any, k: str) -> bool:
 
 
 def _parse_json_output(
-        text: str, logger: Any
+    text: str, logger: Any
 ) -> Dict[str, Any]:  # Added logger argument
     r"""Extract JSON output from a string."""
 
@@ -284,8 +410,8 @@ def visual_viewport_from_dict(viewport: Dict[str, Any]) -> VisualViewport:
 
 
 def add_set_of_mark(
-        screenshot: Union[bytes, Image.Image, io.BufferedIOBase],
-        ROIs: Dict[str, InteractiveRegion],
+    screenshot: Union[bytes, Image.Image, io.BufferedIOBase],
+    ROIs: Dict[str, InteractiveRegion],
 ) -> Tuple[Image.Image, List[str], List[str], List[str]]:
     if isinstance(screenshot, Image.Image):
         return _add_set_of_mark(screenshot, ROIs)
@@ -302,7 +428,7 @@ def add_set_of_mark(
 
 
 def _add_set_of_mark(
-        screenshot: Image.Image, ROIs: Dict[str, InteractiveRegion]
+    screenshot: Image.Image, ROIs: Dict[str, InteractiveRegion]
 ) -> Tuple[Image.Image, List[str], List[str], List[str]]:
     r"""Add a set of marks to the screenshot.
 
@@ -329,9 +455,9 @@ def _add_set_of_mark(
         for rect_item in ROIs[r_key]["rects"]:  # Renamed rect to rect_item
             # Empty rectangles
             if (
-                    not rect_item
-                    or rect_item["width"] == 0
-                    or rect_item["height"] == 0
+                not rect_item
+                or rect_item["width"] == 0
+                or rect_item["height"] == 0
             ):
                 continue
 
@@ -357,11 +483,11 @@ def _add_set_of_mark(
 
 
 def _draw_roi(
-        draw: ImageDraw.ImageDraw,
-        idx: int,
-        font: Union[ImageFont.FreeTypeFont, ImageFont.ImageFont],
-        # Made Union explicit
-        rect: DOMRectangle,
+    draw: ImageDraw.ImageDraw,
+    idx: int,
+    font: Union[ImageFont.FreeTypeFont, ImageFont.ImageFont],
+    # Made Union explicit
+    rect: DOMRectangle,
 ) -> None:
     r"""Draw a ROI on the image.
 
@@ -408,7 +534,7 @@ def _draw_roi(
 
 
 def _get_text_color(
-        bg_color: Tuple[int, int, int, int],
+    bg_color: Tuple[int, int, int, int],
 ) -> Tuple[int, int, int, int]:
     r"""Determine the ideal text color (black or white) for contrast.
 
