@@ -240,7 +240,7 @@ qdrant_storage.clear()
 ```markdown
 >>> {'key2': 'value2'} 0.5669467095138407
 ```
-### 3.5. Using `OceanBaseStorage`
+### 3.6. Using `OceanBaseStorage`
 
 ```python
 import random
@@ -375,7 +375,7 @@ Vector count after clearing: 0
 
 ```
 
-### 3.6. Using `NebulaGraph`
+### 3.7. Using `NebulaGraph`
 
 ```python
 from camel.storages.graph_storages import NebulaGraph
@@ -387,7 +387,7 @@ query = 'SHOW TAGS;'
 print(nebula_graph.query(query))
 ```
 
-### 3.7. Using `Neo4jGraph`
+### 3.8. Using `Neo4jGraph`
 
 ```python
 from camel.storages import Neo4jGraph
