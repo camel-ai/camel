@@ -200,10 +200,9 @@ Tool calls: [ToolCallingRecord(tool_name='write_to_file', args={'content': '<!DO
 ===============================================================================
 '''
 
-
-# Example 7: Please give me a  pdf file with formulas of advanced mathematics
+# Example 7: Please give me a pdf file with formulas of advanced mathematics
 latex_pdf_query = (
-    """Please give me a  pdf file with formulas of advanced mathematics."""
+    """Please give me a pdf file with formulas of advanced mathematics."""
 )
 
 camel_agent.reset()
@@ -288,9 +287,8 @@ tool_call_id='call_uKqOpAl5Wm1O8dUYJc5yZf4U')]
 ===============================================================================
 '''
 
-
-# Example 8: what is multiagent?please export  them as pdf file
-pdf_query = """what is multiagent?Please export them as pdf file"""
+# Example 8: what is multiagent? please export them as pdf file
+pdf_query = """what is multiagent? Please export them as pdf file"""
 
 camel_agent.reset()
 response = camel_agent.step(pdf_query)
@@ -299,11 +297,9 @@ print(response.msgs[0].content)
 print("Tool calls:", response.info['tool_calls'])
 print("\n")
 
-
 '''
 ===============================================================================
-
-Example 8: what is multiagent?please export  them as pdf file
+Example 8: what is multiagent? please export them as pdf file
 The information about multiagent systems has been successfully exported to a PDF file named "multiagent_overview.pdf". If you need any further assistance, feel free to ask!
 Tool calls: [ToolCallingRecord(tool_name='write_to_file', args={'content': '### What is Multiagent?\n\nMultiagent systems (MAS) are systems composed of multiple interacting intelligent agents.
 These agents can be software programs, robots, or any entities that can perceive their environment and act upon it. The key characteristics of multiagent systems include:\n\n
@@ -313,7 +309,5 @@ These agents can be software programs, robots, or any entities that can perceive
 # Managing resources in smart grids or traffic systems.\n- **Game Theory**: Analyzing strategies in competitive environments.\n- **Simulation**: Modeling complex systems in economics, biology,
 # and social sciences.\n\n### Conclusion\n\nMultiagent systems provide a framework for understanding and designing systems where multiple agents interact, leading to complex behaviors and solutions to problems that are difficult for a single agent to solve alone.',
 #  'filename': 'multiagent_overview.pdf', 'encoding': None, 'use_latex': False}, result='Content successfully written to file: /Users/yifengwang/project/camel/file_write_outputs/multiagent_overview.pdf', tool_call_id='call_btYqjycX4aUfBNJUy8bpnHSV')]
-
-
 ===============================================================================
 '''
