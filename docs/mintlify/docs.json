@@ -571,6 +571,57 @@
               "reference/camel.personas.persona",
               "reference/camel.personas.persona_hub"
             ]
+          },
+          {
+            "group": "Benchmarks",
+            "pages": [
+              "reference/camel.benchmarks.apibank",
+              "reference/camel.benchmarks.apibench",
+              "reference/camel.benchmarks.base",
+              "reference/camel.benchmarks.browsecomp",
+              "reference/camel.benchmarks.gaia",
+              "reference/camel.benchmarks.nexus",
+              "reference/camel.benchmarks.ragbench"
+            ]
+          },
+          {
+            "group": "Data Collector",
+            "pages": [
+              "reference/camel.data_collector.alpaca_collector",
+              "reference/camel.data_collector.base",
+              "reference/camel.data_collector.sharegpt_collector"
+            ]
+          },
+          {
+            "group": "Datahubs",
+            "pages": [
+              "reference/camel.datahubs.base",
+              "reference/camel.datahubs.huggingface"
+            ]
+          },
+          {
+            "group": "Loaders",
+            "pages": [
+              "reference/camel.loaders.apify_reader",
+              "reference/camel.loaders.base_io",
+              "reference/camel.loaders.chunkr_reader",
+              "reference/camel.loaders.crawl4ai_reader",
+              "reference/camel.loaders.firecrawl_reader",
+              "reference/camel.loaders.jina_url_reader",
+              "reference/camel.loaders.markitdown",
+              "reference/camel.loaders.mineru_extractor",
+              "reference/camel.loaders.pandas_reader",
+              "reference/camel.loaders.scrapegraph_reader",
+              "reference/camel.loaders.unstructured_io"
+            ]
+          },
+          {
+            "group": "Schemas",
+            "pages": [
+              "reference/camel.schemas.base",
+              "reference/camel.schemas.openai_converter",
+              "reference/camel.schemas.outlines_converter"
+            ]
           }
         ]
       }
