@@ -1,5 +1,0 @@
-CAMEL Terminal Session
-==================================================
-Working Directory: /Users/yifengwang/project/camel
-==================================================
-
