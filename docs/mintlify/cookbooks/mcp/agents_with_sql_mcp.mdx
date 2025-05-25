@@ -91,9 +91,8 @@ This script is responsible for the direct database interactions. It should:
     *   `list_tables(connection_string: str) -> str`: Lists tables in a database.
     *   `describe_table(connection_string: str, table_name: str) -> str`: Describes a table's schema.
 3.  Decorate these functions with `@mcp.tool()` to expose them as tools to the LLM. Each tool should also have an `inputSchema` defined to guide the LLM on how to use it.
-4.  Include a `main` section (`if __name__ == "__main__":`) that runs the MCP server (e.g., `mcp.run(transport='stdio')`).
+4.  Include a `main` section (`if __name__ == "__main__":`) that runs the MCP server (e.g., `mcp.run(transport='stdio')`).## Understanding MCP and Your Local SQL MCP Server
 
-## Understanding MCP and Your Local SQL MCP Server
 
 This tool handles:
 
@@ -333,7 +332,6 @@ Agent: I'll help you explore the database by first listing all tables and then e
 
 Let's start by listing the tables in the database:
 
-
 ```python
 list_tables("sample.db")
 ```
@@ -404,7 +402,7 @@ In this cookbook, you've learned how to:
 This pattern can be extended to other types of databases or services by modifying the MCP server implementation while keeping the same CAMEL agent interface.
 
 
-That's everything: Got questions about 🐫 CAMEL-AI? Join us on [Discord](https://discord.camel-ai.org)! Whether you want to share feedback, explore the latest in multi-agent systems, get support, or connect with others on exciting projects, we'd love to have you in the community! 🤝
+That's everything: Got questions about 🐫 CAMEL-AI? Join us on [Discord](https://discord.camel-ai.org)! Whether you want to share feedback, explore the latest in multi-agent systems, get support, or connect with others on exciting projects, we’d love to have you in the community! 🤝
 
 Check out some of our other work:
 
