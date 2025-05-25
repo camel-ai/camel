@@ -41,7 +41,9 @@ class RemoveOutputPreprocessor(Preprocessor):
     def preprocess_cell(self, cell, resources, index):
         """Process a single cell; if it is a code cell, remove the output."""
         if cell.cell_type == 'code':
+            print(f"[DEBUG] Preprocessor removing outputs from code cell {index}")
             cell.outputs = []
+            cell.execution_count = None
         return cell, resources
 
 
@@ -356,6 +358,39 @@ def convert_ipynb_to_mdx(
     with open(ipynb_file, 'r', encoding='utf-8') as f:
         notebook = nbformat.read(f, as_version=4)
 
+    # Configure exporter; if outputs need to be removed, add preprocessor
+    exporter = MarkdownExporter()
+    if remove_outputs:
+        print(f"  Registering preprocessor to remove outputs")
+        exporter.register_preprocessor(RemoveOutputPreprocessor, enabled=True)
+
+    # Use nbconvert to convert Notebook to Markdown
+    markdown, resources = exporter.from_notebook_node(notebook)
+
+    # Fallback: Manual cleanup if preprocessor didn't work
+    if remove_outputs:
+        # Check if outputs are still present (indicating preprocessor didn't work)
+        outputs_found = False
+        for cell in notebook.cells:
+            if cell.cell_type == 'code' and cell.outputs:
+                outputs_found = True
+                break
+        
+        if outputs_found:
+            print(f"  Preprocessor didn't work, falling back to manual cleanup")
+            for i, cell in enumerate(notebook.cells):
+                if cell.cell_type == 'code':
+                    if cell.outputs:
+                        print(f"  [DEBUG] Manual cleanup of code cell {i}: had {len(cell.outputs)} outputs")
+                    cell.outputs = []
+                    cell.execution_count = None
+                    if hasattr(cell, 'metadata'):
+                        cell.metadata.pop('execution', None)
+                        cell.metadata.pop('scrolled', None)
+            
+            # Re-convert with cleaned notebook
+            markdown, resources = exporter.from_notebook_node(notebook)
+
     # Create output file path
     if output_dir:
         output_file = Path(output_dir) / f"{Path(ipynb_file).stem}.mdx"
@@ -367,15 +402,6 @@ def convert_ipynb_to_mdx(
 
     # Ensure image output directory exists
     os.makedirs(image_output_dir, exist_ok=True)
-
-    # Configure exporter; if outputs need to be removed, add preprocessor
-    exporter = MarkdownExporter()
-    if remove_outputs:
-        # Create a preprocessor to remove code cell outputs
-        exporter.register_preprocessor(RemoveOutputPreprocessor, enabled=True)
-
-    # Use nbconvert to convert Notebook to Markdown
-    markdown, resources = exporter.from_notebook_node(notebook)
 
     # Extract and save images
     images_saved = []
@@ -960,12 +986,6 @@ def main():
         help='Image output directory path; if not specified, will be stored in output/images',
     )
     parser.add_argument(
-        '--keep-outputs',
-        '-k',
-        action='store_true',
-        help='Keep output results of Jupyter Notebook code cells',
-    )
-    parser.add_argument(
         '--verbose', '-v', action='store_true', help='Show detailed logs'
     )
     parser.add_argument(
@@ -1025,7 +1045,7 @@ def main():
         args.input,
         args.output,
         args.images,
-        remove_outputs=not args.keep_outputs,
+        remove_outputs=True,
         incremental=args.incremental,
         since_hours=args.since_hours,
         use_git=args.use_git,
