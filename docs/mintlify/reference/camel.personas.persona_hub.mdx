@@ -2,15 +2,14 @@
 
 <a id="camel.personas.persona_hub.PersonaHub"></a>
 
-## PersonaHub Objects
+## PersonaHub
 
 ```python
-class PersonaHub()
+class PersonaHub:
 ```
 
-The PersonaHub adapted from `"Scaling Synthetic Data Creation with 1,
-000,000,000 Personas"
-<https://github.com/tencent-ailab/persona-hub>`_.
+The PersonaHub adapted from ["Scaling Synthetic Data Creation with 1,
+000,000,000 Personas"](https://github.com/tencent-ailab/persona-hub).
 
 PersonaHub proposes a novel persona-driven data synthesis methodology
 that leverages various perspectives within a large language model (LLM) to
@@ -23,124 +22,193 @@ driving a paradigm shift in synthetic data creation and applications in
 practice, which may have a profound impact on LLM research and development.
 Please refer to the paper for more details: https://arxiv.org/pdf/2406.20094.
 
-**Arguments**:
+**Parameters:**
 
-- `model` _BaseModelBackend, optional_ - The model to use for persona
-  generation and manipulation. (default: :obj:`None`)
+- **model** (BaseModelBackend, optional): The model to use for persona generation and manipulation. (default: :obj:`None`)
+
+<a id="camel.personas.persona_hub.PersonaHub.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, model: Optional[BaseModelBackend] = None):
+```
 
 <a id="camel.personas.persona_hub.PersonaHub.__setitem__"></a>
 
-#### \_\_setitem\_\_
+### __setitem__
 
 ```python
-def __setitem__(persona: Persona)
+def __setitem__(self, persona: Persona):
 ```
 
 Add a persona to the group.
 
-**Arguments**:
+**Parameters:**
 
-- `persona` _Persona_ - The persona to add.
+- **persona** (Persona): The persona to add.
 
 <a id="camel.personas.persona_hub.PersonaHub.__delitem__"></a>
 
-#### \_\_delitem\_\_
+### __delitem__
 
 ```python
-def __delitem__(persona_id: uuid.UUID)
+def __delitem__(self, persona_id: uuid.UUID):
 ```
 
 Remove a persona from the group by ID.
 
-**Arguments**:
+**Parameters:**
 
-- `persona_id` _uuid.UUID_ - The ID of the persona to remove.
+- **persona_id** (uuid.UUID): The ID of the persona to remove.
 
 <a id="camel.personas.persona_hub.PersonaHub.__getitem__"></a>
 
-#### \_\_getitem\_\_
+### __getitem__
 
 ```python
-def __getitem__(persona_id: uuid.UUID) -> Persona
+def __getitem__(self, persona_id: uuid.UUID):
 ```
 
 Get a persona by ID.
 
-**Arguments**:
+**Parameters:**
 
-- `persona_id` _uuid.UUID_ - The ID of the persona to retrieve.
+- **persona_id** (uuid.UUID): The ID of the persona to retrieve.
 
 <a id="camel.personas.persona_hub.PersonaHub.text_to_persona"></a>
 
-#### text\_to\_persona
+### text_to_persona
 
 ```python
 def text_to_persona(
-        text: str,
-        action: Literal["read", "write", "like",
-                        "dislike"] = "read") -> Persona
+    self,
+    text: str,
+    action: Literal['read', 'write', 'like', 'dislike'] = 'read'
+):
 ```
 
 Infers a specific persona who is likely to [read|write|like|dislike
 |...] the given text.
 
-**Arguments**:
+**Parameters:**
 
-- `text` _str_ - The input text for which to infer a persona.
-- `action` _str_ - The action associated with the persona (default is
-  "read").
-  
+- **text** (str): The input text for which to infer a persona.
+- **action** (str): The action associated with the persona (default is "read").
 
-**Returns**:
+**Returns:**
 
-- `Persona` - The inferred persona.
+  Persona: The inferred persona.
 
 <a id="camel.personas.persona_hub.PersonaHub.persona_to_persona"></a>
 
-#### persona\_to\_persona
+### persona_to_persona
 
 ```python
-def persona_to_persona(persona: Persona) -> Dict[uuid.UUID, Persona]
+def persona_to_persona(self, persona: Persona):
 ```
 
 Derives additional personas based on interpersonal relationships
 from this persona.
 
-**Arguments**:
+**Parameters:**
 
-- `persona` _Persona_ - The persona from which to derive related
-  personas.
-  
+- **persona** (Persona): The persona from which to derive related personas.
 
-**Returns**:
+**Returns:**
 
   Dict[uuid.UUID, Persona]: A dictionary of related personas.
 
 <a id="camel.personas.persona_hub.PersonaHub.deduplicate"></a>
 
-#### deduplicate
+### deduplicate
 
 ```python
-def deduplicate(embedding_model: Optional[BaseEmbedding] = None,
-                similarity_threshold: float = 0.85) -> None
+def deduplicate(
+    self,
+    embedding_model: Optional[BaseEmbedding] = None,
+    similarity_threshold: float = 0.85
+):
 ```
 
 Remove similar personas from the group.
 
-**Arguments**:
+**Parameters:**
 
-- `embedding_model` _BaseEmbedding_ - The embedding model
-  for similarity compairsion. (default is `None`).
-- `similarity_threshold` _float_ - The similarity threshold for
-  deduplication (default is `0.85`).
+- **embedding_model** (BaseEmbedding): The embedding model for similarity compairsion. (default is `None`).
+- **similarity_threshold** (float): The similarity threshold for deduplication (default is `0.85`).
+
+<a id="camel.personas.persona_hub.PersonaHub._get_embedding"></a>
+
+### _get_embedding
+
+```python
+def _get_embedding(embedding_model: BaseEmbedding, description: Optional[str]):
+```
+
+Cache embeddings to reduce recomputation.
+
+<a id="camel.personas.persona_hub.PersonaHub._cosine_similarity"></a>
+
+### _cosine_similarity
+
+```python
+def _cosine_similarity(vec1: np.ndarray, vec2: np.ndarray):
+```
+
+Copmute the cosine similarity of two vectors.
+
+**Parameters:**
+
+- **vec1** (np.ndarray): Vector 1
+- **vec2** (np.ndarray): Vector 2
+
+<a id="camel.personas.persona_hub.PersonaHub._is_similar"></a>
+
+### _is_similar
+
+```python
+def _is_similar(
+    self,
+    persona1: Persona,
+    persona2: Persona,
+    similarity_threshold: float,
+    embedding_model: BaseEmbedding
+):
+```
+
+Check if two personas are similar by consine similarity
+of the embeddings of their descriptions.
+
+**Parameters:**
+
+- **persona1** (Persona1): A persona.
+- **persona2** (Persona2): The other persona.
+- **similarity_threshold** (float): The threshold on consine similarity to determine whether the two personas are similar.
+- **embedding_model** (BaseEmbedding): The embedding model for similarity compairsion.
+
+<a id="camel.personas.persona_hub.PersonaHub.__len__"></a>
+
+### __len__
+
+```python
+def __len__(self):
+```
+
+<a id="camel.personas.persona_hub.PersonaHub.__iter__"></a>
+
+### __iter__
+
+```python
+def __iter__(self):
+```
 
 <a id="camel.personas.persona_hub.PersonaHub.get_all_personas"></a>
 
-#### get\_all\_personas
+### get_all_personas
 
 ```python
-def get_all_personas() -> List[Persona]
+def get_all_personas(self):
 ```
 
 Return a list of all personas.
-

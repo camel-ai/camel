@@ -2,160 +2,147 @@
 
 <a id="camel.benchmarks.base.BaseBenchmark"></a>
 
-## BaseBenchmark Objects
+## BaseBenchmark
 
 ```python
-class BaseBenchmark(ABC)
+class BaseBenchmark(ABC):
 ```
 
 Base class for benchmarks.
 
-**Attributes**:
-
-- `name` _str_ - Name of the benchmark.
-- `data_dir` _str_ - Path to the data directory.
-- `save_to` _str_ - Path to save the results.
-- `processes` _int_ - Number of processes to use for parallel
-  processing. :(default: :obj:`1`)
+Attributes:
+name (str): Name of the benchmark.
+data_dir (str): Path to the data directory.
+save_to (str): Path to save the results.
+processes (int): Number of processes to use for parallel
+processing. :(default: :obj:`1`)
 
 <a id="camel.benchmarks.base.BaseBenchmark.__init__"></a>
 
-#### \_\_init\_\_
+### __init__
 
 ```python
-def __init__(name: str, data_dir: str, save_to: str, processes: int = 1)
+def __init__(
+    self,
+    name: str,
+    data_dir: str,
+    save_to: str,
+    processes: int = 1
+):
 ```
 
 Initialize the benchmark.
 
-**Arguments**:
+**Parameters:**
 
-- `name` _str_ - Name of the benchmark.
-- `data_dir` _str_ - Path to the data directory.
-- `save_to` _str_ - Path to save the results.
-- `processes` _int_ - Number of processes to use for parallel
-  processing. :(default: :obj:`1`)
+- **name** (str): Name of the benchmark.
+- **data_dir** (str): Path to the data directory.
+- **save_to** (str): Path to save the results.
+- **processes** (int): Number of processes to use for parallel processing. :(default: :obj:`1`)
 
 <a id="camel.benchmarks.base.BaseBenchmark.download"></a>
 
-#### download
+### download
 
 ```python
-@abstractmethod
-def download() -> "BaseBenchmark"
+def download(self):
 ```
 
-Download the benchmark data.
+**Returns:**
 
-**Returns**:
-
-- `BaseBenchmark` - The benchmark instance.
+  BaseBenchmark: The benchmark instance.
 
 <a id="camel.benchmarks.base.BaseBenchmark.load"></a>
 
-#### load
+### load
 
 ```python
-@abstractmethod
-def load(force_download: bool = False) -> "BaseBenchmark"
+def load(self, force_download: bool = False):
 ```
 
 Load the benchmark data.
 
-**Arguments**:
+**Parameters:**
 
-- `force_download` _bool_ - Whether to force download the data.
-  
+- **force_download** (bool): Whether to force download the data.
 
-**Returns**:
+**Returns:**
 
-- `BaseBenchmark` - The benchmark instance.
+  BaseBenchmark: The benchmark instance.
 
 <a id="camel.benchmarks.base.BaseBenchmark.train"></a>
 
-#### train
+### train
 
 ```python
-@property
-def train() -> List[Dict[str, Any]]
+def train(self):
 ```
 
-Get the training data.
-
-**Returns**:
+**Returns:**
 
   List[Dict[str, Any]]: The training data.
 
 <a id="camel.benchmarks.base.BaseBenchmark.valid"></a>
 
-#### valid
+### valid
 
 ```python
-@property
-def valid() -> List[Dict[str, Any]]
+def valid(self):
 ```
 
-Get the validation data.
-
-**Returns**:
+**Returns:**
 
   List[Dict[str, Any]]: The validation data.
 
 <a id="camel.benchmarks.base.BaseBenchmark.test"></a>
 
-#### test
+### test
 
 ```python
-@property
-def test() -> List[Dict[str, Any]]
+def test(self):
 ```
 
-Get the test data.
-
-**Returns**:
+**Returns:**
 
   List[Dict[str, Any]]: The test data.
 
 <a id="camel.benchmarks.base.BaseBenchmark.run"></a>
 
-#### run
+### run
 
 ```python
-@abstractmethod
-def run(agent: ChatAgent,
-        on: Literal["train", "valid", "test"],
-        randomize: bool = False,
-        subset: Optional[int] = None,
-        *args,
-        **kwargs) -> "BaseBenchmark"
+def run(
+    self,
+    agent: ChatAgent,
+    on: Literal['train', 'valid', 'test'],
+    randomize: bool = False,
+    subset: Optional[int] = None,
+    *args,
+    **kwargs
+):
 ```
 
 Run the benchmark.
 
-**Arguments**:
+**Parameters:**
 
-- `agent` _ChatAgent_ - The chat agent.
-- `on` _str_ - The data split to run the benchmark on.
-- `randomize` _bool_ - Whether to randomize the data.
-- `subset` _int_ - The subset of the data to run the benchmark on.
-  
+- **agent** (ChatAgent): The chat agent.
+- **on** (str): The data split to run the benchmark on.
+- **randomize** (bool): Whether to randomize the data.
+- **subset** (int): The subset of the data to run the benchmark on.
 
-**Returns**:
+**Returns:**
 
-- `BaseBenchmark` - The benchmark instance.
+  BaseBenchmark: The benchmark instance.
 
 <a id="camel.benchmarks.base.BaseBenchmark.results"></a>
 
-#### results
+### results
 
 ```python
-@property
-def results() -> List[Dict[str, Any]]
+def results(self):
 ```
 
-Get the results.
-
-**Returns**:
+**Returns:**
 
   List[Dict[str, Any]]: The results.
-

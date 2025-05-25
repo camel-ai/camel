@@ -2,18 +2,20 @@
 
 <a id="camel.prompts.task_prompt_template.TaskPromptTemplateDict"></a>
 
-## TaskPromptTemplateDict Objects
+## TaskPromptTemplateDict
 
 ```python
-class TaskPromptTemplateDict(Dict[Any, TextPromptDict])
+class TaskPromptTemplateDict:
 ```
 
 A dictionary (:obj:`Dict[Any, TextPromptDict]`) of task prompt
 templates keyed by task type. This dictionary is used to map from
 a task type to its corresponding prompt template dictionary.
 
-**Arguments**:
+<a id="camel.prompts.task_prompt_template.TaskPromptTemplateDict.__init__"></a>
 
-- `*args` - Positional arguments passed to the :obj:`dict` constructor.
-- `**kwargs` - Keyword arguments passed to the :obj:`dict` constructor.
+### __init__
 
+```python
+def __init__(self, *args: Any, **kwargs: Any):
+```

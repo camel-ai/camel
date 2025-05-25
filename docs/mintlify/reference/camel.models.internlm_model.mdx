@@ -2,48 +2,43 @@
 
 <a id="camel.models.internlm_model.InternLMModel"></a>
 
-## InternLMModel Objects
+## InternLMModel
 
 ```python
-class InternLMModel(OpenAICompatibleModel)
+class InternLMModel(OpenAICompatibleModel):
 ```
 
 InternLM API in a unified OpenAICompatibleModel interface.
 
-**Arguments**:
+**Parameters:**
 
-- `model_type` _Union[ModelType, str]_ - Model for which a backend is
-  created, one of InternLM series.
-- `model_config_dict` _Optional[Dict[str, Any]], optional_ - A dictionary
-  that will be fed into:obj:`openai.ChatCompletion.create()`. If
-  :obj:`None`, :obj:`InternLMConfig().as_dict()` will be used.
-- `(default` - :obj:`None`)
-- `api_key` _Optional[str], optional_ - The API key for authenticating with
-  the InternLM service. (default: :obj:`None`)
-- `url` _Optional[str], optional_ - The url to the InternLM service.
-- `(default` - :obj:`https://internlm-chat.intern-ai.org.cn/puyu/api/v1`)
-- `token_counter` _Optional[BaseTokenCounter], optional_ - Token counter to
-  use for the model. If not provided, :obj:`OpenAITokenCounter(
-  ModelType.GPT_4O_MINI)` will be used.
-- `(default` - :obj:`None`)
-- `timeout` _Optional[float], optional_ - The timeout value in seconds for
-  API calls. If not provided, will fall back to the MODEL_TIMEOUT
-  environment variable or default to 180 seconds.
-- `(default` - :obj:`None`)
+- **model_type** (Union[ModelType, str]): Model for which a backend is created, one of InternLM series.
+- **model_config_dict** (Optional[Dict[str, Any]], optional): A dictionary that will be fed into:obj:`openai.ChatCompletion.create()`. If :obj:`None`, :obj:`InternLMConfig().as_dict()` will be used. (default: :obj:`None`)
+- **api_key** (Optional[str], optional): The API key for authenticating with the InternLM service. (default: :obj:`None`)
+- **url** (Optional[str], optional): The url to the InternLM service. (default: :obj:`https://internlm-chat.intern-ai.org.cn/puyu/api/v1`)
+- **token_counter** (Optional[BaseTokenCounter], optional): Token counter to use for the model. If not provided, :obj:`OpenAITokenCounter( ModelType.GPT_4O_MINI)` will be used. (default: :obj:`None`)
+- **timeout** (Optional[float], optional): The timeout value in seconds for API calls. If not provided, will fall back to the MODEL_TIMEOUT environment variable or default to 180 seconds. (default: :obj:`None`)
+
+<a id="camel.models.internlm_model.InternLMModel.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    model_type: Union[ModelType, str],
+    model_config_dict: Optional[Dict[str, Any]] = None,
+    api_key: Optional[str] = None,
+    url: Optional[str] = None,
+    token_counter: Optional[BaseTokenCounter] = None,
+    timeout: Optional[float] = None
+):
+```
 
 <a id="camel.models.internlm_model.InternLMModel.check_model_config"></a>
 
-#### check\_model\_config
+### check_model_config
 
 ```python
-def check_model_config()
+def check_model_config(self):
 ```
-
-Check whether the model configuration contains any
-unexpected arguments to InternLM API.
-
-**Raises**:
-
-- `ValueError` - If the model configuration dictionary contains any
-  unexpected arguments to InternLM API.
-

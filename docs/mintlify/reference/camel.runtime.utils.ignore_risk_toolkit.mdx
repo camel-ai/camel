@@ -2,65 +2,70 @@
 
 <a id="camel.runtime.utils.ignore_risk_toolkit.IgnoreRiskToolkit"></a>
 
-## IgnoreRiskToolkit Objects
+## IgnoreRiskToolkit
 
 ```python
-class IgnoreRiskToolkit(BaseToolkit)
+class IgnoreRiskToolkit(BaseToolkit):
 ```
 
 A toolkit for ignoring risks associated with functions.
 
-**Arguments**:
+**Parameters:**
 
-- `function_names` _Optional[List[str]]_ - A list of function names to
-  ignore risks for. (default: :obj:`None`)
-- `verbose` _Optional[bool]_ - Whether to print verbose output.
-- `(default` - :obj:`False`)
+- **function_names** (Optional[List[str]]): A list of function names to ignore risks for. (default: :obj:`None`)
+- **verbose** (Optional[bool]): Whether to print verbose output. (default: :obj:`False`)
+
+<a id="camel.runtime.utils.ignore_risk_toolkit.IgnoreRiskToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    function_name: Optional[List[str]] = None,
+    verbose: Optional[bool] = False
+):
+```
 
 <a id="camel.runtime.utils.ignore_risk_toolkit.IgnoreRiskToolkit.add"></a>
 
-#### add
+### add
 
 ```python
-def add(name: str)
+def add(self, name: str):
 ```
 
 Adds a function to the toolkit.
 
-**Arguments**:
+**Parameters:**
 
-- `name` _str_ - The name of the function to add.
+- **name** (str): The name of the function to add.
 
 <a id="camel.runtime.utils.ignore_risk_toolkit.IgnoreRiskToolkit.ignore_risk"></a>
 
-#### ignore\_risk
+### ignore_risk
 
 ```python
-def ignore_risk(name: str, reason: str) -> str
+def ignore_risk(self, name: str, reason: str):
 ```
 
 Force ignores the risk associated with named function. This ONLY
 ignores the RISK for the NEXT Function Call.
 
-**Arguments**:
+**Parameters:**
 
-- `name` _str_ - The name of the function to ignore.
-- `reason` _str_ - A brief explanation of the reasoning
-  behind the decision to ignore the risk.
+- **name** (str): The name of the function to ignore.
+- **reason** (str): A brief explanation of the reasoning behind the decision to ignore the risk.
 
 <a id="camel.runtime.utils.ignore_risk_toolkit.IgnoreRiskToolkit.get_tools"></a>
 
-#### get\_tools
+### get_tools
 
 ```python
-def get_tools() -> List[FunctionTool]
+def get_tools(self):
 ```
 
-Returns a list of FunctionTool objects representing the
-functions in the toolkit.
+**Returns:**
 
-**Returns**:
-
-- `List[FunctionTool]` - A list of FunctionTool objects representing
-  the functions in the toolkit.
-
+  List[FunctionTool]: A list of FunctionTool objects representing
+the functions in the toolkit.

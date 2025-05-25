@@ -2,162 +2,98 @@
 
 <a id="camel.environments.multi_step.MultiStepEnv"></a>
 
-## MultiStepEnv Objects
+## MultiStepEnv
 
 ```python
-class MultiStepEnv(ABC)
+class MultiStepEnv(ABC):
 ```
 
 A multi-step environment for reinforcement learning with LLMs.
 
 <a id="camel.environments.multi_step.MultiStepEnv.__init__"></a>
 
-#### \_\_init\_\_
+### __init__
 
 ```python
-def __init__(extractor: BaseExtractor,
-             max_steps: Optional[int] = None,
-             **kwargs) -> None
+def __init__(
+    self,
+    extractor: BaseExtractor,
+    max_steps: Optional[int] = None,
+    **kwargs
+):
 ```
 
 Initialize the environment.
 
-**Arguments**:
+**Parameters:**
 
-- `extractor` - Extractor to process LLM responses.
-- `max_steps` - Maximum steps per episode.
-- `**kwargs` - Additional environment parameters.
+- **extractor**: Extractor to process LLM responses.
+- **max_steps**: Maximum steps per episode. **kwargs: Additional environment parameters.
 
-<a id="camel.environments.multi_step.MultiStepEnv.setup"></a>
+<a id="camel.environments.multi_step.MultiStepEnv._get_initial_state"></a>
 
-#### setup
-
-```python
-async def setup() -> None
-```
-
-Set up the environment by initializing the verifier and extractor.
-
-This method ensures that the environment is ready for interaction.
-It sets up necessary components, including the verifier and extractor.
-
-**Raises**:
-
-- `Exception` - If setup fails due to an internal error.
-
-<a id="camel.environments.multi_step.MultiStepEnv.close"></a>
-
-#### close
+### _get_initial_state
 
 ```python
-async def close() -> None
+def _get_initial_state(self):
 ```
 
-Clean up and close all resources used by the environment.
-This method shuts down the verifier, calls the internal
-close function that is implemented in any MultiStepEnv,
-and ensures that the environment is properly closed.
+<a id="camel.environments.multi_step.MultiStepEnv._get_next_observation"></a>
 
-**Raises**:
-
-- `Exception` - If an error occurs while closing the environment.
-
-<a id="camel.environments.multi_step.MultiStepEnv.reset"></a>
-
-#### reset
+### _get_next_observation
 
 ```python
-async def reset() -> Observation
+def _get_next_observation(self):
 ```
 
-Reset the environment to an initial state.
+<a id="camel.environments.multi_step.MultiStepEnv._get_terminal_observation"></a>
 
-**Returns**:
-
-- `Observation` - The initial observation for the episode.
-  
-
-**Raises**:
-
-- `RuntimeError` - If we fail to get the initial observation.
-
-<a id="camel.environments.multi_step.MultiStepEnv.step"></a>
-
-#### step
+### _get_terminal_observation
 
 ```python
-async def step(
-        action: Action) -> Tuple[Observation, float, bool, Dict[str, Any]]
+def _get_terminal_observation(self):
 ```
-
-Take a step in the environment using the given action.
-
-This method updates the environment state based on the LLM's response,
-computes rewards, checks if the episode is done, and based on that
-gets the next or final observation.
-
-**Arguments**:
-
-- `action` _Action_ - The action containing the LLM response.
-  
-
-**Returns**:
-
-  StepResult containing next observation, total reward, a dictionary
-  of rewards, done flag, and info.
-  
-
-**Raises**:
-
-- `RuntimeError` - If the environment is not set up, the episode has
-  ended, or there is no valid current observation.
 
 <a id="camel.environments.multi_step.MultiStepEnv.is_done"></a>
 
-#### is\_done
+### is_done
 
 ```python
-def is_done() -> bool
+def is_done(self):
 ```
 
-Check if the episode should terminate.
+**Returns:**
 
-This function terminates the episode if the maximum number of
-steps is reached or if any other terminating criterion is met.
+  bool: A boolean flag.
 
-**Returns**:
+<a id="camel.environments.multi_step.MultiStepEnv._is_done"></a>
 
-- `bool` - A boolean flag.
+### _is_done
+
+```python
+def _is_done(self):
+```
 
 <a id="camel.environments.multi_step.MultiStepEnv.metadata"></a>
 
-#### metadata
+### metadata
 
 ```python
-@property
-def metadata() -> Dict[str, Any]
+def metadata(self):
 ```
 
-Retrieve the metadata of the environment.
-
-This provides additional parameters and configuration details.
-
-**Returns**:
+**Returns:**
 
   Dict[str, Any]: A copy of the environment's metadata.
 
 <a id="camel.environments.multi_step.MultiStepEnv.current_step"></a>
 
-#### current\_step
+### current_step
 
 ```python
-@property
-def current_step() -> int
+def current_step(self):
 ```
 
-Get the current step number.
+**Returns:**
 
-**Returns**:
-
-- `int` - The number of the step we are currently in.
-
+  int: The number of the step we are currently in.

@@ -2,45 +2,51 @@
 
 <a id="camel.storages.vectordb_storages.oceanbase.OceanBaseStorage"></a>
 
-## OceanBaseStorage Objects
+## OceanBaseStorage
 
 ```python
-class OceanBaseStorage(BaseVectorStorage)
+class OceanBaseStorage(BaseVectorStorage):
 ```
 
 An implementation of the `BaseVectorStorage` for interacting with
 OceanBase Vector Database.
 
-**Arguments**:
+**Parameters:**
 
-- `vector_dim` _int_ - The dimension of storing vectors.
-- `table_name` _str_ - Name for the table in OceanBase.
-- `uri` _str_ - Connection URI for OceanBase (host:port).
-- `(default` - :obj:`"127.0.0.1:2881"`)
-- `user` _str_ - Username for connecting to OceanBase.
-- `(default` - :obj:`"root@test"`)
-- `password` _str_ - Password for the user. (default: :obj:`""`)
-- `db_name` _str_ - Database name in OceanBase.
-- `(default` - :obj:`"test"`)
-- `distance` _Literal["l2", "cosine"], optional_ - The distance metric for
-  vector comparison. Options: "l2", "cosine". (default: :obj:`"l2"`)
-- `delete_table_on_del` _bool, optional_ - Flag to determine if the
-  table should be deleted upon object destruction.
-- `(default` - :obj:`False`)
-- `**kwargs` _Any_ - Additional keyword arguments for initializing
-  `ObVecClient`.
-  
+- **vector_dim** (int): The dimension of storing vectors.
+- **table_name** (str): Name for the table in OceanBase.
+- **uri** (str): Connection URI for OceanBase (host:port). (default: :obj:`"127.0.0.1:2881"`)
+- **user** (str): Username for connecting to OceanBase. (default: :obj:`"root@test"`)
+- **password** (str): Password for the user. (default: :obj:`""`) (default: `""`)
+- **db_name** (str): Database name in OceanBase. (default: :obj:`"test"`)
+- **distance** (`Literal["l2", "cosine"], optional`): The distance metric for vector comparison. Options: "l2", "cosine". (default: :obj:`"l2"`)
+- **delete_table_on_del** (bool, optional): Flag to determine if the table should be deleted upon object destruction. (default: :obj:`False`) **kwargs (Any): Additional keyword arguments for initializing `ObVecClient`.
 
-**Raises**:
+<a id="camel.storages.vectordb_storages.oceanbase.OceanBaseStorage.__init__"></a>
 
-- `ImportError` - If `pyobvector` package is not installed.
+### __init__
+
+```python
+def __init__(
+    self,
+    vector_dim: int,
+    table_name: str,
+    uri: str = '127.0.0.1:2881',
+    user: str = 'root@test',
+    password: str = '',
+    db_name: str = 'test',
+    distance: Literal['l2', 'cosine'] = 'l2',
+    delete_table_on_del: bool = False,
+    **kwargs: Any
+):
+```
 
 <a id="camel.storages.vectordb_storages.oceanbase.OceanBaseStorage.__del__"></a>
 
-#### \_\_del\_\_
+### __del__
 
 ```python
-def __del__()
+def __del__(self):
 ```
 
 Deletes the table if :obj:`delete_table_on_del` is set to
@@ -48,123 +54,106 @@ Deletes the table if :obj:`delete_table_on_del` is set to
 
 <a id="camel.storages.vectordb_storages.oceanbase.OceanBaseStorage.add"></a>
 
-#### add
+### add
 
 ```python
-def add(records: List[VectorRecord],
-        batch_size: int = 100,
-        **kwargs: Any) -> None
+def add(
+    self,
+    records: List[VectorRecord],
+    batch_size: int = 100,
+    **kwargs: Any
+):
 ```
 
 Saves a list of vector records to the storage.
 
-**Arguments**:
+**Parameters:**
 
-- `records` _List[VectorRecord]_ - List of vector records to be saved.
-- `batch_size` _int_ - Number of records to insert each batch.
-  Larger batches are more efficient but use more memory.
-- `(default` - :obj:`100`)
-- `**kwargs` _Any_ - Additional keyword arguments.
-  
-
-**Raises**:
-
-- `RuntimeError` - If there is an error during the saving process.
-- `ValueError` - If any vector dimension doesn't match vector_dim.
+- **records** (List[VectorRecord]): List of vector records to be saved.
+- **batch_size** (int): Number of records to insert each batch. Larger batches are more efficient but use more memory. (default: :obj:`100`) **kwargs (Any): Additional keyword arguments.
 
 <a id="camel.storages.vectordb_storages.oceanbase.OceanBaseStorage.delete"></a>
 
-#### delete
+### delete
 
 ```python
-def delete(ids: List[str], **kwargs: Any) -> None
+def delete(self, ids: List[str], **kwargs: Any):
 ```
 
 Deletes a list of vectors identified by their IDs from the storage.
 
-**Arguments**:
+**Parameters:**
 
-- `ids` _List[str]_ - List of unique identifiers for the vectors to
-  be deleted.
-- `**kwargs` _Any_ - Additional keyword arguments.
-  
-
-**Raises**:
-
-- `RuntimeError` - If there is an error during the deletion process.
+- **ids** (List[str]): List of unique identifiers for the vectors to be deleted. **kwargs (Any): Additional keyword arguments.
 
 <a id="camel.storages.vectordb_storages.oceanbase.OceanBaseStorage.status"></a>
 
-#### status
+### status
 
 ```python
-def status() -> VectorDBStatus
+def status(self):
 ```
 
-Returns status of the vector database.
+**Returns:**
 
-**Returns**:
-
-- `VectorDBStatus` - The vector database status.
+  VectorDBStatus: The vector database status.
 
 <a id="camel.storages.vectordb_storages.oceanbase.OceanBaseStorage.query"></a>
 
-#### query
+### query
 
 ```python
-def query(query: VectorDBQuery, **kwargs: Any) -> List[VectorDBQueryResult]
+def query(self, query: VectorDBQuery, **kwargs: Any):
 ```
 
 Searches for similar vectors in the storage based on the
 provided query.
 
-**Arguments**:
+**Parameters:**
 
-- `query` _VectorDBQuery_ - The query object containing the search
-  vector and the number of top similar vectors to retrieve.
-- `**kwargs` _Any_ - Additional keyword arguments.
-  
+- **query** (VectorDBQuery): The query object containing the search vector and the number of top similar vectors to retrieve. **kwargs (Any): Additional keyword arguments.
 
-**Returns**:
+**Returns:**
 
-- `List[VectorDBQueryResult]` - A list of vectors retrieved from the
-  storage based on similarity to the query vector.
-  
+  List[VectorDBQueryResult]: A list of vectors retrieved from the
+storage based on similarity to the query vector.
 
-**Raises**:
+<a id="camel.storages.vectordb_storages.oceanbase.OceanBaseStorage._convert_distance_to_similarity"></a>
 
-- `RuntimeError` - If there is an error during the query process.
-- `ValueError` - If the query vector dimension does not match the
-  storage dimension.
+### _convert_distance_to_similarity
+
+```python
+def _convert_distance_to_similarity(self, distance: float):
+```
+
+Converts distance to similarity score based on distance metric.
 
 <a id="camel.storages.vectordb_storages.oceanbase.OceanBaseStorage.clear"></a>
 
-#### clear
+### clear
 
 ```python
-def clear() -> None
+def clear(self):
 ```
 
 Remove all vectors from the storage.
 
 <a id="camel.storages.vectordb_storages.oceanbase.OceanBaseStorage.load"></a>
 
-#### load
+### load
 
 ```python
-def load() -> None
+def load(self):
 ```
 
 Load the collection hosted on cloud service.
 
 <a id="camel.storages.vectordb_storages.oceanbase.OceanBaseStorage.client"></a>
 
-#### client
+### client
 
 ```python
-@property
-def client() -> "ObVecClient"
+def client(self):
 ```
 
 Provides access to underlying OceanBase vector database client.
-

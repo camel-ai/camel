@@ -2,54 +2,63 @@
 
 <a id="camel.runtime.llm_guard_runtime.LLMGuardRuntime"></a>
 
-## LLMGuardRuntime Objects
+## LLMGuardRuntime
 
 ```python
-class LLMGuardRuntime(BaseRuntime)
+class LLMGuardRuntime(BaseRuntime):
 ```
 
 A runtime that evaluates the risk level of functions using
 a language model.
 
-**Arguments**:
+**Parameters:**
 
-- `prompt` _str_ - The prompt to use for the language model. (default:
-  :obj:`GUARDPROMPT`)
-- `model` _BaseModelBackend_ - The language model to use. (default: :obj:
-  `None`)
-- `verbose` _bool_ - Whether to print verbose output. (default: :obj:
-  `False`)
+- **prompt** (str): The prompt to use for the language model. (default: :obj:`GUARDPROMPT`)
+- **model** (BaseModelBackend): The language model to use. (default: :obj: `None`)
+- **verbose** (bool): Whether to print verbose output. (default: :obj: `False`)
+
+<a id="camel.runtime.llm_guard_runtime.LLMGuardRuntime.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    prompt: str = GUARDPROMPT,
+    model: Optional[BaseModelBackend] = None,
+    verbose: bool = False
+):
+```
 
 <a id="camel.runtime.llm_guard_runtime.LLMGuardRuntime.add"></a>
 
-#### add
+### add
 
 ```python
-def add(funcs: Union[FunctionTool, List[FunctionTool]],
-        threshold: int = 2) -> "LLMGuardRuntime"
+def add(
+    self,
+    funcs: Union[FunctionTool, List[FunctionTool]],
+    threshold: int = 2
+):
 ```
 
 Add a function or list of functions to the runtime.
 
-**Arguments**:
+**Parameters:**
 
-- `funcs` _FunctionTool or List[FunctionTool]_ - The function or
-  list of functions to add.
-- `threshold` _int_ - The risk threshold for functions.
-- `(default` - :obj:`2`)
-  
+- **funcs** (FunctionTool or List[FunctionTool]): The function or list of functions to add.
+- **threshold** (int): The risk threshold for functions. (default: :obj:`2`)
 
-**Returns**:
+**Returns:**
 
-- `LLMGuardRuntime` - The current runtime.
+  LLMGuardRuntime: The current runtime.
 
 <a id="camel.runtime.llm_guard_runtime.LLMGuardRuntime.reset"></a>
 
-#### reset
+### reset
 
 ```python
-def reset() -> "LLMGuardRuntime"
+def reset(self):
 ```
 
 Resets the runtime to its initial state.
-

@@ -2,39 +2,38 @@
 
 <a id="camel.toolkits.human_toolkit.HumanToolkit"></a>
 
-## HumanToolkit Objects
+## HumanToolkit
 
 ```python
-class HumanToolkit(BaseToolkit)
+class HumanToolkit(BaseToolkit):
 ```
 
 A class representing a toolkit for human interaction.
 
 <a id="camel.toolkits.human_toolkit.HumanToolkit.ask_human_via_console"></a>
 
-#### ask\_human\_via\_console
+### ask_human_via_console
 
 ```python
-def ask_human_via_console(question: str) -> str
+def ask_human_via_console(self, question: str):
 ```
 
 Ask a question to the human via the console.
 
-**Arguments**:
+**Parameters:**
 
-- `question` _str_ - The question to ask the human.
-  
+- **question** (str): The question to ask the human.
 
-**Returns**:
+**Returns:**
 
-- `str` - The answer from the human.
+  str: The answer from the human.
 
 <a id="camel.toolkits.human_toolkit.HumanToolkit.send_message_to_user"></a>
 
-#### send\_message\_to\_user
+### send_message_to_user
 
 ```python
-def send_message_to_user(message: str) -> None
+def send_message_to_user(self, message: str):
 ```
 
 Send a message to the user, without waiting for
@@ -43,23 +42,19 @@ a response. This will send to stdout in a noticeable way.
 This is guaranteed to reach the user regardless of
 actual user interface.
 
-**Arguments**:
+**Parameters:**
 
-- `message` _str_ - The message to send to the user.
+- **message** (str): The message to send to the user.
 
 <a id="camel.toolkits.human_toolkit.HumanToolkit.get_tools"></a>
 
-#### get\_tools
+### get_tools
 
 ```python
-def get_tools() -> List[FunctionTool]
+def get_tools(self):
 ```
 
-Returns a list of FunctionTool objects representing the
-functions in the toolkit.
+**Returns:**
 
-**Returns**:
-
-- `List[FunctionTool]` - A list of FunctionTool objects
-  representing the functions in the toolkit.
-
+  List[FunctionTool]: A list of FunctionTool objects
+representing the functions in the toolkit.

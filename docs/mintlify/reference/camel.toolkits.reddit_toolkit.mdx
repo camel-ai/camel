@@ -2,11 +2,10 @@
 
 <a id="camel.toolkits.reddit_toolkit.RedditToolkit"></a>
 
-## RedditToolkit Objects
+## RedditToolkit
 
 ```python
-@MCPServer()
-class RedditToolkit(BaseToolkit)
+class RedditToolkit(BaseToolkit):
 ```
 
 A class representing a toolkit for Reddit operations.
@@ -15,136 +14,122 @@ This toolkit provides methods to interact with the Reddit API, allowing
 users to collect top posts, perform sentiment analysis on comments, and
 track keyword discussions across multiple subreddits.
 
-**Attributes**:
-
-- `retries` _int_ - Number of retries for API requests in case of failure.
-- `delay` _float_ - Delay between retries in seconds.
-- `reddit` _Reddit_ - An instance of the Reddit client.
+Attributes:
+retries (int): Number of retries for API requests in case of failure.
+delay (float): Delay between retries in seconds.
+reddit (Reddit): An instance of the Reddit client.
 
 <a id="camel.toolkits.reddit_toolkit.RedditToolkit.__init__"></a>
 
-#### \_\_init\_\_
+### __init__
 
 ```python
-def __init__(retries: int = 3,
-             delay: float = 0.0,
-             timeout: Optional[float] = None)
+def __init__(
+    self,
+    retries: int = 3,
+    delay: float = 0.0,
+    timeout: Optional[float] = None
+):
 ```
 
 Initializes the RedditToolkit with the specified number of retries
 and delay.
 
-**Arguments**:
+**Parameters:**
 
-- `retries` _int_ - Number of times to retry the request in case of
-  failure. Defaults to `3`.
-- `delay` _int_ - Time in seconds to wait between retries. Defaults to
-  `0`.
-- `timeout` _float_ - Timeout for API requests in seconds. Defaults to
-  `None`.
+- **retries** (int): Number of times to retry the request in case of failure. Defaults to `3`.
+- **delay** (int): Time in seconds to wait between retries. Defaults to `0`.
+- **timeout** (float): Timeout for API requests in seconds. Defaults to `None`.
 
 <a id="camel.toolkits.reddit_toolkit.RedditToolkit.collect_top_posts"></a>
 
-#### collect\_top\_posts
+### collect_top_posts
 
 ```python
-@retry_on_error()
 def collect_top_posts(
-        subreddit_name: str,
-        post_limit: int = 5,
-        comment_limit: int = 5) -> Union[List[Dict[str, Any]], str]
+    self,
+    subreddit_name: str,
+    post_limit: int = 5,
+    comment_limit: int = 5
+):
 ```
 
 Collects the top posts and their comments from a specified
 subreddit.
 
-**Arguments**:
+**Parameters:**
 
-- `subreddit_name` _str_ - The name of the subreddit to collect posts
-  from.
-- `post_limit` _int_ - The maximum number of top posts to collect.
-  Defaults to `5`.
-- `comment_limit` _int_ - The maximum number of top comments to collect
-  per post. Defaults to `5`.
-  
+- **subreddit_name** (str): The name of the subreddit to collect posts from.
+- **post_limit** (int): The maximum number of top posts to collect. Defaults to `5`.
+- **comment_limit** (int): The maximum number of top comments to collect per post. Defaults to `5`.
 
-**Returns**:
+**Returns:**
 
   Union[List[Dict[str, Any]], str]: A list of dictionaries, each
-  containing the post title and its top comments if success.
-  String warming if credentials are not set.
+containing the post title and its top comments if success.
+String warming if credentials are not set.
 
 <a id="camel.toolkits.reddit_toolkit.RedditToolkit.perform_sentiment_analysis"></a>
 
-#### perform\_sentiment\_analysis
+### perform_sentiment_analysis
 
 ```python
-def perform_sentiment_analysis(
-        data: List[Dict[str, Any]]) -> List[Dict[str, Any]]
+def perform_sentiment_analysis(self, data: List[Dict[str, Any]]):
 ```
 
 Performs sentiment analysis on the comments collected from Reddit
 posts.
 
-**Arguments**:
+**Parameters:**
 
-- `data` _List[Dict[str, Any]]_ - A list of dictionaries containing
-  Reddit post data and comments.
-  
+- **data** (List[Dict[str, Any]]): A list of dictionaries containing Reddit post data and comments.
 
-**Returns**:
+**Returns:**
 
   List[Dict[str, Any]]: The original data with an added 'Sentiment
-  Score' for each comment.
+Score' for each comment.
 
 <a id="camel.toolkits.reddit_toolkit.RedditToolkit.track_keyword_discussions"></a>
 
-#### track\_keyword\_discussions
+### track_keyword_discussions
 
 ```python
 def track_keyword_discussions(
-        subreddits: List[str],
-        keywords: List[str],
-        post_limit: int = 10,
-        comment_limit: int = 10,
-        sentiment_analysis: bool = False) -> Union[List[Dict[str, Any]], str]
+    self,
+    subreddits: List[str],
+    keywords: List[str],
+    post_limit: int = 10,
+    comment_limit: int = 10,
+    sentiment_analysis: bool = False
+):
 ```
 
 Tracks discussions about specific keywords in specified subreddits.
 
-**Arguments**:
+**Parameters:**
 
-- `subreddits` _List[str]_ - A list of subreddit names to search within.
-- `keywords` _List[str]_ - A list of keywords to track in the subreddit
-  discussions.
-- `post_limit` _int_ - The maximum number of top posts to collect per
-  subreddit. Defaults to `10`.
-- `comment_limit` _int_ - The maximum number of top comments to collect
-  per post. Defaults to `10`.
-- `sentiment_analysis` _bool_ - If True, performs sentiment analysis on
-  the comments. Defaults to `False`.
-  
+- **subreddits** (List[str]): A list of subreddit names to search within.
+- **keywords** (List[str]): A list of keywords to track in the subreddit discussions.
+- **post_limit** (int): The maximum number of top posts to collect per subreddit. Defaults to `10`.
+- **comment_limit** (int): The maximum number of top comments to collect per post. Defaults to `10`.
+- **sentiment_analysis** (bool): If True, performs sentiment analysis on the comments. Defaults to `False`.
 
-**Returns**:
+**Returns:**
 
   Union[List[Dict[str, Any]], str]: A list of dictionaries
-  containing the subreddit name, post title, comment body, and
-  upvotes for each comment that contains the specified keywords
-  if success. String warming if credentials are not set.
+containing the subreddit name, post title, comment body, and
+upvotes for each comment that contains the specified keywords
+if success. String warming if credentials are not set.
 
 <a id="camel.toolkits.reddit_toolkit.RedditToolkit.get_tools"></a>
 
-#### get\_tools
+### get_tools
 
 ```python
-def get_tools() -> List[FunctionTool]
+def get_tools(self):
 ```
 
-Returns a list of FunctionTool objects representing the
-functions in the toolkit.
+**Returns:**
 
-**Returns**:
-
-- `List[FunctionTool]` - A list of FunctionTool objects for the
-  toolkit methods.
-
+  List[FunctionTool]: A list of FunctionTool objects for the
+toolkit methods.

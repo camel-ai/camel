@@ -2,10 +2,10 @@
 
 <a id="camel.storages.key_value_storages.base.BaseKeyValueStorage"></a>
 
-## BaseKeyValueStorage Objects
+## BaseKeyValueStorage
 
 ```python
-class BaseKeyValueStorage(ABC)
+class BaseKeyValueStorage(ABC):
 ```
 
 An abstract base class for key-value storage systems. Provides a
@@ -22,44 +22,37 @@ databases like MongoDB and Redis, as well as in-memory Python dictionaries.
 
 <a id="camel.storages.key_value_storages.base.BaseKeyValueStorage.save"></a>
 
-#### save
+### save
 
 ```python
-@abstractmethod
-def save(records: List[Dict[str, Any]]) -> None
+def save(self, records: List[Dict[str, Any]]):
 ```
 
 Saves a batch of records to the key-value storage system.
 
-**Arguments**:
+**Parameters:**
 
-- `records` _List[Dict[str, Any]]_ - A list of dictionaries, where each
-  dictionary represents a unique record to be stored.
+- **records** (List[Dict[str, Any]]): A list of dictionaries, where each dictionary represents a unique record to be stored.
 
 <a id="camel.storages.key_value_storages.base.BaseKeyValueStorage.load"></a>
 
-#### load
+### load
 
 ```python
-@abstractmethod
-def load() -> List[Dict[str, Any]]
+def load(self):
 ```
 
-Loads all stored records from the key-value storage system.
-
-**Returns**:
+**Returns:**
 
   List[Dict[str, Any]]: A list of dictionaries, where each dictionary
-  represents a stored record.
+represents a stored record.
 
 <a id="camel.storages.key_value_storages.base.BaseKeyValueStorage.clear"></a>
 
-#### clear
+### clear
 
 ```python
-@abstractmethod
-def clear() -> None
+def clear(self):
 ```
 
 Removes all records from the key-value storage system.
-

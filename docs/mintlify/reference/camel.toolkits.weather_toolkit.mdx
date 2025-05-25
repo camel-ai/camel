@@ -2,11 +2,10 @@
 
 <a id="camel.toolkits.weather_toolkit.WeatherToolkit"></a>
 
-## WeatherToolkit Objects
+## WeatherToolkit
 
 ```python
-@MCPServer()
-class WeatherToolkit(BaseToolkit)
+class WeatherToolkit(BaseToolkit):
 ```
 
 A class representing a toolkit for interacting with weather data.
@@ -16,52 +15,43 @@ using the OpenWeatherMap API.
 
 <a id="camel.toolkits.weather_toolkit.WeatherToolkit.__init__"></a>
 
-#### \_\_init\_\_
+### __init__
 
 ```python
-def __init__(timeout: Optional[float] = None)
+def __init__(self, timeout: Optional[float] = None):
 ```
 
 Initializes a new instance of the WeatherToolkit class.
 
-**Arguments**:
+**Parameters:**
 
-- `timeout` _Optional[float]_ - The timeout value for API requests
-  in seconds. If None, no timeout is applied.
-- `(default` - :obj:`None`)
+- **timeout** (Optional[float]): The timeout value for API requests in seconds. If None, no timeout is applied. (default: :obj:`None`)
 
 <a id="camel.toolkits.weather_toolkit.WeatherToolkit.get_openweathermap_api_key"></a>
 
-#### get\_openweathermap\_api\_key
+### get_openweathermap_api_key
 
 ```python
-def get_openweathermap_api_key() -> str
+def get_openweathermap_api_key(self):
 ```
 
-Retrieve the OpenWeatherMap API key from environment variables.
+**Returns:**
 
-**Returns**:
-
-- `str` - The OpenWeatherMap API key.
-  
-
-**Raises**:
-
-- `ValueError` - If the API key is not found in the environment
-  variables.
+  str: The OpenWeatherMap API key.
 
 <a id="camel.toolkits.weather_toolkit.WeatherToolkit.get_weather_data"></a>
 
-#### get\_weather\_data
+### get_weather_data
 
 ```python
 def get_weather_data(
-        city: str,
-        temp_units: Literal['kelvin', 'celsius', 'fahrenheit'] = 'kelvin',
-        wind_units: Literal['meters_sec', 'miles_hour', 'knots',
-                            'beaufort'] = 'meters_sec',
-        visibility_units: Literal['meters', 'miles'] = 'meters',
-        time_units: Literal['unix', 'iso', 'date'] = 'unix') -> str
+    self,
+    city: str,
+    temp_units: Literal['kelvin', 'celsius', 'fahrenheit'] = 'kelvin',
+    wind_units: Literal['meters_sec', 'miles_hour', 'knots', 'beaufort'] = 'meters_sec',
+    visibility_units: Literal['meters', 'miles'] = 'meters',
+    time_units: Literal['unix', 'iso', 'date'] = 'unix'
+):
 ```
 
 Fetch and return a comprehensive weather report for a given city
@@ -72,56 +62,38 @@ all formatted as a readable string.
 The function interacts with the OpenWeatherMap API to
 retrieve the data.
 
-**Arguments**:
+**Parameters:**
 
-- `city` _str_ - The name of the city for which the weather information
-  is desired. Format "City, CountryCode" (e.g., "Paris, FR"
-  for Paris, France). If the country code is not provided,
-  the API will search for the city in all countries, which
-  may yield incorrect results if multiple cities with the
-  same name exist.
-- `temp_units` _Literal['kelvin', 'celsius', 'fahrenheit']_ - Units for
-  temperature. (default: :obj:`kelvin`)
-  wind_units
-  (Literal['meters_sec', 'miles_hour', 'knots', 'beaufort']):
-  Units for wind speed. (default: :obj:`meters_sec`)
-- `visibility_units` _Literal['meters', 'miles']_ - Units for visibility
-  distance. (default: :obj:`meters`)
-- `time_units` _Literal['unix', 'iso', 'date']_ - Format for sunrise and
-  sunset times. (default: :obj:`unix`)
-  
+- **city** (str): The name of the city for which the weather information is desired. Format "City, CountryCode" (e.g., "Paris, FR" for Paris, France). If the country code is not provided, the API will search for the city in all countries, which may yield incorrect results if multiple cities with the same name exist.
+- **temp_units** (`Literal['kelvin', 'celsius', 'fahrenheit']`): Units for temperature. (default: :obj:`kelvin`) wind_units (Literal['meters_sec', 'miles_hour', 'knots', 'beaufort']): Units for wind speed. (default: :obj:`meters_sec`)
+- **visibility_units** (`Literal['meters', 'miles']`): Units for visibility distance. (default: :obj:`meters`)
+- **time_units** (`Literal['unix', 'iso', 'date']`): Format for sunrise and sunset times. (default: :obj:`unix`)
 
-**Returns**:
+**Returns:**
 
-- `str` - A string containing the fetched weather data, formatted in a
-  readable manner. If an error occurs, a message indicating the
-  error will be returned instead.
-  
-  Example of return string:
-  "Weather in Paris, FR: 15°C, feels like 13°C. Max temp: 17°C,
-  Min temp : 12°C.
-- `Wind` - 5 m/s at 270 degrees. Visibility: 10 kilometers.
-  Sunrise at 05:46:05 (UTC), Sunset at 18:42:20 (UTC)."
-  
+  str: A string containing the fetched weather data, formatted in a
+readable manner. If an error occurs, a message indicating the
+error will be returned instead.
 
-**Notes**:
+Example of return string:
+"Weather in Paris, FR: 15°C, feels like 13°C. Max temp: 17°C,
+Min temp : 12°C.
+Wind: 5 m/s at 270 degrees. Visibility: 10 kilometers.
+Sunrise at 05:46:05 (UTC), Sunset at 18:42:20 (UTC)."
 
-  Please ensure that the API key is valid and has permissions
-  to access the weather data.
+Note:
+Please ensure that the API key is valid and has permissions
+to access the weather data.
 
 <a id="camel.toolkits.weather_toolkit.WeatherToolkit.get_tools"></a>
 
-#### get\_tools
+### get_tools
 
 ```python
-def get_tools() -> List[FunctionTool]
+def get_tools(self):
 ```
 
-Returns a list of FunctionTool objects representing the
-functions in the toolkit.
+**Returns:**
 
-**Returns**:
-
-- `List[FunctionTool]` - A list of FunctionTool objects
-  representing the functions in the toolkit.
-
+  List[FunctionTool]: A list of FunctionTool objects
+representing the functions in the toolkit.

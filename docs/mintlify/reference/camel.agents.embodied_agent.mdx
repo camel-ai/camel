@@ -2,67 +2,89 @@
 
 <a id="camel.agents.embodied_agent.EmbodiedAgent"></a>
 
-## EmbodiedAgent Objects
+## EmbodiedAgent
 
 ```python
-@track_agent(name="EmbodiedAgent")
-class EmbodiedAgent(ChatAgent)
+class EmbodiedAgent(ChatAgent):
 ```
 
 Class for managing conversations of CAMEL Embodied Agents.
 
-**Arguments**:
+**Parameters:**
 
-- `system_message` _BaseMessage_ - The system message for the chat agent.
-- `model` _BaseModelBackend, optional_ - The model backend to use for
-  generating responses. (default: :obj:`OpenAIModel` with
-  `GPT_4O_MINI`)
-- `message_window_size` _int, optional_ - The maximum number of previous
-  messages to include in the context window. If `None`, no windowing
-  is performed. (default: :obj:`None`)
-- `tool_agents` _List[BaseToolAgent], optional_ - The tools agents to use in
-  the embodied agent. (default: :obj:`None`)
-- `code_interpreter` _BaseInterpreter, optional_ - The code interpreter to
-  execute codes. If `code_interpreter` and `tool_agent` are both
-  `None`, default to `SubProcessInterpreter`. If `code_interpreter`
-  is `None` and `tool_agents` is not `None`, default to
-  `InternalPythonInterpreter`.  (default: :obj:`None`)
-- `verbose` _bool, optional_ - Whether to print the critic's messages.
-- `logger_color` _Any_ - The color of the logger displayed to the user.
-- `(default` - :obj:`Fore.MAGENTA`)
+- **system_message** (BaseMessage): The system message for the chat agent.
+- **model** (BaseModelBackend, optional): The model backend to use for generating responses. (default: :obj:`OpenAIModel` with `GPT_4O_MINI`)
+- **message_window_size** (int, optional): The maximum number of previous messages to include in the context window. If `None`, no windowing is performed. (default: :obj:`None`)
+- **tool_agents** (List[BaseToolAgent], optional): The tools agents to use in the embodied agent. (default: :obj:`None`)
+- **code_interpreter** (BaseInterpreter, optional): The code interpreter to execute codes. If `code_interpreter` and `tool_agent` are both `None`, default to `SubProcessInterpreter`. If `code_interpreter` is `None` and `tool_agents` is not `None`, default to `InternalPythonInterpreter`. (default: :obj:`None`)
+- **verbose** (bool, optional): Whether to print the critic's messages.
+- **logger_color** (Any): The color of the logger displayed to the user. (default: :obj:`Fore.MAGENTA`)
+
+<a id="camel.agents.embodied_agent.EmbodiedAgent.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    system_message: BaseMessage,
+    model: Optional[BaseModelBackend] = None,
+    message_window_size: Optional[int] = None,
+    tool_agents: Optional[List[BaseToolAgent]] = None,
+    code_interpreter: Optional[BaseInterpreter] = None,
+    verbose: bool = False,
+    logger_color: Any = Fore.MAGENTA
+):
+```
+
+<a id="camel.agents.embodied_agent.EmbodiedAgent._set_tool_agents"></a>
+
+### _set_tool_agents
+
+```python
+def _set_tool_agents(self, system_message: BaseMessage):
+```
+
+<a id="camel.agents.embodied_agent.EmbodiedAgent._get_tool_agents_prompt"></a>
+
+### _get_tool_agents_prompt
+
+```python
+def _get_tool_agents_prompt(self):
+```
+
+**Returns:**
+
+  str: The action space prompt.
 
 <a id="camel.agents.embodied_agent.EmbodiedAgent.get_tool_agent_names"></a>
 
-#### get\_tool\_agent\_names
+### get_tool_agent_names
 
 ```python
-def get_tool_agent_names() -> List[str]
+def get_tool_agent_names(self):
 ```
 
-Returns the names of tool agents.
+**Returns:**
 
-**Returns**:
-
-- `List[str]` - The names of tool agents.
+  List[str]: The names of tool agents.
 
 <a id="camel.agents.embodied_agent.EmbodiedAgent.step"></a>
 
-#### step
+### step
 
 ```python
-def step(input_message: BaseMessage) -> ChatAgentResponse
+def step(self, input_message: BaseMessage):
 ```
 
 Performs a step in the conversation.
 
-**Arguments**:
+**Parameters:**
 
-- `input_message` _BaseMessage_ - The input message.
-  
+- **input_message** (BaseMessage): The input message.
 
-**Returns**:
+**Returns:**
 
-- `ChatAgentResponse` - A struct containing the output messages,
-  a boolean indicating whether the chat session has terminated,
-  and information about the chat session.
-
+  ChatAgentResponse: A struct containing the output messages,
+a boolean indicating whether the chat session has terminated,
+and information about the chat session.

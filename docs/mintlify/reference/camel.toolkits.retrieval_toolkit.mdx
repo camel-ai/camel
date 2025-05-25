@@ -2,11 +2,10 @@
 
 <a id="camel.toolkits.retrieval_toolkit.RetrievalToolkit"></a>
 
-## RetrievalToolkit Objects
+## RetrievalToolkit
 
 ```python
-@MCPServer()
-class RetrievalToolkit(BaseToolkit)
+class RetrievalToolkit(BaseToolkit):
 ```
 
 A class representing a toolkit for information retrieval.
@@ -16,26 +15,30 @@ storage system based on a specified query.
 
 <a id="camel.toolkits.retrieval_toolkit.RetrievalToolkit.__init__"></a>
 
-#### \_\_init\_\_
+### __init__
 
 ```python
-def __init__(auto_retriever: Optional[AutoRetriever] = None,
-             timeout: Optional[float] = None) -> None
+def __init__(
+    self,
+    auto_retriever: Optional[AutoRetriever] = None,
+    timeout: Optional[float] = None
+):
 ```
 
 Initializes a new instance of the RetrievalToolkit class.
 
 <a id="camel.toolkits.retrieval_toolkit.RetrievalToolkit.information_retrieval"></a>
 
-#### information\_retrieval
+### information_retrieval
 
 ```python
 def information_retrieval(
+    self,
     query: str,
     contents: Union[str, List[str]],
     top_k: int = Constants.DEFAULT_TOP_K_RESULTS,
     similarity_threshold: float = Constants.DEFAULT_SIMILARITY_THRESHOLD
-) -> str
+):
 ```
 
 Retrieves information from a local vector storage based on the
@@ -44,44 +47,27 @@ system and retrieves relevant information by processing the input
 query. It is essential to use this function when the answer to a
 question requires external knowledge sources.
 
-**Arguments**:
+**Parameters:**
 
-- `query` _str_ - The question or query for which an answer is required.
-- `contents` _Union[str, List[str]]_ - Local file paths, remote URLs or
-  string contents.
-- `top_k` _int, optional_ - The number of top results to return during
-  retrieve. Must be a positive integer. Defaults to
-  `DEFAULT_TOP_K_RESULTS`.
-- `similarity_threshold` _float, optional_ - The similarity threshold
-  for filtering results. Defaults to
-  `DEFAULT_SIMILARITY_THRESHOLD`.
-  
+- **query** (str): The question or query for which an answer is required.
+- **contents** (Union[str, List[str]]): Local file paths, remote URLs or string contents.
+- **top_k** (int, optional): The number of top results to return during retrieve. Must be a positive integer. Defaults to `DEFAULT_TOP_K_RESULTS`.
+- **similarity_threshold** (float, optional): The similarity threshold for filtering results. Defaults to `DEFAULT_SIMILARITY_THRESHOLD`.
 
-**Returns**:
+**Returns:**
 
-- `str` - The information retrieved in response to the query, aggregated
-  and formatted as a string.
-  
-
-**Example**:
-
-  # Retrieve information about CAMEL AI.
-  information_retrieval(query = "How to contribute to CAMEL AI?",
-  contents="https://github.com/camel-ai/camel/blob/master/CONTRIBUTING.md")
+  str: The information retrieved in response to the query, aggregated
+and formatted as a string.
 
 <a id="camel.toolkits.retrieval_toolkit.RetrievalToolkit.get_tools"></a>
 
-#### get\_tools
+### get_tools
 
 ```python
-def get_tools() -> List[FunctionTool]
+def get_tools(self):
 ```
 
-Returns a list of FunctionTool objects representing the
-functions in the toolkit.
+**Returns:**
 
-**Returns**:
-
-- `List[FunctionTool]` - A list of FunctionTool objects
-  representing the functions in the toolkit.
-
+  List[FunctionTool]: A list of FunctionTool objects
+representing the functions in the toolkit.

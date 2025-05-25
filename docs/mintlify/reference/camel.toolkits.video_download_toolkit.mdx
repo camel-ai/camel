@@ -1,32 +1,59 @@
 <a id="camel.toolkits.video_download_toolkit"></a>
 
-<a id="camel.toolkits.video_download_toolkit.VideoDownloaderToolkit"></a>
+<a id="camel.toolkits.video_download_toolkit._capture_screenshot"></a>
 
-## VideoDownloaderToolkit Objects
+## _capture_screenshot
 
 ```python
-@MCPServer()
-class VideoDownloaderToolkit(BaseToolkit)
+def _capture_screenshot(video_file: str, timestamp: float):
+```
+
+Capture a screenshot from a video file at a specific timestamp.
+
+**Parameters:**
+
+- **video_file** (str): The path to the video file.
+- **timestamp** (float): The time in seconds from which to capture the screenshot.
+
+**Returns:**
+
+  Image.Image: The captured screenshot in the form of Image.Image.
+
+<a id="camel.toolkits.video_download_toolkit.VideoDownloaderToolkit"></a>
+
+## VideoDownloaderToolkit
+
+```python
+class VideoDownloaderToolkit(BaseToolkit):
 ```
 
 A class for downloading videos and optionally splitting them into
 chunks.
 
-**Arguments**:
+**Parameters:**
 
-- `download_directory` _Optional[str], optional_ - The directory where the
-  video will be downloaded to. If not provided, video will be stored
-  in a temporary directory and will be cleaned up after use.
-- `(default` - :obj:`None`)
-- `cookies_path` _Optional[str], optional_ - The path to the cookies file
-  for the video service in Netscape format. (default: :obj:`None`)
+- **download_directory** (Optional[str], optional): The directory where the video will be downloaded to. If not provided, video will be stored in a temporary directory and will be cleaned up after use. (default: :obj:`None`)
+- **cookies_path** (Optional[str], optional): The path to the cookies file for the video service in Netscape format. (default: :obj:`None`)
+
+<a id="camel.toolkits.video_download_toolkit.VideoDownloaderToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    download_directory: Optional[str] = None,
+    cookies_path: Optional[str] = None,
+    timeout: Optional[float] = None
+):
+```
 
 <a id="camel.toolkits.video_download_toolkit.VideoDownloaderToolkit.__del__"></a>
 
-#### \_\_del\_\_
+### __del__
 
 ```python
-def __del__() -> None
+def __del__(self):
 ```
 
 Deconstructor for the VideoDownloaderToolkit class.
@@ -36,74 +63,63 @@ directory.
 
 <a id="camel.toolkits.video_download_toolkit.VideoDownloaderToolkit.download_video"></a>
 
-#### download\_video
+### download_video
 
 ```python
-def download_video(url: str) -> str
+def download_video(self, url: str):
 ```
 
-Download the video and optionally split it into chunks.
+**Returns:**
 
-yt-dlp will detect if the video is downloaded automatically so there
-is no need to check if the video exists.
-
-**Returns**:
-
-- `str` - The path to the downloaded video file.
+  str: The path to the downloaded video file.
 
 <a id="camel.toolkits.video_download_toolkit.VideoDownloaderToolkit.get_video_bytes"></a>
 
-#### get\_video\_bytes
+### get_video_bytes
 
 ```python
-def get_video_bytes(video_path: str) -> bytes
+def get_video_bytes(self, video_path: str):
 ```
 
 Download video by the path, and return the content in bytes.
 
-**Arguments**:
+**Parameters:**
 
-- `video_path` _str_ - The path to the video file.
-  
+- **video_path** (str): The path to the video file.
 
-**Returns**:
+**Returns:**
 
-- `bytes` - The video file content in bytes.
+  bytes: The video file content in bytes.
 
 <a id="camel.toolkits.video_download_toolkit.VideoDownloaderToolkit.get_video_screenshots"></a>
 
-#### get\_video\_screenshots
+### get_video_screenshots
 
 ```python
-def get_video_screenshots(video_path: str, amount: int) -> List[Image.Image]
+def get_video_screenshots(self, video_path: str, amount: int):
 ```
 
 Capture screenshots from the video at specified timestamps or by
 dividing the video into equal parts if an integer is provided.
 
-**Arguments**:
+**Parameters:**
 
-- `video_url` _str_ - The URL of the video to take screenshots.
-- `amount` _int_ - the amount of evenly split screenshots to capture.
-  
+- **video_url** (str): The URL of the video to take screenshots.
+- **amount** (int): the amount of evenly split screenshots to capture.
 
-**Returns**:
+**Returns:**
 
-- `List[Image.Image]` - A list of screenshots as Image.Image.
+  List[Image.Image]: A list of screenshots as Image.Image.
 
 <a id="camel.toolkits.video_download_toolkit.VideoDownloaderToolkit.get_tools"></a>
 
-#### get\_tools
+### get_tools
 
 ```python
-def get_tools() -> List[FunctionTool]
+def get_tools(self):
 ```
 
-Returns a list of FunctionTool objects representing the
-functions in the toolkit.
+**Returns:**
 
-**Returns**:
-
-- `List[FunctionTool]` - A list of FunctionTool objects representing
-  the functions in the toolkit.
-
+  List[FunctionTool]: A list of FunctionTool objects representing
+the functions in the toolkit.

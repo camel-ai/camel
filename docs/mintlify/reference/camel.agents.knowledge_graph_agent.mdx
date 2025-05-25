@@ -2,61 +2,110 @@
 
 <a id="camel.agents.knowledge_graph_agent.KnowledgeGraphAgent"></a>
 
-## KnowledgeGraphAgent Objects
+## KnowledgeGraphAgent
 
 ```python
-@track_agent(name="KnowledgeGraphAgent")
-class KnowledgeGraphAgent(ChatAgent)
+class KnowledgeGraphAgent(ChatAgent):
 ```
 
 An agent that can extract node and relationship information for
 different entities from given `Element` content.
 
-**Attributes**:
-
-- `task_prompt` _TextPrompt_ - A prompt for the agent to extract node and
-  relationship information for different entities.
+Attributes:
+task_prompt (TextPrompt): A prompt for the agent to extract node and
+relationship information for different entities.
 
 <a id="camel.agents.knowledge_graph_agent.KnowledgeGraphAgent.__init__"></a>
 
-#### \_\_init\_\_
+### __init__
 
 ```python
-def __init__(model: Optional[BaseModelBackend] = None) -> None
+def __init__(self, model: Optional[BaseModelBackend] = None):
 ```
 
 Initialize the `KnowledgeGraphAgent`.
 
-**Arguments**:
+**Parameters:**
 
-- `model` _BaseModelBackend, optional_ - The model backend to use for
-  generating responses. (default: :obj:`OpenAIModel` with
-  `GPT_4O_MINI`)
+- **model** (BaseModelBackend, optional): The model backend to use for generating responses. (default: :obj:`OpenAIModel` with `GPT_4O_MINI`)
 
 <a id="camel.agents.knowledge_graph_agent.KnowledgeGraphAgent.run"></a>
 
-#### run
+### run
 
 ```python
-def run(element: "Element",
-        parse_graph_elements: bool = False,
-        prompt: Optional[str] = None) -> Union[str, GraphElement]
+def run(
+    self,
+    element: 'Element',
+    parse_graph_elements: bool = False,
+    prompt: Optional[str] = None
+):
 ```
 
 Run the agent to extract node and relationship information.
 
-**Arguments**:
+**Parameters:**
 
-- `element` _Element_ - The input element.
-- `parse_graph_elements` _bool, optional_ - Whether to parse into
-  `GraphElement`. Defaults to `False`.
-- `prompt` _str, optional_ - The custom prompt to be used.
-  Defaults to `None`.
-  
+- **element** (Element): The input element.
+- **parse_graph_elements** (bool, optional): Whether to parse into `GraphElement`. Defaults to `False`.
+- **prompt** (str, optional): The custom prompt to be used. Defaults to `None`.
 
-**Returns**:
+**Returns:**
 
   Union[str, GraphElement]: The extracted node and relationship
-  information. If `parse_graph_elements` is `True` then return
-  `GraphElement`, else return `str`.
+information. If `parse_graph_elements` is `True` then return
+`GraphElement`, else return `str`.
 
+<a id="camel.agents.knowledge_graph_agent.KnowledgeGraphAgent._validate_node"></a>
+
+### _validate_node
+
+```python
+def _validate_node(self, node: Node):
+```
+
+Validate if the object is a valid Node.
+
+**Parameters:**
+
+- **node** (Node): Object to be validated.
+
+**Returns:**
+
+  bool: True if the object is a valid Node, False otherwise.
+
+<a id="camel.agents.knowledge_graph_agent.KnowledgeGraphAgent._validate_relationship"></a>
+
+### _validate_relationship
+
+```python
+def _validate_relationship(self, relationship: Relationship):
+```
+
+Validate if the object is a valid Relationship.
+
+**Parameters:**
+
+- **relationship** (Relationship): Object to be validated.
+
+**Returns:**
+
+  bool: True if the object is a valid Relationship, False otherwise.
+
+<a id="camel.agents.knowledge_graph_agent.KnowledgeGraphAgent._parse_graph_elements"></a>
+
+### _parse_graph_elements
+
+```python
+def _parse_graph_elements(self, input_string: str):
+```
+
+Parses graph elements from given content.
+
+**Parameters:**
+
+- **input_string** (str): The input content.
+
+**Returns:**
+
+  GraphElement: The parsed graph elements.

@@ -2,34 +2,33 @@
 
 <a id="camel.retrievers.cohere_rerank_retriever.CohereRerankRetriever"></a>
 
-## CohereRerankRetriever Objects
+## CohereRerankRetriever
 
 ```python
-class CohereRerankRetriever(BaseRetriever)
+class CohereRerankRetriever(BaseRetriever):
 ```
 
 An implementation of the `BaseRetriever` using the `Cohere Re-ranking`
 model.
 
-**Attributes**:
+Attributes:
+model_name (str): The model name to use for re-ranking.
+api_key (Optional[str]): The API key for authenticating with the
+Cohere service.
 
-- `model_name` _str_ - The model name to use for re-ranking.
-- `api_key` _Optional[str]_ - The API key for authenticating with the
-  Cohere service.
-  
-
-**References**:
-
-  https://txt.cohere.com/rerank/
+References:
+https://txt.cohere.com/rerank/
 
 <a id="camel.retrievers.cohere_rerank_retriever.CohereRerankRetriever.__init__"></a>
 
-#### \_\_init\_\_
+### __init__
 
 ```python
-@dependencies_required('cohere')
-def __init__(model_name: str = "rerank-multilingual-v2.0",
-             api_key: Optional[str] = None) -> None
+def __init__(
+    self,
+    model_name: str = 'rerank-multilingual-v2.0',
+    api_key: Optional[str] = None
+):
 ```
 
 Initializes an instance of the CohereRerankRetriever. This
@@ -38,46 +37,32 @@ the specified model name and API key. If the API key is not provided,
 it attempts to retrieve it from the COHERE_API_KEY environment
 variable.
 
-**Arguments**:
+**Parameters:**
 
-- `model_name` _str_ - The name of the model to be used for re-ranking.
-  Defaults to 'rerank-multilingual-v2.0'.
-- `api_key` _Optional[str]_ - The API key for authenticating requests
-  to the Cohere API. If not provided, the method will attempt to
-  retrieve the key from the environment variable
-  'COHERE_API_KEY'.
-  
-
-**Raises**:
-
-- `ImportError` - If the 'cohere' package is not installed.
-- `ValueError` - If the API key is neither passed as an argument nor
-  set in the environment variable.
+- **model_name** (str): The name of the model to be used for re-ranking. Defaults to 'rerank-multilingual-v2.0'.
+- **api_key** (Optional[str]): The API key for authenticating requests to the Cohere API. If not provided, the method will attempt to retrieve the key from the environment variable 'COHERE_API_KEY'.
 
 <a id="camel.retrievers.cohere_rerank_retriever.CohereRerankRetriever.query"></a>
 
-#### query
+### query
 
 ```python
-def query(query: str,
-          retrieved_result: List[Dict[str, Any]],
-          top_k: int = DEFAULT_TOP_K_RESULTS) -> List[Dict[str, Any]]
+def query(
+    self,
+    query: str,
+    retrieved_result: List[Dict[str, Any]],
+    top_k: int = DEFAULT_TOP_K_RESULTS
+):
 ```
 
 Queries and compiles results using the Cohere re-ranking model.
 
-**Arguments**:
+**Parameters:**
 
-- `query` _str_ - Query string for information retriever.
-- `retrieved_result` _List[Dict[str, Any]]_ - The content to be
-  re-ranked, should be the output from `BaseRetriever` like
-  `VectorRetriever`.
-- `top_k` _int, optional_ - The number of top results to return during
-  retriever. Must be a positive integer. Defaults to
-  `DEFAULT_TOP_K_RESULTS`.
-  
+- **query** (str): Query string for information retriever.
+- **retrieved_result** (List[Dict[str, Any]]): The content to be re-ranked, should be the output from `BaseRetriever` like `VectorRetriever`.
+- **top_k** (int, optional): The number of top results to return during retriever. Must be a positive integer. Defaults to `DEFAULT_TOP_K_RESULTS`.
 
-**Returns**:
+**Returns:**
 
   List[Dict[str, Any]]: Concatenated list of the query results.
-

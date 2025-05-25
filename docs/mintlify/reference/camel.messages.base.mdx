@@ -2,40 +2,31 @@
 
 <a id="camel.messages.base.BaseMessage"></a>
 
-## BaseMessage Objects
+## BaseMessage
 
 ```python
-@dataclass
-class BaseMessage()
+class BaseMessage:
 ```
 
 Base class for message objects used in CAMEL chat system.
 
-**Arguments**:
+**Parameters:**
 
-- `role_name` _str_ - The name of the user or assistant role.
-- `role_type` _RoleType_ - The type of role, either :obj:`RoleType.
-  ASSISTANT` or :obj:`RoleType.USER`.
-- `meta_dict` _Optional[Dict[str, Any]]_ - Additional metadata dictionary
-  for the message.
-- `content` _str_ - The content of the message.
-- `video_bytes` _Optional[bytes]_ - Optional bytes of a video associated
-  with the message. (default: :obj:`None`)
-- `image_list` _Optional[List[Image.Image]]_ - Optional list of PIL Image
-  objects associated with the message. (default: :obj:`None`)
-- `image_detail` _Literal["auto", "low", "high"]_ - Detail level of the
-  images associated with the message. (default: :obj:`auto`)
-- `video_detail` _Literal["auto", "low", "high"]_ - Detail level of the
-  videos associated with the message. (default: :obj:`low`)
-- `parsed` - Optional[Union[Type[BaseModel], dict]]: Optional object which
-  is parsed from the content. (default: :obj:`None`)
+- **role_name** (str): The name of the user or assistant role.
+- **role_type** (RoleType): The type of role, either :obj:`RoleType. ASSISTANT` or :obj:`RoleType.USER`.
+- **meta_dict** (Optional[Dict[str, Any]]): Additional metadata dictionary for the message.
+- **content** (str): The content of the message.
+- **video_bytes** (Optional[bytes]): Optional bytes of a video associated with the message. (default: :obj:`None`)
+- **image_list** (Optional[List[Image.Image]]): Optional list of PIL Image objects associated with the message. (default: :obj:`None`)
+- **image_detail** (`Literal["auto", "low", "high"]`): Detail level of the images associated with the message. (default: :obj:`auto`)
+- **video_detail** (`Literal["auto", "low", "high"]`): Detail level of the videos associated with the message. (default: :obj:`low`)
+- **parsed**: Optional[Union[Type[BaseModel], dict]]: Optional object which is parsed from the content. (default: :obj:`None`)
 
 <a id="camel.messages.base.BaseMessage.make_user_message"></a>
 
-#### make\_user\_message
+### make_user_message
 
 ```python
-@classmethod
 def make_user_message(
     cls,
     role_name: str,
@@ -43,41 +34,32 @@ def make_user_message(
     meta_dict: Optional[Dict[str, str]] = None,
     video_bytes: Optional[bytes] = None,
     image_list: Optional[List[Image.Image]] = None,
-    image_detail: Union[OpenAIVisionDetailType,
-                        str] = OpenAIVisionDetailType.AUTO,
-    video_detail: Union[OpenAIVisionDetailType,
-                        str] = OpenAIVisionDetailType.LOW
-) -> "BaseMessage"
+    image_detail: Union[OpenAIVisionDetailType, str] = OpenAIVisionDetailType.AUTO,
+    video_detail: Union[OpenAIVisionDetailType, str] = OpenAIVisionDetailType.LOW
+):
 ```
 
 Create a new user message.
 
-**Arguments**:
+**Parameters:**
 
-- `role_name` _str_ - The name of the user role.
-- `content` _str_ - The content of the message.
-- `meta_dict` _Optional[Dict[str, str]]_ - Additional metadata
-  dictionary for the message.
-- `video_bytes` _Optional[bytes]_ - Optional bytes of a video
-  associated with the message.
-- `image_list` _Optional[List[Image.Image]]_ - Optional list of PIL
-  Image objects associated with the message.
-- `image_detail` _Union[OpenAIVisionDetailType, str]_ - Detail level of
-  the images associated with the message.
-- `video_detail` _Union[OpenAIVisionDetailType, str]_ - Detail level of
-  the videos associated with the message.
-  
+- **role_name** (str): The name of the user role.
+- **content** (str): The content of the message.
+- **meta_dict** (Optional[Dict[str, str]]): Additional metadata dictionary for the message.
+- **video_bytes** (Optional[bytes]): Optional bytes of a video associated with the message.
+- **image_list** (Optional[List[Image.Image]]): Optional list of PIL Image objects associated with the message.
+- **image_detail** (Union[OpenAIVisionDetailType, str]): Detail level of the images associated with the message.
+- **video_detail** (Union[OpenAIVisionDetailType, str]): Detail level of the videos associated with the message.
 
-**Returns**:
+**Returns:**
 
-- `BaseMessage` - The new user message.
+  BaseMessage: The new user message.
 
 <a id="camel.messages.base.BaseMessage.make_assistant_message"></a>
 
-#### make\_assistant\_message
+### make_assistant_message
 
 ```python
-@classmethod
 def make_assistant_message(
     cls,
     role_name: str,
@@ -85,265 +67,231 @@ def make_assistant_message(
     meta_dict: Optional[Dict[str, str]] = None,
     video_bytes: Optional[bytes] = None,
     image_list: Optional[List[Image.Image]] = None,
-    image_detail: Union[OpenAIVisionDetailType,
-                        str] = OpenAIVisionDetailType.AUTO,
-    video_detail: Union[OpenAIVisionDetailType,
-                        str] = OpenAIVisionDetailType.LOW
-) -> "BaseMessage"
+    image_detail: Union[OpenAIVisionDetailType, str] = OpenAIVisionDetailType.AUTO,
+    video_detail: Union[OpenAIVisionDetailType, str] = OpenAIVisionDetailType.LOW
+):
 ```
 
 Create a new assistant message.
 
-**Arguments**:
+**Parameters:**
 
-- `role_name` _str_ - The name of the assistant role.
-- `content` _str_ - The content of the message.
-- `meta_dict` _Optional[Dict[str, str]]_ - Additional metadata
-  dictionary for the message.
-- `video_bytes` _Optional[bytes]_ - Optional bytes of a video
-  associated with the message.
-- `image_list` _Optional[List[Image.Image]]_ - Optional list of PIL
-  Image objects associated with the message.
-- `image_detail` _Union[OpenAIVisionDetailType, str]_ - Detail level of
-  the images associated with the message.
-- `video_detail` _Union[OpenAIVisionDetailType, str]_ - Detail level of
-  the videos associated with the message.
-  
+- **role_name** (str): The name of the assistant role.
+- **content** (str): The content of the message.
+- **meta_dict** (Optional[Dict[str, str]]): Additional metadata dictionary for the message.
+- **video_bytes** (Optional[bytes]): Optional bytes of a video associated with the message.
+- **image_list** (Optional[List[Image.Image]]): Optional list of PIL Image objects associated with the message.
+- **image_detail** (Union[OpenAIVisionDetailType, str]): Detail level of the images associated with the message.
+- **video_detail** (Union[OpenAIVisionDetailType, str]): Detail level of the videos associated with the message.
 
-**Returns**:
+**Returns:**
 
-- `BaseMessage` - The new assistant message.
+  BaseMessage: The new assistant message.
 
 <a id="camel.messages.base.BaseMessage.create_new_instance"></a>
 
-#### create\_new\_instance
+### create_new_instance
 
 ```python
-def create_new_instance(content: str) -> "BaseMessage"
+def create_new_instance(self, content: str):
 ```
 
 Create a new instance of the :obj:`BaseMessage` with updated
 content.
 
-**Arguments**:
+**Parameters:**
 
-- `content` _str_ - The new content value.
-  
+- **content** (str): The new content value.
 
-**Returns**:
+**Returns:**
 
-- `BaseMessage` - The new instance of :obj:`BaseMessage`.
+  BaseMessage: The new instance of :obj:`BaseMessage`.
 
 <a id="camel.messages.base.BaseMessage.__add__"></a>
 
-#### \_\_add\_\_
+### __add__
 
 ```python
-def __add__(other: Any) -> Union["BaseMessage", Any]
+def __add__(self, other: Any):
 ```
 
 Addition operator override for :obj:`BaseMessage`.
 
-**Arguments**:
+**Parameters:**
 
-- `other` _Any_ - The value to be added with.
-  
+- **other** (Any): The value to be added with.
 
-**Returns**:
+**Returns:**
 
   Union[BaseMessage, Any]: The result of the addition.
 
 <a id="camel.messages.base.BaseMessage.__mul__"></a>
 
-#### \_\_mul\_\_
+### __mul__
 
 ```python
-def __mul__(other: Any) -> Union["BaseMessage", Any]
+def __mul__(self, other: Any):
 ```
 
 Multiplication operator override for :obj:`BaseMessage`.
 
-**Arguments**:
+**Parameters:**
 
-- `other` _Any_ - The value to be multiplied with.
-  
+- **other** (Any): The value to be multiplied with.
 
-**Returns**:
+**Returns:**
 
   Union[BaseMessage, Any]: The result of the multiplication.
 
 <a id="camel.messages.base.BaseMessage.__len__"></a>
 
-#### \_\_len\_\_
+### __len__
 
 ```python
-def __len__() -> int
+def __len__(self):
 ```
 
-Length operator override for :obj:`BaseMessage`.
+**Returns:**
 
-**Returns**:
-
-- `int` - The length of the content.
+  int: The length of the content.
 
 <a id="camel.messages.base.BaseMessage.__contains__"></a>
 
-#### \_\_contains\_\_
+### __contains__
 
 ```python
-def __contains__(item: str) -> bool
+def __contains__(self, item: str):
 ```
 
 Contains operator override for :obj:`BaseMessage`.
 
-**Arguments**:
+**Parameters:**
 
-- `item` _str_ - The item to check for containment.
-  
+- **item** (str): The item to check for containment.
 
-**Returns**:
+**Returns:**
 
-- `bool` - :obj:`True` if the item is contained in the content,
-  :obj:`False` otherwise.
+  bool: :obj:`True` if the item is contained in the content,
+:obj:`False` otherwise.
 
 <a id="camel.messages.base.BaseMessage.extract_text_and_code_prompts"></a>
 
-#### extract\_text\_and\_code\_prompts
+### extract_text_and_code_prompts
 
 ```python
-def extract_text_and_code_prompts(
-) -> Tuple[List[TextPrompt], List[CodePrompt]]
+def extract_text_and_code_prompts(self):
 ```
 
-Extract text and code prompts from the message content.
-
-**Returns**:
+**Returns:**
 
   Tuple[List[TextPrompt], List[CodePrompt]]: A tuple containing a
-  list of text prompts and a list of code prompts extracted
-  from the content.
+list of text prompts and a list of code prompts extracted
+from the content.
 
 <a id="camel.messages.base.BaseMessage.from_sharegpt"></a>
 
-#### from\_sharegpt
+### from_sharegpt
 
 ```python
-@classmethod
-def from_sharegpt(cls,
-                  message: ShareGPTMessage,
-                  function_format: Optional[FunctionCallFormatter[Any,
-                                                                  Any]] = None,
-                  role_mapping=None) -> "BaseMessage"
+def from_sharegpt(
+    cls,
+    message: ShareGPTMessage,
+    function_format: Optional[FunctionCallFormatter[Any, Any]] = None,
+    role_mapping = None
+):
 ```
 
 Convert ShareGPT message to BaseMessage or FunctionCallingMessage.
 Note tool calls and responses have an 'assistant' role in CAMEL
 
-**Arguments**:
+**Parameters:**
 
-- `message` _ShareGPTMessage_ - ShareGPT message to convert.
-- `function_format` _FunctionCallFormatter, optional_ - Function call
-  formatter to use. (default: :obj:`HermesFunctionFormatter()`.
-- `role_mapping` _Dict[str, List[str, RoleType]], optional_ - Role
-  mapping to use. Defaults to a CAMEL specific mapping.
-  
+- **message** (ShareGPTMessage): ShareGPT message to convert.
+- **function_format** (FunctionCallFormatter, optional): Function call formatter to use. (default: :obj:`HermesFunctionFormatter()`.
+- **role_mapping** (Dict[str, List[str, RoleType]], optional): Role mapping to use. Defaults to a CAMEL specific mapping.
 
-**Returns**:
+**Returns:**
 
-- `BaseMessage` - Converted message.
+  BaseMessage: Converted message.
 
 <a id="camel.messages.base.BaseMessage.to_sharegpt"></a>
 
-#### to\_sharegpt
+### to_sharegpt
 
 ```python
-def to_sharegpt(
-    function_format: Optional[FunctionCallFormatter] = None
-) -> ShareGPTMessage
+def to_sharegpt(self, function_format: Optional[FunctionCallFormatter] = None):
 ```
 
 Convert BaseMessage to ShareGPT message
 
-**Arguments**:
+**Parameters:**
 
-- `function_format` _FunctionCallFormatter_ - Function call formatter
-  to use. Defaults to Hermes.
+- **function_format** (FunctionCallFormatter): Function call formatter to use. Defaults to Hermes.
 
 <a id="camel.messages.base.BaseMessage.to_openai_message"></a>
 
-#### to\_openai\_message
+### to_openai_message
 
 ```python
-def to_openai_message(role_at_backend: OpenAIBackendRole) -> OpenAIMessage
+def to_openai_message(self, role_at_backend: OpenAIBackendRole):
 ```
 
 Converts the message to an :obj:`OpenAIMessage` object.
 
-**Arguments**:
+**Parameters:**
 
-- `role_at_backend` _OpenAIBackendRole_ - The role of the message in
-  OpenAI chat system.
-  
+- **role_at_backend** (OpenAIBackendRole): The role of the message in OpenAI chat system.
 
-**Returns**:
+**Returns:**
 
-- `OpenAIMessage` - The converted :obj:`OpenAIMessage` object.
+  OpenAIMessage: The converted :obj:`OpenAIMessage` object.
 
 <a id="camel.messages.base.BaseMessage.to_openai_system_message"></a>
 
-#### to\_openai\_system\_message
+### to_openai_system_message
 
 ```python
-def to_openai_system_message() -> OpenAISystemMessage
+def to_openai_system_message(self):
 ```
 
-Converts the message to an :obj:`OpenAISystemMessage` object.
+**Returns:**
 
-**Returns**:
-
-- `OpenAISystemMessage` - The converted :obj:`OpenAISystemMessage`
-  object.
+  OpenAISystemMessage: The converted :obj:`OpenAISystemMessage`
+object.
 
 <a id="camel.messages.base.BaseMessage.to_openai_user_message"></a>
 
-#### to\_openai\_user\_message
+### to_openai_user_message
 
 ```python
-def to_openai_user_message() -> OpenAIUserMessage
+def to_openai_user_message(self):
 ```
 
-Converts the message to an :obj:`OpenAIUserMessage` object.
+**Returns:**
 
-**Returns**:
-
-- `OpenAIUserMessage` - The converted :obj:`OpenAIUserMessage` object.
+  OpenAIUserMessage: The converted :obj:`OpenAIUserMessage` object.
 
 <a id="camel.messages.base.BaseMessage.to_openai_assistant_message"></a>
 
-#### to\_openai\_assistant\_message
+### to_openai_assistant_message
 
 ```python
-def to_openai_assistant_message() -> OpenAIAssistantMessage
+def to_openai_assistant_message(self):
 ```
 
-Converts the message to an :obj:`OpenAIAssistantMessage` object.
+**Returns:**
 
-**Returns**:
-
-- `OpenAIAssistantMessage` - The converted :obj:`OpenAIAssistantMessage`
-  object.
+  OpenAIAssistantMessage: The converted :obj:`OpenAIAssistantMessage`
+object.
 
 <a id="camel.messages.base.BaseMessage.to_dict"></a>
 
-#### to\_dict
+### to_dict
 
 ```python
-def to_dict() -> Dict
+def to_dict(self):
 ```
 
-Converts the message to a dictionary.
+**Returns:**
 
-**Returns**:
-
-- `dict` - The converted dictionary.
-
+  dict: The converted dictionary.

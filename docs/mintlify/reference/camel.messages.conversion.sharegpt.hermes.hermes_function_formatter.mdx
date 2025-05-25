@@ -2,122 +2,115 @@
 
 <a id="camel.messages.conversion.sharegpt.hermes.hermes_function_formatter.HermesToolResponse"></a>
 
-## HermesToolResponse Objects
+## HermesToolResponse
 
 ```python
-class HermesToolResponse(ToolResponse)
+class HermesToolResponse(ToolResponse):
 ```
 
 Represents a single tool/function call with validation
 
 <a id="camel.messages.conversion.sharegpt.hermes.hermes_function_formatter.HermesToolCall"></a>
 
-## HermesToolCall Objects
+## HermesToolCall
 
 ```python
-class HermesToolCall(ToolCall)
+class HermesToolCall(ToolCall):
 ```
 
 Represents a single tool/function call with validation
 
 <a id="camel.messages.conversion.sharegpt.hermes.hermes_function_formatter.HermesFunctionFormatter"></a>
 
-## HermesFunctionFormatter Objects
+## HermesFunctionFormatter
 
 ```python
-class HermesFunctionFormatter(FunctionCallFormatter[HermesToolCall,
-                                                    HermesToolResponse])
+class HermesFunctionFormatter:
 ```
 
 Hermes-style function calling format implementation with validation
 
 <a id="camel.messages.conversion.sharegpt.hermes.hermes_function_formatter.HermesFunctionFormatter.extract_tool_calls"></a>
 
-#### extract\_tool\_calls
+### extract_tool_calls
 
 ```python
-def extract_tool_calls(message: str) -> List[HermesToolCall]
+def extract_tool_calls(self, message: str):
 ```
 
 Extracts all tool calls from the provided message string.
 
-**Arguments**:
+**Parameters:**
 
-- `message` _str_ - The input message string containing potential tool
-  calls.
-  
+- **message** (str): The input message string containing potential tool calls.
 
-**Returns**:
+**Returns:**
 
-- `List[HermesToolCall]` - A list of parsed HermesToolCall objects.
+  List[HermesToolCall]: A list of parsed HermesToolCall objects.
 
 <a id="camel.messages.conversion.sharegpt.hermes.hermes_function_formatter.HermesFunctionFormatter.extract_tool_response"></a>
 
-#### extract\_tool\_response
+### extract_tool_response
 
 ```python
-def extract_tool_response(message: str) -> Optional[HermesToolResponse]
+def extract_tool_response(self, message: str):
 ```
 
 Extracts a single tool response from the provided message string.
 
-**Arguments**:
+**Parameters:**
 
-- `message` _str_ - The input message string containing a potential
-  tool response.
-  
+- **message** (str): The input message string containing a potential tool response.
 
-**Returns**:
+**Returns:**
 
-- `Optional[HermesToolResponse]` - A parsed HermesToolResponse object,
-  or None if no valid response is found.
+  Optional[HermesToolResponse]: A parsed HermesToolResponse object,
+or None if no valid response is found.
 
 <a id="camel.messages.conversion.sharegpt.hermes.hermes_function_formatter.HermesFunctionFormatter.format_tool_call"></a>
 
-#### format\_tool\_call
+### format_tool_call
 
 ```python
-def format_tool_call(content: str, func_name: str, args: Dict[str,
-                                                              Any]) -> str
+def format_tool_call(
+    self,
+    content: str,
+    func_name: str,
+    args: Dict[str, Any]
+):
 ```
 
 Formats a tool call message with the given content, function name,
 and arguments.
 
-**Arguments**:
+**Parameters:**
 
-- `content` _str_ - The content or message to be included in the tool
-  call.
-- `func_name` _str_ - The name of the function being called.
-- `args` _Dict[str, Any]_ - A dictionary of arguments to be passed to
-  the function.
-  
+- **content** (str): The content or message to be included in the tool call.
+- **func_name** (str): The name of the function being called.
+- **args** (Dict[str, Any]): A dictionary of arguments to be passed to the function.
 
-**Returns**:
+**Returns:**
 
-- `str` - A formatted string representing the tool call in Hermes
-  format.
+  str: A formatted string representing the tool call in Hermes
+format.
 
 <a id="camel.messages.conversion.sharegpt.hermes.hermes_function_formatter.HermesFunctionFormatter.format_tool_response"></a>
 
-#### format\_tool\_response
+### format_tool_response
 
 ```python
-def format_tool_response(func_name: str, result: Any) -> str
+def format_tool_response(self, func_name: str, result: Any):
 ```
 
 Formats a tool response message with the given function name and
 result.
 
-**Arguments**:
+**Parameters:**
 
-- `func_name` _str_ - The name of the function whose result is being
-  returned.
-- `result` _Any_ - The result to be included in the tool response.
-  
+- **func_name** (str): The name of the function whose result is being returned.
+- **result** (Any): The result to be included in the tool response.
 
-**Returns**:
+**Returns:**
 
-- `str` - A formatted string representing the tool response in Hermes
-  format.
-
+  str: A formatted string representing the tool response in Hermes
+format.

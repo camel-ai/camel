@@ -2,11 +2,10 @@
 
 <a id="camel.toolkits.excel_toolkit.ExcelToolkit"></a>
 
-## ExcelToolkit Objects
+## ExcelToolkit
 
 ```python
-@MCPServer()
-class ExcelToolkit(BaseToolkit)
+class ExcelToolkit(BaseToolkit):
 ```
 
 A class representing a toolkit for extract detailed cell information
@@ -18,53 +17,64 @@ Markdown formatted table.
 
 <a id="camel.toolkits.excel_toolkit.ExcelToolkit.__init__"></a>
 
-#### \_\_init\_\_
+### __init__
 
 ```python
-def __init__(timeout: Optional[float] = None)
+def __init__(self, timeout: Optional[float] = None):
 ```
 
 Initializes a new instance of the ExcelToolkit class.
 
-**Arguments**:
+**Parameters:**
 
-- `timeout` _Optional[float]_ - The timeout value for API requests
-  in seconds. If None, no timeout is applied.
-- `(default` - :obj:`None`)
+- **timeout** (Optional[float]): The timeout value for API requests in seconds. If None, no timeout is applied. (default: :obj:`None`)
+
+<a id="camel.toolkits.excel_toolkit.ExcelToolkit._convert_to_markdown"></a>
+
+### _convert_to_markdown
+
+```python
+def _convert_to_markdown(self, df: pd.DataFrame):
+```
+
+Convert DataFrame to Markdown format table.
+
+**Parameters:**
+
+- **df** (pd.DataFrame): DataFrame containing the Excel data.
+
+**Returns:**
+
+  str: Markdown formatted table.
 
 <a id="camel.toolkits.excel_toolkit.ExcelToolkit.extract_excel_content"></a>
 
-#### extract\_excel\_content
+### extract_excel_content
 
 ```python
-def extract_excel_content(document_path: str) -> str
+def extract_excel_content(self, document_path: str):
 ```
 
 Extract detailed cell information from an Excel file, including
 multiple sheets.
 
-**Arguments**:
+**Parameters:**
 
-- `document_path` _str_ - The path of the Excel file.
-  
+- **document_path** (str): The path of the Excel file.
 
-**Returns**:
+**Returns:**
 
-- `str` - Extracted excel information, including details of each sheet.
+  str: Extracted excel information, including details of each sheet.
 
 <a id="camel.toolkits.excel_toolkit.ExcelToolkit.get_tools"></a>
 
-#### get\_tools
+### get_tools
 
 ```python
-def get_tools() -> List[FunctionTool]
+def get_tools(self):
 ```
 
-Returns a list of FunctionTool objects representing the functions
-in the toolkit.
+**Returns:**
 
-**Returns**:
-
-- `List[FunctionTool]` - A list of FunctionTool objects representing
-  the functions in the toolkit.
-
+  List[FunctionTool]: A list of FunctionTool objects representing
+the functions in the toolkit.

@@ -251,7 +251,7 @@ for index, messages, scores in results:
 ## 🎯Filtering the Generated Data Using the Reward Model
  Finally, we utilize NVIDIA's Nemotron Reward Model to filter out low-quality instruction-input-response triplets. The model evaluates each response based on defined thresholds for metrics such as helpfulness and correctness.
 
- Let's use thresholds = {"helpfulness": 2.5, "correctness": 2.5} as an example of filter parameters. After filtering, some high-quality triplets are retained.
+ Let's use thresholds = `{"helpfulness": 2.5, "correctness": 2.5}` as an example of filter parameters. After filtering, some high-quality triplets are retained.
 
 
 ```python

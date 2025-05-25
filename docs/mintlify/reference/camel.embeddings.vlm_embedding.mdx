@@ -2,82 +2,63 @@
 
 <a id="camel.embeddings.vlm_embedding.VisionLanguageEmbedding"></a>
 
-## VisionLanguageEmbedding Objects
+## VisionLanguageEmbedding
 
 ```python
-class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]])
+class VisionLanguageEmbedding:
 ```
 
 Provides image embedding functionalities using multimodal model.
 
-**Arguments**:
+**Parameters:**
 
-  model_name : The model type to be used for generating embeddings.
-  And the default value is: obj:`openai/clip-vit-base-patch32`.
-  
-
-**Raises**:
-
-- `RuntimeError` - If an unsupported model type is specified.
+- **model_name**: The model type to be used for generating embeddings. And the default value is: obj:`openai/clip-vit-base-patch32`.
 
 <a id="camel.embeddings.vlm_embedding.VisionLanguageEmbedding.__init__"></a>
 
-#### \_\_init\_\_
+### __init__
 
 ```python
-def __init__(model_name: str = "openai/clip-vit-base-patch32") -> None
+def __init__(self, model_name: str = 'openai/clip-vit-base-patch32'):
 ```
 
 Initializes the: obj: `VisionLanguageEmbedding` class with a
 specified model and return the dimension of embeddings.
 
-**Arguments**:
+**Parameters:**
 
-- `model_name` _str, optional_ - The version name of the model to use.
-- `(default` - :obj:`openai/clip-vit-base-patch32`)
+- **model_name** (str, optional): The version name of the model to use. (default: :obj:`openai/clip-vit-base-patch32`)
 
 <a id="camel.embeddings.vlm_embedding.VisionLanguageEmbedding.embed_list"></a>
 
-#### embed\_list
+### embed_list
 
 ```python
-def embed_list(objs: List[Union[Image.Image, str]],
-               **kwargs: Any) -> List[List[float]]
+def embed_list(self, objs: List[Union[Image.Image, str]], **kwargs: Any):
 ```
 
 Generates embeddings for the given images or texts.
 
-**Arguments**:
+**Parameters:**
 
-- `objs` _List[Image.Image|str]_ - The list of images or texts for
-  which to generate the embeddings.
-- `image_processor_kwargs` - Extra kwargs passed to the image processor.
-- `tokenizer_kwargs` - Extra kwargs passed to the text tokenizer
-  (processor).
-- `model_kwargs` - Extra kwargs passed to the main model.
-  
+- **objs** (List[Image.Image|str]): The list of images or texts for which to generate the embeddings.
+- **image_processor_kwargs**: Extra kwargs passed to the image processor.
+- **tokenizer_kwargs**: Extra kwargs passed to the text tokenizer (processor).
+- **model_kwargs**: Extra kwargs passed to the main model.
 
-**Returns**:
+**Returns:**
 
-- `List[List[float]]` - A list that represents the generated embedding
-  as a list of floating-point numbers.
-  
-
-**Raises**:
-
-- `ValueError` - If the input type is not `Image.Image` or `str`.
+  List[List[float]]: A list that represents the generated embedding
+as a list of floating-point numbers.
 
 <a id="camel.embeddings.vlm_embedding.VisionLanguageEmbedding.get_output_dim"></a>
 
-#### get\_output\_dim
+### get_output_dim
 
 ```python
-def get_output_dim() -> int
+def get_output_dim(self):
 ```
 
-Returns the output dimension of the embeddings.
+**Returns:**
 
-**Returns**:
-
-- `int` - The dimensionality of the embedding for the current model.
-
+  int: The dimensionality of the embedding for the current model.

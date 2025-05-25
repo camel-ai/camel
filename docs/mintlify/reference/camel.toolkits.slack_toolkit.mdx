@@ -2,11 +2,10 @@
 
 <a id="camel.toolkits.slack_toolkit.SlackToolkit"></a>
 
-## SlackToolkit Objects
+## SlackToolkit
 
 ```python
-@MCPServer()
-class SlackToolkit(BaseToolkit)
+class SlackToolkit(BaseToolkit):
 ```
 
 A class representing a toolkit for Slack operations.
@@ -16,216 +15,184 @@ channel, joining an existing channel, leaving a channel.
 
 <a id="camel.toolkits.slack_toolkit.SlackToolkit.__init__"></a>
 
-#### \_\_init\_\_
+### __init__
 
 ```python
-def __init__(timeout: Optional[float] = None)
+def __init__(self, timeout: Optional[float] = None):
 ```
 
 Initializes a new instance of the SlackToolkit class.
 
-**Arguments**:
+**Parameters:**
 
-- `timeout` _Optional[float]_ - The timeout value for API requests
-  in seconds. If None, no timeout is applied.
-- `(default` - :obj:`None`)
+- **timeout** (Optional[float]): The timeout value for API requests in seconds. If None, no timeout is applied. (default: :obj:`None`)
+
+<a id="camel.toolkits.slack_toolkit.SlackToolkit._login_slack"></a>
+
+### _login_slack
+
+```python
+def _login_slack(
+    self,
+    slack_token: Optional[str] = None,
+    ssl: Optional[SSLContext] = None
+):
+```
+
+Authenticate using the Slack API.
+
+**Parameters:**
+
+- **slack_token** (str, optional): The Slack API token. If not provided, it attempts to retrieve the token from the environment variable SLACK_BOT_TOKEN or SLACK_USER_TOKEN.
+- **ssl** (SSLContext, optional): SSL context for secure connections. Defaults to `None`.
+
+**Returns:**
+
+  WebClient: A WebClient object for interacting with Slack API.
 
 <a id="camel.toolkits.slack_toolkit.SlackToolkit.create_slack_channel"></a>
 
-#### create\_slack\_channel
+### create_slack_channel
 
 ```python
-def create_slack_channel(name: str, is_private: Optional[bool] = True) -> str
+def create_slack_channel(self, name: str, is_private: Optional[bool] = True):
 ```
 
 Creates a new slack channel, either public or private.
 
-**Arguments**:
+**Parameters:**
 
-- `name` _str_ - Name of the public or private channel to create.
-- `is_private` _bool, optional_ - Whether to create a private channel
-  instead of a public one. Defaults to `True`.
-  
+- **name** (str): Name of the public or private channel to create.
+- **is_private** (bool, optional): Whether to create a private channel instead of a public one. Defaults to `True`.
 
-**Returns**:
+**Returns:**
 
-- `str` - JSON string containing information about Slack
-  channel created.
-  
-
-**Raises**:
-
-- `SlackApiError` - If there is an error during get slack channel
-  information.
+  str: JSON string containing information about Slack
+channel created.
 
 <a id="camel.toolkits.slack_toolkit.SlackToolkit.join_slack_channel"></a>
 
-#### join\_slack\_channel
+### join_slack_channel
 
 ```python
-def join_slack_channel(channel_id: str) -> str
+def join_slack_channel(self, channel_id: str):
 ```
 
 Joins an existing Slack channel.
 
-**Arguments**:
+**Parameters:**
 
-- `channel_id` _str_ - The ID of the Slack channel to join.
-  
+- **channel_id** (str): The ID of the Slack channel to join.
 
-**Returns**:
+**Returns:**
 
-- `str` - A confirmation message indicating whether join successfully
-  or an error message.
-  
-
-**Raises**:
-
-- `SlackApiError` - If there is an error during get slack channel
-  information.
+  str: A confirmation message indicating whether join successfully
+or an error message.
 
 <a id="camel.toolkits.slack_toolkit.SlackToolkit.leave_slack_channel"></a>
 
-#### leave\_slack\_channel
+### leave_slack_channel
 
 ```python
-def leave_slack_channel(channel_id: str) -> str
+def leave_slack_channel(self, channel_id: str):
 ```
 
 Leaves an existing Slack channel.
 
-**Arguments**:
+**Parameters:**
 
-- `channel_id` _str_ - The ID of the Slack channel to leave.
-  
+- **channel_id** (str): The ID of the Slack channel to leave.
 
-**Returns**:
+**Returns:**
 
-- `str` - A confirmation message indicating whether leave successfully
-  or an error message.
-  
-
-**Raises**:
-
-- `SlackApiError` - If there is an error during get slack channel
-  information.
+  str: A confirmation message indicating whether leave successfully
+or an error message.
 
 <a id="camel.toolkits.slack_toolkit.SlackToolkit.get_slack_channel_information"></a>
 
-#### get\_slack\_channel\_information
+### get_slack_channel_information
 
 ```python
-def get_slack_channel_information() -> str
+def get_slack_channel_information(self):
 ```
 
-Retrieve Slack channels and return relevant information in JSON
-format.
+**Returns:**
 
-**Returns**:
-
-- `str` - JSON string containing information about Slack channels.
-  
-
-**Raises**:
-
-- `SlackApiError` - If there is an error during get slack channel
-  information.
+  str: JSON string containing information about Slack channels.
 
 <a id="camel.toolkits.slack_toolkit.SlackToolkit.get_slack_channel_message"></a>
 
-#### get\_slack\_channel\_message
+### get_slack_channel_message
 
 ```python
-def get_slack_channel_message(channel_id: str) -> str
+def get_slack_channel_message(self, channel_id: str):
 ```
 
 Retrieve messages from a Slack channel.
 
-**Arguments**:
+**Parameters:**
 
-- `channel_id` _str_ - The ID of the Slack channel to retrieve messages
-  from.
-  
+- **channel_id** (str): The ID of the Slack channel to retrieve messages from.
 
-**Returns**:
+**Returns:**
 
-- `str` - JSON string containing filtered message data.
-  
-
-**Raises**:
-
-- `SlackApiError` - If there is an error during get
-  slack channel message.
+  str: JSON string containing filtered message data.
 
 <a id="camel.toolkits.slack_toolkit.SlackToolkit.send_slack_message"></a>
 
-#### send\_slack\_message
+### send_slack_message
 
 ```python
-def send_slack_message(message: str,
-                       channel_id: str,
-                       user: Optional[str] = None) -> str
+def send_slack_message(
+    self,
+    message: str,
+    channel_id: str,
+    user: Optional[str] = None
+):
 ```
 
 Send a message to a Slack channel.
 
-**Arguments**:
+**Parameters:**
 
-- `message` _str_ - The message to send.
-- `channel_id` _str_ - The ID of the Slack channel to send message.
-- `user` _Optional[str]_ - The user ID of the recipient.
-  Defaults to `None`.
-  
+- **message** (str): The message to send.
+- **channel_id** (str): The ID of the Slack channel to send message.
+- **user** (Optional[str]): The user ID of the recipient. Defaults to `None`.
 
-**Returns**:
+**Returns:**
 
-- `str` - A confirmation message indicating whether the message was sent
-  successfully or an error message.
-  
-
-**Raises**:
-
-- `SlackApiError` - If an error occurs while sending the message.
+  str: A confirmation message indicating whether the message was sent
+successfully or an error message.
 
 <a id="camel.toolkits.slack_toolkit.SlackToolkit.delete_slack_message"></a>
 
-#### delete\_slack\_message
+### delete_slack_message
 
 ```python
-def delete_slack_message(time_stamp: str, channel_id: str) -> str
+def delete_slack_message(self, time_stamp: str, channel_id: str):
 ```
 
 Delete a message to a Slack channel.
 
-**Arguments**:
+**Parameters:**
 
-- `time_stamp` _str_ - Timestamp of the message to be deleted.
-- `channel_id` _str_ - The ID of the Slack channel to delete message.
-  
+- **time_stamp** (str): Timestamp of the message to be deleted.
+- **channel_id** (str): The ID of the Slack channel to delete message.
 
-**Returns**:
+**Returns:**
 
-- `str` - A confirmation message indicating whether the message
-  was delete successfully or an error message.
-  
-
-**Raises**:
-
-- `SlackApiError` - If an error occurs while sending the message.
+  str: A confirmation message indicating whether the message
+was delete successfully or an error message.
 
 <a id="camel.toolkits.slack_toolkit.SlackToolkit.get_tools"></a>
 
-#### get\_tools
+### get_tools
 
 ```python
-def get_tools() -> List[FunctionTool]
+def get_tools(self):
 ```
 
-Returns a list of FunctionTool objects representing the
-functions in the toolkit.
+**Returns:**
 
-**Returns**:
-
-- `List[FunctionTool]` - A list of FunctionTool objects
-  representing the functions in the toolkit.
-
+  List[FunctionTool]: A list of FunctionTool objects
+representing the functions in the toolkit.

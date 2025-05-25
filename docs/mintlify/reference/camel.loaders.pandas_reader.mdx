@@ -2,56 +2,55 @@
 
 <a id="camel.loaders.pandas_reader.check_suffix"></a>
 
-#### check\_suffix
+## check_suffix
 
 ```python
-def check_suffix(valid_suffixs: List[str]) -> Callable
+def check_suffix(valid_suffixs: List[str]):
 ```
 
 A decorator to check the file suffix of a given file path.
 
-**Arguments**:
+**Parameters:**
 
-- `valid_suffix` _str_ - The required file suffix.
-  
+- **valid_suffix** (str): The required file suffix.
 
-**Returns**:
+**Returns:**
 
-- `Callable` - The decorator function.
+  Callable: The decorator function.
 
 <a id="camel.loaders.pandas_reader.PandasReader"></a>
 
-## PandasReader Objects
+## PandasReader
 
 ```python
-class PandasReader()
+class PandasReader:
 ```
 
 <a id="camel.loaders.pandas_reader.PandasReader.__init__"></a>
 
-#### \_\_init\_\_
+### __init__
 
 ```python
-def __init__(config: Optional[Dict[str, Any]] = None) -> None
+def __init__(self, config: Optional[Dict[str, Any]] = None):
 ```
 
 Initializes the PandasReader class.
 
-**Arguments**:
+**Parameters:**
 
-- `config` _Optional[Dict[str, Any]], optional_ - The configuration
-  dictionary that can include LLM API settings for LLM-based
-  processing. If not provided, no LLM will be configured by
-  default. You can customize the LLM configuration by providing
-  a 'llm' key in the config dictionary. (default: :obj:`None`)
+- **config** (Optional[Dict[str, Any]], optional): The configuration dictionary that can include LLM API settings for LLM-based processing. If not provided, no LLM will be configured by default. You can customize the LLM configuration by providing a 'llm' key in the config dictionary. (default: :obj:`None`)
 
 <a id="camel.loaders.pandas_reader.PandasReader.load"></a>
 
-#### load
+### load
 
 ```python
-def load(data: Union["DataFrame", str], *args: Any,
-         **kwargs: Dict[str, Any]) -> Union["DataFrame", "SmartDataframe"]
+def load(
+    self,
+    data: Union['DataFrame', str],
+    *args: Any,
+    **kwargs: Dict[str, Any]
+):
 ```
 
 Loads a file or DataFrame and returns a DataFrame or
@@ -61,328 +60,315 @@ If an LLM is configured in the config dictionary, a SmartDataframe
 will be returned, otherwise a regular pandas DataFrame will be
 returned.
 
-args:
-data (Union[DataFrame, str]): The data to load.
-*args (Any): Additional positional arguments.
-**kwargs (Dict[str, Any]): Additional keyword arguments.
+**Parameters:**
 
-**Returns**:
+- **data** (Union[DataFrame, str]): The data to load. *args (Any): Additional positional arguments. **kwargs (Dict[str, Any]): Additional keyword arguments.
+
+**Returns:**
 
   Union[DataFrame, SmartDataframe]: The DataFrame or SmartDataframe
-  object.
+object.
 
 <a id="camel.loaders.pandas_reader.PandasReader.read_csv"></a>
 
-#### read\_csv
+### read_csv
 
 ```python
-@check_suffix([".csv"])
-def read_csv(file_path: str, *args: Any, **kwargs: Dict[str,
-                                                        Any]) -> "DataFrame"
+def read_csv(
+    self,
+    file_path: str,
+    *args: Any,
+    **kwargs: Dict[str, Any]
+):
 ```
 
 Reads a CSV file and returns a DataFrame.
 
-**Arguments**:
+**Parameters:**
 
-- `file_path` _str_ - The path to the CSV file.
-- `*args` _Any_ - Additional positional arguments.
-- `**kwargs` _Dict[str, Any]_ - Additional keyword arguments.
-  
+- **file_path** (str): The path to the CSV file. *args (Any): Additional positional arguments. **kwargs (Dict[str, Any]): Additional keyword arguments.
 
-**Returns**:
+**Returns:**
 
-- `DataFrame` - The DataFrame object.
+  DataFrame: The DataFrame object.
 
 <a id="camel.loaders.pandas_reader.PandasReader.read_excel"></a>
 
-#### read\_excel
+### read_excel
 
 ```python
-@check_suffix([".xlsx", ".xls"])
-def read_excel(file_path: str, *args: Any, **kwargs: Dict[str,
-                                                          Any]) -> "DataFrame"
+def read_excel(
+    self,
+    file_path: str,
+    *args: Any,
+    **kwargs: Dict[str, Any]
+):
 ```
 
 Reads an Excel file and returns a DataFrame.
 
-**Arguments**:
+**Parameters:**
 
-- `file_path` _str_ - The path to the Excel file.
-- `*args` _Any_ - Additional positional arguments.
-- `**kwargs` _Dict[str, Any]_ - Additional keyword arguments.
-  
+- **file_path** (str): The path to the Excel file. *args (Any): Additional positional arguments. **kwargs (Dict[str, Any]): Additional keyword arguments.
 
-**Returns**:
+**Returns:**
 
-- `DataFrame` - The DataFrame object.
+  DataFrame: The DataFrame object.
 
 <a id="camel.loaders.pandas_reader.PandasReader.read_json"></a>
 
-#### read\_json
+### read_json
 
 ```python
-@check_suffix([".json"])
-def read_json(file_path: str, *args: Any, **kwargs: Dict[str,
-                                                         Any]) -> "DataFrame"
+def read_json(
+    self,
+    file_path: str,
+    *args: Any,
+    **kwargs: Dict[str, Any]
+):
 ```
 
 Reads a JSON file and returns a DataFrame.
 
-**Arguments**:
+**Parameters:**
 
-- `file_path` _str_ - The path to the JSON file.
-- `*args` _Any_ - Additional positional arguments.
-- `**kwargs` _Dict[str, Any]_ - Additional keyword arguments.
-  
+- **file_path** (str): The path to the JSON file. *args (Any): Additional positional arguments. **kwargs (Dict[str, Any]): Additional keyword arguments.
 
-**Returns**:
+**Returns:**
 
-- `DataFrame` - The DataFrame object.
+  DataFrame: The DataFrame object.
 
 <a id="camel.loaders.pandas_reader.PandasReader.read_parquet"></a>
 
-#### read\_parquet
+### read_parquet
 
 ```python
-@check_suffix([".parquet"])
-def read_parquet(file_path: str, *args: Any,
-                 **kwargs: Dict[str, Any]) -> "DataFrame"
+def read_parquet(
+    self,
+    file_path: str,
+    *args: Any,
+    **kwargs: Dict[str, Any]
+):
 ```
 
 Reads a Parquet file and returns a DataFrame.
 
-**Arguments**:
+**Parameters:**
 
-- `file_path` _str_ - The path to the Parquet file.
-- `*args` _Any_ - Additional positional arguments.
-- `**kwargs` _Dict[str, Any]_ - Additional keyword arguments.
-  
+- **file_path** (str): The path to the Parquet file. *args (Any): Additional positional arguments. **kwargs (Dict[str, Any]): Additional keyword arguments.
 
-**Returns**:
+**Returns:**
 
-- `DataFrame` - The DataFrame object.
+  DataFrame: The DataFrame object.
 
 <a id="camel.loaders.pandas_reader.PandasReader.read_sql"></a>
 
-#### read\_sql
+### read_sql
 
 ```python
-def read_sql(*args: Any, **kwargs: Dict[str, Any]) -> "DataFrame"
+def read_sql(self, *args: Any, **kwargs: Dict[str, Any]):
 ```
 
 Reads a SQL file and returns a DataFrame.
 
-**Arguments**:
+**Returns:**
 
-- `*args` _Any_ - Additional positional arguments.
-- `**kwargs` _Dict[str, Any]_ - Additional keyword arguments.
-  
-
-**Returns**:
-
-- `DataFrame` - The DataFrame object.
+  DataFrame: The DataFrame object.
 
 <a id="camel.loaders.pandas_reader.PandasReader.read_table"></a>
 
-#### read\_table
+### read_table
 
 ```python
-def read_table(file_path: str, *args: Any, **kwargs: Dict[str,
-                                                          Any]) -> "DataFrame"
+def read_table(
+    self,
+    file_path: str,
+    *args: Any,
+    **kwargs: Dict[str, Any]
+):
 ```
 
 Reads a table and returns a DataFrame.
 
-**Arguments**:
+**Parameters:**
 
-- `file_path` _str_ - The path to the table.
-- `*args` _Any_ - Additional positional arguments.
-- `**kwargs` _Dict[str, Any]_ - Additional keyword arguments.
-  
+- **file_path** (str): The path to the table. *args (Any): Additional positional arguments. **kwargs (Dict[str, Any]): Additional keyword arguments.
 
-**Returns**:
+**Returns:**
 
-- `DataFrame` - The DataFrame object.
+  DataFrame: The DataFrame object.
 
 <a id="camel.loaders.pandas_reader.PandasReader.read_clipboard"></a>
 
-#### read\_clipboard
+### read_clipboard
 
 ```python
-def read_clipboard(*args: Any, **kwargs: Dict[str, Any]) -> "DataFrame"
+def read_clipboard(self, *args: Any, **kwargs: Dict[str, Any]):
 ```
 
 Reads a clipboard and returns a DataFrame.
 
-**Arguments**:
+**Returns:**
 
-- `*args` _Any_ - Additional positional arguments.
-- `**kwargs` _Dict[str, Any]_ - Additional keyword arguments.
-  
-
-**Returns**:
-
-- `DataFrame` - The DataFrame object.
+  DataFrame: The DataFrame object.
 
 <a id="camel.loaders.pandas_reader.PandasReader.read_html"></a>
 
-#### read\_html
+### read_html
 
 ```python
-@check_suffix([".html"])
-def read_html(file_path: str, *args: Any, **kwargs: Dict[str,
-                                                         Any]) -> "DataFrame"
+def read_html(
+    self,
+    file_path: str,
+    *args: Any,
+    **kwargs: Dict[str, Any]
+):
 ```
 
 Reads an HTML file and returns a DataFrame.
 
-**Arguments**:
+**Parameters:**
 
-- `file_path` _str_ - The path to the HTML file.
-- `*args` _Any_ - Additional positional arguments.
-- `**kwargs` _Dict[str, Any]_ - Additional keyword arguments.
-  
+- **file_path** (str): The path to the HTML file. *args (Any): Additional positional arguments. **kwargs (Dict[str, Any]): Additional keyword arguments.
 
-**Returns**:
+**Returns:**
 
-- `DataFrame` - The DataFrame object.
+  DataFrame: The DataFrame object.
 
 <a id="camel.loaders.pandas_reader.PandasReader.read_feather"></a>
 
-#### read\_feather
+### read_feather
 
 ```python
-@check_suffix([".feather"])
-def read_feather(file_path: str, *args: Any,
-                 **kwargs: Dict[str, Any]) -> "DataFrame"
+def read_feather(
+    self,
+    file_path: str,
+    *args: Any,
+    **kwargs: Dict[str, Any]
+):
 ```
 
 Reads a Feather file and returns a DataFrame.
 
-**Arguments**:
+**Parameters:**
 
-- `file_path` _str_ - The path to the Feather file.
-- `*args` _Any_ - Additional positional arguments.
-- `**kwargs` _Dict[str, Any]_ - Additional keyword arguments.
-  
+- **file_path** (str): The path to the Feather file. *args (Any): Additional positional arguments. **kwargs (Dict[str, Any]): Additional keyword arguments.
 
-**Returns**:
+**Returns:**
 
-- `DataFrame` - The DataFrame object.
+  DataFrame: The DataFrame object.
 
 <a id="camel.loaders.pandas_reader.PandasReader.read_stata"></a>
 
-#### read\_stata
+### read_stata
 
 ```python
-@check_suffix([".dta"])
-def read_stata(file_path: str, *args: Any, **kwargs: Dict[str,
-                                                          Any]) -> "DataFrame"
+def read_stata(
+    self,
+    file_path: str,
+    *args: Any,
+    **kwargs: Dict[str, Any]
+):
 ```
 
 Reads a Stata file and returns a DataFrame.
 
-**Arguments**:
+**Parameters:**
 
-- `file_path` _str_ - The path to the Stata file.
-- `*args` _Any_ - Additional positional arguments.
-- `**kwargs` _Dict[str, Any]_ - Additional keyword arguments.
-  
+- **file_path** (str): The path to the Stata file. *args (Any): Additional positional arguments. **kwargs (Dict[str, Any]): Additional keyword arguments.
 
-**Returns**:
+**Returns:**
 
-- `DataFrame` - The DataFrame object.
+  DataFrame: The DataFrame object.
 
 <a id="camel.loaders.pandas_reader.PandasReader.read_sas"></a>
 
-#### read\_sas
+### read_sas
 
 ```python
-@check_suffix([".sas"])
-def read_sas(file_path: str, *args: Any, **kwargs: Dict[str,
-                                                        Any]) -> "DataFrame"
+def read_sas(
+    self,
+    file_path: str,
+    *args: Any,
+    **kwargs: Dict[str, Any]
+):
 ```
 
 Reads a SAS file and returns a DataFrame.
 
-**Arguments**:
+**Parameters:**
 
-- `file_path` _str_ - The path to the SAS file.
-- `*args` _Any_ - Additional positional arguments.
-- `**kwargs` _Dict[str, Any]_ - Additional keyword arguments.
-  
+- **file_path** (str): The path to the SAS file. *args (Any): Additional positional arguments. **kwargs (Dict[str, Any]): Additional keyword arguments.
 
-**Returns**:
+**Returns:**
 
-- `DataFrame` - The DataFrame object.
+  DataFrame: The DataFrame object.
 
 <a id="camel.loaders.pandas_reader.PandasReader.read_pickle"></a>
 
-#### read\_pickle
+### read_pickle
 
 ```python
-@check_suffix([".pkl"])
-def read_pickle(file_path: str, *args: Any,
-                **kwargs: Dict[str, Any]) -> "DataFrame"
+def read_pickle(
+    self,
+    file_path: str,
+    *args: Any,
+    **kwargs: Dict[str, Any]
+):
 ```
 
 Reads a Pickle file and returns a DataFrame.
 
-**Arguments**:
+**Parameters:**
 
-- `file_path` _str_ - The path to the Pickle file.
-- `*args` _Any_ - Additional positional arguments.
-- `**kwargs` _Dict[str, Any]_ - Additional keyword arguments.
-  
+- **file_path** (str): The path to the Pickle file. *args (Any): Additional positional arguments. **kwargs (Dict[str, Any]): Additional keyword arguments.
 
-**Returns**:
+**Returns:**
 
-- `DataFrame` - The DataFrame object.
+  DataFrame: The DataFrame object.
 
 <a id="camel.loaders.pandas_reader.PandasReader.read_hdf"></a>
 
-#### read\_hdf
+### read_hdf
 
 ```python
-@check_suffix([".h5"])
-def read_hdf(file_path: str, *args: Any, **kwargs: Dict[str,
-                                                        Any]) -> "DataFrame"
+def read_hdf(
+    self,
+    file_path: str,
+    *args: Any,
+    **kwargs: Dict[str, Any]
+):
 ```
 
 Reads an HDF file and returns a DataFrame.
 
-**Arguments**:
+**Parameters:**
 
-- `file_path` _str_ - The path to the HDF file.
-- `*args` _Any_ - Additional positional arguments.
-- `**kwargs` _Dict[str, Any]_ - Additional keyword arguments.
-  
+- **file_path** (str): The path to the HDF file. *args (Any): Additional positional arguments. **kwargs (Dict[str, Any]): Additional keyword arguments.
 
-**Returns**:
+**Returns:**
 
-- `DataFrame` - The DataFrame object.
+  DataFrame: The DataFrame object.
 
 <a id="camel.loaders.pandas_reader.PandasReader.read_orc"></a>
 
-#### read\_orc
+### read_orc
 
 ```python
-@check_suffix([".orc"])
-def read_orc(file_path: str, *args: Any, **kwargs: Dict[str,
-                                                        Any]) -> "DataFrame"
+def read_orc(
+    self,
+    file_path: str,
+    *args: Any,
+    **kwargs: Dict[str, Any]
+):
 ```
 
 Reads an ORC file and returns a DataFrame.
 
-**Arguments**:
+**Parameters:**
 
-- `file_path` _str_ - The path to the ORC file.
-- `*args` _Any_ - Additional positional arguments.
-- `**kwargs` _Dict[str, Any]_ - Additional keyword arguments.
-  
+- **file_path** (str): The path to the ORC file. *args (Any): Additional positional arguments. **kwargs (Dict[str, Any]): Additional keyword arguments.
 
-**Returns**:
+**Returns:**
 
-- `DataFrame` - The DataFrame object.
-
+  DataFrame: The DataFrame object.

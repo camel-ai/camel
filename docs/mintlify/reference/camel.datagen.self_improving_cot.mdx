@@ -2,10 +2,10 @@
 
 <a id="camel.datagen.self_improving_cot.SelfImprovingCoTPipeline"></a>
 
-## SelfImprovingCoTPipeline Objects
+## SelfImprovingCoTPipeline
 
 ```python
-class SelfImprovingCoTPipeline()
+class SelfImprovingCoTPipeline:
 ```
 
 Pipeline for generating self-taught reasoning traces
@@ -19,225 +19,256 @@ This implements the STaR paper's approach of:
 
 <a id="camel.datagen.self_improving_cot.SelfImprovingCoTPipeline.__init__"></a>
 
-#### \_\_init\_\_
+### __init__
 
 ```python
-def __init__(reason_agent: ChatAgent,
-             problems: List[Dict],
-             max_iterations: int = 3,
-             score_threshold: Union[float, Dict[str, float]] = 0.7,
-             rejection_sampling_n: Optional[int] = None,
-             evaluate_agent: Optional[ChatAgent] = None,
-             reward_model: Optional[BaseRewardModel] = None,
-             output_path: Optional[str] = None,
-             few_shot_examples: Optional[str] = None,
-             batch_size: Optional[int] = None,
-             max_workers: Optional[int] = None,
-             solution_pattern: str = r'\\boxed{(.*?)}',
-             trace_pattern: Optional[str] = None)
+def __init__(
+    self,
+    reason_agent: ChatAgent,
+    problems: List[Dict],
+    max_iterations: int = 3,
+    score_threshold: Union[float, Dict[str, float]] = 0.7,
+    rejection_sampling_n: Optional[int] = None,
+    evaluate_agent: Optional[ChatAgent] = None,
+    reward_model: Optional[BaseRewardModel] = None,
+    output_path: Optional[str] = None,
+    few_shot_examples: Optional[str] = None,
+    batch_size: Optional[int] = None,
+    max_workers: Optional[int] = None,
+    solution_pattern: str = '\\\\boxed{(.*?)}',
+    trace_pattern: Optional[str] = None
+):
 ```
 
 Initialize the self-improving cot pipeline.
 
-**Arguments**:
+**Parameters:**
 
-- `reason_agent` _ChatAgent_ - The chat agent used for generating and
-  improving reasoning traces.
-- `problems` _List[Dict]_ - List of problem dictionaries to process.
-- `max_iterations` _int, optional_ - Maximum number of improvement
-  iterations. If set to `0`, the pipeline will generate an
-  initial trace without any improvement iterations.
-- `(default` - :obj:`3`)
-  score_threshold (Union[float, Dict[str, float]], optional):
-  Quality threshold. Can be either a single float value applied
-  to average score, or a dictionary mapping score dimensions to
-  their thresholds. For example: {"correctness": 0.8,
-- `"coherence"` - 0.7}. If using reward model and threshold for a
-  dimension is not specified, will use the default value 0.7.
-- `(default` - :obj:`0.7`)
-- `rejection_sampling_n` _int, optional_ - Specifies the number of
-  samples to be drawn using the rejection sampling
-  method, where samples are accepted or rejected based on
-  a predefined condition to achieve a desired distribution.
-- `(default` - :obj: `None`)
-- `evaluate_agent` _Optional[ChatAgent]_ - The chat agent used for
-  evaluating reasoning traces. (default: :obj:`None`)
-- `reward_model` _BaseRewardModel, optional_ - Model used to evaluate
-  reasoning traces. If `None`, uses Agent self-evaluation.
-- `(default` - :obj:`None`)
-- `output_path` _str, optional_ - Output path for saving traces. If
-  `None`, results will only be returned without saving to file.
-- `(default` - :obj:`None`)
-- `few_shot_examples` _str, optional_ - Examples to use for few-shot
-  generation. (default: :obj:`None`)
-- `batch_size` _int, optional_ - Batch size for parallel processing.
-- `(default` - :obj:`None`)
-- `max_workers` _int, optional_ - Maximum number of worker threads.
-- `(default` - :obj:`None`)
-- `solution_pattern` _str, optional_ - Regular expression pattern with
-  one capture group to extract answers from solution text.
-- `(default` - :obj:`r'\\boxed{(.*?)}'`)
-- `trace_pattern` _str, optional_ - Regular expression pattern with one
-  capture group to extract answers from trace text. If `None`,
-  uses the same pattern as solution_pattern.
-- `(default` - :obj:`None`)
+- **reason_agent** (ChatAgent): The chat agent used for generating and improving reasoning traces.
+- **problems** (List[Dict]): List of problem dictionaries to process.
+- **max_iterations** (int, optional): Maximum number of improvement iterations. If set to `0`, the pipeline will generate an initial trace without any improvement iterations. (default: :obj:`3`)
+- **score_threshold** (Union[float, Dict[str, float]], optional): Quality threshold. Can be either a single float value applied to average score, or a dictionary mapping score dimensions to their thresholds. For example: `{"correctness": 0.8, "coherence": 0.7}`. If using reward model and threshold for a dimension is not specified, will use the default value 0.7. (default: :obj:`0.7`)
+- **rejection_sampling_n** (int, optional): Specifies the number of samples to be drawn using the rejection sampling method, where samples are accepted or rejected based on a predefined condition to achieve a desired distribution. (default: :obj: `None`)
+- **evaluate_agent** (Optional[ChatAgent]): The chat agent used for evaluating reasoning traces. (default: :obj:`None`)
+- **reward_model** (BaseRewardModel, optional): Model used to evaluate reasoning traces. If `None`, uses Agent self-evaluation. (default: :obj:`None`)
+- **output_path** (str, optional): Output path for saving traces. If `None`, results will only be returned without saving to file. (default: :obj:`None`)
+- **few_shot_examples** (str, optional): Examples to use for few-shot generation. (default: :obj:`None`)
+- **batch_size** (int, optional): Batch size for parallel processing. (default: :obj:`None`)
+- **max_workers** (int, optional): Maximum number of worker threads. (default: :obj:`None`)
+- **solution_pattern** (str, optional): Regular expression pattern with one capture group to extract answers from solution text. (default: :obj:`r'\\boxed{(.*?)}'`)
+- **trace_pattern** (str, optional): Regular expression pattern with one capture group to extract answers from trace text. If `None`, uses the same pattern as solution_pattern. (default: :obj:`None`)
+
+<a id="camel.datagen.self_improving_cot.SelfImprovingCoTPipeline.safe_write_json"></a>
+
+### safe_write_json
+
+```python
+def safe_write_json(self, file_path, data):
+```
+
+<a id="camel.datagen.self_improving_cot.SelfImprovingCoTPipeline.clean_json"></a>
+
+### clean_json
+
+```python
+def clean_json(self, data):
+```
+
+<a id="camel.datagen.self_improving_cot.SelfImprovingCoTPipeline._check_score_threshold"></a>
+
+### _check_score_threshold
+
+```python
+def _check_score_threshold(self, scores: Dict[str, float]):
+```
+
+Check if scores meet the threshold requirements.
+
+**Parameters:**
+
+- **scores** (Dict[str, float]): Dictionary of scores for different dimensions.
+
+**Returns:**
+
+  bool: True if scores meet threshold requirements, False otherwise.
+
+<a id="camel.datagen.self_improving_cot.SelfImprovingCoTPipeline._generate_feedback"></a>
+
+### _generate_feedback
+
+```python
+def _generate_feedback(self, scores: Dict[str, float]):
+```
+
+Generate feedback based on which dimensions need improvement.
+
+**Parameters:**
+
+- **scores** (Dict[str, float]): Dictionary of scores for different dimensions.
+
+**Returns:**
+
+  str: Feedback message indicating which dimensions need improvement.
 
 <a id="camel.datagen.self_improving_cot.SelfImprovingCoTPipeline.generate_reasoning_trace"></a>
 
-#### generate\_reasoning\_trace
+### generate_reasoning_trace
 
 ```python
-@retry_on_error()
-def generate_reasoning_trace(problem: str) -> str
+def generate_reasoning_trace(self, problem: str):
 ```
 
 Generate initial reasoning trace for a given problem.
 
-**Arguments**:
+**Parameters:**
 
-- `problem` _str_ - The problem text to generate reasoning for.
-  
+- **problem** (str): The problem text to generate reasoning for.
 
-**Returns**:
+**Returns:**
 
-- `str` - Generated reasoning trace.
+  str: Generated reasoning trace.
 
 <a id="camel.datagen.self_improving_cot.SelfImprovingCoTPipeline.evaluate_trace"></a>
 
-#### evaluate\_trace
+### evaluate_trace
 
 ```python
-@retry_on_error()
-def evaluate_trace(problem: str,
-                   trace: str,
-                   solution: Optional[str] = None) -> Dict[str, Any]
+def evaluate_trace(
+    self,
+    problem: str,
+    trace: str,
+    solution: Optional[str] = None
+):
 ```
 
 Evaluate the quality of a reasoning trace.
 
-**Arguments**:
+**Parameters:**
 
-- `problem` _str_ - The original problem text to evaluate against.
-- `trace` _str_ - The reasoning trace to evaluate.
-- `solution` _Optional[str]_ - The solution to the problem, if provided.
-- `(default` - :obj:`None`)
-  
+- **problem** (str): The original problem text to evaluate against.
+- **trace** (str): The reasoning trace to evaluate.
+- **solution** (Optional[str]): The solution to the problem, if provided. (default: :obj:`None`)
 
-**Returns**:
+**Returns:**
 
   Dict[str, Any]: Evaluation results containing:
-  - scores: Dict of evaluation dimensions and their scores
-  - feedback: Detailed feedback for improvement
-  
-  For Agent self-evaluation, the scores will include:
-  - correctness: Score for logical correctness
-  - clarity: Score for clarity of explanation
-  - completeness: Score for completeness of reasoning
-  
-  For reward model evaluation, the scores will depend on
-  the model's evaluation dimensions.
+- scores: Dict of evaluation dimensions and their scores
+- feedback: Detailed feedback for improvement
+
+For Agent self-evaluation, the scores will include:
+- correctness: Score for logical correctness
+- clarity: Score for clarity of explanation
+- completeness: Score for completeness of reasoning
+
+For reward model evaluation, the scores will depend on
+the model's evaluation dimensions.
 
 <a id="camel.datagen.self_improving_cot.SelfImprovingCoTPipeline.generate_reasoning_trace_rejection"></a>
 
-#### generate\_reasoning\_trace\_rejection
+### generate_reasoning_trace_rejection
 
 ```python
-@retry_on_error()
-def generate_reasoning_trace_rejection(problem: str) -> str
+def generate_reasoning_trace_rejection(self, problem: str):
 ```
 
 Generate multiple candidate reasoning traces for a problem and
 select the best one based on evaluation.
 
-**Arguments**:
+**Parameters:**
 
-- `problem` _str_ - The problem text for generating a reasoning trace.
-  
+- **problem** (str): The problem text for generating a reasoning trace.
 
-**Returns**:
+**Returns:**
 
-- `str` - The best candidate trace that meets quality criteria, or the
-  first candidate if none qualify.
+  str: The best candidate trace that meets quality criteria, or the
+first candidate if none qualify.
 
 <a id="camel.datagen.self_improving_cot.SelfImprovingCoTPipeline.improve_trace"></a>
 
-#### improve\_trace
+### improve_trace
 
 ```python
-@retry_on_error()
-def improve_trace(problem: str,
-                  trace: str,
-                  feedback: str,
-                  solution: Optional[str] = None) -> str
+def improve_trace(
+    self,
+    problem: str,
+    trace: str,
+    feedback: str,
+    solution: Optional[str] = None
+):
 ```
 
 Generate improved reasoning trace based on feedback.
 
-**Arguments**:
+**Parameters:**
 
-- `problem` _str_ - The original problem text.
-- `trace` _str_ - The current reasoning trace.
-- `feedback` _str_ - Feedback for improving the trace.
-- `solution` _Optional[str]_ - The solution to the problem, if provided.
-- `(default` - :obj:`None`)
-  
+- **problem** (str): The original problem text.
+- **trace** (str): The current reasoning trace.
+- **feedback** (str): Feedback for improving the trace.
+- **solution** (Optional[str]): The solution to the problem, if provided. (default: :obj:`None`)
 
-**Returns**:
+**Returns:**
 
-- `str` - Improved reasoning trace.
+  str: Improved reasoning trace.
 
 <a id="camel.datagen.self_improving_cot.SelfImprovingCoTPipeline.validate_problem_format"></a>
 
-#### validate\_problem\_format
+### validate_problem_format
 
 ```python
-def validate_problem_format(problem: Dict) -> None
+def validate_problem_format(self, problem: Dict):
 ```
 
 Validate that a problem dictionary has the required format.
 
-**Arguments**:
+**Parameters:**
 
-- `problem` _Dict_ - Problem dictionary to validate.
-  
+- **problem** (Dict): Problem dictionary to validate.
 
-**Raises**:
+<a id="camel.datagen.self_improving_cot.SelfImprovingCoTPipeline._check_boxed_answers"></a>
 
-- `ValueError` - If the problem format is invalid.
+### _check_boxed_answers
+
+```python
+def _check_boxed_answers(self, solution: str, trace: str):
+```
+
+Check if the answer in the trace matches the solution using the
+configured patterns.
+
+**Parameters:**
+
+- **solution** (str): The problem solution string.
+- **trace** (str): The reasoning trace string.
+
+**Returns:**
+
+  bool: True if answers match, False otherwise
 
 <a id="camel.datagen.self_improving_cot.SelfImprovingCoTPipeline.process_problem"></a>
 
-#### process\_problem
+### process_problem
 
 ```python
-def process_problem(problem: Dict,
-                    rationalization: bool = False) -> ProblemResult
+def process_problem(self, problem: Dict, rationalization: bool = False):
 ```
 
 Process a single problem through the self-improving cot pipeline.
 
-**Arguments**:
+**Parameters:**
 
-- `problem` _Dict_ - Problem dictionary containing the problem text.
-- `rationalization` _bool, optional_ - Whether to use rationalization.
-- `(default` - :obj:`False`)
-  
+- **problem** (Dict): Problem dictionary containing the problem text.
+- **rationalization** (bool, optional): Whether to use rationalization. (default: :obj:`False`)
 
-**Returns**:
+**Returns:**
 
-- `ProblemResult` - Results with final trace and history.
-  
-
-**Raises**:
-
-- `ValueError` - If the problem format is invalid.
+  ProblemResult: Results with final trace and history.
 
 <a id="camel.datagen.self_improving_cot.SelfImprovingCoTPipeline.generate"></a>
 
-#### generate
+### generate
 
 ```python
-def generate(rationalization: bool = False) -> List[Dict[str, Any]]
+def generate(self, rationalization: bool = False):
 ```
 
 Execute the self-improving cot pipeline on all problems.
@@ -245,13 +276,10 @@ Execute the self-improving cot pipeline on all problems.
 Process problems and return results. If output_path is specified,
 also save results to file.
 
-**Arguments**:
+**Parameters:**
 
-- `rationalization` _bool, optional_ - Whether to use rationalization.
-- `(default` - :obj:`False`)
-  
+- **rationalization** (bool, optional): Whether to use rationalization. (default: :obj:`False`)
 
-**Returns**:
+**Returns:**
 
   List[Dict[str, Any]]: List of processed results
-

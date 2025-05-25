@@ -2,62 +2,79 @@
 
 <a id="camel.models.reward.nemotron_model.NemotronRewardModel"></a>
 
-## NemotronRewardModel Objects
+## NemotronRewardModel
 
 ```python
-class NemotronRewardModel(BaseRewardModel)
+class NemotronRewardModel(BaseRewardModel):
 ```
 
 Reward model based on the Nemotron model with OpenAI compatibility.
 
-**Arguments**:
+**Parameters:**
 
-- `model_type` _Union[ModelType, str]_ - Model for which a backend is
-  created.
-- `api_key` _Optional[str], optional_ - The API key for authenticating
-  with the model service. (default: :obj:`None`)
-- `url` _Optional[str], optional_ - The url to the model service.
-  
+- **model_type** (Union[ModelType, str]): Model for which a backend is created.
+- **api_key** (Optional[str], optional): The API key for authenticating with the model service. (default: :obj:`None`)
+- **url** (Optional[str], optional): The url to the model service.
+- **Note**: The Nemotron model does not support model config.
 
-**Notes**:
+<a id="camel.models.reward.nemotron_model.NemotronRewardModel.__init__"></a>
 
-  The Nemotron model does not support model config.
+### __init__
+
+```python
+def __init__(
+    self,
+    model_type: Union[ModelType, str],
+    api_key: Optional[str] = None,
+    url: Optional[str] = None
+):
+```
 
 <a id="camel.models.reward.nemotron_model.NemotronRewardModel.evaluate"></a>
 
-#### evaluate
+### evaluate
 
 ```python
-@api_keys_required([
-    (None, "NVIDIA_API_KEY"),
-])
-def evaluate(messages: List[Dict[str, str]]) -> Dict[str, float]
+def evaluate(self, messages: List[Dict[str, str]]):
 ```
 
 Evaluate the messages using the Nemotron model.
 
-**Arguments**:
+**Parameters:**
 
-- `messages` _List[Dict[str, str]]_ - A list of messages where each
-  message is a dictionary format.
-  
+- **messages** (List[Dict[str, str]]): A list of messages where each message is a dictionary format.
 
-**Returns**:
+**Returns:**
 
   Dict[str, float]:  A dictionary mapping score types to their
-  values.
+values.
 
 <a id="camel.models.reward.nemotron_model.NemotronRewardModel.get_scores_types"></a>
 
-#### get\_scores\_types
+### get_scores_types
 
 ```python
-def get_scores_types() -> List[str]
+def get_scores_types(self):
 ```
 
-Get the list of score types that the reward model can return.
+**Returns:**
 
-**Returns**:
+  List[str]: A list of score types that the reward model can return.
 
-- `List[str]` - A list of score types that the reward model can return.
+<a id="camel.models.reward.nemotron_model.NemotronRewardModel._parse_scores"></a>
 
+### _parse_scores
+
+```python
+def _parse_scores(self, response: ChatCompletion):
+```
+
+Parse the scores from the response.
+
+**Parameters:**
+
+- **response** (ChatCompletion): A ChatCompletion object with the scores.
+
+**Returns:**
+
+  Dict[str, float]: A dictionary mapping score types to their values.

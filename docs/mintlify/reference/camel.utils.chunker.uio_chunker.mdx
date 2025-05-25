@@ -2,10 +2,10 @@
 
 <a id="camel.utils.chunker.uio_chunker.UnstructuredIOChunker"></a>
 
-## UnstructuredIOChunker Objects
+## UnstructuredIOChunker
 
 ```python
-class UnstructuredIOChunker(BaseChunker)
+class UnstructuredIOChunker(BaseChunker):
 ```
 
 A class for chunking text while respecting structure and
@@ -17,32 +17,40 @@ and titles, are not arbitrarily split across chunks. It utilizes the
 readability and coherence. The chunking method can be adjusted based on
 the provided `chunk_type` parameter.
 
-**Arguments**:
+**Parameters:**
 
-- `chunk_type` _str, optional_ - The method used for chunking text.
-- `(default` - :obj:`"chunk_by_title"`)
-- `max_characters` _int, optional_ - The maximum number of characters
-  allowed per chunk. (default: :obj:`500`)
-- `metadata_filename` _Optional[str], optional_ - An optional filename
-  for storing metadata related to chunking. (default: :obj:`None`)
+- **chunk_type** (str, optional): The method used for chunking text. (default: :obj:`"chunk_by_title"`)
+- **max_characters** (int, optional): The maximum number of characters allowed per chunk. (default: :obj:`500`)
+- **metadata_filename** (Optional[str], optional): An optional filename for storing metadata related to chunking. (default: :obj:`None`)
+
+<a id="camel.utils.chunker.uio_chunker.UnstructuredIOChunker.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    chunk_type: str = 'chunk_by_title',
+    max_characters: int = 500,
+    metadata_filename: Optional[str] = None
+):
+```
 
 <a id="camel.utils.chunker.uio_chunker.UnstructuredIOChunker.chunk"></a>
 
-#### chunk
+### chunk
 
 ```python
-def chunk(content: List["Element"]) -> List["Element"]
+def chunk(self, content: List['Element']):
 ```
 
 Splits the content into smaller chunks while preserving
 structure and adhering to token constraints.
 
-**Arguments**:
+**Parameters:**
 
-- `content` _List[Element]_ - The content to be chunked.
-  
+- **content** (List[Element]): The content to be chunked.
 
-**Returns**:
+**Returns:**
 
-- `List[Element]` - A list of chunked text segments.
-
+  List[Element]: A list of chunked text segments.

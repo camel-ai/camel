@@ -2,249 +2,210 @@
 
 <a id="camel.storages.vectordb_storages.base.VectorRecord"></a>
 
-## VectorRecord Objects
+## VectorRecord
 
 ```python
-class VectorRecord(BaseModel)
+class VectorRecord(BaseModel):
 ```
 
 Encapsulates information about a vector's unique identifier and its
 payload, which is primarily used as a data transfer object when saving
 to vector storage.
 
-**Attributes**:
-
-- `vector` _List[float]_ - The numerical representation of the vector.
-- `id` _str, optional_ - A unique identifier for the vector. If not
-  provided, an random uuid will be assigned.
-- `payload` _Optional[Dict[str, Any]], optional_ - Any additional metadata
-  or information related to the vector. (default: :obj:`None`)
+Attributes:
+vector (List[float]): The numerical representation of the vector.
+id (str, optional): A unique identifier for the vector. If not
+provided, an random uuid will be assigned.
+payload (Optional[Dict[str, Any]], optional): Any additional metadata
+or information related to the vector. (default: :obj:`None`)
 
 <a id="camel.storages.vectordb_storages.base.VectorDBQuery"></a>
 
-## VectorDBQuery Objects
+## VectorDBQuery
 
 ```python
-class VectorDBQuery(BaseModel)
+class VectorDBQuery(BaseModel):
 ```
 
 Represents a query to a vector database.
 
-**Attributes**:
-
-- `query_vector` _List[float]_ - The numerical representation of the query
-  vector.
-- `top_k` _int, optional_ - The number of top similar vectors to retrieve
-  from the database. (default: :obj:`1`)
-
-<a id="camel.storages.vectordb_storages.base.VectorDBQuery.query_vector"></a>
-
-#### query\_vector
-
-The numerical representation of the query vector.
-
-<a id="camel.storages.vectordb_storages.base.VectorDBQuery.top_k"></a>
-
-#### top\_k
-
-The number of top similar vectors to retrieve from the database.
+Attributes:
+query_vector (List[float]): The numerical representation of the query
+vector.
+top_k (int, optional): The number of top similar vectors to retrieve
+from the database. (default: :obj:`1`)
 
 <a id="camel.storages.vectordb_storages.base.VectorDBQuery.__init__"></a>
 
-#### \_\_init\_\_
+### __init__
 
 ```python
-def __init__(query_vector: List[float], top_k: int, **kwargs: Any) -> None
+def __init__(
+    self,
+    query_vector: List[float],
+    top_k: int,
+    **kwargs: Any
+):
 ```
 
 Pass in query_vector and tok_k as positional arg.
 
-**Arguments**:
+**Parameters:**
 
-- `query_vector` _List[float]_ - The numerical representation of the
-  query vector.
-- `top_k` _int, optional_ - The number of top similar vectors to
-  retrieve from the database. (default: :obj:`1`)
+- **query_vector** (List[float]): The numerical representation of the query vector.
+- **top_k** (int, optional): The number of top similar vectors to retrieve from the database. (default: :obj:`1`)
 
 <a id="camel.storages.vectordb_storages.base.VectorDBQueryResult"></a>
 
-## VectorDBQueryResult Objects
+## VectorDBQueryResult
 
 ```python
-class VectorDBQueryResult(BaseModel)
+class VectorDBQueryResult(BaseModel):
 ```
 
 Encapsulates the result of a query against a vector database.
 
-**Attributes**:
-
-- `record` _VectorRecord_ - The target vector record.
-- `similarity` _float_ - The similarity score between the query vector and
-  the record.
+Attributes:
+record (VectorRecord): The target vector record.
+similarity (float): The similarity score between the query vector and
+the record.
 
 <a id="camel.storages.vectordb_storages.base.VectorDBQueryResult.create"></a>
 
-#### create
+### create
 
 ```python
-@classmethod
-def create(cls,
-           similarity: float,
-           vector: List[float],
-           id: str,
-           payload: Optional[Dict[str, Any]] = None) -> "VectorDBQueryResult"
+def create(
+    cls,
+    similarity: float,
+    vector: List[float],
+    id: str,
+    payload: Optional[Dict[str, Any]] = None
+):
 ```
 
 A class method to construct a `VectorDBQueryResult` instance.
 
 <a id="camel.storages.vectordb_storages.base.VectorDBStatus"></a>
 
-## VectorDBStatus Objects
+## VectorDBStatus
 
 ```python
-class VectorDBStatus(BaseModel)
+class VectorDBStatus(BaseModel):
 ```
 
 Vector database status.
 
-**Attributes**:
-
-- `vector_dim` _int_ - The dimension of stored vectors.
-- `vector_count` _int_ - The number of stored vectors.
+Attributes:
+vector_dim (int): The dimension of stored vectors.
+vector_count (int): The number of stored vectors.
 
 <a id="camel.storages.vectordb_storages.base.BaseVectorStorage"></a>
 
-## BaseVectorStorage Objects
+## BaseVectorStorage
 
 ```python
-class BaseVectorStorage(ABC)
+class BaseVectorStorage(ABC):
 ```
 
 An abstract base class for vector storage systems.
 
 <a id="camel.storages.vectordb_storages.base.BaseVectorStorage.add"></a>
 
-#### add
+### add
 
 ```python
-@abstractmethod
-def add(records: List[VectorRecord], **kwargs: Any) -> None
+def add(self, records: List[VectorRecord], **kwargs: Any):
 ```
 
 Saves a list of vector records to the storage.
 
-**Arguments**:
+**Parameters:**
 
-- `records` _List[VectorRecord]_ - List of vector records to be saved.
-- `**kwargs` _Any_ - Additional keyword arguments.
-  
-
-**Raises**:
-
-- `RuntimeError` - If there is an error during the saving process.
+- **records** (List[VectorRecord]): List of vector records to be saved. **kwargs (Any): Additional keyword arguments.
 
 <a id="camel.storages.vectordb_storages.base.BaseVectorStorage.delete"></a>
 
-#### delete
+### delete
 
 ```python
-@abstractmethod
-def delete(ids: List[str], **kwargs: Any) -> None
+def delete(self, ids: List[str], **kwargs: Any):
 ```
 
 Deletes a list of vectors identified by their IDs from the storage.
 
-**Arguments**:
+**Parameters:**
 
-- `ids` _List[str]_ - List of unique identifiers for the vectors to be
-  deleted.
-- `**kwargs` _Any_ - Additional keyword arguments.
-  
-
-**Raises**:
-
-- `RuntimeError` - If there is an error during the deletion process.
+- **ids** (List[str]): List of unique identifiers for the vectors to be deleted. **kwargs (Any): Additional keyword arguments.
 
 <a id="camel.storages.vectordb_storages.base.BaseVectorStorage.status"></a>
 
-#### status
+### status
 
 ```python
-@abstractmethod
-def status() -> VectorDBStatus
+def status(self):
 ```
 
-Returns status of the vector database.
+**Returns:**
 
-**Returns**:
-
-- `VectorDBStatus` - The vector database status.
+  VectorDBStatus: The vector database status.
 
 <a id="camel.storages.vectordb_storages.base.BaseVectorStorage.query"></a>
 
-#### query
+### query
 
 ```python
-@abstractmethod
-def query(query: VectorDBQuery, **kwargs: Any) -> List[VectorDBQueryResult]
+def query(self, query: VectorDBQuery, **kwargs: Any):
 ```
 
 Searches for similar vectors in the storage based on the provided
 query.
 
-**Arguments**:
+**Parameters:**
 
-- `query` _VectorDBQuery_ - The query object containing the search
-  vector and the number of top similar vectors to retrieve.
-- `**kwargs` _Any_ - Additional keyword arguments.
-  
+- **query** (VectorDBQuery): The query object containing the search vector and the number of top similar vectors to retrieve. **kwargs (Any): Additional keyword arguments.
 
-**Returns**:
+**Returns:**
 
-- `List[VectorDBQueryResult]` - A list of vectors retrieved from the
-  storage based on similarity to the query vector.
+  List[VectorDBQueryResult]: A list of vectors retrieved from the
+storage based on similarity to the query vector.
 
 <a id="camel.storages.vectordb_storages.base.BaseVectorStorage.clear"></a>
 
-#### clear
+### clear
 
 ```python
-@abstractmethod
-def clear() -> None
+def clear(self):
 ```
 
 Remove all vectors from the storage.
 
 <a id="camel.storages.vectordb_storages.base.BaseVectorStorage.load"></a>
 
-#### load
+### load
 
 ```python
-@abstractmethod
-def load() -> None
+def load(self):
 ```
 
 Load the collection hosted on cloud service.
 
 <a id="camel.storages.vectordb_storages.base.BaseVectorStorage.client"></a>
 
-#### client
+### client
 
 ```python
-@property
-@abstractmethod
-def client() -> Any
+def client(self):
 ```
 
 Provides access to the underlying vector database client.
 
 <a id="camel.storages.vectordb_storages.base.BaseVectorStorage.get_payloads_by_vector"></a>
 
-#### get\_payloads\_by\_vector
+### get_payloads_by_vector
 
 ```python
-def get_payloads_by_vector(vector: List[float],
-                           top_k: int) -> List[Dict[str, Any]]
+def get_payloads_by_vector(self, vector: List[float], top_k: int):
 ```
 
 Returns payloads of top k vector records that closest to the given
@@ -252,14 +213,12 @@ vector.
 
 This function is a wrapper of `BaseVectorStorage.query`.
 
-**Arguments**:
+**Parameters:**
 
-- `vector` _List[float]_ - The search vector.
-- `top_k` _int_ - The number of top similar vectors.
-  
+- **vector** (List[float]): The search vector.
+- **top_k** (int): The number of top similar vectors.
 
-**Returns**:
+**Returns:**
 
   List[List[Dict[str, Any]]]: A list of vector payloads retrieved
-  from the storage based on similarity to the query vector.
-
+from the storage based on similarity to the query vector.

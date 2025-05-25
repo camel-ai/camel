@@ -2,53 +2,57 @@
 
 <a id="camel.storages.key_value_storages.in_memory.InMemoryKeyValueStorage"></a>
 
-## InMemoryKeyValueStorage Objects
+## InMemoryKeyValueStorage
 
 ```python
-class InMemoryKeyValueStorage(BaseKeyValueStorage)
+class InMemoryKeyValueStorage(BaseKeyValueStorage):
 ```
 
 A concrete implementation of the :obj:`BaseKeyValueStorage` using
 in-memory list. Ideal for temporary storage purposes, as data will be lost
 when the program ends.
 
-<a id="camel.storages.key_value_storages.in_memory.InMemoryKeyValueStorage.save"></a>
+<a id="camel.storages.key_value_storages.in_memory.InMemoryKeyValueStorage.__init__"></a>
 
-#### save
+### __init__
 
 ```python
-def save(records: List[Dict[str, Any]]) -> None
+def __init__(self):
+```
+
+<a id="camel.storages.key_value_storages.in_memory.InMemoryKeyValueStorage.save"></a>
+
+### save
+
+```python
+def save(self, records: List[Dict[str, Any]]):
 ```
 
 Saves a batch of records to the key-value storage system.
 
-**Arguments**:
+**Parameters:**
 
-- `records` _List[Dict[str, Any]]_ - A list of dictionaries, where each
-  dictionary represents a unique record to be stored.
+- **records** (List[Dict[str, Any]]): A list of dictionaries, where each dictionary represents a unique record to be stored.
 
 <a id="camel.storages.key_value_storages.in_memory.InMemoryKeyValueStorage.load"></a>
 
-#### load
+### load
 
 ```python
-def load() -> List[Dict[str, Any]]
+def load(self):
 ```
 
-Loads all stored records from the key-value storage system.
-
-**Returns**:
+**Returns:**
 
   List[Dict[str, Any]]: A list of dictionaries, where each dictionary
-  represents a stored record.
+represents a stored record.
 
 <a id="camel.storages.key_value_storages.in_memory.InMemoryKeyValueStorage.clear"></a>
 
-#### clear
+### clear
 
 ```python
-def clear() -> None
+def clear(self):
 ```
 
 Removes all records from the key-value storage system.
-

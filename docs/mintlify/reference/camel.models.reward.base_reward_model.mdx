@@ -2,10 +2,10 @@
 
 <a id="camel.models.reward.base_reward_model.BaseRewardModel"></a>
 
-## BaseRewardModel Objects
+## BaseRewardModel
 
 ```python
-class BaseRewardModel(ABC)
+class BaseRewardModel(ABC):
 ```
 
 Abstract base class for reward models. Reward models are used to
@@ -13,40 +13,46 @@ evaluate messages and return scores based on different criteria.
 
 Subclasses should implement the 'evaluate' and 'get_scores_types' methods.
 
-<a id="camel.models.reward.base_reward_model.BaseRewardModel.evaluate"></a>
+<a id="camel.models.reward.base_reward_model.BaseRewardModel.__init__"></a>
 
-#### evaluate
+### __init__
 
 ```python
-@abstractmethod
-def evaluate(messages: List[Dict[str, str]]) -> Dict[str, float]
+def __init__(
+    self,
+    model_type: Union[ModelType, str],
+    api_key: Optional[str] = None,
+    url: Optional[str] = None
+):
+```
+
+<a id="camel.models.reward.base_reward_model.BaseRewardModel.evaluate"></a>
+
+### evaluate
+
+```python
+def evaluate(self, messages: List[Dict[str, str]]):
 ```
 
 Evaluate the messages and return scores based on different
 criteria.
 
-**Arguments**:
+**Parameters:**
 
-- `messages` _List[Dict[str, str]]_ - A list of messages where each
-  message is a dictionary with 'role' and 'content'.
-  
+- **messages** (List[Dict[str, str]]): A list of messages where each message is a dictionary with 'role' and 'content'.
 
-**Returns**:
+**Returns:**
 
   Dict[str, float]: A dictionary mapping score types to their values.
 
 <a id="camel.models.reward.base_reward_model.BaseRewardModel.get_scores_types"></a>
 
-#### get\_scores\_types
+### get_scores_types
 
 ```python
-@abstractmethod
-def get_scores_types() -> List[str]
+def get_scores_types(self):
 ```
 
-Get the list of score types that the reward model can return.
+**Returns:**
 
-**Returns**:
-
-- `List[str]` - A list of score types that the reward model can return.
-
+  List[str]: A list of score types that the reward model can return.

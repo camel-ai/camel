@@ -2,61 +2,63 @@
 
 <a id="camel.embeddings.openai_compatible_embedding.OpenAICompatibleEmbedding"></a>
 
-## OpenAICompatibleEmbedding Objects
+## OpenAICompatibleEmbedding
 
 ```python
-class OpenAICompatibleEmbedding(BaseEmbedding[str])
+class OpenAICompatibleEmbedding:
 ```
 
 Provides text embedding functionalities supporting OpenAI
 compatibility.
 
-**Arguments**:
+**Parameters:**
 
-- `model_type` _str_ - The model type to be used for text embeddings.
-- `api_key` _str_ - The API key for authenticating with the model service.
-- `url` _str_ - The url to the model service.
-- `output_dim` _Optional[int]_ - The dimensionality of the embedding
-  vectors. If None, it will be determined during the first
-  embedding call.
+- **model_type** (str): The model type to be used for text embeddings.
+- **api_key** (str): The API key for authenticating with the model service.
+- **url** (str): The url to the model service.
+- **output_dim** (Optional[int]): The dimensionality of the embedding vectors. If None, it will be determined during the first embedding call.
+
+<a id="camel.embeddings.openai_compatible_embedding.OpenAICompatibleEmbedding.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    model_type: str,
+    api_key: Optional[str] = None,
+    url: Optional[str] = None,
+    output_dim: Optional[int] = None
+):
+```
 
 <a id="camel.embeddings.openai_compatible_embedding.OpenAICompatibleEmbedding.embed_list"></a>
 
-#### embed\_list
+### embed_list
 
 ```python
-def embed_list(objs: list[str], **kwargs: Any) -> list[list[float]]
+def embed_list(self, objs: list[str], **kwargs: Any):
 ```
 
 Generates embeddings for the given texts.
 
-**Arguments**:
+**Parameters:**
 
-- `objs` _list[str]_ - The texts for which to generate the embeddings.
-- `**kwargs` _Any_ - Extra kwargs passed to the embedding API.
-  
+- **objs** (list[str]): The texts for which to generate the embeddings. **kwargs (Any): Extra kwargs passed to the embedding API.
 
-**Returns**:
+**Returns:**
 
-- `list[list[float]]` - A list that represents the generated embedding
-  as a list of floating-point numbers.
+  list[list[float]]: A list that represents the generated embedding
+as a list of floating-point numbers.
 
 <a id="camel.embeddings.openai_compatible_embedding.OpenAICompatibleEmbedding.get_output_dim"></a>
 
-#### get\_output\_dim
+### get_output_dim
 
 ```python
-def get_output_dim() -> int
+def get_output_dim(self):
 ```
 
-Returns the output dimension of the embeddings.
+**Returns:**
 
-**Returns**:
-
-- `int` - The dimensionality of the embedding for the current model.
-  
-
-**Raises**:
-
-- `ValueError` - If the embedding dimension cannot be determined.
-
+  int: The dimensionality of the embedding for the current model.

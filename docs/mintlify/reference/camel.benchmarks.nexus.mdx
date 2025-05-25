@@ -2,143 +2,120 @@
 
 <a id="camel.benchmarks.nexus.NexusSample"></a>
 
-## NexusSample Objects
+## NexusSample
 
 ```python
-@dataclass
-class NexusSample()
+class NexusSample:
 ```
 
 Nexus benchmark dataset sample.
 
-<a id="camel.benchmarks.nexus.NexusTool"></a>
-
-## NexusTool Objects
-
-```python
-@dataclass
-class NexusTool()
-```
-
-Nexus benchmark tool
-
 <a id="camel.benchmarks.nexus.NexusBenchmark"></a>
 
-## NexusBenchmark Objects
+## NexusBenchmark
 
 ```python
-class NexusBenchmark(BaseBenchmark)
+class NexusBenchmark(BaseBenchmark):
 ```
 
 Nexus Function Calling Benchmark adapted from `NexusRaven V2
 Function Calling Benchmark`
-<https://huggingface.co/collections/Nexusflow/nexusraven-v2-function-calling-benchmark-657a597fb84dbe7a09ebfc3e>.
+`<https://huggingface.co/collections/Nexusflow/nexusraven-v2-function-calling-benchmark-657a597fb84dbe7a09ebfc3e>`.
 
-**Arguments**:
+**Parameters:**
 
-- `data_dir` _str_ - The directory to save the data.
-- `save_to` _str_ - The file to save the results.
-- `processes` _int, optional_ - The number of processes to use.
-- `(default` - :obj:`1`)
+- **data_dir** (str): The directory to save the data.
+- **save_to** (str): The file to save the results.
+- **processes** (int, optional): The number of processes to use. (default: :obj:`1`)
 
 <a id="camel.benchmarks.nexus.NexusBenchmark.__init__"></a>
 
-#### \_\_init\_\_
+### __init__
 
 ```python
-def __init__(data_dir: str, save_to: str, processes: int = 1)
+def __init__(
+    self,
+    data_dir: str,
+    save_to: str,
+    processes: int = 1
+):
 ```
 
 Initialize the Nexus Function Calling benchmark.
 
-**Arguments**:
+**Parameters:**
 
-- `data_dir` _str_ - The directory to save the data.
-- `save_to` _str_ - The file to save the results.
-- `processes` _int, optional_ - The number of processes to use for
-  parallel processing. (default: :obj:`1`)
+- **data_dir** (str): The directory to save the data.
+- **save_to** (str): The file to save the results.
+- **processes** (int, optional): The number of processes to use for parallel processing. (default: :obj:`1`)
 
 <a id="camel.benchmarks.nexus.NexusBenchmark.download"></a>
 
-#### download
+### download
 
 ```python
-def download()
+def download(self):
 ```
 
 Download the Nexus Functional Calling Benchmark dataset.
 
 <a id="camel.benchmarks.nexus.NexusBenchmark.load"></a>
 
-#### load
+### load
 
 ```python
-def load(dataset_name: str, force_download: bool = False)
+def load(self, dataset_name: str, force_download: bool = False):
 ```
 
 Load the Nexus Benchmark dataset.
 
-**Arguments**:
+**Parameters:**
 
-- `dataset_name` _str_ - Name of the specific dataset to be loaded.
-- `force_download` _bool_ - Whether to force download the data.
+- **dataset_name** (str): Name of the specific dataset to be loaded.
+- **force_download** (bool): Whether to force download the data.
 
 <a id="camel.benchmarks.nexus.NexusBenchmark.train"></a>
 
-#### train
+### train
 
 ```python
-@property
-def train()
+def train(self):
 ```
 
 Get the training set.
 
 <a id="camel.benchmarks.nexus.NexusBenchmark.run"></a>
 
-#### run
+### run
 
 ```python
-def run(agent: ChatAgent,
-        task: Literal[
-            "NVDLibrary",
-            "VirusTotal",
-            "OTX",
-            "PlacesAPI",
-            "ClimateAPI",
-            "VirusTotal-ParallelCalls",
-            "VirusTotal-NestedCalls",
-            "NVDLibrary-NestedCalls",
-        ],
-        randomize: bool = False,
-        subset: Optional[int] = None) -> Dict[str, Any]
+def run(
+    self,
+    agent: ChatAgent,
+    task: Literal['NVDLibrary', 'VirusTotal', 'OTX', 'PlacesAPI', 'ClimateAPI', 'VirusTotal-ParallelCalls', 'VirusTotal-NestedCalls', 'NVDLibrary-NestedCalls'],
+    randomize: bool = False,
+    subset: Optional[int] = None
+):
 ```
 
 Run the benchmark.
 
-**Arguments**:
+**Parameters:**
 
-- `agent` _ChatAgent_ - The agent to run the benchmark.
-  task (Literal["NVDLibrary", "VirusTotal", "OTX",
-  "PlacesAPI", "ClimateAPI", "VirusTotal-ParallelCalls",
-  "VirusTotal-NestedCalls",
-- `"NVDLibrary-NestedCalls"])` - The task to run the benchmark.
-- `randomize` _bool, optional_ - Whether to randomize the data.
-- `(default` - :obj:`False`)
-- `subset` _Optional[int], optional_ - The subset of data to run.
-- `(default` - :obj:`None`)
-  
+- **agent** (ChatAgent): The agent to run the benchmark. task (Literal["NVDLibrary", "VirusTotal", "OTX", "PlacesAPI", "ClimateAPI", "VirusTotal-ParallelCalls", "VirusTotal-NestedCalls", "NVDLibrary-NestedCalls"]): The task to run the benchmark.
+- **randomize** (bool, optional): Whether to randomize the data. (default: :obj:`False`)
+- **subset** (Optional[int], optional): The subset of data to run. (default: :obj:`None`)
 
-**Returns**:
+**Returns:**
 
   Dict[str, Any]: The results of the benchmark.
 
 <a id="camel.benchmarks.nexus.construct_tool_descriptions"></a>
 
-#### construct\_tool\_descriptions
+## construct_tool_descriptions
 
 ```python
-def construct_tool_descriptions(dataset_name: str) -> str
+def construct_tool_descriptions(dataset_name: str):
 ```
 
 Construct tool descriptions from function definitions and
@@ -146,57 +123,52 @@ descriptions.
 
 <a id="camel.benchmarks.nexus.construct_prompt"></a>
 
-#### construct\_prompt
+## construct_prompt
 
 ```python
-def construct_prompt(input: str, tools: str) -> str
+def construct_prompt(input: str, tools: str):
 ```
 
 Construct prompt from tools and input.
 
 <a id="camel.benchmarks.nexus.parse_function_call"></a>
 
-#### parse\_function\_call
+## parse_function_call
 
 ```python
-def parse_function_call(
-    call: str
-) -> Tuple[Optional[str], Optional[List[Any]], Optional[Dict[str, Any]]]
+def parse_function_call(call: str):
 ```
 
 Parse a function call string to extract the function name,
 positional arguments, and keyword arguments, including
 nested function calls.
 
-**Arguments**:
+**Parameters:**
 
-- `call` _str_ - A string in the format `func(arg1, arg2, kwarg=value)`.
-  
+- **call** (str): A string in the format `func(arg1, arg2, kwarg=value)`.
 
-**Returns**:
+**Returns:**
 
-- `tuple` - (function_name (str), positional_args (list),
-  keyword_args (dict)) or (None, None, None).
+  tuple: (function_name (str), positional_args (list),
+keyword_args (dict)) or (None, None, None).
 
 <a id="camel.benchmarks.nexus.compare_function_calls"></a>
 
-#### compare\_function\_calls
+## compare_function_calls
 
 ```python
-def compare_function_calls(agent_call: str, ground_truth_call: str) -> bool
+def compare_function_calls(agent_call: str, ground_truth_call: str):
 ```
 
 Compare the function name and arguments of
 agent_call and ground_truth_call.
 
-**Arguments**:
+**Parameters:**
 
-- `agent_call` _str_ - Function call by agent.
-- `ground_truth_call` _str_ - Ground truth function call.
-  
+- **agent_call** (str): Function call by agent.
+- **ground_truth_call** (str): Ground truth function call.
 
-**Returns**:
+**Returns:**
 
   - `True` if the function names and arguments match.
-  - `False` otherwise.
-
+- `False` otherwise.

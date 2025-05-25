@@ -2,65 +2,63 @@
 
 <a id="camel.embeddings.azure_embedding.AzureEmbedding"></a>
 
-## AzureEmbedding Objects
+## AzureEmbedding
 
 ```python
-class AzureEmbedding(BaseEmbedding[str])
+class AzureEmbedding:
 ```
 
 Provides text embedding functionalities using Azure's OpenAI models.
 
-**Arguments**:
+**Parameters:**
 
-- `model_type` _EmbeddingModelType, optional_ - The model type to be
-  used for text embeddings.
-- `(default` - :obj:`TEXT_EMBEDDING_3_SMALL`)
-- `url` _Optional[str], optional_ - The url to the Azure OpenAI service.
-- `(default` - :obj:`None`)
-- `api_key` _str, optional_ - The API key for authenticating with the
-  Azure OpenAI service. (default: :obj:`None`)
-- `api_version` _str, optional_ - The API version for Azure OpenAI service.
-- `(default` - :obj:`None`)
-- `dimensions` _Optional[int], optional_ - The text embedding output
-  dimensions. (default: :obj:`None`)
-  
+- **model_type** (EmbeddingModelType, optional): The model type to be used for text embeddings. (default: :obj:`TEXT_EMBEDDING_3_SMALL`)
+- **url** (Optional[str], optional): The url to the Azure OpenAI service. (default: :obj:`None`)
+- **api_key** (str, optional): The API key for authenticating with the Azure OpenAI service. (default: :obj:`None`)
+- **api_version** (str, optional): The API version for Azure OpenAI service. (default: :obj:`None`)
+- **dimensions** (Optional[int], optional): The text embedding output dimensions. (default: :obj:`None`)
 
-**Raises**:
+<a id="camel.embeddings.azure_embedding.AzureEmbedding.__init__"></a>
 
-- `RuntimeError` - If an unsupported model type is specified.
-- `ValueError` - If required API configuration is missing.
+### __init__
+
+```python
+def __init__(
+    self,
+    model_type: EmbeddingModelType = EmbeddingModelType.TEXT_EMBEDDING_3_SMALL,
+    url: Union[str, None] = None,
+    api_key: Union[str, None] = None,
+    api_version: Union[str, None] = None,
+    dimensions: Union[int, None] = None
+):
+```
 
 <a id="camel.embeddings.azure_embedding.AzureEmbedding.embed_list"></a>
 
-#### embed\_list
+### embed_list
 
 ```python
-def embed_list(objs: list[str], **kwargs: Any) -> list[list[float]]
+def embed_list(self, objs: list[str], **kwargs: Any):
 ```
 
 Embeds a list of texts using the Azure OpenAI model.
 
-**Arguments**:
+**Parameters:**
 
-- `objs` _list[str]_ - The list of texts to embed.
-- `**kwargs` _Any_ - Additional keyword arguments to pass to the API.
-  
+- **objs** (list[str]): The list of texts to embed. **kwargs (Any): Additional keyword arguments to pass to the API.
 
-**Returns**:
+**Returns:**
 
-- `list[list[float]]` - The embeddings for the input texts.
+  list[list[float]]: The embeddings for the input texts.
 
 <a id="camel.embeddings.azure_embedding.AzureEmbedding.get_output_dim"></a>
 
-#### get\_output\_dim
+### get_output_dim
 
 ```python
-def get_output_dim() -> int
+def get_output_dim(self):
 ```
 
-Returns the output dimension of the embeddings.
+**Returns:**
 
-**Returns**:
-
-- `int` - The dimensionality of the embedding for the current model.
-
+  int: The dimensionality of the embedding for the current model.

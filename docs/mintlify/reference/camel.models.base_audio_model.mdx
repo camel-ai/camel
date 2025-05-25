@@ -2,10 +2,10 @@
 
 <a id="camel.models.base_audio_model.BaseAudioModel"></a>
 
-## BaseAudioModel Objects
+## BaseAudioModel
 
 ```python
-class BaseAudioModel(ABC)
+class BaseAudioModel(ABC):
 ```
 
 Base class for audio models providing Text-to-Speech (TTS) and
@@ -13,72 +13,73 @@ Speech-to-Text (STT) functionality.
 
 <a id="camel.models.base_audio_model.BaseAudioModel.__init__"></a>
 
-#### \_\_init\_\_
+### __init__
 
 ```python
-def __init__(api_key: Optional[str] = None,
-             url: Optional[str] = None,
-             timeout: Optional[float] = None) -> None
+def __init__(
+    self,
+    api_key: Optional[str] = None,
+    url: Optional[str] = None,
+    timeout: Optional[float] = None
+):
 ```
 
 Initialize an instance of BaseAudioModel.
 
-**Arguments**:
+**Parameters:**
 
-- `api_key` _Optional[str]_ - API key for the audio service. If not
-  provided, will look for an environment variable specific to the
-  implementation.
-- `url` _Optional[str]_ - Base URL for the audio API. If not provided,
-  will use a default URL or look for an environment variable
-  specific to the implementation.
-- `timeout` _Optional[float], optional_ - The timeout value in seconds
-  for API calls. If not provided, will fall back to the
-  MODEL_TIMEOUT environment variable or default to 180 seconds.
-- `(default` - :obj:`None`)
+- **api_key** (Optional[str]): API key for the audio service. If not provided, will look for an environment variable specific to the implementation.
+- **url** (Optional[str]): Base URL for the audio API. If not provided, will use a default URL or look for an environment variable specific to the implementation.
+- **timeout** (Optional[float], optional): The timeout value in seconds for API calls. If not provided, will fall back to the MODEL_TIMEOUT environment variable or default to 180 seconds. (default: :obj:`None`)
 
 <a id="camel.models.base_audio_model.BaseAudioModel.text_to_speech"></a>
 
-#### text\_to\_speech
+### text_to_speech
 
 ```python
-@abstractmethod
-def text_to_speech(input: str, *, storage_path: str, **kwargs: Any) -> Any
+def text_to_speech(self, input: str, **kwargs: Any):
 ```
 
 Convert text to speech.
 
-**Arguments**:
+**Parameters:**
 
-- `input` _str_ - The text to be converted to speech.
-- `storage_path` _str_ - The local path to store the
-  generated speech file.
-- `**kwargs` _Any_ - Extra kwargs passed to the TTS API.
-  
+- **input** (str): The text to be converted to speech.
+- **storage_path** (str): The local path to store the generated speech file. **kwargs (Any): Extra kwargs passed to the TTS API.
 
-**Returns**:
+**Returns:**
 
-- `Any` - The response from the TTS API, which may vary by
-  implementation.
+  Any: The response from the TTS API, which may vary by
+implementation.
 
 <a id="camel.models.base_audio_model.BaseAudioModel.speech_to_text"></a>
 
-#### speech\_to\_text
+### speech_to_text
 
 ```python
-@abstractmethod
-def speech_to_text(audio_file_path: str, **kwargs: Any) -> str
+def speech_to_text(self, audio_file_path: str, **kwargs: Any):
 ```
 
 Convert speech audio to text.
 
-**Arguments**:
+**Parameters:**
 
-- `audio_file_path` _str_ - The audio file path to transcribe.
-- `**kwargs` _Any_ - Extra keyword arguments passed to the
-  Speech-to-Text (STT) API.
-  
+- **audio_file_path** (str): The audio file path to transcribe. **kwargs (Any): Extra keyword arguments passed to the Speech-to-Text (STT) API.
 
-**Returns**:
+**Returns:**
 
-- `str` - The transcribed text.
+  str: The transcribed text.
 
+<a id="camel.models.base_audio_model.BaseAudioModel._ensure_directory_exists"></a>
+
+### _ensure_directory_exists
+
+```python
+def _ensure_directory_exists(self, file_path: str):
+```
+
+Ensure the directory for the given file path exists.
+
+**Parameters:**
+
+- **file_path** (str): The file path for which to ensure the directory exists.

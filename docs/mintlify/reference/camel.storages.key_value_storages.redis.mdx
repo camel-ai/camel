@@ -2,10 +2,10 @@
 
 <a id="camel.storages.key_value_storages.redis.RedisStorage"></a>
 
-## RedisStorage Objects
+## RedisStorage
 
 ```python
-class RedisStorage(BaseKeyValueStorage)
+class RedisStorage(BaseKeyValueStorage):
 ```
 
 A concrete implementation of the :obj:`BaseCacheStorage` using Redis as
@@ -14,88 +14,110 @@ persistence and high availability.
 
 <a id="camel.storages.key_value_storages.redis.RedisStorage.__init__"></a>
 
-#### \_\_init\_\_
+### __init__
 
 ```python
-def __init__(sid: str,
-             url: str = "redis://localhost:6379",
-             loop: Optional[asyncio.AbstractEventLoop] = None,
-             **kwargs) -> None
+def __init__(
+    self,
+    sid: str,
+    url: str = 'redis://localhost:6379',
+    loop: Optional[asyncio.AbstractEventLoop] = None,
+    **kwargs
+):
 ```
 
 Initializes the RedisStorage instance with the provided URL and
 options.
 
-**Arguments**:
+**Parameters:**
 
-- `sid` _str_ - The ID for the storage instance to identify the
-  record space.
-- `url` _str_ - The URL for connecting to the Redis server.
-- `**kwargs` - Additional keyword arguments for Redis client
-  configuration.
-  
+- **sid** (str): The ID for the storage instance to identify the record space.
+- **url** (str): The URL for connecting to the Redis server. **kwargs: Additional keyword arguments for Redis client configuration.
 
-**Raises**:
+<a id="camel.storages.key_value_storages.redis.RedisStorage.__enter__"></a>
 
-- `ImportError` - If the `redis.asyncio` module is not installed.
-
-<a id="camel.storages.key_value_storages.redis.RedisStorage.close"></a>
-
-#### close
+### __enter__
 
 ```python
-async def close() -> None
+def __enter__(self):
 ```
 
-Closes the Redis client asynchronously.
+<a id="camel.storages.key_value_storages.redis.RedisStorage.__exit__"></a>
+
+### __exit__
+
+```python
+def __exit__(
+    self,
+    exc_type,
+    exc,
+    tb
+):
+```
+
+<a id="camel.storages.key_value_storages.redis.RedisStorage._create_client"></a>
+
+### _create_client
+
+```python
+def _create_client(self, **kwargs):
+```
+
+Creates the Redis client with the provided URL and options.
 
 <a id="camel.storages.key_value_storages.redis.RedisStorage.client"></a>
 
-#### client
+### client
 
 ```python
-@property
-def client() -> Optional["Redis"]
+def client(self):
 ```
 
-Returns the Redis client instance.
+**Returns:**
 
-**Returns**:
-
-- `redis.asyncio.Redis` - The Redis client instance.
+  redis.asyncio.Redis: The Redis client instance.
 
 <a id="camel.storages.key_value_storages.redis.RedisStorage.save"></a>
 
-#### save
+### save
 
 ```python
-def save(records: List[Dict[str, Any]], expire: Optional[int] = None) -> None
+def save(
+    self,
+    records: List[Dict[str, Any]],
+    expire: Optional[int] = None
+):
 ```
 
 Saves a batch of records to the key-value storage system.
 
 <a id="camel.storages.key_value_storages.redis.RedisStorage.load"></a>
 
-#### load
+### load
 
 ```python
-def load() -> List[Dict[str, Any]]
+def load(self):
 ```
 
-Loads all stored records from the key-value storage system.
-
-**Returns**:
+**Returns:**
 
   List[Dict[str, Any]]: A list of dictionaries, where each dictionary
-  represents a stored record.
+represents a stored record.
 
 <a id="camel.storages.key_value_storages.redis.RedisStorage.clear"></a>
 
-#### clear
+### clear
 
 ```python
-def clear() -> None
+def clear(self):
 ```
 
 Removes all records from the key-value storage system.
 
+<a id="camel.storages.key_value_storages.redis.RedisStorage._run_async"></a>
+
+### _run_async
+
+```python
+def _run_async(self, coro):
+```

@@ -2,313 +2,373 @@
 
 <a id="camel.storages.graph_storages.nebula_graph.NebulaGraph"></a>
 
-## NebulaGraph Objects
+## NebulaGraph
 
 ```python
-class NebulaGraph(BaseGraphStorage)
+class NebulaGraph(BaseGraphStorage):
 ```
 
 <a id="camel.storages.graph_storages.nebula_graph.NebulaGraph.__init__"></a>
 
-#### \_\_init\_\_
+### __init__
 
 ```python
-@dependencies_required('nebula3')
-def __init__(host, username, password, space, port=9669, timeout=10000)
+def __init__(
+    self,
+    host,
+    username,
+    password,
+    space,
+    port = 9669,
+    timeout = 10000
+):
 ```
 
 Initializes the NebulaGraph client.
 
-**Arguments**:
+**Parameters:**
 
-- `host` _str_ - The host address of the NebulaGraph service.
-- `username` _str_ - The username for authentication.
-- `password` _str_ - The password for authentication.
-- `space` _str_ - The graph space to use. If it doesn't exist, a new
-  one will be created.
-- `port` _int, optional_ - The port number for the connection.
-- `(default` - :obj:`9669`)
-- `timeout` _int, optional_ - The connection timeout in milliseconds.
-- `(default` - :obj:`10000`)
+- **host** (str): The host address of the NebulaGraph service.
+- **username** (str): The username for authentication.
+- **password** (str): The password for authentication.
+- **space** (str): The graph space to use. If it doesn't exist, a new one will be created.
+- **port** (int, optional): The port number for the connection. (default: :obj:`9669`)
+- **timeout** (int, optional): The connection timeout in milliseconds. (default: :obj:`10000`)
+
+<a id="camel.storages.graph_storages.nebula_graph.NebulaGraph._init_connection_pool"></a>
+
+### _init_connection_pool
+
+```python
+def _init_connection_pool(self):
+```
+
+**Returns:**
+
+  ConnectionPool: A connection pool instance.
+
+<a id="camel.storages.graph_storages.nebula_graph.NebulaGraph._get_session"></a>
+
+### _get_session
+
+```python
+def _get_session(self):
+```
+
+**Returns:**
+
+  Session: A session object connected to NebulaGraph.
 
 <a id="camel.storages.graph_storages.nebula_graph.NebulaGraph.get_client"></a>
 
-#### get\_client
+### get_client
 
 ```python
-@property
-def get_client() -> Any
+def get_client(self):
 ```
 
 Get the underlying graph storage client.
 
 <a id="camel.storages.graph_storages.nebula_graph.NebulaGraph.query"></a>
 
-#### query
+### query
 
 ```python
-def query(query: str) -> "ResultSet"
+def query(self, query: str):
 ```
 
 Execute a query on the graph store.
 
-**Arguments**:
+**Parameters:**
 
-- `query` _str_ - The Cypher-like query to be executed.
-  
+- **query** (str): The Cypher-like query to be executed.
 
-**Returns**:
+**Returns:**
 
-- `ResultSet` - The result set of the query execution.
-  
-
-**Raises**:
-
-- `ValueError` - If the query execution fails.
+  ResultSet: The result set of the query execution.
 
 <a id="camel.storages.graph_storages.nebula_graph.NebulaGraph.get_relationship_types"></a>
 
-#### get\_relationship\_types
+### get_relationship_types
 
 ```python
-def get_relationship_types() -> List[str]
+def get_relationship_types(self):
 ```
 
-Retrieve relationship types from the graph.
+**Returns:**
 
-**Returns**:
-
-- `List[str]` - A list of relationship (edge) type names.
+  List[str]: A list of relationship (edge) type names.
 
 <a id="camel.storages.graph_storages.nebula_graph.NebulaGraph.add_graph_elements"></a>
 
-#### add\_graph\_elements
+### add_graph_elements
 
 ```python
-def add_graph_elements(graph_elements: List[GraphElement]) -> None
+def add_graph_elements(self, graph_elements: List[GraphElement]):
 ```
 
 Add graph elements (nodes and relationships) to the graph.
 
-**Arguments**:
+**Parameters:**
 
-- `graph_elements` _List[GraphElement]_ - A list of graph elements
-  containing nodes and relationships.
+- **graph_elements** (List[GraphElement]): A list of graph elements containing nodes and relationships.
 
 <a id="camel.storages.graph_storages.nebula_graph.NebulaGraph.ensure_edge_type_exists"></a>
 
-#### ensure\_edge\_type\_exists
+### ensure_edge_type_exists
 
 ```python
-def ensure_edge_type_exists(edge_type: str,
-                            time_label: Optional[str] = None) -> None
+def ensure_edge_type_exists(self, edge_type: str, time_label: Optional[str] = None):
 ```
 
 Ensures that a specified edge type exists in the NebulaGraph
 database. If the edge type already exists, this method does nothing.
 
-**Arguments**:
+**Parameters:**
 
-- `edge_type` _str_ - The name of the edge type to be created.
-- `time_label` _str, optional_ - A specific timestamp to set as the
-  default value for the time label property. If not
-  provided, no timestamp will be added. (default: :obj:`None`)
-  
-
-**Raises**:
-
-- `Exception` - If the edge type creation fails after multiple retry
-  attempts, an exception is raised with the error message.
+- **edge_type** (str): The name of the edge type to be created.
+- **time_label** (str, optional): A specific timestamp to set as the default value for the time label property. If not provided, no timestamp will be added. (default: :obj:`None`)
 
 <a id="camel.storages.graph_storages.nebula_graph.NebulaGraph.ensure_tag_exists"></a>
 
-#### ensure\_tag\_exists
+### ensure_tag_exists
 
 ```python
-def ensure_tag_exists(tag_name: str, time_label: Optional[str] = None) -> None
+def ensure_tag_exists(self, tag_name: str, time_label: Optional[str] = None):
 ```
 
 Ensures a tag is created in the NebulaGraph database. If the tag
 already exists, it does nothing.
 
-**Arguments**:
+**Parameters:**
 
-- `tag_name` _str_ - The name of the tag to be created.
-- `time_label` _str, optional_ - A specific timestamp to set as the
-  default value for the time label property. If not provided,
-  no timestamp will be added. (default: :obj:`None`)
-  
-
-**Raises**:
-
-- `Exception` - If the tag creation fails after retries, an exception
-  is raised with the error message.
+- **tag_name** (str): The name of the tag to be created.
+- **time_label** (str, optional): A specific timestamp to set as the default value for the time label property. If not provided, no timestamp will be added. (default: :obj:`None`)
 
 <a id="camel.storages.graph_storages.nebula_graph.NebulaGraph.add_node"></a>
 
-#### add\_node
+### add_node
 
 ```python
-def add_node(node_id: str,
-             tag_name: str,
-             time_label: Optional[str] = None) -> None
+def add_node(
+    self,
+    node_id: str,
+    tag_name: str,
+    time_label: Optional[str] = None
+):
 ```
 
 Add a node with the specified tag and properties.
 
-**Arguments**:
+**Parameters:**
 
-- `node_id` _str_ - The ID of the node.
-- `tag_name` _str_ - The tag name of the node.
-- `time_label` _str, optional_ - A specific timestamp to set for
-  the node's time label property. If not provided, no timestamp
-  will be added. (default: :obj:`None`)
+- **node_id** (str): The ID of the node.
+- **tag_name** (str): The tag name of the node.
+- **time_label** (str, optional): A specific timestamp to set for the node's time label property. If not provided, no timestamp will be added. (default: :obj:`None`)
+
+<a id="camel.storages.graph_storages.nebula_graph.NebulaGraph._extract_nodes"></a>
+
+### _extract_nodes
+
+```python
+def _extract_nodes(self, graph_elements: List[Any]):
+```
+
+Extracts unique nodes from graph elements.
+
+**Parameters:**
+
+- **graph_elements** (List[Any]): A list of graph elements containing nodes.
+
+**Returns:**
+
+  List[Dict]: A list of dictionaries representing nodes.
+
+<a id="camel.storages.graph_storages.nebula_graph.NebulaGraph._extract_relationships"></a>
+
+### _extract_relationships
+
+```python
+def _extract_relationships(self, graph_elements: List[Any]):
+```
+
+Extracts relationships from graph elements.
+
+**Parameters:**
+
+- **graph_elements** (List[Any]): A list of graph elements containing relationships.
+
+**Returns:**
+
+  List[Dict]: A list of dictionaries representing relationships.
 
 <a id="camel.storages.graph_storages.nebula_graph.NebulaGraph.refresh_schema"></a>
 
-#### refresh\_schema
+### refresh_schema
 
 ```python
-def refresh_schema() -> None
+def refresh_schema(self):
 ```
 
 Refreshes the schema by fetching the latest schema details.
 
 <a id="camel.storages.graph_storages.nebula_graph.NebulaGraph.get_structured_schema"></a>
 
-#### get\_structured\_schema
+### get_structured_schema
 
 ```python
-@property
-def get_structured_schema() -> Dict[str, Any]
+def get_structured_schema(self):
 ```
 
-Generates a structured schema consisting of node and relationship
-properties, relationships, and metadata, including timestamps.
-
-**Returns**:
+**Returns:**
 
   Dict[str, Any]: A dictionary representing the structured schema.
 
 <a id="camel.storages.graph_storages.nebula_graph.NebulaGraph.get_schema"></a>
 
-#### get\_schema
+### get_schema
 
 ```python
-def get_schema()
+def get_schema(self):
 ```
 
-Generates a schema string describing node and relationship
-properties and relationships.
+**Returns:**
 
-**Returns**:
-
-- `str` - A string describing the schema.
+  str: A string describing the schema.
 
 <a id="camel.storages.graph_storages.nebula_graph.NebulaGraph.get_indexes"></a>
 
-#### get\_indexes
+### get_indexes
 
 ```python
-def get_indexes()
+def get_indexes(self):
 ```
 
-Fetches the tag indexes from the database.
+**Returns:**
 
-**Returns**:
-
-- `List[str]` - A list of tag index names.
+  List[str]: A list of tag index names.
 
 <a id="camel.storages.graph_storages.nebula_graph.NebulaGraph.add_triplet"></a>
 
-#### add\_triplet
+### add_triplet
 
 ```python
-def add_triplet(subj: str,
-                obj: str,
-                rel: str,
-                time_label: Optional[str] = None) -> None
+def add_triplet(
+    self,
+    subj: str,
+    obj: str,
+    rel: str,
+    time_label: Optional[str] = None
+):
 ```
 
 Adds a relationship (triplet) between two entities in the Nebula
 Graph database.
 
-**Arguments**:
+**Parameters:**
 
-- `subj` _str_ - The identifier for the subject entity.
-- `obj` _str_ - The identifier for the object entity.
-- `rel` _str_ - The relationship between the subject and object.
-- `time_label` _str, optional_ - A specific timestamp to set for the
-  time label property of the relationship. If not provided,
-  no timestamp will be added. (default: :obj:`None`)
-  
-
-**Raises**:
-
-- `ValueError` - If the time_label format is invalid.
-- `Exception` - If creating the relationship fails.
+- **subj** (str): The identifier for the subject entity.
+- **obj** (str): The identifier for the object entity.
+- **rel** (str): The relationship between the subject and object.
+- **time_label** (str, optional): A specific timestamp to set for the time label property of the relationship. If not provided, no timestamp will be added. (default: :obj:`None`)
 
 <a id="camel.storages.graph_storages.nebula_graph.NebulaGraph.delete_triplet"></a>
 
-#### delete\_triplet
+### delete_triplet
 
 ```python
-def delete_triplet(subj: str, obj: str, rel: str) -> None
+def delete_triplet(
+    self,
+    subj: str,
+    obj: str,
+    rel: str
+):
 ```
 
 Deletes a specific triplet (relationship between two entities)
 from the Nebula Graph database.
 
-**Arguments**:
+**Parameters:**
 
-- `subj` _str_ - The identifier for the subject entity.
-- `obj` _str_ - The identifier for the object entity.
-- `rel` _str_ - The relationship between the subject and object.
+- **subj** (str): The identifier for the subject entity.
+- **obj** (str): The identifier for the object entity.
+- **rel** (str): The relationship between the subject and object.
 
 <a id="camel.storages.graph_storages.nebula_graph.NebulaGraph.delete_entity"></a>
 
-#### delete\_entity
+### delete_entity
 
 ```python
-def delete_entity(entity_id: str) -> None
+def delete_entity(self, entity_id: str):
 ```
 
 Deletes an entity (vertex) from the graph.
 
-**Arguments**:
+**Parameters:**
 
-- `entity_id` _str_ - The identifier of the entity to be deleted.
+- **entity_id** (str): The identifier of the entity to be deleted.
+
+<a id="camel.storages.graph_storages.nebula_graph.NebulaGraph._check_edges"></a>
+
+### _check_edges
+
+```python
+def _check_edges(self, entity_id: str):
+```
+
+Checks if an entity has any remaining edges in the graph.
+
+**Parameters:**
+
+- **entity_id** (str): The identifier of the entity.
+
+**Returns:**
+
+  bool: :obj:`True` if the entity has edges, :obj:`False` otherwise.
 
 <a id="camel.storages.graph_storages.nebula_graph.NebulaGraph.get_node_properties"></a>
 
-#### get\_node\_properties
+### get_node_properties
 
 ```python
-def get_node_properties() -> Tuple[List[str], List[Dict[str, Any]]]
+def get_node_properties(self):
 ```
 
-Retrieve node properties from the graph.
-
-**Returns**:
+**Returns:**
 
   Tuple[List[str], List[Dict[str, Any]]]: A tuple where the first
-  element is a list of node schema properties, and the second
-  element is a list of dictionaries representing node structures.
+element is a list of node schema properties, and the second
+element is a list of dictionaries representing node structures.
 
 <a id="camel.storages.graph_storages.nebula_graph.NebulaGraph.get_relationship_properties"></a>
 
-#### get\_relationship\_properties
+### get_relationship_properties
 
 ```python
-def get_relationship_properties() -> Tuple[List[str], List[Dict[str, Any]]]
+def get_relationship_properties(self):
 ```
 
-Retrieve relationship (edge) properties from the graph.
-
-**Returns**:
+**Returns:**
 
   Tuple[List[str], List[Dict[str, Any]]]: A tuple where the first
-  element is a list of relationship schema properties, and the
-  second element is a list of dictionaries representing
-  relationship structures.
+element is a list of relationship schema properties, and the
+second element is a list of dictionaries representing
+relationship structures.
 
+<a id="camel.storages.graph_storages.nebula_graph.NebulaGraph._validate_time_label"></a>
+
+### _validate_time_label
+
+```python
+def _validate_time_label(self, time_label: str):
+```
+
+Validates the format of a time label string.
+
+**Parameters:**
+
+- **time_label** (str): The time label string to validate. Should be in format 'YYYY-MM-DDThh:mm:ss'.
+
+**Returns:**
+
+  str: The validated time label.

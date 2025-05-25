@@ -2,79 +2,96 @@
 
 <a id="camel.loaders.chunkr_reader.ChunkrReader"></a>
 
-## ChunkrReader Objects
+## ChunkrReader
 
 ```python
-class ChunkrReader()
+class ChunkrReader:
 ```
 
 Chunkr Reader for processing documents and returning content
 in various formats.
 
-**Arguments**:
+**Parameters:**
 
-- `api_key` _Optional[str], optional_ - The API key for Chunkr API. If not
-  provided, it will be retrieved from the environment variable
-  `CHUNKR_API_KEY`. (default: :obj:`None`)
-- `url` _Optional[str], optional_ - The url to the Chunkr service.
-- `(default` - :obj:`https://api.chunkr.ai/api/v1/task`)
-- `timeout` _int, optional_ - The maximum time in seconds to wait for the
-  API responses. (default: :obj:`30`)
-- `**kwargs` _Any_ - Additional keyword arguments for request headers.
+- **api_key** (Optional[str], optional): The API key for Chunkr API. If not provided, it will be retrieved from the environment variable `CHUNKR_API_KEY`. (default: :obj:`None`)
+- **url** (Optional[str], optional): The url to the Chunkr service. (default: :obj:`https://api.chunkr.ai/api/v1/task`)
+- **timeout** (int, optional): The maximum time in seconds to wait for the API responses. (default: :obj:`30`) **kwargs (Any): Additional keyword arguments for request headers.
+
+<a id="camel.loaders.chunkr_reader.ChunkrReader.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    api_key: Optional[str] = None,
+    url: Optional[str] = 'https://api.chunkr.ai/api/v1/task',
+    timeout: int = 30,
+    **kwargs: Any
+):
+```
 
 <a id="camel.loaders.chunkr_reader.ChunkrReader.submit_task"></a>
 
-#### submit\_task
+### submit_task
 
 ```python
-def submit_task(file_path: str,
-                model: str = "Fast",
-                ocr_strategy: str = "Auto",
-                target_chunk_length: str = "512") -> str
+def submit_task(
+    self,
+    file_path: str,
+    model: str = 'Fast',
+    ocr_strategy: str = 'Auto',
+    target_chunk_length: str = '512'
+):
 ```
 
 Submits a file to the Chunkr API and returns the task ID.
 
-**Arguments**:
+**Parameters:**
 
-- `file_path` _str_ - The path to the file to be uploaded.
-- `model` _str, optional_ - The model to be used for the task.
-- `(default` - :obj:`Fast`)
-- `ocr_strategy` _str, optional_ - The OCR strategy. Defaults to 'Auto'.
-- `target_chunk_length` _str, optional_ - The target chunk length.
-- `(default` - :obj:`512`)
-  
+- **file_path** (str): The path to the file to be uploaded.
+- **model** (str, optional): The model to be used for the task. (default: :obj:`Fast`)
+- **ocr_strategy** (str, optional): The OCR strategy. Defaults to 'Auto'. (default: `'Auto'`)
+- **target_chunk_length** (str, optional): The target chunk length. (default: :obj:`512`)
 
-**Returns**:
+**Returns:**
 
-- `str` - The task ID.
+  str: The task ID.
 
 <a id="camel.loaders.chunkr_reader.ChunkrReader.get_task_output"></a>
 
-#### get\_task\_output
+### get_task_output
 
 ```python
-def get_task_output(task_id: str, max_retries: int = 5) -> str
+def get_task_output(self, task_id: str, max_retries: int = 5):
 ```
 
 Polls the Chunkr API to check the task status and returns the task
 result.
 
-**Arguments**:
+**Parameters:**
 
-- `task_id` _str_ - The task ID to check the status for.
-- `max_retries` _int, optional_ - Maximum number of retry attempts.
-- `(default` - :obj:`5`)
-  
+- **task_id** (str): The task ID to check the status for.
+- **max_retries** (int, optional): Maximum number of retry attempts. (default: :obj:`5`)
 
-**Returns**:
+**Returns:**
 
-- `str` - The formatted task result in JSON format.
-  
+  str: The formatted task result in JSON format.
 
-**Raises**:
+<a id="camel.loaders.chunkr_reader.ChunkrReader._pretty_print_response"></a>
 
-- `ValueError` - If the task status cannot be retrieved.
-- `RuntimeError` - If the maximum number of retries is reached without
-  a successful task completion.
+### _pretty_print_response
 
+```python
+def _pretty_print_response(self, response_json: dict):
+```
+
+Pretty prints the JSON response.
+
+**Parameters:**
+
+- **response_json** (dict): The response JSON to pretty print.
+
+**Returns:**
+
+  str: Formatted JSON as a string.

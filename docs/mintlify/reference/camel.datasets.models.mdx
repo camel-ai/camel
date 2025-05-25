@@ -2,54 +2,48 @@
 
 <a id="camel.datasets.models.DataPoint"></a>
 
-## DataPoint Objects
+## DataPoint
 
 ```python
-class DataPoint(BaseModel)
+class DataPoint(BaseModel):
 ```
 
 A single data point in the dataset.
 
-**Attributes**:
-
-- `question` _str_ - The primary question or issue to be addressed.
-- `final_answer` _str_ - The final answer.
-- `rationale` _Optional[str]_ - Logical reasoning or explanation behind the
-  answer. (default: :obj:`None`)
-- `metadata` _Optional[Dict[str, Any]]_ - Additional metadata about the data
-  point. (default: :obj:`None`)
+Attributes:
+question (str): The primary question or issue to be addressed.
+final_answer (str): The final answer.
+rationale (Optional[str]): Logical reasoning or explanation behind the
+answer. (default: :obj:`None`)
+metadata (Optional[Dict[str, Any]]): Additional metadata about the data
+point. (default: :obj:`None`)
 
 <a id="camel.datasets.models.DataPoint.to_dict"></a>
 
-#### to\_dict
+### to_dict
 
 ```python
-def to_dict() -> Dict[str, Any]
+def to_dict(self):
 ```
 
-Convert DataPoint to a dictionary.
-
-**Returns**:
+**Returns:**
 
   Dict[str, Any]: Dictionary representation of the DataPoint.
 
 <a id="camel.datasets.models.DataPoint.from_dict"></a>
 
-#### from\_dict
+### from_dict
 
 ```python
-@classmethod
-def from_dict(cls, data: Dict[str, Any]) -> 'DataPoint'
+def from_dict(cls, data: Dict[str, Any]):
 ```
 
 Create a DataPoint from a dictionary.
 
-**Arguments**:
+**Parameters:**
 
-- `data` _Dict[str, Any]_ - Dictionary containing DataPoint fields.
-  
+- **data** (Dict[str, Any]): Dictionary containing DataPoint fields.
 
-**Returns**:
+**Returns:**
 
-- `DataPoint` - New DataPoint instance.
-
+  DataPoint: New DataPoint instance.

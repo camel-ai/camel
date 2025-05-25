@@ -2,10 +2,10 @@
 
 <a id="camel.memories.blocks.chat_history_block.ChatHistoryBlock"></a>
 
-## ChatHistoryBlock Objects
+## ChatHistoryBlock
 
 ```python
-class ChatHistoryBlock(MemoryBlock)
+class ChatHistoryBlock(MemoryBlock):
 ```
 
 An implementation of the :obj:`MemoryBlock` abstract base class for
@@ -17,63 +17,64 @@ in-memory storage. It offers a windowed approach to retrieving chat
 histories, allowing users to specify how many recent messages they'd
 like to fetch.
 
-**Arguments**:
+**Parameters:**
 
-- `storage` _BaseKeyValueStorage, optional_ - A storage mechanism for
-  storing chat history. If `None`, an :obj:`InMemoryKeyValueStorage`
-  will be used. (default: :obj:`None`)
-- `keep_rate` _float, optional_ - In historical messages, the score of the
-  last message is 1.0, and with each step taken backward, the score
-  of the message is multiplied by the `keep_rate`. Higher `keep_rate`
-  leads to high possibility to keep history messages during context
-  creation.
+- **storage** (BaseKeyValueStorage, optional): A storage mechanism for storing chat history. If `None`, an :obj:`InMemoryKeyValueStorage` will be used. (default: :obj:`None`)
+- **keep_rate** (float, optional): In historical messages, the score of the last message is 1.0, and with each step taken backward, the score of the message is multiplied by the `keep_rate`. Higher `keep_rate` leads to high possibility to keep history messages during context creation.
+
+<a id="camel.memories.blocks.chat_history_block.ChatHistoryBlock.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    storage: Optional[BaseKeyValueStorage] = None,
+    keep_rate: float = 0.9
+):
+```
 
 <a id="camel.memories.blocks.chat_history_block.ChatHistoryBlock.retrieve"></a>
 
-#### retrieve
+### retrieve
 
 ```python
-def retrieve(window_size: Optional[int] = None) -> List[ContextRecord]
+def retrieve(self, window_size: Optional[int] = None):
 ```
 
 Retrieves records with a proper size for the agent from the memory
 based on the window size or fetches the entire chat history if no
 window size is specified.
 
-**Arguments**:
+**Parameters:**
 
-- `window_size` _int, optional_ - Specifies the number of recent chat
-  messages to retrieve. If not provided, the entire chat history
-  will be retrieved. (default: :obj:`None`)
-  
+- **window_size** (int, optional): Specifies the number of recent chat messages to retrieve. If not provided, the entire chat history will be retrieved. (default: :obj:`None`)
 
-**Returns**:
+**Returns:**
 
-- `List[ContextRecord]` - A list of retrieved records.
+  List[ContextRecord]: A list of retrieved records.
 
 <a id="camel.memories.blocks.chat_history_block.ChatHistoryBlock.write_records"></a>
 
-#### write\_records
+### write_records
 
 ```python
-def write_records(records: List[MemoryRecord]) -> None
+def write_records(self, records: List[MemoryRecord]):
 ```
 
 Writes memory records to the memory. Additionally, performs
 validation checks on the messages.
 
-**Arguments**:
+**Parameters:**
 
-- `records` _List[MemoryRecord]_ - Memory records to be added to the
-  memory.
+- **records** (List[MemoryRecord]): Memory records to be added to the memory.
 
 <a id="camel.memories.blocks.chat_history_block.ChatHistoryBlock.clear"></a>
 
-#### clear
+### clear
 
 ```python
-def clear() -> None
+def clear(self):
 ```
 
 Clears all chat messages from the memory.
-

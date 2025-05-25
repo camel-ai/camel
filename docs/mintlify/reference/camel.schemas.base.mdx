@@ -2,40 +2,40 @@
 
 <a id="camel.schemas.base.BaseConverter"></a>
 
-## BaseConverter Objects
+## BaseConverter
 
 ```python
-class BaseConverter(ABC)
+class BaseConverter(ABC):
 ```
 
 A base class for schema outputs that includes functionality
 for managing the response format.
 
-**Arguments**:
+**Parameters:**
 
-- `output_schema` _Optional[Type[BaseModel]], optional_ - The expected
-  format of the response. (default: :obj:`None`)
+- **output_schema** (Optional[Type[BaseModel]], optional): The expected format of the response. (default: :obj:`None`)
 
 <a id="camel.schemas.base.BaseConverter.convert"></a>
 
-#### convert
+### convert
 
 ```python
-@abstractmethod
-def convert(content: str, *args: Any, **kwargs: Dict[str, Any]) -> Any
+def convert(
+    self,
+    content: str,
+    *args: Any,
+    **kwargs: Dict[str, Any]
+):
 ```
 
 Structures the input text into the expected response format.
 
-**Arguments**:
+**Parameters:**
 
-- `text` _str_ - The input text to be structured.
-  output_schema (Optional[Type[BaseModel]], optional):
-  The expected format of the response. Defaults to None.
-- `prompt` _Optional[str], optional_ - The prompt to be used.
-  
+- **text** (str): The input text to be structured.
+- **output_schema** (Optional[Type[BaseModel]], optional): The expected format of the response. Defaults to None.
+- **prompt** (Optional[str], optional): The prompt to be used.
 
-**Returns**:
+**Returns:**
 
-- `Any` - The converted response.
-
+  Any: The converted response.

@@ -2,286 +2,298 @@
 
 <a id="camel.generators.SystemMessageGenerator"></a>
 
-## SystemMessageGenerator Objects
+## SystemMessageGenerator
 
 ```python
-class SystemMessageGenerator()
+class SystemMessageGenerator:
 ```
 
 System message generator for agents.
 
-**Arguments**:
+**Parameters:**
 
-- `task_type` _TaskType, optional_ - The task type.
-- `(default` - :obj:`TaskType.AI_SOCIETY`)
-- `sys_prompts` _Optional[Dict[RoleType, str]], optional_ - The prompts of
-  the system messages for each role type. (default: :obj:`None`)
-- `sys_msg_meta_dict_keys` _Optional[Set[str]], optional_ - The set of keys
-  of the meta dictionary used to fill the prompts.
-- `(default` - :obj:`None`)
+- **task_type** (TaskType, optional): The task type. (default: :obj:`TaskType.AI_SOCIETY`)
+- **sys_prompts** (Optional[Dict[RoleType, str]], optional): The prompts of the system messages for each role type. (default: :obj:`None`)
+- **sys_msg_meta_dict_keys** (Optional[Set[str]], optional): The set of keys of the meta dictionary used to fill the prompts. (default: :obj:`None`)
+
+<a id="camel.generators.SystemMessageGenerator.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    task_type: TaskType = TaskType.AI_SOCIETY,
+    sys_prompts: Optional[Dict[RoleType, str]] = None,
+    sys_msg_meta_dict_keys: Optional[Set[str]] = None
+):
+```
 
 <a id="camel.generators.SystemMessageGenerator.validate_meta_dict_keys"></a>
 
-#### validate\_meta\_dict\_keys
+### validate_meta_dict_keys
 
 ```python
-def validate_meta_dict_keys(meta_dict: Dict[str, str]) -> None
+def validate_meta_dict_keys(self, meta_dict: Dict[str, str]):
 ```
 
 Validates the keys of the meta_dict.
 
-**Arguments**:
+**Parameters:**
 
-- `meta_dict` _Dict[str, str]_ - The dictionary to validate.
+- **meta_dict** (Dict[str, str]): The dictionary to validate.
 
 <a id="camel.generators.SystemMessageGenerator.from_dict"></a>
 
-#### from\_dict
+### from_dict
 
 ```python
 def from_dict(
+    self,
     meta_dict: Dict[str, str],
-    role_tuple: Tuple[str, RoleType] = ("", RoleType.DEFAULT)
-) -> BaseMessage
+    role_tuple: Tuple[str, RoleType] = ('', RoleType.DEFAULT)
+):
 ```
 
 Generates a system message from a dictionary.
 
-**Arguments**:
+**Parameters:**
 
-- `meta_dict` _Dict[str, str]_ - The dictionary containing the
-  information to generate the system message.
-- `role_tuple` _Tuple[str, RoleType], optional_ - The tuple containing
-  the role name and role type. (default: ("", RoleType.DEFAULT))
-  
+- **meta_dict** (Dict[str, str]): The dictionary containing the information to generate the system message.
+- **role_tuple** (Tuple[str, RoleType], optional): The tuple containing the role name and role type. (default: ("", RoleType.DEFAULT))
 
-**Returns**:
+**Returns:**
 
-- `BaseMessage` - The generated system message.
+  BaseMessage: The generated system message.
 
 <a id="camel.generators.SystemMessageGenerator.from_dicts"></a>
 
-#### from\_dicts
+### from_dicts
 
 ```python
-def from_dicts(meta_dicts: List[Dict[str, str]],
-               role_tuples: List[Tuple[str, RoleType]]) -> List[BaseMessage]
+def from_dicts(
+    self,
+    meta_dicts: List[Dict[str, str]],
+    role_tuples: List[Tuple[str, RoleType]]
+):
 ```
 
 Generates a list of system messages from a list of dictionaries.
 
-**Arguments**:
+**Parameters:**
 
-- `meta_dicts` _List[Dict[str, str]]_ - A list of dictionaries
-  containing the information to generate the system messages.
-- `role_tuples` _List[Tuple[str, RoleType]]_ - A list of tuples
-  containing the role name and role type for each system message.
-  
+- **meta_dicts** (List[Dict[str, str]]): A list of dictionaries containing the information to generate the system messages.
+- **role_tuples** (List[Tuple[str, RoleType]]): A list of tuples containing the role name and role type for each system message.
 
-**Returns**:
+**Returns:**
 
-- `List[BaseMessage]` - A list of generated system messages.
-  
-
-**Raises**:
-
-- `ValueError` - If the number of meta_dicts and role_tuples are
-  different.
+  List[BaseMessage]: A list of generated system messages.
 
 <a id="camel.generators.RoleNameGenerator"></a>
 
-## RoleNameGenerator Objects
+## RoleNameGenerator
 
 ```python
-class RoleNameGenerator()
+class RoleNameGenerator:
 ```
 
 Role name generator for role-playing workers.
 
-**Arguments**:
+**Parameters:**
 
-- `assistant_role_names_path` _str, optional_ - The path to the file
-  containing the assistant role names.
-- `(default` - :obj:`"data/ai_society/assistant_roles.txt"`)
-- `user_role_names_path` _str, optional_ - The path to the file
-  containing the user role names.
-- `(default` - :obj:`"data/ai_society/user_roles.txt"`)
-- `assistant_role_names` _Optional[List[str]], optional_ - The list of
-  assistant role names. (default: :obj:`None`)
-- `user_role_names` _Optional[List[str]], optional_ - The list of user role
-  names. (default: :obj:`None`)
+- **assistant_role_names_path** (str, optional): The path to the file containing the assistant role names. (default: :obj:`"data/ai_society/assistant_roles.txt"`)
+- **user_role_names_path** (str, optional): The path to the file containing the user role names. (default: :obj:`"data/ai_society/user_roles.txt"`)
+- **assistant_role_names** (Optional[List[str]], optional): The list of assistant role names. (default: :obj:`None`)
+- **user_role_names** (Optional[List[str]], optional): The list of user role names. (default: :obj:`None`)
+
+<a id="camel.generators.RoleNameGenerator.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    assistant_role_names_path: str = 'data/ai_society/assistant_roles.txt',
+    user_role_names_path: str = 'data/ai_society/user_roles.txt',
+    assistant_role_names: Optional[List[str]] = None,
+    user_role_names: Optional[List[str]] = None
+):
+```
 
 <a id="camel.generators.RoleNameGenerator.from_role_files"></a>
 
-#### from\_role\_files
+### from_role_files
 
 ```python
-def from_role_files() -> Generator[Tuple, None, None]
+def from_role_files(self):
 ```
 
-Generate role names from the file.
-
-**Returns**:
+**Returns:**
 
   Generator[Tuple, None, None]: A generator that yields tuples of
-  assistant role names and user role names.
+assistant role names and user role names.
 
 <a id="camel.generators.AISocietyTaskPromptGenerator"></a>
 
-## AISocietyTaskPromptGenerator Objects
+## AISocietyTaskPromptGenerator
 
 ```python
-class AISocietyTaskPromptGenerator()
+class AISocietyTaskPromptGenerator:
 ```
 
 Task prompt generator for AI society tasks.
 
-**Arguments**:
+**Parameters:**
 
-- `num_tasks` _int, optional_ - The number of tasks to generate.
-- `(default` - :obj:`10`)
+- **num_tasks** (int, optional): The number of tasks to generate. (default: :obj:`10`)
+
+<a id="camel.generators.AISocietyTaskPromptGenerator.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, num_tasks: int = 10):
+```
 
 <a id="camel.generators.AISocietyTaskPromptGenerator.from_role_files"></a>
 
-#### from\_role\_files
+### from_role_files
 
 ```python
 def from_role_files(
-    assistant_role_names_path: str = "data/ai_society/assistant_roles.txt",
-    user_role_names_path: str = "data/ai_society/user_roles.txt"
-) -> Generator[Tuple[str, Tuple[str, str]], None, None]
+    self,
+    assistant_role_names_path: str = 'data/ai_society/assistant_roles.txt',
+    user_role_names_path: str = 'data/ai_society/user_roles.txt'
+):
 ```
 
 Generate tasks from role files.
 
-**Arguments**:
+**Parameters:**
 
-- `assistant_role_names_path` _str, optional_ - The path to the file
-  containing the assistant role names.
-- `(default` - :obj:`"data/ai_society/assistant_roles.txt"`)
-- `user_role_names_path` _str, optional_ - The path to the file
-  containing the user role names.
-- `(default` - :obj:`"data/ai_society/user_roles.txt"`)
-  
+- **assistant_role_names_path** (str, optional): The path to the file containing the assistant role names. (default: :obj:`"data/ai_society/assistant_roles.txt"`)
+- **user_role_names_path** (str, optional): The path to the file containing the user role names. (default: :obj:`"data/ai_society/user_roles.txt"`)
 
-**Returns**:
+**Returns:**
 
   Generator[Tuple[str, Tuple[str, str]], None, None]: A generator
-  that yields tuples of task prompts and role names.
+that yields tuples of task prompts and role names.
 
 <a id="camel.generators.AISocietyTaskPromptGenerator.from_role_generator"></a>
 
-#### from\_role\_generator
+### from_role_generator
 
 ```python
-def from_role_generator(
-    role_generator: Generator[Tuple, None, None]
-) -> Generator[Tuple[str, Tuple[str, str]], None, None]
+def from_role_generator(self, role_generator: Generator[Tuple, None, None]):
 ```
 
 Generate tasks from a role generator.
 
-**Arguments**:
+**Parameters:**
 
-- `role_generator` _Generator[Tuple, None, None]_ - A generator that
-  yields tuples of role names.
-  
+- **role_generator** (Generator[Tuple, None, None]): A generator that yields tuples of role names.
 
-**Returns**:
+**Returns:**
 
   Generator[Tuple[str, Tuple[str, str]], None, None]: A generator
-  that yields tuples of task prompts and role names.
+that yields tuples of task prompts and role names.
 
 <a id="camel.generators.SingleTxtGenerator"></a>
 
-## SingleTxtGenerator Objects
+## SingleTxtGenerator
 
 ```python
-class SingleTxtGenerator()
+class SingleTxtGenerator:
 ```
 
 Single text generator for role-playing workers.
 
-**Arguments**:
+**Parameters:**
 
-- `text_file_path` _str_ - The path to the file containing the text data.
+- **text_file_path** (str): The path to the file containing the text data.
+
+<a id="camel.generators.SingleTxtGenerator.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, text_file_path: str):
+```
 
 <a id="camel.generators.SingleTxtGenerator.from_role_files"></a>
 
-#### from\_role\_files
+### from_role_files
 
 ```python
-def from_role_files() -> Generator[str, None, None]
+def from_role_files(self):
 ```
 
-Generate text from the file.
-
-**Returns**:
+**Returns:**
 
   Generator[str, None, None]: A generator that yields the text data.
 
 <a id="camel.generators.CodeTaskPromptGenerator"></a>
 
-## CodeTaskPromptGenerator Objects
+## CodeTaskPromptGenerator
 
 ```python
-class CodeTaskPromptGenerator()
+class CodeTaskPromptGenerator:
 ```
 
 Code task prompt generator for code tasks.
 
-**Arguments**:
+**Parameters:**
 
-- `num_tasks` _int, optional_ - The number of tasks to generate.
-- `(default` - :obj:`50`)
+- **num_tasks** (int, optional): The number of tasks to generate. (default: :obj:`50`)
+
+<a id="camel.generators.CodeTaskPromptGenerator.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, num_tasks: int = 50):
+```
 
 <a id="camel.generators.CodeTaskPromptGenerator.from_role_files"></a>
 
-#### from\_role\_files
+### from_role_files
 
 ```python
 def from_role_files(
-    languages_path: str = "data/code/languages.txt",
-    domains_path: str = "data/code/domains.txt"
-) -> Generator[Tuple[TextPrompt, str, str], None, None]
+    self,
+    languages_path: str = 'data/code/languages.txt',
+    domains_path: str = 'data/code/domains.txt'
+):
 ```
 
 Generate tasks from role files.
 
-**Arguments**:
+**Parameters:**
 
-- `languages_path` _str, optional_ - The path to the file containing
-  the language names. (default: :obj:`"data/code/languages.txt"`)
-- `domains_path` _str, optional_ - The path to the file containing
-  the domain names. (default: :obj:`"data/code/domains.txt"`)
-  
+- **languages_path** (str, optional): The path to the file containing the language names. (default: :obj:`"data/code/languages.txt"`)
+- **domains_path** (str, optional): The path to the file containing the domain names. (default: :obj:`"data/code/domains.txt"`)
 
-**Returns**:
+**Returns:**
 
   Generator[Tuple[TextPrompt, str, str], None, None]: A generator
-  that yields tuples of task prompts, language names, and domain
-  names.
+that yields tuples of task prompts, language names, and domain
+names.
 
 <a id="camel.generators.CodeTaskPromptGenerator.from_role_generator"></a>
 
-#### from\_role\_generator
+### from_role_generator
 
 ```python
-def from_role_generator(
-    role_generator: Generator[Tuple, None,
-                              None]) -> Generator[str, None, None]
+def from_role_generator(self, role_generator: Generator[Tuple, None, None]):
 ```
 
 Generate tasks from a role generator.
 
-**Arguments**:
+**Parameters:**
 
-- `role_generator` _Generator[Tuple, None, None]_ - A generator that
-  yields tuples of role names.
-  
+- **role_generator** (Generator[Tuple, None, None]): A generator that yields tuples of role names.
 
-**Returns**:
+**Returns:**
 
   Generator[str, None, None]: A generator that yields the task
-  prompts.
-
+prompts.

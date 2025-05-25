@@ -2,11 +2,10 @@
 
 <a id="camel.toolkits.dalle_toolkit.DalleToolkit"></a>
 
-## DalleToolkit Objects
+## DalleToolkit
 
 ```python
-@MCPServer()
-class DalleToolkit(BaseToolkit)
+class DalleToolkit(BaseToolkit):
 ```
 
 A class representing a toolkit for image generation using OpenAI's
@@ -14,66 +13,62 @@ DALL-E model.
 
 <a id="camel.toolkits.dalle_toolkit.DalleToolkit.__init__"></a>
 
-#### \_\_init\_\_
+### __init__
 
 ```python
-def __init__(timeout: Optional[float] = None)
+def __init__(self, timeout: Optional[float] = None):
 ```
 
 Initializes a new instance of the DalleToolkit class.
 
-**Arguments**:
+**Parameters:**
 
-- `timeout` _Optional[float]_ - The timeout value for API requests
-  in seconds. If None, no timeout is applied.
-- `(default` - :obj:`None`)
+- **timeout** (Optional[float]): The timeout value for API requests in seconds. If None, no timeout is applied. (default: :obj:`None`)
 
 <a id="camel.toolkits.dalle_toolkit.DalleToolkit.base64_to_image"></a>
 
-#### base64\_to\_image
+### base64_to_image
 
 ```python
-def base64_to_image(base64_string: str) -> Optional[Image.Image]
+def base64_to_image(self, base64_string: str):
 ```
 
 Converts a base64 encoded string into a PIL Image object.
 
-**Arguments**:
+**Parameters:**
 
-- `base64_string` _str_ - The base64 encoded string of the image.
-  
+- **base64_string** (str): The base64 encoded string of the image.
 
-**Returns**:
+**Returns:**
 
-- `Optional[Image.Image]` - The PIL Image object or None if conversion
-  fails.
+  Optional[Image.Image]: The PIL Image object or None if conversion
+fails.
 
 <a id="camel.toolkits.dalle_toolkit.DalleToolkit.image_path_to_base64"></a>
 
-#### image\_path\_to\_base64
+### image_path_to_base64
 
 ```python
-def image_path_to_base64(image_path: str) -> str
+def image_path_to_base64(self, image_path: str):
 ```
 
 Converts the file path of an image to a Base64 encoded string.
 
-**Arguments**:
+**Parameters:**
 
-- `image_path` _str_ - The path to the image file.
-  
+- **image_path** (str): The path to the image file.
 
-**Returns**:
+**Returns:**
 
-- `str` - A Base64 encoded string representing the content of the image
-  file.
+  str: A Base64 encoded string representing the content of the image
+file.
 
 <a id="camel.toolkits.dalle_toolkit.DalleToolkit.image_to_base64"></a>
 
-#### image\_to\_base64
+### image_to_base64
 
 ```python
-def image_to_base64(image: Image.Image) -> str
+def image_to_base64(self, image: Image.Image):
 ```
 
 Converts an image into a base64-encoded string.
@@ -83,52 +78,43 @@ PNG format base64 string, and returns it.
 If the encoding process encounters an error, it prints the error
 message and returns None.
 
-**Arguments**:
+**Parameters:**
 
-- `image` - The image object to be encoded, supports any image format
-  that can be saved in PNG format.
-  
+- **image**: The image object to be encoded, supports any image format that can be saved in PNG format.
 
-**Returns**:
+**Returns:**
 
-- `str` - A base64-encoded string of the image.
+  str: A base64-encoded string of the image.
 
 <a id="camel.toolkits.dalle_toolkit.DalleToolkit.get_dalle_img"></a>
 
-#### get\_dalle\_img
+### get_dalle_img
 
 ```python
-def get_dalle_img(prompt: str, image_dir: str = "img") -> str
+def get_dalle_img(self, prompt: str, image_dir: str = 'img'):
 ```
 
 Generate an image using OpenAI's DALL-E model.
 The generated image is saved to the specified directory.
 
-**Arguments**:
+**Parameters:**
 
-- `prompt` _str_ - The text prompt based on which the image is
-  generated.
-- `image_dir` _str_ - The directory to save the generated image.
-  Defaults to 'img'.
-  
+- **prompt** (str): The text prompt based on which the image is generated.
+- **image_dir** (str): The directory to save the generated image. Defaults to 'img'.
 
-**Returns**:
+**Returns:**
 
-- `str` - The path to the saved image.
+  str: The path to the saved image.
 
 <a id="camel.toolkits.dalle_toolkit.DalleToolkit.get_tools"></a>
 
-#### get\_tools
+### get_tools
 
 ```python
-def get_tools() -> List[FunctionTool]
+def get_tools(self):
 ```
 
-Returns a list of FunctionTool objects representing the
-functions in the toolkit.
+**Returns:**
 
-**Returns**:
-
-- `List[FunctionTool]` - A list of FunctionTool objects
-  representing the functions in the toolkit.
-
+  List[FunctionTool]: A list of FunctionTool objects
+representing the functions in the toolkit.

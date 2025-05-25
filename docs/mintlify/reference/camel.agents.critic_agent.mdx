@@ -2,142 +2,130 @@
 
 <a id="camel.agents.critic_agent.CriticAgent"></a>
 
-## CriticAgent Objects
+## CriticAgent
 
 ```python
-@track_agent(name="CriticAgent")
-class CriticAgent(ChatAgent)
+class CriticAgent(ChatAgent):
 ```
 
 A class for the critic agent that assists in selecting an option.
 
-**Arguments**:
+**Parameters:**
 
-- `system_message` _Union[BaseMessage, str], optional_ - The system message
-  for the chat agent. (default: :obj:`None`)
-  model (Union[BaseModelBackend, Tuple[str, str], str, ModelType,
-  Tuple[ModelPlatformType, ModelType], List[BaseModelBackend],
-  List[str], List[ModelType], List[Tuple[str, str]],
-  List[Tuple[ModelPlatformType, ModelType]]], optional):
-  The model backend(s) to use. Can be a single instance,
-  a specification (string, enum, tuple), or a list of instances
-  or specifications to be managed by `ModelManager`. If a list of
-  specifications (not `BaseModelBackend` instances) is provided,
-  they will be instantiated using `ModelFactory`. (default:
-  :obj:`ModelPlatformType.DEFAULT` with `ModelType.DEFAULT`)
-- `message_window_size` _int, optional_ - The maximum number of previous
-  messages to include in the context window. If `None`, no windowing
-  is performed. (default: :obj:`6`)
-- `retry_attempts` _int, optional_ - The number of retry attempts if the
-  critic fails to return a valid option. (default: :obj:`2`)
-- `verbose` _bool, optional_ - Whether to print the critic's messages.
-- `logger_color` _Any_ - The color of the menu options displayed to the
-  user. (default: :obj:`Fore.MAGENTA`)
+- **system_message** (Union[BaseMessage, str], optional): The system message for the chat agent. (default: :obj:`None`) model (Union[BaseModelBackend, Tuple[str, str], str, ModelType, Tuple[ModelPlatformType, ModelType], List[BaseModelBackend], List[str], List[ModelType], List[Tuple[str, str]], List[Tuple[ModelPlatformType, ModelType]]], optional): The model backend(s) to use. Can be a single instance, a specification (string, enum, tuple), or a list of instances or specifications to be managed by `ModelManager`. If a list of specifications (not `BaseModelBackend` instances) is provided, they will be instantiated using `ModelFactory`. (default: :obj:`ModelPlatformType.DEFAULT` with `ModelType.DEFAULT`)
+- **message_window_size** (int, optional): The maximum number of previous messages to include in the context window. If `None`, no windowing is performed. (default: :obj:`6`)
+- **retry_attempts** (int, optional): The number of retry attempts if the critic fails to return a valid option. (default: :obj:`2`)
+- **verbose** (bool, optional): Whether to print the critic's messages.
+- **logger_color** (Any): The color of the menu options displayed to the user. (default: :obj:`Fore.MAGENTA`)
+
+<a id="camel.agents.critic_agent.CriticAgent.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    system_message: Optional[Union[BaseMessage, str]] = None,
+    model: Optional[Union[BaseModelBackend, Tuple[str, str], str, ModelType, Tuple[ModelPlatformType, ModelType], List[BaseModelBackend], List[str], List[ModelType], List[Tuple[str, str]], List[Tuple[ModelPlatformType, ModelType]]]] = None,
+    memory: Optional[AgentMemory] = None,
+    message_window_size: int = 6,
+    retry_attempts: int = 2,
+    verbose: bool = False,
+    logger_color: Any = Fore.MAGENTA
+):
+```
 
 <a id="camel.agents.critic_agent.CriticAgent.flatten_options"></a>
 
-#### flatten\_options
+### flatten_options
 
 ```python
-def flatten_options(messages: Sequence[BaseMessage]) -> str
+def flatten_options(self, messages: Sequence[BaseMessage]):
 ```
 
 Flattens the options to the critic.
 
-**Arguments**:
+**Parameters:**
 
-- `messages` _Sequence[BaseMessage]_ - A list of `BaseMessage` objects.
-  
+- **messages** (Sequence[BaseMessage]): A list of `BaseMessage` objects.
 
-**Returns**:
+**Returns:**
 
-- `str` - A string containing the flattened options to the critic.
+  str: A string containing the flattened options to the critic.
 
 <a id="camel.agents.critic_agent.CriticAgent.get_option"></a>
 
-#### get\_option
+### get_option
 
 ```python
-def get_option(input_message: BaseMessage) -> str
+def get_option(self, input_message: BaseMessage):
 ```
 
 Gets the option selected by the critic.
 
-**Arguments**:
+**Parameters:**
 
-- `input_message` _BaseMessage_ - A `BaseMessage` object representing
-  the input message.
-  
+- **input_message** (BaseMessage): A `BaseMessage` object representing the input message.
 
-**Returns**:
+**Returns:**
 
-- `str` - The option selected by the critic.
+  str: The option selected by the critic.
 
 <a id="camel.agents.critic_agent.CriticAgent.parse_critic"></a>
 
-#### parse\_critic
+### parse_critic
 
 ```python
-def parse_critic(critic_msg: BaseMessage) -> Optional[str]
+def parse_critic(self, critic_msg: BaseMessage):
 ```
 
 Parses the critic's message and extracts the choice.
 
-**Arguments**:
+**Parameters:**
 
-- `critic_msg` _BaseMessage_ - A `BaseMessage` object representing the
-  critic's response.
-  
+- **critic_msg** (BaseMessage): A `BaseMessage` object representing the critic's response.
 
-**Returns**:
+**Returns:**
 
-- `Optional[str]` - The critic's choice as a string, or None if the
-  message could not be parsed.
+  Optional[str]: The critic's choice as a string, or None if the
+message could not be parsed.
 
 <a id="camel.agents.critic_agent.CriticAgent.reduce_step"></a>
 
-#### reduce\_step
+### reduce_step
 
 ```python
-def reduce_step(input_messages: Sequence[BaseMessage]) -> ChatAgentResponse
+def reduce_step(self, input_messages: Sequence[BaseMessage]):
 ```
 
 Performs one step of the conversation by flattening options to the
 critic, getting the option, and parsing the choice.
 
-**Arguments**:
+**Parameters:**
 
-- `input_messages` _Sequence[BaseMessage]_ - A list of BaseMessage
-  objects.
-  
+- **input_messages** (Sequence[BaseMessage]): A list of BaseMessage objects.
 
-**Returns**:
+**Returns:**
 
-- `ChatAgentResponse` - A `ChatAgentResponse` object includes the
-  critic's choice.
+  ChatAgentResponse: A `ChatAgentResponse` object includes the
+critic's choice.
 
 <a id="camel.agents.critic_agent.CriticAgent.clone"></a>
 
-#### clone
+### clone
 
 ```python
-def clone(with_memory: bool = False) -> 'CriticAgent'
+def clone(self, with_memory: bool = False):
 ```
 
 Creates a new instance of :obj:`CriticAgent` with the same
 configuration as the current instance.
 
-**Arguments**:
+**Parameters:**
 
-- `with_memory` _bool_ - Whether to copy the memory (conversation
-  history) to the new agent. If True, the new agent will have
-  the same conversation history. If False, the new agent will
-  have a fresh memory with only the system message.
-- `(default` - :obj:`False`)
-  
+- **with_memory** (bool): Whether to copy the memory (conversation history) to the new agent. If True, the new agent will have the same conversation history. If False, the new agent will have a fresh memory with only the system message. (default: :obj:`False`)
 
-**Returns**:
+**Returns:**
 
-- `CriticAgent` - A new instance of :obj:`CriticAgent` with the same
-  configuration.
-
+  CriticAgent: A new instance of :obj:`CriticAgent` with the same
+configuration.

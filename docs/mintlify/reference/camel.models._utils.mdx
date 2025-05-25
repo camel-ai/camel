@@ -2,12 +2,13 @@
 
 <a id="camel.models._utils.try_modify_message_with_format"></a>
 
-#### try\_modify\_message\_with\_format
+## try_modify_message_with_format
 
 ```python
 def try_modify_message_with_format(
-        message: OpenAIMessage,
-        response_format: Optional[Type[BaseModel]]) -> None
+    message: OpenAIMessage,
+    response_format: Optional[Type[BaseModel]]
+):
 ```
 
 Modifies the content of the message to include the instruction of using
@@ -18,8 +19,7 @@ The message will not be modified in the following cases:
 - message content is not a string
 - message role is assistant
 
-**Arguments**:
+**Parameters:**
 
-- `response_format` _Optional[Type[BaseModel]]_ - The Pydantic model class.
-- `message` _OpenAIMessage_ - The message to be modified.
-
+- **response_format** (Optional[Type[BaseModel]]): The Pydantic model class.
+- **message** (OpenAIMessage): The message to be modified.

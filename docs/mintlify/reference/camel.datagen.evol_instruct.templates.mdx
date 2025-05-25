@@ -2,11 +2,10 @@
 
 <a id="camel.datagen.evol_instruct.templates.BaseEvolInstructTemplates"></a>
 
-## BaseEvolInstructTemplates Objects
+## BaseEvolInstructTemplates
 
 ```python
-@dataclass(frozen=True)
-class BaseEvolInstructTemplates(ABC)
+class BaseEvolInstructTemplates(ABC):
 ```
 
 Abstract base class for evolution instruction templates.
@@ -19,55 +18,47 @@ Subclasses should define concrete templates for specific domains.
 
 <a id="camel.datagen.evol_instruct.templates.BaseEvolInstructTemplates.EVOL_METHODS"></a>
 
-#### EVOL\_METHODS
+### EVOL_METHODS
 
 ```python
-@property
-@abstractmethod
-def EVOL_METHODS() -> Dict[str, str]
+def EVOL_METHODS(self):
 ```
 
 A dictionary mapping evolution method keys to their descriptions.
 
 <a id="camel.datagen.evol_instruct.templates.BaseEvolInstructTemplates.STRATEGY"></a>
 
-#### STRATEGY
+### STRATEGY
 
 ```python
-@property
-@abstractmethod
-def STRATEGY() -> Dict[str, Dict[str, Union[str, List[str]]]]
+def STRATEGY(self):
 ```
 
 A dictionary defining strategies and their corresponding methods.
 
 <a id="camel.datagen.evol_instruct.templates.EvolInstructTemplates"></a>
 
-## EvolInstructTemplates Objects
+## EvolInstructTemplates
 
 ```python
-@dataclass(frozen=True)
-class EvolInstructTemplates(BaseEvolInstructTemplates)
+class EvolInstructTemplates(BaseEvolInstructTemplates):
 ```
 
 Contains templates for EvolInstruct prompt transformations.
 
-**References**:
-
-  - WizardLM: Empowering Large Language Models to Follow Complex
-  Instructions
-  https://arxiv.org/pdf/2304.12244
-  - eva: Evolving Alignment via Asymmetric Self-Play
-  https://arxiv.org/abs/2411.00062
+References:
+- WizardLM: Empowering Large Language Models to Follow Complex
+Instructions
+https://arxiv.org/pdf/2304.12244
+- eva: Evolving Alignment via Asymmetric Self-Play
+https://arxiv.org/abs/2411.00062
 
 <a id="camel.datagen.evol_instruct.templates.MathEvolInstructTemplates"></a>
 
-## MathEvolInstructTemplates Objects
+## MathEvolInstructTemplates
 
 ```python
-@dataclass(frozen=True)
-class MathEvolInstructTemplates(BaseEvolInstructTemplates)
+class MathEvolInstructTemplates(BaseEvolInstructTemplates):
 ```
 
 Contains templates for MathEvolInstruct prompt transformations.
-

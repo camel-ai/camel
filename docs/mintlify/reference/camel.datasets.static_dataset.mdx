@@ -2,10 +2,10 @@
 
 <a id="camel.datasets.static_dataset.StaticDataset"></a>
 
-## StaticDataset Objects
+## StaticDataset
 
 ```python
-class StaticDataset(Dataset)
+class StaticDataset(Dataset):
 ```
 
 A static dataset containing a list of datapoints.
@@ -19,110 +19,191 @@ converting them into a consistent internal format.
 
 <a id="camel.datasets.static_dataset.StaticDataset.__init__"></a>
 
-#### \_\_init\_\_
+### __init__
 
 ```python
-def __init__(data: Union[HFDataset, Dataset, Path, List[Dict[str, Any]]],
-             seed: int = 42,
-             min_samples: int = 1,
-             strict: bool = False,
-             **kwargs)
+def __init__(
+    self,
+    data: Union[HFDataset, Dataset, Path, List[Dict[str, Any]]],
+    seed: int = 42,
+    min_samples: int = 1,
+    strict: bool = False,
+    **kwargs
+):
 ```
 
 Initialize the static dataset and validate integrity.
 
-**Arguments**:
+**Parameters:**
 
-  data (Union[HFDataset, Dataset, Path, List[Dict[str, Any]]]):
-  Input data, which can be one of the following:
-  - A Hugging Face Dataset (:obj:`HFDataset`).
-  - A PyTorch Dataset (:obj:`torch.utils.data.Dataset`).
-  - A :obj:`Path` object representing a JSON or JSONL file.
-  - A list of dictionaries with :obj:`DataPoint`-compatible
-  fields.
-- `seed` _int_ - Random seed for reproducibility.
-- `(default` - :obj:`42`)
-- `min_samples` _int_ - Minimum required number of samples.
-- `(default` - :obj:`1`)
-- `strict` _bool_ - Whether to raise an error on invalid
-  datapoints (:obj:`True`) or skip/filter them (:obj:`False`).
-- `(default` - :obj:`False`)
-- `**kwargs` - Additional dataset parameters.
-  
+- **data** (Union[HFDataset, Dataset, Path, List[Dict[str, Any]]]): Input data, which can be one of the following: - A Hugging Face Dataset (:obj:`HFDataset`). - A PyTorch Dataset (:obj:`torch.utils.data.Dataset`). - A :obj:`Path` object representing a JSON or JSONL file. - A list of dictionaries with :obj:`DataPoint`-compatible fields.
+- **seed** (int): Random seed for reproducibility. (default: :obj:`42`)
+- **min_samples** (int): Minimum required number of samples. (default: :obj:`1`)
+- **strict** (bool): Whether to raise an error on invalid datapoints (:obj:`True`) or skip/filter them (:obj:`False`). (default: :obj:`False`) **kwargs: Additional dataset parameters.
 
-**Raises**:
+<a id="camel.datasets.static_dataset.StaticDataset._init_data"></a>
 
-- `TypeError` - If the input data type is unsupported.
-- `ValueError` - If the dataset contains fewer than :obj:`min_samples`
-  datapoints or if validation fails.
-- `FileNotFoundError` - If the specified JSON file path does not exist.
-- `json.JSONDecodeError` - If the JSON file contains invalid formatting.
+### _init_data
+
+```python
+def _init_data(
+    self,
+    data: Union[HFDataset, Dataset, Path, List[Dict[str, Any]]]
+):
+```
+
+Convert input data from various formats into a list of
+:obj:`DataPoint` instances.
+
+**Parameters:**
+
+- **data** (Union[HFDataset, Dataset, Path, List[Dict[str, Any]]]): Input dataset in one of the supported formats.
+
+**Returns:**
+
+  List[DataPoint]: A list of validated :obj:`DataPoint`
+instances.
 
 <a id="camel.datasets.static_dataset.StaticDataset.__len__"></a>
 
-#### \_\_len\_\_
+### __len__
 
 ```python
-def __len__() -> int
+def __len__(self):
 ```
 
 Return the size of the dataset.
 
 <a id="camel.datasets.static_dataset.StaticDataset.__getitem__"></a>
 
-#### \_\_getitem\_\_
+### __getitem__
 
 ```python
-def __getitem__(idx: Union[int, slice]) -> Union[DataPoint, List[DataPoint]]
+def __getitem__(self, idx: Union[int, slice]):
 ```
 
 Retrieve a datapoint or a batch of datapoints by index or slice.
 
-**Arguments**:
+**Parameters:**
 
-- `idx` _Union[int, slice]_ - Index or slice of the datapoint(s).
-  
+- **idx** (Union[int, slice]): Index or slice of the datapoint(s).
 
-**Returns**:
+**Returns:**
 
-- `List[DataPoint]` - A list of `DataPoint` objects.
-  
-
-**Raises**:
-
-- `IndexError` - If an integer `idx` is out of bounds.
+  List[DataPoint]: A list of `DataPoint` objects.
 
 <a id="camel.datasets.static_dataset.StaticDataset.sample"></a>
 
-#### sample
+### sample
 
 ```python
-def sample() -> DataPoint
+def sample(self):
 ```
 
-Sample a random datapoint from the dataset.
+**Returns:**
 
-**Returns**:
-
-- `DataPoint` - A randomly sampled :obj:`DataPoint`.
-  
-
-**Raises**:
-
-- `RuntimeError` - If the dataset is empty and no samples can be drawn.
+  DataPoint: A randomly sampled :obj:`DataPoint`.
 
 <a id="camel.datasets.static_dataset.StaticDataset.metadata"></a>
 
-#### metadata
+### metadata
 
 ```python
-@property
-def metadata() -> Dict[str, Any]
+def metadata(self):
 ```
 
-Retrieve dataset metadata.
-
-**Returns**:
+**Returns:**
 
   Dict[str, Any]: A copy of the dataset metadata dictionary.
 
+<a id="camel.datasets.static_dataset.StaticDataset._init_from_hf_dataset"></a>
+
+### _init_from_hf_dataset
+
+```python
+def _init_from_hf_dataset(self, data: HFDataset):
+```
+
+Convert a Hugging Face dataset into a list of dictionaries.
+
+**Parameters:**
+
+- **data** (HFDataset): A Hugging Face dataset.
+
+**Returns:**
+
+  List[Dict[str, Any]]: A list of dictionaries representing
+the dataset, where each dictionary corresponds to a datapoint.
+
+<a id="camel.datasets.static_dataset.StaticDataset._init_from_pytorch_dataset"></a>
+
+### _init_from_pytorch_dataset
+
+```python
+def _init_from_pytorch_dataset(self, data: Dataset):
+```
+
+Convert a PyTorch dataset into a list of dictionaries.
+
+**Parameters:**
+
+- **data** (Dataset): A PyTorch dataset.
+
+**Returns:**
+
+  List[Dict[str, Any]]: A list of dictionaries representing
+the dataset.
+
+<a id="camel.datasets.static_dataset.StaticDataset._init_from_json_path"></a>
+
+### _init_from_json_path
+
+```python
+def _init_from_json_path(self, data: Path):
+```
+
+Load and parse a dataset from a JSON file.
+
+**Parameters:**
+
+- **data** (Path): Path to the JSON file.
+
+**Returns:**
+
+  List[Dict[str, Any]]: A list of datapoint dictionaries.
+
+<a id="camel.datasets.static_dataset.StaticDataset._init_from_jsonl_path"></a>
+
+### _init_from_jsonl_path
+
+```python
+def _init_from_jsonl_path(self, data: Path):
+```
+
+Load and parse a dataset from a JSONL file.
+
+**Parameters:**
+
+- **data** (Path): Path to the JSONL file.
+
+**Returns:**
+
+  List[Dict[str, Any]]: A list of datapoint dictionaries.
+
+<a id="camel.datasets.static_dataset.StaticDataset._init_from_list"></a>
+
+### _init_from_list
+
+```python
+def _init_from_list(self, data: List[Dict[str, Any]]):
+```
+
+Validate and convert a list of dictionaries into a dataset.
+
+**Parameters:**
+
+- **data** (List[Dict[str, Any]]): A list of dictionaries where each dictionary must be a valid :obj:`DataPoint`.
+
+**Returns:**
+
+  List[Dict[str, Any]]: The validated list of dictionaries.

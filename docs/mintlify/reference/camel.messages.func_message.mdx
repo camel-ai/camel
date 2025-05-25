@@ -2,94 +2,76 @@
 
 <a id="camel.messages.func_message.FunctionCallingMessage"></a>
 
-## FunctionCallingMessage Objects
+## FunctionCallingMessage
 
 ```python
-@dataclass
-class FunctionCallingMessage(BaseMessage)
+class FunctionCallingMessage(BaseMessage):
 ```
 
 Class for message objects used specifically for
 function-related messages.
 
-**Arguments**:
+**Parameters:**
 
-- `func_name` _Optional[str]_ - The name of the function used.
-- `(default` - :obj:`None`)
-- `args` _Optional[Dict]_ - The dictionary of arguments passed to the
-  function. (default: :obj:`None`)
-- `result` _Optional[Any]_ - The result of function execution.
-- `(default` - :obj:`None`)
-- `tool_call_id` _Optional[str]_ - The ID of the tool call, if available.
-- `(default` - :obj:`None`)
+- **func_name** (Optional[str]): The name of the function used. (default: :obj:`None`)
+- **args** (Optional[Dict]): The dictionary of arguments passed to the function. (default: :obj:`None`)
+- **result** (Optional[Any]): The result of function execution. (default: :obj:`None`)
+- **tool_call_id** (Optional[str]): The ID of the tool call, if available. (default: :obj:`None`)
 
 <a id="camel.messages.func_message.FunctionCallingMessage.to_openai_message"></a>
 
-#### to\_openai\_message
+### to_openai_message
 
 ```python
-def to_openai_message(role_at_backend: OpenAIBackendRole) -> OpenAIMessage
+def to_openai_message(self, role_at_backend: OpenAIBackendRole):
 ```
 
 Converts the message to an :obj:`OpenAIMessage` object.
 
-**Arguments**:
+**Parameters:**
 
-- `role_at_backend` _OpenAIBackendRole_ - The role of the message in
-  OpenAI chat system.
-  
+- **role_at_backend** (OpenAIBackendRole): The role of the message in OpenAI chat system.
 
-**Returns**:
+**Returns:**
 
-- `OpenAIMessage` - The converted :obj:`OpenAIMessage` object.
+  OpenAIMessage: The converted :obj:`OpenAIMessage` object.
 
 <a id="camel.messages.func_message.FunctionCallingMessage.to_sharegpt"></a>
 
-#### to\_sharegpt
+### to_sharegpt
 
 ```python
 def to_sharegpt(
-    function_format: Optional[FunctionCallFormatter[ToolCall,
-                                                    ToolResponse]] = None
-) -> ShareGPTMessage
+    self,
+    function_format: Optional[FunctionCallFormatter[ToolCall, ToolResponse]] = None
+):
 ```
 
 Convert FunctionCallingMessage to ShareGPT message.
 
-**Arguments**:
-
-  function_format (FunctionCallFormatter[ToolCall, ToolResponse],
-- `optional)` - The function formatter to use. Defaults to None.
-
 <a id="camel.messages.func_message.FunctionCallingMessage.to_openai_assistant_message"></a>
 
-#### to\_openai\_assistant\_message
+### to_openai_assistant_message
 
 ```python
-def to_openai_assistant_message() -> OpenAIAssistantMessage
+def to_openai_assistant_message(self):
 ```
 
-Converts the message to an :obj:`OpenAIAssistantMessage` object.
+**Returns:**
 
-**Returns**:
-
-- `OpenAIAssistantMessage` - The converted :obj:`OpenAIAssistantMessage`
-  object.
+  OpenAIAssistantMessage: The converted :obj:`OpenAIAssistantMessage`
+object.
 
 <a id="camel.messages.func_message.FunctionCallingMessage.to_openai_tool_message"></a>
 
-#### to\_openai\_tool\_message
+### to_openai_tool_message
 
 ```python
-def to_openai_tool_message() -> OpenAIToolMessageParam
+def to_openai_tool_message(self):
 ```
 
-Converts the message to an :obj:`OpenAIToolMessageParam` object
-with the role being "tool".
+**Returns:**
 
-**Returns**:
-
-- `OpenAIToolMessageParam` - The converted
-  :obj:`OpenAIToolMessageParam` object with its role being
-  "tool".
-
+  OpenAIToolMessageParam: The converted
+:obj:`OpenAIToolMessageParam` object with its role being
+"tool".

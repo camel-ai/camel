@@ -2,119 +2,131 @@
 
 <a id="camel.models.stub_model.StubTokenCounter"></a>
 
-## StubTokenCounter Objects
+## StubTokenCounter
 
 ```python
-class StubTokenCounter(BaseTokenCounter)
+class StubTokenCounter(BaseTokenCounter):
 ```
 
 <a id="camel.models.stub_model.StubTokenCounter.count_tokens_from_messages"></a>
 
-#### count\_tokens\_from\_messages
+### count_tokens_from_messages
 
 ```python
-def count_tokens_from_messages(messages: List[OpenAIMessage]) -> int
+def count_tokens_from_messages(self, messages: List[OpenAIMessage]):
 ```
 
 Token counting for STUB models, directly returning a constant.
 
-**Arguments**:
+**Parameters:**
 
-- `messages` _List[OpenAIMessage]_ - Message list with the chat history
-  in OpenAI API format.
-  
+- **messages** (List[OpenAIMessage]): Message list with the chat history in OpenAI API format.
 
-**Returns**:
+**Returns:**
 
-- `int` - A constant to act as the number of the tokens in the
-  messages.
+  int: A constant to act as the number of the tokens in the
+messages.
 
 <a id="camel.models.stub_model.StubTokenCounter.encode"></a>
 
-#### encode
+### encode
 
 ```python
-def encode(text: str) -> List[int]
+def encode(self, text: str):
 ```
 
 Encode text into token IDs for STUB models.
 
-**Arguments**:
+**Parameters:**
 
-- `text` _str_ - The text to encode.
-  
+- **text** (str): The text to encode.
 
-**Returns**:
+**Returns:**
 
-- `List[int]` - List of token IDs.
+  List[int]: List of token IDs.
 
 <a id="camel.models.stub_model.StubTokenCounter.decode"></a>
 
-#### decode
+### decode
 
 ```python
-def decode(token_ids: List[int]) -> str
+def decode(self, token_ids: List[int]):
 ```
 
 Decode token IDs back to text for STUB models.
 
-**Arguments**:
+**Parameters:**
 
-- `token_ids` _List[int]_ - List of token IDs to decode.
-  
+- **token_ids** (List[int]): List of token IDs to decode.
 
-**Returns**:
+**Returns:**
 
-- `str` - Decoded text.
+  str: Decoded text.
 
 <a id="camel.models.stub_model.StubModel"></a>
 
-## StubModel Objects
+## StubModel
 
 ```python
-class StubModel(BaseModelBackend)
+class StubModel(BaseModelBackend):
 ```
 
 A dummy model used for unit tests.
 
 <a id="camel.models.stub_model.StubModel.__init__"></a>
 
-#### \_\_init\_\_
+### __init__
 
 ```python
-def __init__(model_type: Union[ModelType, str],
-             model_config_dict: Optional[Dict[str, Any]] = None,
-             api_key: Optional[str] = None,
-             url: Optional[str] = None,
-             token_counter: Optional[BaseTokenCounter] = None,
-             timeout: Optional[float] = None) -> None
+def __init__(
+    self,
+    model_type: Union[ModelType, str],
+    model_config_dict: Optional[Dict[str, Any]] = None,
+    api_key: Optional[str] = None,
+    url: Optional[str] = None,
+    token_counter: Optional[BaseTokenCounter] = None,
+    timeout: Optional[float] = None
+):
 ```
 
 All arguments are unused for the dummy model.
 
 <a id="camel.models.stub_model.StubModel.token_counter"></a>
 
-#### token\_counter
+### token_counter
 
 ```python
-@property
-def token_counter() -> BaseTokenCounter
+def token_counter(self):
 ```
 
-Initialize the token counter for the model backend.
+**Returns:**
 
-**Returns**:
+  BaseTokenCounter: The token counter following the model's
+tokenization style.
 
-- `BaseTokenCounter` - The token counter following the model's
-  tokenization style.
+<a id="camel.models.stub_model.StubModel._run"></a>
+
+### _run
+
+```python
+def _run(
+    self,
+    messages: List[OpenAIMessage],
+    response_format: Optional[Type[BaseModel]] = None,
+    tools: Optional[List[Dict[str, Any]]] = None
+):
+```
+
+**Returns:**
+
+  Dict[str, Any]: Response in the OpenAI API format.
 
 <a id="camel.models.stub_model.StubModel.check_model_config"></a>
 
-#### check\_model\_config
+### check_model_config
 
 ```python
-def check_model_config()
+def check_model_config(self):
 ```
 
 Directly pass the check on arguments to STUB model.
-

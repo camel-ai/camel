@@ -2,124 +2,120 @@
 
 <a id="camel.human.Human"></a>
 
-## Human Objects
+## Human
 
 ```python
-class Human()
+class Human:
 ```
 
 A class representing a human user.
 
-**Arguments**:
+**Parameters:**
 
-- `name` _str_ - The name of the human user.
-- `(default` - :obj:`"Kill Switch Engineer"`).
-- `logger_color` _Any_ - The color of the menu options displayed to the
-  user. (default: :obj:`Fore.MAGENTA`)
-  
+- **name** (str): The name of the human user. (default: :obj:`"Kill Switch Engineer"`).
+- **logger_color** (Any): The color of the menu options displayed to the user. (default: :obj:`Fore.MAGENTA`)
+- **Attributes**: 
+- **name** (str): The name of the human user.
+- **logger_color** (Any): The color of the menu options displayed to the user.
+- **input_button** (str): The text displayed for the input button.
+- **kill_button** (str): The text displayed for the kill button.
+- **options_dict** (Dict[str, str]): A dictionary containing the options displayed to the user.
 
-**Attributes**:
+<a id="camel.human.Human.__init__"></a>
 
-- `name` _str_ - The name of the human user.
-- `logger_color` _Any_ - The color of the menu options displayed to the
-  user.
-- `input_button` _str_ - The text displayed for the input button.
-- `kill_button` _str_ - The text displayed for the kill button.
-- `options_dict` _Dict[str, str]_ - A dictionary containing the options
-  displayed to the user.
+### __init__
+
+```python
+def __init__(
+    self,
+    name: str = 'Kill Switch Engineer',
+    logger_color: Any = Fore.MAGENTA
+):
+```
 
 <a id="camel.human.Human.display_options"></a>
 
-#### display\_options
+### display_options
 
 ```python
-def display_options(messages: Sequence[BaseMessage]) -> None
+def display_options(self, messages: Sequence[BaseMessage]):
 ```
 
 Displays the options to the user.
 
-**Arguments**:
+**Parameters:**
 
-- `messages` _Sequence[BaseMessage]_ - A list of `BaseMessage` objects.
-  
+- **messages** (Sequence[BaseMessage]): A list of `BaseMessage` objects.
 
-**Returns**:
+**Returns:**
 
   None
 
 <a id="camel.human.Human.get_input"></a>
 
-#### get\_input
+### get_input
 
 ```python
-def get_input() -> str
+def get_input(self):
 ```
 
-Gets the input from the user.
+**Returns:**
 
-**Returns**:
-
-- `str` - The user's input.
+  str: The user's input.
 
 <a id="camel.human.Human.parse_input"></a>
 
-#### parse\_input
+### parse_input
 
 ```python
-def parse_input(human_input: str) -> str
+def parse_input(self, human_input: str):
 ```
 
 Parses the user's input and returns a `BaseMessage` object.
 
-**Arguments**:
+**Parameters:**
 
-- `human_input` _str_ - The user's input.
-  
+- **human_input** (str): The user's input.
 
-**Returns**:
+**Returns:**
 
-- `content` - A `str` object representing the user's input.
+  content: A `str` object representing the user's input.
 
 <a id="camel.human.Human.reduce_step"></a>
 
-#### reduce\_step
+### reduce_step
 
 ```python
-def reduce_step(messages: Sequence[BaseMessage]) -> ChatAgentResponse
+def reduce_step(self, messages: Sequence[BaseMessage]):
 ```
 
 Performs one step of the conversation by displaying options to the
 user, getting their input, and parsing their choice.
 
-**Arguments**:
+**Parameters:**
 
-- `messages` _Sequence[BaseMessage]_ - A list of BaseMessage objects.
-  
+- **messages** (Sequence[BaseMessage]): A list of BaseMessage objects.
 
-**Returns**:
+**Returns:**
 
-- `ChatAgentResponse` - A `ChatAgentResponse` object representing the
-  user's choice.
+  ChatAgentResponse: A `ChatAgentResponse` object representing the
+user's choice.
 
 <a id="camel.human.Human.clone"></a>
 
-#### clone
+### clone
 
 ```python
-def clone(with_memory: bool = False) -> 'Human'
+def clone(self, with_memory: bool = False):
 ```
 
 Creates a new instance of the Human class with the same
 attributes.
 
-**Arguments**:
+**Parameters:**
 
-- `with_memory` _bool_ - Flag indicating whether to include memory in
-  the cloned instance. Currently not used.
-- `(default` - :obj:`False`)
-  
+- **with_memory** (bool): Flag indicating whether to include memory in the cloned instance. Currently not used. (default: :obj:`False`)
 
-**Returns**:
+**Returns:**
 
-- `Human` - A new Human instance with the same name and logger_color.
-
+  Human: A new Human instance with the same name and logger_color.

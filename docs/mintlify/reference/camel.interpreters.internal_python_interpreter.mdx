@@ -2,10 +2,10 @@
 
 <a id="camel.interpreters.internal_python_interpreter.InternalPythonInterpreter"></a>
 
-## InternalPythonInterpreter Objects
+## InternalPythonInterpreter
 
 ```python
-class InternalPythonInterpreter(BaseInterpreter)
+class InternalPythonInterpreter(BaseInterpreter):
 ```
 
 A customized python interpreter to control the execution of
@@ -16,9 +16,9 @@ fuzzy variable matching to retrieve uncertain input variable name.
 .. highlight:: none
 
 This class is adapted from the hugging face implementation
-`python_interpreter.py <https://github.com/huggingface/transformers/blob/8f
+[python_interpreter.py](https://github.com/huggingface/transformers/blob/8f
 093fb799246f7dd9104ff44728da0c53a9f67a/src/transformers/tools/python_interp
-reter.py>`_. The original license applies::
+reter.py). The original license applies::
 
 Copyright 2023 The HuggingFace Inc. team. All rights reserved.
 
@@ -44,33 +44,33 @@ we have modified the variable matching logic and introduced the
 
 Modifications copyright (C) 2023 CAMEL-AI.org
 
-**Arguments**:
+**Parameters:**
 
-- `action_space` _Dict[str, Any], optional_ - A dictionary that maps action
-  names to their corresponding functions or objects. The interpreter
-  can only execute functions that are either directly listed in this
-  dictionary or are member functions of objects listed in this
-  dictionary. The concept of :obj:`action_space` is derived from
-  EmbodiedAgent, representing the actions that an agent is capable of
-  performing. If `None`, set to empty dict. (default: :obj:`None`)
-- `import_white_list` _List[str], optional_ - A list that stores
-  the Python modules or functions that can be imported in the code.
-  All submodules and functions of the modules listed in this list are
-  importable. Any other import statements will be rejected. The
-  module and its submodule or function name are separated by a period
-  (:obj:`.`). (default: :obj:`None`)
-- `unsafe_mode` _bool, optional_ - If `True`, the interpreter runs the code
-  by `eval()` or `exec()` without any security check.
-- `(default` - :obj:`False`)
-- `raise_error` _bool, optional_ - Raise error if the interpreter fails.
-- `(default` - :obj:`False`)
+- **action_space** (Dict[str, Any], optional): A dictionary that maps action names to their corresponding functions or objects. The interpreter can only execute functions that are either directly listed in this dictionary or are member functions of objects listed in this dictionary. The concept of :obj:`action_space` is derived from EmbodiedAgent, representing the actions that an agent is capable of performing. If `None`, set to empty dict. (default: :obj:`None`)
+- **import_white_list** (List[str], optional): A list that stores the Python modules or functions that can be imported in the code. All submodules and functions of the modules listed in this list are importable. Any other import statements will be rejected. The module and its submodule or function name are separated by a period (:obj:`.`). (default: :obj:`None`)
+- **unsafe_mode** (bool, optional): If `True`, the interpreter runs the code by `eval()` or `exec()` without any security check. (default: :obj:`False`)
+- **raise_error** (bool, optional): Raise error if the interpreter fails. (default: :obj:`False`)
+
+<a id="camel.interpreters.internal_python_interpreter.InternalPythonInterpreter.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    action_space: Optional[Dict[str, Any]] = None,
+    import_white_list: Optional[List[str]] = None,
+    unsafe_mode: bool = False,
+    raise_error: bool = False
+):
+```
 
 <a id="camel.interpreters.internal_python_interpreter.InternalPythonInterpreter.run"></a>
 
-#### run
+### run
 
 ```python
-def run(code: str, code_type: str) -> str
+def run(self, code: str, code_type: str):
 ```
 
 Executes the given code with specified code type in the
@@ -84,88 +84,192 @@ using `eval()` or `exec()` with the action space as the global context.
 An `InterpreterError` is raised if the code type is unsupported or if
 any runtime error occurs during execution.
 
-**Arguments**:
+**Parameters:**
 
-- `code` _str_ - The python code to be executed.
-- `code_type` _str_ - The type of the code, which should be one of the
-  supported code types (`python`, `py`, `python3`, `python2`).
-  
-  
+- **code** (str): The python code to be executed.
+- **code_type** (str): The type of the code, which should be one of the supported code types (`python`, `py`, `python3`, `python2`).
 
-**Returns**:
+**Returns:**
 
-- `str` - The string representation of the output of the executed code.
-  
-
-**Raises**:
-
-- `InterpreterError` - If the `code_type` is not supported or if any
-  runtime error occurs during the execution of the code.
+  str: The string representation of the output of the executed code.
 
 <a id="camel.interpreters.internal_python_interpreter.InternalPythonInterpreter.update_action_space"></a>
 
-#### update\_action\_space
+### update_action_space
 
 ```python
-def update_action_space(action_space: Dict[str, Any]) -> None
+def update_action_space(self, action_space: Dict[str, Any]):
 ```
 
 Updates action space for *python* interpreter.
 
 <a id="camel.interpreters.internal_python_interpreter.InternalPythonInterpreter.supported_code_types"></a>
 
-#### supported\_code\_types
+### supported_code_types
 
 ```python
-def supported_code_types() -> List[str]
+def supported_code_types(self):
 ```
 
 Provides supported code types by the interpreter.
 
 <a id="camel.interpreters.internal_python_interpreter.InternalPythonInterpreter.execute"></a>
 
-#### execute
+### execute
 
 ```python
-def execute(code: str,
-            state: Optional[Dict[str, Any]] = None,
-            fuzz_state: Optional[Dict[str, Any]] = None,
-            keep_state: bool = True) -> Any
+def execute(
+    self,
+    code: str,
+    state: Optional[Dict[str, Any]] = None,
+    fuzz_state: Optional[Dict[str, Any]] = None,
+    keep_state: bool = True
+):
 ```
 
 Execute the input python codes in a security environment.
 
-**Arguments**:
+**Parameters:**
 
-- `code` _str_ - Generated python code to be executed.
-- `state` _Optional[Dict[str, Any]], optional_ - External variables that
-  may be used in the generated code. (default: :obj:`None`)
-- `fuzz_state` _Optional[Dict[str, Any]], optional_ - External variables
-  that do not have certain variable names. The interpreter will
-  use fuzzy matching to access these variables. For example, if
-  :obj:`fuzz_state` has a variable :obj:`image`, the generated
-  code can use :obj:`input_image` to access it. (default:
-  :obj:`None`)
-- `keep_state` _bool, optional_ - If :obj:`True`, :obj:`state` and
-  :obj:`fuzz_state` will be kept for later execution. Otherwise,
-  they will be cleared. (default: :obj:`True`)
-  
+- **code** (str): Generated python code to be executed.
+- **state** (Optional[Dict[str, Any]], optional): External variables that may be used in the generated code. (default: :obj:`None`)
+- **fuzz_state** (Optional[Dict[str, Any]], optional): External variables that do not have certain variable names. The interpreter will use fuzzy matching to access these variables. For example, if :obj:`fuzz_state` has a variable :obj:`image`, the generated code can use :obj:`input_image` to access it. (default: :obj:`None`)
+- **keep_state** (bool, optional): If :obj:`True`, :obj:`state` and :obj:`fuzz_state` will be kept for later execution. Otherwise, they will be cleared. (default: :obj:`True`)
 
-**Returns**:
+**Returns:**
 
-- `Any` - The value of the last statement (excluding "import") in the
-  code. For this interpreter, the value of an expression is its
-  value, the value of an "assign" statement is the assigned
-  value, and the value of an "if" and "for" block statement is
-  the value of the last statement in the block.
+  Any: The value of the last statement (excluding "import") in the
+code. For this interpreter, the value of an expression is its
+value, the value of an "assign" statement is the assigned
+value, and the value of an "if" and "for" block statement is
+the value of the last statement in the block.
 
 <a id="camel.interpreters.internal_python_interpreter.InternalPythonInterpreter.clear_state"></a>
 
-#### clear\_state
+### clear_state
 
 ```python
-def clear_state() -> None
+def clear_state(self):
 ```
 
 Initialize :obj:`state` and :obj:`fuzz_state`.
 
+<a id="camel.interpreters.internal_python_interpreter.InternalPythonInterpreter._execute_ast"></a>
+
+### _execute_ast
+
+```python
+def _execute_ast(self, expression: ast.AST):
+```
+
+<a id="camel.interpreters.internal_python_interpreter.InternalPythonInterpreter._execute_assign"></a>
+
+### _execute_assign
+
+```python
+def _execute_assign(self, assign: ast.Assign):
+```
+
+<a id="camel.interpreters.internal_python_interpreter.InternalPythonInterpreter._assign"></a>
+
+### _assign
+
+```python
+def _assign(self, target: ast.expr, value: Any):
+```
+
+<a id="camel.interpreters.internal_python_interpreter.InternalPythonInterpreter._execute_call"></a>
+
+### _execute_call
+
+```python
+def _execute_call(self, call: ast.Call):
+```
+
+<a id="camel.interpreters.internal_python_interpreter.InternalPythonInterpreter._execute_subscript"></a>
+
+### _execute_subscript
+
+```python
+def _execute_subscript(self, subscript: ast.Subscript):
+```
+
+<a id="camel.interpreters.internal_python_interpreter.InternalPythonInterpreter._execute_name"></a>
+
+### _execute_name
+
+```python
+def _execute_name(self, name: ast.Name):
+```
+
+<a id="camel.interpreters.internal_python_interpreter.InternalPythonInterpreter._execute_condition"></a>
+
+### _execute_condition
+
+```python
+def _execute_condition(self, condition: ast.Compare):
+```
+
+<a id="camel.interpreters.internal_python_interpreter.InternalPythonInterpreter._execute_if"></a>
+
+### _execute_if
+
+```python
+def _execute_if(self, if_statement: ast.If):
+```
+
+<a id="camel.interpreters.internal_python_interpreter.InternalPythonInterpreter._execute_for"></a>
+
+### _execute_for
+
+```python
+def _execute_for(self, for_statement: ast.For):
+```
+
+<a id="camel.interpreters.internal_python_interpreter.InternalPythonInterpreter._execute_import"></a>
+
+### _execute_import
+
+```python
+def _execute_import(self, import_module: ast.Import):
+```
+
+<a id="camel.interpreters.internal_python_interpreter.InternalPythonInterpreter._execute_import_from"></a>
+
+### _execute_import_from
+
+```python
+def _execute_import_from(self, import_from: ast.ImportFrom):
+```
+
+<a id="camel.interpreters.internal_python_interpreter.InternalPythonInterpreter._validate_import"></a>
+
+### _validate_import
+
+```python
+def _validate_import(self, full_name: str):
+```
+
+<a id="camel.interpreters.internal_python_interpreter.InternalPythonInterpreter._execute_binop"></a>
+
+### _execute_binop
+
+```python
+def _execute_binop(self, binop: ast.BinOp):
+```
+
+<a id="camel.interpreters.internal_python_interpreter.InternalPythonInterpreter._execute_unaryop"></a>
+
+### _execute_unaryop
+
+```python
+def _execute_unaryop(self, unaryop: ast.UnaryOp):
+```
+
+<a id="camel.interpreters.internal_python_interpreter.InternalPythonInterpreter._get_value_from_state"></a>
+
+### _get_value_from_state
+
+```python
+def _get_value_from_state(self, key: str):
+```

@@ -2,44 +2,53 @@
 
 <a id="camel.runtime.base.BaseRuntime"></a>
 
-## BaseRuntime Objects
+## BaseRuntime
 
 ```python
-class BaseRuntime(ABC)
+class BaseRuntime(ABC):
 ```
 
 An abstract base class for all CAMEL runtimes.
 
-<a id="camel.runtime.base.BaseRuntime.add"></a>
+<a id="camel.runtime.base.BaseRuntime.__init__"></a>
 
-#### add
+### __init__
 
 ```python
-@abstractmethod
-def add(funcs: Union[FunctionTool, List[FunctionTool]], *args: Any,
-        **kwargs: Any) -> "BaseRuntime"
+def __init__(self):
+```
+
+<a id="camel.runtime.base.BaseRuntime.add"></a>
+
+### add
+
+```python
+def add(
+    self,
+    funcs: Union[FunctionTool, List[FunctionTool]],
+    *args: Any,
+    **kwargs: Any
+):
 ```
 
 Adds a new tool to the runtime.
 
 <a id="camel.runtime.base.BaseRuntime.reset"></a>
 
-#### reset
+### reset
 
 ```python
-@abstractmethod
-def reset(*args: Any, **kwargs: Any) -> Any
+def reset(self, *args: Any, **kwargs: Any):
 ```
 
 Resets the runtime to its initial state.
 
 <a id="camel.runtime.base.BaseRuntime.get_tools"></a>
 
-#### get\_tools
+### get_tools
 
 ```python
-def get_tools() -> List[FunctionTool]
+def get_tools(self):
 ```
 
 Returns a list of all tools in the runtime.
-

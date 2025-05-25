@@ -2,80 +2,120 @@
 
 <a id="camel.models.cohere_model.CohereModel"></a>
 
-## CohereModel Objects
+## CohereModel
 
 ```python
-class CohereModel(BaseModelBackend)
+class CohereModel(BaseModelBackend):
 ```
 
 Cohere API in a unified BaseModelBackend interface.
 
-**Arguments**:
+**Parameters:**
 
-- `model_type` _Union[ModelType, str]_ - Model for which a backend is
-  created, one of Cohere series.
-- `model_config_dict` _Optional[Dict[str, Any]], optional_ - A dictionary
-  that will be fed into:obj:`cohere.ClientV2().chat()`. If
-  :obj:`None`, :obj:`CohereConfig().as_dict()` will be used.
-- `(default` - :obj:`None`)
-- `api_key` _Optional[str], optional_ - The API key for authenticating with
-  the Cohere service. (default: :obj:`None`)
-- `url` _Optional[str], optional_ - The url to the Cohere service.
-- `(default` - :obj:`None`)
-- `token_counter` _Optional[BaseTokenCounter], optional_ - Token counter to
-  use for the model. If not provided, :obj:`OpenAITokenCounter(
-  ModelType.GPT_4O_MINI)` will be used.
-- `(default` - :obj:`None`)
-- `timeout` _Optional[float], optional_ - The timeout value in seconds for
-  API calls. If not provided, will fall back to the MODEL_TIMEOUT
-  environment variable or default to 180 seconds.
-- `(default` - :obj:`None`)
+- **model_type** (Union[ModelType, str]): Model for which a backend is created, one of Cohere series.
+- **model_config_dict** (Optional[Dict[str, Any]], optional): A dictionary that will be fed into:obj:`cohere.ClientV2().chat()`. If :obj:`None`, :obj:`CohereConfig().as_dict()` will be used. (default: :obj:`None`)
+- **api_key** (Optional[str], optional): The API key for authenticating with the Cohere service. (default: :obj:`None`)
+- **url** (Optional[str], optional): The url to the Cohere service. (default: :obj:`None`)
+- **token_counter** (Optional[BaseTokenCounter], optional): Token counter to use for the model. If not provided, :obj:`OpenAITokenCounter( ModelType.GPT_4O_MINI)` will be used. (default: :obj:`None`)
+- **timeout** (Optional[float], optional): The timeout value in seconds for API calls. If not provided, will fall back to the MODEL_TIMEOUT environment variable or default to 180 seconds. (default: :obj:`None`)
+
+<a id="camel.models.cohere_model.CohereModel.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    model_type: Union[ModelType, str],
+    model_config_dict: Optional[Dict[str, Any]] = None,
+    api_key: Optional[str] = None,
+    url: Optional[str] = None,
+    token_counter: Optional[BaseTokenCounter] = None,
+    timeout: Optional[float] = None
+):
+```
+
+<a id="camel.models.cohere_model.CohereModel._to_openai_response"></a>
+
+### _to_openai_response
+
+```python
+def _to_openai_response(self, response: 'ChatResponse'):
+```
+
+<a id="camel.models.cohere_model.CohereModel._to_cohere_chatmessage"></a>
+
+### _to_cohere_chatmessage
+
+```python
+def _to_cohere_chatmessage(self, messages: List[OpenAIMessage]):
+```
 
 <a id="camel.models.cohere_model.CohereModel.token_counter"></a>
 
-#### token\_counter
+### token_counter
 
 ```python
-@property
-def token_counter() -> BaseTokenCounter
+def token_counter(self):
 ```
 
-Initialize the token counter for the model backend.
+**Returns:**
 
-**Returns**:
+  BaseTokenCounter: The token counter following the model's
+tokenization style.
 
-- `BaseTokenCounter` - The token counter following the model's
-  tokenization style.
+<a id="camel.models.cohere_model.CohereModel._prepare_request"></a>
+
+### _prepare_request
+
+```python
+def _prepare_request(
+    self,
+    messages: List[OpenAIMessage],
+    response_format: Optional[Type[BaseModel]] = None,
+    tools: Optional[List[Dict[str, Any]]] = None
+):
+```
+
+<a id="camel.models.cohere_model.CohereModel._run"></a>
+
+### _run
+
+```python
+def _run(
+    self,
+    messages: List[OpenAIMessage],
+    response_format: Optional[Type[BaseModel]] = None,
+    tools: Optional[List[Dict[str, Any]]] = None
+):
+```
+
+Runs inference of Cohere chat completion.
+
+**Parameters:**
+
+- **messages** (List[OpenAIMessage]): Message list with the chat history in OpenAI API format.
+
+**Returns:**
+
+  ChatCompletion.
 
 <a id="camel.models.cohere_model.CohereModel.check_model_config"></a>
 
-#### check\_model\_config
+### check_model_config
 
 ```python
-def check_model_config()
+def check_model_config(self):
 ```
-
-Check whether the model configuration contains any unexpected
-arguments to Cohere API.
-
-**Raises**:
-
-- `ValueError` - If the model configuration dictionary contains any
-  unexpected arguments to Cohere API.
 
 <a id="camel.models.cohere_model.CohereModel.stream"></a>
 
-#### stream
+### stream
 
 ```python
-@property
-def stream() -> bool
+def stream(self):
 ```
 
-Returns whether the model is in stream mode, which sends partial
-results each time. Current it's not supported.
+**Returns:**
 
-**Returns**:
-
-- `bool` - Whether the model is in stream mode.
-
+  bool: Whether the model is in stream mode.

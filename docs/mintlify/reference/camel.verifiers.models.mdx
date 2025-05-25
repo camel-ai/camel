@@ -2,41 +2,40 @@
 
 <a id="camel.verifiers.models.VerificationOutcome"></a>
 
-## VerificationOutcome Objects
+## VerificationOutcome
 
 ```python
-class VerificationOutcome(Enum)
+class VerificationOutcome(Enum):
 ```
 
 Enum representing the status of a verification.
 
 <a id="camel.verifiers.models.VerificationOutcome.__bool__"></a>
 
-#### \_\_bool\_\_
+### __bool__
 
 ```python
-def __bool__()
+def __bool__(self):
 ```
 
 Only VerificationOutcome.SUCCESS is truthy; others are falsy.
 
 <a id="camel.verifiers.models.VerificationResult"></a>
 
-## VerificationResult Objects
+## VerificationResult
 
 ```python
-class VerificationResult(BaseModel)
+class VerificationResult(BaseModel):
 ```
 
 Structured result from a verification.
 
 <a id="camel.verifiers.models.VerifierConfig"></a>
 
-## VerifierConfig Objects
+## VerifierConfig
 
 ```python
-class VerifierConfig(BaseModel)
+class VerifierConfig(BaseModel):
 ```
 
 Configuration for verifier behavior.
-

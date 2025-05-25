@@ -2,59 +2,64 @@
 
 <a id="camel.models.reward.evaluator.Evaluator"></a>
 
-## Evaluator Objects
+## Evaluator
 
 ```python
-class Evaluator()
+class Evaluator:
 ```
 
 Evaluator class to evaluate messages using a reward model and filter
 data based on the scores.
 
-**Arguments**:
+**Parameters:**
 
-- `reward_model` _BaseRewardModel_ - A reward model to evaluate messages.
+- **reward_model** (BaseRewardModel): A reward model to evaluate messages.
+
+<a id="camel.models.reward.evaluator.Evaluator.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, reward_model: BaseRewardModel):
+```
 
 <a id="camel.models.reward.evaluator.Evaluator.evaluate"></a>
 
-#### evaluate
+### evaluate
 
 ```python
-def evaluate(messages: List[Dict[str, str]]) -> Dict[str, float]
+def evaluate(self, messages: List[Dict[str, str]]):
 ```
 
 Evaluate the messages using the reward model.
 
-**Arguments**:
+**Parameters:**
 
-- `messages` _List[Dict[str, str]]_ - A list of messages where each
-  message is a dictionary with 'role' and 'content'.
-  
+- **messages** (List[Dict[str, str]]): A list of messages where each message is a dictionary with 'role' and 'content'.
 
-**Returns**:
+**Returns:**
 
   Dict[str, float]: A dictionary mapping score types to their values.
 
 <a id="camel.models.reward.evaluator.Evaluator.filter_data"></a>
 
-#### filter\_data
+### filter_data
 
 ```python
-def filter_data(messages: List[Dict[str, str]],
-                thresholds: Dict[str, float]) -> bool
+def filter_data(
+    self,
+    messages: List[Dict[str, str]],
+    thresholds: Dict[str, float]
+):
 ```
 
 Filter messages based on the scores.
 
-**Arguments**:
+**Parameters:**
 
-- `messages` _List[Dict[str, str]]_ - A list of messages where each
-  message is a dictionary with 'role' and 'content'.
-- `thresholds` _Dict[str, float]_ - A dictionary mapping score types to
-  their values.
-  
+- **messages** (List[Dict[str, str]]): A list of messages where each message is a dictionary with 'role' and 'content'.
+- **thresholds** (Dict[str, float]): A dictionary mapping score types to their values.
 
-**Returns**:
+**Returns:**
 
-- `bool` - A boolean indicating whether the messages pass the filter.
-
+  bool: A boolean indicating whether the messages pass the filter.

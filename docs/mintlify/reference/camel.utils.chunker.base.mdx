@@ -2,22 +2,20 @@
 
 <a id="camel.utils.chunker.base.BaseChunker"></a>
 
-## BaseChunker Objects
+## BaseChunker
 
 ```python
-class BaseChunker(ABC)
+class BaseChunker(ABC):
 ```
 
 An abstract base class for all CAMEL chunkers.
 
 <a id="camel.utils.chunker.base.BaseChunker.chunk"></a>
 
-#### chunk
+### chunk
 
 ```python
-@abstractmethod
-def chunk(content: Any) -> Any
+def chunk(self, content: Any):
 ```
 
 Chunk the given content
-

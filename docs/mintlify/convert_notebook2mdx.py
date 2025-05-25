@@ -25,6 +25,8 @@ import argparse
 import json
 import os
 import re
+import subprocess
+import time
 from collections import defaultdict
 from pathlib import Path
 
@@ -541,6 +543,11 @@ def process_directory(
     image_dir=None,
     use_sphinx=False,
     remove_outputs=True,
+    incremental=False,
+    since_hours=24,
+    use_git=False,
+    base_branch="origin/master",
+    specific_files=None,
 ):
     """Process all ipynb and md files in the specified directory and its subdirectories."""
     directory = Path(directory)
@@ -555,47 +562,80 @@ def process_directory(
     total_md = 0
     total_images = 0
 
-    # Traverse the directory
-    for root, _dirs, files in os.walk(directory):
-        root_path = Path(root)
+    # Determine which files to process
+    files_to_process = []
+    
+    if specific_files:
+        # Process specific files provided
+        files_to_process = [Path(f) for f in specific_files]
+        print(f"Processing {len(files_to_process)} specific files")
+    elif incremental:
+        if use_git:
+            # Use git to find changed files
+            print(f"Looking for files changed compared to {base_branch}...")
+            files_to_process = get_git_changed_files(directory, base_branch)
+        else:
+            # Use file modification time
+            print(f"Looking for files changed in the last {since_hours} hours...")
+            files_to_process = get_changed_files(directory, since_hours)
+        
+        if not files_to_process:
+            print("No changed files found.")
+            return converted_files
+        
+        print(f"Found {len(files_to_process)} changed files:")
+        for f in files_to_process:
+            print(f"  - {f}")
+    else:
+        # Process all files (original behavior)
+        print("Processing all files in directory...")
+        for root, _dirs, files in os.walk(directory):
+            root_path = Path(root)
+            for file in files:
+                if file.endswith(('.ipynb', '.md')):
+                    files_to_process.append(root_path / file)
 
-        # Create corresponding output directory for each subdirectory
+    # Process the determined files
+    for file_path in files_to_process:
+        # Determine the group for this file
+        group_name = smart_detect_group_from_path(file_path, directory)
+        
+        # Create output directory structure
         if output_dir:
-            relative_path = root_path.relative_to(directory)
-            current_output_dir = output_dir / relative_path
+            # Create group-specific output directory
+            if 'cookbooks' in str(file_path):
+                current_output_dir = output_dir / "cookbooks" / group_name
+            else:
+                current_output_dir = output_dir / group_name
             os.makedirs(current_output_dir, exist_ok=True)
         else:
             current_output_dir = None
 
-        # Process files
-        for file in files:
-            file_path = root_path / file
-
-            if file.endswith('.ipynb'):
-                try:
-                    output_file = convert_ipynb_to_mdx(
-                        file_path,
-                        current_output_dir,
-                        None,  # No longer use image_dir
-                        directory,
-                        remove_outputs,
-                    )
-                    converted_files.append((file_path, output_file))
-                    total_ipynb += 1
-                except Exception as e:
-                    print(f"Error converting IPYNB file {file_path}: {e}")
-            elif file.endswith('.md'):
-                try:
-                    output_file = convert_md_to_mdx(
-                        file_path,
-                        current_output_dir,
-                        None,  # No longer use image_dir
-                        directory,
-                    )
-                    converted_files.append((file_path, output_file))
-                    total_md += 1
-                except Exception as e:
-                    print(f"Error converting MD file {file_path}: {e}")
+        # Process the file
+        try:
+            if file_path.suffix == '.ipynb':
+                output_file = convert_ipynb_to_mdx(
+                    file_path,
+                    current_output_dir,
+                    None,  # No longer use image_dir
+                    directory,
+                    remove_outputs,
+                )
+                converted_files.append((file_path, output_file))
+                total_ipynb += 1
+                print(f"  Converted IPYNB: {file_path.name} -> {output_file}")
+            elif file_path.suffix == '.md':
+                output_file = convert_md_to_mdx(
+                    file_path,
+                    current_output_dir,
+                    None,  # No longer use image_dir
+                    directory,
+                )
+                converted_files.append((file_path, output_file))
+                total_md += 1
+                print(f"  Converted MD: {file_path.name} -> {output_file}")
+        except Exception as e:
+            print(f"Error converting {file_path}: {e}")
 
     # Count images in output directory
     if output_dir:
@@ -617,12 +657,10 @@ def process_directory(
     return converted_files
 
 
-def generate_navigation_from_files(output_dir, relative_path_prefix=""):
+def generate_navigation_from_converted_files(converted_files, input_root, relative_path_prefix=""):
     """
-    Generate navigation structure for docs.json based on converted files.
+    Generate navigation structure for docs.json based on actually converted files.
     """
-    output_dir = Path(output_dir)
-
     # Define group mapping and order
     group_mapping = {
         'basic_concepts': 'Basic Concepts',
@@ -635,7 +673,7 @@ def generate_navigation_from_files(output_dir, relative_path_prefix=""):
         'mcp': 'MCP',
     }
 
-    # Group order (adding mcp to the list)
+    # Group order
     group_order = [
         'basic_concepts',
         'advanced_features',
@@ -647,48 +685,26 @@ def generate_navigation_from_files(output_dir, relative_path_prefix=""):
         'mcp',
     ]
 
-    # Collect all mdx files organized by group
+    # Collect converted files organized by group
     groups = defaultdict(list)
+    input_root = Path(input_root)
 
-    # Look for cookbooks directory structure
-    cookbooks_dir = (
-        output_dir / "cookbooks"
-        if (output_dir / "cookbooks").exists()
-        else output_dir
-    )
-
-    if cookbooks_dir.exists():
-        if cookbooks_dir.name == "cookbooks":
-            # Standard structure: output_dir/cookbooks/group_name/files.mdx
-            for group_dir in cookbooks_dir.iterdir():
-                if group_dir.is_dir() and group_dir.name != "images":
-                    group_name = group_dir.name
-
-                    # Find all mdx files in this group
-                    for file_path in group_dir.glob("*.mdx"):
-                        # Skip index files for now
-                        if file_path.stem != "index":
-                            # Create relative path for docs.json
-                            rel_path = f"{relative_path_prefix}cookbooks/{group_name}/{file_path.stem}"
-                            groups[group_name].append(rel_path)
-        else:
-            # Check if this directory itself is a group directory
-            # Extract group name from the path
-            path_parts = output_dir.parts
-            group_name = None
-
-            # Look for cookbooks in the path to find the group name
-            if "cookbooks" in path_parts:
-                cookbooks_idx = path_parts.index("cookbooks")
-                if cookbooks_idx + 1 < len(path_parts):
-                    group_name = path_parts[cookbooks_idx + 1]
-
-            if group_name:
-                # Direct output to a specific group directory
-                for file_path in output_dir.glob("*.mdx"):
-                    if file_path.stem != "index":
-                        rel_path = f"{relative_path_prefix}cookbooks/{group_name}/{file_path.stem}"
-                        groups[group_name].append(rel_path)
+    for source_file, output_file in converted_files:
+        # Determine the group for this file
+        group_name = smart_detect_group_from_path(source_file, input_root)
+        
+        # Create relative path for docs.json
+        output_path = Path(output_file)
+        
+        # Extract the relative path from the output file
+        # Assuming output structure is: output_dir/cookbooks/group_name/file.mdx
+        if 'cookbooks' in output_path.parts:
+            cookbooks_idx = list(output_path.parts).index('cookbooks')
+            if cookbooks_idx + 2 < len(output_path.parts):  # cookbooks/group/file.mdx
+                group_from_path = output_path.parts[cookbooks_idx + 1]
+                file_stem = output_path.stem
+                rel_path = f"{relative_path_prefix}cookbooks/{group_from_path}/{file_stem}"
+                groups[group_from_path].append(rel_path)
 
     # Generate navigation structure
     navigation_groups = []
@@ -721,9 +737,10 @@ def generate_navigation_from_files(output_dir, relative_path_prefix=""):
     return navigation_groups
 
 
-def update_docs_json(docs_json_path, output_dir, relative_path_prefix=""):
+def update_docs_json(docs_json_path, converted_files, input_root, relative_path_prefix="", incremental=False):
     """
     Update docs.json file with newly converted files.
+    In incremental mode, merge new entries with existing ones.
     """
     docs_json_path = Path(docs_json_path)
 
@@ -736,9 +753,9 @@ def update_docs_json(docs_json_path, output_dir, relative_path_prefix=""):
         with open(docs_json_path, 'r', encoding='utf-8') as f:
             docs_config = json.load(f)
 
-        # Generate new navigation for cookbooks
-        new_cookbooks_nav = generate_navigation_from_files(
-            output_dir, relative_path_prefix
+        # Generate new navigation for converted files only
+        new_cookbooks_nav = generate_navigation_from_converted_files(
+            converted_files, input_root, relative_path_prefix
         )
 
         if not new_cookbooks_nav:
@@ -751,12 +768,17 @@ def update_docs_json(docs_json_path, output_dir, relative_path_prefix=""):
             if tab.get("tab") == "Documentation":
                 for group in tab.get("groups", []):
                     if group.get("group") == "Cookbooks":
-                        # Update the pages structure
-                        group["pages"] = new_cookbooks_nav
+                        if incremental:
+                            # In incremental mode, merge with existing navigation
+                            existing_nav = group.get("pages", [])
+                            merged_nav = merge_navigation_groups(existing_nav, new_cookbooks_nav)
+                            group["pages"] = merged_nav
+                            print(f"Merged cookbooks navigation: {len(merged_nav)} total groups")
+                        else:
+                            # In full mode, replace the entire navigation
+                            group["pages"] = new_cookbooks_nav
+                            print(f"Replaced cookbooks navigation with {len(new_cookbooks_nav)} groups")
                         updated = True
-                        print(
-                            f"Updated Cookbooks navigation with {len(new_cookbooks_nav)} groups"
-                        )
                         break
                 if updated:
                     break
@@ -775,6 +797,146 @@ def update_docs_json(docs_json_path, output_dir, relative_path_prefix=""):
     except Exception as e:
         print(f"Error updating docs.json: {e}")
         return False
+
+
+def merge_navigation_groups(existing_nav, new_nav):
+    """
+    Merge new navigation groups with existing ones.
+    Updates existing groups and adds new ones.
+    """
+    # Convert existing navigation to a dict for easier manipulation
+    existing_groups = {}
+    if isinstance(existing_nav, list):
+        for item in existing_nav:
+            if isinstance(item, dict) and "group" in item:
+                existing_groups[item["group"]] = set(item.get("pages", []))
+    
+    # Merge new navigation
+    for new_group in new_nav:
+        group_name = new_group["group"]
+        new_pages = set(new_group.get("pages", []))
+        
+        if group_name in existing_groups:
+            # Merge pages for existing group
+            existing_groups[group_name].update(new_pages)
+        else:
+            # Add new group
+            existing_groups[group_name] = new_pages
+    
+    # Convert back to the expected format
+    merged_nav = []
+    for group_name, pages in existing_groups.items():
+        merged_nav.append({
+            "group": group_name,
+            "pages": sorted(list(pages))
+        })
+    
+    # Sort groups by the predefined order
+    group_order = [
+        'Basic Concepts',
+        'Advanced Features', 
+        'Applications',
+        'Data Generation',
+        'Data Processing',
+        'Loong',
+        'Multi Agent Society',
+        'MCP',
+    ]
+    
+    def get_group_order(group):
+        try:
+            return group_order.index(group["group"])
+        except ValueError:
+            return len(group_order)  # Put unknown groups at the end
+    
+    merged_nav.sort(key=get_group_order)
+    
+    return merged_nav
+
+
+def get_changed_files(directory, since_hours=24, file_extensions=None):
+    """Get recently modified files in the directory"""
+    if file_extensions is None:
+        file_extensions = ['.ipynb', '.md']
+    
+    changed_files = []
+    directory = Path(directory)
+    
+    # Calculate time threshold
+    time_threshold = time.time() - (since_hours * 3600)
+    
+    # Traverse all files in the directory
+    for root, _dirs, files in os.walk(directory):
+        for file in files:
+            file_path = Path(root) / file
+            
+            # Check if file has the right extension
+            if any(file.endswith(ext) for ext in file_extensions):
+                # Check file modification time
+                if file_path.stat().st_mtime > time_threshold:
+                    changed_files.append(file_path)
+    
+    return sorted(changed_files)
+
+
+def get_git_changed_files(directory, base_branch="origin/master", file_extensions=None):
+    """Get files changed in git compared to base branch"""
+    if file_extensions is None:
+        file_extensions = ['.ipynb', '.md']
+    
+    try:
+        # Get list of changed files from git
+        result = subprocess.run([
+            'git', 'diff', '--name-only', base_branch, 'HEAD'
+        ], capture_output=True, text=True, cwd=directory)
+        
+        if result.returncode != 0:
+            print(f"Git command failed: {result.stderr}")
+            return []
+        
+        changed_files = []
+        directory = Path(directory)
+        
+        for file_path in result.stdout.strip().split('\n'):
+            if file_path:  # Skip empty lines
+                full_path = directory / file_path
+                # Check if file exists and has the right extension
+                if full_path.exists() and any(file_path.endswith(ext) for ext in file_extensions):
+                    changed_files.append(full_path)
+        
+        return sorted(changed_files)
+        
+    except Exception as e:
+        print(f"Error getting git changed files: {e}")
+        return []
+
+
+def smart_detect_group_from_path(file_path, input_root):
+    """Intelligently detect the group name from file path"""
+    file_path = Path(file_path)
+    input_root = Path(input_root)
+    
+    try:
+        # Get relative path from input root
+        rel_path = file_path.relative_to(input_root)
+        path_parts = rel_path.parts
+        
+        # Look for cookbooks in the path
+        if 'cookbooks' in path_parts:
+            cookbooks_idx = list(path_parts).index('cookbooks')
+            if cookbooks_idx + 1 < len(path_parts):
+                return path_parts[cookbooks_idx + 1]
+        
+        # If no cookbooks directory, use the first directory as group
+        if len(path_parts) > 1:
+            return path_parts[0]
+        
+        # Default group
+        return 'misc'
+        
+    except ValueError:
+        # File is not under input_root, use parent directory name
+        return file_path.parent.name
 
 
 def main():
@@ -817,15 +979,58 @@ def main():
         default='',
         help='Path prefix for docs.json navigation entries (e.g., "docs/")',
     )
+    parser.add_argument(
+        '--incremental',
+        action='store_true',
+        help='Only process files that have been changed recently',
+    )
+    parser.add_argument(
+        '--since-hours',
+        type=int,
+        default=24,
+        help='Hours to look back for changed files (used with --incremental)',
+    )
+    parser.add_argument(
+        '--use-git',
+        action='store_true',
+        help='Use git to detect changed files instead of file modification time',
+    )
+    parser.add_argument(
+        '--base-branch',
+        default='origin/master',
+        help='Base branch for git comparison (default: origin/master)',
+    )
+    parser.add_argument(
+        '--files',
+        nargs='*',
+        help='Specific files to process (overrides incremental mode)',
+    )
 
     args = parser.parse_args()
 
     print(f"Starting to process directory: {args.input}")
+    
+    # Determine processing mode
+    if args.files:
+        print(f"Processing {len(args.files)} specific files")
+    elif args.incremental:
+        if args.use_git:
+            print(f"Incremental mode: using git to find changes compared to {args.base_branch}")
+        else:
+            print(f"Incremental mode: processing files changed in the last {args.since_hours} hours")
+    else:
+        print("Full mode: processing all files")
+    
     converted_files = process_directory(
         args.input,
         args.output,
         args.images,
         remove_outputs=not args.keep_outputs,
+        incremental=args.incremental,
+        since_hours=args.since_hours,
+        use_git=args.use_git,
+        base_branch=args.base_branch,
+        specific_files=args.files,
     )
 
     print(f"Conversion completed, processed {len(converted_files)} files")
@@ -836,15 +1041,27 @@ def main():
             print(f"{source} -> {dest}")
 
     # Update docs.json if requested
-    if args.update_docs_json and args.output:
+    if args.update_docs_json and args.output and converted_files:
         print("\nUpdating docs.json...")
         success = update_docs_json(
-            args.update_docs_json, args.output, args.docs_path_prefix
+            args.update_docs_json, 
+            converted_files, 
+            args.input, 
+            args.docs_path_prefix,
+            incremental=args.incremental
         )
         if success:
             print("docs.json update completed successfully")
         else:
             print("docs.json update failed")
+    elif converted_files and args.update_docs_json and not args.output:
+        print("\nNote: docs.json update skipped because no output directory was specified")
+    elif converted_files and not args.update_docs_json:
+        print("\nNote: docs.json update skipped (use --update-docs-json to enable)")
+    elif not converted_files and args.update_docs_json:
+        print("\nNote: docs.json update skipped because no files were converted")
+    
+    return len(converted_files)
 
 
 if __name__ == "__main__":

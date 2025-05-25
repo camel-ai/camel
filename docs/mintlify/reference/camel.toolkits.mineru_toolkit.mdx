@@ -2,10 +2,10 @@
 
 <a id="camel.toolkits.mineru_toolkit.MinerUToolkit"></a>
 
-## MinerUToolkit Objects
+## MinerUToolkit
 
 ```python
-class MinerUToolkit(BaseToolkit)
+class MinerUToolkit(BaseToolkit):
 ```
 
 Toolkit for extracting and processing document content
@@ -15,147 +15,122 @@ Provides comprehensive document processing capabilities including content
 extraction from URLs and files, with support for OCR, formula recognition,
 and table detection through the MinerU API service.
 
-**Notes**:
-
-  - Maximum file size: 200MB per file
-  - Maximum pages: 600 pages per file
-  - Daily quota: 2000 pages for high-priority parsing
-  - Network restrictions may affect certain URLs (e.g., GitHub, AWS)
+Note:
+- Maximum file size: 200MB per file
+- Maximum pages: 600 pages per file
+- Daily quota: 2000 pages for high-priority parsing
+- Network restrictions may affect certain URLs (e.g., GitHub, AWS)
 
 <a id="camel.toolkits.mineru_toolkit.MinerUToolkit.__init__"></a>
 
-#### \_\_init\_\_
+### __init__
 
 ```python
-@api_keys_required([
-    (None, "MINERU_API_KEY"),
-])
-def __init__(api_key: Optional[str] = None,
-             api_url: Optional[str] = "https://mineru.net/api/v4",
-             is_ocr: bool = False,
-             enable_formula: bool = False,
-             enable_table: bool = True,
-             layout_model: str = "doclayout_yolo",
-             language: str = "en",
-             wait: bool = True,
-             timeout: float = 300) -> None
+def __init__(
+    self,
+    api_key: Optional[str] = None,
+    api_url: Optional[str] = 'https://mineru.net/api/v4',
+    is_ocr: bool = False,
+    enable_formula: bool = False,
+    enable_table: bool = True,
+    layout_model: str = 'doclayout_yolo',
+    language: str = 'en',
+    wait: bool = True,
+    timeout: float = 300
+):
 ```
 
 Initialize the MinerU document processing toolkit.
 
-**Arguments**:
+**Parameters:**
 
-- `api_key` _Optional[str]_ - Authentication key for MinerU API access.
-  If not provided, uses MINERU_API_KEY environment variable.
-- `(default` - :obj:`None`)
-- `api_url` _Optional[str]_ - Base endpoint URL for MinerU API service.
-- `(default` - :obj:`"https://mineru.net/api/v4"`)
-- `is_ocr` _bool_ - Enable Optical Character Recognition for image-based
-  text extraction. (default: :obj:`False`)
-- `enable_formula` _bool_ - Enable mathematical formula detection and
-  recognition. (default: :obj:`False`)
-- `enable_table` _bool_ - Enable table structure detection and
-  extraction. (default: :obj:`True`)
-- `layout_model` _str_ - Document layout analysis model selection.
-  Available options: 'doclayout_yolo', 'layoutlmv3'.
-- `(default` - :obj:`"doclayout_yolo"`)
-- `language` _str_ - Primary language of the document for processing.
-- `(default` - :obj:`"en"`)
-- `wait` _bool_ - Block execution until processing completion.
-- `(default` - :obj:`True`)
-- `timeout` _float_ - Maximum duration in seconds to wait for task
-  completion. (default: :obj:`300`)
+- **api_key** (Optional[str]): Authentication key for MinerU API access. If not provided, uses MINERU_API_KEY environment variable. (default: :obj:`None`)
+- **api_url** (Optional[str]): Base endpoint URL for MinerU API service. (default: :obj:`"https://mineru.net/api/v4"`)
+- **is_ocr** (bool): Enable Optical Character Recognition for image-based text extraction. (default: :obj:`False`)
+- **enable_formula** (bool): Enable mathematical formula detection and recognition. (default: :obj:`False`)
+- **enable_table** (bool): Enable table structure detection and extraction. (default: :obj:`True`)
+- **layout_model** (str): Document layout analysis model selection. Available options: 'doclayout_yolo', 'layoutlmv3'. (default: :obj:`"doclayout_yolo"`)
+- **language** (str): Primary language of the document for processing. (default: :obj:`"en"`)
+- **wait** (bool): Block execution until processing completion. (default: :obj:`True`)
+- **timeout** (float): Maximum duration in seconds to wait for task completion. (default: :obj:`300`)
 
 <a id="camel.toolkits.mineru_toolkit.MinerUToolkit.extract_from_urls"></a>
 
-#### extract\_from\_urls
+### extract_from_urls
 
 ```python
-def extract_from_urls(urls: str | List[str]) -> Dict
+def extract_from_urls(self, urls: str | List[str]):
 ```
 
 Process and extract content from one or multiple URLs.
 
-**Arguments**:
+**Parameters:**
 
-- `urls` _str | List[str]_ - Target URL or list of URLs for content
-  extraction. Supports both single URL string and multiple URLs
-  in a list.
-  
+- **urls** (str | List[str]): Target URL or list of URLs for content extraction. Supports both single URL string and multiple URLs in a list.
 
-**Returns**:
+**Returns:**
 
-- `Dict` - Response containing either completed task results when wait
-  is True, or task/batch identifiers for status tracking when
-  wait is False.
+  Dict: Response containing either completed task results when wait
+is True, or task/batch identifiers for status tracking when
+wait is False.
 
 <a id="camel.toolkits.mineru_toolkit.MinerUToolkit.get_task_status"></a>
 
-#### get\_task\_status
+### get_task_status
 
 ```python
-def get_task_status(task_id: str) -> Dict
+def get_task_status(self, task_id: str):
 ```
 
 Retrieve current status of an individual extraction task.
 
-**Arguments**:
+**Parameters:**
 
-- `task_id` _str_ - Unique identifier for the extraction task to check.
-  
+- **task_id** (str): Unique identifier for the extraction task to check.
 
-**Returns**:
+**Returns:**
 
-- `Dict` - Status information and results (if task is completed) for
-  the specified task.
-  
+  Dict: Status information and results (if task is completed) for
+the specified task.
 
-**Notes**:
-
-  This is a low-level status checking method. For most use cases,
-  prefer using extract_from_url with wait=True for automatic
-  completion handling.
+Note:
+This is a low-level status checking method. For most use cases,
+prefer using extract_from_url with wait=True for automatic
+completion handling.
 
 <a id="camel.toolkits.mineru_toolkit.MinerUToolkit.get_batch_status"></a>
 
-#### get\_batch\_status
+### get_batch_status
 
 ```python
-def get_batch_status(batch_id: str) -> Dict
+def get_batch_status(self, batch_id: str):
 ```
 
 Retrieve current status of a batch extraction task.
 
-**Arguments**:
+**Parameters:**
 
-- `batch_id` _str_ - Unique identifier for the batch extraction task
-  to check.
-  
+- **batch_id** (str): Unique identifier for the batch extraction task to check.
 
-**Returns**:
+**Returns:**
 
-- `Dict` - Comprehensive status information and results for all files
-  in the batch task.
-  
+  Dict: Comprehensive status information and results for all files
+in the batch task.
 
-**Notes**:
-
-  This is a low-level status checking method. For most use cases,
-  prefer using batch_extract_from_urls with wait=True for automatic
-  completion handling.
+Note:
+This is a low-level status checking method. For most use cases,
+prefer using batch_extract_from_urls with wait=True for automatic
+completion handling.
 
 <a id="camel.toolkits.mineru_toolkit.MinerUToolkit.get_tools"></a>
 
-#### get\_tools
+### get_tools
 
 ```python
-def get_tools() -> List[FunctionTool]
+def get_tools(self):
 ```
 
-Retrieve available toolkit functions as FunctionTool objects.
+**Returns:**
 
-**Returns**:
-
-- `List[FunctionTool]` - Collection of FunctionTool objects representing
-  the available document processing functions in this toolkit.
-
+  List[FunctionTool]: Collection of FunctionTool objects representing
+the available document processing functions in this toolkit.

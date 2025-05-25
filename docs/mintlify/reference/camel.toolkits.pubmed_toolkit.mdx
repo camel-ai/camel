@@ -2,11 +2,10 @@
 
 <a id="camel.toolkits.pubmed_toolkit.PubMedToolkit"></a>
 
-## PubMedToolkit Objects
+## PubMedToolkit
 
 ```python
-@MCPServer()
-class PubMedToolkit(BaseToolkit)
+class PubMedToolkit(BaseToolkit):
 ```
 
 A toolkit for interacting with PubMed's E-utilities API to access
@@ -15,155 +14,167 @@ MEDLINE data.
 This toolkit provides functionality to search and retrieve papers from the
 PubMed database, including abstracts, citations, and other metadata.
 
-**Arguments**:
+**Parameters:**
 
-- `timeout` _Optional[float]_ - The timeout for API requests in seconds.
-- `(default` - :obj:`None`)
+- **timeout** (Optional[float]): The timeout for API requests in seconds. (default: :obj:`None`)
 
 <a id="camel.toolkits.pubmed_toolkit.PubMedToolkit.__init__"></a>
 
-#### \_\_init\_\_
+### __init__
 
 ```python
-def __init__(timeout: Optional[float] = None) -> None
+def __init__(self, timeout: Optional[float] = None):
 ```
 
 Initializes the PubMedToolkit.
 
+<a id="camel.toolkits.pubmed_toolkit.PubMedToolkit._make_request"></a>
+
+### _make_request
+
+```python
+def _make_request(
+    self,
+    endpoint: str,
+    params: Dict[str, Union[str, int]],
+    retries: int = 3
+):
+```
+
+Makes a request to the PubMed/MEDLINE API with error handling and
+retries.
+
+**Parameters:**
+
+- **endpoint** (str): The API endpoint to call.
+- **params** (Dict[str, Union[str, int]]): Query parameters.
+- **retries** (int, optional): Number of retry attempts. (default: :obj:`3`)
+
+**Returns:**
+
+  Optional[Dict[str, Any]]: JSON response if successful, else None.
+
 <a id="camel.toolkits.pubmed_toolkit.PubMedToolkit.search_papers"></a>
 
-#### search\_papers
+### search_papers
 
 ```python
 def search_papers(
-        query: str,
-        max_results: int = 10,
-        sort: str = "relevance",
-        date_range: Optional[Dict[str, str]] = None,
-        publication_type: Optional[List[str]] = None) -> List[Dict[str, str]]
+    self,
+    query: str,
+    max_results: int = 10,
+    sort: str = 'relevance',
+    date_range: Optional[Dict[str, str]] = None,
+    publication_type: Optional[List[str]] = None
+):
 ```
 
 Search for biomedical papers in MEDLINE via PubMed with advanced
 filtering options.
 
-**Arguments**:
+**Parameters:**
 
-- `query` _str_ - The search query string.
-- `max_results` _int, optional_ - Maximum number of results to return.
-- `(default` - :obj:`10`)
-- `sort` _str, optional_ - Sort order - 'relevance' or 'date'.
-- `(default` - :obj:`"relevance"`)
-- `date_range` _Optional[Dict[str, str]], optional_ - Date range filter
-  with 'from' and 'to' dates in YYYY/MM/DD format.
-- `(default` - :obj:`None`)
-- `publication_type` _Optional[List[str]], optional_ - Filter by
-  publication types (e.g., ["Journal Article", "Review"]).
-- `(default` - :obj:`None`)
-  
+- **query** (str): The search query string.
+- **max_results** (int, optional): Maximum number of results to return. (default: :obj:`10`)
+- **sort** (str, optional): Sort order - 'relevance' or 'date'. (default: :obj:`"relevance"`)
+- **date_range** (Optional[Dict[str, str]], optional): Date range filter with 'from' and 'to' dates in YYYY/MM/DD format. (default: :obj:`None`)
+- **publication_type** (Optional[List[str]], optional): Filter by publication types (e.g., ["Journal Article", "Review"]). (default: :obj:`None`)
 
-**Returns**:
+**Returns:**
 
   List[Dict[str, str]]: List of papers with their metadata.
 
 <a id="camel.toolkits.pubmed_toolkit.PubMedToolkit.get_paper_details"></a>
 
-#### get\_paper\_details
+### get_paper_details
 
 ```python
 def get_paper_details(
-        paper_id: Union[str, int],
-        include_references: bool = False) -> Optional[Dict[str, Any]]
+    self,
+    paper_id: Union[str, int],
+    include_references: bool = False
+):
 ```
 
 Get detailed information about a specific biomedical paper from
 MEDLINE/PubMed.
 
-**Arguments**:
+**Parameters:**
 
-- `paper_id` _Union[str, int]_ - PubMed ID of the paper.
-- `include_references` _bool, optional_ - Whether to include referenced
-  papers. (default: :obj:`False`)
-  
+- **paper_id** (Union[str, int]): PubMed ID of the paper.
+- **include_references** (bool, optional): Whether to include referenced papers. (default: :obj:`False`)
 
-**Returns**:
+**Returns:**
 
   Optional[Dict[str, Any]]: Paper details including title, authors,
-  abstract, etc., or None if retrieval fails.
+abstract, etc., or None if retrieval fails.
 
 <a id="camel.toolkits.pubmed_toolkit.PubMedToolkit.get_abstract"></a>
 
-#### get\_abstract
+### get_abstract
 
 ```python
-def get_abstract(paper_id: Union[str, int]) -> str
+def get_abstract(self, paper_id: Union[str, int]):
 ```
 
 Get the abstract of a specific biomedical paper from MEDLINE/
 PubMed.
 
-**Arguments**:
+**Parameters:**
 
-- `paper_id` _Union[str, int]_ - PubMed ID of the paper.
-  
+- **paper_id** (Union[str, int]): PubMed ID of the paper.
 
-**Returns**:
+**Returns:**
 
-- `str` - The abstract text.
+  str: The abstract text.
 
 <a id="camel.toolkits.pubmed_toolkit.PubMedToolkit.get_citation_count"></a>
 
-#### get\_citation\_count
+### get_citation_count
 
 ```python
-def get_citation_count(paper_id: Union[str, int]) -> int
+def get_citation_count(self, paper_id: Union[str, int]):
 ```
 
 Get the number of citations for a biomedical paper in MEDLINE/
 PubMed.
 
-**Arguments**:
+**Parameters:**
 
-- `paper_id` _Union[str, int]_ - PubMed ID of the paper.
-  
+- **paper_id** (Union[str, int]): PubMed ID of the paper.
 
-**Returns**:
+**Returns:**
 
-- `int` - Number of citations, or 0 if retrieval fails.
+  int: Number of citations, or 0 if retrieval fails.
 
 <a id="camel.toolkits.pubmed_toolkit.PubMedToolkit.get_related_papers"></a>
 
-#### get\_related\_papers
+### get_related_papers
 
 ```python
-def get_related_papers(paper_id: Union[str, int],
-                       max_results: int = 10) -> List[Dict[str, Any]]
+def get_related_papers(self, paper_id: Union[str, int], max_results: int = 10):
 ```
 
 Get biomedical papers related to a specific paper in MEDLINE/
 PubMed.
 
-**Arguments**:
+**Parameters:**
 
-- `paper_id` _Union[str, int]_ - PubMed ID of the paper.
-- `max_results` _int, optional_ - Maximum number of results to return.
-- `(default` - :obj:`10`)
-  
+- **paper_id** (Union[str, int]): PubMed ID of the paper.
+- **max_results** (int, optional): Maximum number of results to return. (default: :obj:`10`)
 
-**Returns**:
+**Returns:**
 
   List[Dict[str, Any]]: List of related papers with their metadata.
 
 <a id="camel.toolkits.pubmed_toolkit.PubMedToolkit.get_tools"></a>
 
-#### get\_tools
+### get_tools
 
 ```python
-def get_tools() -> List[FunctionTool]
+def get_tools(self):
 ```
 
-Returns a list of tools provided by the PubMed toolkit.
+**Returns:**
 
-**Returns**:
-
-- `List[FunctionTool]` - List of available tools.
-
+  List[FunctionTool]: List of available tools.

@@ -2,11 +2,10 @@
 
 <a id="camel.toolkits.wolfram_alpha_toolkit.WolframAlphaToolkit"></a>
 
-## WolframAlphaToolkit Objects
+## WolframAlphaToolkit
 
 ```python
-@MCPServer()
-class WolframAlphaToolkit(BaseToolkit)
+class WolframAlphaToolkit(BaseToolkit):
 ```
 
 A class representing a toolkit for WolframAlpha.
@@ -17,88 +16,111 @@ by computing answers from externally sourced data.
 
 <a id="camel.toolkits.wolfram_alpha_toolkit.WolframAlphaToolkit.query_wolfram_alpha"></a>
 
-#### query\_wolfram\_alpha
+### query_wolfram_alpha
 
 ```python
-@api_keys_required([
-    (None, "WOLFRAMALPHA_APP_ID"),
-])
-@dependencies_required("wolframalpha")
-def query_wolfram_alpha(query: str) -> str
+def query_wolfram_alpha(self, query: str):
 ```
 
 Queries Wolfram|Alpha and returns the result as a simple answer.
 
-**Arguments**:
+**Parameters:**
 
-- `query` _str_ - The query to send to Wolfram Alpha.
-  
+- **query** (str): The query to send to Wolfram Alpha.
 
-**Returns**:
+**Returns:**
 
-- `str` - The result from Wolfram Alpha as a simple answer.
+  str: The result from Wolfram Alpha as a simple answer.
 
 <a id="camel.toolkits.wolfram_alpha_toolkit.WolframAlphaToolkit.query_wolfram_alpha_step_by_step"></a>
 
-#### query\_wolfram\_alpha\_step\_by\_step
+### query_wolfram_alpha_step_by_step
 
 ```python
-@api_keys_required([
-    (None, "WOLFRAMALPHA_APP_ID"),
-])
-@dependencies_required("wolframalpha")
-def query_wolfram_alpha_step_by_step(query: str) -> Dict[str, Any]
+def query_wolfram_alpha_step_by_step(self, query: str):
 ```
 
 Queries Wolfram|Alpha and returns detailed results with
 step-by-step solution.
 
-**Arguments**:
+**Parameters:**
 
-- `query` _str_ - The query to send to Wolfram Alpha.
-  
+- **query** (str): The query to send to Wolfram Alpha.
 
-**Returns**:
+**Returns:**
 
   Dict[str, Any]: A dictionary with detailed information including
-  step-by-step solution.
+step-by-step solution.
 
 <a id="camel.toolkits.wolfram_alpha_toolkit.WolframAlphaToolkit.query_wolfram_alpha_llm"></a>
 
-#### query\_wolfram\_alpha\_llm
+### query_wolfram_alpha_llm
 
 ```python
-@api_keys_required([
-    (None, "WOLFRAMALPHA_APP_ID"),
-])
-def query_wolfram_alpha_llm(query: str) -> str
+def query_wolfram_alpha_llm(self, query: str):
 ```
 
 Sends a query to the Wolfram|Alpha API optimized for language
 model usage.
 
-**Arguments**:
+**Parameters:**
 
-- `query` _str_ - The query to send to Wolfram Alpha LLM.
-  
+- **query** (str): The query to send to Wolfram Alpha LLM.
 
-**Returns**:
+**Returns:**
 
-- `str` - The result from Wolfram Alpha as a string.
+  str: The result from Wolfram Alpha as a string.
+
+<a id="camel.toolkits.wolfram_alpha_toolkit.WolframAlphaToolkit._parse_wolfram_result"></a>
+
+### _parse_wolfram_result
+
+```python
+def _parse_wolfram_result(self, result):
+```
+
+Parses a Wolfram Alpha API result into a structured dictionary
+format.
+
+**Parameters:**
+
+- **result**: The API result returned from a Wolfram Alpha query, structured with multiple pods, each containing specific information related to the query.
+
+**Returns:**
+
+  Dict[str, Any]: A structured dictionary with the original query
+and the final answer.
+
+<a id="camel.toolkits.wolfram_alpha_toolkit.WolframAlphaToolkit._get_wolframalpha_step_by_step_solution"></a>
+
+### _get_wolframalpha_step_by_step_solution
+
+```python
+def _get_wolframalpha_step_by_step_solution(self, app_id: str, query: str):
+```
+
+Retrieve a step-by-step solution from the Wolfram Alpha API for a
+given query.
+
+**Parameters:**
+
+- **app_id** (str): Your Wolfram Alpha API application ID.
+- **query** (str): The mathematical or computational query to solve.
+
+**Returns:**
+
+  dict: The step-by-step solution response text from the Wolfram
+Alpha API.
 
 <a id="camel.toolkits.wolfram_alpha_toolkit.WolframAlphaToolkit.get_tools"></a>
 
-#### get\_tools
+### get_tools
 
 ```python
-def get_tools() -> List[FunctionTool]
+def get_tools(self):
 ```
 
-Returns a list of FunctionTool objects representing the
-functions in the toolkit.
+**Returns:**
 
-**Returns**:
-
-- `List[FunctionTool]` - A list of FunctionTool objects
-  representing the functions in the toolkit.
-
+  List[FunctionTool]: A list of FunctionTool objects
+representing the functions in the toolkit.

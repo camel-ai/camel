@@ -2,37 +2,52 @@
 
 <a id="camel.agents.tool_agents.base.BaseToolAgent"></a>
 
-## BaseToolAgent Objects
+## BaseToolAgent
 
 ```python
-class BaseToolAgent(BaseAgent)
+class BaseToolAgent(BaseAgent):
 ```
 
 Creates a :obj:`BaseToolAgent` object with the specified name and
 description.
 
-**Arguments**:
+**Parameters:**
 
-- `name` _str_ - The name of the tool agent.
-- `description` _str_ - The description of the tool agent.
+- **name** (str): The name of the tool agent.
+- **description** (str): The description of the tool agent.
+
+<a id="camel.agents.tool_agents.base.BaseToolAgent.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, name: str, description: str):
+```
 
 <a id="camel.agents.tool_agents.base.BaseToolAgent.reset"></a>
 
-#### reset
+### reset
 
 ```python
-def reset() -> None
+def reset(self):
 ```
 
 Resets the agent to its initial state.
 
 <a id="camel.agents.tool_agents.base.BaseToolAgent.step"></a>
 
-#### step
+### step
 
 ```python
-def step() -> None
+def step(self):
 ```
 
 Performs a single step of the agent.
 
+<a id="camel.agents.tool_agents.base.BaseToolAgent.__str__"></a>
+
+### __str__
+
+```python
+def __str__(self):
+```

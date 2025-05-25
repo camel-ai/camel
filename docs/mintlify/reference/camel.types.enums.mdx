@@ -2,52 +2,88 @@
 
 <a id="camel.types.enums.ModelType"></a>
 
-## ModelType Objects
+## ModelType
 
 ```python
-class ModelType(UnifiedModelType, Enum)
+class ModelType(UnifiedModelType, Enum):
+```
+
+<a id="camel.types.enums.ModelType.__str__"></a>
+
+### __str__
+
+```python
+def __str__(self):
+```
+
+<a id="camel.types.enums.ModelType.__new__"></a>
+
+### __new__
+
+```python
+def __new__(cls, value):
 ```
 
 <a id="camel.types.enums.ModelType.from_name"></a>
 
-#### from\_name
+### from_name
 
 ```python
-@classmethod
-def from_name(cls, name)
+def from_name(cls, name):
 ```
 
 Returns the ModelType enum value from a string.
 
-<a id="camel.types.enums.ModelType.is_openai"></a>
+<a id="camel.types.enums.ModelType.value_for_tiktoken"></a>
 
-#### is\_openai
+### value_for_tiktoken
 
 ```python
-@property
-def is_openai() -> bool
+def value_for_tiktoken(self):
+```
+
+<a id="camel.types.enums.ModelType.support_native_structured_output"></a>
+
+### support_native_structured_output
+
+```python
+def support_native_structured_output(self):
+```
+
+<a id="camel.types.enums.ModelType.support_native_tool_calling"></a>
+
+### support_native_tool_calling
+
+```python
+def support_native_tool_calling(self):
+```
+
+<a id="camel.types.enums.ModelType.is_openai"></a>
+
+### is_openai
+
+```python
+def is_openai(self):
 ```
 
 Returns whether this type of models is an OpenAI-released model.
 
 <a id="camel.types.enums.ModelType.is_aws_bedrock"></a>
 
-#### is\_aws\_bedrock
+### is_aws_bedrock
 
 ```python
-@property
-def is_aws_bedrock() -> bool
+def is_aws_bedrock(self):
 ```
 
 Returns whether this type of models is an AWS Bedrock model.
 
 <a id="camel.types.enums.ModelType.is_azure_openai"></a>
 
-#### is\_azure\_openai
+### is_azure_openai
 
 ```python
-@property
-def is_azure_openai() -> bool
+def is_azure_openai(self):
 ```
 
 Returns whether this type of models is an OpenAI-released model
@@ -55,219 +91,286 @@ from Azure.
 
 <a id="camel.types.enums.ModelType.is_zhipuai"></a>
 
-#### is\_zhipuai
+### is_zhipuai
 
 ```python
-@property
-def is_zhipuai() -> bool
+def is_zhipuai(self):
 ```
 
 Returns whether this type of models is an ZhipuAI model.
 
 <a id="camel.types.enums.ModelType.is_anthropic"></a>
 
-#### is\_anthropic
+### is_anthropic
 
 ```python
-@property
-def is_anthropic() -> bool
+def is_anthropic(self):
 ```
 
-Returns whether this type of models is Anthropic-released model.
+**Returns:**
 
-**Returns**:
-
-- `bool` - Whether this type of models is anthropic.
+  bool: Whether this type of models is anthropic.
 
 <a id="camel.types.enums.ModelType.is_groq"></a>
 
-#### is\_groq
+### is_groq
 
 ```python
-@property
-def is_groq() -> bool
+def is_groq(self):
 ```
 
 Returns whether this type of models is served by Groq.
 
 <a id="camel.types.enums.ModelType.is_openrouter"></a>
 
-#### is\_openrouter
+### is_openrouter
 
 ```python
-@property
-def is_openrouter() -> bool
+def is_openrouter(self):
 ```
 
 Returns whether this type of models is served by OpenRouter.
 
 <a id="camel.types.enums.ModelType.is_lmstudio"></a>
 
-#### is\_lmstudio
+### is_lmstudio
 
 ```python
-@property
-def is_lmstudio() -> bool
+def is_lmstudio(self):
 ```
 
 Returns whether this type of models is served by LMStudio.
 
 <a id="camel.types.enums.ModelType.is_together"></a>
 
-#### is\_together
+### is_together
 
 ```python
-@property
-def is_together() -> bool
+def is_together(self):
 ```
 
 Returns whether this type of models is served by Together AI.
 
 <a id="camel.types.enums.ModelType.is_sambanova"></a>
 
-#### is\_sambanova
+### is_sambanova
 
 ```python
-@property
-def is_sambanova() -> bool
+def is_sambanova(self):
 ```
 
 Returns whether this type of model is served by SambaNova AI.
 
 <a id="camel.types.enums.ModelType.is_mistral"></a>
 
-#### is\_mistral
+### is_mistral
 
 ```python
-@property
-def is_mistral() -> bool
+def is_mistral(self):
 ```
 
 Returns whether this type of models is served by Mistral.
 
 <a id="camel.types.enums.ModelType.is_nvidia"></a>
 
-#### is\_nvidia
+### is_nvidia
 
 ```python
-@property
-def is_nvidia() -> bool
+def is_nvidia(self):
 ```
 
 Returns whether this type of models is a NVIDIA model.
 
 <a id="camel.types.enums.ModelType.is_gemini"></a>
 
-#### is\_gemini
+### is_gemini
 
 ```python
-@property
-def is_gemini() -> bool
+def is_gemini(self):
 ```
 
-Returns whether this type of models is Gemini model.
+**Returns:**
 
-**Returns**:
-
-- `bool` - Whether this type of models is gemini.
+  bool: Whether this type of models is gemini.
 
 <a id="camel.types.enums.ModelType.is_reka"></a>
 
-#### is\_reka
+### is_reka
 
 ```python
-@property
-def is_reka() -> bool
+def is_reka(self):
 ```
 
-Returns whether this type of models is Reka model.
+**Returns:**
 
-**Returns**:
-
-- `bool` - Whether this type of models is Reka.
+  bool: Whether this type of models is Reka.
 
 <a id="camel.types.enums.ModelType.is_cohere"></a>
 
-#### is\_cohere
+### is_cohere
 
 ```python
-@property
-def is_cohere() -> bool
+def is_cohere(self):
 ```
 
-Returns whether this type of models is a Cohere model.
+**Returns:**
 
-**Returns**:
-
-- `bool` - Whether this type of models is Cohere.
+  bool: Whether this type of models is Cohere.
 
 <a id="camel.types.enums.ModelType.is_yi"></a>
 
-#### is\_yi
+### is_yi
 
 ```python
-@property
-def is_yi() -> bool
+def is_yi(self):
 ```
 
-Returns whether this type of models is Yi model.
+**Returns:**
 
-**Returns**:
+  bool: Whether this type of models is Yi.
 
-- `bool` - Whether this type of models is Yi.
+<a id="camel.types.enums.ModelType.is_qwen"></a>
+
+### is_qwen
+
+```python
+def is_qwen(self):
+```
+
+<a id="camel.types.enums.ModelType.is_deepseek"></a>
+
+### is_deepseek
+
+```python
+def is_deepseek(self):
+```
+
+<a id="camel.types.enums.ModelType.is_netmind"></a>
+
+### is_netmind
+
+```python
+def is_netmind(self):
+```
+
+<a id="camel.types.enums.ModelType.is_ppio"></a>
+
+### is_ppio
+
+```python
+def is_ppio(self):
+```
+
+<a id="camel.types.enums.ModelType.is_internlm"></a>
+
+### is_internlm
+
+```python
+def is_internlm(self):
+```
+
+<a id="camel.types.enums.ModelType.is_modelscope"></a>
+
+### is_modelscope
+
+```python
+def is_modelscope(self):
+```
+
+<a id="camel.types.enums.ModelType.is_moonshot"></a>
+
+### is_moonshot
+
+```python
+def is_moonshot(self):
+```
+
+<a id="camel.types.enums.ModelType.is_sglang"></a>
+
+### is_sglang
+
+```python
+def is_sglang(self):
+```
+
+<a id="camel.types.enums.ModelType.is_siliconflow"></a>
+
+### is_siliconflow
+
+```python
+def is_siliconflow(self):
+```
+
+<a id="camel.types.enums.ModelType.is_watsonx"></a>
+
+### is_watsonx
+
+```python
+def is_watsonx(self):
+```
+
+<a id="camel.types.enums.ModelType.is_novita"></a>
+
+### is_novita
+
+```python
+def is_novita(self):
+```
+
+<a id="camel.types.enums.ModelType.is_aiml"></a>
+
+### is_aiml
+
+```python
+def is_aiml(self):
+```
 
 <a id="camel.types.enums.ModelType.token_limit"></a>
 
-#### token\_limit
+### token_limit
 
 ```python
-@property
-def token_limit() -> int
+def token_limit(self):
 ```
 
-Returns the maximum token limit for a given model.
+**Returns:**
 
-**Returns**:
-
-- `int` - The maximum token limit for the given model.
+  int: The maximum token limit for the given model.
 
 <a id="camel.types.enums.EmbeddingModelType"></a>
 
-## EmbeddingModelType Objects
+## EmbeddingModelType
 
 ```python
-class EmbeddingModelType(Enum)
+class EmbeddingModelType(Enum):
 ```
 
 <a id="camel.types.enums.EmbeddingModelType.is_openai"></a>
 
-#### is\_openai
+### is_openai
 
 ```python
-@property
-def is_openai() -> bool
+def is_openai(self):
 ```
 
 Returns whether this type of models is an OpenAI-released model.
 
 <a id="camel.types.enums.EmbeddingModelType.is_jina"></a>
 
-#### is\_jina
+### is_jina
 
 ```python
-@property
-def is_jina() -> bool
+def is_jina(self):
 ```
 
 Returns whether this type of models is an Jina model.
 
 <a id="camel.types.enums.EmbeddingModelType.is_mistral"></a>
 
-#### is\_mistral
+### is_mistral
 
 ```python
-@property
-def is_mistral() -> bool
+def is_mistral(self):
 ```
 
 Returns whether this type of models is an Mistral-released
@@ -275,21 +378,28 @@ model.
 
 <a id="camel.types.enums.EmbeddingModelType.is_gemini"></a>
 
-#### is\_gemini
+### is_gemini
 
 ```python
-@property
-def is_gemini() -> bool
+def is_gemini(self):
 ```
 
 Returns whether this type of models is an Gemini-released model.
 
-<a id="camel.types.enums.GeminiEmbeddingTaskType"></a>
+<a id="camel.types.enums.EmbeddingModelType.output_dim"></a>
 
-## GeminiEmbeddingTaskType Objects
+### output_dim
 
 ```python
-class GeminiEmbeddingTaskType(str, Enum)
+def output_dim(self):
+```
+
+<a id="camel.types.enums.GeminiEmbeddingTaskType"></a>
+
+## GeminiEmbeddingTaskType
+
+```python
+class GeminiEmbeddingTaskType(str, Enum):
 ```
 
 Task types for Gemini embedding models.
@@ -299,222 +409,188 @@ https://ai.google.dev/gemini-api/docs/embeddings#task-types
 
 <a id="camel.types.enums.VectorDistance"></a>
 
-## VectorDistance Objects
+## VectorDistance
 
 ```python
-class VectorDistance(Enum)
+class VectorDistance(Enum):
 ```
 
 Distance metrics used in a vector database.
 
-<a id="camel.types.enums.VectorDistance.DOT"></a>
-
-#### DOT
-
-Dot product. https://en.wikipedia.org/wiki/Dot_product
-
-<a id="camel.types.enums.VectorDistance.COSINE"></a>
-
-#### COSINE
-
-Cosine similarity. https://en.wikipedia.org/wiki/Cosine_similarity
-
-<a id="camel.types.enums.VectorDistance.EUCLIDEAN"></a>
-
-#### EUCLIDEAN
-
-Euclidean distance. https://en.wikipedia.org/wiki/Euclidean_distance
-
 <a id="camel.types.enums.OpenAIImageType"></a>
 
-## OpenAIImageType Objects
+## OpenAIImageType
 
 ```python
-class OpenAIImageType(Enum, metaclass=OpenAIImageTypeMeta)
+class OpenAIImageType(Enum):
 ```
 
 Image types supported by OpenAI vision model.
 
 <a id="camel.types.enums.ModelPlatformType"></a>
 
-## ModelPlatformType Objects
+## ModelPlatformType
 
 ```python
-class ModelPlatformType(Enum)
+class ModelPlatformType(Enum):
 ```
 
 <a id="camel.types.enums.ModelPlatformType.from_name"></a>
 
-#### from\_name
+### from_name
 
 ```python
-@classmethod
-def from_name(cls, name)
+def from_name(cls, name):
 ```
 
 Returns the ModelPlatformType enum value from a string.
 
 <a id="camel.types.enums.ModelPlatformType.is_openai"></a>
 
-#### is\_openai
+### is_openai
 
 ```python
-@property
-def is_openai() -> bool
+def is_openai(self):
 ```
 
 Returns whether this platform is openai.
 
 <a id="camel.types.enums.ModelPlatformType.is_aws_bedrock"></a>
 
-#### is\_aws\_bedrock
+### is_aws_bedrock
 
 ```python
-@property
-def is_aws_bedrock() -> bool
+def is_aws_bedrock(self):
 ```
 
 Returns whether this platform is aws-bedrock.
 
 <a id="camel.types.enums.ModelPlatformType.is_azure"></a>
 
-#### is\_azure
+### is_azure
 
 ```python
-@property
-def is_azure() -> bool
+def is_azure(self):
 ```
 
 Returns whether this platform is azure.
 
 <a id="camel.types.enums.ModelPlatformType.is_anthropic"></a>
 
-#### is\_anthropic
+### is_anthropic
 
 ```python
-@property
-def is_anthropic() -> bool
+def is_anthropic(self):
 ```
 
 Returns whether this platform is anthropic.
 
 <a id="camel.types.enums.ModelPlatformType.is_groq"></a>
 
-#### is\_groq
+### is_groq
 
 ```python
-@property
-def is_groq() -> bool
+def is_groq(self):
 ```
 
 Returns whether this platform is groq.
 
 <a id="camel.types.enums.ModelPlatformType.is_openrouter"></a>
 
-#### is\_openrouter
+### is_openrouter
 
 ```python
-@property
-def is_openrouter() -> bool
+def is_openrouter(self):
 ```
 
 Returns whether this platform is openrouter.
 
 <a id="camel.types.enums.ModelPlatformType.is_lmstudio"></a>
 
-#### is\_lmstudio
+### is_lmstudio
 
 ```python
-@property
-def is_lmstudio() -> bool
+def is_lmstudio(self):
 ```
 
 Returns whether this platform is lmstudio.
 
 <a id="camel.types.enums.ModelPlatformType.is_ollama"></a>
 
-#### is\_ollama
+### is_ollama
 
 ```python
-@property
-def is_ollama() -> bool
+def is_ollama(self):
 ```
 
 Returns whether this platform is ollama.
 
 <a id="camel.types.enums.ModelPlatformType.is_vllm"></a>
 
-#### is\_vllm
+### is_vllm
 
 ```python
-@property
-def is_vllm() -> bool
+def is_vllm(self):
 ```
 
 Returns whether this platform is vllm.
 
 <a id="camel.types.enums.ModelPlatformType.is_sglang"></a>
 
-#### is\_sglang
+### is_sglang
 
 ```python
-@property
-def is_sglang() -> bool
+def is_sglang(self):
 ```
 
 Returns whether this platform is sglang.
 
 <a id="camel.types.enums.ModelPlatformType.is_together"></a>
 
-#### is\_together
+### is_together
 
 ```python
-@property
-def is_together() -> bool
+def is_together(self):
 ```
 
 Returns whether this platform is together.
 
 <a id="camel.types.enums.ModelPlatformType.is_litellm"></a>
 
-#### is\_litellm
+### is_litellm
 
 ```python
-@property
-def is_litellm() -> bool
+def is_litellm(self):
 ```
 
 Returns whether this platform is litellm.
 
 <a id="camel.types.enums.ModelPlatformType.is_zhipuai"></a>
 
-#### is\_zhipuai
+### is_zhipuai
 
 ```python
-@property
-def is_zhipuai() -> bool
+def is_zhipuai(self):
 ```
 
 Returns whether this platform is zhipu.
 
 <a id="camel.types.enums.ModelPlatformType.is_mistral"></a>
 
-#### is\_mistral
+### is_mistral
 
 ```python
-@property
-def is_mistral() -> bool
+def is_mistral(self):
 ```
 
 Returns whether this platform is mistral.
 
 <a id="camel.types.enums.ModelPlatformType.is_openai_compatible_model"></a>
 
-#### is\_openai\_compatible\_model
+### is_openai_compatible_model
 
 ```python
-@property
-def is_openai_compatible_model() -> bool
+def is_openai_compatible_model(self):
 ```
 
 Returns whether this is a platform supporting openai
@@ -522,217 +598,198 @@ compatibility
 
 <a id="camel.types.enums.ModelPlatformType.is_gemini"></a>
 
-#### is\_gemini
+### is_gemini
 
 ```python
-@property
-def is_gemini() -> bool
+def is_gemini(self):
 ```
 
 Returns whether this platform is Gemini.
 
 <a id="camel.types.enums.ModelPlatformType.is_reka"></a>
 
-#### is\_reka
+### is_reka
 
 ```python
-@property
-def is_reka() -> bool
+def is_reka(self):
 ```
 
 Returns whether this platform is Reka.
 
 <a id="camel.types.enums.ModelPlatformType.is_samba"></a>
 
-#### is\_samba
+### is_samba
 
 ```python
-@property
-def is_samba() -> bool
+def is_samba(self):
 ```
 
 Returns whether this platform is Samba Nova.
 
 <a id="camel.types.enums.ModelPlatformType.is_cohere"></a>
 
-#### is\_cohere
+### is_cohere
 
 ```python
-@property
-def is_cohere() -> bool
+def is_cohere(self):
 ```
 
 Returns whether this platform is Cohere.
 
 <a id="camel.types.enums.ModelPlatformType.is_yi"></a>
 
-#### is\_yi
+### is_yi
 
 ```python
-@property
-def is_yi() -> bool
+def is_yi(self):
 ```
 
 Returns whether this platform is Yi.
 
 <a id="camel.types.enums.ModelPlatformType.is_qwen"></a>
 
-#### is\_qwen
+### is_qwen
 
 ```python
-@property
-def is_qwen() -> bool
+def is_qwen(self):
 ```
 
 Returns whether this platform is Qwen.
 
 <a id="camel.types.enums.ModelPlatformType.is_nvidia"></a>
 
-#### is\_nvidia
+### is_nvidia
 
 ```python
-@property
-def is_nvidia() -> bool
+def is_nvidia(self):
 ```
 
 Returns whether this platform is Nvidia.
 
 <a id="camel.types.enums.ModelPlatformType.is_deepseek"></a>
 
-#### is\_deepseek
+### is_deepseek
 
 ```python
-@property
-def is_deepseek() -> bool
+def is_deepseek(self):
 ```
 
 Returns whether this platform is DeepSeek.
 
 <a id="camel.types.enums.ModelPlatformType.is_netmind"></a>
 
-#### is\_netmind
+### is_netmind
 
 ```python
-@property
-def is_netmind() -> bool
+def is_netmind(self):
 ```
 
 Returns whether this platform is Netmind.
 
 <a id="camel.types.enums.ModelPlatformType.is_ppio"></a>
 
-#### is\_ppio
+### is_ppio
 
 ```python
-@property
-def is_ppio() -> bool
+def is_ppio(self):
 ```
 
 Returns whether this platform is PPIO.
 
 <a id="camel.types.enums.ModelPlatformType.is_internlm"></a>
 
-#### is\_internlm
+### is_internlm
 
 ```python
-@property
-def is_internlm() -> bool
+def is_internlm(self):
 ```
 
 Returns whether this platform is InternLM.
 
 <a id="camel.types.enums.ModelPlatformType.is_moonshot"></a>
 
-#### is\_moonshot
+### is_moonshot
 
 ```python
-@property
-def is_moonshot() -> bool
+def is_moonshot(self):
 ```
 
 Returns whether this platform is Moonshot model.
 
 <a id="camel.types.enums.ModelPlatformType.is_modelscope"></a>
 
-#### is\_modelscope
+### is_modelscope
 
 ```python
-@property
-def is_modelscope() -> bool
+def is_modelscope(self):
 ```
 
 Returns whether this platform is ModelScope model.
 
 <a id="camel.types.enums.ModelPlatformType.is_siliconflow"></a>
 
-#### is\_siliconflow
+### is_siliconflow
 
 ```python
-@property
-def is_siliconflow() -> bool
+def is_siliconflow(self):
 ```
 
 Returns whether this platform is SiliconFlow.
 
 <a id="camel.types.enums.ModelPlatformType.is_aiml"></a>
 
-#### is\_aiml
+### is_aiml
 
 ```python
-@property
-def is_aiml() -> bool
+def is_aiml(self):
 ```
 
 Returns whether this platform is AIML.
 
 <a id="camel.types.enums.ModelPlatformType.is_volcano"></a>
 
-#### is\_volcano
+### is_volcano
 
 ```python
-@property
-def is_volcano() -> bool
+def is_volcano(self):
 ```
 
 Returns whether this platform is volcano.
 
 <a id="camel.types.enums.ModelPlatformType.is_novita"></a>
 
-#### is\_novita
+### is_novita
 
 ```python
-@property
-def is_novita() -> bool
+def is_novita(self):
 ```
 
 Returns whether this platform is Novita.
 
 <a id="camel.types.enums.ModelPlatformType.is_watsonx"></a>
 
-#### is\_watsonx
+### is_watsonx
 
 ```python
-@property
-def is_watsonx() -> bool
+def is_watsonx(self):
 ```
 
 Returns whether this platform is WatsonX.
 
 <a id="camel.types.enums.AudioModelType"></a>
 
-## AudioModelType Objects
+## AudioModelType
 
 ```python
-class AudioModelType(Enum)
+class AudioModelType(Enum):
 ```
 
 <a id="camel.types.enums.AudioModelType.is_openai"></a>
 
-#### is\_openai
+### is_openai
 
 ```python
-@property
-def is_openai() -> bool
+def is_openai(self):
 ```
 
 Returns whether this type of audio models is an OpenAI-released
@@ -740,20 +797,18 @@ model.
 
 <a id="camel.types.enums.VoiceType"></a>
 
-## VoiceType Objects
+## VoiceType
 
 ```python
-class VoiceType(Enum)
+class VoiceType(Enum):
 ```
 
 <a id="camel.types.enums.VoiceType.is_openai"></a>
 
-#### is\_openai
+### is_openai
 
 ```python
-@property
-def is_openai() -> bool
+def is_openai(self):
 ```
 
 Returns whether this type of voice is an OpenAI-released voice.
-

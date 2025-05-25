@@ -2,11 +2,10 @@
 
 <a id="camel.toolkits.arxiv_toolkit.ArxivToolkit"></a>
 
-## ArxivToolkit Objects
+## ArxivToolkit
 
 ```python
-@MCPServer()
-class ArxivToolkit(BaseToolkit)
+class ArxivToolkit(BaseToolkit):
 ```
 
 A toolkit for interacting with the arXiv API to search and download
@@ -14,85 +13,107 @@ academic papers.
 
 <a id="camel.toolkits.arxiv_toolkit.ArxivToolkit.__init__"></a>
 
-#### \_\_init\_\_
+### __init__
 
 ```python
-@dependencies_required('arxiv')
-def __init__(timeout: Optional[float] = None) -> None
+def __init__(self, timeout: Optional[float] = None):
 ```
 
 Initializes the ArxivToolkit and sets up the arXiv client.
 
-<a id="camel.toolkits.arxiv_toolkit.ArxivToolkit.search_papers"></a>
+<a id="camel.toolkits.arxiv_toolkit.ArxivToolkit._get_search_results"></a>
 
-#### search\_papers
+### _get_search_results
 
 ```python
-def search_papers(query: str,
-                  paper_ids: Optional[List[str]] = None,
-                  max_results: Optional[int] = 5) -> List[Dict[str, str]]
+def _get_search_results(
+    self,
+    query: str,
+    paper_ids: Optional[List[str]] = None,
+    max_results: Optional[int] = 5
+):
+```
+
+Retrieves search results from the arXiv API based on the provided
+query and optional paper IDs.
+
+**Parameters:**
+
+- **query** (str): The search query string used to search for papers on arXiv.
+- **paper_ids** (List[str], optional): A list of specific arXiv paper IDs to search for. (default: :obj: `None`)
+- **max_results** (int, optional): The maximum number of search results to retrieve. (default: :obj: `5`)
+
+**Returns:**
+
+  Generator: A generator that yields results from the arXiv search
+query, which includes metadata about each paper matching the
+query.
+
+<a id="camel.toolkits.arxiv_toolkit.ArxivToolkit.search_papers"></a>
+
+### search_papers
+
+```python
+def search_papers(
+    self,
+    query: str,
+    paper_ids: Optional[List[str]] = None,
+    max_results: Optional[int] = 5
+):
 ```
 
 Searches for academic papers on arXiv using a query string and
 optional paper IDs.
 
-**Arguments**:
+**Parameters:**
 
-- `query` _str_ - The search query string.
-- `paper_ids` _List[str], optional_ - A list of specific arXiv paper
-  IDs to search for. (default: :obj: `None`)
-- `max_results` _int, optional_ - The maximum number of search results
-  to return. (default: :obj: `5`)
-  
+- **query** (str): The search query string.
+- **paper_ids** (List[str], optional): A list of specific arXiv paper IDs to search for. (default: :obj: `None`)
+- **max_results** (int, optional): The maximum number of search results to return. (default: :obj: `5`)
 
-**Returns**:
+**Returns:**
 
   List[Dict[str, str]]: A list of dictionaries, each containing
-  information about a paper, including title, published date,
-  authors, entry ID, summary, and extracted text from the paper.
+information about a paper, including title, published date,
+authors, entry ID, summary, and extracted text from the paper.
 
 <a id="camel.toolkits.arxiv_toolkit.ArxivToolkit.download_papers"></a>
 
-#### download\_papers
+### download_papers
 
 ```python
-def download_papers(query: str,
-                    paper_ids: Optional[List[str]] = None,
-                    max_results: Optional[int] = 5,
-                    output_dir: Optional[str] = "./") -> str
+def download_papers(
+    self,
+    query: str,
+    paper_ids: Optional[List[str]] = None,
+    max_results: Optional[int] = 5,
+    output_dir: Optional[str] = './'
+):
 ```
 
 Downloads PDFs of academic papers from arXiv based on the provided
 query.
 
-**Arguments**:
+**Parameters:**
 
-- `query` _str_ - The search query string.
-- `paper_ids` _List[str], optional_ - A list of specific arXiv paper
-  IDs to download. (default: :obj: `None`)
-- `max_results` _int, optional_ - The maximum number of search results
-  to download. (default: :obj: `5`)
-- `output_dir` _str, optional_ - The directory to save the downloaded
-  PDFs. Defaults to the current directory.
-  
+- **query** (str): The search query string.
+- **paper_ids** (List[str], optional): A list of specific arXiv paper IDs to download. (default: :obj: `None`)
+- **max_results** (int, optional): The maximum number of search results to download. (default: :obj: `5`)
+- **output_dir** (str, optional): The directory to save the downloaded PDFs. Defaults to the current directory.
 
-**Returns**:
+**Returns:**
 
-- `str` - Status message indicating success or failure.
+  str: Status message indicating success or failure.
 
 <a id="camel.toolkits.arxiv_toolkit.ArxivToolkit.get_tools"></a>
 
-#### get\_tools
+### get_tools
 
 ```python
-def get_tools() -> List[FunctionTool]
+def get_tools(self):
 ```
 
-Returns a list of FunctionTool objects representing the
-functions in the toolkit.
+**Returns:**
 
-**Returns**:
-
-- `List[FunctionTool]` - A list of FunctionTool objects
-  representing the functions in the toolkit.
-
+  List[FunctionTool]: A list of FunctionTool objects
+representing the functions in the toolkit.

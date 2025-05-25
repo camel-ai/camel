@@ -2,60 +2,65 @@
 
 <a id="camel.toolkits.code_execution.CodeExecutionToolkit"></a>
 
-## CodeExecutionToolkit Objects
+## CodeExecutionToolkit
 
 ```python
-@MCPServer()
-class CodeExecutionToolkit(BaseToolkit)
+class CodeExecutionToolkit(BaseToolkit):
 ```
 
 A toolkit for code execution.
 
-**Arguments**:
+**Parameters:**
 
-- `sandbox` _str_ - The environment type used to execute code.
-- `(default` - `subprocess`)
-- `verbose` _bool_ - Whether to print the output of the code execution.
-- `(default` - :obj:`False`)
-- `unsafe_mode` _bool_ - If `True`, the interpreter runs the code
-  by `eval()` without any security check. (default: :obj:`False`)
-- `import_white_list` _ Optional[List[str]]_ - A list of allowed imports.
-- `(default` - :obj:`None`)
-- `require_confirm` _bool_ - Whether to require confirmation before executing code.
-- `(default` - :obj:`False`)
+- **sandbox** (str): The environment type used to execute code. (default: `subprocess`)
+- **verbose** (bool): Whether to print the output of the code execution. (default: :obj:`False`)
+- **unsafe_mode** (bool): If `True`, the interpreter runs the code by `eval()` without any security check. (default: :obj:`False`)
+- **import_white_list** (Optional[List[str]]): A list of allowed imports. (default: :obj:`None`)
+- **require_confirm** (bool): Whether to require confirmation before executing code. (default: :obj:`False`)
+
+<a id="camel.toolkits.code_execution.CodeExecutionToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    sandbox: Literal['internal_python', 'jupyter', 'docker', 'subprocess', 'e2b'] = 'subprocess',
+    verbose: bool = False,
+    unsafe_mode: bool = False,
+    import_white_list: Optional[List[str]] = None,
+    require_confirm: bool = False,
+    timeout: Optional[float] = None
+):
+```
 
 <a id="camel.toolkits.code_execution.CodeExecutionToolkit.execute_code"></a>
 
-#### execute\_code
+### execute_code
 
 ```python
-def execute_code(code: str) -> str
+def execute_code(self, code: str):
 ```
 
 Execute a given code snippet.
 
-**Arguments**:
+**Parameters:**
 
-- `code` _str_ - The input code to the Code Interpreter tool call.
-  
+- **code** (str): The input code to the Code Interpreter tool call.
 
-**Returns**:
+**Returns:**
 
-- `str` - The text output from the Code Interpreter tool call.
+  str: The text output from the Code Interpreter tool call.
 
 <a id="camel.toolkits.code_execution.CodeExecutionToolkit.get_tools"></a>
 
-#### get\_tools
+### get_tools
 
 ```python
-def get_tools() -> List[FunctionTool]
+def get_tools(self):
 ```
 
-Returns a list of FunctionTool objects representing the
-functions in the toolkit.
+**Returns:**
 
-**Returns**:
-
-- `List[FunctionTool]` - A list of FunctionTool objects
-  representing the functions in the toolkit.
-
+  List[FunctionTool]: A list of FunctionTool objects
+representing the functions in the toolkit.

@@ -2,61 +2,60 @@
 
 <a id="camel.embeddings.mistral_embedding.MistralEmbedding"></a>
 
-## MistralEmbedding Objects
+## MistralEmbedding
 
 ```python
-class MistralEmbedding(BaseEmbedding[str])
+class MistralEmbedding:
 ```
 
 Provides text embedding functionalities using Mistral's models.
 
-**Arguments**:
+**Parameters:**
 
-- `model_type` _EmbeddingModelType, optional_ - The model type to be
-  used for text embeddings.
-- `(default` - :obj:`MISTRAL_EMBED`)
-- `api_key` _str, optional_ - The API key for authenticating with the
-  Mistral service. (default: :obj:`None`)
-- `dimensions` _int, optional_ - The text embedding output dimensions.
-- `(default` - :obj:`None`)
-  
+- **model_type** (EmbeddingModelType, optional): The model type to be used for text embeddings. (default: :obj:`MISTRAL_EMBED`)
+- **api_key** (str, optional): The API key for authenticating with the Mistral service. (default: :obj:`None`)
+- **dimensions** (int, optional): The text embedding output dimensions. (default: :obj:`None`)
 
-**Raises**:
+<a id="camel.embeddings.mistral_embedding.MistralEmbedding.__init__"></a>
 
-- `RuntimeError` - If an unsupported model type is specified.
+### __init__
+
+```python
+def __init__(
+    self,
+    model_type: EmbeddingModelType = EmbeddingModelType.MISTRAL_EMBED,
+    api_key: str | None = None,
+    dimensions: int | None = None
+):
+```
 
 <a id="camel.embeddings.mistral_embedding.MistralEmbedding.embed_list"></a>
 
-#### embed\_list
+### embed_list
 
 ```python
-def embed_list(objs: list[str], **kwargs: Any) -> list[list[float]]
+def embed_list(self, objs: list[str], **kwargs: Any):
 ```
 
 Generates embeddings for the given texts.
 
-**Arguments**:
+**Parameters:**
 
-- `objs` _list[str]_ - The texts for which to generate the embeddings.
-- `**kwargs` _Any_ - Extra kwargs passed to the embedding API.
-  
+- **objs** (list[str]): The texts for which to generate the embeddings. **kwargs (Any): Extra kwargs passed to the embedding API.
 
-**Returns**:
+**Returns:**
 
-- `list[list[float]]` - A list that represents the generated embedding
-  as a list of floating-point numbers.
+  list[list[float]]: A list that represents the generated embedding
+as a list of floating-point numbers.
 
 <a id="camel.embeddings.mistral_embedding.MistralEmbedding.get_output_dim"></a>
 
-#### get\_output\_dim
+### get_output_dim
 
 ```python
-def get_output_dim() -> int
+def get_output_dim(self):
 ```
 
-Returns the output dimension of the embeddings.
+**Returns:**
 
-**Returns**:
-
-- `int` - The dimensionality of the embedding for the current model.
-
+  int: The dimensionality of the embedding for the current model.

@@ -2,57 +2,67 @@
 
 <a id="camel.data_collector.sharegpt_collector.ShareGPTDataCollector"></a>
 
-## ShareGPTDataCollector Objects
+## ShareGPTDataCollector
 
 ```python
-class ShareGPTDataCollector(BaseDataCollector)
+class ShareGPTDataCollector(BaseDataCollector):
+```
+
+<a id="camel.data_collector.sharegpt_collector.ShareGPTDataCollector.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self):
 ```
 
 <a id="camel.data_collector.sharegpt_collector.ShareGPTDataCollector.record"></a>
 
-#### record
+### record
 
 ```python
-def record(agent: Union[List[ChatAgent], ChatAgent]) -> Self
+def record(self, agent: Union[List[ChatAgent], ChatAgent]):
 ```
 
 Inject an agent into the data collector.
 
 <a id="camel.data_collector.sharegpt_collector.ShareGPTDataCollector.convert"></a>
 
-#### convert
+### convert
 
 ```python
-def convert() -> Dict[str, Any]
+def convert(self):
 ```
 
 Convert the collected data into a dictionary.
 
 <a id="camel.data_collector.sharegpt_collector.ShareGPTDataCollector.llm_convert"></a>
 
-#### llm\_convert
+### llm_convert
 
 ```python
-def llm_convert(converter: Optional[OpenAISchemaConverter] = None,
-                prompt: Optional[str] = None) -> Dict[str, Any]
+def llm_convert(
+    self,
+    converter: Optional[OpenAISchemaConverter] = None,
+    prompt: Optional[str] = None
+):
 ```
 
 Convert collected data using an LLM schema converter.
 
-**Arguments**:
+**Parameters:**
 
-  converter (Optional[OpenAISchemaConverter], optional):
-  The converter to use. (default: :obj:`OpenAISchemaConverter`)
-- `prompt` _Optional[str], optional_ - Prompt to guide the conversion.
-- `(default` - :obj:`DEFAULT_CONVERTER_PROMPTS`)
-  
+- **converter** (Optional[OpenAISchemaConverter], optional): The converter to use. (default: :obj:`OpenAISchemaConverter`)
+- **prompt** (Optional[str], optional): Prompt to guide the conversion. (default: :obj:`DEFAULT_CONVERTER_PROMPTS`)
 
-**Returns**:
+**Returns:**
 
   Dict[str, str]: The converted data.
-  
 
-**Raises**:
+<a id="camel.data_collector.sharegpt_collector.ShareGPTDataCollector.to_sharegpt_conversation"></a>
 
-- `ValueError` - If no agent is injected or data cannot be collected.
+### to_sharegpt_conversation
 
+```python
+def to_sharegpt_conversation(data: Dict[str, Any]):
+```

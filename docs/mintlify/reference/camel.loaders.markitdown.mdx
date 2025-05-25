@@ -2,105 +2,108 @@
 
 <a id="camel.loaders.markitdown.MarkItDownLoader"></a>
 
-## MarkItDownLoader Objects
+## MarkItDownLoader
 
 ```python
-class MarkItDownLoader()
+class MarkItDownLoader:
 ```
 
 MarkitDown convert various file types into Markdown format.
 
 Supported Input Formats:
-    - PDF
-    - Microsoft Office documents:
-        - Word (.doc, .docx)
-        - Excel (.xls, .xlsx)
-        - PowerPoint (.ppt, .pptx)
-    - EPUB
-    - HTML
-    - Images (with EXIF metadata and OCR support)
-    - Audio files (with EXIF metadata and speech transcription)
-    - Text-based formats:
-        - CSV
-        - JSON
-        - XML
-    - ZIP archives (iterates over contents)
-    - YouTube URLs (via transcript extraction)
+- PDF
+- Microsoft Office documents:
+- Word (.doc, .docx)
+- Excel (.xls, .xlsx)
+- PowerPoint (.ppt, .pptx)
+- EPUB
+- HTML
+- Images (with EXIF metadata and OCR support)
+- Audio files (with EXIF metadata and speech transcription)
+- Text-based formats:
+- CSV
+- JSON
+- XML
+- ZIP archives (iterates over contents)
+- YouTube URLs (via transcript extraction)
 
 <a id="camel.loaders.markitdown.MarkItDownLoader.__init__"></a>
 
-#### \_\_init\_\_
+### __init__
 
 ```python
-def __init__(llm_client: Optional[object] = None,
-             llm_model: Optional[str] = None)
+def __init__(
+    self,
+    llm_client: Optional[object] = None,
+    llm_model: Optional[str] = None
+):
 ```
 
 Initializes the Converter.
 
-**Arguments**:
+**Parameters:**
 
-- `llm_client` _Optional[object]_ - Optional client for LLM integration.
-- `(default` - :obj:`None`)
-- `llm_model` _Optional[str]_ - Optional model name for the LLM.
-- `(default` - :obj:`None`)
+- **llm_client** (Optional[object]): Optional client for LLM integration. (default: :obj:`None`)
+- **llm_model** (Optional[str]): Optional model name for the LLM. (default: :obj:`None`)
+
+<a id="camel.loaders.markitdown.MarkItDownLoader._validate_format"></a>
+
+### _validate_format
+
+```python
+def _validate_format(self, file_path: str):
+```
+
+Validates if the file format is supported.
+
+**Parameters:**
+
+- **file_path** (str): Path to the input file.
+
+**Returns:**
+
+  bool: True if the format is supported, False otherwise.
 
 <a id="camel.loaders.markitdown.MarkItDownLoader.convert_file"></a>
 
-#### convert\_file
+### convert_file
 
 ```python
-def convert_file(file_path: str) -> str
+def convert_file(self, file_path: str):
 ```
 
 Converts the given file to Markdown format.
 
-**Arguments**:
+**Parameters:**
 
-- `file_path` _str_ - Path to the input file.
-  
+- **file_path** (str): Path to the input file.
 
-**Returns**:
+**Returns:**
 
-- `str` - Converted Markdown text.
-  
-
-**Raises**:
-
-- `FileNotFoundError` - If the specified file does not exist.
-- `ValueError` - If the file format is not supported.
-- `Exception` - For other errors during conversion.
+  str: Converted Markdown text.
 
 <a id="camel.loaders.markitdown.MarkItDownLoader.convert_files"></a>
 
-#### convert\_files
+### convert_files
 
 ```python
-def convert_files(file_paths: List[str],
-                  parallel: bool = False,
-                  skip_failed: bool = False) -> Dict[str, str]
+def convert_files(
+    self,
+    file_paths: List[str],
+    parallel: bool = False,
+    skip_failed: bool = False
+):
 ```
 
 Converts multiple files to Markdown format.
 
-**Arguments**:
+**Parameters:**
 
-- `file_paths` _List[str]_ - List of file paths to convert.
-- `parallel` _bool_ - Whether to process files in parallel.
-- `(default` - :obj:`False`)
-- `skip_failed` _bool_ - Whether to skip failed files instead
-  of including error messages.
-- `(default` - :obj:`False`)
-  
+- **file_paths** (List[str]): List of file paths to convert.
+- **parallel** (bool): Whether to process files in parallel. (default: :obj:`False`)
+- **skip_failed** (bool): Whether to skip failed files instead of including error messages. (default: :obj:`False`)
 
-**Returns**:
+**Returns:**
 
   Dict[str, str]: Dictionary mapping file paths to their
-  converted Markdown text.
-  
-
-**Raises**:
-
-- `Exception` - For errors during conversion of any file if
-  skip_failed is False.
-
+converted Markdown text.
