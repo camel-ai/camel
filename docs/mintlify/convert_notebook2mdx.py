@@ -953,12 +953,14 @@ def smart_detect_group_from_path(file_path, input_root):
             if cookbooks_idx + 1 < len(path_parts):
                 return path_parts[cookbooks_idx + 1]
         
-        # If no cookbooks directory, use the first directory as group
+        # If no cookbooks directory, preserve the directory structure
         if len(path_parts) > 1:
-            return path_parts[0]
+            # For files in subdirectories, use the immediate parent directory name
+            # This preserves the original directory structure
+            return path_parts[-2]  # Use the parent directory of the file
         
-        # Default group
-        return 'misc'
+        # For files directly in the input root, use the input root's name
+        return input_root.name
         
     except ValueError:
         # File is not under input_root, use parent directory name

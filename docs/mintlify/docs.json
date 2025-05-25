@@ -67,15 +67,6 @@
             ]
           },
           {
-            "group": "MCP",
-            "pages": [
-              "mcp/index",
-              "mcp/MCP_with_CAMEL",
-              "mcp/Using_MCP_with_OWL",
-              "mcp/overview"
-            ]
-          },
-          {
             "group": "Cookbooks",
             "pages": [
               {
