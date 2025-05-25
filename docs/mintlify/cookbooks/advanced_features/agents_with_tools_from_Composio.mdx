@@ -1,0 +1,216 @@
+---
+title: "Using Tools from Composio"
+---
+
+You can also check this cookbook in colab [here](https://colab.research.google.com/drive/1x2FYThMPtQXLzKZAhf_Ry-oeU6oPygdm?usp=sharing)
+
+⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
+
+*Goal: Star a repository on GitHub with natural language & CAMEL Agent*
+
+### Install Packages & Connect a Tool
+
+Integrate Composio with CAMEL agents to let them seamlessly interact with external apps
+
+Ensure you have the necessary packages installed and connect your GitHub account to allow your CAMEL-AI agents to utilize GitHub functionalities.
+
+
+```python
+%pip install "camel-ai[all]==0.1.6.5"
+%pip install "composio-camel -U"
+
+import composio
+
+```
+
+
+```python
+# Login to Composio
+!composio login
+```
+
+
+```python
+# Connect your Github account (this is a shell command, so it should be run in your terminal or with '!' prefix in a Jupyter Notebook)
+!composio add github
+
+# Check all different apps which you can connect with
+!composio apps
+```
+
+
+```python
+# Update Composio apps
+! composio apps update
+```
+
+### Prepare your environment by initializing necessary imports from CAMEL & Composio.
+
+
+```python
+from typing import List
+
+from colorama import Fore
+from composio_camel import Action, ComposioToolSet
+
+from camel.agents.chat_agent import FunctionCallingRecord
+from camel.configs import ChatGPTConfig
+from camel.models import ModelFactory
+from camel.societies import RolePlaying
+from camel.types import ModelPlatformType, ModelType
+from camel.utils import print_text_animated
+```
+
+
+```python
+import os
+from getpass import getpass
+
+# Prompt for the API key securely
+openai_api_key = getpass('Enter your API key: ')
+os.environ["OPENAI_API_KEY"] = openai_api_key
+```
+
+Alternatively, if running on Colab, you could save your API keys and tokens as **Colab Secrets**, and use them across notebooks.
+
+To do so, **comment out** the above **manual** API key prompt code block(s), and **uncomment** the following codeblock.
+
+⚠️ Don't forget granting access to the API key you would be using to the current notebook.
+
+
+```python
+# import os
+# from google.colab import userdata
+
+# os.environ["OPENAI_API_KEY"] = userdata.get("OPENAI_API_KEY")
+```
+
+### Let's run CAMEL agents with tools from Composio!
+
+
+
+
+```python
+# Set your task
+
+task_prompt = (
+    "I have created a new Github Repo,"
+    "Please star my github repository: camel-ai/camel"
+)
+```
+
+
+```python
+# Set Toolset
+
+composio_toolset = ComposioToolSet()
+
+tools = composio_toolset.get_actions(
+    actions=[Action.GITHUB_STAR_A_REPOSITORY_FOR_THE_AUTHENTICATED_USER]
+)
+```
+
+
+```python
+# Set models for user agent and assistant agent, give tool to the assistant
+
+assistant_agent_model = ModelFactory.create(
+    model_platform=ModelPlatformType.OPENAI,
+    model_type=ModelType.GPT_3_5_TURBO,
+    model_config_dict=ChatGPTConfig(tools=tools).as_dict(),
+)
+
+user_agent_model = ModelFactory.create(
+    model_platform=ModelPlatformType.OPENAI,
+    model_type=ModelType.GPT_3_5_TURBO,
+    model_config_dict=ChatGPTConfig().as_dict(),
+)
+```
+
+
+```python
+# Set RolePlaying session
+
+role_play_session = RolePlaying(
+    assistant_role_name="Developer",
+    user_role_name="CAMEL User",
+    assistant_agent_kwargs=dict(
+        model=assistant_agent_model,
+        tools=tools,
+    ),
+    user_agent_kwargs=dict(
+        model=user_agent_model,
+    ),
+    task_prompt=task_prompt,
+    with_task_specify=False,
+)
+```
+
+
+```python
+# Print the system message and task prompt
+
+print(
+    Fore.GREEN
+    + f"AI Assistant sys message:\n{role_play_session.assistant_sys_msg}\n"
+)
+print(Fore.BLUE + f"AI User sys message:\n{role_play_session.user_sys_msg}\n")
+
+print(Fore.YELLOW + f"Original task prompt:\n{task_prompt}\n")
+print(
+    Fore.CYAN
+    + "Specified task prompt:"
+    + f"\n{role_play_session.specified_task_prompt}\n"
+)
+print(Fore.RED + f"Final task prompt:\n{role_play_session.task_prompt}\n")
+```
+
+
+```python
+# Set terminate rule and print the chat message
+
+n = 0
+input_msg = role_play_session.init_chat()
+while n < 50:
+    n += 1
+    assistant_response, user_response = role_play_session.step(input_msg)
+
+    if assistant_response.terminated:
+        print(
+            Fore.GREEN
+            + (
+                "AI Assistant terminated. Reason: "
+                f"{assistant_response.info['termination_reasons']}."
+            )
+        )
+        break
+    if user_response.terminated:
+        print(
+            Fore.GREEN
+            + (
+                "AI User terminated. "
+                f"Reason: {user_response.info['termination_reasons']}."
+            )
+        )
+        break
+
+    # Print output from the user
+    print_text_animated(
+        Fore.BLUE + f"AI User:\n\n{user_response.msg.content}\n"
+    )
+
+    # Print output from the assistant, including any function
+    # execution information
+    print_text_animated(Fore.GREEN + "AI Assistant:")
+    tool_calls: List[FunctionCallingRecord] = assistant_response.info[
+        'tool_calls'
+    ]
+    for func_record in tool_calls:
+        print_text_animated(f"{func_record}")
+    print_text_animated(f"{assistant_response.msg.content}\n")
+
+    if "CAMEL_TASK_DONE" in user_response.msg.content:
+        break
+
+    input_msg = assistant_response.msg
+```

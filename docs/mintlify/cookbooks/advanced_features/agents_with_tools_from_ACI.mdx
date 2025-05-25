@@ -1,0 +1,120 @@
+---
+title: "Using Tools from ACI"
+---
+
+You can also check this cookbook in colab [here](https://colab.research.google.com/drive/1vMdwL4MZdWk8O8vFwc9ROuC1KtynFfSi?usp=sharing)
+
+[ACI.dev](https://github.com/aipotheosis-labs/aci) is the open source platform that connects your AI agents to 600+ tool integrations. Integrate [ACI.dev](https://www.aci.dev/docs/introduction/overview) with CAMEL agents to let them seamlessly interact with these external apps.
+
+
+⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
+
+*Goal: Star a repository on GitHub with natural language & CAMEL Agent*
+
+### Install Packages & Connect a Tool
+
+Integrate ACI with CAMEL agents to let them seamlessly interact with external apps.
+
+Ensure you have the necessary packages installed and connect your GitHub account to allow your CAMEL-AI agents to utilize GitHub functionalities on [*ACI.dev*](https://platform.aci.dev/apps).
+
+
+```python
+# Run command
+%pip install "camel-ai[all]==0.2.59"
+```
+
+### Prepare your environment by initializing necessary imports from CAMEL.
+
+
+```python
+from camel.agents import ChatAgent
+from camel.models import ModelFactory
+from camel.toolkits import ACIToolkit
+from camel.types import ModelPlatformType, ModelType
+```
+
+### Provide the API key and the LINKED_ACCOUNT_OWNER from [*ACI.dev*](https://platform.aci.dev/apps) to the SDK.
+
+
+```python
+import os
+from getpass import getpass
+
+# Prompt for the API key securely
+openai_api_key = getpass('Enter your API key: ')
+os.environ["OPENAI_API_KEY"] = openai_api_key
+# Prompt for the ACI key securely
+aci_api_key = getpass('Enter your ACI API key: ')
+os.environ["ACI_API_KEY"] = aci_api_key
+# Prompt for your linked account owner id securely
+linked_account_owner_id = getpass('Enter your linked account owner id: ')
+os.environ["LINKED_ACCOUNT_OWNER"] = linked_account_owner_id
+```
+
+### Let’s run CAMEL agents with tools from ACI!
+
+
+```python
+# Get the value of the environment variable "LINKED_ACCOUNT_OWNER"
+LINKED_ACCOUNT_OWNER = os.getenv("LINKED_ACCOUNT_OWNER")
+
+# Check if the environment variable was set
+if LINKED_ACCOUNT_OWNER is None:
+    raise ValueError("LINKED_ACCOUNT_owner environment variable is not set.")
+```
+
+
+```python
+# Initialize ACI Toolkit with GitHub integration
+aci_toolkit = ACIToolkit(linked_account_owner_id=LINKED_ACCOUNT_OWNER)
+
+# Create default model instance
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.DEFAULT,
+    model_type=ModelType.DEFAULT,
+)
+
+# Set up chat agent with GitHub tools
+chat_agent = ChatAgent(
+    model=model,
+    tools=aci_toolkit.get_tools(),  # GitHub tools enabled
+)
+```
+
+
+```python
+# Execute GitHub star command
+response = chat_agent.step("star the repo camel-ai/camel")
+print(response)
+```
+
+That's everything: Got questions about 🐫 CAMEL-AI? Join us on [Discord](https://discord.camel-ai.org)! Whether you want to share feedback, explore the latest in multi-agent systems, get support, or connect with others on exciting projects, we’d love to have you in the community! 🤝
+
+Check out some of our other work:
+
+1. 🐫 Creating Your First CAMEL Agent [free Colab](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html)
+
+2.  Graph RAG Cookbook [free Colab](https://colab.research.google.com/drive/1uZKQSuu0qW6ukkuSv9TukLB9bVaS1H0U?usp=sharing)
+
+3. 🧑‍⚖️ Create A Hackathon Judge Committee with Workforce [free Colab](https://colab.research.google.com/drive/18ajYUMfwDx3WyrjHow3EvUMpKQDcrLtr?usp=sharing)
+
+4. 🔥 3 ways to ingest data from websites with Firecrawl & CAMEL [free Colab](https://colab.research.google.com/drive/1lOmM3VmgR1hLwDKdeLGFve_75RFW0R9I?usp=sharing)
+
+5. 🦥 Agentic SFT Data Generation with CAMEL and Mistral Models, Fine-Tuned with Unsloth [free Colab](https://colab.research.google.com/drive/1lYgArBw7ARVPSpdwgKLYnp_NEXiNDOd-?usp=sharingg)
+
+Thanks from everyone at 🐫 CAMEL-AI
+
+
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
+  <a href="https://www.camel-ai.org/">
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
+  </a>
+  <a href="https://discord.camel-ai.org">
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
+  </a>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
+

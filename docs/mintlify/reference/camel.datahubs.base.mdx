@@ -1,0 +1,160 @@
+<a id="camel.datahubs.base"></a>
+
+<a id="camel.datahubs.base.BaseDatasetManager"></a>
+
+## BaseDatasetManager
+
+```python
+class BaseDatasetManager(ABC):
+```
+
+Abstract base class for dataset managers.
+
+<a id="camel.datahubs.base.BaseDatasetManager.create_dataset"></a>
+
+### create_dataset
+
+```python
+def create_dataset(self, name: str, **kwargs: Any):
+```
+
+Creates a new dataset.
+
+**Parameters:**
+
+- **name** (str): The name of the dataset.
+- **kwargs** (Any): Additional keyword arguments.
+
+**Returns:**
+
+  str: The URL of the created dataset.
+
+<a id="camel.datahubs.base.BaseDatasetManager.list_datasets"></a>
+
+### list_datasets
+
+```python
+def list_datasets(
+    self,
+    username: str,
+    limit: int = 100,
+    **kwargs: Any
+):
+```
+
+Lists all datasets for the current user.
+
+**Parameters:**
+
+- **username** (str): The username of the user whose datasets to list.
+- **limit** (int): The maximum number of datasets to list. (default::obj:`100`)
+- **kwargs** (Any): Additional keyword arguments.
+
+**Returns:**
+
+  List[str]: A list of dataset ids.
+
+<a id="camel.datahubs.base.BaseDatasetManager.delete_dataset"></a>
+
+### delete_dataset
+
+```python
+def delete_dataset(self, dataset_name: str, **kwargs: Any):
+```
+
+Deletes a dataset.
+
+**Parameters:**
+
+- **dataset_name** (str): The name of the dataset to delete.
+- **kwargs** (Any): Additional keyword arguments.
+
+<a id="camel.datahubs.base.BaseDatasetManager.add_records"></a>
+
+### add_records
+
+```python
+def add_records(
+    self,
+    dataset_name: str,
+    records: List[Record],
+    filepath: str = 'records/records.json',
+    **kwargs: Any
+):
+```
+
+Adds records to a dataset.
+
+**Parameters:**
+
+- **dataset_name** (str): The name of the dataset.
+- **records** (List[Record]): A list of records to add to the dataset.
+- **filepath** (str): The path to the file containing the records. (default::obj:`"records/records.json"`)
+- **kwargs** (Any): Additional keyword arguments.
+
+<a id="camel.datahubs.base.BaseDatasetManager.update_records"></a>
+
+### update_records
+
+```python
+def update_records(
+    self,
+    dataset_name: str,
+    records: List[Record],
+    filepath: str = 'records/records.json',
+    **kwargs: Any
+):
+```
+
+Updates records in a dataset.
+
+**Parameters:**
+
+- **dataset_name** (str): The name of the dataset.
+- **records** (List[Record]): A list of records to update in the dataset.
+- **filepath** (str): The path to the file containing the records. (default::obj:`"records/records.json"`)
+- **kwargs** (Any): Additional keyword arguments.
+
+<a id="camel.datahubs.base.BaseDatasetManager.list_records"></a>
+
+### list_records
+
+```python
+def list_records(
+    self,
+    dataset_name: str,
+    filepath: str = 'records/records.json',
+    **kwargs: Any
+):
+```
+
+Lists records in a dataset.
+
+**Parameters:**
+
+- **dataset_name** (str): The name of the dataset.
+- **filepath** (str): The path to the file containing the records. (default::obj:`"records/records.json"`)
+- **kwargs** (Any): Additional keyword arguments.
+
+<a id="camel.datahubs.base.BaseDatasetManager.delete_record"></a>
+
+### delete_record
+
+```python
+def delete_record(
+    self,
+    dataset_name: str,
+    record_id: str,
+    filepath: str = 'records/records.json',
+    **kwargs: Any
+):
+```
+
+Deletes a record from the dataset.
+
+**Parameters:**
+
+- **dataset_name** (str): The name of the dataset.
+- **record_id** (str): The ID of the record to delete.
+- **filepath** (str): The path to the file containing the records. (default::obj:`"records/records.json"`)
+- **kwargs** (Any): Additional keyword arguments.

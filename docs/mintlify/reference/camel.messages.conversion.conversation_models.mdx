@@ -1,0 +1,89 @@
+<a id="camel.messages.conversion.conversation_models"></a>
+
+<a id="camel.messages.conversion.conversation_models.ShareGPTMessage"></a>
+
+## ShareGPTMessage
+
+```python
+class ShareGPTMessage(BaseModel):
+```
+
+A single message in ShareGPT format with enhanced validation
+
+<a id="camel.messages.conversion.conversation_models.ShareGPTConversation"></a>
+
+## ShareGPTConversation
+
+```python
+class ShareGPTConversation(RootModel):
+```
+
+A full conversation in ShareGPT format with validation
+
+<a id="camel.messages.conversion.conversation_models.ShareGPTConversation.validate_conversation_flow"></a>
+
+### validate_conversation_flow
+
+```python
+def validate_conversation_flow(self):
+```
+
+Validate the conversation follows logical message order
+
+<a id="camel.messages.conversion.conversation_models.ShareGPTConversation.model_dump"></a>
+
+### model_dump
+
+```python
+def model_dump(self, **kwargs):
+```
+
+<a id="camel.messages.conversion.conversation_models.ShareGPTConversation.__iter__"></a>
+
+### __iter__
+
+```python
+def __iter__(self):
+```
+
+<a id="camel.messages.conversion.conversation_models.ToolCall"></a>
+
+## ToolCall
+
+```python
+class ToolCall(BaseModel):
+```
+
+Represents a single tool/function call with validation
+
+<a id="camel.messages.conversion.conversation_models.ToolCall.validate_arguments"></a>
+
+### validate_arguments
+
+```python
+def validate_arguments(cls, v: Dict[str, Any]):
+```
+
+Validate argument structure and content
+
+<a id="camel.messages.conversion.conversation_models.ToolResponse"></a>
+
+## ToolResponse
+
+```python
+class ToolResponse(BaseModel):
+```
+
+Represents a tool/function response with validation. This is a
+base class and default implementation for tool responses, for the purpose
+of converting between different formats.
+
+<a id="camel.messages.conversion.conversation_models.ToolResponse.validate_content"></a>
+
+### validate_content
+
+```python
+def validate_content(cls, v: Dict[str, Any]):
+```
+
+Validate response content structure
