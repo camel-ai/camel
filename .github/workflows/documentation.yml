@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch full history for git diff
 
       - name: Set up Python environment and install dependencies
         uses: ./.github/actions/camel_install
@@ -29,7 +31,7 @@ jobs:
           source .venv/bin/activate
           cd docs
           make html
-
+            
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v4
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
@@ -39,3 +41,68 @@ jobs:
           publish_dir: docs/_build/html/
           force_orphan: true
           cname: docs.camel-ai.org
+
+      - name: Convert Notebooks and Update Mintlify Config
+        run: |
+          source .venv/bin/activate
+          
+          # Check if this is a push event or workflow_dispatch
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "Push event detected - using incremental mode with git"
+            python docs/mintlify/convert_notebook2mdx.py \
+              --input docs/cookbooks \
+              --output docs/mintlify/cookbooks \
+              --update-docs-json docs/mintlify/docs.json \
+              --docs-path-prefix "" \
+              --incremental \
+              --use-git \
+              --base-branch origin/master \
+              --verbose
+          else
+            echo "Manual workflow dispatch - processing all files"
+            python docs/mintlify/convert_notebook2mdx.py \
+              --input docs/cookbooks \
+              --output docs/mintlify/cookbooks \
+              --update-docs-json docs/mintlify/docs.json \
+              --docs-path-prefix "" \
+              --verbose
+          fi
+
+      - name: Generate API Documentation
+        run: |
+          source .venv/bin/activate
+          
+          # Check if this is a push event for incremental API docs
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "Push event detected - using incremental mode for API docs"
+            python docs/mintlify/build_api_docs.py \
+              --output_dir docs/mintlify/reference \
+              --mint_json docs/mintlify/docs.json \
+              --package camel \
+              --incremental \
+              --since_hours 24
+          else
+            echo "Manual workflow dispatch - generating all API docs"
+            python docs/mintlify/build_api_docs.py \
+              --output_dir docs/mintlify/reference \
+              --mint_json docs/mintlify/docs.json \
+              --package camel \
+              --clean
+          fi
+
+      - name: Commit and push changes
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          # Add any new or modified files
+          git add docs/mintlify/cookbooks/ docs/mintlify/reference/ docs/mintlify/docs.json
+          
+          # Check if there are any changes to commit
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Auto-update documentation [skip ci]"
+            git push
+          fi
