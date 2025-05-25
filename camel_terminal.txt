@@ -1,5 +1,5 @@
 CAMEL Terminal Session
 ==================================================
-Working Directory: /Users/yifengwang/project/camel/examples/usecases/product_research
+Working Directory: /Users/yifengwang/project/camel
 ==================================================
 

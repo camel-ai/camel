@@ -21,6 +21,7 @@ from camel.models import ModelFactory
 from camel.societies import RolePlaying
 from camel.toolkits import (
     BrowserToolkit,
+    AsyncBrowserToolkit,
     FileWriteToolkit,
     TerminalToolkit,
     PyAutoGUIToolkit,
@@ -66,7 +67,7 @@ models = {
 
 
     }
-def main(
+async def main(
     chat_turn_limit=50,
 ) -> None:
     task_prompt = (
@@ -81,7 +82,7 @@ def main(
 
     tools_list = [
     
-        *BrowserToolkit(
+        *AsyncBrowserToolkit(
             headless=False,  # Set to True for headless mode (e.g., on remote servers)
             web_agent_model=models["browsing"],
             planning_agent_model=models["planning"],
@@ -94,8 +95,8 @@ def main(
     ]
 
     role_play_session = RolePlaying(
-        assistant_role_name="Searcher",
-        user_role_name="Professor",
+        assistant_role_name="product researcher",
+        user_role_name="product manager",
         assistant_agent_kwargs=dict(
             model=models["assistant"],
             tools=tools_list,
@@ -124,10 +125,10 @@ def main(
     print(Fore.RED + f"Final task prompt:\n{role_play_session.task_prompt}\n")
 
     n = 0
-    input_msg = role_play_session.init_chat()
+    input_msg = await role_play_session.ainit_chat()
     while n < chat_turn_limit:
         n += 1
-        assistant_response, user_response = role_play_session.step(input_msg)
+        assistant_response, user_response = await role_play_session.astep(input_msg)
 
         if assistant_response.terminated:
             print(
@@ -171,4 +172,5 @@ def main(
 
 
 if __name__ == "__main__":
-    main()
+    import asyncio
+    asyncio.run(main())
