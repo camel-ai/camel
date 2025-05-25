@@ -1,0 +1,253 @@
+<a id="camel.societies.workforce.workforce"></a>
+
+<a id="camel.societies.workforce.workforce.Workforce"></a>
+
+## Workforce
+
+```python
+class Workforce(BaseNode):
+```
+
+A system where multiple workder nodes (agents) cooperate together
+to solve tasks. It can assign tasks to workder nodes and also take
+strategies such as create new worker, decompose tasks, etc. to handle
+situations when the task fails.
+
+**Parameters:**
+
+- **description** (str): Description of the node.
+- **children** (Optional[List[BaseNode]], optional): List of child nodes under this node. Each child node can be a worker node or another workforce node. (default: :obj:`None`)
+- **coordinator_agent_kwargs** (Optional[Dict], optional): Keyword arguments for the coordinator agent, e.g. `model`, `api_key`, `tools`, etc. If not provided, default model settings will be used. (default: :obj:`None`)
+- **task_agent_kwargs** (Optional[Dict], optional): Keyword arguments for the task agent, e.g. `model`, `api_key`, `tools`, etc. If not provided, default model settings will be used. (default: :obj:`None`)
+- **new_worker_agent_kwargs** (Optional[Dict]): Default keyword arguments for the worker agent that will be created during runtime to handle failed tasks, e.g. `model`, `api_key`, `tools`, etc. If not provided, default model settings will be used. (default: :obj:`None`)
+
+<a id="camel.societies.workforce.workforce.Workforce.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    description: str,
+    children: Optional[List[BaseNode]] = None,
+    coordinator_agent_kwargs: Optional[Dict] = None,
+    task_agent_kwargs: Optional[Dict] = None,
+    new_worker_agent_kwargs: Optional[Dict] = None
+):
+```
+
+<a id="camel.societies.workforce.workforce.Workforce.__repr__"></a>
+
+### __repr__
+
+```python
+def __repr__(self):
+```
+
+<a id="camel.societies.workforce.workforce.Workforce._decompose_task"></a>
+
+### _decompose_task
+
+```python
+def _decompose_task(self, task: Task):
+```
+
+**Returns:**
+
+  List[Task]: The subtasks.
+
+<a id="camel.societies.workforce.workforce.Workforce.process_task"></a>
+
+### process_task
+
+```python
+def process_task(self, task: Task):
+```
+
+The main entry point for the workforce to process a task. It will
+start the workforce and all the child nodes under it, process the
+task provided and return the updated task.
+
+**Parameters:**
+
+- **task** (Task): The task to be processed.
+
+**Returns:**
+
+  Task: The updated task.
+
+<a id="camel.societies.workforce.workforce.Workforce.add_single_agent_worker"></a>
+
+### add_single_agent_worker
+
+```python
+def add_single_agent_worker(self, description: str, worker: ChatAgent):
+```
+
+Add a worker node to the workforce that uses a single agent.
+
+**Parameters:**
+
+- **description** (str): Description of the worker node.
+- **worker** (ChatAgent): The agent to be added.
+
+**Returns:**
+
+  Workforce: The workforce node itself.
+
+<a id="camel.societies.workforce.workforce.Workforce.add_role_playing_worker"></a>
+
+### add_role_playing_worker
+
+```python
+def add_role_playing_worker(
+    self,
+    description: str,
+    assistant_role_name: str,
+    user_role_name: str,
+    assistant_agent_kwargs: Optional[Dict] = None,
+    user_agent_kwargs: Optional[Dict] = None,
+    summarize_agent_kwargs: Optional[Dict] = None,
+    chat_turn_limit: int = 3
+):
+```
+
+Add a worker node to the workforce that uses `RolePlaying` system.
+
+**Parameters:**
+
+- **description** (str): Description of the node.
+- **assistant_role_name** (str): The role name of the assistant agent.
+- **user_role_name** (str): The role name of the user agent.
+- **assistant_agent_kwargs** (Optional[Dict]): The keyword arguments to initialize the assistant agent in the role playing, like the model name, etc. (default: :obj:`None`)
+- **user_agent_kwargs** (Optional[Dict]): The keyword arguments to initialize the user agent in the role playing, like the model name, etc. (default: :obj:`None`)
+- **summarize_agent_kwargs** (Optional[Dict]): The keyword arguments to initialize the summarize agent, like the model name, etc. (default: :obj:`None`)
+- **chat_turn_limit** (int): The maximum number of chat turns in the role playing. (default: :obj:`3`)
+
+**Returns:**
+
+  Workforce: The workforce node itself.
+
+<a id="camel.societies.workforce.workforce.Workforce.add_workforce"></a>
+
+### add_workforce
+
+```python
+def add_workforce(self, workforce: Workforce):
+```
+
+Add a workforce node to the workforce.
+
+**Parameters:**
+
+- **workforce** (Workforce): The workforce node to be added.
+
+**Returns:**
+
+  Workforce: The workforce node itself.
+
+<a id="camel.societies.workforce.workforce.Workforce.reset"></a>
+
+### reset
+
+```python
+def reset(self):
+```
+
+Reset the workforce and all the child nodes under it. Can only
+be called when the workforce is not running.
+
+<a id="camel.societies.workforce.workforce.Workforce.set_channel"></a>
+
+### set_channel
+
+```python
+def set_channel(self, channel: TaskChannel):
+```
+
+Set the channel for the node and all the child nodes under it.
+
+<a id="camel.societies.workforce.workforce.Workforce._get_child_nodes_info"></a>
+
+### _get_child_nodes_info
+
+```python
+def _get_child_nodes_info(self):
+```
+
+Get the information of all the child nodes under this node.
+
+<a id="camel.societies.workforce.workforce.Workforce._find_assignee"></a>
+
+### _find_assignee
+
+```python
+def _find_assignee(self, task: Task):
+```
+
+Assigns a task to a worker node with the best capability.
+
+**Parameters:**
+
+- **task** (Task): The task to be assigned.
+
+**Returns:**
+
+  str: ID of the worker node to be assigned.
+
+<a id="camel.societies.workforce.workforce.Workforce._create_worker_node_for_task"></a>
+
+### _create_worker_node_for_task
+
+```python
+def _create_worker_node_for_task(self, task: Task):
+```
+
+Creates a new worker node for a given task and add it to the
+children list of this node. This is one of the actions that
+the coordinator can take when a task has failed.
+
+**Parameters:**
+
+- **task** (Task): The task for which the worker node is created.
+
+**Returns:**
+
+  Worker: The created worker node.
+
+<a id="camel.societies.workforce.workforce.Workforce._create_new_agent"></a>
+
+### _create_new_agent
+
+```python
+def _create_new_agent(self, role: str, sys_msg: str):
+```
+
+<a id="camel.societies.workforce.workforce.Workforce.stop"></a>
+
+### stop
+
+```python
+def stop(self):
+```
+
+Stop all the child nodes under it. The node itself will be stopped
+by its parent node.
+
+<a id="camel.societies.workforce.workforce.Workforce.clone"></a>
+
+### clone
+
+```python
+def clone(self, with_memory: bool = False):
+```
+
+Creates a new instance of Workforce with the same configuration.
+
+**Parameters:**
+
+- **with_memory** (bool, optional): Whether to copy the memory (conversation history) to the new instance. If True, the new instance will have the same conversation history. If False, the new instance will have a fresh memory. (default: :obj:`False`)
+
+**Returns:**
+
+  Workforce: A new instance of Workforce with the same configuration.

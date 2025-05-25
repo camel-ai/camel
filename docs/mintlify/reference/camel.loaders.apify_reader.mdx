@@ -1,0 +1,161 @@
+<a id="camel.loaders.apify_reader"></a>
+
+<a id="camel.loaders.apify_reader.Apify"></a>
+
+## Apify
+
+```python
+class Apify:
+```
+
+Apify is a platform that allows you to automate any web workflow.
+
+**Parameters:**
+
+- **api_key** (Optional[str]): API key for authenticating with the Apify API.
+
+<a id="camel.loaders.apify_reader.Apify.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, api_key: Optional[str] = None):
+```
+
+<a id="camel.loaders.apify_reader.Apify.run_actor"></a>
+
+### run_actor
+
+```python
+def run_actor(
+    self,
+    actor_id: str,
+    run_input: Optional[dict] = None,
+    content_type: Optional[str] = None,
+    build: Optional[str] = None,
+    max_items: Optional[int] = None,
+    memory_mbytes: Optional[int] = None,
+    timeout_secs: Optional[int] = None,
+    webhooks: Optional[list] = None,
+    wait_secs: Optional[int] = None
+):
+```
+
+Run an actor on the Apify platform.
+
+**Parameters:**
+
+- **actor_id** (str): The ID of the actor to run.
+- **run_input** (Optional[dict]): The input data for the actor. Defaults to `None`.
+- **content_type** (str, optional): The content type of the input.
+- **build** (str, optional): Specifies the Actor build to run. It can be either a build tag or build number. By default, the run uses the build specified in the default run configuration for the Actor (typically latest).
+- **max_items** (int, optional): Maximum number of results that will be returned by this run. If the Actor is charged per result, you will not be charged for more results than the given limit.
+- **memory_mbytes** (int, optional): Memory limit for the run, in megabytes. By default, the run uses a memory limit specified in the default run configuration for the Actor.
+- **timeout_secs** (int, optional): Optional timeout for the run, in seconds. By default, the run uses timeout specified in the default run configuration for the Actor.
+- **webhooks** (list, optional): Optional webhooks (https://docs.apify.com/webhooks) associated with the Actor run, which can be used to receive a notification, e.g. when the Actor finished or failed. If you already have a webhook set up for the Actor, you do not have to add it again here.
+- **wait_secs** (int, optional): The maximum number of seconds the server waits for finish. If not provided, waits indefinitely.
+
+**Returns:**
+
+  Optional[dict]: The output data from the actor if successful.
+# please use the 'defaultDatasetId' to get the dataset
+
+<a id="camel.loaders.apify_reader.Apify.get_dataset_client"></a>
+
+### get_dataset_client
+
+```python
+def get_dataset_client(self, dataset_id: str):
+```
+
+Get a dataset client from the Apify platform.
+
+**Parameters:**
+
+- **dataset_id** (str): The ID of the dataset to get the client for.
+
+**Returns:**
+
+  DatasetClient: The dataset client.
+
+<a id="camel.loaders.apify_reader.Apify.get_dataset"></a>
+
+### get_dataset
+
+```python
+def get_dataset(self, dataset_id: str):
+```
+
+Get a dataset from the Apify platform.
+
+**Parameters:**
+
+- **dataset_id** (str): The ID of the dataset to get.
+
+**Returns:**
+
+  dict: The dataset.
+
+<a id="camel.loaders.apify_reader.Apify.update_dataset"></a>
+
+### update_dataset
+
+```python
+def update_dataset(self, dataset_id: str, name: str):
+```
+
+Update a dataset on the Apify platform.
+
+**Parameters:**
+
+- **dataset_id** (str): The ID of the dataset to update.
+- **name** (str): The new name for the dataset.
+
+**Returns:**
+
+  dict: The updated dataset.
+
+<a id="camel.loaders.apify_reader.Apify.get_dataset_items"></a>
+
+### get_dataset_items
+
+```python
+def get_dataset_items(self, dataset_id: str):
+```
+
+Get items from a dataset on the Apify platform.
+
+**Parameters:**
+
+- **dataset_id** (str): The ID of the dataset to get items from.
+
+**Returns:**
+
+  list: The items in the dataset.
+
+<a id="camel.loaders.apify_reader.Apify.get_datasets"></a>
+
+### get_datasets
+
+```python
+def get_datasets(
+    self,
+    unnamed: Optional[bool] = None,
+    limit: Optional[int] = None,
+    offset: Optional[int] = None,
+    desc: Optional[bool] = None
+):
+```
+
+Get all named datasets from the Apify platform.
+
+**Parameters:**
+
+- **unnamed** (bool, optional): Whether to include unnamed key-value stores in the list
+- **limit** (int, optional): How many key-value stores to retrieve
+- **offset** (int, optional): What key-value store to include as first when retrieving the list
+- **desc** (bool, optional): Whether to sort the key-value stores in descending order based on their modification date
+
+**Returns:**
+
+  List[dict]: The datasets.

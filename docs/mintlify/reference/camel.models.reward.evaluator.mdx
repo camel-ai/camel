@@ -1,0 +1,65 @@
+<a id="camel.models.reward.evaluator"></a>
+
+<a id="camel.models.reward.evaluator.Evaluator"></a>
+
+## Evaluator
+
+```python
+class Evaluator:
+```
+
+Evaluator class to evaluate messages using a reward model and filter
+data based on the scores.
+
+**Parameters:**
+
+- **reward_model** (BaseRewardModel): A reward model to evaluate messages.
+
+<a id="camel.models.reward.evaluator.Evaluator.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, reward_model: BaseRewardModel):
+```
+
+<a id="camel.models.reward.evaluator.Evaluator.evaluate"></a>
+
+### evaluate
+
+```python
+def evaluate(self, messages: List[Dict[str, str]]):
+```
+
+Evaluate the messages using the reward model.
+
+**Parameters:**
+
+- **messages** (List[Dict[str, str]]): A list of messages where each message is a dictionary with 'role' and 'content'.
+
+**Returns:**
+
+  Dict[str, float]: A dictionary mapping score types to their values.
+
+<a id="camel.models.reward.evaluator.Evaluator.filter_data"></a>
+
+### filter_data
+
+```python
+def filter_data(
+    self,
+    messages: List[Dict[str, str]],
+    thresholds: Dict[str, float]
+):
+```
+
+Filter messages based on the scores.
+
+**Parameters:**
+
+- **messages** (List[Dict[str, str]]): A list of messages where each message is a dictionary with 'role' and 'content'.
+- **thresholds** (Dict[str, float]): A dictionary mapping score types to their values.
+
+**Returns:**
+
+  bool: A boolean indicating whether the messages pass the filter.

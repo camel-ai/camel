@@ -1,0 +1,64 @@
+<a id="camel.datagen.evol_instruct.templates"></a>
+
+<a id="camel.datagen.evol_instruct.templates.BaseEvolInstructTemplates"></a>
+
+## BaseEvolInstructTemplates
+
+```python
+class BaseEvolInstructTemplates(ABC):
+```
+
+Abstract base class for evolution instruction templates.
+
+This class defines a required structure for prompt transformation templates
+- `EVOL_METHODS`: A dictionary mapping method keys to their descriptions.
+- `STRATEGY`: A dictionary defining strategies and associated methods.
+
+Subclasses should define concrete templates for specific domains.
+
+<a id="camel.datagen.evol_instruct.templates.BaseEvolInstructTemplates.EVOL_METHODS"></a>
+
+### EVOL_METHODS
+
+```python
+def EVOL_METHODS(self):
+```
+
+A dictionary mapping evolution method keys to their descriptions.
+
+<a id="camel.datagen.evol_instruct.templates.BaseEvolInstructTemplates.STRATEGY"></a>
+
+### STRATEGY
+
+```python
+def STRATEGY(self):
+```
+
+A dictionary defining strategies and their corresponding methods.
+
+<a id="camel.datagen.evol_instruct.templates.EvolInstructTemplates"></a>
+
+## EvolInstructTemplates
+
+```python
+class EvolInstructTemplates(BaseEvolInstructTemplates):
+```
+
+Contains templates for EvolInstruct prompt transformations.
+
+References:
+- WizardLM: Empowering Large Language Models to Follow Complex
+Instructions
+https://arxiv.org/pdf/2304.12244
+- eva: Evolving Alignment via Asymmetric Self-Play
+https://arxiv.org/abs/2411.00062
+
+<a id="camel.datagen.evol_instruct.templates.MathEvolInstructTemplates"></a>
+
+## MathEvolInstructTemplates
+
+```python
+class MathEvolInstructTemplates(BaseEvolInstructTemplates):
+```
+
+Contains templates for MathEvolInstruct prompt transformations.

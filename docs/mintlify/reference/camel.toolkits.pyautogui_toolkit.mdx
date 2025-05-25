@@ -1,0 +1,244 @@
+<a id="camel.toolkits.pyautogui_toolkit"></a>
+
+<a id="camel.toolkits.pyautogui_toolkit.PyAutoGUIToolkit"></a>
+
+## PyAutoGUIToolkit
+
+```python
+class PyAutoGUIToolkit(BaseToolkit):
+```
+
+A toolkit for automating GUI interactions using PyAutoGUI.
+
+<a id="camel.toolkits.pyautogui_toolkit.PyAutoGUIToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    timeout: Optional[float] = None,
+    screenshots_dir: str = 'tmp'
+):
+```
+
+Initializes the PyAutoGUIToolkit with optional timeout.
+
+**Parameters:**
+
+- **timeout** (Optional[float]): Timeout for API requests in seconds. (default: :obj:`None`)
+- **screenshots_dir** (str): Directory to save screenshots. (default: :obj:`"tmp"`)
+
+<a id="camel.toolkits.pyautogui_toolkit.PyAutoGUIToolkit._get_safe_coordinates"></a>
+
+### _get_safe_coordinates
+
+```python
+def _get_safe_coordinates(self, x: int, y: int):
+```
+
+Ensure coordinates are within safe boundaries to prevent triggering
+failsafe.
+
+**Parameters:**
+
+- **x** (int): Original x-coordinate
+- **y** (int): Original y-coordinate
+
+**Returns:**
+
+  Tuple[int, int]: Safe coordinates
+
+<a id="camel.toolkits.pyautogui_toolkit.PyAutoGUIToolkit.mouse_move"></a>
+
+### mouse_move
+
+```python
+def mouse_move(self, x: int, y: int):
+```
+
+Move mouse pointer to specified coordinates.
+
+**Parameters:**
+
+- **x** (int): X-coordinate to move to.
+- **y** (int): Y-coordinate to move to.
+
+**Returns:**
+
+  str: Success or error message.
+
+<a id="camel.toolkits.pyautogui_toolkit.PyAutoGUIToolkit.mouse_click"></a>
+
+### mouse_click
+
+```python
+def mouse_click(
+    self,
+    button: Literal['left', 'middle', 'right'] = 'left',
+    clicks: int = 1,
+    x: Optional[int] = None,
+    y: Optional[int] = None
+):
+```
+
+Performs a mouse click at the specified coordinates or current
+position.
+
+**Parameters:**
+
+- **button** (`Literal["left", "middle", "right"]`): The mouse button to click. - "left": Typically used for selecting items, activating buttons, or placing the cursor. - "middle": Often used for opening links in a new tab or specific application functions. - "right": Usually opens a context menu providing options related to the clicked item or area. (default: :obj:`"left"`)
+- **clicks** (int): The number of times to click the button. - 1: A single click, the most common action. - 2: A double-click, often used to open files/folders or select words. (default: :obj:`1`)
+- **x** (Optional[int]): The x-coordinate on the screen to move the mouse to before clicking. If None, clicks at the current mouse position. (default: :obj:`None`)
+- **y** (Optional[int]): The y-coordinate on the screen to move the mouse to before clicking. If None, clicks at the current mouse position. (default: :obj:`None`)
+
+**Returns:**
+
+  str: A message indicating the action performed, e.g.,
+"Clicked left button 1 time(s) at coordinates (100, 150)."
+or "Clicked right button 2 time(s) at current position."
+
+<a id="camel.toolkits.pyautogui_toolkit.PyAutoGUIToolkit.get_mouse_position"></a>
+
+### get_mouse_position
+
+```python
+def get_mouse_position(self):
+```
+
+**Returns:**
+
+  str: Current mouse X and Y coordinates.
+
+<a id="camel.toolkits.pyautogui_toolkit.PyAutoGUIToolkit.take_screenshot"></a>
+
+### take_screenshot
+
+```python
+def take_screenshot(self):
+```
+
+**Returns:**
+
+  str: Path to the saved screenshot or error message.
+
+<a id="camel.toolkits.pyautogui_toolkit.PyAutoGUIToolkit.mouse_drag"></a>
+
+### mouse_drag
+
+```python
+def mouse_drag(
+    self,
+    start_x: int,
+    start_y: int,
+    end_x: int,
+    end_y: int,
+    button: Literal['left', 'middle', 'right'] = 'left'
+):
+```
+
+Drag mouse from start position to end position.
+
+**Parameters:**
+
+- **start_x** (int): Starting x-coordinate.
+- **start_y** (int): Starting y-coordinate.
+- **end_x** (int): Ending x-coordinate.
+- **end_y** (int): Ending y-coordinate.
+- **button** (`Literal["left", "middle", "right"]`): Mouse button to use ('left', 'middle', 'right'). (default: :obj:`'left'`)
+
+**Returns:**
+
+  str: Success or error message.
+
+<a id="camel.toolkits.pyautogui_toolkit.PyAutoGUIToolkit.scroll"></a>
+
+### scroll
+
+```python
+def scroll(
+    self,
+    scroll_amount: int,
+    x: Optional[int] = None,
+    y: Optional[int] = None
+):
+```
+
+Scroll the mouse wheel.
+
+**Parameters:**
+
+- **scroll_amount** (int): Amount to scroll. Positive values scroll up, negative values scroll down.
+- **x** (Optional[int]): X-coordinate to scroll at. If None, uses current position. (default: :obj:`None`)
+- **y** (Optional[int]): Y-coordinate to scroll at. If None, uses current position. (default: :obj:`None`)
+
+**Returns:**
+
+  str: Success or error message.
+
+<a id="camel.toolkits.pyautogui_toolkit.PyAutoGUIToolkit.keyboard_type"></a>
+
+### keyboard_type
+
+```python
+def keyboard_type(self, text: str, interval: float = 0.0):
+```
+
+Type text on the keyboard.
+
+**Parameters:**
+
+- **text** (str): Text to type.
+- **interval** (float): Seconds to wait between keypresses. (default: :obj:`0.0`)
+
+**Returns:**
+
+  str: Success or error message.
+
+<a id="camel.toolkits.pyautogui_toolkit.PyAutoGUIToolkit.press_key"></a>
+
+### press_key
+
+```python
+def press_key(self, key: Union[str, List[str]]):
+```
+
+Press a key on the keyboard.
+
+**Parameters:**
+
+- **key** (Union[str, List[str]]): The key to be pressed. Can also be a list of such strings. Valid key names include: - Basic characters: a-z, 0-9, and symbols like !, @, #, etc. - Special keys: enter, esc, space, tab, backspace, delete - Function keys: f1-f24 - Navigation: up, down, left, right, home, end, pageup, pagedown - Modifiers: shift, ctrl, alt, command, option, win - Media keys: volumeup, volumedown, volumemute, playpause
+
+**Returns:**
+
+  str: Success or error message.
+
+<a id="camel.toolkits.pyautogui_toolkit.PyAutoGUIToolkit.hotkey"></a>
+
+### hotkey
+
+```python
+def hotkey(self, keys: List[str]):
+```
+
+Press keys in succession and release in reverse order.
+
+**Parameters:**
+
+- **keys** (List[str]): The series of keys to press, in order. This can be either: - Multiple string arguments, e.g., hotkey('ctrl', 'c') - A single list of strings, e.g., hotkey(['ctrl', 'c'])
+
+**Returns:**
+
+  str: Success or error message.
+
+<a id="camel.toolkits.pyautogui_toolkit.PyAutoGUIToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: List of PyAutoGUI functions.
