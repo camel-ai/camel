@@ -126,9 +126,9 @@ class AudioAnalysisToolkit(BaseToolkit):
         from camel.agents import ChatAgent
 
         if audio_reasoning_model:
-            self.audio_agent = ChatAgent(model=audio_reasoning_model)
+            self.audio_agent = ChatAgent(model=audio_reasoning_model, max_iteration=None)
         else:
-            self.audio_agent = ChatAgent()
+            self.audio_agent = ChatAgent(max_iteration=None)
             logger.warning(
                 "No audio reasoning model provided. Using default model in"
                 " ChatAgent."

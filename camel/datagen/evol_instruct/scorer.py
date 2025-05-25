@@ -59,7 +59,7 @@ answered by a number or a formula.
 Respond with a JSON object like: 
 { "solution": ..., "diversity": ..., "difficulty": ..., "solvability": ... }
 """
-        self.agent = agent or ChatAgent(self.system_msg)
+        self.agent = agent or ChatAgent(self.system_msg, max_iteration=None)
 
     class MathScoreSchema(BaseModel):
         diversity: int = Field(
@@ -117,7 +117,7 @@ class GeneralScorer(BaseScorer):
             "Respond with a JSON object like: "
             "{ \"diversity\": ..., \"complexity\": ..., \"validity\": ... }"
         )
-        self.agent = agent or ChatAgent(self.system_msg)
+        self.agent = agent or ChatAgent(self.system_msg, max_iteration=None)
 
     class GeneralScoreSchema(BaseModel):
         diversity: int = Field(

@@ -120,7 +120,7 @@ class PersonaHub:
 
         # Set Agent to generate personal
         t2p_agent = ChatAgent(
-            system_message="You are a helpful assistant", model=self.model
+            system_message="You are a helpful assistant", model=self.model, max_iteration=None
         )
         t2p_agent.reset()
 
@@ -170,7 +170,7 @@ persona_description: <BLANK>
         )
 
         p2p_agent = ChatAgent(
-            system_message="You're a helpful assistant.", model=self.model
+            system_message="You're a helpful assistant.", model=self.model, max_iteration=None
         )
         p2p_agent.reset()
 

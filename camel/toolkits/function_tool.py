@@ -276,7 +276,7 @@ def generate_docstring(
     )
     # Initialize assistant with system message and model
     assistant_sys_msg = "You are a helpful assistant."
-    docstring_assistant = ChatAgent(assistant_sys_msg, model=model)
+    docstring_assistant = ChatAgent(assistant_sys_msg, model=model, max_iteration=None)
 
     # Create user message to prompt the assistant
     user_msg = docstring_prompt + code
@@ -747,6 +747,7 @@ class FunctionTool:
         synthesis_agent = ChatAgent(
             assistant_sys_msg,
             model=self.synthesize_output_model,
+        max_iteration=None,
         )
 
         # User message combining function string and additional context

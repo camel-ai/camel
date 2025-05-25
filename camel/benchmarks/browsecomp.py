@@ -598,7 +598,7 @@ class BrowseCompBenchmark(BaseBenchmark):
                         formatter_in_process = task_json_formatter.clone()
                     else:
                         formatter_in_process = ChatAgent(
-                            "You are a helpful assistant."
+                            "You are a helpful assistant.", max_iteration=None
                         )
                     response_text = formatter_in_process.step(
                         FORMAT_JSON_TEMPLATE.format(content=task.result),
@@ -639,7 +639,7 @@ class BrowseCompBenchmark(BaseBenchmark):
                         summarizer_in_process = roleplaying_summarizer.clone()
                     else:
                         summarizer_in_process = ChatAgent(
-                            "You are a helpful assistant."
+                            "You are a helpful assistant.", max_iteration=None
                         )
 
                     summarize_prompt = SUMMARIZE_TEMPLATE.format(
@@ -738,7 +738,7 @@ class BrowseCompBenchmark(BaseBenchmark):
             if grader:
                 grader_in_process = grader.clone()
             else:
-                grader_in_process = ChatAgent("You are a helpful assistant.")
+                grader_in_process = ChatAgent("You are a helpful assistant.", max_iteration=None)
 
             # Create a conversation list for the result
             convo = [

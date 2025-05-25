@@ -115,14 +115,14 @@ class Workforce(BaseNode):
             "a new worker for a task, etc.",
         )
         self.coordinator_agent = ChatAgent(
-            coord_agent_sys_msg, **(coordinator_agent_kwargs or {})
+            coord_agent_sys_msg, **(coordinator_agent_kwargs or {}), max_iteration=None
         )
 
         task_sys_msg = BaseMessage.make_assistant_message(
             role_name="Task Planner",
             content="You are going to compose and decompose tasks.",
         )
-        self.task_agent = ChatAgent(task_sys_msg, **(task_agent_kwargs or {}))
+        self.task_agent = ChatAgent(task_sys_msg, **(task_agent_kwargs or {}), max_iteration=None)
 
         # If there is one, will set by the workforce class wrapping this
         self._task: Optional[Task] = None
@@ -391,7 +391,7 @@ class Workforce(BaseNode):
             model_config_dict=model_config_dict,
         )
 
-        return ChatAgent(worker_sys_msg, model=model, tools=function_list)  # type: ignore[arg-type]
+        return ChatAgent(worker_sys_msg, model=model, tools=function_list, max_iteration=None)  # type: ignore[arg-type]
 
     async def _get_returned_task(self) -> Task:
         r"""Get the task that's published by this node and just get returned

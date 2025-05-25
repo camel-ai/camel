@@ -79,6 +79,7 @@ def test_gaia_benchmark():
         sys_msg,
         model,
         tools=tools,
+        max_iteration=None,
     )
 
     with runtime as r:

@@ -181,6 +181,7 @@ class SelfInstructGenerator(BaseGenerator):
         return ChatAgent(
             DEFAULT_INSTRUCTION_SYSTEM_PROMPT,
             model=model,
+            max_iteration=None,
         )
 
     def default_rationale_agent(self) -> ChatAgent:
@@ -201,6 +202,7 @@ class SelfInstructGenerator(BaseGenerator):
         return ChatAgent(
             DEFAULT_RATIONALE_SYSTEM_PROMPT.format(package_list=self.packages),
             model=model,
+            max_iteration=None,
         )
 
     @staticmethod

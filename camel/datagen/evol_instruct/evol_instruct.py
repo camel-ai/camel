@@ -61,7 +61,7 @@ class EvolInstructPipeline:
                 (default: :obj:`None`)
         """
         self.templates = templates
-        self.agent = agent or ChatAgent()
+        self.agent = agent or ChatAgent(max_iteration=None)
 
     def _resolve_evolution_method(self, method_key: str) -> str:
         r"""Resolve evolution method key to concrete implementation.

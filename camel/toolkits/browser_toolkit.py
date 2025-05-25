@@ -1105,6 +1105,7 @@ users achieve their goals.
             system_message=system_prompt,
             model=web_agent_model,
             output_language=self.output_language,
+            max_iteration=None,
         )
 
         planning_system_prompt = """
@@ -1116,6 +1117,7 @@ tasks which need multi-step browser interaction.
             system_message=planning_system_prompt,
             model=planning_model,
             output_language=self.output_language,
+            max_iteration=None,
         )
 
         return web_agent, planning_agent
