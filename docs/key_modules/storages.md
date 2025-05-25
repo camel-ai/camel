@@ -56,6 +56,13 @@ Reference: [TiDB](https://ai.pingcap.com/)
 
 Reference: [Qdrant](https://qdrant.tech/)
 
+
+**`OceanBaseStorage`**:
+
+- Description: A concrete implementation of `BaseVectorStorage`, tailored for interacting with OceanBase vector engine.
+
+Reference: [OceanBase](https://www.oceanbase.com/)
+
 ### 2.3 Graph Storages
 **`BaseGraphStorage`**:
 
