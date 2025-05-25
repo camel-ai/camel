@@ -64,22 +64,22 @@ if st.button("Generate Report") and topic:
 
     scholar_tools = GoogleScholarToolkit(author_identifier=author_id).get_tools()
 
-    semantic_tools = SemanticScholarToolkit().get_tools() # Semantic Scholar queries:contentReference[oaicite:31]{index=31}
-    arxiv_tools = ArxivToolkit().get_tools()            # arXiv search/download:contentReference[oaicite:32]{index=32}
+    semantic_tools = SemanticScholarToolkit().get_tools() 
+    arxiv_tools = ArxivToolkit().get_tools()            
 
     # News and web tools
-    news_tools = AskNewsToolkit().get_tools()          # news API calls:contentReference[oaicite:33]{index=33}
+    news_tools = AskNewsToolkit().get_tools()          
 
     # Thinking and writing tools
-    thinking_tools = ThinkingToolkit().get_tools()     # planning and synthesis:contentReference[oaicite:35]{index=35}
-    file_tools = FileWriteToolkit().get_tools()           # write to files:contentReference[oaicite:36]{index=36}
+    thinking_tools = ThinkingToolkit().get_tools()     
+    file_tools = FileWriteToolkit().get_tools()          
 
     # Optional social tools
     
-    linkedin_tools = LinkedInToolkit().get_tools()     # LinkedIn posts:contentReference[oaicite:39]{index=39}
+    linkedin_tools = LinkedInToolkit().get_tools()     
 
     # Image generation tools
-    dalle_tools = DalleToolkit().get_tools()           # DALL·E image generation:contentReference[oaicite:40]{index=40}
+    dalle_tools = DalleToolkit().get_tools()          
 
     # Aggregate all tools
     all_tools = (
