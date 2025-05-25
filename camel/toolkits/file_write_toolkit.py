@@ -11,8 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-
-
 import re
 from datetime import datetime
 from pathlib import Path
@@ -157,25 +155,22 @@ class FileWriteToolkit(BaseToolkit):
         Args:
             file_path (Path): The target file path.
             content (str): The text content to write.
-            use_latex (bool): Whether to use LaTeX for rendering .
-                (requires LaTeX toolchain)
-                If False, uses FPDF for simpler PDF generation.
-                (default: False)
+            use_latex (bool): Whether to use LaTeX for rendering. (requires
+                LaTeX toolchain). If False, uses FPDF for simpler PDF
+                generation. (default: :obj: `False`)
 
         Raises:
-            RuntimeError: If the 'pylatex' library is not installed
-            when use_latex=True.
-            RuntimeError: If the 'fpdf' library is not installed
-            when use_latex=False.
+            RuntimeError: If the 'pylatex' or 'fpdf' library is not installed
+                when use_latex=True.
         """
         if use_latex:
-            from pylatex import (  # type: ignore[import-not-found, import-untyped]
+            from pylatex import (
                 Command,
                 Document,
                 Math,
                 Section,
             )
-            from pylatex.utils import (  # type: ignore[import-not-found, import-untyped]
+            from pylatex.utils import (
                 NoEscape,
             )
 
@@ -184,15 +179,25 @@ class FileWriteToolkit(BaseToolkit):
 
             with doc.create(Section('Generated Content')):
                 for line in content.split('\n'):
-                    if '$' in line:
-                        doc.append(Math(data=line.strip('$')))
+                    # Remove leading whitespace
+                    stripped_line = line.strip()
+                    # Check if the line is intended as a standalone math
+                    # expression
+                    if (
+                        stripped_line.startswith('$')
+                        and stripped_line.endswith('$')
+                        and len(stripped_line) > 1
+                    ):
+                        # Extract content between the '$' delimiters
+                        math_data = stripped_line[1:-1]
+                        doc.append(Math(data=math_data))
                     else:
                         doc.append(NoEscape(line))
                     doc.append(NoEscape(r'\par'))
 
             doc.generate_pdf(str(file_path), clean_tex=False)
 
-            logger.debug(f"Wrote PDF (with  LaTeX) to {file_path}")
+            logger.info(f"Wrote PDF (with LaTeX) to {file_path}")
         else:
             from fpdf import FPDF
 
@@ -340,7 +345,8 @@ class FileWriteToolkit(BaseToolkit):
             encoding (Optional[str]): The character encoding to use. (default:
                 :obj: `None`)
             use_latex (bool): For PDF files, whether to use LaTeX rendering
-               (True) or simple FPDF rendering (False). (default: False)
+                (True) or simple FPDF rendering (False). (default: :obj:
+                `False`)
 
         Returns:
             str: A message indicating success or error details.
