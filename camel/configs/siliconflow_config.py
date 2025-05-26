@@ -55,7 +55,7 @@ class SiliconFlowConfig(BaseConfig):
     temperature: Optional[float] = None
     top_p: Optional[float] = None
     n: Optional[int] = None
-    stream: Optional[bool] = None
+    stream: Optional[bool] = False
     stop: Optional[Union[str, Sequence[str]]] = None
     max_tokens: Optional[int] = None
     response_format: Optional[Union[Type[BaseModel], dict]] = None
