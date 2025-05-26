@@ -1,0 +1,169 @@
+<a id="camel.benchmarks.healthbench"></a>
+
+<a id="camel.benchmarks.healthbench.WorkforceAgent"></a>
+
+## WorkforceAgent
+
+```python
+class WorkforceAgent:
+```
+
+A wrapper to let a CAMEL Workforce behave like a ChatAgent.
+Generates a response by running a proposer/critic/finalizer pipeline.
+The .step() interface mimics ChatAgent so it can be dropped into HealthBench.
+
+<a id="camel.benchmarks.healthbench.WorkforceAgent.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self):
+```
+
+<a id="camel.benchmarks.healthbench.WorkforceAgent.step"></a>
+
+### step
+
+```python
+def step(self, user_message):
+```
+
+Mimic ChatAgent's .step() interface.
+
+**Parameters:**
+
+- **user_message**: str (the latest user question or context, e.g., from prompt[-1]['content'])
+
+**Returns:**
+
+  An object with .msgs[0].content containing the final answer.
+
+<a id="camel.benchmarks.healthbench.HealthBenchmark"></a>
+
+## HealthBenchmark
+
+```python
+class HealthBenchmark(BaseBenchmark):
+```
+
+HealthBench Benchmark for evaluating medical response safety and completeness.
+
+This benchmark evaluates completions against human-designed rubrics
+from the HealthBench dataset. The assistant is expected to give helpful,
+safe, and structured medical guidance.
+
+**Parameters:**
+
+- **data_dir** (str): Path to store downloaded data.
+- **save_to** (str): File to write evaluation results.
+- **processes** (int, optional): Number of processes (default: 1). (default: 1)
+
+<a id="camel.benchmarks.healthbench.HealthBenchmark.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    data_dir: str,
+    save_to: str,
+    processes: int = 1
+):
+```
+
+<a id="camel.benchmarks.healthbench.HealthBenchmark.download"></a>
+
+### download
+
+```python
+def download(self, variant: Literal['test', 'hard', 'consensus'] = 'test'):
+```
+
+Downloads HealthBench data from public URLs.
+
+**Parameters:**
+
+- **variant** (Literal): Which variant of HealthBench to use.
+
+<a id="camel.benchmarks.healthbench.HealthBenchmark.load"></a>
+
+### load
+
+```python
+def load(
+    self,
+    variant: Literal['test', 'hard', 'consensus'] = 'test',
+    force_download: bool = False
+):
+```
+
+Loads the benchmark data into memory.
+
+**Parameters:**
+
+- **variant** (Literal): Which variant of HealthBench to load.
+- **force_download** (bool): Whether to re-download the data.
+
+<a id="camel.benchmarks.healthbench.HealthBenchmark._format_convo"></a>
+
+### _format_convo
+
+```python
+def _format_convo(self, messages: List[Dict[str, str]]):
+```
+
+Formats a list of messages into plain conversation text.
+
+<a id="camel.benchmarks.healthbench.HealthBenchmark._grade"></a>
+
+### _grade
+
+```python
+def _grade(
+    self,
+    grader: ChatAgent,
+    convo: List[Dict[str, str]],
+    rubric: Dict[str, Any]
+):
+```
+
+Grades a single assistant response against one rubric item.
+
+**Parameters:**
+
+- **grader** (ChatAgent): Grader agent.
+- **convo** (List): The message history ending with assistant response.
+- **rubric** (Dict): The rubric item to evaluate against.
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary with "criteria_met" and "explanation".
+
+<a id="camel.benchmarks.healthbench.HealthBenchmark.run"></a>
+
+### run
+
+```python
+def run(
+    self,
+    agent: Union[ChatAgent, WorkforceAgent],
+    grader: ChatAgent,
+    variant: Literal['test', 'hard', 'consensus'] = 'test',
+    randomize: bool = False,
+    subset: Optional[int] = None
+):
+```
+
+Runs the HealthBench benchmark.
+
+**Parameters:**
+
+- **agent** (ChatAgent): The assistant being tested.
+- **grader** (ChatAgent): The grading agent using rubric logic.
+- **variant** (Literal): Dataset split to use ("test", "hard", "consensus").
+- **randomize** (bool): Whether to shuffle data before evaluation.
+- **subset** (Optional[int]): Evaluate on a subset of examples.
+
+**Returns:**
+
+  Dict[str, float]: A dictionary with the final average score.
