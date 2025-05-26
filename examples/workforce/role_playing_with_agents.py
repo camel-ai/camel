@@ -61,12 +61,13 @@ def main():
 
     workforce = Workforce('a travel group')
     workforce.add_role_playing_worker(
-        'research Group',
-        assistant_role_name,
-        user_role_name,
-        assistant_agent_kwargs,
-        user_agent_kwargs,
-        1,
+        description='research Group',
+        assistant_role_name=assistant_role_name,
+        user_role_name=user_role_name,
+        assistant_agent_kwargs=assistant_agent_kwargs,
+        user_agent_kwargs=user_agent_kwargs,
+        summarize_agent_kwargs={},
+        chat_turn_limit=1,
     ).add_single_agent_worker(
         'tour guide', guide_agent
     ).add_single_agent_worker('planner', planner_agent)

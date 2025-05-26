@@ -85,7 +85,7 @@ def test_init(mock_github):
     mock_repo = MagicMock()
     mock_github.return_value.get_repo.return_value = mock_repo
     # Create toolkit with mock auth
-    github_toolkit = GithubToolkit("repo_name", "token")
+    github_toolkit = GithubToolkit(access_token="token")
     assert github_toolkit is not None, "Failed to initialize GithubToolkit"
 
 
@@ -97,7 +97,7 @@ def test_get_tools(mock_github):
     mock_repo = MagicMock()
     mock_github.return_value.get_repo.return_value = mock_repo
     # Create toolkit with mock auth
-    github_toolkit = GithubToolkit("repo_name", "token")
+    github_toolkit = GithubToolkit(access_token="token")
     tools = github_toolkit.get_tools()
     assert isinstance(tools, list), "get_tools should return a list"
     assert len(tools) > 0, "get_tools should return a non-empty list"
@@ -111,7 +111,7 @@ def test_create_pull_request(mock_github):
     mock_repo = MagicMock()
     mock_github.return_value.get_repo.return_value = mock_repo
     # Create toolkit with mock auth
-    github_toolkit = GithubToolkit("repo_name", "token")
+    github_toolkit = GithubToolkit(access_token="token")
     # Setup branch
     mock_branch = MagicMock()
     mock_branch.commit.sha = "test_sha"
@@ -127,11 +127,13 @@ def test_create_pull_request(mock_github):
     # Create a simplified version of create_pull_request that
     # skips the isinstance check
     def simplified_create_pull_request(
-        self, file_path, new_content, pr_title, body, branch_name
+        self, repo_name, file_path, new_content, pr_title, body, branch_name
     ):
+        # Get the repo using the repo_name parameter
+        repo = self.github.get_repo(repo_name)
         # Skip the isinstance check and just update the file
-        file = self.repo.get_contents(file_path)
-        self.repo.update_file(
+        file = repo.get_contents(file_path)
+        repo.update_file(
             file.path, body, new_content, file.sha, branch=branch_name
         )
         return f"Title: {pr_title}\nBody: {body}\n"
@@ -149,6 +151,7 @@ def test_create_pull_request(mock_github):
         body = "Fixes #1"
 
         pr = github_toolkit.create_pull_request(
+            repo_name="repo_name",
             file_path="path/to/file",
             branch_name="branch_name",
             new_content="This is the content of the file",
@@ -171,7 +174,7 @@ def test_get_all_issues(mock_github):
     mock_repo = MagicMock()
     mock_github.return_value.get_repo.return_value = mock_repo
     # Create toolkit with mock auth
-    github_toolkit = GithubToolkit("repo_name", "token")
+    github_toolkit = GithubToolkit(access_token="token")
     # Setup issues
     mock_issue = MagicMock()
     mock_issue.number = 1
@@ -183,7 +186,7 @@ def test_get_all_issues(mock_github):
         'get_issue_list',
         return_value=[{"number": 1, "title": "Test Issue"}],
     ):
-        issues = github_toolkit.get_issue_list()
+        issues = github_toolkit.get_issue_list(repo_name="repo_name")
         expected_issues = [{"number": 1, "title": "Test Issue"}]
         assert (
             issues == expected_issues
@@ -198,7 +201,7 @@ def test_get_issue_content(mock_github):
     mock_repo = MagicMock()
     mock_github.return_value.get_repo.return_value = mock_repo
     # Create toolkit with mock auth
-    github_toolkit = GithubToolkit("repo_name", "token")
+    github_toolkit = GithubToolkit(access_token="token")
     # Setup issue
     mock_issue = MagicMock()
     mock_issue.body = "Issue content"
@@ -207,7 +210,9 @@ def test_get_issue_content(mock_github):
     with patch.object(
         github_toolkit, 'get_issue_content', return_value="Issue content"
     ):
-        content = github_toolkit.get_issue_content(1)
+        content = github_toolkit.get_issue_content(
+            repo_name="repo_name", issue_number=1
+        )
         expected_content = "Issue content"
         assert (
             content == expected_content
@@ -222,7 +227,7 @@ def test_get_all_pull_requests(mock_github):
     mock_repo = MagicMock()
     mock_github.return_value.get_repo.return_value = mock_repo
     # Create toolkit with mock auth
-    github_toolkit = GithubToolkit("repo_name", "token")
+    github_toolkit = GithubToolkit(access_token="token")
     # Setup PRs
     mock_pr = MagicMock()
     mock_pr.number = 1
@@ -234,7 +239,7 @@ def test_get_all_pull_requests(mock_github):
         'get_pull_request_list',
         return_value=[{"number": 1, "title": "Test PR"}],
     ):
-        prs = github_toolkit.get_pull_request_list()
+        prs = github_toolkit.get_pull_request_list(repo_name="repo_name")
         expected_prs = [{"number": 1, "title": "Test PR"}]
         assert prs == expected_prs, f"Expected {expected_prs}, got {prs}"
 
@@ -247,7 +252,7 @@ def test_get_pull_request_code(mock_github):
     mock_repo = MagicMock()
     mock_github.return_value.get_repo.return_value = mock_repo
     # Create toolkit with mock auth
-    github_toolkit = GithubToolkit("repo_name", "token")
+    github_toolkit = GithubToolkit(access_token="token")
     # Setup PR files
     mock_file = MagicMock()
     mock_file.filename = "file1.py"
@@ -261,7 +266,9 @@ def test_get_pull_request_code(mock_github):
         'get_pull_request_code',
         return_value=[{"filename": "file1.py", "patch": "code changes"}],
     ):
-        files_changed = github_toolkit.get_pull_request_code(1)
+        files_changed = github_toolkit.get_pull_request_code(
+            repo_name="repo_name", pr_number=1
+        )
         expected_files = [{"filename": "file1.py", "patch": "code changes"}]
         assert (
             files_changed == expected_files
@@ -276,7 +283,7 @@ def test_get_pull_request_comments(mock_github):
     mock_repo = MagicMock()
     mock_github.return_value.get_repo.return_value = mock_repo
     # Create toolkit with mock auth
-    github_toolkit = GithubToolkit("repo_name", "token")
+    github_toolkit = GithubToolkit(access_token="token")
     # Setup PR comments
     mock_user = MagicMock()
     mock_user.login = "user1"
@@ -292,7 +299,9 @@ def test_get_pull_request_comments(mock_github):
         'get_pull_request_comments',
         return_value=[{"user": "user1", "body": "Test comment"}],
     ):
-        comments = github_toolkit.get_pull_request_comments(1)
+        comments = github_toolkit.get_pull_request_comments(
+            repo_name="repo_name", pr_number=1
+        )
         expected_comments = [{"user": "user1", "body": "Test comment"}]
         assert (
             comments == expected_comments
@@ -307,7 +316,7 @@ def test_get_all_file_paths(mock_github):
     mock_repo = MagicMock()
     mock_github.return_value.get_repo.return_value = mock_repo
     # Create toolkit with mock auth
-    github_toolkit = GithubToolkit("repo_name", "token")
+    github_toolkit = GithubToolkit(access_token="token")
     # Setup content
     content_file = ContentFile(path="path/to/file.py", type="file")
     mock_repo.get_contents.return_value = [content_file]
@@ -315,7 +324,7 @@ def test_get_all_file_paths(mock_github):
     with patch.object(
         github_toolkit, 'get_all_file_paths', return_value=["path/to/file.py"]
     ):
-        files = github_toolkit.get_all_file_paths()
+        files = github_toolkit.get_all_file_paths(repo_name="repo_name")
         expected_files = ["path/to/file.py"]
         assert (
             files == expected_files

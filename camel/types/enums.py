@@ -15,7 +15,10 @@ import os
 from enum import Enum, EnumMeta
 from typing import cast
 
+from camel.logger import get_logger
 from camel.types.unified_model_type import UnifiedModelType
+
+logger = get_logger(__name__)
 
 
 class RoleType(Enum):
@@ -53,6 +56,8 @@ class ModelType(UnifiedModelType, Enum):
     AWS_LLAMA_3_3_70B_INSTRUCT = "us.meta.llama3-3-70b-instruct-v1:0"
     AWS_LLAMA_3_2_90B_INSTRUCT = "us.meta.llama3-2-90b-instruct-v1:0"
     AWS_LLAMA_3_2_11B_INSTRUCT = "us.meta.llama3-2-11b-instruct-v1:0"
+    AWS_CLAUDE_SONNET_4 = "anthropic.claude-sonnet-4-20250514-v1:0"
+    AWS_CLAUDE_OPUS_4 = "anthropic.claude-opus-4-20250514-v1:0"
 
     GLM_4 = "glm-4"
     GLM_4V = "glm-4v"
@@ -142,13 +147,15 @@ class ModelType(UnifiedModelType, Enum):
     CLAUDE_2_0 = "claude-2.0"
     CLAUDE_INSTANT_1_2 = "claude-instant-1.2"
 
-    # Claude3 models
+    # Claude models
     CLAUDE_3_OPUS = "claude-3-opus-latest"
     CLAUDE_3_SONNET = "claude-3-sonnet-20240229"
     CLAUDE_3_HAIKU = "claude-3-haiku-20240307"
     CLAUDE_3_5_SONNET = "claude-3-5-sonnet-latest"
     CLAUDE_3_5_HAIKU = "claude-3-5-haiku-latest"
     CLAUDE_3_7_SONNET = "claude-3-7-sonnet-latest"
+    CLAUDE_SONNET_4 = "claude-sonnet-4-20250514"
+    CLAUDE_OPUS_4 = "claude-opus-4-20250514"
 
     # Netmind models
     NETMIND_LLAMA_4_MAVERICK_17B_128E_INSTRUCT = (
@@ -177,10 +184,13 @@ class ModelType(UnifiedModelType, Enum):
     NVIDIA_LLAMA3_3_70B_INSTRUCT = "meta/llama-3.3-70b-instruct"
 
     # Gemini models
-    GEMINI_2_5_PRO_EXP = "gemini-2.5-pro-exp-03-25"
-    GEMINI_2_0_FLASH = "gemini-2.0-flash-exp"
+    GEMINI_2_5_FLASH_PREVIEW = "gemini-2.5-flash-preview-04-17"
+    GEMINI_2_5_PRO_PREVIEW = "gemini-2.5-pro-preview-05-06"
+    GEMINI_2_0_FLASH = "gemini-2.0-flash"
+    GEMINI_2_0_FLASH_EXP = "gemini-2.0-flash-exp"
     GEMINI_2_0_FLASH_THINKING = "gemini-2.0-flash-thinking-exp"
     GEMINI_2_0_PRO_EXP = "gemini-2.0-pro-exp-02-05"
+    GEMINI_2_0_FLASH_LITE = "gemini-2.0-flash-lite"
     GEMINI_2_0_FLASH_LITE_PREVIEW = "gemini-2.0-flash-lite-preview-02-05"
     GEMINI_1_5_FLASH = "gemini-1.5-flash"
     GEMINI_1_5_PRO = "gemini-1.5-pro"
@@ -196,6 +206,7 @@ class ModelType(UnifiedModelType, Enum):
     MISTRAL_MIXTRAL_8x22B = "open-mixtral-8x22b"
     MISTRAL_NEMO = "open-mistral-nemo"
     MISTRAL_PIXTRAL_12B = "pixtral-12b-2409"
+    MISTRAL_MEDIUM_3 = "mistral-medium-latest"
 
     # Reka models
     REKA_CORE = "reka-core"
@@ -462,6 +473,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.AWS_LLAMA_3_3_70B_INSTRUCT,
             ModelType.AWS_LLAMA_3_2_90B_INSTRUCT,
             ModelType.AWS_LLAMA_3_2_11B_INSTRUCT,
+            ModelType.AWS_CLAUDE_SONNET_4,
+            ModelType.AWS_CLAUDE_OPUS_4,
         }
 
     @property
@@ -523,6 +536,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_5_SONNET,
             ModelType.CLAUDE_3_5_HAIKU,
             ModelType.CLAUDE_3_7_SONNET,
+            ModelType.CLAUDE_SONNET_4,
+            ModelType.CLAUDE_OPUS_4,
         }
 
     @property
@@ -596,6 +611,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_PIXTRAL_12B,
             ModelType.MISTRAL_8B,
             ModelType.MISTRAL_3B,
+            ModelType.MISTRAL_MEDIUM_3,
         }
 
     @property
@@ -624,13 +640,16 @@ class ModelType(UnifiedModelType, Enum):
             bool: Whether this type of models is gemini.
         """
         return self in {
-            ModelType.GEMINI_2_5_PRO_EXP,
+            ModelType.GEMINI_2_5_FLASH_PREVIEW,
+            ModelType.GEMINI_2_5_PRO_PREVIEW,
             ModelType.GEMINI_2_0_FLASH,
-            ModelType.GEMINI_1_5_FLASH,
-            ModelType.GEMINI_1_5_PRO,
+            ModelType.GEMINI_2_0_FLASH_EXP,
             ModelType.GEMINI_2_0_FLASH_THINKING,
             ModelType.GEMINI_2_0_PRO_EXP,
+            ModelType.GEMINI_2_0_FLASH_LITE,
             ModelType.GEMINI_2_0_FLASH_LITE_PREVIEW,
+            ModelType.GEMINI_1_5_FLASH,
+            ModelType.GEMINI_1_5_PRO,
         }
 
     @property
@@ -1104,6 +1123,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NETMIND_DEEPSEEK_R1,
             ModelType.NETMIND_DEEPSEEK_V3,
             ModelType.NOVITA_DEEPSEEK_V3_0324,
+            ModelType.MISTRAL_MEDIUM_3,
         }:
             return 128_000
         elif self in {
@@ -1150,11 +1170,15 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_5_SONNET,
             ModelType.CLAUDE_3_5_HAIKU,
             ModelType.CLAUDE_3_7_SONNET,
+            ModelType.CLAUDE_SONNET_4,
+            ModelType.CLAUDE_OPUS_4,
             ModelType.YI_MEDIUM_200K,
             ModelType.AWS_CLAUDE_3_5_SONNET,
             ModelType.AWS_CLAUDE_3_HAIKU,
             ModelType.AWS_CLAUDE_3_SONNET,
             ModelType.AWS_CLAUDE_3_7_SONNET,
+            ModelType.AWS_CLAUDE_SONNET_4,
+            ModelType.AWS_CLAUDE_OPUS_4,
             ModelType.O4_MINI,
             ModelType.O3,
         }:
@@ -1175,12 +1199,15 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 512_000
         elif self in {
-            ModelType.GEMINI_2_5_PRO_EXP,
+            ModelType.GEMINI_2_5_FLASH_PREVIEW,
+            ModelType.GEMINI_2_5_PRO_PREVIEW,
             ModelType.GEMINI_2_0_FLASH,
+            ModelType.GEMINI_2_0_FLASH_EXP,
+            ModelType.GEMINI_2_0_FLASH_THINKING,
+            ModelType.GEMINI_2_0_FLASH_LITE,
+            ModelType.GEMINI_2_0_FLASH_LITE_PREVIEW,
             ModelType.GEMINI_1_5_FLASH,
             ModelType.GEMINI_1_5_PRO,
-            ModelType.GEMINI_2_0_FLASH_THINKING,
-            ModelType.GEMINI_2_0_FLASH_LITE_PREVIEW,
             ModelType.GEMINI_2_0_PRO_EXP,  # Not given in doc, assume the same
             ModelType.GLM_4_LONG,
             ModelType.TOGETHER_LLAMA_4_MAVERICK,
@@ -1197,7 +1224,11 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 10_000_000
         else:
-            raise ValueError("Unknown model type")
+            logger.warning(
+                f"Unknown model type {self}, set maximum token limit "
+                f"to 999_999_999"
+            )
+            return 999_999_999
 
 
 class EmbeddingModelType(Enum):

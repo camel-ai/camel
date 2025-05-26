@@ -1,0 +1,41 @@
+<a id="camel.configs.base_config"></a>
+
+<a id="camel.configs.base_config.BaseConfig"></a>
+
+## BaseConfig
+
+```python
+class BaseConfig(ABC, BaseModel):
+```
+
+Base configuration class for all models.
+
+This class provides a common interface for all models, ensuring that all
+models have a consistent set of attributes and methods.
+
+<a id="camel.configs.base_config.BaseConfig.fields_type_checking"></a>
+
+### fields_type_checking
+
+```python
+def fields_type_checking(cls, tools):
+```
+
+Validate the type of tools in the configuration.
+
+This method ensures that the tools provided in the configuration are
+instances of `FunctionTool`. If any tool is not an instance of
+`FunctionTool`, it raises a ValueError.
+
+<a id="camel.configs.base_config.BaseConfig.as_dict"></a>
+
+### as_dict
+
+```python
+def as_dict(self):
+```
+
+**Returns:**
+
+  dict[str, Any]: A dictionary representation of the current
+configuration.

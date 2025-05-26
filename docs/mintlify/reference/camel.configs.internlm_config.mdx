@@ -1,0 +1,22 @@
+<a id="camel.configs.internlm_config"></a>
+
+<a id="camel.configs.internlm_config.InternLMConfig"></a>
+
+## InternLMConfig
+
+```python
+class InternLMConfig(BaseConfig):
+```
+
+Defines the parameters for generating chat completions using the
+InternLM API. You can refer to the following link for more details:
+https://internlm.intern-ai.org.cn/api/document
+
+**Parameters:**
+
+- **stream** (bool, optional): Whether to stream the response. (default: :obj:`None`)
+- **temperature** (float, optional): Controls the diversity and focus of the generated results. Lower values make the output more focused, while higher values make it more diverse. (default: :obj:`None`)
+- **top_p** (float, optional): Controls the diversity and focus of the generated results. Higher values make the output more diverse, while lower values make it more focused. (default: :obj:`None`)
+- **max_tokens** (int, optional): Allows the model to generate the maximum number of tokens. (default: :obj:`None`)
+- **tools** (list, optional): Specifies an array of tools that the model can call. It can contain one or more tool objects. During a function call process, the model will select one tool from the array. (default: :obj:`None`)
+- **tool_choice** (Union[dict[str, str], str], optional): Controls which (if any) tool is called by the model. :obj:`"none"` means the model will not call any tool and instead generates a message. :obj:`"auto"` means the model can pick between generating a message or calling one or more tools. :obj:`"required"` means the model must call one or more tools. Specifying a particular tool via `{"type": "function", "function": {"name": "my_function"}}` forces the model to call that tool. :obj:`"none"` is the default when no tools are present. :obj:`"auto"` is the default if tools are present.

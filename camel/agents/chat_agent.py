@@ -75,7 +75,10 @@ from camel.types import (
     RoleType,
 )
 from camel.types.agents import ToolCallingRecord
-from camel.utils import get_model_encoding
+from camel.utils import (
+    get_model_encoding,
+    model_from_json_schema,
+)
 
 if TYPE_CHECKING:
     from camel.terminators import ResponseTerminator
@@ -442,6 +445,11 @@ class ChatAgent(BaseAgent):
         new_tool = convert_to_function_tool(tool)
         self._internal_tools[new_tool.get_function_name()] = new_tool
 
+    def add_tools(self, tools: List[Union[FunctionTool, Callable]]) -> None:
+        r"""Add a list of tools to the agent."""
+        for tool in tools:
+            self.add_tool(tool)
+
     def add_external_tool(
         self, tool: Union[FunctionTool, Callable, Dict[str, Any]]
     ) -> None:
@@ -461,6 +469,11 @@ class ChatAgent(BaseAgent):
             del self._internal_tools[tool_name]
             return True
         return False
+
+    def remove_tools(self, tool_names: List[str]) -> None:
+        r"""Remove a list of tools from the agent by name."""
+        for tool_name in tool_names:
+            self.remove_tool(tool_name)
 
     def remove_external_tool(self, tool_name: str) -> bool:
         r"""Remove an external tool from the agent by name.
@@ -748,9 +761,17 @@ class ChatAgent(BaseAgent):
         tool_call_records: List[ToolCallingRecord] = []
         external_tool_call_requests: Optional[List[ToolCallRequest]] = None
 
+        accumulated_context_tokens = (
+            0  # This tracks cumulative context tokens, not API usage tokens
+        )
+
+        # Initialize token usage tracker
+        step_token_usage = self._create_token_usage_tracker()
+
         while True:
             try:
                 openai_messages, num_tokens = self.memory.get_context()
+                accumulated_context_tokens += num_tokens
             except RuntimeError as e:
                 return self._step_terminate(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
@@ -758,16 +779,23 @@ class ChatAgent(BaseAgent):
             # Get response from model backend
             response = self._get_model_response(
                 openai_messages,
-                num_tokens,
+                accumulated_context_tokens,  # Cumulative context tokens
                 response_format,
                 self._get_full_tool_schemas(),
+            )
+
+            # Accumulate API token usage
+            self._update_token_usage_tracker(
+                step_token_usage, response.usage_dict
             )
 
             # Terminate Agent if stop_event is set
             if self.stop_event and self.stop_event.is_set():
                 # Use the _step_terminate to terminate the agent with reason
                 return self._step_terminate(
-                    num_tokens, tool_call_records, "termination_triggered"
+                    accumulated_context_tokens,
+                    tool_call_records,
+                    "termination_triggered",
                 )
 
             if tool_call_requests := response.tool_call_requests:
@@ -803,8 +831,11 @@ class ChatAgent(BaseAgent):
         return self._convert_to_chatagent_response(
             response,
             tool_call_records,
-            num_tokens,
+            accumulated_context_tokens,
             external_tool_call_requests,
+            step_token_usage["prompt_tokens"],
+            step_token_usage["completion_tokens"],
+            step_token_usage["total_tokens"],
         )
 
     @property
@@ -847,9 +878,16 @@ class ChatAgent(BaseAgent):
 
         tool_call_records: List[ToolCallingRecord] = []
         external_tool_call_requests: Optional[List[ToolCallRequest]] = None
+        accumulated_context_tokens = (
+            0  # This tracks cumulative context tokens, not API usage tokens
+        )
+
+        # Initialize token usage tracker
+        step_token_usage = self._create_token_usage_tracker()
         while True:
             try:
                 openai_messages, num_tokens = self.memory.get_context()
+                accumulated_context_tokens += num_tokens
             except RuntimeError as e:
                 return self._step_terminate(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
@@ -857,7 +895,7 @@ class ChatAgent(BaseAgent):
 
             response = await self._aget_model_response(
                 openai_messages,
-                num_tokens,
+                accumulated_context_tokens,
                 response_format,
                 self._get_full_tool_schemas(),
             )
@@ -866,7 +904,9 @@ class ChatAgent(BaseAgent):
             if self.stop_event and self.stop_event.is_set():
                 # Use the _step_terminate to terminate the agent with reason
                 return self._step_terminate(
-                    num_tokens, tool_call_records, "termination_triggered"
+                    accumulated_context_tokens,
+                    tool_call_records,
+                    "termination_triggered",
                 )
 
             if tool_call_requests := response.tool_call_requests:
@@ -900,28 +940,68 @@ class ChatAgent(BaseAgent):
         await self._aformat_response_if_needed(response, response_format)
         self._record_final_output(response.output_messages)
 
+        # Create token usage tracker for this step
+        step_token_usage = self._create_token_usage_tracker()
+
+        # Update with response usage
+        self._update_token_usage_tracker(step_token_usage, response.usage_dict)
+
         return self._convert_to_chatagent_response(
             response,
             tool_call_records,
-            num_tokens,
+            accumulated_context_tokens,
             external_tool_call_requests,
+            step_token_usage["prompt_tokens"],
+            step_token_usage["completion_tokens"],
+            step_token_usage["total_tokens"],
         )
+
+    def _create_token_usage_tracker(self) -> Dict[str, int]:
+        r"""Creates a fresh token usage tracker for a step.
+
+        Returns:
+            Dict[str, int]: A dictionary for tracking token usage.
+        """
+        return {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+
+    def _update_token_usage_tracker(
+        self, tracker: Dict[str, int], usage_dict: Dict[str, int]
+    ) -> None:
+        r"""Updates a token usage tracker with values from a usage dictionary.
+
+        Args:
+            tracker (Dict[str, int]): The token usage tracker to update.
+            usage_dict (Dict[str, int]): The usage dictionary with new values.
+        """
+        tracker["prompt_tokens"] += usage_dict.get("prompt_tokens", 0)
+        tracker["completion_tokens"] += usage_dict.get("completion_tokens", 0)
+        tracker["total_tokens"] += usage_dict.get("total_tokens", 0)
 
     def _convert_to_chatagent_response(
         self,
         response: ModelResponse,
         tool_call_records: List[ToolCallingRecord],
-        num_tokens: int,
+        num_tokens: int,  # Context tokens from the last call in step
         external_tool_call_requests: Optional[List[ToolCallRequest]],
+        step_api_prompt_tokens: int = 0,
+        step_api_completion_tokens: int = 0,
+        step_api_total_tokens: int = 0,
     ) -> ChatAgentResponse:
         r"""Parse the final model response into the chat agent response."""
+        # Create usage_dict for the current step's API calls
+        step_api_usage_dict = {
+            "prompt_tokens": step_api_prompt_tokens,
+            "completion_tokens": step_api_completion_tokens,
+            "total_tokens": step_api_total_tokens,
+        }
+
         info = self._step_get_info(
             response.output_messages,
             response.finish_reasons,
-            response.usage_dict,
+            step_api_usage_dict,  # Pass step-specific API usage here
             response.response_id,
             tool_call_records,
-            num_tokens,
+            num_tokens,  # This is context tokens, not API usage
             external_tool_call_requests,
         )
 
@@ -1311,7 +1391,9 @@ class ChatAgent(BaseAgent):
         response_id: str = ""
         # All choices in one response share one role
         for chunk in response:
-            response_id = chunk.id
+            # Some model platforms like siliconflow may return None for the
+            # chunk.id
+            response_id = chunk.id if chunk.id else str(uuid.uuid4())
             self._handle_chunk(
                 chunk, content_dict, finish_reasons_dict, output_messages
             )
@@ -1351,7 +1433,9 @@ class ChatAgent(BaseAgent):
         response_id: str = ""
         # All choices in one response share one role
         async for chunk in response:
-            response_id = chunk.id
+            # Some model platforms like siliconflow may return None for the
+            # chunk.id
+            response_id = chunk.id if chunk.id else str(uuid.uuid4())
             self._handle_chunk(
                 chunk, content_dict, finish_reasons_dict, output_messages
             )
@@ -1566,6 +1650,56 @@ class ChatAgent(BaseAgent):
         """
         self.model_backend.add_strategy(name, strategy_fn)
 
+    def clone(self, with_memory: bool = False) -> ChatAgent:
+        r"""Creates a new instance of :obj:`ChatAgent` with the same
+        configuration as the current instance.
+
+        Args:
+            with_memory (bool): Whether to copy the memory (conversation
+                history) to the new agent. If True, the new agent will have
+                the same conversation history. If False, the new agent will
+                have a fresh memory with only the system message.
+                (default: :obj:`False`)
+
+        Returns:
+            ChatAgent: A new instance of :obj:`ChatAgent` with the same
+                configuration.
+        """
+        # Create a new instance with the same configuration
+        # If with_memory is True, set system_message to None
+        # If with_memory is False, use the original system message
+        # To avoid duplicated system memory.
+        system_message = None if with_memory else self._original_system_message
+
+        new_agent = ChatAgent(
+            system_message=system_message,
+            model=self.model_backend.models,  # Pass the existing model_backend
+            memory=None,  # clone memory later
+            message_window_size=getattr(self.memory, "window_size", None),
+            token_limit=getattr(
+                self.memory.get_context_creator(), "token_limit", None
+            ),
+            output_language=self._output_language,
+            tools=list(self._internal_tools.values()),
+            external_tools=[
+                schema for schema in self._external_tool_schemas.values()
+            ],
+            response_terminators=self.response_terminators,
+            scheduling_strategy=self.model_backend.scheduling_strategy.__name__,
+            single_iteration=self.single_iteration,
+            stop_event=self.stop_event,
+        )
+
+        # Copy memory if requested
+        if with_memory:
+            # Get all records from the current memory
+            context_records = self.memory.retrieve()
+            # Write them to the new agent's memory
+            for context_record in context_records:
+                new_agent.memory.write_record(context_record.memory_record)
+
+        return new_agent
+
     def __repr__(self) -> str:
         r"""Returns a string representation of the :obj:`ChatAgent`.
 
@@ -1575,3 +1709,147 @@ class ChatAgent(BaseAgent):
         return (
             f"ChatAgent({self.role_name}, {self.role_type}, {self.model_type})"
         )
+
+    def to_mcp(
+        self,
+        name: str = "CAMEL-ChatAgent",
+        description: str = "A helpful assistant using the CAMEL AI framework.",
+        dependencies: Optional[List[str]] = None,
+        host: str = "localhost",
+        port: int = 8000,
+    ):
+        r"""Expose this ChatAgent as an MCP server.
+
+        Args:
+            name (str): Name of the MCP server.
+                (default: :obj:`CAMEL-ChatAgent`)
+            description (Optional[List[str]]): Description of the agent. If
+                None, a generic description is used. (default: :obj:`A helpful
+                assistant using the CAMEL AI framework.`)
+            dependencies (Optional[List[str]]): Additional
+                dependencies for the MCP server. (default: :obj:`None`)
+            host (str): Host to bind to for HTTP transport.
+                (default: :obj:`localhost`)
+            port (int): Port to bind to for HTTP transport.
+                (default: :obj:`8000`)
+
+        Returns:
+            FastMCP: An MCP server instance that can be run.
+        """
+        try:
+            from mcp.server.fastmcp import FastMCP
+        except ImportError:
+            raise ImportError(
+                "The 'mcp' package is required to use the to_mcp method. "
+                "Install it with 'pip install mcp'."
+            )
+
+        # Combine dependencies
+        all_dependencies = ["camel-ai[all]"]
+        if dependencies:
+            all_dependencies.extend(dependencies)
+
+        mcp_server = FastMCP(
+            name,
+            dependencies=all_dependencies,
+            host=host,
+            port=port,
+        )
+
+        # Store agent reference
+        agent_instance = self
+
+        # Define functions first
+        async def step(message, response_format=None):
+            r"""Execute a single step in the chat session with the agent."""
+            format_cls = None
+            if response_format:
+                format_cls = model_from_json_schema(
+                    "DynamicResponseFormat", response_format
+                )
+            response = await agent_instance.astep(message, format_cls)
+            return {
+                "status": "success",
+                "messages": [msg.to_dict() for msg in response.msgs],
+                "terminated": response.terminated,
+                "info": response.info,
+            }
+
+        # Reset tool
+        def reset():
+            r"""Reset the chat agent to its initial state."""
+            agent_instance.reset()
+            return {"status": "success", "message": "Agent reset successfully"}
+
+        # Set language tool
+        def set_output_language(language):
+            r"""Set the output language for the chat agent."""
+            agent_instance.output_language = language
+            return {
+                "status": "success",
+                "message": f"Output language set to '{language}'",
+            }
+
+        # Agent info resource and tool
+        def get_agent_info():
+            r"""Get information about the agent."""
+            info = {
+                "agent_id": agent_instance.agent_id,
+                "model_type": str(agent_instance.model_type),
+                "role_name": agent_instance.role_name,
+                "role_type": str(agent_instance.role_type),
+                "output_language": agent_instance.output_language or "None",
+                "description": description,
+            }
+            return info
+
+        # Chat history resource and tool
+        def get_chat_history():
+            r"""Get the chat history for the agent."""
+            # Convert messages to simple serializable format
+            messages = []
+            for msg in agent_instance.chat_history:
+                # Create a simplified version of each message
+                msg_dict = {
+                    "role": msg.get("role", ""),
+                    "content": msg.get("content", ""),
+                }
+                # Include function calls if present
+                if "function_call" in msg:
+                    msg_dict["function_call"] = {
+                        "name": msg["function_call"].get("name", ""),
+                        "arguments": msg["function_call"].get("arguments", ""),
+                    }
+                messages.append(msg_dict)
+            return messages
+
+        # Available tools resource and tool
+        def get_available_tools():
+            r"""Get a list of available internal tools."""
+            tool_info = {}
+            for name, tool in agent_instance.tool_dict.items():
+                tool_info[name] = {
+                    "name": name,
+                    "description": tool.get_function_description() or "",
+                    "parameters": [
+                        {"name": param_name, "type": str(param_type)}
+                        for param_name, param_type in tool.get_parameters().items()  # noqa: E501
+                    ],
+                }
+            return tool_info
+
+        # Now register everything using decorators
+        mcp_server.tool()(step)
+        mcp_server.tool()(reset)
+        mcp_server.tool()(set_output_language)
+
+        mcp_server.resource("agent://")(get_agent_info)
+        mcp_server.tool()(get_agent_info)
+
+        mcp_server.resource("history://")(get_chat_history)
+        mcp_server.tool()(get_chat_history)
+
+        mcp_server.resource("tools://")(get_available_tools)
+        mcp_server.tool()(get_available_tools)
+
+        return mcp_server

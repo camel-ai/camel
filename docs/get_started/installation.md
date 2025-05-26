@@ -19,7 +19,7 @@ Available extras:
 - `all`: Includes all features below
 - `model_platforms`: OpenAI, Google, Mistral, Anthropic Claude, Cohere etc.
 - `huggingface`: Transformers, Diffusers, Accelerate, Datasets, PyTorch etc.
-- `rag`: Sentence Transformers, Qdrant, Milvus, TiDB, BM25 etc.
+- `rag`: Sentence Transformers, Qdrant, Milvus, TiDB, OceanBase,BM25 etc.
 - `storage`: Neo4j, Redis, Azure Blob, Google Cloud Storage, AWS S3  etc.
 - `web_tools`: DuckDuckGo, Wikipedia, WolframAlpha, Google Maps, Weather API etc.
 - `document_tools`: PDF, Word, OpenAPI, BeautifulSoup, Unstructured etc.
@@ -150,7 +150,7 @@ To simplify the process of managing API Keys, you can use store information in a
 OPENAI_API_KEY=<fill your API KEY here>
 ```
 
-Replace <fill your API KEY here> with your actual API key.
+Replace `<fill your API KEY here>` with your actual API key.
 
 2. Load the .env file in your Python script: Use the load_dotenv() function from the dotenv module to load the variables from the .env file into the environment. Here's an example:
 
@@ -199,5 +199,3 @@ python examples/workforce/multiple_single_agents.py
 python examples/vision/image_crafting.py
 ```
 For additional feature examples, see the [`examples`](https://github.com/camel-ai/camel/tree/master/examples) directory.
-
-<br>
