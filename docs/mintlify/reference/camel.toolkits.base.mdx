@@ -1,0 +1,58 @@
+<a id="camel.toolkits.base"></a>
+
+<a id="camel.toolkits.base.BaseToolkit"></a>
+
+## BaseToolkit
+
+```python
+class BaseToolkit:
+```
+
+Base class for toolkits.
+
+**Parameters:**
+
+- **timeout** (Optional[float]): The timeout for the toolkit.
+
+<a id="camel.toolkits.base.BaseToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, timeout: Optional[float] = None):
+```
+
+<a id="camel.toolkits.base.BaseToolkit.__init_subclass__"></a>
+
+### __init_subclass__
+
+```python
+def __init_subclass__(cls, **kwargs):
+```
+
+<a id="camel.toolkits.base.BaseToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects
+representing the functions in the toolkit.
+
+<a id="camel.toolkits.base.BaseToolkit.run_mcp_server"></a>
+
+### run_mcp_server
+
+```python
+def run_mcp_server(self, mode: Literal['stdio', 'sse', 'streamable-http']):
+```
+
+Run the MCP server in the specified mode.
+
+**Parameters:**
+
+- **mode** (`Literal["stdio", "sse", "streamable-http"]`): The mode to run the MCP server in.

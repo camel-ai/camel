@@ -1,0 +1,663 @@
+<a id="camel.toolkits.async_browser_toolkit"></a>
+
+<a id="camel.toolkits.async_browser_toolkit.extract_function_name"></a>
+
+## extract_function_name
+
+```python
+def extract_function_name(s: str):
+```
+
+Extract the pure function name from a string (without parameters or
+parentheses)
+
+**Parameters:**
+
+- **s** (str): Input string, e.g., `1.`**`click_id(14)`**, `scroll_up()`, `'visit_page(url)'`, etc.
+
+**Returns:**
+
+  str: Pure function name (e.g., `click_id`, `scroll_up`, `visit_page`)
+
+<a id="camel.toolkits.async_browser_toolkit._get_str"></a>
+
+## _get_str
+
+```python
+def _get_str(d: Any, k: str):
+```
+
+Safely retrieve a string value from a dictionary.
+
+<a id="camel.toolkits.async_browser_toolkit._get_number"></a>
+
+## _get_number
+
+```python
+def _get_number(d: Any, k: str):
+```
+
+Safely retrieve a number (int or float) from a dictionary
+
+<a id="camel.toolkits.async_browser_toolkit._get_bool"></a>
+
+## _get_bool
+
+```python
+def _get_bool(d: Any, k: str):
+```
+
+Safely retrieve a boolean value from a dictionary.
+
+<a id="camel.toolkits.async_browser_toolkit._parse_json_output"></a>
+
+## _parse_json_output
+
+```python
+def _parse_json_output(text: str):
+```
+
+Extract JSON output from a string.
+
+<a id="camel.toolkits.async_browser_toolkit._reload_image"></a>
+
+## _reload_image
+
+```python
+def _reload_image(image: Image.Image):
+```
+
+<a id="camel.toolkits.async_browser_toolkit.dom_rectangle_from_dict"></a>
+
+## dom_rectangle_from_dict
+
+```python
+def dom_rectangle_from_dict(rect: Dict[str, Any]):
+```
+
+Create a DOMRectangle object from a dictionary.
+
+<a id="camel.toolkits.async_browser_toolkit.interactive_region_from_dict"></a>
+
+## interactive_region_from_dict
+
+```python
+def interactive_region_from_dict(region: Dict[str, Any]):
+```
+
+Create an :class:`InteractiveRegion` object from a dictionary.
+
+<a id="camel.toolkits.async_browser_toolkit.visual_viewport_from_dict"></a>
+
+## visual_viewport_from_dict
+
+```python
+def visual_viewport_from_dict(viewport: Dict[str, Any]):
+```
+
+Create a :class:`VisualViewport` object from a dictionary.
+
+<a id="camel.toolkits.async_browser_toolkit.add_set_of_mark"></a>
+
+## add_set_of_mark
+
+```python
+def add_set_of_mark(
+    screenshot: Union[bytes, Image.Image, io.BufferedIOBase],
+    ROIs: Dict[str, InteractiveRegion]
+):
+```
+
+<a id="camel.toolkits.async_browser_toolkit._add_set_of_mark"></a>
+
+## _add_set_of_mark
+
+```python
+def _add_set_of_mark(screenshot: Image.Image, ROIs: Dict[str, InteractiveRegion]):
+```
+
+Add a set of marks to the screenshot.
+
+**Parameters:**
+
+- **screenshot** (Image.Image): The screenshot to add marks to.
+- **ROIs** (Dict[str, InteractiveRegion]): The regions to add marks to.
+
+**Returns:**
+
+  Tuple[Image.Image, List[str], List[str], List[str]]: A tuple
+containing the screenshot with marked ROIs, ROIs fully within the
+images, ROIs located above the visible area, and ROIs located below
+the visible area.
+
+<a id="camel.toolkits.async_browser_toolkit._draw_roi"></a>
+
+## _draw_roi
+
+```python
+def _draw_roi(
+    draw: ImageDraw.ImageDraw,
+    idx: int,
+    font: ImageFont.FreeTypeFont | ImageFont.ImageFont,
+    rect: DOMRectangle
+):
+```
+
+Draw a ROI on the image.
+
+**Parameters:**
+
+- **draw** (ImageDraw.ImageDraw): The draw object.
+- **idx** (int): The index of the ROI.
+- **font** (ImageFont.FreeTypeFont | ImageFont.ImageFont): The font.
+- **rect** (DOMRectangle): The DOM rectangle.
+
+<a id="camel.toolkits.async_browser_toolkit._get_text_color"></a>
+
+## _get_text_color
+
+```python
+def _get_text_color(bg_color: Tuple[int, int, int, int]):
+```
+
+Determine the ideal text color (black or white) for contrast.
+
+**Parameters:**
+
+- **bg_color**: The background color (R, G, B, A).
+
+**Returns:**
+
+  A tuple representing black or white color for text.
+
+<a id="camel.toolkits.async_browser_toolkit._get_random_color"></a>
+
+## _get_random_color
+
+```python
+def _get_random_color(identifier: int):
+```
+
+Generate a consistent random RGBA color based on the identifier.
+
+**Parameters:**
+
+- **identifier**: The ID used as a seed to ensure color consistency.
+
+**Returns:**
+
+  A tuple representing (R, G, B, A) values.
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBaseBrowser"></a>
+
+## AsyncBaseBrowser
+
+```python
+class AsyncBaseBrowser:
+```
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBaseBrowser.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    headless = True,
+    cache_dir: Optional[str] = None,
+    channel: Literal['chrome', 'msedge', 'chromium'] = 'chromium',
+    cookie_json_path: Optional[str] = None
+):
+```
+
+Initialize the asynchronous browser core.
+
+**Parameters:**
+
+- **headless** (bool): Whether to run the browser in headless mode.
+- **cache_dir** (Union[str, None]): The directory to store cache files.
+- **channel** (`Literal["chrome", "msedge", "chromium"]`): The browser channel to use. Must be one of "chrome", "msedge", or "chromium".
+- **cookie_json_path** (Optional[str]): Path to a JSON file containing authentication cookies and browser storage state. If provided and the file exists, the browser will load this state to maintain authenticated sessions without requiring manual login.
+
+**Returns:**
+
+  None
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBaseBrowser.init"></a>
+
+### init
+
+```python
+def init(self):
+```
+
+Initialize the browser asynchronously.
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBaseBrowser.clean_cache"></a>
+
+### clean_cache
+
+```python
+def clean_cache(self):
+```
+
+Delete the cache directory and its contents.
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBaseBrowser.wait_for_load"></a>
+
+### wait_for_load
+
+```python
+def wait_for_load(self, timeout: int = 20):
+```
+
+Wait for a certain amount of time for the page to load.
+
+**Parameters:**
+
+- **timeout** (int): Timeout in seconds.
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBaseBrowser.click_blank_area"></a>
+
+### click_blank_area
+
+```python
+def click_blank_area(self):
+```
+
+Click a blank area of the page to unfocus the current element.
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBaseBrowser.visit_page"></a>
+
+### visit_page
+
+```python
+def visit_page(self, url: str):
+```
+
+Visit a page with the given URL.
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBaseBrowser.ask_question_about_video"></a>
+
+### ask_question_about_video
+
+```python
+def ask_question_about_video(self, question: str):
+```
+
+Ask a question about the video on the current page,
+such as YouTube video.
+
+**Parameters:**
+
+- **question** (str): The question to ask.
+
+**Returns:**
+
+  str: The answer to the question.
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBaseBrowser.get_screenshot"></a>
+
+### get_screenshot
+
+```python
+def get_screenshot(self, save_image: bool = False):
+```
+
+Get a screenshot of the current page.
+
+**Parameters:**
+
+- **save_image** (bool): Whether to save the image to the cache directory.
+
+**Returns:**
+
+  Tuple[Image.Image, str]: A tuple containing the screenshot
+image and the path to the image file if saved, otherwise
+:obj:`None`.
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBaseBrowser.capture_full_page_screenshots"></a>
+
+### capture_full_page_screenshots
+
+```python
+def capture_full_page_screenshots(self, scroll_ratio: float = 0.8):
+```
+
+Capture full page screenshots by scrolling the page with
+a buffer zone.
+
+**Parameters:**
+
+- **scroll_ratio** (float): The ratio of viewport height to scroll each step (default: 0.8).
+
+**Returns:**
+
+  List[str]: A list of paths to the captured screenshots.
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBaseBrowser.get_visual_viewport"></a>
+
+### get_visual_viewport
+
+```python
+def get_visual_viewport(self):
+```
+
+Get the visual viewport of the current page.
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBaseBrowser.get_interactive_elements"></a>
+
+### get_interactive_elements
+
+```python
+def get_interactive_elements(self):
+```
+
+**Returns:**
+
+  Dict[str, InteractiveRegion]: A dictionary of interactive elements.
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBaseBrowser.get_som_screenshot"></a>
+
+### get_som_screenshot
+
+```python
+def get_som_screenshot(self, save_image: bool = False):
+```
+
+Get a screenshot of the current viewport with interactive elements
+marked.
+
+**Parameters:**
+
+- **save_image** (bool): Whether to save the image to the cache directory.
+
+**Returns:**
+
+  Tuple[Image.Image, str]: A tuple containing the screenshot image
+and the path to the image file.
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBaseBrowser.scroll_up"></a>
+
+### scroll_up
+
+```python
+def scroll_up(self):
+```
+
+Scroll up the page.
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBaseBrowser.scroll_down"></a>
+
+### scroll_down
+
+```python
+def scroll_down(self):
+```
+
+Scroll down the page.
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBaseBrowser.get_url"></a>
+
+### get_url
+
+```python
+def get_url(self):
+```
+
+Get the URL of the current page.
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBaseBrowser.click_id"></a>
+
+### click_id
+
+```python
+def click_id(self, identifier: Union[str, int]):
+```
+
+Click an element with the given identifier.
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBaseBrowser.extract_url_content"></a>
+
+### extract_url_content
+
+```python
+def extract_url_content(self):
+```
+
+Extract the content of the current page.
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBaseBrowser.download_file_id"></a>
+
+### download_file_id
+
+```python
+def download_file_id(self, identifier: Union[str, int]):
+```
+
+Download a file with the given identifier.
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBaseBrowser.fill_input_id"></a>
+
+### fill_input_id
+
+```python
+def fill_input_id(self, identifier: Union[str, int], text: str):
+```
+
+Fill an input field with the given text, and then press Enter.
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBaseBrowser.scroll_to_bottom"></a>
+
+### scroll_to_bottom
+
+```python
+def scroll_to_bottom(self):
+```
+
+Scroll to the bottom of the page.
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBaseBrowser.scroll_to_top"></a>
+
+### scroll_to_top
+
+```python
+def scroll_to_top(self):
+```
+
+Scroll to the top of the page.
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBaseBrowser.hover_id"></a>
+
+### hover_id
+
+```python
+def hover_id(self, identifier: Union[str, int]):
+```
+
+Hover over an element with the given identifier.
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBaseBrowser.find_text_on_page"></a>
+
+### find_text_on_page
+
+```python
+def find_text_on_page(self, search_text: str):
+```
+
+Find the next given text on the page, and scroll the page to
+the targeted text. It is equivalent to pressing Ctrl + F and
+searching for the text.
+
+**Parameters:**
+
+- **search_text** (str): The text to search for.
+
+**Returns:**
+
+  str: The result of the action.
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBaseBrowser.back"></a>
+
+### back
+
+```python
+def back(self):
+```
+
+Navigate back to the previous page.
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBaseBrowser.close"></a>
+
+### close
+
+```python
+def close(self):
+```
+
+Close the browser.
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBaseBrowser.show_interactive_elements"></a>
+
+### show_interactive_elements
+
+```python
+def show_interactive_elements(self):
+```
+
+Show simple interactive elements on the current page.
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBaseBrowser.get_webpage_content"></a>
+
+### get_webpage_content
+
+```python
+def get_webpage_content(self):
+```
+
+Extract the content of the current page.
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBaseBrowser._ensure_browser_installed"></a>
+
+### _ensure_browser_installed
+
+```python
+def _ensure_browser_installed(self):
+```
+
+Ensure the browser is installed.
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBrowserToolkit"></a>
+
+## AsyncBrowserToolkit
+
+```python
+class AsyncBrowserToolkit(BaseToolkit):
+```
+
+An asynchronous class for browsing the web and interacting
+with web pages.
+
+This class provides methods for browsing the web and interacting with web
+pages.
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBrowserToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    headless: bool = False,
+    cache_dir: Optional[str] = None,
+    channel: Literal['chrome', 'msedge', 'chromium'] = 'chromium',
+    history_window: int = 5,
+    web_agent_model: Optional[BaseModelBackend] = None,
+    planning_agent_model: Optional[BaseModelBackend] = None,
+    output_language: str = 'en',
+    cookie_json_path: Optional[str] = None
+):
+```
+
+Initialize the BrowserToolkit instance.
+
+**Parameters:**
+
+- **headless** (bool): Whether to run the browser in headless mode.
+- **cache_dir** (Union[str, None]): The directory to store cache files.
+- **channel** (`Literal["chrome", "msedge", "chromium"]`): The browser channel to use. Must be one of "chrome", "msedge", or "chromium".
+- **history_window** (int): The window size for storing the history of actions.
+- **web_agent_model** (Optional[BaseModelBackend]): The model backend for the web agent.
+- **planning_agent_model** (Optional[BaseModelBackend]): The model backend for the planning agent.
+- **output_language** (str): The language to use for output. (default: :obj:`"en`")
+- **cookie_json_path** (Optional[str]): Path to a JSON file containing authentication cookies and browser storage state. If provided and the file exists, the browser will load this state to maintain authenticated sessions without requiring manual login. (default: :obj:`None`)
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBrowserToolkit._reset"></a>
+
+### _reset
+
+```python
+def _reset(self):
+```
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBrowserToolkit._initialize_agent"></a>
+
+### _initialize_agent
+
+```python
+def _initialize_agent(self):
+```
+
+Initialize the agent.
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBrowserToolkit._get_final_answer"></a>
+
+### _get_final_answer
+
+```python
+def _get_final_answer(self, task_prompt: str):
+```
+
+Get the final answer based on the task prompt and current browser
+state. It is used when the agent thinks that the task can be completed
+without any further action, and answer can be directly found in the
+current viewport.
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBrowserToolkit._task_planning"></a>
+
+### _task_planning
+
+```python
+def _task_planning(self, task_prompt: str, start_url: str):
+```
+
+Plan the task based on the given task prompt.
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBrowserToolkit._task_replanning"></a>
+
+### _task_replanning
+
+```python
+def _task_replanning(self, task_prompt: str, detailed_plan: str):
+```
+
+Replan the task based on the given task prompt.
+
+**Parameters:**
+
+- **task_prompt** (str): The original task prompt.
+- **detailed_plan** (str): The detailed plan to replan.
+
+**Returns:**
+
+  Tuple[bool, str]: A tuple containing a boolean indicating
+whether the task needs to be replanned, and the replanned
+schema.
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBrowserToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
