@@ -1,0 +1,132 @@
+<a id="camel.toolkits.image_analysis_toolkit"></a>
+
+<a id="camel.toolkits.image_analysis_toolkit.ImageAnalysisToolkit"></a>
+
+## ImageAnalysisToolkit
+
+```python
+class ImageAnalysisToolkit(BaseToolkit):
+```
+
+A toolkit for comprehensive image analysis and understanding.
+The toolkit uses vision-capable language models to perform these tasks.
+
+<a id="camel.toolkits.image_analysis_toolkit.ImageAnalysisToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    model: Optional[BaseModelBackend] = None,
+    timeout: Optional[float] = None
+):
+```
+
+Initialize the ImageAnalysisToolkit.
+
+**Parameters:**
+
+- **model** (Optional[BaseModelBackend]): The model backend to use for image analysis tasks. This model should support processing images for tasks like image description and visual question answering. If None, a default model will be created using ModelFactory. (default: :obj:`None`)
+- **timeout** (Optional[float]): The timeout value for API requests in seconds. If None, no timeout is applied. (default: :obj:`None`)
+
+<a id="camel.toolkits.image_analysis_toolkit.ImageAnalysisToolkit.image_to_text"></a>
+
+### image_to_text
+
+```python
+def image_to_text(self, image_path: str, sys_prompt: Optional[str] = None):
+```
+
+Generates textual description of an image with optional custom
+prompt.
+
+**Parameters:**
+
+- **image_path** (str): Local path or URL to an image file.
+- **sys_prompt** (Optional[str]): Custom system prompt for the analysis. (default: :obj:`None`)
+
+**Returns:**
+
+  str: Natural language description of the image.
+
+<a id="camel.toolkits.image_analysis_toolkit.ImageAnalysisToolkit.ask_question_about_image"></a>
+
+### ask_question_about_image
+
+```python
+def ask_question_about_image(
+    self,
+    image_path: str,
+    question: str,
+    sys_prompt: Optional[str] = None
+):
+```
+
+Answers image questions with optional custom instructions.
+
+**Parameters:**
+
+- **image_path** (str): Local path or URL to an image file.
+- **question** (str): Query about the image content.
+- **sys_prompt** (Optional[str]): Custom system prompt for the analysis. (default: :obj:`None`)
+
+**Returns:**
+
+  str: Detailed answer based on visual understanding
+
+<a id="camel.toolkits.image_analysis_toolkit.ImageAnalysisToolkit._load_image"></a>
+
+### _load_image
+
+```python
+def _load_image(self, image_path: str):
+```
+
+Loads an image from either local path or URL.
+
+**Parameters:**
+
+- **image_path** (str): Local path or URL to image.
+
+**Returns:**
+
+  Image.Image: Loaded PIL Image object.
+
+<a id="camel.toolkits.image_analysis_toolkit.ImageAnalysisToolkit._analyze_image"></a>
+
+### _analyze_image
+
+```python
+def _analyze_image(
+    self,
+    image_path: str,
+    prompt: str,
+    system_message: BaseMessage
+):
+```
+
+Core analysis method handling image loading and processing.
+
+**Parameters:**
+
+- **image_path** (str): Image location.
+- **prompt** (str): Analysis query/instructions.
+- **system_message** (BaseMessage): Custom system prompt for the analysis.
+
+**Returns:**
+
+  str: Analysis result or error message.
+
+<a id="camel.toolkits.image_analysis_toolkit.ImageAnalysisToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects representing the
+functions in the toolkit.
