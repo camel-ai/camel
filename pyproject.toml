@@ -159,7 +159,7 @@ research_tools = [
     "arxiv2text>=0.1.14,<0.2",
     "scholarly[tor]==1.7.11",
     # Using a git source for bohrium, no version constraint needed
-    "bohrium",
+    "bohrium @ git+https://github.com/dptech-corp/bohrium-openapi-python-sdk",
 ]
 dev_tools = [
     "docker>=7.1.0,<8",
@@ -373,7 +373,7 @@ all = [
     "google-genai>=1.13.0",
     "aci-sdk>=1.0.0b1",
     "pylatex>=1.4.2",
-    "bohrium"
+    "bohrium @ git+https://github.com/dptech-corp/bohrium-openapi-python-sdk" 
 ]
 
 [project.urls]
@@ -389,7 +389,6 @@ default-groups = [
 
 [tool.uv.sources]
 bohrium = { git = "https://github.com/dptech-corp/bohrium-openapi-python-sdk" }
-bohrium_api = { git = "https://github.com/dptech-corp/bohrium-openapi-python-sdk" }
 
 [tool.hatch.build.targets.sdist]
 include = ["camel"]
