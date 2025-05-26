@@ -1,0 +1,409 @@
+---
+title: "Customer Service Discord Bot Using Local Models with Agentic RAG"
+---
+
+You can also check this cookbook in colab [here](https://colab.research.google.com/drive/1Knq9y5TQ6oeKumWdg9MlWT9gfSsTlqCZ?usp=sharing)
+
+To run this, press "*Runtime*" and press "*Run all*" on a **free** Tesla T4 Google Colab instance!
+
+This notebook demonstrates how to build a customer service Discord bot powered by Retrieval Augmented Generation (RAG) using local models. It leverages the following technologies:
+
+- **CAMEL:** An open-source toolkit for building and deploying large language model (LLM) applications.
+- **Firecrawl:** A tool for web scraping and creating a local knowledge base.
+- **Qdrant:** A vector database for efficient knowledge retrieval.
+- **Ollama:** A local model deployment for running the LLM without external dependencies.
+
+By following this notebook, you can build your own custom customer service bot that uses local models and a custom knowledge base.
+
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
+  <a href="https://www.camel-ai.org/">
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
+  </a>
+  <a href="https://discord.camel-ai.org">
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
+  </a>
+</div>
+Join our Discord if you need help + ⭐ <i>Star us on </i>
+<a href="https://github.com/camel-ai/camel">Github</a> <i> ⭐</i>
+
+
+![12345.png](./images/customer_service_Discord_bot_using_local_model_with_agentic_RAG_1.png)
+
+## Installation and Setup
+First, install the CAMEL package with all its dependencies
+
+
+```python
+!pip install "camel-ai[all]==0.2.16"
+!pip install starlette
+!pip install nest_asyncio
+```
+
+Next, prepare the knowledge base with Firecrawl. Firecrawl is a versatile web scraping and crawling tool designed to extract data efficiently from websites, which has been integrated with CAMEL. For more information, you can check out our Firecrawl cookbook: https://colab.research.google.com/drive/1lOmM3VmgR1hLwDKdeLGFve_75RFW0R9I?usp=sharing#scrollTo=1Nj0Oqnoy6oJ
+
+Let's set up your Firecrawl! You may skip this part if you already have your knowledge file.
+
+In order to run everything locally, we can use self-hosted firecrawl.
+
+For more details, please check out firecrawl documentation: https://docs.firecrawl.dev/contributing/guide
+
+
+```python
+from getpass import getpass
+
+firecrawl_api_url = getpass('Enter your API url: ')
+```
+
+## Local setup
+
+
+Please **make a copy** of this notebook (important), or run this notebook locally.
+
+If you choose to make a copy of this notebook and stay in Google colab, connect the copied notebook to your local runtime by follow the following steps:
+
+1. Install notebook locally by running the following command in your terminal:
+```bash
+  pip install notebook
+```
+```bash
+  jupyter notebook --NotebookApp.allow_origin='https://colab.research.google.com' \
+                 --port=8888 \
+                 --no-browser
+```
+You will see something like this in your terminal:
+```bash
+  To access the server, open this file in a browser:
+        <some_path>
+    Or copy and paste one of these URLs:
+        <url1>
+        <url2>
+```
+2. Copy any of the url, and click on 'connect to a local runtime' button in Google Colab, and paste the copied url into Backend Url.
+3. Click on 'connect'
+
+## Basic Agent and local model Setup
+
+1. Download Ollama for a local model at: https://ollama.com/download
+2. After setting up Ollama, pull the Llama3 model by typing the following command into the terminal:
+  ```bash
+  ollama pull qwq
+
+3. cd into a desired directory
+```bash
+  cd <target_drectory_path>
+
+4. Create a `ModelFile` similar the one below in your project directory. (Optional)
+```bash
+  FROM qwq
+
+  # Set parameters
+  PARAMETER temperature 0.8
+  PARAMETER stop Result
+
+  # Sets a custom system message to specify the behavior of the chat assistant
+  # Leaving it blank for now.
+
+  SYSTEM """ """
+```
+
+5. Create a script to get the base model (llama3) and create a custom model using the `ModelFile` above. Save this as a .sh file: (Optional)
+```bash
+  #!/bin/zsh
+
+  # variables
+  model_name="qwq"
+  custom_model_name="camel-qwq"
+
+  #get the base model
+  ollama pull $model_name
+
+  #create the model file
+  ollama create $custom_model_name -f ./ModelFile
+```
+
+
+
+Now you have the local model deployed!
+
+
+```python
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType
+
+ollama_model = ModelFactory.create(
+    model_platform=ModelPlatformType.OLLAMA,
+    model_type="qwq",
+    url="http://localhost:11434/v1", #optional
+    model_config_dict={"temperature": 0.4},
+)
+
+```
+
+
+```python
+from camel.agents import ChatAgent
+from camel.logger import disable_logging
+
+disable_logging()
+chat_agent = ChatAgent(
+    system_message="You're a helpful assistant",
+    message_window_size=10,
+    model=ollama_model,
+    token_limit=8192, #change base on your input size
+)
+
+```
+
+## Knowledge Crawling and Storage
+
+Use Firecrawl to crawl a website and store the content in a markdown file:
+
+
+```python
+import os
+from camel.loaders import Firecrawl
+from camel.messages import BaseMessage
+
+os.makedirs('local_data', exist_ok=True)
+
+firecrawl = Firecrawl(api_url=firecrawl_api_url, api_key="_")
+
+crawl_response = firecrawl.crawl(
+    url="https://docs.camel-ai.org/"
+)
+
+with open('local_data/camel.md', 'w') as file:
+     file.write(crawl_response["data"][0]["markdown"])
+```
+
+Insert the external knowledge to Agent
+
+
+```python
+with open('local_data/camel.md', 'r') as file:
+  knowledge = file.read()
+
+knowledge_message = BaseMessage.make_user_message(
+    role_name="User", content=f"Based on the following knowledge: {knowledge}"
+)
+chat_agent.update_memory(knowledge_message, "user")
+```
+
+## Basic Chatbot Setup
+
+
+```python
+print("Start chatting! Type 'exit' to end the conversation.")
+while True:
+    user_input = input("User: ")
+
+    if user_input.lower() == "exit":
+        print("Ending conversation.")
+        break
+
+    assistant_response = chat_agent.step(user_input)
+    print(f"Assistant: {assistant_response.msgs[0].content}")
+```
+
+## Basic Discord Bot Integration
+
+To build a discord bot, a discord bot token is necessary.
+
+If you don't have a bot token, you can obtain one by following these steps:
+1. Go to the Discord Developer Portal:https://discord.com/developers/applications
+2. Log in with your Discord account, or create an account if you don't have one
+3. Click on 'New Application' to create a new bot.
+4. Give your application a name and click 'Create'.
+5. Navigate to the 'Bot' tab on the left sidebar and click 'Add Bot'.
+6. Once the bot is created, you will find a 'Token' section. Click 'Reset Token' to generate a new token.
+7. Copy the generated token securely.
+
+To invite the bot:
+1. Navigate to the 'OAuth2' tab, then to 'URL Generator'.
+2. Under 'Scopes', select 'bot'.
+3. Under 'Bot Permissions', select the permissions your bot will need (e.g., 'Send Messages', 'Read Messages' for our bot use)
+4. Copy the generated URL and paste it into your browser to invite the bot to your server.
+
+To grant the bot permissions:
+1. Navigate to the 'Bot' tab
+2. Under 'Privileged Gateway Intents', check 'Server Members Intent' and 'Message Content Intent'.
+
+For more details, you can also check the official Discord bot documentation: https://discord.com/developers/docs/intro
+
+
+
+```python
+import os
+from getpass import getpass
+
+discord_bot_token = getpass('Enter your Discord bot token: ')
+os.environ["DISCORD_BOT_TOKEN"] = discord_bot_token
+```
+
+Alternatively, if running on Colab, you could save your API keys and tokens as **Colab Secrets**, and use them across notebooks.
+
+To do so, **comment out** the above **manual** API key prompt code block(s), and **uncomment** the following codeblock.
+
+⚠️ Don't forget granting access to the API key you would be using to the current notebook.
+
+
+```python
+# import os
+# from google.colab import userdata
+
+# os.environ["DISCORD_BOT_TOKEN"] = userdata.get("DISCORD_BOT_TOKEN")
+```
+
+This code cell sets up a simple Discord bot using the DiscordApp class from the camel.bots library. The bot listens for messages in any channel it has access to and provides a response based on the input message.
+
+
+```python
+from camel.bots import DiscordApp
+import nest_asyncio
+import discord
+
+nest_asyncio.apply()
+discord_bot = DiscordApp(token=discord_bot_token)
+
+@discord_bot.client.event
+async def on_message(message: discord.Message):
+    if message.author == discord_bot.client.user:
+        return
+
+    if message.type != discord.MessageType.default:
+        return
+
+    if message.author.bot:
+        return
+    user_input = message.content
+    chat_agent.reset()
+    chat_agent.update_memory(knowledge_message, "user")
+    assistant_response = chat_agent.step(user_input)
+
+    response_content = assistant_response.msgs[0].content
+
+    if len(response_content) > 2000: # discord message length limit
+        for chunk in [response_content[i:i+2000] for i in range(0, len(response_content), 2000)]:
+            await message.channel.send(chunk)
+    else:
+        await message.channel.send(response_content)
+
+discord_bot.run()
+```
+
+![image.png](./images/customer_service_Discord_bot_using_local_model_with_agentic_RAG_2.png)
+
+## Integrating Qdrant for Large Files to build a more powerful Discord bot
+
+Qdrant is a vector similarity search engine and vector database. It is designed to perform fast and efficient similarity searches on large datasets of vectors. This enables the chatbot to access and utilize external information to provide more comprehensive and accurate responses. By storing knowledge as vectors, Qdrant enables efficient semantic search, allowing the chatbot to find relevant information based on the meaning of the user's query.
+
+Set up an embedding model and retriever for Qdrant: feel free switch to other embedding models supported by CAMEL.
+
+Set up an embedding model and retriever for Qdrant:
+
+
+```python
+from camel.embeddings import SentenceTransformerEncoder # CAMEL also support other embedding
+
+sentence_encoder = SentenceTransformerEncoder(model_name='intfloat/e5-large-v2')
+```
+
+Set up the AutoRetriever for automatically retrieving relevant information from a storage system.
+
+
+```python
+from camel.retrievers import AutoRetriever
+from camel.types import StorageType
+
+assistant_sys_msg = """You are a helpful assistant to answer question,
+         I will give you the Original Query and Retrieved Context,
+        answer the Original Query based on the Retrieved Context,
+        if you can't answer the question just say I don't know.
+        Just give the answer to me directly, no more other words needed.
+        """
+auto_retriever = AutoRetriever(
+              vector_storage_local_path="local_data2/",
+              storage_type=StorageType.QDRANT,
+              embedding_model=sentence_encoder
+            )
+chat_agent_with_rag = ChatAgent(
+    system_message=assistant_sys_msg,
+    model=ollama_model,
+    token_limit=8192, #change base on your input size
+)
+```
+
+Use Auto RAG to retrieve first and then answer the user's query using CAMEL `ChatAgent` based on the retrieved info:
+
+If you are connecting this cookbook to a local runtime, adding files in your local path in contents might cause an error.
+
+
+```python
+from camel.bots import DiscordApp
+import nest_asyncio
+import discord
+
+nest_asyncio.apply()
+discord_q_bot = DiscordApp(token=discord_bot_token)
+
+@discord_q_bot.client.event # triggers when a message is sent in the channel
+async def on_message(message: discord.Message):
+    if message.author == discord_q_bot.client.user:
+        return
+
+    if message.type != discord.MessageType.default:
+        return
+
+    if message.author.bot:
+        return
+    user_input = message.content
+
+    query_and_retrieved_info = auto_retriever.run_vector_retriever(
+        query=user_input,
+        contents=[ # don't add a local path if you are connecting to a local runtime
+            "https://docs.camel-ai.org/", #replace with your knowledge base
+        ],
+        top_k=3,
+        return_detailed_info=False,
+        similarity_threshold=0.5
+    )
+
+    user_msg = str(query_and_retrieved_info)
+    assistant_response = chat_agent_with_rag.step(user_msg)
+    response_content = assistant_response.msgs[0].content
+    print(3)
+    if len(response_content) > 2000: # discord message length limit
+        for chunk in [response_content[i:i+2000] for i in range(0, len(response_content), 2000)]:
+            await message.channel.send(chunk)
+    else:
+        await message.channel.send(response_content)
+
+discord_q_bot.run()
+```
+
+![example_2.png](./images/customer_service_Discord_bot_using_local_model_with_agentic_RAG_3.png)
+
+That's everything: Got questions about 🐫 CAMEL-AI? Join us on [Discord](https://discord.camel-ai.org)! Whether you want to share feedback, explore the latest in multi-agent systems, get support, or connect with others on exciting projects, we’d love to have you in the community! 🤝
+
+Check out some of our other work:
+1. 🐫 Creating Your First CAMEL Agent [free Colab](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html)
+2.  Graph RAG Cookbook [free Colab](https://colab.research.google.com/drive/1uZKQSuu0qW6ukkuSv9TukLB9bVaS1H0U?usp=sharing)
+3. 🧑‍⚖️ Create A Hackathon Judge Committee with Workforce [free Colab](https://colab.research.google.com/drive/18ajYUMfwDx3WyrjHow3EvUMpKQDcrLtr?usp=sharing)
+4. 🔥 3 ways to ingest data from websites with Firecrawl & CAMEL [free Colab](https://colab.research.google.com/drive/1lOmM3VmgR1hLwDKdeLGFve_75RFW0R9I?usp=sharing)
+5. 🦥 Agentic SFT Data Generation with CAMEL and Mistral Models, Fine-Tuned with Unsloth [free Colab](https://colab.research.google.com/drive/1lYgArBw7ARVPSpdwgKLYnp_NEXiNDOd-?usp=sharingg)
+
+Thanks from everyone at 🐫 CAMEL-AI
+
+
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
+  <a href="https://www.camel-ai.org/">
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
+  </a>
+  <a href="https://discord.camel-ai.org">
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
+  </a>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+
