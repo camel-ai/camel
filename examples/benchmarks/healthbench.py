@@ -14,7 +14,7 @@
 
 
 from camel.agents import ChatAgent
-from camel.benchmarks.healthbench import HealthBenchmark
+from camel.benchmarks.healthbench import HealthBenchmark, WorkforceAgent
 
 if __name__ == "__main__":
 
@@ -22,6 +22,8 @@ if __name__ == "__main__":
     agent = ChatAgent(
         system_message="You are a helpful medical assistant."
     )
+
+    workforce_agents = WorkforceAgent()
 
     # Define the grader agent (strict rubric evaluator)
     grader = ChatAgent(
@@ -32,7 +34,7 @@ if __name__ == "__main__":
     benchmark = HealthBenchmark(data_dir=".", save_to="results.jsonl")
 
     result = benchmark.run(
-        agent=agent,
+        agent=workforce_agents,
         grader=grader,
         variant="test",
         randomize=False,
