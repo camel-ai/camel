@@ -1,0 +1,60 @@
+<a id="camel.toolkits.human_toolkit"></a>
+
+<a id="camel.toolkits.human_toolkit.HumanToolkit"></a>
+
+## HumanToolkit
+
+```python
+class HumanToolkit(BaseToolkit):
+```
+
+A class representing a toolkit for human interaction.
+
+<a id="camel.toolkits.human_toolkit.HumanToolkit.ask_human_via_console"></a>
+
+### ask_human_via_console
+
+```python
+def ask_human_via_console(self, question: str):
+```
+
+Ask a question to the human via the console.
+
+**Parameters:**
+
+- **question** (str): The question to ask the human.
+
+**Returns:**
+
+  str: The answer from the human.
+
+<a id="camel.toolkits.human_toolkit.HumanToolkit.send_message_to_user"></a>
+
+### send_message_to_user
+
+```python
+def send_message_to_user(self, message: str):
+```
+
+Send a message to the user, without waiting for
+a response. This will send to stdout in a noticeable way.
+
+This is guaranteed to reach the user regardless of
+actual user interface.
+
+**Parameters:**
+
+- **message** (str): The message to send to the user.
+
+<a id="camel.toolkits.human_toolkit.HumanToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects
+representing the functions in the toolkit.
