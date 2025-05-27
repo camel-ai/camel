@@ -441,6 +441,7 @@
               "reference/camel.toolkits.base",
               "reference/camel.toolkits.bohrium_toolkit",
               "reference/camel.toolkits.browser_toolkit",
+              "reference/camel.toolkits.browser_toolkit_commons",
               "reference/camel.toolkits.code_execution",
               "reference/camel.toolkits.dalle_toolkit",
               "reference/camel.toolkits.dappier_toolkit",
