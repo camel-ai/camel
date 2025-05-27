@@ -227,7 +227,7 @@ class CodeExecutionEnvironment:
             self._setup_interpreter()
 
     def _setup_interpreter(self):
-        """Set up the appropriate interpreter based on sandbox type."""
+        r"""Set up the appropriate interpreter based on sandbox type."""
         if self.sandbox == "internal_python":
             self.interpreter = InternalPythonInterpreter(
                 unsafe_mode=self.unsafe_mode,
@@ -366,10 +366,14 @@ class CodeActAgent(ChatAgent):
     ) -> None:
         super().__init__(tools=tools, **kwargs)
 
-        tool_schemas = self._get_full_tool_schemas()
-        tools_str = ""
-        for item in tool_schemas:
-            tools_str += str(item) + "\n"
+        if tools is not None:
+            tool_schemas = self._get_full_tool_schemas()
+            tools_str = ""
+            for item in tool_schemas:
+                tools_str += str(item) + "\n"
+        else:
+            tools_str = ""
+
         self.default_system_message = SYSTEM_MESSAGE.format(tools=tools_str)
 
         self._system_message = BaseMessage.make_assistant_message(
@@ -417,10 +421,8 @@ class CodeActAgent(ChatAgent):
             try:
                 openai_messages, num_tokens = self.memory.get_context()
             except RuntimeError as e:
-                return self._step_token_exceed(
-                    e.args[1],
-                    termination_reason="max_tokens_exceeded",
-                    tool_calls=[],
+                return self._step_terminate(
+                    e.args[1], [], "max_tokens_exceeded"
                 )
 
             # Get response from model backend
