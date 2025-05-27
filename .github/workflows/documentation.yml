@@ -50,12 +50,15 @@ jobs:
           source .venv/bin/activate
 
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "PR event detected - processing all cookbooks files to ensure consistency"
+            echo "PR event detected - using incremental mode for cookbooks"
             python docs/mintlify/convert_notebook2mdx.py \
               --input docs/cookbooks \
               --output docs/mintlify \
               --update-docs-json docs/mintlify/docs.json \
               --docs-path-prefix "" \
+              --incremental \
+              --use-git \
+              --base-branch origin/${{ github.base_ref }} \
               --verbose
           elif [ "${{ github.event_name }}" = "push" ]; then
             echo "Push event detected - using incremental mode for cookbooks"
@@ -83,12 +86,15 @@ jobs:
           source .venv/bin/activate
 
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "PR event detected - processing all get_started files"
+            echo "PR event detected - using incremental mode for get_started"
             python docs/mintlify/convert_notebook2mdx.py \
               --input docs/get_started \
               --output docs/mintlify \
               --update-docs-json docs/mintlify/docs.json \
               --docs-path-prefix "" \
+              --incremental \
+              --use-git \
+              --base-branch origin/${{ github.base_ref }} \
               --verbose
           elif [ "${{ github.event_name }}" = "push" ]; then
             echo "Push event detected - using incremental mode for get_started"
@@ -116,12 +122,15 @@ jobs:
           source .venv/bin/activate
 
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "PR event detected - processing all key_modules files"
+            echo "PR event detected - using incremental mode for key_modules"
             python docs/mintlify/convert_notebook2mdx.py \
               --input docs/key_modules \
               --output docs/mintlify \
               --update-docs-json docs/mintlify/docs.json \
               --docs-path-prefix "" \
+              --incremental \
+              --use-git \
+              --base-branch origin/${{ github.base_ref }} \
               --verbose
           elif [ "${{ github.event_name }}" = "push" ]; then
             echo "Push event detected - using incremental mode for key_modules"
