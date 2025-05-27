@@ -479,8 +479,7 @@ class CodeActAgent(ChatAgent):
 
                 execution_outputs_console += [
                     Text(
-                        f"{('Out - Final answer' if is_final_answer 
-                            else 'Out')}: {output}",
+                        f"{('Out - Final answer' if is_final_answer else 'Out')}: {output}",  # noqa: E501
                         style=("bold #d4b702" if is_final_answer else ""),
                     ),
                 ]
