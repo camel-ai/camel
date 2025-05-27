@@ -932,12 +932,26 @@ def get_git_changed_files(
         file_extensions = ['.ipynb', '.md']
 
     try:
-        # Get list of changed files from git
+        # Find the git repository root
+        git_root_result = subprocess.run(
+            ['git', 'rev-parse', '--show-toplevel'],
+            capture_output=True,
+            text=True,
+            cwd=directory,
+        )
+        
+        if git_root_result.returncode != 0:
+            print(f"Failed to find git root: {git_root_result.stderr}")
+            return []
+            
+        git_root = Path(git_root_result.stdout.strip())
+        
+        # Get list of changed files from git (run from git root)
         result = subprocess.run(
             ['git', 'diff', '--name-only', base_branch, 'HEAD'],
             capture_output=True,
             text=True,
-            cwd=directory,
+            cwd=git_root,
         )
 
         if result.returncode != 0:
@@ -945,16 +959,26 @@ def get_git_changed_files(
             return []
 
         changed_files = []
-        directory = Path(directory)
+        directory = Path(directory).resolve()  # Convert to absolute path
 
         for file_path in result.stdout.strip().split('\n'):
             if file_path:  # Skip empty lines
-                full_path = directory / file_path
-                # Check if file exists and has the right extension
-                if full_path.exists() and any(
-                    file_path.endswith(ext) for ext in file_extensions
-                ):
-                    changed_files.append(full_path)
+                # file_path is relative to git root
+                full_path = git_root / file_path
+                
+                # Check if file is under the target directory and has the right extension
+                try:
+                    # Check if the file is under our target directory
+                    full_path.resolve().relative_to(directory)
+                    
+                    # Check if file exists and has the right extension
+                    if full_path.exists() and any(
+                        file_path.endswith(ext) for ext in file_extensions
+                    ):
+                        changed_files.append(full_path)
+                except ValueError:
+                    # File is not under target directory, skip it
+                    continue
 
         return sorted(changed_files)
 
