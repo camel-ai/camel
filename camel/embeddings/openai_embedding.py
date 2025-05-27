@@ -14,7 +14,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any
+from typing import Any, Optional, Union
 
 from openai import OpenAI
 
@@ -27,15 +27,15 @@ class OpenAIEmbedding(BaseEmbedding[str]):
     r"""Provides text embedding functionalities using OpenAI's models.
 
     Args:
-        model_type (EmbeddingModelType, optional): The model type to be
-            used for text embeddings.
+        model_type (EmbeddingModelType): The model type to be used for text
+            embeddings.
             (default: :obj:`TEXT_EMBEDDING_3_SMALL`)
-        url (Optional[str], optional): The url to the OpenAI service.
+        url (Optional[str]): The url to the OpenAI service.
             (default: :obj:`None`)
-        api_key (str, optional): The API key for authenticating with the
-            OpenAI service. (default: :obj:`None`)
-        dimensions (int, optional): The text embedding output dimensions.
-            (default: :obj:`NOT_GIVEN`)
+        api_key (Optional[str]): The API key for authenticating with
+            the OpenAI service. (default: :obj:`None`)
+        dimensions (Union[int, NotGiven]): The text embedding output
+            dimensions. (default: :obj:`NOT_GIVEN`)
 
     Raises:
         RuntimeError: If an unsupported model type is specified.
@@ -51,9 +51,9 @@ class OpenAIEmbedding(BaseEmbedding[str]):
         model_type: EmbeddingModelType = (
             EmbeddingModelType.TEXT_EMBEDDING_3_SMALL
         ),
-        url: str | None = None,
-        api_key: str | None = None,
-        dimensions: int | NotGiven = NOT_GIVEN,
+        url: Optional[str] = None,
+        api_key: Optional[str] = None,
+        dimensions: Union[int, NotGiven] = NOT_GIVEN,
     ) -> None:
         if not model_type.is_openai:
             raise ValueError("Invalid OpenAI embedding model type.")

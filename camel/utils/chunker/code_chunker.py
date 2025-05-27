@@ -12,46 +12,40 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import re
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
-from unstructured.documents.elements import Element, ElementMetadata
+if TYPE_CHECKING:
+    from unstructured.documents.elements import Element
 
-from camel.messages import OpenAIUserMessage
-from camel.types import ModelType
-from camel.utils import BaseTokenCounter, OpenAITokenCounter
+from camel.utils import get_model_encoding
 
 from .base import BaseChunker
 
 
 class CodeChunker(BaseChunker):
     r"""A class for chunking code or text while respecting structure
-        and token limits.
+    and token limits.
 
-        This class ensures that structured elements such as functions,
-        classes, and regions are not arbitrarily split across chunks.
-        It also handles oversized lines and Base64-encoded images.
+    This class ensures that structured elements such as functions,
+    classes, and regions are not arbitrarily split across chunks.
+    It also handles oversized lines and Base64-encoded images.
 
     Attributes:
         chunk_size (int, optional): The maximum token size per chunk.
             (default: :obj:`8192`)
-        token_counter (BaseTokenCounter, optional): The tokenizer used for
-            token counting, if `None`, OpenAITokenCounter will be used.
-            (default: :obj:`None`)
         remove_image: (bool, optional): If the chunker should skip the images.
+        model_name (str, optional): The tokenizer model name used
+            for token counting. (default: :obj:`"cl100k_base"`)
     """
 
     def __init__(
         self,
         chunk_size: int = 8192,
-        token_counter: Optional[BaseTokenCounter] = None,
+        model_name: str = "cl100k_base",
         remove_image: Optional[bool] = True,
     ):
         self.chunk_size = chunk_size
-        self.token_counter = (
-            token_counter
-            if token_counter
-            else OpenAITokenCounter(model=ModelType.GPT_4O_MINI)
-        )
+        self.tokenizer = get_model_encoding(model_name)
         self.remove_image = remove_image
         self.struct_pattern = re.compile(
             r'^\s*(?:(def|class|function)\s+\w+|'
@@ -72,9 +66,7 @@ class CodeChunker(BaseChunker):
         Returns:
             int: The number of tokens in the input text.
         """
-        return self.token_counter.count_tokens_from_messages(
-            [OpenAIUserMessage(role="user", name="user", content=text)]
-        )
+        return len(self.tokenizer.encode(text, disallowed_special=()))
 
     def _split_oversized(self, line: str) -> List[str]:
         r"""Splits an oversized line into multiple chunks based on token limits
@@ -86,7 +78,7 @@ class CodeChunker(BaseChunker):
             List[str]: A list of smaller chunks after splitting the
                 oversized line.
         """
-        tokens = self.token_counter.encode(line)
+        tokens = self.tokenizer.encode(line, disallowed_special=())
         chunks = []
         buffer = []
         current_count = 0
@@ -96,15 +88,15 @@ class CodeChunker(BaseChunker):
             current_count += 1
 
             if current_count >= self.chunk_size:
-                chunks.append(self.token_counter.decode(buffer).strip())
+                chunks.append(self.tokenizer.decode(buffer).strip())
                 buffer = []
                 current_count = 0
 
         if buffer:
-            chunks.append(self.token_counter.decode(buffer))
+            chunks.append(self.tokenizer.decode(buffer))
         return chunks
 
-    def chunk(self, content: List[str]) -> List[Element]:
+    def chunk(self, content: List[str]) -> List["Element"]:
         r"""Splits the content into smaller chunks while preserving
         structure and adhering to token constraints.
 
@@ -114,6 +106,8 @@ class CodeChunker(BaseChunker):
         Returns:
             List[str]: A list of chunked text segments.
         """
+        from unstructured.documents.elements import Element, ElementMetadata
+
         content_str = "\n".join(map(str, content))
         chunks = []
         current_chunk: list[str] = []

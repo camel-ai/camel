@@ -1,0 +1,207 @@
+<a id="camel.benchmarks.ragbench"></a>
+
+<a id="camel.benchmarks.ragbench.RagasFields"></a>
+
+## RagasFields
+
+```python
+class RagasFields:
+```
+
+Constants for RAGAS evaluation field names.
+
+<a id="camel.benchmarks.ragbench.annotate_dataset"></a>
+
+## annotate_dataset
+
+```python
+def annotate_dataset(
+    dataset: Dataset,
+    context_call: Optional[Callable[[Dict[str, Any]], List[str]]],
+    answer_call: Optional[Callable[[Dict[str, Any]], str]]
+):
+```
+
+Annotate the dataset by adding context and answers using the provided
+functions.
+
+**Parameters:**
+
+- **dataset** (Dataset): The input dataset to annotate.
+- **context_call** (Optional[Callable[[Dict[str, Any]], List[str]]]): Function to generate context for each example.
+- **answer_call** (Optional[Callable[[Dict[str, Any]], str]]): Function to generate answer for each example.
+
+**Returns:**
+
+  Dataset: The annotated dataset with added contexts and/or answers.
+
+<a id="camel.benchmarks.ragbench.rmse"></a>
+
+## rmse
+
+```python
+def rmse(input_trues: Sequence[float], input_preds: Sequence[float]):
+```
+
+Calculate Root Mean Squared Error (RMSE).
+
+**Parameters:**
+
+- **input_trues** (Sequence[float]): Ground truth values.
+- **input_preds** (Sequence[float]): Predicted values.
+
+**Returns:**
+
+  Optional[float]: RMSE value, or None if inputs have different lengths.
+
+<a id="camel.benchmarks.ragbench.auroc"></a>
+
+## auroc
+
+```python
+def auroc(trues: Sequence[bool], preds: Sequence[float]):
+```
+
+Calculate Area Under Receiver Operating Characteristic Curve (AUROC).
+
+**Parameters:**
+
+- **trues** (Sequence[bool]): Ground truth binary values.
+- **preds** (Sequence[float]): Predicted probability values.
+
+**Returns:**
+
+  float: AUROC score.
+
+<a id="camel.benchmarks.ragbench.ragas_calculate_metrics"></a>
+
+## ragas_calculate_metrics
+
+```python
+def ragas_calculate_metrics(
+    dataset: Dataset,
+    pred_context_relevance_field: Optional[str],
+    pred_faithfulness_field: Optional[str],
+    metrics_to_evaluate: Optional[List[str]] = None,
+    ground_truth_context_relevance_field: str = 'relevance_score',
+    ground_truth_faithfulness_field: str = 'adherence_score'
+):
+```
+
+Calculate RAGAS evaluation metrics.
+
+**Parameters:**
+
+- **dataset** (Dataset): The dataset containing predictions and ground truth.
+- **pred_context_relevance_field** (Optional[str]): Field name for predicted context relevance.
+- **pred_faithfulness_field** (Optional[str]): Field name for predicted faithfulness.
+- **metrics_to_evaluate** (Optional[List[str]]): List of metrics to evaluate.
+- **ground_truth_context_relevance_field** (str): Field name for ground truth relevance.
+- **ground_truth_faithfulness_field** (str): Field name for ground truth adherence.
+
+**Returns:**
+
+  Dict[str, Optional[float]]: Dictionary of calculated metrics.
+
+<a id="camel.benchmarks.ragbench.ragas_evaluate_dataset"></a>
+
+## ragas_evaluate_dataset
+
+```python
+def ragas_evaluate_dataset(
+    dataset: Dataset,
+    contexts_field_name: Optional[str],
+    answer_field_name: Optional[str],
+    metrics_to_evaluate: Optional[List[str]] = None
+):
+```
+
+Evaluate the dataset using RAGAS metrics.
+
+**Parameters:**
+
+- **dataset** (Dataset): Input dataset to evaluate.
+- **contexts_field_name** (Optional[str]): Field name containing contexts.
+- **answer_field_name** (Optional[str]): Field name containing answers.
+- **metrics_to_evaluate** (Optional[List[str]]): List of metrics to evaluate.
+
+**Returns:**
+
+  Dataset: Dataset with added evaluation metrics.
+
+<a id="camel.benchmarks.ragbench.RAGBenchBenchmark"></a>
+
+## RAGBenchBenchmark
+
+```python
+class RAGBenchBenchmark(BaseBenchmark):
+```
+
+RAGBench Benchmark for evaluating RAG performance.
+
+This benchmark uses the rungalileo/ragbench dataset to evaluate
+retrieval-augmented generation (RAG) systems. It measures context
+relevancy and faithfulness metrics as described in
+https://arxiv.org/abs/2407.11005.
+
+**Parameters:**
+
+- **processes** (int, optional): Number of processes for parallel processing.
+- **subset** (str, optional): Dataset subset to use (e.g., "hotpotqa").
+- **split** (str, optional): Dataset split to use (e.g., "test").
+
+<a id="camel.benchmarks.ragbench.RAGBenchBenchmark.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    processes: int = 1,
+    subset: Literal['covidqa', 'cuad', 'delucionqa', 'emanual', 'expertqa', 'finqa', 'hagrid', 'hotpotqa', 'msmarco', 'pubmedqa', 'tatqa', 'techqa'] = 'hotpotqa',
+    split: Literal['train', 'test', 'validation'] = 'test'
+):
+```
+
+<a id="camel.benchmarks.ragbench.RAGBenchBenchmark.download"></a>
+
+### download
+
+```python
+def download(self):
+```
+
+Download the RAGBench dataset.
+
+<a id="camel.benchmarks.ragbench.RAGBenchBenchmark.load"></a>
+
+### load
+
+```python
+def load(self, force_download: bool = False):
+```
+
+Load the RAGBench dataset.
+
+**Parameters:**
+
+- **force_download** (bool, optional): Whether to force download the data.
+
+<a id="camel.benchmarks.ragbench.RAGBenchBenchmark.run"></a>
+
+### run
+
+```python
+def run(self, agent: ChatAgent, auto_retriever: AutoRetriever):
+```
+
+Run the benchmark evaluation.
+
+**Parameters:**
+
+- **agent** (ChatAgent): Chat agent for generating answers.
+- **auto_retriever** (AutoRetriever): Retriever for finding relevant contexts.
+
+**Returns:**
+
+  Dict[str, Optional[float]]: Dictionary of evaluation metrics.

@@ -12,21 +12,17 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Optional, Union
 
-from openai import AsyncOpenAI, OpenAI
-from pydantic import BaseModel
-
-from camel.messages import OpenAIMessage
-from camel.models import BaseModelBackend
-from camel.types import ChatCompletion, ModelType
+from camel.models.openai_compatible_model import OpenAICompatibleModel
+from camel.types import ModelType
 from camel.utils import (
     BaseTokenCounter,
     api_keys_required,
 )
 
 
-class NemotronModel(BaseModelBackend):
+class NemotronModel(OpenAICompatibleModel):
     r"""Nemotron model API backend with OpenAI compatibility.
 
     Args:
@@ -36,6 +32,10 @@ class NemotronModel(BaseModelBackend):
             the Nvidia service. (default: :obj:`None`)
         url (Optional[str], optional): The url to the Nvidia service.
             (default: :obj:`https://integrate.api.nvidia.com/v1`)
+        timeout (Optional[float], optional): The timeout value in seconds for
+            API calls. If not provided, will fall back to the MODEL_TIMEOUT
+            environment variable or default to 180 seconds.
+            (default: :obj:`None`)
 
     Notes:
         Nemotron model doesn't support additional model config like OpenAI.
@@ -51,64 +51,14 @@ class NemotronModel(BaseModelBackend):
         model_type: Union[ModelType, str],
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        timeout: Optional[float] = None,
     ) -> None:
         url = url or os.environ.get(
             "NVIDIA_API_BASE_URL", "https://integrate.api.nvidia.com/v1"
         )
         api_key = api_key or os.environ.get("NVIDIA_API_KEY")
-        super().__init__(model_type, {}, api_key, url)
-        self._client = OpenAI(
-            timeout=180,
-            max_retries=3,
-            base_url=self._url,
-            api_key=self._api_key,
-        )
-        self._async_client = AsyncOpenAI(
-            timeout=180,
-            max_retries=3,
-            base_url=self._url,
-            api_key=self._api_key,
-        )
-
-    async def _arun(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> ChatCompletion:
-        r"""Runs inference of OpenAI chat completion asynchronously.
-
-        Args:
-            messages (List[OpenAIMessage]): Message list.
-
-        Returns:
-            ChatCompletion.
-        """
-        response = await self._async_client.chat.completions.create(
-            messages=messages,
-            model=self.model_type,
-        )
-        return response
-
-    def _run(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> ChatCompletion:
-        r"""Runs inference of OpenAI chat completion.
-
-        Args:
-            messages (List[OpenAIMessage]): Message list.
-
-        Returns:
-            ChatCompletion.
-        """
-        response = self._client.chat.completions.create(
-            messages=messages,
-            model=self.model_type,
-        )
-        return response
+        timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
+        super().__init__(model_type, {}, api_key, url, None, timeout)
 
     @property
     def token_counter(self) -> BaseTokenCounter:
