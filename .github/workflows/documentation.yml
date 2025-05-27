@@ -86,7 +86,7 @@ jobs:
             echo "PR event detected - processing all get_started files"
             python docs/mintlify/convert_notebook2mdx.py \
               --input docs/get_started \
-              --output docs/mintlify/get_started \
+              --output docs/mintlify \
               --update-docs-json docs/mintlify/docs.json \
               --docs-path-prefix "" \
               --verbose
@@ -94,7 +94,7 @@ jobs:
             echo "Push event detected - using incremental mode for get_started"
             python docs/mintlify/convert_notebook2mdx.py \
               --input docs/get_started \
-              --output docs/mintlify/get_started \
+              --output docs/mintlify \
               --update-docs-json docs/mintlify/docs.json \
               --docs-path-prefix "" \
               --incremental \
@@ -105,7 +105,7 @@ jobs:
             echo "Manual workflow - processing all get_started files"
             python docs/mintlify/convert_notebook2mdx.py \
               --input docs/get_started \
-              --output docs/mintlify/get_started \
+              --output docs/mintlify \
               --update-docs-json docs/mintlify/docs.json \
               --docs-path-prefix "" \
               --verbose
@@ -119,7 +119,7 @@ jobs:
             echo "PR event detected - processing all key_modules files"
             python docs/mintlify/convert_notebook2mdx.py \
               --input docs/key_modules \
-              --output docs/mintlify/key_modules \
+              --output docs/mintlify \
               --update-docs-json docs/mintlify/docs.json \
               --docs-path-prefix "" \
               --verbose
@@ -127,7 +127,7 @@ jobs:
             echo "Push event detected - using incremental mode for key_modules"
             python docs/mintlify/convert_notebook2mdx.py \
               --input docs/key_modules \
-              --output docs/mintlify/key_modules \
+              --output docs/mintlify \
               --update-docs-json docs/mintlify/docs.json \
               --docs-path-prefix "" \
               --incremental \
@@ -138,7 +138,7 @@ jobs:
             echo "Manual workflow - processing all key_modules files"
             python docs/mintlify/convert_notebook2mdx.py \
               --input docs/key_modules \
-              --output docs/mintlify/key_modules \
+              --output docs/mintlify \
               --update-docs-json docs/mintlify/docs.json \
               --docs-path-prefix "" \
               --verbose
