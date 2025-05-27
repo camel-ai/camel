@@ -51,21 +51,6 @@ jobs:
 
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             echo "PR event detected - using incremental mode for cookbooks"
-            echo "Base ref: ${{ github.base_ref }}"
-            echo "Head ref: ${{ github.head_ref }}"
-            echo "Using base branch: origin/${{ github.base_ref }}"
-            
-            # Ensure we have the latest remote information
-            git fetch origin ${{ github.base_ref }}
-            
-            # Debug: Show git status and recent commits
-            echo "Git status:"
-            git status --porcelain
-            echo "Recent commits:"
-            git log --oneline -5
-            echo "Diff with base branch:"
-            git diff --name-only origin/${{ github.base_ref }} HEAD
-            
             python docs/mintlify/convert_notebook2mdx.py \
               --input docs/cookbooks \
               --output docs/mintlify \
@@ -102,17 +87,6 @@ jobs:
 
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             echo "PR event detected - using incremental mode for get_started"
-            echo "Base ref: ${{ github.base_ref }}"
-            echo "Head ref: ${{ github.head_ref }}"
-            echo "Using base branch: origin/${{ github.base_ref }}"
-            
-            # Ensure we have the latest remote information
-            git fetch origin ${{ github.base_ref }}
-            
-            # Debug: Show files that changed in get_started directory
-            echo "Files changed in get_started directory:"
-            git diff --name-only origin/${{ github.base_ref }} HEAD -- docs/get_started/
-            
             python docs/mintlify/convert_notebook2mdx.py \
               --input docs/get_started \
               --output docs/mintlify \
@@ -149,17 +123,6 @@ jobs:
 
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             echo "PR event detected - using incremental mode for key_modules"
-            echo "Base ref: ${{ github.base_ref }}"
-            echo "Head ref: ${{ github.head_ref }}"
-            echo "Using base branch: origin/${{ github.base_ref }}"
-            
-            # Ensure we have the latest remote information
-            git fetch origin ${{ github.base_ref }}
-            
-            # Debug: Show files that changed in key_modules directory
-            echo "Files changed in key_modules directory:"
-            git diff --name-only origin/${{ github.base_ref }} HEAD -- docs/key_modules/
-            
             python docs/mintlify/convert_notebook2mdx.py \
               --input docs/key_modules \
               --output docs/mintlify \
@@ -207,21 +170,12 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
-          # Debug information
-          echo "Current branch: $(git branch --show-current)"
-          echo "Head ref: ${{ github.head_ref }}"
-          echo "Remote branches:"
-          git branch -r
-          echo "Local branches:"
-          git branch -a
-
           git add docs/mintlify/ docs/mintlify/get_started/ docs/mintlify/key_modules/ docs/mintlify/reference/ docs/mintlify/docs.json
 
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
             git commit -m "Auto-update Mintlify documentation"
-            echo "Attempting to push to: ${{ github.head_ref }}"
             
             # Try multiple push strategies
             if ! git push origin ${{ github.head_ref }}; then
