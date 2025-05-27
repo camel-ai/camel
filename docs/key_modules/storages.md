@@ -253,7 +253,7 @@ from camel.storages.vectordb_storages import (
 
 """
 Before running this example, you need to setup an OceanBase instance:
-(Option 1): OceanBase Community Edition (OCE):
+(Option 1): OceanBase Community Edition:
 1. Download and install OCE from the official website:
    https://www.oceanbase.com/docs/oceanbase-database
 2. Start the OceanBase server and create a database user

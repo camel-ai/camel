@@ -60,6 +60,7 @@ jobs:
               --use-git \
               --base-branch origin/${{ github.base_ref }} \
               --verbose
+              
           elif [ "${{ github.event_name }}" = "push" ]; then
             echo "Push event detected - using incremental mode for cookbooks"
             python docs/mintlify/convert_notebook2mdx.py \
