@@ -167,7 +167,7 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "Auto-update Mintlify documentation"
-            git push origin HEAD
+            git push origin ${{ github.head_ref }}
           fi
 
       - name: Commit and push changes (only for push to master/qa)
