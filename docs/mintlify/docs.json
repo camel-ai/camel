@@ -72,8 +72,8 @@
               {
                 "group": "Basic Concepts",
                 "pages": [
-                  "cookbooks/basic_concepts/agents_prompting",
                   "cookbooks/basic_concepts/agents_message",
+                  "cookbooks/basic_concepts/agents_prompting",
                   "cookbooks/basic_concepts/create_your_first_agent",
                   "cookbooks/basic_concepts/create_your_first_agents_society",
                   "cookbooks/basic_concepts/model_speed_comparison"
@@ -83,27 +83,29 @@
                 "group": "Advanced Features",
                 "pages": [
                   "cookbooks/advanced_features/agents_tracking",
-                  "cookbooks/advanced_features/agents_with_graph_rag",
+                  "cookbooks/advanced_features/agents_with_MCP",
                   "cookbooks/advanced_features/agents_with_dkg",
+                  "cookbooks/advanced_features/agents_with_graph_rag",
                   "cookbooks/advanced_features/agents_with_human_in_loop_and_tool_approval",
                   "cookbooks/advanced_features/agents_with_memory",
                   "cookbooks/advanced_features/agents_with_rag",
                   "cookbooks/advanced_features/agents_with_tools",
+                  "cookbooks/advanced_features/agents_with_tools_from_ACI",
                   "cookbooks/advanced_features/agents_with_tools_from_Composio",
                   "cookbooks/advanced_features/critic_agents_and_tree_search",
-                  "cookbooks/advanced_features/embodied_agents",
-                  "cookbooks/advanced_features/agents_with_MCP"
+                  "cookbooks/advanced_features/embodied_agents"
                 ]
               },
               {
                 "group": "Applications",
                 "pages": [
-                  "cookbooks/applications/customer_service_Discord_bot_using_local_model_with_agentic_RAG",
+                  "cookbooks/applications/customer_service_Discord_bot_using_Cohere_model_with_agentic_RAG",
                   "cookbooks/applications/customer_service_Discord_bot_using_SambaNova_with_agentic_RAG",
+                  "cookbooks/applications/customer_service_Discord_bot_using_local_model_with_agentic_RAG",
                   "cookbooks/applications/customer_service_Discord_bot_with_agentic_RAG",
                   "cookbooks/applications/dynamic_travel_planner",
-                  "cookbooks/applications/roleplaying_scraper",
-                  "cookbooks/applications/finance_discord_bot"
+                  "cookbooks/applications/finance_discord_bot",
+                  "cookbooks/applications/roleplaying_scraper"
                 ]
               },
               {
@@ -111,13 +113,14 @@
                 "pages": [
                   "cookbooks/data_generation/cot_data_gen_sft_qwen_unsolth_upload_huggingface",
                   "cookbooks/data_generation/data_gen_with_real_function_calls_and_hermes_format",
-                  "cookbooks/data_generation/distill_math_reasoning_data_from_deepseek_r1",
                   "cookbooks/data_generation/data_model_generation_and_structured_output_with_qwen",
+                  "cookbooks/data_generation/distill_math_reasoning_data_from_deepseek_r1",
                   "cookbooks/data_generation/self_improving_cot_generation",
                   "cookbooks/data_generation/self_improving_math_reasoning_data_distillation_from_deepSeek_r1",
+                  "cookbooks/data_generation/self_instruct_data_generation",
+                  "cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B",
                   "cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_mistral_7b_instruct",
                   "cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_tinyllama",
-                  "cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B",
                   "cookbooks/data_generation/synthetic_dataevaluation&filter_with_reward_model"
                 ]
               },
@@ -133,8 +136,8 @@
                 "group": "Loong",
                 "pages": [
                   "cookbooks/loong/batched_single_step_env",
-                  "cookbooks/loong/single_step_env",
-                  "cookbooks/loong/multi_step_rl"
+                  "cookbooks/loong/multi_step_rl",
+                  "cookbooks/loong/single_step_env"
                 ]
               },
               {

@@ -361,7 +361,7 @@ Result 3:
   Payload: {'idx': 654, 'batch': 'example'}
   Similarity: 0.9548076959468635
 Result 4:
-  ID: 8d6359ff-49fd-4fb7-99fd-bf4ca0a0cdcc
+  ID: 8d6359ff-49fd-4fb7-99fd-bf4ca0a0cdcx
   Payload: {'idx': 914, 'batch': 'example'}
   Similarity: 0.9496165658207311
 Result 5:
