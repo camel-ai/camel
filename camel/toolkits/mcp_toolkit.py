@@ -196,6 +196,8 @@ class MCPClient(BaseToolkit):
             if self._connection_state == ConnectionState.CONNECTING:
                 raise MCPConnectionError("Connection already in progress")
 
+            # Set state to connecting before any operations
+            original_state = self._connection_state
             self._connection_state = ConnectionState.CONNECTING
 
             try:
@@ -216,6 +218,7 @@ class MCPClient(BaseToolkit):
                 return self
 
             except Exception as e:
+                # Restore original state if connection fails
                 self._connection_state = ConnectionState.FAILED
                 error_msg = (
                     f"Failed to connect to MCP server "
@@ -224,7 +227,19 @@ class MCPClient(BaseToolkit):
                 logger.error(error_msg)
 
                 # Ensure cleanup on failure
-                await self._force_cleanup()
+                try:
+                    await self._force_cleanup()
+                except Exception as cleanup_error:
+                    cleanup_msg = (
+                        f"Cleanup error after connection failure: "
+                        f"{cleanup_error}"
+                    )
+                    logger.warning(cleanup_msg)
+
+                # Reset to original state if cleanup succeeds
+                if original_state != ConnectionState.CONNECTING:
+                    self._connection_state = original_state
+
                 raise MCPConnectionError(f"Connection failed: {e}") from e
 
     async def _ensure_clean_state(self):
@@ -402,8 +417,13 @@ class MCPClient(BaseToolkit):
         r"""Safely cleanup the AsyncExitStack with proper error handling."""
         if self._exit_stack is not None:
             try:
-                # Don't use shield or parallel cleanup - keep it simple
-                await self._exit_stack.aclose()
+                # Use asyncio.wait_for to prevent hanging during cleanup
+                await asyncio.wait_for(
+                    self._exit_stack.aclose(),
+                    timeout=10.0,  # 10 second timeout for cleanup
+                )
+            except asyncio.TimeoutError:
+                logger.warning("Exit stack cleanup timed out after 10 seconds")
             except (asyncio.CancelledError, RuntimeError) as e:
                 # These are expected during shutdown, just log and continue
                 logger.debug(f"Expected cleanup error during shutdown: {e}")
@@ -732,7 +752,7 @@ class MCPClient(BaseToolkit):
 
     @classmethod
     def create_sync(
-        self,
+        cls,
         command_or_url: str,
         args: Optional[List[str]] = None,
         env: Optional[Dict[str, str]] = None,
@@ -741,7 +761,7 @@ class MCPClient(BaseToolkit):
         mode: Optional[str] = None,
     ) -> "MCPClient":
         r"""Synchronously create and connect to the MCP server."""
-        return run_async(self.create)(
+        return run_async(cls.create)(
             command_or_url, args, env, timeout, headers, mode
         )
 
@@ -787,7 +807,7 @@ class MCPClient(BaseToolkit):
         Returns:
             None
         """
-        return run_async(self.__aexit__)()
+        return run_async(self.__aexit__)(exc_type, exc_val, exc_tb)
 
 
 class MCPToolkit(BaseToolkit):
@@ -908,6 +928,9 @@ class MCPToolkit(BaseToolkit):
             logger.warning("MCPToolkit is already connected")
             return self
 
+        if self._connection_state == ConnectionState.CONNECTING:
+            raise MCPConnectionError("Connection already in progress")
+
         self._connection_state = ConnectionState.CONNECTING
         connected_servers = []
 
@@ -924,6 +947,8 @@ class MCPToolkit(BaseToolkit):
                     # Cleanup already connected servers
                     await self._rollback_connections(connected_servers)
 
+                    # Reset state and re-raise
+                    self._connection_state = ConnectionState.FAILED
                     error_msg = f"Failed to connect to server {i+1}: {e}"
                     raise MCPConnectionError(error_msg) from e
 
@@ -933,7 +958,9 @@ class MCPToolkit(BaseToolkit):
             return self
 
         except Exception:
-            self._connection_state = ConnectionState.FAILED
+            # Ensure state is properly set on any failure
+            if self._connection_state == ConnectionState.CONNECTING:
+                self._connection_state = ConnectionState.FAILED
             raise
 
     async def _rollback_connections(self, connected_servers: List[MCPClient]):
@@ -1019,6 +1046,100 @@ class MCPToolkit(BaseToolkit):
     def connection_sync(self):
         r"""Synchronously connect to all MCP servers."""
         return run_async(self.connection)()
+
+    async def __aenter__(self) -> "MCPToolkit":
+        r"""Async context manager entry point. Automatically connects to all
+        MCP servers when used in an async with statement.
+
+        Returns:
+            MCPToolkit: Self with all servers connected.
+        """
+        await self.connect()
+        return self
+
+    def __enter__(self) -> "MCPToolkit":
+        r"""Synchronously enter the async context manager."""
+        return run_async(self.__aenter__)()
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        r"""Async context manager exit point. Automatically disconnects from
+        all MCP servers when exiting an async with statement.
+
+        Args:
+            exc_type: The type of exception that occurred during execution.
+            exc_val: The exception that occurred during execution.
+            exc_tb: The traceback of the exception that occurred.
+
+        Returns:
+            None
+        """
+        await self.disconnect()
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        r"""Synchronously exit the async context manager.
+
+        Args:
+            exc_type: The type of exception that occurred during execution.
+            exc_val: The exception that occurred during execution.
+            exc_tb: The traceback of the exception that occurred.
+
+        Returns:
+            None
+        """
+        return run_async(self.__aexit__)(exc_type, exc_val, exc_tb)
+
+    @classmethod
+    async def create(
+        cls,
+        servers: Optional[List[MCPClient]] = None,
+        config_path: Optional[str] = None,
+        config_dict: Optional[Dict[str, Any]] = None,
+        strict: Optional[bool] = False,
+    ) -> "MCPToolkit":
+        r"""Factory method that creates and connects to all MCP servers.
+
+        This async factory method ensures all connections to MCP servers are
+        established before the toolkit object is fully constructed.
+
+        Args:
+            servers (Optional[List[MCPClient]]): List of MCPClient instances.
+            config_path (Optional[str]): Path to configuration file.
+            config_dict (Optional[Dict[str, Any]]): Configuration dictionary.
+            strict (Optional[bool]): Whether to enforce strict mode.
+
+        Returns:
+            MCPToolkit: A fully initialized and connected MCPToolkit instance.
+
+        Raises:
+            MCPConnectionError: If connection to any MCP server fails.
+        """
+        toolkit = cls(
+            servers=servers,
+            config_path=config_path,
+            config_dict=config_dict,
+            strict=strict,
+        )
+        try:
+            await toolkit.connect()
+            return toolkit
+        except Exception as e:
+            # Ensure cleanup on initialization failure
+            await toolkit.disconnect()
+            logger.error(f"Failed to initialize MCPToolkit: {e}")
+            raise MCPConnectionError(
+                f"Failed to initialize MCPToolkit: {e}"
+            ) from e
+
+    @classmethod
+    def create_sync(
+        cls,
+        servers: Optional[List[MCPClient]] = None,
+        config_path: Optional[str] = None,
+        config_dict: Optional[Dict[str, Any]] = None,
+        strict: Optional[bool] = False,
+    ) -> "MCPToolkit":
+        r"""Synchronously create and connect to all MCP servers."""
+        return run_async(cls.create)(servers, config_path, config_dict, strict)
 
     def _load_servers_from_config(
         self, config_path: str, strict: Optional[bool] = False
