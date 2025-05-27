@@ -389,13 +389,15 @@ default-groups = [
 
 [tool.uv.sources]
 bohrium = { git = "https://github.com/dptech-corp/bohrium-openapi-python-sdk" }
-bohrium_api = { git = "https://github.com/dptech-corp/bohrium-openapi-python-sdk" }
 
 [tool.hatch.build.targets.sdist]
 include = ["camel"]
 
 [tool.hatch.build.targets.wheel]
 include = ["camel"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.ruff]
 line-length = 79
