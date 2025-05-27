@@ -191,7 +191,7 @@ class MCPAgent(ChatAgent):
         self.mcp_toolkit = self._initialize_mcp_toolkit()
 
         # If already connected, reconnect to apply changes
-        if self.mcp_toolkit and self.mcp_toolkit.is_connected():
+        if self.mcp_toolkit and self.mcp_toolkit.is_connected:
             try:
                 asyncio.run(self.disconnect())
                 asyncio.run(self.connect())
@@ -325,7 +325,7 @@ class MCPAgent(ChatAgent):
         Returns:
             ChatAgentResponse: The response from the agent.
         """
-        if self.mcp_toolkit and not self.mcp_toolkit.is_connected():
+        if self.mcp_toolkit and not self.mcp_toolkit.is_connected:
             await self.connect()
 
         if self.function_calling_available:
