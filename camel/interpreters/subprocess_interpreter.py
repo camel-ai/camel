@@ -425,3 +425,6 @@ class SubprocessInterpreter(BaseInterpreter):
                 return True
             except subprocess.CalledProcessError:
                 return False
+
+    def execute_command(self, command: str) -> str:
+        return " "
