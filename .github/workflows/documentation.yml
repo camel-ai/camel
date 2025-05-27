@@ -53,7 +53,7 @@ jobs:
             echo "PR event detected - processing all cookbooks files to ensure consistency"
             python docs/mintlify/convert_notebook2mdx.py \
               --input docs/cookbooks \
-              --output docs/mintlify/cookbooks \
+              --output docs/mintlify \
               --update-docs-json docs/mintlify/docs.json \
               --docs-path-prefix "" \
               --verbose
@@ -61,7 +61,7 @@ jobs:
             echo "Push event detected - using incremental mode for cookbooks"
             python docs/mintlify/convert_notebook2mdx.py \
               --input docs/cookbooks \
-              --output docs/mintlify/cookbooks \
+              --output docs/mintlify \
               --update-docs-json docs/mintlify/docs.json \
               --docs-path-prefix "" \
               --incremental \
@@ -72,7 +72,7 @@ jobs:
             echo "Manual workflow - processing all cookbooks files"
             python docs/mintlify/convert_notebook2mdx.py \
               --input docs/cookbooks \
-              --output docs/mintlify/cookbooks \
+              --output docs/mintlify \
               --update-docs-json docs/mintlify/docs.json \
               --docs-path-prefix "" \
               --verbose
@@ -161,13 +161,34 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
-          git add docs/mintlify/cookbooks/ docs/mintlify/get_started/ docs/mintlify/key_modules/ docs/mintlify/reference/ docs/mintlify/docs.json
+          # Debug information
+          echo "Current branch: $(git branch --show-current)"
+          echo "Head ref: ${{ github.head_ref }}"
+          echo "Remote branches:"
+          git branch -r
+          echo "Local branches:"
+          git branch -a
+
+          git add docs/mintlify/ docs/mintlify/get_started/ docs/mintlify/key_modules/ docs/mintlify/reference/ docs/mintlify/docs.json
 
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
             git commit -m "Auto-update Mintlify documentation"
-            git push origin ${{ github.head_ref }}
+            echo "Attempting to push to: ${{ github.head_ref }}"
+            
+            # Try multiple push strategies
+            if ! git push origin ${{ github.head_ref }}; then
+              echo "First push attempt failed, trying alternative methods..."
+              
+              # Try with current branch
+              CURRENT_BRANCH=$(git branch --show-current)
+              echo "Trying to push current branch: $CURRENT_BRANCH"
+              if ! git push origin "$CURRENT_BRANCH"; then
+                echo "Second push attempt failed, trying with HEAD:refs/heads/${{ github.head_ref }}"
+                git push origin "HEAD:refs/heads/${{ github.head_ref }}"
+              fi
+            fi
           fi
 
       - name: Commit and push changes (only for push to master/qa)
@@ -176,7 +197,7 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
-          git add docs/mintlify/cookbooks/ docs/mintlify/get_started/ docs/mintlify/key_modules/ docs/mintlify/reference/ docs/mintlify/docs.json
+          git add docs/mintlify/ docs/mintlify/get_started/ docs/mintlify/key_modules/ docs/mintlify/reference/ docs/mintlify/docs.json
 
           if git diff --staged --quiet; then
             echo "No changes to commit"
