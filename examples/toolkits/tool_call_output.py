@@ -16,23 +16,23 @@
 
 
 from camel.agents import ChatAgent
-from camel.models import ModelFactory
-from camel.types import ModelPlatformType
-from camel.toolkits import FunctionTool
 from camel.configs import ChatGPTConfig
-from camel.types import ModelType
+from camel.models import ModelFactory
+from camel.toolkits import FunctionTool
+from camel.types import ModelPlatformType, ModelType
+
 
 def add(a: float, b: float) -> float:
-        r"""Adds two numbers.
+    r"""Adds two numbers.
 
-        Args:
-            a (float): The first number to be added.
-            b (float): The second number to be added.
+    Args:
+        a (float): The first number to be added.
+        b (float): The second number to be added.
 
-        Returns:
-            float: The sum of the two numbers.
-        """
-        raise Exception("故意设置错误,来模仿工具调用失败")
+    Returns:
+        float: The sum of the two numbers.
+    """
+    raise Exception("故意设置错误,来模仿工具调用失败")
 
 
 def multiply(a: float, b: float, decimal_places: int = 2) -> float:
@@ -49,6 +49,7 @@ def multiply(a: float, b: float, decimal_places: int = 2) -> float:
     """
     return round(a * b, decimal_places)
 
+
 add_tool = FunctionTool(add)
 multiply_tool = FunctionTool(multiply)
 
@@ -64,9 +65,7 @@ model = ModelFactory.create(
     model_config_dict=model_config_dict,
 )
 agent = ChatAgent(
-    system_message=sys_msg, 
-    model=model,tools=toollist,
-    output_language='中文'
+    system_message=sys_msg, model=model, tools=toollist, output_language='中文'
 )
 
 # 定义用户消息

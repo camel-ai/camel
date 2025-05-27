@@ -1591,8 +1591,7 @@ class ChatAgent(BaseAgent):
 
         if retries == max_retries:
             logging.error(
-                f"Tool '{func_name}' failed. "
-                f"Final error: {last_error}"
+                f"Tool '{func_name}' failed. " f"Final error: {last_error}"
             )
 
         return self._record_tool_calling(func_name, args, result, tool_call_id)
@@ -1667,8 +1666,7 @@ class ChatAgent(BaseAgent):
 
         if retries == max_retries:
             logging.error(
-                f"Tool '{func_name}' failed. "
-                f"Final error: {last_error}"
+                f"Tool '{func_name}' failed. " f"Final error: {last_error}"
             )
 
         return self._record_tool_calling(func_name, args, result, tool_call_id)

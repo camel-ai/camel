@@ -1,18 +1,32 @@
-import re
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import ast
+import re
 import textwrap
-from typing import List, Optional, Type, Union, Callable
+from typing import Callable, List, Optional, Type, Union
+
+from pydantic import BaseModel
+from rich.console import Group
+from rich.text import Text
 
 from camel.agents.chat_agent import ChatAgent, ChatAgentResponse
+from camel.logger import get_logger
 from camel.messages import BaseMessage
-from pydantic import BaseModel
 from camel.toolkits import FunctionTool
 from camel.types import OpenAIBackendRole
-import logging
 
-from rich.text import Text
-from rich.console import Group
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 SYSTEM_MESSAGE = """
 You are an expert assistant who can solve any task using code blobs. You will be given a task to solve as best you can.
@@ -178,9 +192,11 @@ Here are the rules you should always follow to solve your task:
 10. Don't give up! You're in charge of solving the task, not providing directions to solve it.
 
 Now Begin! If you solve the task correctly, you will receive a reward of $1,000,000.
-"""
+"""  # noqa: E501
+
+
 def _parse_code_blobs(text: str) -> str:
-    """Extract code blocks from the LLM's output.
+    r"""Extract code blocks from the LLM's output.
 
     If a valid code block is passed, it returns it directly.
 
@@ -208,10 +224,12 @@ def _parse_code_blobs(text: str) -> str:
         raise ValueError(
             textwrap.dedent(
                 f"""
-                Your code snippet is invalid, because the regex pattern {pattern} was not found in it.
-                Here is your code snippet:
+                Your code snippet is invalid, because the regex pattern 
+                {pattern} was not found in it. Here is your code 
+                snippet:
                 {text}
-                It seems like you're trying to return the final answer, you can do it as follows:
+                It seems like you're trying to return the final answer, 
+                you can do it as follows:
                 Code:
                 ```py
                 final_answer("YOUR FINAL ANSWER HERE")
@@ -222,10 +240,11 @@ def _parse_code_blobs(text: str) -> str:
     raise ValueError(
         textwrap.dedent(
             f"""
-            Your code snippet is invalid, because the regex pattern {pattern} was not found in it.
-            Here is your code snippet:
+            Your code snippet is invalid, because the regex pattern 
+            {pattern} was not found in it. Here is your code snippet:
             {text}
-            Make sure to include code with the correct pattern, for instance:
+            Make sure to include code with the correct pattern, 
+            for instance:
             Thoughts: Your thoughts
             Code:
             ```py
@@ -237,18 +256,22 @@ def _parse_code_blobs(text: str) -> str:
 
 
 def _fix_final_answer_code(code: str) -> str:
-    """
-    Sometimes an LLM can try to assign a variable to final_answer, which would break the final_answer() tool.
-    This function fixes this behaviour by replacing variable assignments to final_answer with final_answer_variable,
+    r"""Sometimes an LLM can try to assign a variable to final_answer,
+    which would break the final_answer() tool.This function fixes
+    this behaviour by replacing variable assignments to
+    final_answer with final_answer_variable,
     while preserving function calls to final_answer().
     """
     # First, find if there's a direct assignment to final_answer
-    # Use word boundary and negative lookbehind to ensure it's not an object attribute
+    # Use word boundary and negative lookbehind to ensure it's not
+    # an object attribute
     assignment_pattern = r"(?<!\.)(?<!\w)\bfinal_answer\s*="
     if "final_answer(" not in code or not re.search(assignment_pattern, code):
-        # If final_answer tool is not called in this blob, then doing the replacement is hazardous
+        # If final_answer tool is not called in this blob, then doing the
+        # replacement is hazardous
         # because it could affect the model's memory for next steps.
-        # Let's not modify the code and leave the subsequent assignment error happen.
+        # Let's not modify the code and leave the subsequent assignment
+        # error happen.
         return code
 
     # Pattern for replacing variable assignments
@@ -259,15 +282,16 @@ def _fix_final_answer_code(code: str) -> str:
 
     # Pattern for replacing variable usage but not function calls
     # Negative lookahead (?!\s*\() ensures we don't match function calls
-    # Negative lookbehind (?<!\.|\w) ensures we don't match object methods or other variables
+    # Negative lookbehind (?<!\.|\w) ensures we don't match object methods
+    # or other variables
     variable_regex = r"(?<!\.)(?<!\w)(\bfinal_answer\b)(?!\s*\()"
     code = re.sub(variable_regex, "final_answer_variable", code)
     return code
 
 
 class CodeExecutionEnvironment:
-    """Environment for executing Python code with tools."""
-    
+    r"""Environment for executing Python code with tools."""
+
     def __init__(self, agent):
         self.agent = agent
         self.globals = {}
@@ -276,96 +300,94 @@ class CodeExecutionEnvironment:
         self._final_answer = None
         self._is_final_answer = False
         self._setup_environment()
-    
+
     def _setup_environment(self):
-        """Set up the execution environment with tools."""
+        r"""Set up the execution environment with tools."""
         for tool_name, tool in self.agent.tool_dict.items():
             self.globals[tool_name] = tool.__call__
-        
+
         def final_answer(answer):
             self._final_answer = answer
             self._is_final_answer = True
             return answer
-        
+
         self.globals["final_answer"] = final_answer
-        
+
         def custom_print(*args, **kwargs):
             output = " ".join(str(arg) for arg in args)
             end = kwargs.get("end", "\n")
             self._print_outputs += output + end
             return None
-        
+
         self.globals["print"] = custom_print
-    
+
     def execute(self, code):
-        """
+        r"""
         Execute the given code in the environment.
-        
+
         Returns:
             tuple: (output, logs, is_final_answer)
         """
         self._print_outputs = ""
         self._is_final_answer = False
-        
+
         try:
             # Execute the code
             exec(code, self.globals, self.locals)
-            
+
             # Return the final result or None
             output = self._final_answer if self._is_final_answer else None
             return output, self._print_outputs, self._is_final_answer
         except Exception as e:
             # Append the error to print outputs
-            self._print_outputs += f"\nError: {str(e)}"
+            self._print_outputs += f"\nError: {e!s}"
             raise e
 
 
 class CodeAgent(ChatAgent):
-    r"""
-    An agent that interprets and executes Python code from LLM outputs.
-    
+    r"""An agent that interprets and executes Python code from LLM outputs.
+
     This agent extends ChatAgent by adding capabilities to:
     1. Instruct the LLM to output Python code
     2. Parse the code blocks from LLM output
     3. Execute the code in a controlled environment
     4. Process the results as observations
-    
+
     Args:
-        system_message (BaseMessage or str, optional): System message for the agent
-        tools: List of tools to be used by the agent
+        tools Optional[List[Union[FunctionTool, Callable]]]:
+        List of tools to be used by the agent
         **kwargs: Additional arguments to pass to ChatAgent
     """
-    
+
     def __init__(
         self,
         tools: Optional[List[Union[FunctionTool, Callable]]] = None,
-        **kwargs
+        **kwargs,
     ) -> None:
-
         super().__init__(tools=tools, **kwargs)
 
         tools_str = ""
-        for item in tools:
-            tools_str += str(item) + "\n"
+        if tools is not None:
+            for item in tools:
+                tools_str += str(item) + "\n"
         self.default_system_message = SYSTEM_MESSAGE.format(tools=tools_str)
-        
+
         self._system_message = BaseMessage.make_assistant_message(
-            role_name="Assistant",
-            content=self.default_system_message
+            role_name="Assistant", content=self.default_system_message
         )
-        
+
         self.code_executor = CodeExecutionEnvironment(self)
         self.single_iteration = True
-        self.update_memory(self.system_message, OpenAIBackendRole.SYSTEM)
+        if self.system_message is not None:
+            self.update_memory(self.system_message, OpenAIBackendRole.SYSTEM)
 
     def step(
         self,
         input_message: Union[BaseMessage, str],
         response_format: Optional[Type[BaseModel]] = None,
     ) -> ChatAgentResponse:
-        """
-        Execute a step with code parsing and execution.
-        
+        r"""Execute a step with code parsing and execution.
+
         Args:
             input_message: The input message to process
             response_format: The response format to use
@@ -385,8 +407,8 @@ class CodeAgent(ChatAgent):
             try:
                 openai_messages, num_tokens = self.memory.get_context()
             except RuntimeError as e:
-                return self._step_token_exceed(
-                    e.args[1],  termination_reason = "max_tokens_exceeded"
+                return self._step_terminate(
+                    e.args[1], [], "max_tokens_exceeded"
                 )
             # Get response from model backend
             response = self._get_model_response(
@@ -404,20 +426,32 @@ class CodeAgent(ChatAgent):
         print(response.output_messages[0].content)
         try:
             # Get the text content from the response
-            content = response.output_messages[0].content if response.output_messages[0].content else ""
+            content = (
+                response.output_messages[0].content
+                if response.output_messages[0].content
+                else ""
+            )
             # Parse code blocks
             code = _parse_code_blobs(content)
             code_action = _fix_final_answer_code(code)
         except Exception as e:
-            error_msg = f"Error in code parsing:\n{e}\nMake sure to provide correct code blobs."
-            raise error_msg
-        
+            error_msg = (
+                f"Error in code parsing:\n{e}\n"
+                "Make sure to provide correct code blobs."
+            )
+            raise RuntimeError(error_msg)
+
         logger.info(f"Executing parsed code: {code_action}")
         is_final_answer = False
-        
+
         try:
-            output, execution_logs, is_final_answer = self.code_executor.execute(code_action)
-            print(f"output: {output}, execution_logs: {execution_logs}, is_final_answer: {is_final_answer}")
+            output, execution_logs, is_final_answer = (
+                self.code_executor.execute(code_action)
+            )
+            print(
+                f"output: {output}, execution_logs: {execution_logs}, "
+                f"is_final_answer: {is_final_answer}"
+            )
             execution_outputs_console = []
             if len(execution_logs) > 0:
                 execution_outputs_console += [
@@ -426,60 +460,89 @@ class CodeAgent(ChatAgent):
                 ]
             observation = "Execution logs:\n" + execution_logs
         except Exception as e:
-            if hasattr(self.code_executor, "state") and "_print_outputs" in self.code_executor.state:
-                execution_logs = str(self.code_executor.state["_print_outputs"])
+            if (
+                hasattr(self.code_executor, "state")
+                and "_print_outputs" in self.code_executor.state
+            ):
+                execution_logs = str(
+                    self.code_executor.state["_print_outputs"]
+                )
                 if len(execution_logs) > 0:
                     execution_outputs_console = [
                         Text("Execution logs:", style="bold"),
                         Text(execution_logs),
                     ]
 
-                    self.update_memory(BaseMessage.make_assistant_message(
-                        role_name="Assistant",
-                        content="There are some execution logs:\n" + execution_logs
-                    ), OpenAIBackendRole.ASSISTANT)
+                    self.update_memory(
+                        BaseMessage.make_assistant_message(
+                            role_name="Assistant",
+                            content="There are some execution logs:\n"
+                            + execution_logs,
+                        ),
+                        OpenAIBackendRole.ASSISTANT,
+                    )
                     logger.info(Group(*execution_outputs_console))
             error_msg = str(e)
             if "Import of " in error_msg and " is not allowed" in error_msg:
                 logger.info(
-                    "[bold red]Warning to user: Code execution failed due to an unauthorized import - Consider passing said import under `additional_authorized_imports` when initializing your CodeAgent."
+                    "[bold red]Warning to user: Code execution failed due to "
+                    "an unauthorized import - Consider passing said import "
+                    "under `additional_authorized_imports` when initializing "
+                    "your CodeAgent."
                 )
-            raise error_msg
-        
+            raise RuntimeError(error_msg)
+
         observation += "Last output from code snippet:\n" + str(output)
-        
-        self.update_memory(BaseMessage.make_assistant_message(
-            role_name="Assistant",
-            content=observation
-        ),
-        OpenAIBackendRole.ASSISTANT)
+
+        self.update_memory(
+            BaseMessage.make_assistant_message(
+                role_name="Assistant", content=observation
+            ),
+            OpenAIBackendRole.ASSISTANT,
+        )
 
         execution_outputs_console += [
             Text(
-                f"{('Out - Final answer' if is_final_answer else 'Out')}: {output}",
-                style=(f"bold #d4b702" if is_final_answer else ""),
+                f"{('Out - Final answer' if is_final_answer else 'Out')}: "
+                f"{output}",
+                style=("bold #d4b702" if is_final_answer else ""),
             ),
         ]
         logger.info(Group(*execution_outputs_console))
-        
-        self.update_memory(BaseMessage.make_assistant_message(
-            role_name="Assistant",
-            content="here is the execution output:\n" + output if output else ""
-        ), OpenAIBackendRole.ASSISTANT)
+
+        self.update_memory(
+            BaseMessage.make_assistant_message(
+                role_name="Assistant",
+                content="here is the execution output:\n" + str(output)
+                if output
+                else "",
+            ),
+            OpenAIBackendRole.ASSISTANT,
+        )
 
         self._system_message = BaseMessage.make_assistant_message(
-            role_name="Assistant",
-            content="you are a helpful assistant"
+            role_name="Assistant", content="you are a helpful assistant"
         )
+        final_response: ChatAgentResponse
         if is_final_answer:
-            response = super().step('Please give a final summary based on the above results')
+            final_response = super().step(
+                'Please give a final summary based on the above results'
+            )
         else:
-            response = None
+            # Create a default response when not final answer
+            final_response = ChatAgentResponse(
+                msgs=[
+                    BaseMessage.make_assistant_message(
+                        role_name="Assistant",
+                        content=str(output) if output else "",
+                    )
+                ],
+                terminated=False,
+                info={},
+            )
 
         self._system_message = BaseMessage.make_assistant_message(
-            role_name="Assistant",
-            content=self.default_system_message
+            role_name="Assistant", content=self.default_system_message
         )
 
-        return response
-        
+        return final_response

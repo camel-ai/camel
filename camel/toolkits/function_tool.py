@@ -391,10 +391,7 @@ class FunctionTool:
         Returns:
             Dict[str, Any]: A standardized success output dictionary.
         """
-        return {
-            "status": "success",
-            "tool_call_output": output
-        }
+        return {"status": "success", "tool_call_output": output}
 
     def _fail_output(self, error_message: str) -> Dict[str, Any]:
         r"""Creates a failed toolkit output.
@@ -408,7 +405,7 @@ class FunctionTool:
         return {
             "status": "fail",
             "tool_call_output": "tool call failed",
-            "error_message": error_message
+            "error_message": error_message,
         }
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
