@@ -35,6 +35,9 @@ from camel.utils import (
     OpenAITokenCounter,
     api_keys_required,
     dependencies_required,
+    conditional_observe,
+    update_langfuse_observation,
+    update_langfuse_output,
 )
 
 logger = get_logger(__name__)
@@ -232,6 +235,7 @@ class MistralModel(BaseModelBackend):
             )
         return self._token_counter
 
+    @conditional_observe(as_type="generation")
     async def _arun(
         self,
         messages: List[OpenAIMessage],
@@ -242,6 +246,9 @@ class MistralModel(BaseModelBackend):
             "Mistral does not support async inference, using sync "
             "inference instead."
         )
+        # Update Langfuse observation if available
+        update_langfuse_observation(None)(self, messages, tools)
+
         request_config = self._prepare_request(
             messages, response_format, tools
         )
@@ -252,6 +259,9 @@ class MistralModel(BaseModelBackend):
             model=self.model_type,
             **request_config,
         )
+
+        # Update observation with output
+        update_langfuse_output(response)
 
         openai_response = self._to_openai_response(response)  # type: ignore[arg-type]
 
@@ -271,6 +281,7 @@ class MistralModel(BaseModelBackend):
 
         return openai_response
 
+    @conditional_observe(as_type="generation")
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -290,6 +301,9 @@ class MistralModel(BaseModelBackend):
         Returns:
             ChatCompletion: The response from the model.
         """
+        # Update Langfuse observation if available
+        update_langfuse_observation(None)(self, messages, tools)
+
         request_config = self._prepare_request(
             messages, response_format, tools
         )
@@ -300,6 +314,9 @@ class MistralModel(BaseModelBackend):
             model=self.model_type,
             **request_config,
         )
+
+        # Update observation with output
+        update_langfuse_output(response)
 
         openai_response = self._to_openai_response(response)  # type: ignore[arg-type]
 

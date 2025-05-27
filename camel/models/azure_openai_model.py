@@ -25,7 +25,14 @@ from camel.types import (
     ChatCompletionChunk,
     ModelType,
 )
-from camel.utils import BaseTokenCounter, OpenAITokenCounter
+from camel.utils import (
+    BaseTokenCounter,
+    OpenAITokenCounter,
+    api_keys_required,
+    conditional_observe,
+    update_langfuse_observation,
+    update_langfuse_output,
+)
 
 AzureADTokenProvider = Callable[[], str]
 
@@ -142,6 +149,7 @@ class AzureOpenAIModel(BaseModelBackend):
             self._token_counter = OpenAITokenCounter(self.model_type)
         return self._token_counter
 
+    @conditional_observe(as_type="generation")
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -163,14 +171,25 @@ class AzureOpenAIModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
+        # Update Langfuse observation if available
+        update_langfuse_observation(None)(self, messages, tools)
+
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
         )
         if response_format:
-            return self._request_parse(messages, response_format, tools)
+            result: Union[ChatCompletion, Stream[ChatCompletionChunk]] = (
+                self._request_parse(messages, response_format, tools)
+            )
         else:
-            return self._request_chat_completion(messages, tools)
+            result = self._request_chat_completion(messages, tools)
 
+        # Update observation with output
+        update_langfuse_output(result)
+
+        return result
+
+    @conditional_observe(as_type="generation")
     async def _arun(
         self,
         messages: List[OpenAIMessage],
@@ -192,14 +211,24 @@ class AzureOpenAIModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
+        # Update Langfuse observation if available
+        update_langfuse_observation(None)(self, messages, tools)
+
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
         )
         if response_format:
-            return await self._arequest_parse(messages, response_format, tools)
+            result: Union[ChatCompletion, AsyncStream[ChatCompletionChunk]] = (
+                await self._arequest_parse(messages, response_format, tools)
+            )
         else:
-            return await self._arequest_chat_completion(messages, tools)
+            result = await self._arequest_chat_completion(messages, tools)
 
+        # Update observation with output
+        update_langfuse_output(result)
+
+        return result
+    
     def _request_chat_completion(
         self,
         messages: List[OpenAIMessage],

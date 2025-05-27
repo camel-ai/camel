@@ -28,7 +28,13 @@ from camel.types import (
     ChatCompletionChunk,
     ModelType,
 )
-from camel.utils import BaseTokenCounter, api_keys_required
+from camel.utils import (
+    BaseTokenCounter,
+    api_keys_required,
+    conditional_observe,
+    update_langfuse_observation,
+    update_langfuse_output,
+)
 
 logger = get_logger(__name__)
 
@@ -176,6 +182,7 @@ class DeepSeekModel(OpenAICompatibleModel):
             )
         return response
 
+    @conditional_observe(as_type="generation")
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -193,6 +200,9 @@ class DeepSeekModel(OpenAICompatibleModel):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
+        # Update Langfuse observation if available
+        update_langfuse_observation(None)(self, messages, tools)
+
         request_config = self._prepare_request(
             messages, response_format, tools
         )
@@ -202,6 +212,9 @@ class DeepSeekModel(OpenAICompatibleModel):
             model=self.model_type,
             **request_config,
         )
+
+        # Update observation with output
+        update_langfuse_output(response)
 
         return self._post_handle_response(response)
 
@@ -222,6 +235,9 @@ class DeepSeekModel(OpenAICompatibleModel):
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
+        # Update Langfuse observation if available
+        update_langfuse_observation(None)(self, messages, tools)
+
         request_config = self._prepare_request(
             messages, response_format, tools
         )
@@ -230,6 +246,9 @@ class DeepSeekModel(OpenAICompatibleModel):
             model=self.model_type,
             **request_config,
         )
+
+        # Update observation with output
+        update_langfuse_output(response)
 
         return self._post_handle_response(response)
 

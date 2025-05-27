@@ -26,6 +26,9 @@ from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
     api_keys_required,
+    conditional_observe,
+    update_langfuse_output,
+    update_langfuse_observation,
 )
 
 logger = get_logger(__name__)
@@ -151,6 +154,7 @@ class WatsonXModel(BaseModelBackend):
 
         return request_config
 
+    @conditional_observe(as_type="generation")
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -174,6 +178,8 @@ class WatsonXModel(BaseModelBackend):
             request_config = self._prepare_request(
                 messages, response_format, tools
             )
+            # Update Langfuse observation if available
+            update_langfuse_observation(None)(self, messages, tools)
 
             # WatsonX expects messages as a list of dictionaries
             response = self._model.chat(
@@ -183,12 +189,14 @@ class WatsonXModel(BaseModelBackend):
             )
 
             openai_response = self._to_openai_response(response)
+            update_langfuse_output(openai_response)
             return openai_response
 
         except Exception as e:
             logger.error(f"Unexpected error when calling WatsonX API: {e!s}")
             raise
 
+    @conditional_observe(as_type="generation")
     async def _arun(
         self,
         messages: List[OpenAIMessage],
@@ -212,6 +220,8 @@ class WatsonXModel(BaseModelBackend):
             request_config = self._prepare_request(
                 messages, response_format, tools
             )
+            # Update Langfuse observation if available
+            update_langfuse_observation(None)(self, messages, tools)
 
             # WatsonX expects messages as a list of dictionaries
             response = await self._model.achat(
@@ -221,6 +231,8 @@ class WatsonXModel(BaseModelBackend):
             )
 
             openai_response = self._to_openai_response(response)
+            # Update Langfuse observation if available
+            update_langfuse_output(openai_response)
             return openai_response
 
         except Exception as e:
