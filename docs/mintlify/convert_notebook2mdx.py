@@ -932,12 +932,26 @@ def get_git_changed_files(
         file_extensions = ['.ipynb', '.md']
 
     try:
-        # Get list of changed files from git
+        # Find the git repository root
+        git_root_result = subprocess.run(
+            ['git', 'rev-parse', '--show-toplevel'],
+            capture_output=True,
+            text=True,
+            cwd=directory,
+        )
+
+        if git_root_result.returncode != 0:
+            print(f"Failed to find git root: {git_root_result.stderr}")
+            return []
+
+        git_root = Path(git_root_result.stdout.strip())
+
+        # Get list of changed files from git (run from git root)
         result = subprocess.run(
             ['git', 'diff', '--name-only', base_branch, 'HEAD'],
             capture_output=True,
             text=True,
-            cwd=directory,
+            cwd=git_root,
         )
 
         if result.returncode != 0:
@@ -945,21 +959,49 @@ def get_git_changed_files(
             return []
 
         changed_files = []
-        directory = Path(directory)
+        directory = Path(directory).resolve()  # Convert to absolute path
+
+        print(f"Git root: {git_root}")
+        print(f"Target directory: {directory}")
+        print(f"Raw git diff output: {result.stdout.strip()}")
 
         for file_path in result.stdout.strip().split('\n'):
             if file_path:  # Skip empty lines
-                full_path = directory / file_path
-                # Check if file exists and has the right extension
-                if full_path.exists() and any(
-                    file_path.endswith(ext) for ext in file_extensions
-                ):
-                    changed_files.append(full_path)
+                # file_path is relative to git root
+                full_path = git_root / file_path
 
+                print(f"Checking file: {full_path}")
+
+                # Check if file is under the target directory and has the right extension
+                try:
+                    # Check if the file is under our target directory
+                    full_path.resolve().relative_to(directory)
+
+                    print(f"File {full_path} is under target directory")
+
+                    # Check if file exists and has the right extension
+                    if full_path.exists() and any(
+                        file_path.endswith(ext) for ext in file_extensions
+                    ):
+                        changed_files.append(full_path)
+                        print(f"Added file: {full_path}")
+                    else:
+                        print(
+                            f"File {full_path} doesn't exist or wrong extension"
+                        )
+                except ValueError as e:
+                    # File is not under target directory, skip it
+                    print(f"File {full_path} not under target directory: {e}")
+                    continue
+
+        print(f"Final changed files: {changed_files}")
         return sorted(changed_files)
 
     except Exception as e:
         print(f"Error getting git changed files: {e}")
+        import traceback
+
+        traceback.print_exc()
         return []
 
 
