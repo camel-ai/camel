@@ -166,6 +166,7 @@ class ChatAgent(BaseAgent):
         model: Optional[
             Union[
                 BaseModelBackend,
+                ModelManager,
                 Tuple[str, str],
                 str,
                 ModelType,
@@ -191,12 +192,15 @@ class ChatAgent(BaseAgent):
         agent_id: Optional[str] = None,
         stop_event: Optional[threading.Event] = None,
     ) -> None:
-        # Resolve model backends and set up model manager
-        resolved_models = self._resolve_models(model)
-        self.model_backend = ModelManager(
-            resolved_models,
-            scheduling_strategy=scheduling_strategy,
-        )
+        if isinstance(model, ModelManager):
+            self.model_backend = model
+        else:
+            # Resolve model backends and set up model manager
+            resolved_models = self._resolve_models(model)
+            self.model_backend = ModelManager(
+                resolved_models,
+                scheduling_strategy=scheduling_strategy,
+            )
         self.model_type = self.model_backend.model_type
 
         # Assign unique ID
