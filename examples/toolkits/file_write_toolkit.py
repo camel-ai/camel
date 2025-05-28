@@ -199,22 +199,3 @@ I have created a simple HTML webpage with a header, navigation menu, main conten
 Tool calls: [ToolCallingRecord(tool_name='write_to_file', args={'content': '<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>Simple Webpage</title>\n    <link rel="stylesheet" href="styles.css">\n</head>\n<body>\n    <header>\n        <h1>Welcome to My Simple Webpage</h1>\n    </header>\n    <nav>\n        <ul>\n            <li><a href="#home">Home</a></li>\n            <li><a href="#about">About</a></li>\n            <li><a href="#services">Services</a></li>\n            <li><a href="#contact">Contact</a></li>\n        </ul>\n    </nav>\n    <main>\n        <section id="home">\n            <h2>Home</h2>\n            <p>This is the home section of the webpage.</p>\n        </section>\n        <section id="about">\n            <h2>About</h2>\n            <p>This section contains information about us.</p>\n        </section>\n        <section id="services">\n            <h2>Services</h2>\n            <p>Details about our services can be found here.</p>\n        </section>\n        <section id="contact">\n            <h2>Contact</h2>\n            <p>Get in touch with us through this section.</p>\n        </section>\n    </main>\n    <footer>\n        <p>&copy; 2023 My Simple Webpage. All rights reserved.</p>\n    </footer>\n</body>\n</html>', 'filename': 'simple_webpage.html', 'encoding': 'utf-8'}, result='Content successfully written to file: /Users/enrei/Desktop/camel0209/camel/file_write_outputs/simple_webpage.html', tool_call_id='call_6FUwTx4gSAB8mtN7lety05SP')]
 ===============================================================================
 '''
-
-# Example 7: Create a PowerPoint presentation (PPTX)
-pptx_query = """Create a PowerPoint presentation about "Introduction to AI" with 
-                a title slide and 3 content slides. Include professional content 
-                about AI basics, applications, and future trends. Use the proper 
-                PPTX format with structured data."""
-camel_agent.reset()
-response = camel_agent.step(pptx_query)
-print("Example 7: Creating a PowerPoint presentation")
-print(response.msgs[0].content)
-print("Tool calls:", response.info['tool_calls'])
-print("\n")
-'''
-===============================================================================
-Example 7: Creating a PowerPoint presentation
-The PowerPoint presentation "Introduction to AI" has been successfully created with a title slide and 3 content slides covering AI basics, applications, and future trends. The presentation uses professional formatting and structured content suitable for educational or business purposes.
-Tool calls: [ToolCallingRecord(tool_name='write_to_file', args={'content': [{'title': 'Introduction to Artificial Intelligence', 'subtitle': 'Understanding AI: Past, Present, and Future'}, {'title': 'What is Artificial Intelligence?', 'text': 'Definition and Core Concepts\\n\\nMachine Learning Fundamentals\\n\\nDeep Learning Basics\\n\\nAI vs Human Intelligence'}, {'title': 'AI Applications Today', 'text': 'Healthcare and Medical Diagnosis\\n\\nAutonomous Vehicles\\n\\nNatural Language Processing\\n\\nComputer Vision\\n\\nRecommendation Systems'}, {'title': 'Future of AI', 'text': 'Emerging Technologies\\n\\nEthical Considerations\\n\\nSocietal Impact\\n\\nCareer Opportunities\\n\\nChallenges and Solutions'}], 'filename': 'introduction_to_ai.pptx'}, result='Content successfully written to file: /Users/enrei/Desktop/camel0209/camel/file_write_outputs/introduction_to_ai.pptx', tool_call_id='call_ABCxyzExample123')] 
-===============================================================================
-'''
