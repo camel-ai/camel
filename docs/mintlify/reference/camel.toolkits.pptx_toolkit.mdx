@@ -69,12 +69,83 @@ Sanitize a filename by replacing special characters and spaces.
 
   str: The sanitized filename.
 
+<a id="camel.toolkits.pptx_toolkit.PPTXToolkit._format_text"></a>
+
+### _format_text
+
+```python
+def _format_text(self, frame_paragraph, text: str):
+```
+
+Apply bold and italic formatting while preserving the original word order.
+
+**Parameters:**
+
+- **frame_paragraph**: The paragraph to format.
+- **text** (str): The text to format.
+
+<a id="camel.toolkits.pptx_toolkit.PPTXToolkit._add_bulleted_items"></a>
+
+### _add_bulleted_items
+
+```python
+def _add_bulleted_items(
+    self,
+    text_frame: pptx.text.text.TextFrame,
+    flat_items_list: list
+):
+```
+
+Add a list of texts as bullet points and apply formatting.
+
+**Parameters:**
+
+- **text_frame**: The text frame where text is to be displayed.
+- **flat_items_list**: The list of items to be displayed.
+
+<a id="camel.toolkits.pptx_toolkit.PPTXToolkit._get_flat_list_of_contents"></a>
+
+### _get_flat_list_of_contents
+
+```python
+def _get_flat_list_of_contents(self, items: list, level: int):
+```
+
+Flatten a hierarchical list of bullet points to a single list.
+
+**Parameters:**
+
+- **items**: A bullet point (string or list).
+- **level**: The current level of hierarchy.
+
+**Returns:**
+
+  List[Tuple]: A list of (bullet item text, hierarchical level) tuples.
+
+<a id="camel.toolkits.pptx_toolkit.PPTXToolkit._get_slide_width_height_inches"></a>
+
+### _get_slide_width_height_inches
+
+```python
+def _get_slide_width_height_inches(self, presentation: Any):
+```
+
+Get the dimensions of a slide in inches.
+
+**Parameters:**
+
+- **presentation**: The presentation object.
+
+**Returns:**
+
+  Tuple[float, float]: The width and height in inches.
+
 <a id="camel.toolkits.pptx_toolkit.PPTXToolkit._write_pptx_file"></a>
 
 ### _write_pptx_file
 
 ```python
-def _write_pptx_file(self, file_path: Path, content: Union[str, list]):
+def _write_pptx_file(self, file_path: Path, content: List[Dict[str, Any]]):
 ```
 
 Write text content to a PPTX file with enhanced formatting.
@@ -82,7 +153,7 @@ Write text content to a PPTX file with enhanced formatting.
 **Parameters:**
 
 - **file_path** (Path): The target file path.
-- **content** (Union[str, list]): The content to write to the PPTX file. Must be a list of dictionaries where: - First element: Title slide with keys 'title' and 'subtitle' - Subsequent elements: Content slides with keys 'title', 'text' (optional), 'image' (optional) Example format: [ `{ "title": "Presentation Title", "subtitle": "Presentation Subtitle" }`, `{ "title": "Slide 1 Title", "text": "Slide content text", "image": "https://example.com/image.jpg" # optional }`, `{ "title": "Slide 2 Title", "text": "More content text" # image field is optional }` ]
+- **content** (List[Dict[str, Any]]): The content to write to the PPTX file. Must be a list of dictionaries where: - First element: Title slide with keys 'title' and 'subtitle' - Subsequent elements: Content slides with keys 'title', 'text' (optional)
 
 <a id="camel.toolkits.pptx_toolkit.PPTXToolkit.create_presentation"></a>
 
@@ -96,7 +167,7 @@ Create a PowerPoint presentation (PPTX) file.
 
 **Parameters:**
 
-- **content** (str): The content to write to the PPTX file as a JSON string. Must represent a list of dictionaries with specific structure: - First dict: title slide `{"title": str, "subtitle": str}` - Other dicts: content slides `{"title": str, "text": str (optional), "image": str URL (optional)}` Example JSON string: '[ `{ "title": "Presentation Title", "subtitle": "Presentation Subtitle" }`, `{ "title": "Slide 1 Title", "text": "Slide content text", "image": "https://example.com/image.jpg" }` ]'
+- **content** (str): The content to write to the PPTX file as a JSON string. Must represent a list of dictionaries with specific structure: - First dict: title slide `{"title": str, "subtitle": str}` - Other dicts: content slides `{"title": str, "text": str (optional), "image": str URL (optional)}`
 - **filename** (str): The name or path of the file. If a relative path is supplied, it is resolved to self.output_dir.
 
 **Returns:**
@@ -115,3 +186,132 @@ def get_tools(self):
 
   List[FunctionTool]: A list of FunctionTool objects
 representing the functions in the toolkit.
+
+<a id="camel.toolkits.pptx_toolkit.PPTXToolkit._handle_default_display"></a>
+
+### _handle_default_display
+
+```python
+def _handle_default_display(
+    self,
+    presentation: Any,
+    slide_json: dict,
+    slide_width_inch: float,
+    slide_height_inch: float
+):
+```
+
+Display a list of text in a slide.
+
+**Parameters:**
+
+- **presentation**: The presentation object.
+- **slide_json**: The content of the slide as JSON data.
+- **slide_width_inch**: The width of the slide in inches.
+- **slide_height_inch**: The height of the slide in inches.
+
+<a id="camel.toolkits.pptx_toolkit.PPTXToolkit._handle_table"></a>
+
+### _handle_table
+
+```python
+def _handle_table(
+    self,
+    presentation: Any,
+    slide_json: dict,
+    slide_width_inch: float,
+    slide_height_inch: float
+):
+```
+
+Add a table to a slide.
+
+**Parameters:**
+
+- **presentation**: The presentation object.
+- **slide_json**: The content of the slide as JSON data.
+- **slide_width_inch**: The width of the slide in inches.
+- **slide_height_inch**: The height of the slide in inches.
+
+<a id="camel.toolkits.pptx_toolkit.PPTXToolkit._handle_step_by_step_process"></a>
+
+### _handle_step_by_step_process
+
+```python
+def _handle_step_by_step_process(
+    self,
+    presentation: Any,
+    slide_json: dict,
+    slide_width_inch: float,
+    slide_height_inch: float
+):
+```
+
+Add shapes to display a step-by-step process in the slide.
+
+**Parameters:**
+
+- **presentation**: The presentation object.
+- **slide_json**: The content of the slide as JSON data.
+- **slide_width_inch**: The width of the slide in inches.
+- **slide_height_inch**: The height of the slide in inches.
+
+<a id="camel.toolkits.pptx_toolkit.PPTXToolkit._handle_key_message"></a>
+
+### _handle_key_message
+
+```python
+def _handle_key_message(
+    self,
+    the_slide: Any,
+    slide_json: dict,
+    slide_width_inch: float,
+    slide_height_inch: float
+):
+```
+
+Add a shape to display the key message in the slide.
+
+**Parameters:**
+
+- **the_slide**: The slide to be processed.
+- **slide_json**: The content of the slide as JSON data.
+- **slide_width_inch**: The width of the slide in inches.
+- **slide_height_inch**: The height of the slide in inches.
+
+<a id="camel.toolkits.pptx_toolkit.PPTXToolkit._remove_slide_number_from_heading"></a>
+
+### _remove_slide_number_from_heading
+
+```python
+def _remove_slide_number_from_heading(self, header: str):
+```
+
+Remove the slide number from a given slide header.
+
+**Parameters:**
+
+- **header**: The header of a slide.
+
+**Returns:**
+
+  str: The header without slide number.
+
+<a id="camel.toolkits.pptx_toolkit.PPTXToolkit._get_slide_placeholders"></a>
+
+### _get_slide_placeholders
+
+```python
+def _get_slide_placeholders(self, slide: Any, layout_number: int):
+```
+
+Return the index and name of all placeholders present in a slide.
+
+**Parameters:**
+
+- **slide**: The slide.
+- **layout_number**: The layout number used by the slide.
+
+**Returns:**
+
+  List[Tuple[int, str]]: A list containing placeholders (idx, name) tuples.
