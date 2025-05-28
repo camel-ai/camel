@@ -1,0 +1,148 @@
+<a id="camel.storages.object_storages.google_cloud"></a>
+
+<a id="camel.storages.object_storages.google_cloud.GoogleCloudStorage"></a>
+
+## GoogleCloudStorage
+
+```python
+class GoogleCloudStorage(BaseObjectStorage):
+```
+
+A class to connect to Google Cloud Storage. It will connect to one
+bucket in the storage account.
+
+Note that Google Cloud Storage does not support api key authentication.
+Therefore, before using this class, you need to log in with gcloud command
+line tool and save the credentials first.
+
+**Parameters:**
+
+- **bucket_name** (str): The name of the bucket.
+- **create_if_not_exists** (bool, optional): Whether to create the bucket if it does not exist. Defaults to True.
+- **anonymous** (bool, optional): Whether to use anonymous access. Defaults to False.
+- **References**: 
+- **https**: //cloud.google.com/storage
+- **https**: //cloud.google.com/docs/authentication/api-keys
+
+<a id="camel.storages.object_storages.google_cloud.GoogleCloudStorage.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    bucket_name: str,
+    create_if_not_exists: bool = True,
+    anonymous: bool = False
+):
+```
+
+<a id="camel.storages.object_storages.google_cloud.GoogleCloudStorage.canonicalize_path"></a>
+
+### canonicalize_path
+
+```python
+def canonicalize_path(file_path: PurePath):
+```
+
+Canonicalize the path for Google Cloud Storage.
+
+**Parameters:**
+
+- **file_path** (PurePath): The path to be canonicalized.
+
+**Returns:**
+
+  Tuple[str, str]: The canonicalized file key and file name.
+
+<a id="camel.storages.object_storages.google_cloud.GoogleCloudStorage._prepare_and_check"></a>
+
+### _prepare_and_check
+
+```python
+def _prepare_and_check(self):
+```
+
+Check privileges and existence of the bucket.
+
+<a id="camel.storages.object_storages.google_cloud.GoogleCloudStorage._put_file"></a>
+
+### _put_file
+
+```python
+def _put_file(self, file_key: str, file: File):
+```
+
+Put a file to the GCloud bucket.
+
+**Parameters:**
+
+- **file_key** (str): The path to the object in the bucket.
+- **file** (File): The file to be uploaded.
+
+<a id="camel.storages.object_storages.google_cloud.GoogleCloudStorage._get_file"></a>
+
+### _get_file
+
+```python
+def _get_file(self, file_key: str, filename: str):
+```
+
+Get a file from the GCloud bucket.
+
+**Parameters:**
+
+- **file_key** (str): The path to the object in the bucket.
+- **filename** (str): The name of the file.
+
+**Returns:**
+
+  File: The object from the S3 bucket.
+
+<a id="camel.storages.object_storages.google_cloud.GoogleCloudStorage._upload_file"></a>
+
+### _upload_file
+
+```python
+def _upload_file(self, local_file_path: Path, remote_file_key: str):
+```
+
+Upload a local file to the GCloud bucket.
+
+**Parameters:**
+
+- **local_file_path** (Path): The path to the local file to be uploaded.
+- **remote_file_key** (str): The path to the object in the bucket.
+
+<a id="camel.storages.object_storages.google_cloud.GoogleCloudStorage._download_file"></a>
+
+### _download_file
+
+```python
+def _download_file(self, local_file_path: Path, remote_file_key: str):
+```
+
+Download a file from the GCloud bucket to the local system.
+
+**Parameters:**
+
+- **local_file_path** (Path): The path to the local file to be saved.
+- **remote_file_key** (str): The key of the object in the bucket.
+
+<a id="camel.storages.object_storages.google_cloud.GoogleCloudStorage._object_exists"></a>
+
+### _object_exists
+
+```python
+def _object_exists(self, file_key: str):
+```
+
+Check if the object exists in the GCloud bucket.
+
+**Parameters:**
+
+- **file_key**: The key of the object in the bucket.
+
+**Returns:**
+
+  bool: Whether the object exists in the bucket.

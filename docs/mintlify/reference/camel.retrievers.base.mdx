@@ -1,0 +1,63 @@
+<a id="camel.retrievers.base"></a>
+
+<a id="camel.retrievers.base._query_unimplemented"></a>
+
+## _query_unimplemented
+
+```python
+def _query_unimplemented(self, *input: Any):
+```
+
+Defines the query behavior performed at every call.
+
+Query the results. Subclasses should implement this
+method according to their specific needs.
+
+It should be overridden by all subclasses.
+
+.. note::
+Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:`BaseRetriever` instance
+afterwards instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.
+
+<a id="camel.retrievers.base._process_unimplemented"></a>
+
+## _process_unimplemented
+
+```python
+def _process_unimplemented(self, *input: Any):
+```
+
+Defines the process behavior performed at every call.
+
+Processes content from a file or URL, divides it into chunks by
+using `Unstructured IO`,then stored internally. This method must be
+called before executing queries with the retriever.
+
+Should be overridden by all subclasses.
+
+.. note::
+Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:`BaseRetriever` instance
+afterwards instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.
+
+<a id="camel.retrievers.base.BaseRetriever"></a>
+
+## BaseRetriever
+
+```python
+class BaseRetriever(ABC):
+```
+
+Abstract base class for implementing various types of information
+retrievers.
+
+<a id="camel.retrievers.base.BaseRetriever.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self):
+```
