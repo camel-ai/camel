@@ -58,7 +58,6 @@ print("Analyzing video...")
 result = video_toolkit.ask_question_about_video(
     video_path=video_url,
     question=question,
-    num_frames=5,  # Extract only 5 frames for faster processing
 )
 
 print("Video Analysis Result:")

@@ -29,6 +29,7 @@ from .linkedin_toolkit import LinkedInToolkit
 from .reddit_toolkit import RedditToolkit
 from .meshy_toolkit import MeshyToolkit
 from .openbb_toolkit import OpenBBToolkit
+from .bohrium_toolkit import BohriumToolkit
 
 from .base import BaseToolkit
 from .google_maps_toolkit import GoogleMapsToolkit
@@ -59,6 +60,7 @@ from .video_analysis_toolkit import VideoAnalysisToolkit
 from .image_analysis_toolkit import ImageAnalysisToolkit
 from .mcp_toolkit import MCPToolkit
 from .browser_toolkit import BrowserToolkit
+from .async_browser_toolkit import AsyncBrowserToolkit
 from .file_write_toolkit import FileWriteToolkit
 from .terminal_toolkit import TerminalToolkit
 from .pubmed_toolkit import PubMedToolkit
@@ -67,6 +69,12 @@ from .thinking_toolkit import ThinkingToolkit
 from .pyautogui_toolkit import PyAutoGUIToolkit
 from .openai_agent_toolkit import OpenAIAgentToolkit
 from .searxng_toolkit import SearxNGToolkit
+from .jina_reranker_toolkit import JinaRerankerToolkit
+from .pulse_mcp_search_toolkit import PulseMCPSearchToolkit
+from .klavis_toolkit import KlavisToolkit
+from .aci_toolkit import ACIToolkit
+from .playwright_mcp_toolkit import PlaywrightMCPToolkit
+from .wolfram_alpha_toolkit import WolframAlphaToolkit
 
 
 __all__ = [
@@ -114,6 +122,7 @@ __all__ = [
     'VideoAnalysisToolkit',
     'ImageAnalysisToolkit',
     'BrowserToolkit',
+    'AsyncBrowserToolkit',
     'FileWriteToolkit',
     'TerminalToolkit',
     'PubMedToolkit',
@@ -122,4 +131,11 @@ __all__ = [
     'PyAutoGUIToolkit',
     'OpenAIAgentToolkit',
     'SearxNGToolkit',
+    'JinaRerankerToolkit',
+    'PulseMCPSearchToolkit',
+    'KlavisToolkit',
+    'ACIToolkit',
+    'PlaywrightMCPToolkit',
+    'WolframAlphaToolkit',
+    'BohriumToolkit',
 ]

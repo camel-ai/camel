@@ -1,0 +1,121 @@
+<a id="camel.retrievers.hybrid_retrival"></a>
+
+<a id="camel.retrievers.hybrid_retrival.HybridRetriever"></a>
+
+## HybridRetriever
+
+```python
+class HybridRetriever(BaseRetriever):
+```
+
+<a id="camel.retrievers.hybrid_retrival.HybridRetriever.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    embedding_model: Optional[BaseEmbedding] = None,
+    vector_storage: Optional[BaseVectorStorage] = None
+):
+```
+
+Initializes the HybridRetriever with optional embedding model and
+vector storage.
+
+**Parameters:**
+
+- **embedding_model** (Optional[BaseEmbedding]): An optional embedding model used by the VectorRetriever. Defaults to None.
+- **vector_storage** (Optional[BaseVectorStorage]): An optional vector storage used by the VectorRetriever. Defaults to None.
+
+<a id="camel.retrievers.hybrid_retrival.HybridRetriever.process"></a>
+
+### process
+
+```python
+def process(self, content_input_path: str):
+```
+
+Processes the content input path for both vector and BM25
+retrievers.
+
+**Parameters:**
+
+- **content_input_path** (str): File path or URL of the content to be processed.
+
+<a id="camel.retrievers.hybrid_retrival.HybridRetriever._sort_rrf_scores"></a>
+
+### _sort_rrf_scores
+
+```python
+def _sort_rrf_scores(
+    self,
+    vector_retriever_results: List[Dict[str, Any]],
+    bm25_retriever_results: List[Dict[str, Any]],
+    top_k: int,
+    vector_weight: float,
+    bm25_weight: float,
+    rank_smoothing_factor: float
+):
+```
+
+Sorts and combines results from vector and BM25 retrievers using
+Reciprocal Rank Fusion (RRF).
+
+**Parameters:**
+
+- **vector_retriever_results**: A list of dictionaries containing the results from the vector retriever, where each dictionary contains a 'text' entry.
+- **bm25_retriever_results**: A list of dictionaries containing the results from the BM25 retriever, where each dictionary contains a 'text' entry.
+- **top_k**: The number of top results to return after sorting by RRF score.
+- **vector_weight**: The weight to assign to the vector retriever results in the RRF calculation.
+- **bm25_weight**: The weight to assign to the BM25 retriever results in the RRF calculation.
+- **rank_smoothing_factor**: A hyperparameter for the RRF calculation that helps smooth the rank positions.
+
+**Returns:**
+
+  List[Dict[str, Union[str, float]]]: A list of dictionaries
+representing the sorted results. Each dictionary contains the
+'text'from the retrieved items and their corresponding 'rrf_score'.
+
+<a id="camel.retrievers.hybrid_retrival.HybridRetriever.query"></a>
+
+### query
+
+```python
+def query(
+    self,
+    query: str,
+    top_k: int = 20,
+    vector_weight: float = 0.8,
+    bm25_weight: float = 0.2,
+    rank_smoothing_factor: int = 60,
+    vector_retriever_top_k: int = 50,
+    vector_retriever_similarity_threshold: float = 0.5,
+    bm25_retriever_top_k: int = 50,
+    return_detailed_info: bool = False
+):
+```
+
+Executes a hybrid retrieval query using both vector and BM25
+retrievers.
+
+**Parameters:**
+
+- **query** (str): The search query.
+- **top_k** (int): Number of top results to return (default 20).
+- **vector_weight** (float): Weight for vector retriever results in RRF.
+- **bm25_weight** (float): Weight for BM25 retriever results in RRF.
+- **rank_smoothing_factor** (int): RRF hyperparameter for rank smoothing.
+- **vector_retriever_top_k** (int): Top results from vector retriever.
+- **vector_retriever_similarity_threshold** (float): Similarity threshold for vector retriever.
+- **bm25_retriever_top_k** (int): Top results from BM25 retriever.
+- **return_detailed_info** (bool): Return detailed info if True.
+
+**Returns:**
+
+  Union[
+dict[str, Sequence[Collection[str]]],
+dict[str, Sequence[Union[str, float]]]
+]: By default, returns only the text information. If
+`return_detailed_info` is `True`, return detailed information
+including rrf scores.
