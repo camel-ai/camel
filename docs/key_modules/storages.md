@@ -255,7 +255,7 @@ from camel.storages.vectordb_storages import (
 Before running this example, you need to setup an OceanBase instance:
 (Option 1): OceanBase Community Edition (OCE):
 1. Download and install OCE from the official website:
-   https://www.oceanbase.com/docs/oceanbase-database-cn
+   https://www.oceanbase.com/docs/oceanbase-database
 2. Start the OceanBase server and create a database user
 3. Install PyOBVector package:
    pip install pyobvector
@@ -349,7 +349,7 @@ Adding vectors in batches...
 Vector count after adding batch: 1000
 Querying similar vectors...
 Result 1:
-  ID: f33f008d-688a-468a-9a2d-e005d27ad9d8
+  ID: f33f008d-688a-468a-9a2d-e005d27ad9d9
   Payload: {'idx': 496, 'batch': 'example'}
   Similarity: 0.9847431876706196
 Result 2:
@@ -361,7 +361,7 @@ Result 3:
   Payload: {'idx': 654, 'batch': 'example'}
   Similarity: 0.9548076959468635
 Result 4:
-  ID: 8d6359ff-49fd-4fb7-99fd-bf4ca0a0cdcc
+  ID: 8d6359ff-49fd-4fb7-99fd-bf4ca0a0cdcx
   Payload: {'idx': 914, 'batch': 'example'}
   Similarity: 0.9496165658207311
 Result 5:
