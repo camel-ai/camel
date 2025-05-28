@@ -1,0 +1,597 @@
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
+
+import re
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+
+import pptx
+from pptx.enum.shapes import MSO_AUTO_SHAPE_TYPE
+from pptx.util import Inches, Pt
+
+from camel.logger import get_logger
+from camel.toolkits.base import BaseToolkit
+from camel.toolkits.function_tool import FunctionTool
+from camel.utils import MCPServer
+
+logger = get_logger(__name__)
+
+# Constants
+EMU_TO_INCH_SCALING_FACTOR = 1.0 / 914400
+INCHES_1_5 = Inches(1.5)
+INCHES_1 = Inches(1)
+INCHES_0_5 = Inches(0.5)
+INCHES_0_4 = Inches(0.4)
+INCHES_0_3 = Inches(0.3)
+
+STEP_BY_STEP_PROCESS_MARKER = '>> '
+
+SLIDE_NUMBER_REGEX = re.compile(r"^slide[ ]+\d+:", re.IGNORECASE)
+BOLD_ITALICS_PATTERN = re.compile(r'(\*\*(.*?)\*\*|\*(.*?)\*)')
+
+IMAGE_DISPLAY_PROBABILITY = 1 / 3.0
+FOREGROUND_IMAGE_PROBABILITY = 0.8
+
+
+@MCPServer()
+class PPTXToolkit(BaseToolkit):
+    r"""A toolkit for creating and writing PowerPoint presentations (PPTX files).
+
+    This class provides cross-platform support for creating PPTX files with
+    title slides, content slides, text formatting, and image embedding.
+    """
+
+    def __init__(
+        self,
+        output_dir: str = "./",
+        timeout: Optional[float] = None,
+    ) -> None:
+        r"""Initialize the PPTXToolkit.
+
+        Args:
+            output_dir (str): The default directory for output files.
+                Defaults to the current working directory.
+            timeout (Optional[float]): The timeout for the toolkit.
+                (default: :obj: `None`)
+        """
+        super().__init__(timeout=timeout)
+        self.output_dir = Path(output_dir).resolve()
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        logger.info(
+            f"PPTXToolkit initialized with output directory: {self.output_dir}"
+        )
+
+    def _resolve_filepath(self, file_path: str) -> Path:
+        r"""Convert the given string path to a Path object.
+
+        If the provided path is not absolute, it is made relative to the
+        default output directory. The filename part is sanitized to replace
+        spaces and special characters with underscores, ensuring safe usage
+        in downstream processing.
+
+        Args:
+            file_path (str): The file path to resolve.
+
+        Returns:
+            Path: A fully resolved (absolute) and sanitized Path object.
+        """
+        path_obj = Path(file_path)
+        if not path_obj.is_absolute():
+            path_obj = self.output_dir / path_obj
+
+        sanitized_filename = self._sanitize_filename(path_obj.name)
+        path_obj = path_obj.parent / sanitized_filename
+        return path_obj.resolve()
+
+    def _sanitize_filename(self, filename: str) -> str:
+        r"""Sanitize a filename by replacing special characters and spaces.
+
+        Args:
+            filename (str): The filename to sanitize.
+
+        Returns:
+            str: The sanitized filename.
+        """
+        import re
+
+        # Replace spaces and special characters with underscores
+        sanitized = re.sub(r'[^\w\-_\.]', '_', filename)
+        # Remove multiple consecutive underscores
+        sanitized = re.sub(r'_+', '_', sanitized)
+        return sanitized
+
+    def _format_text(self, frame_paragraph, text: str) -> None:
+        r"""Apply bold and italic formatting while preserving the original word order.
+
+        Args:
+            frame_paragraph: The paragraph to format.
+            text (str): The text to format.
+        """
+        matches = list(BOLD_ITALICS_PATTERN.finditer(text))
+        last_index = 0
+
+        for match in matches:
+            start, end = match.span()
+            if start > last_index:
+                run = frame_paragraph.add_run()
+                run.text = text[last_index:start]
+
+            if match.group(2):  # Bold
+                run = frame_paragraph.add_run()
+                run.text = match.group(2)
+                run.font.bold = True
+            elif match.group(3):  # Italics
+                run = frame_paragraph.add_run()
+                run.text = match.group(3)
+                run.font.italic = True
+
+            last_index = end
+
+        if last_index < len(text):
+            run = frame_paragraph.add_run()
+            run.text = text[last_index:]
+
+    def _add_bulleted_items(
+        self, text_frame: pptx.text.text.TextFrame, flat_items_list: list
+    ) -> None:
+        r"""Add a list of texts as bullet points and apply formatting.
+
+        Args:
+            text_frame: The text frame where text is to be displayed.
+            flat_items_list: The list of items to be displayed.
+        """
+        for idx, an_item in enumerate(flat_items_list):
+            if idx == 0:
+                paragraph = text_frame.paragraphs[0]
+            else:
+                paragraph = text_frame.add_paragraph()
+                paragraph.level = an_item[1]
+
+            self._format_text(
+                paragraph, an_item[0].removeprefix(STEP_BY_STEP_PROCESS_MARKER)
+            )
+
+    def _get_flat_list_of_contents(
+        self, items: list, level: int
+    ) -> List[Tuple]:
+        r"""Flatten a hierarchical list of bullet points to a single list.
+
+        Args:
+            items: A bullet point (string or list).
+            level: The current level of hierarchy.
+
+        Returns:
+            List[Tuple]: A list of (bullet item text, hierarchical level) tuples.
+        """
+        flat_list = []
+
+        for item in items:
+            if isinstance(item, str):
+                flat_list.append((item, level))
+            elif isinstance(item, list):
+                flat_list.extend(
+                    self._get_flat_list_of_contents(item, level + 1)
+                )
+
+        return flat_list
+
+    def _get_slide_width_height_inches(
+        self, presentation: Any
+    ) -> Tuple[float, float]:
+        r"""Get the dimensions of a slide in inches.
+
+        Args:
+            presentation: The presentation object.
+
+        Returns:
+            Tuple[float, float]: The width and height in inches.
+        """
+        slide_width_inch = (
+            EMU_TO_INCH_SCALING_FACTOR * presentation.slide_width
+        )
+        slide_height_inch = (
+            EMU_TO_INCH_SCALING_FACTOR * presentation.slide_height
+        )
+        return slide_width_inch, slide_height_inch
+
+    def _write_pptx_file(
+        self, file_path: Path, content: List[Dict[str, Any]]
+    ) -> None:
+        r"""Write text content to a PPTX file with enhanced formatting.
+
+        Args:
+            file_path (Path): The target file path.
+            content (List[Dict[str, Any]]): The content to write to the PPTX file.
+                Must be a list of dictionaries where:
+                - First element: Title slide with keys 'title' and 'subtitle'
+                - Subsequent elements: Content slides with keys 'title', 'text' (optional)
+        """
+        presentation = pptx.Presentation()
+        slide_width_inch, slide_height_inch = (
+            self._get_slide_width_height_inches(presentation)
+        )
+
+        # Process slides
+        if content:
+            # Title slide (first element)
+            title_slide_data = content.pop(0) if content else {}
+            title_layout = presentation.slide_layouts[0]
+            title_slide = presentation.slides.add_slide(title_layout)
+
+            # Set title and subtitle
+            if title_slide.shapes.title:
+                title_slide.shapes.title.text_frame.clear()
+                self._format_text(
+                    title_slide.shapes.title.text_frame.paragraphs[0],
+                    title_slide_data.get("title", ""),
+                )
+
+            if len(title_slide.placeholders) > 1:
+                subtitle = title_slide.placeholders[1]
+                subtitle.text_frame.clear()
+                self._format_text(
+                    subtitle.text_frame.paragraphs[0],
+                    title_slide_data.get("subtitle", ""),
+                )
+
+            # Content slides
+            for slide_data in content:
+                if not isinstance(slide_data, dict):
+                    continue
+
+                # Handle different slide types
+                if 'table' in slide_data:
+                    self._handle_table(
+                        presentation,
+                        slide_data,
+                        slide_width_inch,
+                        slide_height_inch,
+                    )
+                elif 'bullet_points' in slide_data:
+                    if any(
+                        step.startswith(STEP_BY_STEP_PROCESS_MARKER)
+                        for step in slide_data['bullet_points']
+                    ):
+                        self._handle_step_by_step_process(
+                            presentation,
+                            slide_data,
+                            slide_width_inch,
+                            slide_height_inch,
+                        )
+                    else:
+                        self._handle_default_display(
+                            presentation,
+                            slide_data,
+                            slide_width_inch,
+                            slide_height_inch,
+                        )
+
+        # Save the presentation
+        presentation.save(str(file_path))
+        logger.debug(f"Wrote PPTX to {file_path} with enhanced formatting")
+
+    def create_presentation(
+        self,
+        content: str,
+        filename: str,
+    ) -> str:
+        r"""Create a PowerPoint presentation (PPTX) file.
+
+        Args:
+            content (str): The content to write to the PPTX file as a JSON string.
+                Must represent a list of dictionaries with specific structure:
+                - First dict: title slide {"title": str, "subtitle": str}
+                - Other dicts: content slides {"title": str, "text": str (optional),
+                "image": str URL (optional)}
+            filename (str): The name or path of the file. If a relative path is
+                supplied, it is resolved to self.output_dir.
+
+        Returns:
+            str: A success message indicating the file was created.
+
+        Raises:
+            ValueError: If content is not valid JSON or file extension is not .pptx.
+            FileNotFoundError: If the output directory does not exist.
+            PermissionError: If there are insufficient permissions to write the file.
+        """
+        # Ensure filename has .pptx extension
+        if not filename.lower().endswith('.pptx'):
+            filename += '.pptx'
+
+        # Resolve file path
+        file_path = self._resolve_filepath(filename)
+
+        # Parse and validate content format
+        try:
+            import json
+
+            parsed_content = json.loads(content)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Content must be valid JSON: {e}")
+
+        if not isinstance(parsed_content, list):
+            raise ValueError(
+                f"PPTX content must be a list of dictionaries, got {type(parsed_content).__name__}"
+            )
+
+        try:
+            # Create the PPTX file
+            self._write_pptx_file(file_path, parsed_content.copy())
+
+            success_msg = (
+                f"PowerPoint presentation successfully created: {file_path}"
+            )
+            logger.info(success_msg)
+            return success_msg
+
+        except Exception as e:
+            error_msg = f"Failed to create PPTX file {file_path}: {e!s}"
+            logger.error(error_msg)
+            raise e
+
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the
+        functions in the toolkit.
+
+        Returns:
+            List[FunctionTool]: A list of FunctionTool objects
+                representing the functions in the toolkit.
+        """
+        return [FunctionTool(self.create_presentation)]
+
+    def _handle_default_display(
+        self,
+        presentation: Any,
+        slide_json: dict,
+        slide_width_inch: float,
+        slide_height_inch: float,
+    ) -> None:
+        r"""Display a list of text in a slide.
+
+        Args:
+            presentation: The presentation object.
+            slide_json: The content of the slide as JSON data.
+            slide_width_inch: The width of the slide in inches.
+            slide_height_inch: The height of the slide in inches.
+        """
+        bullet_slide_layout = presentation.slide_layouts[1]
+        slide = presentation.slides.add_slide(bullet_slide_layout)
+
+        shapes = slide.shapes
+        title_shape = shapes.title
+
+        try:
+            body_shape = shapes.placeholders[1]
+        except KeyError:
+            placeholders = self._get_slide_placeholders(slide, layout_number=1)
+            body_shape = shapes.placeholders[placeholders[0][0]]
+
+        title_shape.text = self._remove_slide_number_from_heading(
+            slide_json['heading']
+        )
+        text_frame = body_shape.text_frame
+
+        flat_items_list = self._get_flat_list_of_contents(
+            slide_json['bullet_points'], level=0
+        )
+        self._add_bulleted_items(text_frame, flat_items_list)
+
+        self._handle_key_message(
+            the_slide=slide,
+            slide_json=slide_json,
+            slide_height_inch=slide_height_inch,
+            slide_width_inch=slide_width_inch,
+        )
+
+    def _handle_table(
+        self,
+        presentation: Any,
+        slide_json: dict,
+        slide_width_inch: float,
+        slide_height_inch: float,
+    ) -> None:
+        r"""Add a table to a slide.
+
+        Args:
+            presentation: The presentation object.
+            slide_json: The content of the slide as JSON data.
+            slide_width_inch: The width of the slide in inches.
+            slide_height_inch: The height of the slide in inches.
+        """
+        headers = slide_json['table'].get('headers', [])
+        rows = slide_json['table'].get('rows', [])
+        bullet_slide_layout = presentation.slide_layouts[1]
+        slide = presentation.slides.add_slide(bullet_slide_layout)
+        shapes = slide.shapes
+        shapes.title.text = self._remove_slide_number_from_heading(
+            slide_json['heading']
+        )
+        left = slide.placeholders[1].left
+        top = slide.placeholders[1].top
+        width = slide.placeholders[1].width
+        height = slide.placeholders[1].height
+        table = slide.shapes.add_table(
+            len(rows) + 1, len(headers), left, top, width, height
+        ).table
+
+        # Set headers
+        for col_idx, header_text in enumerate(headers):
+            table.cell(0, col_idx).text = header_text
+            table.cell(0, col_idx).text_frame.paragraphs[0].font.bold = True
+
+        # Fill in rows
+        for row_idx, row_data in enumerate(rows, start=1):
+            for col_idx, cell_text in enumerate(row_data):
+                table.cell(row_idx, col_idx).text = cell_text
+
+    def _handle_step_by_step_process(
+        self,
+        presentation: Any,
+        slide_json: dict,
+        slide_width_inch: float,
+        slide_height_inch: float,
+    ) -> None:
+        r"""Add shapes to display a step-by-step process in the slide.
+
+        Args:
+            presentation: The presentation object.
+            slide_json: The content of the slide as JSON data.
+            slide_width_inch: The width of the slide in inches.
+            slide_height_inch: The height of the slide in inches.
+        """
+        steps = slide_json['bullet_points']
+        n_steps = len(steps)
+
+        bullet_slide_layout = presentation.slide_layouts[1]
+        slide = presentation.slides.add_slide(bullet_slide_layout)
+        shapes = slide.shapes
+        shapes.title.text = self._remove_slide_number_from_heading(
+            slide_json['heading']
+        )
+
+        if 3 <= n_steps <= 4:
+            # Horizontal display
+            height = INCHES_1_5
+            width = Inches(slide_width_inch / n_steps - 0.01)
+            top = Inches(slide_height_inch / 2)
+            left = Inches(
+                (slide_width_inch - width.inches * n_steps) / 2 + 0.05
+            )
+
+            for step in steps:
+                shape = shapes.add_shape(
+                    MSO_AUTO_SHAPE_TYPE.CHEVRON, left, top, width, height
+                )
+                text_frame = shape.text_frame
+                text_frame.clear()
+                paragraph = text_frame.paragraphs[0]
+                paragraph.alignment = (
+                    pptx.enum.text.PP_ALIGN.CENTER
+                )  # Center horizontally
+                text_frame.vertical_anchor = (
+                    pptx.enum.text.MSO_ANCHOR.MIDDLE
+                )  # Center vertically
+                self._format_text(
+                    paragraph, step.removeprefix(STEP_BY_STEP_PROCESS_MARKER)
+                )
+                for run in paragraph.runs:
+                    run.font.size = Pt(14)  # Reduce font size for better fit
+                left = Inches(left.inches + width.inches - INCHES_0_4.inches)
+        elif 4 < n_steps <= 6:
+            # Vertical display
+            height = Inches(0.65)
+            top = Inches(slide_height_inch / 4)
+            left = INCHES_1
+
+            width = Inches(slide_width_inch * 2 / 3)
+            lengths = [len(step) for step in steps]
+            font_size_20pt = Pt(20)
+            widths = sorted(
+                [
+                    min(Inches(font_size_20pt.inches * a_len), width)
+                    for a_len in lengths
+                ]
+            )
+            width = widths[len(widths) // 2]
+
+            for step in steps:
+                shape = shapes.add_shape(
+                    MSO_AUTO_SHAPE_TYPE.PENTAGON, left, top, width, height
+                )
+                text_frame = shape.text_frame
+                text_frame.clear()
+                paragraph = text_frame.paragraphs[0]
+                paragraph.alignment = (
+                    pptx.enum.text.PP_ALIGN.CENTER
+                )  # Center horizontally
+                text_frame.vertical_anchor = (
+                    pptx.enum.text.MSO_ANCHOR.MIDDLE
+                )  # Center vertically
+                self._format_text(
+                    paragraph, step.removeprefix(STEP_BY_STEP_PROCESS_MARKER)
+                )
+                for run in paragraph.runs:
+                    run.font.size = Pt(14)  # Reduce font size for better fit
+                top = Inches(top.inches + height.inches + INCHES_0_3.inches)
+                left = Inches(left.inches + INCHES_0_5.inches)
+
+    def _handle_key_message(
+        self,
+        the_slide: Any,
+        slide_json: dict,
+        slide_width_inch: float,
+        slide_height_inch: float,
+    ) -> None:
+        r"""Add a shape to display the key message in the slide.
+
+        Args:
+            the_slide: The slide to be processed.
+            slide_json: The content of the slide as JSON data.
+            slide_width_inch: The width of the slide in inches.
+            slide_height_inch: The height of the slide in inches.
+        """
+        if slide_json.get('key_message'):
+            height = Inches(1.6)
+            width = Inches(slide_width_inch / 2.3)
+            top = Inches(slide_height_inch - height.inches - 0.1)
+            left = Inches((slide_width_inch - width.inches) / 2)
+            shape = the_slide.shapes.add_shape(
+                MSO_AUTO_SHAPE_TYPE.ROUNDED_RECTANGLE,
+                left=left,
+                top=top,
+                width=width,
+                height=height,
+            )
+            self._format_text(
+                shape.text_frame.paragraphs[0], slide_json['key_message']
+            )
+
+    def _remove_slide_number_from_heading(self, header: str) -> str:
+        r"""Remove the slide number from a given slide header.
+
+        Args:
+            header: The header of a slide.
+
+        Returns:
+            str: The header without slide number.
+        """
+        if SLIDE_NUMBER_REGEX.match(header):
+            idx = header.find(':')
+            header = header[idx + 1 :]
+        return header
+
+    def _get_slide_placeholders(
+        self,
+        slide: Any,
+        layout_number: int,
+    ) -> List[Tuple[int, str]]:
+        r"""Return the index and name of all placeholders present in a slide.
+
+        Args:
+            slide: The slide.
+            layout_number: The layout number used by the slide.
+
+        Returns:
+            List[Tuple[int, str]]: A list containing placeholders (idx, name) tuples.
+        """
+        placeholders = [
+            (shape.placeholder_format.idx, shape.name.lower())
+            for shape in slide.shapes.placeholders
+        ]
+        placeholders.pop(0)  # Remove the title placeholder
+        return placeholders
+
+
+# ruff: noqa: E501
