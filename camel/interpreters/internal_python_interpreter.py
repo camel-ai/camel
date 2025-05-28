@@ -531,3 +531,6 @@ class InternalPythonInterpreter(BaseInterpreter):
                 return self.fuzz_state[close_matches[0]]
             else:
                 raise InterpreterError(f"The variable `{key}` is not defined.")
+
+    def execute_command(self, command: str) -> str:
+        return " "

@@ -425,3 +425,64 @@ class SubprocessInterpreter(BaseInterpreter):
                 return True
             except subprocess.CalledProcessError:
                 return False
+
+    def execute_command(self, command: str) -> str:
+        r"""Executes a shell command in a subprocess and captures its output.
+
+        Args:
+            command (str): The shell command to execute.
+
+        Returns:
+            str: A string containing the captured stdout and stderr of the
+                executed command.
+
+        Raises:
+            InterpreterError: If the command execution fails.
+        """
+        # Get current Python executable's environment
+        env = os.environ.copy()
+
+        try:
+            proc = subprocess.Popen(
+                command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                env=env,
+                shell=True,  # Use shell=True for command execution
+            )
+            # Add timeout to prevent hanging processes
+            stdout, stderr = proc.communicate(timeout=self.execution_timeout)
+            return_code = proc.returncode
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            stdout, stderr = proc.communicate()
+            return_code = proc.returncode
+            timeout_msg = (
+                f"Process timed out after {self.execution_timeout} seconds "
+                f"and was terminated."
+            )
+            stderr = f"{stderr}\n{timeout_msg}"
+
+        if self.print_stdout and stdout:
+            print("======stdout======")
+            print(Fore.GREEN + stdout + Fore.RESET)
+            print("==================")
+        if self.print_stderr and stderr:
+            print("======stderr======")
+            print(Fore.RED + stderr + Fore.RESET)
+            print("==================")
+
+        # Build the execution result
+        exec_result = ""
+        if stdout:
+            exec_result += stdout
+        if stderr:
+            exec_result += f"(stderr: {stderr})"
+        if return_code != 0:
+            error_msg = f"(Execution failed with return code {return_code})"
+            if not stderr:
+                exec_result += error_msg
+            elif error_msg not in stderr:
+                exec_result += error_msg
+        return exec_result

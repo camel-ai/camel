@@ -113,6 +113,19 @@ class CodeExecutionToolkit(BaseToolkit):
             print(content)
         return content
 
+    def execute_command(self, command: str) -> str:
+        """
+        Execute a command can be used to resolve the dependency of the code.
+        """
+        print(command)
+        output = self.interpreter.execute_command(command)
+        # ruff: noqa: E501
+
+        content = f"Executed the command below:\n```sh\n{command}\n```\n> Executed Results:\n{output}"
+        if self.verbose:
+            print(content)
+        return content
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
@@ -121,4 +134,7 @@ class CodeExecutionToolkit(BaseToolkit):
             List[FunctionTool]: A list of FunctionTool objects
                 representing the functions in the toolkit.
         """
-        return [FunctionTool(self.execute_code)]
+        return [
+            FunctionTool(self.execute_code),
+            FunctionTool(self.execute_command),
+        ]
