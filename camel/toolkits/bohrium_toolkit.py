@@ -58,9 +58,16 @@ class BohriumToolkit(BaseToolkit):
         yaml_path: Optional[str] = None,
     ):
         super().__init__(timeout=timeout)
-
-        from bohrium._client import Bohrium
-        from bohrium.resources import Job
+        try:
+            from bohrium._client import Bohrium
+            from bohrium.resources import Job
+        except ImportError:
+            logger.error(
+                "bohrium is not installed, install it from "
+                "https://github.com/dptech-corp"
+                "/bohrium-openapi-python-sdk"
+            )
+            raise
 
         api_key = api_key or os.environ.get("BOHRIUM_API_KEY")
         self._client = Bohrium(access_key=api_key, project_id=project_id)

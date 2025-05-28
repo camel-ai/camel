@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.60"
+version = "0.2.61"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -158,8 +158,6 @@ research_tools = [
     "arxiv>=2.1.3,<3",
     "arxiv2text>=0.1.14,<0.2",
     "scholarly[tor]==1.7.11",
-    # Using a git source for bohrium, no version constraint needed
-    "bohrium",
 ]
 dev_tools = [
     "docker>=7.1.0,<8",
@@ -373,7 +371,6 @@ all = [
     "google-genai>=1.13.0",
     "aci-sdk>=1.0.0b1",
     "pylatex>=1.4.2",
-    "bohrium"
 ]
 
 [project.urls]
@@ -386,9 +383,6 @@ default-groups = [
     "dev",
     "docs",
 ]
-
-[tool.uv.sources]
-bohrium = { git = "https://github.com/dptech-corp/bohrium-openapi-python-sdk" }
 
 [tool.hatch.build.targets.sdist]
 include = ["camel"]
@@ -571,8 +565,8 @@ module = [
     "ibm_watsonx_ai.*",
     "google_genai",
     "aci-sdk.*",
-    "bohrium.*",
-    "pylatex.*"
+    "pylatex.*",
+    "bohrium.*"
 ]
 ignore_missing_imports = true
 
