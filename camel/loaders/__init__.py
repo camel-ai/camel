@@ -14,7 +14,7 @@
 
 from .apify_reader import Apify
 from .base_io import File, create_file, create_file_from_raw_bytes
-from .chunkr_reader import ChunkrReader
+from .chunkr_reader import ChunkrReader, ChunkrReaderConfig
 from .crawl4ai_reader import Crawl4AI
 from .firecrawl_reader import Firecrawl
 from .jina_url_reader import JinaURLReader
@@ -32,8 +32,9 @@ __all__ = [
     'JinaURLReader',
     'Firecrawl',
     'Apify',
-    'ChunkrReader',
     'PandasReader',
+    'ChunkrReader',
+    'ChunkrReaderConfig',
     'MinerU',
     'Crawl4AI',
     'MarkItDownLoader',
