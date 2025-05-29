@@ -562,6 +562,7 @@ name = "camel-ai"
 version = "0.2.61"
 source = { editable = "." }
 dependencies = [
+    { name = "chunkr-ai" },
     { name = "colorama" },
     { name = "docstring-parser" },
     { name = "httpx" },
@@ -940,7 +941,6 @@ requires-dist = [
     { name = "beautifulsoup4", marker = "extra == 'web-tools'", specifier = ">=4,<5" },
     { name = "botocore", marker = "extra == 'all'", specifier = ">=1.35.3,<2" },
     { name = "botocore", marker = "extra == 'storage'", specifier = ">=1.35.3,<2" },
-    { name = "chunkr-ai", marker = "extra == 'owl'", specifier = ">=0.0.41" },
     { name = "cohere", marker = "extra == 'all'", specifier = ">=5.11.0,<6" },
     { name = "cohere", marker = "extra == 'model-platforms'", specifier = ">=5.11.0,<6" },
     { name = "cohere", marker = "extra == 'rag'", specifier = ">=5.11.0,<6" },
@@ -1366,6 +1366,22 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/fe/93/2a8262f50fda96068e6ea9acb387fb87f201457c1fa65474abbc318e6d96/chunkr_ai-0.0.50.tar.gz", hash = "sha256:da4d94866818d42997e479bad8d8414b2876b06a98e2ec4788cd89b24fd712df", size = 20023 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/37/ca/57d7647caf903ff465b5af4e6e1ea75dc2f42b2b0684487e02161706773b/chunkr_ai-0.0.50-py3-none-any.whl", hash = "sha256:3a8652cf16a3fd9d1f51d8a922dfc91984e2befab32a6faaaa28dae7dcb6324d", size = 16751 },
+]
+
+[[package]]
+name = "chunkr-ai"
+version = "0.0.41"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "httpx" },
+    { name = "nest-asyncio" },
+    { name = "pillow" },
+    { name = "pydantic" },
+    { name = "python-dotenv" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/bc/67/37c9f1798e884f12ef0e2a25456536d373c1e72c399ddd9cba47057e79c9/chunkr_ai-0.0.41.tar.gz", hash = "sha256:5781276e70ab50ae5f7eb85707432b1d790acf82d59a83060643915870dd1ff6", size = 14908 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c6/1d/355a7cdda41ad5fb8a9d9345e586c02491db30d004deccba8a0613406e66/chunkr_ai-0.0.41-py3-none-any.whl", hash = "sha256:7f83c15ae0bad1e37aa4ac880da747667b0b7a08420755e28f4a2f220ed4eb57", size = 14502 },
 ]
 
 [[package]]
