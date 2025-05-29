@@ -149,3 +149,20 @@ def stream(self):
 **Returns:**
 
   bool: Whether the model is in stream mode.
+
+<a id="camel.models.openai_model.OpenAIModel._request_stream_parse"></a>
+
+### _request_stream_parse
+
+```python
+def _request_stream_parse(
+    self,
+    messages: List[OpenAIMessage],
+    response_format: Type[BaseModel],
+    tools: Optional[List[Dict[str, Any]]] = None
+):
+```
+
+Request streaming structured output parsing.
+
+Note: This uses OpenAI's beta streaming API for structured outputs.
