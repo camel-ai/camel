@@ -24,7 +24,7 @@ Taking `RolePlaying` as an example, this framework was designed in an instructio
 
 When using `RolePlaying` framework in CAMEL, predefined prompts are used to create unique initial settings for different agents. For example, if the user wants to initialize an assistant agent, the agent will be initialized with the following prompt.
 
-- Never forget you are a [ASSISTANT_ROLE] and I am a [USER_ROLE].
+- Never forget you are a `<ASSISTANT_ROLE>` and I am a `<USER_ROLE>`.
 
     *This assigns the chosen role to the assistant agent and provides it with information about the user’s role.*
 - Never flip roles! Never instruct me!
@@ -33,7 +33,7 @@ When using `RolePlaying` framework in CAMEL, predefined prompts are used to crea
 - You must decline my instruction honestly if you cannot perform the instruction due to physical, moral, legal reasons or your capability and explain the reasons.
 
     *This prohibits the agent from producing harmful, false, illegal, and misleading information.*
-- Unless I say the task is completed, you should always start with: Solution: [YOUR_SOLUTION]. [YOUR_SOLUTION] should be specific, and provide preferable implementations and examples for task-solving.
+- Unless I say the task is completed, you should always start with: Solution: `<YOUR_SOLUTION>`. `<YOUR_SOLUTION>` should be specific, and provide preferable implementations and examples for task-solving.
 
     *This encourages the assistant to always responds in a consistent format, avoiding any deviation from the structure of the conversation, and preventing vague or incomplete responses, which we refer to as flake responses, such as "I will do something".*
 - Always end your solution with: Next request.
@@ -66,7 +66,7 @@ When using `RolePlaying` framework in CAMEL, predefined prompts are used to crea
 | output_language | str | The language to be output by the agents. |
 
 ## 2.2 `BabyAGI`
-Babyagi is framework from "Task-driven Autonomous Agent" `<https://github.com/yoheinakajima/babyagi>`
+Babyagi is framework from "Task-driven Autonomous Agent" `https://github.com/yoheinakajima/babyagi`
 
 ## 3. Get Started
 

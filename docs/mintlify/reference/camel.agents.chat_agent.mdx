@@ -32,7 +32,7 @@ Class for managing conversations of CAMEL Chat Agents.
 def __init__(
     self,
     system_message: Optional[Union[BaseMessage, str]] = None,
-    model: Optional[Union[BaseModelBackend, Tuple[str, str], str, ModelType, Tuple[ModelPlatformType, ModelType], List[BaseModelBackend], List[str], List[ModelType], List[Tuple[str, str]], List[Tuple[ModelPlatformType, ModelType]]]] = None,
+    model: Optional[Union[BaseModelBackend, ModelManager, Tuple[str, str], str, ModelType, Tuple[ModelPlatformType, ModelType], List[BaseModelBackend], List[str], List[ModelType], List[Tuple[str, str]], List[Tuple[ModelPlatformType, ModelType]]]] = None,
     memory: Optional[AgentMemory] = None,
     message_window_size: Optional[int] = None,
     token_limit: Optional[int] = None,
