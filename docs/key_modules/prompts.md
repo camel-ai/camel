@@ -1,5 +1,3 @@
-# Prompt
-
 ## 1. Concept
 The prompt module guides AI models to produce accurate, contextually relevant and personalized outputs. It includes various prompt templates and dictionaries designed for different tasks such as role descriptions, code generation, evaluation, text embedding, misalignment tasks, object recognition and so on. You can also create your own prompt to tailor your own AI agent.
 

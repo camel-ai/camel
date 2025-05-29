@@ -1,4 +1,3 @@
-# Data Generation
 
 This document describes CAMEL's key data generation modules that enable high-quality training data creation through advanced reasoning and instruction tuning techniques. The modules include:
 

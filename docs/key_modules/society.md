@@ -1,4 +1,3 @@
-# Society
 ## 1. Concept
 The society module is one of the core modules of CAMEL. By simulating the information exchange process, this module studies the social behaviors among agents. 
 
