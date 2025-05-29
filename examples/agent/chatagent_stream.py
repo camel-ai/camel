@@ -14,12 +14,13 @@
 import asyncio
 import time
 from typing import List
+
 from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType
 from camel.toolkits import FunctionTool
+from camel.types import ModelPlatformType, ModelType
 
 # Create a streaming model
 streaming_model = ModelFactory.create(
@@ -27,8 +28,9 @@ streaming_model = ModelFactory.create(
     model_type=ModelType.GPT_4O_MINI,
     model_config_dict={
         "stream": True,
-    }
+    },
 )
+
 
 # Define structured output model
 class TaskAnalysis(BaseModel):
@@ -37,181 +39,175 @@ class TaskAnalysis(BaseModel):
     estimated_time: str = Field(description="Estimated completion time")
     subtasks: List[str] = Field(description="List of subtasks")
 
+
 def get_weather(city: str) -> str:
     r"""Get weather information for a city"""
+    time.sleep(1)  # Simulate some processing time
     return f"The weather in {city} is sunny, with a temperature of 22°C."
 
-def example_basic_streaming():
-    r"""Test basic streaming functionality"""
-    print("=== Testing Basic Streaming Functionality ===")
-    
+
+def slow_calculation(n: int) -> str:
+    r"""Perform a slow calculation"""
+    time.sleep(3)  # Simulate slow calculation
+    result = n * n
+    return f"The square of {n} is {result}"
+
+
+def fast_lookup(word: str) -> str:
+    r"""Perform a fast lookup"""
+    time.sleep(0.5)  # Simulate fast lookup
+    return f"Definition of '{word}': a sample definition"
+
+
+def test_content_accumulation():
+    r"""Test that content accumulation works correctly"""
+    print("=== Testing Content Accumulation Fix ===")
+
     agent = ChatAgent(
         system_message="You are a helpful assistant.",
         model=streaming_model,
+        tools=[FunctionTool(get_weather)],
     )
-    
-    query = "Please write a short poem about spring."
-    print(f"Query: {query}")
-    print("Streaming response:")
-    
-    start_time = time.time()
-    content_chunks = []
-    
-    for response in agent.stream(query):
-        if response.msgs:
-            content = response.msgs[0].content
-            # Calculate the new content
-            new_content = content[len(''.join(content_chunks)):]
-            if new_content:
-                print(new_content, end="", flush=True)
-                content_chunks.append(new_content)
-    
-    end_time = time.time()
-    print(f"\nTotal time: {end_time - start_time:.2f} seconds")
-    print(f"Total word count: {len(''.join(content_chunks))}")
-    print("="*50)
 
-def example_tool_streaming():
-    r"""Test tool call streaming functionality"""
-    print("\n=== Testing Tool Call Streaming Functionality ===")
-    
-    agent = ChatAgent(
-        system_message="You are a helpful assistant who can check the weather.",
-        model=streaming_model,
-        tools=[FunctionTool(get_weather)]
-    )
-    
     query = "What is the weather like in Beijing?"
     print(f"Query: {query}")
-    print("Streaming response:")
-    
-    last_model_content = ""
-    
+    print("Checking content accumulation:")
+
+    previous_content = ""
+
+    for i, response in enumerate(agent.stream(query)):
+        if response.msgs:
+            current_content = response.msgs[0].content
+
+            # Verify that current content always contains all previous content
+            if not current_content.startswith(previous_content):
+                print(f"❌ CONTENT ACCUMULATION ERROR at response {i}:")
+                print(f"Previous: '{previous_content}'")
+                print(f"Current:  '{current_content}'")
+                print("Current content should contain all previous content!")
+                return False
+
+            # Only print new content
+            new_content = current_content[len(previous_content) :]
+            if new_content:
+                print(new_content, end="", flush=True)
+
+            previous_content = current_content
+
+    print("\n✅ Content accumulation test passed!")
+    print("=" * 50)
+    return True
+
+
+async def test_async_tool_execution():
+    r"""Test async tool execution with proper content accumulation"""
+    print("\n=== Testing Async Tool Execution ===")
+
+    agent = ChatAgent(
+        system_message="You are a helpful assistant who can perform calculations and lookups.",  # noqa: E501
+        model=streaming_model,
+        tools=[
+            FunctionTool(slow_calculation),
+            FunctionTool(fast_lookup),
+            FunctionTool(get_weather),
+        ],
+    )
+
+    query = "Calculate the square of 10, look up the word 'async', and get weather for Tokyo"  # noqa: E501
+    print(f"Query: {query}")
+    print("Testing async execution and content accumulation:")
+
+    previous_content = ""
+
+    async for response in agent.astream(query):
+        if response.msgs:
+            current_content = response.msgs[0].content
+
+            # Verify content accumulation
+            if not current_content.startswith(previous_content):
+                print("❌ ASYNC CONTENT ACCUMULATION ERROR:")
+                print(f"Previous: '{previous_content}'")
+                print(f"Current:  '{current_content}'")
+                return False
+
+            # Only print new content
+            new_content = current_content[len(previous_content) :]
+            if new_content:
+                print(new_content, end="", flush=True)
+
+            previous_content = current_content
+
+    print("=" * 50)
+    return True
+
+
+def test_sync_tool_execution():
+    r"""Test sync tool execution with proper content accumulation"""
+    print("\n=== Testing Sync Tool Execution ===")
+
+    agent = ChatAgent(
+        system_message="You are a helpful assistant who can perform calculations and lookups.",  # noqa: E501
+        model=streaming_model,
+        tools=[
+            FunctionTool(slow_calculation),
+            FunctionTool(fast_lookup),
+            FunctionTool(get_weather),
+        ],
+    )
+
+    query = "Calculate the square of 5, look up the word 'sync', and get weather for Shanghai"  # noqa: E501
+    print(f"Query: {query}")
+    print("Testing sync execution and content accumulation:")
+
+    previous_content = ""
+
     for response in agent.stream(query):
         if response.msgs:
-            content = response.msgs[0].content
-            
-            # Check if this is a tool status message
-            if hasattr(response, 'info') and response.info.get('tool_status'):
-                # This is a tool status message, print it directly
-                print(content, end="", flush=True)
-            else:
-                # This is model-generated content, print incrementally
-                if len(content) > len(last_model_content):
-                    new_content = content[len(last_model_content):]
-                    print(new_content, end="", flush=True)
-                    last_model_content = content
-    
-    print("\n" + "="*50)
+            current_content = response.msgs[0].content
 
-def example_structured_streaming():
-    r"""Test streaming structured output"""
-    print("\n=== Testing Streaming Structured Output ===")
-    
-    agent = ChatAgent(
-        system_message="You are a project management expert responsible for analyzing tasks.",
-        model=streaming_model,
-    )
-    
-    query = "Analyze this task: 'Develop a mobile shopping application.'"
-    print(f"Query: {query}")
-    print("Streaming structured response:")
-    
-    try:
-        for response in agent.stream(query, response_format=TaskAnalysis):
-            if response.msgs and response.msgs[0].parsed:
-                # Successfully parsed structured output
-                task_analysis = response.msgs[0].parsed
-                print(f"\nTitle: {task_analysis.title}")
-                print(f"Priority: {task_analysis.priority}")
-                print(f"Estimated Time: {task_analysis.estimated_time}")
-                print(f"Subtasks: {', '.join(task_analysis.subtasks)}")
-                break
-            elif response.msgs:
-                # Partial content (not fully parsed yet)
-                content = response.msgs[0].content
-                partial_content = content
-                print(f"Content: {partial_content}")
-    except Exception as e:
-        print(f"Error in structured output test: {e}")
-    
-    print("="*50)
+            # Verify content accumulation
+            if not current_content.startswith(previous_content):
+                print("❌ SYNC CONTENT ACCUMULATION ERROR:")
+                print(f"Previous: '{previous_content}'")
+                print(f"Current:  '{current_content}'")
+                return False
 
-async def example_async_streaming():
-    r"""Test asynchronous streaming functionality"""
-    print("\n=== Testing Asynchronous Streaming Functionality ===")
-    
-    agent = ChatAgent(
-        system_message="You are a creative writing assistant.",
-        model=streaming_model,
-    )
-    
-    query = "Write a haiku about streaming data."
-    print(f"Query: {query}")
-    print("Asynchronous streaming response:")
-    
-    start_time = time.time()
-    
-    async for response in agent.astream(query):
-        if response.msgs:
-            content = response.msgs[0].content
-            print(content, end="", flush=True)
-    
-    end_time = time.time()
-    print(f"\nAsynchronous total time: {end_time - start_time:.2f} seconds")
-    print("="*50)
+            # Only print new content
+            new_content = current_content[len(previous_content) :]
+            if new_content:
+                print(new_content, end="", flush=True)
 
-async def example_async_tool_streaming():
-    r"""Test asynchronous tool call streaming functionality"""
-    print("\n=== Testing Asynchronous Tool Call Streaming Functionality ===")
-    
-    agent = ChatAgent(
-        system_message="You are a helpful assistant who can check the weather.",
-        model=streaming_model,
-        tools=[FunctionTool(get_weather)]
-    )
-    
-    query = "What is the weather like in Shanghai and Guangzhou?"
-    print(f"Query: {query}")
-    print("Asynchronous streaming response:")
-    
-    last_model_content = ""
-    
-    async for response in agent.astream(query):
-        if response.msgs:
-            content = response.msgs[0].content
-            
-            # Check if this is a tool status message
-            if hasattr(response, 'info') and response.info.get('tool_status'):
-                # This is a tool status message, print it directly
-                print(content, end="", flush=True)
-            else:
-                # This is model-generated content, print incrementally
-                if len(content) > len(last_model_content):
-                    new_content = content[len(last_model_content):]
-                    print(new_content, end="", flush=True)
-                    last_model_content = content
+            previous_content = current_content
 
-    
-    print("\n" + "="*50)
+    print("=" * 50)
+    return True
 
-async def run_async_example():
-    r"""Run asynchronous example"""
-    # await example_async_streaming()
-    await example_async_tool_streaming()
+
+async def run_all_tests():
+    r"""Run all tests"""
+    print("🧪 Running Content Accumulation and Tool Execution Tests\n")
+
+    # Test basic content accumulation
+    if not test_content_accumulation():
+        print("❌ Basic content accumulation test failed!")
+        return
+
+    # Test sync tool execution
+    if not test_sync_tool_execution():
+        print("❌ Sync tool execution test failed!")
+        return
+
+    # Test async tool execution
+    if not await test_async_tool_execution():
+        print("❌ Async tool execution test failed!")
+        return
+
 
 if __name__ == "__main__":
     try:
-        # Synchronous examples
-        example_basic_streaming()
-        example_tool_streaming()
-        example_structured_streaming()
-        
-        # Asynchronous example
-        asyncio.run(run_async_example())
-        
-        print("\nAll examples completed!")
+        asyncio.run(run_all_tests())
     except Exception as e:
         print(f"Test error: {e}")
         import traceback
-        traceback.print_exc() 
+
+        traceback.print_exc()

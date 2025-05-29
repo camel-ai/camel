@@ -1695,9 +1695,11 @@ class ChatAgent(BaseAgent):
         r"""Internal method to handle streaming responses with tool calls."""
 
         tool_call_records: List[ToolCallingRecord] = []
-        current_content = ""
-        accumulated_tool_calls = {}
+        accumulated_tool_calls: Dict[str, Any] = {}
         step_token_usage = self._create_token_usage_tracker()
+
+        # Create content accumulator for proper content management
+        content_accumulator = self._StreamContentAccumulator()
 
         while True:
             # Check termination condition
@@ -1726,9 +1728,9 @@ class ChatAgent(BaseAgent):
                 (
                     stream_completed,
                     tool_calls_complete,
-                ) = yield from self._process_stream_chunks(
+                ) = yield from self._process_stream_chunks_with_accumulator(
                     response,
-                    current_content,
+                    content_accumulator,
                     accumulated_tool_calls,
                     tool_call_records,
                     step_token_usage,
@@ -1739,7 +1741,8 @@ class ChatAgent(BaseAgent):
                     # Clear completed tool calls
                     accumulated_tool_calls.clear()
 
-                    # If we executed tools and not in single iteration mode, continue
+                    # If we executed tools and not in
+                    # single iteration mode, continue
                     if tool_call_records and not self.single_iteration:
                         # Update messages with tool results for next iteration
                         try:
@@ -1753,6 +1756,8 @@ class ChatAgent(BaseAgent):
                                 "max_tokens_exceeded",
                             )
                             return
+                        # Reset streaming content for next iteration
+                        content_accumulator.reset_streaming_content()
                         continue
                     else:
                         break
@@ -1764,40 +1769,19 @@ class ChatAgent(BaseAgent):
             ):
                 # Handle structured output stream (ChatCompletionStreamManager)
                 with response as stream:
-                    content_buffer = ""
                     parsed_object = None
 
                     for event in stream:
                         if event.type == "content.delta":
                             if event.delta:
-                                content_buffer += event.delta
-
-                            # Create partial message and yield response
-                            # Don't set parsed until content is done
-                            partial_message = BaseMessage(
-                                role_name=self.role_name,
-                                role_type=self.role_type,
-                                meta_dict={},
-                                content=content_buffer,
-                                parsed=None,  # Keep None until content.done
-                            )
-
-                            # Create and yield partial response
-                            partial_response = ChatAgentResponse(
-                                msgs=[partial_message],
-                                terminated=False,
-                                info={
-                                    "id": "",
-                                    "usage": step_token_usage.copy(),
-                                    "finish_reasons": ["streaming"],
-                                    "num_tokens": len(content_buffer.split()),
-                                    "tool_calls": tool_call_records.copy(),
-                                    "external_tool_requests": None,
-                                    "streaming": True,
-                                    "partial": True,
-                                },
-                            )
-                            yield partial_response
+                                # Use accumulator for proper content management
+                                partial_response = self._create_streaming_response_with_accumulator(  # noqa: E501
+                                    content_accumulator,
+                                    event.delta,
+                                    step_token_usage,
+                                    tool_call_records=tool_call_records.copy(),
+                                )
+                                yield partial_response
 
                         elif event.type == "content.done":
                             parsed_object = event.parsed
@@ -1873,18 +1857,17 @@ class ChatAgent(BaseAgent):
                 )
                 break
 
-    def _process_stream_chunks(
+    def _process_stream_chunks_with_accumulator(
         self,
         stream: Stream[ChatCompletionChunk],
-        current_content: str,
+        content_accumulator: '_StreamContentAccumulator',
         accumulated_tool_calls: Dict[str, Any],
         tool_call_records: List[ToolCallingRecord],
         step_token_usage: Dict[str, int],
         response_format: Optional[Type[BaseModel]] = None,
     ) -> Generator[ChatAgentResponse, None, Tuple[bool, bool]]:
-        r"""Process streaming chunks and yield partial responses."""
+        r"""Process streaming chunks with content accumulator."""
 
-        content_buffer = current_content
         tool_calls_complete = False
         stream_completed = False
 
@@ -1902,38 +1885,15 @@ class ChatAgent(BaseAgent):
 
                 # Handle content streaming
                 if delta.content:
-                    content_buffer += delta.content
-
-                    # Create partial message and yield response
-                    partial_message = BaseMessage(
-                        role_name=self.role_name,
-                        role_type=self.role_type,
-                        meta_dict={},
-                        content=content_buffer,
-                    )
-
-                    # Try to parse structured response if format specified
-                    if response_format:
-                        self._try_format_message(
-                            partial_message, response_format
+                    # Use accumulator for proper content management
+                    partial_response = (
+                        self._create_streaming_response_with_accumulator(
+                            content_accumulator,
+                            delta.content,
+                            step_token_usage,
+                            getattr(chunk, 'id', ''),
+                            tool_call_records.copy(),
                         )
-
-                    # Create and yield partial response
-                    partial_response = ChatAgentResponse(
-                        msgs=[partial_message],
-                        terminated=False,
-                        info={
-                            "id": getattr(chunk, 'id', ''),
-                            "usage": step_token_usage.copy(),
-                            "finish_reasons": [
-                                choice.finish_reason or "streaming"
-                            ],
-                            "num_tokens": len(content_buffer.split()),
-                            "tool_calls": tool_call_records.copy(),
-                            "external_tool_requests": None,
-                            "streaming": True,
-                            "partial": True,
-                        },
                     )
                     yield partial_response
 
@@ -1947,66 +1907,47 @@ class ChatAgent(BaseAgent):
                 if choice.finish_reason:
                     stream_completed = True
 
-                    # If we have complete tool calls, execute them with status updates
+                    # If we have complete tool calls, execute them with
+                    # sync status updates
                     if accumulated_tool_calls:
                         # Record assistant message with tool calls first
                         self._record_assistant_tool_calls_message(
-                            accumulated_tool_calls, content_buffer
+                            accumulated_tool_calls,
+                            content_accumulator.get_full_content(),
                         )
 
-                        # Execute each tool call with status updates
+                        # Execute tools synchronously with
+                        # optimized status updates
                         for (
-                            tool_call_index,
-                            tool_call_data,
-                        ) in accumulated_tool_calls.items():
-                            if tool_call_data.get('complete', False):
-                                # Yield "Calling function" status
-                                calling_status = (
-                                    self._create_simple_tool_calling_status(
-                                        tool_call_data,
-                                        content_buffer,
-                                        step_token_usage,
-                                    )
-                                )
-                                yield calling_status
-
-                                # Execute the tool
-                                tool_call_record = (
-                                    self._execute_tool_from_stream_data(
-                                        tool_call_data
-                                    )
-                                )
-                                if tool_call_record:
-                                    tool_call_records.append(tool_call_record)
-
-                                    # Yield "Function output" status
-                                    output_status = (
-                                        self._create_simple_tool_output_status(
-                                            tool_call_record,
-                                            content_buffer,
-                                            step_token_usage,
-                                        )
-                                    )
-                                    yield output_status
+                            status_response
+                        ) in self._execute_tools_sync_with_status_accumulator(
+                            accumulated_tool_calls,
+                            content_accumulator,
+                            step_token_usage,
+                            tool_call_records,
+                        ):
+                            yield status_response
 
                         # Yield "Sending back result to model" status
                         if tool_call_records:
-                            sending_status = (
-                                self._create_tool_sending_status_response(
-                                    content_buffer, step_token_usage
-                                )
+                            sending_status = self._create_tool_status_response_with_accumulator(  # noqa: E501
+                                content_accumulator,
+                                "\n---------\n\nSending back result to model\n\n",  # noqa: E501
+                                "tool_sending",
+                                step_token_usage,
                             )
                             yield sending_status
 
                     # Record final message only if we have content AND no tool
                     # calls. If there are tool calls, _record_tool_calling
                     # will handle message recording.
-                    if content_buffer.strip() and not accumulated_tool_calls:
+                    final_content = content_accumulator.get_full_content()
+                    if final_content.strip() and not accumulated_tool_calls:
                         final_message = BaseMessage(
                             role_name=self.role_name,
                             role_type=self.role_type,
                             meta_dict={},
-                            content=content_buffer,
+                            content=final_content,
                         )
 
                         if response_format:
@@ -2089,6 +2030,75 @@ class ChatAgent(BaseAgent):
 
         return any_complete
 
+    def _execute_tools_sync_with_status_accumulator(
+        self,
+        accumulated_tool_calls: Dict[str, Any],
+        content_accumulator: '_StreamContentAccumulator',
+        step_token_usage: Dict[str, int],
+        tool_call_records: List[ToolCallingRecord],
+    ) -> Generator[ChatAgentResponse, None, None]:
+        r"""Execute multiple tools synchronously with
+        proper content accumulation."""
+
+        # Phase 1: Yield all "Calling function" statuses first
+        tool_calls_to_execute = []
+        for _tool_call_index, tool_call_data in accumulated_tool_calls.items():
+            if tool_call_data.get('complete', False):
+                function_name = tool_call_data['function']['name']
+                try:
+                    args = json.loads(tool_call_data['function']['arguments'])
+                except json.JSONDecodeError:
+                    args = tool_call_data['function']['arguments']
+
+                status_message = (
+                    f"\nCalling function: {function_name} "
+                    f"with arguments:\n{args}\n"
+                )
+
+                # Immediately yield "Calling function" status
+                calling_status = (
+                    self._create_tool_status_response_with_accumulator(
+                        content_accumulator,
+                        status_message,
+                        "tool_calling",
+                        step_token_usage,
+                    )
+                )
+                yield calling_status
+                tool_calls_to_execute.append(tool_call_data)
+
+        # Phase 2: Execute tools and yield results
+        for tool_call_data in tool_calls_to_execute:
+            try:
+                tool_call_record = self._execute_tool_from_stream_data(
+                    tool_call_data
+                )
+                if tool_call_record:
+                    # Add to the shared tool_call_records list
+                    tool_call_records.append(tool_call_record)
+
+                    # Create output status message
+                    raw_result = tool_call_record.result
+                    result_str = str(raw_result)
+                    status_message = (
+                        f"\nFunction output: {result_str}\n---------\n"
+                    )
+
+                    # Yield "Function output" status
+                    output_status = (
+                        self._create_tool_status_response_with_accumulator(
+                            content_accumulator,
+                            status_message,
+                            "tool_output",
+                            step_token_usage,
+                            [tool_call_record],
+                        )
+                    )
+                    yield output_status
+
+            except Exception as e:
+                logger.error(f"Error in sync tool execution: {e}")
+
     def _execute_tool_from_stream_data(
         self, tool_call_data: Dict[str, Any]
     ) -> Optional[ToolCallingRecord]:
@@ -2162,6 +2172,79 @@ class ChatAgent(BaseAgent):
             logger.error(f"Error processing tool call: {e}")
             return None
 
+    async def _aexecute_tool_from_stream_data(
+        self, tool_call_data: Dict[str, Any]
+    ) -> Optional[ToolCallingRecord]:
+        r"""Async execute a tool from accumulated stream data."""
+
+        try:
+            function_name = tool_call_data['function']['name']
+            args = json.loads(tool_call_data['function']['arguments'])
+            tool_call_id = tool_call_data['id']
+
+            if function_name in self._internal_tools:
+                tool = self._internal_tools[function_name]
+                try:
+                    result = await tool.async_call(**args)
+
+                    # Only record the tool response message, not the assistant
+                    # message assistant message with tool_calls was already
+                    # recorded in _record_assistant_tool_calls_message
+                    func_msg = FunctionCallingMessage(
+                        role_name=self.role_name,
+                        role_type=self.role_type,
+                        meta_dict=None,
+                        content="",
+                        func_name=function_name,
+                        result=result,
+                        tool_call_id=tool_call_id,
+                    )
+
+                    self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
+
+                    return ToolCallingRecord(
+                        tool_name=function_name,
+                        args=args,
+                        result=result,
+                        tool_call_id=tool_call_id,
+                    )
+
+                except Exception as e:
+                    error_msg = (
+                        f"Error executing async tool '{function_name}': {e!s}"
+                    )
+                    result = {"error": error_msg}
+                    logging.warning(error_msg)
+
+                    # Record error response
+                    func_msg = FunctionCallingMessage(
+                        role_name=self.role_name,
+                        role_type=self.role_type,
+                        meta_dict=None,
+                        content="",
+                        func_name=function_name,
+                        result=result,
+                        tool_call_id=tool_call_id,
+                    )
+
+                    self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
+
+                    return ToolCallingRecord(
+                        tool_name=function_name,
+                        args=args,
+                        result=result,
+                        tool_call_id=tool_call_id,
+                    )
+            else:
+                logger.warning(
+                    f"Tool '{function_name}' not found in internal tools"
+                )
+                return None
+
+        except Exception as e:
+            logger.error(f"Error processing async tool call: {e}")
+            return None
+
     def _create_error_response(
         self, error_message: str, tool_call_records: List[ToolCallingRecord]
     ) -> ChatAgentResponse:
@@ -2222,9 +2305,11 @@ class ChatAgent(BaseAgent):
         r"""Async method to handle streaming responses with tool calls."""
 
         tool_call_records: List[ToolCallingRecord] = []
-        current_content = ""
-        accumulated_tool_calls = {}
+        accumulated_tool_calls: Dict[str, Any] = {}
         step_token_usage = self._create_token_usage_tracker()
+
+        # Create content accumulator for proper content management
+        content_accumulator = self._StreamContentAccumulator()
 
         while True:
             # Check termination condition
@@ -2253,12 +2338,13 @@ class ChatAgent(BaseAgent):
             if isinstance(response, AsyncStream):
                 stream_completed = False
                 tool_calls_complete = False
-                final_content = current_content
 
                 # Process chunks and forward them
-                async for item in self._aprocess_stream_chunks(
+                async for (
+                    item
+                ) in self._aprocess_stream_chunks_with_accumulator(
                     response,
-                    current_content,
+                    content_accumulator,
                     accumulated_tool_calls,
                     tool_call_records,
                     step_token_usage,
@@ -2266,16 +2352,8 @@ class ChatAgent(BaseAgent):
                 ):
                     if isinstance(item, tuple):
                         # This is the final return value (stream_completed,
-                        # tool_calls_complete, final_content)
-                        if len(item) == 3:
-                            (
-                                stream_completed,
-                                tool_calls_complete,
-                                final_content,
-                            ) = item
-                        else:
-                            # Backward compatibility with old format
-                            stream_completed, tool_calls_complete = item
+                        # tool_calls_complete)
+                        stream_completed, tool_calls_complete = item
                         break
                     else:
                         # This is a ChatAgentResponse to be yielded
@@ -2285,7 +2363,8 @@ class ChatAgent(BaseAgent):
                     # Clear completed tool calls
                     accumulated_tool_calls.clear()
 
-                    # If we executed tools and not in single iteration mode, continue
+                    # If we executed tools and not in
+                    # single iteration mode, continue
                     if tool_call_records and not self.single_iteration:
                         # Update messages with tool results for next iteration
                         try:
@@ -2299,6 +2378,8 @@ class ChatAgent(BaseAgent):
                                 "max_tokens_exceeded",
                             )
                             return
+                        # Reset streaming content for next iteration
+                        content_accumulator.reset_streaming_content()
                         continue
                     else:
                         break
@@ -2311,40 +2392,20 @@ class ChatAgent(BaseAgent):
                 # Handle structured output stream
                 # (AsyncChatCompletionStreamManager)
                 async with response as stream:
-                    content_buffer = ""
                     parsed_object = None
 
                     async for event in stream:
                         if event.type == "content.delta":
                             if event.delta:
-                                content_buffer += event.delta
+                                # Use accumulator for proper content management
+                                partial_response = self._create_streaming_response_with_accumulator(  # noqa: E501
+                                    content_accumulator,
+                                    event.delta,
+                                    step_token_usage,
+                                    tool_call_records=tool_call_records.copy(),
+                                )
+                                yield partial_response
 
-                            # Create partial message and yield response
-                            # Don't set parsed until content is done
-                            partial_message = BaseMessage(
-                                role_name=self.role_name,
-                                role_type=self.role_type,
-                                meta_dict={},
-                                content=content_buffer,
-                                parsed=None,  # Keep None until content.done
-                            )
-
-                            # Create and yield partial response
-                            partial_response = ChatAgentResponse(
-                                msgs=[partial_message],
-                                terminated=False,
-                                info={
-                                    "id": "",
-                                    "usage": step_token_usage.copy(),
-                                    "finish_reasons": ["streaming"],
-                                    "num_tokens": len(content_buffer.split()),
-                                    "tool_calls": tool_call_records.copy(),
-                                    "external_tool_requests": None,
-                                    "streaming": True,
-                                    "partial": True,
-                                },
-                            )
-                            yield partial_response
                         elif event.type == "content.done":
                             parsed_object = event.parsed
                             break
@@ -2456,18 +2517,18 @@ class ChatAgent(BaseAgent):
         # Record this assistant message
         self.update_memory(assist_msg, OpenAIBackendRole.ASSISTANT)
 
-    async def _aprocess_stream_chunks(
+    async def _aprocess_stream_chunks_with_accumulator(
         self,
         stream: AsyncStream[ChatCompletionChunk],
-        current_content: str,
+        content_accumulator: '_StreamContentAccumulator',
         accumulated_tool_calls: Dict[str, Any],
         tool_call_records: List[ToolCallingRecord],
         step_token_usage: Dict[str, int],
         response_format: Optional[Type[BaseModel]] = None,
     ) -> AsyncGenerator[Union[ChatAgentResponse, Tuple[bool, bool]], None]:
-        r"""Async version of process streaming chunks."""
+        r"""Async version of process streaming chunks with
+        content accumulator."""
 
-        content_buffer = current_content
         tool_calls_complete = False
         stream_completed = False
 
@@ -2485,38 +2546,15 @@ class ChatAgent(BaseAgent):
 
                 # Handle content streaming
                 if delta.content:
-                    content_buffer += delta.content
-
-                    # Create partial message and yield response
-                    partial_message = BaseMessage(
-                        role_name=self.role_name,
-                        role_type=self.role_type,
-                        meta_dict={},
-                        content=content_buffer,
-                    )
-
-                    # Try to parse structured response if format specified
-                    if response_format:
-                        self._try_format_message(
-                            partial_message, response_format
+                    # Use accumulator for proper content management
+                    partial_response = (
+                        self._create_streaming_response_with_accumulator(
+                            content_accumulator,
+                            delta.content,
+                            step_token_usage,
+                            getattr(chunk, 'id', ''),
+                            tool_call_records.copy(),
                         )
-
-                    # Create and yield partial response
-                    partial_response = ChatAgentResponse(
-                        msgs=[partial_message],
-                        terminated=False,
-                        info={
-                            "id": getattr(chunk, 'id', ''),
-                            "usage": step_token_usage.copy(),
-                            "finish_reasons": [
-                                choice.finish_reason or "streaming"
-                            ],
-                            "num_tokens": len(content_buffer.split()),
-                            "tool_calls": tool_call_records.copy(),
-                            "external_tool_requests": None,
-                            "streaming": True,
-                            "partial": True,
-                        },
                     )
                     yield partial_response
 
@@ -2530,66 +2568,48 @@ class ChatAgent(BaseAgent):
                 if choice.finish_reason:
                     stream_completed = True
 
-                    # If we have complete tool calls, execute them with status updates
+                    # If we have complete tool calls, execute them with
+                    # async status updates
                     if accumulated_tool_calls:
-                        # Record assistant message with tool calls first
+                        # Record assistant message with
+                        # tool calls first
                         self._record_assistant_tool_calls_message(
-                            accumulated_tool_calls, content_buffer
+                            accumulated_tool_calls,
+                            content_accumulator.get_full_content(),
                         )
 
-                        # Execute each tool call with status updates
-                        for (
-                            tool_call_index,
-                            tool_call_data,
-                        ) in accumulated_tool_calls.items():
-                            if tool_call_data.get('complete', False):
-                                # Yield "Calling function" status
-                                calling_status = (
-                                    self._create_simple_tool_calling_status(
-                                        tool_call_data,
-                                        content_buffer,
-                                        step_token_usage,
-                                    )
-                                )
-                                yield calling_status
-
-                                # Execute the tool
-                                tool_call_record = (
-                                    await self._aexecute_tool_from_stream_data(
-                                        tool_call_data
-                                    )
-                                )
-                                if tool_call_record:
-                                    tool_call_records.append(tool_call_record)
-
-                                    # Yield "Function output" status
-                                    output_status = (
-                                        self._create_simple_tool_output_status(
-                                            tool_call_record,
-                                            content_buffer,
-                                            step_token_usage,
-                                        )
-                                    )
-                                    yield output_status
+                        # Execute tools asynchronously with real-time
+                        # status updates
+                        async for (
+                            status_response
+                        ) in self._execute_tools_async_with_status_accumulator(
+                            accumulated_tool_calls,
+                            content_accumulator,
+                            step_token_usage,
+                            tool_call_records,
+                        ):
+                            yield status_response
 
                         # Yield "Sending back result to model" status
                         if tool_call_records:
-                            sending_status = (
-                                self._create_tool_sending_status_response(
-                                    content_buffer, step_token_usage
-                                )
+                            sending_status = self._create_tool_status_response_with_accumulator(  # noqa: E501
+                                content_accumulator,
+                                "\n---------\n\nSending back result to model\n\n",  # noqa: E501
+                                "tool_sending",
+                                step_token_usage,
                             )
                             yield sending_status
 
                     # Record final message only if we have content AND no tool
                     # calls. If there are tool calls, _record_tool_calling
                     # will handle message recording.
-                    if content_buffer.strip() and not accumulated_tool_calls:
+                    final_content = content_accumulator.get_full_content()
+                    if final_content.strip() and not accumulated_tool_calls:
                         final_message = BaseMessage(
                             role_name=self.role_name,
                             role_type=self.role_type,
                             meta_dict={},
-                            content=content_buffer,
+                            content=final_content,
                         )
 
                         if response_format:
@@ -2600,81 +2620,87 @@ class ChatAgent(BaseAgent):
                         self.record_message(final_message)
                     break
 
-        # Yield the final status as a tuple with content
-        yield (stream_completed, tool_calls_complete, content_buffer)
+        # Yield the final status as a tuple
+        yield (stream_completed, tool_calls_complete)
 
-    async def _aexecute_tool_from_stream_data(
-        self, tool_call_data: Dict[str, Any]
-    ) -> Optional[ToolCallingRecord]:
-        r"""Async execute a tool from accumulated stream data."""
+    async def _execute_tools_async_with_status_accumulator(
+        self,
+        accumulated_tool_calls: Dict[str, Any],
+        content_accumulator: '_StreamContentAccumulator',
+        step_token_usage: Dict[str, int],
+        tool_call_records: List[ToolCallingRecord],
+    ) -> AsyncGenerator[ChatAgentResponse, None]:
+        r"""Execute multiple tools asynchronously with
+        proper content accumulation."""
+        import asyncio
 
-        try:
-            function_name = tool_call_data['function']['name']
-            args = json.loads(tool_call_data['function']['arguments'])
-            tool_call_id = tool_call_data['id']
-
-            if function_name in self._internal_tools:
-                tool = self._internal_tools[function_name]
+        # Phase 1: Start all tools and yield "Calling function"
+        # statuses immediately
+        tool_tasks = []
+        for _tool_call_index, tool_call_data in accumulated_tool_calls.items():
+            if tool_call_data.get('complete', False):
+                function_name = tool_call_data['function']['name']
                 try:
-                    result = await tool.async_call(**args)
+                    args = json.loads(tool_call_data['function']['arguments'])
+                except json.JSONDecodeError:
+                    args = tool_call_data['function']['arguments']
 
-                    # Only record the tool response message, not the assistant
-                    # message assistant message with tool_calls was
-                    # already recorded in _record_assistant_tool_calls_message
-                    func_msg = FunctionCallingMessage(
-                        role_name=self.role_name,
-                        role_type=self.role_type,
-                        meta_dict=None,
-                        content="",
-                        func_name=function_name,
-                        result=result,
-                        tool_call_id=tool_call_id,
+                status_message = (
+                    f"\nCalling function: {function_name} "
+                    f"with arguments:\n{args}\n"
+                )
+
+                # Immediately yield "Calling function" status
+                calling_status = (
+                    self._create_tool_status_response_with_accumulator(
+                        content_accumulator,
+                        status_message,
+                        "tool_calling",
+                        step_token_usage,
                     )
+                )
+                yield calling_status
 
-                    self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
+                # Start tool execution asynchronously (non-blocking)
+                task = asyncio.create_task(
+                    self._aexecute_tool_from_stream_data(tool_call_data)
+                )
+                tool_tasks.append((task, tool_call_data))
 
-                    return ToolCallingRecord(
-                        tool_name=function_name,
-                        args=args,
-                        result=result,
-                        tool_call_id=tool_call_id,
-                    )
+        # Phase 2: Wait for tools to complete and yield results as they finish
+        if tool_tasks:
+            # Use asyncio.as_completed for true async processing
+            for completed_task in asyncio.as_completed(
+                [task for task, _ in tool_tasks]
+            ):
+                try:
+                    tool_call_record = await completed_task
+                    if tool_call_record:
+                        # Add to the shared tool_call_records list
+                        tool_call_records.append(tool_call_record)
+
+                        # Create output status message
+                        raw_result = tool_call_record.result
+                        result_str = str(raw_result)
+                        status_message = (
+                            f"\nFunction output: {result_str}\n---------\n"
+                        )
+
+                        # Yield "Function output" status as soon as this
+                        # tool completes
+                        output_status = (
+                            self._create_tool_status_response_with_accumulator(
+                                content_accumulator,
+                                status_message,
+                                "tool_output",
+                                step_token_usage,
+                                [tool_call_record],
+                            )
+                        )
+                        yield output_status
 
                 except Exception as e:
-                    error_msg = (
-                        f"Error executing async tool '{function_name}': {e!s}"
-                    )
-                    result = {"error": error_msg}
-                    logging.warning(error_msg)
-
-                    # Record error response
-                    func_msg = FunctionCallingMessage(
-                        role_name=self.role_name,
-                        role_type=self.role_type,
-                        meta_dict=None,
-                        content="",
-                        func_name=function_name,
-                        result=result,
-                        tool_call_id=tool_call_id,
-                    )
-
-                    self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
-
-                    return ToolCallingRecord(
-                        tool_name=function_name,
-                        args=args,
-                        result=result,
-                        tool_call_id=tool_call_id,
-                    )
-            else:
-                logger.warning(
-                    f"Tool '{function_name}' not found in internal tools"
-                )
-                return None
-
-        except Exception as e:
-            logger.error(f"Error processing async tool call: {e}")
-            return None
+                    logger.error(f"Error in async tool execution: {e}")
 
     def add_model_scheduling_strategy(self, name: str, strategy_fn: Callable):
         r"""Add a scheduling strategy method provided by user to ModelManger.
@@ -2776,48 +2802,6 @@ class ChatAgent(BaseAgent):
             },
         )
 
-    def _create_simple_tool_calling_status(
-        self,
-        tool_call_data: Dict[str, Any],
-        content: str,
-        step_token_usage: Dict[str, int],
-    ) -> ChatAgentResponse:
-        r"""Create a simple tool calling status response."""
-
-        function_name = tool_call_data['function']['name']
-        try:
-            args = json.loads(tool_call_data['function']['arguments'])
-        except json.JSONDecodeError:
-            args = tool_call_data['function']['arguments']
-
-        status_message = (
-            f"\nCalling function: {function_name} with arguments:\n{args}\n"
-        )
-
-        # Create message with current content plus status
-        message = BaseMessage(
-            role_name=self.role_name,
-            role_type=self.role_type,
-            meta_dict={},
-            content=content + status_message,
-        )
-
-        return ChatAgentResponse(
-            msgs=[message],
-            terminated=False,
-            info={
-                "id": "",
-                "usage": step_token_usage.copy(),
-                "finish_reasons": ["tool_calling"],
-                "num_tokens": len((content + status_message).split()),
-                "tool_calls": [],
-                "external_tool_requests": None,
-                "streaming": True,
-                "tool_status": "calling",
-                "partial": True,
-            },
-        )
-
     def _create_tool_status_response(
         self,
         content: str,
@@ -2826,7 +2810,8 @@ class ChatAgent(BaseAgent):
         step_token_usage: Dict[str, int],
         tool_calls: Optional[List[ToolCallingRecord]] = None,
     ) -> ChatAgentResponse:
-        r"""Create a generic tool status response to reduce code duplication."""
+        r"""Create a generic tool status response to
+        reduce code duplication."""
 
         # Create message with current content plus status
         message = BaseMessage(
@@ -2892,4 +2877,228 @@ class ChatAgent(BaseAgent):
             "tool_output",
             step_token_usage,
             [tool_call_record],
+        )
+
+    async def _execute_tools_async_with_status(
+        self,
+        accumulated_tool_calls: Dict[str, Any],
+        content_buffer: str,
+        step_token_usage: Dict[str, int],
+        tool_call_records: List[ToolCallingRecord],
+    ) -> AsyncGenerator[ChatAgentResponse, None]:
+        r"""Execute multiple tools asynchronously with
+        real-time status updates.
+
+        This method provides true async execution where:
+        1. All "Calling function" statuses are yielded immediately
+        2. Tool execution starts asynchronously (non-blocking)
+        3. "Function output" statuses are yielded as tools complete
+
+        Args:
+            accumulated_tool_calls: Dictionary of complete tool calls
+            content_buffer: Current content to prepend to status messages
+            step_token_usage: Current token usage tracker
+            tool_call_records: List to append completed tool records to
+
+        Yields:
+            ChatAgentResponse: Status updates during tool execution
+        """
+        import asyncio
+
+        # Phase 1: Start all tools and yield "Calling function"
+        # statuses immediately
+        tool_tasks = []
+        for _tool_call_index, tool_call_data in accumulated_tool_calls.items():
+            if tool_call_data.get('complete', False):
+                # Immediately yield "Calling function" status
+                calling_status = self._create_simple_tool_calling_status(
+                    tool_call_data, content_buffer, step_token_usage
+                )
+                yield calling_status
+
+                # Start tool execution asynchronously (non-blocking)
+                task = asyncio.create_task(
+                    self._aexecute_tool_from_stream_data(tool_call_data)
+                )
+                tool_tasks.append((task, tool_call_data))
+
+        # Phase 2: Wait for tools to complete and yield results as they finish
+        if tool_tasks:
+            # Use asyncio.as_completed for true async processing
+            for completed_task in asyncio.as_completed(
+                [task for task, _ in tool_tasks]
+            ):
+                try:
+                    tool_call_record = await completed_task
+                    if tool_call_record:
+                        # Add to the shared tool_call_records list
+                        tool_call_records.append(tool_call_record)
+
+                        # Yield "Function output" status as soon as
+                        # this tool completes
+                        output_status = self._create_simple_tool_output_status(
+                            tool_call_record, content_buffer, step_token_usage
+                        )
+                        yield output_status
+
+                except Exception as e:
+                    logger.error(f"Error in async tool execution: {e}")
+                    # Could yield error status here if needed
+
+    def _execute_tools_sync_with_status(
+        self,
+        accumulated_tool_calls: Dict[str, Any],
+        content_buffer: str,
+        step_token_usage: Dict[str, int],
+        tool_call_records: List[ToolCallingRecord],
+    ) -> Generator[ChatAgentResponse, None, None]:
+        r"""Execute multiple tools synchronously with optimized status updates.
+
+        This provides a more efficient sync version where all
+        "Calling function" statuses are yielded first, then tools execute.
+
+        Args:
+            accumulated_tool_calls: Dictionary of complete tool calls
+            content_buffer: Current content to prepend to status messages
+            step_token_usage: Current token usage tracker
+            tool_call_records: List to append completed tool records to
+        """
+        # Phase 1: Yield all "Calling function" statuses first
+        tool_calls_to_execute = []
+        for _tool_call_index, tool_call_data in accumulated_tool_calls.items():
+            if tool_call_data.get('complete', False):
+                # Immediately yield "Calling function" status
+                calling_status = self._create_simple_tool_calling_status(
+                    tool_call_data, content_buffer, step_token_usage
+                )
+                yield calling_status
+                tool_calls_to_execute.append(tool_call_data)
+
+        # Phase 2: Execute tools and yield results
+        for tool_call_data in tool_calls_to_execute:
+            try:
+                tool_call_record = self._execute_tool_from_stream_data(
+                    tool_call_data
+                )
+                if tool_call_record:
+                    # Add to the shared tool_call_records list
+                    tool_call_records.append(tool_call_record)
+
+                    # Yield "Function output" status
+                    output_status = self._create_simple_tool_output_status(
+                        tool_call_record, content_buffer, step_token_usage
+                    )
+                    yield output_status
+
+            except Exception as e:
+                logger.error(f"Error in sync tool execution: {e}")
+
+    class _StreamContentAccumulator:
+        """Manages content accumulation across streaming responses to ensure
+        all responses contain complete cumulative content."""
+
+        def __init__(self):
+            self.base_content = ""  # Content before tool calls
+            self.current_content = ""  # Current streaming content
+            self.tool_status_messages = []  # Accumulated tool status messages
+
+        def set_base_content(self, content: str):
+            """Set the base content (usually empty or pre-tool content)."""
+            self.base_content = content
+
+        def add_streaming_content(self, new_content: str):
+            """Add new streaming content."""
+            self.current_content += new_content
+
+        def add_tool_status(self, status_message: str):
+            """Add a tool status message."""
+            self.tool_status_messages.append(status_message)
+
+        def get_full_content(self) -> str:
+            """Get the complete accumulated content."""
+            tool_messages = "".join(self.tool_status_messages)
+            return self.base_content + tool_messages + self.current_content
+
+        def get_content_with_new_status(self, status_message: str) -> str:
+            """Get content with a new status message appended."""
+            tool_messages = "".join(
+                [*self.tool_status_messages, status_message]
+            )
+            return self.base_content + tool_messages + self.current_content
+
+        def reset_streaming_content(self):
+            """Reset only the streaming content, keep base and tool status."""
+            self.current_content = ""
+
+    def _create_tool_status_response_with_accumulator(
+        self,
+        accumulator: '_StreamContentAccumulator',
+        status_message: str,
+        status_type: str,
+        step_token_usage: Dict[str, int],
+        tool_calls: Optional[List[ToolCallingRecord]] = None,
+    ) -> ChatAgentResponse:
+        r"""Create a tool status response using content accumulator."""
+
+        # Add this status message to accumulator and get full content
+        accumulator.add_tool_status(status_message)
+        full_content = accumulator.get_full_content()
+
+        message = BaseMessage(
+            role_name=self.role_name,
+            role_type=self.role_type,
+            meta_dict={},
+            content=full_content,
+        )
+
+        return ChatAgentResponse(
+            msgs=[message],
+            terminated=False,
+            info={
+                "id": "",
+                "usage": step_token_usage.copy(),
+                "finish_reasons": [status_type],
+                "num_tokens": len(full_content.split()),
+                "tool_calls": tool_calls or [],
+                "external_tool_requests": None,
+                "streaming": True,
+                "tool_status": status_type,
+                "partial": True,
+            },
+        )
+
+    def _create_streaming_response_with_accumulator(
+        self,
+        accumulator: '_StreamContentAccumulator',
+        new_content: str,
+        step_token_usage: Dict[str, int],
+        response_id: str = "",
+        tool_call_records: Optional[List[ToolCallingRecord]] = None,
+    ) -> ChatAgentResponse:
+        r"""Create a streaming response using content accumulator."""
+
+        # Add new content to accumulator and get full content
+        accumulator.add_streaming_content(new_content)
+        full_content = accumulator.get_full_content()
+
+        message = BaseMessage(
+            role_name=self.role_name,
+            role_type=self.role_type,
+            meta_dict={},
+            content=full_content,
+        )
+
+        return ChatAgentResponse(
+            msgs=[message],
+            terminated=False,
+            info={
+                "id": response_id,
+                "usage": step_token_usage.copy(),
+                "finish_reasons": ["streaming"],
+                "num_tokens": len(full_content.split()),
+                "tool_calls": tool_call_records or [],
+                "external_tool_requests": None,
+                "streaming": True,
+                "partial": True,
+            },
         )
