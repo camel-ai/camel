@@ -14,6 +14,8 @@
 import ast
 import difflib
 import importlib
+import os
+import subprocess
 import typing
 from typing import Any, ClassVar, Dict, List, Optional
 
@@ -89,6 +91,8 @@ class InternalPythonInterpreter(BaseInterpreter):
         raise_error: bool = False,
     ) -> None:
         self.action_space = action_space or dict()
+        # Add print to action space
+        self.action_space['print'] = print
         self.state = self.action_space.copy()
         self.fuzz_state: Dict[str, Any] = dict()
         self.import_white_list = import_white_list or list()
@@ -533,4 +537,14 @@ class InternalPythonInterpreter(BaseInterpreter):
                 raise InterpreterError(f"The variable `{key}` is not defined.")
 
     def execute_command(self, command: str) -> str:
-        return " "
+        proc = subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            env=os.environ,
+            shell=True,
+        )
+        stdout, stderr = proc.communicate()
+
+        return stdout if stdout else stderr
