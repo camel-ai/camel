@@ -13,21 +13,16 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
-import logging
 import os
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
-from chunkr_ai import Chunkr
-from chunkr_ai.models import (
-    ChunkProcessing,
-    Configuration,
-    OcrStrategy,
-    Status,
-)
+if TYPE_CHECKING:
+    from chunkr_ai.models import Configuration
 
+from camel.logger import get_logger
 from camel.utils import api_keys_required
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ChunkrReaderConfig:
@@ -75,6 +70,8 @@ class ChunkrReader:
         api_key: Optional[str] = None,
         url: Optional[str] = "https://api.chunkr.ai/api/v1/task",
     ) -> None:
+        from chunkr_ai import Chunkr
+
         self._api_key = api_key or os.getenv('CHUNKR_API_KEY')
         self._chunkr = Chunkr(api_key=self._api_key)
 
@@ -120,6 +117,8 @@ class ChunkrReader:
             Optional[str]: The formatted task result in JSON format, or `None`
                 if the task fails or is canceld.
         """
+        from chunkr_ai.models import Status
+
         try:
             task = await self._chunkr.get_task(task_id)
         except Exception as e:
@@ -166,7 +165,7 @@ class ChunkrReader:
 
     def _to_chunkr_configuration(
         self, chunkr_config: ChunkrReaderConfig
-    ) -> Configuration:
+    ) -> "Configuration":
         r"""Converts the ChunkrReaderConfig to Chunkr Configuration.
 
         Args:
@@ -176,6 +175,12 @@ class ChunkrReader:
         Returns:
             Configuration: Chunkr SDK configuration.
         """
+        from chunkr_ai.models import (
+            ChunkProcessing,
+            Configuration,
+            OcrStrategy,
+        )
+
         return Configuration(
             chunk_processing=ChunkProcessing(
                 target_length=chunkr_config.chunk_processing
@@ -186,4 +191,3 @@ class ChunkrReader:
                 "All": OcrStrategy.ALL,
             }.get(chunkr_config.ocr_strategy, OcrStrategy.ALL),
         )
-        return json.dumps(response_json, indent=4, ensure_ascii=False)
