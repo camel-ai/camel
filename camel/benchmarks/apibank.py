@@ -239,6 +239,8 @@ class APIBankBenchmark(BaseBenchmark):
         dialog_test_enabled = not api_test_enabled
         total_api_calls, correct_api_calls, rougel_scores = 0, 0, []
 
+        if self.save_to is None:
+            raise ValueError("save_to must be set")
         with open(self.save_to, "w") as f:
             for test in tqdm(datas, desc="Running"):
                 samples = self._data[test]
