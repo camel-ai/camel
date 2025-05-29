@@ -1,0 +1,321 @@
+<a id="camel.benchmarks.browsecomp"></a>
+
+<a id="camel.benchmarks.browsecomp.QueryResponse"></a>
+
+## QueryResponse
+
+```python
+class QueryResponse(BaseModel):
+```
+
+A structured query response for benchmark evaluation.
+
+This class defines the expected format for model responses to benchmark
+questions, including explanation, exact answer, and confidence score.
+
+<a id="camel.benchmarks.browsecomp.GradingResponse"></a>
+
+## GradingResponse
+
+```python
+class GradingResponse(BaseModel):
+```
+
+A structured grading response for evaluating model answers.
+
+This class defines the expected format for grading responses, including
+extracted answer, reasoning about correctness, binary correctness judgment,
+and confidence score extraction.
+
+<a id="camel.benchmarks.browsecomp.SingleEvalResult"></a>
+
+## SingleEvalResult
+
+```python
+class SingleEvalResult(BaseModel):
+```
+
+Result of evaluating a single benchmark sample.
+
+This class stores the evaluation results for a single benchmark example,
+including score, HTML representation, conversation history, and metrics.
+
+<a id="camel.benchmarks.browsecomp.EvalResult"></a>
+
+## EvalResult
+
+```python
+class EvalResult(BaseModel):
+```
+
+Result of running a complete benchmark evaluation.
+
+This class aggregates results from multiple sample evaluations, storing
+the overall score, detailed metrics, HTML reports, and conversation logs.
+
+<a id="camel.benchmarks.browsecomp.JinjaEnv"></a>
+
+## JinjaEnv
+
+```python
+class JinjaEnv:
+```
+
+A class that encapsulates the Jinja environment setup.
+
+<a id="camel.benchmarks.browsecomp.JinjaEnv.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self):
+```
+
+Initialize the JinjaEnv instance if not already initialized.
+
+<a id="camel.benchmarks.browsecomp.JinjaEnv.__new__"></a>
+
+### __new__
+
+```python
+def __new__(cls):
+```
+
+Implement singleton pattern to ensure only one instance exists.
+
+<a id="camel.benchmarks.browsecomp.JinjaEnv.get_instance"></a>
+
+### get_instance
+
+```python
+def get_instance(cls):
+```
+
+**Returns:**
+
+  JinjaEnv: The singleton instance.
+
+<a id="camel.benchmarks.browsecomp.JinjaEnv.env"></a>
+
+### env
+
+```python
+def env(self):
+```
+
+**Returns:**
+
+  jinja2.Environment: The Jinja environment instance.
+
+<a id="camel.benchmarks.browsecomp.JinjaEnv.from_string"></a>
+
+### from_string
+
+```python
+def from_string(self, template_str):
+```
+
+Create a template from the given string.
+
+**Parameters:**
+
+- **template_str** (str): The template string.
+
+**Returns:**
+
+  jinja2.Template: The compiled template.
+
+<a id="camel.benchmarks.browsecomp.JinjaEnv.message_to_html"></a>
+
+### message_to_html
+
+```python
+def message_to_html(message: Message):
+```
+
+Generate HTML snippet (inside a `<div>`) for a message.
+
+**Parameters:**
+
+- **message** (Message): The message to convert to HTML.
+
+**Returns:**
+
+  str: The HTML representation of the message.
+
+<a id="camel.benchmarks.browsecomp.derive_key"></a>
+
+## derive_key
+
+```python
+def derive_key(password: str, length: int):
+```
+
+Derive a fixed-length key from the password using SHA256.
+
+<a id="camel.benchmarks.browsecomp.decrypt"></a>
+
+## decrypt
+
+```python
+def decrypt(ciphertext_b64: str, password: str):
+```
+
+Decrypt base64-encoded ciphertext with XOR.
+
+<a id="camel.benchmarks.browsecomp._compute_stat"></a>
+
+## _compute_stat
+
+```python
+def _compute_stat(values: list, stat: str):
+```
+
+<a id="camel.benchmarks.browsecomp.aggregate_results"></a>
+
+## aggregate_results
+
+```python
+def aggregate_results(
+    single_eval_results: List[SingleEvalResult],
+    default_stats: Tuple[str, str] = ('mean', 'std'),
+    name2stats: Optional[Dict[str, Tuple[str]]] = None
+):
+```
+
+Aggregate results from multiple evaluations into a single EvalResult.
+
+**Parameters:**
+
+- **single_eval_results** (List[SingleEvalResult]): A list of `SingleEvalResult` objects.
+- **default_stats** (Tuple[str, str]): A tuple of default statistics to compute. (default: :obj:`("mean", "std")`)
+- **name2stats** (Optional[Dict[str, Tuple[str]]]): A dictionary mapping metric names to statistics to compute. (default: :obj:`None`)
+
+**Returns:**
+
+  EvalResult: An `EvalResult` object containing aggregated results.
+
+<a id="camel.benchmarks.browsecomp.BrowseCompBenchmark"></a>
+
+## BrowseCompBenchmark
+
+```python
+class BrowseCompBenchmark(BaseBenchmark):
+```
+
+BrowseComp Benchmark for evaluating browser-based comprehension tasks.
+
+This benchmark evaluates the ability of language models to comprehend and
+answer questions based on browser-based content, measuring accuracy and
+performance.
+
+<a id="camel.benchmarks.browsecomp.BrowseCompBenchmark.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    save_to: str,
+    processes: int = 1,
+    num_examples: Optional[int] = None,
+    n_repeats: int = 1
+):
+```
+
+Initialize the BrowseComp benchmark.
+
+**Parameters:**
+
+- **save_to** (str): The file to save the results.
+- **processes** (int, optional): The number of processes to use for parallel processing. (default: :obj:`1`)
+- **num_examples** (Optional[int]): Number of examples to evaluate. If None, all examples are used. Controls the sample size for testing. (default: :obj:`None`)
+- **n_repeats** (int, optional): Number of times to repeat each example. Useful for evaluating consistency across multiple runs. (default: :obj:`1`)
+
+<a id="camel.benchmarks.browsecomp.BrowseCompBenchmark.download"></a>
+
+### download
+
+```python
+def download(self):
+```
+
+**Returns:**
+
+  self: The benchmark instance
+
+<a id="camel.benchmarks.browsecomp.BrowseCompBenchmark.load"></a>
+
+### load
+
+```python
+def load(self):
+```
+
+**Returns:**
+
+  self: The benchmark instance
+
+<a id="camel.benchmarks.browsecomp.BrowseCompBenchmark.train"></a>
+
+### train
+
+```python
+def train(self):
+```
+
+<a id="camel.benchmarks.browsecomp.BrowseCompBenchmark.run"></a>
+
+### run
+
+```python
+def run(
+    self,
+    pipeline_template: Union[ChatAgent, RolePlaying, Workforce],
+    chat_turn_limit: int = 10,
+    roleplaying_summarizer: Optional[ChatAgent] = None,
+    task_json_formatter: Optional[ChatAgent] = None
+):
+```
+
+Run the benchmark by processing each example in parallel.
+
+This method applies the provided pipeline to each example in the
+dataset using a process pool for parallel execution. It shows progress
+using tqdm and stores the results in self._raw_results.
+
+**Parameters:**
+
+- **pipeline_template** (Union[ChatAgent, RolePlaying, Workforce]): The template agent or framework to use for processing examples. Can be a ChatAgent, RolePlaying, or Workforce instance that will be cloned for each example.
+- **chat_turn_limit** (int): Maximum number of conversation turns allowed when using RolePlaying pipeline. (default: :obj:`10`)
+- **roleplaying_summarizer** (Optional[ChatAgent]): Optional ChatAgent to summarize RolePlaying conversations. If None and RolePlaying is used, a default summarizer will be created. (default: :obj:`None`)
+- **task_json_formatter** (Optional[ChatAgent]): Optional ChatAgent to format task JSON. If None and Workforce is used, a default formatter will be created. (default: :obj:`None`)
+
+<a id="camel.benchmarks.browsecomp.BrowseCompBenchmark.make_report"></a>
+
+### make_report
+
+```python
+def make_report(self, eval_result: EvalResult):
+```
+
+Create a standalone HTML report from an EvalResult.
+
+<a id="camel.benchmarks.browsecomp.BrowseCompBenchmark.validate"></a>
+
+### validate
+
+```python
+def validate(self, grader: Optional[ChatAgent] = None):
+```
+
+Validate the raw results using the GRADER_TEMPLATE and ChatAgent.
+
+This method evaluates the correctness of each response by
+multi-threading. A dedicated chat agent is created in each thread.
+The chat agent will compare raw result with the expected answer. The
+grading results will be aggregated in a report.
+
+**Parameters:**
+
+- **grader**: The ChatAgent used for validation. If None, a default agent will be created in each thread. If provided, the provided agent will be used as a template and be cloned into new agents in each thread. (default: :obj:`None`)
