@@ -54,10 +54,10 @@ class Workforce(BaseNode):
     situations when the task fails.
 
     The workforce uses three specialized ChatAgents internally:
-    - **Coordinator Agent**: Assigns tasks to workers based on their
+    - Coordinator Agent: Assigns tasks to workers based on their
       capabilities
-    - **Task Planner Agent**: Decomposes complex tasks and composes results
-    - **Dynamic Workers**: Created at runtime when tasks fail repeatedly
+    - Task Planner Agent: Decomposes complex tasks and composes results
+    - Dynamic Workers: Created at runtime when tasks fail repeatedly
 
     Args:
         description (str): Description of the workforce.
@@ -67,24 +67,22 @@ class Workforce(BaseNode):
         coordinator_agent_kwargs (Optional[Dict], optional): Keyword
             arguments passed directly to the coordinator :obj:`ChatAgent`
             constructor. The coordinator manages task assignment and failure
-            handling strategies. **See** :obj:`ChatAgent` **documentation
-            for all available parameters.**
+            handling strategies. See :obj:`ChatAgent` documentation
+            for all available parameters.
             (default: :obj:`None` - uses ModelPlatformType.DEFAULT,
             ModelType.DEFAULT)
-
         task_agent_kwargs (Optional[Dict], optional): Keyword arguments
             passed directly to the task planning :obj:`ChatAgent` constructor.
             The task agent handles task decomposition into subtasks and result
-            composition. **See** :obj:`ChatAgent` **documentation for all
-            available parameters.**
+            composition. See :obj:`ChatAgent` documentation for all
+            available parameters.
             (default: :obj:`None` - uses ModelPlatformType.DEFAULT,
             ModelType.DEFAULT)
-
         new_worker_agent_kwargs (Optional[Dict], optional): Default keyword
             arguments passed to :obj:`ChatAgent` constructor for workers
             created dynamically at runtime when existing workers cannot handle
-            failed tasks. **See** :obj:`ChatAgent` **documentation for all
-            available parameters.**
+            failed tasks. See :obj:`ChatAgent` documentation for all
+            available parameters.
             (default: :obj:`None` - creates workers with SearchToolkit,
             CodeExecutionToolkit, and ThinkingToolkit)
 
