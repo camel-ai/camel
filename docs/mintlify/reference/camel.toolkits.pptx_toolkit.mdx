@@ -74,7 +74,12 @@ Sanitize a filename by replacing special characters and spaces.
 ### _format_text
 
 ```python
-def _format_text(self, frame_paragraph, text: str):
+def _format_text(
+    self,
+    frame_paragraph,
+    text: str,
+    set_white_font = False
+):
 ```
 
 Apply bold and italic formatting while preserving the original word order.
@@ -92,7 +97,8 @@ Apply bold and italic formatting while preserving the original word order.
 def _add_bulleted_items(
     self,
     text_frame: pptx.text.text.TextFrame,
-    flat_items_list: list
+    flat_items_list: list,
+    set_white_font = False
 ):
 ```
 
@@ -210,6 +216,33 @@ Display a list of text in a slide.
 - **slide_width_inch**: The width of the slide in inches.
 - **slide_height_inch**: The height of the slide in inches.
 
+<a id="camel.toolkits.pptx_toolkit.PPTXToolkit._handle_display_image__in_foreground"></a>
+
+### _handle_display_image__in_foreground
+
+```python
+def _handle_display_image__in_foreground(
+    self,
+    presentation: Any,
+    slide_json: dict,
+    slide_width_inch: float,
+    slide_height_inch: float
+):
+```
+
+Create a slide with text and image using a picture placeholder layout.
+
+**Parameters:**
+
+- **presentation**: The presentation object.
+- **slide_json**: The content of the slide as JSON data.
+- **slide_width_inch**: The width of the slide in inches.
+- **slide_height_inch**: The height of the slide in inches.
+
+**Returns:**
+
+  bool: True if the slide has been processed.
+
 <a id="camel.toolkits.pptx_toolkit.PPTXToolkit._handle_table"></a>
 
 ### _handle_table
@@ -252,29 +285,6 @@ Add shapes to display a step-by-step process in the slide.
 **Parameters:**
 
 - **presentation**: The presentation object.
-- **slide_json**: The content of the slide as JSON data.
-- **slide_width_inch**: The width of the slide in inches.
-- **slide_height_inch**: The height of the slide in inches.
-
-<a id="camel.toolkits.pptx_toolkit.PPTXToolkit._handle_key_message"></a>
-
-### _handle_key_message
-
-```python
-def _handle_key_message(
-    self,
-    the_slide: Any,
-    slide_json: dict,
-    slide_width_inch: float,
-    slide_height_inch: float
-):
-```
-
-Add a shape to display the key message in the slide.
-
-**Parameters:**
-
-- **the_slide**: The slide to be processed.
 - **slide_json**: The content of the slide as JSON data.
 - **slide_width_inch**: The width of the slide in inches.
 - **slide_height_inch**: The height of the slide in inches.
