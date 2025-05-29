@@ -53,6 +53,11 @@
           {
             "group": "Key Modules",
             "pages": [
+              "key_modules/agents",
+              "key_modules/datagen",
+              "key_modules/interpreters",
+              "key_modules/runtimes",
+              "key_modules/society",
               "key_modules/models",
               "key_modules/messages",
               "key_modules/memory",

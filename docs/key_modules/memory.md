@@ -1,5 +1,3 @@
-# Memory
-
 For more detailed usage information, please refer to our cookbook: [Memory Cookbook](../cookbooks/advanced_features/agents_with_memory.ipynb)
 
 ## 1. Concept
