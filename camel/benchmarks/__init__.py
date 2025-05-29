@@ -14,13 +14,15 @@
 
 from .apibank import APIBankBenchmark
 from .apibench import APIBenchBenchmark
-from .base import BaseBenchmark
+from .base import BaseBenchmark, EvalResult, RetrieverProtocol
 from .gaia import DefaultGAIARetriever, GAIABenchmark
 from .nexus import NexusBenchmark
 from .ragbench import RAGBenchBenchmark
 
 __all__ = [
     "BaseBenchmark",
+    "EvalResult",
+    "RetrieverProtocol",
     "GAIABenchmark",
     "DefaultGAIARetriever",
     "NexusBenchmark",
