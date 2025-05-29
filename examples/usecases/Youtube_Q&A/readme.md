@@ -29,7 +29,7 @@ This app utilizes the following CAMEL-AI components:
 
    ```bash
    git clone https://github.com/camel-ai/camel.git
-   cd examples/usecases/Youtube_Q&A
+   cd examples/usecases/youtube_q&a
    ```
 
 2. **Set Up Virtual Environment**:
