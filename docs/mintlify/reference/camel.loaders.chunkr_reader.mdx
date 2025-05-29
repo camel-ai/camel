@@ -1,5 +1,34 @@
 <a id="camel.loaders.chunkr_reader"></a>
 
+<a id="camel.loaders.chunkr_reader.ChunkrReaderConfig"></a>
+
+## ChunkrReaderConfig
+
+```python
+class ChunkrReaderConfig:
+```
+
+Defines the parameters for configuring the task.
+
+**Parameters:**
+
+- **chunk_processing** (int, optional): The target chunk length. (default: :obj:`512`)
+- **high_resolution** (bool, optional): Whether to use high resolution OCR. (default: :obj:`True`)
+- **ocr_strategy** (str, optional): The OCR strategy. Defaults to 'Auto'. (default: `'Auto'`)
+
+<a id="camel.loaders.chunkr_reader.ChunkrReaderConfig.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    chunk_processing: int = 512,
+    high_resolution: bool = True,
+    ocr_strategy: str = 'Auto'
+):
+```
+
 <a id="camel.loaders.chunkr_reader.ChunkrReader"></a>
 
 ## ChunkrReader
@@ -14,8 +43,7 @@ in various formats.
 **Parameters:**
 
 - **api_key** (Optional[str], optional): The API key for Chunkr API. If not provided, it will be retrieved from the environment variable `CHUNKR_API_KEY`. (default: :obj:`None`)
-- **url** (Optional[str], optional): The url to the Chunkr service. (default: :obj:`https://api.chunkr.ai/api/v1/task`)
-- **timeout** (int, optional): The maximum time in seconds to wait for the API responses. (default: :obj:`30`) **kwargs (Any): Additional keyword arguments for request headers.
+- **url** (Optional[str], optional): The url to the Chunkr service. (default: :obj:`https://api.chunkr.ai/api/v1/task`) **kwargs (Any): Additional keyword arguments for request headers.
 
 <a id="camel.loaders.chunkr_reader.ChunkrReader.__init__"></a>
 
@@ -25,58 +53,9 @@ in various formats.
 def __init__(
     self,
     api_key: Optional[str] = None,
-    url: Optional[str] = 'https://api.chunkr.ai/api/v1/task',
-    timeout: int = 30,
-    **kwargs: Any
+    url: Optional[str] = 'https://api.chunkr.ai/api/v1/task'
 ):
 ```
-
-<a id="camel.loaders.chunkr_reader.ChunkrReader.submit_task"></a>
-
-### submit_task
-
-```python
-def submit_task(
-    self,
-    file_path: str,
-    model: str = 'Fast',
-    ocr_strategy: str = 'Auto',
-    target_chunk_length: str = '512'
-):
-```
-
-Submits a file to the Chunkr API and returns the task ID.
-
-**Parameters:**
-
-- **file_path** (str): The path to the file to be uploaded.
-- **model** (str, optional): The model to be used for the task. (default: :obj:`Fast`)
-- **ocr_strategy** (str, optional): The OCR strategy. Defaults to 'Auto'. (default: `'Auto'`)
-- **target_chunk_length** (str, optional): The target chunk length. (default: :obj:`512`)
-
-**Returns:**
-
-  str: The task ID.
-
-<a id="camel.loaders.chunkr_reader.ChunkrReader.get_task_output"></a>
-
-### get_task_output
-
-```python
-def get_task_output(self, task_id: str, max_retries: int = 5):
-```
-
-Polls the Chunkr API to check the task status and returns the task
-result.
-
-**Parameters:**
-
-- **task_id** (str): The task ID to check the status for.
-- **max_retries** (int, optional): Maximum number of retry attempts. (default: :obj:`5`)
-
-**Returns:**
-
-  str: The formatted task result in JSON format.
 
 <a id="camel.loaders.chunkr_reader.ChunkrReader._pretty_print_response"></a>
 
@@ -95,3 +74,21 @@ Pretty prints the JSON response.
 **Returns:**
 
   str: Formatted JSON as a string.
+
+<a id="camel.loaders.chunkr_reader.ChunkrReader._to_chunkr_configuration"></a>
+
+### _to_chunkr_configuration
+
+```python
+def _to_chunkr_configuration(self, chunkr_config: ChunkrReaderConfig):
+```
+
+Converts the ChunkrReaderConfig to Chunkr Configuration.
+
+**Parameters:**
+
+- **chunkr_config** (ChunkrReaderConfig): The ChunkrReaderConfig to convert.
+
+**Returns:**
+
+  Configuration: Chunkr SDK configuration.
