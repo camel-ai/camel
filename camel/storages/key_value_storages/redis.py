@@ -133,7 +133,7 @@ class RedisStorage(BaseKeyValueStorage):
         if self._client is None:
             raise ValueError("Redis client is not initialized")
         try:
-            value = json.dumps(records)
+            value = json.dumps(records, ensure_ascii=False)
             if expire:
                 await self._client.setex(self._sid, expire, value)
             else:

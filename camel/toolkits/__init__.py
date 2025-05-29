@@ -29,14 +29,17 @@ from .linkedin_toolkit import LinkedInToolkit
 from .reddit_toolkit import RedditToolkit
 from .meshy_toolkit import MeshyToolkit
 from .openbb_toolkit import OpenBBToolkit
+from .bohrium_toolkit import BohriumToolkit
 
 from .base import BaseToolkit
 from .google_maps_toolkit import GoogleMapsToolkit
 from .code_execution import CodeExecutionToolkit
 from .github_toolkit import GithubToolkit
 from .google_scholar_toolkit import GoogleScholarToolkit
+from .google_calendar_toolkit import GoogleCalendarToolkit
 from .arxiv_toolkit import ArxivToolkit
 from .slack_toolkit import SlackToolkit
+from .whatsapp_toolkit import WhatsAppToolkit
 from .twitter_toolkit import TwitterToolkit
 from .open_api_toolkit import OpenAPIToolkit
 from .retrieval_toolkit import RetrievalToolkit
@@ -50,14 +53,28 @@ from .semantic_scholar_toolkit import SemanticScholarToolkit
 from .zapier_toolkit import ZapierToolkit
 from .sympy_toolkit import SymPyToolkit
 from .mineru_toolkit import MinerUToolkit
+from .memory_toolkit import MemoryToolkit
 from .audio_analysis_toolkit import AudioAnalysisToolkit
 from .excel_toolkit import ExcelToolkit
 from .video_analysis_toolkit import VideoAnalysisToolkit
 from .image_analysis_toolkit import ImageAnalysisToolkit
 from .mcp_toolkit import MCPToolkit
-from .web_toolkit import WebToolkit
+from .browser_toolkit import BrowserToolkit
+from .async_browser_toolkit import AsyncBrowserToolkit
 from .file_write_toolkit import FileWriteToolkit
 from .terminal_toolkit import TerminalToolkit
+from .pubmed_toolkit import PubMedToolkit
+from .data_commons_toolkit import DataCommonsToolkit
+from .thinking_toolkit import ThinkingToolkit
+from .pyautogui_toolkit import PyAutoGUIToolkit
+from .openai_agent_toolkit import OpenAIAgentToolkit
+from .searxng_toolkit import SearxNGToolkit
+from .jina_reranker_toolkit import JinaRerankerToolkit
+from .pulse_mcp_search_toolkit import PulseMCPSearchToolkit
+from .klavis_toolkit import KlavisToolkit
+from .aci_toolkit import ACIToolkit
+from .playwright_mcp_toolkit import PlaywrightMCPToolkit
+from .wolfram_alpha_toolkit import WolframAlphaToolkit
 
 
 __all__ = [
@@ -72,6 +89,7 @@ __all__ = [
     'GoogleMapsToolkit',
     'SearchToolkit',
     'SlackToolkit',
+    'WhatsAppToolkit',
     'DalleToolkit',
     'TwitterToolkit',
     'WeatherToolkit',
@@ -83,6 +101,7 @@ __all__ = [
     'AskNewsToolkit',
     'AsyncAskNewsToolkit',
     'GoogleScholarToolkit',
+    'GoogleCalendarToolkit',
     'NotionToolkit',
     'ArxivToolkit',
     'HumanToolkit',
@@ -96,12 +115,27 @@ __all__ = [
     'ZapierToolkit',
     'SymPyToolkit',
     'MinerUToolkit',
+    'MemoryToolkit',
     'MCPToolkit',
     'AudioAnalysisToolkit',
     'ExcelToolkit',
     'VideoAnalysisToolkit',
     'ImageAnalysisToolkit',
-    'WebToolkit',
+    'BrowserToolkit',
+    'AsyncBrowserToolkit',
     'FileWriteToolkit',
     'TerminalToolkit',
+    'PubMedToolkit',
+    'DataCommonsToolkit',
+    'ThinkingToolkit',
+    'PyAutoGUIToolkit',
+    'OpenAIAgentToolkit',
+    'SearxNGToolkit',
+    'JinaRerankerToolkit',
+    'PulseMCPSearchToolkit',
+    'KlavisToolkit',
+    'ACIToolkit',
+    'PlaywrightMCPToolkit',
+    'WolframAlphaToolkit',
+    'BohriumToolkit',
 ]

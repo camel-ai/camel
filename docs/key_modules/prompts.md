@@ -278,7 +278,7 @@ This class defines prompts used in the `AI Society` task with role playing and t
 - **GENERATE_ASSISTANTS**: Prompt to list specified number of roles that the AI assistant can play.
 - **GENERATE_USERS**: Prompt to list common groups of internet users or occupations.
 - **GENERATE_TASKS**: Prompt to list diverse tasks for AI assistants.
-- **TASK_SPECIFY_PROMPT**: Specifies a task in more detail with spcified assistant role and user role.
+- **TASK_SPECIFY_PROMPT**: Specifies a task in more detail with specified assistant role and user role.
 - **ASSISTANT_PROMPT**: Rules of the conversation and
 instructions for completing tasks.
 - **USER_PROMPT**: Rules of the conversation and instructions for giving instructions to the AI assistant.

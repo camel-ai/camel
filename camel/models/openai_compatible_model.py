@@ -13,13 +13,16 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
+from json import JSONDecodeError
 from typing import Any, Dict, List, Optional, Type, Union
 
-from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
-from pydantic import BaseModel
+from openai import AsyncOpenAI, AsyncStream, BadRequestError, OpenAI, Stream
+from pydantic import BaseModel, ValidationError
 
+from camel.logger import get_logger
 from camel.messages import OpenAIMessage
-from camel.models import BaseModelBackend
+from camel.models._utils import try_modify_message_with_format
+from camel.models.base_model import BaseModelBackend
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -29,6 +32,8 @@ from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
 )
+
+logger = get_logger(__name__)
 
 
 class OpenAICompatibleModel(BaseModelBackend):
@@ -46,6 +51,10 @@ class OpenAICompatibleModel(BaseModelBackend):
             use for the model. If not provided, :obj:`OpenAITokenCounter(
             ModelType.GPT_4O_MINI)` will be used.
             (default: :obj:`None`)
+        timeout (Optional[float], optional): The timeout value in seconds for
+            API calls. If not provided, will fall back to the MODEL_TIMEOUT
+            environment variable or default to 180 seconds.
+            (default: :obj:`None`)
     """
 
     def __init__(
@@ -55,21 +64,23 @@ class OpenAICompatibleModel(BaseModelBackend):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
+        timeout: Optional[float] = None,
     ) -> None:
-        self.api_key = api_key or os.environ.get("OPENAI_COMPATIBILIY_API_KEY")
-        self.url = url or os.environ.get("OPENAI_COMPATIBILIY_API_BASE_URL")
+        api_key = api_key or os.environ.get("OPENAI_COMPATIBILITY_API_KEY")
+        url = url or os.environ.get("OPENAI_COMPATIBILITY_API_BASE_URL")
+        timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter
+            model_type, model_config_dict, api_key, url, token_counter, timeout
         )
         self._client = OpenAI(
-            timeout=180,
+            timeout=self._timeout,
             max_retries=3,
             api_key=self._api_key,
             base_url=self._url,
         )
 
         self._async_client = AsyncOpenAI(
-            timeout=180,
+            timeout=self._timeout,
             max_retries=3,
             api_key=self._api_key,
             base_url=self._url,
@@ -86,18 +97,23 @@ class OpenAICompatibleModel(BaseModelBackend):
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
+            response_format (Optional[Type[BaseModel]]): The format of the
+                response.
+            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
+                use for the request.
 
         Returns:
             Union[ChatCompletion, Stream[ChatCompletionChunk]]:
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        response = self._client.chat.completions.create(
-            messages=messages,
-            model=self.model_type,
-            **self.model_config_dict,
+        response_format = response_format or self.model_config_dict.get(
+            "response_format", None
         )
-        return response
+        if response_format:
+            return self._request_parse(messages, response_format, tools)
+        else:
+            return self._request_chat_completion(messages, tools)
 
     async def _arun(
         self,
@@ -110,18 +126,133 @@ class OpenAICompatibleModel(BaseModelBackend):
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
+            response_format (Optional[Type[BaseModel]]): The format of the
+                response.
+            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
+                use for the request.
 
         Returns:
             Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
-        response = await self._async_client.chat.completions.create(
+        response_format = response_format or self.model_config_dict.get(
+            "response_format", None
+        )
+        if response_format:
+            return await self._arequest_parse(messages, response_format, tools)
+        else:
+            return await self._arequest_chat_completion(messages, tools)
+
+    def _request_chat_completion(
+        self,
+        messages: List[OpenAIMessage],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+        request_config = self.model_config_dict.copy()
+
+        if tools:
+            request_config["tools"] = tools
+
+        return self._client.chat.completions.create(
             messages=messages,
             model=self.model_type,
-            **self.model_config_dict,
+            **request_config,
         )
-        return response
+
+    async def _arequest_chat_completion(
+        self,
+        messages: List[OpenAIMessage],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+        request_config = self.model_config_dict.copy()
+
+        if tools:
+            request_config["tools"] = tools
+
+        return await self._async_client.chat.completions.create(
+            messages=messages,
+            model=self.model_type,
+            **request_config,
+        )
+
+    def _request_parse(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ChatCompletion:
+        import copy
+
+        request_config = copy.deepcopy(self.model_config_dict)
+        # Remove stream from request_config since OpenAI does not support it
+        # when structured response is used
+        request_config["response_format"] = response_format
+        request_config.pop("stream", None)
+        if tools is not None:
+            request_config["tools"] = tools
+
+        try:
+            return self._client.beta.chat.completions.parse(
+                messages=messages,
+                model=self.model_type,
+                **request_config,
+            )
+        except (ValidationError, JSONDecodeError, BadRequestError) as e:
+            logger.warning(
+                f"Format validation error: {e}. "
+                f"Attempting fallback with JSON format."
+            )
+            try_modify_message_with_format(messages[-1], response_format)
+            request_config["response_format"] = {"type": "json_object"}
+            try:
+                return self._client.beta.chat.completions.parse(
+                    messages=messages,
+                    model=self.model_type,
+                    **request_config,
+                )
+            except Exception as e:
+                logger.error(f"Fallback attempt also failed: {e}")
+                raise
+
+    async def _arequest_parse(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ChatCompletion:
+        import copy
+
+        request_config = copy.deepcopy(self.model_config_dict)
+        # Remove stream from request_config since OpenAI does not support it
+        # when structured response is used
+        request_config["response_format"] = response_format
+        request_config.pop("stream", None)
+        if tools is not None:
+            request_config["tools"] = tools
+
+        try:
+            return await self._async_client.beta.chat.completions.parse(
+                messages=messages,
+                model=self.model_type,
+                **request_config,
+            )
+        except (ValidationError, JSONDecodeError, BadRequestError) as e:
+            logger.warning(
+                f"Format validation error: {e}. "
+                f"Attempting fallback with JSON format."
+            )
+            try_modify_message_with_format(messages[-1], response_format)
+            request_config["response_format"] = {"type": "json_object"}
+            try:
+                return await self._async_client.beta.chat.completions.parse(
+                    messages=messages,
+                    model=self.model_type,
+                    **request_config,
+                )
+            except Exception as e:
+                logger.error(f"Fallback attempt also failed: {e}")
+                raise
 
     @property
     def token_counter(self) -> BaseTokenCounter:

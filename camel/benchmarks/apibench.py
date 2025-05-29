@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 # Mapping of dataset names to file names
-# 'Oracle' retriver used here which means all the full
+# 'Oracle' retriever used here which means all the full
 # API documentation will be included in the prompt
 dataset_mapping = {
     "huggingface": {
@@ -323,7 +323,10 @@ class APIBenchBenchmark(BaseBenchmark):
 
                 agent.reset()
 
-                f.write(json.dumps(self._results[-1], indent=2) + "\n")
+                json_str = json.dumps(
+                    self._results[-1], indent=2, ensure_ascii=False
+                )
+                f.write(json_str + "\n")
                 f.flush()
 
         total = len(self._results)

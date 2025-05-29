@@ -11,6 +11,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from .base import BaseExtractor
+from .base import BaseExtractor, BaseExtractorStrategy
+from .python_strategies import (
+    BoxedStrategy,
+    PythonDictStrategy,
+    PythonListStrategy,
+    PythonSetStrategy,
+    PythonTupleStrategy,
+)
 
-__all__ = ["BaseExtractor"]
+__all__ = [
+    "BaseExtractor",
+    "BaseExtractorStrategy",
+    "BoxedStrategy",
+    "PythonListStrategy",
+    "PythonDictStrategy",
+    "PythonSetStrategy",
+    "PythonTupleStrategy",
+]

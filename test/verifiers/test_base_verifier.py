@@ -13,41 +13,38 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import asyncio
+from typing import Optional
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
 from camel.verifiers.base import BaseVerifier
-from camel.verifiers.models import (
-    VerificationOutcome,
-    VerificationResult,
-    VerifierInput,
-)
+from camel.verifiers.models import VerificationOutcome, VerificationResult
 
 
 class TestVerifier(BaseVerifier):
     r"""Concrete implementation of BaseVerifier for testing."""
 
-    async def _setup(self) -> None:
+    async def _setup(self, **kwargs) -> None:
         self.setup_called = True
 
     async def _cleanup(self) -> None:
         self.cleanup_called = True
 
     async def _verify_implementation(
-        self, result: VerifierInput
+        self, solution: str, ground_truth: Optional[str] = None
     ) -> VerificationResult:
         r"""Simple implementation that returns success or failure based on
         input.
         """
-        if "fail" in result.llm_response.lower():
+        if "fail" in solution.lower():
             return VerificationResult(
                 status=VerificationOutcome.FAILURE,
                 result="Verification failed",
             )
-        elif "error" in result.llm_response.lower():
+        elif "error" in solution.lower():
             raise ValueError("Simulated error in verification")
-        elif "timeout" in result.llm_response.lower():
+        elif "timeout" in solution.lower():
             raise asyncio.TimeoutError("Simulated timeout")
         else:
             return VerificationResult(
@@ -106,7 +103,7 @@ async def test_verifier_setup_error():
     r"""Test handling of errors during setup."""
 
     class ErrorVerifier(TestVerifier):
-        async def _setup(self) -> None:
+        async def _setup(self, **kwargs) -> None:
             raise RuntimeError("Simulated setup error")
 
     verifier = ErrorVerifier()
@@ -140,10 +137,8 @@ async def test_verify_success(test_verifier):
     await test_verifier.setup()
 
     result = await test_verifier.verify(
-        VerifierInput(
-            llm_response="This is a successful response",
-            ground_truth="Expected response",
-        )
+        solution="This is a successful response",
+        reference_answer="Expected response",
     )
 
     assert result.status == VerificationOutcome.SUCCESS
@@ -160,10 +155,8 @@ async def test_verify_failure(test_verifier):
     await test_verifier.setup()
 
     result = await test_verifier.verify(
-        VerifierInput(
-            llm_response="This will fail the verification",
-            ground_truth="Expected response",
-        )
+        solution="This will fail the verification",
+        reference_answer="Expected response",
     )
 
     assert result.status == VerificationOutcome.FAILURE
@@ -183,10 +176,8 @@ async def test_verify_error_with_retry(test_verifier):
 
     with patch("asyncio.sleep", new_callable=AsyncMock):
         result = await test_verifier.verify(
-            VerifierInput(
-                llm_response="This will cause an error",
-                ground_truth="Expected response",
-            )
+            solution="This will cause an error",
+            reference_answer="Expected response",
         )
 
         assert result.status == VerificationOutcome.ERROR
@@ -208,10 +199,8 @@ async def test_verify_timeout(test_verifier):
         side_effect=asyncio.TimeoutError("Simulated timeout"),
     ):
         result = await test_verifier.verify(
-            VerifierInput(
-                llm_response="This will timeout",
-                ground_truth="Expected response",
-            )
+            solution="This will timeout",
+            reference_answer="Expected response",
         )
 
         assert result.status == VerificationOutcome.TIMEOUT
@@ -233,9 +222,7 @@ async def test_verify_not_setup():
         )
     )
 
-    await verifier.verify(
-        VerifierInput(llm_response="Test", ground_truth="Expected")
-    )
+    await verifier.verify(solution="Test", reference_answer="Expected")
 
     verifier.setup.assert_called_once()
 
@@ -252,8 +239,8 @@ async def test_verify_batch(test_verifier):
         )
     )
 
-    async def mock_verify(input_data):
-        if "fail" in input_data.llm_response.lower():
+    async def mock_verify(solution, ground_truth):
+        if "fail" in solution.lower():
             return VerificationResult(
                 status=VerificationOutcome.FAILURE,
                 result="Verification failed",
@@ -264,21 +251,16 @@ async def test_verify_batch(test_verifier):
         )
 
     with patch.object(test_verifier, "verify", side_effect=mock_verify):
-        from camel.verifiers.base import verify_batch
-
-        test_verifier.verify_batch = lambda *args, **kwargs: verify_batch(
-            test_verifier, *args, **kwargs
+        test_verifier.verify_batch = (
+            lambda *args, **kwargs: BaseVerifier.verify_batch(
+                test_verifier, *args, **kwargs
+            )
         )
 
-        inputs = [
-            VerifierInput(llm_response="Success 1", ground_truth="Expected 1"),
-            VerifierInput(llm_response="Success 2", ground_truth="Expected 2"),
-            VerifierInput(
-                llm_response="This will fail", ground_truth="Expected 3"
-            ),
-        ]
+        solutions = ["Success 1", "Success 2", "This will fail"]
+        ground_truthes = ["Expected 1", "Expected 2", "Expected 3"]
 
-        results = await test_verifier.verify_batch(inputs)
+        results = await test_verifier.verify_batch(solutions, ground_truthes)
 
         assert len(results) == 3
         assert results[0].status == VerificationOutcome.SUCCESS
@@ -300,8 +282,8 @@ async def test_verify_batch_with_error_handling(test_verifier):
         )
     )
 
-    async def mock_verify(input_data):
-        if "error" in input_data.llm_response.lower():
+    async def mock_verify(solution, ground_truth):
+        if "error" in solution.lower():
             raise ValueError("Simulated error in verification")
         return VerificationResult(
             status=VerificationOutcome.SUCCESS,
@@ -309,26 +291,23 @@ async def test_verify_batch_with_error_handling(test_verifier):
         )
 
     with patch.object(test_verifier, "verify", side_effect=mock_verify):
-        from camel.verifiers.base import verify_batch
-
-        test_verifier.verify_batch = lambda *args, **kwargs: verify_batch(
-            test_verifier, *args, **kwargs
+        test_verifier.verify_batch = (
+            lambda *args, **kwargs: BaseVerifier.verify_batch(
+                test_verifier, *args, **kwargs
+            )
         )
 
-        inputs = [
-            VerifierInput(llm_response="Success", ground_truth="Expected 1"),
-            VerifierInput(
-                llm_response="This will cause an error",
-                ground_truth="Expected 2",
-            ),
-        ]
+        solutions = ["Success", "This will cause an error"]
+        ground_truthes = ["Expected 1", "Expected 2"]
 
         with pytest.raises(
             RuntimeError, match="One or more verifications failed"
         ):
-            await test_verifier.verify_batch(inputs, raise_on_error=True)
+            await test_verifier.verify_batch(
+                solutions, ground_truthes, raise_on_error=True
+            )
 
-        results = await test_verifier.verify_batch(inputs)
+        results = await test_verifier.verify_batch(solutions, ground_truthes)
         assert len(results) == 2
         assert results[0].status == VerificationOutcome.SUCCESS
         assert results[1].status == VerificationOutcome.ERROR
@@ -354,28 +333,26 @@ async def test_verify_batch_concurrency_limiting(test_verifier):
         async def __aexit__(self, *args):
             self.count -= 1
 
-    inputs = [
-        VerifierInput(
-            llm_response=f"Success {i}", ground_truth=f"Expected {i}"
-        )
-        for i in range(3)
-    ]
+    solutions = ["Success 1", "Success 2", "Success 3"]
+    ground_truthes = ["Expected 1", "Expected 2", "Expected 3"]
 
     mock_sem = MockSemaphore(1)
 
-    async def patched_verify_batch(verifier, inputs, raise_on_error=False):
+    async def patched_verify_batch(
+        verifier, solutions, ground_truthes, raise_on_error=False
+    ):
         results = []
-        for input_data in inputs:
+        for solution, ground_truth in zip(solutions, ground_truthes):
             async with mock_sem:
                 await asyncio.sleep(0.01)  # Simulate processing time
-                results.append(await verifier.verify(input_data))
+                results.append(await verifier.verify(solution, ground_truth))
         return results
 
     test_verifier.verify_batch = lambda *args, **kwargs: patched_verify_batch(
         test_verifier, *args, **kwargs
     )
 
-    await test_verifier.verify_batch(inputs)
+    await test_verifier.verify_batch(solutions, ground_truthes)
 
     assert mock_sem.max_count == 1
 
@@ -392,25 +369,19 @@ async def test_full_verification_flow():
         assert verifier._is_setup is True
 
         success_result = await verifier.verify(
-            VerifierInput(
-                llm_response="This should succeed", ground_truth="Expected"
-            )
+            solution="This should succeed", reference_answer="Expected"
         )
         assert success_result.status == VerificationOutcome.SUCCESS
 
         failure_result = await verifier.verify(
-            VerifierInput(
-                llm_response="This will fail", ground_truth="Expected"
-            )
+            solution="This will fail", reference_answer="Expected"
         )
         assert failure_result.status == VerificationOutcome.FAILURE
 
         with patch("asyncio.sleep", new_callable=AsyncMock):
             error_result = await verifier.verify(
-                VerifierInput(
-                    llm_response="This will cause an error",
-                    ground_truth="Expected",
-                )
+                solution="This will cause an error",
+                reference_answer="Expected",
             )
             assert error_result.status == VerificationOutcome.ERROR
 

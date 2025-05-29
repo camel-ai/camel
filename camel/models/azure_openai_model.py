@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 from openai import AsyncAzureOpenAI, AsyncStream, AzureOpenAI, Stream
 from pydantic import BaseModel
@@ -26,6 +26,8 @@ from camel.types import (
     ModelType,
 )
 from camel.utils import BaseTokenCounter, OpenAITokenCounter
+
+AzureADTokenProvider = Callable[[], str]
 
 
 class AzureOpenAIModel(BaseModelBackend):
@@ -46,9 +48,20 @@ class AzureOpenAIModel(BaseModelBackend):
             (default: :obj:`None`)
         azure_deployment_name (Optional[str], optional): The deployment name
             you chose when you deployed an azure model. (default: :obj:`None`)
+        azure_ad_token (Optional[str], optional): Your Azure Active Directory
+            token, https://www.microsoft.com/en-us/security/business/
+            identity-access/microsoft-entra-id. (default: :obj:`None`)
+        azure_ad_token_provider (Optional[AzureADTokenProvider], optional): A
+            function that returns an Azure Active Directory token, will be
+            invoked on every request. (default: :obj:`None`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter`
             will be used. (default: :obj:`None`)
+        timeout (Optional[float], optional): The timeout value in seconds for
+            API calls. If not provided, will fall back to the MODEL_TIMEOUT
+            environment variable or default to 180 seconds.
+            (default: :obj:`None`)
+
 
     References:
         https://learn.microsoft.com/en-us/azure/ai-services/openai/
@@ -60,28 +73,36 @@ class AzureOpenAIModel(BaseModelBackend):
         model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        timeout: Optional[float] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         api_version: Optional[str] = None,
         azure_deployment_name: Optional[str] = None,
+        azure_ad_token_provider: Optional["AzureADTokenProvider"] = None,
+        azure_ad_token: Optional[str] = None,
     ) -> None:
         if model_config_dict is None:
             model_config_dict = ChatGPTConfig().as_dict()
         api_key = api_key or os.environ.get("AZURE_OPENAI_API_KEY")
         url = url or os.environ.get("AZURE_OPENAI_BASE_URL")
+        timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter
+            model_type, model_config_dict, api_key, url, token_counter, timeout
         )
 
         self.api_version = api_version or os.environ.get("AZURE_API_VERSION")
-        self.azure_deployment_name = azure_deployment_name or os.environ.get(
+        self._azure_deployment_name = azure_deployment_name or os.environ.get(
             "AZURE_DEPLOYMENT_NAME"
         )
+        self._azure_ad_token = azure_ad_token or os.environ.get(
+            "AZURE_AD_TOKEN"
+        )
+        self.azure_ad_token_provider = azure_ad_token_provider
         if self.api_version is None:
             raise ValueError(
                 "Must provide either the `api_version` argument "
                 "or `AZURE_API_VERSION` environment variable."
             )
-        if self.azure_deployment_name is None:
+        if self._azure_deployment_name is None:
             raise ValueError(
                 "Must provide either the `azure_deployment_name` argument "
                 "or `AZURE_DEPLOYMENT_NAME` environment variable."
@@ -89,19 +110,23 @@ class AzureOpenAIModel(BaseModelBackend):
 
         self._client = AzureOpenAI(
             azure_endpoint=str(self._url),
-            azure_deployment=self.azure_deployment_name,
+            azure_deployment=self._azure_deployment_name,
             api_version=self.api_version,
             api_key=self._api_key,
-            timeout=180,
+            azure_ad_token=self._azure_ad_token,
+            azure_ad_token_provider=self.azure_ad_token_provider,
+            timeout=self._timeout,
             max_retries=3,
         )
 
         self._async_client = AsyncAzureOpenAI(
             azure_endpoint=str(self._url),
-            azure_deployment=self.azure_deployment_name,
+            azure_deployment=self._azure_deployment_name,
             api_version=self.api_version,
             api_key=self._api_key,
-            timeout=180,
+            azure_ad_token=self._azure_ad_token,
+            azure_ad_token_provider=self.azure_ad_token_provider,
+            timeout=self._timeout,
             max_retries=3,
         )
 
@@ -128,18 +153,23 @@ class AzureOpenAIModel(BaseModelBackend):
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
+            response_format (Optional[Type[BaseModel]]): The format of the
+                response.
+            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
+                use for the request.
 
         Returns:
             Union[ChatCompletion, Stream[ChatCompletionChunk]]:
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        response = self._client.chat.completions.create(
-            messages=messages,
-            model=self.azure_deployment_name,  # type:ignore[arg-type]
-            **self.model_config_dict,
+        response_format = response_format or self.model_config_dict.get(
+            "response_format", None
         )
-        return response
+        if response_format:
+            return self._request_parse(messages, response_format, tools)
+        else:
+            return self._request_chat_completion(messages, tools)
 
     async def _arun(
         self,
@@ -152,18 +182,101 @@ class AzureOpenAIModel(BaseModelBackend):
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
+            response_format (Optional[Type[BaseModel]]): The format of the
+                response.
+            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
+                use for the request.
 
         Returns:
             Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
-        response = await self._async_client.chat.completions.create(
-            messages=messages,
-            model=self.azure_deployment_name,  # type:ignore[arg-type]
-            **self.model_config_dict,
+        response_format = response_format or self.model_config_dict.get(
+            "response_format", None
         )
-        return response
+        if response_format:
+            return await self._arequest_parse(messages, response_format, tools)
+        else:
+            return await self._arequest_chat_completion(messages, tools)
+
+    def _request_chat_completion(
+        self,
+        messages: List[OpenAIMessage],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+        request_config = self.model_config_dict.copy()
+
+        if tools:
+            request_config["tools"] = tools
+
+        return self._client.chat.completions.create(
+            messages=messages,
+            model=self._azure_deployment_name,  # type:ignore[arg-type]
+            **request_config,
+        )
+
+    async def _arequest_chat_completion(
+        self,
+        messages: List[OpenAIMessage],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+        request_config = self.model_config_dict.copy()
+
+        if tools:
+            request_config["tools"] = tools
+
+        return await self._async_client.chat.completions.create(
+            messages=messages,
+            model=self._azure_deployment_name,  # type:ignore[arg-type]
+            **request_config,
+        )
+
+    def _request_parse(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ChatCompletion:
+        import copy
+
+        request_config = copy.deepcopy(self.model_config_dict)
+
+        request_config["response_format"] = response_format
+        # Remove stream from request config since OpenAI does not support it
+        # with structured response
+        request_config.pop("stream", None)
+        if tools is not None:
+            request_config["tools"] = tools
+
+        return self._client.beta.chat.completions.parse(
+            messages=messages,
+            model=self._azure_deployment_name,  # type:ignore[arg-type]
+            **request_config,
+        )
+
+    async def _arequest_parse(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ChatCompletion:
+        import copy
+
+        request_config = copy.deepcopy(self.model_config_dict)
+
+        request_config["response_format"] = response_format
+        # Remove stream from request config since OpenAI does not support it
+        # with structured response
+        request_config.pop("stream", None)
+        if tools is not None:
+            request_config["tools"] = tools
+
+        return await self._async_client.beta.chat.completions.parse(
+            messages=messages,
+            model=self._azure_deployment_name,  # type:ignore[arg-type]
+            **request_config,
+        )
 
     def check_model_config(self):
         r"""Check whether the model configuration contains any
@@ -183,7 +296,8 @@ class AzureOpenAIModel(BaseModelBackend):
     @property
     def stream(self) -> bool:
         r"""Returns whether the model is in stream mode,
-            which sends partial results each time.
+        which sends partial results each time.
+
         Returns:
             bool: Whether the model is in stream mode.
         """

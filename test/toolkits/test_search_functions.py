@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from unittest import mock
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
@@ -185,144 +185,128 @@ def test_search_duckduckgo_images():
 
 
 @patch('requests.get')
-@patch('wolframalpha.Client')
-@patch('os.environ.get')
-def test_query_wolfram_alpha(mock_get_env, mock_client, mock_requests_get):
-    mock_get_env.return_value = 'FAKE_APP_ID'
-
-    mock_res = MagicMock()
-    mock_res.get.side_effect = lambda key, default: {
-        '@inputstring': 'calculate limit of sinx^2/x',
-        'pod': [
-            {
-                '@title': 'Limit',
-                'subpod': {'plaintext': 'lim_(x->0) (sin^2(x))/x = 0'},
-            },
-            {
-                '@title': 'Plot',
-                'subpod': {'plaintext': None},
-            },
-        ],
-    }[key]
-
-    mock_instance = MagicMock()
-    mock_instance.query.return_value = mock_res
-    mock_client.return_value = mock_instance
-
-    mock_requests_get.return_value = MagicMock(status_code=200)
-    mock_requests_get.return_value.text = """
-    <queryresult success="true" error="false">
-        <pod title="Limit">
-            <subpod>
-                <plaintext>lim_(x->0) (sin^2(x))/x = 0</plaintext>
-            </subpod>
-        </pod>
-        <pod title="Plot">
-            <subpod>
-                <plaintext></plaintext>
-            </subpod>
-        </pod>
-    </queryresult>
+def test_search_baidu(mock_get, search_toolkit):
+    # Mock the response from Baidu search
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.encoding = "utf-8"
+    mock_response.text = """
+    <html>
+        <head><title>Baidu Search</title></head>
+        <body>
+            <div class="result c-container">
+                <h3 class="t">
+                    <a href="https://example1.com">Test Title 1</a>
+                </h3>
+                <div class="c-abstract">Test Abstract 1</div>
+            </div>
+            <div class="result c-container">
+                <h3 class="t">
+                    <a href="https://example2.com">Test Title 2</a>
+                </h3>
+                <div class="c-abstract">Test Abstract 2</div>
+            </div>
+        </body>
+    </html>
     """
+    mock_get.return_value = mock_response
 
-    result = SearchToolkit().query_wolfram_alpha(
-        "calculate limit of sinx^2/x", True
-    )
+    # Call the function under test
+    result = search_toolkit.search_baidu(query="test query", max_results=5)
 
+    # Expected output
     expected_output = {
-        "query": "calculate limit of sinx^2/x",
-        "pod_info": [
+        "results": [
             {
-                "title": "Limit",
-                "description": "lim_(x->0) (sin^2(x))/x = 0",
-                "image_url": '',
+                "result_id": 1,
+                "title": "Test Title 1",
+                "description": "Test Abstract 1",
+                "url": "https://example1.com",
             },
             {
-                "title": "Plot",
-                "description": None,
-                "image_url": '',
+                "result_id": 2,
+                "title": "Test Title 2",
+                "description": "Test Abstract 2",
+                "url": "https://example2.com",
             },
-        ],
-        "final_answer": None,
-        "steps": {},
+        ]
     }
 
+    # Assertions
     assert result == expected_output
-
-
-def test_parse_wolfram_result():
-    sample_wolfram_result = {
-        "@inputstring": "What is 2+2?",
-        "pod": [
-            {
-                "@title": "Input",
-                "subpod": {
-                    "plaintext": "2 + 2",
-                    "img": {"@src": "http://example.com/image1.png"},
-                },
-            },
-            {
-                "@title": "Result",
-                "subpod": {
-                    "plaintext": "4",
-                    "img": {"@src": "http://example.com/image2.png"},
-                },
-                "@primary": "true",
-            },
-        ],
-    }
-    expected_output = {
-        "query": "What is 2+2?",
-        "pod_info": [
-            {
-                "title": "Input",
-                "description": "2 + 2",
-                "image_url": "http://example.com/image1.png",
-            },
-            {
-                "title": "Result",
-                "description": "4",
-                "image_url": "http://example.com/image2.png",
-            },
-        ],
-        "final_answer": "4",
-    }
-
-    result = SearchToolkit()._parse_wolfram_result(sample_wolfram_result)
-
-    assert (
-        result == expected_output
-    ), f"Expected {expected_output}, but got {result}"
+    mock_get.assert_called_once_with(
+        "https://www.baidu.com/s",
+        headers={
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            ),
+            "Referer": "https://www.baidu.com",
+        },
+        params={"wd": "test query", "rn": "5"},
+    )
 
 
 @patch('requests.get')
-def test_get_wolframalpha_step_by_step_solution(mock_get):
-    sample_response = """
-    <queryresult>
-        <pod title="Results">
-            <subpod>
-                <stepbystepcontenttype>SBSHintStep</stepbystepcontenttype>
-                <plaintext>Hint: | Step 1</plaintext>
-            </subpod>
-            <subpod>
-                <stepbystepcontenttype>SBSHintStep</stepbystepcontenttype>
-                <plaintext>Hint: | Step 2</plaintext>
-            </subpod>
-        </pod>
-    </queryresult>
+def test_search_bing(mock_get, search_toolkit):
+    # Mock the response from Bing search
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.encoding = "utf-8"
+    mock_response.text = """
+    <html>
+        <head><title>Bing Search</title></head>
+        <body>
+            <ol id="b_results">
+                <li>
+                    <h2><a href="https://example1.com">Test Title 1</a></h2>
+                    <p class="b_algoSlug">Test Snippet 1</p>
+                </li>
+                <li>
+                    <h2><a href="https://example2.com">Test Title 2</a></h2>
+                    <p class="b_algoSlug">Test Snippet 2</p>
+                </li>
+            </ol>
+        </body>
+    </html>
     """
+    mock_get.return_value = mock_response
 
-    mock_get.return_value = Mock(text=sample_response)
+    # Call the function under test
+    result = search_toolkit.search_bing(query="test query", max_results=5)
 
-    expected_steps = {"step1": "Step 1", "step2": "Step 2"}
+    # Expected output
+    expected_output = {
+        "results": [
+            {
+                "result_id": 1,
+                "title": "Test Title 1",
+                "snippet": "Test Snippet 1",
+                "link": "https://example1.com",
+            },
+            {
+                "result_id": 2,
+                "title": "Test Title 2",
+                "snippet": "Test Snippet 2",
+                "link": "https://example2.com",
+            },
+        ]
+    }
 
-    result = SearchToolkit()._get_wolframalpha_step_by_step_solution(
-        "dummy_app_id", "dummy_query"
+    # Assertions
+    assert result == expected_output
+    mock_get.assert_called_once_with(
+        "https://cn.bing.com/search?q=test+query",
+        headers={
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            ),
+        },
+        timeout=10,
     )
-
-    assert (
-        result == expected_steps
-    ), f"Expected {expected_steps}, but got {result}"
 
 
 class MockSearchResult:
@@ -402,3 +386,121 @@ def test_search_linkup_error(search_toolkit):
             result = search_toolkit.search_linkup(query="test query")
 
         assert result == {"error": "An unexpected error occurred: Test error"}
+
+
+def test_search_bocha_success(search_toolkit):
+    """Test successful Bocha AI search with basic parameters."""
+    import json
+
+    mock_response = {
+        "code": 200,
+        "data": {
+            "_type": "SearchResponse",
+            "queryContext": {"originalQuery": "test_query"},
+            "webPages": {
+                "webSearchUrl": "",
+                "value": [],
+            },
+            "images": {},
+            "videos": {},
+        },
+    }
+    with patch('requests.post') as mock_post:
+        mock_post.return_value.json.return_value = mock_response
+        mock_post.return_value.status_code = 200
+        mock_post.return_value.text = "OK"
+        mock_post.return_value.raise_for_status = lambda: None
+
+        with patch.dict(os.environ, {'BOCHA_API_KEY': 'test_key'}):
+            result = search_toolkit.search_bocha(
+                query="test query",
+            )
+
+    assert result == mock_response["data"]
+
+    mock_post.assert_called_once()
+    args, kwargs = mock_post.call_args
+    assert kwargs['headers'] == {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer test_key",
+    }
+
+    assert kwargs['data'] == json.dumps(
+        {
+            "query": "test query",
+            "freshness": "noLimit",
+            "summary": False,
+            "count": 10,
+            "page": 1,
+        }
+    )
+
+
+def test_search_bocha_error(search_toolkit):
+    """Test error handling in Bocha AI search."""
+    with patch('requests.post') as mock_post:
+        mock_post.side_effect = requests.exceptions.RequestException(
+            "Connection error"
+        )
+
+        with patch.dict(os.environ, {'BOCHA_API_KEY': 'test_key'}):
+            result = search_toolkit.search_bocha(query="test query")
+
+    assert "error" in result
+    assert "Connection error" in result["error"]
+
+
+@patch('requests.get')
+def test_search_alibaba_tongxiao(mock_get, search_toolkit):
+    # Mock the response from Alibaba Tongxiao search
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "requestId": "test-request-id",
+        "pageItems": [
+            {
+                "title": "Test Title 1",
+                "snippet": "Test Snippet 1",
+                "link": "https://example1.com",
+                "hostname": "example1.com",
+                "markdownText": "# Test Markdown 1",
+            }
+        ],
+    }
+    mock_get.return_value = mock_response
+
+    # Mock environment variables and call the function
+    with patch.dict(os.environ, {'TONGXIAO_API_KEY': 'fake_api_key'}):
+        result = search_toolkit.search_alibaba_tongxiao(
+            query="test query", return_markdown_text=True
+        )
+
+        # Verify the request was made correctly
+        mock_get.assert_called_once_with(
+            "https://cloud-iqs.aliyuncs.com/search/genericSearch",
+            headers={"X-API-Key": "fake_api_key"},
+            params={
+                "query": "test query",
+                "timeRange": "NoLimit",
+                "page": 1,
+                "returnMainText": "false",
+                "returnMarkdownText": "true",
+                "enableRerank": "true",
+            },
+            timeout=10,
+        )
+
+        # Check if the result is as expected
+        assert result == {
+            "request_id": "test-request-id",
+            "results": [
+                {
+                    "result_id": 1,
+                    "title": "Test Title 1",
+                    "snippet": "Test Snippet 1",
+                    "url": "https://example1.com",
+                    "hostname": "example1.com",
+                    "markdown_text": "# Test Markdown 1",
+                }
+            ],
+        }

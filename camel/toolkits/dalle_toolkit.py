@@ -11,6 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
+# Enables postponed evaluation of annotations (for string-based type hints)
+from __future__ import annotations
+
 import base64
 import os
 import uuid
@@ -20,14 +24,32 @@ from typing import List, Optional
 from openai import OpenAI
 from PIL import Image
 
+from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
+from camel.utils import MCPServer
+
+logger = get_logger(__name__)
 
 
+@MCPServer()
 class DalleToolkit(BaseToolkit):
     r"""A class representing a toolkit for image generation using OpenAI's
     DALL-E model.
     """
+
+    def __init__(
+        self,
+        timeout: Optional[float] = None,
+    ):
+        r"""Initializes a new instance of the DalleToolkit class.
+
+        Args:
+            timeout (Optional[float]): The timeout value for API requests
+                in seconds. If None, no timeout is applied.
+                (default: :obj:`None`)
+        """
+        super().__init__(timeout=timeout)
 
     def base64_to_image(self, base64_string: str) -> Optional[Image.Image]:
         r"""Converts a base64 encoded string into a PIL Image object.
@@ -48,7 +70,10 @@ class DalleToolkit(BaseToolkit):
             image = Image.open(image_buffer)
             return image
         except Exception as e:
-            print(f"An error occurred while converting base64 to image: {e}")
+            error_msg = (
+                f"An error occurred while converting base64 to image: {e}"
+            )
+            logger.error(error_msg)
             return None
 
     def image_path_to_base64(self, image_path: str) -> str:
@@ -65,10 +90,11 @@ class DalleToolkit(BaseToolkit):
             with open(image_path, "rb") as image_file:
                 return base64.b64encode(image_file.read()).decode('utf-8')
         except Exception as e:
-            print(
+            error_msg = (
                 f"An error occurred while converting image path to base64: {e}"
             )
-            return ""
+            logger.error(error_msg)
+            return error_msg
 
     def image_to_base64(self, image: Image.Image) -> str:
         r"""Converts an image into a base64-encoded string.
@@ -93,8 +119,9 @@ class DalleToolkit(BaseToolkit):
                 base64_str = base64.b64encode(image_bytes).decode('utf-8')
                 return base64_str
         except Exception as e:
-            print(f"An error occurred: {e}")
-            return ""
+            error_msg = f"An error occurred: {e}"
+            logger.error(error_msg)
+            return error_msg
 
     def get_dalle_img(self, prompt: str, image_dir: str = "img") -> str:
         r"""Generate an image using OpenAI's DALL-E model.
@@ -119,11 +146,17 @@ class DalleToolkit(BaseToolkit):
             n=1,  # NOTE: now dall-e-3 only supports n=1
             response_format="b64_json",
         )
+        if response.data is None or len(response.data) == 0:
+            error_msg = "No image data returned from DALL-E API."
+            logger.error(error_msg)
+            return error_msg
         image_b64 = response.data[0].b64_json
         image = self.base64_to_image(image_b64)  # type: ignore[arg-type]
 
         if image is None:
-            raise ValueError("Failed to convert base64 string to image.")
+            error_msg = "Failed to convert base64 string to image."
+            logger.error(error_msg)
+            return error_msg
 
         os.makedirs(image_dir, exist_ok=True)
         image_path = os.path.join(image_dir, f"{uuid.uuid4()}.png")

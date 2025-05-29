@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import logging
+import os
 import subprocess
 import threading
 import time
@@ -51,6 +52,10 @@ class SGLangModel(BaseModelBackend):
             use for the model. If not provided, :obj:`OpenAITokenCounter(
             ModelType.GPT_4O_MINI)` will be used.
             (default: :obj:`None`)
+        timeout (Optional[float], optional): The timeout value in seconds for
+            API calls. If not provided, will fall back to the MODEL_TIMEOUT
+            environment variable or default to 180 seconds.
+            (default: :obj:`None`)
 
     Reference: https://sgl-project.github.io/backend/openai_api_completions.html
     """
@@ -62,6 +67,7 @@ class SGLangModel(BaseModelBackend):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
+        timeout: Optional[float] = None,
     ) -> None:
         if model_config_dict is None:
             model_config_dict = SGLangConfig().as_dict()
@@ -73,8 +79,9 @@ class SGLangModel(BaseModelBackend):
         self._lock = threading.Lock()
         self._inactivity_thread: Optional[threading.Thread] = None
 
+        timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter
+            model_type, model_config_dict, api_key, url, token_counter, timeout
         )
 
         self._client = None
@@ -82,13 +89,13 @@ class SGLangModel(BaseModelBackend):
         if self._url:
             # Initialize the client if an existing URL is provided
             self._client = OpenAI(
-                timeout=180,
+                timeout=self._timeout,
                 max_retries=3,
                 api_key="Set-but-ignored",  # required but ignored
                 base_url=self._url,
             )
             self._async_client = AsyncOpenAI(
-                timeout=180,
+                timeout=self._timeout,
                 max_retries=3,
                 api_key="Set-but-ignored",  # required but ignored
                 base_url=self._url,
@@ -112,7 +119,9 @@ class SGLangModel(BaseModelBackend):
                 )
 
                 server_process = _execute_shell_command(cmd)
-                _wait_for_server("http://localhost:30000")
+                _wait_for_server(
+                    base_url="http://localhost:30000", timeout=self._timeout
+                )
                 self._url = "http://127.0.0.1:30000/v1"
                 self.server_process = server_process  # type: ignore[assignment]
                 # Start the inactivity monitor in a background thread
@@ -123,7 +132,7 @@ class SGLangModel(BaseModelBackend):
             self.last_run_time = time.time()
             # Initialize the client after the server starts
             self._client = OpenAI(
-                timeout=180,
+                timeout=self._timeout,
                 max_retries=3,
                 api_key="Set-but-ignored",  # required but ignored
                 base_url=self._url,
@@ -324,7 +333,10 @@ def _kill_process_tree(
 
             # Sometime processes cannot be killed with SIGKILL
             # so we send an additional signal to kill them.
-            itself.send_signal(signal.SIGQUIT)
+            if hasattr(signal, "SIGQUIT"):
+                itself.send_signal(signal.SIGQUIT)
+            else:
+                itself.send_signal(signal.SIGTERM)
         except psutil.NoSuchProcess:
             pass
 
@@ -346,12 +358,13 @@ def _execute_shell_command(command: str) -> subprocess.Popen:
     return subprocess.Popen(parts, text=True, stderr=subprocess.STDOUT)
 
 
-def _wait_for_server(base_url: str, timeout: Optional[int] = 30) -> None:
+def _wait_for_server(base_url: str, timeout: Optional[float] = 30) -> None:
     r"""Wait for the server to be ready by polling the /v1/models endpoint.
 
     Args:
-        base_url: The base URL of the server
-        timeout: Maximum time to wait in seconds. Default is 30 seconds.
+        base_url (str): The base URL of the server
+        timeout (Optional[float]): Maximum time to wait in seconds.
+            (default: :obj:`30`)
     """
     import requests
 

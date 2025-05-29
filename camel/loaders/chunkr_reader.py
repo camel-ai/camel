@@ -186,3 +186,4 @@ class ChunkrReader:
                 "All": OcrStrategy.ALL,
             }.get(chunkr_config.ocr_strategy, OcrStrategy.ALL),
         )
+        return json.dumps(response_json, indent=4, ensure_ascii=False)

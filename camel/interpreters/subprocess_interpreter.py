@@ -292,7 +292,7 @@ class SubprocessInterpreter(BaseInterpreter):
         if self.require_confirm:
             logger.info(
                 f"The following {code_type} code will run on your "
-                "computer: {code}"
+                f"computer: {code}"
             )
             while True:
                 choice = input("Running code? [Y/n]:").lower().strip()

@@ -16,6 +16,9 @@
 [![Hugging Face][huggingface-image]][huggingface-url]
 [![Star][star-image]][star-url]
 [![Package License][package-license-image]][package-license-url]
+[![PyPI Download][package-download-image]][package-download-url]
+
+<a href="https://trendshift.io/repositories/649" target="_blank"><img src="https://trendshift.io/api/badge/repositories/649" alt="camel-ai/camel | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 
 </div>
 
@@ -187,9 +190,56 @@ Installing CAMEL is a breeze thanks to its availability on PyPI. Simply open you
 pip install camel-ai
 ```
 
+### Starting with ChatAgent
+
+This example demonstrates how to create a `ChatAgent` using the CAMEL framework and perform a search query using DuckDuckGo.
+
+1. **Install the tools package:**
+
+  ```bash
+  pip install 'camel-ai[web_tools]'
+  ```
+
+2. **Set up your OpenAI API key:**
+
+  ```bash
+  export OPENAI_API_KEY='your_openai_api_key'
+  ```
+
+3. **Run the following Python code:**
+
+  ```python
+  from camel.models import ModelFactory
+  from camel.types import ModelPlatformType, ModelType
+  from camel.agents import ChatAgent
+  from camel.toolkits import SearchToolkit
+
+  model = ModelFactory.create(
+    model_platform=ModelPlatformType.OPENAI,
+    model_type=ModelType.GPT_4O,
+    model_config_dict={"temperature": 0.0},
+  )
+
+  search_tool = SearchToolkit().search_duckduckgo
+
+  agent = ChatAgent(model=model, tools=[search_tool])
+
+  response_1 = agent.step("What is CAMEL-AI?")
+  print(response_1.msgs[0].content)
+  # CAMEL-AI is the first LLM (Large Language Model) multi-agent framework
+  # and an open-source community focused on finding the scaling laws of agents.
+  # ...
+
+  response_2 = agent.step("What is the Github link to CAMEL framework?")
+  print(response_2.msgs[0].content)
+  # The GitHub link to the CAMEL framework is
+  # [https://github.com/camel-ai/camel](https://github.com/camel-ai/camel).
+  ```
+
+
 For more detailed instructions and additional configuration options, check out the [installation section](https://github.com/camel-ai/camel/blob/master/docs/get_started/installation.md).
 
-After running, you can explore our CAMEL Tech Stack and Cookbooks at [www.docs.camel-ai.org](https://www.docs.camel-ai.org) to build powerful multi-agent systems.
+After running, you can explore our CAMEL Tech Stack and Cookbooks at [docs.camel-ai.org](https://docs.camel-ai.org) to build powerful multi-agent systems.
 
 We provide a [![Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1AzP33O8rnMW__7ocWJhVBXjKziJXPtim?usp=sharing) demo showcasing a conversation between two ChatGPT agents playing roles as a python programmer and a stock trader collaborating on developing a trading bot for stock market.
 
@@ -202,7 +252,7 @@ Explore different types of agents, their roles, and their applications.
 
 ### Seeking Help
 
-Please reachout to us on [CAMEL discord](https://discord.camel-ai.org/) if you encounter any issue set up CAMEL.
+Please reach out to us on [CAMEL discord](https://discord.camel-ai.org/) if you encounter any issue set up CAMEL.
 
 <br>
 
@@ -210,7 +260,7 @@ Please reachout to us on [CAMEL discord](https://discord.camel-ai.org/) if you e
 
 <div align="center">
   <a href="https://docs.camel-ai.org">
-    <img src="docs/images/techstack.png" alt="TechStack">
+    <img src="https://camel-ai.github.io/camel_asset/graphics/techstack.png" alt="TechStack">
   </a>
 </div>
 
@@ -247,7 +297,7 @@ We believe that studying these agents on a large scale offers valuable insights 
 </div>
 
 <div align="center">
-  <a href="https://www.agent-trust.camel-ai.org/">
+  <a href="https://agent-trust.camel-ai.org/">
     <img src="docs/images/agent_trust.png" alt="Agent Trust">
   </a>
 </div>
@@ -276,7 +326,7 @@ We believe that studying these agents on a large scale offers valuable insights 
 
 <br>
 
-## Syenthetic Datasets
+## Synthetic Datasets
 
 ### 1. Utilize Various LLMs as Backends
 
@@ -325,16 +375,17 @@ Practical guides and tutorials for implementing specific functionalities in CAME
 ### 3. Model Training & Data Generation
 | Cookbook | Description |
 |:---|:---|
-| **[Data Generation with CAMEL and Finetuning with Unsloth](https://docs.camel-ai.org/cookbooks/model_training/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B.html)** | Learn how to generate data with CAMEL and fine-tune models effectively with Unsloth. |
-| **[Data Gen with Real Function Calls and Hermes Format](https://docs.camel-ai.org/cookbooks/model_training/data_gen_with_real_function_calls_and_hermes_format.html)** | Explore how to generate data with real function calls and the Hermes format. |
-| **[CoT Data Generation and Upload Data to Huggingface](https://docs.camel-ai.org/cookbooks/model_training/cot_data_gen_upload_to_huggingface.html)** | Uncover how to generate CoT data with CAMEL and seamlessly upload it to Huggingface. |
-| **[CoT Data Generation and SFT Qwen with Unsolth](https://docs.camel-ai.org/cookbooks/model_training/cot_data_gen_sft_qwen_unsolth_upload_huggingface.html)** | Discover how to generate CoT data using CAMEL and SFT Qwen with Unsolth, and seamlessly upload your data and model to Huggingface. |
+| **[Data Generation with CAMEL and Finetuning with Unsloth](https://docs.camel-ai.org/cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B.html)** | Learn how to generate data with CAMEL and fine-tune models effectively with Unsloth. |
+| **[Data Gen with Real Function Calls and Hermes Format](https://docs.camel-ai.org/cookbooks/data_generation/data_gen_with_real_function_calls_and_hermes_format.html)** | Explore how to generate data with real function calls and the Hermes format. |
+| **[CoT Data Generation and Upload Data to Huggingface](https://docs.camel-ai.org/cookbooks/data_generation/distill_math_reasoning_data_from_deepseek_r1.html)** | Uncover how to generate CoT data with CAMEL and seamlessly upload it to Huggingface. |
+| **[CoT Data Generation and SFT Qwen with Unsolth](https://docs.camel-ai.org/cookbooks/data_generation/cot_data_gen_sft_qwen_unsolth_upload_huggingface.html)** | Discover how to generate CoT data using CAMEL and SFT Qwen with Unsolth, and seamlessly upload your data and model to Huggingface. |
 
 ### 4. Multi-Agent Systems & Applications
 | Cookbook | Description |
 |:---|:---|
 | **[Role-Playing Scraper for Report & Knowledge Graph Generation](https://docs.camel-ai.org/cookbooks/applications/roleplaying_scraper.html)** | Create role-playing agents for data scraping and reporting. |
 | **[Create A Hackathon Judge Committee with Workforce](https://docs.camel-ai.org/cookbooks/multi_agent_society/workforce_judge_committee.html)** | Building a team of agents for collaborative judging. |
+| **[Dynamic Knowledge Graph Role-Playing: Multi-Agent System with dynamic, temporally-aware knowledge graphs](https://docs.camel-ai.org/cookbooks/applications/dyamic_knowledge_graph.html)** |  Builds dynamic, temporally-aware knowledge graphs for financial applications using a multi-agent system. It processes financial reports, news articles, and research papers to help traders analyze data, identify relationships, and uncover market insights. The system also utilizes diverse and optional element node deduplication techniques to ensure data integrity and optimize graph structure for financial decision-making. |
 | **[Customer Service Discord Bot with Agentic RAG](https://docs.camel-ai.org/cookbooks/applications/customer_service_Discord_bot_using_SambaNova_with_agentic_RAG.html)** | Learn how to build a robust customer service bot for Discord using Agentic RAG. |
 | **[Customer Service Discord Bot with Local Model](https://docs.camel-ai.org/cookbooks/applications/customer_service_Discord_bot_using_local_model_with_agentic_RAG.html)** | Learn how to build a robust customer service bot for Discord using Agentic RAG which supports local deployment. |
 
@@ -367,6 +418,13 @@ For more information please contact camel-ai@eigent.ai
 - **X (Twitter):** Follow for updates, AI insights, and key announcements. [Follow us](https://x.com/CamelAIOrg)
 
 - **Ambassador Project:** Advocate for CAMEL-AI, host events, and contribute content. [Learn more](https://www.camel-ai.org/community)
+
+- **WeChat Community:** Scan the QR code below to join our WeChat community.
+
+  <div align="center">
+    <img src="misc/wechat.jpeg" alt="WeChat QR Code" width="200">
+  </div>
+
 
 <br>
 
@@ -405,6 +463,7 @@ The source code is licensed under Apache 2.0.
 [star-url]: https://github.com/camel-ai/camel/stargazers
 [package-license-image]: https://img.shields.io/badge/License-Apache_2.0-blue.svg
 [package-license-url]: https://github.com/camel-ai/camel/blob/master/licenses/LICENSE
+[package-download-image]: https://img.shields.io/pypi/dm/camel-ai
 
 [colab-url]: https://colab.research.google.com/drive/1AzP33O8rnMW__7ocWJhVBXjKziJXPtim?usp=sharing
 [colab-image]: https://colab.research.google.com/assets/colab-badge.svg
@@ -420,3 +479,4 @@ The source code is licensed under Apache 2.0.
 [reddit-url]: https://www.reddit.com/r/CamelAI/
 [reddit-image]: https://img.shields.io/reddit/subreddit-subscribers/CamelAI?style=plastic&logo=reddit&label=r%2FCAMEL&labelColor=white
 [ambassador-url]: https://www.camel-ai.org/community
+[package-download-url]: https://pypi.org/project/camel-ai

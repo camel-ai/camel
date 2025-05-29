@@ -21,11 +21,12 @@ import requests
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import handle_http_error
+from camel.utils import MCPServer, handle_http_error
 
 LINKEDIN_POST_LIMIT = 1300
 
 
+@MCPServer()
 class LinkedInToolkit(BaseToolkit):
     r"""A class representing a toolkit for LinkedIn operations.
 
@@ -75,7 +76,9 @@ class LinkedInToolkit(BaseToolkit):
         }
 
         response = requests.post(
-            url, headers=headers, data=json.dumps(post_data)
+            url,
+            headers=headers,
+            data=json.dumps(post_data, ensure_ascii=False),
         )
         if response.status_code == 201:
             post_response = response.json()
