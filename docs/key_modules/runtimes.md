@@ -1,5 +1,3 @@
-# Runtime
-
 ## 1. Concept
 The runtime module in CAMEL allows functions and tools to be executed in 
 controlled environments, enabling the safe and isolated execution of code.
