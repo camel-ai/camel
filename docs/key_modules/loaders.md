@@ -1,5 +1,3 @@
-# Loaders
-
 ## 1. Concept
 CAMEL introduced two IO modules, `Base IO` and `Unstructured IO` which are designed for handling various file types and unstructured data processing.
 Additionally, four new data readers were added, `Apify Reader`,`Chunkr Reader`, `Firecrawl Reader`, and `Jina_url Reader`, which enable retrieval of external data for improved data integration and analysis.
