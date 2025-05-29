@@ -1,0 +1,61 @@
+<a id="camel.toolkits.pulse_mcp_search_toolkit"></a>
+
+<a id="camel.toolkits.pulse_mcp_search_toolkit.PulseMCPSearchToolkit"></a>
+
+## PulseMCPSearchToolkit
+
+```python
+class PulseMCPSearchToolkit(BaseToolkit):
+```
+
+A toolkit for searching MCP servers using the PulseMCP API.
+
+<a id="camel.toolkits.pulse_mcp_search_toolkit.PulseMCPSearchToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, timeout: Optional[float] = None):
+```
+
+<a id="camel.toolkits.pulse_mcp_search_toolkit.PulseMCPSearchToolkit.search_mcp_servers"></a>
+
+### search_mcp_servers
+
+```python
+def search_mcp_servers(
+    self,
+    query: Optional[str] = None,
+    top_k: Optional[int] = 5,
+    package_registry: Optional[str] = None,
+    count_per_page: int = 5000,
+    offset: int = 0
+):
+```
+
+Search for MCP servers using the PulseMCP API.
+
+**Parameters:**
+
+- **query** (Optional[str]): The query to search for. (default: :obj:`None`)
+- **top_k** (Optional[int]): After sorting, return only the top_k servers. (default: :obj:`5`)
+- **package_registry** (Optional[str]): The package registry to search for. (default: :obj:`None`)
+- **count_per_page** (int): The number of servers to return per page. (default: :obj:`5000`)
+- **offset** (int): The offset to start the search from. (default: :obj:`0`)
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the search results or
+an error message.
+
+<a id="camel.toolkits.pulse_mcp_search_toolkit.PulseMCPSearchToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects.

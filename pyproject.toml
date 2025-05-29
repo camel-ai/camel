@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.60"
+version = "0.2.61"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -72,6 +72,7 @@ rag = [
     "qdrant-client>=1.9.0,<2",
     "pymilvus>=2.4.0,<3",
     "pytidb-experimental==0.0.1.dev4",
+    "faiss-cpu>=1.7.2,<2",
     "neo4j>=5.18.0,<6",
     "nebula3-python==3.8.2",
     "rank-bm25>=0.2.2,<0.3",
@@ -81,6 +82,7 @@ rag = [
     "crawl4ai>=0.3.745",
     "pyobvector>=0.1.18",
     "google-genai>=1.13.0",
+    "chunkr-ai>=0.0.50",
 ]
 web_tools = [
     "duckduckgo-search>=6.3.5,<7",
@@ -122,6 +124,8 @@ document_tools = [
     "fpdf>=1.7.2",
     "crawl4ai>=0.3.745",
     "markitdown==0.1.1",
+    "pylatex>=1.4.2",
+    "chunkr-ai>=0.0.50",
 ]
 media_tools = [
     "imageio[pyav]>=2.34.2,<3",
@@ -156,7 +160,6 @@ research_tools = [
     "arxiv>=2.1.3,<3",
     "arxiv2text>=0.1.14,<0.2",
     "scholarly[tor]==1.7.11",
-    "bohrium",
 ]
 dev_tools = [
     "docker>=7.1.0,<8",
@@ -194,6 +197,7 @@ storage = [
     "qdrant-client>=1.9.0,<2",
     "pymilvus>=2.4.0,<3",
     "pytidb-experimental==0.0.1.dev4",
+    "faiss-cpu>=1.7.2,<2",
     "neo4j>=5.18.0,<6",
     "nebula3-python==3.8.2",
     "redis>=5.0.6,<6",
@@ -249,6 +253,8 @@ owl = [
     "scrapegraph-py>=1.12.0,<2",
     "pyautogui>=0.9.54,<0.10",
     "aci-sdk>=1.0.0b1",
+    "pylatex>=1.4.2",
+    "chunkr-ai>=0.0.50",
 ]
 all = [
     "numpy>=1.2,<=2.2",
@@ -316,6 +322,7 @@ all = [
     "qdrant-client>=1.9.0,<2",
     "pymilvus>=2.4.0,<3",
     "pytidb-experimental==0.0.1.dev4",
+    "faiss-cpu>=1.7.2,<2",
     "cohere>=5.11.0,<6",
     "sentence-transformers>=3.0.1,<4",
     "neo4j>=5.18.0,<6",
@@ -366,8 +373,8 @@ all = [
     "ibm-watsonx-ai>=1.3.11",
     "google-genai>=1.13.0",
     "aci-sdk>=1.0.0b1",
-    "bohrium",
-    
+    "pylatex>=1.4.2",
+    "chunkr-ai>=0.0.50",
 ]
 
 [project.urls]
@@ -381,14 +388,14 @@ default-groups = [
     "docs",
 ]
 
-[tool.uv.sources]
-bohrium = { git = "https://github.com/dptech-corp/bohrium-openapi-python-sdk" }
-
 [tool.hatch.build.targets.sdist]
 include = ["camel"]
 
 [tool.hatch.build.targets.wheel]
 include = ["camel"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.ruff]
 line-length = 79
@@ -493,8 +500,8 @@ module = [
     "fish_audio_sdk",
     "sentence_transformers.*",
     "pymilvus",
-    "pytidb",
     "pytidb.schema",
+    "faiss",
     "pillow",
     "slack-sdk",
     "slack-bolt",
@@ -562,7 +569,9 @@ module = [
     "ibm_watsonx_ai.*",
     "google_genai",
     "aci-sdk.*",
+    "pylatex.*",
     "bohrium.*",
+    "chunkr_ai.*",
 ]
 ignore_missing_imports = true
 

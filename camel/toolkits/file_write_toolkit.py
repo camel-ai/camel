@@ -11,8 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-
-
 import re
 from datetime import datetime
 from pathlib import Path
@@ -21,7 +19,7 @@ from typing import List, Optional, Union
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import MCPServer
+from camel.utils import MCPServer, dependencies_required
 
 logger = get_logger(__name__)
 
@@ -148,40 +146,83 @@ class FileWriteToolkit(BaseToolkit):
         document.save(str(file_path))
         logger.debug(f"Wrote DOCX to {file_path} with default formatting")
 
-    def _write_pdf_file(self, file_path: Path, content: str, **kwargs) -> None:
+    @dependencies_required('pylatex', 'fpdf')
+    def _write_pdf_file(
+        self, file_path: Path, content: str, use_latex: bool = False
+    ) -> None:
         r"""Write text content to a PDF file with default formatting.
 
         Args:
             file_path (Path): The target file path.
             content (str): The text content to write.
+            use_latex (bool): Whether to use LaTeX for rendering. (requires
+                LaTeX toolchain). If False, uses FPDF for simpler PDF
+                generation. (default: :obj: `False`)
 
         Raises:
-            RuntimeError: If the 'fpdf' library is not installed.
+            RuntimeError: If the 'pylatex' or 'fpdf' library is not installed
+                when use_latex=True.
         """
-        from fpdf import FPDF
+        if use_latex:
+            from pylatex import (
+                Command,
+                Document,
+                Math,
+                Section,
+            )
+            from pylatex.utils import (
+                NoEscape,
+            )
 
-        # Use default formatting values
-        font_family = 'Arial'
-        font_size = 12
-        font_style = ''
-        line_height = 10
-        margin = 10
+            doc = Document(documentclass="article")
+            doc.packages.append(Command('usepackage', 'amsmath'))
 
-        pdf = FPDF()
-        pdf.set_margins(margin, margin, margin)
+            with doc.create(Section('Generated Content')):
+                for line in content.split('\n'):
+                    # Remove leading whitespace
+                    stripped_line = line.strip()
+                    # Check if the line is intended as a standalone math
+                    # expression
+                    if (
+                        stripped_line.startswith('$')
+                        and stripped_line.endswith('$')
+                        and len(stripped_line) > 1
+                    ):
+                        # Extract content between the '$' delimiters
+                        math_data = stripped_line[1:-1]
+                        doc.append(Math(data=math_data))
+                    else:
+                        doc.append(NoEscape(line))
+                    doc.append(NoEscape(r'\par'))
 
-        pdf.add_page()
-        pdf.set_font(font_family, style=font_style, size=font_size)
+            doc.generate_pdf(str(file_path), clean_tex=False)
 
-        # Split content into paragraphs and add them
-        for para in content.split('\n'):
-            if para.strip():  # Skip empty paragraphs
-                pdf.multi_cell(0, line_height, para)
-            else:
-                pdf.ln(line_height)  # Add empty line
+            logger.info(f"Wrote PDF (with LaTeX) to {file_path}")
+        else:
+            from fpdf import FPDF
 
-        pdf.output(str(file_path))
-        logger.debug(f"Wrote PDF to {file_path} with custom formatting")
+            # Use default formatting values
+            font_family = 'Arial'
+            font_size = 12
+            font_style = ''
+            line_height = 10
+            margin = 10
+
+            pdf = FPDF()
+            pdf.set_margins(margin, margin, margin)
+
+            pdf.add_page()
+            pdf.set_font(font_family, style=font_style, size=font_size)
+
+            # Split content into paragraphs and add them
+            for para in content.split('\n'):
+                if para.strip():  # Skip empty paragraphs
+                    pdf.multi_cell(0, line_height, para)
+                else:
+                    pdf.ln(line_height)  # Add empty line
+
+            pdf.output(str(file_path))
+            logger.debug(f"Wrote PDF to {file_path} with custom formatting")
 
     def _write_csv_file(
         self,
@@ -286,6 +327,7 @@ class FileWriteToolkit(BaseToolkit):
         content: Union[str, List[List[str]]],
         filename: str,
         encoding: Optional[str] = None,
+        use_latex: bool = False,
     ) -> str:
         r"""Write the given content to a file.
 
@@ -302,6 +344,9 @@ class FileWriteToolkit(BaseToolkit):
                 supplied, it is resolved to self.output_dir.
             encoding (Optional[str]): The character encoding to use. (default:
                 :obj: `None`)
+            use_latex (bool): For PDF files, whether to use LaTeX rendering
+                (True) or simple FPDF rendering (False). (default: :obj:
+                `False`)
 
         Returns:
             str: A message indicating success or error details.
@@ -326,7 +371,9 @@ class FileWriteToolkit(BaseToolkit):
             if extension in [".doc", ".docx"]:
                 self._write_docx_file(file_path, str(content))
             elif extension == ".pdf":
-                self._write_pdf_file(file_path, str(content))
+                self._write_pdf_file(
+                    file_path, str(content), use_latex=use_latex
+                )
             elif extension == ".csv":
                 self._write_csv_file(
                     file_path, content, encoding=file_encoding
