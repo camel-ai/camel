@@ -848,6 +848,8 @@ class BrowseCompBenchmark(BaseBenchmark):
 
         self._eval_result = aggregate_results(self._validated_results)
         # ^^^ how to use a sampler
+        if self.save_to is None:
+            raise ValueError("save_to must be set")
         report_filename = self.save_to
         logger.info(f"Writing report to {report_filename}")
         with open(report_filename, "w") as fh:
