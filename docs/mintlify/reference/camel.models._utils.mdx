@@ -1,0 +1,25 @@
+<a id="camel.models._utils"></a>
+
+<a id="camel.models._utils.try_modify_message_with_format"></a>
+
+## try_modify_message_with_format
+
+```python
+def try_modify_message_with_format(
+    message: OpenAIMessage,
+    response_format: Optional[Type[BaseModel]]
+):
+```
+
+Modifies the content of the message to include the instruction of using
+the response format.
+
+The message will not be modified in the following cases:
+- response_format is None
+- message content is not a string
+- message role is assistant
+
+**Parameters:**
+
+- **response_format** (Optional[Type[BaseModel]]): The Pydantic model class.
+- **message** (OpenAIMessage): The message to be modified.

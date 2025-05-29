@@ -1,0 +1,392 @@
+<a id="camel.storages.graph_storages.neo4j_graph"></a>
+
+<a id="camel.storages.graph_storages.neo4j_graph.Neo4jGraph"></a>
+
+## Neo4jGraph
+
+```python
+class Neo4jGraph(BaseGraphStorage):
+```
+
+Provides a connection to a Neo4j database for various graph operations.
+
+The detailed information about Neo4j is available at:
+`Neo4j https://neo4j.com/docs/getting-started`
+
+This module referred to the work of Langchian and Llamaindex.
+
+**Parameters:**
+
+- **url** (str): The URL of the Neo4j database server.
+- **username** (str): The username for database authentication.
+- **password** (str): The password for database authentication.
+- **database** (str): The name of the database to connect to. Defaults to `neo4j`.
+- **timeout** (Optional[float]): The timeout for transactions in seconds. Useful for terminating long-running queries. Defaults to `None`.
+- **truncate** (bool): A flag to indicate whether to remove lists with more than `LIST_LIMIT` elements from results. Defaults to `False`.
+
+<a id="camel.storages.graph_storages.neo4j_graph.Neo4jGraph.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    url: str,
+    username: str,
+    password: str,
+    database: str = 'neo4j',
+    timeout: Optional[float] = None,
+    truncate: bool = False
+):
+```
+
+Create a new Neo4j graph instance.
+
+<a id="camel.storages.graph_storages.neo4j_graph.Neo4jGraph.get_client"></a>
+
+### get_client
+
+```python
+def get_client(self):
+```
+
+Get the underlying graph storage client.
+
+<a id="camel.storages.graph_storages.neo4j_graph.Neo4jGraph.get_schema"></a>
+
+### get_schema
+
+```python
+def get_schema(self, refresh: bool = False):
+```
+
+Retrieve the schema of the Neo4jGraph store.
+
+**Parameters:**
+
+- **refresh** (bool): A flag indicating whether to forcibly refresh the schema from the Neo4jGraph store regardless of whether it is already cached. Defaults to `False`.
+
+**Returns:**
+
+  str: The schema of the Neo4jGraph store.
+
+<a id="camel.storages.graph_storages.neo4j_graph.Neo4jGraph.get_structured_schema"></a>
+
+### get_structured_schema
+
+```python
+def get_structured_schema(self):
+```
+
+**Returns:**
+
+  Dict[str, Any]: The structured schema of the graph.
+
+<a id="camel.storages.graph_storages.neo4j_graph.Neo4jGraph._value_truncate"></a>
+
+### _value_truncate
+
+```python
+def _value_truncate(self, raw_value: Any):
+```
+
+Truncates the input raw value by removing entries that is
+dictionary or list with values resembling embeddings and containing
+more than `LIST_LIMIT` elements. This method aims to reduce unnecessary
+computational cost and noise in scenarios where such detailed data
+structures are not needed. If the input value is not dictionary or
+list then give the raw value back.
+
+**Parameters:**
+
+- **raw_value** (Any): The raw value to be truncated.
+
+**Returns:**
+
+  Any: The truncated value, with embedding-like
+dictionaries and oversized lists handled.
+
+<a id="camel.storages.graph_storages.neo4j_graph.Neo4jGraph.query"></a>
+
+### query
+
+```python
+def query(self, query: str, params: Optional[Dict[str, Any]] = None):
+```
+
+Executes a Neo4j Cypher declarative query in a database.
+
+**Parameters:**
+
+- **query** (str): The Cypher query to be executed.
+- **params** (Optional[Dict[str, Any]]): A dictionary of parameters to be used in the query. Defaults to `None`.
+
+**Returns:**
+
+  List[Dict[str, Any]]: A list of dictionaries, each
+dictionary represents a row of results from the Cypher query.
+
+<a id="camel.storages.graph_storages.neo4j_graph.Neo4jGraph.refresh_schema"></a>
+
+### refresh_schema
+
+```python
+def refresh_schema(self):
+```
+
+Refreshes the Neo4j graph schema information by querying the
+database for node properties, relationship properties, and
+relationships.
+
+<a id="camel.storages.graph_storages.neo4j_graph.Neo4jGraph.add_triplet"></a>
+
+### add_triplet
+
+```python
+def add_triplet(
+    self,
+    subj: str,
+    obj: str,
+    rel: str,
+    timestamp: Optional[str] = None
+):
+```
+
+Adds a relationship (triplet) between two entities
+in the database with a timestamp.
+
+**Parameters:**
+
+- **subj** (str): The identifier for the subject entity.
+- **obj** (str): The identifier for the object entity.
+- **rel** (str): The relationship between the subject and object.
+- **timestamp** (Optional[str]): The timestamp of the relationship. Defaults to None.
+
+<a id="camel.storages.graph_storages.neo4j_graph.Neo4jGraph._delete_rel"></a>
+
+### _delete_rel
+
+```python
+def _delete_rel(
+    self,
+    subj: str,
+    obj: str,
+    rel: str
+):
+```
+
+Deletes a specific relationship between two nodes in the Neo4j
+database.
+
+**Parameters:**
+
+- **subj** (str): The identifier for the subject entity.
+- **obj** (str): The identifier for the object entity.
+- **rel** (str): The relationship between the subject and object to delete.
+
+<a id="camel.storages.graph_storages.neo4j_graph.Neo4jGraph._delete_entity"></a>
+
+### _delete_entity
+
+```python
+def _delete_entity(self, entity: str):
+```
+
+Deletes an entity from the Neo4j database based on its unique
+identifier.
+
+**Parameters:**
+
+- **entity** (str): The unique identifier of the entity to be deleted.
+
+<a id="camel.storages.graph_storages.neo4j_graph.Neo4jGraph._check_edges"></a>
+
+### _check_edges
+
+```python
+def _check_edges(self, entity: str):
+```
+
+Checks if the given entity has any relationships in the graph
+database.
+
+**Parameters:**
+
+- **entity** (str): The unique identifier of the entity to check.
+
+**Returns:**
+
+  bool: True if the entity has at least one edge (relationship),
+False otherwise.
+
+<a id="camel.storages.graph_storages.neo4j_graph.Neo4jGraph.delete_triplet"></a>
+
+### delete_triplet
+
+```python
+def delete_triplet(
+    self,
+    subj: str,
+    obj: str,
+    rel: str
+):
+```
+
+Deletes a specific triplet from the graph, comprising a subject,
+object and relationship.
+
+**Parameters:**
+
+- **subj** (str): The identifier for the subject entity.
+- **obj** (str): The identifier for the object entity.
+- **rel** (str): The relationship between the subject and object.
+
+<a id="camel.storages.graph_storages.neo4j_graph.Neo4jGraph._get_node_import_query"></a>
+
+### _get_node_import_query
+
+```python
+def _get_node_import_query(self, base_entity_label: bool, include_source: bool):
+```
+
+Constructs a Cypher query string for importing nodes into a Neo4j
+database.
+
+**Parameters:**
+
+- **base_entity_label** (bool): Flag indicating whether to use a base entity label in the MERGE operation.
+- **include_source** (bool): Flag indicating whether to include source element information in the query.
+
+**Returns:**
+
+  str: A Cypher query string tailored based on the provided flags.
+
+<a id="camel.storages.graph_storages.neo4j_graph.Neo4jGraph._get_rel_import_query"></a>
+
+### _get_rel_import_query
+
+```python
+def _get_rel_import_query(self, base_entity_label: bool):
+```
+
+Constructs a Cypher query string for importing relationship into a
+Neo4j database.
+
+**Parameters:**
+
+- **base_entity_label** (bool): Flag indicating whether to use a base entity label in the MERGE operation.
+
+**Returns:**
+
+  str: A Cypher query string tailored based on the provided flags.
+
+<a id="camel.storages.graph_storages.neo4j_graph.Neo4jGraph.add_graph_elements"></a>
+
+### add_graph_elements
+
+```python
+def add_graph_elements(
+    self,
+    graph_elements: List[GraphElement],
+    include_source: bool = False,
+    base_entity_label: bool = False
+):
+```
+
+Adds nodes and relationships from a list of GraphElement objects
+to the graph storage.
+
+**Parameters:**
+
+- **graph_elements** (List[GraphElement]): A list of GraphElement objects that contain the nodes and relationships to be added to the graph. Each GraphElement should encapsulate the structure of part of the graph, including nodes, relationships, and the source element information.
+- **include_source** (bool, optional): If True, stores the source element and links it to nodes in the graph using the MENTIONS relationship. This is useful for tracing back the origin of data. Merges source elements based on the `id` property from the source element metadata if available; otherwise it calculates the MD5 hash of `page_content` for merging process. Defaults to `False`.
+- **base_entity_label** (bool, optional): If True, each newly created node gets a secondary `BASE_ENTITY_LABEL` label, which is indexed and improves import speed and performance. Defaults to `False`.
+
+<a id="camel.storages.graph_storages.neo4j_graph.Neo4jGraph.random_walk_with_restarts"></a>
+
+### random_walk_with_restarts
+
+```python
+def random_walk_with_restarts(
+    self,
+    graph_name: str,
+    sampling_ratio: float,
+    start_node_ids: List[int],
+    restart_probability: float = 0.1,
+    node_label_stratification: bool = False,
+    relationship_weight_property: Optional[str] = None
+):
+```
+
+Runs the Random Walk with Restarts (RWR) sampling algorithm.
+
+**Parameters:**
+
+- **graph_name** (str): The name of the original graph in the graph catalog.
+- **sampling_ratio** (float): The fraction of nodes in the original graph to be sampled.
+- **start_node_ids** (List[int]): IDs of the initial set of nodes of the original graph from which the sampling random walks will start.
+- **restart_probability** (float, optional): The probability that a sampling random walk restarts from one of the start nodes. Defaults to `0.1`.
+- **node_label_stratification** (bool, optional): If true, preserves the node label distribution of the original graph. Defaults to `False`.
+- **relationship_weight_property** (Optional[str], optional): Name of the relationship property to use as weights. If unspecified, the algorithm runs unweighted. Defaults to `None`.
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary with the results of the RWR sampling.
+
+<a id="camel.storages.graph_storages.neo4j_graph.Neo4jGraph.common_neighbour_aware_random_walk"></a>
+
+### common_neighbour_aware_random_walk
+
+```python
+def common_neighbour_aware_random_walk(
+    self,
+    graph_name: str,
+    sampling_ratio: float,
+    start_node_ids: List[int],
+    node_label_stratification: bool = False,
+    relationship_weight_property: Optional[str] = None
+):
+```
+
+Runs the Common Neighbour Aware Random Walk (CNARW) sampling
+algorithm.
+
+**Parameters:**
+
+- **graph_name** (str): The name of the original graph in the graph catalog.
+- **sampling_ratio** (float): The fraction of nodes in the original graph to be sampled.
+- **start_node_ids** (List[int]): IDs of the initial set of nodes of the original graph from which the sampling random walks will start.
+- **node_label_stratification** (bool, optional): If true, preserves the node label distribution of the original graph. Defaults to `False`.
+- **relationship_weight_property** (Optional[str], optional): Name of the relationship property to use as weights. If unspecified, the algorithm runs unweighted. Defaults to `None`.
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary with the results of the CNARW
+sampling.
+
+<a id="camel.storages.graph_storages.neo4j_graph.Neo4jGraph.get_triplet"></a>
+
+### get_triplet
+
+```python
+def get_triplet(
+    self,
+    subj: Optional[str] = None,
+    obj: Optional[str] = None,
+    rel: Optional[str] = None
+):
+```
+
+Query triplet information. If subj, obj, or rel is
+not specified, returns all matching triplets.
+
+**Parameters:**
+
+- **subj** (Optional[str]): The ID of the subject node. If None, matches any subject node. (default: :obj:`None`)
+- **obj** (Optional[str]): The ID of the object node. If None, matches any object node. (default: :obj:`None`)
+- **rel** (Optional[str]): The type of relationship. If None, matches any relationship type. (default: :obj:`None`)
+
+**Returns:**
+
+  List[Dict[str, Any]]: A list of matching triplets,
+each containing subj, obj, rel, and timestamp.
