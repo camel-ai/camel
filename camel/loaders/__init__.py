@@ -32,6 +32,7 @@ __all__ = [
     'JinaURLReader',
     'Firecrawl',
     'Apify',
+    'PandasReader',
     'ChunkrReader',
     'ChunkrReaderConfig',
     'MinerU',
