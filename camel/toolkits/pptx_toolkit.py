@@ -37,39 +37,18 @@ logger = get_logger(__name__)
 
 # Constants
 EMU_TO_INCH_SCALING_FACTOR = 1.0 / 914400
-INCHES_3 = Inches(3)
-INCHES_2 = Inches(2)
-INCHES_1_5 = Inches(1.5)
 INCHES_1 = Inches(1)
 INCHES_0_8 = Inches(0.8)
-INCHES_0_9 = Inches(0.9)
 INCHES_0_5 = Inches(0.5)
 INCHES_0_4 = Inches(0.4)
 INCHES_0_3 = Inches(0.3)
-INCHES_0_2 = Inches(0.2)
 
 STEP_BY_STEP_PROCESS_MARKER = '>> '
-ICON_BEGINNING_MARKER = '[['
-ICON_END_MARKER = ']]'
-
-ICON_SIZE = INCHES_0_8
-ICON_BG_SIZE = INCHES_1
 
 IMAGE_DISPLAY_PROBABILITY = 1 / 3.0
-FOREGROUND_IMAGE_PROBABILITY = 0.8
 
 SLIDE_NUMBER_REGEX = re.compile(r"^slide[ ]+\d+:", re.IGNORECASE)
-ICONS_REGEX = re.compile(r"\[\[(.*?)\]\]\s*(.*)")
 BOLD_ITALICS_PATTERN = re.compile(r'(\*\*(.*?)\*\*|\*(.*?)\*)')
-
-ICON_COLORS = [
-    pptx.dml.color.RGBColor.from_string('800000'),  # Maroon
-    pptx.dml.color.RGBColor.from_string('6A5ACD'),  # SlateBlue
-    pptx.dml.color.RGBColor.from_string('556B2F'),  # DarkOliveGreen
-    pptx.dml.color.RGBColor.from_string('2F4F4F'),  # DarkSlateGray
-    pptx.dml.color.RGBColor.from_string('4682B4'),  # SteelBlue
-    pptx.dml.color.RGBColor.from_string('5F9EA0'),  # CadetBlue
-]
 
 
 @MCPServer()
@@ -445,13 +424,6 @@ class PPTXToolkit(BaseToolkit):
         )
         self._add_bulleted_items(text_frame, flat_items_list)
 
-        self._handle_key_message(
-            the_slide=slide,
-            slide_json=slide_json,
-            slide_height_inch=slide_height_inch,
-            slide_width_inch=slide_width_inch,
-        )
-
     def _handle_display_image__in_foreground(
         self,
         presentation: Any,
@@ -630,7 +602,7 @@ class PPTXToolkit(BaseToolkit):
 
         if 3 <= n_steps <= 4:
             # Horizontal display
-            height = INCHES_1_5
+            height = Inches(1.5)
             width = Inches(slide_width_inch / n_steps - 0.01)
             top = Inches(slide_height_inch / 2)
             left = Inches(
@@ -644,34 +616,20 @@ class PPTXToolkit(BaseToolkit):
                 text_frame = shape.text_frame
                 text_frame.clear()
                 paragraph = text_frame.paragraphs[0]
-                paragraph.alignment = (
-                    pptx.enum.text.PP_ALIGN.CENTER
-                )  # Center horizontally
-                text_frame.vertical_anchor = (
-                    pptx.enum.text.MSO_ANCHOR.MIDDLE
-                )  # Center vertically
+                paragraph.alignment = pptx.enum.text.PP_ALIGN.CENTER
+                text_frame.vertical_anchor = pptx.enum.text.MSO_ANCHOR.MIDDLE
                 self._format_text(
                     paragraph, step.removeprefix(STEP_BY_STEP_PROCESS_MARKER)
                 )
                 for run in paragraph.runs:
-                    run.font.size = Pt(14)  # Reduce font size for better fit
+                    run.font.size = Pt(14)
                 left = Inches(left.inches + width.inches - INCHES_0_4.inches)
         elif 4 < n_steps <= 6:
             # Vertical display
             height = Inches(0.65)
             top = Inches(slide_height_inch / 4)
             left = INCHES_1
-
             width = Inches(slide_width_inch * 2 / 3)
-            lengths = [len(step) for step in steps]
-            font_size_20pt = Pt(20)
-            widths = sorted(
-                [
-                    min(Inches(font_size_20pt.inches * a_len), width)
-                    for a_len in lengths
-                ]
-            )
-            width = widths[len(widths) // 2]
 
             for step in steps:
                 shape = shapes.add_shape(
@@ -680,50 +638,15 @@ class PPTXToolkit(BaseToolkit):
                 text_frame = shape.text_frame
                 text_frame.clear()
                 paragraph = text_frame.paragraphs[0]
-                paragraph.alignment = (
-                    pptx.enum.text.PP_ALIGN.CENTER
-                )  # Center horizontally
-                text_frame.vertical_anchor = (
-                    pptx.enum.text.MSO_ANCHOR.MIDDLE
-                )  # Center vertically
+                paragraph.alignment = pptx.enum.text.PP_ALIGN.CENTER
+                text_frame.vertical_anchor = pptx.enum.text.MSO_ANCHOR.MIDDLE
                 self._format_text(
                     paragraph, step.removeprefix(STEP_BY_STEP_PROCESS_MARKER)
                 )
                 for run in paragraph.runs:
-                    run.font.size = Pt(14)  # Reduce font size for better fit
+                    run.font.size = Pt(14)
                 top = Inches(top.inches + height.inches + INCHES_0_3.inches)
                 left = Inches(left.inches + INCHES_0_5.inches)
-
-    def _handle_key_message(
-        self,
-        the_slide: Any,
-        slide_json: dict,
-        slide_width_inch: float,
-        slide_height_inch: float,
-    ) -> None:
-        r"""Add a shape to display the key message in the slide.
-
-        Args:
-            the_slide: The slide to be processed.
-            slide_json: The content of the slide as JSON data.
-            slide_width_inch: The width of the slide in inches.
-            slide_height_inch: The height of the slide in inches.
-        """
-        if slide_json.get('key_message'):
-            height = Inches(1.6)
-            width = Inches(slide_width_inch / 2.3)
-            top = Inches(slide_height_inch - height.inches - 0.1)
-            left = Inches((slide_width_inch - width.inches) / 2)
-            shape = the_slide.shapes.add_shape(
-                MSO_AUTO_SHAPE_TYPE.ROUNDED_RECTANGLE,
-                left=left,
-                top=top,
-                width=width,
-                height=height,
-            )
-            self._format_text(
-                shape.text_frame.paragraphs[0], slide_json['key_message']
-            )
 
     def _remove_slide_number_from_heading(self, header: str) -> str:
         r"""Remove the slide number from a given slide header.
@@ -759,44 +682,6 @@ class PPTXToolkit(BaseToolkit):
         ]
         placeholders.pop(0)  # Remove the title placeholder
         return placeholders
-
-    def _add_text_at_bottom(
-        self,
-        slide: pptx.slide.Slide,
-        slide_width_inch: float,
-        slide_height_inch: float,
-        text: str,
-        hyperlink: Optional[str] = None,
-        target_height: Optional[float] = 0.5,
-    ):
-        r"""Add arbitrary text to a textbox positioned near the lower left side of a slide.
-
-        Args:
-            slide: The slide.
-            slide_width_inch: The width of the slide.
-            slide_height_inch: The height of the slide.
-            text: The text to be added.
-            hyperlink: The hyperlink to be added to the text (optional).
-            target_height: The target height of the box in inches (optional).
-        """
-        # Use default value of 0.5 if target_height is None
-        actual_height = target_height if target_height is not None else 0.5
-
-        footer = slide.shapes.add_textbox(
-            left=INCHES_1,
-            top=Inches(slide_height_inch - actual_height),
-            width=Inches(slide_width_inch),
-            height=Inches(actual_height),
-        )
-
-        paragraph = footer.text_frame.paragraphs[0]
-        run = paragraph.add_run()
-        run.text = text
-        run.font.size = Pt(10)
-        run.font.underline = False
-
-        if hyperlink:
-            run.hyperlink.address = hyperlink
 
 
 # ruff: noqa: E501
