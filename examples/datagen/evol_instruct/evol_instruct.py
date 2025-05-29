@@ -86,7 +86,7 @@ def main():
         scorer=MathScorer(),
     )
 
-    save_results(results, os.path.join(output_dir, "results_iter2.json"))
+    save_results(results, os.path.join(output_dir, "results_iter.json"))
 
     # Generate even harder math problems
     evol_spec = [
@@ -104,7 +104,7 @@ def main():
         scorer=MathScorer(),
     )
 
-    save_results(results, os.path.join(output_dir, "results_iter4.json"))
+    save_results(results, os.path.join(output_dir, "results_iter_harder.json"))
 
 
 if __name__ == "__main__":
