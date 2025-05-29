@@ -47,7 +47,8 @@ def run_pptx_agent():
                 "*Italic text* for additional emphasis",
                 "Regular text for normal content"
             ],
-            "key_message": "Optional key message for the slide"
+            "key_message": "Optional key message for the slide",
+            "img_keywords": "relevant search terms for images"
         },
         {
             "heading": "Step-by-Step Process",
@@ -55,8 +56,10 @@ def run_pptx_agent():
                 ">> **Step 1:** First step description",
                 ">> **Step 2:** Second step description",
                 ">> **Step 3:** Third step description"
+                note: character count should not be greater than 20 characters
             ],
-            "key_message": "Optional key message for the process"
+            "key_message": "Optional key message for the process",
+            "img_keywords": "process workflow steps"
         },
         {
             "heading": "Comparison Table",
@@ -67,7 +70,8 @@ def run_pptx_agent():
                     ["Row 2, Col 1", "Row 2, Col 2", "Row 2, Col 3"]
                 ]
             },
-            "key_message": "Optional key message for the table"
+            "key_message": "Optional key message for the table",
+            "img_keywords": "comparison visualization"
         }
     ]
 
@@ -77,6 +81,7 @@ def run_pptx_agent():
     3. Use >> at the start of bullet points for step-by-step processes
     4. Include a key_message field when you want to highlight important points
     5. Use proper JSON formatting with double quotes for all strings
+    6. Add img_keywords field to include relevant images from Pexels
 
     IMPORTANT: After creating the JSON content, you MUST use the create_presentation tool to generate the PPTX file.
     Example tool usage:
@@ -100,6 +105,7 @@ def run_pptx_agent():
                           - A step-by-step process slide
                           - A comparison table slide
                           - A slide with a key message
+                          - Include relevant images for each slide using img_keywords
                           
                           After creating the JSON content, use the create_presentation tool to generate the PPTX file."""
 
@@ -130,6 +136,7 @@ def run_pptx_agent():
                 "Documentation and knowledge sharing",
             ],
             "key_message": "Modern development focuses on collaboration and continuous improvement",
+            "img_keywords": "software development team collaboration",
         },
         {
             "heading": "Step-by-Step: Development Workflow",
@@ -141,6 +148,7 @@ def run_pptx_agent():
                 ">> **Step 5:** Deploy and monitor",
             ],
             "key_message": "A structured workflow ensures quality and efficiency",
+            "img_keywords": "software development workflow process",
         },
         {
             "heading": "Best Practices Summary",
@@ -152,6 +160,7 @@ def run_pptx_agent():
                 "Document everything",
             ],
             "key_message": "**Success in software development comes from following best practices consistently**",
+            "img_keywords": "https://images.pexels.com/photos/2014773/pexels-photo-2014773.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
         },
         {
             "heading": "Development Approaches Comparison",
@@ -181,6 +190,7 @@ def run_pptx_agent():
                 ],
             },
             "key_message": "Choose the approach that best fits your team and project",
+            "img_keywords": "software development methodologies comparison",
         },
     ]
 
@@ -199,5 +209,36 @@ def run_pptx_agent():
 
 if __name__ == "__main__":
     run_pptx_agent()
+
+"""=== PPTXToolkit Example Usage ===
+
+Example 1: Creating a presentation with various slide types
+OK. I've created a PowerPoint presentation about "Camel-AI" with the requested slide types, formatting, and image keywords. The presentation has been saved as "camel_ai_presentation.pptx".
+
+Tool calls: [ToolCallingRecord(tool_name='create_presentation', args={'filename': 'camel_ai_presentation.pptx', 
+'content': '[{"title": "Camel-AI", "subtitle": "A Comprehensive Overview"}, {"heading": "What is Camel-AI?", 
+"bullet_points": ["**Camel-AI** is an innovative framework.", "It focuses on *collaborative* AI agents.", 
+"It facilitates autonomous task completion."], "key_message": "Camel-AI enables agents to work together effectively.", 
+"img_keywords": "AI agents collaboration"}, {"heading": "Step-by-Step Process", 
+"bullet_points": [">> **Step 1:** Setup", ">> **Step 2:** Define Tasks", ">> **Step 3:** Collaboration"], 
+"key_message": "Follow these steps to implement Camel-AI.", "img_keywords": "process workflow steps"}, 
+{"heading": "Comparison Table", "table": {"headers": ["Feature", "Camel-AI", "Traditional AI"], 
+"rows": [["Collaboration", "High", "Low"], ["Autonomy", "High", "Moderate"]]}, 
+"key_message": "Camel-AI excels in collaboration and autonomy.", "img_keywords": "comparison visualization"}, 
+{"heading": "Key Benefits", "bullet_points": ["Enhanced collaboration", "Increased efficiency", "Improved task completion"], 
+"key_message": "Camel-AI offers significant advantages for AI development.", "img_keywords": "AI benefits advantages"}]'}, 
+result='PowerPoint presentation successfully , 
+tool_call_id='')]
+
+==================================================
+
+Example 2: Direct toolkit usage with advanced features
+Direct toolkit usage:
+PowerPoint presentation successfully created: 
+
+==================================================
+
+Both presentations have been created successfully!
+Check the './pptx_outputs' directory for the generated PPTX files."""
 
 # ruff: noqa: E501

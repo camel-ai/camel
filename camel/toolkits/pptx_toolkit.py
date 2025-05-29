@@ -13,11 +13,15 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 
+import os
+import random
 import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import pptx
+from dotenv import load_dotenv
+from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_AUTO_SHAPE_TYPE
 from pptx.util import Inches, Pt
 
@@ -26,23 +30,46 @@ from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.utils import MCPServer
 
+# Load environment variables
+load_dotenv()
+
 logger = get_logger(__name__)
 
 # Constants
 EMU_TO_INCH_SCALING_FACTOR = 1.0 / 914400
+INCHES_3 = Inches(3)
+INCHES_2 = Inches(2)
 INCHES_1_5 = Inches(1.5)
 INCHES_1 = Inches(1)
+INCHES_0_8 = Inches(0.8)
+INCHES_0_9 = Inches(0.9)
 INCHES_0_5 = Inches(0.5)
 INCHES_0_4 = Inches(0.4)
 INCHES_0_3 = Inches(0.3)
+INCHES_0_2 = Inches(0.2)
 
 STEP_BY_STEP_PROCESS_MARKER = '>> '
+ICON_BEGINNING_MARKER = '[['
+ICON_END_MARKER = ']]'
 
-SLIDE_NUMBER_REGEX = re.compile(r"^slide[ ]+\d+:", re.IGNORECASE)
-BOLD_ITALICS_PATTERN = re.compile(r'(\*\*(.*?)\*\*|\*(.*?)\*)')
+ICON_SIZE = INCHES_0_8
+ICON_BG_SIZE = INCHES_1
 
 IMAGE_DISPLAY_PROBABILITY = 1 / 3.0
 FOREGROUND_IMAGE_PROBABILITY = 0.8
+
+SLIDE_NUMBER_REGEX = re.compile(r"^slide[ ]+\d+:", re.IGNORECASE)
+ICONS_REGEX = re.compile(r"\[\[(.*?)\]\]\s*(.*)")
+BOLD_ITALICS_PATTERN = re.compile(r'(\*\*(.*?)\*\*|\*(.*?)\*)')
+
+ICON_COLORS = [
+    pptx.dml.color.RGBColor.from_string('800000'),  # Maroon
+    pptx.dml.color.RGBColor.from_string('6A5ACD'),  # SlateBlue
+    pptx.dml.color.RGBColor.from_string('556B2F'),  # DarkOliveGreen
+    pptx.dml.color.RGBColor.from_string('2F4F4F'),  # DarkSlateGray
+    pptx.dml.color.RGBColor.from_string('4682B4'),  # SteelBlue
+    pptx.dml.color.RGBColor.from_string('5F9EA0'),  # CadetBlue
+]
 
 
 @MCPServer()
@@ -112,7 +139,9 @@ class PPTXToolkit(BaseToolkit):
         sanitized = re.sub(r'_+', '_', sanitized)
         return sanitized
 
-    def _format_text(self, frame_paragraph, text: str) -> None:
+    def _format_text(
+        self, frame_paragraph, text: str, set_white_font=False
+    ) -> None:
         r"""Apply bold and italic formatting while preserving the original word order.
 
         Args:
@@ -127,24 +156,35 @@ class PPTXToolkit(BaseToolkit):
             if start > last_index:
                 run = frame_paragraph.add_run()
                 run.text = text[last_index:start]
+                if set_white_font:
+                    run.font.color.rgb = RGBColor(255, 255, 255)
 
             if match.group(2):  # Bold
                 run = frame_paragraph.add_run()
                 run.text = match.group(2)
                 run.font.bold = True
+                if set_white_font:
+                    run.font.color.rgb = RGBColor(255, 255, 255)
             elif match.group(3):  # Italics
                 run = frame_paragraph.add_run()
                 run.text = match.group(3)
                 run.font.italic = True
+                if set_white_font:
+                    run.font.color.rgb = RGBColor(255, 255, 255)
 
             last_index = end
 
         if last_index < len(text):
             run = frame_paragraph.add_run()
             run.text = text[last_index:]
+            if set_white_font:
+                run.font.color.rgb = RGBColor(255, 255, 255)
 
     def _add_bulleted_items(
-        self, text_frame: pptx.text.text.TextFrame, flat_items_list: list
+        self,
+        text_frame: pptx.text.text.TextFrame,
+        flat_items_list: list,
+        set_white_font=False,
     ) -> None:
         r"""Add a list of texts as bullet points and apply formatting.
 
@@ -160,7 +200,9 @@ class PPTXToolkit(BaseToolkit):
                 paragraph.level = an_item[1]
 
             self._format_text(
-                paragraph, an_item[0].removeprefix(STEP_BY_STEP_PROCESS_MARKER)
+                paragraph,
+                an_item[0].removeprefix(STEP_BY_STEP_PROCESS_MARKER),
+                set_white_font=set_white_font,
             )
 
     def _get_flat_list_of_contents(
@@ -366,6 +408,21 @@ class PPTXToolkit(BaseToolkit):
             slide_width_inch: The width of the slide in inches.
             slide_height_inch: The height of the slide in inches.
         """
+        status = False
+
+        if 'img_keywords' in slide_json:
+            if random.random() < IMAGE_DISPLAY_PROBABILITY:
+                status = self._handle_display_image__in_foreground(
+                    presentation,
+                    slide_json,
+                    slide_width_inch,
+                    slide_height_inch,
+                )
+
+        if status:
+            return
+
+        # Image display failed, so display only text
         bullet_slide_layout = presentation.slide_layouts[1]
         slide = presentation.slides.add_slide(bullet_slide_layout)
 
@@ -394,6 +451,116 @@ class PPTXToolkit(BaseToolkit):
             slide_height_inch=slide_height_inch,
             slide_width_inch=slide_width_inch,
         )
+
+    def _handle_display_image__in_foreground(
+        self,
+        presentation: Any,
+        slide_json: dict,
+        slide_width_inch: float,
+        slide_height_inch: float,
+    ) -> bool:
+        r"""Create a slide with text and image using a picture placeholder layout.
+
+        Args:
+            presentation: The presentation object.
+            slide_json: The content of the slide as JSON data.
+            slide_width_inch: The width of the slide in inches.
+            slide_height_inch: The height of the slide in inches.
+        Returns:
+            bool: True if the slide has been processed.
+        """
+        from io import BytesIO
+
+        import requests
+
+        img_keywords = slide_json.get('img_keywords', '').strip()
+        slide = presentation.slide_layouts[8]  # Picture with Caption
+        slide = presentation.slides.add_slide(slide)
+        placeholders = None
+
+        title_placeholder = slide.shapes.title
+        title_placeholder.text = self._remove_slide_number_from_heading(
+            slide_json['heading']
+        )
+
+        try:
+            pic_col = slide.shapes.placeholders[1]
+        except KeyError:
+            placeholders = self._get_slide_placeholders(slide, layout_number=8)
+            pic_col = None
+            for idx, name in placeholders:
+                if 'picture' in name:
+                    pic_col = slide.shapes.placeholders[idx]
+
+        try:
+            text_col = slide.shapes.placeholders[2]
+        except KeyError:
+            text_col = None
+            if not placeholders:
+                placeholders = self._get_slide_placeholders(
+                    slide, layout_number=8
+                )
+
+            for idx, name in placeholders:
+                if 'content' in name:
+                    text_col = slide.shapes.placeholders[idx]
+
+        flat_items_list = self._get_flat_list_of_contents(
+            slide_json['bullet_points'], level=0
+        )
+        self._add_bulleted_items(text_col.text_frame, flat_items_list)
+
+        if not img_keywords:
+            return True
+
+        if isinstance(img_keywords, str) and img_keywords.startswith(
+            ('http://', 'https://')
+        ):
+            img_response = requests.get(img_keywords)
+            img_response.raise_for_status()
+            image_data = BytesIO(img_response.content)
+            pic_col.insert_picture(image_data)
+            return True
+
+        try:
+            url = 'https://api.pexels.com/v1/search'
+            headers = {
+                'Authorization': os.getenv('PEXEL_API_KEY'),
+                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:10.0) Gecko/20100101 Firefox/10.0',
+            }
+            params = {
+                'query': img_keywords,
+                'size': 'medium',
+                'page': 1,
+                'per_page': 3,
+            }
+            response = requests.get(
+                url, headers=headers, params=params, timeout=12
+            )
+            response.raise_for_status()
+            json_response = response.json()
+
+            if json_response.get('photos'):
+                photo = random.choice(json_response['photos'])
+                photo_url = photo.get('src', {}).get('large') or photo.get(
+                    'src', {}
+                ).get('original')
+
+                if photo_url:
+                    # Download and insert the image
+                    img_response = requests.get(
+                        photo_url, headers=headers, stream=True, timeout=12
+                    )
+                    img_response.raise_for_status()
+                    image_data = BytesIO(img_response.content)
+
+                    pic_col.insert_picture(image_data)
+        except Exception as ex:
+            logger.error(
+                '*** Error occurred while adding image to slide: %s', str(ex)
+            )
+
+        return True
 
     def _handle_table(
         self,
@@ -592,6 +759,44 @@ class PPTXToolkit(BaseToolkit):
         ]
         placeholders.pop(0)  # Remove the title placeholder
         return placeholders
+
+    def _add_text_at_bottom(
+        self,
+        slide: pptx.slide.Slide,
+        slide_width_inch: float,
+        slide_height_inch: float,
+        text: str,
+        hyperlink: Optional[str] = None,
+        target_height: Optional[float] = 0.5,
+    ):
+        r"""Add arbitrary text to a textbox positioned near the lower left side of a slide.
+
+        Args:
+            slide: The slide.
+            slide_width_inch: The width of the slide.
+            slide_height_inch: The height of the slide.
+            text: The text to be added.
+            hyperlink: The hyperlink to be added to the text (optional).
+            target_height: The target height of the box in inches (optional).
+        """
+        # Use default value of 0.5 if target_height is None
+        actual_height = target_height if target_height is not None else 0.5
+
+        footer = slide.shapes.add_textbox(
+            left=INCHES_1,
+            top=Inches(slide_height_inch - actual_height),
+            width=Inches(slide_width_inch),
+            height=Inches(actual_height),
+        )
+
+        paragraph = footer.text_frame.paragraphs[0]
+        run = paragraph.add_run()
+        run.text = text
+        run.font.size = Pt(10)
+        run.font.underline = False
+
+        if hyperlink:
+            run.hyperlink.address = hyperlink
 
 
 # ruff: noqa: E501
