@@ -101,9 +101,12 @@ Runs inference of OpenAI chat completion.
 
 **Returns:**
 
-  Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-`ChatCompletion` in the non-stream mode, or
-`Stream[ChatCompletionChunk]` in the stream mode.
+  Union[ChatCompletion, Stream[ChatCompletionChunk],
+ChatCompletionStreamManager[BaseModel]]:
+`ChatCompletion` in the non-stream mode,
+`Stream[ChatCompletionChunk]`in the stream mode,
+or `ChatCompletionStreamManager[BaseModel]` for
+structured output streaming.
 
 <a id="camel.models.openai_model.OpenAIModel._request_chat_completion"></a>
 
