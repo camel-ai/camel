@@ -210,8 +210,19 @@ class OpenAIModel(BaseModelBackend):
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
         )
+
+        # Check if streaming is enabled
+        is_streaming = self.model_config_dict.get("stream", False)
+
         if response_format:
-            return self._request_parse(messages, response_format, tools)
+            if is_streaming:
+                # Use streaming parse for structured output
+                return self._request_stream_parse(
+                    messages, response_format, tools
+                )
+            else:
+                # Use non-streaming parse for structured output
+                return self._request_parse(messages, response_format, tools)
         else:
             return self._request_chat_completion(messages, tools)
 
@@ -239,8 +250,21 @@ class OpenAIModel(BaseModelBackend):
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
         )
+
+        # Check if streaming is enabled
+        is_streaming = self.model_config_dict.get("stream", False)
+
         if response_format:
-            return await self._arequest_parse(messages, response_format, tools)
+            if is_streaming:
+                # Use streaming parse for structured output
+                return await self._arequest_stream_parse(
+                    messages, response_format, tools
+                )
+            else:
+                # Use non-streaming parse for structured output
+                return await self._arequest_parse(
+                    messages, response_format, tools
+                )
         else:
             return await self._arequest_chat_completion(messages, tools)
 
@@ -358,3 +382,63 @@ class OpenAIModel(BaseModelBackend):
             bool: Whether the model is in stream mode.
         """
         return self.model_config_dict.get('stream', False)
+
+    def _request_stream_parse(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Stream[ChatCompletionChunk]:
+        r"""Request streaming structured output parsing.
+
+        Note: This uses OpenAI's beta streaming API for structured outputs.
+        """
+        import copy
+
+        request_config = copy.deepcopy(self.model_config_dict)
+
+        # Remove stream from config as it's handled by the stream method
+        request_config.pop("stream", None)
+
+        if tools is not None:
+            request_config["tools"] = tools
+
+        request_config = self._sanitize_config(request_config)
+
+        # Use the beta streaming API for structured outputs
+        return self._client.beta.chat.completions.stream(
+            messages=messages,
+            model=self.model_type,
+            response_format=response_format,
+            **request_config,
+        )
+
+    async def _arequest_stream_parse(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> AsyncStream[ChatCompletionChunk]:
+        r"""Request async streaming structured output parsing.
+
+        Note: This uses OpenAI's beta streaming API for structured outputs.
+        """
+        import copy
+
+        request_config = copy.deepcopy(self.model_config_dict)
+
+        # Remove stream from config as it's handled by the stream method
+        request_config.pop("stream", None)
+
+        if tools is not None:
+            request_config["tools"] = tools
+
+        request_config = self._sanitize_config(request_config)
+
+        # Use the beta streaming API for structured outputs
+        return await self._async_client.beta.chat.completions.stream(
+            messages=messages,
+            model=self.model_type,
+            response_format=response_format,
+            **request_config,
+        )
