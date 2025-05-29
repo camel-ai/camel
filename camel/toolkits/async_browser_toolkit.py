@@ -64,6 +64,7 @@ from .browser_toolkit_commons import (
     WEB_AGENT_SYSTEM_PROMPT,
     InteractiveRegion,
     VisualViewport,
+    _normalize_identifier,
     _parse_json_output,
     _reload_image,
     add_set_of_mark,
@@ -547,8 +548,7 @@ class AsyncBaseBrowser:
         Args:
             identifier (Union[str, int]): The ID of the element to click.
         """
-        if isinstance(identifier, int):
-            identifier = str(identifier)
+        identifier = _normalize_identifier(identifier)
         target = self.page.locator(f"[__elementId='{identifier}']")
 
         try:
@@ -609,8 +609,7 @@ class AsyncBaseBrowser:
             str: The path to the downloaded file.
         """
 
-        if isinstance(identifier, int):
-            identifier = str(identifier)
+        identifier = _normalize_identifier(identifier)
         try:
             target = self.page.locator(f"[__elementId='{identifier}']")
         except (TimeoutError, Exception) as e:  # type: ignore[misc]
@@ -661,8 +660,7 @@ class AsyncBaseBrowser:
         Returns:
             str: The result of the action.
         """
-        if isinstance(identifier, int):
-            identifier = str(identifier)
+        identifier = _normalize_identifier(identifier)
 
         try:
             target = self.page.locator(f"[__elementId='{identifier}']")
@@ -726,8 +724,7 @@ class AsyncBaseBrowser:
         Returns:
             str: The result of the action.
         """
-        if isinstance(identifier, int):
-            identifier = str(identifier)
+        identifier = _normalize_identifier(identifier)
         try:
             target = self.page.locator(f"[__elementId='{identifier}']")
         except (TimeoutError, Exception) as e:  # type: ignore[misc]
@@ -980,6 +977,7 @@ class AsyncBrowserToolkit(BaseToolkit):
         self.planning_agent_model = planning_agent_model
         self.output_language = output_language
         self.browser.web_agent_model = web_agent_model
+        self.browser_initialized = False
 
         self.history: list[Any] = []
         self.web_agent, self.planning_agent = self._initialize_agent()
@@ -1343,7 +1341,7 @@ Here is a plan about how to solve the task step-by-step which you must follow:
                 The task is not completed within the round limit. Please check 
                 the last round {self.history_window} information to see if 
                 there is any useful information:
-                <history>{self.history[-self.history_window :]}</history>
+                <history>{self.history[-self.history_window:]}</history>
             """
 
         else:
@@ -1353,4 +1351,238 @@ Here is a plan about how to solve the task step-by-step which you must follow:
         return simulation_result
 
     def get_tools(self) -> List[FunctionTool]:
-        return [FunctionTool(self.browse_url)]
+        return [
+            FunctionTool(self.browse_url),
+            FunctionTool(self.setup_browser),
+            FunctionTool(self.shutdown_browser),
+            FunctionTool(self.visit_page),
+            FunctionTool(self.get_current_url),
+            FunctionTool(self.scroll_page),
+            FunctionTool(self.click_element),
+            FunctionTool(self.fill_input_element),
+            FunctionTool(self.hover_element),
+            FunctionTool(self.find_text_on_page),
+            FunctionTool(self.navigate_back),
+            FunctionTool(self.get_page_content),
+            FunctionTool(self.download_file_by_element_id),
+            FunctionTool(self.capture_screenshot),
+            FunctionTool(self.ask_question_about_video),
+        ]
+
+    async def _ensure_browser_initialized(self):
+        if not self.browser_initialized:
+            await self.browser.async_init()
+            self.browser_initialized = True
+
+    async def setup_browser(self) -> str:
+        r"""Initializes the browser session asynchronously."""
+        if not self.browser_initialized:
+            await self.browser.async_init()
+            self.browser_initialized = True
+            return "Browser session initialized."
+        return "Browser session already initialized."
+
+    async def shutdown_browser(self) -> str:
+        r"""Closes the browser session asynchronously."""
+        if self.browser_initialized:
+            await self.browser.async_close()
+            self.browser_initialized = False
+            return "Browser session closed."
+        return "Browser session was not initialized or already closed."
+
+    async def visit_page(self, url: str) -> str:
+        r"""Navigates the browser to the specified URL asynchronously.
+
+        Args:
+            url (str): The URL to visit.
+
+        Returns:
+            str: Confirmation message.
+        """
+        await self._ensure_browser_initialized()
+        await self.browser.async_visit_page(url)
+        return f"Navigated to URL: {url}"
+
+    async def get_current_url(self) -> str:
+        r"""Returns the current URL of the browser asynchronously.
+
+        Returns:
+            str: The current URL.
+        """
+        await self._ensure_browser_initialized()
+        return self.browser.get_url()
+
+    async def scroll_page(
+        self, direction: Literal["up", "down", "top", "bottom"]
+    ) -> str:
+        r"""Scrolls the current page asynchronously.
+
+        Args:
+            direction (Literal["up", "down", "top", "bottom"]): The
+                direction to scroll.
+
+        Returns:
+            str: Confirmation message.
+        """
+        await self._ensure_browser_initialized()
+        if direction == "up":
+            await self.browser.async_scroll_up()
+            return "Scrolled up."
+        elif direction == "down":
+            await self.browser.async_scroll_down()
+            return "Scrolled down."
+        elif direction == "top":
+            return await self.browser.async_scroll_to_top()
+        elif direction == "bottom":
+            return await self.browser.async_scroll_to_bottom()
+        return "Invalid scroll direction."
+
+    async def click_element(self, element_id: Union[str, int]) -> str:
+        r"""Clicks an element with the given ID asynchronously.
+
+        Args:
+            element_id (Union[str, int]): The ID of the element to click.
+
+        Returns:
+            str: Confirmation message or error.
+        """
+        await self._ensure_browser_initialized()
+        try:
+            await self.browser.async_click_id(element_id)
+            return f"Clicked element with ID: {element_id}"
+        except ValueError as e:
+            return str(e)
+        except Exception as e:
+            return f"Error clicking element {element_id}: {e}"
+
+    async def fill_input_element(
+        self, element_id: Union[str, int], text: str
+    ) -> str:
+        r"""Fills an input field with text and presses Enter, asynchronously.
+
+        Args:
+            element_id (Union[str, int]): The ID of the input field.
+            text (str): The text to fill.
+
+        Returns:
+            str: Confirmation message or error.
+        """
+        await self._ensure_browser_initialized()
+        return await self.browser.async_fill_input_id(element_id, text)
+
+    async def hover_element(self, element_id: Union[str, int]) -> str:
+        r"""Hovers over an element with the given ID asynchronously.
+
+        Args:
+            element_id (Union[str, int]): The ID of the element to hover.
+
+        Returns:
+            str: Confirmation message or error.
+        """
+        await self._ensure_browser_initialized()
+        return await self.browser.async_hover_id(element_id)
+
+    async def find_text_on_page(self, search_text: str) -> str:
+        r"""Finds text on the page and scrolls to it, asynchronously.
+
+        Args:
+            search_text (str): The text to find.
+
+        Returns:
+            str: Confirmation message or error.
+        """
+        await self._ensure_browser_initialized()
+        return await self.browser.async_find_text_on_page(search_text)
+
+    async def navigate_back(self) -> str:
+        r"""Navigates back to the previous page, asynchronously.
+
+        Returns:
+            str: Confirmation message.
+        """
+        await self._ensure_browser_initialized()
+        await self.browser.async_back()
+        return "Navigated back to the previous page."
+
+    async def get_page_content(
+        self, format: Literal["markdown", "html"] = "markdown"
+    ) -> str:
+        r"""Extracts page content asynchronously.
+
+        Args:
+            format (Literal["markdown", "html"]): Content format.
+                Defaults to "markdown".
+
+        Returns:
+            str: Page content.
+        """
+        await self._ensure_browser_initialized()
+        if format == "markdown":
+            return await self.browser.async_get_webpage_content()
+        elif format == "html":
+            return await self.browser.async_extract_url_content()
+        return "Invalid format. Choose 'markdown' or 'html'."
+
+    async def download_file_by_element_id(
+        self, element_id: Union[str, int]
+    ) -> str:
+        r"""Downloads a file by element ID, asynchronously.
+
+        Args:
+            element_id (Union[str, int]): Element ID for download.
+
+        Returns:
+            str: Path to downloaded file or error.
+        """
+        await self._ensure_browser_initialized()
+        return await self.browser.async_download_file_id(element_id)
+
+    async def capture_screenshot(
+        self, mark_interactive_elements: bool = False
+    ) -> str:
+        r"""Captures a screenshot asynchronously.
+
+        Args:
+            mark_interactive_elements (bool): Mark interactive elements.
+                Defaults to False.
+
+        Returns:
+            str: Path to screenshot or error.
+        """
+        await self._ensure_browser_initialized()
+        try:
+            if mark_interactive_elements:
+                _, file_path = await self.browser.async_get_som_screenshot(
+                    save_image=True
+                )
+            else:
+                _, file_path = await self.browser.async_get_screenshot(
+                    save_image=True
+                )
+
+            if file_path:
+                return f"Screenshot saved to: {file_path}"
+            return "Failed to save screenshot."
+        except Exception as e:
+            return f"Error capturing screenshot: {e}"
+
+    def ask_question_about_video(self, question: str) -> str:
+        r"""Asks a question about a video on the current page.
+        Note: This is an interactive function that may require user input.
+        This function itself is synchronous due to the input() call.
+
+        Args:
+            question (str): The question to ask about the video.
+
+        Returns:
+            str: The answer to the question or an error/cancellation message.
+        """
+        # Note: self._ensure_browser_initialized() is not called here
+        # because the underlying self.browser.ask_question_about_video
+        # is synchronous and does not depend on the async browser init state.
+        # However, for consistency in tool usage, it might be better to ensure
+        # the browser is initialized if other async operations might precede
+        # or follow this call in a typical workflow.
+        # For now, assuming it's called in a context where browser state is
+        # managed.
+        return self.browser.ask_question_about_video(question)
