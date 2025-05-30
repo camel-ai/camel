@@ -34,6 +34,7 @@ from camel.societies.workforce.prompts import (
 from camel.societies.workforce.role_playing_worker import RolePlayingWorker
 from camel.societies.workforce.single_agent_worker import SingleAgentWorker
 from camel.societies.workforce.task_channel import TaskChannel
+from camel.societies.workforce.task_replanner import TaskReplanner
 from camel.societies.workforce.utils import (
     TaskAssignResult,
     WorkerConf,
@@ -123,6 +124,11 @@ class Workforce(BaseNode):
             content="You are going to compose and decompose tasks.",
         )
         self.task_agent = ChatAgent(task_sys_msg, **(task_agent_kwargs or {}))
+
+        # Initialize the task replanner
+        self.task_replanner = TaskReplanner(
+            agent_kwargs=coordinator_agent_kwargs
+        )
 
         # If there is one, will set by the workforce class wrapping this
         self._task: Optional[Task] = None
@@ -431,24 +437,72 @@ class Workforce(BaseNode):
             await self._post_task(ready_task, assignee_id)
 
     async def _handle_failed_task(self, task: Task) -> bool:
+        """Handle a failed task with improved replanning mechanism.
+
+        This method implements a sophisticated task failure handling strategy:
+        1. Analyzes why the task failed
+        2. Attempts to replan/restructure the task
+        based on the failure analysis
+        3. Dynamically determines the appropriate maximum depth for the task
+        4. Decides whether to retry, decompose, or create a new worker
+        based on analysis
+
+        Args:
+            task (Task): The failed task to handle.
+
+        Returns:
+            bool: True if the task should be terminated, False otherwise.
+        """
+        # If the task has failed too many times, terminate it
         if task.failure_count >= 3:
             return True
+
+        # Increment the failure count and remove from channel
         task.failure_count += 1
-        # Remove the failed task from the channel
         await self._channel.remove_task(task.id)
-        if task.get_depth() >= 3:
-            # Create a new worker node and reassign
-            assignee = self._create_worker_node_for_task(task)
-            await self._post_task(task, assignee.node_id)
+
+        # Step 1: Analyze why the task failed
+        failure_reason = await self.task_replanner.analyze_failure_reason(task)
+
+        # Step 2: Replan the task based on the failure analysis
+        new_task = await self.task_replanner.replan_task(
+            task, failure_reason, self._get_child_nodes_info()
+        )
+
+        # Step 3: Determine the appropriate maximum depth for this task type
+        max_depth = await self.task_replanner.get_max_depth(new_task)
+
+        # Step 4: Decide on the next action based on analysis
+        if new_task.is_restructured:
+            # If the task was significantly restructured, try it again directly
+            print(
+                f"\033[33mTask {new_task.id} has been replanned. "
+                f"Retrying with new structure.\033[0m"
+            )
+            self._pending_tasks.appendleft(new_task)
+        elif new_task.get_depth() >= max_depth:
+            # If the task is too deeply nested, create a specialized worker
+            print(
+                f"\033[33mTask {new_task.id} exceeds max depth ({max_depth})."
+                f"Creating specialized worker.\033[0m"
+            )
+            assignee = self._create_worker_node_for_task(new_task)
+            await self._post_task(new_task, assignee.node_id)
         else:
-            subtasks = self._decompose_task(task)
-            # Insert packets at the head of the queue
+            # Otherwise, try to decompose the task into subtasks
+            print(
+                f"\033[33mDecomposing task {new_task.id} into subtasks.\033[0m"
+            )
+            subtasks = self._decompose_task(new_task)
+            # Insert subtasks at the head of the queue
             self._pending_tasks.extendleft(reversed(subtasks))
-            await self._post_ready_tasks()
+
+        # Post any ready tasks
+        await self._post_ready_tasks()
         return False
 
     async def _handle_completed_task(self, task: Task) -> None:
-        # archive the packet, making it into a dependency
+        """Handle a completed task."""
         self._pending_tasks.popleft()
         await self._channel.archive_task(task.id)
         await self._post_ready_tasks()
