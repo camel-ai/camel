@@ -1,0 +1,199 @@
+<a id="camel.utils.mcp_client"></a>
+
+Unified MCP Client
+
+This module provides a unified interface for connecting to MCP servers
+using different transport protocols (stdio, sse, streamable-http, websocket).
+The client can automatically detect the transport type based on configuration.
+
+<a id="camel.utils.mcp_client.TransportType"></a>
+
+## TransportType
+
+```python
+class TransportType(str, Enum):
+```
+
+Supported transport types.
+
+<a id="camel.utils.mcp_client.ServerConfig"></a>
+
+## ServerConfig
+
+```python
+class ServerConfig(BaseModel):
+```
+
+<a id="camel.utils.mcp_client.ServerConfig.validate_config"></a>
+
+### validate_config
+
+```python
+def validate_config(self):
+```
+
+Validate that either command or url is provided.
+
+<a id="camel.utils.mcp_client.ServerConfig.transport_type"></a>
+
+### transport_type
+
+```python
+def transport_type(self):
+```
+
+Automatically detect transport type based on configuration.
+
+<a id="camel.utils.mcp_client.MCPClient"></a>
+
+## MCPClient
+
+```python
+class MCPClient:
+```
+
+Unified MCP client that automatically detects and connects to servers
+using the appropriate transport protocol.
+
+<a id="camel.utils.mcp_client.MCPClient.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    config: Union[ServerConfig, Dict[str, Any]],
+    client_info: Optional[types.Implementation] = None
+):
+```
+
+Initialize the unified MCP client.
+
+**Parameters:**
+
+- **config**: Server configuration (ServerConfig object or dict)
+- **client_info**: Client implementation information
+
+<a id="camel.utils.mcp_client.MCPClient.transport_type"></a>
+
+### transport_type
+
+```python
+def transport_type(self):
+```
+
+Get the detected transport type.
+
+<a id="camel.utils.mcp_client.MCPClient.session"></a>
+
+### session
+
+```python
+def session(self):
+```
+
+Get the current session if connected.
+
+<a id="camel.utils.mcp_client.MCPClient.is_connected"></a>
+
+### is_connected
+
+```python
+def is_connected(self):
+```
+
+Check if the client is currently connected.
+
+<a id="camel.utils.mcp_client.MCPClient.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: List of available tools
+
+<a id="camel.utils.mcp_client.MCPClient._convert_mcp_tool_to_camel"></a>
+
+### _convert_mcp_tool_to_camel
+
+```python
+def _convert_mcp_tool_to_camel(self, mcp_tool: types.Tool):
+```
+
+Convert an MCP tool to a CAMEL FunctionTool.
+
+<a id="camel.utils.mcp_client.MCPClient.get_text_tools"></a>
+
+### get_text_tools
+
+```python
+def get_text_tools(self):
+```
+
+**Returns:**
+
+  str: Text description of tools
+
+<a id="camel.utils.mcp_client.create_mcp_client"></a>
+
+## create_mcp_client
+
+```python
+def create_mcp_client(config: Union[Dict[str, Any], ServerConfig], **kwargs: Any):
+```
+
+Create an MCP client from configuration.
+
+**Parameters:**
+
+- **config**: Server configuration as dict or ServerConfig object **kwargs: Additional arguments passed to MCPClient constructor
+
+**Returns:**
+
+  MCPClient instance
+
+<a id="camel.utils.mcp_client.create_mcp_client_from_config_file"></a>
+
+## create_mcp_client_from_config_file
+
+```python
+def create_mcp_client_from_config_file(config_path: Union[str, Path], server_name: str, **kwargs: Any):
+```
+
+Create an MCP client from a configuration file.
+
+**Parameters:**
+
+- **config_path**: Path to configuration file (JSON)
+- **server_name**: Name of the server in the config **kwargs: Additional arguments passed to MCPClient constructor
+
+**Returns:**
+
+  MCPClient instance
+
+Example config file:
+`\{
+"mcpServers": \{
+"filesystem": \{
+"command": "npx",
+"args": [
+"-y",
+"@modelcontextprotocol/server-filesystem",
+"/path"
+]
+\},
+"remote-server": \{
+"url": "https://api.example.com/mcp",
+"headers": \{"Authorization": "Bearer token"\}
+\}
+\}
+\}`
+
+Usage:
+client = create_mcp_client_from_config_file(
+"config.json", "filesystem"
+)
