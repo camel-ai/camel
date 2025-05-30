@@ -64,7 +64,6 @@ def run_pptx_agent():
                 "*Italic text* for additional emphasis",
                 "Regular text for normal content"
             ],
-            "key_message": "Optional key message for the slide",
             "img_keywords": "relevant search terms for images"
         },
         {
@@ -73,9 +72,7 @@ def run_pptx_agent():
                 ">> **Step 1:** First step description",
                 ">> **Step 2:** Second step description",
                 ">> **Step 3:** Third step description"
-                note: character count should not be greater than 20 characters
-            ],
-            "key_message": "Optional key message for the process",
+            ],            
             "img_keywords": "process workflow steps"
         },
         {
@@ -86,8 +83,7 @@ def run_pptx_agent():
                     ["Row 1, Col 1", "Row 1, Col 2", "Row 1, Col 3"],
                     ["Row 2, Col 1", "Row 2, Col 2", "Row 2, Col 3"]
                 ]
-            },
-            "key_message": "Optional key message for the table",
+            },            
             "img_keywords": "comparison visualization"
         }
     ]
@@ -125,7 +121,6 @@ def run_pptx_agent():
                           - A slide with bullet points and bold/italic text
                           - A step-by-step process slide
                           - A comparison table slide
-                          - A slide with a key message
                           - Include relevant images for each slide using img_keywords
                           
                           After creating the JSON content, use the create_presentation tool to generate the PPTX file."""
@@ -156,7 +151,6 @@ def run_pptx_agent():
                 "Code review and pair programming",
                 "Documentation and knowledge sharing",
             ],
-            "key_message": "Modern development focuses on collaboration and continuous improvement",
             "img_keywords": "software development team collaboration",
         },
         {
@@ -168,7 +162,6 @@ def run_pptx_agent():
                 ">> **Step 4:** Write and run tests",
                 ">> **Step 5:** Deploy and monitor",
             ],
-            "key_message": "A structured workflow ensures quality and efficiency",
             "img_keywords": "software development workflow process",
         },
         {
@@ -180,7 +173,6 @@ def run_pptx_agent():
                 "Keep security in mind",
                 "Document everything",
             ],
-            "key_message": "**Success in software development comes from following best practices consistently**",
             "img_keywords": "https://images.pexels.com/photos/2014773/pexels-photo-2014773.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
         },
         {
@@ -210,7 +202,6 @@ def run_pptx_agent():
                     ],
                 ],
             },
-            "key_message": "Choose the approach that best fits your team and project",
             "img_keywords": "software development methodologies comparison",
         },
     ]

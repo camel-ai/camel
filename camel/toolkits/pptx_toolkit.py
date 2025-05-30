@@ -119,13 +119,15 @@ class PPTXToolkit(BaseToolkit):
         return sanitized
 
     def _format_text(
-        self, frame_paragraph, text: str, set_white_font=False
+        self, frame_paragraph, text: str, set_color_to_white=False
     ) -> None:
         r"""Apply bold and italic formatting while preserving the original word order.
 
         Args:
             frame_paragraph: The paragraph to format.
             text (str): The text to format.
+            set_color_to_white (bool): Whether to set the color to white.
+                (default: :obj: `False`)
         """
         matches = list(BOLD_ITALICS_PATTERN.finditer(text))
         last_index = 0
@@ -135,20 +137,20 @@ class PPTXToolkit(BaseToolkit):
             if start > last_index:
                 run = frame_paragraph.add_run()
                 run.text = text[last_index:start]
-                if set_white_font:
+                if set_color_to_white:
                     run.font.color.rgb = RGBColor(255, 255, 255)
 
             if match.group(2):  # Bold
                 run = frame_paragraph.add_run()
                 run.text = match.group(2)
                 run.font.bold = True
-                if set_white_font:
+                if set_color_to_white:
                     run.font.color.rgb = RGBColor(255, 255, 255)
             elif match.group(3):  # Italics
                 run = frame_paragraph.add_run()
                 run.text = match.group(3)
                 run.font.italic = True
-                if set_white_font:
+                if set_color_to_white:
                     run.font.color.rgb = RGBColor(255, 255, 255)
 
             last_index = end
@@ -156,21 +158,26 @@ class PPTXToolkit(BaseToolkit):
         if last_index < len(text):
             run = frame_paragraph.add_run()
             run.text = text[last_index:]
-            if set_white_font:
+            if set_color_to_white:
                 run.font.color.rgb = RGBColor(255, 255, 255)
 
     def _add_bulleted_items(
         self,
         text_frame: pptx.text.text.TextFrame,
         flat_items_list: list,
-        set_white_font=False,
+        set_color_to_white=False,
     ) -> None:
         r"""Add a list of texts as bullet points and apply formatting.
 
         Args:
             text_frame: The text frame where text is to be displayed.
             flat_items_list: The list of items to be displayed.
+            set_color_to_white (bool): Whether to set the font color to white.
+                (default: :obj: `False`)
         """
+        if not flat_items_list:
+            logger.warning("Empty bullet point list provided")
+            return
         for idx, an_item in enumerate(flat_items_list):
             if idx == 0:
                 paragraph = text_frame.paragraphs[0]
@@ -181,7 +188,7 @@ class PPTXToolkit(BaseToolkit):
             self._format_text(
                 paragraph,
                 an_item[0].removeprefix(STEP_BY_STEP_PROCESS_MARKER),
-                set_white_font=set_white_font,
+                set_color_to_white=set_color_to_white,
             )
 
     def _get_flat_list_of_contents(
@@ -245,15 +252,20 @@ class PPTXToolkit(BaseToolkit):
                 the default template will be used.
         """
         # Use template if provided, otherwise create new presentation
-        if template:
+        if template is not None:
             template_path = Path(template).resolve()
-            # Create a new presentation from template
-            presentation = pptx.Presentation(str(template_path))
-            # Clear all existing slides by removing them from the slide list
-            while len(presentation.slides) > 0:
-                rId = presentation.slides._sldIdLst[-1].rId
-                presentation.part.drop_rel(rId)
-                del presentation.slides._sldIdLst[-1]
+            if not template_path.exists():
+                logger.warning(
+                    f"Template file not found: {template_path}, using default template"
+                )
+                presentation = pptx.Presentation()
+            else:
+                presentation = pptx.Presentation(str(template_path))
+                # Clear all existing slides by removing them from the slide list
+                while len(presentation.slides) > 0:
+                    rId = presentation.slides._sldIdLst[-1].rId
+                    presentation.part.drop_rel(rId)
+                    del presentation.slides._sldIdLst[-1]
         else:
             presentation = pptx.Presentation()
 
@@ -328,25 +340,65 @@ class PPTXToolkit(BaseToolkit):
     ) -> str:
         r"""Create a PowerPoint presentation (PPTX) file.
 
-        Args:
-            content (str): The content to write to the PPTX file as a JSON string.
-                Must represent a list of dictionaries with specific structure:
-                - First dict: title slide {"title": str, "subtitle": str}
-                - Other dicts: content slides {"title": str, "text": str (optional),
-                "image": str URL (optional)}
-            filename (str): The name or path of the file. If a relative path is
-                supplied, it is resolved to self.output_dir.
-            template (Optional[str]): The name of the template to use. If not provided,
-                the default template will be used.
+            Args:
+                content (str): The content to write to the PPTX file as a JSON string.
+                    Must represent a list of dictionaries with the following structure:
+                    - First dict: title slide {"title": str, "subtitle": str}
+                    - Other dicts: content slides, which can be one of:
+                        * Bullet/step slides: {"heading": str, "bullet_points": list of str or nested lists, "img_keywords": str (optional)}
+                            - If any bullet point starts with '>> ', it will be rendered as a step-by-step process.
+                            - "img_keywords" can be a URL or search keywords for an image (optional).
+                        * Table slides: {"heading": str, "table": {"headers": list of str, "rows": list of list of str}}
+                filename (str): The name or path of the file. If a relative path is
+                    supplied, it is resolved to self.output_dir.
+                template (Optional[str]): The name of the template to use. If not provided,
+                    the default template will be used.
+
+            Example:
+            [
+            {
+                "title": "Presentation Title",
+                "subtitle": "Presentation Subtitle"
+            },
+            {
+                "heading": "Slide Title",
+                "bullet_points": [
+                    "**Bold text** for emphasis",
+                    "*Italic text* for additional emphasis",
+                    "Regular text for normal content"
+                ],
+                "img_keywords": "relevant search terms for images"
+            },
+            {
+                "heading": "Step-by-Step Process",
+                "bullet_points": [
+                    ">> **Step 1:** First step description",
+                    ">> **Step 2:** Second step description",
+                    ">> **Step 3:** Third step description"
+                ],
+                "img_keywords": "process workflow steps"
+            },
+            {
+                "heading": "Comparison Table",
+                "table": {
+                    "headers": ["Column 1", "Column 2", "Column 3"],
+                    "rows": [
+                        ["Row 1, Col 1", "Row 1, Col 2", "Row 1, Col 3"],
+                        ["Row 2, Col 1", "Row 2, Col 2", "Row 2, Col 3"]
+                    ]
+                },
+                "img_keywords": "comparison visualization"
+            }
+        ]
 
 
-        Returns:
-            str: A success message indicating the file was created.
+            Returns:
+                str: A success message indicating the file was created.
 
-        Raises:
-            ValueError: If content is not valid JSON or file extension is not .pptx.
-            FileNotFoundError: If the output directory does not exist.
-            PermissionError: If there are insufficient permissions to write the file.
+            Raises:
+                ValueError: If content is not valid JSON or file extension is not .pptx.
+                FileNotFoundError: If the output directory does not exist.
+                PermissionError: If there are insufficient permissions to write the file.
         """
         # Ensure filename has .pptx extension
         if not filename.lower().endswith('.pptx'):
@@ -509,7 +561,7 @@ class PPTXToolkit(BaseToolkit):
         if isinstance(img_keywords, str) and img_keywords.startswith(
             ('http://', 'https://')
         ):
-            img_response = requests.get(img_keywords)
+            img_response = requests.get(img_keywords, timeout=30)
             img_response.raise_for_status()
             image_data = BytesIO(img_response.content)
             pic_col.insert_picture(image_data)
