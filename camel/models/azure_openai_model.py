@@ -150,10 +150,10 @@ class AzureOpenAIModel(BaseModelBackend):
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[
-        ChatCompletion, 
-        Stream[ChatCompletionChunk], 
-        ChatCompletionStreamManager[BaseModel]
-        ]:
+        ChatCompletion,
+        Stream[ChatCompletionChunk],
+        ChatCompletionStreamManager[BaseModel],
+    ]:
         r"""Runs inference of Azure OpenAI chat completion.
 
         Args:
@@ -177,7 +177,9 @@ class AzureOpenAIModel(BaseModelBackend):
         is_streaming = self.model_config_dict.get("stream", False)
         if response_format:
             if is_streaming:
-                return self._request_stream_parse(messages, response_format, tools)
+                return self._request_stream_parse(
+                    messages, response_format, tools
+                )
             else:
                 return self._request_parse(messages, response_format, tools)
         else:
@@ -189,10 +191,10 @@ class AzureOpenAIModel(BaseModelBackend):
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[
-        ChatCompletion, 
-        AsyncStream[ChatCompletionChunk], 
-        ChatCompletionStreamManager[BaseModel]
-        ]:
+        ChatCompletion,
+        AsyncStream[ChatCompletionChunk],
+        ChatCompletionStreamManager[BaseModel],
+    ]:
         r"""Runs inference of Azure OpenAI chat completion.
 
         Args:
@@ -216,9 +218,13 @@ class AzureOpenAIModel(BaseModelBackend):
         is_streaming = self.model_config_dict.get("stream", False)
         if response_format:
             if is_streaming:
-                return await self._arequest_stream_parse(messages, response_format, tools)
+                return await self._arequest_stream_parse(
+                    messages, response_format, tools
+                )
             else:
-                return await self._arequest_parse(messages, response_format, tools)
+                return await self._arequest_parse(
+                    messages, response_format, tools
+                )
         else:
             return await self._arequest_chat_completion(messages, tools)
 
@@ -260,8 +266,6 @@ class AzureOpenAIModel(BaseModelBackend):
         response_format: Type[BaseModel],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ChatCompletion:
-        import copy
-
         request_config = copy.deepcopy(self.model_config_dict)
 
         request_config["response_format"] = response_format
@@ -283,8 +287,6 @@ class AzureOpenAIModel(BaseModelBackend):
         response_format: Type[BaseModel],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ChatCompletion:
-        import copy
-
         request_config = copy.deepcopy(self.model_config_dict)
 
         request_config["response_format"] = response_format
@@ -310,7 +312,6 @@ class AzureOpenAIModel(BaseModelBackend):
 
         Note: This uses OpenAI's beta streaming API for structured outputs.
         """
-        import copy
 
         request_config = copy.deepcopy(self.model_config_dict)
 
@@ -319,8 +320,6 @@ class AzureOpenAIModel(BaseModelBackend):
 
         if tools is not None:
             request_config["tools"] = tools
-
-        request_config = self._sanitize_config(request_config)
 
         # Use the beta streaming API for structured outputs
         return self._client.beta.chat.completions.stream(
@@ -340,7 +339,6 @@ class AzureOpenAIModel(BaseModelBackend):
 
         Note: This uses OpenAI's beta streaming API for structured outputs.
         """
-        import copy
 
         request_config = copy.deepcopy(self.model_config_dict)
 
@@ -350,11 +348,9 @@ class AzureOpenAIModel(BaseModelBackend):
         if tools is not None:
             request_config["tools"] = tools
 
-        request_config = self._sanitize_config(request_config)
-
         # Use the beta streaming API for structured outputs
         return self._async_client.beta.chat.completions.stream(
-            messages=messages,  
+            messages=messages,
             model=self.model_type,
             response_format=response_format,
             **request_config,

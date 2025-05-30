@@ -93,10 +93,10 @@ class OpenAICompatibleModel(BaseModelBackend):
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[
-        ChatCompletion, 
-        Stream[ChatCompletionChunk], 
-        ChatCompletionStreamManager[BaseModel]
-        ]:
+        ChatCompletion,
+        Stream[ChatCompletionChunk],
+        ChatCompletionStreamManager[BaseModel],
+    ]:
         r"""Runs inference of OpenAI chat completion.
 
         Args:
@@ -117,7 +117,7 @@ class OpenAICompatibleModel(BaseModelBackend):
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
         )
-        
+
         # Check if streaming is enabled
         is_streaming = self.model_config_dict.get("stream", False)
 
@@ -139,10 +139,10 @@ class OpenAICompatibleModel(BaseModelBackend):
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[
-        ChatCompletion, 
-        AsyncStream[ChatCompletionChunk], 
-        ChatCompletionStreamManager[BaseModel]
-        ]:
+        ChatCompletion,
+        AsyncStream[ChatCompletionChunk],
+        ChatCompletionStreamManager[BaseModel],
+    ]:
         r"""Runs inference of OpenAI chat completion in async mode.
 
         Args:
@@ -164,14 +164,21 @@ class OpenAICompatibleModel(BaseModelBackend):
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
         )
-        
+
         # Check if streaming is enabled
         is_streaming = self.model_config_dict.get("stream", False)
 
         if response_format:
             if is_streaming:
                 # Use streaming parse for structured output
-                return await self._arequest_stream_parse(messages, response_format, tools)
+                return await self._arequest_stream_parse(
+                    messages, response_format, tools
+                )
+            else:
+                # Use non-streaming parse for structured output
+                return await self._arequest_parse(
+                    messages, response_format, tools
+                )
         else:
             return await self._arequest_chat_completion(messages, tools)
 
@@ -284,7 +291,7 @@ class OpenAICompatibleModel(BaseModelBackend):
             except Exception as e:
                 logger.error(f"Fallback attempt also failed: {e}")
                 raise
-    
+
     def _request_stream_parse(
         self,
         messages: List[OpenAIMessage],
@@ -304,8 +311,6 @@ class OpenAICompatibleModel(BaseModelBackend):
 
         if tools is not None:
             request_config["tools"] = tools
-
-        request_config = self._sanitize_config(request_config)
 
         # Use the beta streaming API for structured outputs
         return self._client.beta.chat.completions.stream(
@@ -335,8 +340,6 @@ class OpenAICompatibleModel(BaseModelBackend):
         if tools is not None:
             request_config["tools"] = tools
 
-        request_config = self._sanitize_config(request_config)
-
         # Use the beta streaming API for structured outputs
         return self._async_client.beta.chat.completions.stream(
             messages=messages,
@@ -345,7 +348,6 @@ class OpenAICompatibleModel(BaseModelBackend):
             **request_config,
         )
 
-                
     @property
     def token_counter(self) -> BaseTokenCounter:
         r"""Initialize the token counter for the model backend.

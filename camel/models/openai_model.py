@@ -367,7 +367,7 @@ class OpenAIModel(BaseModelBackend):
             model=self.model_type,
             **request_config,
         )
-    
+
     def _request_stream_parse(
         self,
         messages: List[OpenAIMessage],

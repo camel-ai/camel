@@ -1860,7 +1860,6 @@ class ChatAgent(BaseAgent):
 
         return mcp_server
 
-
     def stream(
         self,
         input_message: Union[BaseMessage, str],
@@ -2916,75 +2915,6 @@ class ChatAgent(BaseAgent):
 
                 except Exception as e:
                     logger.error(f"Error in async tool execution: {e}")
-
-    def add_model_scheduling_strategy(self, name: str, strategy_fn: Callable):
-        r"""Add a scheduling strategy method provided by user to ModelManger.
-
-        Args:
-            name (str): The name of the strategy.
-            strategy_fn (Callable): The scheduling strategy function.
-        """
-        self.model_backend.add_strategy(name, strategy_fn)
-
-    def clone(self, with_memory: bool = False) -> 'ChatAgent':
-        r"""Creates a new instance of :obj:`ChatAgent` with the same
-        configuration as the current instance.
-
-        Args:
-            with_memory (bool): Whether to copy the memory (conversation
-                history) to the new agent. If True, the new agent will have
-                the same conversation history. If False, the new agent will
-                have a fresh memory with only the system message.
-                (default: :obj:`False`)
-
-        Returns:
-            ChatAgent: A new instance of :obj:`ChatAgent` with the same
-                configuration.
-        """
-        # Create a new instance with the same configuration
-        # If with_memory is True, set system_message to None
-        # If with_memory is False, use the original system message
-        # To avoid duplicated system memory.
-        system_message = None if with_memory else self._original_system_message
-
-        new_agent = ChatAgent(
-            system_message=system_message,
-            model=self.model_backend.models,  # Pass the existing model_backend
-            memory=None,  # clone memory later
-            message_window_size=getattr(self.memory, "window_size", None),
-            token_limit=getattr(
-                self.memory.get_context_creator(), "token_limit", None
-            ),
-            output_language=self._output_language,
-            tools=list(self._internal_tools.values()),
-            external_tools=[
-                schema for schema in self._external_tool_schemas.values()
-            ],
-            response_terminators=self.response_terminators,
-            scheduling_strategy=self.model_backend.scheduling_strategy.__name__,
-            single_iteration=self.single_iteration,
-            stop_event=self.stop_event,
-        )
-
-        # Copy memory if requested
-        if with_memory:
-            # Get all records from the current memory
-            context_records = self.memory.retrieve()
-            # Write them to the new agent's memory
-            for context_record in context_records:
-                new_agent.memory.write_record(context_record.memory_record)
-
-        return new_agent
-
-    def __repr__(self) -> str:
-        r"""Returns a string representation of the :obj:`ChatAgent`.
-
-        Returns:
-            str: The string representation of the :obj:`ChatAgent`.
-        """
-        return (
-            f"ChatAgent({self.role_name}, {self.role_type}, {self.model_type})"
-        )
 
     def _create_tool_sending_status_response(
         self, content: str, step_token_usage: Dict[str, int]
