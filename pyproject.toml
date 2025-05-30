@@ -72,6 +72,7 @@ rag = [
     "qdrant-client>=1.9.0,<2",
     "pymilvus>=2.4.0,<3",
     "pytidb-experimental==0.0.1.dev4",
+    "weaviate-client>=4.14.4",
     "neo4j>=5.18.0,<6",
     "nebula3-python==3.8.2",
     "rank-bm25>=0.2.2,<0.3",
@@ -202,6 +203,7 @@ storage = [
     "botocore>=1.35.3,<2",
     "mem0ai>=0.1.73",
     "pyobvector>=0.1.18",
+    "weaviate-client>=4.14.4",
 ]
 owl = [
     "numpy>=1.2,<=2.2",
@@ -367,6 +369,7 @@ all = [
     "google-genai>=1.13.0",
     "aci-sdk>=1.0.0b1",
     "bohrium",
+    "weaviate-client>=4.14.4",
     
 ]
 
