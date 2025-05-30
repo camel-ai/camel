@@ -24,8 +24,8 @@ from camel.types import ModelPlatformType, ModelType
 def run_pptx_agent():
     # Initialize the model
     model = ModelFactory.create(
-        model_platform=ModelPlatformType.DEFAULT,
-        model_type=ModelType.DEFAULT,
+        model_platform=ModelPlatformType.GEMINI,
+        model_type=ModelType.GEMINI_2_0_FLASH,
     )
 
     # Initialize the toolkit with an output directory
@@ -92,9 +92,8 @@ def run_pptx_agent():
     1. Use **text** for bold text
     2. Use *text* for italic text
     3. Use >> at the start of bullet points for step-by-step processes
-    4. Include a key_message field when you want to highlight important points
-    5. Use proper JSON formatting with double quotes for all strings
-    6. Add img_keywords field to include relevant images from Pexels
+    4. Use proper JSON formatting with double quotes for all strings
+    5. Add img_keywords field to include relevant images from Pexels
 
     IMPORTANT: 
     1. First, analyze the presentation topic and select the most appropriate template
@@ -222,35 +221,38 @@ def run_pptx_agent():
 if __name__ == "__main__":
     run_pptx_agent()
 
-"""=== PPTXToolkit Example Usage ===
+
+"""
+=== PPTXToolkit Example Usage ===
 
 Example 1: Creating a presentation with various slide types
-OK. I've created a PowerPoint presentation about "Camel-AI" with the requested slide types, formatting, and image keywords. The presentation has been saved as "camel_ai_presentation.pptx".
+OK. I've created a PowerPoint presentation about Camel-AI, including a title slide, bullet point slide, 
+step-by-step process slide, and a comparison table slide. I've also added relevant image keywords for each slide.
+ The presentation has been saved as "camel_ai_presentation.pptx" using the modern template.
 
 Tool calls: [ToolCallingRecord(tool_name='create_presentation', args={'filename': 'camel_ai_presentation.pptx', 
-'content': '[{"title": "Camel-AI", "subtitle": "A Comprehensive Overview"}, {"heading": "What is Camel-AI?", 
-"bullet_points": ["**Camel-AI** is an innovative framework.", "It focuses on *collaborative* AI agents.", 
-"It facilitates autonomous task completion."], "key_message": "Camel-AI enables agents to work together effectively.", 
-"img_keywords": "AI agents collaboration"}, {"heading": "Step-by-Step Process", 
-"bullet_points": [">> **Step 1:** Setup", ">> **Step 2:** Define Tasks", ">> **Step 3:** Collaboration"], 
-"key_message": "Follow these steps to implement Camel-AI.", "img_keywords": "process workflow steps"}, 
-{"heading": "Comparison Table", "table": {"headers": ["Feature", "Camel-AI", "Traditional AI"], 
-"rows": [["Collaboration", "High", "Low"], ["Autonomy", "High", "Moderate"]]}, 
-"key_message": "Camel-AI excels in collaboration and autonomy.", "img_keywords": "comparison visualization"}, 
-{"heading": "Key Benefits", "bullet_points": ["Enhanced collaboration", "Increased efficiency", "Improved task completion"], 
-"key_message": "Camel-AI offers significant advantages for AI development.", "img_keywords": "AI benefits advantages"}]'}, 
-result='PowerPoint presentation successfully , 
+'content': '[{"title": "Camel-AI: An Overview", "subtitle": "Conversational AI Made Accessible"}, {"heading": "What is Camel-AI?", 
+"bullet_points": ["**Camel-AI** is a framework for building *conversational AI* agents.", "It simplifies the process of creating 
+and managing complex dialogues.", "Key features include: role-playing, multi-agent collaboration, and task-oriented conversations."],
+"img_keywords": "conversational AI agents"}, {"heading": "Building a Camel-AI Agent: Step-by-Step", 
+"bullet_points": [">> **Step 1:** Define the roles and objectives of each agent.", ">> **Step 2:** Design the conversation flow and 
+interaction protocols.", ">> **Step 3:** Implement the agent logic using the Camel-AI framework.", ">> **Step 4:** Test and refine
+the agent through simulations and real-world interactions."], "img_keywords": "AI agent workflow"}, {"heading": "Camel-AI vs.
+Traditional Chatbots", "table": {"headers": ["Feature", "Camel-AI", "Traditional Chatbots"], "rows": [["Complexity", "Handles complex, 
+multi-agent dialogues", "Limited to simple, single-turn conversations"], ["Role-Playing", "Supports diverse roles and personalities", 
+"Typically lacks role-playing capabilities"], ["Task-Oriented", "Designed for collaborative task completion", "Often focused on 
+information retrieval"]] }, "img_keywords": "AI chatbot comparison"}]', 'template': 'examples/toolkits/templates/modern.pptx'}, 
+result='PowerPoint presentation successfully created:camel/pptx_outputs/camel_ai_presentation.pptx', 
 tool_call_id='')]
 
 ==================================================
 
 Example 2: Direct toolkit usage with advanced features
 Direct toolkit usage:
-PowerPoint presentation successfully created: 
+PowerPoint presentation successfully created: camel/pptx_outputs/modern_development.pptx
 
 ==================================================
 
 Both presentations have been created successfully!
 Check the './pptx_outputs' directory for the generated PPTX files."""
-
 # ruff: noqa: E501
