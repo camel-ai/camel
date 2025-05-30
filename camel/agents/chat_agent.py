@@ -79,6 +79,7 @@ from camel.types import (
 from camel.types.agents import ToolCallingRecord
 from camel.utils import (
     get_model_encoding,
+    model_from_json_schema,
 )
 
 if TYPE_CHECKING:
@@ -1645,6 +1646,220 @@ class ChatAgent(BaseAgent):
             prompt_tokens=prompt_tokens,
             total_tokens=completion_tokens + prompt_tokens,
         )
+
+    def add_model_scheduling_strategy(self, name: str, strategy_fn: Callable):
+        r"""Add a scheduling strategy method provided by user to ModelManger.
+
+        Args:
+            name (str): The name of the strategy.
+            strategy_fn (Callable): The scheduling strategy function.
+        """
+        self.model_backend.add_strategy(name, strategy_fn)
+
+    def clone(self, with_memory: bool = False) -> ChatAgent:
+        r"""Creates a new instance of :obj:`ChatAgent` with the same
+        configuration as the current instance.
+
+        Args:
+            with_memory (bool): Whether to copy the memory (conversation
+                history) to the new agent. If True, the new agent will have
+                the same conversation history. If False, the new agent will
+                have a fresh memory with only the system message.
+                (default: :obj:`False`)
+
+        Returns:
+            ChatAgent: A new instance of :obj:`ChatAgent` with the same
+                configuration.
+        """
+        # Create a new instance with the same configuration
+        # If with_memory is True, set system_message to None
+        # If with_memory is False, use the original system message
+        # To avoid duplicated system memory.
+        system_message = None if with_memory else self._original_system_message
+
+        new_agent = ChatAgent(
+            system_message=system_message,
+            model=self.model_backend.models,  # Pass the existing model_backend
+            memory=None,  # clone memory later
+            message_window_size=getattr(self.memory, "window_size", None),
+            token_limit=getattr(
+                self.memory.get_context_creator(), "token_limit", None
+            ),
+            output_language=self._output_language,
+            tools=list(self._internal_tools.values()),
+            external_tools=[
+                schema for schema in self._external_tool_schemas.values()
+            ],
+            response_terminators=self.response_terminators,
+            scheduling_strategy=self.model_backend.scheduling_strategy.__name__,
+            single_iteration=self.single_iteration,
+            stop_event=self.stop_event,
+        )
+
+        # Copy memory if requested
+        if with_memory:
+            # Get all records from the current memory
+            context_records = self.memory.retrieve()
+            # Write them to the new agent's memory
+            for context_record in context_records:
+                new_agent.memory.write_record(context_record.memory_record)
+
+        return new_agent
+
+    def __repr__(self) -> str:
+        r"""Returns a string representation of the :obj:`ChatAgent`.
+
+        Returns:
+            str: The string representation of the :obj:`ChatAgent`.
+        """
+        return (
+            f"ChatAgent({self.role_name}, {self.role_type}, {self.model_type})"
+        )
+
+    def to_mcp(
+        self,
+        name: str = "CAMEL-ChatAgent",
+        description: str = "A helpful assistant using the CAMEL AI framework.",
+        dependencies: Optional[List[str]] = None,
+        host: str = "localhost",
+        port: int = 8000,
+    ):
+        r"""Expose this ChatAgent as an MCP server.
+
+        Args:
+            name (str): Name of the MCP server.
+                (default: :obj:`CAMEL-ChatAgent`)
+            description (Optional[List[str]]): Description of the agent. If
+                None, a generic description is used. (default: :obj:`A helpful
+                assistant using the CAMEL AI framework.`)
+            dependencies (Optional[List[str]]): Additional
+                dependencies for the MCP server. (default: :obj:`None`)
+            host (str): Host to bind to for HTTP transport.
+                (default: :obj:`localhost`)
+            port (int): Port to bind to for HTTP transport.
+                (default: :obj:`8000`)
+
+        Returns:
+            FastMCP: An MCP server instance that can be run.
+        """
+        try:
+            from mcp.server.fastmcp import FastMCP
+        except ImportError:
+            raise ImportError(
+                "The 'mcp' package is required to use the to_mcp method. "
+                "Install it with 'pip install mcp'."
+            )
+
+        # Combine dependencies
+        all_dependencies = ["camel-ai[all]"]
+        if dependencies:
+            all_dependencies.extend(dependencies)
+
+        mcp_server = FastMCP(
+            name,
+            dependencies=all_dependencies,
+            host=host,
+            port=port,
+        )
+
+        # Store agent reference
+        agent_instance = self
+
+        # Define functions first
+        async def step(message, response_format=None):
+            r"""Execute a single step in the chat session with the agent."""
+            format_cls = None
+            if response_format:
+                format_cls = model_from_json_schema(
+                    "DynamicResponseFormat", response_format
+                )
+            response = await agent_instance.astep(message, format_cls)
+            return {
+                "status": "success",
+                "messages": [msg.to_dict() for msg in response.msgs],
+                "terminated": response.terminated,
+                "info": response.info,
+            }
+
+        # Reset tool
+        def reset():
+            r"""Reset the chat agent to its initial state."""
+            agent_instance.reset()
+            return {"status": "success", "message": "Agent reset successfully"}
+
+        # Set language tool
+        def set_output_language(language):
+            r"""Set the output language for the chat agent."""
+            agent_instance.output_language = language
+            return {
+                "status": "success",
+                "message": f"Output language set to '{language}'",
+            }
+
+        # Agent info resource and tool
+        def get_agent_info():
+            r"""Get information about the agent."""
+            info = {
+                "agent_id": agent_instance.agent_id,
+                "model_type": str(agent_instance.model_type),
+                "role_name": agent_instance.role_name,
+                "role_type": str(agent_instance.role_type),
+                "output_language": agent_instance.output_language or "None",
+                "description": description,
+            }
+            return info
+
+        # Chat history resource and tool
+        def get_chat_history():
+            r"""Get the chat history for the agent."""
+            # Convert messages to simple serializable format
+            messages = []
+            for msg in agent_instance.chat_history:
+                # Create a simplified version of each message
+                msg_dict = {
+                    "role": msg.get("role", ""),
+                    "content": msg.get("content", ""),
+                }
+                # Include function calls if present
+                if "function_call" in msg:
+                    msg_dict["function_call"] = {
+                        "name": msg["function_call"].get("name", ""),
+                        "arguments": msg["function_call"].get("arguments", ""),
+                    }
+                messages.append(msg_dict)
+            return messages
+
+        # Available tools resource and tool
+        def get_available_tools():
+            r"""Get a list of available internal tools."""
+            tool_info = {}
+            for name, tool in agent_instance.tool_dict.items():
+                tool_info[name] = {
+                    "name": name,
+                    "description": tool.get_function_description() or "",
+                    "parameters": [
+                        {"name": param_name, "type": str(param_type)}
+                        for param_name, param_type in tool.get_parameters().items()  # noqa: E501
+                    ],
+                }
+            return tool_info
+
+        # Now register everything using decorators
+        mcp_server.tool()(step)
+        mcp_server.tool()(reset)
+        mcp_server.tool()(set_output_language)
+
+        mcp_server.resource("agent://")(get_agent_info)
+        mcp_server.tool()(get_agent_info)
+
+        mcp_server.resource("history://")(get_chat_history)
+        mcp_server.tool()(get_chat_history)
+
+        mcp_server.resource("tools://")(get_available_tools)
+        mcp_server.tool()(get_available_tools)
+
+        return mcp_server
+
 
     def stream(
         self,
