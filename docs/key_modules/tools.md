@@ -1,5 +1,3 @@
-# Tools
-
 For more detailed usage information, please refer to our cookbook: [Tools Cookbook](../cookbooks/advanced_features/agents_with_tools.ipynb)
 
 ## 1. Concept
