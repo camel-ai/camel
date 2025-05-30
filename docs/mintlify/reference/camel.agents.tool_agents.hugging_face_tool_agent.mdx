@@ -1,0 +1,78 @@
+<a id="camel.agents.tool_agents.hugging_face_tool_agent"></a>
+
+<a id="camel.agents.tool_agents.hugging_face_tool_agent.HuggingFaceToolAgent"></a>
+
+## HuggingFaceToolAgent
+
+```python
+class HuggingFaceToolAgent(BaseToolAgent):
+```
+
+Tool agent for calling HuggingFace models. This agent is a wrapper
+around agents from the `transformers` library. For more information
+about the available models, please see the `transformers` documentation
+at https://huggingface.co/docs/transformers/transformers_agents.
+
+**Parameters:**
+
+- **name** (str): The name of the agent. *args (Any): Additional positional arguments to pass to the underlying Agent class.
+- **remote** (bool, optional): Flag indicating whether to run the agent remotely. (default: :obj:`True`) **kwargs (Any): Additional keyword arguments to pass to the underlying Agent class.
+
+<a id="camel.agents.tool_agents.hugging_face_tool_agent.HuggingFaceToolAgent.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    name: str,
+    *args: Any,
+    **kwargs: Any
+):
+```
+
+<a id="camel.agents.tool_agents.hugging_face_tool_agent.HuggingFaceToolAgent.reset"></a>
+
+### reset
+
+```python
+def reset(self):
+```
+
+Resets the chat history of the agent.
+
+<a id="camel.agents.tool_agents.hugging_face_tool_agent.HuggingFaceToolAgent.step"></a>
+
+### step
+
+```python
+def step(self, *args: Any, **kwargs: Any):
+```
+
+Runs the agent in single execution mode.
+
+**Parameters:**
+
+- **remote** (bool, optional): Flag indicating whether to run the agent remotely. Overrides the default setting. (default: :obj:`None`) **kwargs (Any): Keyword arguments to pass to the agent.
+
+**Returns:**
+
+  str: The response from the agent.
+
+<a id="camel.agents.tool_agents.hugging_face_tool_agent.HuggingFaceToolAgent.chat"></a>
+
+### chat
+
+```python
+def chat(self, *args: Any, **kwargs: Any):
+```
+
+Runs the agent in a chat conversation mode.
+
+**Parameters:**
+
+- **remote** (bool, optional): Flag indicating whether to run the agent remotely. Overrides the default setting. (default: :obj:`None`) **kwargs (Any): Keyword arguments to pass to the agent.
+
+**Returns:**
+
+  str: The response from the agent.

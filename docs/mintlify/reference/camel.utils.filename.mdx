@@ -1,0 +1,26 @@
+<a id="camel.utils.filename"></a>
+
+<a id="camel.utils.filename.sanitize_filename"></a>
+
+## sanitize_filename
+
+```python
+def sanitize_filename(
+    url_name: str,
+    default: str = 'index',
+    max_length: int = MAX_FILENAME_LENGTH
+):
+```
+
+Sanitize a URL path into a safe filename that is safe for
+most platforms.
+
+**Parameters:**
+
+- **url_name** (str): The URL path to sanitize.
+- **default** (str): Default name if sanitization results in empty string. (default: :obj:`"index"`)
+- **max_length** (int): Maximum length of the filename. (default: :obj:`MAX_FILENAME_LENGTH`)
+
+**Returns:**
+
+  str: A sanitized filename safe for most platforms.

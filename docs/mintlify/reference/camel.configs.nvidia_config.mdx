@@ -1,0 +1,29 @@
+<a id="camel.configs.nvidia_config"></a>
+
+<a id="camel.configs.nvidia_config.NvidiaConfig"></a>
+
+## NvidiaConfig
+
+```python
+class NvidiaConfig(BaseConfig):
+```
+
+Configuration class for NVIDIA API models.
+
+This class defines the configuration parameters for NVIDIA's language
+models, including temperature, sampling parameters, and response format
+settings.
+
+**Parameters:**
+
+- **stream** (bool, optional): Whether to stream the response. (default: :obj:`None`)
+- **temperature** (float, optional): Controls randomness in the response. Higher values make output more random, lower values make it more deterministic. Range: [0.0, 2.0]. (default: :obj:`None`)
+- **top_p** (float, optional): Controls diversity via nucleus sampling.
+- **Range**: [0.0, 1.0]. (default: :obj:`None`)
+- **presence_penalty** (float, optional): Penalizes new tokens based on whether they appear in the text so far. Range: [-2.0, 2.0]. (default: :obj:`None`)
+- **frequency_penalty** (float, optional): Penalizes new tokens based on their frequency in the text so far. Range: [-2.0, 2.0]. (default: :obj:`None`)
+- **max_tokens** (Union[int, NotGiven], optional): Maximum number of tokens to generate. If not provided, model will use its default maximum. (default: :obj:`None`)
+- **seed** (Optional[int], optional): Random seed for deterministic sampling. (default: :obj:`None`)
+- **tools** (Optional[List[Dict]], optional): List of tools available to the model. This includes tools such as a text editor, a calculator, or a search engine. (default: :obj:`None`)
+- **tool_choice** (Optional[str], optional): Tool choice configuration. (default: :obj:`None`)
+- **stop** (Optional[List[str]], optional): List of stop sequences. (default: :obj:`None`)

@@ -1,0 +1,174 @@
+<a id="camel.benchmarks.nexus"></a>
+
+<a id="camel.benchmarks.nexus.NexusSample"></a>
+
+## NexusSample
+
+```python
+class NexusSample:
+```
+
+Nexus benchmark dataset sample.
+
+<a id="camel.benchmarks.nexus.NexusBenchmark"></a>
+
+## NexusBenchmark
+
+```python
+class NexusBenchmark(BaseBenchmark):
+```
+
+Nexus Function Calling Benchmark adapted from `NexusRaven V2
+Function Calling Benchmark`
+`<https://huggingface.co/collections/Nexusflow/nexusraven-v2-function-calling-benchmark-657a597fb84dbe7a09ebfc3e>`.
+
+**Parameters:**
+
+- **data_dir** (str): The directory to save the data.
+- **save_to** (str): The file to save the results.
+- **processes** (int, optional): The number of processes to use. (default: :obj:`1`)
+
+<a id="camel.benchmarks.nexus.NexusBenchmark.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    data_dir: str,
+    save_to: str,
+    processes: int = 1
+):
+```
+
+Initialize the Nexus Function Calling benchmark.
+
+**Parameters:**
+
+- **data_dir** (str): The directory to save the data.
+- **save_to** (str): The file to save the results.
+- **processes** (int, optional): The number of processes to use for parallel processing. (default: :obj:`1`)
+
+<a id="camel.benchmarks.nexus.NexusBenchmark.download"></a>
+
+### download
+
+```python
+def download(self):
+```
+
+Download the Nexus Functional Calling Benchmark dataset.
+
+<a id="camel.benchmarks.nexus.NexusBenchmark.load"></a>
+
+### load
+
+```python
+def load(self, dataset_name: str, force_download: bool = False):
+```
+
+Load the Nexus Benchmark dataset.
+
+**Parameters:**
+
+- **dataset_name** (str): Name of the specific dataset to be loaded.
+- **force_download** (bool): Whether to force download the data.
+
+<a id="camel.benchmarks.nexus.NexusBenchmark.train"></a>
+
+### train
+
+```python
+def train(self):
+```
+
+Get the training set.
+
+<a id="camel.benchmarks.nexus.NexusBenchmark.run"></a>
+
+### run
+
+```python
+def run(
+    self,
+    agent: ChatAgent,
+    task: Literal['NVDLibrary', 'VirusTotal', 'OTX', 'PlacesAPI', 'ClimateAPI', 'VirusTotal-ParallelCalls', 'VirusTotal-NestedCalls', 'NVDLibrary-NestedCalls'],
+    randomize: bool = False,
+    subset: Optional[int] = None
+):
+```
+
+Run the benchmark.
+
+**Parameters:**
+
+- **agent** (ChatAgent): The agent to run the benchmark. task (Literal["NVDLibrary", "VirusTotal", "OTX", "PlacesAPI", "ClimateAPI", "VirusTotal-ParallelCalls", "VirusTotal-NestedCalls", "NVDLibrary-NestedCalls"]): The task to run the benchmark.
+- **randomize** (bool, optional): Whether to randomize the data. (default: :obj:`False`)
+- **subset** (Optional[int], optional): The subset of data to run. (default: :obj:`None`)
+
+**Returns:**
+
+  Dict[str, Any]: The results of the benchmark.
+
+<a id="camel.benchmarks.nexus.construct_tool_descriptions"></a>
+
+## construct_tool_descriptions
+
+```python
+def construct_tool_descriptions(dataset_name: str):
+```
+
+Construct tool descriptions from function definitions and
+descriptions.
+
+<a id="camel.benchmarks.nexus.construct_prompt"></a>
+
+## construct_prompt
+
+```python
+def construct_prompt(input: str, tools: str):
+```
+
+Construct prompt from tools and input.
+
+<a id="camel.benchmarks.nexus.parse_function_call"></a>
+
+## parse_function_call
+
+```python
+def parse_function_call(call: str):
+```
+
+Parse a function call string to extract the function name,
+positional arguments, and keyword arguments, including
+nested function calls.
+
+**Parameters:**
+
+- **call** (str): A string in the format `func(arg1, arg2, kwarg=value)`.
+
+**Returns:**
+
+  tuple: (function_name (str), positional_args (list),
+keyword_args (dict)) or (None, None, None).
+
+<a id="camel.benchmarks.nexus.compare_function_calls"></a>
+
+## compare_function_calls
+
+```python
+def compare_function_calls(agent_call: str, ground_truth_call: str):
+```
+
+Compare the function name and arguments of
+agent_call and ground_truth_call.
+
+**Parameters:**
+
+- **agent_call** (str): Function call by agent.
+- **ground_truth_call** (str): Ground truth function call.
+
+**Returns:**
+
+  - `True` if the function names and arguments match.
+- `False` otherwise.
