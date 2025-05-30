@@ -448,7 +448,6 @@ class StaticDataset(Dataset):
         language: Optional[List[str]] = None,
         task_categories: Optional[List[str]] = None,
         authors: Optional[List[str]] = None,
-        overwrite: bool = False,
         **kwargs: Any,
     ) -> str:
         r"""Save the dataset to the Hugging Face Hub using the project's
@@ -535,7 +534,7 @@ class StaticDataset(Dataset):
                     task_categories=task_categories,
                 )
 
-            print(
+            logger.info(
                 f"Successfully uploaded dataset to {dataset_name}, "
                 f"the url is {dataset_url}"
             )
