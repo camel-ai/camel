@@ -31,8 +31,14 @@ benchmark = GAIABenchmark(
     retriever=retriever,
 )
 
-print(f"Number of validation examples: {len(benchmark.valid)}")
-print(f"Number of test examples: {len(benchmark.test)}")
+# Load the data first
+benchmark.load()
+
+# Access the data through the _data dictionary
+print(
+    f"Number of validation examples: {len(benchmark._data.get('valid', []))}"
+)
+print(f"Number of test examples: {len(benchmark._data.get('test', []))}")
 
 
 toolkit = CodeExecutionToolkit(verbose=True)
@@ -72,8 +78,8 @@ agent = ChatAgent(
 )
 
 result = benchmark.run(agent, "valid", level="all", subset=3)
-print("correct:", result["correct"])
-print("total:", result["total"])
+print("correct:", result.metrics["correct"])
+print("total:", result.metrics["total"])
 
 # ruff: noqa: E501
 """
