@@ -122,6 +122,18 @@ def is_connected(self):
 
 Check if the client is currently connected.
 
+<a id="camel.utils.mcp_client.MCPClient.list_mcp_tools_sync"></a>
+
+### list_mcp_tools_sync
+
+```python
+def list_mcp_tools_sync(self):
+```
+
+**Returns:**
+
+  ListToolsResult: Result containing available MCP tools.
+
 <a id="camel.utils.mcp_client.MCPClient.generate_function_from_mcp_tool"></a>
 
 ### generate_function_from_mcp_tool
@@ -181,6 +193,25 @@ def get_text_tools(self):
 **Returns:**
 
   str: Text description of tools
+
+<a id="camel.utils.mcp_client.MCPClient.call_tool_sync"></a>
+
+### call_tool_sync
+
+```python
+def call_tool_sync(self, tool_name: str, arguments: Dict[str, Any]):
+```
+
+Synchronously call a tool by name with the provided arguments.
+
+**Parameters:**
+
+- **tool_name** (str): The name of the tool to call.
+- **arguments** (Dict[str, Any]): A dictionary of arguments to pass to the tool.
+
+**Returns:**
+
+  Any: The result returned by the tool execution.
 
 <a id="camel.utils.mcp_client.create_mcp_client"></a>
 
