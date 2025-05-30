@@ -123,7 +123,7 @@ class MathToolkit(CodeExecutionToolkit):
             a (Union[float, int]): The multiplier in the multiplication.
             b (Union[float, int]): The multiplicand in the multiplication.
             decimal_places (int, optional): The number of decimal
-                places to round to. Defaults to 2.
+                places to round to. (default: :obj:`2`)
 
         Returns:
             float: The product of the two numbers.
@@ -142,7 +142,7 @@ class MathToolkit(CodeExecutionToolkit):
             a (Union[float, int]): The dividend in the division.
             b (Union[float, int]): The divisor in the division.
             decimal_places (int, optional): The number of
-                decimal places to round to. Defaults to 2.
+                decimal places to round to. (default: :obj:`2`)
 
         Returns:
             float: The result of dividing :obj:`a` by :obj:`b`.
@@ -154,9 +154,9 @@ class MathToolkit(CodeExecutionToolkit):
     def round(self, a: float, decimal_places: int = 0) -> float:
         r"""Rounds a number to a specified number of decimal places.
         Args:
-            a (Union[float, int]): The number to be rounded.
+            a (float): The number to be rounded.
             decimal_places (int, optional): The number of decimal places
-                to round to. Defaults to 0.
+                to round to. (default: :obj:`0`)
         Returns:
             float: The rounded number.
         """
@@ -229,8 +229,8 @@ class MathToolkit(CodeExecutionToolkit):
 
         Args:
             packages (Optional[List[str]]): Optional list of packages to
-            install.If not provided, uses the packages specified during
-            initialization.
+                install. If not provided, uses the packages specified during
+                initialization. (default: :obj:`None`)
 
         Returns:
             str: Message indicating success or failure.
