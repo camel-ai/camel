@@ -257,6 +257,44 @@ query.
   List[VectorDBQueryResult]: A list of vectors retrieved from the
 storage based on similarity to the query vector.
 
+<a id="camel.storages.vectordb_storages.qdrant.QdrantStorage._convert_filter_dict_to_qdrant_filter"></a>
+
+### _convert_filter_dict_to_qdrant_filter
+
+```python
+def _convert_filter_dict_to_qdrant_filter(self, filter_dict: Dict[str, Any]):
+```
+
+convert filter_dict to qdrant_client.http.models.Filter
+
+**Parameters:**
+
+- **filter_dict** (Dict[str, Any]): A dictionary specifying conditions to filter the query results.
+
+**Returns:**
+
+  qdrant_client.http.models.Filter: A Qdrant filter
+
+<a id="camel.storages.vectordb_storages.qdrant.QdrantStorage.search"></a>
+
+### search
+
+```python
+def search(self, search: VectorDBSearch, **kwargs: Any):
+```
+
+Searches for vector records that match the given
+payload filter,without performing vector similarity search.
+
+**Parameters:**
+
+- **search** (VectorDBSearch): The search object containing the payload filter.For example, `{"category": "fruit", "color": "red"}`. **kwargs (Any): Additional parameters for the search.
+
+**Returns:**
+
+  List[VectorDBSearchResult]: A list of vector records that match
+the filter criteria.
+
 <a id="camel.storages.vectordb_storages.qdrant.QdrantStorage.clear"></a>
 
 ### clear

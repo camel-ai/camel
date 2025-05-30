@@ -15,12 +15,17 @@ from unittest.mock import MagicMock, create_autospec, patch
 
 import pytest
 
-from camel.storages import MilvusStorage, VectorDBQuery, VectorRecord
+from camel.storages import (
+    MilvusStorage,
+    VectorDBQuery,
+    VectorDBSearch,
+    VectorRecord,
+)
 
 
 @pytest.fixture
 def mock_milvus_storage():
-    with patch('camel.storages.MilvusStorage') as MockMilvusStorage:
+    with patch("camel.storages.MilvusStorage") as MockMilvusStorage:
         mock_storage1 = create_autospec(MilvusStorage)
         mock_storage2 = create_autospec(MilvusStorage)
         MockMilvusStorage.side_effect = [mock_storage1, mock_storage2]

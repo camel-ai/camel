@@ -156,6 +156,24 @@ expected by Milvus.
 
   List[dict]: A list of dictionaries formatted for Milvus insertion.
 
+<a id="camel.storages.vectordb_storages.milvus.MilvusStorage._convert_filter_dict_to_expr"></a>
+
+### _convert_filter_dict_to_expr
+
+```python
+def _convert_filter_dict_to_expr(self, filter_dict: dict):
+```
+
+convert filter dict to expr
+
+**Parameters:**
+
+- **filter_dict** (dict): filter dict
+
+**Returns:**
+
+  str: expr
+
 <a id="camel.storages.vectordb_storages.milvus.MilvusStorage.add"></a>
 
 ### add
@@ -218,6 +236,25 @@ query.
 
   List[VectorDBQueryResult]: A list of vectors retrieved from the
 storage based on similarity to the query vector.
+
+<a id="camel.storages.vectordb_storages.milvus.MilvusStorage.search"></a>
+
+### search
+
+```python
+def search(self, search: VectorDBSearch, **kwargs: Any):
+```
+
+Searches for vector records that match the given payload filter.
+
+**Parameters:**
+
+- **search** (VectorDBSearch): The search object containing the filter For example, `{"category": "fruit", "color": "red"}`. **kwargs (Any): Additional parameters for the search.
+
+**Returns:**
+
+  List[VectorDBSearchResult]: A list of vector records that match the
+filter criteria.
 
 <a id="camel.storages.vectordb_storages.milvus.MilvusStorage.clear"></a>
 
