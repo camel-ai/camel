@@ -1,0 +1,134 @@
+<a id="camel.runtime.ubuntu_docker_runtime"></a>
+
+<a id="camel.runtime.ubuntu_docker_runtime.UbuntuDockerRuntime"></a>
+
+## UbuntuDockerRuntime
+
+```python
+class UbuntuDockerRuntime(DockerRuntime):
+```
+
+A specialized Docker runtime for Ubuntu-based environments.
+
+This runtime includes specific configurations and setup for Ubuntu
+containers, including proper Python path handling and environment setup.
+It provides methods for executing Python files, managing the container
+lifecycle, and handling file operations within the Ubuntu container.
+
+Attributes:
+python_path (str): Path to the Python interpreter in the container
+docker_config (dict): Configuration dict for Docker container setup
+
+<a id="camel.runtime.ubuntu_docker_runtime.UbuntuDockerRuntime.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    image: str,
+    port: int = 0,
+    remove: bool = True,
+    python_path: str = '/usr/bin/python3',
+    **kwargs
+):
+```
+
+Initialize the Ubuntu Docker Runtime.
+
+**Parameters:**
+
+- **image** (str): Docker image name to use
+- **port** (int, optional): Port to expose. Defaults to 0 (random port) (default: 0 (random port)
+- **remove** (bool, optional): Whether to remove container after use. Defaults to True
+- **python_path** (str, optional): Path to Python interpreter. Defaults to "/usr/bin/python3" **kwargs: Additional arguments passed to DockerRuntime
+
+<a id="camel.runtime.ubuntu_docker_runtime.UbuntuDockerRuntime.add"></a>
+
+### add
+
+```python
+def add(
+    self,
+    funcs: Union[FunctionTool, List[FunctionTool]],
+    entrypoint: str,
+    redirect_stdout: bool = False,
+    arguments: Optional[dict] = None
+):
+```
+
+Add functions to the runtime with Ubuntu-specific modifications.
+
+**Returns:**
+
+  Self for method chaining
+
+<a id="camel.runtime.ubuntu_docker_runtime.UbuntuDockerRuntime._setup_default_mounts"></a>
+
+### _setup_default_mounts
+
+```python
+def _setup_default_mounts(self):
+```
+
+Setup default volume mounts for the container.
+
+This method can be extended to add Ubuntu-specific volume mounts.
+
+<a id="camel.runtime.ubuntu_docker_runtime.UbuntuDockerRuntime.build"></a>
+
+### build
+
+```python
+def build(self, time_out: int = 15):
+```
+
+Build and initialize the Ubuntu container with proper setup.
+
+**Parameters:**
+
+- **time_out** (int): Timeout in seconds for build operation
+
+**Returns:**
+
+  Self for method chaining
+
+<a id="camel.runtime.ubuntu_docker_runtime.UbuntuDockerRuntime.exec_python_file"></a>
+
+### exec_python_file
+
+```python
+def exec_python_file(
+    self,
+    local_file_path: str,
+    container_path: Optional[str] = None,
+    args: Optional[List[str]] = None,
+    env: Optional[dict] = None,
+    callback: Optional[Callable[[str], None]] = None
+):
+```
+
+Execute a Python file inside the Docker container.
+
+**Parameters:**
+
+- **env**: Additional environment variables to set for the execution
+- **callback**: Optional function to process each line of output If None, output is printed to stdout
+
+<a id="camel.runtime.ubuntu_docker_runtime.UbuntuDockerRuntime._create_archive_from_file"></a>
+
+### _create_archive_from_file
+
+```python
+def _create_archive_from_file(self, file_path: Union[str, Path]):
+```
+
+Create a tar archive from a single file for docker.put_archive().
+
+**Parameters:**
+
+- **file_path**: Path to the file to archive
+
+**Returns:**
+
+  bytes: The tar archive as bytes
