@@ -30,7 +30,8 @@ class MathToolkit(CodeExecutionToolkit):
 
     Args:
         math_packages (List[str], optional): List of Python packages to use
-            for mathematical computations (e.g., `numpy`, `sympy`).
+            for mathematical computations (e.g., `numpy`, `sympy`, `cvxpy`,
+              `scipy`, `networkx`).
         sandbox (str, optional): The environment for code execution
             (`internal_python`, `jupyter`, `docker`, `subprocess`, `e2b`).
             (default: `subprocess`)
@@ -90,8 +91,8 @@ class MathToolkit(CodeExecutionToolkit):
         r"""Adds two numbers.
 
         Args:
-            a (float): The first number to be added.
-            b (float): The second number to be added.
+            a (Union[float, int]): The first number to be added.
+            b (Union[float, int]): The second number to be added.
 
         Returns:
             float: The sum of the two numbers.
@@ -102,8 +103,8 @@ class MathToolkit(CodeExecutionToolkit):
         r"""Do subtraction between two numbers.
 
         Args:
-            a (float): The minuend in subtraction.
-            b (float): The subtrahend in subtraction.
+            a (Union[float, int]): The minuend in subtraction.
+            b (Union[float, int]): The subtrahend in subtraction.
 
         Returns:
             float: The result of subtracting :obj:`b` from :obj:`a`.
@@ -119,8 +120,8 @@ class MathToolkit(CodeExecutionToolkit):
         r"""Multiplies two numbers.
 
         Args:
-            a (float): The multiplier in the multiplication.
-            b (float): The multiplicand in the multiplication.
+            a (Union[float, int]): The multiplier in the multiplication.
+            b (Union[float, int]): The multiplicand in the multiplication.
             decimal_places (int, optional): The number of decimal
                 places to round to. Defaults to 2.
 
@@ -138,8 +139,8 @@ class MathToolkit(CodeExecutionToolkit):
         r"""Divides two numbers.
 
         Args:
-            a (float): The dividend in the division.
-            b (float): The divisor in the division.
+            a (Union[float, int]): The dividend in the division.
+            b (Union[float, int]): The divisor in the division.
             decimal_places (int, optional): The number of
                 decimal places to round to. Defaults to 2.
 
@@ -153,7 +154,7 @@ class MathToolkit(CodeExecutionToolkit):
     def round(self, a: float, decimal_places: int = 0) -> float:
         r"""Rounds a number to a specified number of decimal places.
         Args:
-            a (float): The number to be rounded.
+            a (Union[float, int]): The number to be rounded.
             decimal_places (int, optional): The number of decimal places
                 to round to. Defaults to 0.
         Returns:
@@ -209,7 +210,7 @@ class MathToolkit(CodeExecutionToolkit):
         r"""Execute mathematical computations using Python's math packages.
 
         Args:
-            code: Python code containing mathematical computations.
+            code (str): Python code containing mathematical computations.
 
         Returns:
             str: The result of the code execution.
@@ -227,8 +228,9 @@ class MathToolkit(CodeExecutionToolkit):
         r"""Install specified math packages.
 
         Args:
-            packages: Optional list of packages to install. If not provided,
-                     uses the packages specified during initialization.
+            packages (Optional[List[str]]): Optional list of packages to
+            install.If not provided, uses the packages specified during
+            initialization.
 
         Returns:
             str: Message indicating success or failure.
