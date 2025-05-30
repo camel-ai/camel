@@ -228,7 +228,10 @@ class PPTXToolkit(BaseToolkit):
         return slide_width_inch, slide_height_inch
 
     def _write_pptx_file(
-        self, file_path: Path, content: List[Dict[str, Any]]
+        self,
+        file_path: Path,
+        content: List[Dict[str, Any]],
+        template: Optional[str] = None,
     ) -> None:
         r"""Write text content to a PPTX file with enhanced formatting.
 
@@ -238,8 +241,22 @@ class PPTXToolkit(BaseToolkit):
                 Must be a list of dictionaries where:
                 - First element: Title slide with keys 'title' and 'subtitle'
                 - Subsequent elements: Content slides with keys 'title', 'text' (optional)
+            template (Optional[str]): The name of the template to use. If not provided,
+                the default template will be used.
         """
-        presentation = pptx.Presentation()
+        # Use template if provided, otherwise create new presentation
+        if template:
+            template_path = Path(template).resolve()
+            # Create a new presentation from template
+            presentation = pptx.Presentation(str(template_path))
+            # Clear all existing slides by removing them from the slide list
+            while len(presentation.slides) > 0:
+                rId = presentation.slides._sldIdLst[-1].rId
+                presentation.part.drop_rel(rId)
+                del presentation.slides._sldIdLst[-1]
+        else:
+            presentation = pptx.Presentation()
+
         slide_width_inch, slide_height_inch = (
             self._get_slide_width_height_inches(presentation)
         )
@@ -307,6 +324,7 @@ class PPTXToolkit(BaseToolkit):
         self,
         content: str,
         filename: str,
+        template: Optional[str] = None,
     ) -> str:
         r"""Create a PowerPoint presentation (PPTX) file.
 
@@ -318,6 +336,9 @@ class PPTXToolkit(BaseToolkit):
                 "image": str URL (optional)}
             filename (str): The name or path of the file. If a relative path is
                 supplied, it is resolved to self.output_dir.
+            template (Optional[str]): The name of the template to use. If not provided,
+                the default template will be used.
+
 
         Returns:
             str: A success message indicating the file was created.
@@ -349,7 +370,7 @@ class PPTXToolkit(BaseToolkit):
 
         try:
             # Create the PPTX file
-            self._write_pptx_file(file_path, parsed_content.copy())
+            self._write_pptx_file(file_path, parsed_content.copy(), template)
 
             success_msg = (
                 f"PowerPoint presentation successfully created: {file_path}"

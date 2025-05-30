@@ -24,16 +24,33 @@ from camel.types import ModelPlatformType, ModelType
 def run_pptx_agent():
     # Initialize the model
     model = ModelFactory.create(
-        model_platform=ModelPlatformType.GEMINI,
-        model_type=ModelType.GEMINI_2_0_FLASH,
+        model_platform=ModelPlatformType.DEFAULT,
+        model_type=ModelType.DEFAULT,
     )
 
     # Initialize the toolkit with an output directory
-    pptx_toolkit = PPTXToolkit(output_dir="./pptx_outputs")
+    pptx_toolkit = PPTXToolkit(
+        output_dir="./pptx_outputs",
+    )
 
     # Initialize the agent with the toolkit
     system_message = """You are a helpful assistant that can create PowerPoint presentations.
-    When creating presentations, you must output the content in the following JSON format and use the create_presentation tool to generate the PPTX file:
+    When creating presentations, you must first select the appropriate template based on the topic:
+
+    Available Templates:
+    1. Modern Template (modern.pptx)
+       - Best for: Technology, Innovation, Digital topics
+       - Path: examples/toolkits/templates/modern.pptx
+
+    2. Business Template (Ion_Boardroom.pptx)
+       - Best for: Business, Corporate, Professional topics
+       - Path: examples/toolkits/templates/Ion_Boardroom.pptx
+
+    3. Education Template (Urban_monochrome.pptx)
+       - Best for: Education, Learning, Academic topics
+       - Path: examples/toolkits/templates/Urban_monochrome.pptx
+
+    After selecting the appropriate template, output the content in the following JSON format and use the create_presentation tool to generate the PPTX file:
 
     [
         {
@@ -83,9 +100,13 @@ def run_pptx_agent():
     5. Use proper JSON formatting with double quotes for all strings
     6. Add img_keywords field to include relevant images from Pexels
 
-    IMPORTANT: After creating the JSON content, you MUST use the create_presentation tool to generate the PPTX file.
+    IMPORTANT: 
+    1. First, analyze the presentation topic and select the most appropriate template
+    2. Then create the JSON content following the format above
+    3. Finally, use the create_presentation tool to generate the PPTX file with the selected template
+
     Example tool usage:
-    create_presentation(content='[{"title": "Example", "subtitle": "Demo"}]', filename="example.pptx")
+    create_presentation(content='[{"title": "Example", "subtitle": "Demo"}]', filename="example.pptx", template="/examples/toolkits/templates/modern.pptx")
     """
 
     camel_agent = ChatAgent(
