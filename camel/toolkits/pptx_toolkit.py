@@ -351,8 +351,8 @@ class PPTXToolkit(BaseToolkit):
                         * Table slides: {"heading": str, "table": {"headers": list of str, "rows": list of list of str}}
                 filename (str): The name or path of the file. If a relative path is
                     supplied, it is resolved to self.output_dir.
-                template (Optional[str]): The name of the template to use. If not provided,
-                    the default template will be used.
+                template (Optional[str]): The path to the template PPTX file.
+                        Initializes a presentation from a given template file Or PPTX file.
 
             Example:
             [
