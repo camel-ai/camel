@@ -234,7 +234,23 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk], Any]:
+        r"""Runs the query to the backend model in a non-stream mode.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+            response_format (Optional[Type[BaseModel]]): The format of the
+                response.
+            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
+                use for the request.
+
+        Returns:
+            Union[ChatCompletion, Stream[ChatCompletionChunk], Any]:
+                `ChatCompletion` in the non-stream mode, or
+                `Stream[ChatCompletionChunk]` in the stream mode,
+                or other stream managers for structured output.
+        """
         pass
 
     @abstractmethod
@@ -243,7 +259,23 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk], Any]:
+        r"""Runs the query to the backend model in async non-stream mode.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+            response_format (Optional[Type[BaseModel]]): The format of the
+                response.
+            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
+                use for the request.
+
+        Returns:
+            Union[ChatCompletion, AsyncStream[ChatCompletionChunk], Any]:
+                `ChatCompletion` in the non-stream mode, or
+                `AsyncStream[ChatCompletionChunk]` in the stream mode,
+                or other async stream managers for structured output.
+        """
         pass
 
     def run(
@@ -251,7 +283,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk], Any]:
         r"""Runs the query to the backend model.
 
         Args:
@@ -265,9 +297,10 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
                 (default: :obj:`None`)
 
         Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-                `ChatCompletion` in the non-stream mode, or
-                `Stream[ChatCompletionChunk]` in the stream mode.
+            Union[ChatCompletion, Stream[ChatCompletionChunk], Any]:
+                `ChatCompletion` in the non-stream mode,
+                `Stream[ChatCompletionChunk]` in the stream mode, or
+                other stream managers for structured output.
         """
         # None -> use default tools
         if tools is None:
@@ -282,7 +315,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk], Any]:
         r"""Runs the query to the backend model asynchronously.
 
         Args:
@@ -296,9 +329,10 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
                 (default: :obj:`None`)
 
         Returns:
-            Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-                `ChatCompletion` in the non-stream mode, or
-                `AsyncStream[ChatCompletionChunk]` in the stream mode.
+            Union[ChatCompletion, AsyncStream[ChatCompletionChunk], Any]:
+                `ChatCompletion` in the non-stream mode,
+                `AsyncStream[ChatCompletionChunk]` in the stream mode, or
+                other async stream managers for structured output.
         """
         if tools is None:
             tools = self.model_config_dict.get("tools", None)
