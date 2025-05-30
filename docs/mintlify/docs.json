@@ -53,6 +53,11 @@
           {
             "group": "Key Modules",
             "pages": [
+              "key_modules/agents",
+              "key_modules/datagen",
+              "key_modules/interpreters",
+              "key_modules/runtimes",
+              "key_modules/society",
               "key_modules/models",
               "key_modules/messages",
               "key_modules/memory",
@@ -614,6 +619,7 @@
               "reference/camel.loaders.jina_url_reader",
               "reference/camel.loaders.markitdown",
               "reference/camel.loaders.mineru_extractor",
+              "reference/camel.loaders.mistral_reader",
               "reference/camel.loaders.pandas_reader",
               "reference/camel.loaders.scrapegraph_reader",
               "reference/camel.loaders.unstructured_io"

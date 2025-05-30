@@ -1,5 +1,3 @@
-# Interpreters
-
 ## 1. Concept
 Interpreters are tools that empower the agents to execute given code snippets
 on local machine. 
