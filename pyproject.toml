@@ -82,6 +82,7 @@ rag = [
     "crawl4ai>=0.3.745",
     "pyobvector>=0.1.18",
     "google-genai>=1.13.0",
+    "chunkr-ai>=0.0.50",
 ]
 web_tools = [
     "duckduckgo-search>=6.3.5,<7",
@@ -124,6 +125,7 @@ document_tools = [
     "crawl4ai>=0.3.745",
     "markitdown==0.1.1",
     "pylatex>=1.4.2",
+    "chunkr-ai>=0.0.50",
 ]
 media_tools = [
     "imageio[pyav]>=2.34.2,<3",
@@ -252,6 +254,7 @@ owl = [
     "pyautogui>=0.9.54,<0.10",
     "aci-sdk>=1.0.0b1",
     "pylatex>=1.4.2",
+    "chunkr-ai>=0.0.50",
 ]
 all = [
     "numpy>=1.2,<=2.2",
@@ -371,6 +374,7 @@ all = [
     "google-genai>=1.13.0",
     "aci-sdk>=1.0.0b1",
     "pylatex>=1.4.2",
+    "chunkr-ai>=0.0.50",
 ]
 
 [project.urls]
@@ -566,7 +570,8 @@ module = [
     "google_genai",
     "aci-sdk.*",
     "pylatex.*",
-    "bohrium.*"
+    "bohrium.*",
+    "chunkr_ai.*",
 ]
 ignore_missing_imports = true
 

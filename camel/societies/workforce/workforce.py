@@ -48,29 +48,58 @@ logger = get_logger(__name__)
 
 
 class Workforce(BaseNode):
-    r"""A system where multiple workder nodes (agents) cooperate together
-    to solve tasks. It can assign tasks to workder nodes and also take
+    r"""A system where multiple worker nodes (agents) cooperate together
+    to solve tasks. It can assign tasks to worker nodes and also take
     strategies such as create new worker, decompose tasks, etc. to handle
     situations when the task fails.
 
+    The workforce uses three specialized ChatAgents internally:
+    - Coordinator Agent: Assigns tasks to workers based on their
+      capabilities
+    - Task Planner Agent: Decomposes complex tasks and composes results
+    - Dynamic Workers: Created at runtime when tasks fail repeatedly
+
     Args:
-        description (str): Description of the node.
+        description (str): Description of the workforce.
         children (Optional[List[BaseNode]], optional): List of child nodes
             under this node. Each child node can be a worker node or
             another workforce node. (default: :obj:`None`)
         coordinator_agent_kwargs (Optional[Dict], optional): Keyword
-            arguments for the coordinator agent, e.g. `model`, `api_key`,
-            `tools`, etc. If not provided, default model settings will be used.
-            (default: :obj:`None`)
-        task_agent_kwargs (Optional[Dict], optional): Keyword arguments for
-            the task agent, e.g. `model`, `api_key`, `tools`, etc.
-            If not provided, default model settings will be used.
-            (default: :obj:`None`)
-        new_worker_agent_kwargs (Optional[Dict]): Default keyword arguments
-            for the worker agent that will be created during runtime to
-            handle failed tasks, e.g. `model`, `api_key`, `tools`, etc.
-            If not provided, default model settings will be used.
-            (default: :obj:`None`)
+            arguments passed directly to the coordinator :obj:`ChatAgent`
+            constructor. The coordinator manages task assignment and failure
+            handling strategies. See :obj:`ChatAgent` documentation
+            for all available parameters.
+            (default: :obj:`None` - uses ModelPlatformType.DEFAULT,
+            ModelType.DEFAULT)
+        task_agent_kwargs (Optional[Dict], optional): Keyword arguments
+            passed directly to the task planning :obj:`ChatAgent` constructor.
+            The task agent handles task decomposition into subtasks and result
+            composition. See :obj:`ChatAgent` documentation for all
+            available parameters.
+            (default: :obj:`None` - uses ModelPlatformType.DEFAULT,
+            ModelType.DEFAULT)
+        new_worker_agent_kwargs (Optional[Dict], optional): Default keyword
+            arguments passed to :obj:`ChatAgent` constructor for workers
+            created dynamically at runtime when existing workers cannot handle
+            failed tasks. See :obj:`ChatAgent` documentation for all
+            available parameters.
+            (default: :obj:`None` - creates workers with SearchToolkit,
+            CodeExecutionToolkit, and ThinkingToolkit)
+
+    Example:
+        >>> # Configure with custom model
+        >>> model = ModelFactory.create(
+        ...     ModelPlatformType.OPENAI, ModelType.GPT_4O
+        ... )
+        >>> workforce = Workforce(
+        ...     "Research Team",
+        ...     coordinator_agent_kwargs={"model": model, "token_limit": 4000},
+        ...     task_agent_kwargs={"model": model, "token_limit": 8000}
+        ... )
+        >>>
+        >>> # Process a task
+        >>> task = Task(content="Research AI trends", id="1")
+        >>> result = workforce.process_task(task)
     """
 
     def __init__(
@@ -89,21 +118,33 @@ class Workforce(BaseNode):
         # Warning messages for default model usage
         if coordinator_agent_kwargs is None:
             logger.warning(
-                "No coordinator_agent_kwargs provided. "
-                "Using `ModelPlatformType.DEFAULT` and `ModelType.DEFAULT` "
-                "for coordinator agent."
+                "No coordinator_agent_kwargs provided. Using default "
+                "ChatAgent settings (ModelPlatformType.DEFAULT, "
+                "ModelType.DEFAULT). To customize the coordinator agent "
+                "that assigns tasks and handles failures, pass a dictionary "
+                "with ChatAgent parameters, e.g.: {'model': your_model, "
+                "'tools': your_tools, 'token_limit': 8000}. See ChatAgent "
+                "documentation for all available options."
             )
         if task_agent_kwargs is None:
             logger.warning(
-                "No task_agent_kwargs provided. "
-                "Using `ModelPlatformType.DEFAULT` and `ModelType.DEFAULT` "
-                "for task agent."
+                "No task_agent_kwargs provided. Using default ChatAgent "
+                "settings (ModelPlatformType.DEFAULT, ModelType.DEFAULT). "
+                "To customize the task planning agent that "
+                "decomposes/composes tasks, pass a dictionary with "
+                "ChatAgent parameters, e.g.: {'model': your_model, "
+                "'token_limit': 16000}. See ChatAgent documentation for "
+                "all available options."
             )
         if new_worker_agent_kwargs is None:
             logger.warning(
-                "No new_worker_agent_kwargs provided. "
-                "Using `ModelPlatformType.DEFAULT` and `ModelType.DEFAULT` "
-                "for worker agents created during runtime."
+                "No new_worker_agent_kwargs provided. Workers created at "
+                "runtime will use default ChatAgent settings with "
+                "SearchToolkit, CodeExecutionToolkit, and ThinkingToolkit. "
+                "To customize runtime worker creation, pass a dictionary "
+                "with ChatAgent parameters, e.g.: {'model': your_model, "
+                "'tools': your_tools}. See ChatAgent documentation for all "
+                "available options."
             )
 
         coord_agent_sys_msg = BaseMessage.make_assistant_message(
