@@ -206,16 +206,19 @@ class APIBenchBenchmark(BaseBenchmark):
                     f"Error decoding JSON in file {file_path}: {e}"
                 )
 
-        dataset_path = self.data_dir / dataset_name
-        if not dataset_path.exists():
+        # Get the dataset directory
+        if self.data_dir is None:
+            raise ValueError("data_dir must be set")
+        dataset_dir = self.data_dir / dataset_name
+        if not dataset_dir.exists():
             raise FileNotFoundError(
-                f"Dataset directory does not exist: {dataset_path}"
+                f"Dataset directory does not exist: {dataset_dir}"
             )
 
         for label in ['api', 'eval', 'questions']:
             file_name = dataset_mapping[dataset_name][label]
             file_path = (
-                dataset_path / file_name
+                dataset_dir / file_name
                 if label == 'questions'
                 else self.data_dir / file_name
             )
@@ -277,6 +280,9 @@ class APIBenchBenchmark(BaseBenchmark):
         # Initialize results storage
         self._results = []
 
+        # Save results
+        if self.save_to is None:
+            raise ValueError("save_to must be set")
         with open(self.save_to, "w") as f:
             for question in tqdm(datas, desc="Running"):
                 prompt = encode_question(question["text"], dataset_name)

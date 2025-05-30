@@ -1,5 +1,157 @@
 <a id="camel.benchmarks.base"></a>
 
+<a id="camel.benchmarks.base.RetrieverProtocol"></a>
+
+## RetrieverProtocol
+
+```python
+class RetrieverProtocol(Protocol):
+```
+
+Protocol for retriever components used in benchmarks.
+
+This protocol defines the interface that retriever components should
+implement to be compatible with benchmark frameworks.
+
+<a id="camel.benchmarks.base.RetrieverProtocol.retrieve"></a>
+
+### retrieve
+
+```python
+def retrieve(
+    self,
+    query: str,
+    contents: List[str],
+    **kwargs: Any
+):
+```
+
+Retrieve relevant content for the given query.
+
+**Parameters:**
+
+- **query** (str): The query to retrieve content for.
+- **contents** (List[str]): The list of contents to search in. **kwargs (Any): Additional keyword arguments.
+
+**Returns:**
+
+  Dict[str, Any]: The retrieved content and metadata.
+
+<a id="camel.benchmarks.base.RetrieverProtocol.reset"></a>
+
+### reset
+
+```python
+def reset(self, **kwargs: Any):
+```
+
+Reset the retriever state.
+
+**Returns:**
+
+  bool: True if reset was successful, False otherwise.
+
+<a id="camel.benchmarks.base.EvalResult"></a>
+
+## EvalResult
+
+```python
+class EvalResult:
+```
+
+Standardized evaluation result model for benchmarks.
+
+This class provides a unified interface for storing and accessing
+benchmark evaluation results, supporting both aggregate metrics and
+detailed task-level results.
+
+Attributes:
+metrics (Dict[str, Union[int, float]]): Dictionary of metric names
+to their values (e.g., accuracy, score, etc.).
+details (List[Dict[str, Any]]): List of detailed results per item/task.
+metadata (Dict[str, Any]): Additional metadata about the evaluation
+(e.g., benchmark configuration, timestamps, etc.).
+
+<a id="camel.benchmarks.base.EvalResult.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    metrics: Optional[Dict[str, Union[int, float]]] = None,
+    details: Optional[List[Dict[str, Any]]] = None,
+    metadata: Optional[Dict[str, Any]] = None
+):
+```
+
+Initialize the evaluation result.
+
+**Parameters:**
+
+- **metrics** (Optional[Dict[str, Union[int, float]]]): Dictionary of metric names to their values.
+- **details** (Optional[List[Dict[str, Any]]]): List of detailed results.
+- **metadata** (Optional[Dict[str, Any]]): Additional metadata about the evaluation.
+
+<a id="camel.benchmarks.base.EvalResult.add_metric"></a>
+
+### add_metric
+
+```python
+def add_metric(self, name: str, value: Union[int, float]):
+```
+
+Add a metric to the result.
+
+**Parameters:**
+
+- **name** (str): Name of the metric.
+- **value** (Union[int, float]): Value of the metric.
+
+<a id="camel.benchmarks.base.EvalResult.add_detail"></a>
+
+### add_detail
+
+```python
+def add_detail(self, item: Dict[str, Any]):
+```
+
+Add a detailed result item.
+
+**Parameters:**
+
+- **item** (Dict[str, Any]): Detailed result data for an item.
+
+<a id="camel.benchmarks.base.EvalResult.get_metric"></a>
+
+### get_metric
+
+```python
+def get_metric(self, name: str):
+```
+
+Get a specific metric value.
+
+**Parameters:**
+
+- **name** (str): Name of the metric.
+
+**Returns:**
+
+  Optional[Union[int, float]]: The metric value if it exists.
+
+<a id="camel.benchmarks.base.EvalResult.to_dict"></a>
+
+### to_dict
+
+```python
+def to_dict(self):
+```
+
+**Returns:**
+
+  Dict[str, Any]: Dictionary representation of the result.
+
 <a id="camel.benchmarks.base.BaseBenchmark"></a>
 
 ## BaseBenchmark
@@ -10,12 +162,19 @@ class BaseBenchmark(ABC):
 
 Base class for benchmarks.
 
+This class provides a flexible foundation for implementing various types
+of benchmarks. It supports different data loading mechanisms, evaluation
+patterns, and result formats to accommodate diverse benchmark requirements.
+
 Attributes:
 name (str): Name of the benchmark.
-data_dir (str): Path to the data directory.
-save_to (str): Path to save the results.
-processes (int): Number of processes to use for parallel
-processing. :(default: :obj:`1`)
+data_dir (Optional[Path]): Suggested local path for data storage.
+Subclasses may use alternative mechanisms.
+save_to (Optional[str]): Path to save the results. Can be None if
+results are not saved to file.
+processes (int): Number of processes to use for parallel processing.
+retriever (Optional[RetrieverProtocol]): Optional retriever component
+for benchmarks that need retrieval functionality.
 
 <a id="camel.benchmarks.base.BaseBenchmark.__init__"></a>
 
@@ -25,9 +184,11 @@ processing. :(default: :obj:`1`)
 def __init__(
     self,
     name: str,
-    data_dir: str,
-    save_to: str,
-    processes: int = 1
+    data_dir: Optional[str] = None,
+    save_to: Optional[str] = None,
+    processes: int = 1,
+    retriever: Optional[RetrieverProtocol] = None,
+    **kwargs: Any
 ):
 ```
 
@@ -36,9 +197,10 @@ Initialize the benchmark.
 **Parameters:**
 
 - **name** (str): Name of the benchmark.
-- **data_dir** (str): Path to the data directory.
-- **save_to** (str): Path to save the results.
-- **processes** (int): Number of processes to use for parallel processing. :(default: :obj:`1`)
+- **data_dir** (Optional[str]): Suggested local path for data storage. Subclasses may use alternative mechanisms. If provided and doesn't exist, will be created.
+- **save_to** (Optional[str]): Path to save the results. Can be None if results are not saved to file.
+- **processes** (int): Number of processes to use for parallel processing. (default: :obj:`1`)
+- **retriever** (Optional[RetrieverProtocol]): Optional retriever for benchmarks that need retrieval functionality. **kwargs (Any): Additional keyword arguments for subclass-specific initialization parameters.
 
 <a id="camel.benchmarks.base.BaseBenchmark.download"></a>
 
@@ -50,90 +212,131 @@ def download(self):
 
 **Returns:**
 
-  BaseBenchmark: The benchmark instance.
+  BaseBenchmark: The benchmark instance for method chaining.
 
 <a id="camel.benchmarks.base.BaseBenchmark.load"></a>
 
 ### load
 
 ```python
-def load(self, force_download: bool = False):
+def load(self, *args, **kwargs):
 ```
 
 Load the benchmark data.
 
-**Parameters:**
-
-- **force_download** (bool): Whether to force download the data.
-
-**Returns:**
-
-  BaseBenchmark: The benchmark instance.
-
-<a id="camel.benchmarks.base.BaseBenchmark.train"></a>
-
-### train
-
-```python
-def train(self):
-```
+Default implementation raises NotImplementedError. Subclasses should
+override this method to implement their specific data loading logic.
+The signature can vary based on subclass requirements.
 
 **Returns:**
 
-  List[Dict[str, Any]]: The training data.
-
-<a id="camel.benchmarks.base.BaseBenchmark.valid"></a>
-
-### valid
-
-```python
-def valid(self):
-```
-
-**Returns:**
-
-  List[Dict[str, Any]]: The validation data.
-
-<a id="camel.benchmarks.base.BaseBenchmark.test"></a>
-
-### test
-
-```python
-def test(self):
-```
-
-**Returns:**
-
-  List[Dict[str, Any]]: The test data.
+  BaseBenchmark: The benchmark instance for method chaining.
 
 <a id="camel.benchmarks.base.BaseBenchmark.run"></a>
 
 ### run
 
 ```python
-def run(
-    self,
-    agent: ChatAgent,
-    on: Literal['train', 'valid', 'test'],
-    randomize: bool = False,
-    subset: Optional[int] = None,
-    *args,
-    **kwargs
-):
+def run(self, *args, **kwargs):
 ```
 
-Run the benchmark.
+Run the benchmark evaluation.
 
-**Parameters:**
-
-- **agent** (ChatAgent): The chat agent.
-- **on** (str): The data split to run the benchmark on.
-- **randomize** (bool): Whether to randomize the data.
-- **subset** (int): The subset of the data to run the benchmark on.
+Subclasses must define their required arguments and return type.
+This method should handle the core evaluation logic.
 
 **Returns:**
 
-  BaseBenchmark: The benchmark instance.
+  Any: Return type depends on subclass implementation.
+Common patterns:
+- EvalResult: Standardized evaluation result
+- Dict[str, Any]: Metrics dictionary
+- BaseBenchmark: Self for method chaining
+
+<a id="camel.benchmarks.base.BaseBenchmark.evaluate"></a>
+
+### evaluate
+
+```python
+def evaluate(self, *args, **kwargs):
+```
+
+Evaluate the benchmark results and return calculated metrics.
+
+Default implementation raises NotImplementedError. Subclasses should
+override this method to process results and return metrics.
+
+**Returns:**
+
+  EvalResult: Standardized evaluation result with metrics and
+detailed results.
+
+<a id="camel.benchmarks.base.BaseBenchmark.get_data_split"></a>
+
+### get_data_split
+
+```python
+def get_data_split(self, split: str):
+```
+
+Get data for a specific split.
+
+This is a helper method for benchmarks that use traditional
+train/valid/test splits.
+
+**Parameters:**
+
+- **split** (str): The split name (e.g., "train", "valid", "test").
+
+**Returns:**
+
+  List[Dict[str, Any]]: The data for the specified split.
+
+<a id="camel.benchmarks.base.BaseBenchmark.filter_by_criteria"></a>
+
+### filter_by_criteria
+
+```python
+def filter_by_criteria(self, data: List[Dict[str, Any]], criteria: Dict[str, Any]):
+```
+
+Filter data based on specified criteria.
+
+This is a helper method for filtering tasks by level, type, etc.
+
+**Parameters:**
+
+- **data** (List[Dict[str, Any]]): The data to filter.
+- **criteria** (Dict[str, Any]): Filtering criteria.
+
+**Returns:**
+
+  List[Dict[str, Any]]: Filtered data.
+
+<a id="camel.benchmarks.base.BaseBenchmark.apply_data_options"></a>
+
+### apply_data_options
+
+```python
+def apply_data_options(
+    self,
+    data: List[Dict[str, Any]],
+    randomize: bool = False,
+    subset: Optional[int] = None
+):
+```
+
+Apply common data processing options.
+
+**Parameters:**
+
+- **data** (List[Dict[str, Any]]): The data to process.
+- **randomize** (bool): Whether to randomize the data order.
+- **subset** (Optional[int]): Number of samples to keep.
+
+**Returns:**
+
+  List[Dict[str, Any]]: Processed data.
 
 <a id="camel.benchmarks.base.BaseBenchmark.results"></a>
 
@@ -145,4 +348,44 @@ def results(self):
 
 **Returns:**
 
-  List[Dict[str, Any]]: The results.
+  List[Dict[str, Any]]: The results. Note that subclasses may
+manage results differently and override this property.
+
+<a id="camel.benchmarks.base.BaseBenchmark.dataset"></a>
+
+### dataset
+
+```python
+def dataset(self):
+```
+
+**Returns:**
+
+  Optional[Any]: The external dataset if available.
+
+<a id="camel.benchmarks.base.BaseBenchmark.reset"></a>
+
+### reset
+
+```python
+def reset(self):
+```
+
+Reset the benchmark state.
+
+This method clears any cached results and resets internal state.
+Useful for running multiple evaluations or in RL training loops.
+
+<a id="camel.benchmarks.base.BaseBenchmark.save_results"></a>
+
+### save_results
+
+```python
+def save_results(self, filepath: Optional[str] = None):
+```
+
+Save results to file.
+
+**Parameters:**
+
+- **filepath** (Optional[str]): Path to save results. If None, uses self.save_to if available.

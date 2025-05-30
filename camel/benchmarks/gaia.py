@@ -255,7 +255,9 @@ class GAIABenchmark(BaseBenchmark):
         # Initialize results storage
         self._results = []
 
-        # Process tasks
+        # Save results
+        if self.save_to is None:
+            raise ValueError("save_to must be set")
         with open(self.save_to, "w") as f:
             for task in tqdm(datas, desc="Running"):
                 if not self._prepare_task(task):
@@ -269,6 +271,11 @@ class GAIABenchmark(BaseBenchmark):
                 finally:
                     agent.reset()
 
+        # Reset retriever if available
+        if self.retriever is None:
+            raise ValueError("retriever must be set")
+        self.retriever.reset()
+
         return self._generate_summary()
 
     def _prepare_task(self, task: Dict[str, Any]) -> bool:
@@ -281,6 +288,8 @@ class GAIABenchmark(BaseBenchmark):
                 )
                 return False
             if file_path.suffix in [".pdf", ".docx", ".doc", ".txt"]:
+                if self.retriever is None:
+                    raise ValueError("retriever must be set")
                 if not self.retriever.reset(task_id=task["task_id"]):
                     return False
                 retrieved_info = self.retriever.retrieve(
