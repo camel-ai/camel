@@ -1,5 +1,3 @@
-# Retrievers
-
 For more detailed usage information, please refer to our cookbook: [RAG Cookbook](../cookbooks/advanced_features/agents_with_rag.ipynb)
 
 ## 1. Concept

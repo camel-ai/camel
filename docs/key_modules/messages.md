@@ -1,5 +1,3 @@
-# Message
-
 ## 1. Concept
 
 The `BaseMessage` class is the base class for message objects used in the CAMEL chat system. It is designed to provide a consistent structure for the messages in the system and allow for easy conversion between different message types.

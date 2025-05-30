@@ -1,4 +1,3 @@
-# Storages
 ## 1. Concept
 The Storage module is a comprehensive framework designed for handling various types of data storage mechanisms. It is composed of abstract base classes and concrete implementations, catering to both key-value storage and vector storage systems.
 

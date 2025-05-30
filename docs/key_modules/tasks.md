@@ -1,5 +1,3 @@
-# Task
-
 For more detailed usage information, please refer to our cookbook: [Task Generation Cookbook](../cookbooks/multi_agent_society/task_generation.ipynb)
 
 ## 1. Concept
