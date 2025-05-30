@@ -90,7 +90,7 @@ def simple_intervention_menu(workforce):
         print("  5. Stop workforce")
         
         try:
-            choice = input("\nEnter choice (1-6): ").strip()
+            choice = input("\nEnter choice (1-5): ").strip()
             
             if choice == "1":
                 pending = workforce.get_pending_tasks()
