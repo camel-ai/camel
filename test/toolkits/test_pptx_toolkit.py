@@ -52,12 +52,12 @@ def test_create_presentation_basic(pptx_toolkit):
             "subtitle": "Created by PPTXToolkit",
         },
         {
-            "title": "First Slide",
-            "text": "This is the content of the first slide.",
+            "heading": "First Slide",
+            "bullet_points": ["This is the content of the first slide."],
         },
         {
-            "title": "Second Slide", 
-            "text": "This is the content of the second slide.",
+            "heading": "Second Slide", 
+            "bullet_points": ["This is the content of the second slide."],
         },
     ]
     filename = "test_basic.pptx"
@@ -92,9 +92,9 @@ def test_create_presentation_with_images(pptx_toolkit):
             "subtitle": "Testing image integration",
         },
         {
-            "title": "Slide with Image",
-            "text": "This slide contains an image.",
-            "image": "https://via.placeholder.com/300x200.png",
+            "heading": "Slide with Image",
+            "bullet_points": ["This slide contains an image."],
+            "img_keywords": "https://via.placeholder.com/300x200.png",
         },
     ]
     filename = "test_images.pptx"
@@ -150,12 +150,13 @@ def test_create_presentation_missing_fields(pptx_toolkit):
             # Missing subtitle
         },
         {
-            "title": "Slide without text",
-            # Missing text and image
+            "heading": "Slide without bullet points",
+            "bullet_points": [],
+            # Missing img_keywords
         },
         {
-            # Missing title
-            "text": "Slide with text but no title",
+            "heading": "Basic slide",
+            "bullet_points": ["Slide with text but minimal structure"],
         },
     ]
     filename = "test_missing_fields.pptx"
@@ -180,9 +181,9 @@ def test_create_presentation_invalid_image_url(pptx_toolkit):
             "subtitle": "Should handle gracefully",
         },
         {
-            "title": "Slide with Bad Image",
-            "text": "This slide has an invalid image URL.",
-            "image": "https://invalid-url-that-does-not-exist.example.com/image.jpg",
+            "heading": "Slide with Bad Image",
+            "bullet_points": ["This slide has an invalid image URL."],
+            "img_keywords": "https://invalid-url-that-does-not-exist.example.com/image.jpg",
         },
     ]
     filename = "test_invalid_image.pptx"
