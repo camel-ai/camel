@@ -551,6 +551,7 @@
               "reference/camel.utils.deduplication",
               "reference/camel.utils.filename",
               "reference/camel.utils.mcp",
+              "reference/camel.utils.mcp_client",
               "reference/camel.utils.response_format",
               "reference/camel.utils.token_counting",
               "reference/camel.utils.chunker.base",
@@ -619,6 +620,7 @@
               "reference/camel.loaders.jina_url_reader",
               "reference/camel.loaders.markitdown",
               "reference/camel.loaders.mineru_extractor",
+              "reference/camel.loaders.mistral_reader",
               "reference/camel.loaders.pandas_reader",
               "reference/camel.loaders.scrapegraph_reader",
               "reference/camel.loaders.unstructured_io"
