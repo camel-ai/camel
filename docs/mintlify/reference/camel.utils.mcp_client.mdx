@@ -66,6 +66,7 @@ configuration provided.
 - **config** (Union[ServerConfig, Dict[str, Any]]): Server configuration as either a :obj:`ServerConfig` object or a dictionary that will be converted to a :obj:`ServerConfig`. The configuration determines the transport type and connection parameters.
 - **client_info** (Optional[types.Implementation], optional): Client implementation information to send to the server during initialization. (default: :obj:`None`)
 - **timeout** (Optional[float], optional): Timeout for waiting for messages from the server in seconds. (default: :obj:`10.0`)
+- **strict** (Optional[bool], optional): Strict mode for generating FunctionTool objects. (default: :obj:`False`)
 
 <a id="camel.utils.mcp_client.MCPClient.__init__"></a>
 
@@ -76,7 +77,8 @@ def __init__(
     self,
     config: Union[ServerConfig, Dict[str, Any]],
     client_info: Optional[types.Implementation] = None,
-    timeout: Optional[float] = 10.0
+    timeout: Optional[float] = 10.0,
+    strict: Optional[bool] = False
 ):
 ```
 
@@ -120,6 +122,36 @@ def is_connected(self):
 
 Check if the client is currently connected.
 
+<a id="camel.utils.mcp_client.MCPClient.generate_function_from_mcp_tool"></a>
+
+### generate_function_from_mcp_tool
+
+```python
+def generate_function_from_mcp_tool(self, mcp_tool: types.Tool):
+```
+
+Dynamically generates a Python callable function corresponding to
+a given MCP tool.
+
+**Parameters:**
+
+- **mcp_tool** (types.Tool): The MCP tool definition received from the MCP server.
+
+**Returns:**
+
+  Callable: A dynamically created async Python function that wraps
+the MCP tool.
+
+<a id="camel.utils.mcp_client.MCPClient._build_tool_schema"></a>
+
+### _build_tool_schema
+
+```python
+def _build_tool_schema(self, mcp_tool: types.Tool):
+```
+
+Build tool schema for OpenAI function calling format.
+
 <a id="camel.utils.mcp_client.MCPClient.get_tools"></a>
 
 ### get_tools
@@ -137,16 +169,6 @@ an empty list if the client is not connected.
 Note:
 This method requires an active connection to the MCP server.
 If the client is not connected, an empty list will be returned.
-
-<a id="camel.utils.mcp_client.MCPClient._convert_mcp_tool_to_camel"></a>
-
-### _convert_mcp_tool_to_camel
-
-```python
-def _convert_mcp_tool_to_camel(self, mcp_tool: types.Tool):
-```
-
-Convert an MCP tool to a CAMEL FunctionTool.
 
 <a id="camel.utils.mcp_client.MCPClient.get_text_tools"></a>
 
@@ -177,7 +199,7 @@ as it handles configuration validation and type conversion automatically.
 **Parameters:**
 
 - **config** (Union[Dict[str, Any], ServerConfig]): Server configuration as either a dictionary or a :obj:`ServerConfig` object. If a dictionary is provided, it will be automatically converted to
-- **a**: obj:`ServerConfig`. **kwargs: Additional keyword arguments passed to the :obj:`MCPClient` constructor, such as :obj:`client_info` and :obj:`timeout`.
+- **a**: obj:`ServerConfig`. **kwargs: Additional keyword arguments passed to the :obj:`MCPClient` constructor, such as :obj:`client_info`, :obj:`timeout`, and :obj:`strict`.
 
 **Returns:**
 
