@@ -40,19 +40,6 @@ Result of evaluating a single benchmark sample.
 This class stores the evaluation results for a single benchmark example,
 including score, HTML representation, conversation history, and metrics.
 
-<a id="camel.benchmarks.browsecomp.EvalResult"></a>
-
-## EvalResult
-
-```python
-class EvalResult(BaseModel):
-```
-
-Result of running a complete benchmark evaluation.
-
-This class aggregates results from multiple sample evaluations, storing
-the overall score, detailed metrics, HTML reports, and conversation logs.
-
 <a id="camel.benchmarks.browsecomp.JinjaEnv"></a>
 
 ## JinjaEnv
@@ -183,7 +170,8 @@ def aggregate_results(
 ):
 ```
 
-Aggregate results from multiple evaluations into a single EvalResult.
+Aggregate results from multiple evaluations into a single
+EvalResult.
 
 **Parameters:**
 
@@ -193,7 +181,8 @@ Aggregate results from multiple evaluations into a single EvalResult.
 
 **Returns:**
 
-  EvalResult: An `EvalResult` object containing aggregated results.
+  EvalResult: A `EvalResult` object containing aggregated
+results, following the base class structure.
 
 <a id="camel.benchmarks.browsecomp.BrowseCompBenchmark"></a>
 
@@ -256,14 +245,6 @@ def load(self):
 
   self: The benchmark instance
 
-<a id="camel.benchmarks.browsecomp.BrowseCompBenchmark.train"></a>
-
-### train
-
-```python
-def train(self):
-```
-
 <a id="camel.benchmarks.browsecomp.BrowseCompBenchmark.run"></a>
 
 ### run
@@ -274,7 +255,8 @@ def run(
     pipeline_template: Union[ChatAgent, RolePlaying, Workforce],
     chat_turn_limit: int = 10,
     roleplaying_summarizer: Optional[ChatAgent] = None,
-    task_json_formatter: Optional[ChatAgent] = None
+    task_json_formatter: Optional[ChatAgent] = None,
+    grader: Optional[ChatAgent] = None
 ):
 ```
 
@@ -290,6 +272,11 @@ using tqdm and stores the results in self._raw_results.
 - **chat_turn_limit** (int): Maximum number of conversation turns allowed when using RolePlaying pipeline. (default: :obj:`10`)
 - **roleplaying_summarizer** (Optional[ChatAgent]): Optional ChatAgent to summarize RolePlaying conversations. If None and RolePlaying is used, a default summarizer will be created. (default: :obj:`None`)
 - **task_json_formatter** (Optional[ChatAgent]): Optional ChatAgent to format task JSON. If None and Workforce is used, a default formatter will be created. (default: :obj:`None`)
+- **grader** (Optional[ChatAgent]): Optional ChatAgent to grade the responses. If None, a default grader will be created. (default: :obj:`None`)
+
+**Returns:**
+
+  EvalResult: The evaluation results.
 
 <a id="camel.benchmarks.browsecomp.BrowseCompBenchmark.make_report"></a>
 
@@ -299,7 +286,7 @@ using tqdm and stores the results in self._raw_results.
 def make_report(self, eval_result: EvalResult):
 ```
 
-Create a standalone HTML report from an EvalResult.
+Create a standalone HTML report from a EvalResult.
 
 <a id="camel.benchmarks.browsecomp.BrowseCompBenchmark.validate"></a>
 

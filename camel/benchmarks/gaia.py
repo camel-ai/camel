@@ -20,50 +20,16 @@ import re
 import string
 import uuid
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Protocol, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from tqdm import tqdm
 
 from camel.agents import ChatAgent
-from camel.benchmarks.base import BaseBenchmark
+from camel.benchmarks.base import BaseBenchmark, EvalResult, RetrieverProtocol
 from camel.messages import BaseMessage
 from camel.retrievers.auto_retriever import AutoRetriever
 
 logger = logging.getLogger(__name__)
-
-
-class RetrieverProtocol(Protocol):
-    r"""Protocol for the retriever class. Any retriever class implementing
-    this protocol can be used in the benchmark class.
-    """
-
-    def retrieve(
-        self, query: str, contents: List[str], **kwargs: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        r"""Retrieve the relevant content for the query.
-
-        Args:
-            query (str): The query to retrieve the content for.
-            contents (List[str]): The list of contents to search in.
-            **kwargs (Dict[str, Any]): Additional keyword arguments.
-
-        Returns:
-            Dict[str, Any]: The relevant content for the query.
-        """
-        ...
-
-    def reset(self, **kwargs) -> bool:
-        r"""Reset the retriever.
-        Some benchmarks may require resetting the retriever
-        after each query.
-
-        Args:
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            bool: True if the reset was successful, False otherwise.
-        """
-        ...
 
 
 class DefaultGAIARetriever(AutoRetriever):
@@ -192,19 +158,14 @@ class GAIABenchmark(BaseBenchmark):
                     self._data[label].append(data)
         return self
 
-    @property
-    def train(self):
-        r"""Get the training set."""
-        raise NotImplementedError("GAIA does not have a training set.")
-
-    def run(  # type: ignore[override]
+    def run(
         self,
         agent: ChatAgent,
         on: Literal["train", "valid", "test"],
         level: Union[int, List[int], Literal["all"]],
         randomize: bool = False,
         subset: Optional[int] = None,
-    ) -> Dict[str, Any]:
+    ) -> EvalResult:
         r"""Run the benchmark.
 
         Args:
@@ -218,8 +179,16 @@ class GAIABenchmark(BaseBenchmark):
                 (default: :obj:`None`)
 
         Returns:
-            Dict[str, Any]: The results of the benchmark.
+            EvalResult: The standardized evaluation results of the benchmark.
         """
+        # Store run parameters for later use in metadata
+        self._run_params = {
+            "on": on,
+            "level": level,
+            "randomize": randomize,
+            "subset": subset,
+        }
+
         # Validate inputs
         if on not in ["valid", "test"]:
             raise ValueError(
@@ -342,7 +311,7 @@ class GAIABenchmark(BaseBenchmark):
         }
         self._results.append(result_data)
         file_obj.write(
-            json.dumps(result_data, indent=2) + "\n", ensure_ascii=False
+            json.dumps(result_data, indent=2, ensure_ascii=False) + "\n"
         )
         file_obj.flush()
 
@@ -363,17 +332,41 @@ class GAIABenchmark(BaseBenchmark):
         }
         self._results.append(error_data)
         file_obj.write(
-            json.dumps(error_data, indent=2) + "\n", ensure_ascii=False
+            json.dumps(error_data, indent=2, ensure_ascii=False) + "\n"
         )
         file_obj.flush()
 
-    def _generate_summary(self) -> Dict[str, Any]:
+    def _generate_summary(self) -> EvalResult:
         r"""Generate and return a summary of the benchmark results."""
-        return {
+        metrics = {
             "total": len(self._results),
             "correct": sum(result["score"] for result in self._results),
-            "results": self._results,
+            "accuracy": sum(result["score"] for result in self._results)
+            / len(self._results)
+            if self._results
+            else 0.0,
         }
+
+        # Get levels from results, other params from stored run parameters
+        levels = (
+            list({result["level"] for result in self._results})
+            if self._results
+            else []
+        )
+
+        metadata = {
+            "on": getattr(self, "_run_params", {}).get("on", "unknown"),
+            "levels": levels,
+            "randomize": getattr(self, "_run_params", {}).get(
+                "randomize", False
+            ),
+            "subset": getattr(self, "_run_params", {}).get("subset", None),
+            "num_tasks": len(self._results),
+        }
+
+        return EvalResult(
+            metrics=metrics, details=self._results, metadata=metadata
+        )
 
     def question_scorer(self, model_answer: str, ground_truth: str) -> bool:
         r"""Scorer for the GAIA benchmark.

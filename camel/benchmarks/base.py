@@ -12,12 +12,15 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Protocol, Union
+from typing import Any, Dict, List, Optional, Protocol, TypeVar, Union
 
-logger = logging.getLogger(__name__)
+from camel.logger import get_logger
+
+logger = get_logger(__name__)
+
+T = TypeVar('T', bound='BaseBenchmark')
 
 
 class RetrieverProtocol(Protocol):
@@ -186,12 +189,13 @@ class BaseBenchmark(ABC):
         if self.data_dir:
             if not self.data_dir.exists():
                 logger.info(
-                    f"Data directory {data_dir} does not exist. Creating it."
+                    f"Data directory {self.data_dir} does not exist. "
+                    "Creating it."
                 )
                 self.data_dir.mkdir(parents=True, exist_ok=True)
             if not self.data_dir.is_dir():
                 raise NotADirectoryError(
-                    f"Data directory {data_dir} is not a directory"
+                    f"Data directory {self.data_dir} is not a directory"
                 )
 
         # Initialize internal data storage
@@ -200,7 +204,7 @@ class BaseBenchmark(ABC):
         self._dataset: Optional[Any] = None
 
     @abstractmethod
-    def download(self) -> "BaseBenchmark":
+    def download(self: T) -> T:
         r"""Download the benchmark data.
 
         Subclasses must implement their specific data acquisition logic.
@@ -211,7 +215,7 @@ class BaseBenchmark(ABC):
         """
         pass
 
-    def load(self, *args, **kwargs) -> "BaseBenchmark":
+    def load(self: T, *args: Any, **kwargs: Any) -> T:
         r"""Load the benchmark data.
 
         Default implementation raises NotImplementedError. Subclasses should
@@ -238,7 +242,7 @@ class BaseBenchmark(ABC):
         )
 
     @abstractmethod
-    def run(self, *args, **kwargs) -> Any:
+    def run(self, *args, **kwargs) -> EvalResult:
         r"""Run the benchmark evaluation.
 
         Subclasses must define their required arguments and return type.
@@ -256,11 +260,8 @@ class BaseBenchmark(ABC):
                 - subset: Number of samples to evaluate
 
         Returns:
-            Any: Return type depends on subclass implementation.
-            Common patterns:
-            - EvalResult: Standardized evaluation result
-            - Dict[str, Any]: Metrics dictionary
-            - BaseBenchmark: Self for method chaining
+            EvalResult: Standardized evaluation result with metrics and
+                detailed results.
 
         Examples:
             Different subclasses may have different signatures:
@@ -286,25 +287,6 @@ class BaseBenchmark(ABC):
                 randomize=True,
                 subset=100
             )
-        """
-        pass
-
-    def evaluate(self, *args, **kwargs) -> EvalResult:
-        r"""Evaluate the benchmark results and return calculated metrics.
-
-        Default implementation raises NotImplementedError. Subclasses should
-        override this method to process results and return metrics.
-
-        Args:
-            *args: Variable positional arguments for evaluation parameters.
-            **kwargs: Variable keyword arguments for evaluation parameters.
-
-        Returns:
-            EvalResult: Standardized evaluation result with metrics and
-                detailed results.
-
-        Raises:
-            NotImplementedError: If not implemented by subclass.
         """
         raise NotImplementedError(
             "Subclasses should override this method to process results "
@@ -431,9 +413,10 @@ class BaseBenchmark(ABC):
 
         Args:
             filepath (Optional[str]): Path to save results. If None,
-                uses self.save_to if available.
+                uses self.save_to if available. (default: :obj:`None`)
         """
         import json
+        import os
 
         save_path = filepath or self.save_to
         if not save_path:
@@ -441,6 +424,11 @@ class BaseBenchmark(ABC):
             return
 
         try:
+            # Create directory if it doesn't exist
+            os.makedirs(
+                os.path.dirname(os.path.abspath(save_path)), exist_ok=True
+            )
+
             with open(save_path, 'w', encoding='utf-8') as f:
                 for result_item in self._results:
                     f.write(json.dumps(result_item, ensure_ascii=False) + '\n')

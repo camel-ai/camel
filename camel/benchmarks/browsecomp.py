@@ -25,7 +25,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from pydantic import BaseModel, Field
 
 from camel.agents.chat_agent import ChatAgent
-from camel.benchmarks.base import BaseBenchmark
+from camel.benchmarks.base import BaseBenchmark, EvalResult
 from camel.logger import get_logger
 from camel.societies.role_playing import RolePlaying
 from camel.societies.workforce.workforce import Workforce
@@ -109,19 +109,6 @@ class SingleEvalResult(BaseModel):
     html: str
     convo: MessageList
     metrics: Dict[str, float] = Field(default_factory=dict)
-
-
-class EvalResult(BaseModel):
-    r"""Result of running a complete benchmark evaluation.
-
-    This class aggregates results from multiple sample evaluations, storing
-    the overall score, detailed metrics, HTML reports, and conversation logs.
-    """
-
-    score: Optional[float] = None  # top-line metric
-    metrics: Optional[Dict[str, float]] = None  # other metrics
-    htmls: List[str]  # strings of valid HTML
-    convos: List[MessageList]  # sampled conversations
 
 
 # Define the message template first
@@ -391,7 +378,8 @@ def aggregate_results(
     default_stats: Tuple[str, str] = ("mean", "std"),
     name2stats: Optional[Dict[str, Tuple[str]]] = None,
 ) -> EvalResult:
-    r"""Aggregate results from multiple evaluations into a single EvalResult.
+    r"""Aggregate results from multiple evaluations into a single
+    EvalResult.
 
     Args:
         single_eval_results (List[SingleEvalResult]): A list of
@@ -402,33 +390,48 @@ def aggregate_results(
             metric names to statistics to compute. (default: :obj:`None`)
 
     Returns:
-        EvalResult: An `EvalResult` object containing aggregated results.
+        EvalResult: A `EvalResult` object containing aggregated
+            results, following the base class structure.
     """
     name2stats = name2stats or {}
     name2values = defaultdict(list)
-    htmls = []
-    convos = []
+
+    details_list: List[Dict[str, Any]] = []
 
     for single_eval_result in single_eval_results:
         for name, value in single_eval_result.metrics.items():
             name2values[name].append(value)
         if single_eval_result.score is not None:
             name2values["score"].append(single_eval_result.score)
-        htmls.append(single_eval_result.html)
-        convos.append(single_eval_result.convo)
 
-    final_metrics = {}
+        detail_item: Dict[str, Any] = {
+            "html": single_eval_result.html,
+            "individual_score": single_eval_result.score,
+            "task_metrics": single_eval_result.metrics,
+            "conversation": single_eval_result.convo,
+        }
+        details_list.append(detail_item)
+
+    aggregated_metrics: Dict[str, Union[int, float]] = {}
     for name, values in name2values.items():
-        stats = name2stats.get(name, default_stats)
-        for stat in stats:
+        stats_to_compute = name2stats.get(name, default_stats)
+        for stat in stats_to_compute:
             key = name if stat == "mean" else f"{name}:{stat}"
-            final_metrics[key] = _compute_stat(values, stat)
+            computed_value = _compute_stat(values, stat)
+            if computed_value is not None:
+                aggregated_metrics[key] = computed_value
+
+    metadata_dict: Dict[str, Any] = {
+        "benchmark_name": "BrowseComp",
+        "num_samples_processed": len(single_eval_results),
+        "aggregation_default_stats": default_stats,
+        "aggregation_name2stats": name2stats,
+    }
 
     return EvalResult(
-        score=final_metrics.pop("score", None),
-        metrics=final_metrics,
-        htmls=htmls,
-        convos=convos,
+        metrics=aggregated_metrics,
+        details=details_list,
+        metadata=metadata_dict,
     )
 
 
@@ -518,26 +521,14 @@ class BrowseCompBenchmark(BaseBenchmark):
         self.examples = examples * self.n_repeats
         return self
 
-    @property
-    def train(self):
-        r"""Get the training set.
-
-        This property is implemented to maintain compatibility with
-        the BaseBenchmark interface, but BrowseComp doesn't have a
-        training set.
-
-        Raises:
-            NotImplementedError: BrowseComp does not have a training set.
-        """
-        raise NotImplementedError("BrowseComp does not have a training set.")
-
-    def run(  # type: ignore[override]
+    def run(
         self,
         pipeline_template: Union[ChatAgent, RolePlaying, Workforce],
         chat_turn_limit: int = 10,
         roleplaying_summarizer: Optional[ChatAgent] = None,
         task_json_formatter: Optional[ChatAgent] = None,
-    ) -> None:
+        grader: Optional[ChatAgent] = None,
+    ) -> EvalResult:
         r"""Run the benchmark by processing each example in parallel.
 
         This method applies the provided pipeline to each example in the
@@ -558,6 +549,12 @@ class BrowseCompBenchmark(BaseBenchmark):
             task_json_formatter (Optional[ChatAgent]): Optional ChatAgent to
                 format task JSON. If None and Workforce is used, a default
                 formatter will be created. (default: :obj:`None`)
+            grader (Optional[ChatAgent]): Optional ChatAgent to grade the
+                responses. If None, a default grader will be created.
+                (default: :obj:`None`)
+
+            Returns:
+                EvalResult: The evaluation results.
         """
         from tqdm import tqdm
 
@@ -692,12 +689,35 @@ class BrowseCompBenchmark(BaseBenchmark):
                 )
             )
 
+        # Validate the results and generate the report
+        self.validate(grader=grader)
+
+        return self._eval_result
+
     def make_report(self, eval_result: EvalResult) -> str:
-        r"""Create a standalone HTML report from an EvalResult."""
+        r"""Create a standalone HTML report from a EvalResult."""
+        primary_score_keys = [
+            "score",
+            "score:mean",
+            "accuracy",
+            "is_correct:mean",
+            "is_correct",
+        ]
+        main_score_val = None
+        if eval_result.metrics:
+            for key in primary_score_keys:
+                if key in eval_result.metrics:
+                    main_score_val = eval_result.metrics[key]
+                    break
+
+        report_htmls = [
+            detail.get("html", "") for detail in eval_result.details or []
+        ]
+
         return self.jinja_env.from_string(_report_template).render(
-            score=eval_result.score,
+            score=main_score_val,
             metrics=eval_result.metrics,
-            htmls=eval_result.htmls,
+            htmls=report_htmls,
         )
 
     def validate(self, grader: Optional[ChatAgent] = None) -> None:
@@ -824,30 +844,51 @@ class BrowseCompBenchmark(BaseBenchmark):
                 )
             )
 
-        aggregate_metrics = {
-            "is_correct": sum(
-                result.metrics["is_correct"]
-                for result in self._validated_results
-            )
-            / len(self._validated_results),
-            "is_incorrect": sum(
-                result.metrics["is_incorrect"]
-                for result in self._validated_results
-            )
-            / len(self._validated_results),
-        }
-        logger.info("AGGREGATE METRICS")
-        logger.info(aggregate_metrics)
-        logger.info("##################")
-
-        output_d = {
-            "accuracy": aggregate_metrics["is_correct"],
-        }
-
-        logger.info(f"Accuracy: {output_d['accuracy']:.3f}")
-
         self._eval_result = aggregate_results(self._validated_results)
-        # ^^^ how to use a sampler
+
+        logger.info("AGGREGATED EVALUATION METRICS (from EvalResult):")
+        if self._eval_result.metrics:
+            # Sort metrics for consistent logging if desired
+            sorted_metrics = sorted(self._eval_result.metrics.items())
+            for k, v in sorted_metrics:
+                log_value = f"{v:.3f}" if isinstance(v, float) else str(v)
+                logger.info(f"{k}: {log_value}")
+
+            # Attempt to log a primary score more explicitly if found
+            primary_score_keys = [
+                "score",
+                "score:mean",
+                "accuracy",
+                "is_correct:mean",
+                "is_correct",
+            ]
+            primary_score_val = None
+            primary_score_key_found = None
+            for key in primary_score_keys:
+                if key in self._eval_result.metrics:
+                    primary_score_val = self._eval_result.metrics[key]
+                    primary_score_key_found = key
+                    break
+            if primary_score_key_found:
+                log_primary_score = (
+                    f"{primary_score_val:.3f}"
+                    if isinstance(primary_score_val, float)
+                    else str(primary_score_val)
+                )
+                logger.info(
+                    f"Primary Score ({primary_score_key_found}"
+                    f"): {log_primary_score}"
+                )
+            else:
+                logger.info(
+                    "A specific primary score (e.g., 'score', 'accuracy') "
+                    "was not found in metrics."
+                )
+
+        else:
+            logger.info("No metrics available in EvalResult.")
+        logger.info("####################################################")
+
         if self.save_to is None:
             raise ValueError("save_to must be set")
         report_filename = self.save_to

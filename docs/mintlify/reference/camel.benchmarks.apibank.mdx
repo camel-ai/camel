@@ -89,7 +89,7 @@ def run(
     self,
     agent: ChatAgent,
     level: Literal['level-1', 'level-2'],
-    api_test_enabled = True,
+    api_test_enabled: bool = True,
     randomize: bool = False,
     subset: Optional[int] = None
 ):
@@ -101,9 +101,9 @@ Run the benchmark.
 
 - **agent** (ChatAgent): The agent to run the benchmark.
 - **level** (`Literal['level-1', 'level-2']`): The level to run the benchmark on.
-- **randomize** (bool, optional): Whether to randomize the data.
-- **api_test_enabled** (bool): Whether to test API calling (`True`) or response (`False`) (default: :obj:`False`)
-- **subset** (Optional[int], optional): The subset of data to run. (default: :obj:`None`)
+- **api_test_enabled** (bool): Whether to test API calling or response (default: :obj:`False`)
+- **randomize** (bool): Whether to randomize the data (default: :obj:`False`)
+- **subset** (Optional[int]): The subset of data to run (default: :obj:`None`)
 
 **Returns:**
 

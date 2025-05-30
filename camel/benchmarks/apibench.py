@@ -13,7 +13,6 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
-import logging
 import random
 from pathlib import Path
 from typing import Any, Dict, Literal, Optional
@@ -23,10 +22,11 @@ from tqdm import tqdm
 from tree_sitter import Language, Parser
 
 from camel.agents import ChatAgent
-from camel.benchmarks.base import BaseBenchmark
+from camel.benchmarks.base import BaseBenchmark, EvalResult
+from camel.logger import get_logger
 from camel.utils import download_github_subdirectory
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # Mapping of dataset names to file names
@@ -181,7 +181,7 @@ class APIBenchBenchmark(BaseBenchmark):
 
         download_github_subdirectory(repo, subdir, data_dir)
 
-    def load(self, dataset_name: str, force_download: bool = False):  # type: ignore[override]
+    def load(self, dataset_name: str, force_download: bool = False):
         r"""Load the APIBench Benchmark dataset.
 
         Args:
@@ -241,13 +241,13 @@ class APIBenchBenchmark(BaseBenchmark):
             ast_database.append(ast_tree)
         self._data['ast'] = ast_database
 
-    def run(  # type: ignore[override]
+    def run(
         self,
         agent: ChatAgent,
         dataset_name: Literal["huggingface", "tensorflowhub", "torchhub"],
         randomize: bool = False,
         subset: Optional[int] = None,
-    ) -> Dict[str, Any]:
+    ) -> EvalResult:
         r"""Run the benchmark.
 
         Args:
@@ -336,16 +336,29 @@ class APIBenchBenchmark(BaseBenchmark):
                 f.flush()
 
         total = len(self._results)
-        correct = sum(r["correct"] for r in self.results)
-        hallucination = sum(r["hallucination"] for r in self.results)
+        correct = sum(r["correct"] for r in self._results)
+        hallucination = sum(r["hallucination"] for r in self._results)
 
-        return {
+        metrics_dict: Dict[str, Any] = {
             "total": total,
             "correct": correct,
             "hallucination": hallucination,
-            "accuracy": correct / total if total else "N/A",
-            "hallucination rate": hallucination / total if total else "N/A",
+            "accuracy": correct / total if total else 0.0,
+            "hallucination_rate": hallucination / total if total else 0.0,
         }
+
+        metadata_dict: Dict[str, Any] = {
+            "dataset_name": dataset_name,
+            "randomize": randomize,
+            "subset": subset,
+            "num_tasks": len(datas),
+        }
+
+        return EvalResult(
+            metrics=metrics_dict,
+            details=self._results,
+            metadata=metadata_dict,
+        )
 
 
 # This code is modified from the

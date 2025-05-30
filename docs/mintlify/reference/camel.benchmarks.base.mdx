@@ -207,7 +207,7 @@ Initialize the benchmark.
 ### download
 
 ```python
-def download(self):
+def download(self: T):
 ```
 
 **Returns:**
@@ -219,7 +219,7 @@ def download(self):
 ### load
 
 ```python
-def load(self, *args, **kwargs):
+def load(self: T, *args: Any, **kwargs: Any):
 ```
 
 Load the benchmark data.
@@ -244,27 +244,6 @@ Run the benchmark evaluation.
 
 Subclasses must define their required arguments and return type.
 This method should handle the core evaluation logic.
-
-**Returns:**
-
-  Any: Return type depends on subclass implementation.
-Common patterns:
-- EvalResult: Standardized evaluation result
-- Dict[str, Any]: Metrics dictionary
-- BaseBenchmark: Self for method chaining
-
-<a id="camel.benchmarks.base.BaseBenchmark.evaluate"></a>
-
-### evaluate
-
-```python
-def evaluate(self, *args, **kwargs):
-```
-
-Evaluate the benchmark results and return calculated metrics.
-
-Default implementation raises NotImplementedError. Subclasses should
-override this method to process results and return metrics.
 
 **Returns:**
 
@@ -388,4 +367,4 @@ Save results to file.
 
 **Parameters:**
 
-- **filepath** (Optional[str]): Path to save results. If None, uses self.save_to if available.
+- **filepath** (Optional[str]): Path to save results. If None, uses self.save_to if available. (default: :obj:`None`)

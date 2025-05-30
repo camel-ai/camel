@@ -27,7 +27,7 @@ from datasets import load_dataset
 from tqdm import tqdm
 
 from camel.agents import ChatAgent
-from camel.benchmarks.base import BaseBenchmark
+from camel.benchmarks.base import BaseBenchmark, EvalResult
 
 logger = logging.getLogger(__name__)
 
@@ -269,7 +269,7 @@ class NexusBenchmark(BaseBenchmark):
         ],
         randomize: bool = False,
         subset: Optional[int] = None,
-    ) -> Dict[str, Any]:
+    ) -> EvalResult:
         r"""Run the benchmark.
 
         Args:
@@ -286,6 +286,12 @@ class NexusBenchmark(BaseBenchmark):
         Returns:
             Dict[str, Any]: The results of the benchmark.
         """
+
+        self._run_params = {
+            "task": task,
+            "randomize": randomize,
+            "subset": subset,
+        }
 
         if task not in dataset_mapping:
             raise ValueError(f"Invalid value for dataset: {task}.")
@@ -356,11 +362,24 @@ class NexusBenchmark(BaseBenchmark):
         total = len(self._results)
         correct = sum(r["result"] for r in self._results)
 
-        return {
+        metrics_dict: Dict[str, Union[int, float]] = {
             "total": total,
             "correct": correct,
-            "accuracy": correct / total,
+            "accuracy": correct / total if total else 0.0,
         }
+
+        metadata_dict: Dict[str, Any] = {
+            "task": self._run_params.get("task", "unknown"),
+            "randomize": self._run_params.get("randomize", False),
+            "subset": self._run_params.get("subset", None),
+            "num_tasks": total,
+        }
+
+        return EvalResult(
+            metrics=metrics_dict,
+            details=self._results,
+            metadata=metadata_dict,
+        )
 
 
 # Utility functions
