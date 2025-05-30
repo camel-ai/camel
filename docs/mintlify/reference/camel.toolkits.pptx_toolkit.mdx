@@ -151,7 +151,12 @@ Get the dimensions of a slide in inches.
 ### _write_pptx_file
 
 ```python
-def _write_pptx_file(self, file_path: Path, content: List[Dict[str, Any]]):
+def _write_pptx_file(
+    self,
+    file_path: Path,
+    content: List[Dict[str, Any]],
+    template: Optional[str] = None
+):
 ```
 
 Write text content to a PPTX file with enhanced formatting.
@@ -160,13 +165,19 @@ Write text content to a PPTX file with enhanced formatting.
 
 - **file_path** (Path): The target file path.
 - **content** (List[Dict[str, Any]]): The content to write to the PPTX file. Must be a list of dictionaries where: - First element: Title slide with keys 'title' and 'subtitle' - Subsequent elements: Content slides with keys 'title', 'text' (optional)
+- **template** (Optional[str]): The name of the template to use. If not provided, the default template will be used.
 
 <a id="camel.toolkits.pptx_toolkit.PPTXToolkit.create_presentation"></a>
 
 ### create_presentation
 
 ```python
-def create_presentation(self, content: str, filename: str):
+def create_presentation(
+    self,
+    content: str,
+    filename: str,
+    template: Optional[str] = None
+):
 ```
 
 Create a PowerPoint presentation (PPTX) file.
@@ -175,6 +186,7 @@ Create a PowerPoint presentation (PPTX) file.
 
 - **content** (str): The content to write to the PPTX file as a JSON string. Must represent a list of dictionaries with specific structure: - First dict: title slide `{"title": str, "subtitle": str}` - Other dicts: content slides `{"title": str, "text": str (optional), "image": str URL (optional)}`
 - **filename** (str): The name or path of the file. If a relative path is supplied, it is resolved to self.output_dir.
+- **template** (Optional[str]): The name of the template to use. If not provided, the default template will be used.
 
 **Returns:**
 
