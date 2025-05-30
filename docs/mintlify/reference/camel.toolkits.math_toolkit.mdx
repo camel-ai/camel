@@ -97,7 +97,7 @@ Multiplies two numbers.
 
 - **a** (Union[float, int]): The multiplier in the multiplication.
 - **b** (Union[float, int]): The multiplicand in the multiplication.
-- **decimal_places** (int, optional): The number of decimal places to round to. Defaults to 2.
+- **decimal_places** (int, optional): The number of decimal places to round to. (default: :obj:`2`)
 
 **Returns:**
 
@@ -122,7 +122,7 @@ Divides two numbers.
 
 - **a** (Union[float, int]): The dividend in the division.
 - **b** (Union[float, int]): The divisor in the division.
-- **decimal_places** (int, optional): The number of decimal places to round to. Defaults to 2.
+- **decimal_places** (int, optional): The number of decimal places to round to. (default: :obj:`2`)
 
 **Returns:**
 
@@ -140,8 +140,8 @@ Rounds a number to a specified number of decimal places.
 
 **Parameters:**
 
-- **a** (Union[float, int]): The number to be rounded.
-- **decimal_places** (int, optional): The number of decimal places to round to. Defaults to 0.
+- **a** (float): The number to be rounded.
+- **decimal_places** (int, optional): The number of decimal places to round to. (default: :obj:`0`)
 
 **Returns:**
 
@@ -197,7 +197,7 @@ Install specified math packages.
 
 **Parameters:**
 
-- **packages** (Optional[List[str]]): Optional list of packages to install.If not provided, uses the packages specified during initialization.
+- **packages** (Optional[List[str]]): Optional list of packages to install. If not provided, uses the packages specified during initialization. (default: :obj:`None`)
 
 **Returns:**
 
