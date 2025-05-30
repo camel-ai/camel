@@ -54,6 +54,7 @@ search_model = ModelFactory.create(
 chat_agent = ChatAgent(
     model=chat_model,
     system_message="You are a helpful assistant.",
+    max_iteration=None,
     # Uncomment to set a specific output language
     # output_language="en",  # or "zh", "es", "fr", etc.
 )
@@ -66,6 +67,7 @@ with tasks.
 reasoning_agent = ChatAgent(
     model=reasoning_model,
     system_message="You are a helpful assistant.",
+    max_iteration=None,
 )
 
 reasoning_agent_description = """
@@ -78,6 +80,7 @@ search_agent = ChatAgent(
     model=search_model,
     system_message="You are a helpful assistant.",
     tools=SearchToolkit().get_tools(),  # Add search tool
+    max_iteration=None,
 )
 
 search_agent_description = """

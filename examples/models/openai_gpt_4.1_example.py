@@ -24,7 +24,7 @@ gpt_4_1_model = ModelFactory.create(
 )
 
 # Set agent
-camel_agent = ChatAgent(model=gpt_4_1_model)
+camel_agent = ChatAgent(model=gpt_4_1_model, max_iteration=None)
 
 # Set user message
 user_msg = """Say hi to CAMEL AI, one open-source community 

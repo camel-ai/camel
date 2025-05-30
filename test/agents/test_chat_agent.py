@@ -99,8 +99,8 @@ def test_chat_agent(model, step_call_count=3):
         dict(assistant_role="doctor"),
         role_tuple=("doctor", RoleType.ASSISTANT),
     )
-    assistant_with_sys_msg = ChatAgent(system_msg, model=model)
-    assistant_without_sys_msg = ChatAgent(model=model)
+    assistant_with_sys_msg = ChatAgent(system_msg, model=model, max_iteration=None)
+    assistant_without_sys_msg = ChatAgent(model=model, max_iteration=None)
 
     assert str(assistant_with_sys_msg) == (
         "ChatAgent(doctor, " f"RoleType.ASSISTANT, {ModelType.GPT_4O_MINI})"
@@ -140,6 +140,209 @@ def test_chat_agent(model, step_call_count=3):
 
 
 @pytest.mark.model_backend
+def test_max_iteration_n():
+    system_message = BaseMessage(
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content="You are a help assistant that uses tools.",
+    )
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4O_MINI,
+    )
+    agent = ChatAgent(
+        system_message=system_message,
+        model=model,
+        tools=MathToolkit().get_tools(),
+        max_iteration=2,  # Set max_iteration to 2
+    )
+
+    user_msg = BaseMessage(
+        role_name="User",
+        role_type=RoleType.USER,
+        meta_dict=dict(),
+        content="Calculate 2*3 then add 4.",
+    )
+
+    # Mock responses:
+    # 1. Model requests multiply(2,3)
+    model_backend_rsp_tool_call_multiply = ChatCompletion(
+        id='mock_id_multiply',
+        choices=[
+            Choice(
+                finish_reason='tool_calls', index=0, logprobs=None,
+                message=ChatCompletionMessage(
+                    content=None, role='assistant',
+                    tool_calls=[
+                        ChatCompletionMessageToolCall(
+                            id='call_multiply_1',
+                            function=Function(
+                                arguments='{"a": 2, "b": 3, "decimal_places": 0}',
+                                name='multiply'),
+                            type='function')
+                    ]))],
+        created=1, model='gpt-4o-mini', object='chat.completion',
+        usage=CompletionUsage(completion_tokens=10, prompt_tokens=10, total_tokens=20))
+
+    # 2. Model requests add(6,4) - this is the Nth (2nd) call
+    model_backend_rsp_tool_call_add = ChatCompletion(
+        id='mock_id_add',
+        choices=[
+            Choice(
+                finish_reason='tool_calls', index=0, logprobs=None,
+                message=ChatCompletionMessage(
+                    content=None, role='assistant',
+                    tool_calls=[
+                        ChatCompletionMessageToolCall(
+                            id='call_add_1',
+                            function=Function(
+                                arguments='{"a": 6, "b": 4, "decimal_places": 0}',
+                                name='add'),
+                            type='function')
+                    ]))],
+        created=2, model='gpt-4o-mini', object='chat.completion',
+        usage=CompletionUsage(completion_tokens=10, prompt_tokens=10, total_tokens=20))
+
+    model.run = MagicMock(side_effect=[
+        model_backend_rsp_tool_call_multiply,
+        model_backend_rsp_tool_call_add,
+        # No third call should happen
+    ])
+
+    agent_response = agent.step(user_msg)
+
+    # Assert model.run was called exactly N=2 times
+    assert model.run.call_count == 2, "model.run should be called twice for max_iteration=2"
+    
+    # Tool calls made: only the first one (multiply) should have been fully processed
+    tool_calls: List[ToolCallingRecord] = agent_response.info.get('tool_calls', [])
+    assert len(tool_calls) == 1, "Expected one tool call record to be fully processed (multiply)"
+    assert tool_calls[0].tool_name == "multiply"
+    assert tool_calls[0].args == {"a": 2, "b": 3, "decimal_places": 0}
+    assert tool_calls[0].result == 6
+
+    # The agent's message should be empty because it stopped after the Nth model call,
+    # which was a tool request, and didn't proceed to generate a content message.
+    assert not agent_response.msgs[0].content, "Agent message content should be empty"
+    
+    # The finish reason for the last model interaction (which was the Nth call)
+    # should be 'tool_calls'.
+    assert agent_response.info['finish_reasons'][0] == 'tool_calls'
+
+    # Check if the second tool call request (add) is present in external_tool_call_requests
+    # because it was requested by the Nth model call but not executed internally.
+    # For internal tools, when max_iteration is hit, the last tool_call_request is *not*
+    # automatically put into external_tool_call_requests. The step simply ends.
+    # If it were an external tool, it would appear here.
+    # So, for internal tools, we just check that no more tool calls were processed.
+    external_tool_requests = agent_response.info.get('external_tool_call_requests')
+    assert external_tool_requests is None or len(external_tool_requests) == 0, \
+        "No external tool requests should be pending if the last call was for an internal tool cut by max_iteration"
+
+
+@pytest.mark.model_backend
+def test_tool_calling_sync_multi_step(step_call_count=1): # Test a multi-step tool call
+    system_message = BaseMessage(
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content="You are a help assistant.",
+    )
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4O_MINI,
+    )
+    # Explicitly set max_iteration=None or rely on default
+    agent = ChatAgent(
+        system_message=system_message,
+        model=model,
+        tools=MathToolkit().get_tools(),
+        max_iteration=None,
+    )
+
+    user_msg = BaseMessage(
+        role_name="User",
+        role_type=RoleType.USER,
+        meta_dict=dict(),
+        content="Calculate the result of: 2*8-10.",
+    )
+
+    # Mock responses for a 3-step process:
+    # 1. Call multiply(2,8)
+    # 2. Call sub(16,10) (using result of multiply)
+    # 3. Final content response
+    model_backend_rsp_tool_call_multiply = ChatCompletion(
+        id='mock_id_multiply',
+        choices=[
+            Choice(
+                finish_reason='tool_calls', index=0, logprobs=None,
+                message=ChatCompletionMessage(
+                    content=None, role='assistant',
+                    tool_calls=[
+                        ChatCompletionMessageToolCall(
+                            id='call_multiply_123',
+                            function=Function(
+                                arguments='{"a": 2, "b": 8, "decimal_places": 0}',
+                                name='multiply'),
+                            type='function')
+                    ]))],
+        created=1, model='gpt-4o-mini', object='chat.completion',
+        usage=CompletionUsage(completion_tokens=10, prompt_tokens=10, total_tokens=20))
+
+    model_backend_rsp_tool_call_sub = ChatCompletion(
+        id='mock_id_sub',
+        choices=[
+            Choice(
+                finish_reason='tool_calls', index=0, logprobs=None,
+                message=ChatCompletionMessage(
+                    content=None, role='assistant',
+                    tool_calls=[
+                        ChatCompletionMessageToolCall(
+                            id='call_sub_456',
+                            function=Function(
+                                arguments='{"a": 16, "b": 10}', name='sub'),
+                            type='function')
+                    ]))],
+        created=2, model='gpt-4o-mini', object='chat.completion',
+        usage=CompletionUsage(completion_tokens=10, prompt_tokens=10, total_tokens=20))
+
+    model_backend_rsp_content = ChatCompletion(
+        id='mock_id_content',
+        choices=[
+            Choice(
+                finish_reason='stop', index=0, logprobs=None,
+                message=ChatCompletionMessage(
+                    content='The result of (2 * 8) - 10 is 6.',
+                    role='assistant'))],
+        created=3, model='gpt-4o-mini', object='chat.completion',
+        usage=CompletionUsage(completion_tokens=10, prompt_tokens=10, total_tokens=20))
+
+    model.run = MagicMock(side_effect=[
+        model_backend_rsp_tool_call_multiply,
+        model_backend_rsp_tool_call_sub,
+        model_backend_rsp_content,
+    ])
+
+    agent_response = agent.step(user_msg)
+
+    assert model.run.call_count == 3, "model.run should be called three times for a two-step tool sequence"
+    
+    tool_calls: List[ToolCallingRecord] = agent_response.info.get('tool_calls', [])
+    assert len(tool_calls) == 2, "Expected two tool call records"
+    
+    assert tool_calls[0].tool_name == "multiply"
+    assert tool_calls[0].args == {"a": 2, "b": 8, "decimal_places": 0}
+    assert tool_calls[0].result == 16
+
+    assert tool_calls[1].tool_name == "sub"
+    assert tool_calls[1].args == {"a": 16, "b": 10}
+    assert tool_calls[1].result == 6
+    
+    assert agent_response.msgs[0].content == "The result of (2 * 8) - 10 is 6."
+
+
+@pytest.mark.model_backend
 def test_chat_agent_stored_messages():
     system_msg = BaseMessage(
         role_name="assistant",
@@ -148,8 +351,8 @@ def test_chat_agent_stored_messages():
         content="You are a help assistant.",
     )
 
-    assistant_with_sys_msg = ChatAgent(system_msg)
-    assistant_without_sys_msg = ChatAgent()
+    assistant_with_sys_msg = ChatAgent(system_msg, max_iteration=None)
+    assistant_without_sys_msg = ChatAgent(max_iteration=None)
 
     expected_context = [system_msg.to_openai_system_message()]
 
@@ -191,7 +394,7 @@ def test_chat_agent_step_with_structure_response(step_call_count=3):
         content="You are a help assistant.",
     )
     assistant = ChatAgent(
-        system_message=system_msg,
+        system_message=system_msg, max_iteration=None
     )
 
     class JokeResponse(BaseModel):
@@ -349,6 +552,7 @@ def test_chat_agent_step_with_external_tools(step_call_count=3):
         model=model,
         tools=internal_tools,
         external_tools=external_tools,
+        max_iteration=None,
     )
 
     usr_msg = BaseMessage.make_user_message(
@@ -493,6 +697,7 @@ async def test_chat_agent_astep_with_external_tools(step_call_count=3):
         model=model,
         tools=internal_tools,
         external_tools=external_tools,
+        max_iteration=None,
     )
 
     usr_msg = BaseMessage.make_user_message(
@@ -524,6 +729,7 @@ def test_chat_agent_messages_window():
     assistant = ChatAgent(
         system_message=system_msg,
         message_window_size=2,
+        max_iteration=None,
     )
 
     user_msg = BaseMessage(
@@ -559,6 +765,7 @@ def test_chat_agent_step_exceed_token_number(step_call_count=3):
     assistant = ChatAgent(
         system_message=system_msg,
         token_limit=1,
+        max_iteration=None,
     )
     assistant.model_backend.run = MagicMock(
         return_value=model_backend_rsp_base
@@ -618,8 +825,8 @@ def test_chat_agent_multiple_return_messages(n, step_call_count=3):
         meta_dict=None,
         content="You are a helpful assistant.",
     )
-    assistant_with_sys_msg = ChatAgent(system_msg, model=model)
-    assistant_without_sys_msg = ChatAgent(model=model)
+    assistant_with_sys_msg = ChatAgent(system_msg, model=model, max_iteration=None)
+    assistant_without_sys_msg = ChatAgent(model=model, max_iteration=None)
 
     assistant_with_sys_msg.reset()
     assistant_without_sys_msg.reset()
@@ -685,7 +892,7 @@ def test_chat_agent_multiple_return_message_error(n, step_call_count=3):
         content="You are a helpful assistant.",
     )
 
-    assistant = ChatAgent(system_msg, model=model)
+    assistant = ChatAgent(system_msg, model=model, max_iteration=None)
     assistant.reset()
 
     user_msg = BaseMessage(
@@ -721,7 +928,7 @@ def test_chat_agent_stream_output(step_call_count=3):
         model_config_dict=stream_model_config.as_dict(),
     )
     model.run = MagicMock(return_value=model_backend_rsp_base)
-    stream_assistant = ChatAgent(system_msg, model=model)
+    stream_assistant = ChatAgent(system_msg, model=model, max_iteration=None)
     stream_assistant.reset()
     for i in range(step_call_count):
         stream_assistant_response = stream_assistant.step(user_msg)
@@ -751,7 +958,7 @@ def test_set_output_language():
         meta_dict=None,
         content="You are a help assistant.",
     )
-    agent = ChatAgent(system_message=system_message)
+    agent = ChatAgent(system_message=system_message, max_iteration=None)
     assert agent.output_language is None
 
     # Set the output language to "Arabic"
@@ -779,8 +986,8 @@ def test_set_multiple_output_language():
         meta_dict=None,
         content="You are a help assistant.",
     )
-    agent_with_sys_msg = ChatAgent(system_message=system_message)
-    agent_without_sys_msg = ChatAgent()
+    agent_with_sys_msg = ChatAgent(system_message=system_message, max_iteration=None)
+    agent_without_sys_msg = ChatAgent(max_iteration=None)
 
     # Verify that the length of the system message is kept constant even when
     # multiple set_output_language operations are called
@@ -816,7 +1023,7 @@ def test_set_multiple_output_language():
 
 
 @pytest.mark.model_backend
-def test_tool_calling_sync(step_call_count=3):
+def test_tool_calling_sync_max_iteration_1(step_call_count=1):  # Reduced step_call_count for focused test
     system_message = BaseMessage(
         role_name="assistant",
         role_type=RoleType.ASSISTANT,
@@ -831,6 +1038,7 @@ def test_tool_calling_sync(step_call_count=3):
         system_message=system_message,
         model=model,
         tools=MathToolkit().get_tools(),
+        max_iteration=1,  # Set max_iteration to 1
     )
 
     ref_funcs = MathToolkit().get_tools()
@@ -948,35 +1156,53 @@ def test_tool_calling_sync(step_call_count=3):
         ),
     )
 
-    model.run = MagicMock(
-        side_effect=[
-            model_backend_rsp_tool,
-            model_backend_rsp_tool1,
-            model_backend_rsp_tool2,
-        ]
-        * step_call_count
+    # Mock model.run to be called only once
+    # The first response should be a tool call
+    model_backend_rsp_tool_call_1 = ChatCompletion(
+        id='mock_id_tc1',
+        choices=[
+            Choice(
+                finish_reason='tool_calls',
+                index=0,
+                logprobs=None,
+                message=ChatCompletionMessage(
+                    content=None,
+                    role='assistant',
+                    tool_calls=[
+                        ChatCompletionMessageToolCall(
+                            id='call_multiply_123',
+                            function=Function(
+                                arguments='{"a": 2, "b": 8, "decimal_places": 0}',
+                                name='multiply',
+                            ),
+                            type='function',
+                        )
+                    ],
+                ),
+            )
+        ],
+        created=1730752528, model='gpt-4o-mini-2024-07-18', object='chat.completion',
+        usage=CompletionUsage(completion_tokens=20, prompt_tokens=100, total_tokens=120),
     )
+    # If max_iteration=1 and a tool is called, the agent should not make a second call
+    # to the model with the tool's result within the same step.
+    model.run = MagicMock(return_value=model_backend_rsp_tool_call_1)
 
-    for i in range(step_call_count):
-        agent_response = agent.step(user_msg)
+    agent_response = agent.step(user_msg)
 
-        tool_calls: List[ToolCallingRecord] = [
-            call for call in agent_response.info['tool_calls']
-        ]
+    # Assert model.run was called exactly once
+    assert model.run.call_count == 1, "model.run should be called once for max_iteration=1"
 
-        assert len(tool_calls) > 0, f"Error in calling round {i+1}"
-        assert str(tool_calls[0]).startswith(
-            "Tool Execution"
-        ), f"Error in calling round {i+1}"
-        assert (
-            tool_calls[0].tool_name == "multiply"
-        ), f"Error in calling round {i+1}"
-        assert tool_calls[0].args == {
-            "a": 2,
-            "b": 8,
-            'decimal_places': 0,
-        }, f"Error in calling round {i+1}"
-        assert tool_calls[0].result == 16, f"Error in calling round {i+1}"
+    # Check that a tool call was made and recorded
+    tool_calls: List[ToolCallingRecord] = agent_response.info.get('tool_calls', [])
+    assert len(tool_calls) == 1, "Expected one tool call record"
+    assert tool_calls[0].tool_name == "multiply"
+    assert tool_calls[0].args == {"a": 2, "b": 8, 'decimal_places': 0}
+    assert tool_calls[0].result == 16 # multiply(2,8) = 16
+
+    # The final response message from the agent should be empty as it ended with a tool call
+    # and max_iteration=1 prevents it from processing the tool result to give a final textual answer.
+    assert not agent_response.msgs[0].content, "Agent message content should be empty"
 
 
 @pytest.mark.model_backend
@@ -999,6 +1225,7 @@ async def test_tool_calling_math_async(step_call_count=3):
         system_message=system_message,
         model=model,
         tools=math_funcs,
+        max_iteration=None,
     )
 
     ref_funcs = math_funcs
@@ -1160,6 +1387,7 @@ async def test_tool_calling_async(step_call_count=3):
         system_message=system_message,
         model=model,
         tools=[FunctionTool(async_sleep)],
+        max_iteration=None,
     )
 
     assert len(agent.tool_dict) == 1
@@ -1202,6 +1430,7 @@ def test_response_words_termination(step_call_count=3):
     agent = ChatAgent(
         system_message=system_message,
         response_terminators=[response_terminator],
+        max_iteration=None,
     )
     user_msg = BaseMessage(
         role_name="User",
@@ -1239,6 +1468,7 @@ def test_chat_agent_vision(step_call_count=3):
     agent = ChatAgent(
         system_message=system_message,
         model=model,
+        max_iteration=None,
     )
 
     # Create an all blue PNG image:
@@ -1297,13 +1527,13 @@ def test_chat_agent_creation_methods():
     specifications.
     """
     # Method 1: Initialize with just a string (model name)
-    agent_1 = ChatAgent("You are a helpful assistant.", model="gpt-4o-mini")
+    agent_1 = ChatAgent("You are a helpful assistant.", model="gpt-4o-mini", max_iteration=None)
     assert agent_1.model_type.value == "gpt-4o-mini"
     assert isinstance(agent_1.model_backend.models[0], OpenAIModel)
 
     # Method 2: Initialize with just a ModelType enum
     agent_2 = ChatAgent(
-        "You are a helpful assistant.", model=ModelType.GPT_4O_MINI
+        "You are a helpful assistant.", model=ModelType.GPT_4O_MINI, max_iteration=None
     )
     assert agent_2.model_type.value == "gpt-4o-mini"
     assert isinstance(agent_2.model_backend.models[0], OpenAIModel)
@@ -1311,7 +1541,7 @@ def test_chat_agent_creation_methods():
     # Method 3: Initialize with a tuple of strings (platform, model)
     agent_3 = ChatAgent(
         "You are a helpful assistant.",
-        model=("anthropic", "claude-3-5-sonnet-latest"),
+        model=("anthropic", "claude-3-5-sonnet-latest"), max_iteration=None
     )
     assert agent_3.model_type.value == "claude-3-5-sonnet-latest"
     assert (
@@ -1323,13 +1553,13 @@ def test_chat_agent_creation_methods():
     # Method 4: Initialize with a tuple of enums
     agent_4 = ChatAgent(
         "You are a helpful assistant.",
-        model=(ModelPlatformType.ANTHROPIC, ModelType.CLAUDE_3_5_SONNET),
+        model=(ModelPlatformType.ANTHROPIC, ModelType.CLAUDE_3_5_SONNET), max_iteration=None
     )
     assert agent_4.model_type.value == "claude-3-5-sonnet-latest"
     assert isinstance(agent_4.model_backend.models[0], AnthropicModel)
 
     # Method 5: Default model when none is specified
-    agent_5 = ChatAgent("You are a helpful assistant.")
+    agent_5 = ChatAgent("You are a helpful assistant.", max_iteration=None)
     assert agent_5.model_type.value == ModelType.DEFAULT.value
 
     # All agents should have the same system message

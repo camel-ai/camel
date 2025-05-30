@@ -150,14 +150,14 @@ class VideoAnalysisToolkit(BaseToolkit):
             from camel.agents import ChatAgent
 
             self.vl_agent = ChatAgent(
-                model=self.vl_model, output_language=self.output_language
+                model=self.vl_model, output_language=self.output_language, max_iteration=None
             )
         else:
             # If no model is provided, use default model in ChatAgent
             # Import ChatAgent at runtime to avoid circular imports
             from camel.agents import ChatAgent
 
-            self.vl_agent = ChatAgent(output_language=self.output_language)
+            self.vl_agent = ChatAgent(output_language=self.output_language, max_iteration=None)
             logger.warning(
                 "No vision-language model provided. Using default model in "
                 "ChatAgent."

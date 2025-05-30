@@ -43,6 +43,7 @@ def test_sharegpt_converter():
         ),
         model=model,
         tools=tool_list,
+        max_iteration=None,
     )
     collector = ShareGPTDataCollector().record(agent).start()
 
@@ -80,6 +81,7 @@ def test_sharegpt_llm_converter():
         ),
         model=model,
         tools=tool_list,
+        max_iteration=None,
     )
     collector = ShareGPTDataCollector().record(agent).start()
 

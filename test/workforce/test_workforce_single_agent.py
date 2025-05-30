@@ -25,7 +25,7 @@ async def test_get_dep_tasks_info():
         role_name="programmer",
         content="You are a python programmer.",
     )
-    agent = ChatAgent(sys_msg)
+    agent = ChatAgent(sys_msg, max_iteration=None)
     test_worker = SingleAgentWorker('agent1', agent)
     human_task = Task(
         content='develop a python program of investing stock.',

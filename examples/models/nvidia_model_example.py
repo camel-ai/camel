@@ -27,7 +27,7 @@ model = ModelFactory.create(
 sys_msg = "You are a helpful assistant."
 
 # Set agent
-camel_agent = ChatAgent(system_message=sys_msg, model=model)
+camel_agent = ChatAgent(system_message=sys_msg, model=model, max_iteration=None)
 
 user_msg = """give me python code to develop a trading bot"""
 
@@ -154,7 +154,7 @@ model = ModelFactory.create(
 sys_msg = "You are a helpful assistant."
 
 # Set agent
-camel_agent = ChatAgent(system_message=sys_msg, model=model)
+camel_agent = ChatAgent(system_message=sys_msg, model=model, max_iteration=None)
 
 user_msg = """Say hi to CAMEL AI, one open-source community 
     dedicated to the study of autonomous and communicative agents."""
