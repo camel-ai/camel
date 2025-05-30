@@ -119,3 +119,22 @@ def update_action_space(self, action_space: Dict[str, Any]):
 ```
 
 Updates action space for *python* interpreter
+
+<a id="camel.interpreters.docker_interpreter.DockerInterpreter.execute_command"></a>
+
+### execute_command
+
+```python
+def execute_command(self, command: str):
+```
+
+Executes a command in the Docker container and returns its output.
+
+**Parameters:**
+
+- **command** (str): The command to execute in the container.
+
+**Returns:**
+
+  str: A string containing the captured stdout and stderr of the
+executed command.

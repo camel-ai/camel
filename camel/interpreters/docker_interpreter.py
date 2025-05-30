@@ -92,8 +92,11 @@ class DockerInterpreter(BaseInterpreter):
         This method ensures that the Docker container is removed when the
         interpreter is deleted.
         """
-        if self._container is not None:
-            self._container.remove(force=True)
+        try:
+            if self._container is not None:
+                self._container.remove(force=True)
+        except ImportError:
+            pass
 
     def _initialize_if_needed(self) -> None:
         if self._container is not None:
@@ -261,3 +264,36 @@ class DockerInterpreter(BaseInterpreter):
         raise RuntimeError(
             "SubprocessInterpreter doesn't support " "`action_space`."
         )
+
+    def execute_command(self, command: str) -> str:
+        r"""Executes a command in the Docker container and returns its output.
+
+        Args:
+            command (str): The command to execute in the container.
+
+        Returns:
+            str: A string containing the captured stdout and stderr of the
+                executed command.
+
+        Raises:
+            InterpreterError: If the container is not initialized or there is
+                an error executing the command.
+        """
+        self._initialize_if_needed()
+
+        if self._container is None:
+            raise InterpreterError(
+                "Container is not initialized. Try running the command again."
+            )
+
+        try:
+            stdout, stderr = self._container.exec_run(
+                command,
+                demux=True,
+            ).output
+            exec_result = f"{stdout.decode()}" if stdout else ""
+            exec_result += f"(stderr: {stderr.decode()})" if stderr else ""
+            return exec_result
+
+        except Exception as e:
+            raise InterpreterError(f"Failed to execute command: {e!s}") from e

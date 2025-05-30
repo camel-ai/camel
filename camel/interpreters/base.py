@@ -47,3 +47,8 @@ class BaseInterpreter(ABC):
     def update_action_space(self, action_space: Dict[str, Any]) -> None:
         r"""Updates action space for *python* interpreter"""
         pass
+
+    @abstractmethod
+    def execute_command(self, command: str) -> str:
+        r"""Executes a command in the interpreter."""
+        pass

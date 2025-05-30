@@ -138,8 +138,9 @@ def test_invalid_sandbox_type():
 
 def test_get_tools(code_execution_toolkit):
     tools = code_execution_toolkit.get_tools()
-    assert len(tools) == 1
+    assert len(tools) == 2
     assert tools[0].get_function_name() == "execute_code"
+    assert tools[1].get_function_name() == "execute_command"
 
 
 def test_verbose_output(code_execution_toolkit):

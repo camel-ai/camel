@@ -63,12 +63,15 @@ class E2BInterpreter(BaseInterpreter):
         This method ensures that the e2b sandbox is killed when the
         interpreter is deleted.
         """
-        if (
-            hasattr(self, '_sandbox')
-            and self._sandbox is not None
-            and self._sandbox.is_running()
-        ):
-            self._sandbox.kill()
+        try:
+            if (
+                hasattr(self, '_sandbox')
+                and self._sandbox is not None
+                and self._sandbox.is_running()
+            ):
+                self._sandbox.kill()
+        except ImportError:
+            pass
 
     def run(
         self,
@@ -138,3 +141,9 @@ class E2BInterpreter(BaseInterpreter):
     def update_action_space(self, action_space: Dict[str, Any]) -> None:
         r"""Updates action space for *python* interpreter"""
         raise RuntimeError("E2B doesn't support " "`action_space`.")
+
+    def execute_command(self, command: str) -> str:
+        """
+        Execute a command can be used to resolve the dependency of the code.
+        """
+        return self._sandbox.commands.run(command)
