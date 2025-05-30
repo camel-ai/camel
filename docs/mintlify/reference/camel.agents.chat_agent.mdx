@@ -910,53 +910,6 @@ Record the assistant message that contains tool calls.
 This method creates and records an assistant message that includes
 the tool calls information, which is required by OpenAI's API format.
 
-<a id="camel.agents.chat_agent.ChatAgent.add_model_scheduling_strategy"></a>
-
-### add_model_scheduling_strategy
-
-```python
-def add_model_scheduling_strategy(self, name: str, strategy_fn: Callable):
-```
-
-Add a scheduling strategy method provided by user to ModelManger.
-
-**Parameters:**
-
-- **name** (str): The name of the strategy.
-- **strategy_fn** (Callable): The scheduling strategy function.
-
-<a id="camel.agents.chat_agent.ChatAgent.clone"></a>
-
-### clone
-
-```python
-def clone(self, with_memory: bool = False):
-```
-
-Creates a new instance of :obj:`ChatAgent` with the same
-configuration as the current instance.
-
-**Parameters:**
-
-- **with_memory** (bool): Whether to copy the memory (conversation history) to the new agent. If True, the new agent will have the same conversation history. If False, the new agent will have a fresh memory with only the system message. (default: :obj:`False`)
-
-**Returns:**
-
-  ChatAgent: A new instance of :obj:`ChatAgent` with the same
-configuration.
-
-<a id="camel.agents.chat_agent.ChatAgent.__repr__"></a>
-
-### __repr__
-
-```python
-def __repr__(self):
-```
-
-**Returns:**
-
-  str: The string representation of the :obj:`ChatAgent`.
-
 <a id="camel.agents.chat_agent.ChatAgent._create_tool_sending_status_response"></a>
 
 ### _create_tool_sending_status_response
