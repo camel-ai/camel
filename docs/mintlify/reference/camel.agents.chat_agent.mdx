@@ -701,6 +701,82 @@ Get usage dictionary when using the stream mode.
 
   dict: Usage dictionary.
 
+<a id="camel.agents.chat_agent.ChatAgent.add_model_scheduling_strategy"></a>
+
+### add_model_scheduling_strategy
+
+```python
+def add_model_scheduling_strategy(self, name: str, strategy_fn: Callable):
+```
+
+Add a scheduling strategy method provided by user to ModelManger.
+
+**Parameters:**
+
+- **name** (str): The name of the strategy.
+- **strategy_fn** (Callable): The scheduling strategy function.
+
+<a id="camel.agents.chat_agent.ChatAgent.clone"></a>
+
+### clone
+
+```python
+def clone(self, with_memory: bool = False):
+```
+
+Creates a new instance of :obj:`ChatAgent` with the same
+configuration as the current instance.
+
+**Parameters:**
+
+- **with_memory** (bool): Whether to copy the memory (conversation history) to the new agent. If True, the new agent will have the same conversation history. If False, the new agent will have a fresh memory with only the system message. (default: :obj:`False`)
+
+**Returns:**
+
+  ChatAgent: A new instance of :obj:`ChatAgent` with the same
+configuration.
+
+<a id="camel.agents.chat_agent.ChatAgent.__repr__"></a>
+
+### __repr__
+
+```python
+def __repr__(self):
+```
+
+**Returns:**
+
+  str: The string representation of the :obj:`ChatAgent`.
+
+<a id="camel.agents.chat_agent.ChatAgent.to_mcp"></a>
+
+### to_mcp
+
+```python
+def to_mcp(
+    self,
+    name: str = 'CAMEL-ChatAgent',
+    description: str = 'A helpful assistant using the CAMEL AI framework.',
+    dependencies: Optional[List[str]] = None,
+    host: str = 'localhost',
+    port: int = 8000
+):
+```
+
+Expose this ChatAgent as an MCP server.
+
+**Parameters:**
+
+- **name** (str): Name of the MCP server. (default: :obj:`CAMEL-ChatAgent`)
+- **description** (Optional[List[str]]): Description of the agent. If None, a generic description is used. (default: :obj:`A helpful assistant using the CAMEL AI framework.`)
+- **dependencies** (Optional[List[str]]): Additional dependencies for the MCP server. (default: :obj:`None`)
+- **host** (str): Host to bind to for HTTP transport. (default: :obj:`localhost`)
+- **port** (int): Port to bind to for HTTP transport. (default: :obj:`8000`)
+
+**Returns:**
+
+  FastMCP: An MCP server instance that can be run.
+
 <a id="camel.agents.chat_agent.ChatAgent.stream"></a>
 
 ### stream
