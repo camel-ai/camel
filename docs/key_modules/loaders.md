@@ -399,7 +399,7 @@ mistral_reader = MistralReader()
 
 # Extract text from a PDF URL
 url_ocr_response = mistral_reader.extract_text(
-    file_path="https://arxiv.org/pdf/2201.04234", pages=[0]
+    file_path="https://arxiv.org/pdf/2201.04234", pages=[5]
 )
 print(url_ocr_response)
 ```
@@ -426,9 +426,7 @@ print(local_ocr_response)
 The response contains structured information about the extracted text, including the markdown-formatted content, page dimensions, and usage information:
 
 ```markdown
->>>pages=[OCRPageObject(index=0, markdown='# Leveraging Unlabeled Data to Predict Out-of-Distribution Performance 
+>>>pages=[OCRPageObject(index=5, markdown='![img-0.jpeg](img-0.jpeg)\n\nFigure 2: Scatter plot of predicted accuracy versus (true) OOD accuracy. Each point denotes a dif...', 
 
-Saurabh Garg*<br>Carnegie Mellon University<br>sgarg2@andrew.cmu.edu...', 
-images=[], dimensions=OCRPageDimensions(dpi=200, height=2200, width=1700))] 
-model='mistral-ocr-2505-completion' usage_info=OCRUsageInfo(pages_processed=1, doc_size_bytes=3002783) document_annotation=None
+images=[OCRImageObject(id='img-0.jpeg', top_left_x=294, top_left_y=180, bottom_right_x=1387, bottom_right_y=558, image_base64=None, image_annotation=None)], dimensions=OCRPageDimensions(dpi=200, height=2200, width=1700))] model='mistral-ocr-2505-completion' usage_info=OCRUsageInfo(pages_processed=1, doc_size_bytes=3002783) document_annotation=None
 ```

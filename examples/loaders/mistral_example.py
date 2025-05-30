@@ -19,65 +19,70 @@ from camel.loaders import MistralReader
 
 mistral_reader = MistralReader()
 url_ocr_response = mistral_reader.extract_text(
-    file_path="https://arxiv.org/pdf/2201.04234", pages=[0]
+    file_path="https://arxiv.org/pdf/2201.04234", pages=[5]
 )
 print(url_ocr_response)
 """
 ============================================================================
-pages=[OCRPageObject(index=0, markdown="# Leveraging Unlabeled Data to Predict 
-Out-of-Distribution Performance \n\nSaurabh Garg*<br>Carnegie Mellon 
-University<br>sgarg2@andrew.cmu.edu Sivaraman Balakrishnan<br>Carnegie Mellon 
-University<br>sbalakri@andrew.cmu.edu Zachary C. Lipton<br>Carnegie Mellon 
-University<br>zlipton@andrew.cmu.edu\n\n## Behnam Neyshabur\n\nGoogle 
-Research, Blueshift team neyshabur@google.com\n\n## Hanie Sedghi\n\nGoogle 
-Research, Brain team hsedghi@google.com\n\n## ABSTRACT\n\nReal-world machine 
-learning deployments are characterized by mismatches between the source 
-(training) and target (test) distributions that may cause performance drops. 
-In this work, we investigate methods for predicting the target domain accuracy 
-using only labeled source data and unlabeled target data. We propose Average 
-Thresholded Confidence (ATC), a practical method that learns a threshold on 
-the model's confidence, predicting accuracy as the fraction of unlabeled 
-examples for which model confidence exceeds that threshold. ATC outperforms 
-previous methods across several model architectures, types of distribution 
-shifts (e.g., due to synthetic corruptions, dataset reproduction, or novel 
-subpopulations), and datasets (WILDS, ImageNet, BREEDS, CIFAR, and MNIST). In 
-our experiments, ATC estimates target performance $2-4 \\times$ more 
-accurately than prior methods. We also explore the theoretical foundations of 
-the problem, proving that, in general, identifying the accuracy is just as 
-hard as identifying the optimal predictor and thus, the efficacy of any method 
-rests upon (perhaps unstated) assumptions on the nature of the shift. Finally, 
-analyzing our method on some toy distributions, we provide insights concerning 
-when it works ${ }^{1}$.\n\n## 1 INTRODUCTION\n\nMachine learning models 
-deployed in the real world typically encounter examples from previously unseen 
-distributions. While the IID assumption enables us to evaluate models using 
-held-out data from the source distribution (from which training data is 
-sampled), this estimate is no longer valid in presence of a distribution 
-shift. Moreover, under such shifts, model accuracy tends to degrade (Szegedy 
-et al., 2014; Recht et al., 2019; Koh et al., 2021). Commonly, the only data 
-available to the practitioner are a labeled training set (source) and 
-unlabeled deployment-time data which makes the problem more difficult. In this 
-setting, detecting shifts in the distribution of covariates is known to be 
-possible (but difficult) in theory (Ramdas et al., 2015), and in practice 
-(Rabanser et al., 2018). However, producing an optimal predictor using only 
-labeled source and unlabeled target data is well-known to be impossible absent 
-further assumptions (Ben-David et al., 2010; Lipton et al., 2018).\n\nTwo 
-vital questions that remain are: (i) the precise conditions under which we can 
-estimate a classifier's target-domain accuracy; and (ii) which methods are 
-most practically useful. To begin, the straightforward way to assess the 
-performance of a model under distribution shift would be to collect labeled 
-(target domain) examples and then to evaluate the model on that data. However, 
-collecting fresh labeled data from the target distribution is prohibitively 
-expensive and time-consuming, especially if the target distribution is 
-non-stationary. Hence, instead of using labeled data, we aim to use unlabeled 
-data from the target distribution, that is comparatively abundant, to predict 
-model performance. Note that in this work, our focus is not to improve 
-performance on the target but, rather, to estimate the accuracy on the target 
-for a given classifier.\n\n[^0]\n[^0]:    * Work done in part while Saurabh 
-Garg was interning at Google\n    ${ }^{1}$ Code is available at https://
-github.com/saurabhgarg1996/ATC_code.", images=[], dimensions=OCRPageDimensions
-(dpi=200, height=2200, width=1700))] model='mistral-ocr-2505-completion' 
-usage_info=OCRUsageInfo(pages_processed=1, doc_size_bytes=3002783) 
-document_annotation=None
+pages=[OCRPageObject(index=5, markdown='![img-0.jpeg](img-0.jpeg)\n\nFigure 2: 
+Scatter plot of predicted accuracy versus (true) OOD accuracy. Each point 
+denotes a different OOD dataset, all evaluated with the same DenseNet121 
+model. We only plot the best three methods. With ATC (ours), we refer to 
+ATC-NE. We observe that ATC significantly outperforms other methods and with 
+ATC, we recover the desired line $y=x$ with a robust linear fit. Aggregated 
+estimation error in Table 1 and plots for other datasets and architectures in 
+App. H.\nof the target accuracy with various methods given access to only 
+unlabeled data from the target. Unless noted otherwise, all models are trained 
+only on samples from the source distribution with the main exception of 
+pre-training on a different distribution. We use labeled examples from the 
+target distribution to only obtain true error estimates.\n\nDatasets. First, 
+we consider synthetic shifts induced due to different visual corruptions (e.
+g., shot noise, motion blur etc.) under ImageNet-C (Hendrycks \\& Dietterich, 
+2019). Next, we consider natural shifts due to differences in the data 
+collection process of ImageNet (Russakovsky et al., 2015), e.g, ImageNetv2 
+(Recht et al., 2019). We also consider images with artistic renditions of 
+object classes, i.e., ImageNet-R (Hendrycks et al., 2021) and ImageNet-Sketch 
+(Wang et al., 2019). Note that renditions dataset only contains a subset 200 
+classes from ImageNet. To include renditions dataset in our testbed, we 
+include results on ImageNet restricted to these 200 classes (which we call 
+ImageNet-200) along with full ImageNet.\n\nSecond, we consider BREEDS 
+(Santurkar et al., 2020) to assess robustness to subpopulation shifts, in 
+particular, to understand how accuracy estimation methods behave when novel 
+subpopulations not observed during training are introduced. BREEDS leverages 
+class hierarchy in ImageNet to create 4 datasets ENTITY-13, ENTITY-30, 
+LIVING-17, NON-LIVING-26. We focus on natural and synthetic shifts as in 
+ImageNet on same and different subpopulations in BREEDs. Third, from WILDS 
+(Koh et al., 2021) benchmark, we consider FMoW-WILDS (Christie et al., 2018), 
+RxRx1-WILDS (Taylor et al., 2019), Amazon-WILDS (Ni et al., 2019), 
+CivilComments-WILDS (Borkan et al., 2019) to consider distribution shifts 
+faced in the wild.\n\nFinally, similar to ImageNet, we consider (i) synthetic 
+shifts (CIFAR-10-C) due to common corruptions; and (ii) natural shift (i.e., 
+CIFARv2 (Recht et al., 2018)) on CIFAR-10 (Krizhevsky \\& Hinton, 2009). On 
+CIFAR-100, we just have synthetic shifts due to common corruptions. For 
+completeness, we also consider natural shifts on MNIST (LeCun et al., 1998) as 
+in the prior work (Deng \\& Zheng, 2021). We use three real shifted datasets, 
+i.e., USPS (Hull, 1994), SVHN (Netzer et al., 2011) and QMNIST (Yadav \\& 
+Bottou, 2019). We give a detailed overview of our setup in App. F.
+\n\nArchitectures and Evaluation. For ImageNet, BREEDS, CIFAR, FMoW-WILDS, 
+RxRx1-WILDS datasets, we use DenseNet121 (Huang et al., 2017) and ResNet50 (He 
+et al., 2016) architectures. For Amazon-WILDS and CivilComments-WILDS, we 
+fine-tune a DistilBERT-base-uncased (Sanh et al., 2019) model. For MNIST, we 
+train a fully connected multilayer perceptron. We use standard training with 
+benchmarked hyperparameters. To compare methods, we report average absolute 
+difference between the true accuracy on the target data and the estimated 
+accuracy on the same unlabeled examples. We refer to this metric as Mean 
+Absolute estimation Error (MAE). Along with MAE, we also show scatter plots to 
+visualize performance at individual target sets. Refer to App. G for 
+additional details on the setup.\n\nMethods With ATC-NE, we denote ATC with 
+negative entropy score function and with ATC-MC, we denote ATC with maximum 
+confidence score function. For all methods, we implement post-hoc calibration 
+on validation source data with Temperature Scaling (TS; Guo et al. (2017)). 
+Below we briefly discuss baselines methods compared in our work and relegate 
+details to App. E.', images=[OCRImageObject(id='img-0.jpeg', top_left_x=294, 
+top_left_y=180, bottom_right_x=1387, bottom_right_y=558, image_base64=None, 
+image_annotation=None)], dimensions=OCRPageDimensions(dpi=200, height=2200, 
+width=1700))] model='mistral-ocr-2505-completion' usage_info=OCRUsageInfo
+(pages_processed=1, doc_size_bytes=3002783) document_annotation=None
 ============================================================================
 """
 
