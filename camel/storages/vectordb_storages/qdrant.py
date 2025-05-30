@@ -15,6 +15,8 @@ import logging
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
 
+from qdrant_client.http.models import Filter
+
 if TYPE_CHECKING:
     from qdrant_client import QdrantClient
 
@@ -22,6 +24,8 @@ from camel.storages.vectordb_storages import (
     BaseVectorStorage,
     VectorDBQuery,
     VectorDBQueryResult,
+    VectorDBSearch,
+    VectorDBSearchResult,
     VectorDBStatus,
     VectorRecord,
 )
@@ -67,7 +71,7 @@ class QdrantStorage(BaseVectorStorage):
           be initialized with an in-memory storage (`":memory:"`).
     """
 
-    @dependencies_required('qdrant_client')
+    @dependencies_required("qdrant_client")
     def __init__(
         self,
         vector_dim: int,
@@ -246,9 +250,11 @@ class QdrantStorage(BaseVectorStorage):
         )
         vector_config = collection_info.config.params.vectors
         return {
-            "vector_dim": vector_config.size
-            if isinstance(vector_config, VectorParams)
-            else None,
+            "vector_dim": (
+                vector_config.size
+                if isinstance(vector_config, VectorParams)
+                else None
+            ),
             "vector_count": collection_info.points_count,
             "status": collection_info.status,
             "vectors_count": collection_info.vectors_count,
@@ -472,6 +478,130 @@ class QdrantStorage(BaseVectorStorage):
 
         return query_results
 
+    def _convert_filter_dict_to_qdrant_filter(
+        self, filter_dict: Dict[str, Any]
+    ) -> Filter:
+        r"""convert filter_dict to qdrant_client.http.models.Filter
+
+        Args:
+            filter_dict (Dict[str, Any]): A dictionary specifying conditions to
+                filter the query results.
+
+        Returns:
+            qdrant_client.http.models.Filter: A Qdrant filter
+        """
+        from qdrant_client.http.models import (
+            Condition,
+            FieldCondition,
+            Filter,
+            MatchValue,
+            Range,
+        )
+
+        def parse_condition(key: str, value: Any) -> Condition:
+            """
+            Parse a single-field condition from a JSON-like filter spec.
+
+            Args:
+                key:   The field name to filter on.
+                value: Either a literal (for equality) or a dict
+                    mapping a single operator ('$eq', '$lt', etc.) to its operand.
+
+            Returns:
+                A FieldCondition representing that filter.
+
+            Raises:
+                ValueError: If the dict is empty or contains an unsupported operator.
+            """
+            # Map each operator to a constructor for the corresponding FieldCondition
+            _operator_map: Dict[str, Callable[[str, Any], FieldCondition]] = {
+                "$eq":  lambda key, v: FieldCondition(key=key, match=MatchValue(value=v)),
+                "$ne":  lambda key, v: FieldCondition(key=key, match=MatchValue(value=v)),
+                "$lt":  lambda key, v: FieldCondition(key=key, range=Range(lt=v)),
+                "$lte": lambda key, v: FieldCondition(key=key, range=Range(lte=v)),
+                "$gt":  lambda key, v: FieldCondition(key=key, range=Range(gt=v)),
+                "$gte": lambda key, v: FieldCondition(key=key, range=Range(gte=v)),
+            }
+            # If value is a dict, expect exactly one operator → operand mapping
+            if isinstance(value, dict):
+                if not value:
+                    raise ValueError(f"No operator provided for field '{key}'")
+                op, v = next(iter(value.items()))
+                constructor = _operator_map.get(op)
+                if constructor is None:
+                    raise ValueError(f"Unsupported operator: {op}")
+                return constructor(key, v)
+
+            # Otherwise treat it as an equality match
+            return FieldCondition(key=key, match=MatchValue(value=value))
+
+        def parse_logic(filter_dict: Dict[str, Any]) -> Filter:
+            """handle the or and the and in filter_dict
+
+            Args:
+                filter_dict (Dict[str, Any]): A dictionary specifying
+                    conditions tofilter the query results.
+
+            Returns:
+                Filter: A Qdrant filter
+            """
+            must: List[Condition] = []
+            should: List[Condition] = []
+            for key, value in filter_dict.items():
+                if key == "$and":
+                    for sub in value:
+                        must.append(parse_logic(sub))
+                elif key == "$or":
+                    for sub in value:
+                        should.append(parse_logic(sub))
+                else:
+                    must.append(parse_condition(key, value))
+            return Filter(must=must or None, should=should or None)
+
+        return parse_logic(filter_dict)
+
+    def search(
+        self,
+        search: VectorDBSearch,
+        **kwargs: Any,
+    ) -> List[VectorDBSearchResult]:
+        r"""Searches for vector records that match the given
+            payload filter,without performing vector similarity search.
+
+        Args:
+            search (VectorDBSearch): The search object containing the payload
+            filter.For example, {"category": "fruit", "color": "red"}.
+            **kwargs (Any): Additional parameters for the search.
+
+        Returns:
+            List[VectorDBSearchResult]: A list of vector records that match
+            the filter criteria.
+        """
+
+        search_filter = self._convert_filter_dict_to_qdrant_filter(
+            search.payload_filter
+        )
+
+        search_result = self._client.query_points(
+            collection_name=self.collection_name,
+            query=None,
+            with_payload=True,
+            with_vectors=True,
+            limit=search.top_k,
+            query_filter=search_filter,
+            **kwargs,
+        )
+
+        search_results = [
+            VectorDBSearchResult.create(
+                vector=cast(List[float], point.vector),
+                id=str(point.id),
+                payload=point.payload or {},
+            )
+            for point in search_result.points
+        ]
+        return search_results
+
     def clear(self) -> None:
         r"""Remove all vectors from the storage."""
         self._delete_collection(self.collection_name)
@@ -483,7 +613,7 @@ class QdrantStorage(BaseVectorStorage):
 
     def load(self) -> None:
         r"""Load the collection hosted on cloud service."""
-        pass
+        return None
 
     @property
     def client(self) -> "QdrantClient":

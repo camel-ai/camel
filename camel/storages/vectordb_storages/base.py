@@ -96,6 +96,75 @@ class VectorDBQueryResult(BaseModel):
         )
 
 
+class VectorDBSearch(BaseModel):
+    r"""Represents a payload-based search query to a vector database.
+
+    Attributes:
+        payload_filter (Dict[str, Any]): The filter criteria used to
+            select records.For example, {"category": "fruit", "color": "red"}.
+        top_k (int, optional): The number of top similar vectors to retrieve
+            from the database. (default: :obj:`5`)
+    """
+
+    payload_filter: Dict[str, Any]
+    top_k: int
+
+    def __init__(
+        self, payload_filter: Dict[str, Any], top_k: int = 5, **kwargs: Any
+    ) -> None:
+        """Pass in payload_filter and tok_k as positional arg.
+        Args:
+            payload_filter (Dict[str, Any]): The filter criteria used to
+                select records.For example, {"category": "fruit", "color":
+                "red"}.
+            top_top_k (int, optional): The number of top similar vectors to
+                retrieve from the database. (default: :obj:`5`)
+        """
+        super().__init__(payload_filter=payload_filter, top_k=top_k, **kwargs)
+
+
+class VectorDBSearchResult(BaseModel):
+    r"""Encapsulates the result of a payload-based search against a
+        vector database.
+
+    Attributes:
+        record (VectorRecord): The vector record that matches the filter
+            criteria.
+        match_info (Optional[Dict[str, Any]]): Optional additional information
+            about the match.
+    """
+
+    record: VectorRecord
+    match_info: Dict[str, Any]
+
+    @classmethod
+    def create(
+        cls,
+        vector: List[float],
+        id: str,
+        payload: Dict[str, Any],
+    ) -> "VectorDBSearchResult":
+        """A class method to construct a `VectorDBSearchResult` instance.
+
+        Args:
+            vector (List[float]): The numerical representation of the
+                vector.
+            id (str): The unique identifier for the vector.
+            payload (Dict[str, Any]): The payload associated with the
+                vector.
+        Returns:
+            VectorDBSearchResult: The search result object.
+        """
+        return cls(
+            record=VectorRecord(
+                vector=vector,
+                id=id,
+                payload=payload,
+            ),
+            match_info=payload,
+        )
+
+
 class VectorDBStatus(BaseModel):
     r"""Vector database status.
 
@@ -173,6 +242,25 @@ class BaseVectorStorage(ABC):
         Returns:
             List[VectorDBQueryResult]: A list of vectors retrieved from the
                 storage based on similarity to the query vector.
+        """
+        pass
+
+    @abstractmethod
+    def search(
+        self,
+        search: VectorDBSearch,
+        **kwargs: Any,
+    ) -> List[VectorDBSearchResult]:
+        r"""Searches for vector records that match the given payload filter.
+
+        Args:
+            filter (VectorDBSearch): The search object containing the filter
+                For example, {"category": "fruit", "color": "red"}.
+            **kwargs (Any): Additional parameters for the search.
+
+        Returns:
+            List[VectorDBSearchResult]: A list of vector records that match
+                the filter criteria.
         """
         pass
 
