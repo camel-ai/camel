@@ -78,7 +78,7 @@ def _format_text(
     self,
     frame_paragraph,
     text: str,
-    set_white_font = False
+    set_color_to_white = False
 ):
 ```
 
@@ -88,6 +88,7 @@ Apply bold and italic formatting while preserving the original word order.
 
 - **frame_paragraph**: The paragraph to format.
 - **text** (str): The text to format.
+- **set_color_to_white** (bool): Whether to set the color to white. (default: :obj: `False`)
 
 <a id="camel.toolkits.pptx_toolkit.PPTXToolkit._add_bulleted_items"></a>
 
@@ -98,7 +99,7 @@ def _add_bulleted_items(
     self,
     text_frame: pptx.text.text.TextFrame,
     flat_items_list: list,
-    set_white_font = False
+    set_color_to_white = False
 ):
 ```
 
@@ -108,6 +109,7 @@ Add a list of texts as bullet points and apply formatting.
 
 - **text_frame**: The text frame where text is to be displayed.
 - **flat_items_list**: The list of items to be displayed.
+- **set_color_to_white** (bool): Whether to set the font color to white. (default: :obj: `False`)
 
 <a id="camel.toolkits.pptx_toolkit.PPTXToolkit._get_flat_list_of_contents"></a>
 
@@ -184,7 +186,7 @@ Create a PowerPoint presentation (PPTX) file.
 
 **Parameters:**
 
-- **content** (str): The content to write to the PPTX file as a JSON string. Must represent a list of dictionaries with specific structure: - First dict: title slide `{"title": str, "subtitle": str}` - Other dicts: content slides `{"title": str, "text": str (optional), "image": str URL (optional)}`
+- **content** (str): The content to write to the PPTX file as a JSON string. Must represent a list of dictionaries with the following structure: - First dict: title slide `{"title": str, "subtitle": str}` - Other dicts: content slides, which can be one of: * Bullet/step slides: `{"heading": str, "bullet_points": list of str or nested lists, "img_keywords": str (optional)}` - If any bullet point starts with '&gt;> ', it will be rendered as a step-by-step process. - "img_keywords" can be a URL or search keywords for an image (optional). * Table slides: `{"heading": str, "table": {"headers": list of str, "rows": list of list of str}}`
 - **filename** (str): The name or path of the file. If a relative path is supplied, it is resolved to self.output_dir.
 - **template** (Optional[str]): The name of the template to use. If not provided, the default template will be used.
 
