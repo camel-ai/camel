@@ -68,8 +68,7 @@ class TransportType(str, Enum):
 
 
 class ServerConfig(BaseModel):
-    """
-    Unified server configuration that automatically detects transport type.
+    r"""Unified server configuration that automatically detects transport type.
 
     Examples:
         # STDIO server
@@ -110,7 +109,7 @@ class ServerConfig(BaseModel):
 
     @model_validator(mode='after')
     def validate_config(self):
-        """Validate that either command or url is provided."""
+        r"""Validate that either command or url is provided."""
         if not self.command and not self.url:
             raise ValueError(
                 "Either 'command' (for stdio) or 'url' "
@@ -124,7 +123,7 @@ class ServerConfig(BaseModel):
 
     @property
     def transport_type(self) -> TransportType:
-        """Automatically detect transport type based on configuration."""
+        r"""Automatically detect transport type based on configuration."""
         if self.command:
             return TransportType.STDIO
         elif self.url:
@@ -143,23 +142,68 @@ class ServerConfig(BaseModel):
 
 
 class MCPClient:
-    """
-    Unified MCP client that automatically detects and connects to servers
+    r"""Unified MCP client that automatically detects and connects to servers
     using the appropriate transport protocol.
+
+    This client provides a unified interface for connecting to Model Context
+    Protocol (MCP) servers using different transport protocols including STDIO,
+    HTTP/HTTPS, WebSocket, and Server-Sent Events (SSE). The client
+    automatically detects the appropriate transport type based on the
+    configuration provided.
+
+    Args:
+        config (Union[ServerConfig, Dict[str, Any]]): Server configuration
+            as either a :obj:`ServerConfig` object or a dictionary that will
+            be converted to a :obj:`ServerConfig`. The configuration determines
+            the transport type and connection parameters.
+        client_info (Optional[types.Implementation], optional): Client
+            implementation information to send to the server during
+            initialization. (default: :obj:`None`)
+        timeout (Optional[float], optional): Timeout for waiting for messages
+            from the server in seconds. (default: :obj:`10.0`)
+
+    Examples:
+        STDIO server connection:
+
+        .. code-block:: python
+
+            client = MCPClient({
+                "command": "npx",
+                "args": [
+                    "-y",
+                    "@modelcontextprotocol/server-filesystem",
+                    "/path"
+                ]
+            })
+
+        HTTP server connection:
+
+        .. code-block:: python
+
+            client = MCPClient({
+                "url": "https://api.example.com/mcp",
+                "headers": {"Authorization": "Bearer token"}
+            })
+
+        WebSocket server connection:
+
+        .. code-block:: python
+
+            client = MCPClient({"url": "ws://localhost:8080/mcp"})
+
+    Attributes:
+        config (ServerConfig): The server configuration object.
+        client_info (Optional[types.Implementation]): Client implementation
+            information.
+        read_timeout_seconds (timedelta): Timeout for reading from the server.
     """
 
     def __init__(
         self,
         config: Union[ServerConfig, Dict[str, Any]],
         client_info: Optional[types.Implementation] = None,
+        timeout: Optional[float] = 10.0,
     ):
-        """
-        Initialize the unified MCP client.
-
-        Args:
-            config: Server configuration (ServerConfig object or dict)
-            client_info: Client implementation information
-        """
         # Convert dict config to ServerConfig if needed
         if isinstance(config, dict):
             config = ServerConfig(**config)
@@ -170,6 +214,7 @@ class MCPClient:
         _ = self.config.transport_type
 
         self.client_info = client_info
+        self.read_timeout_seconds = timedelta(seconds=timeout or 10.0)
 
         self._session: Optional[ClientSession] = None
         self._tools: List[types.Tool] = []
@@ -181,11 +226,35 @@ class MCPClient:
 
     @asynccontextmanager
     async def connect(self) -> AsyncGenerator[ClientSession, None]:
-        """
-        Connect to the MCP server and yield a ClientSession.
+        r"""Connect to the MCP server and yield a ClientSession.
+
+        This method establishes a connection to the MCP server using the
+        appropriate transport protocol (STDIO, HTTP, WebSocket, or SSE) based
+        on the client configuration. It returns an async context manager that
+        yields a connected ClientSession.
 
         Returns:
-            AsyncGenerator yielding a ClientSession instance
+            AsyncGenerator[ClientSession, None]: An async context manager that
+                yields a connected :obj:`ClientSession` instance. The session
+                is automatically initialized and tools are loaded upon
+                connection.
+
+        Raises:
+            ConnectionError: If connection fails due to various reasons such as
+                server not found, timeout, or configuration errors. The error
+                message is simplified for better user understanding.
+            ValueError: If the transport configuration is invalid or
+                unsupported.
+
+        Example:
+            .. code-block:: python
+
+                async with client.connect() as session:
+                    # Use the connected session
+                    tools = client.get_tools()
+                    result = await client.call_tool(
+                        "tool_name", {"arg": "value"}
+                    )
         """
         session = None
         self._session = None
@@ -200,6 +269,7 @@ class MCPClient:
                     read_stream=read_stream,
                     write_stream=write_stream,
                     client_info=self.client_info,
+                    read_timeout_seconds=self.read_timeout_seconds,
                 )
 
                 # Start the session's message processing loop
@@ -214,10 +284,69 @@ class MCPClient:
                     )
 
                     yield session
+
+        except Exception as e:
+            # Convert complex exceptions to simpler, more understandable ones
+            from camel.logger import get_logger
+
+            logger = get_logger(__name__)
+
+            error_msg = self._simplify_connection_error(e)
+            logger.error(f"MCP connection failed: {error_msg}")
+
+            # Raise a simpler exception
+            raise ConnectionError(error_msg) from e
+
         finally:
             # Ensure cleanup happens no matter what
             self._session = None
             self._tools = []
+
+    def _simplify_connection_error(self, error: Exception) -> str:
+        r"""Convert complex MCP connection errors to simple, understandable messages."""  # noqa: E501
+        error_str = str(error).lower()
+
+        # Handle different types of errors
+        if "exceptiongroup" in error_str or "taskgroup" in error_str:
+            # Often happens when the command fails to start
+            if "processlookuperror" in error_str:
+                return f"Failed to start MCP server command '{self.config.command}'. The command may have exited unexpectedly."  # noqa: E501
+            elif "cancelled" in error_str:
+                return "Connection to MCP server was cancelled, likely due to timeout or server startup failure."  # noqa: E501
+            else:
+                return f"MCP server process error. The server command '{self.config.command}' failed to start properly."  # noqa: E501
+
+        elif "timeout" in error_str:
+            return f"Connection timeout after {self.config.timeout}s. The MCP server may be taking too long to respond."  # noqa: E501
+
+        elif "not found" in error_str or "404" in error_str:
+            command_parts = []
+            if self.config.command:
+                command_parts.append(self.config.command)
+                if self.config.args:
+                    command_parts.extend(self.config.args)
+            command_str = (
+                ' '.join(command_parts) if command_parts else "unknown command"
+            ) 
+            return f"MCP server package not found. Check if '{command_str}' is correct."  # noqa: E501
+
+        elif "permission" in error_str:
+            return f"Permission denied when trying to run MCP server command '{self.config.command}'."  # noqa: E501
+
+        elif "connection" in error_str:
+            if self.config.url:
+                return f"Failed to connect to MCP server at {self.config.url}."
+            else:
+                return "Connection failed to MCP server."
+
+        else:
+            # Generic fallback
+            command_info = (
+                f"'{self.config.command}'"
+                if self.config.command
+                else f"URL: {self.config.url}"
+            )
+            return f"MCP connection failed for {command_info}. Error: {str(error)[:100]}{'...' if len(str(error)) > 100 else ''}"  # noqa: E501
 
     @asynccontextmanager
     async def _create_transport(self):
@@ -309,14 +438,22 @@ class MCPClient:
         return self._session is not None
 
     def get_tools(self):
-        """
-        Get available tools as CAMEL FunctionTool objects.
+        r"""Get available tools as CAMEL FunctionTool objects.
+
+        Retrieves all available tools from the connected MCP server and
+        converts them to CAMEL-compatible :obj:`FunctionTool` objects. The
+        tools are automatically wrapped to handle the MCP protocol
+        communication.
 
         Returns:
-            List[FunctionTool]: List of available tools
-        """
-        # Delayed import to avoid circular dependency
+            List[FunctionTool]: A list of :obj:`FunctionTool` objects
+                representing the available tools from the MCP server. Returns
+                an empty list if the client is not connected.
 
+        Note:
+            This method requires an active connection to the MCP server.
+            If the client is not connected, an empty list will be returned.
+        """
         if not self.is_connected():
             return []
 
@@ -345,13 +482,13 @@ class MCPClient:
             if not self.is_connected():
                 raise RuntimeError("Client is not connected")
 
-            if self._session is None:
-                raise RuntimeError("Client session is not available")
-
             # Convert kwargs to the format expected by MCP
             arguments = kwargs
 
-            # Call the MCP tool using the correct API
+            # Call the tool using the correct API
+            if self._session is None:
+                raise RuntimeError("Client session is not available")
+
             result = await self._session.call_tool(
                 name=mcp_tool.name, arguments=arguments
             )
@@ -394,25 +531,38 @@ class MCPClient:
     async def call_tool(
         self, tool_name: str, arguments: Dict[str, Any]
     ) -> Any:
-        """
-        Call a tool by name.
+        r"""Call a tool by name with the provided arguments.
+
+        Executes a specific tool on the connected MCP server with the given
+        arguments. The tool must be available in the server's tool list.
 
         Args:
-            tool_name: Name of the tool to call
-            arguments: Arguments to pass to the tool
+            tool_name (str): The name of the tool to call. Must match a tool
+                name returned by :obj:`get_tools()`.
+            arguments (Dict[str, Any]): A dictionary of arguments to pass to
+                the tool. The argument names and types must match the tool's
+                expected parameters.
 
         Returns:
-            Tool execution result
+            Any: The result returned by the tool execution. The type and
+                structure depend on the specific tool being called.
 
         Raises:
-            RuntimeError: If client is not connected
-            ValueError: If tool is not found
+            RuntimeError: If the client is not connected to an MCP server.
+            ValueError: If the specified tool name is not found in the list
+                of available tools.
+
+        Example:
+            .. code-block:: python
+
+                # Call a file reading tool
+                result = await client.call_tool(
+                    "read_file",
+                    {"path": "/tmp/example.txt"}
+                )
         """
         if not self.is_connected():
             raise RuntimeError("Client is not connected")
-
-        if self._session is None:
-            raise RuntimeError("Client session is not available")
 
         # Check if tool exists
         tool_names = [tool.name for tool in self._tools]
@@ -424,6 +574,9 @@ class MCPClient:
             )
 
         # Call the tool using the correct API
+        if self._session is None:
+            raise RuntimeError("Client session is not available")
+
         result = await self._session.call_tool(
             name=tool_name, arguments=arguments
         )
@@ -434,31 +587,51 @@ class MCPClient:
 def create_mcp_client(
     config: Union[Dict[str, Any], ServerConfig], **kwargs: Any
 ) -> MCPClient:
-    """
-    Create an MCP client from configuration.
+    r"""Create an MCP client from configuration.
+
+    Factory function that creates an :obj:`MCPClient` instance from various
+    configuration formats. This is the recommended way to create MCP clients
+    as it handles configuration validation and type conversion automatically.
 
     Args:
-        config: Server configuration as dict or ServerConfig object
-        **kwargs: Additional arguments passed to MCPClient constructor
+        config (Union[Dict[str, Any], ServerConfig]): Server configuration
+            as either a dictionary or a :obj:`ServerConfig` object. If a
+            dictionary is provided, it will be automatically converted to
+            a :obj:`ServerConfig`.
+        **kwargs: Additional keyword arguments passed to the :obj:`MCPClient`
+            constructor, such as :obj:`client_info` and :obj:`timeout`.
 
     Returns:
-        MCPClient instance
+        MCPClient: A configured :obj:`MCPClient` instance ready for connection.
 
     Examples:
-        # STDIO server
-        client = create_mcp_client({
-            "command": "npx",
-            "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path"]
-        })
+        STDIO server:
 
-        # HTTP server
-        client = create_mcp_client({
-            "url": "https://api.example.com/mcp",
-            "headers": {"Authorization": "Bearer token"}
-        })
+        .. code-block:: python
 
-        # WebSocket server
-        client = create_mcp_client({"url": "ws://localhost:8080/mcp"})
+            client = create_mcp_client({
+                "command": "npx",
+                "args": [
+                    "-y",
+                    "@modelcontextprotocol/server-filesystem",
+                    "/path",
+                ],
+            })
+
+        HTTP server:
+
+        .. code-block:: python
+
+            client = create_mcp_client({
+                "url": "https://api.example.com/mcp",
+                "headers": {"Authorization": "Bearer token"}
+            })
+
+        WebSocket server:
+
+        .. code-block:: python
+
+            client = create_mcp_client({"url": "ws://localhost:8080/mcp"})
     """
     return MCPClient(config, **kwargs)
 

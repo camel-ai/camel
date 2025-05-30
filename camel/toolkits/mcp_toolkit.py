@@ -43,59 +43,64 @@ class MCPToolkit(BaseToolkit):
 
     This class handles the lifecycle of multiple MCP server connections and
     offers a centralized configuration mechanism for both local and remote
-    MCP services.
-
-    The toolkit manages multiple MCPClient instances and aggregates their
-    tools into a unified interface compatible with the CAMEL framework.
+    MCP services. The toolkit manages multiple :obj:`MCPClient` instances and
+    aggregates their tools into a unified interface compatible with the CAMEL
+    framework.
 
     Connection Lifecycle:
         There are three ways to manage the connection lifecycle:
 
         1. Using the async context manager:
-           ```python
-           async with MCPToolkit(config_path="config.json") as toolkit:
-               # Toolkit is connected here
-               tools = toolkit.get_tools()
-           # Toolkit is automatically disconnected here
-           ```
+
+           .. code-block:: python
+
+               async with MCPToolkit(config_path="config.json") as toolkit:
+                   # Toolkit is connected here
+                   tools = toolkit.get_tools()
+               # Toolkit is automatically disconnected here
 
         2. Using the factory method:
-           ```python
-           toolkit = await MCPToolkit.create(config_path="config.json")
-           # Toolkit is connected here
-           tools = toolkit.get_tools()
-           # Don't forget to disconnect when done!
-           await toolkit.disconnect()
-           ```
+
+           .. code-block:: python
+
+               toolkit = await MCPToolkit.create(config_path="config.json")
+               # Toolkit is connected here
+               tools = toolkit.get_tools()
+               # Don't forget to disconnect when done!
+               await toolkit.disconnect()
 
         3. Using explicit connect/disconnect:
-           ```python
-           toolkit = MCPToolkit(config_path="config.json")
-           await toolkit.connect()
-           # Toolkit is connected here
-           tools = toolkit.get_tools()
-           # Don't forget to disconnect when done!
-           await toolkit.disconnect()
-           ```
+
+           .. code-block:: python
+
+               toolkit = MCPToolkit(config_path="config.json")
+               await toolkit.connect()
+               # Toolkit is connected here
+               tools = toolkit.get_tools()
+               # Don't forget to disconnect when done!
+               await toolkit.disconnect()
 
     Args:
-        clients (Optional[List[MCPClient]]): List of MCPClient
+        clients (Optional[List[MCPClient]], optional): List of :obj:`MCPClient`
             instances to manage. (default: :obj:`None`)
-        config_path (Optional[str]): Path to a JSON configuration file
-            defining MCP servers. (default: :obj:`None`)
-        config_dict (Optional[Dict[str, Any]]): Dictionary containing MCP
-            server configurations in the same format as the config file.
+        config_path (Optional[str], optional): Path to a JSON configuration
+            file defining MCP servers. The file should contain server
+            configurations in the standard MCP format. (default: :obj:`None`)
+        config_dict (Optional[Dict[str, Any]], optional): Dictionary containing
+            MCP server configurations in the same format as the config file.
+            This allows for programmatic configuration without file I/O.
             (default: :obj:`None`)
-        timeout (Optional[float]): Timeout for connection attempts.
+        timeout (Optional[float], optional): Timeout for connection attempts
+            in seconds. This timeout applies to individual client connections.
             (default: :obj:`None`)
 
     Note:
-        Either `clients`, `config_path`, or `config_dict` must be provided.
-        If multiple are provided, clients from all sources will be combined.
+        At least one of :obj:`clients`, :obj:`config_path`, or
+        :obj:`config_dict` must be provided. If multiple sources are provided,
+        clients from all sources will be combined.
 
-        For web servers in the config, you can specify authorization
-        headers using the "headers" field to connect to protected MCP server
-        endpoints.
+        For web servers in the config, you can specify authorization headers
+        using the "headers" field to connect to protected MCP server endpoints.
 
         Example configuration:
 
@@ -120,7 +125,14 @@ class MCPToolkit(BaseToolkit):
             }
 
     Attributes:
-        clients (List[MCPClient]): List of MCPClient instances being managed.
+        clients (List[MCPClient]): List of :obj:`MCPClient` instances being
+            managed by this toolkit.
+
+    Raises:
+        ValueError: If no configuration sources are provided or if the
+            configuration is invalid.
+        MCPConnectionError: If connection to any MCP server fails during
+            initialization.
     """
 
     def __init__(
@@ -159,7 +171,37 @@ class MCPToolkit(BaseToolkit):
             raise ValueError("No valid MCP clients could be created")
 
     async def connect(self) -> "MCPToolkit":
-        r"""Connect to all MCP servers using AsyncExitStack."""
+        r"""Connect to all MCP servers using AsyncExitStack.
+
+        Establishes connections to all configured MCP servers sequentially.
+        Uses :obj:`AsyncExitStack` to manage the lifecycle of all connections,
+        ensuring proper cleanup on exit or error.
+
+        Returns:
+            MCPToolkit: Returns :obj:`self` for method chaining, allowing for
+                fluent interface usage.
+
+        Raises:
+            MCPConnectionError: If connection to any MCP server fails. The
+                error message will include details about which client failed
+                to connect and the underlying error reason.
+
+        Warning:
+            If any client fails to connect, all previously established
+            connections will be automatically cleaned up before raising
+            the exception.
+
+        Example:
+            .. code-block:: python
+
+                toolkit = MCPToolkit(config_dict=config)
+                try:
+                    await toolkit.connect()
+                    # Use the toolkit
+                    tools = toolkit.get_tools()
+                finally:
+                    await toolkit.disconnect()
+        """
         if self._is_connected:
             logger.warning("MCPToolkit is already connected")
             return self
@@ -262,17 +304,42 @@ class MCPToolkit(BaseToolkit):
     ) -> "MCPToolkit":
         r"""Factory method that creates and connects to all MCP servers.
 
+        Creates a new :obj:`MCPToolkit` instance and automatically establishes
+        connections to all configured MCP servers. This is a convenience method
+        that combines instantiation and connection in a single call.
+
         Args:
-            clients (Optional[List[MCPClient]]): List of MCPClient instances.
-            config_path (Optional[str]): Path to configuration file.
-            config_dict (Optional[Dict[str, Any]]): Configuration dictionary.
-            timeout (Optional[float]): Timeout for connection attempts.
+            clients (Optional[List[MCPClient]], optional): List of
+                :obj:`MCPClient` instances to manage. (default: :obj:`None`)
+            config_path (Optional[str], optional): Path to a JSON configuration
+                file defining MCP servers. (default: :obj:`None`)
+            config_dict (Optional[Dict[str, Any]], optional): Dictionary
+                containing MCP server configurations in the same format as the
+                config file. (default: :obj:`None`)
+            timeout (Optional[float], optional): Timeout for connection
+                attempts in seconds. (default: :obj:`None`)
 
         Returns:
-            MCPToolkit: A fully initialized and connected MCPToolkit instance.
+            MCPToolkit: A fully initialized and connected :obj:`MCPToolkit`
+                instance with all servers ready for use.
 
         Raises:
-            MCPConnectionError: If connection to any MCP server fails.
+            MCPConnectionError: If connection to any MCP server fails during
+                initialization. All successfully connected servers will be
+                properly disconnected before raising the exception.
+            ValueError: If no configuration sources are provided or if the
+                configuration is invalid.
+
+        Example:
+            .. code-block:: python
+
+                # Create and connect in one step
+                toolkit = await MCPToolkit.create(config_path="servers.json")
+                try:
+                    tools = toolkit.get_tools()
+                    # Use the toolkit...
+                finally:
+                    await toolkit.disconnect()
         """
         toolkit = cls(
             clients=clients,
@@ -364,8 +431,29 @@ class MCPToolkit(BaseToolkit):
     def get_tools(self) -> List[FunctionTool]:
         r"""Aggregates all tools from the managed MCP client instances.
 
+        Collects and combines tools from all connected MCP clients into a
+        single unified list. Each tool is converted to a CAMEL-compatible
+        :obj:`FunctionTool` that can be used with CAMEL agents.
+
         Returns:
-            List[FunctionTool]: Combined list of all available function tools.
+            List[FunctionTool]: Combined list of all available function tools
+                from all connected MCP servers. Returns an empty list if no
+                clients are connected or if no tools are available.
+
+        Note:
+            This method can be called even when the toolkit is not connected,
+            but it will log a warning and may return incomplete results.
+            For best results, ensure the toolkit is connected before calling
+            this method.
+
+        Example:
+            .. code-block:: python
+
+                async with MCPToolkit(config_dict=config) as toolkit:
+                    tools = toolkit.get_tools()
+                    print(f"Available tools: {len(tools)}")
+                    for tool in tools:
+                        print(f"  - {tool.func.__name__}")
         """
         if not self.is_connected:
             logger.warning(
@@ -419,15 +507,38 @@ class MCPToolkit(BaseToolkit):
     ) -> Any:
         r"""Call a tool by name across all managed clients.
 
+        Searches for and executes a tool with the specified name across all
+        connected MCP clients. The method will try each client in sequence
+        until the tool is found and successfully executed.
+
         Args:
-            tool_name (str): Name of the tool to call.
-            tool_args (Dict[str, Any]): Arguments to pass to the tool.
+            tool_name (str): Name of the tool to call. Must match a tool name
+                available from one of the connected MCP servers.
+            tool_args (Dict[str, Any]): Arguments to pass to the tool. The
+                argument names and types must match the tool's expected
+                parameters.
 
         Returns:
-            Any: The result of the tool call.
+            Any: The result of the tool call. The type and structure depend
+                on the specific tool being called.
 
         Raises:
-            MCPToolError: If the tool is not found or call fails.
+            MCPConnectionError: If the toolkit is not connected to any MCP
+                servers.
+            MCPToolError: If the tool is not found in any client, or if all
+                attempts to call the tool fail. The error message will include
+                details about the last failure encountered.
+
+        Example:
+            .. code-block:: python
+
+                async with MCPToolkit(config_dict=config) as toolkit:
+                    # Call a file reading tool
+                    result = await toolkit.call_tool(
+                        "read_file",
+                        {"path": "/tmp/example.txt"}
+                    )
+                    print(f"File contents: {result}")
         """
         if not self.is_connected:
             raise MCPConnectionError(
