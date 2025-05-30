@@ -1,5 +1,3 @@
-# Loaders
-
 ## 1. Concept
 CAMEL introduced two IO modules, `Base IO` and `Unstructured IO` which are designed for handling various file types and unstructured data processing.
 Additionally, four new data readers were added, `Apify Reader`,`Chunkr Reader`, `Firecrawl Reader`, and `Jina_url Reader`, which enable retrieval of external data for improved data integration and analysis.
@@ -236,98 +234,61 @@ shared_invite/zt-1vy8u9lbo-ZQmhIAyWSEfSwLCl2r2eKA)
 
 ### 3.5. Using `Chunkr Reader`
 
-Initialize the client and set the local PDF file path, then use the generated task id to fetch the output.
+Initialize the `ChunkrReader` and `ChunkrReaderConfig`. Set the local PDF file path and configuration, then submit the task. Use the generated task ID to fetch the output.
+The `submit_task` and `get_task_output` methods are asynchronous, so you'll need to run them using an event loop (e.g., `asyncio.run()`).
 
 ```python
-from camel.loaders import ChunkrReader
+import asyncio
+from camel.loaders import ChunkrReader, ChunkrReaderConfig
 
-chunkr = ChunkrReader()
+async def main():
+    chunkr = ChunkrReader()
 
-task_id = chunkr.submit_task(
-    file_path="/Users/enrei/Large Language Model based Multi-Agents- A Survey of Progress and Challenges.pdf",
-    model="Fast",
-    ocr_strategy="Auto",
-    target_chunk_length=512,
-)
+    config = ChunkrReaderConfig(
+        chunk_processing=512,      # Example: target chunk length
+        ocr_strategy="Auto",       # Example: OCR strategy
+        high_resolution=False      # Example: False for faster processing (maps to old "Fast" model)
+    )
 
-print(task_id)
+    # Submit the task
+    # Replace "/path/to/your/document.pdf" with your actual file path.
+    file_path = "/path/to/your/document.pdf"
+    try:
+        task_id = await chunkr.submit_task(
+            file_path=file_path,
+            chunkr_config=config,
+        )
+        print(f"Task ID: {task_id}")
+
+        # Fetch the output
+        # The get_task_output method handles polling until completion, failure, or cancellation.
+        if task_id:
+            task_output_json_str = await chunkr.get_task_output(task_id=task_id)
+            if task_output_json_str:
+                print("Task Output:")
+                # The output is a JSON string, already pretty-printed by the SDK.
+                # You can parse it using json.loads() if you need to work with the dictionary object.
+                print(task_output_json_str)
+            else:
+                # This case occurs if the task failed or was cancelled after polling.
+                print(f"Failed to get output for task {task_id}, or task did not succeed/was cancelled.")
+    except ValueError as e:
+        print(f"An error occurred during task submission or retrieval: {e}")
+    except FileNotFoundError:
+        print(f"Error: File not found at {file_path}. Please check the path.")
+    except Exception as e:
+        # Catch any other unexpected errors
+        print(f"An unexpected error occurred: {e}")
+
+if __name__ == "__main__":
+    # To actually run, uncomment the asyncio.run(main()) line below.
+    print("To run this example, replace '/path/to/your/document.pdf' with a real file path, ensure CHUNKR_API_KEY is set, and uncomment 'asyncio.run(main())'.")
+    # asyncio.run(main()) # Uncomment to run the example
 ```
 ```markdown
->>>"7becf001-6f07-4f63-bddf-5633df363bbb"
-```
-
-Fetch the output.
-```python
-task_output = chunkr.get_task_output(
-    task_id="7becf001-6f07-4f63-bddf-5633df363bbb"
-)
-
-print(task_output)
-```
-```markdown
->>>{
-    "task_id": "7becf001-6f07-4f63-bddf-5633df363bbb",
-    "status": "Succeeded",
-    "created_at": "2024-11-08T12:45:04.260765Z",
-    "finished_at": "2024-11-08T12:45:48.942365Z",
-    "expires_at": null,
-    "message": "Task succeeded",
-    "output": {
-        "chunks": [
-            {
-                "segments": [
-                    {
-                        "segment_id": "d53ec931-3779-41be-a220-3fe4da2770c5",
-                        "bbox": {
-                            "left": 224.16666,
-                            "top": 370.0,
-                            "width": 2101.6665,
-                            "height": 64.166664
-                        },
-                        "page_number": 1,
-                        "page_width": 2550.0,
-                        "page_height": 3300.0,
-                        "content": "Large Language Model based Multi-Agents: A Survey of Progress and Challenges",
-                        "segment_type": "Title",
-                        "ocr": null,
-                        "image": "https://chunkmydocs-bucket-prod.storage.googleapis.com/e68161bd-5d39-4cbf-afb2-5c6640a05522/7becf001-6f07-4f63-bddf-5633df363bbb/images/d53ec931-3779-41be-a220-3fe4da2770c5.jpg?x-id=GetObject&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=GOOG1E67ULNM7PPHKQDVSRZD64OWC4CJTKOHXCOIDKI5QCMJK4U6ROEJQSOJM%2F20241108%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20241108T125023Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=7d2854d7d87ef0b152ac342dfdc0caa7c2ac10418e9445b73c584a9b34736fbf",
-                        "html": "<h1>Large Language Model based Multi-Agents: A Survey of Progress and Challenges</h1>",
-                        "markdown": "# Large Language Model based Multi-Agents: A Survey of Progress and Challenges\n\n"
-                    }
-                ],
-                "chunk_length": 11
-            },
-            {
-                "segments": [
-                    {
-                        "segment_id": "7bb38fc7-c1b3-4153-a3cc-116c0b9caa0a",
-                        "bbox": {
-                            "left": 432.49997,
-                            "top": 474.16666,
-                            "width": 1659.9999,
-                            "height": 122.49999
-                        },
-                        "page_number": 1,
-                        "page_width": 2550.0,
-                        "page_height": 3300.0,
-                        "content": "Taicheng Guo 1 , Xiuying Chen 2 , Yaqi Wang 3 \u2217 , Ruidi Chang , Shichao Pei 4 , Nitesh V. Chawla 1 , Olaf Wiest 1 , Xiangliang Zhang 1 \u2020",
-                        "segment_type": "Text",
-                        "ocr": null,
-                        "image": "https://chunkmydocs-bucket-prod.storage.googleapis.com/e68161bd-5d39-4cbf-afb2-5c6640a05522/7becf001-6f07-4f63-bddf-5633df363bbb/images/7bb38fc7-c1b3-4153-a3cc-116c0b9caa0a.jpg?x-id=GetObject&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=GOOG1E67ULNM7PPHKQDVSRZD64OWC4CJTKOHXCOIDKI5QCMJK4U6ROEJQSOJM%2F20241108%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20241108T125023Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=14b9a5048ff052a3641d100ec60da1b1a26e512e9863d09619bfe8237a2bdf80",
-                        "html": "<p>Taicheng Guo 1 , Xiuying Chen 2 , Yaqi Wang 3 \u2217 , Ruidi Chang , Shichao Pei 4 , Nitesh V. Chawla 1 , Olaf Wiest 1 , Xiangliang Zhang 1 \u2020</p>",
-                        "markdown": "Taicheng Guo 1 , Xiuying Chen 2 , Yaqi Wang 3 \u2217 , Ruidi Chang , Shichao Pei 4 , Nitesh V. Chawla 1 , Olaf Wiest 1 , Xiangliang Zhang 1 \u2020\n\n"
-                    },
-                    {
-                        "segment_id": "35c9e3ab-399c-43af-8f9e-60f5d9263c80",
-                        "bbox": {
-                            "left": 440.8333,
-                            "top": 599.1666,
-                            "width": 1668.3333,
-                            "height": 64.166664
-                        },
-                        "page_number": 1,...
-                    }]}]}}
-```
+>>>Task ID: 7becf001-6f07-4f63-bddf-5633df363bbb
+>>>Task Output:
+>>>{    "task_id": "7becf001-6f07-4f63-bddf-5633df363bbb",    "status": "Succeeded",    "created_at": "2024-11-08T12:45:04.260765Z",    "finished_at": "2024-11-08T12:45:48.942365Z",    "expires_at": null,    "message": "Task succeeded",    "output": {        "chunks": [            {                "segments": [                    {                        "segment_id": "d53ec931-3779-41be-a220-3fe4da2770c5",                        "bbox": {                            "left": 224.16666,                            "top": 370.0,                            "width": 2101.6665,                            "height": 64.166664                        },                        "page_number": 1,                        "page_width": 2550.0,                        "page_height": 3300.0,                        "content": "Large Language Model based Multi-Agents: A Survey of Progress and Challenges",                        "segment_type": "Title",                        "ocr": null,                        "image": "https://chunkmydocs-bucket-prod.storage.googleapis.com/.../d53ec931-3779-41be-a220-3fe4da2770c5.jpg?...",                        "html": "<h1>Large Language Model based Multi-Agents: A Survey of Progress and Challenges</h1>",                        "markdown": "# Large Language Model based Multi-Agents: A Survey of Progress and Challenges\n\n"                    }                ],                "chunk_length": 11            },            {                "segments": [                    {                        "segment_id": "7bb38fc7-c1b3-4153-a3cc-116c0b9caa0a",                        "bbox": {                            "left": 432.49997,                            "top": 474.16666,                            "width": 1659.9999,                            "height": 122.49999                        },                        "page_number": 1,                        "page_width": 2550.0,                        "page_height": 3300.0,                        "content": "Taicheng Guo 1 , Xiuying Chen 2 , Yaqi Wang 3 \u2217 , Ruidi Chang , Shichao Pei 4 , Nitesh V. Chawla 1 , Olaf Wiest 1 , Xiangliang Zhang 1 \u2020",                        "segment_type": "Text",                        "ocr": null,                        "image": "https://chunkmydocs-bucket-prod.storage.googleapis.com/.../7bb38fc7-c1b3-4153-a3cc-116c0b9caa0a.jpg?...",                        "html": "<p>Taicheng Guo 1 , Xiuying Chen 2 , Yaqi Wang 3 \u2217 , Ruidi Chang , Shichao Pei 4 , Nitesh V. Chawla 1 , Olaf Wiest 1 , Xiangliang Zhang 1 \u2020</p>",                        "markdown": "Taicheng Guo 1 , Xiuying Chen 2 , Yaqi Wang 3 \u2217 , Ruidi Chang , Shichao Pei 4 , Nitesh V. Chawla 1 , Olaf Wiest 1 , Xiangliang Zhang 1 \u2020\n\n"                    }                ],                "chunk_length": 100 # Example, actual length may vary            }            // ... other chunks and segments truncated for brevity ...        ]    }}```
 
 ### 3.6. Using `Jina Reader`
 
