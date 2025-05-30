@@ -367,32 +367,7 @@ class OpenAIModel(BaseModelBackend):
             model=self.model_type,
             **request_config,
         )
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to OpenAI API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to OpenAI API.
-        """
-        for param in self.model_config_dict:
-            if param not in OPENAI_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into OpenAI model backend."
-                )
-
-    @property
-    def stream(self) -> bool:
-        r"""Returns whether the model is in stream mode, which sends partial
-        results each time.
-
-        Returns:
-            bool: Whether the model is in stream mode.
-        """
-        return self.model_config_dict.get('stream', False)
-
+    
     def _request_stream_parse(
         self,
         messages: List[OpenAIMessage],
@@ -452,3 +427,28 @@ class OpenAIModel(BaseModelBackend):
             response_format=response_format,
             **request_config,
         )
+
+    def check_model_config(self):
+        r"""Check whether the model configuration contains any
+        unexpected arguments to OpenAI API.
+
+        Raises:
+            ValueError: If the model configuration dictionary contains any
+                unexpected arguments to OpenAI API.
+        """
+        for param in self.model_config_dict:
+            if param not in OPENAI_API_PARAMS:
+                raise ValueError(
+                    f"Unexpected argument `{param}` is "
+                    "input into OpenAI model backend."
+                )
+
+    @property
+    def stream(self) -> bool:
+        r"""Returns whether the model is in stream mode, which sends partial
+        results each time.
+
+        Returns:
+            bool: Whether the model is in stream mode.
+        """
+        return self.model_config_dict.get('stream', False)
