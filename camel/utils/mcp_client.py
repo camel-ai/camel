@@ -396,14 +396,25 @@ class MCPClient:
             if not self.config.url:
                 raise ValueError("URL is required for SSE transport")
 
-            async with sse_client(
-                url=self.config.url,
-                headers=self.config.headers,
-                timeout=self.config.timeout,
-                sse_read_timeout=self.config.sse_read_timeout,
-                httpx_client_factory=create_mcp_http_client,
-            ) as (read_stream, write_stream):
-                yield read_stream, write_stream
+            try:
+                # Try with httpx_client_factory first (newer versions)
+                async with sse_client(
+                    url=self.config.url,
+                    headers=self.config.headers,
+                    timeout=self.config.timeout,
+                    sse_read_timeout=self.config.sse_read_timeout,
+                    httpx_client_factory=create_mcp_http_client,
+                ) as (read_stream, write_stream):
+                    yield read_stream, write_stream
+            except TypeError:
+                # Fall back to basic call without httpx_client_factory
+                async with sse_client(
+                    url=self.config.url,
+                    headers=self.config.headers,
+                    timeout=self.config.timeout,
+                    sse_read_timeout=self.config.sse_read_timeout,
+                ) as (read_stream, write_stream):
+                    yield read_stream, write_stream
 
         elif transport_type == TransportType.STREAMABLE_HTTP:
             from mcp.client.streamable_http import streamablehttp_client
@@ -414,17 +425,31 @@ class MCPClient:
                     "URL is required for StreamableHTTP transport"
                 )
 
-            async with streamablehttp_client(
-                url=self.config.url,
-                headers=self.config.headers,
-                timeout=timedelta(seconds=self.config.timeout),
-                sse_read_timeout=timedelta(
-                    seconds=self.config.sse_read_timeout
-                ),
-                terminate_on_close=self.config.terminate_on_close,
-                httpx_client_factory=create_mcp_http_client,
-            ) as (read_stream, write_stream, get_session_id):
-                yield read_stream, write_stream, get_session_id
+            try:
+                # Try with httpx_client_factory first (newer versions)
+                async with streamablehttp_client(
+                    url=self.config.url,
+                    headers=self.config.headers,
+                    timeout=timedelta(seconds=self.config.timeout),
+                    sse_read_timeout=timedelta(
+                        seconds=self.config.sse_read_timeout
+                    ),
+                    terminate_on_close=self.config.terminate_on_close,
+                    httpx_client_factory=create_mcp_http_client,
+                ) as (read_stream, write_stream, get_session_id):
+                    yield read_stream, write_stream, get_session_id
+            except TypeError:
+                # Fall back to basic call without httpx_client_factory
+                async with streamablehttp_client(
+                    url=self.config.url,
+                    headers=self.config.headers,
+                    timeout=timedelta(seconds=self.config.timeout),
+                    sse_read_timeout=timedelta(
+                        seconds=self.config.sse_read_timeout
+                    ),
+                    terminate_on_close=self.config.terminate_on_close,
+                ) as (read_stream, write_stream, get_session_id):
+                    yield read_stream, write_stream, get_session_id
 
         elif transport_type == TransportType.WEBSOCKET:
             from mcp.client.websocket import websocket_client
@@ -464,6 +489,17 @@ class MCPClient:
             return await self._session.list_tools()
         except Exception as e:
             raise e
+
+    def list_mcp_tools_sync(self):
+        r"""Synchronously retrieves the list of available tools from the
+        connected MCP server.
+
+        Returns:
+            ListToolsResult: Result containing available MCP tools.
+        """
+        from camel.utils.commons import run_async
+
+        return run_async(self.list_mcp_tools)()
 
     def generate_function_from_mcp_tool(
         self, mcp_tool: types.Tool
@@ -751,6 +787,21 @@ class MCPClient:
         )
 
         return result
+
+    def call_tool_sync(self, tool_name: str, arguments: Dict[str, Any]) -> Any:
+        r"""Synchronously call a tool by name with the provided arguments.
+
+        Args:
+            tool_name (str): The name of the tool to call.
+            arguments (Dict[str, Any]): A dictionary of arguments to pass to
+                the tool.
+
+        Returns:
+            Any: The result returned by the tool execution.
+        """
+        from camel.utils.commons import run_async
+
+        return run_async(self.call_tool)(tool_name, arguments)
 
 
 def create_mcp_client(

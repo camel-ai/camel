@@ -403,6 +403,9 @@ class MCPToolkit(BaseToolkit):
 
         for name, cfg in mcp_servers.items():
             try:
+                if "timeout" not in cfg and self.timeout is not None:
+                    cfg["timeout"] = self.timeout
+
                 client = self._create_client_from_config(name, cfg)
                 clients.append(client)
             except Exception as e:
@@ -422,7 +425,12 @@ class MCPToolkit(BaseToolkit):
 
         try:
             # Use the new mcp_client factory function
-            client = create_mcp_client(cfg)
+            # Pass timeout from toolkit if available
+            kwargs = {}
+            if hasattr(self, "timeout") and self.timeout is not None:
+                kwargs["timeout"] = self.timeout
+
+            client = create_mcp_client(cfg, **kwargs)
             return client
         except Exception as e:
             error_msg = f"Failed to create client for server '{name}': {e}"
