@@ -266,18 +266,27 @@ title: "{title}"
 ---
 
 """.format(title=title)
-        
+
         # For key_modules files, remove any H1 header that matches the title to avoid duplication
         if 'key_modules' in str(md_file):
             # Remove H1 header that matches the title (case-insensitive)
             h1_pattern = r'^#\s+' + re.escape(title) + r'\s*\n'
-            content = re.sub(h1_pattern, '', content, flags=re.MULTILINE | re.IGNORECASE)
-            
+            content = re.sub(
+                h1_pattern, '', content, flags=re.MULTILINE | re.IGNORECASE
+            )
+
             # Also try to match the original filename-based title
             original_title = Path(md_file).stem.replace('_', ' ')
-            h1_pattern_original = r'^#\s+' + re.escape(original_title) + r'\s*\n'
-            content = re.sub(h1_pattern_original, '', content, flags=re.MULTILINE | re.IGNORECASE)
-        
+            h1_pattern_original = (
+                r'^#\s+' + re.escape(original_title) + r'\s*\n'
+            )
+            content = re.sub(
+                h1_pattern_original,
+                '',
+                content,
+                flags=re.MULTILINE | re.IGNORECASE,
+            )
+
         content = front_matter + content
 
     # Write to MDX file
