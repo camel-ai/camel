@@ -1,0 +1,60 @@
+<a id="camel.extractors.base"></a>
+
+<a id="camel.extractors.base.BaseExtractorStrategy"></a>
+
+## BaseExtractorStrategy
+
+```python
+class BaseExtractorStrategy(ABC):
+```
+
+Abstract base class for extraction strategies.
+
+<a id="camel.extractors.base.BaseExtractor"></a>
+
+## BaseExtractor
+
+```python
+class BaseExtractor:
+```
+
+Base class for response extractors with a fixed strategy pipeline.
+
+This extractor:
+- Uses a **fixed multi-stage pipeline** of extraction strategies.
+- Tries **each strategy in order** within a stage until one succeeds.
+- Feeds the **output of one stage into the next** for processing.
+- Supports **async execution** for efficient processing.
+- Provides **batch processing and resource monitoring** options.
+
+<a id="camel.extractors.base.BaseExtractor.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    pipeline: List[List[BaseExtractorStrategy]],
+    cache_templates: bool = True,
+    max_cache_size: int = 1000,
+    extraction_timeout: float = 30.0,
+    batch_size: int = 10,
+    monitoring_interval: float = 5.0,
+    cpu_threshold: float = 80.0,
+    memory_threshold: float = 85.0,
+    **kwargs
+):
+```
+
+Initialize the extractor with a multi-stage strategy pipeline.
+
+**Parameters:**
+
+- **pipeline** (List[List[BaseExtractorStrategy]]): A fixed list of lists where each list represents a stage containing extractor strategies executed in order.
+- **cache_templates** (bool): Whether to cache extraction templates. (default: :obj:`True`)
+- **max_cache_size** (int): Maximum number of templates to cache. (default: :obj:`1000`)
+- **extraction_timeout** (float): Maximum time for extraction in seconds. (default: :obj:`30.0`)
+- **batch_size** (int): Size of batches for parallel extraction. (default: :obj:`10`)
+- **monitoring_interval** (float): Interval in seconds between resource checks. (default: :obj:`5.0`)
+- **cpu_threshold** (float): CPU usage percentage threshold for scaling down. (default: :obj:`80.0`)
+- **memory_threshold** (float): Memory usage percentage threshold for scaling down. (default: :obj:`85.0`) **kwargs: Additional extractor parameters.
