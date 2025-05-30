@@ -19,11 +19,21 @@ using different transport protocols (stdio, sse, streamable-http, websocket).
 The client can automatically detect the transport type based on configuration.
 """
 
+import inspect
 from contextlib import asynccontextmanager
 from datetime import timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any, AsyncGenerator, Dict, List, Optional, Union
+from typing import (
+    Any,
+    AsyncGenerator,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Union,
+)
 
 import httpx
 import mcp.types as types
@@ -161,6 +171,8 @@ class MCPClient:
             initialization. (default: :obj:`None`)
         timeout (Optional[float], optional): Timeout for waiting for messages
             from the server in seconds. (default: :obj:`10.0`)
+        strict (Optional[bool], optional): Strict mode for generating
+            FunctionTool objects. (default: :obj:`False`)
 
     Examples:
         STDIO server connection:
@@ -203,12 +215,14 @@ class MCPClient:
         config: Union[ServerConfig, Dict[str, Any]],
         client_info: Optional[types.Implementation] = None,
         timeout: Optional[float] = 10.0,
+        strict: Optional[bool] = False,
     ):
         # Convert dict config to ServerConfig if needed
         if isinstance(config, dict):
             config = ServerConfig(**config)
 
         self.config = config
+        self.strict = strict
 
         # Validate transport type early (this will raise ValueError if invalid)
         _ = self.config.transport_type
@@ -327,7 +341,7 @@ class MCPClient:
                     command_parts.extend(self.config.args)
             command_str = (
                 ' '.join(command_parts) if command_parts else "unknown command"
-            ) 
+            )
             return f"MCP server package not found. Check if '{command_str}' is correct."  # noqa: E501
 
         elif "permission" in error_str:
@@ -437,6 +451,176 @@ class MCPClient:
         """Check if the client is currently connected."""
         return self._session is not None
 
+    async def list_mcp_tools(self):
+        r"""Retrieves the list of available tools from the connected MCP
+        server.
+
+        Returns:
+            ListToolsResult: Result containing available MCP tools.
+        """
+        if not self._session:
+            return "MCP Client is not connected. Call `connection()` first."
+        try:
+            return await self._session.list_tools()
+        except Exception as e:
+            raise e
+
+    def generate_function_from_mcp_tool(
+        self, mcp_tool: types.Tool
+    ) -> Callable:
+        r"""Dynamically generates a Python callable function corresponding to
+        a given MCP tool.
+
+        Args:
+            mcp_tool (types.Tool): The MCP tool definition received from the
+                MCP server.
+
+        Returns:
+            Callable: A dynamically created async Python function that wraps
+                the MCP tool.
+        """
+        func_name = mcp_tool.name
+        func_desc = mcp_tool.description or "No description provided."
+        parameters_schema = mcp_tool.inputSchema.get("properties", {})
+        required_params = mcp_tool.inputSchema.get("required", [])
+
+        type_map = {
+            "string": str,
+            "integer": int,
+            "number": float,
+            "boolean": bool,
+            "array": list,
+            "object": dict,
+        }
+        annotations = {}  # used to type hints
+        defaults: Dict[str, Any] = {}  # store default values
+
+        func_params = []
+        for param_name, param_schema in parameters_schema.items():
+            param_type = param_schema.get("type", "Any")
+            param_type = type_map.get(param_type, Any)
+
+            annotations[param_name] = param_type
+            if param_name not in required_params:
+                defaults[param_name] = None
+
+            func_params.append(param_name)
+
+        async def dynamic_function(**kwargs) -> str:
+            r"""Auto-generated function for MCP Tool interaction.
+
+            Args:
+                kwargs: Keyword arguments corresponding to MCP tool parameters.
+
+            Returns:
+                str: The textual result returned by the MCP tool.
+            """
+
+            missing_params: Set[str] = set(required_params) - set(
+                kwargs.keys()
+            )
+            if missing_params:
+                from camel.logger import get_logger
+
+                logger = get_logger(__name__)
+                logger.warning(
+                    f"Missing required parameters: {missing_params}"
+                )
+                return "Missing required parameters."
+
+            if not self._session:
+                from camel.logger import get_logger
+
+                logger = get_logger(__name__)
+                logger.error(
+                    "MCP Client is not connected. Call `connection()` first."
+                )
+                raise RuntimeError(
+                    "MCP Client is not connected. Call `connection()` first."
+                )
+
+            try:
+                result = await self._session.call_tool(func_name, kwargs)
+            except Exception as e:
+                from camel.logger import get_logger
+
+                logger = get_logger(__name__)
+                logger.error(f"Failed to call MCP tool '{func_name}': {e!s}")
+                raise e
+
+            if not result.content or len(result.content) == 0:
+                return "No data available for this request."
+
+            # Handle different content types
+            try:
+                content = result.content[0]
+                if content.type == "text":
+                    return content.text
+                elif content.type == "image":
+                    # Return image URL or data URI if available
+                    if hasattr(content, "url") and content.url:
+                        return f"Image available at: {content.url}"
+                    return "Image content received (data URI not shown)"
+                elif content.type == "embedded_resource":
+                    # Return resource information if available
+                    if hasattr(content, "name") and content.name:
+                        return f"Embedded resource: {content.name}"
+                    return "Embedded resource received"
+                else:
+                    msg = f"Received content of type '{content.type}'"
+                    return f"{msg} which is not fully supported yet."
+            except (IndexError, AttributeError) as e:
+                from camel.logger import get_logger
+
+                logger = get_logger(__name__)
+                logger.error(
+                    f"Error processing content from MCP tool response: {e!s}"
+                )
+                raise e
+
+        dynamic_function.__name__ = func_name
+        dynamic_function.__doc__ = func_desc
+        dynamic_function.__annotations__ = annotations
+
+        sig = inspect.Signature(
+            parameters=[
+                inspect.Parameter(
+                    name=param,
+                    kind=inspect.Parameter.KEYWORD_ONLY,
+                    default=defaults.get(param, inspect.Parameter.empty),
+                    annotation=annotations[param],
+                )
+                for param in func_params
+            ]
+        )
+        dynamic_function.__signature__ = sig  # type: ignore[attr-defined]
+
+        return dynamic_function
+
+    def _build_tool_schema(self, mcp_tool: types.Tool) -> Dict[str, Any]:
+        """Build tool schema for OpenAI function calling format."""
+        input_schema = mcp_tool.inputSchema
+        properties = input_schema.get("properties", {})
+        required = input_schema.get("required", [])
+
+        parameters = {
+            "type": "object",
+            "properties": properties,
+            "required": required,
+            "additionalProperties": False,
+        }
+
+        return {
+            "type": "function",
+            "function": {
+                "name": mcp_tool.name,
+                "description": mcp_tool.description
+                or "No description provided.",
+                "strict": self.strict,
+                "parameters": parameters,
+            },
+        }
+
     def get_tools(self):
         r"""Get available tools as CAMEL FunctionTool objects.
 
@@ -457,11 +641,31 @@ class MCPClient:
         if not self.is_connected():
             return []
 
+        # Import FunctionTool here to avoid circular imports
+        try:
+            from camel.toolkits import FunctionTool
+        except ImportError:
+            from camel.logger import get_logger
+
+            logger = get_logger(__name__)
+            logger.error(
+                "Failed to import FunctionTool. Please ensure "
+                "camel.toolkits is available."
+            )
+            return []
+
         camel_tools = []
         for tool in self._tools:
             try:
-                # Convert MCP tool to CAMEL FunctionTool
-                camel_tool = self._convert_mcp_tool_to_camel(tool)
+                # Generate the function and build the tool schema
+                func = self.generate_function_from_mcp_tool(tool)
+                schema = self._build_tool_schema(tool)
+
+                # Create CAMEL FunctionTool
+                camel_tool = FunctionTool(
+                    func,
+                    openai_tool_schema=schema,
+                )
                 camel_tools.append(camel_tool)
             except Exception as e:
                 # Log error but continue with other tools
@@ -471,41 +675,6 @@ class MCPClient:
                 logger.warning(f"Failed to convert tool {tool.name}: {e}")
 
         return camel_tools
-
-    def _convert_mcp_tool_to_camel(self, mcp_tool: types.Tool):
-        """Convert an MCP tool to a CAMEL FunctionTool."""
-        # Delayed import to avoid circular dependency
-        from camel.toolkits import FunctionTool
-
-        # Create a wrapper function that calls the MCP tool
-        async def tool_wrapper(**kwargs):
-            if not self.is_connected():
-                raise RuntimeError("Client is not connected")
-
-            # Convert kwargs to the format expected by MCP
-            arguments = kwargs
-
-            # Call the tool using the correct API
-            if self._session is None:
-                raise RuntimeError("Client session is not available")
-
-            result = await self._session.call_tool(
-                name=mcp_tool.name, arguments=arguments
-            )
-
-            return result
-
-        # Set the function name to match the tool name
-        tool_wrapper.__name__ = mcp_tool.name
-
-        # Set the function docstring to include description
-        if mcp_tool.description:
-            tool_wrapper.__doc__ = mcp_tool.description
-        else:
-            tool_wrapper.__doc__ = f"MCP tool: {mcp_tool.name}"
-
-        # Create the FunctionTool with only the func parameter
-        return FunctionTool(func=tool_wrapper)
 
     def get_text_tools(self) -> str:
         """
@@ -599,7 +768,8 @@ def create_mcp_client(
             dictionary is provided, it will be automatically converted to
             a :obj:`ServerConfig`.
         **kwargs: Additional keyword arguments passed to the :obj:`MCPClient`
-            constructor, such as :obj:`client_info` and :obj:`timeout`.
+            constructor, such as :obj:`client_info`, :obj:`timeout`, and
+            :obj:`strict`.
 
     Returns:
         MCPClient: A configured :obj:`MCPClient` instance ready for connection.
@@ -632,6 +802,19 @@ def create_mcp_client(
         .. code-block:: python
 
             client = create_mcp_client({"url": "ws://localhost:8080/mcp"})
+
+        With strict mode enabled:
+
+        .. code-block:: python
+
+            client = create_mcp_client({
+                "command": "npx",
+                "args": [
+                    "-y",
+                    "@modelcontextprotocol/server-filesystem",
+                    "/path",
+                ],
+            }, strict=True)
     """
     return MCPClient(config, **kwargs)
 
