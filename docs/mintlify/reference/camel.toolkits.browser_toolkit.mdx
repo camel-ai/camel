@@ -571,3 +571,237 @@ solve the task which needs multi-step actions.
 ```python
 def get_tools(self):
 ```
+
+<a id="camel.toolkits.browser_toolkit.BrowserToolkit._ensure_browser_initialized"></a>
+
+### _ensure_browser_initialized
+
+```python
+def _ensure_browser_initialized(self):
+```
+
+<a id="camel.toolkits.browser_toolkit.BrowserToolkit.setup_browser"></a>
+
+### setup_browser
+
+```python
+def setup_browser(self):
+```
+
+Initializes the browser session.
+
+<a id="camel.toolkits.browser_toolkit.BrowserToolkit.shutdown_browser"></a>
+
+### shutdown_browser
+
+```python
+def shutdown_browser(self):
+```
+
+Closes the browser session.
+
+<a id="camel.toolkits.browser_toolkit.BrowserToolkit.visit_page"></a>
+
+### visit_page
+
+```python
+def visit_page(self, url: str):
+```
+
+Navigates the browser to the specified URL.
+
+**Parameters:**
+
+- **url** (str): The URL to visit.
+
+**Returns:**
+
+  str: Confirmation message.
+
+<a id="camel.toolkits.browser_toolkit.BrowserToolkit.get_current_url"></a>
+
+### get_current_url
+
+```python
+def get_current_url(self):
+```
+
+**Returns:**
+
+  str: The current URL.
+
+<a id="camel.toolkits.browser_toolkit.BrowserToolkit.scroll_page"></a>
+
+### scroll_page
+
+```python
+def scroll_page(self, direction: Literal['up', 'down', 'top', 'bottom']):
+```
+
+Scrolls the current page.
+
+**Parameters:**
+
+- **direction** (`Literal["up", "down", "top", "bottom"]`): The direction to scroll.
+
+**Returns:**
+
+  str: Confirmation message.
+
+<a id="camel.toolkits.browser_toolkit.BrowserToolkit.click_element"></a>
+
+### click_element
+
+```python
+def click_element(self, element_id: Union[str, int]):
+```
+
+Clicks an element with the given ID.
+
+**Parameters:**
+
+- **element_id** (Union[str, int]): The ID of the element to click.
+
+**Returns:**
+
+  str: Confirmation message or error.
+
+<a id="camel.toolkits.browser_toolkit.BrowserToolkit.fill_input_element"></a>
+
+### fill_input_element
+
+```python
+def fill_input_element(self, element_id: Union[str, int], text: str):
+```
+
+Fills an input field with the given text and presses Enter.
+
+**Parameters:**
+
+- **element_id** (Union[str, int]): The ID of the input field.
+- **text** (str): The text to fill.
+
+**Returns:**
+
+  str: Confirmation message or error.
+
+<a id="camel.toolkits.browser_toolkit.BrowserToolkit.hover_element"></a>
+
+### hover_element
+
+```python
+def hover_element(self, element_id: Union[str, int]):
+```
+
+Hovers over an element with the given ID.
+
+**Parameters:**
+
+- **element_id** (Union[str, int]): The ID of the element to hover over.
+
+**Returns:**
+
+  str: Confirmation message or error.
+
+<a id="camel.toolkits.browser_toolkit.BrowserToolkit.find_text_on_page"></a>
+
+### find_text_on_page
+
+```python
+def find_text_on_page(self, search_text: str):
+```
+
+Finds text on the current page and scrolls to it.
+
+**Parameters:**
+
+- **search_text** (str): The text to find.
+
+**Returns:**
+
+  str: Confirmation message or error.
+
+<a id="camel.toolkits.browser_toolkit.BrowserToolkit.navigate_back"></a>
+
+### navigate_back
+
+```python
+def navigate_back(self):
+```
+
+**Returns:**
+
+  str: Confirmation message.
+
+<a id="camel.toolkits.browser_toolkit.BrowserToolkit.get_page_content"></a>
+
+### get_page_content
+
+```python
+def get_page_content(self, format: Literal['markdown', 'html'] = 'markdown'):
+```
+
+Extracts the content of the current page.
+
+**Parameters:**
+
+- **format** (`Literal["markdown", "html"]`): The desired format of the content. Defaults to "markdown".
+
+**Returns:**
+
+  str: The page content in the specified format.
+
+<a id="camel.toolkits.browser_toolkit.BrowserToolkit.download_file_by_element_id"></a>
+
+### download_file_by_element_id
+
+```python
+def download_file_by_element_id(self, element_id: Union[str, int]):
+```
+
+Downloads a file associated with a given element ID.
+
+**Parameters:**
+
+- **element_id** (Union[str, int]): The ID of the element that triggers the download.
+
+**Returns:**
+
+  str: Path to the downloaded file or an error message.
+
+<a id="camel.toolkits.browser_toolkit.BrowserToolkit.capture_screenshot"></a>
+
+### capture_screenshot
+
+```python
+def capture_screenshot(self, mark_interactive_elements: bool = False):
+```
+
+Captures a screenshot of the current page.
+
+**Parameters:**
+
+- **mark_interactive_elements** (bool): Whether to mark interactive elements on the screenshot. Defaults to False.
+
+**Returns:**
+
+  str: Path to the saved screenshot or an error message.
+
+<a id="camel.toolkits.browser_toolkit.BrowserToolkit.ask_question_about_video"></a>
+
+### ask_question_about_video
+
+```python
+def ask_question_about_video(self, question: str):
+```
+
+Asks a question about a video on the current page.
+Note: This is an interactive function that may require user input.
+
+**Parameters:**
+
+- **question** (str): The question to ask about the video.
+
+**Returns:**
+
+  str: The answer to the question or an error/cancellation message.
