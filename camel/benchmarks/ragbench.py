@@ -18,7 +18,7 @@ import numpy as np
 from datasets import Dataset, load_dataset
 
 from camel.agents import ChatAgent
-from camel.benchmarks import BaseBenchmark
+from camel.benchmarks.base import BaseBenchmark, EvalResult
 from camel.logger import get_logger
 from camel.retrievers import AutoRetriever
 
@@ -284,11 +284,11 @@ class RAGBenchBenchmark(BaseBenchmark):
             )
             self.download()
 
-    def run(  # type: ignore[override, return]
+    def run(
         self,
         agent: ChatAgent,
         auto_retriever: AutoRetriever,
-    ) -> Dict[str, Optional[float]]:
+    ) -> EvalResult:
         r"""Run the benchmark evaluation.
 
         Args:
@@ -297,7 +297,8 @@ class RAGBenchBenchmark(BaseBenchmark):
                 contexts.
 
         Returns:
-            Dict[str, Optional[float]]: Dictionary of evaluation metrics.
+            EvalResult: Standardized evaluation result with metrics and
+                detailed results.
         """
 
         def context_call(example):
@@ -326,8 +327,20 @@ class RAGBenchBenchmark(BaseBenchmark):
             metrics_to_evaluate=["context_relevancy", "faithfulness"],
         )
 
-        return ragas_calculate_metrics(
-            evaluated_ds,
-            pred_context_relevance_field="context_relevancy",
-            pred_faithfulness_field="faithfulness",
+        # Calculate metrics
+        metrics_dict = ragas_calculate_metrics(evaluated_ds)  # type: ignore[call-arg]
+
+        # Convert annotated_ds to list of dicts for details
+        details_list = [example for example in evaluated_ds]
+
+        metadata_dict = {
+            "subset": self.subset,
+            "split": self.split,
+            "num_examples": len(self.dataset) if self.dataset else 0,
+        }
+
+        return EvalResult(
+            metrics=metrics_dict,  # type: ignore[arg-type]
+            details=details_list,
+            metadata=metadata_dict,
         )
