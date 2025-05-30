@@ -619,6 +619,7 @@
               "reference/camel.loaders.jina_url_reader",
               "reference/camel.loaders.markitdown",
               "reference/camel.loaders.mineru_extractor",
+              "reference/camel.loaders.mistral_reader",
               "reference/camel.loaders.pandas_reader",
               "reference/camel.loaders.scrapegraph_reader",
               "reference/camel.loaders.unstructured_io"
