@@ -378,14 +378,14 @@ class MCPAgent(ChatAgent):
                         if (
                             not isinstance(server_idx, int)
                             or server_idx < 0
-                            or server_idx >= len(self.mcp_toolkit.servers)
+                            or server_idx >= len(self.mcp_toolkit.clients)
                         ):
                             logger.warning(
                                 f"Invalid server index: {server_idx}"
                             )
                             continue
 
-                        server = self.mcp_toolkit.servers[server_idx]
+                        server = self.mcp_toolkit.clients[server_idx]
                         result = await server.call_tool(tool_name, tool_args)
 
                         # Safely access content
