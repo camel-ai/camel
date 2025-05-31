@@ -571,6 +571,7 @@ dependencies = [
     { name = "pillow" },
     { name = "psutil" },
     { name = "pydantic" },
+    { name = "python-pptx" },
     { name = "tiktoken" },
 ]
 
@@ -1138,6 +1139,7 @@ requires-dist = [
     { name = "pytest-cov", marker = "extra == 'all'", specifier = ">=4,<5" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4,<5" },
     { name = "python-dotenv", marker = "extra == 'owl'", specifier = ">=1.0.0,<2" },
+    { name = "python-pptx", specifier = ">=1.0.2" },
     { name = "pytidb-experimental", marker = "extra == 'all'", specifier = "==0.0.1.dev4" },
     { name = "pytidb-experimental", marker = "extra == 'rag'", specifier = "==0.0.1.dev4" },
     { name = "pytidb-experimental", marker = "extra == 'storage'", specifier = "==0.0.1.dev4" },
@@ -5863,6 +5865,21 @@ wheels = [
 ]
 
 [[package]]
+name = "python-pptx"
+version = "1.0.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "lxml" },
+    { name = "pillow" },
+    { name = "typing-extensions" },
+    { name = "xlsxwriter" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/52/a9/0c0db8d37b2b8a645666f7fd8accea4c6224e013c42b1d5c17c93590cd06/python_pptx-1.0.2.tar.gz", hash = "sha256:479a8af0eaf0f0d76b6f00b0887732874ad2e3188230315290cd1f9dd9cc7095", size = 10109297 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d9/4f/00be2196329ebbff56ce564aa94efb0fbc828d00de250b1980de1a34ab49/python_pptx-1.0.2-py3-none-any.whl", hash = "sha256:160838e0b8565a8b1f67947675886e9fea18aa5e795db7ae531606d68e785cba", size = 472788 },
+]
+
+[[package]]
 name = "python3-xlib"
 version = "0.15"
 source = { registry = "https://pypi.org/simple" }
@@ -8016,6 +8033,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/bb/f1/cd87cb50c5da52a32f3c8eb268f31f2e0594171a89de69b37a66dc5de0b8/xls2xlsx-0.2.0.tar.gz", hash = "sha256:98123cb8f43fdd68f4af8d61d7223100d6003daf9a592fa6c0746acbc7314c35", size = 1330340 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/fc/be/8302d331252974200ff4adb392d1fc67e4ff161c85a3109b915f4cbaa1ca/xls2xlsx-0.2.0-py2.py3-none-any.whl", hash = "sha256:a6b9c6f887d2e366a54d26682d1ec399f5dbf408567d47768ef6178ef587af4e", size = 39191 },
+]
+
+[[package]]
+name = "xlsxwriter"
+version = "3.2.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/a7/d1/e026d33dd5d552e5bf3a873dee54dad66b550230df8290d79394f09b2315/xlsxwriter-3.2.3.tar.gz", hash = "sha256:ad6fd41bdcf1b885876b1f6b7087560aecc9ae5a9cc2ba97dcac7ab2e210d3d5", size = 209135 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/37/b1/a252d499f2760b314fcf264d2b36fcc4343a1ecdb25492b210cb0db70a68/XlsxWriter-3.2.3-py3-none-any.whl", hash = "sha256:593f8296e8a91790c6d0378ab08b064f34a642b3feb787cf6738236bd0a4860d", size = 169433 },
 ]
 
 [[package]]
