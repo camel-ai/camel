@@ -21,9 +21,7 @@ from tqdm import tqdm
 
 from camel.agents import ChatAgent
 from camel.benchmarks import BaseBenchmark
-from camel.messages import BaseMessage
-from camel.societies.workforce import Workforce
-from camel.tasks import Task
+from camel.societies.workforce.workforce_agent import WorkforceAgent
 
 # URLs for different HealthBench variants
 HEALTHBENCH_URLS = {
@@ -85,86 +83,11 @@ Return just the json object in markdown format. Do not include any other text in
 """.strip()
 
 
-PROPOSER_PROMPT = (
-    "You are a diligent medical assistant (Proposer) whose job is to draft a complete, helpful, and safe answer to the user's medical question."
-)
-CRITIC_PROMPT = (
-    "You are a medical safety and accuracy reviewer (Critic). Review the Proposer's draft answer, pointing out any mistakes, dangerous advice, or missing important medical details."
-)
-FINALIZER_PROMPT = (
-    "You are a senior medical assistant (Finalizer). Carefully integrate the Critic's feedback to produce a final, clear, medically sound answer for the user."
-)
-
-
-class WorkforceAgent:
-    r"""
-    A wrapper to let a CAMEL Workforce behave like a ChatAgent.
-    Generates a response by running a proposer/critic/finalizer pipeline.
-    The .step() interface mimics ChatAgent so it can be dropped into HealthBench.
-    """
-
-    def __init__(self):
-        # You may customize model_config, model name, etc.
-        self.proposer = ChatAgent(system_message=PROPOSER_PROMPT)
-        self.critic = ChatAgent(system_message=CRITIC_PROMPT)
-        self.finalizer = ChatAgent(system_message=FINALIZER_PROMPT)
-
-        self.workforce = Workforce("HealthBench Judge Committee")
-        self.workforce.add_single_agent_worker(
-                "Proposer (drafts answer to the medical question)", worker=self.proposer
-            ).add_single_agent_worker(
-                "Critic (reviews the draft for accuracy, completeness, and safety)", worker=self.critic
-            ).add_single_agent_worker(
-                "Finalizer (integrates critic feedback into a final, polished answer)", worker=self.finalizer
-            )
-
-        # Optionally, keep role names for reference.
-        self.role_names = ["Proposer", "Critic", "Finalizer"]
-
-    def step(self, user_message):
-        r"""
-        Mimic ChatAgent's .step() interface.
-        Args:
-            user_message: str (the latest user question or context, e.g., from prompt[-1]['content'])
-        Returns:
-            An object with .msgs[0].content containing the final answer.
-        """
-        # Task instructions for the committee
-        task_instructions = (
-            "You are a collaborative team tasked with answering a medical question step by step:\n"
-            "1. The Proposer drafts an initial answer to the question.\n"
-            "2. The Critic reviews and comments on the draft for errors, missing info, or unsafe suggestions.\n"
-            "3. The Finalizer integrates the Critic's feedback to produce a final, polished answer.\n"
-            "Return ONLY the Finalizer's final answer as the solution."
-        )
-        # Compose the Task (ID is arbitrary since run is single-threaded)
-        task = Task(
-            content=task_instructions,
-            additional_info=user_message,
-            id="0"
-        )
-
-        # Run the workforce committee
-        result_task = self.workforce.process_task(task)
-        final_answer = result_task.result  # Should be a string (final answer)
-
-        # Wrap as a ChatAgent-style message
-        reply_msg = BaseMessage.make_assistant_message(
-            role_name="assistant", content=final_answer
-        )
-
-        # Wrap in object with .msgs[0].content for HealthBench compatibility
-        class DummyResponse:
-            def __init__(self, msg): self.msgs = [msg]
-
-        return DummyResponse(reply_msg)
-
-
 class HealthBenchmark(BaseBenchmark):
-    r"""HealthBench Benchmark for evaluating medical response safety and completeness.
+    r"""HealthBench for evaluating medical response safety and completeness.
 
     This benchmark evaluates completions against human-designed rubrics
-    from the HealthBench dataset. The assistant is expected to give helpful,
+    from OpenAI's HealthBench dataset. The assistant is expected to give helpful,
     safe, and structured medical guidance.
 
     Args:
@@ -242,7 +165,7 @@ class HealthBenchmark(BaseBenchmark):
         r"""Runs the HealthBench benchmark.
 
         Args:
-            agent (ChatAgent): The assistant being tested.
+            agent (ChatAgent, WorkforceAgent): The assistant or workforce being tested.
             grader (ChatAgent): The grading agent using rubric logic.
             variant (Literal): Dataset split to use ("test", "hard", "consensus").
             randomize (bool): Whether to shuffle data before evaluation.

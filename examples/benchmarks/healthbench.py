@@ -14,16 +14,46 @@
 
 
 from camel.agents import ChatAgent
-from camel.benchmarks.healthbench import HealthBenchmark, WorkforceAgent
+from camel.benchmarks.healthbench import HealthBenchmark
+from camel.societies.workforce.workforce_agent import WorkforceAgent
 
 if __name__ == "__main__":
 
-    # Define the assistant agent (medical assistant persona)
-    agent = ChatAgent(
-        system_message="You are a helpful medical assistant."
+    # Single Agent Example
+    # agent = ChatAgent(
+    #     system_message="You are a helpful medical assistant."
+    # )
+
+    # Workforce Example
+    # This example creates a medical workforce with three roles: Proposer, Critic and Finalizer.
+    medical_task_instruction = (
+        "You are a collaborative team tasked with answering a medical question step by step:\n"
+        "1. The Proposer drafts an initial answer to the question.\n"
+        "2. The Critic reviews and comments on the draft for errors, missing info, or unsafe suggestions.\n"
+        "3. The Finalizer integrates the Critic's feedback to produce a final, polished answer."
     )
 
-    workforce_agents = WorkforceAgent()
+    PROPOSER_PROMPT = (
+        "You are a diligent medical assistant (Proposer) whose job is to draft a complete, helpful, and safe answer to the user's medical question."
+    )
+    CRITIC_PROMPT = (
+        "You are a medical safety and accuracy reviewer (Critic). Review the Proposer's draft answer, pointing out any mistakes, dangerous advice, or missing important medical details."
+    )
+    FINALIZER_PROMPT = (
+        "You are a senior medical assistant (Finalizer). Carefully integrate the Critic's feedback to produce a final, clear, medically sound answer for the user."
+    )
+
+    agents_config = [
+        {'agent': ChatAgent(system_message=PROPOSER_PROMPT), 'description': "Proposer"},
+        {'agent': ChatAgent(system_message=CRITIC_PROMPT), 'description': "Critic"},
+        {'agent': ChatAgent(system_message=FINALIZER_PROMPT), 'description': "Finalizer"}
+    ]
+    
+    medical_workforce = WorkforceAgent(
+        agents_config=agents_config,
+        workforce_name="Medical Committee",
+        task_instruction=medical_task_instruction
+    )
 
     # Define the grader agent (strict rubric evaluator)
     grader = ChatAgent(
@@ -31,10 +61,10 @@ if __name__ == "__main__":
     )
 
     # Run HealthBench evaluation
-    benchmark = HealthBenchmark(data_dir=".", save_to="results.jsonl")
+    benchmark = HealthBenchmark(data_dir=".", save_to="example/benchmarks/health_results.jsonl")
 
     result = benchmark.run(
-        agent=workforce_agents,
+        agent=medical_workforce,
         grader=grader,
         variant="test",
         randomize=False,
