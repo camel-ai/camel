@@ -86,6 +86,8 @@ def test_create_presentation_basic(pptx_toolkit):
 def test_create_presentation_with_images(pptx_toolkit):
     r"""Test creating a PPTX file with image URLs."""
     import json
+    import os
+    from unittest.mock import patch
 
     content = [
         {
@@ -100,7 +102,10 @@ def test_create_presentation_with_images(pptx_toolkit):
     ]
     filename = "test_images.pptx"
 
-    result = pptx_toolkit.create_presentation(json.dumps(content), filename)
+    with patch.dict(os.environ, {"PEXELS_API_KEY": "test_key"}):
+        result = pptx_toolkit.create_presentation(
+            json.dumps(content), filename
+        )
 
     # Check the result message
     assert "successfully created" in result
@@ -177,6 +182,8 @@ def test_create_presentation_invalid_image_url(pptx_toolkit):
     r"""Test creating a PPTX file with invalid image URL (should continue
     without failing)."""
     import json
+    import os
+    from unittest.mock import patch
 
     content = [
         {
@@ -194,7 +201,10 @@ def test_create_presentation_invalid_image_url(pptx_toolkit):
     ]
     filename = "test_invalid_image.pptx"
 
-    result = pptx_toolkit.create_presentation(json.dumps(content), filename)
+    with patch.dict(os.environ, {"PEXELS_API_KEY": "test_key"}):
+        result = pptx_toolkit.create_presentation(
+            json.dumps(content), filename
+        )
 
     # Should still succeed despite invalid image
     assert "successfully created" in result
@@ -207,15 +217,17 @@ def test_create_presentation_invalid_image_url(pptx_toolkit):
 def test_create_presentation_invalid_content_type(pptx_toolkit):
     r"""Test that creating a PPTX file with invalid content type raises
     ValueError."""
+    import json
+
     filename = "test_invalid.pptx"
 
     # Test with invalid JSON string
-    with pytest.raises(ValueError, match="Content must be valid JSON"):
-        pptx_toolkit.create_presentation("invalid json content", filename)
+    result = pptx_toolkit.create_presentation("invalid json content", filename)
+    assert result == "Failed to parse content as JSON"
 
     # Test with JSON that's not a list
-    with pytest.raises(ValueError, match="PPTX content must be a list"):
-        pptx_toolkit.create_presentation('{"title": "Not a list"}', filename)
+    result = pptx_toolkit.create_presentation(json.dumps({}), filename)
+    assert result == "PPTX content must be a list of dictionaries"
 
 
 def test_create_presentation_auto_extension(pptx_toolkit):

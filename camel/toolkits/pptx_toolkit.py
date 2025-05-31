@@ -17,31 +17,22 @@ import os
 import random
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
-import pptx
-from dotenv import load_dotenv
-from pptx.dml.color import RGBColor
-from pptx.enum.shapes import MSO_AUTO_SHAPE_TYPE
-from pptx.util import Inches, Pt
+if TYPE_CHECKING:
+    from pptx import presentation
+    from pptx.slide import Slide
+    from pptx.text.text import TextFrame
 
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.utils import MCPServer, api_keys_required
 
-# Load environment variables
-load_dotenv()
-
 logger = get_logger(__name__)
 
 # Constants
 EMU_TO_INCH_SCALING_FACTOR = 1.0 / 914400
-INCHES_1 = Inches(1)
-INCHES_0_8 = Inches(0.8)
-INCHES_0_5 = Inches(0.5)
-INCHES_0_4 = Inches(0.4)
-INCHES_0_3 = Inches(0.3)
 
 STEP_BY_STEP_PROCESS_MARKER = '>> '
 
@@ -53,7 +44,8 @@ BOLD_ITALICS_PATTERN = re.compile(r'(\*\*(.*?)\*\*|\*(.*?)\*)')
 
 @MCPServer()
 class PPTXToolkit(BaseToolkit):
-    r"""A toolkit for creating and writing PowerPoint presentations (PPTX files).
+    r"""A toolkit for creating and writing PowerPoint presentations (PPTX
+    files).
 
     This class provides cross-platform support for creating PPTX files with
     title slides, content slides, text formatting, and image embedding.
@@ -121,7 +113,8 @@ class PPTXToolkit(BaseToolkit):
     def _format_text(
         self, frame_paragraph, text: str, set_color_to_white=False
     ) -> None:
-        r"""Apply bold and italic formatting while preserving the original word order.
+        r"""Apply bold and italic formatting while preserving the original
+        word order.
 
         Args:
             frame_paragraph: The paragraph to format.
@@ -129,6 +122,8 @@ class PPTXToolkit(BaseToolkit):
             set_color_to_white (bool): Whether to set the color to white.
                 (default: :obj: `False`)
         """
+        from pptx.dml.color import RGBColor
+
         matches = list(BOLD_ITALICS_PATTERN.finditer(text))
         last_index = 0
 
@@ -163,45 +158,58 @@ class PPTXToolkit(BaseToolkit):
 
     def _add_bulleted_items(
         self,
-        text_frame: pptx.text.text.TextFrame,
-        flat_items_list: list,
-        set_color_to_white=False,
+        text_frame: "TextFrame",
+        flat_items_list: List[Tuple[str, int]],
+        set_color_to_white: bool = False,
     ) -> None:
         r"""Add a list of texts as bullet points and apply formatting.
 
         Args:
-            text_frame: The text frame where text is to be displayed.
-            flat_items_list: The list of items to be displayed.
+            text_frame (TextFrame): The text frame where text is to be
+                displayed.
+            flat_items_list (List[Tuple[str, int]]): The list of items to be
+                displayed.
             set_color_to_white (bool): Whether to set the font color to white.
                 (default: :obj: `False`)
         """
         if not flat_items_list:
             logger.warning("Empty bullet point list provided")
             return
-        for idx, an_item in enumerate(flat_items_list):
+        for idx, item_content in enumerate(flat_items_list):
+            item_text, item_level = item_content
+
             if idx == 0:
-                paragraph = text_frame.paragraphs[0]
+                if not text_frame.paragraphs:
+                    # Ensure a paragraph exists if the frame is empty or
+                    # cleared
+                    paragraph = text_frame.add_paragraph()
+                else:
+                    # Use the first existing paragraph
+                    paragraph = text_frame.paragraphs[0]
             else:
                 paragraph = text_frame.add_paragraph()
-                paragraph.level = an_item[1]
+
+            paragraph.level = item_level
 
             self._format_text(
                 paragraph,
-                an_item[0].removeprefix(STEP_BY_STEP_PROCESS_MARKER),
+                item_text.removeprefix(STEP_BY_STEP_PROCESS_MARKER),
                 set_color_to_white=set_color_to_white,
             )
 
     def _get_flat_list_of_contents(
-        self, items: list, level: int
-    ) -> List[Tuple]:
+        self, items: List[Union[str, List[Any]]], level: int
+    ) -> List[Tuple[str, int]]:
         r"""Flatten a hierarchical list of bullet points to a single list.
 
         Args:
-            items: A bullet point (string or list).
-            level: The current level of hierarchy.
+            items (List[Union[str, List[Any]]]): A bullet point (string or
+                list).
+            level (int): The current level of hierarchy.
 
         Returns:
-            List[Tuple]: A list of (bullet item text, hierarchical level) tuples.
+            List[Tuple[str, int]]: A list of (bullet item text, hierarchical
+                level) tuples.
         """
         flat_list = []
 
@@ -216,21 +224,21 @@ class PPTXToolkit(BaseToolkit):
         return flat_list
 
     def _get_slide_width_height_inches(
-        self, presentation: Any
+        self, presentation: "presentation.Presentation"
     ) -> Tuple[float, float]:
         r"""Get the dimensions of a slide in inches.
 
         Args:
-            presentation: The presentation object.
+            presentation (presentation.Presentation): The presentation object.
 
         Returns:
             Tuple[float, float]: The width and height in inches.
         """
-        slide_width_inch = (
-            EMU_TO_INCH_SCALING_FACTOR * presentation.slide_width
+        slide_width_inch = EMU_TO_INCH_SCALING_FACTOR * (
+            presentation.slide_width or 0
         )
-        slide_height_inch = (
-            EMU_TO_INCH_SCALING_FACTOR * presentation.slide_height
+        slide_height_inch = EMU_TO_INCH_SCALING_FACTOR * (
+            presentation.slide_height or 0
         )
         return slide_width_inch, slide_height_inch
 
@@ -244,24 +252,29 @@ class PPTXToolkit(BaseToolkit):
 
         Args:
             file_path (Path): The target file path.
-            content (List[Dict[str, Any]]): The content to write to the PPTX file.
-                Must be a list of dictionaries where:
+            content (List[Dict[str, Any]]): The content to write to the PPTX
+                file. Must be a list of dictionaries where:
                 - First element: Title slide with keys 'title' and 'subtitle'
-                - Subsequent elements: Content slides with keys 'title', 'text' (optional)
-            template (Optional[str]): The name of the template to use. If not provided,
-                the default template will be used.
+                - Subsequent elements: Content slides with keys 'title', 'text'
+            template (Optional[str]): The name of the template to use. If not
+                provided, the default template will be used. (default: :obj:
+                `None`)
         """
+        import pptx
+
         # Use template if provided, otherwise create new presentation
         if template is not None:
             template_path = Path(template).resolve()
             if not template_path.exists():
                 logger.warning(
-                    f"Template file not found: {template_path}, using default template"
+                    f"Template file not found: {template_path}, using "
+                    "default template"
                 )
                 presentation = pptx.Presentation()
             else:
                 presentation = pptx.Presentation(str(template_path))
-                # Clear all existing slides by removing them from the slide list
+                # Clear all existing slides by removing them from the slide
+                # list
                 while len(presentation.slides) > 0:
                     rId = presentation.slides._sldIdLst[-1].rId
                     presentation.part.drop_rel(rId)
@@ -336,22 +349,32 @@ class PPTXToolkit(BaseToolkit):
     ) -> str:
         r"""Create a PowerPoint presentation (PPTX) file.
 
-            Args:
-                content (str): The content to write to the PPTX file as a JSON string.
-                    Must represent a list of dictionaries with the following structure:
-                    - First dict: title slide {"title": str, "subtitle": str}
-                    - Other dicts: content slides, which can be one of:
-                        * Bullet/step slides: {"heading": str, "bullet_points": list of str or nested lists, "img_keywords": str (optional)}
-                            - If any bullet point starts with '>> ', it will be rendered as a step-by-step process.
-                            - "img_keywords" can be a URL or search keywords for an image (optional).
-                        * Table slides: {"heading": str, "table": {"headers": list of str, "rows": list of list of str}}
-                filename (str): The name or path of the file. If a relative path is
-                    supplied, it is resolved to self.output_dir.
-                template (Optional[str]): The path to the template PPTX file.
-                        Initializes a presentation from a given template file Or PPTX file.
+        Args:
+            content (str): The content to write to the PPTX file as a JSON
+                string. Must represent a list of dictionaries with the
+                following structure:
+                - First dict: title slide {"title": str, "subtitle": str}
+                - Other dicts: content slides, which can be one of:
+                    * Bullet/step slides: {"heading": str, "bullet_points":
+                    list of str or nested lists, "img_keywords": str
+                    (optional)}
+                        - If any bullet point starts with '>> ', it will be
+                        rendered as a step-by-step process.
+                        - "img_keywords" can be a URL or search keywords for
+                        an image (optional).
+                    * Table slides: {"heading": str, "table": {"headers": list
+                    of str, "rows": list of list of str}}
+            filename (str): The name or path of the file. If a relative path is
+                supplied, it is resolved to self.output_dir.
+            template (Optional[str]): The path to the template PPTX file.
+                Initializes a presentation from a given template file Or PPTX
+                file. (default: :obj: `None`)
 
-            Example:
-            [
+        Returns:
+            str: A success message indicating the file was created.
+
+        Example:
+        [
             {
                 "title": "Presentation Title",
                 "subtitle": "Presentation Subtitle"
@@ -386,15 +409,6 @@ class PPTXToolkit(BaseToolkit):
                 "img_keywords": "comparison visualization"
             }
         ]
-
-
-            Returns:
-                str: A success message indicating the file was created.
-
-            Raises:
-                ValueError: If content is not valid JSON or file extension is not .pptx.
-                FileNotFoundError: If the output directory does not exist.
-                PermissionError: If there are insufficient permissions to write the file.
         """
         # Ensure filename has .pptx extension
         if not filename.lower().endswith('.pptx'):
@@ -409,12 +423,15 @@ class PPTXToolkit(BaseToolkit):
 
             parsed_content = json.loads(content)
         except json.JSONDecodeError as e:
-            raise ValueError(f"Content must be valid JSON: {e}")
+            logger.error(f"Content must be valid JSON: {e}")
+            return "Failed to parse content as JSON"
 
         if not isinstance(parsed_content, list):
-            raise ValueError(
-                f"PPTX content must be a list of dictionaries, got {type(parsed_content).__name__}"
+            logger.error(
+                f"PPTX content must be a list of dictionaries, "
+                f"got {type(parsed_content).__name__}"
             )
+            return "PPTX content must be a list of dictionaries"
 
         try:
             # Create the PPTX file
@@ -429,28 +446,18 @@ class PPTXToolkit(BaseToolkit):
         except Exception as e:
             error_msg = f"Failed to create PPTX file {file_path}: {e!s}"
             logger.error(error_msg)
-            raise e
-
-    def get_tools(self) -> List[FunctionTool]:
-        r"""Returns a list of FunctionTool objects representing the
-        functions in the toolkit.
-
-        Returns:
-            List[FunctionTool]: A list of FunctionTool objects
-                representing the functions in the toolkit.
-        """
-        return [FunctionTool(self.create_presentation)]
+            return error_msg
 
     def _handle_default_display(
         self,
-        presentation: Any,
-        slide_json: dict,
+        presentation: "presentation.Presentation",
+        slide_json: Dict[str, Any],
     ) -> None:
         r"""Display a list of text in a slide.
 
         Args:
-            presentation: The presentation object.
-            slide_json: The content of the slide as JSON data.
+            presentation (presentation.Presentation): The presentation object.
+            slide_json (Dict[str, Any]): The content of the slide as JSON data.
         """
         status = False
 
@@ -474,7 +481,8 @@ class PPTXToolkit(BaseToolkit):
         try:
             body_shape = shapes.placeholders[1]
         except KeyError:
-            placeholders = self._get_slide_placeholders(slide, layout_number=1)
+            # Get placeholders from the slide without layout_number
+            placeholders = self._get_slide_placeholders(slide)
             body_shape = shapes.placeholders[placeholders[0][0]]
 
         title_shape.text = self._remove_slide_number_from_heading(
@@ -489,19 +497,21 @@ class PPTXToolkit(BaseToolkit):
 
     @api_keys_required(
         [
-            ("api_key", 'PEXEL_API_KEY'),
+            ("api_key", 'PEXELS_API_KEY'),
         ]
     )
     def _handle_display_image__in_foreground(
         self,
-        presentation: Any,
-        slide_json: dict,
+        presentation: "presentation.Presentation",
+        slide_json: Dict[str, Any],
     ) -> bool:
-        r"""Create a slide with text and image using a picture placeholder layout.
+        r"""Create a slide with text and image using a picture placeholder
+        layout.
 
         Args:
-            presentation: The presentation object.
-            slide_json: The content of the slide as JSON data.
+            presentation (presentation.Presentation): The presentation object.
+            slide_json (Dict[str, Any]): The content of the slide as JSON data.
+
         Returns:
             bool: True if the slide has been processed.
         """
@@ -514,32 +524,31 @@ class PPTXToolkit(BaseToolkit):
         slide = presentation.slides.add_slide(slide)
         placeholders = None
 
-        title_placeholder = slide.shapes.title
+        title_placeholder = slide.shapes.title  # type: ignore[attr-defined]
         title_placeholder.text = self._remove_slide_number_from_heading(
             slide_json['heading']
         )
 
         try:
-            pic_col = slide.shapes.placeholders[1]
+            pic_col = slide.shapes.placeholders[1]  # type: ignore[attr-defined]
         except KeyError:
-            placeholders = self._get_slide_placeholders(slide, layout_number=8)
+            # Get placeholders from the slide without layout_number
+            placeholders = self._get_slide_placeholders(slide)  # type: ignore[arg-type]
             pic_col = None
             for idx, name in placeholders:
                 if 'picture' in name:
-                    pic_col = slide.shapes.placeholders[idx]
+                    pic_col = slide.shapes.placeholders[idx]  # type: ignore[attr-defined]
 
         try:
-            text_col = slide.shapes.placeholders[2]
+            text_col = slide.shapes.placeholders[2]  # type: ignore[attr-defined]
         except KeyError:
             text_col = None
             if not placeholders:
-                placeholders = self._get_slide_placeholders(
-                    slide, layout_number=8
-                )
+                placeholders = self._get_slide_placeholders(slide)  # type: ignore[arg-type]
 
             for idx, name in placeholders:
                 if 'content' in name:
-                    text_col = slide.shapes.placeholders[idx]
+                    text_col = slide.shapes.placeholders[idx]  # type: ignore[attr-defined]
 
         flat_items_list = self._get_flat_list_of_contents(
             slide_json['bullet_points'], level=0
@@ -565,11 +574,12 @@ class PPTXToolkit(BaseToolkit):
 
         try:
             url = 'https://api.pexels.com/v1/search'
-            api_key = os.getenv('PEXEL_API_KEY')
-            
+            api_key = os.getenv('PEXELS_API_KEY')
+
             headers = {
                 'Authorization': api_key,
-                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:10.0) Gecko/20100101 Firefox/10.0',
+                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:10.0) '
+                'Gecko/20100101 Firefox/10.0',
             }
             params = {
                 'query': img_keywords,
@@ -607,14 +617,14 @@ class PPTXToolkit(BaseToolkit):
 
     def _handle_table(
         self,
-        presentation: Any,
-        slide_json: dict,
+        presentation: "presentation.Presentation",
+        slide_json: Dict[str, Any],
     ) -> None:
         r"""Add a table to a slide.
 
         Args:
-            presentation: The presentation object.
-            slide_json: The content of the slide as JSON data.
+            presentation (presentation.Presentation): The presentation object.
+            slide_json (Dict[str, Any]): The content of the slide as JSON data.
         """
         headers = slide_json['table'].get('headers', [])
         rows = slide_json['table'].get('rows', [])
@@ -644,19 +654,23 @@ class PPTXToolkit(BaseToolkit):
 
     def _handle_step_by_step_process(
         self,
-        presentation: Any,
-        slide_json: dict,
+        presentation: "presentation.Presentation",
+        slide_json: Dict[str, Any],
         slide_width_inch: float,
         slide_height_inch: float,
     ) -> None:
         r"""Add shapes to display a step-by-step process in the slide.
 
         Args:
-            presentation: The presentation object.
-            slide_json: The content of the slide as JSON data.
-            slide_width_inch: The width of the slide in inches.
-            slide_height_inch: The height of the slide in inches.
+            presentation (presentation.Presentation): The presentation object.
+            slide_json (Dict[str, Any]): The content of the slide as JSON data.
+            slide_width_inch (float): The width of the slide in inches.
+            slide_height_inch (float): The height of the slide in inches.
         """
+        import pptx
+        from pptx.enum.shapes import MSO_AUTO_SHAPE_TYPE
+        from pptx.util import Inches, Pt
+
         steps = slide_json['bullet_points']
         n_steps = len(steps)
 
@@ -690,12 +704,12 @@ class PPTXToolkit(BaseToolkit):
                 )
                 for run in paragraph.runs:
                     run.font.size = Pt(14)
-                left = Inches(left.inches + width.inches - INCHES_0_4.inches)
+                left = Inches(left.inches + width.inches - Inches(0.4).inches)
         elif 4 < n_steps <= 6:
             # Vertical display
             height = Inches(0.65)
             top = Inches(slide_height_inch / 4)
-            left = INCHES_1
+            left = Inches(1)
             width = Inches(slide_width_inch * 2 / 3)
 
             for step in steps:
@@ -712,14 +726,14 @@ class PPTXToolkit(BaseToolkit):
                 )
                 for run in paragraph.runs:
                     run.font.size = Pt(14)
-                top = Inches(top.inches + height.inches + INCHES_0_3.inches)
-                left = Inches(left.inches + INCHES_0_5.inches)
+                top = Inches(top.inches + height.inches + Inches(0.3).inches)
+                left = Inches(left.inches + Inches(0.5).inches)
 
     def _remove_slide_number_from_heading(self, header: str) -> str:
         r"""Remove the slide number from a given slide header.
 
         Args:
-            header: The header of a slide.
+            header (str): The header of a slide.
 
         Returns:
             str: The header without slide number.
@@ -731,24 +745,33 @@ class PPTXToolkit(BaseToolkit):
 
     def _get_slide_placeholders(
         self,
-        slide: Any,
-        layout_number: int,
+        slide: "Slide",
     ) -> List[Tuple[int, str]]:
         r"""Return the index and name of all placeholders present in a slide.
 
         Args:
-            slide: The slide.
-            layout_number: The layout number used by the slide.
+            slide (Slide): The slide.
 
         Returns:
-            List[Tuple[int, str]]: A list containing placeholders (idx, name) tuples.
+            List[Tuple[int, str]]: A list containing placeholders (idx, name)
+                tuples.
         """
-        placeholders = [
-            (shape.placeholder_format.idx, shape.name.lower())
-            for shape in slide.shapes.placeholders
-        ]
-        placeholders.pop(0)  # Remove the title placeholder
-        return placeholders
+        if hasattr(slide.shapes, 'placeholders'):
+            placeholders = [
+                (shape.placeholder_format.idx, shape.name.lower())
+                for shape in slide.shapes.placeholders
+            ]
+            if placeholders and len(placeholders) > 0:
+                placeholders.pop(0)  # Remove the title placeholder
+            return placeholders
+        return []
 
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the
+        functions in the toolkit.
 
-# ruff: noqa: E501
+        Returns:
+            List[FunctionTool]: A list of FunctionTool objects
+                representing the functions in the toolkit.
+        """
+        return [FunctionTool(self.create_presentation)]
