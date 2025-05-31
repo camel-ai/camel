@@ -20,13 +20,13 @@ from camel.toolkits.mcp_toolkit import MCPClient, MCPToolkit
 
 async def run_example():
     mcp_toolkit = MCPToolkit(
-        config_path="examples/mcp_arxiv_toolkit/mcp_servers_config.json"
+        config_path="examples/toolkits/mcp/mcp_arxiv_toolkit/mcp_servers_config.json"
     )
 
     await mcp_toolkit.connect()
 
     # call the server to list the available tools
-    mcp_client: MCPClient = mcp_toolkit.servers[0]
+    mcp_client: MCPClient = mcp_toolkit.clients[0]
     res = await mcp_client.list_mcp_tools()
     if isinstance(res, str):
         raise Exception(res)
