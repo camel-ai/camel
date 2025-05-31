@@ -28,7 +28,7 @@ from pptx.util import Inches, Pt
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import MCPServer
+from camel.utils import MCPServer, api_keys_required
 
 # Load environment variables
 load_dotenv()
@@ -497,6 +497,11 @@ class PPTXToolkit(BaseToolkit):
         )
         self._add_bulleted_items(text_frame, flat_items_list)
 
+    @api_keys_required(
+        [
+            (None, 'PEXEL_API_KEY'),
+        ]
+    )
     def _handle_display_image__in_foreground(
         self,
         presentation: Any,
@@ -582,7 +587,7 @@ class PPTXToolkit(BaseToolkit):
                     "You can get a free API key from https://www.pexels.com/api/"
                 )
                 return True
-            
+
             headers = {
                 'Authorization': api_key,
                 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:10.0) Gecko/20100101 Firefox/10.0',
@@ -615,9 +620,7 @@ class PPTXToolkit(BaseToolkit):
 
                     pic_col.insert_picture(image_data)
         except Exception as ex:
-            logger.error(
-                '*** Error occurred while adding image to slide: %s', str(ex)
-            )
+            logger.error(f"Error occurred while adding image to slide: {ex!s}")
 
         return True
 
