@@ -50,7 +50,7 @@ class MCPToolkit(BaseToolkit):
     Connection Lifecycle:
         There are three ways to manage the connection lifecycle:
 
-        1. Using the async context manager:
+        1. Using the async context manager (recommended):
 
            .. code-block:: python
 
@@ -79,6 +79,11 @@ class MCPToolkit(BaseToolkit):
                tools = toolkit.get_tools()
                # Don't forget to disconnect when done!
                await toolkit.disconnect()
+
+    Note:
+        Both MCPClient and MCPToolkit now use the same async context manager
+        pattern for consistent connection management. MCPToolkit automatically
+        manages multiple MCPClient instances using AsyncExitStack.
 
     Args:
         clients (Optional[List[MCPClient]], optional): List of :obj:`MCPClient`
@@ -212,10 +217,8 @@ class MCPToolkit(BaseToolkit):
             # Connect to all clients using AsyncExitStack
             for i, client in enumerate(self.clients):
                 try:
-                    # Enter the client's async context manager
-                    await self._exit_stack.enter_async_context(
-                        client.connect()
-                    )
+                    # Use MCPClient directly as async context manager
+                    await self._exit_stack.enter_async_context(client)
                     msg = f"Connected to client {i+1}/{len(self.clients)}"
                     logger.debug(msg)
                 except Exception as e:

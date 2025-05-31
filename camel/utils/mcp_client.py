@@ -26,7 +26,6 @@ from enum import Enum
 from pathlib import Path
 from typing import (
     Any,
-    AsyncGenerator,
     Callable,
     Dict,
     List,
@@ -161,6 +160,9 @@ class MCPClient:
     automatically detects the appropriate transport type based on the
     configuration provided.
 
+    The client should be used as an async context manager for automatic
+    connectionmanagement.
+
     Args:
         config (Union[ServerConfig, Dict[str, Any]]): Server configuration
             as either a :obj:`ServerConfig` object or a dictionary that will
@@ -175,33 +177,51 @@ class MCPClient:
             FunctionTool objects. (default: :obj:`False`)
 
     Examples:
-        STDIO server connection:
+        STDIO server:
 
         .. code-block:: python
 
-            client = MCPClient({
+            async with MCPClient({
                 "command": "npx",
                 "args": [
                     "-y",
                     "@modelcontextprotocol/server-filesystem",
                     "/path"
                 ]
-            })
+            }) as client:
+                tools = client.get_tools()
+                result = await client.call_tool("tool_name", {"arg": "value"})
 
-        HTTP server connection:
+        HTTP server:
 
         .. code-block:: python
 
-            client = MCPClient({
+            async with MCPClient({
                 "url": "https://api.example.com/mcp",
                 "headers": {"Authorization": "Bearer token"}
-            })
+            }) as client:
+                tools = client.get_tools()
 
-        WebSocket server connection:
+        WebSocket server:
 
         .. code-block:: python
 
-            client = MCPClient({"url": "ws://localhost:8080/mcp"})
+            async with MCPClient({"url": "ws://localhost:8080/mcp"}) as client:
+                tools = client.get_tools()
+
+        With strict mode enabled:
+
+        .. code-block:: python
+
+            async with MCPClient({
+                "command": "npx",
+                "args": [
+                    "-y",
+                    "@modelcontextprotocol/server-filesystem",
+                    "/path"
+                ]
+            }, strict=True) as client:
+                tools = client.get_tools()
 
     Attributes:
         config (ServerConfig): The server configuration object.
@@ -232,74 +252,59 @@ class MCPClient:
 
         self._session: Optional[ClientSession] = None
         self._tools: List[types.Tool] = []
+        self._connection_context = None
 
     @property
     def transport_type(self) -> TransportType:
         r"""Get the detected transport type."""
         return self.config.transport_type
 
-    @asynccontextmanager
-    async def connect(self) -> AsyncGenerator[ClientSession, None]:
-        r"""Connect to the MCP server and yield a ClientSession.
+    async def __aenter__(self):
+        r"""Async context manager entry point.
 
-        This method establishes a connection to the MCP server using the
-        appropriate transport protocol (STDIO, HTTP, WebSocket, or SSE) based
-        on the client configuration. It returns an async context manager that
-        yields a connected ClientSession.
+        Establishes connection to the MCP server and initializes the session.
 
         Returns:
-            AsyncGenerator[ClientSession, None]: An async context manager that
-                yields a connected :obj:`ClientSession` instance. The session
-                is automatically initialized and tools are loaded upon
-                connection.
-
-        Raises:
-            ConnectionError: If connection fails due to various reasons such as
-                server not found, timeout, or configuration errors. The error
-                message is simplified for better user understanding.
-            ValueError: If the transport configuration is invalid or
-                unsupported.
-
-        Example:
-            .. code-block:: python
-
-                async with client.connect() as session:
-                    # Use the connected session
-                    tools = client.get_tools()
-                    result = await client.call_tool(
-                        "tool_name", {"arg": "value"}
-                    )
+            MCPClient: The connected client instance.
         """
-        session = None
-        self._session = None
-        self._tools = []
+        await self._establish_connection()
+        return self
 
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        r"""Async context manager exit point.
+
+        Cleans up the connection and resources.
+        """
+        await self._cleanup_connection()
+
+    async def _establish_connection(self):
+        r"""Establish connection to the MCP server."""
         try:
-            async with self._create_transport() as streams:
-                # Handle extra returns safely
-                read_stream, write_stream = streams[:2]
+            self._connection_context = self._create_transport()
+            streams = await self._connection_context.__aenter__()
 
-                session = ClientSession(
-                    read_stream=read_stream,
-                    write_stream=write_stream,
-                    client_info=self.client_info,
-                    read_timeout_seconds=self.read_timeout_seconds,
-                )
+            # Handle extra returns safely
+            read_stream, write_stream = streams[:2]
 
-                # Start the session's message processing loop
-                async with session:
-                    self._session = session
+            self._session = ClientSession(
+                read_stream=read_stream,
+                write_stream=write_stream,
+                client_info=self.client_info,
+                read_timeout_seconds=self.read_timeout_seconds,
+            )
 
-                    # Initialize the session and load tools
-                    await session.initialize()
-                    tools_response = await session.list_tools()
-                    self._tools = (
-                        tools_response.tools if tools_response else []
-                    )
+            # Start the session's message processing loop
+            await self._session.__aenter__()
 
-                    yield session
+            # Initialize the session and load tools
+            await self._session.initialize()
+            tools_response = await self._session.list_tools()
+            self._tools = tools_response.tools if tools_response else []
 
         except Exception as e:
+            # Clean up on error
+            await self._cleanup_connection()
+
             # Convert complex exceptions to simpler, more understandable ones
             from camel.logger import get_logger
 
@@ -311,9 +316,27 @@ class MCPClient:
             # Raise a simpler exception
             raise ConnectionError(error_msg) from e
 
+    async def _cleanup_connection(self):
+        r"""Clean up connection resources."""
+        try:
+            if self._session:
+                try:
+                    await self._session.__aexit__(None, None, None)
+                except Exception:
+                    pass  # Ignore cleanup errors
+                finally:
+                    self._session = None
+
+            if self._connection_context:
+                try:
+                    await self._connection_context.__aexit__(None, None, None)
+                except Exception:
+                    pass  # Ignore cleanup errors
+                finally:
+                    self._connection_context = None
+
         finally:
-            # Ensure cleanup happens no matter what
-            self._session = None
+            # Ensure state is reset
             self._tools = []
 
     def _simplify_connection_error(self, error: Exception) -> str:
@@ -846,49 +869,56 @@ def create_mcp_client(
             :obj:`strict`.
 
     Returns:
-        MCPClient: A configured :obj:`MCPClient` instance ready for connection.
+        MCPClient: A configured :obj:`MCPClient` instance ready for use as
+            an async context manager.
 
     Examples:
         STDIO server:
 
         .. code-block:: python
 
-            client = create_mcp_client({
+            async with create_mcp_client({
                 "command": "npx",
                 "args": [
                     "-y",
                     "@modelcontextprotocol/server-filesystem",
                     "/path",
                 ],
-            })
+            }) as client:
+                tools = client.get_tools()
 
         HTTP server:
 
         .. code-block:: python
 
-            client = create_mcp_client({
+            async with create_mcp_client({
                 "url": "https://api.example.com/mcp",
                 "headers": {"Authorization": "Bearer token"}
-            })
+            }) as client:
+                result = await client.call_tool("tool_name", {"arg": "value"})
 
         WebSocket server:
 
         .. code-block:: python
 
-            client = create_mcp_client({"url": "ws://localhost:8080/mcp"})
+            async with create_mcp_client({
+                "url": "ws://localhost:8080/mcp"
+            }) as client:
+                tools = client.get_tools()
 
         With strict mode enabled:
 
         .. code-block:: python
 
-            client = create_mcp_client({
+            async with create_mcp_client({
                 "command": "npx",
                 "args": [
                     "-y",
                     "@modelcontextprotocol/server-filesystem",
                     "/path",
                 ],
-            }, strict=True)
+            }, strict=True) as client:
+                tools = client.get_tools()
     """
     return MCPClient(config, **kwargs)
 
@@ -904,8 +934,7 @@ def create_mcp_client_from_config_file(
         **kwargs: Additional arguments passed to MCPClient constructor.
 
     Returns:
-        MCPClient: MCPClient instance.
-
+        MCPClient: MCPClient instance as an async context manager.
     Example config file:
         {
           "mcpServers": {
@@ -925,9 +954,12 @@ def create_mcp_client_from_config_file(
         }
 
     Usage:
-        client = create_mcp_client_from_config_file(
-            "config.json", "filesystem"
-        )
+        .. code-block:: python
+
+            async with create_mcp_client_from_config_file(
+                "config.json", "filesystem"
+            ) as client:
+                tools = client.get_tools()
     """
     import json
 
