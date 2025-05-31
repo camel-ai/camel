@@ -1,266 +1,24 @@
 <a id="camel.toolkits.mcp_toolkit"></a>
 
-<a id="camel.toolkits.mcp_toolkit.MCPClient"></a>
+<a id="camel.toolkits.mcp_toolkit.MCPConnectionError"></a>
 
-## MCPClient
-
-```python
-class MCPClient(BaseToolkit):
-```
-
-Internal class that provides an abstraction layer to interact with
-external tools using the Model Context Protocol (MCP). It supports three
-modes of connection:
-
-1. stdio mode: Connects via standard input/output streams for local
-command-line interactions.
-
-2. SSE mode (HTTP Server-Sent Events): Connects via HTTP for persistent,
-event-based interactions.
-
-3. streamable-http mode: Connects via HTTP for persistent, streamable
-interactions.
-
-Connection Lifecycle:
-There are three ways to manage the connection lifecycle:
-
-1. Using the async context manager:
-```python
-async with MCPClient(command_or_url="...") as client:
-# Client is connected here
-result = await client.some_tool()
-# Client is automatically disconnected here
-```
-
-2. Using the factory method:
-```python
-client = await MCPClient.create(command_or_url="...")
-# Client is connected here
-result = await client.some_tool()
-# Don't forget to disconnect when done!
-await client.disconnect()
-```
-
-3. Using explicit connect/disconnect:
-```python
-client = MCPClient(command_or_url="...")
-await client.connect()
-# Client is connected here
-result = await client.some_tool()
-# Don't forget to disconnect when done!
-await client.disconnect()
-```
-
-Attributes:
-command_or_url (str): URL for SSE mode or command executable for stdio
-mode. (default: :obj:`None`)
-args (List[str]): List of command-line arguments if stdio mode is used.
-(default: :obj:`None`)
-env (Dict[str, str]): Environment variables for the stdio mode command.
-(default: :obj:`None`)
-timeout (Optional[float]): Connection timeout.
-(default: :obj:`None`)
-headers (Dict[str, str]): Headers for the HTTP request.
-(default: :obj:`None`)
-mode (Optional[str]): Connection mode. Can be "sse" for Server-Sent
-Events, "streamable-http" for streaming HTTP,
-or None for stdio mode.
-(default: :obj:`None`)
-strict (Optional[bool]): Whether to enforce strict mode for the
-function call. (default: :obj:`False`)
-
-<a id="camel.toolkits.mcp_toolkit.MCPClient.__init__"></a>
-
-### __init__
+## MCPConnectionError
 
 ```python
-def __init__(
-    self,
-    command_or_url: str,
-    args: Optional[List[str]] = None,
-    env: Optional[Dict[str, str]] = None,
-    timeout: Optional[float] = None,
-    headers: Optional[Dict[str, str]] = None,
-    mode: Optional[str] = None,
-    strict: Optional[bool] = False
-):
+class MCPConnectionError(Exception):
 ```
 
-<a id="camel.toolkits.mcp_toolkit.MCPClient.connect_sync"></a>
+Raised when MCP connection fails.
 
-### connect_sync
+<a id="camel.toolkits.mcp_toolkit.MCPToolError"></a>
+
+## MCPToolError
 
 ```python
-def connect_sync(self):
+class MCPToolError(Exception):
 ```
 
-Synchronously connect to the MCP server.
-
-<a id="camel.toolkits.mcp_toolkit.MCPClient.disconnect_sync"></a>
-
-### disconnect_sync
-
-```python
-def disconnect_sync(self):
-```
-
-Synchronously disconnect from the MCP server.
-
-<a id="camel.toolkits.mcp_toolkit.MCPClient.connection_sync"></a>
-
-### connection_sync
-
-```python
-def connection_sync(self):
-```
-
-Synchronously connect to the MCP server.
-
-<a id="camel.toolkits.mcp_toolkit.MCPClient.list_mcp_tools_sync"></a>
-
-### list_mcp_tools_sync
-
-```python
-def list_mcp_tools_sync(self):
-```
-
-Synchronously list the available tools from the connected MCP
-server.
-
-<a id="camel.toolkits.mcp_toolkit.MCPClient.generate_function_from_mcp_tool"></a>
-
-### generate_function_from_mcp_tool
-
-```python
-def generate_function_from_mcp_tool(self, mcp_tool: 'Tool'):
-```
-
-Dynamically generates a Python callable function corresponding to
-a given MCP tool.
-
-**Parameters:**
-
-- **mcp_tool** (Tool): The MCP tool definition received from the MCP server.
-
-**Returns:**
-
-  Callable: A dynamically created async Python function that wraps
-the MCP tool.
-
-<a id="camel.toolkits.mcp_toolkit.MCPClient.generate_function_from_mcp_tool_sync"></a>
-
-### generate_function_from_mcp_tool_sync
-
-```python
-def generate_function_from_mcp_tool_sync(self, mcp_tool: 'Tool'):
-```
-
-Synchronously generate a function from an MCP tool.
-
-<a id="camel.toolkits.mcp_toolkit.MCPClient._build_tool_schema"></a>
-
-### _build_tool_schema
-
-```python
-def _build_tool_schema(self, mcp_tool: 'Tool'):
-```
-
-<a id="camel.toolkits.mcp_toolkit.MCPClient.get_tools"></a>
-
-### get_tools
-
-```python
-def get_tools(self):
-```
-
-**Returns:**
-
-  List[FunctionTool]: A list of FunctionTool objects
-representing the functions in the toolkit.
-
-<a id="camel.toolkits.mcp_toolkit.MCPClient.get_text_tools"></a>
-
-### get_text_tools
-
-```python
-def get_text_tools(self):
-```
-
-**Returns:**
-
-  str: A string containing the descriptions of the tools
-in the toolkit.
-
-<a id="camel.toolkits.mcp_toolkit.MCPClient.call_tool_sync"></a>
-
-### call_tool_sync
-
-```python
-def call_tool_sync(self, tool_name: str, tool_args: Dict[str, Any]):
-```
-
-Synchronously call a tool.
-
-<a id="camel.toolkits.mcp_toolkit.MCPClient.session"></a>
-
-### session
-
-```python
-def session(self):
-```
-
-<a id="camel.toolkits.mcp_toolkit.MCPClient.create_sync"></a>
-
-### create_sync
-
-```python
-def create_sync(
-    self,
-    command_or_url: str,
-    args: Optional[List[str]] = None,
-    env: Optional[Dict[str, str]] = None,
-    timeout: Optional[float] = None,
-    headers: Optional[Dict[str, str]] = None,
-    mode: Optional[str] = None
-):
-```
-
-Synchronously create and connect to the MCP server.
-
-<a id="camel.toolkits.mcp_toolkit.MCPClient.__enter__"></a>
-
-### __enter__
-
-```python
-def __enter__(self):
-```
-
-Synchronously enter the async context manager.
-
-<a id="camel.toolkits.mcp_toolkit.MCPClient.__exit__"></a>
-
-### __exit__
-
-```python
-def __exit__(
-    self,
-    exc_type,
-    exc_val,
-    exc_tb
-):
-```
-
-Synchronously exit the async context manager.
-
-**Parameters:**
-
-- **exc_type** (Optional[Type[Exception]]): The type of exception that occurred during the execution of the with statement.
-- **exc_val** (Optional[Exception]): The exception that occurred during the execution of the with statement.
-- **exc_tb** (Optional[TracebackType]): The traceback of the exception that occurred during the execution of the with statement.
-
-**Returns:**
-
-  None
+Raised when MCP tool execution fails.
 
 <a id="camel.toolkits.mcp_toolkit.MCPToolkit"></a>
 
@@ -275,47 +33,57 @@ MCP server connections and their tools.
 
 This class handles the lifecycle of multiple MCP server connections and
 offers a centralized configuration mechanism for both local and remote
-MCP services.
+MCP services. The toolkit manages multiple :obj:`MCPClient` instances and
+aggregates their tools into a unified interface compatible with the CAMEL
+framework.
 
 Connection Lifecycle:
 There are three ways to manage the connection lifecycle:
 
-1. Using the async context manager:
-```python
+1. Using the async context manager (recommended):
+
+.. code-block:: python
+
 async with MCPToolkit(config_path="config.json") as toolkit:
 # Toolkit is connected here
 tools = toolkit.get_tools()
 # Toolkit is automatically disconnected here
-```
 
 2. Using the factory method:
-```python
+
+.. code-block:: python
+
 toolkit = await MCPToolkit.create(config_path="config.json")
 # Toolkit is connected here
 tools = toolkit.get_tools()
 # Don't forget to disconnect when done!
 await toolkit.disconnect()
-```
 
 3. Using explicit connect/disconnect:
-```python
+
+.. code-block:: python
+
 toolkit = MCPToolkit(config_path="config.json")
 await toolkit.connect()
 # Toolkit is connected here
 tools = toolkit.get_tools()
 # Don't forget to disconnect when done!
 await toolkit.disconnect()
-```
+
+Note:
+Both MCPClient and MCPToolkit now use the same async context manager
+pattern for consistent connection management. MCPToolkit automatically
+manages multiple MCPClient instances using AsyncExitStack.
 
 **Parameters:**
 
-- **servers** (Optional[List[MCPClient]]): List of MCPClient instances to manage. (default: :obj:`None`)
-- **config_path** (Optional[str]): Path to a JSON configuration file defining MCP servers. (default: :obj:`None`)
-- **config_dict** (Optional[Dict[str, Any]]): Dictionary containing MCP server configurations in the same format as the config file. (default: :obj:`None`)
-- **strict** (Optional[bool]): Whether to enforce strict mode for the function call. (default: :obj:`False`)
-- **Note**: Either `servers`, `config_path`, or `config_dict` must be provided. If multiple are provided, servers from all sources will be combined. For web servers in the config, you can specify authorization headers using the "headers" field to connect to protected MCP server endpoints. Example configuration: .. code-block:: json `{ "mcpServers": { "protected-server": { "url": "https://example.com/mcp", "timeout": 30, "headers": { "Authorization": "Bearer YOUR_TOKEN", "X-API-Key": "YOUR_API_KEY" } } } }`
+- **clients** (Optional[List[MCPClient]], optional): List of :obj:`MCPClient` instances to manage. (default: :obj:`None`)
+- **config_path** (Optional[str], optional): Path to a JSON configuration file defining MCP servers. The file should contain server configurations in the standard MCP format. (default: :obj:`None`)
+- **config_dict** (Optional[Dict[str, Any]], optional): Dictionary containing MCP server configurations in the same format as the config file. This allows for programmatic configuration without file I/O. (default: :obj:`None`)
+- **timeout** (Optional[float], optional): Timeout for connection attempts in seconds. This timeout applies to individual client connections. (default: :obj:`None`)
+- **Note**: At least one of :obj:`clients`, :obj:`config_path`, or :obj:`config_dict` must be provided. If multiple sources are provided, clients from all sources will be combined. For web servers in the config, you can specify authorization headers using the "headers" field to connect to protected MCP server endpoints. Example configuration: .. code-block:: json `{ "mcpServers": { "filesystem": { "command": "npx", "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path"] }, "protected-server": { "url": "https://example.com/mcp", "timeout": 30, "headers": { "Authorization": "Bearer YOUR_TOKEN", "X-API-Key": "YOUR_API_KEY" } } } }`
 - **Attributes**: 
-- **servers** (List[MCPClient]): List of MCPClient instances being managed.
+- **clients** (List[MCPClient]): List of :obj:`MCPClient` instances being managed by this toolkit.
 
 <a id="camel.toolkits.mcp_toolkit.MCPToolkit.__init__"></a>
 
@@ -324,50 +92,25 @@ await toolkit.disconnect()
 ```python
 def __init__(
     self,
-    servers: Optional[List[MCPClient]] = None,
+    clients: Optional[List[MCPClient]] = None,
     config_path: Optional[str] = None,
     config_dict: Optional[Dict[str, Any]] = None,
-    strict: Optional[bool] = False
+    timeout: Optional[float] = None
 ):
 ```
 
-<a id="camel.toolkits.mcp_toolkit.MCPToolkit._load_servers_from_config"></a>
+<a id="camel.toolkits.mcp_toolkit.MCPToolkit.is_connected"></a>
 
-### _load_servers_from_config
+### is_connected
 
 ```python
-def _load_servers_from_config(self, config_path: str, strict: Optional[bool] = False):
+def is_connected(self):
 ```
-
-Loads MCP server configurations from a JSON file.
-
-**Parameters:**
-
-- **config_path** (str): Path to the JSON configuration file.
-- **strict** (bool): Whether to enforce strict mode for the function call. (default: :obj:`False`)
 
 **Returns:**
 
-  List[MCPClient]: List of configured MCPClient instances.
-
-<a id="camel.toolkits.mcp_toolkit.MCPToolkit._load_servers_from_dict"></a>
-
-### _load_servers_from_dict
-
-```python
-def _load_servers_from_dict(self, config: Dict[str, Any], strict: Optional[bool] = False):
-```
-
-Loads MCP server configurations from a dictionary.
-
-**Parameters:**
-
-- **config** (Dict[str, Any]): Dictionary containing server configurations.
-- **strict** (bool): Whether to enforce strict mode for the function call. (default: :obj:`False`)
-
-**Returns:**
-
-  List[MCPClient]: List of configured MCPClient instances.
+  bool: True if the toolkit is connected to all MCP servers,
+False otherwise.
 
 <a id="camel.toolkits.mcp_toolkit.MCPToolkit.connect_sync"></a>
 
@@ -389,27 +132,76 @@ def disconnect_sync(self):
 
 Synchronously disconnect from all MCP servers.
 
-<a id="camel.toolkits.mcp_toolkit.MCPToolkit.connection_sync"></a>
+<a id="camel.toolkits.mcp_toolkit.MCPToolkit.__enter__"></a>
 
-### connection_sync
-
-```python
-def connection_sync(self):
-```
-
-Synchronously connect to all MCP servers.
-
-<a id="camel.toolkits.mcp_toolkit.MCPToolkit.is_connected"></a>
-
-### is_connected
+### __enter__
 
 ```python
-def is_connected(self):
+def __enter__(self):
 ```
 
-**Returns:**
+Synchronously enter the async context manager.
 
-  bool: True if connected, False otherwise.
+<a id="camel.toolkits.mcp_toolkit.MCPToolkit.__exit__"></a>
+
+### __exit__
+
+```python
+def __exit__(
+    self,
+    exc_type,
+    exc_val,
+    exc_tb
+):
+```
+
+Synchronously exit the async context manager.
+
+<a id="camel.toolkits.mcp_toolkit.MCPToolkit.create_sync"></a>
+
+### create_sync
+
+```python
+def create_sync(
+    cls,
+    clients: Optional[List[MCPClient]] = None,
+    config_path: Optional[str] = None,
+    config_dict: Optional[Dict[str, Any]] = None,
+    timeout: Optional[float] = None
+):
+```
+
+Synchronously create and connect to all MCP servers.
+
+<a id="camel.toolkits.mcp_toolkit.MCPToolkit._load_clients_from_config"></a>
+
+### _load_clients_from_config
+
+```python
+def _load_clients_from_config(self, config_path: str):
+```
+
+Load clients from configuration file.
+
+<a id="camel.toolkits.mcp_toolkit.MCPToolkit._load_clients_from_dict"></a>
+
+### _load_clients_from_dict
+
+```python
+def _load_clients_from_dict(self, config: Dict[str, Any]):
+```
+
+Load clients from configuration dictionary.
+
+<a id="camel.toolkits.mcp_toolkit.MCPToolkit._create_client_from_config"></a>
+
+### _create_client_from_config
+
+```python
+def _create_client_from_config(self, name: str, cfg: Dict[str, Any]):
+```
+
+Create a single MCP client from configuration.
 
 <a id="camel.toolkits.mcp_toolkit.MCPToolkit.get_tools"></a>
 
@@ -421,7 +213,15 @@ def get_tools(self):
 
 **Returns:**
 
-  List[FunctionTool]: Combined list of all available function tools.
+  List[FunctionTool]: Combined list of all available function tools
+from all connected MCP servers. Returns an empty list if no
+clients are connected or if no tools are available.
+
+Note:
+This method can be called even when the toolkit is not connected,
+but it will log a warning and may return incomplete results.
+For best results, ensure the toolkit is connected before calling
+this method.
 
 <a id="camel.toolkits.mcp_toolkit.MCPToolkit.get_text_tools"></a>
 
@@ -433,5 +233,27 @@ def get_text_tools(self):
 
 **Returns:**
 
-  str: A string containing the descriptions of the tools
-in the toolkit.
+  str: A string containing the descriptions of all tools.
+
+<a id="camel.toolkits.mcp_toolkit.MCPToolkit.call_tool_sync"></a>
+
+### call_tool_sync
+
+```python
+def call_tool_sync(self, tool_name: str, tool_args: Dict[str, Any]):
+```
+
+Synchronously call a tool.
+
+<a id="camel.toolkits.mcp_toolkit.MCPToolkit.list_available_tools"></a>
+
+### list_available_tools
+
+```python
+def list_available_tools(self):
+```
+
+**Returns:**
+
+  Dict[str, List[str]]: Dictionary mapping client indices to tool
+names.

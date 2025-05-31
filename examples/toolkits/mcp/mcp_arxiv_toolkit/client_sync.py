@@ -19,26 +19,30 @@ from camel.toolkits.mcp_toolkit import MCPClient, MCPToolkit
 
 def run_example():
     mcp_toolkit = MCPToolkit(
-        config_path="examples/mcp_arxiv_toolkit/mcp_servers_config.json"
+        config_dict={
+            "mcpServers": {
+                "arxiv_toolkit": {
+                    "url": "http://localhost:8000/mcp/",
+                    "mode": "streamable-http",
+                }
+            }
+        }
     )
 
-    mcp_toolkit.connect_sync()
+    with mcp_toolkit:
+        # call the server to list the available tools
+        mcp_client: MCPClient = mcp_toolkit.clients[0]
+        res = mcp_client.list_mcp_tools_sync()
+        if isinstance(res, str):
+            raise Exception(res)
 
-    # call the server to list the available tools
-    mcp_client: MCPClient = mcp_toolkit.servers[0]
-    res = mcp_client.list_mcp_tools_sync()
-    if isinstance(res, str):
-        raise Exception(res)
+        tools = [tool.name for tool in res.tools]
+        print(tools)
 
-    tools = [tool.name for tool in res]
-    print(tools)
-
-    res1: CallToolResult = mcp_client.call_tool_sync(
-        "search_papers", {"query": "attention is all you need"}
-    )
-    print(res1.content[0].text[:1000])
-
-    mcp_toolkit.disconnect_sync()
+        res1: CallToolResult = mcp_client.call_tool_sync(
+            "search_papers", {"query": "attention is all you need"}
+        )
+        print(res1.content[0].text[:1000])
 
 
 if __name__ == "__main__":
