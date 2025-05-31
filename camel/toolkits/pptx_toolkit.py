@@ -566,7 +566,7 @@ class PPTXToolkit(BaseToolkit):
         try:
             url = 'https://api.pexels.com/v1/search'
             api_key = os.getenv('PEXEL_API_KEY')
-
+            
             headers = {
                 'Authorization': api_key,
                 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:10.0) Gecko/20100101 Firefox/10.0',
