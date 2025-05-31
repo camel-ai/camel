@@ -20,7 +20,7 @@ from camel.toolkits.mcp_toolkit import MCPClient, MCPToolkit
 
 async def run_example():
     mcp_toolkit = MCPToolkit(
-        config_path="examples/toolkits/mcp/mcp_arxiv_toolkit/mcp_servers_config.json"  # noqa: E501
+        config_path="examples/toolkits/mcp/mcp_arxiv_toolkit/mcp_servers_config.json"
     )
 
     await mcp_toolkit.connect()

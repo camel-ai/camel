@@ -69,7 +69,7 @@ from mcp import ClientSession
 
 
 class TransportType(str, Enum):
-    """Supported transport types."""
+    r"""Supported transport types."""
 
     STDIO = "stdio"
     SSE = "sse"
@@ -235,7 +235,7 @@ class MCPClient:
 
     @property
     def transport_type(self) -> TransportType:
-        """Get the detected transport type."""
+        r"""Get the detected transport type."""
         return self.config.transport_type
 
     @asynccontextmanager
@@ -317,21 +317,36 @@ class MCPClient:
             self._tools = []
 
     def _simplify_connection_error(self, error: Exception) -> str:
-        r"""Convert complex MCP connection errors to simple, understandable messages."""  # noqa: E501
+        r"""Convert complex MCP connection errors to simple, understandable
+        messages.
+        """
         error_str = str(error).lower()
 
         # Handle different types of errors
         if "exceptiongroup" in error_str or "taskgroup" in error_str:
             # Often happens when the command fails to start
             if "processlookuperror" in error_str:
-                return f"Failed to start MCP server command '{self.config.command}'. The command may have exited unexpectedly."  # noqa: E501
+                return (
+                    f"Failed to start MCP server command "
+                    f"'{self.config.command}'. The command may have "
+                    "exited unexpectedly."
+                )
             elif "cancelled" in error_str:
-                return "Connection to MCP server was cancelled, likely due to timeout or server startup failure."  # noqa: E501
+                return (
+                    "Connection to MCP server was cancelled, "
+                    "likely due to timeout or server startup failure."
+                )
             else:
-                return f"MCP server process error. The server command '{self.config.command}' failed to start properly."  # noqa: E501
+                return (
+                    f"MCP server process error. The server command "
+                    f"'{self.config.command}' failed to start properly."
+                )
 
         elif "timeout" in error_str:
-            return f"Connection timeout after {self.config.timeout}s. The MCP server may be taking too long to respond."  # noqa: E501
+            return (
+                f"Connection timeout after {self.config.timeout}s. "
+                "The MCP server may be taking too long to respond."
+            )
 
         elif "not found" in error_str or "404" in error_str:
             command_parts = []
@@ -342,10 +357,16 @@ class MCPClient:
             command_str = (
                 ' '.join(command_parts) if command_parts else "unknown command"
             )
-            return f"MCP server package not found. Check if '{command_str}' is correct."  # noqa: E501
+            return (
+                f"MCP server package not found. Check if '{command_str}' "
+                "is correct."
+            )
 
         elif "permission" in error_str:
-            return f"Permission denied when trying to run MCP server command '{self.config.command}'."  # noqa: E501
+            return (
+                f"Permission denied when trying to run MCP server "
+                f"command '{self.config.command}'."
+            )
 
         elif "connection" in error_str:
             if self.config.url:
@@ -360,7 +381,10 @@ class MCPClient:
                 if self.config.command
                 else f"URL: {self.config.url}"
             )
-            return f"MCP connection failed for {command_info}. Error: {str(error)[:100]}{'...' if len(str(error)) > 100 else ''}"  # noqa: E501
+            return (
+                f"MCP connection failed for {command_info}. Error: "
+                f"{str(error)[:100]}{'...' if len(str(error)) > 100 else ''}"
+            )
 
     @asynccontextmanager
     async def _create_transport(self):
@@ -469,11 +493,11 @@ class MCPClient:
 
     @property
     def session(self) -> Optional[ClientSession]:
-        """Get the current session if connected."""
+        r"""Get the current session if connected."""
         return self._session
 
     def is_connected(self) -> bool:
-        """Check if the client is currently connected."""
+        r"""Check if the client is currently connected."""
         return self._session is not None
 
     async def list_mcp_tools(self):
@@ -713,8 +737,7 @@ class MCPClient:
         return camel_tools
 
     def get_text_tools(self) -> str:
-        """
-        Get a text description of available tools.
+        r"""Get a text description of available tools.
 
         Returns:
             str: Text description of tools
@@ -873,16 +896,15 @@ def create_mcp_client(
 def create_mcp_client_from_config_file(
     config_path: Union[str, Path], server_name: str, **kwargs: Any
 ) -> MCPClient:
-    """
-    Create an MCP client from a configuration file.
+    r"""Create an MCP client from a configuration file.
 
     Args:
-        config_path: Path to configuration file (JSON)
-        server_name: Name of the server in the config
-        **kwargs: Additional arguments passed to MCPClient constructor
+        config_path (Union[str, Path]): Path to configuration file (JSON).
+        server_name (str): Name of the server in the config.
+        **kwargs: Additional arguments passed to MCPClient constructor.
 
     Returns:
-        MCPClient instance
+        MCPClient: MCPClient instance.
 
     Example config file:
         {

@@ -256,8 +256,13 @@ class MCPToolkit(BaseToolkit):
 
     @property
     def is_connected(self) -> bool:
-        r"""Check if toolkit is connected."""
-        if not self._is_connected:
+        r"""Check if toolkit is connected.
+
+        Returns:
+            bool: True if the toolkit is connected to all MCP servers,
+                False otherwise.
+        """
+        if not self._is_connected or not self._exit_stack:
             return False
 
         # Check if all clients are connected
