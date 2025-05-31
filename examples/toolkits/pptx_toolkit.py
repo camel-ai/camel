@@ -14,7 +14,7 @@
 """
 Example usage of the PPTXToolkit for creating PowerPoint presentations.
 """
-
+import os
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
 from camel.toolkits import PPTXToolkit
@@ -22,10 +22,13 @@ from camel.types import ModelPlatformType, ModelType
 
 
 def run_pptx_agent():
+    # Make sure to set the PEXEL_API_KEY environment variable
+    os.environ['PEXEL_API_KEY'] = 'your_api_key_here'
+
     # Initialize the model
     model = ModelFactory.create(
-        model_platform=ModelPlatformType.GEMINI,
-        model_type=ModelType.GEMINI_2_0_FLASH,
+        model_platform=ModelPlatformType.DEFAULT,
+        model_type=ModelType.DEFAULT,
     )
 
     # Initialize the toolkit with an output directory

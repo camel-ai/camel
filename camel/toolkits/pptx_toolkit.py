@@ -561,16 +561,30 @@ class PPTXToolkit(BaseToolkit):
         if isinstance(img_keywords, str) and img_keywords.startswith(
             ('http://', 'https://')
         ):
-            img_response = requests.get(img_keywords, timeout=30)
-            img_response.raise_for_status()
-            image_data = BytesIO(img_response.content)
-            pic_col.insert_picture(image_data)
-            return True
+            try:
+                img_response = requests.get(img_keywords, timeout=30)
+                img_response.raise_for_status()
+                image_data = BytesIO(img_response.content)
+                pic_col.insert_picture(image_data)
+                return True
+            except Exception as ex:
+                logger.error(
+                    '*** Error while downloading image from URL: %s', str(ex)
+                )
 
         try:
             url = 'https://api.pexels.com/v1/search'
+            api_key = os.getenv('PEXEL_API_KEY')
+            if not api_key:
+                logger.warning(
+                    "PEXEL_API_KEY environment variable not set. Image search functionality will be limited. "
+                    "Please set PEXEL_API_KEY to enable Pexels image integration. "
+                    "You can get a free API key from https://www.pexels.com/api/"
+                )
+                return True
+            
             headers = {
-                'Authorization': os.getenv('PEXEL_API_KEY'),
+                'Authorization': api_key,
                 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:10.0) Gecko/20100101 Firefox/10.0',
             }
             params = {
