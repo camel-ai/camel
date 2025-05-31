@@ -74,10 +74,11 @@ The reasoning agent is a helpful assistant that can reason about the world.
 
 
 # Create another agent for searching the web
+toolkit = SearchToolkit()
 search_agent = ChatAgent(
     model=search_model,
     system_message="You are a helpful assistant.",
-    tools=SearchToolkit().get_tools(),  # Add search tool
+    tools=toolkit.get_tools(),  # type: ignore[arg-type]
 )
 
 search_agent_description = """
