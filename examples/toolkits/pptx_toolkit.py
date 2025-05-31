@@ -14,7 +14,9 @@
 """
 Example usage of the PPTXToolkit for creating PowerPoint presentations.
 """
+
 import os
+
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
 from camel.toolkits import PPTXToolkit

@@ -28,7 +28,7 @@ from pptx.util import Inches, Pt
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import MCPServer
+from camel.utils import MCPServer, api_keys_required
 
 # Load environment variables
 load_dotenv()
@@ -306,8 +306,6 @@ class PPTXToolkit(BaseToolkit):
                     self._handle_table(
                         presentation,
                         slide_data,
-                        slide_width_inch,
-                        slide_height_inch,
                     )
                 elif 'bullet_points' in slide_data:
                     if any(
@@ -324,8 +322,6 @@ class PPTXToolkit(BaseToolkit):
                         self._handle_default_display(
                             presentation,
                             slide_data,
-                            slide_width_inch,
-                            slide_height_inch,
                         )
 
         # Save the presentation
@@ -449,16 +445,12 @@ class PPTXToolkit(BaseToolkit):
         self,
         presentation: Any,
         slide_json: dict,
-        slide_width_inch: float,
-        slide_height_inch: float,
     ) -> None:
         r"""Display a list of text in a slide.
 
         Args:
             presentation: The presentation object.
             slide_json: The content of the slide as JSON data.
-            slide_width_inch: The width of the slide in inches.
-            slide_height_inch: The height of the slide in inches.
         """
         status = False
 
@@ -467,8 +459,6 @@ class PPTXToolkit(BaseToolkit):
                 status = self._handle_display_image__in_foreground(
                     presentation,
                     slide_json,
-                    slide_width_inch,
-                    slide_height_inch,
                 )
 
         if status:
@@ -497,20 +487,21 @@ class PPTXToolkit(BaseToolkit):
         )
         self._add_bulleted_items(text_frame, flat_items_list)
 
+    @api_keys_required(
+        [
+            ("api_key", 'PEXEL_API_KEY'),
+        ]
+    )
     def _handle_display_image__in_foreground(
         self,
         presentation: Any,
         slide_json: dict,
-        slide_width_inch: float,
-        slide_height_inch: float,
     ) -> bool:
         r"""Create a slide with text and image using a picture placeholder layout.
 
         Args:
             presentation: The presentation object.
             slide_json: The content of the slide as JSON data.
-            slide_width_inch: The width of the slide in inches.
-            slide_height_inch: The height of the slide in inches.
         Returns:
             bool: True if the slide has been processed.
         """
@@ -569,20 +560,13 @@ class PPTXToolkit(BaseToolkit):
                 return True
             except Exception as ex:
                 logger.error(
-                    '*** Error while downloading image from URL: %s', str(ex)
+                    'Error while downloading image from URL: %s', str(ex)
                 )
 
         try:
             url = 'https://api.pexels.com/v1/search'
             api_key = os.getenv('PEXEL_API_KEY')
-            if not api_key:
-                logger.warning(
-                    "PEXEL_API_KEY environment variable not set. Image search functionality will be limited. "
-                    "Please set PEXEL_API_KEY to enable Pexels image integration. "
-                    "You can get a free API key from https://www.pexels.com/api/"
-                )
-                return True
-            
+
             headers = {
                 'Authorization': api_key,
                 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:10.0) Gecko/20100101 Firefox/10.0',
@@ -616,7 +600,7 @@ class PPTXToolkit(BaseToolkit):
                     pic_col.insert_picture(image_data)
         except Exception as ex:
             logger.error(
-                '*** Error occurred while adding image to slide: %s', str(ex)
+                'Error occurred while adding image to slide: %s', str(ex)
             )
 
         return True
@@ -625,16 +609,12 @@ class PPTXToolkit(BaseToolkit):
         self,
         presentation: Any,
         slide_json: dict,
-        slide_width_inch: float,
-        slide_height_inch: float,
     ) -> None:
         r"""Add a table to a slide.
 
         Args:
             presentation: The presentation object.
             slide_json: The content of the slide as JSON data.
-            slide_width_inch: The width of the slide in inches.
-            slide_height_inch: The height of the slide in inches.
         """
         headers = slide_json['table'].get('headers', [])
         rows = slide_json['table'].get('rows', [])
