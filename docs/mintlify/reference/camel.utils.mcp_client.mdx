@@ -100,7 +100,8 @@ Get the detected transport type.
 def _simplify_connection_error(self, error: Exception):
 ```
 
-Convert complex MCP connection errors to simple, understandable messages.
+Convert complex MCP connection errors to simple, understandable
+messages.
 
 <a id="camel.utils.mcp_client.MCPClient.session"></a>
 
@@ -248,12 +249,12 @@ Create an MCP client from a configuration file.
 
 **Parameters:**
 
-- **config_path**: Path to configuration file (JSON)
-- **server_name**: Name of the server in the config **kwargs: Additional arguments passed to MCPClient constructor
+- **config_path** (Union[str, Path]): Path to configuration file (JSON).
+- **server_name** (str): Name of the server in the config. **kwargs: Additional arguments passed to MCPClient constructor.
 
 **Returns:**
 
-  MCPClient instance
+  MCPClient: MCPClient instance.
 
 Example config file:
 `\{
