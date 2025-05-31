@@ -3,6 +3,8 @@ name: Build and deploy camel documents
 on:
   push:
     branches: [ "master", "qa" ]
+  pull_request:
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 permissions:
@@ -16,7 +18,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetch full history for git diff
+          fetch-depth: 0  # Full history for git diff
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python environment and install dependencies
         uses: ./.github/actions/camel_install
@@ -31,8 +34,8 @@ jobs:
           source .venv/bin/activate
           cd docs
           make html
-            
-      - name: Deploy
+
+      - name: Deploy Sphinx to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
         with:
@@ -42,16 +45,26 @@ jobs:
           force_orphan: true
           cname: docs.camel-ai.org
 
-      - name: Convert Notebooks and Update Mintlify Config
+      - name: Convert Cookbooks and Update Mintlify Config
         run: |
           source .venv/bin/activate
-          
-          # Check if this is a push event or workflow_dispatch
-          if [ "${{ github.event_name }}" = "push" ]; then
-            echo "Push event detected - using incremental mode with git"
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "PR event detected - using incremental mode for cookbooks"
             python docs/mintlify/convert_notebook2mdx.py \
               --input docs/cookbooks \
-              --output docs/mintlify/cookbooks \
+              --output docs/mintlify \
+              --update-docs-json docs/mintlify/docs.json \
+              --docs-path-prefix "" \
+              --incremental \
+              --use-git \
+              --base-branch origin/${{ github.base_ref }} \
+              --verbose
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            echo "Push event detected - using incremental mode for cookbooks"
+            python docs/mintlify/convert_notebook2mdx.py \
+              --input docs/cookbooks \
+              --output docs/mintlify \
               --update-docs-json docs/mintlify/docs.json \
               --docs-path-prefix "" \
               --incremental \
@@ -59,10 +72,82 @@ jobs:
               --base-branch origin/master \
               --verbose
           else
-            echo "Manual workflow dispatch - processing all files"
+            echo "Manual workflow - processing all cookbooks files"
             python docs/mintlify/convert_notebook2mdx.py \
               --input docs/cookbooks \
-              --output docs/mintlify/cookbooks \
+              --output docs/mintlify \
+              --update-docs-json docs/mintlify/docs.json \
+              --docs-path-prefix "" \
+              --verbose
+          fi
+
+      - name: Convert Get Started docs
+        run: |
+          source .venv/bin/activate
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "PR event detected - using incremental mode for get_started"
+            python docs/mintlify/convert_notebook2mdx.py \
+              --input docs/get_started \
+              --output docs/mintlify \
+              --update-docs-json docs/mintlify/docs.json \
+              --docs-path-prefix "" \
+              --incremental \
+              --use-git \
+              --base-branch origin/${{ github.base_ref }} \
+              --verbose
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            echo "Push event detected - using incremental mode for get_started"
+            python docs/mintlify/convert_notebook2mdx.py \
+              --input docs/get_started \
+              --output docs/mintlify \
+              --update-docs-json docs/mintlify/docs.json \
+              --docs-path-prefix "" \
+              --incremental \
+              --use-git \
+              --base-branch origin/master \
+              --verbose
+          else
+            echo "Manual workflow - processing all get_started files"
+            python docs/mintlify/convert_notebook2mdx.py \
+              --input docs/get_started \
+              --output docs/mintlify \
+              --update-docs-json docs/mintlify/docs.json \
+              --docs-path-prefix "" \
+              --verbose
+          fi
+
+      - name: Convert Key Modules docs
+        run: |
+          source .venv/bin/activate
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "PR event detected - using incremental mode for key_modules"
+            python docs/mintlify/convert_notebook2mdx.py \
+              --input docs/key_modules \
+              --output docs/mintlify \
+              --update-docs-json docs/mintlify/docs.json \
+              --docs-path-prefix "" \
+              --incremental \
+              --use-git \
+              --base-branch origin/${{ github.base_ref }} \
+              --verbose
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            echo "Push event detected - using incremental mode for key_modules"
+            python docs/mintlify/convert_notebook2mdx.py \
+              --input docs/key_modules \
+              --output docs/mintlify \
+              --update-docs-json docs/mintlify/docs.json \
+              --docs-path-prefix "" \
+              --incremental \
+              --use-git \
+              --base-branch origin/master \
+              --verbose
+          else
+            echo "Manual workflow - processing all key_modules files"
+            python docs/mintlify/convert_notebook2mdx.py \
+              --input docs/key_modules \
+              --output docs/mintlify \
               --update-docs-json docs/mintlify/docs.json \
               --docs-path-prefix "" \
               --verbose
@@ -71,38 +156,52 @@ jobs:
       - name: Generate API Documentation
         run: |
           source .venv/bin/activate
-          
-          # Check if this is a push event for incremental API docs
-          if [ "${{ github.event_name }}" = "push" ]; then
-            echo "Push event detected - using incremental mode for API docs"
-            python docs/mintlify/build_api_docs.py \
-              --output_dir docs/mintlify/reference \
-              --mint_json docs/mintlify/docs.json \
-              --package camel \
-              --incremental \
-              --since_hours 24
+          echo "Using incremental API docs generation for optimal performance"
+          python docs/mintlify/build_api_docs.py \
+            --output_dir docs/mintlify/reference \
+            --mint_json docs/mintlify/docs.json \
+            --package camel \
+            --incremental \
+            --since_hours 24
+
+      - name: Commit and push changes to PR branch
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          git add docs/mintlify/ docs/mintlify/get_started/ docs/mintlify/key_modules/ docs/mintlify/reference/ docs/mintlify/docs.json
+
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
           else
-            echo "Manual workflow dispatch - generating all API docs"
-            python docs/mintlify/build_api_docs.py \
-              --output_dir docs/mintlify/reference \
-              --mint_json docs/mintlify/docs.json \
-              --package camel \
-              --clean
+            git commit -m "Auto-update Mintlify documentation"
+            
+            # Try multiple push strategies
+            if ! git push origin ${{ github.head_ref }}; then
+              echo "First push attempt failed, trying alternative methods..."
+              
+              # Try with current branch
+              CURRENT_BRANCH=$(git branch --show-current)
+              echo "Trying to push current branch: $CURRENT_BRANCH"
+              if ! git push origin "$CURRENT_BRANCH"; then
+                echo "Second push attempt failed, trying with HEAD:refs/heads/${{ github.head_ref }}"
+                git push origin "HEAD:refs/heads/${{ github.head_ref }}"
+              fi
+            fi
           fi
 
-      - name: Commit and push changes
+      - name: Commit and push changes (only for push to master/qa)
         if: ${{ github.event_name == 'push' }}
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          
-          # Add any new or modified files
-          git add docs/mintlify/cookbooks/ docs/mintlify/reference/ docs/mintlify/docs.json
-          
-          # Check if there are any changes to commit
+
+          git add docs/mintlify/ docs/mintlify/get_started/ docs/mintlify/key_modules/ docs/mintlify/reference/ docs/mintlify/docs.json
+
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "Auto-update documentation [skip ci]"
-            git push
+            echo "Changes detected but skipping commit for push events to avoid protected branch issues"
+            echo "Documentation will be updated when PR is merged"
           fi
