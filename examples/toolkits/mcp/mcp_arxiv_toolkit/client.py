@@ -19,31 +19,41 @@ from camel.toolkits.mcp_toolkit import MCPClient, MCPToolkit
 
 
 async def run_example():
-    mcp_toolkit = MCPToolkit(
-        config_path="examples/mcp_arxiv_toolkit/mcp_servers_config.json"
-    )
+    config = {
+        "mcpServers": {
+            "arxiv_toolkit": {
+                "url": "http://localhost:8000/mcp/",
+                "mode": "streamable-http",
+            }
+        }
+    }
+    mcp_toolkit = MCPToolkit(config_dict=config)
 
-    await mcp_toolkit.connect()
+    async with mcp_toolkit:
+        # call the server to list the available tools
+        mcp_client: MCPClient = mcp_toolkit.clients[0]
+        res = await mcp_client.list_mcp_tools()
+        if isinstance(res, str):
+            raise Exception(res)
 
-    # call the server to list the available tools
-    mcp_client: MCPClient = mcp_toolkit.servers[0]
-    res = await mcp_client.list_mcp_tools()
-    if isinstance(res, str):
-        raise Exception(res)
+        # call the server to list the available tools
+        mcp_client: MCPClient = mcp_toolkit.clients[0]
+        res = await mcp_client.list_mcp_tools()
+        if isinstance(res, str):
+            raise Exception(res)
 
-    tools = [tool.name for tool in res.tools]
-    print(tools)
-    """
+        tools = [tool.name for tool in res.tools]
+        print(tools)
+        """
 ===============================================================================
 ['search_papers', 'download_papers']
 ===============================================================================
-    """
-
-    res1: CallToolResult = await mcp_client.session.call_tool(
-        "search_papers", {"query": "attention is all you need"}
-    )
-    print(res1.content[0].text[:1000])
-    """
+        """
+        res1: CallToolResult = await mcp_client.session.call_tool(
+            "search_papers", {"query": "attention is all you need"}
+        )
+        print(res1.content[0].text[:1000])
+        """
 ===============================================================================
 {"title": "Attention Is All You Need But You Don't Need All Of It For 
 Inference of Large Language Models", "published_date": "2024-07-22", 
@@ -60,9 +70,7 @@ attention layers in a 13B Llama2 model\nresults in a 1.8\\% drop in average
 performance over the OpenLLM benchmark. We\nalso observe that skipping layers 
 except the latter layers reduces perform
 ===============================================================================    
-    """
-
-    await mcp_toolkit.disconnect()
+        """
 
 
 if __name__ == "__main__":
