@@ -13,11 +13,10 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import logging
 import os
-from typing import Callable, List, Union, cast
 
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
-from camel.toolkits import FunctionTool, SearchToolkit
+from camel.toolkits import SearchToolkit
 from camel.types import ModelPlatformType
 from camel.types.enums import ModelType
 
@@ -76,13 +75,10 @@ The reasoning agent is a helpful assistant that can reason about the world.
 
 # Create another agent for searching the web
 toolkit = SearchToolkit()
-tools: List[Union[FunctionTool, Callable]] = cast(
-    List[Union[FunctionTool, Callable]], toolkit.get_tools()
-)
 search_agent = ChatAgent(
     model=search_model,
     system_message="You are a helpful assistant.",
-    tools=tools,
+    tools=toolkit.get_tools(),  # type: ignore[arg-type]
 )
 
 search_agent_description = """
