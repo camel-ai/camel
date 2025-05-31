@@ -1,9 +1,0 @@
-{
-  "mcpServers": {
-    "arxiv_toolkit": {
-      "url": "http://localhost:8000/mcp/",
-      "timeout": 10,
-      "mode": "streamable-http"
-    }
-  }
-}
