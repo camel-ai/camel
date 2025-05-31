@@ -61,6 +61,9 @@ HTTP/HTTPS, WebSocket, and Server-Sent Events (SSE). The client
 automatically detects the appropriate transport type based on the
 configuration provided.
 
+The client should be used as an async context manager for automatic
+connectionmanagement.
+
 **Parameters:**
 
 - **config** (Union[ServerConfig, Dict[str, Any]]): Server configuration as either a :obj:`ServerConfig` object or a dictionary that will be converted to a :obj:`ServerConfig`. The configuration determines the transport type and connection parameters.
@@ -235,7 +238,8 @@ as it handles configuration validation and type conversion automatically.
 
 **Returns:**
 
-  MCPClient: A configured :obj:`MCPClient` instance ready for connection.
+  MCPClient: A configured :obj:`MCPClient` instance ready for use as
+an async context manager.
 
 <a id="camel.utils.mcp_client.create_mcp_client_from_config_file"></a>
 
@@ -254,8 +258,7 @@ Create an MCP client from a configuration file.
 
 **Returns:**
 
-  MCPClient: MCPClient instance.
-
+  MCPClient: MCPClient instance as an async context manager.
 Example config file:
 `\{
 "mcpServers": \{
@@ -275,6 +278,9 @@ Example config file:
 \}`
 
 Usage:
-client = create_mcp_client_from_config_file(
+.. code-block:: python
+
+async with create_mcp_client_from_config_file(
 "config.json", "filesystem"
-)
+) as client:
+tools = client.get_tools()
