@@ -477,6 +477,7 @@
               "reference/camel.toolkits.openai_agent_toolkit",
               "reference/camel.toolkits.openbb_toolkit",
               "reference/camel.toolkits.playwright_mcp_toolkit",
+              "reference/camel.toolkits.pptx_toolkit",
               "reference/camel.toolkits.pubmed_toolkit",
               "reference/camel.toolkits.pulse_mcp_search_toolkit",
               "reference/camel.toolkits.pyautogui_toolkit",
