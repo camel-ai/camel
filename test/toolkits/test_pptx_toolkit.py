@@ -14,7 +14,6 @@
 
 import os
 import tempfile
-from pathlib import Path
 
 import pytest
 
@@ -23,7 +22,8 @@ from camel.toolkits.pptx_toolkit import PPTXToolkit
 
 @pytest.fixture
 def pptx_toolkit():
-    r"""Fixture that creates a PPTXToolkit instance with a temporary directory."""
+    r"""Fixture that creates a PPTXToolkit instance with a temporary
+    directory."""
     with tempfile.TemporaryDirectory() as temp_dir:
         toolkit = PPTXToolkit(output_dir=temp_dir)
         yield toolkit
@@ -45,7 +45,7 @@ def test_get_tools(pptx_toolkit):
 def test_create_presentation_basic(pptx_toolkit):
     r"""Test creating a PPTX file with basic slide structure."""
     import json
-    
+
     content = [
         {
             "title": "Test Presentation",
@@ -56,7 +56,7 @@ def test_create_presentation_basic(pptx_toolkit):
             "bullet_points": ["This is the content of the first slide."],
         },
         {
-            "heading": "Second Slide", 
+            "heading": "Second Slide",
             "bullet_points": ["This is the content of the second slide."],
         },
     ]
@@ -74,6 +74,7 @@ def test_create_presentation_basic(pptx_toolkit):
     # Verify it's a valid PPTX file by checking we can open it
     try:
         import pptx
+
         presentation = pptx.Presentation(str(file_path))
         # Should have 3 slides (1 title + 2 content)
         assert len(presentation.slides) == 3
@@ -85,7 +86,7 @@ def test_create_presentation_basic(pptx_toolkit):
 def test_create_presentation_with_images(pptx_toolkit):
     r"""Test creating a PPTX file with image URLs."""
     import json
-    
+
     content = [
         {
             "title": "Presentation with Images",
@@ -112,7 +113,7 @@ def test_create_presentation_with_images(pptx_toolkit):
 def test_create_presentation_title_only(pptx_toolkit):
     r"""Test creating a PPTX file with only title slide."""
     import json
-    
+
     content = [
         {
             "title": "Title Only Presentation",
@@ -133,6 +134,7 @@ def test_create_presentation_title_only(pptx_toolkit):
     # Verify it's a valid PPTX file with 1 slide
     try:
         import pptx
+
         presentation = pptx.Presentation(str(file_path))
         assert len(presentation.slides) == 1
     except ImportError:
@@ -143,7 +145,7 @@ def test_create_presentation_title_only(pptx_toolkit):
 def test_create_presentation_missing_fields(pptx_toolkit):
     r"""Test creating a PPTX file with slides missing optional fields."""
     import json
-    
+
     content = [
         {
             "title": "Presentation",
@@ -172,9 +174,10 @@ def test_create_presentation_missing_fields(pptx_toolkit):
 
 
 def test_create_presentation_invalid_image_url(pptx_toolkit):
-    r"""Test creating a PPTX file with invalid image URL (should continue without failing)."""
+    r"""Test creating a PPTX file with invalid image URL (should continue
+    without failing)."""
     import json
-    
+
     content = [
         {
             "title": "Test Invalid Image",
@@ -183,7 +186,10 @@ def test_create_presentation_invalid_image_url(pptx_toolkit):
         {
             "heading": "Slide with Bad Image",
             "bullet_points": ["This slide has an invalid image URL."],
-            "img_keywords": "https://invalid-url-that-does-not-exist.example.com/image.jpg",
+            "img_keywords": (
+                "https://invalid-url-that-does-not-exist.example.com/"
+                "image.jpg"
+            ),
         },
     ]
     filename = "test_invalid_image.pptx"
@@ -199,13 +205,14 @@ def test_create_presentation_invalid_image_url(pptx_toolkit):
 
 
 def test_create_presentation_invalid_content_type(pptx_toolkit):
-    r"""Test that creating a PPTX file with invalid content type raises ValueError."""
+    r"""Test that creating a PPTX file with invalid content type raises
+    ValueError."""
     filename = "test_invalid.pptx"
-    
+
     # Test with invalid JSON string
     with pytest.raises(ValueError, match="Content must be valid JSON"):
         pptx_toolkit.create_presentation("invalid json content", filename)
-    
+
     # Test with JSON that's not a list
     with pytest.raises(ValueError, match="PPTX content must be a list"):
         pptx_toolkit.create_presentation('{"title": "Not a list"}', filename)
@@ -214,7 +221,7 @@ def test_create_presentation_invalid_content_type(pptx_toolkit):
 def test_create_presentation_auto_extension(pptx_toolkit):
     r"""Test that the .pptx extension is automatically added if missing."""
     import json
-    
+
     content = [
         {
             "title": "Test Auto Extension",
@@ -234,14 +241,15 @@ def test_create_presentation_auto_extension(pptx_toolkit):
 
 
 def test_sanitize_and_resolve_filepath(pptx_toolkit):
-    r"""Test that _resolve_filepath sanitizes filenames with spaces and special characters."""
+    r"""Test that _resolve_filepath sanitizes filenames with spaces and
+    special characters."""
     # Test filename with spaces and special characters
     filename = "test file with spaces & special chars!.pptx"
     resolved_path = pptx_toolkit._resolve_filepath(filename)
-    
+
     # Should replace special characters with underscores
     assert "test_file_with_spaces_special_chars_.pptx" in str(resolved_path)
-    
+
     # Should be under the output directory
     assert str(pptx_toolkit.output_dir) in str(resolved_path)
 
@@ -249,12 +257,14 @@ def test_sanitize_and_resolve_filepath(pptx_toolkit):
 def test_resolve_filepath_absolute_path(pptx_toolkit):
     r"""Test _resolve_filepath with absolute paths."""
     # Create a temporary file path
-    with tempfile.NamedTemporaryFile(suffix='.pptx', delete=False) as temp_file:
+    with tempfile.NamedTemporaryFile(
+        suffix='.pptx', delete=False
+    ) as temp_file:
         temp_path = temp_file.name
-    
+
     try:
         resolved_path = pptx_toolkit._resolve_filepath(temp_path)
-        
+
         # Should return the absolute path as-is (after sanitization)
         assert resolved_path.is_absolute()
         assert resolved_path.suffix == '.pptx'
@@ -267,7 +277,7 @@ def test_resolve_filepath_absolute_path(pptx_toolkit):
 def test_create_presentation_empty_content(pptx_toolkit):
     r"""Test creating a PPTX file with empty content list."""
     import json
-    
+
     content = []
     filename = "test_empty.pptx"
 
@@ -283,8 +293,9 @@ def test_create_presentation_empty_content(pptx_toolkit):
     # Verify it's a valid PPTX file with no slides
     try:
         import pptx
+
         presentation = pptx.Presentation(str(file_path))
         assert len(presentation.slides) == 0
     except ImportError:
         # If python-pptx is not available, just check file exists
-        pass 
+        pass
