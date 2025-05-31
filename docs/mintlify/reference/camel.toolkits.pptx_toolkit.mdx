@@ -212,13 +212,7 @@ representing the functions in the toolkit.
 ### _handle_default_display
 
 ```python
-def _handle_default_display(
-    self,
-    presentation: Any,
-    slide_json: dict,
-    slide_width_inch: float,
-    slide_height_inch: float
-):
+def _handle_default_display(self, presentation: Any, slide_json: dict):
 ```
 
 Display a list of text in a slide.
@@ -227,21 +221,13 @@ Display a list of text in a slide.
 
 - **presentation**: The presentation object.
 - **slide_json**: The content of the slide as JSON data.
-- **slide_width_inch**: The width of the slide in inches.
-- **slide_height_inch**: The height of the slide in inches.
 
 <a id="camel.toolkits.pptx_toolkit.PPTXToolkit._handle_display_image__in_foreground"></a>
 
 ### _handle_display_image__in_foreground
 
 ```python
-def _handle_display_image__in_foreground(
-    self,
-    presentation: Any,
-    slide_json: dict,
-    slide_width_inch: float,
-    slide_height_inch: float
-):
+def _handle_display_image__in_foreground(self, presentation: Any, slide_json: dict):
 ```
 
 Create a slide with text and image using a picture placeholder layout.
@@ -250,8 +236,6 @@ Create a slide with text and image using a picture placeholder layout.
 
 - **presentation**: The presentation object.
 - **slide_json**: The content of the slide as JSON data.
-- **slide_width_inch**: The width of the slide in inches.
-- **slide_height_inch**: The height of the slide in inches.
 
 **Returns:**
 
@@ -262,13 +246,7 @@ Create a slide with text and image using a picture placeholder layout.
 ### _handle_table
 
 ```python
-def _handle_table(
-    self,
-    presentation: Any,
-    slide_json: dict,
-    slide_width_inch: float,
-    slide_height_inch: float
-):
+def _handle_table(self, presentation: Any, slide_json: dict):
 ```
 
 Add a table to a slide.
@@ -277,8 +255,6 @@ Add a table to a slide.
 
 - **presentation**: The presentation object.
 - **slide_json**: The content of the slide as JSON data.
-- **slide_width_inch**: The width of the slide in inches.
-- **slide_height_inch**: The height of the slide in inches.
 
 <a id="camel.toolkits.pptx_toolkit.PPTXToolkit._handle_step_by_step_process"></a>
 
