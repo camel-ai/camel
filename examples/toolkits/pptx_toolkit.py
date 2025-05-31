@@ -16,6 +16,7 @@ Example usage of the PPTXToolkit for creating PowerPoint presentations.
 """
 
 import os
+
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
 from camel.toolkits import PPTXToolkit
@@ -23,8 +24,8 @@ from camel.types import ModelPlatformType, ModelType
 
 
 def run_pptx_agent():
-    # Make sure to set the PEXEL_API_KEY environment variable
-    os.environ['PEXEL_API_KEY'] = 'your_api_key_here'
+    # Set the PEXELS_API_KEY for Pexels image fetching
+    os.environ['PEXELS_API_KEY'] = 'your_api_key_here'
 
     # Initialize the model
     model = ModelFactory.create(
@@ -38,59 +39,23 @@ def run_pptx_agent():
     )
 
     # Initialize the agent with the toolkit
-    system_message = """You are a helpful assistant that can create PowerPoint presentations.
-    When creating presentations, you must first select the appropriate template based on the topic:
+    system_message = """You are a helpful assistant that can create PowerPoint 
+    presentations.
+    When creating presentations, you must first select the appropriate 
+    template based on the topic:
 
     Available Templates:
     1. Modern Template (modern.pptx)
        - Best for: Technology, Innovation, Digital topics
        - Path: examples/toolkits/templates/modern.pptx
 
-    2. Business Template (Ion_Boardroom.pptx)
+    2. Business Template (ion_boardroom.pptx)
        - Best for: Business, Corporate, Professional topics
-       - Path: examples/toolkits/templates/Ion_Boardroom.pptx
+       - Path: examples/toolkits/templates/ion_boardroom.pptx
 
-    3. Education Template (Urban_monochrome.pptx)
+    3. Education Template (urban_monochrome.pptx)
        - Best for: Education, Learning, Academic topics
-       - Path: examples/toolkits/templates/Urban_monochrome.pptx
-
-    After selecting the appropriate template, output the content in the following JSON format and use the create_presentation tool to generate the PPTX file:
-
-    [
-        {
-            "title": "Presentation Title",
-            "subtitle": "Presentation Subtitle"
-        },
-        {
-            "heading": "Slide Title",
-            "bullet_points": [
-                "**Bold text** for emphasis",
-                "*Italic text* for additional emphasis",
-                "Regular text for normal content"
-            ],
-            "img_keywords": "relevant search terms for images"
-        },
-        {
-            "heading": "Step-by-Step Process",
-            "bullet_points": [
-                ">> **Step 1:** First step description",
-                ">> **Step 2:** Second step description",
-                ">> **Step 3:** Third step description"
-            ],            
-            "img_keywords": "process workflow steps"
-        },
-        {
-            "heading": "Comparison Table",
-            "table": {
-                "headers": ["Column 1", "Column 2", "Column 3"],
-                "rows": [
-                    ["Row 1, Col 1", "Row 1, Col 2", "Row 1, Col 3"],
-                    ["Row 2, Col 1", "Row 2, Col 2", "Row 2, Col 3"]
-                ]
-            },            
-            "img_keywords": "comparison visualization"
-        }
-    ]
+       - Path: examples/toolkits/templates/urban_monochrome.pptx
 
     Special formatting rules:
     1. Use **text** for bold text
@@ -100,12 +65,16 @@ def run_pptx_agent():
     5. Add img_keywords field to include relevant images from Pexels
 
     IMPORTANT: 
-    1. First, analyze the presentation topic and select the most appropriate template
+    1. First, analyze the presentation topic and select the most appropriate 
+    template
     2. Then create the JSON content following the format above
-    3. Finally, use the create_presentation tool to generate the PPTX file with the selected template
+    3. Finally, use the create_presentation tool to generate the PPTX file 
+    with the selected template
 
     Example tool usage:
-    create_presentation(content='[{"title": "Example", "subtitle": "Demo"}]', filename="example.pptx", template="/examples/toolkits/templates/modern.pptx")
+    create_presentation(content='[{"title": "Example", "subtitle": "Demo"}]', 
+    filename="example.pptx", template="/examples/toolkits/templates/modern.
+    pptx")
     """
 
     camel_agent = ChatAgent(
@@ -118,15 +87,37 @@ def run_pptx_agent():
 
     # Example 1: Presentation with various slide types
     print("Example 1: Creating a presentation with various slide types")
-    presentation_query = """Create a PowerPoint presentation about \"Camel-ai\" 
-                          that demonstrates different slide types including:
-                          - A title slide
-                          - A slide with bullet points and bold/italic text
-                          - A step-by-step process slide
-                          - A comparison table slide
-                          - Include relevant images for each slide using img_keywords
-                          
-                          After creating the JSON content, use the create_presentation tool to generate the PPTX file."""
+    presentation_query = """Create a PowerPoint presentation about 
+    \"CAMEL-AI\" based on the content below: 
+    CAMEL: The first and the best multi-agent framework. We are working on 
+    finding the scaling laws of Agents. We believe that studying these agents 
+    on a large scale offers valuable insights into their behaviors, 
+    capabilities, and potential risks. To facilitate research in this field, 
+    we implement and support various types of agents, tasks, prompts, models, 
+    and simulated environments.
+
+    The CAMEL project is building the foundational infrastructure for AI 
+    agents: collaborative, tool-using agents that operates in complex, 
+    real-world environments.
+
+    Our open-source framework empowers researchers and developers to rapidly 
+    build and experiment with multi-agent systems. These agents are powered by 
+    large language models (LLMs) and can interact with real-world 
+    tools—including terminals, web browsers, code execution, and 
+    APIs—unlocking high-value applications across enterprise automation, 
+    simulation, and AI research.
+
+    CAMEL is already gaining significant traction: over 200 contributors have 
+    supported the project globally, our community spans more than 10,000 
+    active members on private channels like Discord and Slack, and our work 
+    has been cited more than 700 times in academic literature. CAMEL is widely 
+    used in research, education, and industry to develop agentic systems and 
+    drive innovation at the frontier of AI agent research.
+
+    We believe CAMEL is well-positioned to become the core infrastructure 
+    layer for safe, scalable, and intelligent multi-agent systems in the 
+    emerging agent economy.
+    """
 
     camel_agent.reset()
     response = camel_agent.step(presentation_query)
@@ -176,7 +167,9 @@ def run_pptx_agent():
                 "Keep security in mind",
                 "Document everything",
             ],
-            "img_keywords": "https://images.pexels.com/photos/2014773/pexels-photo-2014773.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
+            "img_keywords": "https://images.pexels.com/photos/2014773"
+            "/pexels-photo-2014773.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750"
+            "&dpr=1",
         },
         {
             "heading": "Development Approaches Comparison",
@@ -227,36 +220,50 @@ if __name__ == "__main__":
 
 
 """
+===============================================================================
 === PPTXToolkit Example Usage ===
 
 Example 1: Creating a presentation with various slide types
-OK. I've created a PowerPoint presentation about Camel-AI, including a title slide, bullet point slide, 
-step-by-step process slide, and a comparison table slide. I've also added relevant image keywords for each slide.
- The presentation has been saved as "camel_ai_presentation.pptx" using the modern template.
+The PowerPoint presentation titled "CAMEL-AI: The First Multi-Agent Framework" 
+has been successfully created. You can download it using the link below:
 
-Tool calls: [ToolCallingRecord(tool_name='create_presentation', args={'filename': 'camel_ai_presentation.pptx', 
-'content': '[{"title": "Camel-AI: An Overview", "subtitle": "Conversational AI Made Accessible"}, {"heading": "What is Camel-AI?", 
-"bullet_points": ["**Camel-AI** is a framework for building *conversational AI* agents.", "It simplifies the process of creating 
-and managing complex dialogues.", "Key features include: role-playing, multi-agent collaboration, and task-oriented conversations."],
-"img_keywords": "conversational AI agents"}, {"heading": "Building a Camel-AI Agent: Step-by-Step", 
-"bullet_points": [">> **Step 1:** Define the roles and objectives of each agent.", ">> **Step 2:** Design the conversation flow and 
-interaction protocols.", ">> **Step 3:** Implement the agent logic using the Camel-AI framework.", ">> **Step 4:** Test and refine
-the agent through simulations and real-world interactions."], "img_keywords": "AI agent workflow"}, {"heading": "Camel-AI vs.
-Traditional Chatbots", "table": {"headers": ["Feature", "Camel-AI", "Traditional Chatbots"], "rows": [["Complexity", "Handles complex, 
-multi-agent dialogues", "Limited to simple, single-turn conversations"], ["Role-Playing", "Supports diverse roles and personalities", 
-"Typically lacks role-playing capabilities"], ["Task-Oriented", "Designed for collaborative task completion", "Often focused on 
-information retrieval"]] }, "img_keywords": "AI chatbot comparison"}]', 'template': 'examples/toolkits/templates/modern.pptx'}, 
-result='PowerPoint presentation successfully created:camel/pptx_outputs/camel_ai_presentation.pptx', 
-tool_call_id='')]
+[Download CAMEL-AI Presentation](sandbox:/Users/enrei/Desktop/camel0508/camel/
+pptx_outputs/camel_ai_presentation.pptx)
+Tool calls: [ToolCallingRecord(tool_name='create_presentation', args=
+{'content': '[{"title": "CAMEL-AI","subtitle": "The First Multi-Agent 
+Framework"},{"heading": "Introduction to CAMEL","bullet_points":[">> 
+Multi-agent framework for AI research.",">> Focus on the scaling laws of 
+agents.",">> Insights into behavior, capabilities, and risks."],
+"img_keywords":"AI research, agents"},{"heading": "Key Features",
+"bullet_points":[">> Collaborative, tool-using agents for real-world 
+environments.",">> Open-source framework for rapid development and 
+experimentation.",">> Powered by large language models (LLMs)."],
+"img_keywords":"collaboration, technology"},{"heading": "Applications of 
+CAMEL","bullet_points":[">> Interaction with real-world tools: terminals, web 
+browsers, APIs.",">> Enterprise automation and simulation applications.",">> 
+Significant contributions to AI research."],"img_keywords":"application of AI, 
+technologies"},{"heading": "Community and Impact","bullet_points":[">> Over 
+200 global contributors or supporters.",">> Community of more than 10,000 
+active members on Discord and Slack.",">> Over 700 citations in academic 
+literature."],"img_keywords":"community, collaboration"},{"heading": "Future 
+of CAMEL","bullet_points":[">> Core infrastructure for multi-agent systems in 
+agent economy.",">> Positioned for safe and scalable intelligent systems."],
+"img_keywords":"future of technology, AI"}]', 'filename': 
+'camel_ai_presentation.pptx', 'template': '/examples/toolkits/templates/modern.
+pptx'}, result='PowerPoint presentation successfully created: /Users/enrei/
+Desktop/camel0508/camel/pptx_outputs/camel_ai_presentation.pptx', 
+tool_call_id='call_DwygLSSBGGG9c6kXgQt3sFO5')]
 
 ==================================================
 
 Example 2: Direct toolkit usage with advanced features
 Direct toolkit usage:
-PowerPoint presentation successfully created: camel/pptx_outputs/modern_development.pptx
+PowerPoint presentation successfully created: /Users/enrei/Desktop/camel0508/
+camel/pptx_outputs/modern_development.pptx
 
 ==================================================
 
 Both presentations have been created successfully!
-Check the './pptx_outputs' directory for the generated PPTX files."""
-# ruff: noqa: E501
+Check the './pptx_outputs' directory for the generated PPTX files.
+===============================================================================
+"""
