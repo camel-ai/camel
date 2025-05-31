@@ -18,7 +18,7 @@ from mcp.types import CallToolResult
 from camel.toolkits.mcp_toolkit import MCPClient, MCPToolkit
 
 
-async def run_example():
+async def run_example_http():
     config = {
         "mcpServers": {
             "arxiv_toolkit": {
@@ -73,5 +73,40 @@ except the latter layers reduces perform
         """
 
 
+async def run_example_stdio():
+    config = {
+        "mcpServers": {
+            "arxiv_toolkit": {
+                "command": "/Users/jinx0a/Repo/camel/.venv/bin/python",
+                "args": [
+                    "examples/toolkits/mcp/mcp_arxiv_toolkit/arxiv_toolkit_server.py",
+                    "--mode",
+                    "stdio",
+                ],
+            }
+        }
+    }
+    mcp_toolkit = MCPToolkit(config_dict=config)
+    async with mcp_toolkit:
+        mcp_client: MCPClient = mcp_toolkit.clients[0]
+        res = await mcp_client.list_mcp_tools()
+        if isinstance(res, str):
+            raise Exception(res)
+
+        # call the server to list the available tools
+        mcp_client: MCPClient = mcp_toolkit.clients[0]
+        res = await mcp_client.list_mcp_tools()
+        if isinstance(res, str):
+            raise Exception(res)
+
+        tools = [tool.name for tool in res.tools]
+        print(tools)
+        res1: CallToolResult = await mcp_client.session.call_tool(
+            "search_papers", {"query": "attention is all you need"}
+        )
+        print(res1.content[0].text[:1000])
+
+
 if __name__ == "__main__":
-    asyncio.run(run_example())
+    asyncio.run(run_example_http())
+    asyncio.run(run_example_stdio())
