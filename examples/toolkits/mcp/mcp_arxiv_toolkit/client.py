@@ -109,5 +109,5 @@ async def run_example_stdio():
 
 
 if __name__ == "__main__":
-    # asyncio.run(run_example_http())
+    asyncio.run(run_example_http())
     asyncio.run(run_example_stdio())
