@@ -13,24 +13,22 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
-import logging
 import os
 import random
 import re
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional, Union
 
-import numpy as np
-from rouge import Rouge
 from tqdm import tqdm
 
 from camel.agents import ChatAgent
-from camel.benchmarks.base import BaseBenchmark
+from camel.benchmarks.base import BaseBenchmark, EvalResult
+from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.utils import download_github_subdirectory
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Add current folder to sys.path to enable relative import
 current_folder = os.getcwd()
@@ -42,8 +40,7 @@ def process_messages(
     chat_history: List[Dict[str, Any]],
     prompt: str,
 ) -> List[Dict[str, str]]:
-    """
-    Processes chat history into a structured format for further use.
+    r"""Processes chat history into a structured format for further use.
 
     Args:
         chat_history (List[Dict[str, Any]):
@@ -104,8 +101,13 @@ class APIBankBenchmark(BaseBenchmark):
                 parallel processing. (default: :obj:`1`)
         """
         # Predefine data_dir for better import management
-        super().__init__("apibank", "api_bank", save_to, processes)
-        self._data: Dict[str, List[APIBankSample]] = dict()  # type: ignore[assignment]
+        super().__init__(
+            name="apibank",
+            data_dir="api_bank",
+            save_to=save_to,
+            processes=processes,
+        )
+        self._data: Dict[str, List[APIBankSample]] = dict()
 
     def download(self):
         r"""Download APIBank dataset and code from Github."""
@@ -119,7 +121,7 @@ class APIBankBenchmark(BaseBenchmark):
         sys.path.insert(0, self.data_dir)
         logger.info("Download completed.")
 
-    def load(self, level: str, force_download: bool = False):  # type: ignore[override]
+    def load(self, level: str, force_download: bool = False):
         r"""Load the APIBank Benchmark dataset.
 
         Args:
@@ -189,33 +191,32 @@ class APIBankBenchmark(BaseBenchmark):
         process_files(apis_folder, apis_replacements)
         process_files(api_bank_folder, api_bank_replacements)
 
-    def run(  # type: ignore[override, return]
+    def run(
         self,
         agent: ChatAgent,
         level: Literal["level-1", "level-2"],
-        api_test_enabled=True,
+        api_test_enabled: bool = True,
         randomize: bool = False,
         subset: Optional[int] = None,
-    ) -> Dict[str, Any]:
+    ) -> EvalResult:
         r"""Run the benchmark.
 
         Args:
-            agent (ChatAgent): The agent to run the
-                benchmark.
-            level (Literal['level-1', 'level-2']):
-                The level to run the benchmark on.
-            randomize (bool, optional): Whether to
-                randomize the data.
-            api_test_enabled (bool): Whether to test
-            API calling (`True`) or response (`False`)
-                (default: :obj:`False`)
-            subset (Optional[int], optional):
-            The subset of data to run.
-                (default: :obj:`None`)
+            agent (ChatAgent): The agent to run the benchmark.
+            level (Literal['level-1', 'level-2']): The level to run the
+                benchmark on.
+            api_test_enabled (bool): Whether to test API calling or
+                response (default: :obj:`False`)
+            randomize (bool): Whether to randomize the data (default:
+                :obj:`False`)
+            subset (Optional[int]): The subset of data to run (default:
+                :obj:`None`)
 
         Returns:
             Dict[str, Any]: The results of the benchmark.
         """
+        import numpy as np
+
         logger.info(f"Running APIBench benchmark on {level}.")
         self.load(level)
         datas = self._data
@@ -282,20 +283,20 @@ class APIBankBenchmark(BaseBenchmark):
                                     e
                                 ):
                                     raise e
-                                logging.info('AssertionError: {}'.format(e))
+                                logger.info('AssertionError: {}'.format(e))
                                 correct = False
                         else:
                             model_output_result = 'No API call found'
                             correct = False
                         if correct:
                             correct_api_calls += 1
-                            logging.info(
+                            logger.info(
                                 'Correct API call: {} Ground truth: {}'.format(
                                     api_call, sample.ground_truth
                                 )
                             )
                         else:
-                            logging.info(
+                            logger.info(
                                 'Incorrect model output: {} Result: {} \
                                 Ground truth: {} File: {} Sample ID: {} \
                                 Messages: {}'.format(
@@ -344,7 +345,7 @@ class APIBankBenchmark(BaseBenchmark):
                             score = 0
                         rougel_scores.append(score)
                         if score < 0.2:
-                            logging.info(
+                            logger.info(
                                 'Low score: {} Score: {} Ground truth: {} \
                                 Test: {} Sample ID: {} \
                                 Messages: {}'.format(
@@ -373,16 +374,34 @@ class APIBankBenchmark(BaseBenchmark):
 
                     f.flush()
 
+        metrics_dict: Dict[str, Union[int, float]] = {}
         if api_test_enabled:
-            return {
-                'total': total_api_calls,
-                'correct': correct_api_calls,
-                "accuracy": correct_api_calls / total_api_calls
-                if total_api_calls
-                else 0,
-            }
+            metrics_dict['total_api_calls'] = total_api_calls
+            metrics_dict['correct_api_calls'] = correct_api_calls
+            metrics_dict['api_call_accuracy'] = (
+                correct_api_calls / total_api_calls if total_api_calls else 0.0
+            )
         elif dialog_test_enabled:
-            return {'Dialog_score': np.mean(rougel_scores)}
+            metrics_dict['dialog_score'] = (
+                float(np.mean(rougel_scores)) if rougel_scores else 0.0
+            )
+
+        metadata_dict: Dict[str, Any] = {
+            'level': level,
+            'api_test_enabled': api_test_enabled,
+            'dialog_test_enabled': dialog_test_enabled,
+            'randomize': randomize,
+            'subset': subset,
+            'num_tasks': len(datas),
+        }
+        if not api_test_enabled and not dialog_test_enabled:
+            metadata_dict['status'] = 'No tests were enabled'
+
+        return EvalResult(
+            metrics=metrics_dict,
+            details=self._results,
+            metadata=metadata_dict,
+        )
 
 
 # The following code are migrated from the original repo:
@@ -417,6 +436,8 @@ def agent_call(messages: List[Dict], agent: ChatAgent):
 
 def calculate_rouge_l_score(reference, hypothesis):
     r"""Calculate rouge l score between hypothesis and reference."""
+    from rouge import Rouge
+
     rouge = Rouge()
     scores = rouge.get_scores(hypothesis, reference)
     rouge_l_score = scores[0]['rouge-l']['f']
