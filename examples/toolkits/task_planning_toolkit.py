@@ -69,18 +69,90 @@ of stop time from minutes to hours was explicitly noted for clarity.
 
 Tool calls:
 [
-    ToolCallingRecord
-        tool_name='decompose_task', 
-        args={'tasks': [{'content': 'Calculate the total travel time without 
-            stops.', 'id': '1'}, {'content': 'Calculate the total stop time.', 
-            'id': '2'}, {'content': 'Add the travel time and stop time to get
-             the total journey time.', 'id': '3'}]}, 
-        result=[{'content': 'Calculate the total travel time without stops.', 
-            'id': '1'}, {'content': 'Calculate the total stop time.', 
-            'id': '2'}, {'content': 'Add the travel time and stop time to get 
-            the total journey time.', 'id': '3'}], 
-        tool_call_id='call_0_824fe110-be29-491d-ada7-5422ddfe5afb')
+    ToolCallingRecord(
+        tool_name='decompose_task',
+        args={
+            'original_task_content': 'If a train travels at 60 mph and needs to
+                cover 300 miles, with 3 stops of 15 minutes each, how long will
+                the journey take?',
+            'sub_task_contents': [
+                'Calculate the total travel time without stops by dividing the
+                    distance by the speed.',
+                'Calculate the total stop time by multiplying the number of
+                    stops by the duration of each stop.',
+                'Add the total travel time and the total stop time to get the
+                    total journey time.'
+            ]
+        },
+        result=[
+            Task(
+                content='Calculate the total travel time without stops by
+                    dividing the distance by the speed.',
+                id='f5c2597c-8a97-43b2-9363-3da6af54a96a.0',
+                state=<TaskState.OPEN: 'OPEN'>,
+                type=None,
+                parent=Task(
+                    content='If a train travels at 60 mph and needs to cover
+                        300 miles, with 3 stops of 15 minutes each, how long
+                        will the journey take?',
+                    id='f5c2597c-8a97-43b2-9363-3da6af54a96a',
+                    state=<TaskState.OPEN: 'OPEN'>,
+                    type=None,
+                    parent=None,
+                    subtasks=[...]
+                ),
+                subtasks=[],
+                result='',
+                failure_count=0,
+                additional_info=None
+            ),
+            Task(
+                content='Calculate the total stop time by multiplying the number
+                    of stops by the duration of each stop.',
+                id='f5c2597c-8a97-43b2-9363-3da6af54a96a.1',
+                state=<TaskState.OPEN: 'OPEN'>,
+                type=None,
+                parent=Task(
+                    content='If a train travels at 60 mph and needs to cover
+                        300 miles, with 3 stops of 15 minutes each, how long
+                        will the journey take?',
+                    id='f5c2597c-8a97-43b2-9363-3da6af54a96a',
+                    state=<TaskState.OPEN: 'OPEN'>,
+                    type=None,
+                    parent=None,
+                    subtasks=[...]
+                ),
+                subtasks=[],
+                result='',
+                failure_count=0,
+                additional_info=None
+            ),
+            Task(
+                content='Add the total travel time and the total stop time to
+                    get the total journey time.',
+                id='f5c2597c-8a97-43b2-9363-3da6af54a96a.2',
+                state=<TaskState.OPEN: 'OPEN'>,
+                type=None,
+                parent=Task(
+                    content='If a train travels at 60 mph and needs to cover
+                        300 miles, with 3 stops of 15 minutes each, how long
+                        will the journey take?',
+                    id='f5c2597c-8a97-43b2-9363-3da6af54a96a',
+                    state=<TaskState.OPEN: 'OPEN'>,
+                    type=None,
+                    parent=None,
+                    subtasks=[...]
+                ),
+                subtasks=[],
+                result='',
+                failure_count=0,
+                additional_info=None
+            )
+        ],
+        tool_call_id='call_0_6711b31c-f762-47be-8671-37851b46ce7d'
+    )
 ]
 
 ===============================================================================
+
 """

@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import uuid
 from typing import List, Optional
 
 from camel.logger import get_logger
@@ -21,9 +22,7 @@ logger = get_logger(__name__)
 
 
 class TaskPlanningToolkit(BaseToolkit):
-    r"""
-    A toolkit for task decomposition and rePlanning.
-    """
+    r"""A toolkit for task decomposition and rePlanning."""
 
     def __init__(
         self,
@@ -39,41 +38,83 @@ class TaskPlanningToolkit(BaseToolkit):
 
     def decompose_task(
         self,
-        tasks: List[Task],
+        original_task_content: str,
+        sub_task_contents: List[str],
     ) -> List[Task]:
-        r"""Use the tool to decompose a task into several subTasks.
-        It will not obtain new information or change the database, but just
-        append the subTasks to the log.
+        r"""Use the tool to decompose an original task into several sub-tasks.
+        It creates new Task objects from the provided original task content,
+        used when the original task is complex and needs to be decomposed.
 
         Args:
-            tasks (List[Task]): the subTasks which compose the task.
+            original_task_content (str): The content of the task to be
+                decomposed.
+            sub_task_contents (List[str]): A list of strings, where each
+                string is the content for a new sub-task.
 
         Returns:
-            str: The recorded tasks.
+            List[Task]: A list of newly created sub-task objects.
         """
-        logger.debug(f"subTasks: {tasks}")
+        # Create the original task object from its content
+        original_task = Task(
+            content=original_task_content, id=str(uuid.uuid4())
+        )
 
-        return tasks
+        new_tasks: List[Task] = []
+        for i, content in enumerate(sub_task_contents):
+            new_task = Task(
+                content=content, id=f"{original_task.id}.{i}",
+                parent=original_task
+            )
+            new_tasks.append(new_task)
+            original_task.subtasks.append(new_task)
+
+        logger.debug(
+            f"Decomposed task (content: '{original_task.content[:50]}...', "
+            f"id: {original_task.id}) into {len(new_tasks)} sub-tasks: "
+            f"{[task.id for task in new_tasks]}"
+        )
+
+        return new_tasks
 
     def replan_tasks(
         self,
-        tasks: List[Task],
-        context: str = "",
+        original_task_content: str,
+        sub_task_contents: List[str],
     ) -> List[Task]:
-        r"""
-        Use the tool to reDecompose the task into subTasks when the subTasks
-        decompose before are not good enough to solve the task.
+        r"""Use the tool to reDecompose a task into several subTasks.
+        It creates new Task objects from the provided original task content,
+        used when the decomposed tasks are not good enough to help finish
+        the task.
 
         Args:
-            tasks (List[Task]): Original list of tasks.
-            context (str): Contextual information affecting the replanning.
+            original_task_content (str): The content of the task to be
+                decomposed.
+            sub_task_contents (List[str]): A list of strings, where each
+                string is the content for a new sub-task.
 
         Returns:
             List[Task]: Reordered or modified tasks.
         """
-        logger.debug(f"rePlanSubTasks: {tasks}")
+        original_task = Task(
+            content=original_task_content, id=str(uuid.uuid4())
+        )
 
-        return tasks
+        new_tasks: List[Task] = []
+        for i, content in enumerate(sub_task_contents):
+            new_task = Task(
+                content=content, id=f"{original_task.id}.{i}",
+                parent=original_task
+            )
+            new_tasks.append(new_task)
+            original_task.subtasks.append(new_task)
+
+        logger.debug(
+            f"RePlan task (content: '{original_task.content[:50]}...', "
+            f"id: {original_task.id}) into {len(new_tasks)} sub-tasks: "
+            f"{[task.id for task in new_tasks]}"
+        )
+
+        return new_tasks
 
     def get_tools(self) -> List[FunctionTool]:
         return [
