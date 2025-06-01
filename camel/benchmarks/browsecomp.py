@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import base64
+import functools
 import hashlib
 import json
 import os
@@ -559,132 +560,20 @@ class BrowseCompBenchmark(BaseBenchmark):
         from tqdm import tqdm
 
         # Use a process pool for parallel execution
-        def process_benchmark_row(row: Dict[str, Any]) -> Dict[str, Any]:
-            r"""This inner function processes a single benchmark row by
-            extracting the problem and answer, creating a pipeline instance,
-            and generating a response using the appropriate method based on
-            the pipeline type.
-
-            Args:
-                row (Dict[str, Any]): A row from the dataset containing
-                    encrypted problem and answer, along with a canary for
-                    decryption.
-
-            Returns:
-                Dict[str, Any]: A dictionary containing the decrypted problem,
-                    expected answer, model response, and structured response
-                    fields.
-            """
-
-            problem = decrypt(row.get("problem", ""), row.get("canary", ""))
-            answer = decrypt(row.get("answer", ""), row.get("canary", ""))
-            try:
-                input_message = QUERY_TEMPLATE.format(question=problem)
-
-                if isinstance(pipeline_template, (ChatAgent)):
-                    pipeline = pipeline_template.clone()  # type: ignore[assignment]
-
-                    response_text = pipeline.step(
-                        input_message, response_format=QueryResponse
-                    )
-                elif isinstance(pipeline_template, Workforce):
-                    pipeline = pipeline_template.clone()  # type: ignore[assignment]
-                    task = Task(content=input_message, id="0")
-                    task = pipeline.process_task(task)  # type: ignore[attr-defined]
-                    if task_json_formatter:
-                        formatter_in_process = task_json_formatter.clone()
-                    else:
-                        formatter_in_process = ChatAgent(
-                            "You are a helpful assistant."
-                        )
-                    response_text = formatter_in_process.step(
-                        FORMAT_JSON_TEMPLATE.format(content=task.result),
-                        response_format=QueryResponse,
-                    )
-
-                elif isinstance(pipeline_template, RolePlaying):
-                    # RolePlaying is different.
-                    pipeline = pipeline_template.clone(  # type: ignore[assignment]
-                        task_prompt=input_message
-                    )
-
-                    n = 0
-                    input_msg = pipeline.init_chat()  # type: ignore[attr-defined]
-                    chat_history = []
-                    while n < chat_turn_limit:
-                        n += 1
-                        assistant_response, user_response = pipeline.step(
-                            input_msg
-                        )
-                        if assistant_response.terminated:  # type: ignore[attr-defined]
-                            break
-                        if user_response.terminated:  # type: ignore[attr-defined]
-                            break
-                        if "CAMEL_TASK_DONE" in user_response.msg.content:  # type: ignore[attr-defined]
-                            break
-
-                        chat_history.append(
-                            f"AI User: {user_response.msg.content}"  # type: ignore[attr-defined]
-                        )
-                        chat_history.append(
-                            f"AI Assistant: {assistant_response.msg.content}"  # type: ignore[attr-defined]
-                        )
-                        input_msg = assistant_response.msg  # type: ignore[attr-defined]
-
-                    chat_history_str = "\n".join(chat_history)
-                    if roleplaying_summarizer:
-                        summarizer_in_process = roleplaying_summarizer.clone()
-                    else:
-                        summarizer_in_process = ChatAgent(
-                            "You are a helpful assistant."
-                        )
-
-                    summarize_prompt = SUMMARIZE_TEMPLATE.format(
-                        chat_history=chat_history_str,
-                        query=input_message,
-                    )
-                    response_text = summarizer_in_process.step(
-                        summarize_prompt, response_format=QueryResponse
-                    )
-                else:
-                    raise NotImplementedError(
-                        f"{type(pipeline_template)} is not supported."
-                    )
-                # Parse the response JSON
-                response_dict = json.loads(response_text.msg.content)
-
-                # Format the response as a key-value string
-                formatted_response = f"""
-    Explanation: {response_dict['explanation']}
-
-    Exact Answer: {response_dict['exact_answer']}
-    Confidence: {response_dict['confidence']}"""
-
-                # Create the result dictionary
-                raw_result = {}
-                raw_result['problem'] = problem
-                raw_result['expected_answer'] = answer
-                raw_result['response'] = formatted_response
-                # Keep the original dict for reference
-                raw_result['response_dict'] = response_dict
-
-                return raw_result
-            except Exception as e:
-                # Log any errors that occur during evaluation
-                logger.error(f"Error evaluating result: {e}")
-                logger.error(traceback.format_exc())
-                return {
-                    'problem': problem,
-                    'expected_answer': answer,
-                    'response': traceback.format_exc(),
-                    'response_dict': {},
-                }
-
         pool_class = ThreadPool
         with pool_class(min(self.processes, len(self.examples))) as pool:
             self._raw_results = list(
                 tqdm(
-                    pool.imap(process_benchmark_row, self.examples),
+                    pool.imap(
+                        functools.partial(
+                            self._process_benchmark_row,
+                            pipeline_template=pipeline_template,
+                            task_json_formatter=task_json_formatter,
+                            chat_turn_limit=chat_turn_limit,
+                            roleplaying_summarizer=roleplaying_summarizer,
+                        ),
+                        self.examples,
+                    ),
                     total=len(self.examples),
                 )
             )
@@ -693,6 +582,147 @@ class BrowseCompBenchmark(BaseBenchmark):
         self.validate(grader=grader)
 
         return self._eval_result
+
+    def _process_benchmark_row(
+        self,
+        row: Dict[str, Any],
+        pipeline_template: Union[ChatAgent, RolePlaying, Workforce],
+        task_json_formatter: Optional[ChatAgent] = None,
+        chat_turn_limit: int = 10,
+        roleplaying_summarizer: Optional[ChatAgent] = None,
+    ) -> Dict[str, Any]:
+        r"""This inner function processes a single benchmark row by
+        extracting the problem and answer, creating a pipeline instance,
+        and generating a response using the appropriate method based on
+        the pipeline type.
+
+        Args:
+            row (Dict[str, Any]): A row from the dataset containing
+                encrypted problem and answer, along with a canary for
+                decryption.
+            pipeline_template (Union[ChatAgent, RolePlaying, Workforce]): The
+                template agent or framework to use for processing examples.
+                Can be a ChatAgent, RolePlaying, or Workforce instance that
+                will be cloned for each example.
+            task_json_formatter (Optional[ChatAgent]): Optional ChatAgent to
+                format task JSON. If None and Workforce is used, a default
+                formatter will be created. (default: :obj:`None`)
+            chat_turn_limit (int): Maximum number of conversation turns allowed
+                when using RolePlaying pipeline. (default: :obj:`10`)
+            roleplaying_summarizer (Optional[ChatAgent]): Optional ChatAgent to
+                summarize RolePlaying conversations. If None and RolePlaying is
+                used, a default summarizer will be created.
+                (default: :obj:`None`)
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the decrypted problem,
+                expected answer, model response, and structured response
+                fields.
+        """
+
+        problem = decrypt(row.get("problem", ""), row.get("canary", ""))
+        answer = decrypt(row.get("answer", ""), row.get("canary", ""))
+        try:
+            input_message = QUERY_TEMPLATE.format(question=problem)
+
+            if isinstance(pipeline_template, (ChatAgent)):
+                pipeline = pipeline_template.clone()  # type: ignore[assignment]
+
+                response_text = pipeline.step(
+                    input_message, response_format=QueryResponse
+                )
+            elif isinstance(pipeline_template, Workforce):
+                pipeline = pipeline_template.clone()  # type: ignore[assignment]
+                task = Task(content=input_message, id="0")
+                task = pipeline.process_task(task)  # type: ignore[attr-defined]
+                if task_json_formatter:
+                    formatter_in_process = task_json_formatter.clone()
+                else:
+                    formatter_in_process = ChatAgent(
+                        "You are a helpful assistant."
+                    )
+                response_text = formatter_in_process.step(
+                    FORMAT_JSON_TEMPLATE.format(content=task.result),
+                    response_format=QueryResponse,
+                )
+
+            elif isinstance(pipeline_template, RolePlaying):
+                # RolePlaying is different.
+                pipeline = pipeline_template.clone(  # type: ignore[assignment]
+                    task_prompt=input_message
+                )
+
+                n = 0
+                input_msg = pipeline.init_chat()  # type: ignore[attr-defined]
+                chat_history = []
+                while n < chat_turn_limit:
+                    n += 1
+                    assistant_response, user_response = pipeline.step(
+                        input_msg
+                    )
+                    if assistant_response.terminated:  # type: ignore[attr-defined]
+                        break
+                    if user_response.terminated:  # type: ignore[attr-defined]
+                        break
+                    if "CAMEL_TASK_DONE" in user_response.msg.content:  # type: ignore[attr-defined]
+                        break
+
+                    chat_history.append(
+                        f"AI User: {user_response.msg.content}"  # type: ignore[attr-defined]
+                    )
+                    chat_history.append(
+                        f"AI Assistant: {assistant_response.msg.content}"  # type: ignore[attr-defined]
+                    )
+                    input_msg = assistant_response.msg  # type: ignore[attr-defined]
+
+                chat_history_str = "\n".join(chat_history)
+                if roleplaying_summarizer:
+                    summarizer_in_process = roleplaying_summarizer.clone()
+                else:
+                    summarizer_in_process = ChatAgent(
+                        "You are a helpful assistant."
+                    )
+
+                summarize_prompt = SUMMARIZE_TEMPLATE.format(
+                    chat_history=chat_history_str,
+                    query=input_message,
+                )
+                response_text = summarizer_in_process.step(
+                    summarize_prompt, response_format=QueryResponse
+                )
+            else:
+                raise NotImplementedError(
+                    f"{type(pipeline_template)} is not supported."
+                )
+            # Parse the response JSON
+            response_dict = json.loads(response_text.msg.content)
+
+            # Format the response as a key-value string
+            formatted_response = f"""
+Explanation: {response_dict['explanation']}
+
+Exact Answer: {response_dict['exact_answer']}
+Confidence: {response_dict['confidence']}"""
+
+            # Create the result dictionary
+            raw_result = {}
+            raw_result['problem'] = problem
+            raw_result['expected_answer'] = answer
+            raw_result['response'] = formatted_response
+            # Keep the original dict for reference
+            raw_result['response_dict'] = response_dict
+
+            return raw_result
+        except Exception as e:
+            # Log any errors that occur during evaluation
+            logger.error(f"Error evaluating result: {e}")
+            logger.error(traceback.format_exc())
+            return {
+                'problem': problem,
+                'expected_answer': answer,
+                'response': traceback.format_exc(),
+                'response_dict': {},
+            }
 
     def make_report(self, eval_result: EvalResult) -> str:
         r"""Create a standalone HTML report from a EvalResult."""
