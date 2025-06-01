@@ -16,7 +16,7 @@ from typing import Any, Dict, Optional
 from mcp.server.fastmcp import Context, FastMCP
 
 from camel.utils import model_from_json_schema
-from services.agent_config import agents_dict, description_dict
+from services.agent_mcp.agent_config import agents_dict, description_dict
 
 mcp = FastMCP("ChatAgentMCP", dependencies=["camel-ai[all]"])
 
@@ -54,7 +54,7 @@ async def step(
             "DynamicResponseFormat", response_format
         )
 
-    ctx.info(f"The agent {name} is processing the message: {message}")
+    await ctx.info(f"The agent {name} is processing the message: {message}")
     response = await agent.astep(message, format_cls)
 
     return {
@@ -66,7 +66,7 @@ async def step(
 
 
 @mcp.tool()
-def reset(ctx: Context) -> Dict[str, str]:
+async def reset(ctx: Context) -> Dict[str, str]:
     r"""Reset the chat agent to its initial state.
 
     Args:
@@ -78,12 +78,12 @@ def reset(ctx: Context) -> Dict[str, str]:
     """
     for agent in agents_dict.values():
         agent.reset()
-    ctx.info("All agents reset successfully")
+    await ctx.info("All agents reset successfully")
     return {"status": "success", "message": "All agents reset successfully"}
 
 
 @mcp.tool()
-def set_output_language(language: str, ctx: Context) -> Dict[str, str]:
+async def set_output_language(language: str, ctx: Context) -> Dict[str, str]:
     r"""Set the output language for the chat agent.
 
     Args:
@@ -96,7 +96,7 @@ def set_output_language(language: str, ctx: Context) -> Dict[str, str]:
     """
     for agent in agents_dict.values():
         agent.output_language = language
-    ctx.info(f"Output language set to '{language}'")
+    await ctx.info(f"Output language set to '{language}'")
     return {
         "status": "success",
         "message": f"Output language set to '{language}'",
@@ -133,7 +133,10 @@ def get_chat_history(name: str) -> Dict[str, Any]:
             "status": "error",
             "message": f"Agent with name {name} not found",
         }
-    return agent.chat_history
+    return {
+        "status": "success",
+        "chat_history": agent.chat_history,
+    }
 
 
 @mcp.resource("agent://{name}")
@@ -158,7 +161,6 @@ def get_agent_info(name: str) -> Dict[str, Any]:
     info = {
         "agent_id": agent.agent_id,
         "model_type": str(agent.model_type),
-        "token_limit": agent.token_limit,
         "output_language": agent.output_language,
         "description": description_dict[name],
     }

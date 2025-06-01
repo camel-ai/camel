@@ -338,8 +338,10 @@ class FileWriteToolkit(BaseToolkit):
 
         Args:
             content (Union[str, List[List[str]]]): The content to write to the
-                file. For all formats, content must be a string or list in the
-                appropriate format.
+                file. Content format varies by file type:
+                - Text formats (txt, md, html, yaml): string
+                - CSV: string or list of lists
+                - JSON: string or serializable object
             filename (str): The name or path of the file. If a relative path is
                 supplied, it is resolved to self.output_dir.
             encoding (Optional[str]): The character encoding to use. (default:
