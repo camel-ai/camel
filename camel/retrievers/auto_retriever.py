@@ -149,7 +149,7 @@ class AutoRetriever:
             # Combine for a unique name
             collection_name = f"{clean_name}_{dir_hash}"
         else:
-            # For non-file content
+            # For URL content
             content_hash = hashlib.md5(content.encode()).hexdigest()[:6]
             clean_content = re.sub(r'[^a-zA-Z0-9]', '', content)[-10:]
             collection_name = f"{clean_content}_{content_hash}"
