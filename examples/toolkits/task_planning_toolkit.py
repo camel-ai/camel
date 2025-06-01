@@ -107,8 +107,8 @@ Tool calls:
                 additional_info=None
             ),
             Task(
-                content='Calculate the total stop time by multiplying the number
-                    of stops by the duration of each stop.',
+                content='Calculate the total stop time by multiplying the、
+                    number of stops by the duration of each stop.',
                 id='f5c2597c-8a97-43b2-9363-3da6af54a96a.1',
                 state=<TaskState.OPEN: 'OPEN'>,
                 type=None,
