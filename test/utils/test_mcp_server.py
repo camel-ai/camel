@@ -13,16 +13,13 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
 import sys
-from typing import TYPE_CHECKING, Literal
+from typing import Literal
 
 import pytest
 from mcp.server import FastMCP
 
 from camel.toolkits.mcp_toolkit import MCPClient
 from camel.utils import MCPServer
-
-if TYPE_CHECKING:
-    pass
 
 
 @MCPServer(
