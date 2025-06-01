@@ -278,6 +278,40 @@ using tqdm and stores the results in self._raw_results.
 
   EvalResult: The evaluation results.
 
+<a id="camel.benchmarks.browsecomp.BrowseCompBenchmark._process_benchmark_row"></a>
+
+### _process_benchmark_row
+
+```python
+def _process_benchmark_row(
+    self,
+    row: Dict[str, Any],
+    pipeline_template: Union[ChatAgent, RolePlaying, Workforce],
+    task_json_formatter: Optional[ChatAgent] = None,
+    chat_turn_limit: int = 10,
+    roleplaying_summarizer: Optional[ChatAgent] = None
+):
+```
+
+This inner function processes a single benchmark row by
+extracting the problem and answer, creating a pipeline instance,
+and generating a response using the appropriate method based on
+the pipeline type.
+
+**Parameters:**
+
+- **row** (Dict[str, Any]): A row from the dataset containing encrypted problem and answer, along with a canary for decryption.
+- **pipeline_template** (Union[ChatAgent, RolePlaying, Workforce]): The template agent or framework to use for processing examples. Can be a ChatAgent, RolePlaying, or Workforce instance that will be cloned for each example.
+- **task_json_formatter** (Optional[ChatAgent]): Optional ChatAgent to format task JSON. If None and Workforce is used, a default formatter will be created. (default: :obj:`None`)
+- **chat_turn_limit** (int): Maximum number of conversation turns allowed when using RolePlaying pipeline. (default: :obj:`10`)
+- **roleplaying_summarizer** (Optional[ChatAgent]): Optional ChatAgent to summarize RolePlaying conversations. If None and RolePlaying is used, a default summarizer will be created. (default: :obj:`None`)
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the decrypted problem,
+expected answer, model response, and structured response
+fields.
+
 <a id="camel.benchmarks.browsecomp.BrowseCompBenchmark.make_report"></a>
 
 ### make_report
