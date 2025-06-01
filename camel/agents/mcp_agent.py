@@ -431,7 +431,7 @@ class MCPAgent(ChatAgent):
             # Use create_task and run with a future
             coro = self.astep(input_message, *args, **kwargs)
             future = asyncio.ensure_future(coro)
-            return asyncio.run_coroutine_threadsafe(future, loop).result()
+            return asyncio.run_coroutine_threadsafe(future, loop).result()  # type: ignore [arg-type]
         else:
             # Safe to run normally
             return asyncio.run(self.astep(input_message, *args, **kwargs))
