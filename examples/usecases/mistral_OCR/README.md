@@ -19,7 +19,7 @@ A simple Streamlit app to extract and summarize text from PDFs and images using 
 ## 🛠️ Requirements
 
 - Python **3.10** or **3.12** (recommended)
-- [CAMEL-AI](https://github.com/camel-ai/camel) (latest, from GitHub)
+- [CAMEL-AI](https://github.com/camel-ai/camel) (`camel-ai==0.2.61`, installed via `requirements.txt`)
 - [mistralai](https://pypi.org/project/mistralai/) (for API calls)
 - [Streamlit](https://streamlit.io/)
 - [Pillow](https://pypi.org/project/Pillow/) (image preview)
@@ -31,20 +31,16 @@ Install all dependencies in a **clean virtualenv**.
 ### 📦 Quick Install
 
 ```bash
-# 1. Clone CAMEL-AI repo (or your fork)
-git clone https://github.com/camel-ai/camel.git
-cd camel
-
-# 2. (Optional) Create and activate virtualenv
+# 1. (Recommended) Create and activate virtualenv
 python3.12 -m venv .venv
 source .venv/bin/activate
 
+# 2. Clone this demo repo or copy app.py and requirements.txt
+# (Assume you’re in the right directory)
+
 # 3. Install dependencies
 pip install --upgrade pip
-pip install streamlit pillow mistralai
-pip install -e .
-
-# 4. (Recommended) Clone this demo app into a new directory and copy this README/app.py inside
+pip install -r requirements.txt
 ```
 
 ---
@@ -66,7 +62,7 @@ pip install -e .
 ```
 app.py            # Main Streamlit app
 README.md         # This file
-camel/            # (if cloned inside the CAMEL repo)
+requirements.txt  # Python dependencies
 ```
 
 ---
@@ -74,18 +70,19 @@ camel/            # (if cloned inside the CAMEL repo)
 ## 🔧 Troubleshooting
 
 - **MistralReader import error?**  
-  Ensure you’re using the latest CAMEL-AI from GitHub, not PyPI.
+  Make sure you have `camel-ai==0.2.61` installed (see `requirements.txt`).
 - **No module named mistralai?**  
   Install with `pip install mistralai`.
 - **Python version errors?**  
   Use Python 3.10 or 3.12 only.
+
 ---
 
-### requirements.txt (for reference, but pip install recommended)
+## requirements.txt
 
-```txt
+```
 streamlit
 pillow
 mistralai
-# camel-ai (install via pip install -e . from repo root)
+camel-ai==0.2.61
 ```
