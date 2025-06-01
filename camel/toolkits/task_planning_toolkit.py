@@ -62,8 +62,9 @@ class TaskPlanningToolkit(BaseToolkit):
         new_tasks: List[Task] = []
         for i, content in enumerate(sub_task_contents):
             new_task = Task(
-                content=content, id=f"{original_task.id}.{i}",
-                parent=original_task
+                content=content,
+                id=f"{original_task.id}.{i}",
+                parent=original_task,
             )
             new_tasks.append(new_task)
             original_task.subtasks.append(new_task)
@@ -102,8 +103,9 @@ class TaskPlanningToolkit(BaseToolkit):
         new_tasks: List[Task] = []
         for i, content in enumerate(sub_task_contents):
             new_task = Task(
-                content=content, id=f"{original_task.id}.{i}",
-                parent=original_task
+                content=content,
+                id=f"{original_task.id}.{i}",
+                parent=original_task,
             )
             new_tasks.append(new_task)
             original_task.subtasks.append(new_task)
