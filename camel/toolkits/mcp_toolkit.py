@@ -265,7 +265,7 @@ class MCPToolkit(BaseToolkit):
             bool: True if the toolkit is connected to all MCP servers,
                 False otherwise.
         """
-        if not self._is_connected or not self._exit_stack:
+        if not self._is_connected:
             return False
 
         # Check if all clients are connected

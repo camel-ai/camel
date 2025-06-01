@@ -187,15 +187,12 @@ class TestMCPToolkitConnectionManagement:
         mock_client1 = MagicMock()
         mock_client2 = MagicMock()
 
-        @asynccontextmanager
-        async def mock_connect1():
-            yield MagicMock()  # Mock session
+        # Set up the first client as a successful async context manager
+        mock_client1.__aenter__.return_value = mock_client1
+        mock_client1.__aexit__.return_value = None
 
-        async def mock_connect2():
-            raise Exception("Connection failed")
-
-        mock_client1.connect = mock_connect1
-        mock_client2.connect = mock_connect2
+        # Set up the second client to raise an exception during __aenter__
+        mock_client2.__aenter__.side_effect = Exception("Connection failed")
 
         toolkit = MCPToolkit(clients=[mock_client1, mock_client2])
 
@@ -204,6 +201,8 @@ class TestMCPToolkitConnectionManagement:
             await toolkit.connect()
 
         assert not toolkit._is_connected
+        # Verify the first client's __aexit__ was called for cleanup
+        mock_client1.__aexit__.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_connect_already_connected(self):

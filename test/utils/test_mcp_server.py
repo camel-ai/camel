@@ -22,7 +22,7 @@ from camel.toolkits.mcp_toolkit import MCPClient
 from camel.utils import MCPServer
 
 if TYPE_CHECKING:
-    from mcp import ClientSession
+    pass
 
 
 @MCPServer(
@@ -94,31 +94,28 @@ def test_tool_schema():
 @pytest.mark.asyncio
 async def test_async_word_count():
     processor = TextProcessorForMCP()
-    server = MCPClient(
-        command_or_url=sys.executable,
-        args=[__file__, "--server"],
-    )
-    await server.connect()
-    session: "ClientSession" = server._session
+    async with MCPClient(
+        config={
+            "command": sys.executable,
+            "args": [__file__, "--server"],
+        }
+    ) as client:
+        text = "hello world"
+        result = await client.call_tool(
+            tool_name="reverse_text",
+            arguments={"text": text},
+        )
+        assert len(result.content) == 1
+        assert result.content[0].text == processor.reverse_text(text)
 
-    text = "hello world"
-
-    result = await session.call_tool(
-        name="reverse_text",
-        arguments={"text": text},
-    )
-    assert len(result.content) == 1
-    assert result.content[0].text == processor.reverse_text(text)
-
-    result = await session.call_tool(
-        name="async_word_count",
-        arguments={"text": text},
-    )
-    assert len(result.content) == 1
-    assert int(result.content[0].text) == await processor.async_word_count(
-        text
-    )
-    await server.disconnect()
+        result = await client.call_tool(
+            tool_name="async_word_count",
+            arguments={"text": text},
+        )
+        assert len(result.content) == 1
+        assert int(result.content[0].text) == await processor.async_word_count(
+            text
+        )
 
 
 if __name__ == "__main__":

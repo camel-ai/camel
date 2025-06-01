@@ -681,7 +681,7 @@ class MCPClient:
         return dynamic_function
 
     def _build_tool_schema(self, mcp_tool: types.Tool) -> Dict[str, Any]:
-        """Build tool schema for OpenAI function calling format."""
+        r"""Build tool schema for OpenAI function calling format."""
         input_schema = mcp_tool.inputSchema
         properties = input_schema.get("properties", {})
         required = input_schema.get("required", [])
