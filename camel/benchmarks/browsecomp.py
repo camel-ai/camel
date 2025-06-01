@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import base64
+import functools
 import hashlib
 import json
 import os
@@ -25,7 +26,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from pydantic import BaseModel, Field
 
 from camel.agents.chat_agent import ChatAgent
-from camel.benchmarks.base import BaseBenchmark
+from camel.benchmarks.base import BaseBenchmark, EvalResult
 from camel.logger import get_logger
 from camel.societies.role_playing import RolePlaying
 from camel.societies.workforce.workforce import Workforce
@@ -109,19 +110,6 @@ class SingleEvalResult(BaseModel):
     html: str
     convo: MessageList
     metrics: Dict[str, float] = Field(default_factory=dict)
-
-
-class EvalResult(BaseModel):
-    r"""Result of running a complete benchmark evaluation.
-
-    This class aggregates results from multiple sample evaluations, storing
-    the overall score, detailed metrics, HTML reports, and conversation logs.
-    """
-
-    score: Optional[float] = None  # top-line metric
-    metrics: Optional[Dict[str, float]] = None  # other metrics
-    htmls: List[str]  # strings of valid HTML
-    convos: List[MessageList]  # sampled conversations
 
 
 # Define the message template first
@@ -391,7 +379,8 @@ def aggregate_results(
     default_stats: Tuple[str, str] = ("mean", "std"),
     name2stats: Optional[Dict[str, Tuple[str]]] = None,
 ) -> EvalResult:
-    r"""Aggregate results from multiple evaluations into a single EvalResult.
+    r"""Aggregate results from multiple evaluations into a single
+    EvalResult.
 
     Args:
         single_eval_results (List[SingleEvalResult]): A list of
@@ -402,33 +391,48 @@ def aggregate_results(
             metric names to statistics to compute. (default: :obj:`None`)
 
     Returns:
-        EvalResult: An `EvalResult` object containing aggregated results.
+        EvalResult: A `EvalResult` object containing aggregated
+            results, following the base class structure.
     """
     name2stats = name2stats or {}
     name2values = defaultdict(list)
-    htmls = []
-    convos = []
+
+    details_list: List[Dict[str, Any]] = []
 
     for single_eval_result in single_eval_results:
         for name, value in single_eval_result.metrics.items():
             name2values[name].append(value)
         if single_eval_result.score is not None:
             name2values["score"].append(single_eval_result.score)
-        htmls.append(single_eval_result.html)
-        convos.append(single_eval_result.convo)
 
-    final_metrics = {}
+        detail_item: Dict[str, Any] = {
+            "html": single_eval_result.html,
+            "individual_score": single_eval_result.score,
+            "task_metrics": single_eval_result.metrics,
+            "conversation": single_eval_result.convo,
+        }
+        details_list.append(detail_item)
+
+    aggregated_metrics: Dict[str, Union[int, float]] = {}
     for name, values in name2values.items():
-        stats = name2stats.get(name, default_stats)
-        for stat in stats:
+        stats_to_compute = name2stats.get(name, default_stats)
+        for stat in stats_to_compute:
             key = name if stat == "mean" else f"{name}:{stat}"
-            final_metrics[key] = _compute_stat(values, stat)
+            computed_value = _compute_stat(values, stat)
+            if computed_value is not None:
+                aggregated_metrics[key] = computed_value
+
+    metadata_dict: Dict[str, Any] = {
+        "benchmark_name": "BrowseComp",
+        "num_samples_processed": len(single_eval_results),
+        "aggregation_default_stats": default_stats,
+        "aggregation_name2stats": name2stats,
+    }
 
     return EvalResult(
-        score=final_metrics.pop("score", None),
-        metrics=final_metrics,
-        htmls=htmls,
-        convos=convos,
+        metrics=aggregated_metrics,
+        details=details_list,
+        metadata=metadata_dict,
     )
 
 
@@ -518,26 +522,14 @@ class BrowseCompBenchmark(BaseBenchmark):
         self.examples = examples * self.n_repeats
         return self
 
-    @property
-    def train(self):
-        r"""Get the training set.
-
-        This property is implemented to maintain compatibility with
-        the BaseBenchmark interface, but BrowseComp doesn't have a
-        training set.
-
-        Raises:
-            NotImplementedError: BrowseComp does not have a training set.
-        """
-        raise NotImplementedError("BrowseComp does not have a training set.")
-
-    def run(  # type: ignore[override]
+    def run(
         self,
         pipeline_template: Union[ChatAgent, RolePlaying, Workforce],
         chat_turn_limit: int = 10,
         roleplaying_summarizer: Optional[ChatAgent] = None,
         task_json_formatter: Optional[ChatAgent] = None,
-    ) -> None:
+        grader: Optional[ChatAgent] = None,
+    ) -> EvalResult:
         r"""Run the benchmark by processing each example in parallel.
 
         This method applies the provided pipeline to each example in the
@@ -558,146 +550,204 @@ class BrowseCompBenchmark(BaseBenchmark):
             task_json_formatter (Optional[ChatAgent]): Optional ChatAgent to
                 format task JSON. If None and Workforce is used, a default
                 formatter will be created. (default: :obj:`None`)
+            grader (Optional[ChatAgent]): Optional ChatAgent to grade the
+                responses. If None, a default grader will be created.
+                (default: :obj:`None`)
+
+            Returns:
+                EvalResult: The evaluation results.
         """
         from tqdm import tqdm
 
         # Use a process pool for parallel execution
-        def process_benchmark_row(row: Dict[str, Any]) -> Dict[str, Any]:
-            r"""This inner function processes a single benchmark row by
-            extracting the problem and answer, creating a pipeline instance,
-            and generating a response using the appropriate method based on
-            the pipeline type.
-
-            Args:
-                row (Dict[str, Any]): A row from the dataset containing
-                    encrypted problem and answer, along with a canary for
-                    decryption.
-
-            Returns:
-                Dict[str, Any]: A dictionary containing the decrypted problem,
-                    expected answer, model response, and structured response
-                    fields.
-            """
-
-            problem = decrypt(row.get("problem", ""), row.get("canary", ""))
-            answer = decrypt(row.get("answer", ""), row.get("canary", ""))
-            try:
-                input_message = QUERY_TEMPLATE.format(question=problem)
-
-                if isinstance(pipeline_template, (ChatAgent)):
-                    pipeline = pipeline_template.clone()  # type: ignore[assignment]
-
-                    response_text = pipeline.step(
-                        input_message, response_format=QueryResponse
-                    )
-                elif isinstance(pipeline_template, Workforce):
-                    pipeline = pipeline_template.clone()  # type: ignore[assignment]
-                    task = Task(content=input_message, id="0")
-                    task = pipeline.process_task(task)  # type: ignore[attr-defined]
-                    if task_json_formatter:
-                        formatter_in_process = task_json_formatter.clone()
-                    else:
-                        formatter_in_process = ChatAgent(
-                            "You are a helpful assistant."
-                        )
-                    response_text = formatter_in_process.step(
-                        FORMAT_JSON_TEMPLATE.format(content=task.result),
-                        response_format=QueryResponse,
-                    )
-
-                elif isinstance(pipeline_template, RolePlaying):
-                    # RolePlaying is different.
-                    pipeline = pipeline_template.clone(  # type: ignore[assignment]
-                        task_prompt=input_message
-                    )
-
-                    n = 0
-                    input_msg = pipeline.init_chat()  # type: ignore[attr-defined]
-                    chat_history = []
-                    while n < chat_turn_limit:
-                        n += 1
-                        assistant_response, user_response = pipeline.step(
-                            input_msg
-                        )
-                        if assistant_response.terminated:  # type: ignore[attr-defined]
-                            break
-                        if user_response.terminated:  # type: ignore[attr-defined]
-                            break
-                        if "CAMEL_TASK_DONE" in user_response.msg.content:  # type: ignore[attr-defined]
-                            break
-
-                        chat_history.append(
-                            f"AI User: {user_response.msg.content}"  # type: ignore[attr-defined]
-                        )
-                        chat_history.append(
-                            f"AI Assistant: {assistant_response.msg.content}"  # type: ignore[attr-defined]
-                        )
-                        input_msg = assistant_response.msg  # type: ignore[attr-defined]
-
-                    chat_history_str = "\n".join(chat_history)
-                    if roleplaying_summarizer:
-                        summarizer_in_process = roleplaying_summarizer.clone()
-                    else:
-                        summarizer_in_process = ChatAgent(
-                            "You are a helpful assistant."
-                        )
-
-                    summarize_prompt = SUMMARIZE_TEMPLATE.format(
-                        chat_history=chat_history_str,
-                        query=input_message,
-                    )
-                    response_text = summarizer_in_process.step(
-                        summarize_prompt, response_format=QueryResponse
-                    )
-                else:
-                    raise NotImplementedError(
-                        f"{type(pipeline_template)} is not supported."
-                    )
-                # Parse the response JSON
-                response_dict = json.loads(response_text.msg.content)
-
-                # Format the response as a key-value string
-                formatted_response = f"""
-    Explanation: {response_dict['explanation']}
-
-    Exact Answer: {response_dict['exact_answer']}
-    Confidence: {response_dict['confidence']}"""
-
-                # Create the result dictionary
-                raw_result = {}
-                raw_result['problem'] = problem
-                raw_result['expected_answer'] = answer
-                raw_result['response'] = formatted_response
-                # Keep the original dict for reference
-                raw_result['response_dict'] = response_dict
-
-                return raw_result
-            except Exception as e:
-                # Log any errors that occur during evaluation
-                logger.error(f"Error evaluating result: {e}")
-                logger.error(traceback.format_exc())
-                return {
-                    'problem': problem,
-                    'expected_answer': answer,
-                    'response': traceback.format_exc(),
-                    'response_dict': {},
-                }
-
         pool_class = ThreadPool
         with pool_class(min(self.processes, len(self.examples))) as pool:
             self._raw_results = list(
                 tqdm(
-                    pool.imap(process_benchmark_row, self.examples),
+                    pool.imap(
+                        functools.partial(
+                            self._process_benchmark_row,
+                            pipeline_template=pipeline_template,
+                            task_json_formatter=task_json_formatter,
+                            chat_turn_limit=chat_turn_limit,
+                            roleplaying_summarizer=roleplaying_summarizer,
+                        ),
+                        self.examples,
+                    ),
                     total=len(self.examples),
                 )
             )
 
+        # Validate the results and generate the report
+        self.validate(grader=grader)
+
+        return self._eval_result
+
+    def _process_benchmark_row(
+        self,
+        row: Dict[str, Any],
+        pipeline_template: Union[ChatAgent, RolePlaying, Workforce],
+        task_json_formatter: Optional[ChatAgent] = None,
+        chat_turn_limit: int = 10,
+        roleplaying_summarizer: Optional[ChatAgent] = None,
+    ) -> Dict[str, Any]:
+        r"""This inner function processes a single benchmark row by
+        extracting the problem and answer, creating a pipeline instance,
+        and generating a response using the appropriate method based on
+        the pipeline type.
+
+        Args:
+            row (Dict[str, Any]): A row from the dataset containing
+                encrypted problem and answer, along with a canary for
+                decryption.
+            pipeline_template (Union[ChatAgent, RolePlaying, Workforce]): The
+                template agent or framework to use for processing examples.
+                Can be a ChatAgent, RolePlaying, or Workforce instance that
+                will be cloned for each example.
+            task_json_formatter (Optional[ChatAgent]): Optional ChatAgent to
+                format task JSON. If None and Workforce is used, a default
+                formatter will be created. (default: :obj:`None`)
+            chat_turn_limit (int): Maximum number of conversation turns allowed
+                when using RolePlaying pipeline. (default: :obj:`10`)
+            roleplaying_summarizer (Optional[ChatAgent]): Optional ChatAgent to
+                summarize RolePlaying conversations. If None and RolePlaying is
+                used, a default summarizer will be created.
+                (default: :obj:`None`)
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the decrypted problem,
+                expected answer, model response, and structured response
+                fields.
+        """
+
+        problem = decrypt(row.get("problem", ""), row.get("canary", ""))
+        answer = decrypt(row.get("answer", ""), row.get("canary", ""))
+        try:
+            input_message = QUERY_TEMPLATE.format(question=problem)
+
+            if isinstance(pipeline_template, (ChatAgent)):
+                pipeline = pipeline_template.clone()  # type: ignore[assignment]
+
+                response_text = pipeline.step(
+                    input_message, response_format=QueryResponse
+                )
+            elif isinstance(pipeline_template, Workforce):
+                pipeline = pipeline_template.clone()  # type: ignore[assignment]
+                task = Task(content=input_message, id="0")
+                task = pipeline.process_task(task)  # type: ignore[attr-defined]
+                if task_json_formatter:
+                    formatter_in_process = task_json_formatter.clone()
+                else:
+                    formatter_in_process = ChatAgent(
+                        "You are a helpful assistant."
+                    )
+                response_text = formatter_in_process.step(
+                    FORMAT_JSON_TEMPLATE.format(content=task.result),
+                    response_format=QueryResponse,
+                )
+
+            elif isinstance(pipeline_template, RolePlaying):
+                # RolePlaying is different.
+                pipeline = pipeline_template.clone(  # type: ignore[assignment]
+                    task_prompt=input_message
+                )
+
+                n = 0
+                input_msg = pipeline.init_chat()  # type: ignore[attr-defined]
+                chat_history = []
+                while n < chat_turn_limit:
+                    n += 1
+                    assistant_response, user_response = pipeline.step(
+                        input_msg
+                    )
+                    if assistant_response.terminated:  # type: ignore[attr-defined]
+                        break
+                    if user_response.terminated:  # type: ignore[attr-defined]
+                        break
+                    if "CAMEL_TASK_DONE" in user_response.msg.content:  # type: ignore[attr-defined]
+                        break
+
+                    chat_history.append(
+                        f"AI User: {user_response.msg.content}"  # type: ignore[attr-defined]
+                    )
+                    chat_history.append(
+                        f"AI Assistant: {assistant_response.msg.content}"  # type: ignore[attr-defined]
+                    )
+                    input_msg = assistant_response.msg  # type: ignore[attr-defined]
+
+                chat_history_str = "\n".join(chat_history)
+                if roleplaying_summarizer:
+                    summarizer_in_process = roleplaying_summarizer.clone()
+                else:
+                    summarizer_in_process = ChatAgent(
+                        "You are a helpful assistant."
+                    )
+
+                summarize_prompt = SUMMARIZE_TEMPLATE.format(
+                    chat_history=chat_history_str,
+                    query=input_message,
+                )
+                response_text = summarizer_in_process.step(
+                    summarize_prompt, response_format=QueryResponse
+                )
+            else:
+                raise NotImplementedError(
+                    f"{type(pipeline_template)} is not supported."
+                )
+            # Parse the response JSON
+            response_dict = json.loads(response_text.msg.content)
+
+            # Format the response as a key-value string
+            formatted_response = f"""
+Explanation: {response_dict['explanation']}
+
+Exact Answer: {response_dict['exact_answer']}
+Confidence: {response_dict['confidence']}"""
+
+            # Create the result dictionary
+            raw_result = {}
+            raw_result['problem'] = problem
+            raw_result['expected_answer'] = answer
+            raw_result['response'] = formatted_response
+            # Keep the original dict for reference
+            raw_result['response_dict'] = response_dict
+
+            return raw_result
+        except Exception as e:
+            # Log any errors that occur during evaluation
+            logger.error(f"Error evaluating result: {e}")
+            logger.error(traceback.format_exc())
+            return {
+                'problem': problem,
+                'expected_answer': answer,
+                'response': traceback.format_exc(),
+                'response_dict': {},
+            }
+
     def make_report(self, eval_result: EvalResult) -> str:
-        r"""Create a standalone HTML report from an EvalResult."""
+        r"""Create a standalone HTML report from a EvalResult."""
+        primary_score_keys = [
+            "score",
+            "score:mean",
+            "accuracy",
+            "is_correct:mean",
+            "is_correct",
+        ]
+        main_score_val = None
+        if eval_result.metrics:
+            for key in primary_score_keys:
+                if key in eval_result.metrics:
+                    main_score_val = eval_result.metrics[key]
+                    break
+
+        report_htmls = [
+            detail.get("html", "") for detail in eval_result.details or []
+        ]
+
         return self.jinja_env.from_string(_report_template).render(
-            score=eval_result.score,
+            score=main_score_val,
             metrics=eval_result.metrics,
-            htmls=eval_result.htmls,
+            htmls=report_htmls,
         )
 
     def validate(self, grader: Optional[ChatAgent] = None) -> None:
@@ -824,30 +874,51 @@ class BrowseCompBenchmark(BaseBenchmark):
                 )
             )
 
-        aggregate_metrics = {
-            "is_correct": sum(
-                result.metrics["is_correct"]
-                for result in self._validated_results
-            )
-            / len(self._validated_results),
-            "is_incorrect": sum(
-                result.metrics["is_incorrect"]
-                for result in self._validated_results
-            )
-            / len(self._validated_results),
-        }
-        logger.info("AGGREGATE METRICS")
-        logger.info(aggregate_metrics)
-        logger.info("##################")
-
-        output_d = {
-            "accuracy": aggregate_metrics["is_correct"],
-        }
-
-        logger.info(f"Accuracy: {output_d['accuracy']:.3f}")
-
         self._eval_result = aggregate_results(self._validated_results)
-        # ^^^ how to use a sampler
+
+        logger.info("AGGREGATED EVALUATION METRICS (from EvalResult):")
+        if self._eval_result.metrics:
+            # Sort metrics for consistent logging if desired
+            sorted_metrics = sorted(self._eval_result.metrics.items())
+            for k, v in sorted_metrics:
+                log_value = f"{v:.3f}" if isinstance(v, float) else str(v)
+                logger.info(f"{k}: {log_value}")
+
+            # Attempt to log a primary score more explicitly if found
+            primary_score_keys = [
+                "score",
+                "score:mean",
+                "accuracy",
+                "is_correct:mean",
+                "is_correct",
+            ]
+            primary_score_val = None
+            primary_score_key_found = None
+            for key in primary_score_keys:
+                if key in self._eval_result.metrics:
+                    primary_score_val = self._eval_result.metrics[key]
+                    primary_score_key_found = key
+                    break
+            if primary_score_key_found:
+                log_primary_score = (
+                    f"{primary_score_val:.3f}"
+                    if isinstance(primary_score_val, float)
+                    else str(primary_score_val)
+                )
+                logger.info(
+                    f"Primary Score ({primary_score_key_found}"
+                    f"): {log_primary_score}"
+                )
+            else:
+                logger.info(
+                    "A specific primary score (e.g., 'score', 'accuracy') "
+                    "was not found in metrics."
+                )
+
+        else:
+            logger.info("No metrics available in EvalResult.")
+        logger.info("####################################################")
+
         if self.save_to is None:
             raise ValueError("save_to must be set")
         report_filename = self.save_to

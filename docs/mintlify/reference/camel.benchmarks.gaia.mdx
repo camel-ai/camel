@@ -1,56 +1,5 @@
 <a id="camel.benchmarks.gaia"></a>
 
-<a id="camel.benchmarks.gaia.RetrieverProtocol"></a>
-
-## RetrieverProtocol
-
-```python
-class RetrieverProtocol(Protocol):
-```
-
-Protocol for the retriever class. Any retriever class implementing
-this protocol can be used in the benchmark class.
-
-<a id="camel.benchmarks.gaia.RetrieverProtocol.retrieve"></a>
-
-### retrieve
-
-```python
-def retrieve(
-    self,
-    query: str,
-    contents: List[str],
-    **kwargs: Dict[str, Any]
-):
-```
-
-Retrieve the relevant content for the query.
-
-**Parameters:**
-
-- **query** (str): The query to retrieve the content for.
-- **contents** (List[str]): The list of contents to search in. **kwargs (Dict[str, Any]): Additional keyword arguments.
-
-**Returns:**
-
-  Dict[str, Any]: The relevant content for the query.
-
-<a id="camel.benchmarks.gaia.RetrieverProtocol.reset"></a>
-
-### reset
-
-```python
-def reset(self, **kwargs):
-```
-
-Reset the retriever.
-Some benchmarks may require resetting the retriever
-after each query.
-
-**Returns:**
-
-  bool: True if the reset was successful, False otherwise.
-
 <a id="camel.benchmarks.gaia.DefaultGAIARetriever"></a>
 
 ## DefaultGAIARetriever
@@ -166,16 +115,6 @@ Load the GAIA dataset.
 
 - **force_download** (bool, optional): Whether to force download the data.
 
-<a id="camel.benchmarks.gaia.GAIABenchmark.train"></a>
-
-### train
-
-```python
-def train(self):
-```
-
-Get the training set.
-
 <a id="camel.benchmarks.gaia.GAIABenchmark.run"></a>
 
 ### run
@@ -203,7 +142,7 @@ Run the benchmark.
 
 **Returns:**
 
-  Dict[str, Any]: The results of the benchmark.
+  EvalResult: The standardized evaluation results of the benchmark.
 
 <a id="camel.benchmarks.gaia.GAIABenchmark._prepare_task"></a>
 
