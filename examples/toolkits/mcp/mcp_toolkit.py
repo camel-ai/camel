@@ -60,17 +60,21 @@ async def mcp_client_example():
 
 
 '''
-Available MCP tools: ['read_file', 'read_multiple_files', 'write_file', 'edit_file', 'create_directory', 'list_directory', 'directory_tree', 'move_file', 'search_files', 'get_file_info', 'list_allowed_directories']
+===============================================================================
+Available MCP tools: ['read_file', 'read_multiple_files', 'write_file', 
+'edit_file', 'create_directory', 'list_directory', 'directory_tree', 
+'move_file', 'search_files', 'get_file_info', 'list_allowed_directories']
 Directory Contents:
   [DIR] .container
   [FILE] .env
   [DIR] .git
   [DIR] .github
   [FILE] .gitignore
-'''  # noqa: E501
+===============================================================================
+'''
 
 
-async def main():
+async def mcp_toolkit_example():
     # Use either config path or config dict to initialize the MCP toolkit.
     # 1. Use config path:
     config_path = Path(__file__).parent / "mcp_servers_config.json"
@@ -123,4 +127,4 @@ Here are 5 files in the project using relative paths:
 
 if __name__ == "__main__":
     asyncio.run(mcp_client_example())
-    asyncio.run(main())
+    asyncio.run(mcp_toolkit_example())

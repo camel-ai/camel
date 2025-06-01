@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
+import sys
 
 from mcp.types import CallToolResult
 
@@ -27,7 +28,7 @@ async def run_example_http():
             }
         }
     }
-    mcp_toolkit = MCPToolkit(config_dict=config)
+    mcp_toolkit = MCPToolkit(config_dict=config, timeout=60)
 
     async with mcp_toolkit:
         # call the server to list the available tools
@@ -77,7 +78,7 @@ async def run_example_stdio():
     config = {
         "mcpServers": {
             "arxiv_toolkit": {
-                "command": "/Users/jinx0a/Repo/camel/.venv/bin/python",
+                "command": sys.executable,
                 "args": [
                     "examples/toolkits/mcp/mcp_arxiv_toolkit/arxiv_toolkit_server.py",
                     "--mode",
@@ -86,7 +87,7 @@ async def run_example_stdio():
             }
         }
     }
-    mcp_toolkit = MCPToolkit(config_dict=config)
+    mcp_toolkit = MCPToolkit(config_dict=config, timeout=60)
     async with mcp_toolkit:
         mcp_client: MCPClient = mcp_toolkit.clients[0]
         res = await mcp_client.list_mcp_tools()
@@ -108,5 +109,5 @@ async def run_example_stdio():
 
 
 if __name__ == "__main__":
-    asyncio.run(run_example_http())
+    # asyncio.run(run_example_http())
     asyncio.run(run_example_stdio())
