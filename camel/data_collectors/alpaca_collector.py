@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional, Union
 from typing_extensions import Self
 
 from camel.agents import ChatAgent
-from camel.data_collector.base import BaseDataCollector
+from camel.data_collectors.base import BaseDataCollector
 from camel.messages import AlpacaItem, BaseMessage
 from camel.schemas import OpenAISchemaConverter
 
