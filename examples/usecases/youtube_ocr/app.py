@@ -18,9 +18,10 @@ from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from PIL import Image
 from dotenv import load_dotenv
+import os
 
 load_dotenv()
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+pytesseract.pytesseract.tesseract_cmd = os.getenv("TESSERACT_CMD", "tesseract")
 
 
 # Initialize CAMEL tools/agent
