@@ -16,7 +16,7 @@ import os
 import unittest
 from unittest.mock import MagicMock, patch
 
-from camel.runtime import DaytonaRuntime
+from camel.runtimes import DaytonaRuntime
 from camel.toolkits.function_tool import FunctionTool
 
 

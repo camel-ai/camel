@@ -15,7 +15,7 @@
 import os
 import sys
 
-from camel.runtime import UbuntuDockerRuntime
+from camel.runtimes import UbuntuDockerRuntime
 
 
 def main():

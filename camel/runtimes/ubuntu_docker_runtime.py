@@ -18,7 +18,7 @@ import time
 from pathlib import Path
 from typing import Callable, List, Optional, Union
 
-from camel.runtime.docker_runtime import DockerRuntime
+from camel.runtimes.docker_runtime import DockerRuntime
 from camel.toolkits import FunctionTool
 
 logger = logging.getLogger(__name__)
