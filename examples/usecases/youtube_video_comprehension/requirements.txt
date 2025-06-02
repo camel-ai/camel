@@ -1,5 +1,3 @@
-chunkr_ai
-python-dotenv
-streamlit
-camel-ai[all]
-docx2markdown
+streamlit==1.45.1
+camel-ai[all]==0.2.61
+docx2markdown==0.1.1
