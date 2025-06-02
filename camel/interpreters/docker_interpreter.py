@@ -53,12 +53,14 @@ class DockerInterpreter(BaseInterpreter):
         "python": "python {file_name}",
         "bash": "bash {file_name}",
         "r": "Rscript {file_name}",
+        "node": "node {file_name}",
     }
 
     _CODE_EXTENSION_MAPPING: ClassVar[Dict[str, str]] = {
         "python": "py",
         "bash": "sh",
         "r": "R",
+        "node": "js",
     }
 
     _CODE_TYPE_MAPPING: ClassVar[Dict[str, str]] = {
@@ -71,6 +73,11 @@ class DockerInterpreter(BaseInterpreter):
         "sh": "bash",
         "r": "r",
         "R": "r",
+        "node": "node",
+        "js": "node",
+        "javascript": "node",
+        "typescript": "node",
+        "ts": "node",
     }
 
     def __init__(
@@ -94,6 +101,7 @@ class DockerInterpreter(BaseInterpreter):
         """
         try:
             if self._container is not None:
+                self._container.stop()
                 self._container.remove(force=True)
         except ImportError:
             pass
@@ -183,6 +191,20 @@ class DockerInterpreter(BaseInterpreter):
         exec_result += f"(stderr: {stderr.decode()})" if stderr else ""
         return exec_result
 
+    def cleanup(self) -> None:
+        r"""Explicitly stops and removes the Docker container.
+
+        This method should be called when you're done with the interpreter
+        to ensure proper cleanup of Docker resources.
+        """
+        try:
+            if self._container is not None:
+                self._container.stop()
+                self._container.remove(force=True)
+                self._container = None
+        except Exception as e:
+            logger.error(f"Error during container cleanup: {e}")
+
     def run(
         self,
         code: str,
@@ -232,6 +254,7 @@ class DockerInterpreter(BaseInterpreter):
         try:
             temp_file_path = self._create_file_in_container(code)
             result = self._run_file_in_container(temp_file_path, code_type)
+            # Clean up after execution
         except docker.errors.APIError as e:
             raise InterpreterError(
                 f"Execution halted due to docker API error: {e.explanation}. "
@@ -239,6 +262,7 @@ class DockerInterpreter(BaseInterpreter):
                 "further code execution."
             ) from e
         except docker.errors.DockerException as e:
+            self.cleanup()  # Clean up even if there's an error
             raise InterpreterError(
                 f"Execution halted due to docker exceptoin: {e}. "
                 "This choice stops the current operation and any "
