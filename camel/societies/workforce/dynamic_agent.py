@@ -13,7 +13,6 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
-from typing import List
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
@@ -33,10 +32,10 @@ class DynamicAgentCreator:
     matching, API-based tools, and MCP protocol.
     """
 
-    def __init__(self, mcp_client=None):
-        self.selectors: List[ToolSelector] = []
+    def __init__(self, tool_selector: ToolSelector):
+        self.tool_selector = tool_selector
 
-    def _generate_prompt(self, task_content: str) -> dict:
+    def generate_prompt(self, task_content: str) -> dict:
         prompt = TextPrompt(
             """Given the following task, create an optimized role and system
                 message for the agent:
@@ -64,15 +63,11 @@ class DynamicAgentCreator:
         return result
 
     def select_tools(self, task_content: str) -> list:
-        for selector in self.selectors:
-            tools = selector.select_tools(task_content)
-            if tools:
-                return tools
-        return []
+        return self.tool_selector.select_tools(task_content)
 
     def create_agent(self, task_content: str) -> ChatAgent:
         # Step 1: Generate system prompt
-        prompt_info = self._generate_prompt(task_content)
+        prompt_info = self.generate_prompt(task_content)
 
         # Step 2: Discover tools using all available strategies
         tools = self.select_tools(task_content)
