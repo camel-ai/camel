@@ -134,6 +134,7 @@
                 "pages": [
                   "cookbooks/data_processing/agent_with_chunkr_for_pdf_parsing",
                   "cookbooks/data_processing/ingest_data_from_websites_with_Firecrawl",
+                  "cookbooks/data_processing/summarisation_agent_with_mistral_ocr",
                   "cookbooks/data_processing/video_analysis"
                 ]
               },
