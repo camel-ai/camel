@@ -14,6 +14,7 @@
 
 import io
 import os
+import shutil
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -37,7 +38,7 @@ def base_browser_fixture():
         yield browser
         # Cleanup
         if os.path.exists("test_cache"):
-            os.rmdir("test_cache")
+            shutil.rmtree("test_cache", ignore_errors=True)
 
 
 @pytest.fixture(scope="function")
@@ -47,7 +48,7 @@ def browser_toolkit_fixture():
         yield toolkit
         # Cleanup
         if os.path.exists("test_cache"):
-            os.rmdir("test_cache")
+            shutil.rmtree("test_cache", ignore_errors=True)
 
 
 def test_base_browser_init(base_browser_fixture):
@@ -65,6 +66,8 @@ def test_base_browser_initialization_order():
         assert browser.page is None  # page not created yet
 
         browser.init()  # explicit init() call
+        # This assertion depends on user_data_dir being None. If it were set,
+        # browser.browser would be None. For default (None), it's not None.
         assert browser.browser is not None  # browser launched
         assert browser.page is not None  # page created
 
