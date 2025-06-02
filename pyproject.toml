@@ -126,6 +126,7 @@ document_tools = [
     "markitdown==0.1.1",
     "pylatex>=1.4.2",
     "chunkr-ai>=0.0.50",
+    "python-pptx>=1.0.2",
 ]
 media_tools = [
     "imageio[pyav]>=2.34.2,<3",
@@ -255,6 +256,7 @@ owl = [
     "aci-sdk>=1.0.0b1",
     "pylatex>=1.4.2",
     "chunkr-ai>=0.0.50",
+    "python-pptx>=1.0.2",
 ]
 all = [
     "numpy>=1.2,<=2.2",
@@ -375,6 +377,7 @@ all = [
     "aci-sdk>=1.0.0b1",
     "pylatex>=1.4.2",
     "chunkr-ai>=0.0.50",
+    "python-pptx>=1.0.2",
 ]
 
 [project.urls]
