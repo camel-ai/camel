@@ -8,18 +8,24 @@
 class Workforce(BaseNode):
 ```
 
-A system where multiple workder nodes (agents) cooperate together
-to solve tasks. It can assign tasks to workder nodes and also take
+A system where multiple worker nodes (agents) cooperate together
+to solve tasks. It can assign tasks to worker nodes and also take
 strategies such as create new worker, decompose tasks, etc. to handle
 situations when the task fails.
 
+The workforce uses three specialized ChatAgents internally:
+- Coordinator Agent: Assigns tasks to workers based on their
+capabilities
+- Task Planner Agent: Decomposes complex tasks and composes results
+- Dynamic Workers: Created at runtime when tasks fail repeatedly
+
 **Parameters:**
 
-- **description** (str): Description of the node.
+- **description** (str): Description of the workforce.
 - **children** (Optional[List[BaseNode]], optional): List of child nodes under this node. Each child node can be a worker node or another workforce node. (default: :obj:`None`)
-- **coordinator_agent_kwargs** (Optional[Dict], optional): Keyword arguments for the coordinator agent, e.g. `model`, `api_key`, `tools`, etc. If not provided, default model settings will be used. (default: :obj:`None`)
-- **task_agent_kwargs** (Optional[Dict], optional): Keyword arguments for the task agent, e.g. `model`, `api_key`, `tools`, etc. If not provided, default model settings will be used. (default: :obj:`None`)
-- **new_worker_agent_kwargs** (Optional[Dict]): Default keyword arguments for the worker agent that will be created during runtime to handle failed tasks, e.g. `model`, `api_key`, `tools`, etc. If not provided, default model settings will be used. (default: :obj:`None`)
+- **coordinator_agent_kwargs** (Optional[Dict], optional): Keyword arguments passed directly to the coordinator :obj:`ChatAgent` constructor. The coordinator manages task assignment and failure handling strategies. See :obj:`ChatAgent` documentation for all available parameters. (default: :obj:`None` - uses ModelPlatformType.DEFAULT, ModelType.DEFAULT)
+- **task_agent_kwargs** (Optional[Dict], optional): Keyword arguments passed directly to the task planning :obj:`ChatAgent` constructor. The task agent handles task decomposition into subtasks and result composition. See :obj:`ChatAgent` documentation for all available parameters. (default: :obj:`None` - uses ModelPlatformType.DEFAULT, ModelType.DEFAULT)
+- **new_worker_agent_kwargs** (Optional[Dict], optional): Default keyword arguments passed to :obj:`ChatAgent` constructor for workers created dynamically at runtime when existing workers cannot handle failed tasks. See :obj:`ChatAgent` documentation for all available parameters. (default: :obj:`None` - creates workers with SearchToolkit, CodeExecutionToolkit, and ThinkingToolkit)
 
 <a id="camel.societies.workforce.workforce.Workforce.__init__"></a>
 
