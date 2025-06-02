@@ -29,36 +29,57 @@ TEST_URL = "https://example.com"
 
 @pytest.fixture
 def dummy_playwright_setup():
-    dummy_instance = MagicMock()
+    dummy_instance = (
+        MagicMock()
+    )  # This is the object returned by playwright.start()
 
-    dummy_browser = MagicMock()
+    # Mock for non-persistent launch (browser object)
+    dummy_browser_obj = MagicMock(name="BrowserObjectMock")
     dummy_instance.chromium = MagicMock()
-    dummy_instance.chromium.launch = AsyncMock(return_value=dummy_browser)
-    dummy_instance.chromium.launch_persistent_context = AsyncMock(
-        return_value=MagicMock()
+    dummy_instance.chromium.launch = AsyncMock(return_value=dummy_browser_obj)
+    dummy_browser_obj.close = AsyncMock()
+
+    # Mock for context created from dummy_browser_obj
+    dummy_context_from_browser = AsyncMock(name="ContextFromBrowserMock")
+    dummy_browser_obj.new_context = AsyncMock(
+        return_value=dummy_context_from_browser
     )
+    dummy_context_from_browser.new_page = AsyncMock(
+        return_value=MagicMock(name="PageFromContextFromBrowser")
+    )
+    dummy_context_from_browser.close = AsyncMock()
 
-    dummy_context = MagicMock()
-    dummy_browser.new_context = AsyncMock(return_value=dummy_context)
-    dummy_browser.close = AsyncMock()
+    # Mock for persistent context launch
+    dummy_persistent_context = AsyncMock(name="PersistentContextMock")
+    dummy_instance.chromium.launch_persistent_context = AsyncMock(
+        return_value=dummy_persistent_context
+    )
+    dummy_persistent_context.pages = []  # Simulate no pre-existing pages
+    # initially
+    dummy_persistent_context.new_page = AsyncMock(
+        return_value=MagicMock(name="PageFromPersistentContext")
+    )
+    dummy_persistent_context.close = AsyncMock()
 
-    dummy_page = MagicMock()
-    dummy_context.new_page = AsyncMock(return_value=dummy_page)
-    dummy_context.pages = []
-    dummy_context.close = AsyncMock()
+    dummy_playwright_entry = MagicMock(
+        name="PlaywrightEntryMock"
+    )  # This is the playwright module itself
+    dummy_playwright_entry.start = AsyncMock(return_value=dummy_instance)
 
-    dummy_playwright = MagicMock()
-    dummy_playwright.start = AsyncMock(return_value=dummy_instance)
-
-    return dummy_playwright
+    return dummy_playwright_entry
 
 
 @pytest.fixture(scope="function")
 async def async_base_browser_fixture(dummy_playwright_setup):
-    with patch(
-        'playwright.async_api.async_playwright',
-        return_value=dummy_playwright_setup,
-    ):
+    with (
+        patch(
+            'playwright.async_api.async_playwright',
+            return_value=dummy_playwright_setup,
+        ),
+        patch.object(
+            AsyncBaseBrowser, '_ensure_browser_installed', AsyncMock()
+        ),
+    ):  # Mock install for all tests using this fixture
         browser = AsyncBaseBrowser(headless=True, cache_dir="test_cache")
         yield browser
         if os.path.exists("test_cache"):
@@ -67,9 +88,14 @@ async def async_base_browser_fixture(dummy_playwright_setup):
 
 @pytest.fixture(scope="function")
 async def async_browser_toolkit_fixture(dummy_playwright_setup):
-    with patch(
-        'playwright.async_api.async_playwright',
-        return_value=dummy_playwright_setup,
+    with (
+        patch(
+            'playwright.async_api.async_playwright',
+            return_value=dummy_playwright_setup,
+        ),
+        patch.object(
+            AsyncBaseBrowser, '_ensure_browser_installed', AsyncMock()
+        ),
     ):
         toolkit = AsyncBrowserToolkit(headless=True, cache_dir="test_cache")
         yield toolkit
@@ -79,26 +105,129 @@ async def async_browser_toolkit_fixture(dummy_playwright_setup):
 
 @pytest.mark.asyncio
 async def test_async_base_browser_init(async_base_browser_fixture):
-    browser = async_base_browser_fixture
+    browser = await async_base_browser_fixture  # await the fixture
     assert browser.headless is True
     assert browser.cache_dir == "test_cache"
     assert isinstance(browser.history, list)
     assert isinstance(browser.page_history, list)
+    assert browser.user_data_dir is None  # Added for default user_data_dir
+
+
+@pytest.mark.asyncio
+async def test_async_base_browser_init_with_user_data_dir(
+    dummy_playwright_setup,
+):
+    test_user_dir = "test_user_data_dir_async"
+    try:
+        with (
+            patch(
+                'playwright.async_api.async_playwright',
+                return_value=dummy_playwright_setup,
+            ),
+            patch.object(
+                AsyncBaseBrowser, '_ensure_browser_installed', AsyncMock()
+            ) as mock_ensure_installed,
+        ):
+            browser = AsyncBaseBrowser(
+                headless=True, user_data_dir=test_user_dir
+            )
+            mock_ensure_installed.assert_called_once()
+            assert browser.user_data_dir == test_user_dir
+            assert os.path.exists(test_user_dir)
+    finally:
+        if os.path.exists(test_user_dir):
+            shutil.rmtree(test_user_dir)
 
 
 @pytest.mark.asyncio
 async def test_async_base_browser_initialization_order_async(
-    async_base_browser_fixture,
+    async_base_browser_fixture, dummy_playwright_setup
 ):
-    browser = async_base_browser_fixture
+    browser = await async_base_browser_fixture  # await the fixture
 
+    # Assert initial state (AsyncBaseBrowser __init__ doesn't set these up yet)
     assert browser.browser is None
     assert browser.page is None
+    assert browser.context is None
 
     await browser.async_init()
 
-    assert browser.browser is not None
+    # Assertions for user_data_dir=None path
+    mock_chromium_api = dummy_playwright_setup.start.return_value.chromium
+    mock_chromium_api.launch.assert_called_once()
+
+    # browser.browser should be the mocked browser object
+    assert browser.browser == mock_chromium_api.launch.return_value
+    # browser.context should be the context from the mocked browser object
+    assert (
+        browser.context
+        == mock_chromium_api.launch.return_value.new_context.return_value
+    )
+    # browser.page should be the page from that context
+    assert (
+        browser.page
+        == mock_chromium_api.launch.return_value.new_context.return_value.new_page.return_value
+    )
     assert browser.page is not None
+
+
+@pytest.mark.asyncio
+# ruff: noqa: E501
+async def test_async_base_browser_initialization_order_with_user_data_dir_async(
+    dummy_playwright_setup,
+):
+    test_init_dir = "test_init_user_data_async"
+    try:
+        with (
+            patch(
+                'playwright.async_api.async_playwright',
+                return_value=dummy_playwright_setup,
+            ),
+            patch.object(
+                AsyncBaseBrowser, '_ensure_browser_installed', AsyncMock()
+            ) as mock_ensure_installed,
+        ):
+            browser = AsyncBaseBrowser(
+                headless=True, user_data_dir=test_init_dir
+            )
+            # Assertions for __init__ behaviour
+            mock_ensure_installed.assert_called_once()
+            assert os.path.exists(test_init_dir)
+            assert browser.browser is None
+            assert browser.page is None
+            assert browser.context is None
+
+            await browser.async_init()
+
+            # Assertions for init() behaviour with user_data_dir
+            mock_chromium_api = (
+                dummy_playwright_setup.start.return_value.chromium
+            )
+            mock_chromium_api.launch_persistent_context.assert_called_once()
+
+            call_kwargs = (
+                mock_chromium_api.launch_persistent_context.call_args.kwargs
+            )
+            assert call_kwargs['user_data_dir'] == test_init_dir
+            assert call_kwargs['headless'] is True
+            assert call_kwargs['channel'] == "chromium"
+            assert call_kwargs['accept_downloads'] is True
+            assert isinstance(call_kwargs['user_agent'], str)
+            assert call_kwargs['java_script_enabled'] is True
+            assert isinstance(call_kwargs['args'], list)
+
+            assert browser.browser is None  # Key: No separate browser object
+            assert (
+                browser.context
+                == mock_chromium_api.launch_persistent_context.return_value
+            )
+            assert (
+                browser.page
+                == mock_chromium_api.launch_persistent_context.return_value.new_page.return_value
+            )
+    finally:
+        if os.path.exists(test_init_dir):
+            shutil.rmtree(test_init_dir)
 
 
 @pytest.mark.asyncio
@@ -113,17 +242,22 @@ async def test_async_base_browser_initialization_order_async(
 async def test_async_browser_channel_selection(
     channel, dummy_playwright_setup
 ):
-    with patch(
-        'playwright.async_api.async_playwright',
-        return_value=dummy_playwright_setup,
-    ):
+    with (
+        patch(
+            'playwright.async_api.async_playwright',
+            return_value=dummy_playwright_setup,
+        ),
+        patch.object(
+            AsyncBaseBrowser, '_ensure_browser_installed', AsyncMock()
+        ),
+    ):  # Also mock install here for standalone test
         browser = AsyncBaseBrowser(headless=True, channel=channel)
         assert browser.channel == channel
 
 
 @pytest.mark.asyncio
 async def test_async_browser_visit_page(async_base_browser_fixture):
-    browser = async_base_browser_fixture
+    browser = await async_base_browser_fixture  # await the fixture
     await browser.async_init()
 
     browser_page = MagicMock()
@@ -138,7 +272,7 @@ async def test_async_browser_visit_page(async_base_browser_fixture):
 
 @pytest.mark.asyncio
 async def test_async_browser_get_screenshot(async_base_browser_fixture):
-    browser = async_base_browser_fixture
+    browser = await async_base_browser_fixture  # await the fixture
     await browser.async_init()
 
     # Create a dummy image and its byte representation
@@ -156,7 +290,7 @@ async def test_async_browser_get_screenshot(async_base_browser_fixture):
 
 @pytest.mark.asyncio
 async def test_async_browser_toolkit_browse_url(async_browser_toolkit_fixture):
-    toolkit = async_browser_toolkit_fixture
+    toolkit = await async_browser_toolkit_fixture  # await the fixture
 
     class DummyMessage:
         def __init__(self, content):
@@ -184,7 +318,7 @@ async def test_async_browser_toolkit_browse_url(async_browser_toolkit_fixture):
 
 @pytest.mark.asyncio
 async def test_async_browser_clean_cache(async_base_browser_fixture):
-    browser = async_base_browser_fixture
+    browser = await async_base_browser_fixture  # await the fixture
 
     os.makedirs(browser.cache_dir, exist_ok=True)
     test_file = os.path.join(browser.cache_dir, "test.txt")
@@ -197,7 +331,7 @@ async def test_async_browser_clean_cache(async_base_browser_fixture):
 
 @pytest.mark.asyncio
 async def test_async_browser_click_blank_area(async_base_browser_fixture):
-    browser = async_base_browser_fixture
+    browser = await async_base_browser_fixture  # await the fixture
     await browser.async_init()
 
     browser.page.mouse.click = AsyncMock()
@@ -211,7 +345,7 @@ async def test_async_browser_click_blank_area(async_base_browser_fixture):
 
 @pytest.mark.asyncio
 async def test_async_browser_get_url(async_base_browser_fixture):
-    browser = async_base_browser_fixture
+    browser = await async_base_browser_fixture  # await the fixture
     await browser.async_init()
 
     browser.page.url = TEST_URL
@@ -220,7 +354,7 @@ async def test_async_browser_get_url(async_base_browser_fixture):
 
 @pytest.mark.asyncio
 async def test_async_browser_back_navigation(async_base_browser_fixture):
-    browser = async_base_browser_fixture
+    browser = await async_base_browser_fixture  # await the fixture
     await browser.async_init()
 
     browser.page.go_back = AsyncMock()
