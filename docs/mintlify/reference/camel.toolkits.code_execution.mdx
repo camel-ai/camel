@@ -39,7 +39,7 @@ def __init__(
 ### execute_code
 
 ```python
-def execute_code(self, code: str):
+def execute_code(self, code: str, code_type: str):
 ```
 
 Execute a given code snippet.
@@ -47,6 +47,7 @@ Execute a given code snippet.
 **Parameters:**
 
 - **code** (str): The input code to the Code Interpreter tool call.
+- **code_type** (str): The type of the code to be executed type node.js, python, etc.
 
 **Returns:**
 
