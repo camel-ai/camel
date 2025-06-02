@@ -1,3 +1,17 @@
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
 import streamlit as st
 from dotenv import load_dotenv
 from camel.societies import RolePlaying
@@ -62,33 +76,14 @@ if st.button("Generate Report") and topic:
 
     st.success(f"Using author ID: {author_id}")
 
-    scholar_tools = GoogleScholarToolkit(author_identifier=author_id).get_tools()
-
-    semantic_tools = SemanticScholarToolkit().get_tools() 
-    arxiv_tools = ArxivToolkit().get_tools()            
-
-    # News and web tools
-    news_tools = AskNewsToolkit().get_tools()          
-
-    # Thinking and writing tools
-    thinking_tools = ThinkingToolkit().get_tools()     
-    file_tools = FileWriteToolkit().get_tools()          
-
-    # Optional social tools
-    
-    linkedin_tools = LinkedInToolkit().get_tools()     
-
-    # Image generation tools
-    dalle_tools = DalleToolkit().get_tools()          
-
-    # Aggregate all tools
-    all_tools = (
-        scholar_tools + semantic_tools + arxiv_tools +
-        news_tools  +
-        thinking_tools + file_tools +
-         linkedin_tools +
-        dalle_tools
-    )
+    all_tools=[GoogleScholarToolkit(author_identifier=author_id).get_tools(),
+           SemanticScholarToolkit().get_tools(),
+           ArxivToolkit().get_tools(),
+           AskNewsToolkit().get_tools(),
+           ThinkingToolkit().get_tools(),
+           FileWriteToolkit().get_tools(),
+           LinkedInToolkit().get_tools(),
+           DalleToolkit().get_tools()]
 
     role_play = RolePlaying(
         assistant_role_name="Researcher Agent",
