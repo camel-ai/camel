@@ -60,6 +60,35 @@ This app utilizes the following CAMEL-AI components:
    - Windows: [Download from ffmpeg.org](https://ffmpeg.org/download.html)
 
 ---
+## 🍪 Using Authentication Cookies with yt-dlp
+
+YouTube may require authentication for certain videos. To allow yt-dlp to access such content, you need to provide your own `cookies.txt` file.
+
+### Exporting Cookies from Your Browser
+
+1. **Using a Browser Extension**:
+
+   - **Chrome**: Install [Get cookies.txt LOCALLY](https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc)
+   - **Firefox**: Install [cookies.txt](https://addons.mozilla.org/en-US/firefox/addon/cookies-txt/)
+
+   After installing the extension:
+
+   - Navigate to [YouTube](https://www.youtube.com) and log in.
+   - Click the extension icon and export the cookies.
+   - Save the file as `cookies.txt` in the `examples/usecases/youtube_q&a` directory.
+
+
+### Updating the Application to Use Your Cookies
+
+In your code, specify the path to your `cookies.txt`:
+
+```python
+video_toolkit = VideoAnalysisToolkit(cookies_path="cookies.txt")
+```
+
+Ensure that this path points to your exported `cookies.txt` file.
+
+---
 
 ## ▶️ Running the Application
 

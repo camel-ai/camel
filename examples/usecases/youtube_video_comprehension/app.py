@@ -31,7 +31,7 @@ qa_agent = ChatAgent(system_message="Answer the question based on the context pr
 st.title("🎥 Video Content Q&A with CAMEL")
 
 # Input URL
-url = st.text_input("Enter a YouTube video URL:")
+url = st.text_input("Enter a YouTube video URL:",value="https://www.youtube.com/watch?v=hT_nvWreIhg")
 
 if st.button("Process Video"):
     if url:
