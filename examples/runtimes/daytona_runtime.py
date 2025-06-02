@@ -18,7 +18,7 @@ from colorama import Fore
 
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
-from camel.runtime import DaytonaRuntime
+from camel.runtimes import DaytonaRuntime
 from camel.toolkits.code_execution import CodeExecutionToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.types import ModelPlatformType, ModelType

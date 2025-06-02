@@ -16,7 +16,7 @@ import json
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
-from camel.data_collector import ShareGPTDataCollector
+from camel.data_collectors import ShareGPTDataCollector
 from camel.models import ModelFactory
 from camel.toolkits import MathToolkit
 from camel.types import ModelPlatformType, ModelType

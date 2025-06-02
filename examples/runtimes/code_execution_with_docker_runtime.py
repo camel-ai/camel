@@ -17,7 +17,7 @@ from colorama import Fore
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
-from camel.runtime import DockerRuntime
+from camel.runtimes import DockerRuntime
 from camel.toolkits.code_execution import CodeExecutionToolkit
 from camel.types import ModelPlatformType, ModelType
 from camel.utils import print_text_animated

@@ -21,7 +21,7 @@ from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel
 
 from camel.logger import get_logger
-from camel.runtime import BaseRuntime
+from camel.runtimes import BaseRuntime
 from camel.toolkits.function_tool import FunctionTool
 
 logger = get_logger(__name__)
