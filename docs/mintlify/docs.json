@@ -134,6 +134,7 @@
                 "pages": [
                   "cookbooks/data_processing/agent_with_chunkr_for_pdf_parsing",
                   "cookbooks/data_processing/ingest_data_from_websites_with_Firecrawl",
+                  "cookbooks/data_processing/summarisation_agent_with_mistral_ocr",
                   "cookbooks/data_processing/video_analysis"
                 ]
               },
@@ -621,6 +622,7 @@
               "reference/camel.loaders.jina_url_reader",
               "reference/camel.loaders.markitdown",
               "reference/camel.loaders.mineru_extractor",
+              "reference/camel.loaders.mistral_reader",
               "reference/camel.loaders.pandas_reader",
               "reference/camel.loaders.scrapegraph_reader",
               "reference/camel.loaders.unstructured_io"
