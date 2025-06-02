@@ -76,14 +76,14 @@ if st.button("Generate Report") and topic:
 
     st.success(f"Using author ID: {author_id}")
 
-    all_tools=[GoogleScholarToolkit(author_identifier=author_id).get_tools(),
-           SemanticScholarToolkit().get_tools(),
-           ArxivToolkit().get_tools(),
-           AskNewsToolkit().get_tools(),
-           ThinkingToolkit().get_tools(),
-           FileWriteToolkit().get_tools(),
-           LinkedInToolkit().get_tools(),
-           DalleToolkit().get_tools()]
+    all_tools=[*GoogleScholarToolkit(author_identifier=author_id).get_tools(),
+           *SemanticScholarToolkit().get_tools(),
+           *ArxivToolkit().get_tools(),
+           *AskNewsToolkit().get_tools(),
+           *ThinkingToolkit().get_tools(),
+           *FileWriteToolkit().get_tools(),
+           *LinkedInToolkit().get_tools(),
+           *DalleToolkit().get_tools()]
 
     role_play = RolePlaying(
         assistant_role_name="Researcher Agent",
