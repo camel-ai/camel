@@ -26,10 +26,9 @@ from camel.types import ModelPlatformType, ModelType
 
 
 class DynamicAgentCreator:
-    """
+    r"""
     A class to dynamically create agents based on task content.
-    Supports multiple tool discovery strategies including local keyword
-    matching, API-based tools, and MCP protocol.
+    Supports multiple tool discovery strategies.
     """
 
     def __init__(self, tool_selector: ToolSelector):
