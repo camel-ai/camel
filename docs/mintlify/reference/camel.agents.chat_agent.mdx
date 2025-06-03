@@ -910,16 +910,6 @@ Record the assistant message that contains tool calls.
 This method creates and records an assistant message that includes
 the tool calls information, which is required by OpenAI's API format.
 
-<a id="camel.agents.chat_agent.ChatAgent._create_tool_sending_status_response"></a>
-
-### _create_tool_sending_status_response
-
-```python
-def _create_tool_sending_status_response(self, content: str, step_token_usage: Dict[str, int]):
-```
-
-Create a response showing tool result sending status.
-
 <a id="camel.agents.chat_agent.ChatAgent._create_tool_status_response"></a>
 
 ### _create_tool_status_response
@@ -967,32 +957,6 @@ def _create_simple_tool_output_status(
 ```
 
 Create a simple tool output status response.
-
-<a id="camel.agents.chat_agent.ChatAgent._execute_tools_sync_with_status"></a>
-
-### _execute_tools_sync_with_status
-
-```python
-def _execute_tools_sync_with_status(
-    self,
-    accumulated_tool_calls: Dict[str, Any],
-    content_buffer: str,
-    step_token_usage: Dict[str, int],
-    tool_call_records: List[ToolCallingRecord]
-):
-```
-
-Execute multiple tools synchronously with optimized status updates.
-
-This provides a more efficient sync version where all
-"Calling function" statuses are yielded first, then tools execute.
-
-**Parameters:**
-
-- **accumulated_tool_calls**: Dictionary of complete tool calls
-- **content_buffer**: Current content to prepend to status messages
-- **step_token_usage**: Current token usage tracker
-- **tool_call_records**: List to append completed tool records to
 
 <a id="camel.agents.chat_agent.ChatAgent._create_tool_status_response_with_accumulator"></a>
 
