@@ -24,8 +24,10 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncGenerator,
     Callable,
     Dict,
+    Generator,
     List,
     Optional,
     Set,
@@ -1857,3 +1859,1247 @@ class ChatAgent(BaseAgent):
         mcp_server.tool()(get_available_tools)
 
         return mcp_server
+
+    def stream(
+        self,
+        input_message: Union[BaseMessage, str],
+        response_format: Optional[Type[BaseModel]] = None,
+    ) -> Generator[ChatAgentResponse, None, None]:
+        r"""Executes a streaming step in the chat session, yielding
+        intermediate responses as they are generated.
+
+        Args:
+            input_message (Union[BaseMessage, str]): The input message for the
+                agent.
+            response_format (Optional[Type[BaseModel]], optional): A Pydantic
+                model defining the expected structure of the response.
+
+        Yields:
+            ChatAgentResponse: Intermediate responses containing partial
+                content, tool calls, and other information as they become
+                available.
+        """
+        # Convert input message to BaseMessage if necessary
+        if isinstance(input_message, str):
+            input_message = BaseMessage.make_user_message(
+                role_name="User", content=input_message
+            )
+
+        # Add user input to memory
+        self.update_memory(input_message, OpenAIBackendRole.USER)
+
+        # Get context for streaming
+        try:
+            openai_messages, num_tokens = self.memory.get_context()
+        except RuntimeError as e:
+            yield self._step_terminate(e.args[1], [], "max_tokens_exceeded")
+            return
+
+        # Start streaming response
+        yield from self._stream_response(
+            openai_messages, num_tokens, response_format
+        )
+
+    def _stream_response(
+        self,
+        openai_messages: List[OpenAIMessage],
+        num_tokens: int,
+        response_format: Optional[Type[BaseModel]] = None,
+    ) -> Generator[ChatAgentResponse, None, None]:
+        r"""Internal method to handle streaming responses with tool calls."""
+
+        tool_call_records: List[ToolCallingRecord] = []
+        accumulated_tool_calls: Dict[str, Any] = {}
+        step_token_usage = self._create_token_usage_tracker()
+
+        # Create content accumulator for proper content management
+        content_accumulator = self._StreamContentAccumulator()
+
+        while True:
+            # Check termination condition
+            if self.stop_event and self.stop_event.is_set():
+                yield self._step_terminate(
+                    num_tokens, tool_call_records, "termination_triggered"
+                )
+                return
+
+            # Get streaming response from model
+            try:
+                response = self.model_backend.run(
+                    openai_messages,
+                    response_format,
+                    self._get_full_tool_schemas() or None,
+                )
+            except Exception as exc:
+                logger.error(
+                    f"Error in streaming model response: {exc}", exc_info=exc
+                )
+                yield self._create_error_response(str(exc), tool_call_records)
+                return
+
+            # Handle streaming response
+            if isinstance(response, Stream):
+                (
+                    stream_completed,
+                    tool_calls_complete,
+                ) = yield from self._process_stream_chunks_with_accumulator(
+                    response,
+                    content_accumulator,
+                    accumulated_tool_calls,
+                    tool_call_records,
+                    step_token_usage,
+                    response_format,
+                )
+
+                if tool_calls_complete:
+                    # Clear completed tool calls
+                    accumulated_tool_calls.clear()
+
+                    # If we executed tools and not in
+                    # single iteration mode, continue
+                    if tool_call_records and not self.single_iteration:
+                        # Update messages with tool results for next iteration
+                        try:
+                            openai_messages, num_tokens = (
+                                self.memory.get_context()
+                            )
+                        except RuntimeError as e:
+                            yield self._step_terminate(
+                                e.args[1],
+                                tool_call_records,
+                                "max_tokens_exceeded",
+                            )
+                            return
+                        # Reset streaming content for next iteration
+                        content_accumulator.reset_streaming_content()
+                        continue
+                    else:
+                        break
+                else:
+                    # Stream completed without tool calls
+                    break
+            elif hasattr(response, '__enter__') and hasattr(
+                response, '__exit__'
+            ):
+                # Handle structured output stream (ChatCompletionStreamManager)
+                with response as stream:
+                    parsed_object = None
+
+                    for event in stream:
+                        if event.type == "content.delta":
+                            if event.delta:
+                                # Use accumulator for proper content management
+                                partial_response = self._create_streaming_response_with_accumulator(  # noqa: E501
+                                    content_accumulator,
+                                    event.delta,
+                                    step_token_usage,
+                                    tool_call_records=tool_call_records.copy(),
+                                )
+                                yield partial_response
+
+                        elif event.type == "content.done":
+                            parsed_object = event.parsed
+                            break
+                        elif event.type == "error":
+                            logger.error(
+                                f"Error in structured stream: {event.error}"
+                            )
+                            yield self._create_error_response(
+                                str(event.error), tool_call_records
+                            )
+                            return
+
+                    # Get final completion and record final message
+                    try:
+                        final_completion = stream.get_final_completion()
+                        final_content = (
+                            final_completion.choices[0].message.content or ""
+                        )
+
+                        final_message = BaseMessage(
+                            role_name=self.role_name,
+                            role_type=self.role_type,
+                            meta_dict={},
+                            content=final_content,
+                            parsed=parsed_object,
+                        )
+
+                        self.record_message(final_message)
+
+                        # Create final response
+                        final_response = ChatAgentResponse(
+                            msgs=[final_message],
+                            terminated=False,
+                            info={
+                                "id": final_completion.id or "",
+                                "usage": safe_model_dump(
+                                    final_completion.usage
+                                )
+                                if final_completion.usage
+                                else {},
+                                "finish_reasons": [
+                                    choice.finish_reason or "stop"
+                                    for choice in final_completion.choices
+                                ],
+                                "num_tokens": len(final_content.split()),
+                                "tool_calls": tool_call_records,
+                                "external_tool_requests": None,
+                                "streaming": False,
+                                "partial": False,
+                            },
+                        )
+                        yield final_response
+                        break
+
+                    except Exception as e:
+                        logger.error(f"Error getting final completion: {e}")
+                        yield self._create_error_response(
+                            str(e), tool_call_records
+                        )
+                        return
+            else:
+                # Handle non-streaming response (fallback)
+                model_response = self._handle_batch_response(response)
+                yield self._convert_to_chatagent_response(
+                    model_response,
+                    tool_call_records,
+                    num_tokens,
+                    None,
+                    step_token_usage["prompt_tokens"],
+                    step_token_usage["completion_tokens"],
+                    step_token_usage["total_tokens"],
+                )
+                break
+
+    def _process_stream_chunks_with_accumulator(
+        self,
+        stream: Stream[ChatCompletionChunk],
+        content_accumulator: '_StreamContentAccumulator',
+        accumulated_tool_calls: Dict[str, Any],
+        tool_call_records: List[ToolCallingRecord],
+        step_token_usage: Dict[str, int],
+        response_format: Optional[Type[BaseModel]] = None,
+    ) -> Generator[ChatAgentResponse, None, Tuple[bool, bool]]:
+        r"""Process streaming chunks with content accumulator."""
+
+        tool_calls_complete = False
+        stream_completed = False
+
+        for chunk in stream:
+            # Update token usage if available
+            if chunk.usage:
+                self._update_token_usage_tracker(
+                    step_token_usage, safe_model_dump(chunk.usage)
+                )
+
+            # Process chunk delta
+            if chunk.choices and len(chunk.choices) > 0:
+                choice = chunk.choices[0]
+                delta = choice.delta
+
+                # Handle content streaming
+                if delta.content:
+                    # Use accumulator for proper content management
+                    partial_response = (
+                        self._create_streaming_response_with_accumulator(
+                            content_accumulator,
+                            delta.content,
+                            step_token_usage,
+                            getattr(chunk, 'id', ''),
+                            tool_call_records.copy(),
+                        )
+                    )
+                    yield partial_response
+
+                # Handle tool calls streaming
+                if delta.tool_calls:
+                    tool_calls_complete = self._accumulate_tool_calls(
+                        delta.tool_calls, accumulated_tool_calls
+                    )
+
+                # Check if stream is complete
+                if choice.finish_reason:
+                    stream_completed = True
+
+                    # If we have complete tool calls, execute them with
+                    # sync status updates
+                    if accumulated_tool_calls:
+                        # Record assistant message with tool calls first
+                        self._record_assistant_tool_calls_message(
+                            accumulated_tool_calls,
+                            content_accumulator.get_full_content(),
+                        )
+
+                        # Execute tools synchronously with
+                        # optimized status updates
+                        for (
+                            status_response
+                        ) in self._execute_tools_sync_with_status_accumulator(
+                            accumulated_tool_calls,
+                            content_accumulator,
+                            step_token_usage,
+                            tool_call_records,
+                        ):
+                            yield status_response
+
+                        # Yield "Sending back result to model" status
+                        if tool_call_records:
+                            sending_status = self._create_tool_status_response_with_accumulator(  # noqa: E501
+                                content_accumulator,
+                                "\n---------\n\nSending back result to model\n\n",  # noqa: E501
+                                "tool_sending",
+                                step_token_usage,
+                            )
+                            yield sending_status
+
+                    # Record final message only if we have content AND no tool
+                    # calls. If there are tool calls, _record_tool_calling
+                    # will handle message recording.
+                    final_content = content_accumulator.get_full_content()
+                    if final_content.strip() and not accumulated_tool_calls:
+                        final_message = BaseMessage(
+                            role_name=self.role_name,
+                            role_type=self.role_type,
+                            meta_dict={},
+                            content=final_content,
+                        )
+
+                        if response_format:
+                            self._try_format_message(
+                                final_message, response_format
+                            )
+
+                        self.record_message(final_message)
+                    break
+
+        return stream_completed, tool_calls_complete
+
+    def _accumulate_tool_calls(
+        self,
+        tool_call_deltas: List[Any],
+        accumulated_tool_calls: Dict[str, Any],
+    ) -> bool:
+        r"""Accumulate tool call chunks and return True when
+        any tool call is complete.
+
+        Args:
+            tool_call_deltas (List[Any]): List of tool call deltas.
+            accumulated_tool_calls (Dict[str, Any]): Dictionary of accumulated
+                tool calls.
+
+        Returns:
+            bool: True if any tool call is complete, False otherwise.
+        """
+
+        for delta_tool_call in tool_call_deltas:
+            index = delta_tool_call.index
+            tool_call_id = getattr(delta_tool_call, 'id', None)
+
+            # Initialize tool call entry if not exists
+            if index not in accumulated_tool_calls:
+                accumulated_tool_calls[index] = {
+                    'id': '',
+                    'type': 'function',
+                    'function': {'name': '', 'arguments': ''},
+                    'complete': False,
+                }
+
+            tool_call_entry = accumulated_tool_calls[index]
+
+            # Accumulate tool call data
+            if tool_call_id:
+                tool_call_entry['id'] = (
+                    tool_call_id  # Set full ID, don't append
+                )
+
+            if (
+                hasattr(delta_tool_call, 'function')
+                and delta_tool_call.function
+            ):
+                if delta_tool_call.function.name:
+                    tool_call_entry['function']['name'] = (
+                        delta_tool_call.function.name
+                    )  # Set full name
+                if delta_tool_call.function.arguments:
+                    tool_call_entry['function']['arguments'] += (
+                        delta_tool_call.function.arguments
+                    )
+
+        # Check if any tool calls are complete
+        any_complete = False
+        for _index, tool_call_entry in accumulated_tool_calls.items():
+            if (
+                tool_call_entry['id']
+                and tool_call_entry['function']['name']
+                and tool_call_entry['function']['arguments']
+            ):
+                try:
+                    # Try to parse arguments to check completeness
+                    json.loads(tool_call_entry['function']['arguments'])
+                    tool_call_entry['complete'] = True
+                    any_complete = True
+                except json.JSONDecodeError:
+                    # Arguments not complete yet
+                    tool_call_entry['complete'] = False
+
+        return any_complete
+
+    def _execute_tools_sync_with_status_accumulator(
+        self,
+        accumulated_tool_calls: Dict[str, Any],
+        content_accumulator: '_StreamContentAccumulator',
+        step_token_usage: Dict[str, int],
+        tool_call_records: List[ToolCallingRecord],
+    ) -> Generator[ChatAgentResponse, None, None]:
+        r"""Execute multiple tools synchronously with
+        proper content accumulation."""
+
+        # Phase 1: Yield all "Calling function" statuses first
+        tool_calls_to_execute = []
+        for _tool_call_index, tool_call_data in accumulated_tool_calls.items():
+            if tool_call_data.get('complete', False):
+                function_name = tool_call_data['function']['name']
+                try:
+                    args = json.loads(tool_call_data['function']['arguments'])
+                except json.JSONDecodeError:
+                    args = tool_call_data['function']['arguments']
+
+                status_message = (
+                    f"\nCalling function: {function_name} "
+                    f"with arguments:\n{args}\n"
+                )
+
+                # Immediately yield "Calling function" status
+                calling_status = (
+                    self._create_tool_status_response_with_accumulator(
+                        content_accumulator,
+                        status_message,
+                        "tool_calling",
+                        step_token_usage,
+                    )
+                )
+                yield calling_status
+                tool_calls_to_execute.append(tool_call_data)
+
+        # Phase 2: Execute tools and yield results
+        for tool_call_data in tool_calls_to_execute:
+            try:
+                tool_call_record = self._execute_tool_from_stream_data(
+                    tool_call_data
+                )
+                if tool_call_record:
+                    # Add to the shared tool_call_records list
+                    tool_call_records.append(tool_call_record)
+
+                    # Create output status message
+                    raw_result = tool_call_record.result
+                    result_str = str(raw_result)
+                    status_message = (
+                        f"\nFunction output: {result_str}\n---------\n"
+                    )
+
+                    # Yield "Function output" status
+                    output_status = (
+                        self._create_tool_status_response_with_accumulator(
+                            content_accumulator,
+                            status_message,
+                            "tool_output",
+                            step_token_usage,
+                            [tool_call_record],
+                        )
+                    )
+                    yield output_status
+
+            except Exception as e:
+                logger.error(f"Error in sync tool execution: {e}")
+
+    def _execute_tool_from_stream_data(
+        self, tool_call_data: Dict[str, Any]
+    ) -> Optional[ToolCallingRecord]:
+        r"""Execute a tool from accumulated stream data."""
+
+        try:
+            function_name = tool_call_data['function']['name']
+            args = json.loads(tool_call_data['function']['arguments'])
+            tool_call_id = tool_call_data['id']
+
+            if function_name in self._internal_tools:
+                tool = self._internal_tools[function_name]
+                try:
+                    result = tool(**args)
+
+                    # Only record the tool response message, not the assistant
+                    # message assistant message with tool_calls was already
+                    # recorded in _record_assistant_tool_calls_message
+                    func_msg = FunctionCallingMessage(
+                        role_name=self.role_name,
+                        role_type=self.role_type,
+                        meta_dict=None,
+                        content="",
+                        func_name=function_name,
+                        result=result,
+                        tool_call_id=tool_call_id,
+                    )
+
+                    self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
+
+                    return ToolCallingRecord(
+                        tool_name=function_name,
+                        args=args,
+                        result=result,
+                        tool_call_id=tool_call_id,
+                    )
+
+                except Exception as e:
+                    error_msg = (
+                        f"Error executing tool '{function_name}': {e!s}"
+                    )
+                    result = {"error": error_msg}
+                    logging.warning(error_msg)
+
+                    # Record error response
+                    func_msg = FunctionCallingMessage(
+                        role_name=self.role_name,
+                        role_type=self.role_type,
+                        meta_dict=None,
+                        content="",
+                        func_name=function_name,
+                        result=result,
+                        tool_call_id=tool_call_id,
+                    )
+
+                    self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
+
+                    return ToolCallingRecord(
+                        tool_name=function_name,
+                        args=args,
+                        result=result,
+                        tool_call_id=tool_call_id,
+                    )
+            else:
+                logger.warning(
+                    f"Tool '{function_name}' not found in internal tools"
+                )
+                return None
+
+        except Exception as e:
+            logger.error(f"Error processing tool call: {e}")
+            return None
+
+    async def _aexecute_tool_from_stream_data(
+        self, tool_call_data: Dict[str, Any]
+    ) -> Optional[ToolCallingRecord]:
+        r"""Async execute a tool from accumulated stream data."""
+
+        try:
+            function_name = tool_call_data['function']['name']
+            args = json.loads(tool_call_data['function']['arguments'])
+            tool_call_id = tool_call_data['id']
+
+            if function_name in self._internal_tools:
+                tool = self._internal_tools[function_name]
+                try:
+                    result = await tool.async_call(**args)
+
+                    # Only record the tool response message, not the assistant
+                    # message assistant message with tool_calls was already
+                    # recorded in _record_assistant_tool_calls_message
+                    func_msg = FunctionCallingMessage(
+                        role_name=self.role_name,
+                        role_type=self.role_type,
+                        meta_dict=None,
+                        content="",
+                        func_name=function_name,
+                        result=result,
+                        tool_call_id=tool_call_id,
+                    )
+
+                    self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
+
+                    return ToolCallingRecord(
+                        tool_name=function_name,
+                        args=args,
+                        result=result,
+                        tool_call_id=tool_call_id,
+                    )
+
+                except Exception as e:
+                    error_msg = (
+                        f"Error executing async tool '{function_name}': {e!s}"
+                    )
+                    result = {"error": error_msg}
+                    logging.warning(error_msg)
+
+                    # Record error response
+                    func_msg = FunctionCallingMessage(
+                        role_name=self.role_name,
+                        role_type=self.role_type,
+                        meta_dict=None,
+                        content="",
+                        func_name=function_name,
+                        result=result,
+                        tool_call_id=tool_call_id,
+                    )
+
+                    self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
+
+                    return ToolCallingRecord(
+                        tool_name=function_name,
+                        args=args,
+                        result=result,
+                        tool_call_id=tool_call_id,
+                    )
+            else:
+                logger.warning(
+                    f"Tool '{function_name}' not found in internal tools"
+                )
+                return None
+
+        except Exception as e:
+            logger.error(f"Error processing async tool call: {e}")
+            return None
+
+    def _create_error_response(
+        self, error_message: str, tool_call_records: List[ToolCallingRecord]
+    ) -> ChatAgentResponse:
+        r"""Create an error response for streaming."""
+
+        error_msg = BaseMessage(
+            role_name=self.role_name,
+            role_type=self.role_type,
+            meta_dict={},
+            content=f"Error: {error_message}",
+        )
+
+        return ChatAgentResponse(
+            msgs=[error_msg],
+            terminated=True,
+            info={
+                "error": error_message,
+                "tool_calls": tool_call_records,
+                "streaming": True,
+            },
+        )
+
+    async def astream(
+        self,
+        input_message: Union[BaseMessage, str],
+        response_format: Optional[Type[BaseModel]] = None,
+    ) -> AsyncGenerator[ChatAgentResponse, None]:
+        r"""Asynchronous version of stream method."""
+
+        # Convert input message to BaseMessage if necessary
+        if isinstance(input_message, str):
+            input_message = BaseMessage.make_user_message(
+                role_name="User", content=input_message
+            )
+
+        # Add user input to memory
+        self.update_memory(input_message, OpenAIBackendRole.USER)
+
+        # Get context for streaming
+        try:
+            openai_messages, num_tokens = self.memory.get_context()
+        except RuntimeError as e:
+            yield self._step_terminate(e.args[1], [], "max_tokens_exceeded")
+            return
+
+        # Start async streaming response
+        async for response in self._astream_response(
+            openai_messages, num_tokens, response_format
+        ):
+            yield response
+
+    async def _astream_response(
+        self,
+        openai_messages: List[OpenAIMessage],
+        num_tokens: int,
+        response_format: Optional[Type[BaseModel]] = None,
+    ) -> AsyncGenerator[ChatAgentResponse, None]:
+        r"""Async method to handle streaming responses with tool calls."""
+
+        tool_call_records: List[ToolCallingRecord] = []
+        accumulated_tool_calls: Dict[str, Any] = {}
+        step_token_usage = self._create_token_usage_tracker()
+
+        # Create content accumulator for proper content management
+        content_accumulator = self._StreamContentAccumulator()
+
+        while True:
+            # Check termination condition
+            if self.stop_event and self.stop_event.is_set():
+                yield self._step_terminate(
+                    num_tokens, tool_call_records, "termination_triggered"
+                )
+                return
+
+            # Get async streaming response from model
+            try:
+                response = await self.model_backend.arun(
+                    openai_messages,
+                    response_format,
+                    self._get_full_tool_schemas() or None,
+                )
+            except Exception as exc:
+                logger.error(
+                    f"Error in async streaming model response: {exc}",
+                    exc_info=exc,
+                )
+                yield self._create_error_response(str(exc), tool_call_records)
+                return
+
+            # Handle streaming response
+            if isinstance(response, AsyncStream):
+                stream_completed = False
+                tool_calls_complete = False
+
+                # Process chunks and forward them
+                async for (
+                    item
+                ) in self._aprocess_stream_chunks_with_accumulator(
+                    response,
+                    content_accumulator,
+                    accumulated_tool_calls,
+                    tool_call_records,
+                    step_token_usage,
+                    response_format,
+                ):
+                    if isinstance(item, tuple):
+                        # This is the final return value (stream_completed,
+                        # tool_calls_complete)
+                        stream_completed, tool_calls_complete = item
+                        break
+                    else:
+                        # This is a ChatAgentResponse to be yielded
+                        yield item
+
+                if tool_calls_complete:
+                    # Clear completed tool calls
+                    accumulated_tool_calls.clear()
+
+                    # If we executed tools and not in
+                    # single iteration mode, continue
+                    if tool_call_records and not self.single_iteration:
+                        # Update messages with tool results for next iteration
+                        try:
+                            openai_messages, num_tokens = (
+                                self.memory.get_context()
+                            )
+                        except RuntimeError as e:
+                            yield self._step_terminate(
+                                e.args[1],
+                                tool_call_records,
+                                "max_tokens_exceeded",
+                            )
+                            return
+                        # Reset streaming content for next iteration
+                        content_accumulator.reset_streaming_content()
+                        continue
+                    else:
+                        break
+                else:
+                    # Stream completed without tool calls
+                    break
+            elif hasattr(response, '__aenter__') and hasattr(
+                response, '__aexit__'
+            ):
+                # Handle structured output stream
+                # (AsyncChatCompletionStreamManager)
+                async with response as stream:
+                    parsed_object = None
+
+                    async for event in stream:
+                        if event.type == "content.delta":
+                            if event.delta:
+                                # Use accumulator for proper content management
+                                partial_response = self._create_streaming_response_with_accumulator(  # noqa: E501
+                                    content_accumulator,
+                                    event.delta,
+                                    step_token_usage,
+                                    tool_call_records=tool_call_records.copy(),
+                                )
+                                yield partial_response
+
+                        elif event.type == "content.done":
+                            parsed_object = event.parsed
+                            break
+                        elif event.type == "error":
+                            logger.error(
+                                f"Error in async structured stream: "
+                                f"{event.error}"
+                            )
+                            yield self._create_error_response(
+                                str(event.error), tool_call_records
+                            )
+                            return
+
+                    # Get final completion and record final message
+                    try:
+                        final_completion = await stream.get_final_completion()
+                        final_content = (
+                            final_completion.choices[0].message.content or ""
+                        )
+
+                        final_message = BaseMessage(
+                            role_name=self.role_name,
+                            role_type=self.role_type,
+                            meta_dict={},
+                            content=final_content,
+                            parsed=parsed_object,
+                        )
+
+                        self.record_message(final_message)
+
+                        # Create final response
+                        final_response = ChatAgentResponse(
+                            msgs=[final_message],
+                            terminated=False,
+                            info={
+                                "id": final_completion.id or "",
+                                "usage": safe_model_dump(
+                                    final_completion.usage
+                                )
+                                if final_completion.usage
+                                else {},
+                                "finish_reasons": [
+                                    choice.finish_reason or "stop"
+                                    for choice in final_completion.choices
+                                ],
+                                "num_tokens": len(final_content.split()),
+                                "tool_calls": tool_call_records,
+                                "external_tool_requests": None,
+                                "streaming": False,
+                                "partial": False,
+                            },
+                        )
+                        yield final_response
+                        break
+
+                    except Exception as e:
+                        logger.error(
+                            f"Error getting async final completion: {e}"
+                        )
+                        yield self._create_error_response(
+                            str(e), tool_call_records
+                        )
+                        return
+            else:
+                # Handle non-streaming response (fallback)
+                model_response = self._handle_batch_response(response)
+                yield self._convert_to_chatagent_response(
+                    model_response,
+                    tool_call_records,
+                    num_tokens,
+                    None,
+                    step_token_usage["prompt_tokens"],
+                    step_token_usage["completion_tokens"],
+                    step_token_usage["total_tokens"],
+                )
+                break
+
+    def _record_assistant_tool_calls_message(
+        self, accumulated_tool_calls: Dict[str, Any], content: str = ""
+    ) -> None:
+        r"""Record the assistant message that contains tool calls.
+
+        This method creates and records an assistant message that includes
+        the tool calls information, which is required by OpenAI's API format.
+        """
+        # Create a BaseMessage with tool_calls information in meta_dict
+        # This will be converted to the proper OpenAI format when needed
+        tool_calls_list = []
+        for tool_call_data in accumulated_tool_calls.values():
+            if tool_call_data.get('complete', False):
+                tool_call_dict = {
+                    "id": tool_call_data["id"],
+                    "type": "function",
+                    "function": {
+                        "name": tool_call_data["function"]["name"],
+                        "arguments": tool_call_data["function"]["arguments"],
+                    },
+                }
+                tool_calls_list.append(tool_call_dict)
+
+        # Create an assistant message with tool calls
+        assist_msg = BaseMessage(
+            role_name=self.role_name,
+            role_type=self.role_type,
+            meta_dict={"tool_calls": tool_calls_list},
+            content=content or "",
+        )
+
+        # Record this assistant message
+        self.update_memory(assist_msg, OpenAIBackendRole.ASSISTANT)
+
+    async def _aprocess_stream_chunks_with_accumulator(
+        self,
+        stream: AsyncStream[ChatCompletionChunk],
+        content_accumulator: '_StreamContentAccumulator',
+        accumulated_tool_calls: Dict[str, Any],
+        tool_call_records: List[ToolCallingRecord],
+        step_token_usage: Dict[str, int],
+        response_format: Optional[Type[BaseModel]] = None,
+    ) -> AsyncGenerator[Union[ChatAgentResponse, Tuple[bool, bool]], None]:
+        r"""Async version of process streaming chunks with
+        content accumulator."""
+
+        tool_calls_complete = False
+        stream_completed = False
+
+        async for chunk in stream:
+            # Update token usage if available
+            if chunk.usage:
+                self._update_token_usage_tracker(
+                    step_token_usage, safe_model_dump(chunk.usage)
+                )
+
+            # Process chunk delta
+            if chunk.choices and len(chunk.choices) > 0:
+                choice = chunk.choices[0]
+                delta = choice.delta
+
+                # Handle content streaming
+                if delta.content:
+                    # Use accumulator for proper content management
+                    partial_response = (
+                        self._create_streaming_response_with_accumulator(
+                            content_accumulator,
+                            delta.content,
+                            step_token_usage,
+                            getattr(chunk, 'id', ''),
+                            tool_call_records.copy(),
+                        )
+                    )
+                    yield partial_response
+
+                # Handle tool calls streaming
+                if delta.tool_calls:
+                    tool_calls_complete = self._accumulate_tool_calls(
+                        delta.tool_calls, accumulated_tool_calls
+                    )
+
+                # Check if stream is complete
+                if choice.finish_reason:
+                    stream_completed = True
+
+                    # If we have complete tool calls, execute them with
+                    # async status updates
+                    if accumulated_tool_calls:
+                        # Record assistant message with
+                        # tool calls first
+                        self._record_assistant_tool_calls_message(
+                            accumulated_tool_calls,
+                            content_accumulator.get_full_content(),
+                        )
+
+                        # Execute tools asynchronously with real-time
+                        # status updates
+                        async for (
+                            status_response
+                        ) in self._execute_tools_async_with_status_accumulator(
+                            accumulated_tool_calls,
+                            content_accumulator,
+                            step_token_usage,
+                            tool_call_records,
+                        ):
+                            yield status_response
+
+                        # Yield "Sending back result to model" status
+                        if tool_call_records:
+                            sending_status = self._create_tool_status_response_with_accumulator(  # noqa: E501
+                                content_accumulator,
+                                "\n---------\n\nSending back result to model\n\n",  # noqa: E501
+                                "tool_sending",
+                                step_token_usage,
+                            )
+                            yield sending_status
+
+                    # Record final message only if we have content AND no tool
+                    # calls. If there are tool calls, _record_tool_calling
+                    # will handle message recording.
+                    final_content = content_accumulator.get_full_content()
+                    if final_content.strip() and not accumulated_tool_calls:
+                        final_message = BaseMessage(
+                            role_name=self.role_name,
+                            role_type=self.role_type,
+                            meta_dict={},
+                            content=final_content,
+                        )
+
+                        if response_format:
+                            self._try_format_message(
+                                final_message, response_format
+                            )
+
+                        self.record_message(final_message)
+                    break
+
+        # Yield the final status as a tuple
+        yield (stream_completed, tool_calls_complete)
+
+    async def _execute_tools_async_with_status_accumulator(
+        self,
+        accumulated_tool_calls: Dict[str, Any],
+        content_accumulator: '_StreamContentAccumulator',
+        step_token_usage: Dict[str, int],
+        tool_call_records: List[ToolCallingRecord],
+    ) -> AsyncGenerator[ChatAgentResponse, None]:
+        r"""Execute multiple tools asynchronously with
+        proper content accumulation."""
+        import asyncio
+
+        # Phase 1: Start all tools and yield "Calling function"
+        # statuses immediately
+        tool_tasks = []
+        for _tool_call_index, tool_call_data in accumulated_tool_calls.items():
+            if tool_call_data.get('complete', False):
+                function_name = tool_call_data['function']['name']
+                try:
+                    args = json.loads(tool_call_data['function']['arguments'])
+                except json.JSONDecodeError:
+                    args = tool_call_data['function']['arguments']
+
+                status_message = (
+                    f"\nCalling function: {function_name} "
+                    f"with arguments:\n{args}\n"
+                )
+
+                # Immediately yield "Calling function" status
+                calling_status = (
+                    self._create_tool_status_response_with_accumulator(
+                        content_accumulator,
+                        status_message,
+                        "tool_calling",
+                        step_token_usage,
+                    )
+                )
+                yield calling_status
+
+                # Start tool execution asynchronously (non-blocking)
+                task = asyncio.create_task(
+                    self._aexecute_tool_from_stream_data(tool_call_data)
+                )
+                tool_tasks.append((task, tool_call_data))
+
+        # Phase 2: Wait for tools to complete and yield results as they finish
+        if tool_tasks:
+            # Use asyncio.as_completed for true async processing
+            for completed_task in asyncio.as_completed(
+                [task for task, _ in tool_tasks]
+            ):
+                try:
+                    tool_call_record = await completed_task
+                    if tool_call_record:
+                        # Add to the shared tool_call_records list
+                        tool_call_records.append(tool_call_record)
+
+                        # Create output status message
+                        raw_result = tool_call_record.result
+                        result_str = str(raw_result)
+                        status_message = (
+                            f"\nFunction output: {result_str}\n---------\n"
+                        )
+
+                        # Yield "Function output" status as soon as this
+                        # tool completes
+                        output_status = (
+                            self._create_tool_status_response_with_accumulator(
+                                content_accumulator,
+                                status_message,
+                                "tool_output",
+                                step_token_usage,
+                                [tool_call_record],
+                            )
+                        )
+                        yield output_status
+
+                except Exception as e:
+                    logger.error(f"Error in async tool execution: {e}")
+
+
+    def _create_tool_status_response(
+        self,
+        content: str,
+        status_message: str,
+        status_type: str,
+        step_token_usage: Dict[str, int],
+        tool_calls: Optional[List[ToolCallingRecord]] = None,
+    ) -> ChatAgentResponse:
+        r"""Create a generic tool status response to
+        reduce code duplication."""
+
+        # Create message with current content plus status
+        message = BaseMessage(
+            role_name=self.role_name,
+            role_type=self.role_type,
+            meta_dict={},
+            content=content + status_message,
+        )
+
+        return ChatAgentResponse(
+            msgs=[message],
+            terminated=False,
+            info={
+                "id": "",
+                "usage": step_token_usage.copy(),
+                "finish_reasons": [status_type],
+                "num_tokens": len((content + status_message).split()),
+                "tool_calls": tool_calls or [],
+                "external_tool_requests": None,
+                "streaming": True,
+                "tool_status": status_type,
+                "partial": True,
+            },
+        )
+
+    def _create_simple_tool_calling_status(
+        self,
+        tool_call_data: Dict[str, Any],
+        content: str,
+        step_token_usage: Dict[str, int],
+    ) -> ChatAgentResponse:
+        r"""Create a simple tool calling status response."""
+
+        function_name = tool_call_data['function']['name']
+        try:
+            args = json.loads(tool_call_data['function']['arguments'])
+        except json.JSONDecodeError:
+            args = tool_call_data['function']['arguments']
+
+        status_message = (
+            f"\nCalling function: {function_name} with arguments:\n{args}\n"
+        )
+        return self._create_tool_status_response(
+            content, status_message, "tool_calling", step_token_usage
+        )
+
+    def _create_simple_tool_output_status(
+        self,
+        tool_call_record: ToolCallingRecord,
+        content: str,
+        step_token_usage: Dict[str, int],
+    ) -> ChatAgentResponse:
+        r"""Create a simple tool output status response."""
+
+        # Use the raw result from the tool, not processed by model
+        raw_result = tool_call_record.result
+        result_str = str(raw_result)
+
+        status_message = f"\nFunction output: {result_str}\n---------\n"
+        return self._create_tool_status_response(
+            content,
+            status_message,
+            "tool_output",
+            step_token_usage,
+            [tool_call_record],
+        )
+
+    class _StreamContentAccumulator:
+        """Manages content accumulation across streaming responses to ensure
+        all responses contain complete cumulative content."""
+
+        def __init__(self):
+            self.base_content = ""  # Content before tool calls
+            self.current_content = ""  # Current streaming content
+            self.tool_status_messages = []  # Accumulated tool status messages
+
+        def set_base_content(self, content: str):
+            """Set the base content (usually empty or pre-tool content)."""
+            self.base_content = content
+
+        def add_streaming_content(self, new_content: str):
+            """Add new streaming content."""
+            self.current_content += new_content
+
+        def add_tool_status(self, status_message: str):
+            """Add a tool status message."""
+            self.tool_status_messages.append(status_message)
+
+        def get_full_content(self) -> str:
+            """Get the complete accumulated content."""
+            tool_messages = "".join(self.tool_status_messages)
+            return self.base_content + tool_messages + self.current_content
+
+        def get_content_with_new_status(self, status_message: str) -> str:
+            """Get content with a new status message appended."""
+            tool_messages = "".join(
+                [*self.tool_status_messages, status_message]
+            )
+            return self.base_content + tool_messages + self.current_content
+
+        def reset_streaming_content(self):
+            """Reset only the streaming content, keep base and tool status."""
+            self.current_content = ""
+
+    def _create_tool_status_response_with_accumulator(
+        self,
+        accumulator: '_StreamContentAccumulator',
+        status_message: str,
+        status_type: str,
+        step_token_usage: Dict[str, int],
+        tool_calls: Optional[List[ToolCallingRecord]] = None,
+    ) -> ChatAgentResponse:
+        r"""Create a tool status response using content accumulator."""
+
+        # Add this status message to accumulator and get full content
+        accumulator.add_tool_status(status_message)
+        full_content = accumulator.get_full_content()
+
+        message = BaseMessage(
+            role_name=self.role_name,
+            role_type=self.role_type,
+            meta_dict={},
+            content=full_content,
+        )
+
+        return ChatAgentResponse(
+            msgs=[message],
+            terminated=False,
+            info={
+                "id": "",
+                "usage": step_token_usage.copy(),
+                "finish_reasons": [status_type],
+                "num_tokens": len(full_content.split()),
+                "tool_calls": tool_calls or [],
+                "external_tool_requests": None,
+                "streaming": True,
+                "tool_status": status_type,
+                "partial": True,
+            },
+        )
+
+    def _create_streaming_response_with_accumulator(
+        self,
+        accumulator: '_StreamContentAccumulator',
+        new_content: str,
+        step_token_usage: Dict[str, int],
+        response_id: str = "",
+        tool_call_records: Optional[List[ToolCallingRecord]] = None,
+    ) -> ChatAgentResponse:
+        r"""Create a streaming response using content accumulator."""
+
+        # Add new content to accumulator and get full content
+        accumulator.add_streaming_content(new_content)
+        full_content = accumulator.get_full_content()
+
+        message = BaseMessage(
+            role_name=self.role_name,
+            role_type=self.role_type,
+            meta_dict={},
+            content=full_content,
+        )
+
+        return ChatAgentResponse(
+            msgs=[message],
+            terminated=False,
+            info={
+                "id": response_id,
+                "usage": step_token_usage.copy(),
+                "finish_reasons": ["streaming"],
+                "num_tokens": len(full_content.split()),
+                "tool_calls": tool_call_records or [],
+                "external_tool_requests": None,
+                "streaming": True,
+                "partial": True,
+            },
+        )

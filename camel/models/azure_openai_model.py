@@ -11,10 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import copy
 import os
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 from openai import AsyncAzureOpenAI, AsyncStream, AzureOpenAI, Stream
+from openai.lib.streaming.chat import ChatCompletionStreamManager
 from pydantic import BaseModel
 
 from camel.configs import OPENAI_API_PARAMS, ChatGPTConfig
@@ -147,7 +149,11 @@ class AzureOpenAIModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+    ) -> Union[
+        ChatCompletion,
+        Stream[ChatCompletionChunk],
+        ChatCompletionStreamManager[BaseModel],
+    ]:
         r"""Runs inference of Azure OpenAI chat completion.
 
         Args:
@@ -162,12 +168,20 @@ class AzureOpenAIModel(BaseModelBackend):
             Union[ChatCompletion, Stream[ChatCompletionChunk]]:
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
+                `ChatCompletionStreamManager[BaseModel]` for
+                structured output streaming.
         """
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
         )
+        is_streaming = self.model_config_dict.get("stream", False)
         if response_format:
-            return self._request_parse(messages, response_format, tools)
+            if is_streaming:
+                return self._request_stream_parse(
+                    messages, response_format, tools
+                )
+            else:
+                return self._request_parse(messages, response_format, tools)
         else:
             return self._request_chat_completion(messages, tools)
 
@@ -176,7 +190,11 @@ class AzureOpenAIModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+    ) -> Union[
+        ChatCompletion,
+        AsyncStream[ChatCompletionChunk],
+        ChatCompletionStreamManager[BaseModel],
+    ]:
         r"""Runs inference of Azure OpenAI chat completion.
 
         Args:
@@ -191,12 +209,22 @@ class AzureOpenAIModel(BaseModelBackend):
             Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
+                `ChatCompletionStreamManager[BaseModel]` for
+                structured output streaming.
         """
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
         )
+        is_streaming = self.model_config_dict.get("stream", False)
         if response_format:
-            return await self._arequest_parse(messages, response_format, tools)
+            if is_streaming:
+                return await self._arequest_stream_parse(
+                    messages, response_format, tools
+                )
+            else:
+                return await self._arequest_parse(
+                    messages, response_format, tools
+                )
         else:
             return await self._arequest_chat_completion(messages, tools)
 
@@ -238,8 +266,6 @@ class AzureOpenAIModel(BaseModelBackend):
         response_format: Type[BaseModel],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ChatCompletion:
-        import copy
-
         request_config = copy.deepcopy(self.model_config_dict)
 
         request_config["response_format"] = response_format
@@ -261,8 +287,6 @@ class AzureOpenAIModel(BaseModelBackend):
         response_format: Type[BaseModel],
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ChatCompletion:
-        import copy
-
         request_config = copy.deepcopy(self.model_config_dict)
 
         request_config["response_format"] = response_format
@@ -275,6 +299,60 @@ class AzureOpenAIModel(BaseModelBackend):
         return await self._async_client.beta.chat.completions.parse(
             messages=messages,
             model=self._azure_deployment_name,  # type:ignore[arg-type]
+            **request_config,
+        )
+
+    def _request_stream_parse(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ChatCompletionStreamManager[BaseModel]:
+        r"""Request streaming structured output parsing.
+
+        Note: This uses OpenAI's beta streaming API for structured outputs.
+        """
+
+        request_config = copy.deepcopy(self.model_config_dict)
+
+        # Remove stream from config as it's handled by the stream method
+        request_config.pop("stream", None)
+
+        if tools is not None:
+            request_config["tools"] = tools
+
+        # Use the beta streaming API for structured outputs
+        return self._client.beta.chat.completions.stream(
+            messages=messages,
+            model=self.model_type,
+            response_format=response_format,
+            **request_config,
+        )
+
+    async def _arequest_stream_parse(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Any:
+        r"""Request async streaming structured output parsing.
+
+        Note: This uses OpenAI's beta streaming API for structured outputs.
+        """
+
+        request_config = copy.deepcopy(self.model_config_dict)
+
+        # Remove stream from config as it's handled by the stream method
+        request_config.pop("stream", None)
+
+        if tools is not None:
+            request_config["tools"] = tools
+
+        # Use the beta streaming API for structured outputs
+        return self._async_client.beta.chat.completions.stream(
+            messages=messages,
+            model=self.model_type,
+            response_format=response_format,
             **request_config,
         )
 
