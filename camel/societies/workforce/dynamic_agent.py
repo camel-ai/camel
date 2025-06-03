@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import json
 
 from pydantic import BaseModel, Field
 
@@ -93,8 +94,11 @@ class DynamicAgentCreator:
         )
 
         agent = ChatAgent(system_message=prompt, model=model)
+
         response = agent.step(task_content, response_format=self.PromptModel)
-        return response.msgs[0].content
+        content_str = response.msgs[0].content
+        content_dict = json.loads(content_str)
+        return self.PromptModel(**content_dict)
 
     def select_tools(self, task_content: str) -> list:
         r"""
