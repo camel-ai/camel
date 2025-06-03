@@ -29,7 +29,7 @@ This app utilizes the following CAMEL-AI components:
 
    ```bash
    git clone https://github.com/camel-ai/camel.git
-   cd examples/usecases/youtube_q&a
+   cd examples/usecases/chat_with_youtube
    ```
 
 2. **Set Up Virtual Environment**:
@@ -75,7 +75,7 @@ YouTube may require authentication for certain videos. To allow yt-dlp to access
 
    - Navigate to [YouTube](https://www.youtube.com) and log in.
    - Click the extension icon and export the cookies.
-   - Save the file as `cookies.txt` in the `examples/usecases/youtube_q&a` directory.
+   - Save the file as `cookies.txt` in the `examples/usecases/chat_with_youtube` directory.
 
 
 ### Updating the Application to Use Your Cookies
