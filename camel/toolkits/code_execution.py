@@ -97,18 +97,32 @@ class CodeExecutionToolkit(BaseToolkit):
                 f"The sandbox type `{sandbox}` is not supported."
             )
 
-    def execute_code(self, code: str) -> str:
+    def execute_code(self, code: str, code_type: str) -> str:
         r"""Execute a given code snippet.
 
         Args:
             code (str): The input code to the Code Interpreter tool call.
+            code_type (str): The type of the code to be executed type node.js, python, etc.
 
         Returns:
             str: The text output from the Code Interpreter tool call.
         """
-        output = self.interpreter.run(code, "python")
+        output = self.interpreter.run(code, code_type)
         # ruff: noqa: E501
         content = f"Executed the code below:\n```py\n{code}\n```\n> Executed Results:\n{output}"
+        if self.verbose:
+            print(content)
+        return content
+
+    def execute_command(self, command: str) -> str:
+        """
+        Execute a command can be used to resolve the dependency of the code.
+        """
+        print(command)
+        output = self.interpreter.execute_command(command)
+        # ruff: noqa: E501
+
+        content = f"Executed the command below:\n```sh\n{command}\n```\n> Executed Results:\n{output}"
         if self.verbose:
             print(content)
         return content
@@ -121,4 +135,7 @@ class CodeExecutionToolkit(BaseToolkit):
             List[FunctionTool]: A list of FunctionTool objects
                 representing the functions in the toolkit.
         """
-        return [FunctionTool(self.execute_code)]
+        return [
+            FunctionTool(self.execute_code),
+            FunctionTool(self.execute_command),
+        ]
