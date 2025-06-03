@@ -22,7 +22,7 @@ from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.toolkits import MCPToolkit
-from camel.types import ModelPlatformType
+from camel.types import ModelPlatformType, ModelType
 
 load_dotenv()
 
@@ -46,7 +46,7 @@ async def main():
         # setup gemini model
         model = ModelFactory.create(
             model_platform=ModelPlatformType.GEMINI,
-            model_type="gemini-2.5-pro-preview-05-06",
+            model_type=ModelType.GEMINI_2_5_PRO_PREVIEW,
             api_key=os.getenv("GOOGLE_API_KEY"),
             model_config_dict={"temperature": 0.7, "max_tokens": 4000},
         )
@@ -61,7 +61,6 @@ async def main():
             system_message=system_message, 
             model=model, 
             tools=tools, 
-            memory=None
         )
 
         rprint("[green]Agent ready[/green]")

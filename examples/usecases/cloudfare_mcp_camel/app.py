@@ -20,14 +20,15 @@ from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.toolkits import MCPToolkit
+from camel.types import ModelPlatformType, ModelType
 
 # Load environment variables
 dotenv.load_dotenv()
 
 # Initialize the model
 model = ModelFactory.create(
-    model_platform="gemini",
-    model_type="gemini-2.5-pro-preview-05-06",
+    model_platform=ModelPlatformType.GEMINI,
+    model_type=ModelType.GEMINI_2_5_PRO_PREVIEW,
     api_key=os.getenv("GEMINI_API_KEY"),
     model_config_dict={"temperature": 0.5, "max_tokens": 4096},
 )

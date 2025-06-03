@@ -41,7 +41,7 @@ This repository contains two different approaches to integrate ACI (AI Compute I
 
 ### Prerequisites
 
-- Python 3.8+
+- Python 3.10+
 - ACI API access
 - Google Gemini API access
 
@@ -55,7 +55,7 @@ This repository contains two different approaches to integrate ACI (AI Compute I
 
 2. **Install dependencies**:
    ```bash
-   pip install camel-ai python-dotenv rich aci-mcp
+   pip install camel-ai[all] rich aci-mcp
    ```
 
 3. **Set up environment variables**:
@@ -124,5 +124,5 @@ Both scripts include comprehensive error handling with traceback information for
 
 ## Links
 
-- [CAMEL AI](https://github.com/camel-ai/camel) - Multi-agent framework
+- [CAMEL-AI](https://github.com/camel-ai/camel) - Multi-agent framework
 - [ACI](https://github.com/aci-labs) - AI Compute Infrastructure

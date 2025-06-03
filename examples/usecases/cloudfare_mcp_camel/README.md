@@ -28,7 +28,7 @@ This project provides a Streamlit-based web interface to interact with public Cl
 
 ## Prerequisites
 
--   Python 3.8+
+-   Python 3.10+
 -   Node.js and npm (for `npx mcp-remote` if your `mcp_config.json` uses it)
 -   A Gemini API Key (or another compatible model API key supported by CAMEL AI)
 
