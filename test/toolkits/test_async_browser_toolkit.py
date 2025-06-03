@@ -105,7 +105,7 @@ async def async_browser_toolkit_fixture(dummy_playwright_setup):
 
 @pytest.mark.asyncio
 async def test_async_base_browser_init(async_base_browser_fixture):
-    browser = await async_base_browser_fixture  # await the fixture
+    browser = async_base_browser_fixture  # await the fixture
     assert browser.headless is True
     assert browser.cache_dir == "test_cache"
     assert isinstance(browser.history, list)
@@ -118,6 +118,7 @@ async def test_async_base_browser_init_with_user_data_dir(
     dummy_playwright_setup,
 ):
     test_user_dir = "test_user_data_dir_async"
+    browser = None  # Define browser outside try for finally block
     try:
         with (
             patch(
@@ -131,19 +132,26 @@ async def test_async_base_browser_init_with_user_data_dir(
             browser = AsyncBaseBrowser(
                 headless=True, user_data_dir=test_user_dir
             )
+            await browser.async_init()  # Call async_init before asserting mock
             mock_ensure_installed.assert_called_once()
             assert browser.user_data_dir == test_user_dir
             assert os.path.exists(test_user_dir)
     finally:
         if os.path.exists(test_user_dir):
             shutil.rmtree(test_user_dir)
+        if (
+            browser
+            and hasattr(browser, 'playwright_started')
+            and browser.playwright_started
+        ):
+            await browser.close()
 
 
 @pytest.mark.asyncio
 async def test_async_base_browser_initialization_order_async(
     async_base_browser_fixture, dummy_playwright_setup
 ):
-    browser = await async_base_browser_fixture  # await the fixture
+    browser = async_base_browser_fixture  # await the fixture
 
     # Assert initial state (AsyncBaseBrowser __init__ doesn't set these up yet)
     assert browser.browser is None
@@ -177,6 +185,7 @@ async def test_async_base_browser_initialization_order_with_user_data_dir_async(
     dummy_playwright_setup,
 ):
     test_init_dir = "test_init_user_data_async"
+    browser = None  # Define browser outside try for finally block
     try:
         with (
             patch(
@@ -191,13 +200,14 @@ async def test_async_base_browser_initialization_order_with_user_data_dir_async(
                 headless=True, user_data_dir=test_init_dir
             )
             # Assertions for __init__ behaviour
-            mock_ensure_installed.assert_called_once()
+            mock_ensure_installed.assert_not_called()  # __init__ does not call it
             assert os.path.exists(test_init_dir)
             assert browser.browser is None
             assert browser.page is None
             assert browser.context is None
 
             await browser.async_init()
+            mock_ensure_installed.assert_called_once()  # async_init calls it
 
             # Assertions for init() behaviour with user_data_dir
             mock_chromium_api = (
@@ -228,6 +238,12 @@ async def test_async_base_browser_initialization_order_with_user_data_dir_async(
     finally:
         if os.path.exists(test_init_dir):
             shutil.rmtree(test_init_dir)
+        if (
+            browser
+            and hasattr(browser, 'playwright_started')
+            and browser.playwright_started
+        ):
+            await browser.close()
 
 
 @pytest.mark.asyncio
@@ -257,7 +273,7 @@ async def test_async_browser_channel_selection(
 
 @pytest.mark.asyncio
 async def test_async_browser_visit_page(async_base_browser_fixture):
-    browser = await async_base_browser_fixture  # await the fixture
+    browser = async_base_browser_fixture  # await the fixture
     await browser.async_init()
 
     browser_page = MagicMock()
@@ -272,7 +288,7 @@ async def test_async_browser_visit_page(async_base_browser_fixture):
 
 @pytest.mark.asyncio
 async def test_async_browser_get_screenshot(async_base_browser_fixture):
-    browser = await async_base_browser_fixture  # await the fixture
+    browser = async_base_browser_fixture  # await the fixture
     await browser.async_init()
 
     # Create a dummy image and its byte representation
@@ -290,7 +306,7 @@ async def test_async_browser_get_screenshot(async_base_browser_fixture):
 
 @pytest.mark.asyncio
 async def test_async_browser_toolkit_browse_url(async_browser_toolkit_fixture):
-    toolkit = await async_browser_toolkit_fixture  # await the fixture
+    toolkit = async_browser_toolkit_fixture  # await the fixture
 
     class DummyMessage:
         def __init__(self, content):
@@ -318,7 +334,7 @@ async def test_async_browser_toolkit_browse_url(async_browser_toolkit_fixture):
 
 @pytest.mark.asyncio
 async def test_async_browser_clean_cache(async_base_browser_fixture):
-    browser = await async_base_browser_fixture  # await the fixture
+    browser = async_base_browser_fixture  # await the fixture
 
     os.makedirs(browser.cache_dir, exist_ok=True)
     test_file = os.path.join(browser.cache_dir, "test.txt")
@@ -331,7 +347,7 @@ async def test_async_browser_clean_cache(async_base_browser_fixture):
 
 @pytest.mark.asyncio
 async def test_async_browser_click_blank_area(async_base_browser_fixture):
-    browser = await async_base_browser_fixture  # await the fixture
+    browser = async_base_browser_fixture  # await the fixture
     await browser.async_init()
 
     browser.page.mouse.click = AsyncMock()
@@ -345,7 +361,7 @@ async def test_async_browser_click_blank_area(async_base_browser_fixture):
 
 @pytest.mark.asyncio
 async def test_async_browser_get_url(async_base_browser_fixture):
-    browser = await async_base_browser_fixture  # await the fixture
+    browser = async_base_browser_fixture  # await the fixture
     await browser.async_init()
 
     browser.page.url = TEST_URL
@@ -354,7 +370,7 @@ async def test_async_browser_get_url(async_base_browser_fixture):
 
 @pytest.mark.asyncio
 async def test_async_browser_back_navigation(async_base_browser_fixture):
-    browser = await async_base_browser_fixture  # await the fixture
+    browser = async_base_browser_fixture  # await the fixture
     await browser.async_init()
 
     browser.page.go_back = AsyncMock()
