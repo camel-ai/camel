@@ -24,12 +24,10 @@ def main():
     )
 
     tool_selector = ACIFunctionToolSelector(
-        linked_account_owner_id = linked_account_owner_id
+        linked_account_owner_id=linked_account_owner_id
     )
 
-    agent_creator = DynamicAgentCreator(
-        tool_selector = tool_selector
-    )
+    agent_creator = DynamicAgentCreator(tool_selector=tool_selector)
 
     task_content = "Search for GitHub repositories related to 'AI agents'"
 
