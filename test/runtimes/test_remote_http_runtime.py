@@ -11,14 +11,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import pytest
 
-from camel.logger import disable_logging, enable_logging, set_log_level
+from camel.runtimes import RemoteHttpRuntime
+from camel.toolkits import MathToolkit
 
-__version__ = '0.2.62'
 
-__all__ = [
-    '__version__',
-    'disable_logging',
-    'enable_logging',
-    'set_log_level',
-]
+@pytest.mark.skip(reason="Cannot run this test without a running server.")
+def test_remote_http_runtime():
+    runtime = (
+        RemoteHttpRuntime("localhost")
+        .add(MathToolkit().get_tools(), "camel.toolkits.MathToolkit")
+        .build()
+    )
+    print("Waiting for runtime to be ready...")
+    runtime.wait()
+    print("Runtime is ready.")
+    add, sub, mul = runtime.get_tools()
+
+    assert add.func(1, 2) == 3
+    assert sub.func(5, 3) == 2
+    assert mul.func(2, 3) == 6
+
+    assert runtime.docs == "http://localhost:8000/docs"

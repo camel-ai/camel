@@ -134,6 +134,7 @@
                 "pages": [
                   "cookbooks/data_processing/agent_with_chunkr_for_pdf_parsing",
                   "cookbooks/data_processing/ingest_data_from_websites_with_Firecrawl",
+                  "cookbooks/data_processing/summarisation_agent_with_mistral_ocr",
                   "cookbooks/data_processing/video_analysis"
                 ]
               },
@@ -531,20 +532,6 @@
             ]
           },
           {
-            "group": "Runtime",
-            "pages": [
-              "reference/camel.runtime.base",
-              "reference/camel.runtime.configs",
-              "reference/camel.runtime.daytona_runtime",
-              "reference/camel.runtime.docker_runtime",
-              "reference/camel.runtime.llm_guard_runtime",
-              "reference/camel.runtime.remote_http_runtime",
-              "reference/camel.runtime.ubuntu_docker_runtime",
-              "reference/camel.runtime.utils.function_risk_toolkit",
-              "reference/camel.runtime.utils.ignore_risk_toolkit"
-            ]
-          },
-          {
             "group": "Utilities",
             "pages": [
               "reference/camel.utils.async_func",
@@ -596,11 +583,11 @@
             ]
           },
           {
-            "group": "Data Collector",
+            "group": "Data Collectors",
             "pages": [
-              "reference/camel.data_collector.alpaca_collector",
-              "reference/camel.data_collector.base",
-              "reference/camel.data_collector.sharegpt_collector"
+              "reference/camel.data_collectors.alpaca_collector",
+              "reference/camel.data_collectors.base",
+              "reference/camel.data_collectors.sharegpt_collector"
             ]
           },
           {
@@ -625,6 +612,20 @@
               "reference/camel.loaders.pandas_reader",
               "reference/camel.loaders.scrapegraph_reader",
               "reference/camel.loaders.unstructured_io"
+            ]
+          },
+          {
+            "group": "Runtimes",
+            "pages": [
+              "reference/camel.runtimes.base",
+              "reference/camel.runtimes.configs",
+              "reference/camel.runtimes.daytona_runtime",
+              "reference/camel.runtimes.docker_runtime",
+              "reference/camel.runtimes.llm_guard_runtime",
+              "reference/camel.runtimes.remote_http_runtime",
+              "reference/camel.runtimes.ubuntu_docker_runtime",
+              "reference/camel.runtimes.utils.function_risk_toolkit",
+              "reference/camel.runtimes.utils.ignore_risk_toolkit"
             ]
           },
           {
