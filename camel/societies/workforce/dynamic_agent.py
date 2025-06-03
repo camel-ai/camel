@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import json
+from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
@@ -57,7 +57,13 @@ class DynamicAgentCreator:
         """
         self.tool_selector = tool_selector
 
-    def generate_prompt(self, task_content: str) -> dict:
+    class PromptModel(BaseModel):
+        role: str = Field(description="The role of the assistant.")
+        sys_msg: str = Field(
+            description="The system message for the assistant."
+        )
+
+    def generate_prompt(self, task_content: str) -> PromptModel:
         r"""
         Generates a JSON-formatted prompt containing a role name and system
             message for an agent,
@@ -76,12 +82,6 @@ class DynamicAgentCreator:
                 message for the agent:
 
             Task: {task_content}
-
-            Output format (JSON):
-            {{
-                "role": "Role Name",
-                "sys_msg": "System message content"
-            }}
             """
         ).format(task_content=task_content)
 
@@ -93,9 +93,8 @@ class DynamicAgentCreator:
         )
 
         agent = ChatAgent(system_message=prompt, model=model)
-        response = agent.step(task_content)
-        result = json.loads(response[0].content)
-        return result
+        response = agent.step(task_content, response_format=self.PromptModel)
+        return response.msgs[0].content
 
     def select_tools(self, task_content: str) -> list:
         r"""
@@ -145,6 +144,6 @@ class DynamicAgentCreator:
 
         # Step 4: Create Agent
         sys_msg = BaseMessage.make_assistant_message(
-            role_name=prompt_info["role"], content=prompt_info["sys_msg"]
+            role_name=prompt_info.role, content=prompt_info.sys_msg
         )
         return ChatAgent(sys_msg, model=model, tools=tools)

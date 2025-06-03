@@ -16,12 +16,10 @@ from abc import ABC, abstractmethod
 from typing import Any, List
 
 from camel.toolkits import ACIToolkit
-from examples.toolkits.aci_toolkit import LINKED_ACCOUNT_OWNER
 
 
 class ToolSelector(ABC):
-    r"""
-    Abstract base class for all tool selectors.
+    r"""Abstract base class for all tool selectors.
 
     Subclasses must implement the [select_tools] method to provide
     different strategies for selecting tools based on task content.
@@ -50,8 +48,7 @@ class ACIFunctionToolSelector(ToolSelector):
 
     def __init__(self, linked_account_owner_id: str | None = None):
         self.aci_toolkit = ACIToolkit(
-            linked_account_owner_id=linked_account_owner_id
-            or LINKED_ACCOUNT_OWNER,
+            linked_account_owner_id=linked_account_owner_id,
             api_key=os.getenv("ACI_API_KEY"),
         )
 
