@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import uuid
 from collections import deque
 from typing import Deque, Dict, List, Optional
 
@@ -598,3 +599,227 @@ class Workforce(BaseNode):
                 continue
 
         return new_instance
+
+    def to_mcp(
+        self,
+        name: str = "CAMEL-Workforce",
+        description: str = (
+            "A workforce system using the CAMEL AI framework for "
+            "multi-agent collaboration."
+        ),
+        dependencies: Optional[List[str]] = None,
+        host: str = "localhost",
+        port: int = 8001,
+    ):
+        r"""Expose this Workforce as an MCP server.
+
+        Args:
+            name (str): Name of the MCP server.
+                (default: :obj:`CAMEL-Workforce`)
+            description (str): Description of the workforce. If
+                None, a generic description is used. (default: :obj:`A
+                workforce system using the CAMEL AI framework for
+                multi-agent collaboration.`)
+            dependencies (Optional[List[str]]): Additional
+                dependencies for the MCP server. (default: :obj:`None`)
+            host (str): Host to bind to for HTTP transport.
+                (default: :obj:`localhost`)
+            port (int): Port to bind to for HTTP transport.
+                (default: :obj:`8001`)
+
+        Returns:
+            FastMCP: An MCP server instance that can be run.
+        """
+        try:
+            from mcp.server.fastmcp import FastMCP
+        except ImportError:
+            raise ImportError(
+                "The 'mcp' package is required to use the to_mcp method. "
+                "Install it with 'pip install mcp'."
+            )
+
+        # Combine dependencies
+        all_dependencies = ["camel-ai[all]"]
+        if dependencies:
+            all_dependencies.extend(dependencies)
+
+        mcp_server = FastMCP(
+            name,
+            dependencies=all_dependencies,
+            host=host,
+            port=port,
+        )
+
+        # Store workforce reference
+        workforce_instance = self
+
+        # Define functions first
+        def process_task(task_content, task_id=None, additional_info=None):
+            r"""Process a task using the workforce."""
+            task = Task(
+                content=task_content,
+                id=task_id or str(uuid.uuid4()),
+                additional_info=additional_info or "",
+            )
+
+            try:
+                result_task = workforce_instance.process_task(task)
+                return {
+                    "status": "success",
+                    "task_id": result_task.id,
+                    "state": str(result_task.state),
+                    "result": result_task.result or "",
+                    "subtasks": [
+                        {
+                            "id": subtask.id,
+                            "content": subtask.content,
+                            "state": str(subtask.state),
+                            "result": subtask.result or "",
+                        }
+                        for subtask in (result_task.subtasks or [])
+                    ],
+                }
+            except Exception as e:
+                return {
+                    "status": "error",
+                    "message": str(e),
+                    "task_id": task.id,
+                }
+
+        # Reset tool
+        def reset():
+            r"""Reset the workforce to its initial state."""
+            try:
+                workforce_instance.reset()
+                return {
+                    "status": "success",
+                    "message": "Workforce reset successfully",
+                }
+            except Exception as e:
+                return {"status": "error", "message": str(e)}
+
+        # Workforce info resource and tool
+        def get_workforce_info():
+            r"""Get information about the workforce."""
+            info = {
+                "node_id": workforce_instance.node_id,
+                "description": workforce_instance.description,
+                "mcp_description": description,
+                "children_count": len(workforce_instance._children),
+                "is_running": workforce_instance._running,
+                "pending_tasks_count": len(workforce_instance._pending_tasks),
+                "current_task_id": (
+                    workforce_instance._task.id
+                    if workforce_instance._task
+                    else None
+                ),
+            }
+            return info
+
+        # Children info resource and tool
+        def get_children_info():
+            r"""Get information about child nodes in the workforce."""
+            children_info = []
+            for child in workforce_instance._children:
+                child_info = {
+                    "node_id": child.node_id,
+                    "description": child.description,
+                    "type": type(child).__name__,
+                }
+
+                if isinstance(child, SingleAgentWorker):
+                    child_info["tools"] = list(child.worker.tool_dict.keys())
+                    child_info["role_name"] = child.worker.role_name
+                elif isinstance(child, RolePlayingWorker):
+                    child_info["assistant_role"] = child.assistant_role_name
+                    child_info["user_role"] = child.user_role_name
+                    child_info["chat_turn_limit"] = child.chat_turn_limit
+                elif isinstance(child, Workforce):
+                    child_info["children_count"] = len(child._children)
+                    child_info["is_running"] = child._running
+
+                children_info.append(child_info)
+
+            return children_info
+
+        # Add single agent worker
+        def add_single_agent_worker(
+            description,
+            system_message=None,
+            role_name="Assistant",
+            agent_kwargs=None,
+        ):
+            r"""Add a single agent worker to the workforce."""
+            try:
+                if workforce_instance._running:
+                    return {
+                        "status": "error",
+                        "message": "Cannot add workers while workforce is running",  # noqa: E501
+                    }
+
+                # Create agent with provided configuration
+                sys_msg = BaseMessage.make_assistant_message(
+                    role_name=role_name,
+                    content=system_message or f"You are a {role_name}.",
+                )
+
+                agent = ChatAgent(sys_msg, **(agent_kwargs or {}))
+                workforce_instance.add_single_agent_worker(description, agent)
+
+                return {
+                    "status": "success",
+                    "message": f"Single agent worker '{description}' added",
+                    "worker_id": workforce_instance._children[-1].node_id,
+                }
+            except Exception as e:
+                return {"status": "error", "message": str(e)}
+
+        # Add role playing worker
+        def add_role_playing_worker(
+            description,
+            assistant_role_name,
+            user_role_name,
+            chat_turn_limit=3,
+            assistant_agent_kwargs=None,
+            user_agent_kwargs=None,
+            summarize_agent_kwargs=None,
+        ):
+            r"""Add a role playing worker to the workforce."""
+            try:
+                if workforce_instance._running:
+                    return {
+                        "status": "error",
+                        "message": "Cannot add workers while workforce is running",  # noqa: E501
+                    }
+
+                workforce_instance.add_role_playing_worker(
+                    description=description,
+                    assistant_role_name=assistant_role_name,
+                    user_role_name=user_role_name,
+                    chat_turn_limit=chat_turn_limit,
+                    assistant_agent_kwargs=assistant_agent_kwargs,
+                    user_agent_kwargs=user_agent_kwargs,
+                    summarize_agent_kwargs=summarize_agent_kwargs,
+                )
+
+                return {
+                    "status": "success",
+                    "message": f"Role playing worker '{description}' added",
+                    "worker_id": workforce_instance._children[-1].node_id,
+                }
+            except Exception as e:
+                return {"status": "error", "message": str(e)}
+
+        # Now register everything using decorators
+        mcp_server.tool()(process_task)
+        mcp_server.tool()(reset)
+        mcp_server.tool()(add_single_agent_worker)
+        mcp_server.tool()(add_role_playing_worker)
+
+        mcp_server.resource("workforce://")(get_workforce_info)
+        mcp_server.tool()(get_workforce_info)
+
+        mcp_server.resource("children://")(get_children_info)
+        mcp_server.tool()(get_children_info)
+
+        return mcp_server
