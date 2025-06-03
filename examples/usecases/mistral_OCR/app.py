@@ -24,13 +24,29 @@ from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 from camel.agents import ChatAgent
 
+
+# Load camel and mistral logo images as base64
+def get_base64_img(path, w=32):
+    with open(path, "rb") as img_f:
+        b64 = base64.b64encode(img_f.read()).decode()
+    return f"<img src='data:image/png;base64,{b64}' width='{w}' style='vertical-align:middle;margin-bottom:4px;'>"
+
+camel_logo = get_base64_img("assets/CAMEL_logo.jpg", 40)
+mistral_logo = get_base64_img("assets/mistral_logo.png", 40)
+
+
 # --- Page config ---
-st.set_page_config(
-    page_title="Create Document Summarization Agents with Mistral OCR & CAMEL-AI 🐫",
-    page_icon="📄",
-    layout="wide",
-    initial_sidebar_state="expanded"
+st.markdown(
+    f"""
+    <div style='display:flex; align-items:center; gap:12px;'>
+        <span style="font-size:2.7rem;font-weight:700;">Chat with Your OCR Docs with</span>
+        {camel_logo}
+        {mistral_logo}
+    </div>
+    """,
+    unsafe_allow_html=True
 )
+
 
 # --- Sidebar: API Key & Upload & Preview ---
 st.sidebar.header("⚙️ Configuration")
@@ -73,6 +89,7 @@ if uploaded:
     if st.sidebar.button("Clear Result"):
         st.session_state.pop("ocr_result", None)
         st.session_state.pop("file_path", None)
+        st.session_state.pop("chat_history", None)
         st.experimental_rerun()
 
     if st.sidebar.button("Extract Text 🔍"):
@@ -82,19 +99,14 @@ if uploaded:
                 ocr_response = loader.extract_text(file_path)
                 st.session_state['ocr_result'] = ocr_response
                 st.session_state['file_path'] = file_path
+                st.session_state['chat_history'] = []  # Reset chat on new doc
             except Exception as e:
                 st.error(f"❌ OCR failed: {e}")
 
-# --- Main UI ---
-st.title("Create Document Summarization Agents with Mistral OCR & CAMEL-AI 🐫")
-st.markdown("Upload a PDF or image via the sidebar, preview it there, and extract text, then summarize it with a CAMEL agent.")
-
-# --- Show OCR Results ---
-st.markdown("---")
+# --- Show OCR Results (expand/collapse if needed) ---
 if 'ocr_result' in st.session_state:
-    resp = st.session_state['ocr_result']
-    st.subheader("🔎 OCR Result")
-    try:
+    with st.expander("🔎 OCR Result (Full Extracted Markdown)", expanded=False):
+        resp = st.session_state['ocr_result']
         for page in resp.pages:
             if page.markdown:
                 st.markdown(page.markdown)
@@ -104,38 +116,64 @@ if 'ocr_result' in st.session_state:
                     img_path = img_obj.id
                     if os.path.exists(img_path):
                         st.image(img_path)
-    except Exception:
-        st.json(resp)
+        st.write("**Model:**", resp.model)
+        usage = getattr(resp, 'usage_info', None)
+        if usage:
+            st.write(f"**Pages Processed:** {usage.pages_processed}")
+            st.write(f"**Document Size (bytes):** {usage.doc_size_bytes}")
 
-    st.write("**Model:**", resp.model)
-    usage = getattr(resp, 'usage_info', None)
-    if usage:
-        st.write(f"**Pages Processed:** {usage.pages_processed}")
-        st.write(f"**Document Size (bytes):** {usage.doc_size_bytes}")
-
-# --- Optional: Quick Summary ---
-st.markdown("---")
+# --- Chatbot Section ---
 if 'ocr_result' in st.session_state:
-    st.subheader("🤖 Quick Summary")
+    # Combine markdown of all pages for context
+    resp = st.session_state['ocr_result']
+    ocr_context = "\n\n".join([page.markdown or '' for page in resp.pages])
+
+    # Setup LLM agent
     mistral_model = ModelFactory.create(
         model_platform=ModelPlatformType.MISTRAL,
         model_type=ModelType.MISTRAL_LARGE,
         model_config_dict=MistralConfig(temperature=0.0).as_dict(),
     )
     agent = ChatAgent(
-        system_message="You are a helpful document assistant.",
+        system_message="You are a helpful document assistant. Always answer based only on the provided OCR document.",
         message_window_size=10,
         model=mistral_model,
     )
-    if st.button("Summarize Document"):
-        with st.spinner("Generating summary…"):
-            text = []
-            for page in resp.pages:
-                text.append(page.markdown or '')
-            prompt_text = "\n---\n".join(text)[:4000]
-            summary = agent.step(f"Summarize this document concisely:\n\n{prompt_text}")
-            st.markdown(summary.msgs[0].content)
+
+    # Persistent chat history
+    if "chat_history" not in st.session_state:
+        st.session_state["chat_history"] = []
+
+    st.markdown("---")
+    st.header("💬 Chat with Document")
+
+    for chat in st.session_state["chat_history"]:
+        with st.chat_message(chat["role"]):
+            st.markdown(chat["content"])
+
+    user_prompt = st.chat_input("Ask anything about your document...")
+    if user_prompt:
+        # Show user message
+        st.session_state["chat_history"].append({"role": "user", "content": user_prompt})
+        with st.chat_message("user"):
+            st.markdown(user_prompt)
+
+        # Compose prompt with OCR context
+        prompt = (
+            "Given the following document content (extracted by OCR):\n\n"
+            + ocr_context[:3500]  # Keep context in-token limit
+            + f"\n\nQuestion: {user_prompt}"
+        )
+
+        # Get assistant response
+        with st.chat_message("assistant"):
+            with st.spinner("Thinking..."):
+                response = agent.step(prompt)
+                answer = response.msgs[0].content
+                st.markdown(answer)
+                st.session_state["chat_history"].append({"role": "assistant", "content": answer})
 
 # --- Footer ---
 st.markdown("---")
 st.markdown("Made with ❤️ using CAMEL-AI & Mistral OCR 🐫")
+
