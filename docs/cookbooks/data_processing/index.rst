@@ -13,4 +13,5 @@ Data Processing and Analysis
 
    video_analysis
    agent_with_chunkr_for_pdf_parsing
+   summarisation_agent_with_mistral_ocr
    ingest_data_from_websites_with_Firecrawl

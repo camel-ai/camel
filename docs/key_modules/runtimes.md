@@ -1,5 +1,3 @@
-# Runtime
-
 ## 1. Concept
 The runtime module in CAMEL allows functions and tools to be executed in 
 controlled environments, enabling the safe and isolated execution of code.
@@ -99,7 +97,7 @@ long as they follow the `FunctionTool` type defined by CAMEL (see [tools](
 ./tools.md) 
 module document for more details.)
 ```
-from camel.runtime import RemoteHttpRuntime
+from camel.runtimes import RemoteHttpRuntime
 from camel.toolkits import MathToolkit
 
 if __name__ == "__main__":
