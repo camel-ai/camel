@@ -3,8 +3,6 @@ name: Build and deploy camel documents
 on:
   push:
     branches: [ "master", "qa" ]
-  pull_request:
-    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 permissions:
@@ -29,38 +27,11 @@ jobs:
       - name: Install Pandoc
         run: sudo apt-get install -y pandoc
 
-      - name: Sphinx build
-        run: |
-          source .venv/bin/activate
-          cd docs
-          make html
-
-      - name: Deploy Sphinx to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
-        with:
-          publish_branch: gh-pages
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: docs/_build/html/
-          force_orphan: true
-          cname: docs.camel-ai.org
-
       - name: Convert Cookbooks and Update Mintlify Config
         run: |
           source .venv/bin/activate
-
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "PR event detected - using incremental mode for cookbooks"
-            python docs/mintlify/convert_notebook2mdx.py \
-              --input docs/cookbooks \
-              --output docs/mintlify \
-              --update-docs-json docs/mintlify/docs.json \
-              --docs-path-prefix "" \
-              --incremental \
-              --use-git \
-              --base-branch origin/${{ github.base_ref }} \
-              --verbose
-          elif [ "${{ github.event_name }}" = "push" ]; then
+          
+          if [ "${{ github.event_name }}" = "push" ]; then
             echo "Push event detected - using incremental mode for cookbooks"
             python docs/mintlify/convert_notebook2mdx.py \
               --input docs/cookbooks \
@@ -84,19 +55,8 @@ jobs:
       - name: Convert Get Started docs
         run: |
           source .venv/bin/activate
-
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "PR event detected - using incremental mode for get_started"
-            python docs/mintlify/convert_notebook2mdx.py \
-              --input docs/get_started \
-              --output docs/mintlify \
-              --update-docs-json docs/mintlify/docs.json \
-              --docs-path-prefix "" \
-              --incremental \
-              --use-git \
-              --base-branch origin/${{ github.base_ref }} \
-              --verbose
-          elif [ "${{ github.event_name }}" = "push" ]; then
+          
+          if [ "${{ github.event_name }}" = "push" ]; then
             echo "Push event detected - using incremental mode for get_started"
             python docs/mintlify/convert_notebook2mdx.py \
               --input docs/get_started \
@@ -120,19 +80,8 @@ jobs:
       - name: Convert Key Modules docs
         run: |
           source .venv/bin/activate
-
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "PR event detected - using incremental mode for key_modules"
-            python docs/mintlify/convert_notebook2mdx.py \
-              --input docs/key_modules \
-              --output docs/mintlify \
-              --update-docs-json docs/mintlify/docs.json \
-              --docs-path-prefix "" \
-              --incremental \
-              --use-git \
-              --base-branch origin/${{ github.base_ref }} \
-              --verbose
-          elif [ "${{ github.event_name }}" = "push" ]; then
+          
+          if [ "${{ github.event_name }}" = "push" ]; then
             echo "Push event detected - using incremental mode for key_modules"
             python docs/mintlify/convert_notebook2mdx.py \
               --input docs/key_modules \
@@ -164,8 +113,7 @@ jobs:
             --incremental \
             --since_hours 24
 
-      - name: Commit and push changes to PR branch
-        if: ${{ github.event_name == 'pull_request' }}
+      - name: Commit and push changes
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
@@ -175,33 +123,6 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "Auto-update Mintlify documentation"
-            
-            # Try multiple push strategies
-            if ! git push origin ${{ github.head_ref }}; then
-              echo "First push attempt failed, trying alternative methods..."
-              
-              # Try with current branch
-              CURRENT_BRANCH=$(git branch --show-current)
-              echo "Trying to push current branch: $CURRENT_BRANCH"
-              if ! git push origin "$CURRENT_BRANCH"; then
-                echo "Second push attempt failed, trying with HEAD:refs/heads/${{ github.head_ref }}"
-                git push origin "HEAD:refs/heads/${{ github.head_ref }}"
-              fi
-            fi
-          fi
-
-      - name: Commit and push changes (only for push to master/qa)
-        if: ${{ github.event_name == 'push' }}
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-
-          git add docs/mintlify/ docs/mintlify/get_started/ docs/mintlify/key_modules/ docs/mintlify/reference/ docs/mintlify/docs.json
-
-          if git diff --staged --quiet; then
-            echo "No changes to commit"
-          else
-            echo "Changes detected but skipping commit for push events to avoid protected branch issues"
-            echo "Documentation will be updated when PR is merged"
+            git commit -m "Auto-update documentation after merge"
+            git push origin ${{ github.ref_name }}
           fi
