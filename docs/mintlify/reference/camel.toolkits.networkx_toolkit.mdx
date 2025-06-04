@@ -1,0 +1,210 @@
+<a id="camel.toolkits.networkx_toolkit"></a>
+
+<a id="camel.toolkits.networkx_toolkit.NetworkXToolkit"></a>
+
+## NetworkXToolkit
+
+```python
+class NetworkXToolkit(BaseToolkit):
+```
+
+<a id="camel.toolkits.networkx_toolkit.NetworkXToolkit._get_nx"></a>
+
+### _get_nx
+
+```python
+def _get_nx(cls):
+```
+
+Lazily import networkx module when needed.
+
+<a id="camel.toolkits.networkx_toolkit.NetworkXToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    timeout: Optional[float] = None,
+    graph_type: Literal['graph', 'digraph', 'multigraph', 'multidigraph'] = 'graph'
+):
+```
+
+Initializes the NetworkX graph client.
+
+**Parameters:**
+
+- **timeout** (Optional[float]): The timeout value for API requests in seconds. If None, no timeout is applied. (default: :obj:`None`)
+
+<a id="camel.toolkits.networkx_toolkit.NetworkXToolkit.add_node"></a>
+
+### add_node
+
+```python
+def add_node(self, node_id: str, **attributes: Any):
+```
+
+Adds a node to the graph.
+
+**Parameters:**
+
+- **node_id** (str): The ID of the node.
+- **attributes** (dict): Additional node attributes.
+
+<a id="camel.toolkits.networkx_toolkit.NetworkXToolkit.add_edge"></a>
+
+### add_edge
+
+```python
+def add_edge(
+    self,
+    source: str,
+    target: str,
+    **attributes: Any
+):
+```
+
+Adds an edge to the graph.
+
+**Parameters:**
+
+- **source** (str): Source node ID.
+- **target** (str): Target node ID.
+- **attributes** (dict): Additional edge attributes.
+
+<a id="camel.toolkits.networkx_toolkit.NetworkXToolkit.get_nodes"></a>
+
+### get_nodes
+
+```python
+def get_nodes(self):
+```
+
+**Returns:**
+
+  List[str]: A list of node IDs.
+
+<a id="camel.toolkits.networkx_toolkit.NetworkXToolkit.get_edges"></a>
+
+### get_edges
+
+```python
+def get_edges(self):
+```
+
+**Returns:**
+
+  List[Tuple[str, str]]: A list of edges as (source, target).
+
+<a id="camel.toolkits.networkx_toolkit.NetworkXToolkit.get_shortest_path"></a>
+
+### get_shortest_path
+
+```python
+def get_shortest_path(
+    self,
+    source: str,
+    target: str,
+    weight: Optional[Union[str, Callable]] = None,
+    method: Literal['dijkstra', 'bellman-ford'] = 'dijkstra'
+):
+```
+
+Finds the shortest path between two nodes.
+
+**Parameters:**
+
+- **method** (`Literal['dijkstra', 'bellman-ford'], optional`): Algorithm to compute the path. Ignored if weight is None. (default: :obj:`'dijkstra'`)
+
+**Returns:**
+
+  List[str]: A list of nodes in the shortest path.
+
+<a id="camel.toolkits.networkx_toolkit.NetworkXToolkit.compute_centrality"></a>
+
+### compute_centrality
+
+```python
+def compute_centrality(self):
+```
+
+**Returns:**
+
+  Dict[str, float]: Centrality values for each node.
+
+<a id="camel.toolkits.networkx_toolkit.NetworkXToolkit.serialize_graph"></a>
+
+### serialize_graph
+
+```python
+def serialize_graph(self):
+```
+
+**Returns:**
+
+  str: The serialized graph in JSON format.
+
+<a id="camel.toolkits.networkx_toolkit.NetworkXToolkit.deserialize_graph"></a>
+
+### deserialize_graph
+
+```python
+def deserialize_graph(self, data: str):
+```
+
+Loads a graph from a serialized JSON string.
+
+**Parameters:**
+
+- **data** (str): The JSON string representing the graph.
+
+<a id="camel.toolkits.networkx_toolkit.NetworkXToolkit.export_to_file"></a>
+
+### export_to_file
+
+```python
+def export_to_file(self, file_path: str):
+```
+
+Exports the graph to a file in JSON format.
+
+**Parameters:**
+
+- **file_path** (str): The file path to save the graph.
+
+<a id="camel.toolkits.networkx_toolkit.NetworkXToolkit.import_from_file"></a>
+
+### import_from_file
+
+```python
+def import_from_file(self, file_path: str):
+```
+
+Imports a graph from a JSON file.
+
+**Parameters:**
+
+- **file_path** (str): The file path to load the graph from.
+
+<a id="camel.toolkits.networkx_toolkit.NetworkXToolkit.clear_graph"></a>
+
+### clear_graph
+
+```python
+def clear_graph(self):
+```
+
+Clears the current graph.
+
+<a id="camel.toolkits.networkx_toolkit.NetworkXToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects for the
+toolkit methods.

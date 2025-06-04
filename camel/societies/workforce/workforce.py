@@ -48,29 +48,58 @@ logger = get_logger(__name__)
 
 
 class Workforce(BaseNode):
-    r"""A system where multiple workder nodes (agents) cooperate together
-    to solve tasks. It can assign tasks to workder nodes and also take
+    r"""A system where multiple worker nodes (agents) cooperate together
+    to solve tasks. It can assign tasks to worker nodes and also take
     strategies such as create new worker, decompose tasks, etc. to handle
     situations when the task fails.
 
+    The workforce uses three specialized ChatAgents internally:
+    - Coordinator Agent: Assigns tasks to workers based on their
+      capabilities
+    - Task Planner Agent: Decomposes complex tasks and composes results
+    - Dynamic Workers: Created at runtime when tasks fail repeatedly
+
     Args:
-        description (str): Description of the node.
+        description (str): Description of the workforce.
         children (Optional[List[BaseNode]], optional): List of child nodes
             under this node. Each child node can be a worker node or
             another workforce node. (default: :obj:`None`)
         coordinator_agent_kwargs (Optional[Dict], optional): Keyword
-            arguments for the coordinator agent, e.g. `model`, `api_key`,
-            `tools`, etc. If not provided, default model settings will be used.
-            (default: :obj:`None`)
-        task_agent_kwargs (Optional[Dict], optional): Keyword arguments for
-            the task agent, e.g. `model`, `api_key`, `tools`, etc.
-            If not provided, default model settings will be used.
-            (default: :obj:`None`)
-        new_worker_agent_kwargs (Optional[Dict]): Default keyword arguments
-            for the worker agent that will be created during runtime to
-            handle failed tasks, e.g. `model`, `api_key`, `tools`, etc.
-            If not provided, default model settings will be used.
-            (default: :obj:`None`)
+            arguments passed directly to the coordinator :obj:`ChatAgent`
+            constructor. The coordinator manages task assignment and failure
+            handling strategies. See :obj:`ChatAgent` documentation
+            for all available parameters.
+            (default: :obj:`None` - uses ModelPlatformType.DEFAULT,
+            ModelType.DEFAULT)
+        task_agent_kwargs (Optional[Dict], optional): Keyword arguments
+            passed directly to the task planning :obj:`ChatAgent` constructor.
+            The task agent handles task decomposition into subtasks and result
+            composition. See :obj:`ChatAgent` documentation for all
+            available parameters.
+            (default: :obj:`None` - uses ModelPlatformType.DEFAULT,
+            ModelType.DEFAULT)
+        new_worker_agent_kwargs (Optional[Dict], optional): Default keyword
+            arguments passed to :obj:`ChatAgent` constructor for workers
+            created dynamically at runtime when existing workers cannot handle
+            failed tasks. See :obj:`ChatAgent` documentation for all
+            available parameters.
+            (default: :obj:`None` - creates workers with SearchToolkit,
+            CodeExecutionToolkit, and ThinkingToolkit)
+
+    Example:
+        >>> # Configure with custom model
+        >>> model = ModelFactory.create(
+        ...     ModelPlatformType.OPENAI, ModelType.GPT_4O
+        ... )
+        >>> workforce = Workforce(
+        ...     "Research Team",
+        ...     coordinator_agent_kwargs={"model": model, "token_limit": 4000},
+        ...     task_agent_kwargs={"model": model, "token_limit": 8000}
+        ... )
+        >>>
+        >>> # Process a task
+        >>> task = Task(content="Research AI trends", id="1")
+        >>> result = workforce.process_task(task)
     """
 
     def __init__(
@@ -89,21 +118,33 @@ class Workforce(BaseNode):
         # Warning messages for default model usage
         if coordinator_agent_kwargs is None:
             logger.warning(
-                "No coordinator_agent_kwargs provided. "
-                "Using `ModelPlatformType.DEFAULT` and `ModelType.DEFAULT` "
-                "for coordinator agent."
+                "No coordinator_agent_kwargs provided. Using default "
+                "ChatAgent settings (ModelPlatformType.DEFAULT, "
+                "ModelType.DEFAULT). To customize the coordinator agent "
+                "that assigns tasks and handles failures, pass a dictionary "
+                "with ChatAgent parameters, e.g.: {'model': your_model, "
+                "'tools': your_tools, 'token_limit': 8000}. See ChatAgent "
+                "documentation for all available options."
             )
         if task_agent_kwargs is None:
             logger.warning(
-                "No task_agent_kwargs provided. "
-                "Using `ModelPlatformType.DEFAULT` and `ModelType.DEFAULT` "
-                "for task agent."
+                "No task_agent_kwargs provided. Using default ChatAgent "
+                "settings (ModelPlatformType.DEFAULT, ModelType.DEFAULT). "
+                "To customize the task planning agent that "
+                "decomposes/composes tasks, pass a dictionary with "
+                "ChatAgent parameters, e.g.: {'model': your_model, "
+                "'token_limit': 16000}. See ChatAgent documentation for "
+                "all available options."
             )
         if new_worker_agent_kwargs is None:
             logger.warning(
-                "No new_worker_agent_kwargs provided. "
-                "Using `ModelPlatformType.DEFAULT` and `ModelType.DEFAULT` "
-                "for worker agents created during runtime."
+                "No new_worker_agent_kwargs provided. Workers created at "
+                "runtime will use default ChatAgent settings with "
+                "SearchToolkit, CodeExecutionToolkit, and ThinkingToolkit. "
+                "To customize runtime worker creation, pass a dictionary "
+                "with ChatAgent parameters, e.g.: {'model': your_model, "
+                "'tools': your_tools}. See ChatAgent documentation for all "
+                "available options."
             )
 
         coord_agent_sys_msg = BaseMessage.make_assistant_message(
@@ -202,6 +243,7 @@ class Workforce(BaseNode):
         user_role_name: str,
         assistant_agent_kwargs: Optional[Dict] = None,
         user_agent_kwargs: Optional[Dict] = None,
+        summarize_agent_kwargs: Optional[Dict] = None,
         chat_turn_limit: int = 3,
     ) -> Workforce:
         r"""Add a worker node to the workforce that uses `RolePlaying` system.
@@ -210,25 +252,29 @@ class Workforce(BaseNode):
             description (str): Description of the node.
             assistant_role_name (str): The role name of the assistant agent.
             user_role_name (str): The role name of the user agent.
-            assistant_agent_kwargs (Optional[Dict], optional): The keyword
-                arguments to initialize the assistant agent in the role
-                playing, like the model name, etc. Defaults to `None`.
-            user_agent_kwargs (Optional[Dict], optional): The keyword arguments
-                to initialize the user agent in the role playing, like the
-                model name, etc. Defaults to `None`.
-            chat_turn_limit (int, optional): The maximum number of chat turns
-                in the role playing. Defaults to 3.
+            assistant_agent_kwargs (Optional[Dict]): The keyword arguments to
+                initialize the assistant agent in the role playing, like the
+                model name, etc. (default: :obj:`None`)
+            user_agent_kwargs (Optional[Dict]): The keyword arguments to
+                initialize the user agent in the role playing, like the
+                model name, etc. (default: :obj:`None`)
+            summarize_agent_kwargs (Optional[Dict]): The keyword arguments to
+                initialize the summarize agent, like the model name, etc.
+                (default: :obj:`None`)
+            chat_turn_limit (int): The maximum number of chat turns in the
+                role playing. (default: :obj:`3`)
 
         Returns:
             Workforce: The workforce node itself.
         """
         worker_node = RolePlayingWorker(
-            description,
-            assistant_role_name,
-            user_role_name,
-            assistant_agent_kwargs,
-            user_agent_kwargs,
-            chat_turn_limit,
+            description=description,
+            assistant_role_name=assistant_role_name,
+            user_role_name=user_role_name,
+            assistant_agent_kwargs=assistant_agent_kwargs,
+            user_agent_kwargs=user_agent_kwargs,
+            summarize_agent_kwargs=summarize_agent_kwargs,
+            chat_turn_limit=chat_turn_limit,
         )
         self._children.append(worker_node)
         return self
@@ -501,3 +547,54 @@ class Workforce(BaseNode):
         for child_task in self._child_listening_tasks:
             child_task.cancel()
         self._running = False
+
+    def clone(self, with_memory: bool = False) -> 'Workforce':
+        r"""Creates a new instance of Workforce with the same configuration.
+
+        Args:
+            with_memory (bool, optional): Whether to copy the memory
+                (conversation history) to the new instance. If True, the new
+                instance will have the same conversation history. If False,
+                the new instance will have a fresh memory.
+                (default: :obj:`False`)
+
+        Returns:
+            Workforce: A new instance of Workforce with the same configuration.
+        """
+
+        # Create a new instance with the same configuration
+        new_instance = Workforce(
+            description=self.description,
+            coordinator_agent_kwargs={},
+            task_agent_kwargs={},
+            new_worker_agent_kwargs=self.new_worker_agent_kwargs,
+        )
+
+        new_instance.task_agent = self.task_agent.clone(with_memory)
+        new_instance.coordinator_agent = self.coordinator_agent.clone(
+            with_memory
+        )
+
+        for child in self._children:
+            if isinstance(child, SingleAgentWorker):
+                cloned_worker = child.worker.clone(with_memory)
+                new_instance.add_single_agent_worker(
+                    child.description, cloned_worker
+                )
+            elif isinstance(child, RolePlayingWorker):
+                new_instance.add_role_playing_worker(
+                    child.description,
+                    child.assistant_role_name,
+                    child.user_role_name,
+                    child.assistant_agent_kwargs,
+                    child.user_agent_kwargs,
+                    child.summarize_agent_kwargs,
+                    child.chat_turn_limit,
+                )
+            elif isinstance(child, Workforce):
+                new_instance.add_workforce(child.clone(with_memory))
+            else:
+                logger.warning(f"{type(child)} is not being cloned.")
+                continue
+
+        return new_instance

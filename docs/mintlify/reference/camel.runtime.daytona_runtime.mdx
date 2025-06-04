@@ -1,0 +1,136 @@
+<a id="camel.runtime.daytona_runtime"></a>
+
+<a id="camel.runtime.daytona_runtime.DaytonaRuntime"></a>
+
+## DaytonaRuntime
+
+```python
+class DaytonaRuntime(BaseRuntime):
+```
+
+A runtime that executes functions in a Daytona sandbox environment.
+Requires the Daytona server to be running and an API key configured.
+
+**Parameters:**
+
+- **api_key** (Optional[str]): The Daytona API key for authentication. If not provided, it will try to use the DAYTONA_API_KEY environment variable. (default: :obj: `None`)
+- **api_url** (Optional[str]): The URL of the Daytona server. If not provided, it will try to use the DAYTONA_API_URL environment variable. If none is provided, it will use "http://localhost:8000". (default: :obj: `None`)
+- **language** (Optional[str]): The programming language for the sandbox. (default: :obj: `"python"`)
+
+<a id="camel.runtime.daytona_runtime.DaytonaRuntime.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    api_key: Optional[str] = None,
+    api_url: Optional[str] = None,
+    language: Optional[str] = 'python'
+):
+```
+
+<a id="camel.runtime.daytona_runtime.DaytonaRuntime.build"></a>
+
+### build
+
+```python
+def build(self):
+```
+
+**Returns:**
+
+  DaytonaRuntime: The current runtime.
+
+<a id="camel.runtime.daytona_runtime.DaytonaRuntime._cleanup"></a>
+
+### _cleanup
+
+```python
+def _cleanup(self):
+```
+
+Clean up the sandbox when exiting.
+
+<a id="camel.runtime.daytona_runtime.DaytonaRuntime.add"></a>
+
+### add
+
+```python
+def add(
+    self,
+    funcs: Union[FunctionTool, List[FunctionTool]],
+    entrypoint: str,
+    arguments: Optional[Dict[str, Any]] = None
+):
+```
+
+Add a function or list of functions to the runtime.
+
+**Parameters:**
+
+- **funcs** (Union[FunctionTool, List[FunctionTool]]): The function or list of functions to add.
+- **entrypoint** (str): The entrypoint for the function.
+- **arguments** (Optional[Dict[str, Any]]): The arguments for the function. (default: :obj: `None`)
+
+**Returns:**
+
+  DaytonaRuntime: The current runtime.
+
+<a id="camel.runtime.daytona_runtime.DaytonaRuntime.info"></a>
+
+### info
+
+```python
+def info(self):
+```
+
+**Returns:**
+
+  str: Information about the sandbox.
+
+<a id="camel.runtime.daytona_runtime.DaytonaRuntime.__del__"></a>
+
+### __del__
+
+```python
+def __del__(self):
+```
+
+Clean up the sandbox when the object is deleted.
+
+<a id="camel.runtime.daytona_runtime.DaytonaRuntime.stop"></a>
+
+### stop
+
+```python
+def stop(self):
+```
+
+**Returns:**
+
+  DaytonaRuntime: The current runtime.
+
+<a id="camel.runtime.daytona_runtime.DaytonaRuntime.reset"></a>
+
+### reset
+
+```python
+def reset(self):
+```
+
+**Returns:**
+
+  DaytonaRuntime: The current runtime.
+
+<a id="camel.runtime.daytona_runtime.DaytonaRuntime.docs"></a>
+
+### docs
+
+```python
+def docs(self):
+```
+
+**Returns:**
+
+  str: The URL for the API documentation.

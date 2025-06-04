@@ -56,14 +56,14 @@ class AnthropicConfig(BaseConfig):
             metadata about the request. Can include user_id as an external
             identifier for the user associated with the request.
             (default: :obj:`None`)
-        thinking (dict, optional): Configuration for enabling
-            Claude's extended thinking. When enabled, responses include
-            thinking content blocks showing Claude's thinking process.
-            (default: :obj:`None`)
         tool_choice (dict, optional): How the model should
             use the provided tools. The model can use a specific tool, any
             available tool, decide by itself, or not use tools at all.
             (default: :obj:`None`)
+        extra_headers (Optional[dict], optional): Additional headers for the
+            request. (default: :obj:`None`)
+        extra_body (dict, optional): Extra body parameters to be passed to
+            the Anthropic API.
     """
 
     max_tokens: Optional[int] = None
@@ -73,8 +73,9 @@ class AnthropicConfig(BaseConfig):
     top_k: Optional[int] = None
     stream: Optional[bool] = None
     metadata: Optional[dict] = None
-    thinking: Optional[dict] = None
     tool_choice: Optional[dict] = None
+    extra_headers: Optional[dict] = None
+    extra_body: Optional[dict] = None
 
 
 ANTHROPIC_API_PARAMS = {param for param in AnthropicConfig.model_fields.keys()}

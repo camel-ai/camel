@@ -398,3 +398,147 @@ class StaticDataset(Dataset):
                     f"got {type(item).__name__}"
                 )
         return data
+
+    def save_to_json(self, file_path: Union[str, Path]) -> None:
+        r"""Save the dataset to a local JSON file.
+
+        Args:
+            file_path (Union[str, Path]): Path to the output JSON file.
+                If a string is provided, it will be converted to a Path object.
+
+        Raises:
+            TypeError: If file_path is not a string or Path object.
+            OSError: If there's an error writing to the file.
+        """
+        if isinstance(file_path, str):
+            file_path = Path(file_path)
+        elif not isinstance(file_path, Path):
+            raise TypeError(
+                f"Expected file_path to be a string or Path object, "
+                f"got {type(file_path).__name__}"
+            )
+
+        # Convert DataPoint objects to dictionaries
+        data_dicts = [datapoint.to_dict() for datapoint in self.data]
+
+        # Ensure the parent directory exists
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+
+        try:
+            logger.debug(f"Saving dataset to {file_path}")
+            with file_path.open('w', encoding='utf-8') as f:
+                json.dump(data_dicts, f, ensure_ascii=False, indent=2)
+            logger.info(
+                f"Successfully saved {len(data_dicts)} items to {file_path}"
+            )
+        except OSError as e:
+            logger.error(f"Error saving dataset to {file_path}: {e}")
+            raise
+
+    def save_to_huggingface(
+        self,
+        dataset_name: str,
+        token: Optional[str] = None,
+        filepath: str = "records/records.json",
+        private: bool = False,
+        description: Optional[str] = None,
+        license: Optional[str] = None,
+        version: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+        language: Optional[List[str]] = None,
+        task_categories: Optional[List[str]] = None,
+        authors: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> str:
+        r"""Save the dataset to the Hugging Face Hub using the project's
+        HuggingFaceDatasetManager.
+
+        Args:
+            dataset_name (str): The name of the dataset on Hugging Face Hub.
+                Should be in the format 'username/dataset_name' .
+            token (Optional[str]): The Hugging Face API token. If not provided,
+                the token will be read from the environment variable `HF_TOKEN`
+                (default: :obj:`None`)
+            filepath (str): The path in the repository where the dataset
+                will be saved.  (default: :obj:`"records/records.json"`)
+            private (bool): Whether the dataset should be private.
+                (default: :obj:`False`)
+            description (Optional[str]): A description of the dataset.
+                (default: :obj:`None`)
+            license (Optional[str]): The license of the dataset.
+                (default: :obj:`None`)
+            version (Optional[str]): The version of the dataset.
+                (default: :obj:`None`)
+            tags (Optional[List[str]]): A list of tags for the dataset.
+                (default: :obj:`None`)
+            language (Optional[List[str]]): A list of languages the dataset is
+                in. (default: :obj:`None`)
+            task_categories (Optional[List[str]]): A list of task categories.
+                (default: :obj:`None`)
+            authors (Optional[List[str]]): A list of authors of the dataset.
+                (default: :obj:`None`)
+            **kwargs (Any): Additional keyword arguments to pass to the
+                Hugging Face API.
+
+        Returns:
+            str: The URL of the dataset on the Hugging Face Hub.
+
+        Raises:
+            OSError: If there's an error uploading the dataset.
+        """
+        # lazy import to avoid heavy dependencies
+        from camel.datahubs.huggingface import HuggingFaceDatasetManager
+        from camel.datahubs.models import Record
+
+        # Initialize the HuggingFaceDatasetManager
+        manager = HuggingFaceDatasetManager(token=token)
+
+        # Convert DataPoint objects to Record objects
+        records = []
+        for datapoint in self.data:
+            datapoint_dict = datapoint.to_dict()
+
+            record_dict = {
+                "question": datapoint_dict.get("question", ""),
+                "final_answer": datapoint_dict.get("final_answer", ""),
+                "rationale": datapoint_dict.get("rationale", ""),
+                "metadata": datapoint_dict.get("metadata", {}),
+            }
+            record = Record(**record_dict)
+            records.append(record)
+
+        logger.debug(f"Creating dataset {dataset_name}")
+        try:
+            # Create the dataset
+            dataset_url = manager.create_dataset(
+                name=dataset_name, private=private, **kwargs
+            )
+
+            # Add records to the dataset
+            manager.add_records(
+                dataset_name=dataset_name,
+                records=records,
+                filepath=filepath,
+            )
+
+            # Create dataset card if description is provided
+            if description:
+                manager.create_dataset_card(
+                    dataset_name=dataset_name,
+                    description=description,
+                    license=license,
+                    version=version,
+                    tags=tags,
+                    authors=authors,
+                    language=language,
+                    task_categories=task_categories,
+                )
+
+            logger.info(
+                f"Successfully uploaded dataset to {dataset_name}, "
+                f"the url is {dataset_url}"
+            )
+            return dataset_url
+        except Exception as e:
+            logger.error(f"Error uploading dataset to Hugging Face: {e}")
+            raise
