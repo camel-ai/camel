@@ -163,6 +163,7 @@ class SingleStepEnv:
             RuntimeError: If called before all previous states are processed.
             ValueError: If batch size exceeds dataset size.
             TypeError: If the dataset is of an unsupported type.
+            asyncio.TimeoutError: If the environment setup times out or dataset sampling times out.
         """
         if batch_size <= 0:
             raise ValueError("Batch size must be positive")
@@ -171,7 +172,16 @@ class SingleStepEnv:
             logger.warning(
                 "reset() called on un-setup environment. Setting up..."
             )
-            await self.setup()
+            try:
+                # add timeout control
+                await asyncio.wait_for(
+                    self.setup(), 
+                    timeout=self._timeout
+                )
+            except asyncio.TimeoutError:
+                logger.error(f"Environment setup timed out after {self._timeout}s")
+                raise
+
 
         if self._batch_started() and not self._batch_done():
             logger.error(
@@ -218,11 +228,22 @@ class SingleStepEnv:
             return observations[0] if batch_size == 1 else observations
 
         elif isinstance(self.dataset, BaseGenerator):
-            self._states = [
-                await self.dataset.async_sample() for _ in range(batch_size)
-            ]
-            self.current_batch_size = batch_size
-            self._states_done = [False] * batch_size
+            self._states = []
+            for _ in range(batch_size):
+                try:
+                    # add timeout control for dataset sampling
+                    sample = await asyncio.wait_for(
+                        self.dataset.async_sample(),
+                        timeout=self._timeout
+                    )
+                    self._states.append(sample)
+                except asyncio.TimeoutError:
+                    logger.error(f"Dataset sampling timed out after {self._timeout}s")
+                    # raise exception to terminate the reset operation
+                    raise
+                
+            self.current_batch_size = len(self._states)
+            self._states_done = [False] * self.current_batch_size
 
             observations = [
                 Observation(
@@ -534,6 +555,9 @@ class SingleStepEnv:
             Tuple containing:
                 - List of total rewards for each solution.
                 - List of reward component dictionaries for each solution.
+
+        Raises:
+            asyncio.TimeoutError: If the custom reward computation times out.
         """
         if len(proposed_solutions) != len(verification_results):
             raise ValueError(
@@ -553,10 +577,23 @@ class SingleStepEnv:
                 self.ACCURACY_REWARD if verification_result.status else 0.0
             )
 
-            further_rewards = await self._compute_custom_reward(
-                solution, verification_result
-            )
-            rewards = {**rewards, **further_rewards}
+            try:
+                # add timeout control
+                further_rewards = await asyncio.wait_for(
+                    self._compute_custom_reward(
+                        solution, verification_result
+                    ),
+                    timeout=self._timeout,  # use existing timeout parameter
+                )
+                rewards = {**rewards, **further_rewards}
+            except asyncio.TimeoutError:
+                logger.warning(
+                    f"Custom reward computation timed out after {self._timeout}s"
+                )
+                # use empty dictionary as fallback strategy
+                further_rewards = {}
+                rewards = {**rewards, **further_rewards}  # only basic rewards
+
 
             total_reward = sum(rewards.values())
             total_rewards.append(total_reward)

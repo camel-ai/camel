@@ -345,3 +345,42 @@ async def test_full_game():
             assert done is False
 
     await env.close()
+
+@pytest.mark.asyncio
+async def test_extraction_timeout():
+    """Test timeout handling during move extraction in TicTacToeEnv."""
+    import asyncio
+    from unittest.mock import patch, AsyncMock
+    
+    env = TicTacToeEnv()
+    await env.setup()
+    await env.reset()
+    
+    # Create a mock extractor that simulates a timeout
+    mock_extract = AsyncMock()
+    # This will be replaced by our patched wait_for that raises TimeoutError
+    
+    # Store original wait_for to restore later
+    original_wait_for = asyncio.wait_for
+    
+    async def mock_wait_for(coro, timeout, *args, **kwargs):
+        # Check if this is the extractor.extract call
+        if "extract" in str(coro):
+            raise asyncio.TimeoutError("Simulated timeout during extraction")
+        # Otherwise, pass through to the original function
+        return await original_wait_for(coro, timeout, *args, **kwargs)
+    
+    # Patch asyncio.wait_for to simulate timeout
+    with patch('asyncio.wait_for', side_effect=mock_wait_for):
+        action = Action(llm_response="<Action>5</Action>")
+        obs, reward, done, info = await env.step(action)
+        
+        # Verify timeout was handled properly
+        state = env._state
+        assert state["last_move_illegal"] is True
+        assert state["extraction_error"] == "Extraction timed out"
+        assert reward == 0.0  # No reward for illegal move
+        assert done is False  # Game continues
+        assert "Your last move was illegal" in obs.question
+    
+    await env.close()

@@ -14,12 +14,16 @@
 import math
 import random
 import re
+import asyncio
+
 from typing import Any, ClassVar, Dict, List, Literal, Optional, Tuple
 
 from camel.environments.models import Action, Observation
 from camel.environments.multi_step import MultiStepEnv
 from camel.extractors import BaseExtractor, BaseExtractorStrategy
+from camel.logger import get_logger
 
+logger = get_logger(__name__)
 
 class MoveExtractor(BaseExtractorStrategy):
     r"""A strategy for extracting Tic Tac Toe actions from text."""
@@ -254,11 +258,27 @@ class TicTacToeEnv(MultiStepEnv):
 
         Returns:
             None
+
+        Raises:
+            asyncio.TimeoutError: If the move extraction times out.
         """
         board = self._state["board"]
 
-        # Attempt to parse the agent's chosen move
-        extraction_result = await self.extractor.extract(action.llm_response)
+         # Attempt to parse the agent's chosen move
+        try:
+            # Add timeout control
+            extraction_result = await asyncio.wait_for(
+                self.extractor.extract(action.llm_response),
+                timeout=self._timeout  # Use the timeout from MultiStepEnv
+            )
+        except asyncio.TimeoutError:
+            logger.error(f"Move extraction timed out after {self._timeout}s")
+            # Handle timeout gracefully
+            self._state["last_move_illegal"] = True
+            self._state["last_move"] = None
+            self._state["extraction_error"] = "Extraction timed out"
+            return
+
         if not extraction_result:
             # Handle extraction failure gracefully
             self._state["last_move_illegal"] = True

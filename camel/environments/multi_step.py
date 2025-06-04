@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from camel.environments.models import Action, Observation, StepResult
 from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
+import asyncio
 
 logger = get_logger(__name__)
 
@@ -29,6 +30,7 @@ class MultiStepEnv(ABC):
         self,
         extractor: BaseExtractor,
         max_steps: Optional[int] = None,
+        timeout: Optional[float] = 180.0,
         **kwargs,
     ) -> None:
         r"""Initialize the environment.
@@ -36,10 +38,12 @@ class MultiStepEnv(ABC):
         Args:
             extractor: Extractor to process LLM responses.
             max_steps: Maximum steps per episode.
+            timeout: The execution timeout in seconds.
             **kwargs: Additional environment parameters.
         """
         self.extractor = extractor
         self.max_steps = max_steps
+        self._timeout = timeout
         self._metadata = kwargs
 
         # State tracking
@@ -109,14 +113,23 @@ class MultiStepEnv(ABC):
 
         Raises:
             RuntimeError: If we fail to get the initial observation.
+            asyncio.TimeoutError: If the environment setup times out.
         """
 
         if not self._is_setup:
             logger.warning(
                 "reset() called on un-setup environment. Setting up..."
             )
-            await self.setup()
-
+            try:
+                # add timeout control
+                await asyncio.wait_for(
+                    self.setup(),
+                    timeout=self._timeout
+                )
+            except asyncio.TimeoutError:
+                logger.error(f"Environment setup timed out after {self._timeout}s")
+                raise
+            
         # Reset state
         self._current_step = 0
         self._episode_ended = False
@@ -151,6 +164,7 @@ class MultiStepEnv(ABC):
         Raises:
             RuntimeError: If the environment is not set up, the episode has
                 ended, or there is no valid current observation.
+            asyncio.TimeoutError: If the step operation times out.
         """
         if self.max_steps and self._current_step >= self.max_steps:
             return StepResult(
@@ -173,11 +187,43 @@ class MultiStepEnv(ABC):
         current_obs: Observation = self._last_observation
         self._episode_history.append((current_obs, action))
 
-        # Update the environment state based on the action
-        await self._update_state(action)
+        # Initialize info dictionary
+        info = {}
 
+        # Update the environment state based on the action
+        update_timed_out = False
+        try:
+            await asyncio.wait_for(
+                self._update_state(action),
+                timeout=self._timeout
+            )
+        except asyncio.TimeoutError:
+            update_timed_out = True
+            logger.error(f"State update timed out after {self._timeout}s")
+            # Don't raise, continue with error handling
+
+        # If update timed out, return error information
+        if update_timed_out:
+            return StepResult(
+                observation=self._last_observation,  # Use last observation
+                reward=0.0,  # Default reward
+                rewards_dict={},  # No rewards on timeout
+                done=False,  # Episode not done
+                info={"error": f"State update timed out after {self._timeout}s"}
+            ).as_tuple()
+        
         # Compute rewards
-        total_reward, rewards_dict = await self.compute_reward()
+        try:
+            total_reward, rewards_dict = await asyncio.wait_for(
+                self.compute_reward(),
+                timeout=self._timeout
+            )
+        except asyncio.TimeoutError:
+            logger.error(f"Reward computation timed out after {self._timeout}s")
+            # raise exception to terminate the step operation
+            total_reward = 0.0
+            rewards_dict = {}
+            info["error"] = f"Reward computation timed out after {self._timeout}s"
 
         # Check termination
         done = self.is_done()
@@ -192,18 +238,39 @@ class MultiStepEnv(ABC):
         self._last_observation = next_obs
         self._episode_ended = done
 
+
+        extraction_result = None
+        try:
+            extraction_result = await asyncio.wait_for(
+                self.extractor.extract(action.llm_response),
+                timeout=self._timeout
+            )
+        except asyncio.TimeoutError:
+            logger.error(f"Extraction timed out after {self._timeout}s")
+            # Don't raise, use default values instead
+            extraction_result = None
+            if info is None:
+                info = {}
+            info["error"] = f"Extraction timed out after {self._timeout}s"
+        
+        # If we have no info dict yet (no errors occurred), create one
+        if info is None:
+            info = {}
+        
+        # Add extraction result to info if available and no error occurred
+        if "error" not in info and extraction_result is not None:
+            info["extraction_result"] = extraction_result
+            
+        # Add step and state info
+        info["step"] = self._current_step
+        info["state"] = self._state  # Updated state
+
         return StepResult(
             observation=next_obs,
             reward=total_reward,
             rewards_dict=rewards_dict,
             done=done,
-            info={
-                "extraction_result": await self.extractor.extract(
-                    action.llm_response
-                ),
-                "step": self._current_step,
-                "state": self._state,  # Updated state
-            },
+            info=info,
         ).as_tuple()
 
     @abstractmethod
