@@ -15,10 +15,10 @@ import json
 import logging
 import re
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, List, Optional, Union
+from typing import TYPE_CHECKING, Any, List, Optional
 
 if TYPE_CHECKING:
-    from weaviate import WeaviateAsyncClient, WeaviateClient
+    from weaviate import WeaviateClient
 
 from camel.storages.vectordb_storages import (
     BaseVectorStorage,
@@ -37,9 +37,8 @@ class WeaviateStorage(BaseVectorStorage):
     Weaviate, a cloud-native vector search engine.
 
     Args:
-        client (Union[WeaviateClient, WeaviateAsyncClient]):
-          A pre-configured Weaviate client instance. Can be either
-            synchronous (WeaviateClient) or asynchronous (WeaviateAsyncClient).
+        client (WeaviateClient):
+          A pre-configured Weaviate client instance.
         vector_dim (int): The dimension of storing vectors.
         collection_name (Optional[str], optional): Name for the collection in
             the Weaviate. If not provided, set it to the current time with iso
@@ -52,21 +51,19 @@ class WeaviateStorage(BaseVectorStorage):
 
     Note:
         This implementation currently supports synchronous operations only.
-        If an async client is provided, it will be used but operations will
-        be performed synchronously.
     """
 
     @dependencies_required('weaviate')
     def __init__(
         self,
-        client: Union["WeaviateClient", "WeaviateAsyncClient"],
+        client: "WeaviateClient",
         vector_dim: int,
         collection_name: Optional[str] = None,
     ) -> None:
         if client is None:
             raise ValueError("Weaviate client cannot be None")
 
-        self._client: Union["WeaviateClient", "WeaviateAsyncClient"] = client
+        self._client: "WeaviateClient" = client
         self.vector_dim = vector_dim
         self.collection_name = (
             collection_name or self._generate_collection_name()
@@ -131,7 +128,7 @@ class WeaviateStorage(BaseVectorStorage):
         try:
             collection = self._client.collections.get(self.collection_name)
 
-            with collection.batch.dynamic() as batch:  # type: ignore[union-attr]
+            with collection.batch.dynamic() as batch:
                 for record in records:
                     payload_str = (
                         json.dumps(record.payload) if record.payload else ""
@@ -141,6 +138,10 @@ class WeaviateStorage(BaseVectorStorage):
                         vector=record.vector,
                         uuid=record.id,
                     )
+            logger.debug(
+                f"Successfully added vectors to Weaviate collection: "
+                f"{self.collection_name}"
+            )
 
         except Exception as e:
             raise RuntimeError(f"Failed to add vectors to Weaviate: {e}")
@@ -168,6 +169,10 @@ class WeaviateStorage(BaseVectorStorage):
             from weaviate.classes.query import Filter
 
             collection.data.delete_many(where=Filter.by_id().contains_any(ids))
+            logger.debug(
+                f"Successfully deleted vectors in Weaviate: "
+                f"{self.collection_name}"
+            )
 
         except Exception as e:
             raise RuntimeError(f"Failed to delete vectors from Weaviate: {e}")
@@ -181,12 +186,10 @@ class WeaviateStorage(BaseVectorStorage):
         try:
             collection = self._client.collections.get(self.collection_name)
             objects = collection.aggregate.over_all(total_count=True)
-            # Handle both sync and async return types
-            vector_count = 0
-            if hasattr(objects, 'total_count'):
-                vector_count = (
-                    objects.total_count if objects.total_count else 0
-                )  # type: ignore[union-attr]
+
+            vector_count = (
+                objects.total_count if objects.total_count is not None else 0
+            )
 
             return VectorDBStatus(
                 vector_dim=self.vector_dim, vector_count=vector_count
@@ -213,6 +216,8 @@ class WeaviateStorage(BaseVectorStorage):
             List[VectorDBQueryResult]: A list of vectors retrieved from the
                 storage based on similarity to the query vector.
         """
+        from weaviate.classes.query import MetadataQuery
+
         try:
             collection = self._client.collections.get(self.collection_name)
 
@@ -220,50 +225,36 @@ class WeaviateStorage(BaseVectorStorage):
                 near_vector=query.query_vector,
                 limit=query.top_k,
                 include_vector=True,
-                return_metadata=['distance'],
+                return_metadata=MetadataQuery(score=True),
             )
 
             results = []
-            # Handle both sync and async response types
-            objects = getattr(response, 'objects', [])  # type: ignore[union-attr]
-            for obj in objects:
-                distance = (
-                    obj.metadata.distance
-                    if obj.metadata.distance is not None
-                    else 0.0
-                )
-                similarity = 1.0 - distance
+            for obj in response.objects:
+                # Use score as similarity score
+                similarity = obj.metadata.score or 0.0
 
+                # Handle payload
                 payload = None
-                payload_value = obj.properties.get('payload')
-                if payload_value:
-                    try:
-                        # Handle different payload types
-                        if isinstance(payload_value, str):
+                if obj.properties.get('payload'):
+                    payload_value = obj.properties['payload']
+                    if isinstance(payload_value, str):
+                        try:
                             payload = json.loads(payload_value)
-                        else:
-                            payload = {"raw": str(payload_value)}
-                    except (json.JSONDecodeError, TypeError):
+                        except (json.JSONDecodeError, TypeError):
+                            payload = {"raw": payload_value}
+                    else:
                         payload = {"raw": str(payload_value)}
 
-                # Ensure vector is a list of floats
-                vector_data = obj.vector or []
-                if isinstance(vector_data, dict):
-                    # Handle case where vector is a dict
-                    vector_list = []
-                    for v in vector_data.values():
-                        if isinstance(v, list):
-                            vector_list.extend(v)
-                        else:
-                            vector_list.append(float(v))
-                elif isinstance(vector_data, list):
-                    vector_list = [float(x) for x in vector_data]
+                # Handle vector data
+                vector_data: Any = obj.vector or []
+                if isinstance(vector_data, list):
+                    vector = [float(x) for x in vector_data]
                 else:
-                    vector_list = []
+                    vector = []
 
                 result = VectorDBQueryResult.create(
                     similarity=similarity,
-                    vector=vector_list,
+                    vector=vector,
                     id=str(obj.uuid),
                     payload=payload,
                 )
@@ -289,6 +280,6 @@ class WeaviateStorage(BaseVectorStorage):
         pass
 
     @property
-    def client(self) -> Union["WeaviateClient", "WeaviateAsyncClient"]:
+    def client(self) -> "WeaviateClient":
         r"""Provides access to the underlying vector database client."""
         return self._client
