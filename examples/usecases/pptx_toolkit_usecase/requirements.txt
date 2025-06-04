@@ -1,0 +1,4 @@
+camel-ai==0.2.61
+streamlit
+openai
+python-pptx
