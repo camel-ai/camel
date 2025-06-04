@@ -20,7 +20,7 @@ import subprocess
 import sys
 import tempfile
 import venv
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple, Awaitable, TypeVar
 
 from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
@@ -30,6 +30,7 @@ from .models import VerificationOutcome, VerificationResult
 
 logger = get_logger(__name__)
 
+from camel.verifiers.base import with_timeout, TIMEOUT_THRESHOLD
 
 class PythonVerifier(BaseVerifier):
     r"""The PythonVerifier class verifies Python-based implementations
@@ -309,9 +310,11 @@ class PythonVerifier(BaseVerifier):
             )
 
         try:
-            sol_out, sol_err, sol_code = await self._run_code_block(
-                solution, venv_python
-            )
+            sol_out, sol_err, sol_code = await with_timeout(
+                self._run_code_block(solution, venv_python),
+                timeout=self._timeout if self._timeout else TIMEOUT_THRESHOLD,
+                context="running Python solution"
+            ) 
             if sol_code != 0:
                 return VerificationResult(
                     status=VerificationOutcome.ERROR,
@@ -416,11 +419,13 @@ class PythonVerifier(BaseVerifier):
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
-        stdout, stderr = await asyncio.wait_for(
-            proc.communicate(), timeout=self._timeout
+        stdout, stderr = await with_timeout(
+            proc.communicate(),
+            timeout=self._timeout if self._timeout else TIMEOUT_THRESHOLD,
+            context="executing Python code"
         )
         os.remove(tmp_path)
-        return (
+        return (    
             stdout.decode().strip(),
             stderr.decode().strip(),
             proc.returncode if proc.returncode is not None else -1,

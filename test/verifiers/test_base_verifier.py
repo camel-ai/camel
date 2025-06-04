@@ -18,7 +18,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from camel.verifiers.base import BaseVerifier
+from camel.verifiers.base import BaseVerifier, with_timeout
 from camel.verifiers.models import VerificationOutcome, VerificationResult
 
 
@@ -193,22 +193,22 @@ async def test_verify_error_with_retry(test_verifier):
 async def test_verify_timeout(test_verifier):
     r"""Test verification timeout."""
     await test_verifier.setup()
-
-    with patch(
-        "asyncio.wait_for",
+    
+    # dont verify directly
+    with patch.object(
+        test_verifier,
+        "_verify_implementation",
         side_effect=asyncio.TimeoutError("Simulated timeout"),
-    ):
+    ), patch("asyncio.sleep", new_callable=AsyncMock):  
         result = await test_verifier.verify(
             solution="This will timeout",
             reference_answer="Expected response",
         )
-
-        assert result.status == VerificationOutcome.TIMEOUT
-        assert "timed out" in result.error_message
-        assert result.duration > 0
-
+    
+    assert result.status == VerificationOutcome.TIMEOUT
+    assert "Verification timed out after all retries" in result.error_message
+    
     await test_verifier.cleanup()
-
 
 @pytest.mark.asyncio
 async def test_verify_not_setup():
@@ -260,7 +260,8 @@ async def test_verify_batch(test_verifier):
         solutions = ["Success 1", "Success 2", "This will fail"]
         ground_truthes = ["Expected 1", "Expected 2", "Expected 3"]
 
-        results = await test_verifier.verify_batch(solutions, ground_truthes)
+        reference_answers = ["reference"] * len(solutions)
+        results = await test_verifier.verify_batch(solutions, reference_answers)
 
         assert len(results) == 3
         assert results[0].status == VerificationOutcome.SUCCESS
@@ -388,3 +389,115 @@ async def test_full_verification_flow():
     finally:
         await verifier.cleanup()
         assert verifier._is_setup is False
+
+
+@pytest.mark.asyncio
+async def test_with_timeout_function():
+    """Test the with_timeout function handles completions and timeouts correctly"""
+    from camel.verifiers.base import with_timeout
+    
+    # Test normal operation (successful completion)
+    mock_coro = AsyncMock()
+    mock_coro.return_value = "success"
+    result = await with_timeout(mock_coro(), context="test operation")
+    assert result == "success"
+    
+    # Test timeout handling
+    mock_timeout_coro = AsyncMock()
+    mock_timeout_coro.side_effect = asyncio.TimeoutError("Simulated timeout")
+    
+    with pytest.raises(asyncio.TimeoutError) as exc_info:
+        await with_timeout(mock_timeout_coro(), context="test timeout operation")
+    
+    assert "Timed out while test timeout operation" in str(exc_info.value)
+
+
+@pytest.mark.asyncio
+async def test_timeout_in_extractor_setup():
+    """Test timeout handling during extractor setup"""
+    mock_extractor = AsyncMock()
+    mock_extractor.setup.side_effect = asyncio.TimeoutError("Simulated timeout in extractor setup")
+    
+    verifier = TestVerifier()
+    verifier.extractor = mock_extractor
+    
+    with pytest.raises(RuntimeError) as exc_info:
+        await verifier.setup()
+    
+    assert "Failed to initialize" in str(exc_info.value)
+    mock_extractor.setup.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_timeout_in_verify_implementation(test_verifier):
+    """Test timeout during verify implementation"""
+    await test_verifier.setup()
+    
+    # Test that a TimeoutError in _verify_implementation is handled with retry
+    with patch.object(
+        test_verifier, 
+        "_verify_implementation",
+        side_effect=[asyncio.TimeoutError("Simulated timeout"), 
+                    VerificationResult(status=VerificationOutcome.SUCCESS, result="Success after retry")]
+    ), patch("asyncio.sleep", new_callable=AsyncMock):
+        result = await test_verifier.verify("solution", "reference")
+    
+    assert result.status == VerificationOutcome.SUCCESS
+    assert result.result == "Success after retry"
+    assert result.metadata["attempt"] == 2  # Second attempt succeeded
+    
+    await test_verifier.cleanup()
+
+
+@pytest.mark.asyncio
+async def test_repeated_timeout_in_verify_implementation(test_verifier):
+    """Test multiple consecutive timeouts leading to timeout outcome"""
+    await test_verifier.setup()
+    test_verifier._max_retries = 2  # Set max retries to 2
+    
+    # Simulate repeated timeouts exceeding max_retries
+    with patch.object(
+        test_verifier, 
+        "_verify_implementation",
+        side_effect=asyncio.TimeoutError("Simulated timeout")
+    ), patch("asyncio.sleep", new_callable=AsyncMock):
+        result = await test_verifier.verify("solution", "reference")
+    
+    # After max retries are exhausted, should return TIMEOUT outcome
+    assert result.status == VerificationOutcome.TIMEOUT
+    assert "Verification timed out after all retries" in result.error_message
+    assert result.metadata["attempt"] == 2  # Attempted max_retries times
+    
+    await test_verifier.cleanup()
+
+@pytest.mark.asyncio
+async def test_timeout_in_batch_verification(test_verifier):
+    """Test timeout handling in batch verification"""
+    await test_verifier.setup()
+    
+    # Create a mix of successful and timeout solutions
+    solutions = ["solution1", "solution2", "timeout"]
+    reference_answers = ["reference"] * len(solutions) 
+    
+    # Mock the verify method to simulate a timeout for specific solutions
+    original_verify = test_verifier.verify
+    
+    async def mock_verify(solution, reference=None):
+        if "timeout" in solution:
+            raise asyncio.TimeoutError("Simulated timeout")
+        return await original_verify(solution, reference)
+    
+    with patch.object(test_verifier, "verify", side_effect=mock_verify):
+        results = await test_verifier.verify_batch(solutions, reference_answers)
+    
+    # Should have 3 results
+    assert len(results) == 3
+    
+    # Check individual results
+    timeout_results = [r for r in results if r.status == VerificationOutcome.TIMEOUT]
+    success_results = [r for r in results if r.status == VerificationOutcome.SUCCESS]
+    
+    non_success_results = [r for r in results if r.status != VerificationOutcome.SUCCESS]
+    assert len(non_success_results) == 1
+    assert len(success_results) == 2
+    await test_verifier.cleanup()

@@ -14,7 +14,7 @@
 import asyncio
 import time
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List, Optional, Awaitable, TypeVar
 
 from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
@@ -24,6 +24,33 @@ from .models import VerificationOutcome, VerificationResult
 
 logger = get_logger(__name__)
 
+TIMEOUT_THRESHOLD = 180.0  # Default timeout in seconds
+
+T = TypeVar('T')
+
+async def with_timeout(
+    coro: Awaitable[T],
+    timeout: float = TIMEOUT_THRESHOLD,
+    context: str = "operation"
+) -> T:
+    """General timeout wrapper for async operations.
+    
+    Args:
+        coro: async operation to be executed
+        timeout: max wait time (seconds)
+        context: context information, used for error messages
+        
+    Returns:
+        result of the async operation
+        
+    Raises:
+        asyncio.TimeoutError: if wait times out
+    """
+    try:
+        return await asyncio.wait_for(coro, timeout=timeout)
+    except asyncio.TimeoutError:
+        logger.error(f"Operation timed out after {timeout}s: {context}")
+        raise asyncio.TimeoutError(f"Timed out while {context}")
 
 class BaseVerifier(ABC):
     r"""Base class for all verifiers.
@@ -103,7 +130,7 @@ class BaseVerifier(ABC):
 
         try:
             if self.extractor:
-                await self.extractor.setup()
+                await with_timeout(self.extractor.setup(), context="setting up extractor")
             batch_size = max(1, self._initial_batch_size or 10)
             max_parallel = max(1, self._max_parallel or 1)
             self._batch_processor = BatchProcessor()
@@ -113,7 +140,8 @@ class BaseVerifier(ABC):
                 f"batch_size={batch_size}, max_parallel={max_parallel}"
             )
 
-            await self._setup(**kwargs)
+            await with_timeout(self._setup(**kwargs),\
+                context=f"setting up {self.__class__.__name__}")
             self._is_setup = True
 
         except Exception as e:
@@ -121,7 +149,7 @@ class BaseVerifier(ABC):
                 f"Failed to initialize {self.__class__.__name__}: {e!s}"
             )
             logger.error(error_msg, exc_info=True)
-            await self.cleanup()
+            await with_timeout(self.cleanup(), context="cleaning up")
             raise RuntimeError(error_msg) from e
 
     @abstractmethod
@@ -144,9 +172,9 @@ class BaseVerifier(ABC):
 
         try:
             if self.extractor:
-                await self.extractor.cleanup()
+                await with_timeout(self.extractor.cleanup(), context="cleaning up extractor")
             self._batch_processor = BatchProcessor()
-            await self._cleanup()
+            await with_timeout(self._cleanup(), context=f"cleaning up {self.__class__.__name__}")
             logger.info(f"{self.__class__.__name__} cleaned up successfully")
 
         except Exception as e:
@@ -194,7 +222,7 @@ class BaseVerifier(ABC):
             logger.warning(
                 f"{self.__class__.__name__} not set up, calling setup()"
             )
-            await self.setup()
+            await with_timeout(self.setup(), context="setting up verifier")
 
         attempt = 0
         start_time = time.time()
@@ -203,7 +231,7 @@ class BaseVerifier(ABC):
             # Extract verifiable part of the proposed solution,
             # if verifier has been initialized with extractor.
             verifiable_solution = (
-                await self.extractor.extract(solution)
+                await with_timeout(self.extractor.extract(solution), context="extracting solution")
                 if self.extractor
                 else solution
             )
@@ -222,21 +250,16 @@ class BaseVerifier(ABC):
                     f"Failed to extract verifiable solution on attempt "
                     f"{attempt}, retrying..."
                 )
-                await asyncio.sleep(self._retry_delay)
+                await with_timeout(asyncio.sleep(self._retry_delay), context="waiting before retrying")
                 continue
 
             try:
-                verification_result = (
-                    await asyncio.wait_for(
-                        self._verify_implementation(
-                            verifiable_solution, reference_answer
-                        ),
-                        timeout=self._timeout,
-                    )
-                    if self._timeout
-                    else await self._verify_implementation(
+                verification_result = await with_timeout(
+                    self._verify_implementation(
                         verifiable_solution, reference_answer
-                    )
+                    ),
+                    timeout=self._timeout if self._timeout else TIMEOUT_THRESHOLD,
+                    context="verifying solution"
                 )
 
                 verification_result.duration = time.time() - start_time
@@ -257,7 +280,7 @@ class BaseVerifier(ABC):
                 logger.warning(
                     f"Verification timeout on attempt {attempt}, retrying..."
                 )
-                await asyncio.sleep(self._retry_delay)
+                await with_timeout(asyncio.sleep(self._retry_delay), context="waiting before retrying")
 
             except Exception as e:
                 attempt += 1
@@ -269,7 +292,7 @@ class BaseVerifier(ABC):
                         duration=time.time() - start_time,
                         metadata={"attempt": attempt},
                     )
-                await asyncio.sleep(self._retry_delay)
+                await with_timeout(asyncio.sleep(self._retry_delay), context="waiting before retrying")
 
         return VerificationResult(
             status=VerificationOutcome.ERROR,
@@ -339,7 +362,7 @@ class BaseVerifier(ABC):
             logger.warning(
                 f"{self.__class__.__name__} not set up, calling setup()"
             )
-            await self.setup()
+            await with_timeout(self.setup(), context="setting up verifier")
 
         # Retrieve batch processing settings
         max_workers = getattr(
@@ -356,8 +379,12 @@ class BaseVerifier(ABC):
             start_time = time.time()
             try:
                 async with semaphore:
-                    verification_result = await self.verify(
-                        solution, reference_answer
+                    verification_result = await with_timeout(
+                        self.verify(
+                            solution, reference_answer
+                        ),
+                        timeout=self._timeout if self._timeout else TIMEOUT_THRESHOLD,
+                        context="verifying solution"
                     )
                 processing_time = time.time() - start_time
                 success = (
@@ -391,7 +418,11 @@ class BaseVerifier(ABC):
                 )
             ]
             try:
-                batch_results = await asyncio.gather(*verification_tasks)
+                batch_results = await with_timeout(
+                    asyncio.gather(*verification_tasks),
+                    timeout=self._timeout if self._timeout else TIMEOUT_THRESHOLD,
+                    context="verifying solutions"
+                )
                 all_results.extend(batch_results)
             except Exception as e:
                 logger.error(
