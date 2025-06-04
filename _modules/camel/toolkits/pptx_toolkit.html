@@ -1,0 +1,1360 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>camel.toolkits.pptx_toolkit &#8212; CAMEL 0.2.62 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=3c972f42" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../../_static/documentation_options.js?v=b2b93ad3"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/camel/toolkits/pptx_toolkit';</script>
+    <link rel="icon" href="https://raw.githubusercontent.com/camel-ai/camel/master/misc/favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png" class="logo__image only-light" alt=""/>
+    <script>document.write(`<img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png" class="logo__image only-dark" alt=""/>`);</script>
+  
+  
+    <p class="title logo__title">CAMEL 0.2.62</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Get Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../get_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../get_started/setup.html">API Setup</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Key Modules</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/agents.html">1. Concept</a></li>
+
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/datagen.html">Chain of Thought (CoT) Data Generation</a></li>
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/models.html">1. Concept</a></li>
+
+
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/messages.html">1. Concept</a></li>
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/memory.html">1. Concept</a></li>
+
+
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/tools.html">1. Concept</a></li>
+
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/prompts.html">1. Concept</a></li>
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/runtimes.html">1. Concept</a></li>
+
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/tasks.html">1. Concept</a></li>
+
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/loaders.html">1. Concept</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/storages.html">1. Concept</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/society.html">1. Concept</a></li>
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/embeddings.html">1. Concept</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/retrievers.html">1. Concept</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/workforce.html">System Design</a></li>
+
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Cookbooks</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/basic_concepts/index.html">Basic Concepts</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/create_your_first_agent.html">Creating Your First Agent</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/create_your_first_agents_society.html">Creating Your First Agent Society</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/agents_message.html">Message Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/agents_prompting.html">Prompting Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/basic_concepts/model_speed_comparison.html">Model Speed Comparison Cookbook</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/advanced_features/index.html">Advanced Features</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_tools.html">Tools Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_tools_from_ACI.html">Using Tools from ACI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_tools_from_Composio.html">Using Tools from Composio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_human_in_loop_and_tool_approval.html">Agents with Human-in-loop and Tool Approval from HumanLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_memory.html">Memory Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_rag.html">RAG Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_graph_rag.html">Graph RAG Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_with_MCP.html">CAMEL MCP Cookbook</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/agents_tracking.html">Track CAMEL Agents with AgentOps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/critic_agents_and_tree_search.html">Critic Agents and Tree Search</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/advanced_features/embodied_agents.html">Embodied Agents</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/multi_agent_society/index.html">Multi-agent Society</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/multi_agent_society/agents_society.html">Develop Trading Bot with Role Playing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/multi_agent_society/workforce_judge_committee.html">Create A Hackathon Judge Committee with Workforce</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/multi_agent_society/task_generation.html">Task Generation Cookbook</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/data_generation/index.html">Agentic Data Generation</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_mistral_7b_instruct.html">Agentic SFT Data generation with CAMEL and finetuning Mistral models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B.html">Agentic Data generation with CAMEL and finetuning Qwen models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_tinyllama.html">Agentic SFT Data generation with CAMEL and finetuning Meta models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/data_gen_with_real_function_calls_and_hermes_format.html">Real Function Calls and Hermes Format Data Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/self_instruct_data_generation.html">Self-instruct Data Generation Using Qwen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/cot_data_gen_sft_qwen_unsolth_upload_huggingface.html">CoT Data Generation and SFT Qwen With Unsloth</a></li>
+
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/synthetic_dataevaluation%26filter_with_reward_model.html">Agentic Data Generation, Evaluation &amp; Filtering with Reward Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/data_model_generation_and_structured_output_with_qwen.html">Agentic Data Model Generation and Structured Output Powered by CAMEL &amp; Qwen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/distill_math_reasoning_data_from_deepseek_r1.html">Distill Math Reasoning Data from DeepSeek R1 with CAMEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/self_improving_math_reasoning_data_distillation_from_deepSeek_r1.html">Self-Improving Math Reasoning Data Distillation from DeepSeek R1 with CAMEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_generation/self_improving_cot_generation.html">Deep Dive into CAMEL’s Practices for Self-Improving CoT Generation 🚀</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/applications/index.html">Applications</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/roleplaying_scraper.html">Role-Playing Scraper for Report &amp; Knowledge Graph Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/dynamic_travel_planner.html">Dynamic Travel Planner Role-Playing: Multi-Agent System with Real-Time Insights Powered by Dappier</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/customer_service_Discord_bot_with_agentic_RAG.html">Customer Service Discord Bot with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/customer_service_Discord_bot_using_SambaNova_with_agentic_RAG.html">Customer Service Discord Bot Using SambaNova with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/customer_service_Discord_bot_using_local_model_with_agentic_RAG.html">Customer Service Discord Bot Using Local Models with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/applications/finance_discord_bot.html">Customer Service Discord Bot for Finance with OpenBB</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/data_processing/index.html">Data Processing and Analysis</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_processing/video_analysis.html">Video Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_processing/agent_with_chunkr_for_pdf_parsing.html">Create AI Agents that work with your PDFs using Chunkr &amp; Mistral AI</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_processing/summarisation_agent_with_mistral_ocr.html">Create Document Summarization Agents with Mistral OCR &amp; CAMEL-AI 🐫</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/data_processing/ingest_data_from_websites_with_Firecrawl.html">3 ways to ingest data from websites with Firecrawl</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/loong/index.html">Loong Cookbooks</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/loong/batched_single_step_env.html">Batched Single Step Environment in Camel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/loong/multi_step_rl.html">Tic Tac Toe</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/loong/single_step_env.html">Single Step Environment in Camel</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../cookbooks/mcp/index.html">MCP Cookbooks</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cookbooks/mcp/agents_with_sql_mcp.html">CAMEL Cookbook: SQL MCP Server</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../modules.html">camel</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../camel.html">camel package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.agents.html">camel.agents package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.agents.tool_agents.html">camel.agents.tool_agents package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.configs.html">camel.configs package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.datagen.html">camel.datagen package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.datagen.self_instruct.html">camel.datagen.self_instruct package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.datagen.source2synth.html">camel.datagen.source2synth package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.embeddings.html">camel.embeddings package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.interpreters.html">camel.interpreters package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.loaders.html">camel.loaders package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.memories.html">camel.memories package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.memories.blocks.html">camel.memories.blocks package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.memories.context_creators.html">camel.memories.context_creators package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.messages.html">camel.messages package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.models.html">camel.models package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.prompts.html">camel.prompts package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.responses.html">camel.responses package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.retrievers.html">camel.retrievers package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.societies.html">camel.societies package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.societies.workforce.html">camel.societies.workforce package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.storages.html">camel.storages package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.graph_storages.html">camel.storages.graph_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.key_value_storages.html">camel.storages.key_value_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.object_storages.html">camel.storages.object_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.vectordb_storages.html">camel.storages.vectordb_storages package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.tasks.html">camel.tasks package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.terminators.html">camel.terminators package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.toolkits.html">camel.toolkits package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.types.html">camel.types package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.utils.html">camel.utils package</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/camel-ai/camel" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/camel-ai/camel/issues/new?title=Issue%20on%20page%20%2F_modules/camel/toolkits/pptx_toolkit.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for camel.toolkits.pptx_toolkit</h1><div class="highlight"><pre>
+<span></span><span class="c1"># ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1"># ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========</span>
+
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pptx</span><span class="w"> </span><span class="kn">import</span> <span class="n">presentation</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pptx.slide</span><span class="w"> </span><span class="kn">import</span> <span class="n">Slide</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pptx.text.text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TextFrame</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.toolkits.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseToolkit</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.toolkits.function_tool</span><span class="w"> </span><span class="kn">import</span> <span class="n">FunctionTool</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">MCPServer</span><span class="p">,</span> <span class="n">api_keys_required</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1"># Constants</span>
+<span class="n">EMU_TO_INCH_SCALING_FACTOR</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="mi">914400</span>
+
+<span class="n">STEP_BY_STEP_PROCESS_MARKER</span> <span class="o">=</span> <span class="s1">&#39;&gt;&gt; &#39;</span>
+
+<span class="n">IMAGE_DISPLAY_PROBABILITY</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="mf">3.0</span>
+
+<span class="n">SLIDE_NUMBER_REGEX</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;^slide[ ]+\d+:&quot;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+<span class="n">BOLD_ITALICS_PATTERN</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;(\*\*(.*?)\*\*|\*(.*?)\*)&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="PPTXToolkit">
+<a class="viewcode-back" href="../../../camel.toolkits.html#camel.toolkits.PPTXToolkit">[docs]</a>
+<span class="nd">@MCPServer</span><span class="p">()</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PPTXToolkit</span><span class="p">(</span><span class="n">BaseToolkit</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;A toolkit for creating and writing PowerPoint presentations (PPTX</span>
+<span class="sd">    files).</span>
+
+<span class="sd">    This class provides cross-platform support for creating PPTX files with</span>
+<span class="sd">    title slides, content slides, text formatting, and image embedding.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;./&quot;</span><span class="p">,</span>
+        <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Initialize the PPTXToolkit.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            output_dir (str): The default directory for output files.</span>
+<span class="sd">                Defaults to the current working directory.</span>
+<span class="sd">            timeout (Optional[float]): The timeout for the toolkit.</span>
+<span class="sd">                (default: :obj: `None`)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;PPTXToolkit initialized with output directory: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_resolve_filepath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Convert the given string path to a Path object.</span>
+
+<span class="sd">        If the provided path is not absolute, it is made relative to the</span>
+<span class="sd">        default output directory. The filename part is sanitized to replace</span>
+<span class="sd">        spaces and special characters with underscores, ensuring safe usage</span>
+<span class="sd">        in downstream processing.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            file_path (str): The file path to resolve.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Path: A fully resolved (absolute) and sanitized Path object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path_obj</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">path_obj</span><span class="o">.</span><span class="n">is_absolute</span><span class="p">():</span>
+            <span class="n">path_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span> <span class="o">/</span> <span class="n">path_obj</span>
+
+        <span class="n">sanitized_filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sanitize_filename</span><span class="p">(</span><span class="n">path_obj</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">path_obj</span> <span class="o">=</span> <span class="n">path_obj</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="n">sanitized_filename</span>
+        <span class="k">return</span> <span class="n">path_obj</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_sanitize_filename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Sanitize a filename by replacing special characters and spaces.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            filename (str): The filename to sanitize.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The sanitized filename.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+
+        <span class="c1"># Replace spaces and special characters with underscores</span>
+        <span class="n">sanitized</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;[^\w\-_\.]&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="c1"># Remove multiple consecutive underscores</span>
+        <span class="n">sanitized</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;_+&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">,</span> <span class="n">sanitized</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">sanitized</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_format_text</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">frame_paragraph</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">set_color_to_white</span><span class="o">=</span><span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Apply bold and italic formatting while preserving the original</span>
+<span class="sd">        word order.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            frame_paragraph: The paragraph to format.</span>
+<span class="sd">            text (str): The text to format.</span>
+<span class="sd">            set_color_to_white (bool): Whether to set the color to white.</span>
+<span class="sd">                (default: :obj: `False`)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">pptx.dml.color</span><span class="w"> </span><span class="kn">import</span> <span class="n">RGBColor</span>
+
+        <span class="n">matches</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">BOLD_ITALICS_PATTERN</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">text</span><span class="p">))</span>
+        <span class="n">last_index</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">matches</span><span class="p">:</span>
+            <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">span</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">start</span> <span class="o">&gt;</span> <span class="n">last_index</span><span class="p">:</span>
+                <span class="n">run</span> <span class="o">=</span> <span class="n">frame_paragraph</span><span class="o">.</span><span class="n">add_run</span><span class="p">()</span>
+                <span class="n">run</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="p">[</span><span class="n">last_index</span><span class="p">:</span><span class="n">start</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">set_color_to_white</span><span class="p">:</span>
+                    <span class="n">run</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">color</span><span class="o">.</span><span class="n">rgb</span> <span class="o">=</span> <span class="n">RGBColor</span><span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>  <span class="c1"># Bold</span>
+                <span class="n">run</span> <span class="o">=</span> <span class="n">frame_paragraph</span><span class="o">.</span><span class="n">add_run</span><span class="p">()</span>
+                <span class="n">run</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+                <span class="n">run</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">bold</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">if</span> <span class="n">set_color_to_white</span><span class="p">:</span>
+                    <span class="n">run</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">color</span><span class="o">.</span><span class="n">rgb</span> <span class="o">=</span> <span class="n">RGBColor</span><span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>  <span class="c1"># Italics</span>
+                <span class="n">run</span> <span class="o">=</span> <span class="n">frame_paragraph</span><span class="o">.</span><span class="n">add_run</span><span class="p">()</span>
+                <span class="n">run</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+                <span class="n">run</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">italic</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">if</span> <span class="n">set_color_to_white</span><span class="p">:</span>
+                    <span class="n">run</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">color</span><span class="o">.</span><span class="n">rgb</span> <span class="o">=</span> <span class="n">RGBColor</span><span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+
+            <span class="n">last_index</span> <span class="o">=</span> <span class="n">end</span>
+
+        <span class="k">if</span> <span class="n">last_index</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+            <span class="n">run</span> <span class="o">=</span> <span class="n">frame_paragraph</span><span class="o">.</span><span class="n">add_run</span><span class="p">()</span>
+            <span class="n">run</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="p">[</span><span class="n">last_index</span><span class="p">:]</span>
+            <span class="k">if</span> <span class="n">set_color_to_white</span><span class="p">:</span>
+                <span class="n">run</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">color</span><span class="o">.</span><span class="n">rgb</span> <span class="o">=</span> <span class="n">RGBColor</span><span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_add_bulleted_items</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">text_frame</span><span class="p">:</span> <span class="s2">&quot;TextFrame&quot;</span><span class="p">,</span>
+        <span class="n">flat_items_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span>
+        <span class="n">set_color_to_white</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Add a list of texts as bullet points and apply formatting.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            text_frame (TextFrame): The text frame where text is to be</span>
+<span class="sd">                displayed.</span>
+<span class="sd">            flat_items_list (List[Tuple[str, int]]): The list of items to be</span>
+<span class="sd">                displayed.</span>
+<span class="sd">            set_color_to_white (bool): Whether to set the font color to white.</span>
+<span class="sd">                (default: :obj: `False`)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">flat_items_list</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Empty bullet point list provided&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">item_content</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">flat_items_list</span><span class="p">):</span>
+            <span class="n">item_text</span><span class="p">,</span> <span class="n">item_level</span> <span class="o">=</span> <span class="n">item_content</span>
+
+            <span class="k">if</span> <span class="n">idx</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">text_frame</span><span class="o">.</span><span class="n">paragraphs</span><span class="p">:</span>
+                    <span class="c1"># Ensure a paragraph exists if the frame is empty or</span>
+                    <span class="c1"># cleared</span>
+                    <span class="n">paragraph</span> <span class="o">=</span> <span class="n">text_frame</span><span class="o">.</span><span class="n">add_paragraph</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Use the first existing paragraph</span>
+                    <span class="n">paragraph</span> <span class="o">=</span> <span class="n">text_frame</span><span class="o">.</span><span class="n">paragraphs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">paragraph</span> <span class="o">=</span> <span class="n">text_frame</span><span class="o">.</span><span class="n">add_paragraph</span><span class="p">()</span>
+
+            <span class="n">paragraph</span><span class="o">.</span><span class="n">level</span> <span class="o">=</span> <span class="n">item_level</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_format_text</span><span class="p">(</span>
+                <span class="n">paragraph</span><span class="p">,</span>
+                <span class="n">item_text</span><span class="o">.</span><span class="n">removeprefix</span><span class="p">(</span><span class="n">STEP_BY_STEP_PROCESS_MARKER</span><span class="p">),</span>
+                <span class="n">set_color_to_white</span><span class="o">=</span><span class="n">set_color_to_white</span><span class="p">,</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_flat_list_of_contents</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]]],</span> <span class="n">level</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Flatten a hierarchical list of bullet points to a single list.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            items (List[Union[str, List[Any]]]): A bullet point (string or</span>
+<span class="sd">                list).</span>
+<span class="sd">            level (int): The current level of hierarchy.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[Tuple[str, int]]: A list of (bullet item text, hierarchical</span>
+<span class="sd">                level) tuples.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">flat_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">flat_list</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">item</span><span class="p">,</span> <span class="n">level</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="n">flat_list</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_get_flat_list_of_contents</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">level</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">flat_list</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_slide_width_height_inches</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">presentation</span><span class="p">:</span> <span class="s2">&quot;presentation.Presentation&quot;</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Get the dimensions of a slide in inches.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            presentation (presentation.Presentation): The presentation object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tuple[float, float]: The width and height in inches.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">slide_width_inch</span> <span class="o">=</span> <span class="n">EMU_TO_INCH_SCALING_FACTOR</span> <span class="o">*</span> <span class="p">(</span>
+            <span class="n">presentation</span><span class="o">.</span><span class="n">slide_width</span> <span class="ow">or</span> <span class="mi">0</span>
+        <span class="p">)</span>
+        <span class="n">slide_height_inch</span> <span class="o">=</span> <span class="n">EMU_TO_INCH_SCALING_FACTOR</span> <span class="o">*</span> <span class="p">(</span>
+            <span class="n">presentation</span><span class="o">.</span><span class="n">slide_height</span> <span class="ow">or</span> <span class="mi">0</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">slide_width_inch</span><span class="p">,</span> <span class="n">slide_height_inch</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_write_pptx_file</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">file_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+        <span class="n">content</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span>
+        <span class="n">template</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Write text content to a PPTX file with enhanced formatting.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            file_path (Path): The target file path.</span>
+<span class="sd">            content (List[Dict[str, Any]]): The content to write to the PPTX</span>
+<span class="sd">                file. Must be a list of dictionaries where:</span>
+<span class="sd">                - First element: Title slide with keys &#39;title&#39; and &#39;subtitle&#39;</span>
+<span class="sd">                - Subsequent elements: Content slides with keys &#39;title&#39;, &#39;text&#39;</span>
+<span class="sd">            template (Optional[str]): The name of the template to use. If not</span>
+<span class="sd">                provided, the default template will be used. (default: :obj:</span>
+<span class="sd">                `None`)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">pptx</span>
+
+        <span class="c1"># Use template if provided, otherwise create new presentation</span>
+        <span class="k">if</span> <span class="n">template</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">template_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">template</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">template_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Template file not found: </span><span class="si">{</span><span class="n">template_path</span><span class="si">}</span><span class="s2">, using &quot;</span>
+                    <span class="s2">&quot;default template&quot;</span>
+                <span class="p">)</span>
+                <span class="n">presentation</span> <span class="o">=</span> <span class="n">pptx</span><span class="o">.</span><span class="n">Presentation</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">presentation</span> <span class="o">=</span> <span class="n">pptx</span><span class="o">.</span><span class="n">Presentation</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">template_path</span><span class="p">))</span>
+                <span class="c1"># Clear all existing slides by removing them from the slide</span>
+                <span class="c1"># list</span>
+                <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">presentation</span><span class="o">.</span><span class="n">slides</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">rId</span> <span class="o">=</span> <span class="n">presentation</span><span class="o">.</span><span class="n">slides</span><span class="o">.</span><span class="n">_sldIdLst</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">rId</span>
+                    <span class="n">presentation</span><span class="o">.</span><span class="n">part</span><span class="o">.</span><span class="n">drop_rel</span><span class="p">(</span><span class="n">rId</span><span class="p">)</span>
+                    <span class="k">del</span> <span class="n">presentation</span><span class="o">.</span><span class="n">slides</span><span class="o">.</span><span class="n">_sldIdLst</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">presentation</span> <span class="o">=</span> <span class="n">pptx</span><span class="o">.</span><span class="n">Presentation</span><span class="p">()</span>
+
+        <span class="n">slide_width_inch</span><span class="p">,</span> <span class="n">slide_height_inch</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_slide_width_height_inches</span><span class="p">(</span><span class="n">presentation</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Process slides</span>
+        <span class="k">if</span> <span class="n">content</span><span class="p">:</span>
+            <span class="c1"># Title slide (first element)</span>
+            <span class="n">title_slide_data</span> <span class="o">=</span> <span class="n">content</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="k">if</span> <span class="n">content</span> <span class="k">else</span> <span class="p">{}</span>
+            <span class="n">title_layout</span> <span class="o">=</span> <span class="n">presentation</span><span class="o">.</span><span class="n">slide_layouts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">title_slide</span> <span class="o">=</span> <span class="n">presentation</span><span class="o">.</span><span class="n">slides</span><span class="o">.</span><span class="n">add_slide</span><span class="p">(</span><span class="n">title_layout</span><span class="p">)</span>
+
+            <span class="c1"># Set title and subtitle</span>
+            <span class="k">if</span> <span class="n">title_slide</span><span class="o">.</span><span class="n">shapes</span><span class="o">.</span><span class="n">title</span><span class="p">:</span>
+                <span class="n">title_slide</span><span class="o">.</span><span class="n">shapes</span><span class="o">.</span><span class="n">title</span><span class="o">.</span><span class="n">text_frame</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_format_text</span><span class="p">(</span>
+                    <span class="n">title_slide</span><span class="o">.</span><span class="n">shapes</span><span class="o">.</span><span class="n">title</span><span class="o">.</span><span class="n">text_frame</span><span class="o">.</span><span class="n">paragraphs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">title_slide_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                <span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">title_slide</span><span class="o">.</span><span class="n">placeholders</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">subtitle</span> <span class="o">=</span> <span class="n">title_slide</span><span class="o">.</span><span class="n">placeholders</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">subtitle</span><span class="o">.</span><span class="n">text_frame</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_format_text</span><span class="p">(</span>
+                    <span class="n">subtitle</span><span class="o">.</span><span class="n">text_frame</span><span class="o">.</span><span class="n">paragraphs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">title_slide_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;subtitle&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                <span class="p">)</span>
+
+            <span class="c1"># Content slides</span>
+            <span class="k">for</span> <span class="n">slide_data</span> <span class="ow">in</span> <span class="n">content</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">slide_data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                    <span class="k">continue</span>
+
+                <span class="c1"># Handle different slide types</span>
+                <span class="k">if</span> <span class="s1">&#39;table&#39;</span> <span class="ow">in</span> <span class="n">slide_data</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_handle_table</span><span class="p">(</span>
+                        <span class="n">presentation</span><span class="p">,</span>
+                        <span class="n">slide_data</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="k">elif</span> <span class="s1">&#39;bullet_points&#39;</span> <span class="ow">in</span> <span class="n">slide_data</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span>
+                        <span class="n">step</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">STEP_BY_STEP_PROCESS_MARKER</span><span class="p">)</span>
+                        <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="n">slide_data</span><span class="p">[</span><span class="s1">&#39;bullet_points&#39;</span><span class="p">]</span>
+                    <span class="p">):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_handle_step_by_step_process</span><span class="p">(</span>
+                            <span class="n">presentation</span><span class="p">,</span>
+                            <span class="n">slide_data</span><span class="p">,</span>
+                            <span class="n">slide_width_inch</span><span class="p">,</span>
+                            <span class="n">slide_height_inch</span><span class="p">,</span>
+                        <span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_handle_default_display</span><span class="p">(</span>
+                            <span class="n">presentation</span><span class="p">,</span>
+                            <span class="n">slide_data</span><span class="p">,</span>
+                        <span class="p">)</span>
+
+        <span class="c1"># Save the presentation</span>
+        <span class="n">presentation</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">file_path</span><span class="p">))</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Wrote PPTX to </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2"> with enhanced formatting&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="PPTXToolkit.create_presentation">
+<a class="viewcode-back" href="../../../camel.toolkits.html#camel.toolkits.PPTXToolkit.create_presentation">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_presentation</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">content</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">template</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Create a PowerPoint presentation (PPTX) file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            content (str): The content to write to the PPTX file as a JSON</span>
+<span class="sd">                string. Must represent a list of dictionaries with the</span>
+<span class="sd">                following structure:</span>
+<span class="sd">                - First dict: title slide {&quot;title&quot;: str, &quot;subtitle&quot;: str}</span>
+<span class="sd">                - Other dicts: content slides, which can be one of:</span>
+<span class="sd">                    * Bullet/step slides: {&quot;heading&quot;: str, &quot;bullet_points&quot;:</span>
+<span class="sd">                    list of str or nested lists, &quot;img_keywords&quot;: str</span>
+<span class="sd">                    (optional)}</span>
+<span class="sd">                        - If any bullet point starts with &#39;&gt;&gt; &#39;, it will be</span>
+<span class="sd">                        rendered as a step-by-step process.</span>
+<span class="sd">                        - &quot;img_keywords&quot; can be a URL or search keywords for</span>
+<span class="sd">                        an image (optional).</span>
+<span class="sd">                    * Table slides: {&quot;heading&quot;: str, &quot;table&quot;: {&quot;headers&quot;: list</span>
+<span class="sd">                    of str, &quot;rows&quot;: list of list of str}}</span>
+<span class="sd">            filename (str): The name or path of the file. If a relative path is</span>
+<span class="sd">                supplied, it is resolved to self.output_dir.</span>
+<span class="sd">            template (Optional[str]): The path to the template PPTX file.</span>
+<span class="sd">                Initializes a presentation from a given template file Or PPTX</span>
+<span class="sd">                file. (default: :obj: `None`)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: A success message indicating the file was created.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">        [</span>
+<span class="sd">            {</span>
+<span class="sd">                &quot;title&quot;: &quot;Presentation Title&quot;,</span>
+<span class="sd">                &quot;subtitle&quot;: &quot;Presentation Subtitle&quot;</span>
+<span class="sd">            },</span>
+<span class="sd">            {</span>
+<span class="sd">                &quot;heading&quot;: &quot;Slide Title&quot;,</span>
+<span class="sd">                &quot;bullet_points&quot;: [</span>
+<span class="sd">                    &quot;**Bold text** for emphasis&quot;,</span>
+<span class="sd">                    &quot;*Italic text* for additional emphasis&quot;,</span>
+<span class="sd">                    &quot;Regular text for normal content&quot;</span>
+<span class="sd">                ],</span>
+<span class="sd">                &quot;img_keywords&quot;: &quot;relevant search terms for images&quot;</span>
+<span class="sd">            },</span>
+<span class="sd">            {</span>
+<span class="sd">                &quot;heading&quot;: &quot;Step-by-Step Process&quot;,</span>
+<span class="sd">                &quot;bullet_points&quot;: [</span>
+<span class="sd">                    &quot;&gt;&gt; **Step 1:** First step description&quot;,</span>
+<span class="sd">                    &quot;&gt;&gt; **Step 2:** Second step description&quot;,</span>
+<span class="sd">                    &quot;&gt;&gt; **Step 3:** Third step description&quot;</span>
+<span class="sd">                ],</span>
+<span class="sd">                &quot;img_keywords&quot;: &quot;process workflow steps&quot;</span>
+<span class="sd">            },</span>
+<span class="sd">            {</span>
+<span class="sd">                &quot;heading&quot;: &quot;Comparison Table&quot;,</span>
+<span class="sd">                &quot;table&quot;: {</span>
+<span class="sd">                    &quot;headers&quot;: [&quot;Column 1&quot;, &quot;Column 2&quot;, &quot;Column 3&quot;],</span>
+<span class="sd">                    &quot;rows&quot;: [</span>
+<span class="sd">                        [&quot;Row 1, Col 1&quot;, &quot;Row 1, Col 2&quot;, &quot;Row 1, Col 3&quot;],</span>
+<span class="sd">                        [&quot;Row 2, Col 1&quot;, &quot;Row 2, Col 2&quot;, &quot;Row 2, Col 3&quot;]</span>
+<span class="sd">                    ]</span>
+<span class="sd">                },</span>
+<span class="sd">                &quot;img_keywords&quot;: &quot;comparison visualization&quot;</span>
+<span class="sd">            }</span>
+<span class="sd">        ]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Ensure filename has .pptx extension</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">filename</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.pptx&#39;</span><span class="p">):</span>
+            <span class="n">filename</span> <span class="o">+=</span> <span class="s1">&#39;.pptx&#39;</span>
+
+        <span class="c1"># Resolve file path</span>
+        <span class="n">file_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_filepath</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+
+        <span class="c1"># Parse and validate content format</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+            <span class="n">parsed_content</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Content must be valid JSON: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="s2">&quot;Failed to parse content as JSON&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parsed_content</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;PPTX content must be a list of dictionaries, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">parsed_content</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="s2">&quot;PPTX content must be a list of dictionaries&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Create the PPTX file</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_write_pptx_file</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">parsed_content</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="n">template</span><span class="p">)</span>
+
+            <span class="n">success_msg</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;PowerPoint presentation successfully created: </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">success_msg</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">success_msg</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">error_msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Failed to create PPTX file </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">!s}</span><span class="s2">&quot;</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">error_msg</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_default_display</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">presentation</span><span class="p">:</span> <span class="s2">&quot;presentation.Presentation&quot;</span><span class="p">,</span>
+        <span class="n">slide_json</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Display a list of text in a slide.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            presentation (presentation.Presentation): The presentation object.</span>
+<span class="sd">            slide_json (Dict[str, Any]): The content of the slide as JSON data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="s1">&#39;img_keywords&#39;</span> <span class="ow">in</span> <span class="n">slide_json</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">IMAGE_DISPLAY_PROBABILITY</span><span class="p">:</span>
+                <span class="n">status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle_display_image__in_foreground</span><span class="p">(</span>
+                    <span class="n">presentation</span><span class="p">,</span>
+                    <span class="n">slide_json</span><span class="p">,</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">status</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="c1"># Image display failed, so display only text</span>
+        <span class="n">bullet_slide_layout</span> <span class="o">=</span> <span class="n">presentation</span><span class="o">.</span><span class="n">slide_layouts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">slide</span> <span class="o">=</span> <span class="n">presentation</span><span class="o">.</span><span class="n">slides</span><span class="o">.</span><span class="n">add_slide</span><span class="p">(</span><span class="n">bullet_slide_layout</span><span class="p">)</span>
+
+        <span class="n">shapes</span> <span class="o">=</span> <span class="n">slide</span><span class="o">.</span><span class="n">shapes</span>
+        <span class="n">title_shape</span> <span class="o">=</span> <span class="n">shapes</span><span class="o">.</span><span class="n">title</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">body_shape</span> <span class="o">=</span> <span class="n">shapes</span><span class="o">.</span><span class="n">placeholders</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="c1"># Get placeholders from the slide without layout_number</span>
+            <span class="n">placeholders</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_slide_placeholders</span><span class="p">(</span><span class="n">slide</span><span class="p">)</span>
+            <span class="n">body_shape</span> <span class="o">=</span> <span class="n">shapes</span><span class="o">.</span><span class="n">placeholders</span><span class="p">[</span><span class="n">placeholders</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span>
+
+        <span class="n">title_shape</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_remove_slide_number_from_heading</span><span class="p">(</span>
+            <span class="n">slide_json</span><span class="p">[</span><span class="s1">&#39;heading&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">text_frame</span> <span class="o">=</span> <span class="n">body_shape</span><span class="o">.</span><span class="n">text_frame</span>
+
+        <span class="n">flat_items_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_flat_list_of_contents</span><span class="p">(</span>
+            <span class="n">slide_json</span><span class="p">[</span><span class="s1">&#39;bullet_points&#39;</span><span class="p">],</span> <span class="n">level</span><span class="o">=</span><span class="mi">0</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_add_bulleted_items</span><span class="p">(</span><span class="n">text_frame</span><span class="p">,</span> <span class="n">flat_items_list</span><span class="p">)</span>
+
+    <span class="nd">@api_keys_required</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="p">(</span><span class="s2">&quot;api_key&quot;</span><span class="p">,</span> <span class="s1">&#39;PEXELS_API_KEY&#39;</span><span class="p">),</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_display_image__in_foreground</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">presentation</span><span class="p">:</span> <span class="s2">&quot;presentation.Presentation&quot;</span><span class="p">,</span>
+        <span class="n">slide_json</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Create a slide with text and image using a picture placeholder</span>
+<span class="sd">        layout.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            presentation (presentation.Presentation): The presentation object.</span>
+<span class="sd">            slide_json (Dict[str, Any]): The content of the slide as JSON data.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the slide has been processed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">io</span><span class="w"> </span><span class="kn">import</span> <span class="n">BytesIO</span>
+
+        <span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+
+        <span class="n">img_keywords</span> <span class="o">=</span> <span class="n">slide_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;img_keywords&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">slide</span> <span class="o">=</span> <span class="n">presentation</span><span class="o">.</span><span class="n">slide_layouts</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span>  <span class="c1"># Picture with Caption</span>
+        <span class="n">slide</span> <span class="o">=</span> <span class="n">presentation</span><span class="o">.</span><span class="n">slides</span><span class="o">.</span><span class="n">add_slide</span><span class="p">(</span><span class="n">slide</span><span class="p">)</span>
+        <span class="n">placeholders</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="n">title_placeholder</span> <span class="o">=</span> <span class="n">slide</span><span class="o">.</span><span class="n">shapes</span><span class="o">.</span><span class="n">title</span>  <span class="c1"># type: ignore[attr-defined]</span>
+        <span class="n">title_placeholder</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_remove_slide_number_from_heading</span><span class="p">(</span>
+            <span class="n">slide_json</span><span class="p">[</span><span class="s1">&#39;heading&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">pic_col</span> <span class="o">=</span> <span class="n">slide</span><span class="o">.</span><span class="n">shapes</span><span class="o">.</span><span class="n">placeholders</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># type: ignore[attr-defined]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="c1"># Get placeholders from the slide without layout_number</span>
+            <span class="n">placeholders</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_slide_placeholders</span><span class="p">(</span><span class="n">slide</span><span class="p">)</span>  <span class="c1"># type: ignore[arg-type]</span>
+            <span class="n">pic_col</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">placeholders</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s1">&#39;picture&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+                    <span class="n">pic_col</span> <span class="o">=</span> <span class="n">slide</span><span class="o">.</span><span class="n">shapes</span><span class="o">.</span><span class="n">placeholders</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>  <span class="c1"># type: ignore[attr-defined]</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">text_col</span> <span class="o">=</span> <span class="n">slide</span><span class="o">.</span><span class="n">shapes</span><span class="o">.</span><span class="n">placeholders</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>  <span class="c1"># type: ignore[attr-defined]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">text_col</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">placeholders</span><span class="p">:</span>
+                <span class="n">placeholders</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_slide_placeholders</span><span class="p">(</span><span class="n">slide</span><span class="p">)</span>  <span class="c1"># type: ignore[arg-type]</span>
+
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">placeholders</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s1">&#39;content&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+                    <span class="n">text_col</span> <span class="o">=</span> <span class="n">slide</span><span class="o">.</span><span class="n">shapes</span><span class="o">.</span><span class="n">placeholders</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>  <span class="c1"># type: ignore[attr-defined]</span>
+
+        <span class="n">flat_items_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_flat_list_of_contents</span><span class="p">(</span>
+            <span class="n">slide_json</span><span class="p">[</span><span class="s1">&#39;bullet_points&#39;</span><span class="p">],</span> <span class="n">level</span><span class="o">=</span><span class="mi">0</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_add_bulleted_items</span><span class="p">(</span><span class="n">text_col</span><span class="o">.</span><span class="n">text_frame</span><span class="p">,</span> <span class="n">flat_items_list</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">img_keywords</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">img_keywords</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">img_keywords</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span>
+            <span class="p">(</span><span class="s1">&#39;http://&#39;</span><span class="p">,</span> <span class="s1">&#39;https://&#39;</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">img_response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">img_keywords</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+                <span class="n">img_response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+                <span class="n">image_data</span> <span class="o">=</span> <span class="n">BytesIO</span><span class="p">(</span><span class="n">img_response</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+                <span class="n">pic_col</span><span class="o">.</span><span class="n">insert_picture</span><span class="p">(</span><span class="n">image_data</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                    <span class="s1">&#39;Error while downloading image from URL: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
+                <span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;https://api.pexels.com/v1/search&#39;</span>
+            <span class="n">api_key</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;PEXELS_API_KEY&#39;</span><span class="p">)</span>
+
+            <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;Authorization&#39;</span><span class="p">:</span> <span class="n">api_key</span><span class="p">,</span>
+                <span class="s1">&#39;User-Agent&#39;</span><span class="p">:</span> <span class="s1">&#39;Mozilla/5.0 (X11; Linux x86_64; rv:10.0) &#39;</span>
+                <span class="s1">&#39;Gecko/20100101 Firefox/10.0&#39;</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;query&#39;</span><span class="p">:</span> <span class="n">img_keywords</span><span class="p">,</span>
+                <span class="s1">&#39;size&#39;</span><span class="p">:</span> <span class="s1">&#39;medium&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;page&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s1">&#39;per_page&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="n">url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">12</span>
+            <span class="p">)</span>
+            <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+            <span class="n">json_response</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="n">json_response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;photos&#39;</span><span class="p">):</span>
+                <span class="n">photo</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">json_response</span><span class="p">[</span><span class="s1">&#39;photos&#39;</span><span class="p">])</span>
+                <span class="n">photo_url</span> <span class="o">=</span> <span class="n">photo</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;src&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;large&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">photo</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                    <span class="s1">&#39;src&#39;</span><span class="p">,</span> <span class="p">{}</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;original&#39;</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">photo_url</span><span class="p">:</span>
+                    <span class="c1"># Download and insert the image</span>
+                    <span class="n">img_response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                        <span class="n">photo_url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">12</span>
+                    <span class="p">)</span>
+                    <span class="n">img_response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+                    <span class="n">image_data</span> <span class="o">=</span> <span class="n">BytesIO</span><span class="p">(</span><span class="n">img_response</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+
+                    <span class="n">pic_col</span><span class="o">.</span><span class="n">insert_picture</span><span class="p">(</span><span class="n">image_data</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s1">&#39;Error occurred while adding image to slide: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_table</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">presentation</span><span class="p">:</span> <span class="s2">&quot;presentation.Presentation&quot;</span><span class="p">,</span>
+        <span class="n">slide_json</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Add a table to a slide.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            presentation (presentation.Presentation): The presentation object.</span>
+<span class="sd">            slide_json (Dict[str, Any]): The content of the slide as JSON data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="n">slide_json</span><span class="p">[</span><span class="s1">&#39;table&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;headers&#39;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="n">slide_json</span><span class="p">[</span><span class="s1">&#39;table&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;rows&#39;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">bullet_slide_layout</span> <span class="o">=</span> <span class="n">presentation</span><span class="o">.</span><span class="n">slide_layouts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">slide</span> <span class="o">=</span> <span class="n">presentation</span><span class="o">.</span><span class="n">slides</span><span class="o">.</span><span class="n">add_slide</span><span class="p">(</span><span class="n">bullet_slide_layout</span><span class="p">)</span>
+        <span class="n">shapes</span> <span class="o">=</span> <span class="n">slide</span><span class="o">.</span><span class="n">shapes</span>
+        <span class="n">shapes</span><span class="o">.</span><span class="n">title</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_remove_slide_number_from_heading</span><span class="p">(</span>
+            <span class="n">slide_json</span><span class="p">[</span><span class="s1">&#39;heading&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">left</span> <span class="o">=</span> <span class="n">slide</span><span class="o">.</span><span class="n">placeholders</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">left</span>
+        <span class="n">top</span> <span class="o">=</span> <span class="n">slide</span><span class="o">.</span><span class="n">placeholders</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">top</span>
+        <span class="n">width</span> <span class="o">=</span> <span class="n">slide</span><span class="o">.</span><span class="n">placeholders</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">width</span>
+        <span class="n">height</span> <span class="o">=</span> <span class="n">slide</span><span class="o">.</span><span class="n">placeholders</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">height</span>
+        <span class="n">table</span> <span class="o">=</span> <span class="n">slide</span><span class="o">.</span><span class="n">shapes</span><span class="o">.</span><span class="n">add_table</span><span class="p">(</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">headers</span><span class="p">),</span> <span class="n">left</span><span class="p">,</span> <span class="n">top</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">table</span>
+
+        <span class="c1"># Set headers</span>
+        <span class="k">for</span> <span class="n">col_idx</span><span class="p">,</span> <span class="n">header_text</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">headers</span><span class="p">):</span>
+            <span class="n">table</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">col_idx</span><span class="p">)</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">header_text</span>
+            <span class="n">table</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">col_idx</span><span class="p">)</span><span class="o">.</span><span class="n">text_frame</span><span class="o">.</span><span class="n">paragraphs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">bold</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="c1"># Fill in rows</span>
+        <span class="k">for</span> <span class="n">row_idx</span><span class="p">,</span> <span class="n">row_data</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">col_idx</span><span class="p">,</span> <span class="n">cell_text</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">row_data</span><span class="p">):</span>
+                <span class="n">table</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="n">row_idx</span><span class="p">,</span> <span class="n">col_idx</span><span class="p">)</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">cell_text</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_step_by_step_process</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">presentation</span><span class="p">:</span> <span class="s2">&quot;presentation.Presentation&quot;</span><span class="p">,</span>
+        <span class="n">slide_json</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="n">slide_width_inch</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">slide_height_inch</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Add shapes to display a step-by-step process in the slide.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            presentation (presentation.Presentation): The presentation object.</span>
+<span class="sd">            slide_json (Dict[str, Any]): The content of the slide as JSON data.</span>
+<span class="sd">            slide_width_inch (float): The width of the slide in inches.</span>
+<span class="sd">            slide_height_inch (float): The height of the slide in inches.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">pptx</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">pptx.enum.shapes</span><span class="w"> </span><span class="kn">import</span> <span class="n">MSO_AUTO_SHAPE_TYPE</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">pptx.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">Inches</span><span class="p">,</span> <span class="n">Pt</span>
+
+        <span class="n">steps</span> <span class="o">=</span> <span class="n">slide_json</span><span class="p">[</span><span class="s1">&#39;bullet_points&#39;</span><span class="p">]</span>
+        <span class="n">n_steps</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span>
+
+        <span class="n">bullet_slide_layout</span> <span class="o">=</span> <span class="n">presentation</span><span class="o">.</span><span class="n">slide_layouts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">slide</span> <span class="o">=</span> <span class="n">presentation</span><span class="o">.</span><span class="n">slides</span><span class="o">.</span><span class="n">add_slide</span><span class="p">(</span><span class="n">bullet_slide_layout</span><span class="p">)</span>
+        <span class="n">shapes</span> <span class="o">=</span> <span class="n">slide</span><span class="o">.</span><span class="n">shapes</span>
+        <span class="n">shapes</span><span class="o">.</span><span class="n">title</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_remove_slide_number_from_heading</span><span class="p">(</span>
+            <span class="n">slide_json</span><span class="p">[</span><span class="s1">&#39;heading&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="mi">3</span> <span class="o">&lt;=</span> <span class="n">n_steps</span> <span class="o">&lt;=</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="c1"># Horizontal display</span>
+            <span class="n">height</span> <span class="o">=</span> <span class="n">Inches</span><span class="p">(</span><span class="mf">1.5</span><span class="p">)</span>
+            <span class="n">width</span> <span class="o">=</span> <span class="n">Inches</span><span class="p">(</span><span class="n">slide_width_inch</span> <span class="o">/</span> <span class="n">n_steps</span> <span class="o">-</span> <span class="mf">0.01</span><span class="p">)</span>
+            <span class="n">top</span> <span class="o">=</span> <span class="n">Inches</span><span class="p">(</span><span class="n">slide_height_inch</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">left</span> <span class="o">=</span> <span class="n">Inches</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">slide_width_inch</span> <span class="o">-</span> <span class="n">width</span><span class="o">.</span><span class="n">inches</span> <span class="o">*</span> <span class="n">n_steps</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="mf">0.05</span>
+            <span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="n">steps</span><span class="p">:</span>
+                <span class="n">shape</span> <span class="o">=</span> <span class="n">shapes</span><span class="o">.</span><span class="n">add_shape</span><span class="p">(</span>
+                    <span class="n">MSO_AUTO_SHAPE_TYPE</span><span class="o">.</span><span class="n">CHEVRON</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">top</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span>
+                <span class="p">)</span>
+                <span class="n">text_frame</span> <span class="o">=</span> <span class="n">shape</span><span class="o">.</span><span class="n">text_frame</span>
+                <span class="n">text_frame</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+                <span class="n">paragraph</span> <span class="o">=</span> <span class="n">text_frame</span><span class="o">.</span><span class="n">paragraphs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">paragraph</span><span class="o">.</span><span class="n">alignment</span> <span class="o">=</span> <span class="n">pptx</span><span class="o">.</span><span class="n">enum</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">PP_ALIGN</span><span class="o">.</span><span class="n">CENTER</span>
+                <span class="n">text_frame</span><span class="o">.</span><span class="n">vertical_anchor</span> <span class="o">=</span> <span class="n">pptx</span><span class="o">.</span><span class="n">enum</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">MSO_ANCHOR</span><span class="o">.</span><span class="n">MIDDLE</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_format_text</span><span class="p">(</span>
+                    <span class="n">paragraph</span><span class="p">,</span> <span class="n">step</span><span class="o">.</span><span class="n">removeprefix</span><span class="p">(</span><span class="n">STEP_BY_STEP_PROCESS_MARKER</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">run</span> <span class="ow">in</span> <span class="n">paragraph</span><span class="o">.</span><span class="n">runs</span><span class="p">:</span>
+                    <span class="n">run</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">Pt</span><span class="p">(</span><span class="mi">14</span><span class="p">)</span>
+                <span class="n">left</span> <span class="o">=</span> <span class="n">Inches</span><span class="p">(</span><span class="n">left</span><span class="o">.</span><span class="n">inches</span> <span class="o">+</span> <span class="n">width</span><span class="o">.</span><span class="n">inches</span> <span class="o">-</span> <span class="n">Inches</span><span class="p">(</span><span class="mf">0.4</span><span class="p">)</span><span class="o">.</span><span class="n">inches</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="mi">4</span> <span class="o">&lt;</span> <span class="n">n_steps</span> <span class="o">&lt;=</span> <span class="mi">6</span><span class="p">:</span>
+            <span class="c1"># Vertical display</span>
+            <span class="n">height</span> <span class="o">=</span> <span class="n">Inches</span><span class="p">(</span><span class="mf">0.65</span><span class="p">)</span>
+            <span class="n">top</span> <span class="o">=</span> <span class="n">Inches</span><span class="p">(</span><span class="n">slide_height_inch</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span>
+            <span class="n">left</span> <span class="o">=</span> <span class="n">Inches</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">width</span> <span class="o">=</span> <span class="n">Inches</span><span class="p">(</span><span class="n">slide_width_inch</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="n">steps</span><span class="p">:</span>
+                <span class="n">shape</span> <span class="o">=</span> <span class="n">shapes</span><span class="o">.</span><span class="n">add_shape</span><span class="p">(</span>
+                    <span class="n">MSO_AUTO_SHAPE_TYPE</span><span class="o">.</span><span class="n">PENTAGON</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">top</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span>
+                <span class="p">)</span>
+                <span class="n">text_frame</span> <span class="o">=</span> <span class="n">shape</span><span class="o">.</span><span class="n">text_frame</span>
+                <span class="n">text_frame</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+                <span class="n">paragraph</span> <span class="o">=</span> <span class="n">text_frame</span><span class="o">.</span><span class="n">paragraphs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">paragraph</span><span class="o">.</span><span class="n">alignment</span> <span class="o">=</span> <span class="n">pptx</span><span class="o">.</span><span class="n">enum</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">PP_ALIGN</span><span class="o">.</span><span class="n">CENTER</span>
+                <span class="n">text_frame</span><span class="o">.</span><span class="n">vertical_anchor</span> <span class="o">=</span> <span class="n">pptx</span><span class="o">.</span><span class="n">enum</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">MSO_ANCHOR</span><span class="o">.</span><span class="n">MIDDLE</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_format_text</span><span class="p">(</span>
+                    <span class="n">paragraph</span><span class="p">,</span> <span class="n">step</span><span class="o">.</span><span class="n">removeprefix</span><span class="p">(</span><span class="n">STEP_BY_STEP_PROCESS_MARKER</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">run</span> <span class="ow">in</span> <span class="n">paragraph</span><span class="o">.</span><span class="n">runs</span><span class="p">:</span>
+                    <span class="n">run</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">Pt</span><span class="p">(</span><span class="mi">14</span><span class="p">)</span>
+                <span class="n">top</span> <span class="o">=</span> <span class="n">Inches</span><span class="p">(</span><span class="n">top</span><span class="o">.</span><span class="n">inches</span> <span class="o">+</span> <span class="n">height</span><span class="o">.</span><span class="n">inches</span> <span class="o">+</span> <span class="n">Inches</span><span class="p">(</span><span class="mf">0.3</span><span class="p">)</span><span class="o">.</span><span class="n">inches</span><span class="p">)</span>
+                <span class="n">left</span> <span class="o">=</span> <span class="n">Inches</span><span class="p">(</span><span class="n">left</span><span class="o">.</span><span class="n">inches</span> <span class="o">+</span> <span class="n">Inches</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">inches</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_remove_slide_number_from_heading</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">header</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Remove the slide number from a given slide header.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            header (str): The header of a slide.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The header without slide number.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">SLIDE_NUMBER_REGEX</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">header</span><span class="p">):</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="n">header</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+            <span class="n">header</span> <span class="o">=</span> <span class="n">header</span><span class="p">[</span><span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:]</span>
+        <span class="k">return</span> <span class="n">header</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_slide_placeholders</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">slide</span><span class="p">:</span> <span class="s2">&quot;Slide&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Return the index and name of all placeholders present in a slide.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            slide (Slide): The slide.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[Tuple[int, str]]: A list containing placeholders (idx, name)</span>
+<span class="sd">                tuples.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">slide</span><span class="o">.</span><span class="n">shapes</span><span class="p">,</span> <span class="s1">&#39;placeholders&#39;</span><span class="p">):</span>
+            <span class="n">placeholders</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">(</span><span class="n">shape</span><span class="o">.</span><span class="n">placeholder_format</span><span class="o">.</span><span class="n">idx</span><span class="p">,</span> <span class="n">shape</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+                <span class="k">for</span> <span class="n">shape</span> <span class="ow">in</span> <span class="n">slide</span><span class="o">.</span><span class="n">shapes</span><span class="o">.</span><span class="n">placeholders</span>
+            <span class="p">]</span>
+            <span class="k">if</span> <span class="n">placeholders</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">placeholders</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">placeholders</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># Remove the title placeholder</span>
+            <span class="k">return</span> <span class="n">placeholders</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="PPTXToolkit.get_tools">
+<a class="viewcode-back" href="../../../camel.toolkits.html#camel.toolkits.PPTXToolkit.get_tools">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_tools</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">FunctionTool</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Returns a list of FunctionTool objects representing the</span>
+<span class="sd">        functions in the toolkit.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[FunctionTool]: A list of FunctionTool objects</span>
+<span class="sd">                representing the functions in the toolkit.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">FunctionTool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">create_presentation</span><span class="p">)]</span></div>
+</div>
+
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By CAMEL-AI.org
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, CAMEL-AI.org.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

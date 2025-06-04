@@ -1,0 +1,1125 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>CAMEL Cookbook: SQL MCP Server &#8212; CAMEL 0.2.62 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=3c972f42" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../_static/documentation_options.js?v=b2b93ad3"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'cookbooks/mcp/agents_with_sql_mcp';</script>
+    <link rel="icon" href="https://raw.githubusercontent.com/camel-ai/camel/master/misc/favicon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="camel" href="../../modules.html" />
+    <link rel="prev" title="MCP Cookbooks" href="index.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png" class="logo__image only-light" alt=""/>
+    <script>document.write(`<img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png" class="logo__image only-dark" alt=""/>`);</script>
+  
+  
+    <p class="title logo__title">CAMEL 0.2.62</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Get Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../get_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../get_started/setup.html">API Setup</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Key Modules</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../key_modules/agents.html">1. Concept</a></li>
+
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../key_modules/datagen.html">Chain of Thought (CoT) Data Generation</a></li>
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../key_modules/models.html">1. Concept</a></li>
+
+
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../key_modules/messages.html">1. Concept</a></li>
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../key_modules/memory.html">1. Concept</a></li>
+
+
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../key_modules/tools.html">1. Concept</a></li>
+
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../key_modules/prompts.html">1. Concept</a></li>
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../key_modules/runtimes.html">1. Concept</a></li>
+
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../key_modules/tasks.html">1. Concept</a></li>
+
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../key_modules/loaders.html">1. Concept</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../key_modules/storages.html">1. Concept</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../key_modules/society.html">1. Concept</a></li>
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../key_modules/embeddings.html">1. Concept</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../key_modules/retrievers.html">1. Concept</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../key_modules/workforce.html">System Design</a></li>
+
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Cookbooks</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../basic_concepts/index.html">Basic Concepts</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../basic_concepts/create_your_first_agent.html">Creating Your First Agent</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../basic_concepts/create_your_first_agents_society.html">Creating Your First Agent Society</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../basic_concepts/agents_message.html">Message Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../basic_concepts/agents_prompting.html">Prompting Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../basic_concepts/model_speed_comparison.html">Model Speed Comparison Cookbook</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../advanced_features/index.html">Advanced Features</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../advanced_features/agents_with_tools.html">Tools Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../advanced_features/agents_with_tools_from_ACI.html">Using Tools from ACI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../advanced_features/agents_with_tools_from_Composio.html">Using Tools from Composio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../advanced_features/agents_with_human_in_loop_and_tool_approval.html">Agents with Human-in-loop and Tool Approval from HumanLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../advanced_features/agents_with_memory.html">Memory Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../advanced_features/agents_with_rag.html">RAG Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../advanced_features/agents_with_graph_rag.html">Graph RAG Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../advanced_features/agents_with_MCP.html">CAMEL MCP Cookbook</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../advanced_features/agents_tracking.html">Track CAMEL Agents with AgentOps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../advanced_features/critic_agents_and_tree_search.html">Critic Agents and Tree Search</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../advanced_features/embodied_agents.html">Embodied Agents</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../multi_agent_society/index.html">Multi-agent Society</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../multi_agent_society/agents_society.html">Develop Trading Bot with Role Playing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../multi_agent_society/workforce_judge_committee.html">Create A Hackathon Judge Committee with Workforce</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../multi_agent_society/task_generation.html">Task Generation Cookbook</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../data_generation/index.html">Agentic Data Generation</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../data_generation/sft_data_generation_and_unsloth_finetuning_mistral_7b_instruct.html">Agentic SFT Data generation with CAMEL and finetuning Mistral models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../data_generation/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B.html">Agentic Data generation with CAMEL and finetuning Qwen models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../data_generation/sft_data_generation_and_unsloth_finetuning_tinyllama.html">Agentic SFT Data generation with CAMEL and finetuning Meta models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../data_generation/data_gen_with_real_function_calls_and_hermes_format.html">Real Function Calls and Hermes Format Data Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data_generation/self_instruct_data_generation.html">Self-instruct Data Generation Using Qwen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data_generation/cot_data_gen_sft_qwen_unsolth_upload_huggingface.html">CoT Data Generation and SFT Qwen With Unsloth</a></li>
+
+
+<li class="toctree-l2"><a class="reference internal" href="../data_generation/synthetic_dataevaluation%26filter_with_reward_model.html">Agentic Data Generation, Evaluation &amp; Filtering with Reward Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data_generation/data_model_generation_and_structured_output_with_qwen.html">Agentic Data Model Generation and Structured Output Powered by CAMEL &amp; Qwen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data_generation/distill_math_reasoning_data_from_deepseek_r1.html">Distill Math Reasoning Data from DeepSeek R1 with CAMEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data_generation/self_improving_math_reasoning_data_distillation_from_deepSeek_r1.html">Self-Improving Math Reasoning Data Distillation from DeepSeek R1 with CAMEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data_generation/self_improving_cot_generation.html">Deep Dive into CAMEL’s Practices for Self-Improving CoT Generation 🚀</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../applications/index.html">Applications</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../applications/roleplaying_scraper.html">Role-Playing Scraper for Report &amp; Knowledge Graph Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../applications/dynamic_travel_planner.html">Dynamic Travel Planner Role-Playing: Multi-Agent System with Real-Time Insights Powered by Dappier</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../applications/customer_service_Discord_bot_with_agentic_RAG.html">Customer Service Discord Bot with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../applications/customer_service_Discord_bot_using_SambaNova_with_agentic_RAG.html">Customer Service Discord Bot Using SambaNova with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../applications/customer_service_Discord_bot_using_local_model_with_agentic_RAG.html">Customer Service Discord Bot Using Local Models with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../applications/finance_discord_bot.html">Customer Service Discord Bot for Finance with OpenBB</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../data_processing/index.html">Data Processing and Analysis</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../data_processing/video_analysis.html">Video Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data_processing/agent_with_chunkr_for_pdf_parsing.html">Create AI Agents that work with your PDFs using Chunkr &amp; Mistral AI</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../data_processing/summarisation_agent_with_mistral_ocr.html">Create Document Summarization Agents with Mistral OCR &amp; CAMEL-AI 🐫</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data_processing/ingest_data_from_websites_with_Firecrawl.html">3 ways to ingest data from websites with Firecrawl</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../loong/index.html">Loong Cookbooks</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../loong/batched_single_step_env.html">Batched Single Step Environment in Camel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../loong/multi_step_rl.html">Tic Tac Toe</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../loong/single_step_env.html">Single Step Environment in Camel</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">MCP Cookbooks</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">CAMEL Cookbook: SQL MCP Server</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../modules.html">camel</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../camel.html">camel package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../camel.agents.html">camel.agents package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../camel.agents.tool_agents.html">camel.agents.tool_agents package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../camel.configs.html">camel.configs package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../camel.datagen.html">camel.datagen package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../camel.datagen.self_instruct.html">camel.datagen.self_instruct package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../camel.datagen.source2synth.html">camel.datagen.source2synth package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../camel.embeddings.html">camel.embeddings package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../camel.interpreters.html">camel.interpreters package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../camel.loaders.html">camel.loaders package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../camel.memories.html">camel.memories package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../camel.memories.blocks.html">camel.memories.blocks package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../camel.memories.context_creators.html">camel.memories.context_creators package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../camel.messages.html">camel.messages package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../camel.models.html">camel.models package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../camel.prompts.html">camel.prompts package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../camel.responses.html">camel.responses package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../camel.retrievers.html">camel.retrievers package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../camel.societies.html">camel.societies package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../camel.societies.workforce.html">camel.societies.workforce package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../camel.storages.html">camel.storages package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../camel.storages.graph_storages.html">camel.storages.graph_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../camel.storages.key_value_storages.html">camel.storages.key_value_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../camel.storages.object_storages.html">camel.storages.object_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../camel.storages.vectordb_storages.html">camel.storages.vectordb_storages package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../camel.tasks.html">camel.tasks package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../camel.terminators.html">camel.terminators package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../camel.toolkits.html">camel.toolkits package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../camel.types.html">camel.types package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../camel.utils.html">camel.utils package</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/camel-ai/camel" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/camel-ai/camel/edit/main/cookbooks/mcp/agents_with_sql_mcp.ipynb" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/camel-ai/camel/issues/new?title=Issue%20on%20page%20%2Fcookbooks/mcp/agents_with_sql_mcp.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../../_sources/cookbooks/mcp/agents_with_sql_mcp.ipynb" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.ipynb</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>CAMEL Cookbook: SQL MCP Server</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> On this page </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#📦-Installation">📦 Installation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#🔑-Setting-Up-API-Keys">🔑 Setting Up API Keys</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Required-Configuration-Files">Required Configuration Files</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#1.-MCP-Configuration-File-(mcp_config.json)">1. MCP Configuration File (<code class="docutils literal notranslate"><span class="pre">mcp_config.json</span></code>)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#2.-SQL-MCP-Server-Script-(sql_server_mcp.py)">2. SQL MCP Server Script (<code class="docutils literal notranslate"><span class="pre">sql_server_mcp.py</span></code>)</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Understanding-MCP-and-Your-Local-SQL-MCP-Server">Understanding MCP and Your Local SQL MCP Server</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Creating-a-Sample-Database">Creating a Sample Database</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Creating-the-CAMEL-Agent">Creating the CAMEL Agent</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Running-the-Example">Running the Example</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Example-Output--">Example Output -</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Example-Queries">Example Queries</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Conclusion">Conclusion</a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <style>
+div.nbinput div.prompt,
+div.nboutput div.prompt {
+    display: none;
+}
+</style><section id="CAMEL-Cookbook:-SQL-MCP-Server">
+<h1>CAMEL Cookbook: SQL MCP Server<a class="headerlink" href="#CAMEL-Cookbook:-SQL-MCP-Server" title="Link to this heading">#</a></h1>
+<p>You can also check this cookbook in <a class="reference external" href="https://colab.research.google.com/drive/1ssaxacH4ahbFcv0fz6azy7hX9yjEXYro?usp=sharing">Google Colab</a>.</p>
+<div class="align-center"><p><img alt="c39e17a578c340a3b6d8ce9a51687b4a" class="no-scaled-link" src="https://i.postimg.cc/KzQ5rfBC/button.png" style="width: 150px;" /> <img alt="2d2d9f8c90904ddba6f8649c095f0ec7" class="no-scaled-link" src="https://i.postimg.cc/L4wPdG9N/join-2.png" style="width: 150px;" /></p>
+<p>⭐ Star us on <a class="reference external" href="https://github.com/camel-ai/camel">Github</a>, join our <a class="reference external" href="https://discord.camel-ai.org">Discord</a> or follow our <a class="reference external" href="https://x.com/camelaiorg">X</a></p>
+</div><p>This cookbook demonstrates how to use CAMEL AI agents to interact with an SQL database using natural language. We’ll achieve this by connecting CAMEL to a <strong>local SQL Model Control Protocol (MCP) server</strong> that you provide. This setup allows the CAMEL agent to leverage MCP for database operations like querying data, listing tables, and describing schemas, all triggered by conversational prompts.</p>
+<p><strong>Key Learnings:</strong></p>
+<ul class="simple">
+<li><p>Understanding the role of MCP in CAMEL for tool usage.</p></li>
+<li><p>Setting up the CAMEL environment and necessary API keys.</p></li>
+<li><p>Preparing a local Python script (<code class="docutils literal notranslate"><span class="pre">sql_server_mcp.py</span></code>) to act as your SQL MCP server.</p></li>
+<li><p>Configuring CAMEL to connect to and utilize this local MCP server.</p></li>
+<li><p>Creating a sample SQLite database.</p></li>
+<li><p>Interacting with the database using natural language queries through a CAMEL agent.</p></li>
+</ul>
+<p>This approach focuses on using CAMEL with an MCP server that runs as a separate Python process, managed by CAMEL’s <code class="docutils literal notranslate"><span class="pre">_MCPServer</span></code> utility.</p>
+<section id="📦-Installation">
+<h2>📦 Installation<a class="headerlink" href="#📦-Installation" title="Link to this heading">#</a></h2>
+<p>First, install the CAMEL package with all its dependencies:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">pip</span> install &quot;camel-ai[all]==0.2.57&quot;
+</pre></div>
+</div>
+</div>
+</section>
+<section id="🔑-Setting-Up-API-Keys">
+<h2>🔑 Setting Up API Keys<a class="headerlink" href="#🔑-Setting-Up-API-Keys" title="Link to this heading">#</a></h2>
+<p>This cookbook uses OpenRouter as the model provider, which gives us access to various LLMs including Claude and Gemini. You’ll need an OpenRouter API key.</p>
+<ol class="arabic simple">
+<li><p>Sign up at <a class="reference external" href="https://openrouter.ai/">OpenRouter</a></p></li>
+<li><p>Get your API key from the dashboard</p></li>
+<li><p>The script will prompt you for the API key when running</p></li>
+</ol>
+</section>
+<section id="Required-Configuration-Files">
+<h2>Required Configuration Files<a class="headerlink" href="#Required-Configuration-Files" title="Link to this heading">#</a></h2>
+<p>Before running the code, you need to set up two important configuration files in your working directory:</p>
+<section id="1.-MCP-Configuration-File-(mcp_config.json)">
+<h3>1. MCP Configuration File (<code class="docutils literal notranslate"><span class="pre">mcp_config.json</span></code>)<a class="headerlink" href="#1.-MCP-Configuration-File-(mcp_config.json)" title="Link to this heading">#</a></h3>
+<p>Create a file named <code class="docutils literal notranslate"><span class="pre">mcp_config.json</span></code> with the following content:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;servers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;script&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;python&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;args&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;sql_server_mcp.py&quot;</span><span class="p">],</span>
+<span class="w">            </span><span class="nt">&quot;transport&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;stdio&quot;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>This configuration tells CAMEL how to start and communicate with your SQL MCP server.</p>
+</section>
+<section id="2.-SQL-MCP-Server-Script-(sql_server_mcp.py)">
+<h3>2. SQL MCP Server Script (<code class="docutils literal notranslate"><span class="pre">sql_server_mcp.py</span></code>)<a class="headerlink" href="#2.-SQL-MCP-Server-Script-(sql_server_mcp.py)" title="Link to this heading">#</a></h3>
+<p>Create a file named <code class="docutils literal notranslate"><span class="pre">sql_server_mcp.py</span></code> in your working directory. This script will handle all database operations: You can download and configure the script <a class="reference external" href="https://github.com/parthshr370/MCP-Servers/blob/main/sql_server/sql_server_mcp.py">here</a></p>
+</section>
+</section>
+<section id="Understanding-MCP-and-Your-Local-SQL-MCP-Server">
+<h2>Understanding MCP and Your Local SQL MCP Server<a class="headerlink" href="#Understanding-MCP-and-Your-Local-SQL-MCP-Server" title="Link to this heading">#</a></h2>
+<p><strong>What is MCP?</strong></p>
+<p>MCP (Model Control Protocol) is a specification that allows Large Language Models (LLMs) to interact with external tools and services in a standardized way. In CAMEL, <code class="docutils literal notranslate"><span class="pre">MCPToolkit</span></code> enables agents to discover and use tools exposed by MCP-compliant servers. This cookbook focuses on using a Python-based MCP server that you’ll run locally.</p>
+<p><strong>Your ``sql_server_mcp.py`` Script</strong></p>
+<p>For this cookbook to function, you need to have a Python script named <code class="docutils literal notranslate"><span class="pre">sql_server_mcp.py</span></code> in the <strong>same directory</strong> as this notebook (or where you execute the Python code derived from this markdown).</p>
+<p>This script is responsible for the direct database interactions. It should:</p>
+<ol class="arabic simple">
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">mcp.server.fastmcp.FastMCP</span></code> (from the <code class="docutils literal notranslate"><span class="pre">modelcontextprotocol</span></code> Python SDK) to define an MCP server instance (e.g., <code class="docutils literal notranslate"><span class="pre">mcp</span> <span class="pre">=</span> <span class="pre">FastMCP(&quot;sqldb&quot;)</span></code>).</p></li>
+<li><p>Define Python functions for database operations, such as:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">execute_query(connection_string:</span> <span class="pre">str,</span> <span class="pre">query:</span> <span class="pre">str)</span> <span class="pre">-&gt;</span> <span class="pre">str</span></code>: Executes a given SQL query.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">list_tables(connection_string:</span> <span class="pre">str)</span> <span class="pre">-&gt;</span> <span class="pre">str</span></code>: Lists tables in a database.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">describe_table(connection_string:</span> <span class="pre">str,</span> <span class="pre">table_name:</span> <span class="pre">str)</span> <span class="pre">-&gt;</span> <span class="pre">str</span></code>: Describes a table’s schema.</p></li>
+</ul>
+</li>
+<li><p>Decorate these functions with <code class="docutils literal notranslate"><span class="pre">&#64;mcp.tool()</span></code> to expose them as tools to the LLM. Each tool should also have an <code class="docutils literal notranslate"><span class="pre">inputSchema</span></code> defined to guide the LLM on how to use it.</p></li>
+<li><p>Include a <code class="docutils literal notranslate"><span class="pre">main</span></code> section (<code class="docutils literal notranslate"><span class="pre">if</span> <span class="pre">__name__</span> <span class="pre">==</span> <span class="pre">&quot;__main__&quot;:</span></code>) that runs the MCP server (e.g., <code class="docutils literal notranslate"><span class="pre">mcp.run(transport='stdio')</span></code>).## Understanding MCP and Your Local SQL MCP Server</p></li>
+</ol>
+<p>This tool handles:</p>
+<ul class="simple">
+<li><p>Connecting to a SQLite database</p></li>
+<li><p>Executing a SQL query</p></li>
+<li><p>Handling different types of queries (SELECT vs. non-SELECT)</p></li>
+<li><p>Formatting results as JSON</p></li>
+<li><p>Error handling</p></li>
+</ul>
+<p>The <code class="docutils literal notranslate"><span class="pre">inputSchema</span></code> defines the required parameters and provides descriptions that help the LLM understand how to use the tool.</p>
+<p>This simple tool creates empty SQLite databases that can later be populated with tables and data.</p>
+<p>This cookbook will demonstrate how CAMEL’s <code class="docutils literal notranslate"><span class="pre">_MCPServer</span></code> utility launches and communicates with your <code class="docutils literal notranslate"><span class="pre">sql_server_mcp.py</span></code> script using the Python interpreter.</p>
+</section>
+<section id="Creating-a-Sample-Database">
+<h2>Creating a Sample Database<a class="headerlink" href="#Creating-a-Sample-Database" title="Link to this heading">#</a></h2>
+<p>Let’s create a local SQLite database (<code class="docutils literal notranslate"><span class="pre">sample.db</span></code>) that our agent will interact with. This database will contain <code class="docutils literal notranslate"><span class="pre">employees</span></code> and <code class="docutils literal notranslate"><span class="pre">departments</span></code> tables.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sqlite3</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="n">db_path</span> <span class="o">=</span> <span class="s2">&quot;sample.db&quot;</span> <span class="c1"># Database will be created in the current working directory</span>
+
+<span class="c1"># Remove existing database if any, to ensure a clean start</span>
+<span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">db_path</span><span class="p">):</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">db_path</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Removed existing database: </span><span class="si">{</span><span class="n">db_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">conn</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">db_path</span><span class="p">)</span>
+<span class="n">cursor</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+
+<span class="c1"># Create employees table</span>
+<span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">CREATE TABLE employees (</span>
+<span class="s2">    id INTEGER PRIMARY KEY,</span>
+<span class="s2">    name TEXT NOT NULL,</span>
+<span class="s2">    department TEXT,</span>
+<span class="s2">    salary REAL,</span>
+<span class="s2">    hire_date TEXT</span>
+<span class="s2">)</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Created &#39;employees&#39; table.&quot;</span><span class="p">)</span>
+
+<span class="c1"># Create departments table</span>
+<span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">CREATE TABLE departments (</span>
+<span class="s2">    id INTEGER PRIMARY KEY,</span>
+<span class="s2">    name TEXT NOT NULL,</span>
+<span class="s2">    budget REAL,</span>
+<span class="s2">    location TEXT</span>
+<span class="s2">)</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Created &#39;departments&#39; table.&quot;</span><span class="p">)</span>
+
+<span class="c1"># Insert sample employee data</span>
+<span class="n">employees_data</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;John Doe&#39;</span><span class="p">,</span> <span class="s1">&#39;Engineering&#39;</span><span class="p">,</span> <span class="mf">85000.00</span><span class="p">,</span> <span class="s1">&#39;2020-01-15&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;Jane Smith&#39;</span><span class="p">,</span> <span class="s1">&#39;Marketing&#39;</span><span class="p">,</span> <span class="mf">75000.00</span><span class="p">,</span> <span class="s1">&#39;2019-05-20&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;Bob Johnson&#39;</span><span class="p">,</span> <span class="s1">&#39;Engineering&#39;</span><span class="p">,</span> <span class="mf">95000.00</span><span class="p">,</span> <span class="s1">&#39;2018-11-10&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="s1">&#39;Alice Brown&#39;</span><span class="p">,</span> <span class="s1">&#39;HR&#39;</span><span class="p">,</span> <span class="mf">65000.00</span><span class="p">,</span> <span class="s1">&#39;2021-03-05&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="s1">&#39;Charlie Davis&#39;</span><span class="p">,</span> <span class="s1">&#39;Engineering&#39;</span><span class="p">,</span> <span class="mf">90000.00</span><span class="p">,</span> <span class="s1">&#39;2020-08-12&#39;</span><span class="p">)</span>
+<span class="p">]</span>
+<span class="n">cursor</span><span class="o">.</span><span class="n">executemany</span><span class="p">(</span><span class="s2">&quot;INSERT INTO employees VALUES (?, ?, ?, ?, ?)&quot;</span><span class="p">,</span> <span class="n">employees_data</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Inserted </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">employees_data</span><span class="p">)</span><span class="si">}</span><span class="s2"> records into &#39;employees&#39; table.&quot;</span><span class="p">)</span>
+
+<span class="c1"># Insert sample department data</span>
+<span class="n">departments_data</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Engineering&#39;</span><span class="p">,</span> <span class="mf">1000000.00</span><span class="p">,</span> <span class="s1">&#39;Building A&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;Marketing&#39;</span><span class="p">,</span> <span class="mf">500000.00</span><span class="p">,</span> <span class="s1">&#39;Building B&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;HR&#39;</span><span class="p">,</span> <span class="mf">300000.00</span><span class="p">,</span> <span class="s1">&#39;Building A&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="s1">&#39;Finance&#39;</span><span class="p">,</span> <span class="mf">600000.00</span><span class="p">,</span> <span class="s1">&#39;Building C&#39;</span><span class="p">)</span>
+<span class="p">]</span>
+<span class="n">cursor</span><span class="o">.</span><span class="n">executemany</span><span class="p">(</span><span class="s2">&quot;INSERT INTO departments VALUES (?, ?, ?, ?)&quot;</span><span class="p">,</span> <span class="n">departments_data</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Inserted </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">departments_data</span><span class="p">)</span><span class="si">}</span><span class="s2"> records into &#39;departments&#39; table.&quot;</span><span class="p">)</span>
+
+<span class="n">conn</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+<span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sample database &#39;</span><span class="si">{</span><span class="n">db_path</span><span class="si">}</span><span class="s2">&#39; created and populated successfully.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Creating-the-CAMEL-Agent">
+<h2>Creating the CAMEL Agent<a class="headerlink" href="#Creating-the-CAMEL-Agent" title="Link to this heading">#</a></h2>
+<p>Now let’s create our CAMEL agent that will interact with the database. Save this as <code class="docutils literal notranslate"><span class="pre">mcp_camel.py</span></code>:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">getpass</span><span class="w"> </span><span class="kn">import</span> <span class="n">getpass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="c1"># CAMEL AI Imports</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.agents</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatAgent</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.messages</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseMessage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModelFactory</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.toolkits</span><span class="w"> </span><span class="kn">import</span> <span class="n">MCPToolkit</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModelPlatformType</span><span class="p">,</span> <span class="n">RoleType</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+    <span class="c1"># Path to your local MCP server script</span>
+    <span class="n">server_script_path</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span> <span class="o">/</span> <span class="s2">&quot;sql_server_mcp.py&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">server_script_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;MCP server script not found at: </span><span class="si">{</span><span class="n">server_script_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Please create &#39;sql_server_mcp.py&#39; or update the path.&quot;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="c1"># Path to your SQLite database</span>
+    <span class="n">db_path</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span> <span class="o">/</span> <span class="s2">&quot;sample.db&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">db_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Database not found at: </span><span class="si">{</span><span class="n">db_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Please run the database setup script first.&quot;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="c1"># Initialize MCPToolkit with config file</span>
+    <span class="n">config_file_path</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span> <span class="o">/</span> <span class="s2">&quot;mcp_config.json&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">config_file_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;MCP config file not found at: </span><span class="si">{</span><span class="n">config_file_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="n">mcp_toolkit</span> <span class="o">=</span> <span class="n">MCPToolkit</span><span class="p">(</span><span class="n">config_path</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">config_file_path</span><span class="p">))</span>
+
+    <span class="n">tools</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">async</span> <span class="k">with</span> <span class="n">mcp_toolkit</span><span class="o">.</span><span class="n">connection</span><span class="p">()</span> <span class="k">as</span> <span class="n">toolkit_connection</span><span class="p">:</span>
+        <span class="n">tools</span> <span class="o">=</span> <span class="n">toolkit_connection</span><span class="o">.</span><span class="n">get_tools</span><span class="p">()</span>
+
+    <span class="c1"># Get API key securely from user input</span>
+    <span class="n">openrouter_api_key</span> <span class="o">=</span> <span class="n">getpass</span><span class="p">(</span><span class="s1">&#39;Enter your OpenRouter API key: &#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">openrouter_api_key</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;API key is required to proceed.&quot;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">ModelFactory</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">model_platform</span><span class="o">=</span><span class="n">ModelPlatformType</span><span class="o">.</span><span class="n">OPENROUTER</span><span class="p">,</span>
+            <span class="n">model_type</span><span class="o">=</span><span class="s2">&quot;anthropic/claude-3.7-sonnet&quot;</span><span class="p">,</span>
+            <span class="n">api_key</span><span class="o">=</span><span class="n">openrouter_api_key</span><span class="p">,</span>
+            <span class="n">model_config_dict</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;temperature&quot;</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
+                <span class="s2">&quot;max_tokens&quot;</span><span class="p">:</span> <span class="mi">2048</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Model configured successfully.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># define the system message in detail</span>
+        <span class="n">system_content</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;You are a helpful SQL assistant with access to MCP tools for database operations. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;The target database is located at: </span><span class="si">{</span><span class="n">db_path</span><span class="si">}</span><span class="s2">. &quot;</span>
+            <span class="s2">&quot;Available tools:</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;1. execute_query(connection_string, query) - Execute SQL queries</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;2. list_tables(connection_string) - List all tables</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;3. describe_table(connection_string, table_name) - Get table schema</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;4. get_table_row_count(connection_string, table_name) - Count rows</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">When using these tools:</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;- Always use the full path to the database as connection_string</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;- Parse and display the JSON responses from the tools</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;- Handle any error messages in the responses</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;- For listing data, first get tables then query each one</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Never write raw SQL without using the tools to execute it.&quot;</span>
+        <span class="p">)</span>
+
+        <span class="n">system_message</span> <span class="o">=</span> <span class="n">BaseMessage</span><span class="p">(</span>
+            <span class="n">role_name</span><span class="o">=</span><span class="s2">&quot;SQL Assistant&quot;</span><span class="p">,</span>
+            <span class="n">role_type</span><span class="o">=</span><span class="n">RoleType</span><span class="o">.</span><span class="n">ASSISTANT</span><span class="p">,</span>
+            <span class="n">meta_dict</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="s2">&quot;SQL Database Operations&quot;</span><span class="p">},</span>
+            <span class="n">content</span><span class="o">=</span><span class="n">system_content</span>
+        <span class="p">)</span>
+
+        <span class="n">agent</span> <span class="o">=</span> <span class="n">ChatAgent</span><span class="p">(</span>
+            <span class="n">system_message</span><span class="o">=</span><span class="n">system_message</span><span class="p">,</span>
+            <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+            <span class="n">tools</span><span class="o">=</span><span class="n">tools</span>
+        <span class="p">)</span>
+        <span class="n">agent</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+        <span class="c1"># Example query - you can modify this or make it interactive</span>
+        <span class="n">user_question</span> <span class="o">=</span> <span class="s2">&quot;What tables are in the database and what&#39;s in them?&quot;</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&gt;&gt;&gt; User: </span><span class="si">{</span><span class="n">user_question</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">agent</span><span class="o">.</span><span class="n">astep</span><span class="p">(</span><span class="n">user_question</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">response</span> <span class="ow">and</span> <span class="n">response</span><span class="o">.</span><span class="n">msgs</span><span class="p">:</span>
+            <span class="n">agent_reply</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">msgs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">content</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&lt;&lt;&lt; Agent: </span><span class="si">{</span><span class="n">agent_reply</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&lt;&lt;&lt; Agent: No response received from the model.&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Response object or messages were empty&quot;</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Script finished.&quot;</span><span class="p">)</span>
+
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;An error occurred: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Error: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span> <span class="o">==</span> <span class="s2">&quot;win32&quot;</span> <span class="ow">and</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">8</span><span class="p">):</span>
+        <span class="n">asyncio</span><span class="o">.</span><span class="n">set_event_loop_policy</span><span class="p">(</span><span class="n">asyncio</span><span class="o">.</span><span class="n">WindowsSelectorEventLoopPolicy</span><span class="p">())</span>
+    <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Running-the-Example">
+<h2>Running the Example<a class="headerlink" href="#Running-the-Example" title="Link to this heading">#</a></h2>
+<ol class="arabic">
+<li><p>Make sure you have all three required files in your directory:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">mcp_config.json</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sql_server_mcp.py</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mcp_camel.py</span></code></p></li>
+</ul>
+</li>
+<li><p>Create and populate the database by running the database setup code</p></li>
+<li><p>Run the CAMEL agent:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>mcp_camel.py
+</pre></div>
+</div>
+</li>
+<li><p>When prompted, enter your OpenRouter API key</p></li>
+</ol>
+<p>The agent will then:</p>
+<ol class="arabic simple">
+<li><p>Connect to the local MCP server</p></li>
+<li><p>Use the provided tools to interact with the database</p></li>
+<li><p>Display the results in a human-readable format</p></li>
+</ol>
+</section>
+<section id="Example-Output--">
+<h2>Example Output -<a class="headerlink" href="#Example-Output--" title="Link to this heading">#</a></h2>
+<p>Enter your OpenRouter API key: Agent: I’ll help you explore the database by first listing all tables and then examining their contents.</p>
+<p>Let’s start by listing the tables in the database:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">list_tables</span><span class="p">(</span><span class="s2">&quot;sample.db&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Based on the response, the database contains the following tables:</p>
+<ul class="simple">
+<li><p>customers</p></li>
+<li><p>orders</p></li>
+<li><p>products</p></li>
+</ul>
+<p>Now, let’s examine the schema of each table to understand their structure:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">describe_table</span><span class="p">(</span><span class="s2">&quot;sample.db&quot;</span><span class="p">,</span> <span class="s2">&quot;customers&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The customers table has the following columns:</p>
+<ul class="simple">
+<li><p>id (INTEGER): Primary key</p></li>
+<li><p>name (TEXT): Customer name</p></li>
+<li><p>email (TEXT): Customer email</p></li>
+<li><p>address (TEXT): Customer address</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">describe_table</span><span class="p">(</span><span class="s2">&quot;sample.db&quot;</span><span class="p">,</span> <span class="s2">&quot;orders&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The orders table has the following columns:</p>
+<ul class="simple">
+<li><p>id (INTEGER): Primary key</p></li>
+<li><p>customer_id (INTEGER): Foreign key referencing customers</p></li>
+<li><p>product_id (INTEGER): Foreign key referencing products</p></li>
+<li><p>quantity (INTEGER): Order quantity</p></li>
+<li><p>order_date (TEXT): Date of the order</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">describe_table</span><span class="p">(</span><span class="s2">&quot;sample.db&quot;</span><span class="p">,</span> <span class="s2">&quot;products&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The products table has the following columns:</p>
+<ul class="simple">
+<li><p>id (INTEGER): Primary key</p></li>
+<li><p>name (TEXT): Product name</p></li>
+<li><p>price (REAL): Product price</p></li>
+<li><p>category (TEXT): Product category</p></li>
+</ul>
+<p>To summarize:</p>
+<ol class="arabic simple">
+<li><p>The database contains 3 tables: customers, products, and orders</p></li>
+<li><p>The customers table has 5 customers with their contact information</p></li>
+<li><p>The products table has 6 products with pricing and category information</p></li>
+<li><p>The orders table has 10 orders linking customers to products with quantity and date information</p></li>
+</ol>
+</section>
+<section id="Example-Queries">
+<h2>Example Queries<a class="headerlink" href="#Example-Queries" title="Link to this heading">#</a></h2>
+<p>You can modify the <code class="docutils literal notranslate"><span class="pre">user_question</span></code> in <code class="docutils literal notranslate"><span class="pre">mcp_camel.py</span></code> to ask different questions, such as:</p>
+<ul class="simple">
+<li><p>“What tables are in the database?”</p></li>
+<li><p>“Show me all customers and their orders”</p></li>
+<li><p>“How many products do we have in stock?”</p></li>
+<li><p>“List all orders with their items and total amounts”</p></li>
+</ul>
+</section>
+<section id="Conclusion">
+<h2>Conclusion<a class="headerlink" href="#Conclusion" title="Link to this heading">#</a></h2>
+<p>In this cookbook, you’ve learned how to:</p>
+<ul class="simple">
+<li><p>Set up a complete MCP-based database interaction system</p></li>
+<li><p>Create and configure the necessary files (<code class="docutils literal notranslate"><span class="pre">mcp_config.json</span></code> and <code class="docutils literal notranslate"><span class="pre">sql_server_mcp.py</span></code>)</p></li>
+<li><p>Build a CAMEL agent that can understand and execute database operations</p></li>
+<li><p>Use OpenRouter to access powerful language models</p></li>
+<li><p>Handle database operations safely through MCP tools</p></li>
+</ul>
+<p>This pattern can be extended to other types of databases or services by modifying the MCP server implementation while keeping the same CAMEL agent interface.</p>
+<p>That’s everything: Got questions about 🐫 CAMEL-AI? Join us on <a class="reference external" href="https://discord.camel-ai.org">Discord</a>! Whether you want to share feedback, explore the latest in multi-agent systems, get support, or connect with others on exciting projects, we’d love to have you in the community! 🤝</p>
+<p>Check out some of our other work:</p>
+<ol class="arabic simple">
+<li><p>🐫 Creating Your First CAMEL Agent <a class="reference external" href="https://docs.camel-ai.org/cookbooks/create_your_first_agent.html">free Colab</a></p></li>
+<li><p>Graph RAG Cookbook <a class="reference external" href="https://colab.research.google.com/drive/1uZKQSuu0qW6ukkuSv9TukLB9bVaS1H0U?usp=sharing">free Colab</a></p></li>
+<li><p>🧑‍⚖️ Create A Hackathon Judge Committee with Workforce <a class="reference external" href="https://colab.research.google.com/drive/18ajYUMfwDx3WyrjHow3EvUMpKQDcrLtr?usp=sharing">free Colab</a></p></li>
+<li><p>🔥 3 ways to ingest data from websites with Firecrawl &amp; CAMEL <a class="reference external" href="https://colab.research.google.com/drive/1lOmM3VmgR1hLwDKdeLGFve_75RFW0R9I?usp=sharing">free Colab</a></p></li>
+<li><p>🦥 Agentic SFT Data Generation with CAMEL and Mistral Models, Fine-Tuned with Unsloth <a class="reference external" href="https://colab.research.google.com/drive/1lYgArBw7ARVPSpdwgKLYnp_NEXiNDOd-?usp=sharingg">free Colab</a></p></li>
+</ol>
+<p>Thanks from everyone at 🐫 CAMEL-AI</p>
+<div class="align-center"><p><img alt="0d3e18b0868c4ec3a3ad6f9e84b95770" class="no-scaled-link" src="https://i.postimg.cc/KzQ5rfBC/button.png" style="width: 150px;" /> <img alt="b366d64cd423400086b31c58a7ccb349" class="no-scaled-link" src="https://i.postimg.cc/L4wPdG9N/join-2.png" style="width: 150px;" /></p>
+<p>⭐ Star us on <a class="reference external" href="https://github.com/camel-ai/camel">Github</a>, join our <a class="reference external" href="https://discord.camel-ai.org">Discord</a> or follow our <a class="reference external" href="https://x.com/camelaiorg">X</a></p>
+</div></section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="index.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">MCP Cookbooks</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../../modules.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">camel</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#📦-Installation">📦 Installation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#🔑-Setting-Up-API-Keys">🔑 Setting Up API Keys</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Required-Configuration-Files">Required Configuration Files</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#1.-MCP-Configuration-File-(mcp_config.json)">1. MCP Configuration File (<code class="docutils literal notranslate"><span class="pre">mcp_config.json</span></code>)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#2.-SQL-MCP-Server-Script-(sql_server_mcp.py)">2. SQL MCP Server Script (<code class="docutils literal notranslate"><span class="pre">sql_server_mcp.py</span></code>)</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Understanding-MCP-and-Your-Local-SQL-MCP-Server">Understanding MCP and Your Local SQL MCP Server</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Creating-a-Sample-Database">Creating a Sample Database</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Creating-the-CAMEL-Agent">Creating the CAMEL Agent</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Running-the-Example">Running the Example</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Example-Output--">Example Output -</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Example-Queries">Example Queries</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Conclusion">Conclusion</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By CAMEL-AI.org
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, CAMEL-AI.org.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
