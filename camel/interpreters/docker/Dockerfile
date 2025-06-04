@@ -45,7 +45,12 @@ RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | b
 # Install Python packages
 RUN python3.10 -m pip install --upgrade pip setuptools wheel 
 
-# Create version check script
+# Install uv
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
+    mv /root/.local/bin/uv /usr/local/bin/uv && \
+    mv /root/.local/bin/uvx /usr/local/bin/uvx && \
+    chmod +x /usr/local/bin/uv && \
+    chmod +x /usr/local/bin/uvx
 
 # Setup working directory
 WORKDIR /workspace
