@@ -30,10 +30,29 @@ from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
     api_keys_required,
-    conditional_observe,
-    update_langfuse_observation,
-    update_langfuse_output,
+    get_current_agent_session_id,
+    is_langfuse_available,
+    update_langfuse_trace,
 )
+
+if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
+    try:
+        from langfuse.decorators import observe
+    except ImportError:
+
+        def observe(*args, **kwargs):
+            def decorator(func):
+                return func
+
+            return decorator
+else:
+
+    def observe(*args, **kwargs):
+        def decorator(func):
+            return func
+
+        return decorator
+
 
 UNSUPPORTED_PARAMS = {
     "temperature",
@@ -93,41 +112,23 @@ class OpenAIModel(BaseModelBackend):
             model_type, model_config_dict, api_key, url, token_counter, timeout
         )
 
-        try:
-            from camel.utils import is_langfuse_available
+        if is_langfuse_available():
+            from langfuse.openai import AsyncOpenAI as LangfuseAsyncOpenAI
+            from langfuse.openai import OpenAI as LangfuseOpenAI
 
-            if is_langfuse_available():
-                from langfuse.openai import AsyncOpenAI as LangfuseAsyncOpenAI
-                from langfuse.openai import OpenAI as LangfuseOpenAI
-
-                self._client = LangfuseOpenAI(
-                    timeout=self._timeout,
-                    max_retries=3,
-                    base_url=self._url,
-                    api_key=self._api_key,
-                )
-                self._async_client = LangfuseAsyncOpenAI(
-                    timeout=self._timeout,
-                    max_retries=3,
-                    base_url=self._url,
-                    api_key=self._api_key,
-                )
-            else:
-                # Use regular OpenAI clients
-                self._client = OpenAI(
-                    timeout=self._timeout,
-                    max_retries=3,
-                    base_url=self._url,
-                    api_key=self._api_key,
-                )
-                self._async_client = AsyncOpenAI(
-                    timeout=self._timeout,
-                    max_retries=3,
-                    base_url=self._url,
-                    api_key=self._api_key,
-                )
-        except ImportError:
-            # Fallback to regular OpenAI clients
+            self._client = LangfuseOpenAI(
+                timeout=self._timeout,
+                max_retries=3,
+                base_url=self._url,
+                api_key=self._api_key,
+            )
+            self._async_client = LangfuseAsyncOpenAI(
+                timeout=self._timeout,
+                max_retries=3,
+                base_url=self._url,
+                api_key=self._api_key,
+            )
+        else:
             self._client = OpenAI(
                 timeout=self._timeout,
                 max_retries=3,
@@ -223,7 +224,7 @@ class OpenAIModel(BaseModelBackend):
             self._token_counter = OpenAITokenCounter(self.model_type)
         return self._token_counter
 
-    @conditional_observe(as_type="generation")
+    @observe()
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -245,8 +246,20 @@ class OpenAIModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        # Update Langfuse observation if available
-        update_langfuse_observation(None)(self, messages, tools)
+
+        # Update Langfuse trace with current agent session and metadata
+        agent_session_id = get_current_agent_session_id()
+        if agent_session_id:
+            update_langfuse_trace(
+                session_id=agent_session_id,
+                metadata={
+                    "source": "camel",
+                    "agent_id": agent_session_id,
+                    "agent_type": "camel_chat_agent",
+                    "model_type": str(self.model_type),
+                },
+                tags=["camel", "openai", str(self.model_type)],
+            )
 
         messages = self._adapt_messages_for_o1_models(messages)
         response_format = response_format or self.model_config_dict.get(
@@ -259,12 +272,9 @@ class OpenAIModel(BaseModelBackend):
         else:
             result = self._request_chat_completion(messages, tools)
 
-        # Update observation with output
-        update_langfuse_output(result)
-
         return result
 
-    @conditional_observe(as_type="generation")
+    @observe()
     async def _arun(
         self,
         messages: List[OpenAIMessage],
@@ -286,8 +296,20 @@ class OpenAIModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
-        # Update Langfuse observation if available
-        update_langfuse_observation(None)(self, messages, tools)
+
+        # Update Langfuse trace with current agent session and metadata
+        agent_session_id = get_current_agent_session_id()
+        if agent_session_id:
+            update_langfuse_trace(
+                session_id=agent_session_id,
+                metadata={
+                    "source": "camel",
+                    "agent_id": agent_session_id,
+                    "agent_type": "camel_chat_agent",
+                    "model_type": str(self.model_type),
+                },
+                tags=["camel", "openai", str(self.model_type)],
+            )
 
         messages = self._adapt_messages_for_o1_models(messages)
         response_format = response_format or self.model_config_dict.get(
@@ -299,9 +321,6 @@ class OpenAIModel(BaseModelBackend):
             ] = await self._arequest_parse(messages, response_format, tools)
         else:
             result = await self._arequest_chat_completion(messages, tools)
-
-        # Update observation with output
-        update_langfuse_output(result)
 
         return result
 

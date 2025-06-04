@@ -11,12 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-
 import logging
 import os
-from typing import Any, Callable, Dict, Optional
+import threading
+from typing import Any, Dict, List, Optional
 
-# Langfuse configuration singleton
+# Thread-local storage for agent session IDs
+_local = threading.local()
+
+# Global flag to track if Langfuse has been configured
 _langfuse_configured = False
 
 
@@ -26,7 +29,7 @@ def configure_langfuse(
     host: Optional[str] = None,
     debug: Optional[bool] = None,
     enabled: Optional[bool] = None,
-) -> bool:
+):
     r"""Configure Langfuse for CAMEL models.
 
     Args:
@@ -34,266 +37,142 @@ def configure_langfuse(
         secret_key: Langfuse secret key. Can be set via LANGFUSE_SECRET_KEY.
         host: Langfuse host URL. Can be set via LANGFUSE_HOST.
         debug: Enable debug mode. Can be set via LANGFUSE_DEBUG.
-        enabled: Enable/disable Langfuse tracing.
-
-    Returns:
-        bool: True if Langfuse was successfully configured, False otherwise.
+        enabled: Enable/disable tracing. Can be set via LANGFUSE_ENABLED.
 
     Note:
-        Langfuse tracing is disabled by default. You must explicitly set
-        LANGFUSE_ENABLED=true or enabled=True to enable tracing.
+        This function configures the native langfuse_context which works with
+        @observe() decorators. Set enabled=False to disable all tracing.
     """
     global _langfuse_configured
 
-    logger = logging.getLogger("camel.models")
-
-    if _langfuse_configured:
-        logger.debug("Langfuse already configured")
-        return True
+    logger = logging.getLogger("camel.langfuse")
 
     try:
-        logger.debug("Attempting to import langfuse.decorators")
         from langfuse.decorators import langfuse_context
+    except ImportError as e:
+        logger.debug(f"Langfuse not installed: {e}")
 
-        # Get configuration from environment or parameters
-        public_key = public_key or os.environ.get("LANGFUSE_PUBLIC_KEY")
-        secret_key = secret_key or os.environ.get("LANGFUSE_SECRET_KEY")
-        host = host or os.environ.get(
-            "LANGFUSE_HOST", "https://us.cloud.langfuse.com"
-        )
-        debug = (
-            debug
-            if debug is not None
-            else os.environ.get("LANGFUSE_DEBUG", "False").lower() == "true"
-        )
+    # Get configuration from environment or parameters
+    public_key = public_key or os.environ.get("LANGFUSE_PUBLIC_KEY")
+    secret_key = secret_key or os.environ.get("LANGFUSE_SECRET_KEY")
+    host = host or os.environ.get(
+        "LANGFUSE_HOST", "https://cloud.langfuse.com"
+    )
+    debug = (
+        debug
+        if debug is not None
+        else os.environ.get("LANGFUSE_DEBUG", "False").lower() == "true"
+    )
 
-        logger.debug(
-            f"Configuration values - public_key: "
-            f"{'***' + public_key[-4:] if public_key else None}, "
-            f"secret_key: {'***' + secret_key[-4:] if secret_key else None}, "
-            f"host: {host}, debug: {debug}, enabled: {enabled}"
-        )
-
-        # Check if explicitly enabled/disabled via environment variable
+    # Handle enabled parameter
+    if enabled is None:
         env_enabled_str = os.environ.get("LANGFUSE_ENABLED")
-        env_enabled: Optional[bool] = None
         if env_enabled_str is not None:
-            env_enabled = env_enabled_str.lower() == "true"
-
-        logger.debug(f"Environment enabled setting: {env_enabled}")
-
-        # Determine final enabled state
-        if enabled is not None:
-            # Parameter takes precedence
-            final_enabled = enabled
-            logger.debug(f"Using parameter enabled: {final_enabled}")
-        elif env_enabled is not None:
-            # Environment variable takes precedence
-            final_enabled = env_enabled
-            logger.debug(f"Using environment enabled: {final_enabled}")
+            enabled = env_enabled_str.lower() == "true"
         else:
-            final_enabled = False
-            logger.debug("No explicit setting, defaulting to disabled")
+            enabled = False  # Default to disabled
 
-        # If explicitly disabled, don't configure even if keys are present
-        if not final_enabled:
-            logger.debug(
-                "Langfuse tracing disabled - explicit setting required"
-            )
-            return False
+    # If not enabled, don't configure anything and don't call langfuse function
+    if not enabled:
+        _langfuse_configured = False
+        logger.info("Langfuse tracing disabled for CAMEL models")
 
-        # Check if keys are available when enabled
-        if not public_key or not secret_key:
-            logger.debug("Langfuse enabled but keys not found")
-            return False
+    logger.debug(
+        f"Configuring Langfuse - enabled: {enabled}, "
+        f"public_key: {'***' + public_key[-4:] if public_key else None}, "
+        f"host: {host}, debug: {debug}"
+    )
+    if enabled and public_key and secret_key:
+        _langfuse_configured = True
+    else:
+        _langfuse_configured = False
 
-        logger.debug("Attempting to configure langfuse_context")
-
-        # Try to configure Langfuse
+    try:
+        # Configure langfuse_context with native method
         langfuse_context.configure(
             public_key=public_key,
             secret_key=secret_key,
             host=host,
             debug=debug,
-            enabled=final_enabled,
+            enabled=True,  # Always True here since we checked enabled above
         )
 
-        logger.debug("langfuse_context.configure() completed successfully")
+        logger.info("Langfuse tracing enabled for CAMEL models")
 
-        _langfuse_configured = True
-        logger.info("Langfuse configured successfully for CAMEL models")
-        return True
-
-    except ImportError as e:
-        logger.debug(f"Langfuse not installed: {e}")
-        return False
     except Exception as e:
         logger.error(f"Failed to configure Langfuse: {e}")
-        logger.debug(f"Exception details: {type(e).__name__}: {e}")
-        import traceback
-
-        logger.debug(f"Traceback: {traceback.format_exc()}")
-        return False
 
 
 def is_langfuse_available() -> bool:
-    r"""Check if Langfuse is installed and configured."""
-    global _langfuse_configured
-
-    try:
-        from langfuse.decorators import langfuse_context
-
-        # First check our global variable
-        if not _langfuse_configured:
-            return False
-
-        try:
-            langfuse_context.get_current_trace()
-            return True
-        except Exception:
-            try:
-                client = getattr(langfuse_context, "_client", None) or getattr(
-                    langfuse_context, "client", None
-                )
-                return client is not None
-            except Exception:
-                return _langfuse_configured
-
-    except ImportError:
-        return False
-    except Exception:
-        return _langfuse_configured
+    r"""Check if Langfuse is configured."""
+    return _langfuse_configured
 
 
-def get_langfuse_context():
-    r"""Get the Langfuse context if available."""
-    try:
-        from langfuse.decorators import langfuse_context
-
-        if is_langfuse_available():
-            return langfuse_context
-        return None
-    except ImportError:
-        return None
-
-
-def conditional_observe(as_type: Optional[str] = None, **kwargs):
-    r"""Conditional decorator that only applies Langfuse observe if
-        available and configured.
+def set_current_agent_session_id(session_id: str) -> None:
+    """Set the session ID for the current agent in thread-local storage.
 
     Args:
-        as_type: The observation type (e.g., "generation")
-        **kwargs: Additional arguments for the observe decorator
-
-    Returns:
-        Decorator function that either applies Langfuse observe or returns
-        the original function.
+        session_id: The session ID to set for the current agent.
     """
 
-    def decorator(func: Callable) -> Callable:
-        if is_langfuse_available():
-            try:
-                from langfuse.decorators import observe
-
-                return observe(as_type=as_type, **kwargs)(func)
-            except ImportError:
-                pass
-
-        return func
-
-    return decorator
+    _local.agent_session_id = session_id
 
 
-def update_langfuse_observation(func_wrapper):
-    r"""Helper function to update Langfuse observation with model details."""
+def get_current_agent_session_id() -> Optional[str]:
+    """Get the session ID for the current agent from thread-local storage.
 
-    def update_observation(model, messages, tools=None):
-        if is_langfuse_available():
-            try:
-                from langfuse.decorators import langfuse_context
-
-                langfuse_context.update_current_observation(
-                    model=str(model.model_type),
-                    model_parameters=model.model_config_dict,
-                    input={"messages": messages, "tools": tools},
-                )
-            except Exception as e:
-                logging.getLogger("camel.models").debug(
-                    f"Failed to update Langfuse observation: {e}"
-                )
-
-    return update_observation
-
-
-def update_langfuse_output(result):
-    r"""Helper function to update Langfuse observation with output."""
+    Returns:
+        Optional[str]: The session ID for the current agent, None if not set.
+    """
     if is_langfuse_available():
-        try:
-            from langfuse.decorators import langfuse_context
-
-            if hasattr(result, 'choices') and result.choices:
-                langfuse_context.update_current_observation(
-                    output=result.choices[0].message.content
-                    if result.choices[0].message
-                    else None
-                )
-        except Exception as e:
-            logging.getLogger("camel.models").debug(
-                f"Failed to update Langfuse output: {e}"
-            )
+        return getattr(_local, 'agent_session_id', None)
+    return None
 
 
-def get_langfuse_status() -> Dict[str, Any]:
-    r"""Get detailed Langfuse configuration status for debugging.
+def update_langfuse_trace(
+    session_id: Optional[str] = None,
+    user_id: Optional[str] = None,
+    metadata: Optional[Dict[str, Any]] = None,
+    tags: Optional[List[str]] = None,
+) -> bool:
+    """Update the current Langfuse trace with session ID and metadata.
+
+    Args:
+        session_id: Optional session ID to use. If None, uses the current
+        agent's session ID.
+        user_id: Optional user ID for the trace.
+        metadata: Optional metadata dictionary.
+        tags: Optional list of tags.
 
     Returns:
-        Dict[str, Any]: Status information including configuration state and
-        reasons.
+        bool: True if update was successful, False otherwise.
     """
-    global _langfuse_configured
+    if not is_langfuse_available():
+        return False
 
-    has_keys = bool(
-        os.environ.get("LANGFUSE_PUBLIC_KEY")
-        and os.environ.get("LANGFUSE_SECRET_KEY")
-    )
-    env_enabled_str = os.environ.get("LANGFUSE_ENABLED")
-    env_enabled: Optional[bool] = None
-    if env_enabled_str is not None:
-        env_enabled = env_enabled_str.lower() == "true"
-    explicitly_enabled = env_enabled if env_enabled is not None else None
+    try:
+        from langfuse.decorators import langfuse_context
 
-    should_be_configured = has_keys and explicitly_enabled is True
+        # Use provided session_id or get from thread-local storage
+        final_session_id = session_id or get_current_agent_session_id()
 
-    actual_configured = _langfuse_configured and should_be_configured
+        update_data: Dict[str, Any] = {}
+        if final_session_id:
+            update_data["session_id"] = final_session_id
+        if user_id:
+            update_data["user_id"] = user_id
+        if metadata:
+            update_data["metadata"] = metadata
+        if tags:
+            update_data["tags"] = tags
 
-    status: Dict[str, Any] = {
-        "configured": actual_configured,
-        "global_var_configured": _langfuse_configured,  # For debugging
-        "should_be_configured": should_be_configured,  # For debugging
-        "has_public_key": bool(os.environ.get("LANGFUSE_PUBLIC_KEY")),
-        "has_secret_key": bool(os.environ.get("LANGFUSE_SECRET_KEY")),
-        "explicitly_enabled": explicitly_enabled,
-        "host": os.environ.get(
-            "LANGFUSE_HOST", "https://us.cloud.langfuse.com"
-        ),
-        "debug": os.environ.get("LANGFUSE_DEBUG", "false").lower() == "true",
-    }
+        if update_data:
+            langfuse_context.update_current_trace(**update_data)
+            return True
 
-    if _langfuse_configured:
-        try:
-            from langfuse.decorators import langfuse_context
+    except Exception as e:
+        logging.getLogger("camel.langfuse").debug(
+            f"Failed to update Langfuse trace: {e}"
+        )
 
-            context_checks = {}
-
-            for attr in ['_client', 'client', '_langfuse', 'langfuse']:
-                context_checks[f"has_{attr}"] = hasattr(langfuse_context, attr)
-                if hasattr(langfuse_context, attr):
-                    obj = getattr(langfuse_context, attr)
-                    context_checks[f"{attr}_is_none"] = obj is None
-
-            status["context_debug"] = context_checks
-
-        except Exception as e:
-            status["context_error"] = str(e)
-
-    return status
+    return False

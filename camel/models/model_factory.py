@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
+import os
 from typing import ClassVar, Dict, Optional, Type, Union
 
 from camel.models.aiml_model import AIMLModel
@@ -142,8 +143,11 @@ class ModelFactory:
         Raises:
             ValueError: If there is no backend for the model.
         """
-        # Auto-configure Langfuse if environment variables are available
-        configure_langfuse()
+
+        # Auto-configure Langfuse only if explicitly enabled
+        env_enabled_str = os.environ.get("LANGFUSE_ENABLED")
+        if env_enabled_str and env_enabled_str.lower() == "true":
+            configure_langfuse()
 
         # Convert string to ModelPlatformType enum if needed
         if isinstance(model_platform, str):

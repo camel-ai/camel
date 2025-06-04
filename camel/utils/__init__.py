@@ -45,13 +45,10 @@ from .constants import Constants
 from .deduplication import DeduplicationResult, deduplicate_internally
 from .filename import sanitize_filename
 from .langfuse import (
-    conditional_observe,
     configure_langfuse,
-    get_langfuse_context,
-    get_langfuse_status,
+    get_current_agent_session_id,
     is_langfuse_available,
-    update_langfuse_observation,
-    update_langfuse_output,
+    update_langfuse_trace,
 )
 from .mcp import MCPServer
 from .response_format import get_pydantic_model, model_from_json_schema
@@ -108,9 +105,6 @@ __all__ = [
     "run_async",
     "configure_langfuse",
     "is_langfuse_available",
-    "get_langfuse_context",
-    "conditional_observe",
-    "update_langfuse_observation",
-    "update_langfuse_output",
-    "get_langfuse_status",
+    "get_current_agent_session_id",
+    "update_langfuse_trace",
 ]

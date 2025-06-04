@@ -37,10 +37,7 @@ from camel.types import (
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
-    api_keys_required,  
-    conditional_observe,
-    update_langfuse_observation,
-    update_langfuse_output, 
+    api_keys_required,
 )
 
 try:
@@ -164,7 +161,6 @@ class SambaModel(BaseModelBackend):
                 " SambaNova service"
             )
 
-    @conditional_observe(as_type="generation")
     async def _arun(  # type: ignore[misc]
         self,
         messages: List[OpenAIMessage],
@@ -182,8 +178,6 @@ class SambaModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
-        # Update Langfuse observation if available
-        update_langfuse_observation(None)(self, messages, tools)
 
         if "tools" in self.model_config_dict:
             del self.model_config_dict["tools"]
@@ -192,7 +186,6 @@ class SambaModel(BaseModelBackend):
         else:
             return await self._arun_non_streaming(messages)
 
-    @conditional_observe(as_type="generation")
     def _run(  # type: ignore[misc]
         self,
         messages: List[OpenAIMessage],
@@ -210,8 +203,6 @@ class SambaModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        # Update Langfuse observation if available
-        update_langfuse_observation(None)(self, messages, tools)
 
         if "tools" in self.model_config_dict:
             del self.model_config_dict["tools"]
@@ -220,7 +211,6 @@ class SambaModel(BaseModelBackend):
         else:
             return self._run_non_streaming(messages)
 
-    @conditional_observe(as_type="generation")
     def _run_streaming(
         self, messages: List[OpenAIMessage]
     ) -> Stream[ChatCompletionChunk]:
@@ -246,9 +236,6 @@ class SambaModel(BaseModelBackend):
                 model=self.model_type,
                 **self.model_config_dict,
             )
-
-            # Update Langfuse observation if available
-            update_langfuse_output(response)
 
             # Add AgentOps LLM Event tracking
             if LLMEvent:
@@ -298,9 +285,6 @@ class SambaModel(BaseModelBackend):
                 model=self.model_type,
                 **self.model_config_dict,
             )
-
-            # Update Langfuse observation if available
-            update_langfuse_output(response)
 
             # Add AgentOps LLM Event tracking
             if LLMEvent:
@@ -458,7 +442,6 @@ class SambaModel(BaseModelBackend):
         """
         return self.model_config_dict.get('stream', False)
 
-    @conditional_observe(as_type="generation")
     async def _arun_streaming(
         self, messages: List[OpenAIMessage]
     ) -> AsyncStream[ChatCompletionChunk]:
@@ -485,9 +468,6 @@ class SambaModel(BaseModelBackend):
                 **self.model_config_dict,
             )
 
-            # Update Langfuse observation if available
-            update_langfuse_output(response)
-
             # Add AgentOps LLM Event tracking
             if LLMEvent:
                 llm_event = LLMEvent(
@@ -511,7 +491,6 @@ class SambaModel(BaseModelBackend):
             )
         raise RuntimeError(f"Unknown URL: {self._url}")
 
-    @conditional_observe(as_type="generation")
     async def _arun_non_streaming(
         self, messages: List[OpenAIMessage]
     ) -> ChatCompletion:
@@ -537,9 +516,6 @@ class SambaModel(BaseModelBackend):
                 model=self.model_type,
                 **self.model_config_dict,
             )
-
-            # Update Langfuse observation if available
-            update_langfuse_output(response)
 
             # Add AgentOps LLM Event tracking
             if LLMEvent:

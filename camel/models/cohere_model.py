@@ -32,9 +32,6 @@ from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
     api_keys_required,
-    conditional_observe,
-    update_langfuse_observation,
-    update_langfuse_output,
 )
 
 try:
@@ -274,7 +271,6 @@ class CohereModel(BaseModelBackend):
 
         return request_config
 
-    @conditional_observe(as_type="generation")
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -290,9 +286,6 @@ class CohereModel(BaseModelBackend):
             ChatCompletion.
         """
         from cohere.core.api_error import ApiError
-
-        # Update Langfuse observation if available
-        update_langfuse_observation(None)(self, messages, tools)
 
         request_config = self._prepare_request(
             messages, response_format, tools
@@ -330,12 +323,8 @@ class CohereModel(BaseModelBackend):
             )
             record(llm_event)
 
-        # Update observation with output
-        update_langfuse_output(openai_response)
-
         return openai_response
 
-    @conditional_observe(as_type="generation")
     async def _arun(
         self,
         messages: List[OpenAIMessage],
@@ -351,9 +340,6 @@ class CohereModel(BaseModelBackend):
             ChatCompletion.
         """
         from cohere.core.api_error import ApiError
-
-        # Update Langfuse observation if available
-        update_langfuse_observation(None)(self, messages, tools)
 
         request_config = self._prepare_request(
             messages, response_format, tools
@@ -390,9 +376,6 @@ class CohereModel(BaseModelBackend):
                 model=self.model_type,
             )
             record(llm_event)
-
-        # Update observation with output
-        update_langfuse_output(openai_response)
 
         return openai_response
 

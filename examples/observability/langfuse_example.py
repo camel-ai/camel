@@ -24,23 +24,14 @@ Note:
 - Tracing will only be enabled if LANGFUSE_ENABLED=true is set
 """
 
-import os
-
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
-from camel.utils import get_langfuse_status
-
-# Enable Langfuse tracing (optional)
-os.environ["LANGFUSE_ENABLED"] = "true"
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
     model_type=ModelType.GPT_4_1_MINI,
 )
-
-status = get_langfuse_status()
-print("Configuration successful:", status.get("configured"))
 
 # Define system message
 sys_msg = "You are a helpful AI assistant, skilled at answering questions."
@@ -49,11 +40,7 @@ sys_msg = "You are a helpful AI assistant, skilled at answering questions."
 camel_agent = ChatAgent(system_message=sys_msg, model=model)
 
 # User message
-user_msg = (
-    "Please introduce the CAMEL AI open-source community "
-    "and explain its main features."
-)
+user_msg = "Calculate the square root after adding 222991 and 1111"
 
-# Get response (if Langfuse is configured, it will automatically trace)
 response = camel_agent.step(user_msg)
 print(response.msgs[0].content)

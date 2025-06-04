@@ -24,9 +24,6 @@ from camel.utils import (
     OpenAITokenCounter,
     api_keys_required,
     dependencies_required,
-    conditional_observe,
-    update_langfuse_observation,
-    update_langfuse_output,
 )
 
 if TYPE_CHECKING:
@@ -191,7 +188,6 @@ class RekaModel(BaseModelBackend):
             )
         return self._token_counter
 
-    @conditional_observe(as_type="generation")
     async def _arun(
         self,
         messages: List[OpenAIMessage],
@@ -207,8 +203,6 @@ class RekaModel(BaseModelBackend):
         Returns:
             ChatCompletion.
         """
-        # Update Langfuse observation if available
-        update_langfuse_observation(None)(self, messages, tools)
 
         reka_messages = self._convert_openai_to_reka_messages(messages)
 
@@ -219,9 +213,6 @@ class RekaModel(BaseModelBackend):
         )
 
         openai_response = self._convert_reka_to_openai_response(response)
-
-        # Update observation with output
-        update_langfuse_output(openai_response)
 
         # Add AgentOps LLM Event tracking
         if LLMEvent:
@@ -239,7 +230,6 @@ class RekaModel(BaseModelBackend):
 
         return openai_response
 
-    @conditional_observe(as_type="generation")
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -255,8 +245,6 @@ class RekaModel(BaseModelBackend):
         Returns:
             ChatCompletion.
         """
-        # Update Langfuse observation if available
-        update_langfuse_observation(None)(self, messages, tools)
 
         reka_messages = self._convert_openai_to_reka_messages(messages)
 
@@ -267,9 +255,6 @@ class RekaModel(BaseModelBackend):
         )
 
         openai_response = self._convert_reka_to_openai_response(response)
-
-        # Update observation with output
-        update_langfuse_output(openai_response)
 
         # Add AgentOps LLM Event tracking
         if LLMEvent:
