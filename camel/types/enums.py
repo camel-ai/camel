@@ -378,7 +378,29 @@ class ModelType(UnifiedModelType, Enum):
     WATSONX_MISTRAL_LARGE = "mistralai/mistral-large"
 
     # Crynux models
+    CRYNUX_LLAMA_3_2_1B = "meta-llama/llama-3.2-1b"
+    CRYNUX_LLAMA_3_2_1B_INSTRUCT = "meta-llama/llama-3.2-1b-instruct"
+    CRYNUX_LLAMA_3_2_3B = "meta-llama/llama-3.2-3b"
+    CRYNUX_LLAMA_3_2_3B_INSTRUCT = "meta-llama/llama-3.2-3b-instruct"
+    CRYNUX_LLAMA_3_1_8B = "meta-llama/llama-3.1-8b"
+    CRYNUX_LLAMA_3_1_8B_INSTRUCT = "meta-llama/llama-3.1-8b-instruct"
+    CRYNUX_LLAMA_3_8B = "meta-llama/llama-3-8b"
+    CRYNUX_LLAMA_3_8B_INSTRUCT = "meta-llama/Meta-Llama-3-8B-Instruct"
+
+    CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_1_5B = "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+    CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_7B = "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
+    CRYNUX_DEEPSEEK_R1_DISTILL_LLAMA_8B = "deepseek-ai/DeepSeek-R1-Distill-Llama-8B"
+
+    CRYNUX_QWEN_3_4_B = "Qwen/Qwen3-4B"
+    CRYNUX_QWEN_3_8_B = "Qwen/Qwen3-8B"
+    CRYNUX_QWEN_2_5_7B = "Qwen/Qwen2.5-7B"
     CRYNUX_QWEN_2_5_7B_INSTRUCT = "Qwen/Qwen2.5-7B-Instruct"
+
+    CRYNUX_GEMMA_3_4B_PT = "google/gemma-3-4b-pt"
+    CRYNUX_GEMMA_3_4B_IT = "google/gemma-3-4b-it"
+
+    CRYNUX_NOUS_HERMES_3_LLAMA_3_1_8B = "NousResearch/Hermes-3-Llama-3.1-8B"
+    CRYNUX_NOUS_HERMES_3_LLAMA_3_2_3B = "NousResearch/Hermes-3-Llama-3.2-3B"
 
     def __str__(self):
         return self.value
