@@ -14,6 +14,8 @@
 from __future__ import annotations
 
 import json
+import asyncio
+
 from typing import Dict, List, Optional
 
 from colorama import Fore
@@ -82,7 +84,7 @@ class RolePlayingWorker(Worker):
         self.user_agent_kwargs = user_agent_kwargs
 
     async def _process_task(
-        self, task: Task, dependencies: List[Task]
+        self, task: Task, dependencies: List[Task], timeout: Optional[int] = 180.0,
     ) -> TaskState:
         r"""Processes a task leveraging its dependencies through role-playing.
 
@@ -101,6 +103,10 @@ class RolePlayingWorker(Worker):
         Returns:
             TaskState: `TaskState.DONE` if processed successfully, otherwise
                 `TaskState.FAILED`.
+
+        Raises:
+            Exception: If an error occurs during role-playing.
+            asyncio.TimeoutError: If the role-playing session times out.
         """
         dependency_tasks_info = self._get_dep_tasks_info(dependencies)
         prompt = ROLEPLAY_PROCESS_TASK_PROMPT.format(
@@ -121,9 +127,24 @@ class RolePlayingWorker(Worker):
         chat_history = []
         while n < self.chat_turn_limit:
             n += 1
-            assistant_response, user_response = await role_play_session.astep(
-                input_msg
-            )
+            try:
+                # add a timeout control
+                assistant_response, user_response = await asyncio.wait_for(
+                    role_play_session.astep(input_msg),
+                    timeout=timeout
+                )
+            except asyncio.TimeoutError:
+                print(
+                    f"{Fore.RED}Error: Role playing step timed out.{Fore.RESET}"
+                )
+                chat_history.append("Error: Role playing step timed out.")
+                break
+            except Exception as e:
+                print(
+                    f"{Fore.RED}Error during role playing step: {str(e)}{Fore.RESET}"
+                )
+                chat_history.append(f"Error during role playing: {str(e)}")
+                break
 
             if assistant_response.terminated:
                 reason = assistant_response.info['termination_reasons']

@@ -83,9 +83,16 @@ class TaskChannel:
         self._condition = asyncio.Condition()
         self._task_dict: Dict[str, Packet] = {}
 
-    async def get_returned_task_by_publisher(self, publisher_id: str) -> Task:
+    async def get_returned_task_by_publisher(self, publisher_id: str, timeout: float = 180.0) -> Task:
         r"""Get a task from the channel that has been returned by the
         publisher.
+
+        Args:
+            publisher_id: The ID of the publisher
+            timeout: Maximum time to wait in seconds (default: 180.0)
+            
+        Raises:
+            asyncio.TimeoutError: If waiting times out
         """
         async with self._condition:
             while True:
@@ -96,11 +103,23 @@ class TaskChannel:
                     if packet.status != PacketStatus.RETURNED:
                         continue
                     return packet.task
-                await self._condition.wait()
+                
+                # use wait_condition to wait, including timeout control
+                await self._wait_condition(
+                    timeout=timeout,
+                    context=f"waiting for returned task from publisher {publisher_id}"
+                )
 
-    async def get_assigned_task_by_assignee(self, assignee_id: str) -> Task:
+    async def get_assigned_task_by_assignee(self, assignee_id: str, timeout: float = 180.0) -> Task:
         r"""Get a task from the channel that has been assigned to the
         assignee.
+
+        Args:
+            assignee_id: The ID of the assignee
+            timeout: Maximum time to wait in seconds (default: 180.0)
+            
+        Raises:
+            asyncio.TimeoutError: If waiting times out
         """
         async with self._condition:
             while True:
@@ -111,7 +130,12 @@ class TaskChannel:
                         and packet.assignee_id == assignee_id
                     ):
                         return packet.task
-                await self._condition.wait()
+                
+                # use wait_condition to wait, including timeout control
+                await self._wait_condition(
+                    timeout=timeout,
+                    context=f"waiting for assigned task to assignee {assignee_id}"
+                )
 
     async def post_task(
         self, task: Task, publisher_id: str, assignee_id: str
@@ -180,3 +204,18 @@ class TaskChannel:
         r"""Get the debug information of the channel."""
         async with self._condition:
             return str(self._task_dict) + '\n' + str(self._task_id_list)
+
+    async def _wait_condition(self, timeout: float = 180.0, context: str = "operation"):
+        """function to wait for a condition to be met with a timeout.
+        
+        Args:
+            timeout (float): max wait time (seconds)
+            context (str): context information, used for error messages
+            
+        Raises:
+            asyncio.TimeoutError: if wait times out
+        """
+        try:
+            await asyncio.wait_for(self._condition.wait(), timeout=timeout)
+        except asyncio.TimeoutError:
+            raise asyncio.TimeoutError(f"Timed out while {context}")
