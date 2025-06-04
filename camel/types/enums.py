@@ -394,9 +394,15 @@ class ModelType(UnifiedModelType, Enum):
     CRYNUX_LLAMA_3_8B = "meta-llama/llama-3-8b"
     CRYNUX_LLAMA_3_8B_INSTRUCT = "meta-llama/Meta-Llama-3-8B-Instruct"
 
-    CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_1_5B = "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
-    CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_7B = "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
-    CRYNUX_DEEPSEEK_R1_DISTILL_LLAMA_8B = "deepseek-ai/DeepSeek-R1-Distill-Llama-8B"
+    CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_1_5B = (
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+    )
+    CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_7B = (
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
+    )
+    CRYNUX_DEEPSEEK_R1_DISTILL_LLAMA_8B = (
+        "deepseek-ai/DeepSeek-R1-Distill-Llama-8B"
+    )
 
     CRYNUX_QWEN_3_4_B = "Qwen/Qwen3-4B"
     CRYNUX_QWEN_3_8_B = "Qwen/Qwen3-8B"

@@ -113,4 +113,6 @@ __all__ = [
     'LMStudioConfig',
     'WatsonXConfig',
     'WATSONX_API_PARAMS',
+    'CrynuxConfig',
+    'CRYNUX_API_PARAMS',
 ]

@@ -23,6 +23,7 @@ from camel.utils import (
     api_keys_required,
 )
 
+
 class CrynuxModel(OpenAICompatibleModel):
     r"""Constructor for Crynux backend with OpenAI compatibility.
 
