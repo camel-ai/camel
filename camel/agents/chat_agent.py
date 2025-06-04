@@ -204,7 +204,7 @@ class ChatAgent(BaseAgent):
         self.model_type = self.model_backend.model_type
 
         # Assign unique ID
-        self.agent_id = agent_id if agent_id else str(uuid.uuid4())[:6]
+        self.agent_id = agent_id if agent_id else str(uuid.uuid4())
 
         # Set up memory
         context_creator = ScoreBasedContextCreator(
