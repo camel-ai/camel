@@ -1,0 +1,3 @@
+[submodule "camel/environments/trainers"]
+	path = camel/environments/trainers
+	url = https://github.com/volcengine/verl
