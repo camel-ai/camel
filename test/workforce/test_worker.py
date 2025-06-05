@@ -17,33 +17,31 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from camel.societies.workforce.task_channel import TaskChannel
-from camel.societies.workforce.worker import (
-    TIMEOUT_THRESHOLD,
-    Worker,
-    with_timeout,
-)
+from camel.societies.workforce.worker import Worker
+from camel.utils import with_timeout_async, TIMEOUT_THRESHOLD
+
 from camel.tasks.task import Task, TaskState
 
 
 class TestTimeoutWorker(Worker):
-    """Test Worker implementation for timeout testing"""
+    r"""Test Worker implementation for timeout testing"""
 
     def __init__(self, description="Test Worker", node_id=None):
         super().__init__(description, node_id=node_id)
 
     async def _process_task(self, task, dependencies):
-        """Simple implementation of task processing method"""
+        r"""Simple implementation of task processing method"""
         return TaskState.DONE
 
 
 @pytest.mark.asyncio
 async def test_with_timeout_function():
-    """Test the basic functionality of with_timeout function"""
+    r"""Test the basic functionality of with_timeout function"""
     # Test normal case
     mock_coro = AsyncMock()
     mock_coro.return_value = "success"
 
-    result = await with_timeout(mock_coro(), timeout=1.0, context="test")
+    result = await with_timeout_async(mock_coro(), timeout=1.0, context="test")
     assert result == "success"
 
     # Test timeout case by directly mocking timeout error
@@ -51,7 +49,7 @@ async def test_with_timeout_function():
     mock_failing_coro.side_effect = asyncio.TimeoutError("Simulated timeout")
 
     with pytest.raises(asyncio.TimeoutError) as excinfo:
-        await with_timeout(
+        await with_timeout_async(
             mock_failing_coro(), timeout=1.0, context="test timeout"
         )
 
@@ -60,7 +58,7 @@ async def test_with_timeout_function():
 
 @pytest.mark.asyncio
 async def test_get_assigned_task_timeout():
-    """Test timeout handling in _get_assigned_task method"""
+    r"""Test timeout handling in _get_assigned_task method"""
     worker = TestTimeoutWorker()
 
     # Mock TaskChannel to simulate timeout
@@ -78,7 +76,7 @@ async def test_get_assigned_task_timeout():
 
 @pytest.mark.asyncio
 async def test_listen_to_channel_recovers_from_timeout():
-    """Test that _listen_to_channel method recovers from timeouts"""
+    r"""Test that _listen_to_channel method recovers from timeouts"""
     worker = TestTimeoutWorker()
 
     # Mock TaskChannel
@@ -144,7 +142,7 @@ async def test_listen_to_channel_recovers_from_timeout():
 
 @pytest.mark.asyncio
 async def test_worker_with_timeout_integration():
-    """Test the integration of with_timeout across Worker methods"""
+    r"""Test the integration of with_timeout across Worker methods"""
     worker = TestTimeoutWorker()
 
     # Mock TaskChannel
@@ -173,13 +171,13 @@ async def test_worker_with_timeout_integration():
             # Get task
             task = await worker._get_assigned_task()
             # Get dependencies
-            dependency_ids = await with_timeout(
+            dependency_ids = await with_timeout_async(
                 worker._channel.get_dependency_ids(),
                 context=f"getting dependency IDs for task {task.id}",
             )
             task_dependencies = []
             # Process task
-            task_state = await with_timeout(
+            task_state = await with_timeout_async(
                 worker._process_task(task, task_dependencies),
                 timeout=TIMEOUT_THRESHOLD,
                 context=f"processing task {task.id}",
@@ -187,7 +185,7 @@ async def test_worker_with_timeout_integration():
             # Update status
             task.set_state(task_state)
             # Return task
-            await with_timeout(
+            await with_timeout_async(
                 worker._channel.return_task(task.id),
                 timeout=TIMEOUT_THRESHOLD,
                 context=f"returning task {task.id}",
@@ -206,7 +204,7 @@ async def test_worker_with_timeout_integration():
 
 @pytest.mark.asyncio
 async def test_multiple_timeout_points():
-    """Test handling timeouts at different points in the worker process"""
+    r"""Test handling timeouts at different points in the worker process"""
     worker = TestTimeoutWorker()
 
     # Mock TaskChannel that times out during dependency retrieval
@@ -234,13 +232,13 @@ async def test_multiple_timeout_points():
 
             # Get dependencies - this will time out
             try:
-                dependency_ids = await with_timeout(
+                dependency_ids = await with_timeout_async(
                     worker._channel.get_dependency_ids(),
                     context=f"getting dependency IDs for task {task.id}",
                 )
                 task_dependencies = []
                 for dep_id in dependency_ids:
-                    dep_task = await with_timeout(
+                    dep_task = await with_timeout_async(
                         worker._channel.get_task_by_id(dep_id),
                         context=f"getting dependency task {dep_id}",
                     )

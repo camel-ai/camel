@@ -13,10 +13,9 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-import asyncio
 import logging
 from abc import ABC, abstractmethod
-from typing import Awaitable, List, Optional, TypeVar
+from typing import List, Optional
 
 from colorama import Fore
 
@@ -24,37 +23,9 @@ from camel.societies.workforce.base import BaseNode
 from camel.societies.workforce.task_channel import TaskChannel
 from camel.societies.workforce.utils import check_if_running
 from camel.tasks.task import Task, TaskState
+from camel.utils import with_timeout_async, TIMEOUT_THRESHOLD
 
 logger = logging.getLogger(__name__)
-
-T = TypeVar('T')  # generic type for async operations
-TIMEOUT_THRESHOLD = 180.0  # seconds
-
-
-async def with_timeout(
-    coro: Awaitable[T],
-    timeout: float = TIMEOUT_THRESHOLD,
-    context: str = "operation",
-) -> T:
-    """general timeout wrapper for async operations.
-
-    Args:
-        coro: async operation to be executed
-        timeout: max wait time (seconds)
-        context: context information, used for error messages
-
-    Returns:
-        result of the async operation
-
-    Raises:
-        asyncio.TimeoutError: if wait times out
-    """
-    try:
-        return await asyncio.wait_for(coro, timeout=timeout)
-    except asyncio.TimeoutError:
-        logger.error(f"Operation timed out after {timeout}s: {context}")
-        raise asyncio.TimeoutError(f"Timed out while {context}")
-
 
 class Worker(BaseNode, ABC):
     r"""A worker node that works on tasks. It is the basic unit of task
@@ -90,7 +61,7 @@ class Worker(BaseNode, ABC):
 
     async def _get_assigned_task(self) -> Task:
         r"""Get the task assigned to this node from the channel."""
-        return await with_timeout(
+        return await with_timeout_async(
             self._channel.get_assigned_task_by_assignee(self.node_id),
             timeout=TIMEOUT_THRESHOLD,
             context=f"getting assigned task for {self.node_id}",
@@ -123,7 +94,7 @@ class Worker(BaseNode, ABC):
 
         while True:
             # Get the earliest task assigned to this node
-            task = await with_timeout(
+            task = await with_timeout_async(
                 self._get_assigned_task(),
                 timeout=TIMEOUT_THRESHOLD,
                 context=f"getting assigned task for {self.node_id}",
@@ -135,20 +106,20 @@ class Worker(BaseNode, ABC):
             )
 
             # Get the Task instance of dependencies
-            dependency_ids = await with_timeout(
+            dependency_ids = await with_timeout_async(
                 self._channel.get_dependency_ids(),
                 context=f"getting dependency IDs for task {task.id}",
             )
             task_dependencies = []
             for dep_id in dependency_ids:
-                dep_task = await with_timeout(
+                dep_task = await with_timeout_async(
                     self._channel.get_task_by_id(dep_id),
                     context=f"getting dependency task {dep_id}",
                 )
                 task_dependencies.append(dep_task)
 
             # Process the task
-            task_state = await with_timeout(
+            task_state = await with_timeout_async(
                 self._process_task(task, task_dependencies),
                 timeout=TIMEOUT_THRESHOLD,
                 context=f"processing task {task.id}",
@@ -157,7 +128,7 @@ class Worker(BaseNode, ABC):
             # Update the result and status of the task
             task.set_state(task_state)
 
-            await with_timeout(
+            await with_timeout_async(
                 self._channel.return_task(task.id),
                 timeout=TIMEOUT_THRESHOLD,
                 context=f"returning task {task.id}",
@@ -166,7 +137,7 @@ class Worker(BaseNode, ABC):
     @check_if_running(False)
     async def start(self):
         r"""Start the worker."""
-        await with_timeout(
+        await with_timeout_async(
             self._listen_to_channel(),
             timeout=TIMEOUT_THRESHOLD,
             context=f"listening to channel for {self.node_id}",

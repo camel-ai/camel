@@ -15,13 +15,11 @@ import asyncio
 import logging
 import threading
 from typing import (
-    Awaitable,
     Dict,
     List,
     Optional,
     Sequence,
     Tuple,
-    TypeVar,
     Union,
 )
 
@@ -38,40 +36,9 @@ from camel.models import BaseModelBackend
 from camel.prompts import TextPrompt
 from camel.responses import ChatAgentResponse
 from camel.types import RoleType, TaskType
-
+from camel.utils import with_timeout_async
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
-
-
-TIMEOUT_THRESHOLD = 180.0  # Default timeout in seconds
-
-# define type variable for with_timeout function
-T = TypeVar("T")
-
-
-async def with_timeout(
-    coro: Awaitable[T],
-    timeout: float = TIMEOUT_THRESHOLD,
-    context: str = "operation",
-) -> T:
-    """General timeout wrapper for async operations.
-
-    Args:
-        coro: async operation to be executed
-        timeout: max wait time (seconds)
-        context: context information, used for error messages
-
-    Returns:
-        result of the async operation
-
-    Raises:
-        asyncio.TimeoutError: if wait times out
-    """
-    try:
-        return await asyncio.wait_for(coro, timeout=timeout)
-    except asyncio.TimeoutError:
-        logger.error(f"Operation timed out after {timeout}s: {context}")
-        raise asyncio.TimeoutError(f"Timed out while {context}")
 
 
 class RolePlaying:
@@ -668,7 +635,7 @@ class RolePlaying:
                 user agent terminated the conversation, and any additional user
                 information.
         """
-        user_response = await with_timeout(
+        user_response = await with_timeout_async(
             self.user_agent.astep(assistant_msg),
             context=f"waiting for user agent {self.user_agent.role_name} response",
         )
@@ -693,7 +660,7 @@ class RolePlaying:
         ):
             self.user_agent.record_message(user_msg)
 
-        assistant_response = await with_timeout(
+        assistant_response = await with_timeout_async(
             self.assistant_agent.astep(user_msg),
             context=f"waiting for assistant agent {self.assistant_agent.role_name} response",
         )

@@ -20,19 +20,17 @@ import pytest
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.responses import ChatAgentResponse
-from camel.societies.role_playing import (
-    RolePlaying,
-    with_timeout,
-)
+from camel.societies.role_playing import RolePlaying
+from camel.utils import with_timeout_async
 
 
 @pytest.mark.asyncio
 async def test_with_timeout_function():
-    """Test the with_timeout function handles completions and timeouts correctly"""
+    r"""Test the with_timeout function handles completions and timeouts correctly"""
     # Test normal operation (successful completion)
     mock_coro = AsyncMock()
     mock_coro.return_value = "success"
-    result = await with_timeout(mock_coro(), context="test operation")
+    result = await with_timeout_async(mock_coro(), context="test operation")
     assert result == "success"
 
     # Test timeout handling
@@ -40,7 +38,7 @@ async def test_with_timeout_function():
     mock_timeout_coro.side_effect = asyncio.TimeoutError("Simulated timeout")
 
     with pytest.raises(asyncio.TimeoutError) as exc_info:
-        await with_timeout(
+        await with_timeout_async(
             mock_timeout_coro(), context="test timeout operation"
         )
 
@@ -49,7 +47,7 @@ async def test_with_timeout_function():
 
 @pytest.mark.asyncio
 async def test_user_agent_timeout():
-    """Test handling timeout from user agent in RolePlaying.astep"""
+    r"""Test handling timeout from user agent in RolePlaying.astep"""
     # Create mock agents
     mock_user_agent = AsyncMock(spec=ChatAgent)
     mock_user_agent.astep.side_effect = asyncio.TimeoutError()
@@ -83,7 +81,7 @@ async def test_user_agent_timeout():
 
 @pytest.mark.asyncio
 async def test_assistant_agent_timeout():
-    """Test handling timeout from assistant agent in RolePlaying.astep"""
+    r"""Test handling timeout from assistant agent in RolePlaying.astep"""
     # Create mock agents with model_backend
     mock_user_agent = AsyncMock(spec=ChatAgent)
     mock_user_agent.model_backend = MagicMock()
@@ -125,7 +123,7 @@ async def test_assistant_agent_timeout():
 
 @pytest.mark.asyncio
 async def test_recovery_from_timeout():
-    """Test RolePlaying can recover from an agent timeout"""
+    r"""Test RolePlaying can recover from an agent timeout"""
     # Create mock agents with model_backend
     mock_user_agent = AsyncMock(spec=ChatAgent)
     mock_user_agent.model_backend = MagicMock()
@@ -192,7 +190,7 @@ async def test_recovery_from_timeout():
 
 @pytest.mark.asyncio
 async def test_integration_with_timeout():
-    """Test the full RolePlaying.astep flow with various timeout points"""
+    r"""Test the full RolePlaying.astep flow with various timeout points"""
 
     # Setup patching of with_timeout - properly await the coroutine
     async def mock_with_timeout(coro, **kwargs):
@@ -239,7 +237,7 @@ async def test_integration_with_timeout():
 
     # Test the normal flow (no timeouts)
     with patch(
-        "camel.societies.role_playing.with_timeout",
+        "camel.utils.with_timeout_async",
         side_effect=mock_with_timeout,
     ):
         user_response, assistant_response = await role_playing.astep(test_msg)
