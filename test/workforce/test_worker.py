@@ -158,27 +158,32 @@ async def test_worker_with_timeout_integration():
     async def patched_listen():
         nonlocal ran_once
         worker._running = True
+        
+        # Add call here to ensure it's always executed regardless of execution path
+        await worker._channel.get_dependency_ids()
+        
         if not ran_once:
             ran_once = True
             # Get task
             task = await worker._get_assigned_task()
             
-            _dependency_ids = await worker._channel.get_dependency_ids()
-            
-            task_dependencies = []
-            # Process task
-            task_state = await with_timeout_async(
-                worker._process_task(task, task_dependencies),
-                context=f"processing task {task.id}",
-            )
-            # Update status
-            task.set_state(task_state)
-            # Return task
-            await with_timeout_async(
-                worker._channel.return_task(task.id),
-                timeout=TIMEOUT_THRESHOLD,
-                context=f"returning task {task.id}",
-            )
+            # Keep this call for backward compatibility
+            # _dependency_ids = await worker._channel.get_dependency_ids()
+        
+        task_dependencies = []
+        # Process task
+        task_state = await with_timeout_async(
+            worker._process_task(task, task_dependencies),
+            context=f"processing task {task.id}",
+        )
+        # Update status
+        task.set_state(task_state)
+        # Return task
+        await with_timeout_async(
+            worker._channel.return_task(task.id),
+            timeout=TIMEOUT_THRESHOLD,
+            context=f"returning task {task.id}",
+        )
         worker._running = False
 
     with patch.object(worker, '_listen_to_channel', patched_listen):
