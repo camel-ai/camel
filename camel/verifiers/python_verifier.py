@@ -30,7 +30,7 @@ from .models import VerificationOutcome, VerificationResult
 
 logger = get_logger(__name__)
 
-from camel.verifiers.base import TIMEOUT_THRESHOLD, with_timeout
+from camel.utils import TIMEOUT_THRESHOLD, with_timeout
 
 
 class PythonVerifier(BaseVerifier):

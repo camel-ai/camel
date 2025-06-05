@@ -18,39 +18,11 @@ from typing import List, Optional, Awaitable, TypeVar
 
 from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
-from camel.utils import BatchProcessor
+from camel.utils import BatchProcessor, with_timeout, TIMEOUT_THRESHOLD
 
 from .models import VerificationOutcome, VerificationResult
 
 logger = get_logger(__name__)
-
-TIMEOUT_THRESHOLD = 180.0  # Default timeout in seconds
-
-T = TypeVar('T')
-
-async def with_timeout(
-    coro: Awaitable[T],
-    timeout: float = TIMEOUT_THRESHOLD,
-    context: str = "operation"
-) -> T:
-    """General timeout wrapper for async operations.
-    
-    Args:
-        coro: async operation to be executed
-        timeout: max wait time (seconds)
-        context: context information, used for error messages
-        
-    Returns:
-        result of the async operation
-        
-    Raises:
-        asyncio.TimeoutError: if wait times out
-    """
-    try:
-        return await asyncio.wait_for(coro, timeout=timeout)
-    except asyncio.TimeoutError:
-        logger.error(f"Operation timed out after {timeout}s: {context}")
-        raise asyncio.TimeoutError(f"Timed out while {context}")
 
 class BaseVerifier(ABC):
     r"""Base class for all verifiers.
