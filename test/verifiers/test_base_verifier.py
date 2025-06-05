@@ -18,8 +18,9 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from camel.verifiers.base import BaseVerifier, with_timeout
+from camel.verifiers.base import BaseVerifier   
 from camel.verifiers.models import VerificationOutcome, VerificationResult
+from camel.utils import with_timeout_async
 
 
 class TestVerifier(BaseVerifier):
@@ -404,7 +405,7 @@ async def test_with_timeout_function():
     # Test normal operation (successful completion)
     mock_coro = AsyncMock()
     mock_coro.return_value = "success"
-    result = await with_timeout(mock_coro(), context="test operation")
+    result = await with_timeout_async(mock_coro(), context="test operation")
     assert result == "success"
 
     # Test timeout handling
@@ -412,7 +413,7 @@ async def test_with_timeout_function():
     mock_timeout_coro.side_effect = asyncio.TimeoutError("Simulated timeout")
 
     with pytest.raises(asyncio.TimeoutError) as exc_info:
-        await with_timeout(
+        await with_timeout_async(
             mock_timeout_coro(), context="test timeout operation"
         )
 
