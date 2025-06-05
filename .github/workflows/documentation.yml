@@ -16,8 +16,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Full history for git diff
-          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up Python environment and install dependencies
         uses: ./.github/actions/camel_install
@@ -30,7 +30,6 @@ jobs:
       - name: Convert Cookbooks and Update Mintlify Config
         run: |
           source .venv/bin/activate
-          
           if [ "${{ github.event_name }}" = "push" ]; then
             echo "Push event detected - using incremental mode for cookbooks"
             python docs/mintlify/convert_notebook2mdx.py \
@@ -50,12 +49,10 @@ jobs:
               --update-docs-json docs/mintlify/docs.json \
               --docs-path-prefix "" \
               --verbose
-          fi
 
       - name: Convert Get Started docs
         run: |
           source .venv/bin/activate
-          
           if [ "${{ github.event_name }}" = "push" ]; then
             echo "Push event detected - using incremental mode for get_started"
             python docs/mintlify/convert_notebook2mdx.py \
@@ -75,12 +72,10 @@ jobs:
               --update-docs-json docs/mintlify/docs.json \
               --docs-path-prefix "" \
               --verbose
-          fi
 
       - name: Convert Key Modules docs
         run: |
           source .venv/bin/activate
-          
           if [ "${{ github.event_name }}" = "push" ]; then
             echo "Push event detected - using incremental mode for key_modules"
             python docs/mintlify/convert_notebook2mdx.py \
@@ -100,7 +95,6 @@ jobs:
               --update-docs-json docs/mintlify/docs.json \
               --docs-path-prefix "" \
               --verbose
-          fi
 
       - name: Generate API Documentation
         run: |
@@ -114,9 +108,11 @@ jobs:
             --since_hours 24
 
       - name: Commit and push changes
+        env:
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
 
           git add docs/mintlify/ docs/mintlify/get_started/ docs/mintlify/key_modules/ docs/mintlify/reference/ docs/mintlify/docs.json
 
@@ -124,5 +120,6 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "Auto-update documentation after merge"
+            git remote set-url origin https://x-access-token:${PAT_TOKEN}@github.com/${{ github.repository }}
             git push origin ${{ github.ref_name }}
           fi
