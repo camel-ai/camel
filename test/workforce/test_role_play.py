@@ -26,7 +26,8 @@ from camel.utils import with_timeout_async
 
 @pytest.mark.asyncio
 async def test_with_timeout_function():
-    r"""Test the with_timeout function handles completions and timeouts correctly"""
+    r"""Test the with_timeout function handles completions and\
+         timeouts correctly"""
     # Test normal operation (successful completion)
     mock_coro = AsyncMock()
     mock_coro.return_value = "success"
@@ -91,7 +92,8 @@ async def test_assistant_agent_timeout():
     mock_assistant_agent.model_backend = MagicMock()
     mock_assistant_agent.model_backend.model_config_dict = {}
 
-    # Configure user_agent to return normal response and assistant_agent to timeout
+    # Configure user_agent to return normal response and assistant_agent
+    # to timeout
     mock_user_response = MagicMock(spec=ChatAgentResponse)
     mock_user_response.msgs = [MagicMock(spec=BaseMessage)]
     mock_user_response.terminated = False

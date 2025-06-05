@@ -637,7 +637,8 @@ class RolePlaying:
         """
         user_response = await with_timeout_async(
             self.user_agent.astep(assistant_msg),
-            context=f"waiting for user agent {self.user_agent.role_name} response",
+            context=f"waiting for user agent \
+                {self.user_agent.role_name} response",
         )
 
         if user_response.terminated or user_response.msgs is None:

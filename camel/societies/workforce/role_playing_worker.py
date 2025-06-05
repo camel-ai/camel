@@ -136,13 +136,15 @@ class RolePlayingWorker(Worker):
                 )
             except asyncio.TimeoutError:
                 print(
-                    f"{Fore.RED}Error: Role playing step timed out.{Fore.RESET}"
+                    f"{Fore.RED}Error: Role playing step timed out.\
+                        {Fore.RESET}"
                 )
                 chat_history.append("Error: Role playing step timed out.")
                 break
             except Exception as e:
                 print(
-                    f"{Fore.RED}Error during role playing step: {e!s}{Fore.RESET}"
+                    f"{Fore.RED}Error during role playing step: {e!s}\
+                        {Fore.RESET}"
                 )
                 chat_history.append(f"Error during role playing: {e!s}")
                 break

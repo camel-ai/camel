@@ -14,7 +14,7 @@
 import asyncio
 import time
 from abc import ABC, abstractmethod
-from typing import List, Optional, Awaitable, TypeVar
+from typing import List, Optional
 
 from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
@@ -203,7 +203,8 @@ class BaseVerifier(ABC):
             logger.warning(
                 f"{self.__class__.__name__} not set up, calling setup()"
             )
-            await with_timeout_async(self.setup(), context="setting up verifier")
+            await with_timeout_async(self.setup(), context="setting \
+                up verifier")
 
         attempt = 0
         start_time = time.time()
@@ -357,7 +358,8 @@ class BaseVerifier(ABC):
             logger.warning(
                 f"{self.__class__.__name__} not set up, calling setup()"
             )
-            await with_timeout_async(self.setup(), context="setting up verifier")
+            await with_timeout_async(self.setup(), context="setting\
+                 up verifier")
 
         # Retrieve batch processing settings
         max_workers = getattr(

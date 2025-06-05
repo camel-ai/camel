@@ -25,13 +25,10 @@ from typing import Any, List, Optional, Tuple
 from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
 from camel.verifiers import BaseVerifier
-
+from camel.utils import TIMEOUT_THRESHOLD, with_timeout_async
 from .models import VerificationOutcome, VerificationResult
 
 logger = get_logger(__name__)
-
-from camel.utils import TIMEOUT_THRESHOLD, with_timeout_async
-
 
 class PythonVerifier(BaseVerifier):
     r"""The PythonVerifier class verifies Python-based implementations

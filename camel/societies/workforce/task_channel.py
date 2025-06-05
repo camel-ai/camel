@@ -109,7 +109,8 @@ class TaskChannel:
                 # use wait_condition to wait, including timeout control
                 await self._wait_condition(
                     timeout=timeout,
-                    context=f"waiting for returned task from publisher {publisher_id}",
+                    context=f"waiting for returned task from publisher\
+                         {publisher_id}",
                 )
 
     async def get_assigned_task_by_assignee(
@@ -138,7 +139,8 @@ class TaskChannel:
                 # use wait_condition to wait, including timeout control
                 await self._wait_condition(
                     timeout=timeout,
-                    context=f"waiting for assigned task to assignee {assignee_id}",
+                    context=f"waiting for assigned task to assignee\
+                         {assignee_id}",
                 )
 
     async def post_task(

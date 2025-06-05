@@ -263,8 +263,6 @@ async def test_verify_batch(test_verifier):
         )
 
         solutions = ["Success 1", "Success 2", "This will fail"]
-        ground_truthes = ["Expected 1", "Expected 2", "Expected 3"]
-
         reference_answers = ["reference"] * len(solutions)
         results = await test_verifier.verify_batch(
             solutions, reference_answers
@@ -400,7 +398,8 @@ async def test_full_verification_flow():
 
 @pytest.mark.asyncio
 async def test_with_timeout_function():
-    """Test the with_timeout function handles completions and timeouts correctly"""
+    """Test the with_timeout function handles completions and\
+         timeouts correctly"""
 
     # Test normal operation (successful completion)
     mock_coro = AsyncMock()
@@ -519,9 +518,6 @@ async def test_timeout_in_batch_verification(test_verifier):
     assert len(results) == 3
 
     # Check individual results
-    timeout_results = [
-        r for r in results if r.status == VerificationOutcome.TIMEOUT
-    ]
     success_results = [
         r for r in results if r.status == VerificationOutcome.SUCCESS
     ]

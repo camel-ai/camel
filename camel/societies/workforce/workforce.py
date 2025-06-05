@@ -489,7 +489,8 @@ class Workforce(BaseNode):
             assignee_id = self._find_assignee(task=ready_task)
             await with_timeout_async(
                 self._post_task(ready_task, assignee_id),
-                context=f"posting task {ready_task.id} to assignee {assignee_id}",
+                context=f"posting task {ready_task.id} \
+                    to assignee {assignee_id}",
             )
 
     async def _handle_failed_task(self, task: Task) -> bool:
@@ -506,7 +507,8 @@ class Workforce(BaseNode):
             assignee = self._create_worker_node_for_task(task)
             await with_timeout_async(
                 self._post_task(task, assignee.node_id),
-                context=f"posting task {task.id} to new worker {assignee.node_id}",
+                context=f"posting task {task.id} to new worker\
+                     {assignee.node_id}",
             )
         else:
             subtasks = self._decompose_task(task)

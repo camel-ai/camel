@@ -1033,10 +1033,8 @@ async def test_single_step_env_timeout_handling():
         async def _compute_custom_reward(self, *args, **kwargs):
             return {"custom_reward": 5.0}
 
-    # Create a patched asyncio.wait_for that raises TimeoutError for _compute_custom_reward
-    original_wait_for = asyncio.wait_for
-
-    # Create a patched asyncio.wait_for that raises TimeoutError for _compute_custom_reward
+    # Create a patched asyncio.wait_for that raises TimeoutError
+    # for _compute_custom_reward
     original_wait_for = asyncio.wait_for
 
     async def mock_wait_for(coro, timeout, *args, **kwargs):
@@ -1052,14 +1050,15 @@ async def test_single_step_env_timeout_handling():
 
     # Setup and reset environment
     await env.setup()
-    obs = await env.reset(batch_size=1)
+    _obs = await env.reset(batch_size=1)
 
     # Test step with patched wait_for
     with patch('asyncio.wait_for', side_effect=mock_wait_for):
         action = Action(llm_response="The answer is 4")
         observation, reward, done, info = await env.step(action)
 
-        # Verify that only correctness reward is present (custom reward timed out)
+        # Verify that only correctness reward is present
+        # (custom reward timed out)
         rewards_dict = info["rewards_dict"]
         assert "correctness" in rewards_dict
         assert "custom_reward" not in rewards_dict

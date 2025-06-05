@@ -192,7 +192,7 @@ async def test_multi_step_env_timeout_handling():
 
     try:
         await env.setup()
-        obs = await env.reset()
+        _obs = await env.reset()
 
         # Replace _update_state with our mocked timeout version
         with patch.object(
@@ -200,7 +200,8 @@ async def test_multi_step_env_timeout_handling():
             '_update_state',
             new=AsyncMock(side_effect=mock_update_state_timeout),
         ):
-            # The step should not hang - it should handle the timeout and continue
+            # The step should not hang - it should handle the timeout
+            # and continue
             action = Action(llm_response="test action")
             observation, reward, done, info = await env.step(action)
 

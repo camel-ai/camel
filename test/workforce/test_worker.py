@@ -102,9 +102,6 @@ async def test_listen_to_channel_recovers_from_timeout():
 
     worker._channel = mock_channel
 
-    # Patch _listen_to_channel to run limited times
-    original_listen = worker._listen_to_channel
-
     async def patched_listen():
         worker._running = True
         try:
@@ -122,9 +119,6 @@ async def test_listen_to_channel_recovers_from_timeout():
                         raise  # Re-raise if max attempts reached
         finally:
             worker._running = False
-
-    # Patch start method to avoid double wrapping with timeout
-    original_start = worker.start
 
     async def direct_start():
         return await patched_listen()
@@ -158,9 +152,6 @@ async def test_worker_with_timeout_integration():
 
     worker._channel = mock_channel
 
-    # Patch _listen_to_channel to run only one iteration
-    original_listen = worker._listen_to_channel
-
     ran_once = False
 
     async def patched_listen():
@@ -170,11 +161,6 @@ async def test_worker_with_timeout_integration():
             ran_once = True
             # Get task
             task = await worker._get_assigned_task()
-            # Get dependencies
-            dependency_ids = await with_timeout_async(
-                worker._channel.get_dependency_ids(),
-                context=f"getting dependency IDs for task {task.id}",
-            )
             task_dependencies = []
             # Process task
             task_state = await with_timeout_async(

@@ -39,7 +39,8 @@ class TestTimeoutWorkforce(Workforce):
 
 @pytest.mark.asyncio
 async def test_with_timeout_function():
-    r"""Test the with_timeout function handles completions and timeouts correctly"""
+    r"""Test the with_timeout function handles completions and
+     timeouts correctly"""
     # Test normal operation (successful completion)
     mock_coro = AsyncMock()
     mock_coro.return_value = "success"
@@ -81,7 +82,8 @@ async def test_post_task_timeout():
 
 @pytest.mark.asyncio
 async def test_listen_to_channel_recovers_from_timeout():
-    r"""Test that _listen_to_channel method recovers from timeouts when getting returned tasks"""
+    r"""Test that _listen_to_channel method recovers from timeouts when
+     getting returned tasks"""
     workforce = TestTimeoutWorkforce()
 
     # Mock TaskChannel with first call timing out, second call succeeding
@@ -90,7 +92,8 @@ async def test_listen_to_channel_recovers_from_timeout():
     mock_task.id = "test_task_id"
     mock_task.state = TaskState.DONE
 
-    # Configure get_returned_task_by_publisher to first throw TimeoutError, then return normal result
+    # Configure get_returned_task_by_publisher to first throw TimeoutError,
+    # then return normal result
     call_count = 0
 
     async def side_effect(*args, **kwargs):
@@ -135,9 +138,6 @@ async def test_listen_to_channel_recovers_from_timeout():
         finally:
             workforce._running = False
 
-    # Patch start method to avoid double wrapping with timeout
-    original_start = workforce.start
-
     async def direct_start():
         return await patched_listen()
 
@@ -147,7 +147,8 @@ async def test_listen_to_channel_recovers_from_timeout():
     ):
         await workforce.start()
 
-    # Verify get_returned_task_by_publisher was called twice (first fails, second succeeds)
+    # Verify get_returned_task_by_publisher was called twice (first fails,
+    # second succeeds)
     assert mock_channel.get_returned_task_by_publisher.call_count == 2
     # Verify the task was processed
     workforce._handle_completed_task.assert_called_once_with(mock_task)
@@ -185,7 +186,7 @@ async def test_workforce_with_timeout_integration():
         if not ran_once:
             ran_once = True
             # Post initial ready tasks
-            await with_tirmeout(
+            await with_timeout_async(
                 workforce._post_ready_tasks(),
                 context="posting ready tasks at start",
             )
@@ -247,7 +248,7 @@ async def test_multiple_timeout_points():
             # Handle failed task - should timeout during remove_task
             try:
                 await workforce._handle_failed_task(returned_task)
-                assert False, "Should have timed out when handling failed task"
+                raise AssertionError("Should have timed out on first attempt")
             except asyncio.TimeoutError:
                 # This is expected
                 pass
@@ -257,12 +258,6 @@ async def test_multiple_timeout_points():
 
     # Mock methods to avoid full implementation
     workforce._post_ready_tasks = AsyncMock()
-
-    # Use the real _handle_failed_task for this test
-    original_handle_failed = workforce._handle_failed_task
-
-    # Patch start method to avoid timeout wrapper
-    original_start = workforce.start
 
     async def direct_start():
         return await patched_listen()
