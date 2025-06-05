@@ -41,6 +41,7 @@ from camel.societies.workforce.utils import (
 )
 from camel.societies.workforce.worker import Worker
 from camel.tasks.task import Task, TaskState
+from camel.toolkits import CodeExecutionToolkit, SearchToolkit, ThinkingToolkit
 from camel.types import ModelPlatformType, ModelType
 
 logger = get_logger(__name__)
@@ -421,9 +422,9 @@ class Workforce(BaseNode):
 
         # Default tools for a new agent
         function_list = [
-            # SearchToolkit().search_duckduckgo,
-            # *CodeExecutionToolkit().get_tools(),
-            # *ThinkingToolkit().get_tools(),
+            SearchToolkit().search_duckduckgo,
+            *CodeExecutionToolkit().get_tools(),
+            *ThinkingToolkit().get_tools(),
         ]
 
         model_config_dict = ChatGPTConfig(
@@ -510,11 +511,10 @@ class Workforce(BaseNode):
             # Immediate shutdown if timeout is 0 or negative
             return
 
-        print(
-            f"{Fore.RED} Workforce will shutdown in "
-            f"{self.graceful_shutdown_timeout} seconds due to failure. "
-            f"You can use this time to inspect the current state "
-            f"of the workforce.{Fore.RESET}"
+        logger.warning(
+            f"Workforce will shutdown in {self.graceful_shutdown_timeout} "
+            f"seconds due to failure. You can use this time to inspect the "
+            f"current state of the workforce."
         )
 
         # Wait for the full timeout period
@@ -539,9 +539,9 @@ class Workforce(BaseNode):
                 halt = await self._handle_failed_task(returned_task)
                 if not halt:
                     continue
-                print(
-                    f"{Fore.RED}Task {returned_task.id} has failed "
-                    f"for 3 times, halting the workforce.{Fore.RESET}"
+                logger.error(
+                    f"Task {returned_task.id} has failed for 3 times, "
+                    f"halting the workforce."
                 )
                 # Graceful shutdown instead of immediate break
                 await self._graceful_shutdown(returned_task)
