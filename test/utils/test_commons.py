@@ -13,8 +13,9 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import time
+import asyncio
 from unittest import TestCase
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock
 
 import pytest
 
@@ -30,6 +31,7 @@ from camel.utils import (
     retry_on_error,
     to_pascal,
     with_timeout,
+    with_timeout_async,
 )
 
 
@@ -383,3 +385,37 @@ def test_direct_timeout_no_delay():
 
     result = fast_function()
     assert result == "success"
+
+
+@pytest.mark.asyncio
+async def test_toolkit_within_timeout():
+    r"""Test toolkit operation completes within timeout period."""
+    # Create a mock coro that will complete within the timeout
+    mock_coro = AsyncMock()
+    mock_coro.return_value = "run success"
+    
+    # Use with_timeout_async to wrap the mock coroutine
+    result = await with_timeout_async(mock_coro(), timeout=2, context="toolkit operation")
+    
+    # Verify the expected result was returned
+    assert result == "run success"
+    # Verify the mock was called
+    mock_coro.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_toolkit_timeout_exceeded():
+    r"""Test that operation times out when exceeding timeout period."""
+    # Create a mock coro that will simulate a timeout
+    mock_coro = AsyncMock()
+    # Make the mock function raise a TimeoutError
+    mock_coro.side_effect = asyncio.TimeoutError("Simulated timeout")
+    
+    # Test that the timeout exception is properly handled
+    with pytest.raises(asyncio.TimeoutError) as exc_info:
+        await with_timeout_async(mock_coro(), timeout=1, context="toolkit operation")
+    
+    # Verify the exception message contains our context
+    assert "Timed out while toolkit operation" in str(exc_info.value)
+    # Verify the mock was called
+    mock_coro.assert_called_once()

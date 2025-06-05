@@ -40,8 +40,8 @@ from .commons import (
     to_pascal,
     track_agent,
     with_timeout,
+    with_timeout_async,
     TIMEOUT_THRESHOLD,
-    with_timeout,
 )
 from .constants import Constants
 from .deduplication import DeduplicationResult, deduplicate_internally

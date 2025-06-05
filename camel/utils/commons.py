@@ -1136,7 +1136,7 @@ def run_async(func: Callable[..., Any]) -> Callable[..., Any]:
     return wrapper
 
 
-async def with_timeout(
+async def with_timeout_async(
     coro: Awaitable[T],
     timeout: float = TIMEOUT_THRESHOLD,
     context: str = "operation"

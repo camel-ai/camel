@@ -30,7 +30,7 @@ from .models import VerificationOutcome, VerificationResult
 
 logger = get_logger(__name__)
 
-from camel.utils import TIMEOUT_THRESHOLD, with_timeout
+from camel.utils import TIMEOUT_THRESHOLD, with_timeout_async
 
 
 class PythonVerifier(BaseVerifier):
@@ -311,7 +311,7 @@ class PythonVerifier(BaseVerifier):
             )
 
         try:
-            sol_out, sol_err, sol_code = await with_timeout(
+            sol_out, sol_err, sol_code = await with_timeout_async(
                 self._run_code_block(solution, venv_python),
                 timeout=self._timeout if self._timeout else TIMEOUT_THRESHOLD,
                 context="running Python solution",
@@ -420,7 +420,7 @@ class PythonVerifier(BaseVerifier):
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
-        stdout, stderr = await with_timeout(
+        stdout, stderr = await with_timeout_async(
             proc.communicate(),
             timeout=self._timeout if self._timeout else TIMEOUT_THRESHOLD,
             context="executing Python code",
