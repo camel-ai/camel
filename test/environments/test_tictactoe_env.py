@@ -349,7 +349,7 @@ async def test_full_game():
 
 @pytest.mark.asyncio
 async def test_extraction_timeout():
-    """Test timeout handling during move extraction in TicTacToeEnv."""
+    r"""Test timeout handling during move extraction in TicTacToeEnv."""
     import asyncio
     from unittest.mock import AsyncMock, patch
 

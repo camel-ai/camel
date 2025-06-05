@@ -19,6 +19,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from camel.environments.models import Action, Observation, StepResult
 from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
+from camel.utils import with_timeout_async, TIMEOUT_THRESHOLD
 
 logger = get_logger(__name__)
 
@@ -120,14 +121,12 @@ class MultiStepEnv(ABC):
             logger.warning(
                 "reset() called on un-setup environment. Setting up..."
             )
-            try:
-                # add timeout control
-                await asyncio.wait_for(self.setup(), timeout=self._timeout)
-            except asyncio.TimeoutError:
-                logger.error(
-                    f"Environment setup timed out after {self._timeout}s"
-                )
-                raise
+
+            await with_timeout_async(
+                self.setup(),
+                timeout=self._timeout,
+                context="environment setup",
+            )
 
         # Reset state
         self._current_step = 0
@@ -192,13 +191,13 @@ class MultiStepEnv(ABC):
         # Update the environment state based on the action
         update_timed_out = False
         try:
-            await asyncio.wait_for(
-                self._update_state(action), timeout=self._timeout
+            await with_timeout_async(
+                self._update_state(action),
+                timeout=self._timeout,
+                context="state update",
             )
         except asyncio.TimeoutError:
             update_timed_out = True
-            logger.error(f"State update timed out after {self._timeout}s")
-            # Don't raise, continue with error handling
 
         # If update timed out, return error information
         if update_timed_out:
@@ -214,13 +213,12 @@ class MultiStepEnv(ABC):
 
         # Compute rewards
         try:
-            total_reward, rewards_dict = await asyncio.wait_for(
-                self.compute_reward(), timeout=self._timeout
+            total_reward, rewards_dict = await with_timeout_async(
+                self.compute_reward(),
+                timeout=self._timeout,
+                context="reward computation",
             )
         except asyncio.TimeoutError:
-            logger.error(
-                f"Reward computation timed out after {self._timeout}s"
-            )
             # raise exception to terminate the step operation
             total_reward = 0.0
             rewards_dict = {}
@@ -243,13 +241,13 @@ class MultiStepEnv(ABC):
 
         extraction_result = None
         try:
-            extraction_result = await asyncio.wait_for(
+            extraction_result = await with_timeout_async(
                 self.extractor.extract(action.llm_response),
                 timeout=self._timeout,
+                context="extraction",
             )
         except asyncio.TimeoutError:
-            logger.error(f"Extraction timed out after {self._timeout}s")
-            # Don't raise, use default values instead
+            # raise exception to terminate the step operation
             extraction_result = None
             if info is None:
                 info = {}

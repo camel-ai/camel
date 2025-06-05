@@ -169,7 +169,7 @@ async def test_multi_step_env_error_handling():
 
 @pytest.mark.asyncio
 async def test_multi_step_env_timeout_handling():
-    """Test timeout handling in MultiStepEnv using mocks instead of sleep."""
+    r"""Test timeout handling in MultiStepEnv using mocks instead of sleep."""
 
     # Create mock functions that raise TimeoutError
     async def mock_update_state_timeout(*args, **kwargs):

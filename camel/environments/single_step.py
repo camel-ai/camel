@@ -25,6 +25,7 @@ from camel.verifiers.base import (
 )
 
 from .models import Action, Observation, StepResult
+from camel.utils import with_timeout_async
 
 logger = get_logger(__name__)
 
@@ -172,14 +173,11 @@ class SingleStepEnv:
             logger.warning(
                 "reset() called on un-setup environment. Setting up..."
             )
-            try:
-                # add timeout control
-                await asyncio.wait_for(self.setup(), timeout=self._timeout)
-            except asyncio.TimeoutError:
-                logger.error(
-                    f"Environment setup timed out after {self._timeout}s"
-                )
-                raise
+            await with_timeout_async(
+                self.setup(),
+                timeout=self._timeout,
+                context="environment setup",
+            )
 
         if self._batch_started() and not self._batch_done():
             logger.error(
@@ -229,16 +227,13 @@ class SingleStepEnv:
             self._states = []
             for _ in range(batch_size):
                 try:
-                    # add timeout control for dataset sampling
-                    sample = await asyncio.wait_for(
-                        self.dataset.async_sample(), timeout=self._timeout
+                    sample = await with_timeout_async(
+                        self.dataset.async_sample(),
+                        timeout=self._timeout,
+                        context="dataset sampling",
                     )
                     self._states.append(sample)
                 except asyncio.TimeoutError:
-                    logger.error(
-                        f"Dataset sampling timed out after {self._timeout}s"
-                    )
-                    # raise exception to terminate the reset operation
                     raise
 
             self.current_batch_size = len(self._states)
@@ -339,18 +334,16 @@ class SingleStepEnv:
         ]
 
         try:
-            verification_results = await asyncio.wait_for(
+            verification_results = await with_timeout_async(
                 self.verifier.verify_batch(
                     solutions=proposed_solutions,
                     reference_answers=ground_truths,  # type: ignore [arg-type]
                     raise_on_error=True,
                 ),
                 timeout=self._timeout,
+                context="step verification",
             )
         except asyncio.TimeoutError as e:
-            logger.error(
-                f"Step verification timed out after {self._timeout}s: {e}"
-            )
             # Return timeout verification results
             verification_results = [
                 VerificationResult(
@@ -379,27 +372,26 @@ class SingleStepEnv:
 
         try:
             # First try to compute all rewards with a timeout
-            computed_rewards, computed_rewards_dicts = await asyncio.wait_for(
+            computed_rewards, computed_rewards_dicts = await with_timeout_async(
                 self._compute_reward_batch(
                     proposed_solutions, verification_results
                 ),
                 timeout=self._timeout,
+                context="batch reward computation",
             )
             # If successful, use all the computed values
             total_rewards = computed_rewards
             rewards_dicts = computed_rewards_dicts
         except asyncio.TimeoutError as e:
-            logger.error(
-                f"Reward computation timed out after {self._timeout}s: {e}"
-            )
             # Try to compute rewards one by one to identify which ones time out
             for i, (solution, result) in enumerate(
                 zip(proposed_solutions, verification_results)
             ):
                 try:
-                    individual_rewards = await asyncio.wait_for(
+                    individual_rewards = await with_timeout_async(
                         self._compute_custom_reward(solution, result),
                         timeout=self._timeout,
+                        context=f"reward computation for solution {i}",
                     )
                     # If successful, calculate the reward for this solution
                     correctness_reward = (
@@ -412,9 +404,7 @@ class SingleStepEnv:
                     total_rewards[i] = sum(rewards_dict.values())
                     rewards_dicts[i] = rewards_dict
                 except asyncio.TimeoutError:
-                    logger.warning(
-                        f"Reward computation for solution {i} timed out"
-                    )
+                    pass
                 except Exception as e:
                     logger.warning(
                         f"Error computing reward for solution {i}: {e}"
