@@ -2916,7 +2916,6 @@ class ChatAgent(BaseAgent):
                 except Exception as e:
                     logger.error(f"Error in async tool execution: {e}")
 
-
     def _create_tool_status_response(
         self,
         content: str,
