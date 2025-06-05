@@ -10,7 +10,6 @@ Built with [CAMEL-AI](https://github.com/camel-ai/camel), OpenAI, and Streamlit.
 - 🔥 Generate engaging, multi-slide PPTX files for any topic—instantly!
 - 💡 Uses OpenAI to create bullet, step-by-step (pentagon/chevron), and table slides.
 - 🖼️ Optional support for auto-inserting images using [Pexels](https://www.pexels.com/api/).
-- 🎨 Modern, readable design: dark backgrounds and white text.
 - 📦 All output is 100% local and ready for download.
 
 ---
@@ -40,14 +39,14 @@ pip install camel-ai==0.2.61 streamlit openai
 
 3. **Clone this repo or copy the app file:**
    ```bash
-   git clone <your-repo-url>
-   cd <your-folder>
+   git clone https://github.com/camel-ai/camel
+   cd examples/usecases/pptx_toolkit_usecase
    # Or just copy the .py script to your working directory
    ```
 
 4. **Run the Streamlit app:**
    ```bash
-   streamlit run <your_app_file.py>
+   streamlit run app_pptx.py
    ```
 
 5. **Open the Streamlit UI in your browser** (default: http://localhost:8501).
