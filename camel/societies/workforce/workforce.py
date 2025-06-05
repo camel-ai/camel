@@ -21,7 +21,6 @@ from typing import Deque, Dict, List, Optional
 from colorama import Fore
 
 from camel.agents import ChatAgent
-from camel.configs import ChatGPTConfig
 from camel.logger import get_logger
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
@@ -85,6 +84,10 @@ class Workforce(BaseNode):
             available parameters.
             (default: :obj:`None` - creates workers with SearchToolkit,
             CodeExecutionToolkit, and ThinkingToolkit)
+        graceful_shutdown_timeout (float, optional): The timeout in seconds
+            for graceful shutdown when a task fails 3 times. During this
+            period, the workforce remains active for debugging.
+            Set to 0 for immediate shutdown. (default: :obj:`15.0`)
 
     Example:
         >>> # Configure with custom model
@@ -109,11 +112,13 @@ class Workforce(BaseNode):
         coordinator_agent_kwargs: Optional[Dict] = None,
         task_agent_kwargs: Optional[Dict] = None,
         new_worker_agent_kwargs: Optional[Dict] = None,
+        graceful_shutdown_timeout: float = 15.0,
     ) -> None:
         super().__init__(description)
         self._child_listening_tasks: Deque[asyncio.Task] = deque()
         self._children = children or []
         self.new_worker_agent_kwargs = new_worker_agent_kwargs
+        self.graceful_shutdown_timeout = graceful_shutdown_timeout
 
         # Warning messages for default model usage
         if coordinator_agent_kwargs is None:
@@ -421,15 +426,10 @@ class Workforce(BaseNode):
             *ThinkingToolkit().get_tools(),
         ]
 
-        model_config_dict = ChatGPTConfig(
-            tools=function_list,
-            temperature=0.0,
-        ).as_dict()
-
         model = ModelFactory.create(
             model_platform=ModelPlatformType.DEFAULT,
             model_type=ModelType.DEFAULT,
-            model_config_dict=model_config_dict,
+            model_config_dict={"temperature": 0},
         )
 
         return ChatAgent(worker_sys_msg, model=model, tools=function_list)  # type: ignore[arg-type]
@@ -494,6 +494,26 @@ class Workforce(BaseNode):
         await self._channel.archive_task(task.id)
         await self._post_ready_tasks()
 
+    async def _graceful_shutdown(self, failed_task: Task) -> None:
+        r"""Handle graceful shutdown with configurable timeout. This is used to
+        keep the workforce running for a while to debug the failed task.
+
+        Args:
+            failed_task (Task): The task that failed and triggered shutdown.
+        """
+        if self.graceful_shutdown_timeout <= 0:
+            # Immediate shutdown if timeout is 0 or negative
+            return
+
+        logger.warning(
+            f"Workforce will shutdown in {self.graceful_shutdown_timeout} "
+            f"seconds due to failure. You can use this time to inspect the "
+            f"current state of the workforce."
+        )
+
+        # Wait for the full timeout period
+        await asyncio.sleep(self.graceful_shutdown_timeout)
+
     @check_if_running(False)
     async def _listen_to_channel(self) -> None:
         r"""Continuously listen to the channel, post task to the channel and
@@ -517,6 +537,8 @@ class Workforce(BaseNode):
                     f"{Fore.RED}Task {returned_task.id} has failed "
                     f"for 3 times, halting the workforce.{Fore.RESET}"
                 )
+                # Graceful shutdown instead of immediate break
+                await self._graceful_shutdown(returned_task)
                 break
             elif returned_task.state == TaskState.OPEN:
                 # TODO: multi-layer workforce
@@ -568,6 +590,7 @@ class Workforce(BaseNode):
             coordinator_agent_kwargs={},
             task_agent_kwargs={},
             new_worker_agent_kwargs=self.new_worker_agent_kwargs,
+            graceful_shutdown_timeout=self.graceful_shutdown_timeout,
         )
 
         new_instance.task_agent = self.task_agent.clone(with_memory)
