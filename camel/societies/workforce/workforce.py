@@ -539,9 +539,9 @@ class Workforce(BaseNode):
                 halt = await self._handle_failed_task(returned_task)
                 if not halt:
                     continue
-                logger.error(
-                    f"Task {returned_task.id} has failed for 3 times, "
-                    f"halting the workforce."
+                print(
+                    f"{Fore.RED}Task {returned_task.id} has failed "
+                    f"for 3 times, halting the workforce.{Fore.RESET}"
                 )
                 # Graceful shutdown instead of immediate break
                 await self._graceful_shutdown(returned_task)
