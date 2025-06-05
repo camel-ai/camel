@@ -58,8 +58,8 @@ assistant_sys_msg = (
 
 # Create model
 model = ModelFactory.create(
-    model_platform=ModelPlatformType.GEMINI,
-    model_type=ModelType.GEMINI_2_0_FLASH_LITE,
+    model_platform=ModelPlatformType.DEFAULT,
+    model_type=ModelType.DEFAULT,
 )
 
 # Create agent
