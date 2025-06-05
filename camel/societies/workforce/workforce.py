@@ -21,7 +21,6 @@ from typing import Deque, Dict, List, Optional
 from colorama import Fore
 
 from camel.agents import ChatAgent
-from camel.configs import ChatGPTConfig
 from camel.logger import get_logger
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
@@ -427,15 +426,10 @@ class Workforce(BaseNode):
             *ThinkingToolkit().get_tools(),
         ]
 
-        model_config_dict = ChatGPTConfig(
-            tools=function_list,
-            temperature=0.0,
-        ).as_dict()
-
         model = ModelFactory.create(
             model_platform=ModelPlatformType.DEFAULT,
             model_type=ModelType.DEFAULT,
-            model_config_dict=model_config_dict,
+            model_config_dict={"temperature": 0},
         )
 
         return ChatAgent(worker_sys_msg, model=model, tools=function_list)  # type: ignore[arg-type]
