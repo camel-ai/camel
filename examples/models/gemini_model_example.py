@@ -25,7 +25,7 @@ user_msg = """Say hi to CAMEL AI, one open-source community dedicated to the
     study of autonomous and communicative agents."""
 
 
-# Example of using the gemini-2.5-pro-preview-05-06 model
+# Example of using the gemini-2.5-pro-preview-06-05 model
 model_2_5_pro_pre = ModelFactory.create(
     model_platform=ModelPlatformType.GEMINI,
     model_type=ModelType.GEMINI_2_5_PRO_PREVIEW,
