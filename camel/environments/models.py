@@ -13,11 +13,9 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from datetime import datetime, timezone
-from typing import Any, ClassVar, Dict, List, Optional, Protocol, Tuple, Type
+from typing import Any, Dict, Optional, Protocol, Tuple
 
 from pydantic import BaseModel, Field
-
-from camel.toolkits.base import BaseToolkit
 
 
 class Action(BaseModel):
@@ -97,8 +95,6 @@ class StepResult(BaseModel):
 
 
 class Environment(Protocol):
-    REQUIRED_TOOLS: ClassVar[List[Type[BaseToolkit]]] = []
-
     async def reset(self) -> Observation:
         r"""Reset the environment to an initial state.
 
