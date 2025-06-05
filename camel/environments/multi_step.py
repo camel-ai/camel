@@ -50,6 +50,30 @@ class MultiStepEnv(ABC):
         self._last_observation: Optional[Observation] = None
         self._episode_history: List[Tuple[Observation, Action]] = []
 
+    def get_action_space(self) -> Any:
+        r"""Get the action space definition for this environment.
+
+        Returns:
+            Any: The action space definition describing the structure of
+                valid actions in this environment.
+        """
+        return {
+            "llm_response": "text",
+            "metadata": "dict",
+            "index": "int",
+            "timestamp": "datetime",
+        }
+
+    def get_observation_space(self) -> Any:
+        r"""Get the observation space definition for this environment.
+
+        Returns:
+            Any: The observation space definition, which in this case is a
+                structured Observation containing a question,
+                context, and metadata.
+        """
+        return {"question": "text", "context": "dict", "metadata": "dict"}
+
     async def setup(self) -> None:
         r"""Set up the environment by initializing the verifier and extractor.
 

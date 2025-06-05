@@ -94,10 +94,15 @@ class SingleStepEnv:
         r"""Get the action space definition for this environment.
 
         Returns:
-            Any: The action space definition, which in this case is a string
-                representing the LLM's response to the question.
+            Any: The action space definition describing the structure of
+                valid actions in this environment.
         """
-        return "text"
+        return {
+            "llm_response": "text",
+            "metadata": "dict",
+            "index": "int",
+            "timestamp": "datetime",
+        }
 
     def get_observation_space(self) -> Any:
         r"""Get the observation space definition for this environment.
