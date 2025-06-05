@@ -13,9 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-# CAMEL AI with ACI Integration Examples
+# CAMEL-AI with ACI Integration Examples
 
-This repository contains two different approaches to integrate ACI (AI Compute Infrastructure) with CAMEL AI agents:
+This repository contains two different approaches to integrate ACI.dev (AI Compute Infrastructure) with CAMEL-AI agents:
 
 1. **Direct ACI Toolkit Integration** (`aci_toolkit_camel.py`)
 2. **MCP Server Integration** (`camel_mcp_aci.py`)
@@ -43,7 +43,7 @@ This repository contains two different approaches to integrate ACI (AI Compute I
 ### Prerequisites
 
 - Python 3.10+
-- ACI API access
+- ACI.dev API access
 - Google Gemini API access
 
 ### Installation
@@ -58,7 +58,7 @@ This repository contains two different approaches to integrate ACI (AI Compute I
 2. **Install dependencies**:
 
    ```bash
-   uv pip install camel-ai[all] python-dotenv rich aci-mcp
+   uv pip install camel-ai[all]==0.2.61 rich aci-mcp
    ```
 
 3. **Set up environment variables**:
@@ -79,14 +79,14 @@ Create a `.env` file with the following variables:
 
 You can get these from:
 
-- **ACI API Key**: Configure your apps and get your key at [ACI Platform](https://platform.aci.dev/apps)
+- **ACI API Key**: Configure your apps and get your key at [ACI.dev Platform](https://platform.aci.dev/apps)
 - **Google API Key**: Get your Gemini API key from [Google AI Studio](https://aistudio.google.com/)
 
 ## 🎯 Usage
 
 ### Approach 1: Direct ACI Toolkit Integration
 
-This approach uses the ACI toolkit directly within the CAMEL AI framework:
+This approach uses the ACI toolkit directly within the CAMEL-AI framework:
 
 ```bash
 python aci_toolkit_camel.py
@@ -96,12 +96,12 @@ python aci_toolkit_camel.py
 
 - Direct integration with ACI toolkit
 - Simpler setup and configuration
-- Immediate access to ACI tools
+- Immediate access to ACI.dev tools
 - Rich console output with progress indicators
 
 ### Approach 2: MCP Server Integration
 
-This approach uses MCP (Model Context Protocol) servers to provide ACI functionality:
+This approach uses MCP (Model Context Protocol) servers to provide ACI.dev functionality:
 
 ```bash
 python camel_mcp_aci.py
@@ -120,7 +120,7 @@ python camel_mcp_aci.py
 ### Common Issues
 
 1. **Missing API Keys**: Ensure all required environment variables are set in your `.env` file
-2. **ACI MCP Installation**: Make sure `aci-mcp` is properly installed for MCP approach
+2. **ACI.dev MCP Installation**: Make sure `aci-mcp` is properly installed for MCP approach
 3. **Network Issues**: Check internet connectivity for API calls
 4. **Permission Issues**: Ensure proper permissions for file creation (config.json)
 
@@ -131,4 +131,4 @@ Both scripts include comprehensive error handling with traceback information for
 ## Links
 
 - [CAMEL-AI](https://github.com/camel-ai/camel) - Multi-agent framework
-- [ACI](https://github.com/aci-labs) - AI Compute Infrastructure
+- [ACI.dev](https://github.com/aci-labs) - AI Compute Infrastructure
