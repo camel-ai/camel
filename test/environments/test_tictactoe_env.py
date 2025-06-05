@@ -357,10 +357,6 @@ async def test_extraction_timeout():
     await env.setup()
     await env.reset()
 
-    # Create a mock extractor that simulates a timeout
-    mock_extract = AsyncMock()
-    # This will be replaced by our patched wait_for that raises TimeoutError
-
     # Store original wait_for to restore later
     original_wait_for = asyncio.wait_for
 

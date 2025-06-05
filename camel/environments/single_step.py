@@ -164,7 +164,8 @@ class SingleStepEnv:
             RuntimeError: If called before all previous states are processed.
             ValueError: If batch size exceeds dataset size.
             TypeError: If the dataset is of an unsupported type.
-            asyncio.TimeoutError: If the environment setup times out or dataset sampling times out.
+            asyncio.TimeoutError: If the environment setup times out or 
+            dataset sampling times out.
         """
         if batch_size <= 0:
             raise ValueError("Batch size must be positive")
@@ -372,7 +373,8 @@ class SingleStepEnv:
 
         try:
             # First try to compute all rewards with a timeout
-            computed_rewards, computed_rewards_dicts = await with_timeout_async(
+            computed_rewards, computed_rewards_dicts = await\
+                with_timeout_async(
                 self._compute_reward_batch(
                     proposed_solutions, verification_results
                 ),
@@ -575,7 +577,8 @@ class SingleStepEnv:
                 rewards = {**rewards, **further_rewards}
             except asyncio.TimeoutError:
                 logger.warning(
-                    f"Custom reward computation timed out after {self._timeout}s"
+                    f"Custom reward computation timed out after\
+                         {self._timeout}s"
                 )
                 # use empty dictionary as fallback strategy
                 further_rewards = {}

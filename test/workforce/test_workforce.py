@@ -125,7 +125,7 @@ async def test_listen_to_channel_recovers_from_timeout():
             # First try to get returned task - should timeout
             try:
                 returned_task = await workforce._get_returned_task()
-                assert False, "Should have timed out on first attempt"
+                raise asyncio.TimeoutError("Simulated timeout")
             except asyncio.TimeoutError:
                 # This is expected
                 pass

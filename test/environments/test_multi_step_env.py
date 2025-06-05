@@ -217,7 +217,7 @@ async def test_multi_step_env_timeout_handling():
 
     try:
         await env_reward.setup()
-        obs = await env_reward.reset()
+        _obs = await env_reward.reset()
 
         # Replace compute_reward with our mocked timeout version
         with patch.object(
