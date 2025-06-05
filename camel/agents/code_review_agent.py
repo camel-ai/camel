@@ -103,7 +103,7 @@ class CodeReviewAgent(ChatAgent):
         change_model: ChangeMode = ChangeMode.NORMAL,
         **kwargs,
     ) -> None:
-        """
+        r"""
         Initialize the CodeReviewAgent.
 
         Args:
@@ -153,7 +153,7 @@ class CodeReviewAgent(ChatAgent):
         )
 
     def sanitize_filename(self, path: str) -> str:
-        """
+        r"""
         Sanitize file path into safe flat filename for saving as markdown.
 
         Args:
@@ -168,7 +168,7 @@ class CodeReviewAgent(ChatAgent):
         return f"{filename}.md"
 
     def save_review_markdowns(self, changed_files: List[ChangedFile], review_outputs: List[str], save_dir: str = "./review") -> None:
-        """
+        r"""
         Save each file's code review output as a markdown file.
 
         Args:
@@ -190,7 +190,7 @@ class CodeReviewAgent(ChatAgent):
                 logger.exception(f"Failed to save review for {file.filename}: {str(e)}")
 
     def fetch_pull_request_info(self, pr_number: int) -> PullRequestInfo:
-        """
+        r"""
         Fetch PR info and changed files.
 
         Args:
@@ -225,7 +225,7 @@ class CodeReviewAgent(ChatAgent):
         )
 
     def fetch_commit_info(self, commit_sha: str) -> CommitInfo:
-        """
+        r"""
         Fetch commit info and changed files.
 
         Args:
@@ -255,73 +255,70 @@ class CodeReviewAgent(ChatAgent):
             changed_files=commit_file_objects
         )
 
-    def step(
+    def review(
         self,
-        input_message: Union[BaseMessage, str],
-        *args,
-        **kwargs,
-    ) -> ChatAgentResponse:
+        query: str,
+        pr_number: int = None,
+        commit_sha: str = None,
+    ):
         """
-        Perform code review based on change mode (PR or incremental commit).
+        Perform a code review by analyzing either a pull request (NORMAL mode)
+        or a specific commit (INCREMENTAL mode). This function fetches changed files,
+        generates review prompts using a template, invokes the agent to review each
+        file, and saves the review results.
 
         Args:
-            input_message (Union[BaseMessage, str]): Review instructions.
-            *args: Additional arguments.
-            **kwargs: pr_number or commit_sha.
+            query (str): The review request or question to guide the review.
+            pr_number (int, optional): Pull request number used in NORMAL mode.
+            commit_sha (str, optional): Commit SHA used in INCREMENTAL mode.
 
         Returns:
-            ChatAgentResponse: Agent response after reviews, including per-file results.
+            ChatAgentResponse: Contains assistant messages for each reviewed file.
         """
-        pr_number = kwargs.get("pr_number")
-        commit_sha = kwargs.get("commit_sha")
-
-        logger.info(f"Executing step with change_mode={self.change_model}, pr_number={pr_number}, commit_sha={commit_sha}")
-
         try:
             if self.change_model == ChangeMode.NORMAL:
                 if pr_number is None:
                     raise ValueError("Parameter 'pr_number' is required in NORMAL mode.")
+                
+                logger.info(f"[NORMAL] Fetching pull request info for PR #{pr_number}...")
                 context_info = self.fetch_pull_request_info(pr_number)
                 changed_files = context_info.changed_files
+                logger.info(f"[NORMAL] PR #{pr_number} contains {len(changed_files)} changed files.")
 
             elif self.change_model == ChangeMode.INCREMENTAL:
                 if commit_sha is None:
                     raise ValueError("Parameter 'commit_sha' is required in INCREMENTAL mode.")
+                
+                logger.info(f"[INCREMENTAL] Fetching commit info for SHA {commit_sha}...")
                 context_info = self.fetch_commit_info(commit_sha)
                 changed_files = context_info.changed_files
+                logger.info(f"[INCREMENTAL] Commit {commit_sha} contains {len(changed_files)} changed files.")
 
-            else:
-                raise ValueError(f"Unsupported change mode: {self.change_model}")
+            logger.info(f"[{self.change_model.value}] Starting review with query: {query}")
 
-            user_query = input_message.content if isinstance(input_message, BaseMessage) else input_message
-
-            review_outputs = []
-            per_file_results = []
-            
-            # 初始化消息列表
-            all_msgs = []
-            review_outputs = []  # 用于存储每个文件的审查结果
-
-            # 循环处理每个文件
-            for file in changed_files:
-                diff_summary = f"--- {file.filename} ({file.change_type}) ---\n{file.patch or '[No diff available]'}"
-                full_prompt = self.prompt_template.safe_substitute(
-                    diff_summary=diff_summary,
-                    review_request=user_query,
-                )
-                review_input = input_message.copy() if isinstance(input_message, BaseMessage) else BaseMessage.make_user_message(role_name="User", content=full_prompt)
-                review_input.content = full_prompt
-
-                result = super().step(review_input)
-                response_content = result.msgs[0].content if result.msgs else ""
-                
-                all_msgs.append(BaseMessage.make_assistant_message(role_name = "CodeReview_Agent", content=f"### {file.filename}\n{response_content}"))
-                review_outputs.append(response_content)
-
-            self.save_review_markdowns(changed_files, review_outputs)
-
-            return ChatAgentResponse(msgs=all_msgs, terminated=False, info={})
-        
         except Exception as e:
-            logger.exception(f"Failed during step execution: {str(e)}")
+            logger.exception("Error during code review")
             raise
+
+        all_msgs = []
+        review_outputs = []
+
+        for file in changed_files:
+            diff_summary = f"--- {file.filename} ({file.change_type}) ---\n{file.patch or '[No diff available]'}"
+            full_prompt = self.prompt_template.safe_substitute(
+                diff_summary=diff_summary,
+                review_request=query,
+            )
+            user_msg = BaseMessage.make_user_message(
+                role_name="User",
+                content=full_prompt,
+            )
+            result = super().step(user_msg)
+            response_content = result.msgs[0].content if result.msgs else ""
+
+            all_msgs.append(BaseMessage.make_assistant_message(role_name="CodeReview_Agent", content=f"### {file.filename}\n{response_content}"))
+            review_outputs.append(response_content)
+        
+        self.save_review_markdowns(changed_files, review_outputs)
+        return ChatAgentResponse(msgs=all_msgs, terminated=False, info={})
+
