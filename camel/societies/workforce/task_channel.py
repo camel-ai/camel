@@ -91,7 +91,7 @@ class TaskChannel:
 
         Args:
             publisher_id: The ID of the publisher
-            timeout: Maximum time to wait in seconds (default: 180.0)
+            timeout: Maximum time to wait in seconds (default: :obj:`180.0`)
 
         Raises:
             asyncio.TimeoutError: If waiting times out
@@ -121,7 +121,7 @@ class TaskChannel:
 
         Args:
             assignee_id: The ID of the assignee
-            timeout: Maximum time to wait in seconds (default: 180.0)
+            timeout: Maximum time to wait in seconds (default: :obj:`180.0`)
 
         Raises:
             asyncio.TimeoutError: If waiting times out
