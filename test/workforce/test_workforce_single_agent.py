@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import time
+from typing import List
 
 import pytest
 
@@ -33,11 +34,13 @@ class AlwaysFailingWorker(SingleAgentWorker):
         agent = ChatAgent(sys_msg)
         super().__init__(description, agent)
 
-    async def _process_task(self, task: Task) -> Task:
+    async def _process_task(
+        self, task: Task, dependencies: List[Task]
+    ) -> TaskState:
         """Always return failed task."""
         task.state = TaskState.FAILED
         task.result = "Task failed deliberately for testing"
-        return task
+        return TaskState.FAILED
 
 
 @pytest.mark.asyncio
