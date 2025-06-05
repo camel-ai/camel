@@ -13,9 +13,8 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-import json
 import asyncio
-
+import json
 from typing import Dict, List, Optional
 
 from colorama import Fore
@@ -84,7 +83,10 @@ class RolePlayingWorker(Worker):
         self.user_agent_kwargs = user_agent_kwargs
 
     async def _process_task(
-        self, task: Task, dependencies: List[Task], timeout: Optional[int] = 180.0,
+        self,
+        task: Task,
+        dependencies: List[Task],
+        timeout: Optional[int] = 180.0,
     ) -> TaskState:
         r"""Processes a task leveraging its dependencies through role-playing.
 
@@ -130,8 +132,7 @@ class RolePlayingWorker(Worker):
             try:
                 # add a timeout control
                 assistant_response, user_response = await asyncio.wait_for(
-                    role_play_session.astep(input_msg),
-                    timeout=timeout
+                    role_play_session.astep(input_msg), timeout=timeout
                 )
             except asyncio.TimeoutError:
                 print(
@@ -141,9 +142,9 @@ class RolePlayingWorker(Worker):
                 break
             except Exception as e:
                 print(
-                    f"{Fore.RED}Error during role playing step: {str(e)}{Fore.RESET}"
+                    f"{Fore.RED}Error during role playing step: {e!s}{Fore.RESET}"
                 )
-                chat_history.append(f"Error during role playing: {str(e)}")
+                chat_history.append(f"Error during role playing: {e!s}")
                 break
 
             if assistant_response.terminated:

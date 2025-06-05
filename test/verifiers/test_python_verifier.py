@@ -12,10 +12,13 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-import pytest
 from unittest.mock import patch
+
+import pytest
+
 from camel.verifiers.models import VerificationOutcome
 from camel.verifiers.python_verifier import PythonVerifier
+
 
 @pytest.fixture
 def python_verifier():
@@ -240,44 +243,45 @@ async def test_verify_with_float_tolerance(
 @pytest.mark.asyncio
 async def test_python_verifier_run_code_block_timeout(python_verifier):
     """Test timeout handling in _run_code_block method."""
-    from unittest.mock import patch
     import asyncio
-    
+
     await python_verifier.setup(uv=True)
-    
+
     if python_verifier.venv_path is None:
         python_verifier.venv_path = "/tmp/mock_venv"
-    
+
     # Mock proc.communicate to raise TimeoutError
-    with patch('asyncio.subprocess.Process.communicate', 
-               side_effect=asyncio.TimeoutError("Simulated timeout")):
-        
+    with patch(
+        'asyncio.subprocess.Process.communicate',
+        side_effect=asyncio.TimeoutError("Simulated timeout"),
+    ):
         with pytest.raises(asyncio.TimeoutError):
-            await python_verifier._run_code_block('print("test")', 
-                                                 python_verifier.venv_path + "/bin/python")
-    
+            await python_verifier._run_code_block(
+                'print("test")', python_verifier.venv_path + "/bin/python"
+            )
+
     await python_verifier.cleanup()
 
 
 @pytest.mark.asyncio
 async def test_python_verifier_verify_timeout_propagation(python_verifier):
     """Test timeout propagation in the verification implementation."""
-    from unittest.mock import patch
     import asyncio
-    
+
     await python_verifier.setup(uv=True)
-    
+
     # Mock _run_code_block to raise TimeoutError
-    with patch.object(python_verifier, '_run_code_block',
-                      side_effect=asyncio.TimeoutError("Simulated timeout")):
-        
+    with patch.object(
+        python_verifier,
+        '_run_code_block',
+        side_effect=asyncio.TimeoutError("Simulated timeout"),
+    ):
         result = await python_verifier._verify_implementation(
-            solution="print('test')", 
-            reference_answer=None
+            solution="print('test')", reference_answer=None
         )
-        
+
         # Check that the timeout is properly handled
         assert result.status == VerificationOutcome.TIMEOUT
         assert "timed out" in result.error_message.lower()
-    
+
     await python_verifier.cleanup()

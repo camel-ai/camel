@@ -174,14 +174,12 @@ class SingleStepEnv:
             )
             try:
                 # add timeout control
-                await asyncio.wait_for(
-                    self.setup(), 
-                    timeout=self._timeout
-                )
+                await asyncio.wait_for(self.setup(), timeout=self._timeout)
             except asyncio.TimeoutError:
-                logger.error(f"Environment setup timed out after {self._timeout}s")
+                logger.error(
+                    f"Environment setup timed out after {self._timeout}s"
+                )
                 raise
-
 
         if self._batch_started() and not self._batch_done():
             logger.error(
@@ -233,15 +231,16 @@ class SingleStepEnv:
                 try:
                     # add timeout control for dataset sampling
                     sample = await asyncio.wait_for(
-                        self.dataset.async_sample(),
-                        timeout=self._timeout
+                        self.dataset.async_sample(), timeout=self._timeout
                     )
                     self._states.append(sample)
                 except asyncio.TimeoutError:
-                    logger.error(f"Dataset sampling timed out after {self._timeout}s")
+                    logger.error(
+                        f"Dataset sampling timed out after {self._timeout}s"
+                    )
                     # raise exception to terminate the reset operation
                     raise
-                
+
             self.current_batch_size = len(self._states)
             self._states_done = [False] * self.current_batch_size
 
@@ -580,9 +579,7 @@ class SingleStepEnv:
             try:
                 # add timeout control
                 further_rewards = await asyncio.wait_for(
-                    self._compute_custom_reward(
-                        solution, verification_result
-                    ),
+                    self._compute_custom_reward(solution, verification_result),
                     timeout=self._timeout,  # use existing timeout parameter
                 )
                 rewards = {**rewards, **further_rewards}
@@ -593,7 +590,6 @@ class SingleStepEnv:
                 # use empty dictionary as fallback strategy
                 further_rewards = {}
                 rewards = {**rewards, **further_rewards}  # only basic rewards
-
 
             total_reward = sum(rewards.values())
             total_rewards.append(total_reward)

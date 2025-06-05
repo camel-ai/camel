@@ -11,10 +11,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import asyncio
 import logging
 import threading
-import asyncio
-from typing import Dict, List, Optional, Sequence, Tuple, Union, Awaitable, TypeVar
+from typing import (
+    Awaitable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 from camel.agents import (
     ChatAgent,
@@ -39,21 +48,22 @@ TIMEOUT_THRESHOLD = 180.0  # Default timeout in seconds
 # define type variable for with_timeout function
 T = TypeVar("T")
 
+
 async def with_timeout(
     coro: Awaitable[T],
     timeout: float = TIMEOUT_THRESHOLD,
-    context: str = "operation"
+    context: str = "operation",
 ) -> T:
     """General timeout wrapper for async operations.
-    
+
     Args:
         coro: async operation to be executed
         timeout: max wait time (seconds)
         context: context information, used for error messages
-        
+
     Returns:
         result of the async operation
-        
+
     Raises:
         asyncio.TimeoutError: if wait times out
     """
@@ -62,6 +72,7 @@ async def with_timeout(
     except asyncio.TimeoutError:
         logger.error(f"Operation timed out after {timeout}s: {context}")
         raise asyncio.TimeoutError(f"Timed out while {context}")
+
 
 class RolePlaying:
     r"""Role playing between two agents.
@@ -659,7 +670,7 @@ class RolePlaying:
         """
         user_response = await with_timeout(
             self.user_agent.astep(assistant_msg),
-            context=f"waiting for user agent {self.user_agent.role_name} response"
+            context=f"waiting for user agent {self.user_agent.role_name} response",
         )
 
         if user_response.terminated or user_response.msgs is None:
@@ -684,9 +695,9 @@ class RolePlaying:
 
         assistant_response = await with_timeout(
             self.assistant_agent.astep(user_msg),
-            context=f"waiting for assistant agent {self.assistant_agent.role_name} response"
+            context=f"waiting for assistant agent {self.assistant_agent.role_name} response",
         )
-    
+
         if assistant_response.terminated or assistant_response.msgs is None:
             return (
                 ChatAgentResponse(

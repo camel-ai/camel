@@ -12,36 +12,40 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
+
 import asyncio
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import Awaitable, List, Optional, TypeVar
+
 from colorama import Fore
+
 from camel.societies.workforce.base import BaseNode
 from camel.societies.workforce.task_channel import TaskChannel
 from camel.societies.workforce.utils import check_if_running
 from camel.tasks.task import Task, TaskState
-from typing import TypeVar, Awaitable
+
 logger = logging.getLogger(__name__)
 
 T = TypeVar('T')  # generic type for async operations
 TIMEOUT_THRESHOLD = 180.0  # seconds
 
+
 async def with_timeout(
-    coro: Awaitable[T], 
-    timeout: float = TIMEOUT_THRESHOLD, 
-    context: str = "operation"
+    coro: Awaitable[T],
+    timeout: float = TIMEOUT_THRESHOLD,
+    context: str = "operation",
 ) -> T:
     """general timeout wrapper for async operations.
-    
+
     Args:
         coro: async operation to be executed
         timeout: max wait time (seconds)
         context: context information, used for error messages
-        
+
     Returns:
         result of the async operation
-        
+
     Raises:
         asyncio.TimeoutError: if wait times out
     """
@@ -50,6 +54,7 @@ async def with_timeout(
     except asyncio.TimeoutError:
         logger.error(f"Operation timed out after {timeout}s: {context}")
         raise asyncio.TimeoutError(f"Timed out while {context}")
+
 
 class Worker(BaseNode, ABC):
     r"""A worker node that works on tasks. It is the basic unit of task
@@ -88,7 +93,7 @@ class Worker(BaseNode, ABC):
         return await with_timeout(
             self._channel.get_assigned_task_by_assignee(self.node_id),
             timeout=TIMEOUT_THRESHOLD,
-            context=f"getting assigned task for {self.node_id}"
+            context=f"getting assigned task for {self.node_id}",
         )
 
     @staticmethod
@@ -121,32 +126,32 @@ class Worker(BaseNode, ABC):
             task = await with_timeout(
                 self._get_assigned_task(),
                 timeout=TIMEOUT_THRESHOLD,
-                context=f"getting assigned task for {self.node_id}"
+                context=f"getting assigned task for {self.node_id}",
             )
 
             print(
                 f"{Fore.YELLOW}{self} get task {task.id}: {task.content}"
                 f"{Fore.RESET}"
             )
-            
+
             # Get the Task instance of dependencies
             dependency_ids = await with_timeout(
                 self._channel.get_dependency_ids(),
-                context=f"getting dependency IDs for task {task.id}"
+                context=f"getting dependency IDs for task {task.id}",
             )
             task_dependencies = []
             for dep_id in dependency_ids:
                 dep_task = await with_timeout(
                     self._channel.get_task_by_id(dep_id),
-                    context=f"getting dependency task {dep_id}"
+                    context=f"getting dependency task {dep_id}",
                 )
                 task_dependencies.append(dep_task)
-            
+
             # Process the task
             task_state = await with_timeout(
                 self._process_task(task, task_dependencies),
                 timeout=TIMEOUT_THRESHOLD,
-                context=f"processing task {task.id}"
+                context=f"processing task {task.id}",
             )
 
             # Update the result and status of the task
@@ -155,7 +160,7 @@ class Worker(BaseNode, ABC):
             await with_timeout(
                 self._channel.return_task(task.id),
                 timeout=TIMEOUT_THRESHOLD,
-                context=f"returning task {task.id}"
+                context=f"returning task {task.id}",
             )
 
     @check_if_running(False)
@@ -164,7 +169,7 @@ class Worker(BaseNode, ABC):
         await with_timeout(
             self._listen_to_channel(),
             timeout=TIMEOUT_THRESHOLD,
-            context=f"listening to channel for {self.node_id}"
+            context=f"listening to channel for {self.node_id}",
         )
 
     @check_if_running(True)
