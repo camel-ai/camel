@@ -22,7 +22,7 @@ python3 -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
 # 2. Install the specific CAMEL-AI version (and requirements)
-pip install camel-ai==0.2.61 streamlit openai
+pip install camel-ai==0.2.62 streamlit openai
 
 # 3. (Optional) Get a [Pexels API key](https://www.pexels.com/api/) if you want slides with images
 ```
