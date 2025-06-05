@@ -13,10 +13,10 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import io
 import os
+import shutil
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-import pytest_asyncio
 from PIL import Image
 
 from camel.toolkits.async_browser_toolkit import (
@@ -34,6 +34,9 @@ def dummy_playwright_setup():
     dummy_browser = MagicMock()
     dummy_instance.chromium = MagicMock()
     dummy_instance.chromium.launch = AsyncMock(return_value=dummy_browser)
+    dummy_instance.chromium.launch_persistent_context = AsyncMock(
+        return_value=MagicMock()
+    )
 
     dummy_context = MagicMock()
     dummy_browser.new_context = AsyncMock(return_value=dummy_context)
@@ -41,6 +44,8 @@ def dummy_playwright_setup():
 
     dummy_page = MagicMock()
     dummy_context.new_page = AsyncMock(return_value=dummy_page)
+    dummy_context.pages = []
+    dummy_context.close = AsyncMock()
 
     dummy_playwright = MagicMock()
     dummy_playwright.start = AsyncMock(return_value=dummy_instance)
@@ -48,7 +53,7 @@ def dummy_playwright_setup():
     return dummy_playwright
 
 
-@pytest_asyncio.fixture(scope="function")
+@pytest.fixture(scope="function")
 async def async_base_browser_fixture(dummy_playwright_setup):
     with patch(
         'playwright.async_api.async_playwright',
@@ -57,10 +62,10 @@ async def async_base_browser_fixture(dummy_playwright_setup):
         browser = AsyncBaseBrowser(headless=True, cache_dir="test_cache")
         yield browser
         if os.path.exists("test_cache"):
-            os.rmdir("test_cache")
+            shutil.rmtree("test_cache", ignore_errors=True)
 
 
-@pytest_asyncio.fixture(scope="function")
+@pytest.fixture(scope="function")
 async def async_browser_toolkit_fixture(dummy_playwright_setup):
     with patch(
         'playwright.async_api.async_playwright',
@@ -69,7 +74,7 @@ async def async_browser_toolkit_fixture(dummy_playwright_setup):
         toolkit = AsyncBrowserToolkit(headless=True, cache_dir="test_cache")
         yield toolkit
         if os.path.exists("test_cache"):
-            os.rmdir("test_cache")
+            shutil.rmtree("test_cache", ignore_errors=True)
 
 
 @pytest.mark.asyncio
