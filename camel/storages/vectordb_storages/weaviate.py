@@ -15,7 +15,7 @@ import json
 import logging
 import re
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional, cast
 
 if TYPE_CHECKING:
     from weaviate import WeaviateClient
@@ -225,13 +225,17 @@ class WeaviateStorage(BaseVectorStorage):
                 near_vector=query.query_vector,
                 limit=query.top_k,
                 include_vector=True,
-                return_metadata=MetadataQuery(score=True),
+                return_metadata=MetadataQuery(certainty=True),
             )
 
             results = []
             for obj in response.objects:
-                # Use score as similarity score
-                similarity = obj.metadata.score or 0.0
+                # calculate similarity score
+                similarity = (
+                    obj.metadata.certainty
+                    if obj.metadata.certainty is not None
+                    else 0.0
+                )
 
                 # Handle payload
                 payload = None
@@ -246,9 +250,23 @@ class WeaviateStorage(BaseVectorStorage):
                         payload = {"raw": str(payload_value)}
 
                 # Handle vector data
-                vector_data: Any = obj.vector or []
-                if isinstance(vector_data, list):
-                    vector = [float(x) for x in vector_data]
+                # In newer versions of Weaviate, obj.vector returns a dict
+                # with 'default' key
+
+                vector: List[float] = []
+                if hasattr(obj, 'vector') and obj.vector is not None:
+                    # New format: {'default': [vector_values]}
+                    vector_data = obj.vector.get('default', [])
+                    if (
+                        vector_data
+                        and isinstance(vector_data, list)
+                        and len(vector_data) > 0
+                        and isinstance(vector_data[0], float)
+                    ):
+                        vector = cast(List[float], vector_data)
+                    else:
+                        # unsupported vector data format
+                        vector = []
                 else:
                     vector = []
 
