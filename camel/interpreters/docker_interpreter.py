@@ -101,10 +101,9 @@ class DockerInterpreter(BaseInterpreter):
         """
         try:
             if self._container is not None:
-                self._container.stop()
-                self._container.remove(force=True)
-        except ImportError:
-            pass
+                self.cleanup()
+        except ImportError as e:
+            logger.warning(f"Error during container cleanup: {e}")
 
     def _initialize_if_needed(self) -> None:
         if self._container is not None:
@@ -256,6 +255,7 @@ class DockerInterpreter(BaseInterpreter):
             result = self._run_file_in_container(temp_file_path, code_type)
             # Clean up after execution
         except docker.errors.APIError as e:
+            self.cleanup()
             raise InterpreterError(
                 f"Execution halted due to docker API error: {e.explanation}. "
                 "This choice stops the current operation and any "
@@ -285,9 +285,7 @@ class DockerInterpreter(BaseInterpreter):
 
     def update_action_space(self, action_space: Dict[str, Any]) -> None:
         r"""Updates action space for *python* interpreter"""
-        raise RuntimeError(
-            "SubprocessInterpreter doesn't support " "`action_space`."
-        )
+        raise RuntimeError("DockerInterpreter doesn't support `action_space`.")
 
     def execute_command(self, command: str) -> str:
         r"""Executes a command in the Docker container and returns its output.

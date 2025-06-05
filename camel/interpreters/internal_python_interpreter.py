@@ -536,15 +536,26 @@ class InternalPythonInterpreter(BaseInterpreter):
             else:
                 raise InterpreterError(f"The variable `{key}` is not defined.")
 
-    def execute_command(self, command: str) -> str:
-        proc = subprocess.Popen(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            env=os.environ,
-            shell=True,
-        )
-        stdout, stderr = proc.communicate()
+    def execute_command(self, command: str) -> tuple[str, str]:
+        r"""Execute a command in the internal python interpreter.
 
-        return stdout if stdout else stderr
+        Args:
+            command (str): The command to execute.
+
+        Returns:
+            tuple: A tuple containing the stdout and stderr of the command.
+        """
+        try:
+            proc = subprocess.Popen(
+                command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                env=os.environ,
+                shell=True,
+            )
+            stdout, stderr = proc.communicate()
+
+            return stdout, stderr
+        except Exception as e:
+            raise InterpreterError(f"Error executing command: {e}")

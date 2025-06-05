@@ -25,7 +25,10 @@ RUN add-apt-repository ppa:deadsnakes/ppa \
         python3.10-dev \
         python3.10-distutils \
         python3-pip \
-    && ln -s /usr/bin/python3.10 /usr/bin/python
+    && ln -s /usr/bin/python3.10 /usr/bin/python \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean \
+    && apt-get autoremove -y
 
 # Install NodeJS 22.x
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
@@ -34,13 +37,6 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
 # Install Poetry
 RUN curl -fsSL https://install.python-poetry.org | python3.10 - \
     && ln -s ~/.local/bin/poetry /usr/local/bin/poetry
-
-# Install NVM and latest LTS Node.js
-RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash && \
-    export NVM_DIR="$HOME/.nvm" && \
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && \
-    nvm install --lts
-
 
 # Install Python packages
 RUN python3.10 -m pip install --upgrade pip setuptools wheel 

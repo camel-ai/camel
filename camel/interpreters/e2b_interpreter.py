@@ -70,8 +70,8 @@ class E2BInterpreter(BaseInterpreter):
                 and self._sandbox.is_running()
             ):
                 self._sandbox.kill()
-        except ImportError:
-            pass
+        except ImportError as e:
+            logger.warning(f"Error during sandbox cleanup: {e}")
 
     def run(
         self,
@@ -143,7 +143,13 @@ class E2BInterpreter(BaseInterpreter):
         raise RuntimeError("E2B doesn't support " "`action_space`.")
 
     def execute_command(self, command: str) -> str:
-        """
+        r"""
         Execute a command can be used to resolve the dependency of the code.
+
+        Args:
+            command (str): The command to execute.
+
+        Returns:
+            str: The output of the command.
         """
         return self._sandbox.commands.run(command)

@@ -16,7 +16,6 @@
 from colorama import Fore
 
 from camel.agents import ChatAgent
-from camel.configs import ChatGPTConfig
 from camel.interpreters import DockerInterpreter
 from camel.models import ModelFactory
 from camel.toolkits.code_execution import CodeExecutionToolkit
@@ -29,7 +28,8 @@ tools = toolkit.get_tools()
 # Enhanced system message with explicit workflow
 assistant_sys_msg = (
     "You are a programming assistant with code execution capabilities. "
-    "You have access to tools for executing shell commands and running code in various programming languages.\n\n"
+    "You have access to tools for executing shell commands and running "
+    "code in various programming languages.\n\n"
     "MANDATORY WORKFLOW for code requests:\n"
     "1. FIRST: If the code requires external dependencies:\n"
     "   - Use execute_command tool to install required packages/libraries\n"
@@ -52,22 +52,14 @@ assistant_sys_msg = (
     "1. execute_command('npm install <package>')\n"
     "2. execute_code('// your JavaScript code here')\n"
     "3. Explain the output\n\n"
-    "You MUST use the available tools - do not provide text-only responses for code requests."
-)
-# ruff: noqa: E501
-
-# Model configuration
-assistant_model_config = ChatGPTConfig(
-    temperature=0.0,
-    tools=tools,
-    tool_choice="auto",
+    "You MUST use the available tools - do not provide text-only "
+    "responses for code requests."
 )
 
 # Create model
 model = ModelFactory.create(
     model_platform=ModelPlatformType.GEMINI,
     model_type=ModelType.GEMINI_2_0_FLASH_LITE,
-    model_config_dict=assistant_model_config.as_dict(),
 )
 
 # Create agent
@@ -115,7 +107,8 @@ function dotProduct(matrix1, matrix2) {
   for (let i = 0; i < matrix1.length; i++) {
     let sum = 0;
     for (let j = 0; j < matrix2.length; j++) {
-      sum += matrix1[i][j] * matrix2[j][0]; // Assuming matrix2 is a column vector
+      # Assuming matrix2 is a column vector
+      sum += matrix1[i][j] * matrix2[j][0];
     }
     result.push(sum);
   }
@@ -123,7 +116,7 @@ function dotProduct(matrix1, matrix2) {
 }
 
 const matrix1 = [[1, 2], [3, 4]];
-const matrix2 = [[5], [6]]; // Corrected to be a column vector
+const matrix2 = [[5], [6]]; # Corrected to be a column vector
 
 const product = dotProduct(matrix1, matrix2);
 console.log(product);
@@ -137,9 +130,9 @@ The JavaScript code calculates the dot product of two matrices.
 The `dotProduct` function takes two matrices as input and returns a new matrix
 representing their dot product. The code first checks for invalid inputs
 (empty or null matrices, or incompatible dimensions). Then, it iterates through
-the rows of the first matrix and the columns of the second matrix, computing the sum 
-of the products of the corresponding elements. The example uses matrices `[[1, 2], [3, 4]]` and `[[5], [6]]` 
-and the output is `[17, 39]`.
+the rows of the first matrix and the columns of the second matrix, computing 
+the sum of the products of the corresponding elements. The example uses 
+matrices `[[1, 2], [3, 4]]` and `[[5], [6]]` and the output is `[17, 39]`.
 '''
 
 
@@ -149,10 +142,12 @@ docker_interpreter = DockerInterpreter(require_confirm=False)
 
 # Execute commands in the Docker container
 print(
-    f'System update example {docker_interpreter.execute_command("apt-get update")}'
+    f'System update example '
+    f'{docker_interpreter.execute_command("apt-get update")}'
 )
 print(
-    f'System upgrade example {docker_interpreter.execute_command("apt-get upgrade -y")}'
+    f'System upgrade example '
+    f'{docker_interpreter.execute_command("apt-get upgrade -y")}'
 )
 print(f'pip example {docker_interpreter.execute_command("pip --version")}')
 print(f'npm example {docker_interpreter.execute_command("npm --version")}')
@@ -161,18 +156,25 @@ print(f'uv example {docker_interpreter.execute_command("uv --version")}')
 # Clean up the container
 docker_interpreter.cleanup()
 
-"""System update example Hit:1 https://deb.nodesource.com/node_22.x nodistro InRelease
+"""System update example Hit:1 https://deb.nodesource.com/node_22.x nodistro 
+InRelease
 Get:2 http://security.ubuntu.com/ubuntu jammy-security InRelease [129 kB]
 Hit:3 http://archive.ubuntu.com/ubuntu jammy InRelease
 Hit:4 https://ppa.launchpadcontent.net/deadsnakes/ppa/ubuntu jammy InRelease
 Get:5 http://archive.ubuntu.com/ubuntu jammy-updates InRelease [128 kB]
-Get:6 http://security.ubuntu.com/ubuntu jammy-security/universe amd64 Packages [1245 kB]
+Get:6 http://security.ubuntu.com/ubuntu jammy-security/universe amd64 
+Packages [1245 kB]
 Get:7 http://archive.ubuntu.com/ubuntu jammy-backports InRelease [127 kB]
-Get:8 http://archive.ubuntu.com/ubuntu jammy-updates/main amd64 Packages [3295 kB]
-Get:9 http://security.ubuntu.com/ubuntu jammy-security/restricted amd64 Packages [4468 kB]
-Get:10 http://security.ubuntu.com/ubuntu jammy-security/main amd64 Packages [2979 kB]
-Get:11 http://archive.ubuntu.com/ubuntu jammy-updates/restricted amd64 Packages [4630 kB]
-Get:12 http://archive.ubuntu.com/ubuntu jammy-updates/universe amd64 Packages [1553 kB]
+Get:8 http://archive.ubuntu.com/ubuntu jammy-updates/main amd64 
+Packages [3295 kB]
+Get:9 http://security.ubuntu.com/ubuntu jammy-security/restricted amd64 
+Packages [4468 kB]
+Get:10 http://security.ubuntu.com/ubuntu jammy-security/main amd64 
+Packages [2979 kB]
+Get:11 http://archive.ubuntu.com/ubuntu jammy-updates/restricted amd64 
+Packages [4630 kB]
+Get:12 http://archive.ubuntu.com/ubuntu jammy-updates/universe amd64 
+Packages [1553 kB]
 Fetched 18.6 MB in 3s (5312 kB/s)
 Reading package lists...
 
@@ -182,7 +184,8 @@ Reading state information...
 Calculating upgrade...
 0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
 
-pip example pip 25.1.1 from /usr/local/lib/python3.10/dist-packages/pip (python 3.10)
+pip example pip 25.1.1 from /usr/local/lib/python3.10/dist-packages/pip 
+(python 3.10)
 
 npm example 10.9.2
 
