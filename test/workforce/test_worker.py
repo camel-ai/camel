@@ -82,7 +82,8 @@ async def test_listen_to_channel_recovers_from_timeout():
     # Mock TaskChannel
     mock_channel = AsyncMock(spec=TaskChannel)
 
-    # Configure get_assigned_task_by_assignee to first throw TimeoutError, then return normal result
+    # Configure get_assigned_task_by_assignee to first throw TimeoutError, 
+    # then return normal result
     mock_task = MagicMock(spec=Task)
     mock_task.id = "test_task_id"
     mock_task.content = "test content"
