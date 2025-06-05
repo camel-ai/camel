@@ -261,7 +261,7 @@ class CodeReviewAgent(ChatAgent):
         pr_number: int = None,
         commit_sha: str = None,
     ):
-        """
+        r"""
         Perform a code review by analyzing either a pull request (NORMAL mode)
         or a specific commit (INCREMENTAL mode). This function fetches changed files,
         generates review prompts using a template, invokes the agent to review each
