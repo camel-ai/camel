@@ -162,11 +162,13 @@ async def test_worker_with_timeout_integration():
             ran_once = True
             # Get task
             task = await worker._get_assigned_task()
+            
+            _dependency_ids = await worker._channel.get_dependency_ids()
+            
             task_dependencies = []
             # Process task
             task_state = await with_timeout_async(
                 worker._process_task(task, task_dependencies),
-                timeout=TIMEOUT_THRESHOLD,
                 context=f"processing task {task.id}",
             )
             # Update status
