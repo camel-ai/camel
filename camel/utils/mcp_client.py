@@ -697,7 +697,8 @@ class MCPClient:
                 # No event loop is running, we can safely use run_async
                 from camel.utils.commons import run_async
 
-                return run_async(async_mcp_call)(**kwargs)
+                run_async_func = run_async(async_mcp_call)
+                return run_async_func(**kwargs)
 
         # Add an async_call method to the function for explicit async usage
         adaptive_dynamic_function.async_call = async_mcp_call  # type: ignore[attr-defined]
