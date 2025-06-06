@@ -11,430 +11,477 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import asyncio
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
-from camel.agents import ChatAgent
+import asyncio
+from asyncio import AbstractEventLoop, Task
+from typing import Any, Dict, List, Optional
+
 from camel.bots.discord import (
     DiscordApp,
     DiscordBaseInstallationStore,
     DiscordSQLiteInstallationStore,
 )
-from camel.logger import get_logger
-from camel.retrievers import AutoRetriever
+from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.toolkits.function_tool import FunctionTool
 from camel.utils import MCPServer
-
-# For type annotations only
-if TYPE_CHECKING:
-    from unstructured.documents.elements import Element
-else:
-    try:
-        from unstructured.documents.elements import Element
-    except ImportError:
-        pass
-
-
-logger = get_logger(__name__)
 
 
 @MCPServer()
 class DiscordToolkit(BaseToolkit):
-    r"""A toolkit for creating and managing Discord bots.
+    r"""A toolkit for interacting with Discord servers using the Discord API.
 
-    This toolkit provides functionality to create, configure,
-    and run Discord botsthat can process messages, interact with users,
-    and leverage retrieval-augmented generation for providing
-    informative responses using the CAMEL Discord bot implementation.
+    This toolkit provides functionality for sending messages,
+    retrieving channel information, managing guild members,
+    and handling Discord application installations.
+
+    Attributes:
+        bot_token (str): The Discord bot token used for authentication.
+        client_id (Optional[str]): The client ID for Discord OAuth.
+        client_secret (Optional[str]): The client secret for Discord OAuth.
+        redirect_uri (Optional[str]): The redirect URI for OAuth callbacks.
+        installation_store (Optional[DiscordBaseInstallationStore]):
+            The store for managing Discord installations.
+        discord_app (DiscordApp): The Discord application instance.
     """
 
     def __init__(
         self,
-        token: Optional[str] = None,
-        channel_ids: Optional[List[int]] = None,
+        bot_token: str,
         client_id: Optional[str] = None,
         client_secret: Optional[str] = None,
         redirect_uri: Optional[str] = None,
         installation_store: Optional[DiscordBaseInstallationStore] = None,
         database_path: Optional[str] = None,
+        channel_ids: Optional[List[int]] = None,
         timeout: Optional[float] = None,
     ) -> None:
         r"""Initialize the DiscordToolkit.
 
         Args:
-            token (Optional[str]): The Discord bot token for authentication.
-                If None, it must be provided when calling create_bot.
-            channel_ids (Optional[List[int]]): List of Discord channel IDs
-                where the bot is allowed to interact. If None, the bot will
-                respond in any channel when mentioned.
+            bot_token (str): The Discord bot token used for authentication.
             client_id (Optional[str]): The client ID for Discord OAuth.
-                Required for OAuth flow.
+                (default: :obj:`None`)
             client_secret (Optional[str]): The client secret for Discord OAuth.
-                Required for OAuth flow.
+                (default: :obj:`None`)
             redirect_uri (Optional[str]): The redirect URI for OAuth callbacks.
-                Required for OAuth flow.
-            installation_store (Optional[DiscordBaseInstallationStore]): The
-                database to store installation information. If None and
-                database_path is provided, a SQLite store will be created.
-            database_path (Optional[str]): Path to SQLite database for
-                installation storage. Only used if installation_store is None.
-            timeout (Optional[float]): The timeout for the toolkit operations.
+                (default: :obj:`None`)
+            installation_store (Optional[DiscordBaseInstallationStore]):
+                The store for managing Discord installations.
+                If None and database_path is provided,
+                a SQLite store will be created.
+                (default: :obj:`None`)
+            database_path (Optional[str]): Path to SQLite database for storing
+                installations. (default: :obj:`None`)
+            channel_ids (Optional[List[int]]): List of Discord channel IDs
+                to monitor.
+                (default: :obj:`None`)
+            timeout (Optional[float]): The timeout for toolkit operations.
+                (default: :obj:`None`)
         """
         super().__init__(timeout=timeout)
+        import discord
 
         # Create installation store if database path is provided
         if installation_store is None and database_path is not None:
             installation_store = DiscordSQLiteInstallationStore(database_path)
 
         # Initialize Discord app
-        self._discord_app = DiscordApp(
-            channel_ids=channel_ids,
-            token=token,
+        self.bot_token = bot_token
+        self.client_id = client_id
+        self.client_secret = client_secret
+        self.redirect_uri = redirect_uri
+        self.installation_store = installation_store
+
+        # Create intents
+        intents = discord.Intents.default()
+        intents.message_content = True
+        intents.members = True
+
+        # Initialize Discord app
+        self.discord_app = DiscordApp(
+            token=bot_token,
             client_id=client_id,
             client_secret=client_secret,
             redirect_uri=redirect_uri,
             installation_store=installation_store,
+            channel_ids=channel_ids,
+            intents=intents,
         )
 
-        self._agent_instance: Optional[Dict[str, Any]] = None
+        self._is_running = False
+        self._event_loop: Optional[AbstractEventLoop] = None
+        self._background_task: Optional[Task[Any]] = None
 
-    def create_agent(
-        self,
-        contents: Optional[
-            Union[str, List[str], "Element", List["Element"]]
-        ] = None,
-        auto_retriever: Optional[AutoRetriever] = None,
-        similarity_threshold: float = 0.5,
-        vector_storage_local_path: str = "local_data/",
-        top_k: int = 1,
-        return_detailed_info: bool = True,
-        system_message: Optional[str] = None,
-    ) -> str:
-        r"""Create a bot agent for processing messages and generating responses
+    async def start_bot(self) -> bool:
+        r"""Start the Discord bot.
+
+        Returns:
+            bool: True if the bot was started successfully, False otherwise.
+        """
+        if not self._is_running:
+            try:
+                # Initialize installation store if available
+                if self.installation_store:
+                    await self.installation_store.init()
+
+                # Start the bot in a background task
+                self._event_loop = asyncio.get_event_loop()
+                self._background_task = asyncio.create_task(
+                    self.discord_app.start()
+                )
+                self._is_running = True
+                return True
+            except Exception as e:
+                print(f"Failed to start Discord bot: {e!s}")
+                return False
+        return True
+
+    async def send_message(
+        self, channel_id: str, content: str
+    ) -> Dict[str, Any]:
+        r"""Send a message to a Discord channel.
 
         Args:
-            contents (Union[str, List[str], Element, List[Element]], optional):
-                The content to be retrieved.
-            auto_retriever (Optional[AutoRetriever], optional): An instance of
-                AutoRetriever for vector search.
-            similarity_threshold (float): Threshold for vector similarity when
-                retrieving content.
-            vector_storage_local_path (str): Path to local vector storage for
-                the retriever.
-            top_k (int): Number of top results to retrieve.
-            return_detailed_info (bool): Whether to return detailed
-                information from the retriever.
-            system_message (Optional[str]): Custom system message for the agent
-                If None, a default customer service message will be used.
+            channel_id (str): The ID of the channel to send the message to.
+            content (str): The content of the message to send.
 
         Returns:
-            str: A message indicating the agent was created successfully.
+            Dict[str, Any]: Information about the sent message or an error.
         """
-        if system_message is None:
-            system_message = '''
-                Objective: 
-                    You are a customer service bot designed to assist users
-                    with inquiries related to our open-source project. 
-                    Your responses should be informative, concise, and helpful.
-
-                Instructions:
-                    Understand User Queries: Carefully read and understand the
-                            user's question. Focus on keywords and context to
-                            determine the user's intent.
-                    Search for Relevant Information: Use the provided dataset
-                            and refer to the RAG (file to find answers that 
-                            closely match the user's query. The RAG file 
-                            contains detailed interactions and should be your 
-                            primary resource for crafting responses.
-                    Provide Clear and Concise Responses: Your answers should 
-                            be clear and to the point. Avoid overly technical
-                            language unless the user's query indicates 
-                            familiarity with technical terms.
-                    Encourage Engagement: Where applicable, encourage users
-                            to contribute to the project or seek further
-                            assistance.
-
-                Response Structure:
-                    Greeting: Begin with a polite greeting or acknowledgment.
-                    Main Response: Provide the main answer to the user's query.
-                    Additional Information: Offer any extra tips or direct the
-                            user to additional resources if necessary.
-                    Closing: Close the response politely, encouraging
-                            further engagement if appropriate.
-
-                Tone:
-                    Professional: Maintain a professional tone that 
-                            instills confidence in the user.
-                    Friendly: Be approachable and personable to create
-                            a positive interaction.
-                    Helpful: Always aim to be as helpful as possible,
-                            even when faced with challenging queries.
-            '''
-
-        # Create the agent instance
-        agent = ChatAgent(system_message)
-
-        # Store agent properties
-        self._agent_instance = {
-            "agent": agent,
-            "contents": contents,
-            "auto_retriever": auto_retriever,
-            "similarity_threshold": similarity_threshold,
-            "vector_storage_local_path": vector_storage_local_path,
-            "top_k": top_k,
-            "return_detailed_info": return_detailed_info,
-        }
-
-        logger.info("Bot agent created successfully")
-        return "Bot agent created successfully"
-
-    async def _process_message(self, message: str) -> str:
-        r"""Process the user message, retrieve relevant content, and generate
-        a response.
-
-        Args:
-            message (str): The user's query message.
-
-        Returns:
-            str: The assistant's response message.
-        """
-        if not self._agent_instance:
-            raise ValueError("Bot agent not created. Call create_agent first.")
-
-        agent = self._agent_instance["agent"]
-        auto_retriever = self._agent_instance["auto_retriever"]
-        contents = self._agent_instance["contents"]
-        top_k = self._agent_instance["top_k"]
-        similarity_threshold = self._agent_instance["similarity_threshold"]
-        return_detailed_info = self._agent_instance["return_detailed_info"]
-
-        user_raw_msg = message
-        logger.info(f"Processing user message: {user_raw_msg}")
-
-        if auto_retriever:
-            retrieved_content = auto_retriever.run_vector_retriever(
-                query=user_raw_msg,
-                contents=contents,
-                top_k=top_k,
-                similarity_threshold=similarity_threshold,
-                return_detailed_info=return_detailed_info,
-            )
-            user_raw_msg = (
-                f"Here is the query to you: {user_raw_msg}\n"
-                f"Based on the retrieved content: {retrieved_content}, \n"
-                f"answer the query"
-            )
-
-        assistant_response = agent.step(user_raw_msg)
-        return assistant_response.msg.content
-
-    def process_message(self, message: str) -> str:
-        r"""Process a message and generate a response using the bot agent.
-
-        Args:
-            message (str): The user's message to process.
-
-        Returns:
-            str: The assistant's response message.
-        """
-        if not self._agent_instance:
-            raise ValueError("Bot agent not created. Call create_agent first.")
-
-        # Run the async function in a new event loop
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        try:
-            response = loop.run_until_complete(self._process_message(message))
-        finally:
-            loop.close()
-
-        return response
-
-    def create_bot(
-        self,
-        token: Optional[str] = None,
-        channel_ids: Optional[List[int]] = None,
-        client_id: Optional[str] = None,
-        client_secret: Optional[str] = None,
-        redirect_uri: Optional[str] = None,
-        installation_store: Optional[DiscordBaseInstallationStore] = None,
-    ) -> str:
-        r"""Create a Discord bot instance using
-          the existing DiscordApp implementation.
-
-        Args:
-            token (Optional[str]): The Discord bot token for authentication.
-                If None, uses the token provided during initialization.
-            channel_ids (Optional[List[int]]): List of Discord channel IDs
-                where the bot is allowed to interact. If None, uses the
-                channel_ids provided during initialization.
-            client_id (Optional[str]): The client ID for Discord OAuth.
-                Required for OAuth flow.
-            client_secret (Optional[str]): The client secret for Discord OAuth.
-                Required for OAuth flow.
-            redirect_uri (Optional[str]): The redirect URI for OAuth callbacks.
-                Required for OAuth flow.
-            installation_store (Optional[DiscordBaseInstallationStore]): The
-                database to store installation information.
-
-        Returns:
-            str: A message indicating the bot was created successfully.
-        """
-        if not self._agent_instance:
-            return "Error: Bot agent not created. Call create_agent first."
-
-        # Update the Discord app with any new parameters
-        if token is not None:
-            self._discord_app.token = token
-
-        if channel_ids is not None:
-            self._discord_app.channel_ids = channel_ids
-
-        # Set up the custom message handler to use our agent
-        async def custom_on_message(message):
-            # The default behavior from DiscordApp.on_message will be preserved
-            # (checking for bot messages, channel IDs, and mentions)
-            # If the message author is the bot itself, do not respond
-            if message.author == self._discord_app.client.user:
-                return
-
-            # If allowed channel IDs are provided,
-            # only respond in those channels
-            if (
-                self._discord_app.channel_ids
-                and message.channel.id not in self._discord_app.channel_ids
-            ):
-                return
-
-            # Only respond to messages that mention the bot
-            if (
-                not self._discord_app.client.user
-                or not self._discord_app.client.user.mentioned_in(message)
-            ):
-                return
-
-            # Process the message using our agent
-            user_raw_msg = message.content
-            response = await self._process_message(user_raw_msg)
-            await message.channel.send(response)
-
-        # Override the on_message handler with our custom one
-        self._discord_app._client.event(custom_on_message)
-
-        logger.info("Discord bot created successfully")
-        return "Discord bot created successfully"
-
-    async def _start_bot(self) -> None:
-        r"""Start the Discord bot (internal async method)."""
-        if not self._agent_instance:
-            raise ValueError("Bot agent not created. Call create_agent first.")
-
-        # Use the start method from DiscordApp
-        await self._discord_app.start()
-
-    def start_bot(self) -> str:
-        r"""Start the Discord bot and begin listening for messages.
-
-        Returns:
-            str: A message indicating the bot has started.
-        """
-        if not self._agent_instance:
-            return "Error: Bot agent not created. Call create_agent first."
-
-        # Run the async function in a new event loop
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+        if not self._is_running:
+            await self.start_bot()
 
         try:
-            logger.info("Starting Discord bot...")
-            loop.run_until_complete(self._start_bot())
-        except KeyboardInterrupt:
-            logger.info("Bot stopped by user")
-            return "Bot stopped by user"
+            channel = await self.discord_app.client.fetch_channel(
+                int(channel_id)
+            )
+            message = await channel.send(content)
+
+            return {
+                'id': str(message.id),
+                'content': message.content,
+                'channel_id': str(message.channel.id),
+                'timestamp': str(message.created_at),
+            }
         except Exception as e:
-            logger.error(f"Error starting bot: {e}")
-            return f"Error starting bot: {e}"
-        finally:
-            loop.close()
+            return {'error': str(e)}
 
-        return "Discord bot started successfully"
-
-    async def exchange_code_for_token(self, code: str) -> str:
-        r"""Exchange the authorization code for an access token.
+    async def get_channel_messages(
+        self, channel_id: str, limit: int = 100
+    ) -> List[Dict[str, Any]]:
+        r"""Retrieve messages from a Discord channel.
 
         Args:
-            code (str): The authorization code received from Discord after
-                user authorization.
+            channel_id (str): The ID of the channel to retrieve messages from.
+            limit (int): The maximum number of messages to retrieve.
+                (default: :obj:`100`)
 
         Returns:
-            str: A message indicating the result of the token exchange.
+            List[Dict[str, Any]]: A list of messages or an error.
         """
+        if not self._is_running:
+            await self.start_bot()
+
         try:
+            channel = await self.discord_app.client.fetch_channel(
+                int(channel_id)
+            )
+            messages = [msg async for msg in channel.history(limit=limit)]
+
+            return [
+                {
+                    'id': str(msg.id),
+                    'content': msg.content,
+                    'author': str(msg.author),
+                    'author_id': str(msg.author.id),
+                    'timestamp': str(msg.created_at),
+                }
+                for msg in messages
+            ]
+        except Exception as e:
+            return [{'error': str(e)}]
+
+    async def get_guild_channels(self, guild_id: str) -> List[Dict[str, Any]]:
+        r"""Retrieve channels from a Discord guild.
+
+        Args:
+            guild_id (str): The ID of the guild to retrieve channels from.
+
+        Returns:
+            List[Dict[str, Any]]: A list of channels or an error.
+        """
+        if not self._is_running:
+            await self.start_bot()
+
+        try:
+            guild = await self.discord_app.client.fetch_guild(int(guild_id))
+            channels = await guild.fetch_channels()
+
+            return [
+                {
+                    'id': str(channel.id),
+                    'name': channel.name,
+                    'type': str(channel.type),
+                    'position': channel.position,
+                }
+                for channel in channels
+            ]
+        except Exception as e:
+            return [{'error': str(e)}]
+
+    async def get_guild_members(
+        self, guild_id: str, limit: int = 1000
+    ) -> List[Dict[str, Any]]:
+        r"""Retrieve members from a Discord guild.
+
+        Args:
+            guild_id (str): The ID of the guild to retrieve members from.
+            limit (int): The maximum number of members to retrieve.
+                (default: :obj:`1000`)
+
+        Returns:
+            List[Dict[str, Any]]: A list of members or an error.
+        """
+        if not self._is_running:
+            await self.start_bot()
+
+        try:
+            guild = await self.discord_app.client.fetch_guild(int(guild_id))
+            members = [
+                member async for member in guild.fetch_members(limit=limit)
+            ]
+
+            return [
+                {
+                    'id': str(member.id),
+                    'name': member.name,
+                    'display_name': member.display_name,
+                    'joined_at': str(member.joined_at),
+                    'roles': [str(role.name) for role in member.roles],
+                }
+                for member in members
+            ]
+        except Exception as e:
+            return [{'error': str(e)}]
+
+    async def add_reaction(
+        self, channel_id: str, message_id: str, emoji: str
+    ) -> Dict[str, Any]:
+        r"""Add a reaction to a Discord message.
+
+        Args:
+            channel_id (str): The ID of the channel containing the message.
+            message_id (str): The ID of the message to add a reaction to.
+            emoji (str): The emoji to add as a reaction.
+
+        Returns:
+            Dict[str, Any]: Information about the reaction or an error.
+        """
+        if not self._is_running:
+            await self.start_bot()
+
+        try:
+            channel = await self.discord_app.client.fetch_channel(
+                int(channel_id)
+            )
+            message = await channel.fetch_message(int(message_id))
+            await message.add_reaction(emoji)
+            return {'success': True, 'message_id': message_id, 'emoji': emoji}
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
+    async def create_channel(
+        self,
+        guild_id: str,
+        name: str,
+        channel_type: str = "text",
+        category_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        r"""Create a new channel in a Discord guild.
+
+        Args:
+            guild_id (str): The ID of the guild to create the channel in.
+            name (str): The name of the channel to create.
+            channel_type (str): The type of channel to
+                create ("text", "voice", "category").
+                (default: :obj:`"text"`)
+            category_id (Optional[str]): The ID of the category to
+                 place the channel in.
+                (default: :obj:`None`)
+
+        Returns:
+            Dict[str, Any]: Information about the created channel or an error.
+        """
+        if not self._is_running:
+            await self.start_bot()
+
+        try:
+            import discord
+
+            guild = await self.discord_app.client.fetch_guild(int(guild_id))
+
+            type_map = {
+                "text": discord.ChannelType.text,
+                "voice": discord.ChannelType.voice,
+                "category": discord.ChannelType.category,
+            }
+
+            kwargs = {
+                "type": type_map.get(
+                    channel_type.lower(), discord.ChannelType.text
+                )
+            }
+            if category_id:
+                kwargs[
+                    "category"
+                ] = await self.discord_app.client.fetch_channel(
+                    int(category_id)
+                )
+
+            channel = await guild.create_channel(name, **kwargs)
+
+            return {
+                'id': str(channel.id),
+                'name': channel.name,
+                'type': str(channel.type),
+                'created_at': str(channel.created_at),
+            }
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
+    async def install_app(self, code: str) -> Dict[str, Any]:
+        r"""Install the Discord application using an authorization code.
+
+        Args:
+            code (str): The authorization code from the OAuth flow.
+
+        Returns:
+            Dict[str, Any]: Information about the installation or an error.
+        """
+        if not self._is_running:
+            await self.start_bot()
+
+        try:
+            # Exchange code for token
             token_response = (
-                await self._discord_app.exchange_code_for_token_response(code)
+                await self.discord_app.exchange_code_for_token_response(code)
             )
-            if token_response:
-                return "Successfully exchanged code for token"
-            else:
-                return "Failed to exchange code for token"
-        except Exception as e:
-            logger.error(f"Error exchanging code for token: {e}")
-            return f"Error exchanging code for token: {e}"
+            if not token_response:
+                return {
+                    'success': False,
+                    'error': 'Failed to exchange code for token',
+                }
 
-    def get_oauth_url(self, scopes: Optional[List[str]] = None) -> str:
-        r"""Get the OAuth URL for authorizing the bot.
+            # Get user info
+            access_token = ""
+            if (
+                isinstance(token_response, dict)
+                and "access_token" in token_response
+            ):
+                access_token = token_response["access_token"]
+
+            user_info = await self.discord_app.get_user_info(access_token)
+            if not user_info:
+                return {'success': False, 'error': 'Failed to get user info'}
+
+            # Create installation
+            guild_id = ""
+            refresh_token = ""
+            expires_in = 604800  # Default to 7 days
+
+            if isinstance(user_info, dict) and "id" in user_info:
+                guild_id = str(user_info["id"])
+
+            if isinstance(token_response, dict):
+                if "refresh_token" in token_response:
+                    refresh_token = str(token_response["refresh_token"])
+                if "expires_in" in token_response:
+                    expires_in = int(token_response["expires_in"])
+
+            await self.discord_app.save_installation(
+                guild_id, access_token, refresh_token, expires_in
+            )
+
+            return {
+                'success': True,
+                'guild_id': guild_id,
+                'user_info': user_info,
+            }
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
+    async def refresh_token(self, guild_id: str) -> Dict[str, Any]:
+        r"""Refresh the access token for a Discord installation.
 
         Args:
-            scopes (Optional[List[str]], optional): The OAuth scopes to request
-                Defaults to ['bot', 'applications.commands'].
+            guild_id (str): The ID of the guild to refresh the token for.
 
         Returns:
-            str: The OAuth URL for authorizing the bot.
+            Dict[str, Any]: Information about
+                the refresh operation or an error.
         """
-        if (
-            not hasattr(self._discord_app, 'client_id')
-            or not self._discord_app.client_id
-        ):
-            return (
-                "Error: No client_id provided. OAuth URL cannot be generated."
+        if not self._is_running:
+            await self.start_bot()
+
+        try:
+            # Get installation
+            if self.installation_store is None:
+                return {
+                    'success': False,
+                    'error': 'No installation store configured',
+                }
+
+            installation = await self.installation_store.find_by_guild(
+                guild_id
             )
+            if not installation:
+                return {'success': False, 'error': 'Installation not found'}
 
-        if scopes is None:
-            scopes = ['bot', 'applications.commands']
+            # Refresh token
+            new_token = await self.discord_app.refresh_access_token(
+                installation.refresh_token
+            )
+            if not new_token:
+                return {'success': False, 'error': 'Failed to refresh token'}
 
-        # Construct the OAuth URL
-        scope_str = '%20'.join(scopes)
-        permissions = 3072
+            return {'success': True, 'token': new_token}
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
 
-        oauth_url = (
-            f"https://discord.com/api/oauth2/authorize"
-            f"?client_id={self._discord_app.client_id}"
-            f"&permissions={permissions}"
-            f"&scope={scope_str}"
-            f"&response_type=code"
-        )
+    def stop_bot(self) -> bool:
+        r"""Stop the Discord bot.
 
-        if (
-            hasattr(self._discord_app, 'redirect_uri')
-            and self._discord_app.redirect_uri
-        ):
-            oauth_url += f"&redirect_uri={self._discord_app.redirect_uri}"
-
-        return oauth_url
+        Returns:
+            bool: True if the bot was stopped successfully, False otherwise.
+        """
+        if self._is_running and self.discord_app.client:
+            try:
+                if self._event_loop is not None:
+                    asyncio.run_coroutine_threadsafe(
+                        self.discord_app.client.close(), self._event_loop
+                    )
+                self._is_running = False
+                return True
+            except Exception as e:
+                print(f"Failed to stop Discord bot: {e!s}")
+                return False
+        return False
 
     def get_tools(self) -> List[FunctionTool]:
-        r"""Return a list of FunctionTool objects representing the functions
-        in the toolkit.
+        r"""Get the list of tools provided by this toolkit.
 
         Returns:
-            List[FunctionTool]: A list of FunctionTool objects representing
-                the available functions in this toolkit.
+            List[FunctionTool]: A list of function tools.
         """
         return [
-            FunctionTool(self.create_agent),
-            FunctionTool(self.process_message),
-            FunctionTool(self.create_bot),
             FunctionTool(self.start_bot),
-            FunctionTool(self.get_oauth_url),
+            FunctionTool(self.send_message),
+            FunctionTool(self.get_channel_messages),
+            FunctionTool(self.get_guild_channels),
+            FunctionTool(self.get_guild_members),
+            FunctionTool(self.add_reaction),
+            FunctionTool(self.create_channel),
+            FunctionTool(self.install_app),
+            FunctionTool(self.refresh_token),
+            FunctionTool(self.stop_bot),
         ]
