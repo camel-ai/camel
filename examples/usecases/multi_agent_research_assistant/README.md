@@ -21,7 +21,7 @@ A powerful, AI-driven research assistant built using the [CAMEL-AI](https://www.
 
    ```bash
    git clone https://github.com/camel-ai/camel.git
-   cd camel/examples/usecases/Multi_Agent_Research_Assistant
+   cd camel/examples/usecases/multi_agent_research_assistant
    ```
 
 2. **Create and Activate a Virtual Environment**:
