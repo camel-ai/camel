@@ -41,7 +41,7 @@ You can go to [here](https://app.agentops.ai/signin) to get **free** API Key fro
 
 ```python
 # Prompt for the AgentOps API key securely
-agentops_api_key = getpass('Enter your API key: ')
+agentops_api_key = getpass('Enter your API key:')
 os.environ["AGENTOPS_API_KEY"] = agentops_api_key
 ```
 
@@ -89,7 +89,7 @@ Set one Agent with Search Tools
 ```python
 # Define system message
 sys_msg = BaseMessage.make_assistant_message(
-    role_name='Tools calling opertor', content='You are a helpful assistant'
+    role_name='Tools calling opertor', content='You are a helpful assistant.'
 )
 
 # Set model config
@@ -152,7 +152,7 @@ Initialize AgentOps, you need to import toolkits after init of agentops so that 
 
 
 ```python
-agentops.start_session(tags=["CAMEL X AgentOps Multi-agent with Tools"])
+agentops.start_session(tags=["CAMEL X AgentOps Multi-agent with Tools."])
 
 from camel.toolkits import (
     SearchToolkit,
