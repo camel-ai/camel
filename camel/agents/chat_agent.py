@@ -1331,6 +1331,13 @@ class ChatAgent(BaseAgent):
         """
         output_messages: List[BaseMessage] = []
         for choice in response.choices:
+            # Skip messages with no meaningful content
+            if (
+                choice.message.content is None
+                or choice.message.content.strip() == ""
+            ) and not choice.message.tool_calls:
+                continue
+
             meta_dict = {}
             if logprobs_info := handle_logprobs(choice):
                 meta_dict["logprobs_info"] = logprobs_info
@@ -1602,14 +1609,19 @@ class ChatAgent(BaseAgent):
         # Use slightly different timestamps to ensure correct ordering
         # This ensures the assistant message (tool call) always appears before
         # the function message (tool result) in the conversation context
-        current_time = datetime.now().timestamp()
+        import time
+
+        # Use nanosecond precision for better timestamp accuracy
+        current_time = time.time_ns() / 1e9
         self.update_memory(
             assist_msg, OpenAIBackendRole.ASSISTANT, timestamp=current_time
         )
+        # Use a larger time difference (10ms) to ensure reliable ordering
+        # even on systems with lower timer precision
         self.update_memory(
             func_msg,
             OpenAIBackendRole.FUNCTION,
-            timestamp=current_time + 0.001,
+            timestamp=current_time + 0.01,
         )
 
         # Record information about this tool call
