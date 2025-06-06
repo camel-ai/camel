@@ -215,6 +215,36 @@ def run_pptx_agent():
     print("Both presentations have been created successfully!")
     print("Check the './pptx_outputs' directory for the generated PPTX files.")
 
+    # Example 3: Modify a slide
+    print("Example 3: Modify a slide")
+    slide_index = 1
+    slide_content = {
+        "heading": "Modified Slide",
+        "bullet_points": ["New bullet point 1", "New bullet point 2"],
+        # "img_keywords": "bitcoin price stock market",
+    }
+    result = pptx_toolkit.modify_slide(
+        presentation="modern_development.pptx",
+        slide_index=slide_index,
+        slide_json=slide_content,
+    )
+    print("Slide modification result:")
+    print(result)
+
+    # Example 3b: Add a new slide
+    print("Example 3b: Add a new slide")
+    new_slide_content = {
+        "heading": "Added Slide",
+        "bullet_points": ["This is a new slide", "With bullet points"],
+        # "img_keywords": "teamwork collaboration",
+    }
+    add_result = pptx_toolkit.add_slide_to_presentation(
+        presentation="modern_development.pptx",
+        slide_json=new_slide_content,
+    )
+    print("Add slide result:")
+    print(add_result)
+
 
 if __name__ == "__main__":
     run_pptx_agent()
@@ -266,5 +296,13 @@ camel/pptx_outputs/modern_development.pptx
 
 Both presentations have been created successfully!
 Check the './pptx_outputs' directory for the generated PPTX files.
+Example 3: Modify a slide
+Slide modification result:
+Successfully modified slide 1 in camel/pptx_outputs/modern_development.pptx
+Example 3b: Add a new slide
+Add slide result:
+Successfully added new slide at the end of (
+    "camel/pptx_outputs/modern_development.pptx"
+)
 ===============================================================================
 """

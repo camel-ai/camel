@@ -316,8 +316,10 @@ class PPTXToolkit(BaseToolkit):
 
                 # Handle different slide types
                 if 'table' in slide_data:
+                    bullet_slide_layout = presentation.slide_layouts[1]
+                    slide = presentation.slides.add_slide(bullet_slide_layout)
                     self._handle_table(
-                        presentation,
+                        slide,
                         slide_data,
                     )
                 elif 'bullet_points' in slide_data:
@@ -325,17 +327,67 @@ class PPTXToolkit(BaseToolkit):
                         step.startswith(STEP_BY_STEP_PROCESS_MARKER)
                         for step in slide_data['bullet_points']
                     ):
+                        bullet_slide_layout = presentation.slide_layouts[1]
+                        slide = presentation.slides.add_slide(
+                            bullet_slide_layout
+                        )
+
                         self._handle_step_by_step_process(
-                            presentation,
+                            slide,
                             slide_data,
                             slide_width_inch,
                             slide_height_inch,
                         )
                     else:
-                        self._handle_default_display(
-                            presentation,
-                            slide_data,
-                        )
+                        if 'img_keywords' in slide_data:
+                            # Try different layouts that support images
+                            for layout_idx in [
+                                8,
+                                7,
+                                6,
+                            ]:  # Picture with Caption, Picture with Caption (2), Picture with Caption (3)
+                                try:
+                                    picture_layout = (
+                                        presentation.slide_layouts[layout_idx]
+                                    )
+                                    slide = presentation.slides.add_slide(
+                                        picture_layout
+                                    )
+                                    if (
+                                        random.random()
+                                        < IMAGE_DISPLAY_PROBABILITY
+                                    ):
+                                        status = self._handle_display_image__in_foreground(
+                                            slide,
+                                            slide_data,
+                                        )
+                                        if status:
+                                            break
+                                        else:
+                                            # If image handling failed, remove the slide and try next layout
+                                            presentation.slides.remove(slide)
+                                except Exception as e:
+                                    logger.warning(
+                                        f"Failed to use layout {layout_idx}: {e!s}"
+                                    )
+                                    continue
+
+                            # If all image layouts failed, fall back to default display
+                            if not status:
+                                bullet_slide_layout = (
+                                    presentation.slide_layouts[1]
+                                )
+                                slide = presentation.slides.add_slide(
+                                    bullet_slide_layout
+                                )
+                                self._handle_default_display(slide, slide_data)
+                        else:
+                            # Use regular bullet layout for slides without images
+                            bullet_slide_layout = presentation.slide_layouts[1]
+                            slide = presentation.slides.add_slide(
+                                bullet_slide_layout
+                            )
+                            self._handle_default_display(slide, slide_data)
 
         # Save the presentation
         presentation.save(str(file_path))
@@ -450,50 +502,49 @@ class PPTXToolkit(BaseToolkit):
 
     def _handle_default_display(
         self,
-        presentation: "presentation.Presentation",
+        slide: "Slide",
         slide_json: Dict[str, Any],
     ) -> None:
         r"""Display a list of text in a slide.
 
         Args:
-            presentation (presentation.Presentation): The presentation object.
+            slide (Slide): The slide to modify.
             slide_json (Dict[str, Any]): The content of the slide as JSON data.
         """
-        status = False
-
-        if 'img_keywords' in slide_json:
-            if random.random() < IMAGE_DISPLAY_PROBABILITY:
-                status = self._handle_display_image__in_foreground(
-                    presentation,
-                    slide_json,
-                )
-
-        if status:
-            return
-
-        # Image display failed, so display only text
-        bullet_slide_layout = presentation.slide_layouts[1]
-        slide = presentation.slides.add_slide(bullet_slide_layout)
-
         shapes = slide.shapes
         title_shape = shapes.title
 
-        try:
-            body_shape = shapes.placeholders[1]
-        except KeyError:
-            # Get placeholders from the slide without layout_number
-            placeholders = self._get_slide_placeholders(slide)
-            body_shape = shapes.placeholders[placeholders[0][0]]
+        # Set only the heading/title here
+        if title_shape:
+            title_shape.text = self._remove_slide_number_from_heading(
+                slide_json['heading']
+            )
 
-        title_shape.text = self._remove_slide_number_from_heading(
-            slide_json['heading']
-        )
-        text_frame = body_shape.text_frame
+        # Find the content/body placeholder (never use title for bullet points)
+        text_placeholder = None
+        for shape in slide.shapes:
+            if (
+                shape.is_placeholder and shape.placeholder_format.type == 2
+            ):  # Body placeholder
+                text_placeholder = shape
+                break
+            elif hasattr(shape, 'text_frame') and shape != title_shape:
+                text_placeholder = shape
+                break
 
-        flat_items_list = self._get_flat_list_of_contents(
-            slide_json['bullet_points'], level=0
-        )
-        self._add_bulleted_items(text_frame, flat_items_list)
+        if not text_placeholder:
+            logger.warning("No suitable text placeholder found in slide")
+            return
+
+        # Add bullet points to the content/body placeholder only
+        if hasattr(text_placeholder, 'text_frame'):
+            text_frame = text_placeholder.text_frame
+            text_frame.clear()
+            if 'bullet_points' in slide_json:
+                flat_items_list = self._get_flat_list_of_contents(
+                    slide_json['bullet_points'], level=0
+                )
+                self._add_bulleted_items(text_frame, flat_items_list)
 
     @api_keys_required(
         [
@@ -502,62 +553,79 @@ class PPTXToolkit(BaseToolkit):
     )
     def _handle_display_image__in_foreground(
         self,
-        presentation: "presentation.Presentation",
+        slide: "Slide",
         slide_json: Dict[str, Any],
     ) -> bool:
         r"""Create a slide with text and image using a picture placeholder
         layout.
 
         Args:
-            presentation (presentation.Presentation): The presentation object.
+            slide (Slide): The slide to add the image to.
             slide_json (Dict[str, Any]): The content of the slide as JSON data.
 
         Returns:
-            bool: True if the slide has been processed.
+            bool: True if the slide has been processed successfully.
         """
         from io import BytesIO
 
         import requests
 
         img_keywords = slide_json.get('img_keywords', '').strip()
-        slide = presentation.slide_layouts[8]  # Picture with Caption
-        slide = presentation.slides.add_slide(slide)
-        placeholders = None
-
-        title_placeholder = slide.shapes.title  # type: ignore[attr-defined]
-        title_placeholder.text = self._remove_slide_number_from_heading(
-            slide_json['heading']
-        )
-
-        try:
-            pic_col = slide.shapes.placeholders[1]  # type: ignore[attr-defined]
-        except KeyError:
-            # Get placeholders from the slide without layout_number
-            placeholders = self._get_slide_placeholders(slide)  # type: ignore[arg-type]
-            pic_col = None
-            for idx, name in placeholders:
-                if 'picture' in name:
-                    pic_col = slide.shapes.placeholders[idx]  # type: ignore[attr-defined]
-
-        try:
-            text_col = slide.shapes.placeholders[2]  # type: ignore[attr-defined]
-        except KeyError:
-            text_col = None
-            if not placeholders:
-                placeholders = self._get_slide_placeholders(slide)  # type: ignore[arg-type]
-
-            for idx, name in placeholders:
-                if 'content' in name:
-                    text_col = slide.shapes.placeholders[idx]  # type: ignore[attr-defined]
-
-        flat_items_list = self._get_flat_list_of_contents(
-            slide_json['bullet_points'], level=0
-        )
-        self._add_bulleted_items(text_col.text_frame, flat_items_list)
-
         if not img_keywords:
-            return True
+            return False
 
+        # Set title
+        if slide.shapes.title:
+            slide.shapes.title.text = self._remove_slide_number_from_heading(
+                slide_json['heading']
+            )
+
+        # Find picture placeholder
+        pic_placeholder = None
+        text_placeholder = None
+
+        # First try to find placeholders by type
+        for shape in slide.shapes:
+            if shape.is_placeholder:
+                if shape.placeholder_format.type == 13:  # Picture placeholder
+                    pic_placeholder = shape
+                elif shape.placeholder_format.type == 2:  # Body placeholder
+                    text_placeholder = shape
+
+        # If no picture placeholder found by type, try to find by name
+        if not pic_placeholder:
+            for shape in slide.shapes:
+                if shape.is_placeholder:
+                    if 'picture' in shape.name.lower():
+                        pic_placeholder = shape
+                    elif 'content' in shape.name.lower():
+                        text_placeholder = shape
+
+        # If still no picture placeholder, try to find any shape that can hold a picture
+        if not pic_placeholder:
+            for shape in slide.shapes:
+                if (
+                    shape.is_placeholder and shape.placeholder_format.type == 1
+                ):  # Title placeholder
+                    continue
+                if shape.is_placeholder:
+                    pic_placeholder = shape
+                    break
+
+        if not pic_placeholder:
+            logger.error("No suitable placeholder found for image in slide")
+            return False
+
+        # Add bullet points if text placeholder exists
+        if text_placeholder and 'bullet_points' in slide_json:
+            flat_items_list = self._get_flat_list_of_contents(
+                slide_json['bullet_points'], level=0
+            )
+            self._add_bulleted_items(
+                text_placeholder.text_frame, flat_items_list
+            )
+
+        # Handle direct image URL
         if isinstance(img_keywords, str) and img_keywords.startswith(
             ('http://', 'https://')
         ):
@@ -565,21 +633,25 @@ class PPTXToolkit(BaseToolkit):
                 img_response = requests.get(img_keywords, timeout=30)
                 img_response.raise_for_status()
                 image_data = BytesIO(img_response.content)
-                pic_col.insert_picture(image_data)
+                pic_placeholder.insert_picture(image_data)
                 return True
             except Exception as ex:
-                logger.error(
-                    'Error while downloading image from URL: %s', str(ex)
-                )
+                logger.error(f'Error while downloading image from URL: {ex!s}')
+                return False
 
+        # Handle Pexels API image search
         try:
             url = 'https://api.pexels.com/v1/search'
             api_key = os.getenv('PEXELS_API_KEY')
+            if not api_key:
+                logger.error(
+                    "PEXELS_API_KEY not found in environment variables"
+                )
+                return False
 
             headers = {
                 'Authorization': api_key,
-                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:10.0) '
-                'Gecko/20100101 Firefox/10.0',
+                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:10.0) Gecko/20100101 Firefox/10.0',
             }
             params = {
                 'query': img_keywords,
@@ -587,49 +659,52 @@ class PPTXToolkit(BaseToolkit):
                 'page': 1,
                 'per_page': 3,
             }
+
             response = requests.get(
                 url, headers=headers, params=params, timeout=12
             )
             response.raise_for_status()
             json_response = response.json()
 
-            if json_response.get('photos'):
-                photo = random.choice(json_response['photos'])
-                photo_url = photo.get('src', {}).get('large') or photo.get(
-                    'src', {}
-                ).get('original')
+            if not json_response.get('photos'):
+                logger.error("No photos found for the given keywords")
+                return False
 
-                if photo_url:
-                    # Download and insert the image
-                    img_response = requests.get(
-                        photo_url, headers=headers, stream=True, timeout=12
-                    )
-                    img_response.raise_for_status()
-                    image_data = BytesIO(img_response.content)
+            photo = random.choice(json_response['photos'])
+            photo_url = photo.get('src', {}).get('large') or photo.get(
+                'src', {}
+            ).get('original')
 
-                    pic_col.insert_picture(image_data)
-        except Exception as ex:
-            logger.error(
-                'Error occurred while adding image to slide: %s', str(ex)
+            if not photo_url:
+                logger.error("No valid photo URL found in the response")
+                return False
+
+            # Download and insert the image
+            img_response = requests.get(
+                photo_url, headers=headers, stream=True, timeout=12
             )
+            img_response.raise_for_status()
+            image_data = BytesIO(img_response.content)
+            pic_placeholder.insert_picture(image_data)
+            return True
 
-        return True
+        except Exception as ex:
+            logger.error(f'Error occurred while adding image to slide: {ex!s}')
+            return False
 
     def _handle_table(
         self,
-        presentation: "presentation.Presentation",
+        slide: "Slide",
         slide_json: Dict[str, Any],
     ) -> None:
         r"""Add a table to a slide.
 
         Args:
-            presentation (presentation.Presentation): The presentation object.
+            slide (Slide): The slide to add the table to.
             slide_json (Dict[str, Any]): The content of the slide as JSON data.
         """
         headers = slide_json['table'].get('headers', [])
         rows = slide_json['table'].get('rows', [])
-        bullet_slide_layout = presentation.slide_layouts[1]
-        slide = presentation.slides.add_slide(bullet_slide_layout)
         shapes = slide.shapes
         shapes.title.text = self._remove_slide_number_from_heading(
             slide_json['heading']
@@ -654,7 +729,7 @@ class PPTXToolkit(BaseToolkit):
 
     def _handle_step_by_step_process(
         self,
-        presentation: "presentation.Presentation",
+        slide: "Slide",
         slide_json: Dict[str, Any],
         slide_width_inch: float,
         slide_height_inch: float,
@@ -662,7 +737,7 @@ class PPTXToolkit(BaseToolkit):
         r"""Add shapes to display a step-by-step process in the slide.
 
         Args:
-            presentation (presentation.Presentation): The presentation object.
+            slide (Slide): The slide to add the process to.
             slide_json (Dict[str, Any]): The content of the slide as JSON data.
             slide_width_inch (float): The width of the slide in inches.
             slide_height_inch (float): The height of the slide in inches.
@@ -673,9 +748,6 @@ class PPTXToolkit(BaseToolkit):
 
         steps = slide_json['bullet_points']
         n_steps = len(steps)
-
-        bullet_slide_layout = presentation.slide_layouts[1]
-        slide = presentation.slides.add_slide(bullet_slide_layout)
         shapes = slide.shapes
         shapes.title.text = self._remove_slide_number_from_heading(
             slide_json['heading']
@@ -766,6 +838,90 @@ class PPTXToolkit(BaseToolkit):
             return placeholders
         return []
 
+    def modify_slide(
+        self,
+        presentation: str,
+        slide_index: int,
+        slide_json: Dict[str, Any],
+    ) -> str:
+        r"""Modify a slide in a presentation.
+
+        Args:
+            presentation (str): The path to the presentation file.
+            slide_index (int): The index of the slide to modify (0-based).
+            slide_json (Dict[str, Any]): The content to modify in the slide.
+
+        Returns:
+            str: A success message indicating the slide was modified.
+        """
+        try:
+            from pptx import Presentation
+
+            # Resolve and validate presentation path
+            presentation_path = self._resolve_filepath(presentation)
+            if not presentation_path.exists():
+                return f"Presentation file not found: {presentation_path}"
+
+            # Load presentation
+            presentation = Presentation(str(presentation_path))
+
+            # Validate slide index
+            if slide_index < 0 or slide_index >= len(presentation.slides):
+                return f"Invalid slide index: {slide_index}. Presentation has {len(presentation.slides)} slides."
+
+            # Get the slide to modify
+            slide = presentation.slides[slide_index]
+
+            # Get slide dimensions for step-by-step process
+            slide_width_inch = (
+                EMU_TO_INCH_SCALING_FACTOR * presentation.slide_width
+            )
+            slide_height_inch = (
+                EMU_TO_INCH_SCALING_FACTOR * presentation.slide_height
+            )
+
+            # Handle different types of slide modifications
+            if slide_json:
+                if slide_index == 0:  # Title slide
+                    if "title" in slide_json and slide.shapes.title:
+                        slide.shapes.title.text = slide_json["title"]
+                    if (
+                        "subtitle" in slide_json
+                        and len(slide.shapes.placeholders) > 1
+                    ):
+                        slide.shapes.placeholders[1].text = slide_json[
+                            "subtitle"
+                        ]
+                else:  # Content slides
+                    if "table" in slide_json:
+                        self._handle_table(slide, slide_json)
+                    elif "bullet_points" in slide_json:
+                        if any(
+                            step.startswith(STEP_BY_STEP_PROCESS_MARKER)
+                            for step in slide_json['bullet_points']
+                        ):
+                            self._handle_step_by_step_process(
+                                slide,
+                                slide_json,
+                                slide_width_inch,
+                                slide_height_inch,
+                            )
+                        else:
+                            self._handle_default_display(slide, slide_json)
+                    elif "img_keywords" in slide_json:
+                        self._handle_display_image__in_foreground(
+                            slide, slide_json
+                        )
+
+            # Save the modified presentation
+            presentation.save(str(presentation_path))
+            return f"Successfully modified slide {slide_index} in {presentation_path}"
+
+        except Exception as e:
+            error_msg = f"Failed to modify slide {slide_index}: {e!s}"
+            logger.error(error_msg)
+            return error_msg
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
@@ -774,4 +930,96 @@ class PPTXToolkit(BaseToolkit):
             List[FunctionTool]: A list of FunctionTool objects
                 representing the functions in the toolkit.
         """
-        return [FunctionTool(self.create_presentation)]
+        return [
+            FunctionTool(self.create_presentation),
+            FunctionTool(self.modify_slide),
+            FunctionTool(self.add_slide_to_presentation),
+        ]
+
+    def add_slide_to_presentation(
+        self,
+        presentation: str,
+        slide_json: dict,
+    ) -> str:
+        r"""Add a new slide to the end of a PowerPoint presentation.
+
+        Args:
+            presentation (str): The path to the presentation file.
+            slide_json (dict): The content for the new slide. Can be one of:
+                * Bullet/step slide: {"heading": str, "bullet_points": list of str or nested lists}
+                * Table slide: {"heading": str, "table": {"headers": list of str, "rows": list of list of str}}
+                * Image slide: {"heading": str, "bullet_points": list, "img_keywords": str}
+
+        Returns:
+            str: A success message indicating the slide was added.
+        """
+        try:
+            from pptx import Presentation
+
+            # Resolve and validate presentation path
+            presentation_path = self._resolve_filepath(presentation)
+            if not presentation_path.exists():
+                return f"Presentation file not found: {presentation_path}"
+
+            # Load presentation
+            presentation = Presentation(str(presentation_path))
+
+            # Get slide dimensions for step-by-step process
+            slide_width_inch = (
+                EMU_TO_INCH_SCALING_FACTOR * presentation.slide_width
+            )
+            slide_height_inch = (
+                EMU_TO_INCH_SCALING_FACTOR * presentation.slide_height
+            )
+
+            # Decide layout
+            layout_idx = 1  # Default to Title and Content
+            if 'img_keywords' in slide_json:
+                # Try to use Picture with Caption layout if available
+                try:
+                    layout_idx = 8
+                    _ = presentation.slide_layouts[layout_idx]
+                except Exception:
+                    layout_idx = 1
+            slide_layout = presentation.slide_layouts[layout_idx]
+            slide = presentation.slides.add_slide(slide_layout)
+
+            # Set title
+            if slide.shapes.title and 'heading' in slide_json:
+                slide.shapes.title.text = (
+                    self._remove_slide_number_from_heading(
+                        slide_json['heading']
+                    )
+                )
+
+            # Handle content
+            if 'table' in slide_json:
+                self._handle_table(slide, slide_json)
+            elif 'bullet_points' in slide_json:
+                if any(
+                    step.startswith(STEP_BY_STEP_PROCESS_MARKER)
+                    for step in slide_json['bullet_points']
+                ):
+                    self._handle_step_by_step_process(
+                        slide, slide_json, slide_width_inch, slide_height_inch
+                    )
+                elif 'img_keywords' in slide_json:
+                    self._handle_display_image__in_foreground(
+                        slide, slide_json
+                    )
+                else:
+                    self._handle_default_display(slide, slide_json)
+            elif 'img_keywords' in slide_json:
+                self._handle_display_image__in_foreground(slide, slide_json)
+            else:
+                return "Content type not supported for adding a slide."
+
+            # Save the modified presentation
+            presentation.save(str(presentation_path))
+            return f"Successfully added new slide at the end of {presentation_path}"
+        except Exception as e:
+            error_msg = (
+                f"Failed to add slide at the end of {presentation}: {e!s}"
+            )
+            logger.error(error_msg)
+            return error_msg
