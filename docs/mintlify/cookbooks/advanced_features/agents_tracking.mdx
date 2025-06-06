@@ -16,7 +16,7 @@ First, install the CAMEL and AgentOps package with all its dependencies:
 
 
 ```python
-%pip install camel-ai[all]==0.2.18
+%pip install camel-ai[all]==0.2.16
 %pip install agentops==0.3.10
 ```
 
@@ -89,7 +89,7 @@ Set one Agent with Search Tools
 ```python
 # Define system message
 sys_msg = BaseMessage.make_assistant_message(
-    role_name='Tools calling opertor', content='You are a helpful assistant '
+    role_name='Tools calling opertor', content='You are a helpful assistant.'
 )
 
 # Set model config
@@ -152,7 +152,7 @@ Initialize AgentOps, you need to import toolkits after init of agentops so that 
 
 
 ```python
-agentops.start_session(tags=["CAMEL X AgentOps Multi-agent with Tools"])
+agentops.start_session(tags=["CAMEL X AgentOps Multi-agent with Tools."])
 
 from camel.toolkits import (
     SearchToolkit,
