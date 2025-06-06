@@ -49,6 +49,7 @@ jobs:
               --update-docs-json docs/mintlify/docs.json \
               --docs-path-prefix "" \
               --verbose
+          fi
 
       - name: Convert Get Started docs
         run: |
@@ -72,6 +73,7 @@ jobs:
               --update-docs-json docs/mintlify/docs.json \
               --docs-path-prefix "" \
               --verbose
+          fi
 
       - name: Convert Key Modules docs
         run: |
@@ -95,7 +97,8 @@ jobs:
               --update-docs-json docs/mintlify/docs.json \
               --docs-path-prefix "" \
               --verbose
-
+          fi
+          
       - name: Generate API Documentation
         run: |
           source .venv/bin/activate
