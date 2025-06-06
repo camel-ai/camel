@@ -1226,9 +1226,9 @@ requires-dist = [
     { name = "unstructured", marker = "extra == 'owl'", specifier = "==0.16.20" },
     { name = "unstructured", marker = "extra == 'rag'", specifier = "==0.16.20" },
     { name = "uv", marker = "extra == 'dev'", specifier = "==0.6.5" },
-    { name = "weaviate-client", marker = "extra == 'all'", specifier = ">=4.14.4" },
-    { name = "weaviate-client", marker = "extra == 'rag'", specifier = ">=4.14.4" },
-    { name = "weaviate-client", marker = "extra == 'storage'", specifier = ">=4.14.4" },
+    { name = "weaviate-client", marker = "extra == 'all'", specifier = ">=4.15.0" },
+    { name = "weaviate-client", marker = "extra == 'rag'", specifier = ">=4.15.0" },
+    { name = "weaviate-client", marker = "extra == 'storage'", specifier = ">=4.15.0" },
     { name = "wikipedia", marker = "extra == 'all'", specifier = ">=1,<2" },
     { name = "wikipedia", marker = "extra == 'owl'", specifier = ">=1,<2" },
     { name = "wikipedia", marker = "extra == 'web-tools'", specifier = ">=1,<2" },
@@ -7860,7 +7860,7 @@ wheels = [
 
 [[package]]
 name = "weaviate-client"
-version = "4.14.4"
+version = "4.15.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "authlib" },
@@ -7872,9 +7872,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "validators" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2d/c3/ce01b557855a79877d4aa36173fb94cdde1df8aa2a8458180d5e9762159a/weaviate_client-4.14.4.tar.gz", hash = "sha256:d149f11793d33e45a8e77d33cfbb92227a87509d2e1a6a51a617220bb22a6d0a", size = 664038 }
+sdist = { url = "https://files.pythonhosted.org/packages/90/98/53544475466ec35260c8cdc201fd7a9e9731d3ed596121ffc912fab782cf/weaviate_client-4.15.0.tar.gz", hash = "sha256:0e1c06e0bb08c8ab6987d91cf024b625f517b349965e6dee5439f675ff90cc64", size = 663838 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/98/19/def7550b7134d63b31b4426e4943caead74faf8cac34f788dae57a6f9f45/weaviate_client-4.14.4-py3-none-any.whl", hash = "sha256:73151ef3c6a05c976c30485e34d549d1936ed82d5036f8b1d7c95f5c5ace15d5", size = 437012 },
+    { url = "https://files.pythonhosted.org/packages/b8/eb/cebfb6b401e005e2e0b5ad89e43b674cb962c7e9ec386bb6f5874c8b21a2/weaviate_client-4.15.0-py3-none-any.whl", hash = "sha256:36bb83dacfc102cab0267aa211eb21eaca31cc80921b977451d814532c9a50e6", size = 433671 },
 ]
 
 [[package]]
