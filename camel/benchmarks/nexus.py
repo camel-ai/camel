@@ -231,6 +231,8 @@ class NexusBenchmark(BaseBenchmark):
             )
 
         # Get the dataset directory
+        if self.data_dir is None:
+            raise ValueError("data_dir must be set")
         dataset_dir = self.data_dir / dataset_name
         if not dataset_dir.exists():
             raise FileNotFoundError(
@@ -305,6 +307,8 @@ class NexusBenchmark(BaseBenchmark):
 
         # Process samples
         tools = construct_tool_descriptions(task)
+        if self.save_to is None:
+            raise ValueError("save_to must be set")
         with open(self.save_to, "w") as f:
             for sample in tqdm(datas, desc="Running"):
                 prompt = construct_prompt(input=sample.input, tools=tools)
