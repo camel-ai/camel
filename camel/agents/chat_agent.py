@@ -196,6 +196,14 @@ class StreamingChatAgentResponse:
             return self._current_response.info
         return {}
 
+    @property
+    def msg(self):
+        r"""Get the single message if there's exactly one message."""
+        self._ensure_latest_response()
+        if self._current_response:
+            return self._current_response.msg
+        return None
+
     def __iter__(self):
         r"""Make this object iterable."""
         if self._consumed:
@@ -913,7 +921,7 @@ class ChatAgent(BaseAgent):
         input_message: Union[BaseMessage, str],
         response_format: Optional[Type[BaseModel]] = None,
         stream: Optional[bool] = False,
-    ) -> ChatAgentResponse:
+    ) -> Union[ChatAgentResponse, StreamingChatAgentResponse]:
         r"""Executes a single step in the chat session, generating a response
         to the input message.
 
@@ -931,11 +939,11 @@ class ChatAgent(BaseAgent):
                 single ChatAgentResponse. (default: :obj:`False`)
 
         Returns:
-            ChatAgentResponse: If stream is False, returns a single
-                ChatAgentResponse. If stream is True, returns a
-                StreamingChatAgentResponse that behaves like ChatAgentResponse
+            Union[ChatAgentResponse, StreamingChatAgentResponse]: If stream is
+                False, returns a ChatAgentResponse. If stream is True, returns
+                a StreamingChatAgentResponse that behaves like ChatAgentResponse
                 but can also be iterated for streaming updates.
-        """
+        """  # noqa: E501
 
         if stream:
             # Return wrapped generator that has ChatAgentResponse interface
@@ -1041,7 +1049,7 @@ class ChatAgent(BaseAgent):
         input_message: Union[BaseMessage, str],
         response_format: Optional[Type[BaseModel]] = None,
         stream: Optional[bool] = False,
-    ) -> Awaitable[ChatAgentResponse]:
+    ) -> Union[Awaitable[ChatAgentResponse], AsyncStreamingChatAgentResponse]:
         r"""Performs a single step in the chat session by generating a response
         to the input message. This agent step can call async function calls.
 
@@ -1063,10 +1071,12 @@ class ChatAgent(BaseAgent):
                 If False, returns an awaitable ChatAgentResponse. (default:
                 :obj:`False`)
         Returns:
-            Awaitable[ChatAgentResponse]: An awaitable that resolves to a
-                ChatAgentResponse. If stream is True, the returned object can
-                also be async iterated for streaming updates.
-        """
+            Union[Awaitable[ChatAgentResponse], AsyncStreamingChatAgentResponse]:
+                If stream is False, returns an awaitable ChatAgentResponse.
+                If stream is True, returns an AsyncStreamingChatAgentResponse
+                that can be awaited for the final result or async iterated
+                for streaming updates.
+        """  # noqa: E501
 
         if stream:
             # Return wrapped async generator that is awaitable

@@ -512,7 +512,9 @@ class RepoAgent(ChatAgent):
                             "attempts."
                         )
 
-        return super().step(input_message, *args, **kwargs)
+        result = super().step(input_message, *args, **kwargs)
+        assert isinstance(result, ChatAgentResponse)
+        return result
 
     def reset(self):
         super().reset()
