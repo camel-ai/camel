@@ -1,0 +1,197 @@
+<a id="camel.data_collectors.base"></a>
+
+<a id="camel.data_collectors.base.CollectorData"></a>
+
+## CollectorData
+
+```python
+class CollectorData:
+```
+
+<a id="camel.data_collectors.base.CollectorData.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    id: UUID,
+    name: str,
+    role: Literal['user', 'assistant', 'system', 'tool'],
+    message: Optional[str] = None,
+    function_call: Optional[Dict[str, Any]] = None
+):
+```
+
+Create a data item store information about a message.
+Used by the data collector.
+
+**Parameters:**
+
+- **id** (UUID): The id of the message.
+- **name** (str): The name of the agent.
+- **role** (`Literal["user", "assistant", "system", "function"]`): The role of the message.
+- **message** (Optional[str], optional): The message. (default: :obj:`None`)
+- **function_call** (Optional[Dict[str, Any]], optional): The function call. (default: :obj:`None`)
+
+<a id="camel.data_collectors.base.CollectorData.from_context"></a>
+
+### from_context
+
+```python
+def from_context(name, context: Dict[str, Any]):
+```
+
+Create a data collector from a context.
+
+**Parameters:**
+
+- **name** (str): The name of the agent.
+- **context** (Dict[str, Any]): The context.
+
+**Returns:**
+
+  CollectorData: The data collector.
+
+<a id="camel.data_collectors.base.BaseDataCollector"></a>
+
+## BaseDataCollector
+
+```python
+class BaseDataCollector(ABC):
+```
+
+Base class for data collectors.
+
+<a id="camel.data_collectors.base.BaseDataCollector.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self):
+```
+
+Create a data collector.
+
+<a id="camel.data_collectors.base.BaseDataCollector.step"></a>
+
+### step
+
+```python
+def step(
+    self,
+    role: Literal['user', 'assistant', 'system', 'tool'],
+    name: Optional[str] = None,
+    message: Optional[str] = None,
+    function_call: Optional[Dict[str, Any]] = None
+):
+```
+
+Record a message.
+
+**Parameters:**
+
+- **role** (`Literal["user", "assistant", "system", "tool"]`): The role of the message.
+- **name** (Optional[str], optional): The name of the agent. (default: :obj:`None`)
+- **message** (Optional[str], optional): The message to record. (default: :obj:`None`)
+- **function_call** (Optional[Dict[str, Any]], optional): The function call to record. (default: :obj:`None`)
+
+**Returns:**
+
+  Self: The data collector.
+
+<a id="camel.data_collectors.base.BaseDataCollector.record"></a>
+
+### record
+
+```python
+def record(self, agent: Union[List[ChatAgent], ChatAgent]):
+```
+
+Record agents.
+
+**Parameters:**
+
+- **agent** (Union[List[ChatAgent], ChatAgent]): The agent(s) to inject.
+
+<a id="camel.data_collectors.base.BaseDataCollector.start"></a>
+
+### start
+
+```python
+def start(self):
+```
+
+Start recording.
+
+<a id="camel.data_collectors.base.BaseDataCollector.stop"></a>
+
+### stop
+
+```python
+def stop(self):
+```
+
+Stop recording.
+
+<a id="camel.data_collectors.base.BaseDataCollector.recording"></a>
+
+### recording
+
+```python
+def recording(self):
+```
+
+Whether the collector is recording.
+
+<a id="camel.data_collectors.base.BaseDataCollector.reset"></a>
+
+### reset
+
+```python
+def reset(self, reset_agents: bool = True):
+```
+
+Reset the collector.
+
+**Parameters:**
+
+- **reset_agents** (bool, optional): Whether to reset the agents. Defaults to True.
+
+<a id="camel.data_collectors.base.BaseDataCollector.convert"></a>
+
+### convert
+
+```python
+def convert(self):
+```
+
+Convert the collected data.
+
+<a id="camel.data_collectors.base.BaseDataCollector.llm_convert"></a>
+
+### llm_convert
+
+```python
+def llm_convert(self, converter: Any, prompt: Optional[str] = None):
+```
+
+Convert the collected data.
+
+<a id="camel.data_collectors.base.BaseDataCollector.get_agent_history"></a>
+
+### get_agent_history
+
+```python
+def get_agent_history(self, name: str):
+```
+
+Get the message history of an agent.
+
+**Parameters:**
+
+- **name** (str): The name of the agent.
+
+**Returns:**
+
+  List[CollectorData]: The message history of the agent

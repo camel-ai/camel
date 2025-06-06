@@ -21,7 +21,6 @@ from typing import Deque, Dict, List, Optional
 from colorama import Fore
 
 from camel.agents import ChatAgent
-from camel.configs import ChatGPTConfig
 from camel.logger import get_logger
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
@@ -48,29 +47,62 @@ logger = get_logger(__name__)
 
 
 class Workforce(BaseNode):
-    r"""A system where multiple workder nodes (agents) cooperate together
-    to solve tasks. It can assign tasks to workder nodes and also take
+    r"""A system where multiple worker nodes (agents) cooperate together
+    to solve tasks. It can assign tasks to worker nodes and also take
     strategies such as create new worker, decompose tasks, etc. to handle
     situations when the task fails.
 
+    The workforce uses three specialized ChatAgents internally:
+    - Coordinator Agent: Assigns tasks to workers based on their
+      capabilities
+    - Task Planner Agent: Decomposes complex tasks and composes results
+    - Dynamic Workers: Created at runtime when tasks fail repeatedly
+
     Args:
-        description (str): Description of the node.
+        description (str): Description of the workforce.
         children (Optional[List[BaseNode]], optional): List of child nodes
             under this node. Each child node can be a worker node or
             another workforce node. (default: :obj:`None`)
         coordinator_agent_kwargs (Optional[Dict], optional): Keyword
-            arguments for the coordinator agent, e.g. `model`, `api_key`,
-            `tools`, etc. If not provided, default model settings will be used.
-            (default: :obj:`None`)
-        task_agent_kwargs (Optional[Dict], optional): Keyword arguments for
-            the task agent, e.g. `model`, `api_key`, `tools`, etc.
-            If not provided, default model settings will be used.
-            (default: :obj:`None`)
-        new_worker_agent_kwargs (Optional[Dict]): Default keyword arguments
-            for the worker agent that will be created during runtime to
-            handle failed tasks, e.g. `model`, `api_key`, `tools`, etc.
-            If not provided, default model settings will be used.
-            (default: :obj:`None`)
+            arguments passed directly to the coordinator :obj:`ChatAgent`
+            constructor. The coordinator manages task assignment and failure
+            handling strategies. See :obj:`ChatAgent` documentation
+            for all available parameters.
+            (default: :obj:`None` - uses ModelPlatformType.DEFAULT,
+            ModelType.DEFAULT)
+        task_agent_kwargs (Optional[Dict], optional): Keyword arguments
+            passed directly to the task planning :obj:`ChatAgent` constructor.
+            The task agent handles task decomposition into subtasks and result
+            composition. See :obj:`ChatAgent` documentation for all
+            available parameters.
+            (default: :obj:`None` - uses ModelPlatformType.DEFAULT,
+            ModelType.DEFAULT)
+        new_worker_agent_kwargs (Optional[Dict], optional): Default keyword
+            arguments passed to :obj:`ChatAgent` constructor for workers
+            created dynamically at runtime when existing workers cannot handle
+            failed tasks. See :obj:`ChatAgent` documentation for all
+            available parameters.
+            (default: :obj:`None` - creates workers with SearchToolkit,
+            CodeExecutionToolkit, and ThinkingToolkit)
+        graceful_shutdown_timeout (float, optional): The timeout in seconds
+            for graceful shutdown when a task fails 3 times. During this
+            period, the workforce remains active for debugging.
+            Set to 0 for immediate shutdown. (default: :obj:`15.0`)
+
+    Example:
+        >>> # Configure with custom model
+        >>> model = ModelFactory.create(
+        ...     ModelPlatformType.OPENAI, ModelType.GPT_4O
+        ... )
+        >>> workforce = Workforce(
+        ...     "Research Team",
+        ...     coordinator_agent_kwargs={"model": model, "token_limit": 4000},
+        ...     task_agent_kwargs={"model": model, "token_limit": 8000}
+        ... )
+        >>>
+        >>> # Process a task
+        >>> task = Task(content="Research AI trends", id="1")
+        >>> result = workforce.process_task(task)
     """
 
     def __init__(
@@ -80,30 +112,44 @@ class Workforce(BaseNode):
         coordinator_agent_kwargs: Optional[Dict] = None,
         task_agent_kwargs: Optional[Dict] = None,
         new_worker_agent_kwargs: Optional[Dict] = None,
+        graceful_shutdown_timeout: float = 15.0,
     ) -> None:
         super().__init__(description)
         self._child_listening_tasks: Deque[asyncio.Task] = deque()
         self._children = children or []
         self.new_worker_agent_kwargs = new_worker_agent_kwargs
+        self.graceful_shutdown_timeout = graceful_shutdown_timeout
 
         # Warning messages for default model usage
         if coordinator_agent_kwargs is None:
             logger.warning(
-                "No coordinator_agent_kwargs provided. "
-                "Using `ModelPlatformType.DEFAULT` and `ModelType.DEFAULT` "
-                "for coordinator agent."
+                "No coordinator_agent_kwargs provided. Using default "
+                "ChatAgent settings (ModelPlatformType.DEFAULT, "
+                "ModelType.DEFAULT). To customize the coordinator agent "
+                "that assigns tasks and handles failures, pass a dictionary "
+                "with ChatAgent parameters, e.g.: {'model': your_model, "
+                "'tools': your_tools, 'token_limit': 8000}. See ChatAgent "
+                "documentation for all available options."
             )
         if task_agent_kwargs is None:
             logger.warning(
-                "No task_agent_kwargs provided. "
-                "Using `ModelPlatformType.DEFAULT` and `ModelType.DEFAULT` "
-                "for task agent."
+                "No task_agent_kwargs provided. Using default ChatAgent "
+                "settings (ModelPlatformType.DEFAULT, ModelType.DEFAULT). "
+                "To customize the task planning agent that "
+                "decomposes/composes tasks, pass a dictionary with "
+                "ChatAgent parameters, e.g.: {'model': your_model, "
+                "'token_limit': 16000}. See ChatAgent documentation for "
+                "all available options."
             )
         if new_worker_agent_kwargs is None:
             logger.warning(
-                "No new_worker_agent_kwargs provided. "
-                "Using `ModelPlatformType.DEFAULT` and `ModelType.DEFAULT` "
-                "for worker agents created during runtime."
+                "No new_worker_agent_kwargs provided. Workers created at "
+                "runtime will use default ChatAgent settings with "
+                "SearchToolkit, CodeExecutionToolkit, and ThinkingToolkit. "
+                "To customize runtime worker creation, pass a dictionary "
+                "with ChatAgent parameters, e.g.: {'model': your_model, "
+                "'tools': your_tools}. See ChatAgent documentation for all "
+                "available options."
             )
 
         coord_agent_sys_msg = BaseMessage.make_assistant_message(
@@ -380,15 +426,10 @@ class Workforce(BaseNode):
             *ThinkingToolkit().get_tools(),
         ]
 
-        model_config_dict = ChatGPTConfig(
-            tools=function_list,
-            temperature=0.0,
-        ).as_dict()
-
         model = ModelFactory.create(
             model_platform=ModelPlatformType.DEFAULT,
             model_type=ModelType.DEFAULT,
-            model_config_dict=model_config_dict,
+            model_config_dict={"temperature": 0},
         )
 
         return ChatAgent(worker_sys_msg, model=model, tools=function_list)  # type: ignore[arg-type]
@@ -453,6 +494,26 @@ class Workforce(BaseNode):
         await self._channel.archive_task(task.id)
         await self._post_ready_tasks()
 
+    async def _graceful_shutdown(self, failed_task: Task) -> None:
+        r"""Handle graceful shutdown with configurable timeout. This is used to
+        keep the workforce running for a while to debug the failed task.
+
+        Args:
+            failed_task (Task): The task that failed and triggered shutdown.
+        """
+        if self.graceful_shutdown_timeout <= 0:
+            # Immediate shutdown if timeout is 0 or negative
+            return
+
+        logger.warning(
+            f"Workforce will shutdown in {self.graceful_shutdown_timeout} "
+            f"seconds due to failure. You can use this time to inspect the "
+            f"current state of the workforce."
+        )
+
+        # Wait for the full timeout period
+        await asyncio.sleep(self.graceful_shutdown_timeout)
+
     @check_if_running(False)
     async def _listen_to_channel(self) -> None:
         r"""Continuously listen to the channel, post task to the channel and
@@ -476,6 +537,8 @@ class Workforce(BaseNode):
                     f"{Fore.RED}Task {returned_task.id} has failed "
                     f"for 3 times, halting the workforce.{Fore.RESET}"
                 )
+                # Graceful shutdown instead of immediate break
+                await self._graceful_shutdown(returned_task)
                 break
             elif returned_task.state == TaskState.OPEN:
                 # TODO: multi-layer workforce
@@ -527,6 +590,7 @@ class Workforce(BaseNode):
             coordinator_agent_kwargs={},
             task_agent_kwargs={},
             new_worker_agent_kwargs=self.new_worker_agent_kwargs,
+            graceful_shutdown_timeout=self.graceful_shutdown_timeout,
         )
 
         new_instance.task_agent = self.task_agent.clone(with_memory)
