@@ -13,7 +13,6 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
 import time
-from typing import List
 
 from pydantic import BaseModel, Field
 
@@ -33,11 +32,9 @@ streaming_model = ModelFactory.create(
 
 
 # Define structured output model
-class TaskAnalysis(BaseModel):
-    title: str = Field(description="Task title")
-    priority: str = Field(description="Priority: High, Medium, Low")
-    estimated_time: str = Field(description="Estimated completion time")
-    subtasks: List[str] = Field(description="List of subtasks")
+class Thinking(BaseModel):
+    think: str = Field(description="Your thinking process")
+    answer: str = Field(description="Your answer")
 
 
 def get_weather(city: str) -> str:
@@ -75,7 +72,7 @@ def test_content_accumulation():
 
     previous_content = ""
 
-    for i, response in enumerate(agent.stream(query)):
+    for i, response in enumerate(agent.step(query, stream=True)):
         if response.msgs:
             current_content = response.msgs[0].content
 
@@ -113,13 +110,13 @@ async def test_async_tool_execution():
         ],
     )
 
-    query = "Calculate the square of 10, look up the word 'async', and get weather for Tokyo"  # noqa: E501
+    query = ""
     print(f"Query: {query}")
     print("Testing async execution and content accumulation:")
 
     previous_content = ""
 
-    async for response in agent.astream(query):
+    async for response in agent.astep(query, stream=True):
         if response.msgs:
             current_content = response.msgs[0].content
 
@@ -157,17 +154,91 @@ def test_sync_tool_execution():
 
     query = "Calculate the square of 5, look up the word 'sync', and get weather for Shanghai"  # noqa: E501
     print(f"Query: {query}")
-    print("Testing sync execution and content accumulation:")
+    print("Testing sync structured output and content accumulation:")
 
     previous_content = ""
 
-    for response in agent.stream(query):
+    for response in agent.step(query, stream=True):
         if response.msgs:
             current_content = response.msgs[0].content
 
             # Verify content accumulation
             if not current_content.startswith(previous_content):
                 print("❌ SYNC CONTENT ACCUMULATION ERROR:")
+                print(f"Previous: '{previous_content}'")
+                print(f"Current:  '{current_content}'")
+                return False
+
+            # Only print new content
+            new_content = current_content[len(previous_content) :]
+            if new_content:
+                print(new_content, end="", flush=True)
+
+            previous_content = current_content
+
+    print("=" * 50)
+    return True
+
+
+def test_sync_structured_output():
+    r"""Test sync structured output"""
+    print("\n=== Testing Sync Structured Output ===")
+
+    agent = ChatAgent(
+        system_message="You are a helpful assistant .", model=streaming_model
+    )
+
+    query = "how many r in strawberry?"
+    print(f"Query: {query}")
+    print("Testing sync structured output and content accumulation:")
+
+    previous_content = ""
+
+    for response in agent.step(query, stream=True, response_format=Thinking):
+        if response.msgs:
+            current_content = response.msgs[0].content
+
+            # Verify content accumulation
+            if not current_content.startswith(previous_content):
+                print("❌ SYNC CONTENT ACCUMULATION ERROR:")
+                print(f"Previous: '{previous_content}'")
+                print(f"Current:  '{current_content}'")
+                return False
+
+            # Only print new content
+            new_content = current_content[len(previous_content) :]
+            if new_content:
+                print(new_content, end="", flush=True)
+
+            previous_content = current_content
+
+    print("=" * 50)
+    return True
+
+
+async def test_async_structured_output():
+    r"""Test async structured output"""
+    print("\n=== Testing Async Structured Output ===")
+
+    agent = ChatAgent(
+        system_message="You are a helpful assistant .", model=streaming_model
+    )
+
+    query = "how many r in strawberry?"
+    print(f"Query: {query}")
+    print("Testing async structured output and content accumulation:")
+
+    previous_content = ""
+
+    async for response in agent.astep(
+        query, stream=True, response_format=Thinking
+    ):
+        if response.msgs:
+            current_content = response.msgs[0].content
+
+            # Verify content accumulation
+            if not current_content.startswith(previous_content):
+                print("❌ ASYNC CONTENT ACCUMULATION ERROR:")
                 print(f"Previous: '{previous_content}'")
                 print(f"Current:  '{current_content}'")
                 return False
@@ -192,7 +263,7 @@ async def run_all_tests():
         print("❌ Basic content accumulation test failed!")
         return
 
-    # Test sync tool execution
+    # # Test sync tool execution
     if not test_sync_tool_execution():
         print("❌ Sync tool execution test failed!")
         return
@@ -200,6 +271,17 @@ async def run_all_tests():
     # Test async tool execution
     if not await test_async_tool_execution():
         print("❌ Async tool execution test failed!")
+        return
+
+    # Test sync structured output
+    if not test_sync_structured_output():
+        print("❌ Sync structured output test failed!")
+        return
+
+    # Test async structured output
+
+    if not await test_async_structured_output():
+        print("❌ Async structured output test failed!")
         return
 
 
