@@ -56,6 +56,13 @@ Reference: [TiDB](https://ai.pingcap.com/)
 
 Reference: [Qdrant](https://qdrant.tech/)
 
+**`WeaviateStorage`**:
+
+- Description: A concrete implementation of `BaseVectorStorage`, tailored for interacting with Weaviate, a vector search engine.
+
+Reference: [Weaviate](https://weaviate.io/)
+
+
 ### 2.3 Graph Storages
 **`BaseGraphStorage`**:
 
@@ -204,7 +211,60 @@ tidb_storage.clear()
 >>> {'key2': 'value2'} 0.5669466755703252
 ```
 
-### 3.5. Using `QdrantStorage`
+### 3.5. Using `WeaviateStorage`
+
+```python
+import os
+import weaviate
+from weaviate.classes.init import Auth
+from camel.storages.vectordb_storages import (
+    WeaviateStorage,
+    VectorDBQuery,
+    VectorRecord,
+)
+
+os.environ["WEAVIATE_URL"] = "you weaviate url"
+os.environ["WEAVIATE_API_KEY"] = "you weaviate api key"
+
+# create weaviate client 
+client = weaviate.connect_to_weaviate_cloud(
+    cluster_url=os.getenv("WEAVIATE_URL"),
+    auth_credentials=Auth.api_key(os.getenv("WEAVIATE_API_KEY")),
+)
+
+# Create WeaviateStorage instance with dimension = 4
+weaviate_storage = WeaviateStorage(
+    client=client,
+    vector_dim=4,
+    collection_name="camel_example_vectors"
+)
+
+# Add vectors records to Weaviate
+weaviate_storage.add([
+    VectorRecord(
+        vector=[-0.1, 0.1, -0.1, 0.1],
+        payload={'key1': 'value1'},
+    ),
+    VectorRecord(
+        vector=[-0.1, 0.1, 0.1, 0.1],
+        payload={'key2': 'value2'},
+    ),
+])
+
+# Query Weaviate for similar vectors
+query_results = weaviate_storage.query(VectorDBQuery(query_vector=[0.1, 0.2, 0.1, 0.1], top_k=1))
+for result in query_results:
+    print(result.record.payload, result.similarity)
+
+# Clear all vectors
+weaviate_storage.clear()
+```
+```markdown
+>>> {'key2': 'value2'} 0.7834733128547668
+```
+
+
+### 3.6. Using `QdrantStorage`
 
 ```python
 from camel.storages import QdrantStorage, VectorDBQuery, VectorRecord
@@ -234,7 +294,7 @@ qdrant_storage.clear()
 >>> {'key2': 'value2'} 0.5669467095138407
 ```
 
-### 3.6. Using `NebulaGraph`
+### 3.7. Using `NebulaGraph`
 
 ```python
 from camel.storages.graph_storages import NebulaGraph
@@ -246,7 +306,7 @@ query = 'SHOW TAGS;'
 print(nebula_graph.query(query))
 ```
 
-### 3.7. Using `Neo4jGraph`
+### 3.8. Using `Neo4jGraph`
 
 ```python
 from camel.storages import Neo4jGraph
