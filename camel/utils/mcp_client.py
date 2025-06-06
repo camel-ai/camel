@@ -665,6 +665,10 @@ class MCPClient:
 
             Returns:
                 str: The textual result returned by the MCP tool.
+
+            Raises:
+                TimeoutError: If the operation times out.
+                RuntimeError: If there are issues with async execution.
             """
             import asyncio
             import concurrent.futures
@@ -684,21 +688,42 @@ class MCPClient:
                         return new_loop.run_until_complete(
                             async_mcp_call(**kwargs)
                         )
+                    except Exception as e:
+                        # Preserve the original exception context
+                        raise RuntimeError(
+                            f"MCP call failed in thread: {e}"
+                        ) from e
                     finally:
                         new_loop.close()
-                        asyncio.set_event_loop(None)
 
                 # Run in a separate thread to avoid event loop conflicts
                 with concurrent.futures.ThreadPoolExecutor() as executor:
                     future = executor.submit(run_in_thread)
-                    return future.result(timeout=30)  # 30 second timeout
+                    try:
+                        return future.result(
+                            timeout=self.read_timeout_seconds.total_seconds()
+                        )
+                    except concurrent.futures.TimeoutError:
+                        raise TimeoutError(
+                            f"MCP call timed out after "
+                            f"{self.read_timeout_seconds.total_seconds()}"
+                            f" seconds"
+                        )
 
-            except RuntimeError:
-                # No event loop is running, we can safely use run_async
-                from camel.utils.commons import run_async
+            except RuntimeError as e:
+                # Only handle the specific "no running event loop" case
+                if (
+                    "no running event loop" in str(e).lower()
+                    or "no current event loop" in str(e).lower()
+                ):
+                    # No event loop is running, we can safely use run_async
+                    from camel.utils.commons import run_async
 
-                run_async_func = run_async(async_mcp_call)
-                return run_async_func(**kwargs)
+                    run_async_func = run_async(async_mcp_call)
+                    return run_async_func(**kwargs)
+                else:
+                    # Re-raise other RuntimeErrors
+                    raise
 
         # Add an async_call method to the function for explicit async usage
         adaptive_dynamic_function.async_call = async_mcp_call  # type: ignore[attr-defined]
