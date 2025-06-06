@@ -125,6 +125,31 @@ Here are 5 files in the project using relative paths:
 '''
 
 
+# Same example as above but in sync mode
+def mcp_toolkit_example_sync():
+    # Use either config path or config dict to initialize the MCP toolkit.
+    config_path = Path(__file__).parent / "mcp_servers_config.json"
+
+    # Connect to all MCP servers.
+    with MCPToolkit(config_path=str(config_path)) as mcp_toolkit:
+        sys_msg = "You are a helpful assistant"
+        model = ModelFactory.create(
+            model_platform=ModelPlatformType.DEFAULT,
+            model_type=ModelType.DEFAULT,
+        )
+        camel_agent = ChatAgent(
+            system_message=sys_msg,
+            model=model,
+            tools=[*mcp_toolkit.get_tools()],
+        )
+        user_msg = "List 5 files in the project, using relative paths"
+        # response = await camel_agent.astep(user_msg)
+        response = camel_agent.step(user_msg)
+        print(response.msgs[0].content)
+        print(response.info['tool_calls'])
+
+
 if __name__ == "__main__":
-    asyncio.run(mcp_client_example())
+    # asyncio.run(mcp_client_example())
     asyncio.run(mcp_toolkit_example())
+    # mcp_toolkit_example_sync()
