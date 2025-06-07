@@ -182,6 +182,7 @@ class ChatAgentOpenAPIServer:
             agent = ChatAgent(
                 model=model,
                 tools=tools,  # type: ignore[arg-type]
+                external_tools = request.external_tools,
                 system_message=system_message,
                 message_window_size=request.message_window_size,
                 token_limit=request.token_limit,
