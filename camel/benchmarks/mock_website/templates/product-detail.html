@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/style/global.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/style/local.css') }}">
+    <title>Product Detail</title>
+</head>
+<body>
+    <main id="_top" class="container-fluid p-0 m-0">
+        <!-- Header -->
+        <section class="container-fluid p-0 m-0">
+            <header class="container-fluid p-0 m-0">
+                <div id="header1" class="container-fluid p-0 m-0 d-flex align-items-center ">
+                    <ul class="col-12 d-flex text-white h-75 p-0 m-0 ">
+                        <li class="col-1  h-100 d-flex justify-content-center align-items-center">
+                            <a href="{{ url_for('home') }}"><img class="col-9" src="{{ url_for('static', filename='assets/img/logo.png') }}" alt="Logo"></a>
+                        </li>
+                        <li class="col-1 h-100 d-flex justify-content-center align-items-center">
+                            <div class="col-12 h-75 d-flex justify-content-center align-items-end m-0 p-0">
+                                <div class="col-6 h-100 d-flex justify-content-center align-items-center m-0 p-0">
+                                    <span id="c0" class="col-2 col-md-5 p-0 m-0 d-flex ">{{ cart_count if cart_count is defined else 0 }}</span>
+                                    <a href="{{ url_for('view_cart') }}"><img id="cimg" class="col-12 p-0 m-0" src="{{ url_for('static', filename='assets/img/cart.png') }}" alt="cart"></a>
+                                </div>
+                                <div id="_cart" class="col-2 col-sm-3 col-md-6  p-0 m-0">
+                                    <a href="{{ url_for('view_cart') }}" class="text-white text-decoration-none">Cart</a>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </header>
+        </section>
+
+        <!-- Product Detail Section -->
+        <section class="container mt-5 mb-5">
+            <div id="product-detail-container" class="row">
+                {% if product %}
+                <div class="col-md-6">
+                    <img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}" class="img-fluid">
+                </div>
+                <div class="col-md-6">
+                    <h2>{{ product.name }}</h2>
+                    <p>
+                        {% for i in range(5) %}
+                            {% if i < product.rating|int %}
+                                <i class="bi bi-star-fill text-warning"></i>
+                            {% elif i < product.rating and (product.rating * 10) % 10 != 0 %}
+                                <i class="bi bi-star-half text-warning"></i>
+                            {% else %}
+                                <i class="bi bi-star text-warning"></i>
+                            {% endif %}
+                        {% endfor %}
+                        ({{ product.rating }})
+                    </p>
+                    <p><strong>Price:</strong> ${{ product.price }}</p>
+                    <p><strong>Description:</strong> {{ product.description }}</p>
+                    <div class="d-flex align-items-center mb-3">
+                        <label for="quantity" class="form-label me-2">Quantity:</label>
+                        <input type="number" id="quantity" class="form-control me-2" value="1" min="1" style="width: 70px;">
+                        <button id="add-to-cart-detail" class="btn btn-warning" data-product-id="{{ product.id }}">Add to Cart</button>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-center">Product not found.</p>
+                {% endif %}
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <section id="foot" class="container-fluid p-0 m-0">
+            <footer class="container-fluid p-0 m-0">
+                <div class="container-fluid pb-5">
+                    <div class="container d-flex justify-content-center pt-5 pe-5">
+                        </div>
+                </div>
+                <div id="foot2" class="container-fluid p-0 m-0">
+                    <div class="container d-flex flex-wrap justify-content-center ">
+                        <div class="btm1 col-10 p-0 m-0 d-flex justify-content-center">
+                            <span class="col-11 d-flex justify-content-center">© 1996-2023, YourCompanyName, Inc. or its affiliates</span>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </section>
+    </main>
+    <!-- Remove the script.js link as product data is now from Flask -->
+    <script src="{{ url_for('static', filename='assets/js/product-detail.js') }}"></script>
+</body>
+</html> 

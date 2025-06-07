@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/style/global.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/style/local.css') }}">
+    <title>Shopping Cart</title>
+</head>
+<body>
+    <main id="_top" class="container-fluid p-0 m-0">
+        <!-- Header -->
+        <section class="container-fluid p-0 m-0">
+            <header class="container-fluid p-0 m-0">
+                <div id="header1" class="container-fluid p-0 m-0 d-flex align-items-center ">
+                    <ul class="col-12 d-flex text-white h-75 p-0 m-0 ">
+                        <li class="col-1  h-100 d-flex justify-content-center align-items-center">
+                            <a href="{{ url_for('home') }}"><img class="col-9" src="{{ url_for('static', filename='assets/img/logo.png') }}" alt="Logo"></a>
+                        </li>
+                        <li class="col-1 h-100 d-flex justify-content-center align-items-center">
+                            <div class="col-12 h-75 d-flex justify-content-center align-items-end m-0 p-0">
+                                <div class="col-6 h-100 d-flex justify-content-center align-items-center m-0 p-0">
+                                    <span id="c0" class="col-2 col-md-5 p-0 m-0 d-flex ">{{ cart_count if cart_count is defined else 0 }}</span>
+                                    <a href="{{ url_for('view_cart') }}"><img id="cimg" class="col-12 p-0 m-0" src="{{ url_for('static', filename='assets/img/cart.png') }}" alt="cart"></a>
+                                </div>
+                                <div id="_cart" class="col-2 col-sm-3 col-md-6  p-0 m-0">
+                                    <a href="{{ url_for('view_cart') }}" class="text-white text-decoration-none">Cart</a>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </header>
+        </section>
+
+        <!-- Shopping Cart Section -->
+        <section class="container mt-5 mb-5">
+            <h2 class="mb-4">Your Shopping Cart</h2>
+            <div id="cart-items-container" class="row">
+                {% if cart_items %}
+                    {% for item in cart_items %}
+                    <div class="col-12 mb-3 border-bottom pb-3" data-item-id="{{ item.id }}">
+                        <div class="row align-items-center">
+                            <div class="col-md-2">
+                                <img src="{{ url_for('static', filename=item.image) }}" alt="{{ item.name }}" class="img-fluid" style="max-height: 100px; object-fit: contain;">
+                            </div>
+                            <div class="col-md-4">
+                                <h5>{{ item.name }}</h5>
+                                <p>Price: ${{ item.price }}</p>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="quantity-{{ item.id }}">Quantity:</label>
+                                <input type="number" id="quantity-{{ item.id }}" class="form-control quantity-input" value="{{ item.quantity }}" min="0" data-id="{{ item.id }}" style="width: 70px;">
+                            </div>
+                            <div class="col-md-2">
+                                <p>Subtotal: $${ (item.price * item.quantity)|round(2) }</p>
+                            </div>
+                            <div class="col-md-1">
+                                <button class="btn btn-danger btn-sm remove-item" data-id="{{ item.id }}"><i class="bi bi-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="col-12 text-center">Your cart is currently empty.</p>
+                {% endif %}
+            </div>
+            <div id="cart-summary" class="row mt-4">
+                {% if cart_items %}
+                    <div class="col-12 text-end">
+                        <h4>Total: $ <span id="total-price">
+                            {% set total = namespace(value=0) %}
+                            {% for item in cart_items %}
+                                {% set total.value = total.value + (item.price * item.quantity) %}
+                            {% endfor %}
+                            {{ total.value|round(2) }}
+                        </span></h4>
+                        <button class="btn btn-success">Proceed to Checkout</button>
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <section id="foot" class="container-fluid p-0 m-0">
+            <footer class="container-fluid p-0 m-0">
+                <div class="container-fluid pb-5">
+                    <div class="container d-flex justify-content-center pt-5 pe-5">
+                        </div>
+                </div>
+                <div id="foot2" class="container-fluid p-0 m-0">
+                    <div class="container d-flex flex-wrap justify-content-center ">
+                        <div class="btm1 col-10 p-0 m-0 d-flex justify-content-center">
+                            <span class="col-11 d-flex justify-content-center">© 1996-2023, YourCompanyName, Inc. or its affiliates</span>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </section>
+    </main>
+
+    <!-- Do not include script.js here directly, as products and cart are managed by Flask -->
+    <!-- cart-page.js will handle client-side interactions and API calls -->
+    <script src="{{ url_for('static', filename='assets/js/cart-page.js') }}"></script>
+</body>
+</html> 

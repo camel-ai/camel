@@ -1,0 +1,221 @@
+a {
+  text-decoration: none;
+}
+
+ul {
+  list-style-type: none;
+}
+
+body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+body * {
+  font-family: "Inter", sans-serif;
+}
+body #x {
+  justify-content: center;
+  align-items: center;
+  width: 40px;
+  height: 40px;
+  color: white;
+  position: absolute;
+  top: 0;
+  z-index: 101;
+  font-size: 25px;
+  display: none;
+  cursor: pointer;
+}
+body #lmenu {
+  transition: 0.5s;
+  height: 100%;
+  background-color: #FFFFFF;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  overflow-x: hidden;
+}
+body main {
+  background-color: #E3E6E6;
+  flex-grow: 1;
+}
+body main section header #header1 {
+  background-color: black;
+}
+body main section header #header1 > ul {
+  list-style-type: none;
+}
+body main section header #header1 > ul > li img {
+  height: 65%;
+}
+body main section header #header1 > ul > li:nth-of-type(5) div:nth-of-type(2) i {
+  font-size: 10px;
+  color: gray;
+}
+body main section header #header1 > ul > li:nth-of-type(7) > div > div:nth-of-type(1) {
+  position: relative;
+}
+body main section header #header1 > ul > li:nth-of-type(7) > div > div:nth-of-type(1) span {
+  position: absolute;
+  left: 45%;
+  top: -20%;
+  display: flex;
+  font-size: 18px;
+}
+body main section header #header1 > ul > li:nth-of-type(7) > div > div:nth-of-type(2) {
+  font-size: 18px;
+}
+body main section header #head2 {
+  background-color: #232F3E;
+}
+body main section header #head2 div ul {
+  list-style: none;
+}
+body main section header #head2 div ul li {
+  color: white;
+}
+body main section header #head2 div ul li a {
+  color: white;
+  text-decoration: none;
+}
+body main section header #head2 div ul li:hover {
+  border: 1px solid white;
+  border-radius: 2px;
+  cursor: pointer;
+}
+body main section header #head2 div span a {
+  color: white;
+  text-decoration: none;
+}
+body main section header #head2 div span a:hover {
+  cursor: pointer;
+  border: 1px solid white;
+  border-radius: 2px;
+}
+body main #smain {
+  position: relative;
+  z-index: 1;
+}
+body main .pic {
+  background-color: white;
+}
+body main .pic > h5 {
+  height: 15%;
+  display: flex;
+  cursor: pointer;
+}
+body main .pic > div {
+  height: 15%;
+}
+body main .pic > div:nth-of-type(1) {
+  height: 70%;
+  cursor: pointer;
+}
+body main .pic > div:nth-of-type(1) > div {
+  height: 50%;
+}
+body main .pic span:nth-of-type(1) {
+  cursor: pointer;
+}
+body main .pic span:nth-of-type(1) button {
+  height: 30%;
+}
+body #afterMain {
+  background-color: white;
+  position: relative;
+  z-index: 2;
+}
+body #afterMain span:nth-of-type(2) a {
+  color: rgb(42, 184, 194);
+}
+body #afterMain button {
+  background-color: #FFC635;
+}
+body #btop {
+  color: white;
+  background-color: #37475A;
+  cursor: pointer;
+}
+body #btop:hover {
+  background-color: #404f61;
+}
+body #btop a {
+  color: rgb(224, 224, 224);
+}
+body #foot {
+  position: relative;
+  z-index: 5;
+}
+body #foot footer > div:nth-of-type(1) {
+  background-color: #232F3E;
+  color: white;
+}
+body #foot footer > div:nth-of-type(1) div > ul > li a {
+  color: rgb(224, 224, 224);
+}
+body #foot footer > div:nth-of-type(2) {
+  background-color: #000000;
+  color: rgb(224, 224, 224);
+}
+body #topLmenu {
+  background-color: #232F3E;
+  cursor: pointer;
+}
+body #topLmenu span {
+  color: white;
+}
+body #topLmenu span i {
+  color: white;
+}
+body .d1 {
+  border-bottom: 1px solid black;
+  transition: 0.5s;
+}
+body .d1 ul li {
+  cursor: pointer;
+}
+body .d1 ul li:nth-of-type(1) {
+  cursor: auto;
+}
+body .d1 ul li:nth-of-type(1):hover {
+  background-color: white;
+}
+body .d1 ul li:hover {
+  background-color: #EAEDED;
+}
+body .d2 {
+  min-height: 0 !important;
+  opacity: 0;
+  height: 0 !important;
+}
+body #dnMenu {
+  transition: 0.5s;
+  overflow: hidden;
+}
+body #dnMenu2 {
+  transition: 0.5s;
+  min-height: 0 !important;
+  overflow: hidden;
+}
+body .lm {
+  left: -500px !important;
+}
+body .btm1 {
+  display: flex;
+  align-items: end !important;
+  height: 50px;
+}
+body #fullsc {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 99;
+  background-color: rgba(0, 0, 0, 0.774);
+  display: none;
+  overflow: auto;
+}/*# sourceMappingURL=global.css.map */

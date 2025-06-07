@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/style/global.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/style/local.css') }}">
+    
+    <title>Amazon Mockup</title>
+</head>
+<body>
+    <main id="_top" class="container-fluid p-0 m-0">
+        <!-- strat header -->
+        <section class="container-fluid p-0 m-0">
+            <header class="container-fluid p-0 m-0">
+                <div id="header1" class="container-fluid p-0 m-0 d-flex align-items-center ">
+                    <ul class="col-12 d-flex text-white h-75 p-0 m-0 ">
+                        <li class="col-1  h-100 d-flex justify-content-center align-items-center"><img class="col-9" src="{{ url_for('static', filename='assets/img/logo.png') }}" alt="logo"></li>
+                        <li class="col-2 col-sm-1 col-md-2 col-lg-1 h-100  d-flex  justify-content-around align-items-center p-0 m-0">
+                            <div class="col-1 d-flex justify-content-center"><i class="font4 bi-geo-alt p-0 m-0"></i></div>
+                            <div class="col-11 row justify-content-start">
+                                <span class="font1 d-flex p-0 m-0 col-12">Deliver to</span>
+                                <span class="font3 d-flex p-0 m-0 col-12" >Iran-Islamic...</span>
+                            </div>
+                        </li>
+                        <li class="col-5 col-sm-6 col-md-5 col-lg-6 h-100 d-flex justify-content-center  align-items-center">
+                       
+                         
+                          <div id="_inp" class="col-12 d-flex align-items-center p-0 m-0">
+                            <select name="category_select" id="category_select" class="font5 col-2 col-lg-1 m-0 p-0" >
+                                <option value="All">All</option>
+                                {% if categories %}
+                                    {% for category in categories %}
+                                        <option value="{{ category }}">{{ category }}</option>
+                                    {% endfor %}
+                                {% endif %}
+                                <!-- <option value="All Departments">All Departments</option>
+                                <option value="Arts & Crafts">Arts & Crafts</option>
+                                <option value="Automotive">Automotive</option>
+                                <option value="Baby">Baby</option>
+                                <option value="Books">Books</option>
+                                <option value="Deals">Deals</option> -->
+                              </select> 
+
+                              <input class="col-9 col-lg-10  m-0 p-0" type="search">
+                              <button class="col-1 m-0 p-0 d-flex justify-content-center align-items-center"><i class="font3 bi bi-search"></i></button>
+                          </div>
+                          
+
+                        </li>
+
+
+                        <li class="col-1 m-0 h-100 d-flex justify-content-center  align-items-center">
+                            <span class="col-5  d-flex justify-content-end m-1 p-0 h-50 align-items-center"><img class="col-9 col-md-5" src="{{ url_for('static', filename='assets/img/usFlag.png') }}" alt=""></span>
+                            <span class="font2 d-flex justify-content-start align-items-center col-6 d-flex  h-50">EN</span>
+
+                        </li>
+
+
+
+                        <li class="col-1 h-100 d-flex justify-content-center align-items-center">
+
+                            <!-- <div class="col-11 row justify-content-start p-0 m-0  h-75">
+                                <span class="font1 d-flex justify-content-center col-10  p-0 m-0">Hello, sign in</span>
+                                <span class="font2 d-flex justify-content-end col-12 p-0 pe-1 m-0" >Account & Lists </span>
+                            </div>
+                            
+                            <div class="col-1 d-flex justify-content-center align-items-end  h-75"><i class="font3 bi bi-caret-down-fill"></i></div> -->
+                            <!-- Removed Sign In / Account & Lists -->
+
+                        </li>
+
+
+
+                        <li class="col-1 h-100 d-flex justify-content-center align-items-center">
+
+                            <!-- <div class="col-11 row justify-content-start p-0 m-0  h-75">
+                                <span class="font1 d-flex justify-content-center col-10  p-0 m-0">Returns</span>
+                                <span class="font2 d-flex justify-content-center col-12 p-0 pe-1 m-0" >& Orders</span>
+                            </div> -->
+
+                        </li>
+
+
+
+
+
+                        <li class="col-1 h-100 d-flex justify-content-center align-items-center">
+
+                            <div class="col-12 h-75 d-flex justify-content-center  align-items-end m-0 p-0">
+                                <div class="col-6 h-100 d-flex justify-content-center align-items-center m-0 p-0">
+                                    <span id="c0" class="col-2 col-md-5 p-0 m-0 d-flex ">{{ cart_count if cart_count is defined else 0 }}</span>
+                                    <a href="{{ url_for('view_cart') }}"><img id="cimg" class="col-12 p-0 m-0" src="{{ url_for('static', filename='assets/img/cart.png') }}" alt="cart"></a>
+                                </div>
+                                <div id="_cart" class="col-2 col-sm-3 col-md-6  p-0 m-0"><a href="{{ url_for('view_cart') }}" class="text-white text-decoration-none">Cart</a></div>
+                            </div>
+
+                        </li>
+
+
+
+                    </ul>
+
+                </div>
+
+
+
+
+
+
+                <div id="head2" class="container-fluid p-0">
+
+                    <div  class="d-flex h-75 col-12 justify-content-between align-items-center m-0 p-0">
+                        <ul class="col-8 col-md-6 d-flex m-0 p-0 text-white">
+                            <li class="col-2  d-flex justify-content-center p-0 m-0 align-items-center"><a id="all" href="#" class="col-5 m-0 p-0 d-flex justify-content-center align-items-center"><i class="bi bi-list col-5"></i><span class="col-5 d-flex">All</span></a></li>
+                            <li class="col-2 d-flex justify-content-center p-0 m-0 align-items-center"><a href="#">Today's Deals</a></li>
+                            <li class="col-3 d-flex justify-content-center p-0 m-0 ms-1 ms-md-0 align-items-center"><a href="#">Customer Service</a></li>
+                            <li class="col-2 d-flex justify-content-center p-0 m-0 align-items-center"><a href="#">Registry</a></li>
+                            <li class="col-2 d-flex justify-content-center p-0 m-0 align-items-center"><a href="#">Gift Cards</a></li>
+                            <li class="col-1 d-flex justify-content-center p-0 m-0 align-items-center"><a href="#">Sell</a></li>
+                        </ul>
+                        <span class="col-3 col-md-2 d-flex justify-content-end align-items-center"><a class="col-12" href="#">Shop deals in Electronics</a><span>
+                    </div>
+
+
+
+                </div>
+            </header>
+        </section>
+
+        <!-- **********start slider, section 2 ************ -->
+       
+        <section class="container-fluid m-0 p-0 ">
+                           
+          <div class="container-fluid container-xxl p-0 ">
+                
+
+
+            <div id="carouselExampleControls" class="carousel slide" data-bs-ride="carousel">
+              <div class="carousel-inner">
+                <div class="carousel-item active">
+                  <img src="{{ url_for('static', filename='assets/img/back/61DUO0NqyyL._SX3000_.jpg') }}" class="d-block w-100" alt="...">
+                </div>
+                <div class="carousel-item">
+                  <img src="{{ url_for('static', filename='assets/img/back/61jovjd+f9L._SX3000_.jpg') }}" class="d-block w-100" alt="...">
+                </div>
+                <div class="carousel-item">
+                  <img src="{{ url_for('static', filename='assets/img/back/61TD5JLGhIL._SX3000_.jpg') }}" class="d-block w-100" alt="...">
+                </div>
+                <div class="carousel-item">
+                  <img src="{{ url_for('static', filename='assets/img/back/62DUO0NqyyL._SX3000_.jpg') }}" class="d-block w-100" alt="...">
+                </div>
+                <div class="carousel-item">
+                  <img src="{{ url_for('static', filename='assets/img/back/71qid7QFWJL._SX3000_.jpg') }}" class="d-block w-100" alt="...">
+                </div>
+                <div class="carousel-item">
+                  <img src="{{ url_for('static', filename='assets/img/back/71tIrZqybrL._SX3000_.jpg') }}" class="d-block w-100" alt="...">
+                </div>
+              </div>
+            
+            </div>
+            
+
+
+
+          </div>
+         
+         
+        </section>
+
+        <!-- ******** start main, section 3 *********** -->
+        <section id="smain" class="container-fluid  justify-content-center m-0 p-0">
+            <!-- Content will be dynamically generated here by Jinja -->
+        </section>
+   
+
+
+     
+    </main>
+   <!-- ******** start bottom main, section 4 *********** -->
+
+   <section id="afterMain" class="container-fluid d-flex justify-content-center pt-0 pt-sm-2 pb-0 pb-sm-2 pt-md-4 pb-md-4   m-0 pe-0 ps-0 ">
+    <div class="row container-fluid justify-content-center m-0  p-0 p-sm-2 ">
+      <!-- <span class="col-12 d-flex justify-content-center m-2">See personalized recommendations</span>
+      <button class="col-2">Sign in</button>
+      <span class="col-12 d-flex justify-content-center m-2">New customer? <a href="#">Start here.</a></span> -->
+      <!-- Removed Sign In section -->
+      <span class="col-12 d-flex justify-content-center m-2">Explore more products below or use the search above.</span>
+    </div>
+         
+   </section>
+
+
+     <!-- ******** start back to top, section 5 *********** -->
+
+<section id="btop" class="container-fluid d-flex justify-content-center align-items-center p-0 m-0">
+  <a href="#_top">Back to top</a>
+</section>
+
+  <!-- ******** start footer, section 6 *********** -->
+<section id="foot" class="container-fluid p-0 m-0">
+  <footer class="container-fluid  p-0 m-0">
+
+
+    <div class="container-fluid  pb-5">
+    
+      <div class="container d-flex justify-content-center pt-5 pe-5">
+        
+        <div class="col-2  m-3 ">
+          <ul class="col-12 m-0 p-0">
+            <li>Get to Know Us</li>
+            <li><a href="#">Careers</a></li>
+            <li><a href="#">Blog</a></li>
+            <li><a href="#">About Amazon</a></li>
+            <li><a href="#">Investor Relations</a></li>
+            <li><a href="#">Amazon Devices</a></li>
+            <li><a href="#">Amazon Science</a></li>
+          </ul>
+        </div>
+        
+        <div class="col-2 m-3 ">
+        <ul class="col-12 m-0 p-0">
+          <li>Make Money with Us</li>
+          <li><a href="#">Sell products on Amazon</a></li>
+          <li><a href="#">Sell on Amazon Business</a></li>
+          <li><a href="#">Sell apps on Amazon</a></li>
+          <li><a href="#">Become an Affiliate</a></li>
+          <li><a href="#">Advertise Your Products</a></li>
+          <li><a href="#">Self-Publish with Us</a></li>
+          <li><a href="#">Host an Amazon Hub</a></li>
+          <li><a href="#">›See More Make Money with Us</a></li>
+        </ul>
+        </div>
+        
+        
+        
+        
+        <div class="col-2 m-3 ">
+        <ul class="col-12 m-0 p-0">
+          <li>Amazon Payment Products</li>
+          <li><a href="#">Amazon Business Card</a></li>
+          <li><a href="#">Shop with Points</a></li>
+          <li><a href="#">Reload Your Balance</a></li>
+          <li><a href="#">Amazon Currency Converter</a></li>
+        </ul>
+        </div>
+        
+        
+        
+        <div class="col-2 m-3 ">
+        <ul class="col-12 m-0 p-0 ">
+          <li>Let Us Help You</li>
+          <li><a href="#">Amazon and COVID-19</a></li>
+          <li><a href="#">Your Account</a></li>
+          <li><a href="#">Your Orders</a></li>
+          <li><a href="#">Shipping Rates & Policies</a></li>
+          <li><a href="#">Returns & Replacements</a></li>
+          <li><a href="#">Manage Your Content and Devices</a></li>
+          <li><a href="#">Amazon Assistant</a></li>
+          <li><a href="#">Help</a></li>
+        </ul>
+        </div>
+        
+
+      </div>
+    
+    </div>
+    
+    
+    
+    
+    
+    
+    
+    
+    <div id="foot2" class="container-fluid  p-0 m-0">
+    
+      <div class="container  d-flex flex-wrap justify-content-center ">
+
+        <div class="col-10 col-md-9 p-0 mt-1 mt-sm-2 mt-md-3 mt-lg-4 d-flex justify-content-between">
+          <a class="col-1 m-1"  href="#">Amazon MusicStream millions of songs</a>
+          <a class="col-1 m-1" href="#">Amazon Advertising Find, attract, and engage customers	</a>
+          <a class="col-1 m-1" href="#">6pm Score deals on fashion brands</a>
+          <a class="col-1 m-1" href="#">AbeBooks Books, art & collectibles</a>
+          <a class="col-1 m-1" href="#">ACX Audiobook Publishing Made Easy</a>
+          <a class="col-1 m-1" href="#">Sell on Amazon Start a Selling Account</a>
+          <a class="col-1 m-1" href="#">Amazon Business Everything For Your Business</a>
+        </div>
+
+
+
+
+
+
+        <div class="col-10 col-md-9 p-0 mt-1 mt-sm-2 mt-md-3 mt-lg-4 d-flex justify-content-between">
+          <a class="col-1 m-1" href="#">AmazonGlobal Ship Orders Internationally</a>
+          <a class="col-1 m-1" href="#">Home Services Experienced Pros Happiness Guarantee</a>
+          <a class="col-1 m-1" href="#">Amazon Ignite Sell your original Digital Educational Resources</a>
+          <a class="col-1 m-1" href="#">Amazon Web Services Scalable Cloud Computing Services</a>
+          <a class="col-1 m-1" href="#">Audible Listen to Books & Original Audio Performances</a>
+          <a class="col-1 m-1" href="#">Book Depository Books With Free Delivery Worldwide</a>
+          <a class="col-1 m-1" href="#">Box Office Mojo Find Movie Box Office Data</a>
+        </div>
+
+
+
+
+
+        <div class="col-10 col-md-9 p-0 mt-1 mt-sm-2 mt-md-3 mt-lg-4 d-flex justify-content-between">
+          <a class="col-1 m-1" href="#">ComiXology Thousands of Digital Comics</a>
+          <a class="col-1 m-1" href="#">DPReview Digital Photography</a>
+          <a class="col-1 m-1" href="#">Fabric Sewing, Quilting & Knitting</a>
+          <a class="col-1 m-1" href="#">Goodreads Book reviews & recommendations</a>
+          <a class="col-1 m-1" href="#">IMDb Movies, TV & Celebrities</a>
+          <a class="col-1 m-1" href="#">IMDbPro Get Info Entertainment Professionals Need</a>
+          <a class="col-1 m-1" href="#">Kindle Direct Publishing Indie Digital & Print Publishing Made Easy</a>
+        </div>
+
+
+        <div class="col-10 col-md-9 p-0 mt-1 mt-sm-2 mt-md-3 mt-lg-4 d-flex justify-content-between">
+          <a class="col-1 m-1" href="#">Prime Video Direct Video Distribution Made Easy</a>
+          <a class="col-1 m-1" href="#">Shopbop Designer Fashion Brands</a>
+          <a class="col-1 m-1" href="#">Woot! Deals and Shenanigans</a>
+          <a class="col-1 m-1" href="#">Zappos Shoes & Clothing</a>
+          <a class="col-1 m-1" href="#">Ring Smart Home Security Systems</a>
+          <a class="col-1 m-1" href="#">eero WiFi Stream 4K Video in Every Room</a>
+          <a class="col-1 m-1" href="#">Blink Smart Security for Every Home</a>
+        </div>
+
+
+        <div class="col-10 col-md-9 p-0 mt-1 mt-sm-2 mt-md-3 mt-lg-4 d-flex justify-content-between">
+          <a class="col-1 m-1" href="#"></a>
+          <a class="col-1 m-1" href="#"></a>
+          <a class="col-1 m-1" href="#">Neighbors App Real-Time Crime & Safety Alerts</a>
+          <a class="col-1 m-1" href="#">Amazon Subscription Boxes Top subscription boxes right to your door</a>
+          <a class="col-1 m-1" href="#">PillPack Pharmacy Simplified</a>
+          <a class="col-1 m-1" href="#"></a>
+          <a class="col-1 m-1" href="#"></a>
+        </div>
+
+
+
+
+
+   
+
+
+   
+          <div  class="btm1 col-7 col-sm-5  p-0 m-0 d-flex justify-content-between">
+              <a class="col-4 d-flex justify-content-center p-0 m0" href="#">Conditions of Use</a>
+              <a class="col-4 d-flex justify-content-center p-0 m0" href="#">Privacy Notice</a>
+              <a class="col-4 d-flex justify-content-center p-0 m0" href="#">Your Ads Privacy Choices</a>
+          </div>
+          <div class="btm1 col-10 p-0 m-0  d-flex justify-content-center">
+              <span class="col-11 d-flex justify-content-center">© 1996-2023, Peyman Motamedifar, Inc. or its affiliates</span>
+          </div>
+
+
+         
+      </div>
+        
+      
+    </div>
+    
+    
+    
+
+    
+    
+    </footer>
+    
+
+
+</section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="lmenu" class="lm  ">
+
+  <div id="topLmenu" class="col-12  d-flex">
+    <!-- <span class="col-3  d-flex  justify-content-end align-items-center"><i class="col-5  col-xl-3 bi bi-person-circle"></i></span>
+    <span class="d-flex col-9  justify-content-start align-items-center">Hello, sign in</span> -->
+    <!-- Removed "Hello, sign in" from side menu -->
+    <span class="d-flex col-12 justify-content-center align-items-center">Menu</span>
+  </div>
+
+
+  <div class="d1 col-12  p-0 d-flex flex-wrap justify-content-center">
+    <ul class="col-12 p-0 d-flex flex-wrap justify-content-center align-content-center">
+      <li class="col-11 col-md-12 pt-2 pb-2 ps-1 ps-md-5 m-0 d-flex  align-items-center ">Digital Content & Devices</li>
+      <li  class="col-11 col-md-12 pt-2 pb-2 ps-1 ps-md-5 m-0 d-flex justify-content-between align-items-center"><span class="col-11">Amazon Music</span> <i class="col-1 p-0 m-0 bi bi-chevron-right"></i></li>
+      <li class="col-11 col-md-12 pt-2 pb-2 ps-1 ps-md-5 m-0  d-flex justify-content-between align-items-center"><span class="col-11">Kindle E-readers $ Books</span> <i class="col-1 p-0 m-0 bi bi-chevron-right"></i></li>
+      <li class="col-11 col-md-12 pt-2 pb-2 ps-1 ps-md-5 m-0  d-flex justify-content-between align-items-center"><span class="col-11">Amazon Appstore</span> <i class="col-1 p-0 m-0  bi bi-chevron-right"></i></li>
+    </ul>
+
+  </div>
+
+
+
+
+
+
+
+
+
+
+  <div class="d1 col-12  p-0 d-flex flex-wrap justify-content-center">
+    <ul class="col-12 p-0 d-flex flex-wrap justify-content-center align-content-center">
+      <li class="col-11 col-md-12 pt-2 pb-2 ps-1 ps-md-5 m-0 d-flex  align-items-center">Shop By Department</li>
+      <li  class="col-11 col-md-12 pt-2 pb-2 ps-1 ps-md-5 m-0 d-flex justify-content-between align-items-center"><span class="col-11">Electronics</span> <i class="col-1 p-0 m-0 bi bi-chevron-right"></i></li>
+      <li class="col-11 col-md-12 pt-2 pb-2 ps-1 ps-md-5 m-0  d-flex justify-content-between align-items-center"><span class="col-11">Computers</span> <i class="col-1 p-0 m-0 bi bi-chevron-right"></i></li>
+      <li class="col-11 col-md-12 pt-2 pb-2 ps-1 ps-md-5 m-0  d-flex justify-content-between align-items-center"><span class="col-11">Smart Home</span> <i class="col-1 p-0 m-0  bi bi-chevron-right"></i></li>
+      <li class="col-11 col-md-12 pt-2 pb-2 ps-1 ps-md-5 m-0  d-flex justify-content-between align-items-center"><span class="col-11">Arts & Crafts</span> <i class="col-1 p-0 m-0  bi bi-chevron-right"></i></li>
+
+
+
+
+      <div id="dnMenu" class="d1 d2 col-12  -top -dark -bottom-0 p-0 d-flex flex-wrap justify-content-center">
+        <!-- <h5 class="col-10 ">Digital Content & Devices</h5> -->
+        <ul class="col-12 p-0 border-top border-2 d-flex flex-wrap justify-content-center align-content-center">
+          <li class="d-none"></li>
+          <li class="col-11 col-md-12 pt-2 pb-2 ps-1 ps-md-5 m-0  d-flex justify-content-between align-items-center"><span class="col-11">Automotive</span> <i class="col-1 p-0 m-0 bi bi-chevron-right"></i></li>
+          <li class="col-11 col-md-12 pt-2 pb-2 ps-1 ps-md-5 m-0  d-flex justify-content-between align-items-center"><span class="col-11">Baby</span> <i class="col-1 p-0 m-0 bi bi-chevron-right"></i></li>
+          <li class="col-11 col-md-12 pt-2 pb-2 ps-1 ps-md-5 m-0  d-flex justify-content-between align-items-center"><span class="col-11">Beauty And Personal Care</span> <i class="col-1 p-0 m-0  bi bi-chevron-right"></i></li>
+          <li class="col-11 col-md-12 pt-2 pb-2 ps-1 ps-md-5 m-0  d-flex justify-content-between align-items-center"><span class="col-11">Women's Fashion</span> <i class="col-1 p-0 m-0  bi bi-chevron-right"></i></li>
+          <li class="col-11 col-md-12 pt-2 pb-2 ps-1 ps-md-5 m-0  d-flex justify-content-between align-items-center"><span class="col-11">Men's Fashion</span> <i class="col-1 p-0 m-0  bi bi-chevron-right"></i></li>
+          <li class="col-11 col-md-12 pt-2 pb-2 ps-1 ps-md-5 m-0  d-flex justify-content-between align-items-center"><span class="col-11">Girls' Fashion</span> <i class="col-1 p-0 m-0  bi bi-chevron-right"></i></li>
+          <li class="col-11 col-md-12 pt-2 pb-2 ps-1 ps-md-5 m-0  d-flex justify-content-between align-items-center"><span class="col-11">Boys' Fashion</span> <i class="col-1 p-0 m-0  bi bi-chevron-right"></i></li>
+          <li class="col-11 col-md-12 pt-2 pb-2 ps-1 ps-md-5 m-0  d-flex justify-content-between align-items-center"><span class="col-11">Health And Household</span> <i class="col-1 p-0 m-0  bi bi-chevron-right"></i></li>
+          <li class="col-11 col-md-12 pt-2 pb-2 ps-1 ps-md-5 m-0  d-flex justify-content-between align-items-center"><span class="col-11">Home And Kitchen</span> <i class="col-1 p-0 m-0  bi bi-chevron-right"></i></li>
+          <li class="col-11 col-md-12 pt-2 pb-2 ps-1 ps-md-5 m-0  d-flex justify-content-between align-items-center"><span class="col-11">Industrial And Scientific</span> <i class="col-1 p-0 m-0  bi bi-chevron-right"></i></li>
+        </ul>
+    
+      </div>
+
+
+      <li id="activDnMenu" class="col-11 col-md-12 pt-2 pb-2 ps-1 ps-md-5 m-0  d-flex justify-content-start align-items-center"><span class="col-3">See All</span> <i id="_icon1" class="col-1 p-0 m-0  bi-chevron-down"></i></li>
+    </ul>
+
+
+
+
+  </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <div class="d1 col-12  p-0 d-flex flex-wrap justify-content-center">
+    <ul class="col-12 p-0 d-flex flex-wrap justify-content-center align-content-center">
+      <li class="col-11 col-md-12 pt-2 pb-2 ps-1 ps-md-5 m-0 d-flex  align-items-center">Programs & Features</li>
+      <li  class="col-11 col-md-12 pt-2 pb-2 ps-1 ps-md-5 m-0 d-flex justify-content-between align-items-center"><span class="col-11">Gift Card</span> <i class="col-1 p-0 m-0 bi bi-chevron-right"></i></li>
+      <li class="col-11 col-md-12 pt-2 pb-2 ps-1 ps-md-5 m-0  d-flex justify-content-between align-items-center"><span class="col-11">Shop By Interest</span> <i class="col-1 p-0 m-0 bi bi-chevron-right"></i></li>
+      <li class="col-11 col-md-12 pt-2 pb-2 ps-1 ps-md-5 m-0  d-flex justify-content-between align-items-center"><span class="col-11">Amazon Live</span> <i class="col-1 p-0 m-0  bi bi-chevron-right"></i></li>
+      <li class="col-11 col-md-12 pt-2 pb-2 ps-1 ps-md-5 m-0  d-flex justify-content-between align-items-center"><span class="col-11">International Shopping</span> <i class="col-1 p-0 m-0  bi bi-chevron-right"></i></li>
+
+
+      <div id="dnMenu2" class="d1 d2 col-12  -top -dark -bottom-0 p-0 d-flex flex-wrap justify-content-center">
+        <ul class="col-12 p-0 d-flex flex-wrap justify-content-center align-content-center">
+          <li class="d-none"></li>
+          <li class="col-11 col-md-12 pt-2 pb-2 ps-1 ps-md-5 m-0  d-flex justify-content-between align-items-center"><span class="col-11">Amazon Second Chance</span> <i class="col-1 p-0 m-0 bi bi-chevron-right"></i></li>
+
+        </ul>
+    
+    </div>
+
+      <li id="activDnMenu2" class="col-11 col-md-12 pt-2 pb-2 ps-1 ps-md-5 m-0  d-flex justify-content-start align-items-center"><span class="col-3">See All</span> <i id="_icon2" class="col-1 p-0 m-0  bi-chevron-down"></i></li>
+    </ul>
+
+ </div>
+
+
+
+
+
+
+
+
+
+ <div class="d1 col-12  p-0 d-flex flex-wrap justify-content-center">
+  <ul class="col-12 p-0 d-flex flex-wrap justify-content-center align-content-center">
+    <li class="col-11 col-md-12 pt-2 pb-2 ps-1 ps-md-5 m-0 d-flex  align-items-center">Help & Settings</li>
+    <li  class="col-11 col-md-12 pt-2 pb-2 ps-1 ps-md-5 m-0 d-flex justify-content-between align-items-center"><span class="col-11">Your Account</span> <i class="col-1 p-0 m-0 bi bi-chevron-right"></i></li>
+    <li class="col-11 col-md-12 pt-2 pb-2 ps-1 ps-md-5 m-0  d-flex justify-content-between align-items-center"><i class=" col-1 p-0 m-0 bi bi-globe"></i><span class="col-11">English</span></li>
+    <li class="col-11 col-md-12 pt-2 pb-2 ps-1 ps-md-5 m-0  d-flex justify-content-between align-items-center"><img src="{{ url_for('static', filename='assets/img/usFlag.png') }}" class="col-1 p-0 m-0 me-1  bi bi-chevron-right"></img><span class="col-11">United States</span> </li>
+    <li class="col-11 col-md-12 pt-2 pb-2 ps-1 ps-md-5 m-0  d-flex justify-content-between align-items-center"><span class="col-11">CUstomer Service</span></li>
+    <!-- <li class="col-11 col-md-12 pt-2 pb-2 ps-1 ps-md-5 m-0  d-flex justify-content-between align-items-center"><span class="col-11">Sign in</span></li> -->
+    <!-- Removed "Sign in" link from side menu help section -->
+  </ul>
+
+  </div>
+
+
+</div>
+<span id="x">X</span>
+
+
+<div id="fullsc">
+</div>
+
+ <script src="{{ url_for('static', filename='assets/js/script.js') }}"></script>
+</body>
+</html>

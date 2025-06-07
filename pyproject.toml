@@ -378,6 +378,7 @@ all = [
     "pylatex>=1.4.2",
     "chunkr-ai>=0.0.50",
     "python-pptx>=1.0.2",
+    "Flask>=2.0"
 ]
 
 [project.urls]
