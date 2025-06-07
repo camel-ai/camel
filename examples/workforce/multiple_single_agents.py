@@ -74,7 +74,10 @@ def main():
         ),
     )
 
-    workforce = Workforce('A travel group')
+    workforce = Workforce(
+        'A travel group',
+        graceful_shutdown_timeout=30.0,  # 30 seconds for debugging
+    )
 
     workforce.add_single_agent_worker(
         "A tour guide",
