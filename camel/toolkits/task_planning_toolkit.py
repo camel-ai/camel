@@ -22,7 +22,7 @@ logger = get_logger(__name__)
 
 
 class TaskPlanningToolkit(BaseToolkit):
-    r"""A toolkit for task decomposition and rePlanning."""
+    r"""A toolkit for task decomposition and re-planning."""
 
     def __init__(
         self,
@@ -79,15 +79,17 @@ class TaskPlanningToolkit(BaseToolkit):
 
     def replan_tasks(
         self,
+        original_task_id: str,
         original_task_content: str,
         sub_task_contents: List[str],
     ) -> List[Task]:
-        r"""Use the tool to reDecompose a task into several subTasks.
+        r"""Use the tool to re_decompose a task into several subTasks.
         It creates new Task objects from the provided original task content,
         used when the decomposed tasks are not good enough to help finish
         the task.
 
         Args:
+            original_task_id: The id of the task to be decomposed
             original_task_content (str): The content of the task to be
                 decomposed.
             sub_task_contents (List[str]): A list of strings, where each
@@ -97,7 +99,7 @@ class TaskPlanningToolkit(BaseToolkit):
             List[Task]: Reordered or modified tasks.
         """
         original_task = Task(
-            content=original_task_content, id=str(uuid.uuid4())
+            content=original_task_content, id=original_task_id
         )
 
         new_tasks: List[Task] = []
