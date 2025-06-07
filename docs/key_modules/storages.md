@@ -214,29 +214,16 @@ tidb_storage.clear()
 ### 3.5. Using `WeaviateStorage`
 
 ```python
-import os
-import weaviate
-from weaviate.classes.init import Auth
-from camel.storages.vectordb_storages import (
-    WeaviateStorage,
-    VectorDBQuery,
-    VectorRecord,
-)
+from camel.storages import WeaviateStorage, VectorDBQuery, VectorRecord
+from camel.storages.vectordb_storages import WeaviateConnectionType
 
-os.environ["WEAVIATE_URL"] = "you weaviate url"
-os.environ["WEAVIATE_API_KEY"] = "you weaviate api key"
-
-# create weaviate client 
-client = weaviate.connect_to_weaviate_cloud(
-    cluster_url=os.getenv("WEAVIATE_URL"),
-    auth_credentials=Auth.api_key(os.getenv("WEAVIATE_API_KEY")),
-)
-
-# Create WeaviateStorage instance with dimension = 4
+# Create WeaviateStorage instance with dimension = 4 using Weaviate Cloud
 weaviate_storage = WeaviateStorage(
-    client=client,
     vector_dim=4,
-    collection_name="camel_example_vectors"
+    collection_name="camel_example_vectors",
+    connection_type=WeaviateConnectionType.CLOUD,
+    wcd_cluster_url="your-weaviate-cloud-url",
+    wcd_api_key="your-weaviate-api-key",
 )
 
 # Add vectors records to Weaviate
