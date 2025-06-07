@@ -13,22 +13,13 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import random
-import warnings
-
-import weaviate
-from weaviate.classes.init import Auth
 
 from camel.storages.vectordb_storages import (
     VectorDBQuery,
     VectorRecord,
+    WeaviateConnectionType,
     WeaviateStorage,
 )
-
-# Suppress Pydantic deprecation warnings from Weaviate client
-warnings.filterwarnings(
-    "ignore", message=".*model_fields.*", category=DeprecationWarning
-)
-
 
 """
 Before running this example, you need to setup a Weaviate instance:
@@ -39,51 +30,86 @@ Before running this example, you need to setup a Weaviate instance:
 2. Run the following command to start Weaviate:
    docker run -p 8080:8080 -p 50051:50051 cr.weaviate.io/semitechnologies/
    weaviate:1.31.0
-3. Connect to local Weaviate instance example:
-   import weaviate
-   client = weaviate.connect_to_local(
-            host="localhost",
-            port=8080,
-            grpc_port=50051,
-        )
+3. The example will automatically connect to the local instance
 
 (Option 2): Weaviate Cloud Service (WCS):
 
 1. Sign up at https://console.weaviate.cloud
 2. Create a free Weaviate cluster
 3. Get your API key and cluster URL
-4. Connect to Weaviate Cloud Service example:
-   import weaviate
-   from weaviate.classes.init import Auth
-   client = weaviate.connect_to_weaviate_cloud(
-            cluster_url=WEAVIATE_URL,
-            auth_credentials=Auth.api_key(WEAVIATE_API_KEY),
-        )
+4. Update the WEAVIATE_URL and WEAVIATE_API_KEY variables below
 
-        
-For the convenience of demonstration,we use weaviate cloud service as an 
-example to demonstrate the functionality.
+(Option 3): Embedded Weaviate:
+
+Only supports Linux and macOS systems (Windows is not supported)
+
+Note: You may see deprecation warnings from the Weaviate client library:
+"PydanticDeprecatedSince211: Accessing the 'model_fields' attribute..."
+These warnings are from the Weaviate library itself and can be safely ignored.
+They do not affect the functionality of the code.
+
 """
 
-# Replace these with your Weaviate connection parameters
-WEAVIATE_URL = (
-    "7hh0x7e0qus857pcvhqq.c0.us-west3.gcp.weaviate.cloud"  # WCS cluster URL
-)
-WEAVIATE_API_KEY = "C7E8Q5ArFevK4DAE704KPHj2gNUkKcc6KQVS"  # WCS API key
 
+def example_local_connection():
+    """Example using local Weaviate instance (default connection type)."""
+    print("=== Local Weaviate Connection Example ===")
 
-def main():
-    # Setup weaviate client, here we use weaviate cloud service instance,
-    # you can also use local weaviate instance by using connect_to_local.
-    client = weaviate.connect_to_weaviate_cloud(
-        cluster_url=WEAVIATE_URL,
-        auth_credentials=Auth.api_key(WEAVIATE_API_KEY),
-    )
-
-    # Create WeaviateStorage instance with dimension = 4
+    # Create WeaviateStorage instance with local connection (default)
     weaviate_storage = WeaviateStorage(
-        client=client, vector_dim=4, collection_name="camel_example_vectors"
+        vector_dim=4,
+        collection_name="camel_local_example",
+        connection_type=WeaviateConnectionType.LOCAL,
+        local_host="localhost",
+        local_port=8080,
+        local_grpc_port=50051,
     )
+
+    run_storage_example(weaviate_storage)
+
+
+def example_cloud_connection():
+    """Example using Weaviate Cloud Service."""
+    print("=== Weaviate Cloud Connection Example ===")
+
+    # Replace these with your Weaviate Cloud connection parameters
+
+    WEAVIATE_URL = "your-weaviate-cloud-url"
+    WEAVIATE_API_KEY = "your-weaviate-api-key"
+
+    # Create WeaviateStorage instance with cloud connection
+    weaviate_storage = WeaviateStorage(
+        vector_dim=4,
+        collection_name="camel_cloud_example",
+        connection_type=WeaviateConnectionType.CLOUD,
+        wcd_cluster_url=WEAVIATE_URL,
+        wcd_api_key=WEAVIATE_API_KEY,
+    )
+
+    run_storage_example(weaviate_storage)
+
+
+def example_embedded_connection():
+    """Example using embedded Weaviate."""
+    print("=== Embedded Weaviate Connection Example ===")
+
+    # Create WeaviateStorage instance with embedded connection
+    weaviate_storage = WeaviateStorage(
+        vector_dim=4,
+        collection_name="camel_embedded_example",
+        connection_type=WeaviateConnectionType.EMBEDDED,
+        embedded_hostname="127.0.0.1",
+        embedded_port=8079,
+        embedded_grpc_port=50050,
+        # Optional: persist data
+        embedded_persistence_data_path="./weaviate_data",
+    )
+
+    run_storage_example(weaviate_storage)
+
+
+def run_storage_example(weaviate_storage: WeaviateStorage):
+    """Run the common storage operations example."""
 
     # Get database status
     status = weaviate_storage.status()
@@ -113,7 +139,7 @@ def main():
     status = weaviate_storage.status()
     print(f"Vector count after adding: {status.vector_count}")
 
-    # Query similar vectors,use the first vector as query vector
+    # Query similar vectors, use the first vector as query vector
     print("\nQuerying similar vectors...")
     query_vector = vector_records[0].vector
     query_results = weaviate_storage.query(
@@ -128,7 +154,7 @@ def main():
         print(f"  Similarity: {result.similarity}")
         # print(f"  Vector: {result.record.vector}")
 
-    # Test deletion,delete the first two vectors
+    # Test deletion, delete the first two vectors
     print("\nDeleting vectors...")
     ids_to_delete = [result.record.id for result in query_results[:2]]
     weaviate_storage.delete(ids_to_delete)
@@ -143,8 +169,40 @@ def main():
     status = weaviate_storage.status()
     print(f"Vector count after clearing: {status.vector_count}")
 
-    # close weaviate client
-    client.close()
+
+def main():
+    """Main function demonstrating different connection types."""
+
+    print("This example demonstrates different Weaviate connection types.")
+    print("Make sure you have the appropriate Weaviate instance running.\n")
+
+    # Example 1: Local connection (requires local Weaviate instance)
+    try:
+        example_local_connection()
+    except Exception as e:
+        print(f"Local connection failed: {e}")
+        print(
+            "Make sure you have a local Weaviate instance running on "
+            "localhost:8080\n"
+        )
+
+    # Example 2: Cloud connection (requires valid cloud credentials)
+    try:
+        example_cloud_connection()
+    except Exception as e:
+        print(f"Cloud connection failed: {e}")
+        print("Make sure you have valid Weaviate Cloud credentials\n")
+
+    # Example 3: Embedded connection (automatically starts embedded Weaviate)
+    # Note:Embedded weviate client is unsupported windows system
+    try:
+        example_embedded_connection()
+    except Exception as e:
+        print(f"Embedded connection failed: {e}")
+        print(
+            "Make sure you have weaviate-client with embedded support "
+            "installed\n"
+        )
 
 
 if __name__ == "__main__":
@@ -152,6 +210,10 @@ if __name__ == "__main__":
 
 """
 ===============================================================================
+This example demonstrates different Weaviate connection types.
+Make sure you have the appropriate Weaviate instance running.
+
+=== Local Weaviate Connection Example ===
 Vector dimension: 4
 Initial vector count: 0
 
@@ -160,15 +222,15 @@ Vector count after adding: 10
 
 Querying similar vectors...
 Result 1:
-  ID: 0cf0e63b-2296-4222-b1f7-7e6b1b17822d
+  ID: e44a25c3-0909-4979-990d-87803686dc7c
   Payload: {'idx': 0, 'category': 'example', 'description': 'Vector example 0'}
   Similarity: 1.0
 Result 2:
-  ID: bcc25824-4290-45e2-88c8-d380f83280f2
+  ID: 01fe9999-f0ab-43c7-8bdb-8a0127bbb5c5
   Payload: {'idx': 1, 'category': 'example', 'description': 'Vector example 1'}
   Similarity: 0.8593824505805969
 Result 3:
-  ID: a33f3984-39d5-46e4-8062-7972ad2562f0
+  ID: 6b193dc9-2ea9-423e-a4bc-6fa36903cf3c
   Payload: {'idx': 9, 'category': 'example', 'description': 'Vector example 9'}
   Similarity: 0.8499993085861206
 
