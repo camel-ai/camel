@@ -492,3 +492,23 @@ schema.
 ```python
 def get_tools(self):
 ```
+
+<a id="camel.toolkits.async_browser_toolkit.AsyncBrowserToolkit.ask_question_about_video"></a>
+
+### ask_question_about_video
+
+```python
+def ask_question_about_video(self, question: str):
+```
+
+Asks a question about a video on the current page.
+Note: This is an interactive function that may require user input.
+This function itself is synchronous due to the input() call.
+
+**Parameters:**
+
+- **question** (str): The question to ask about the video.
+
+**Returns:**
+
+  str: The answer to the question or an error/cancellation message.
