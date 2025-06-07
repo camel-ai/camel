@@ -13,8 +13,9 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import time
+import asyncio
 from unittest import TestCase
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock
 
 import pytest
 
@@ -30,6 +31,7 @@ from camel.utils import (
     retry_on_error,
     to_pascal,
     with_timeout,
+    with_timeout_async,
 )
 
 

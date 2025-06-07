@@ -25,11 +25,10 @@ from typing import Any, List, Optional, Tuple
 from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
 from camel.verifiers import BaseVerifier
-
+from camel.utils import TIMEOUT_THRESHOLD, with_timeout_async
 from .models import VerificationOutcome, VerificationResult
 
 logger = get_logger(__name__)
-
 
 class PythonVerifier(BaseVerifier):
     r"""The PythonVerifier class verifies Python-based implementations
@@ -309,8 +308,10 @@ class PythonVerifier(BaseVerifier):
             )
 
         try:
-            sol_out, sol_err, sol_code = await self._run_code_block(
-                solution, venv_python
+            sol_out, sol_err, sol_code = await with_timeout_async(
+                self._run_code_block(solution, venv_python),
+                timeout=self._timeout if self._timeout else TIMEOUT_THRESHOLD,
+                context="running Python solution",
             )
             if sol_code != 0:
                 return VerificationResult(
@@ -416,8 +417,10 @@ class PythonVerifier(BaseVerifier):
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
-        stdout, stderr = await asyncio.wait_for(
-            proc.communicate(), timeout=self._timeout
+        stdout, stderr = await with_timeout_async(
+            proc.communicate(),
+            timeout=self._timeout if self._timeout else TIMEOUT_THRESHOLD,
+            context="executing Python code",
         )
         os.remove(tmp_path)
         return (
