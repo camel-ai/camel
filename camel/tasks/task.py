@@ -97,6 +97,12 @@ class Task(BaseModel):
 
     additional_info: Optional[str] = None
 
+    # Flag to indicate if this task has been restructured by a replanner
+    is_restructured: bool = False
+
+    # Store execution history for failure analysis
+    execution_history: str = ""
+
     @classmethod
     def from_message(cls, message: BaseMessage) -> "Task":
         r"""Create a task from a message.
