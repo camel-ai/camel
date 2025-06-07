@@ -98,6 +98,8 @@ class MCPToolkit(BaseToolkit):
         timeout (Optional[float], optional): Timeout for connection attempts
             in seconds. This timeout applies to individual client connections.
             (default: :obj:`None`)
+        strict (Optional[bool], optional): Flag to indicate strict mode.
+            (default: :obj:`False`)
 
     Note:
         At least one of :obj:`clients`, :obj:`config_path`, or
@@ -146,6 +148,7 @@ class MCPToolkit(BaseToolkit):
         config_path: Optional[str] = None,
         config_dict: Optional[Dict[str, Any]] = None,
         timeout: Optional[float] = None,
+        strict: Optional[bool] = False,
     ):
         # Call parent constructor first
         super().__init__(timeout=timeout)
@@ -162,6 +165,7 @@ class MCPToolkit(BaseToolkit):
             raise ValueError(error_msg)
 
         self.clients: List[MCPClient] = clients or []
+        self.strict = strict  # Store strict parameter
         self._is_connected = False
         self._exit_stack: Optional[AsyncExitStack] = None
 
@@ -309,6 +313,7 @@ class MCPToolkit(BaseToolkit):
         config_path: Optional[str] = None,
         config_dict: Optional[Dict[str, Any]] = None,
         timeout: Optional[float] = None,
+        strict: Optional[bool] = False,
     ) -> "MCPToolkit":
         r"""Factory method that creates and connects to all MCP servers.
 
@@ -326,6 +331,8 @@ class MCPToolkit(BaseToolkit):
                 config file. (default: :obj:`None`)
             timeout (Optional[float], optional): Timeout for connection
                 attempts in seconds. (default: :obj:`None`)
+            strict (Optional[bool], optional): Flag to indicate strict mode.
+                (default: :obj:`False`)
 
         Returns:
             MCPToolkit: A fully initialized and connected :obj:`MCPToolkit`
@@ -354,6 +361,7 @@ class MCPToolkit(BaseToolkit):
             config_path=config_path,
             config_dict=config_dict,
             timeout=timeout,
+            strict=strict,
         )
         try:
             await toolkit.connect()
@@ -373,10 +381,11 @@ class MCPToolkit(BaseToolkit):
         config_path: Optional[str] = None,
         config_dict: Optional[Dict[str, Any]] = None,
         timeout: Optional[float] = None,
+        strict: Optional[bool] = False,
     ) -> "MCPToolkit":
         r"""Synchronously create and connect to all MCP servers."""
         return run_async(cls.create)(
-            clients, config_path, config_dict, timeout
+            clients, config_path, config_dict, timeout, strict
         )
 
     def _load_clients_from_config(self, config_path: str) -> List[MCPClient]:
@@ -433,10 +442,12 @@ class MCPToolkit(BaseToolkit):
 
         try:
             # Use the new mcp_client factory function
-            # Pass timeout from toolkit if available
+            # Pass timeout and strict from toolkit if available
             kwargs = {}
             if hasattr(self, "timeout") and self.timeout is not None:
                 kwargs["timeout"] = self.timeout
+            if hasattr(self, "strict") and self.strict is not None:
+                kwargs["strict"] = self.strict
 
             client = create_mcp_client(cfg, **kwargs)
             return client
