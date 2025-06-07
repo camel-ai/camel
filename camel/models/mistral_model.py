@@ -242,6 +242,7 @@ class MistralModel(BaseModelBackend):
             "Mistral does not support async inference, using sync "
             "inference instead."
         )
+
         request_config = self._prepare_request(
             messages, response_format, tools
         )
@@ -290,6 +291,7 @@ class MistralModel(BaseModelBackend):
         Returns:
             ChatCompletion: The response from the model.
         """
+
         request_config = self._prepare_request(
             messages, response_format, tools
         )

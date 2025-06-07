@@ -28,7 +28,31 @@ from camel.types import (
     ChatCompletionChunk,
     ModelType,
 )
-from camel.utils import BaseTokenCounter, api_keys_required
+from camel.utils import (
+    BaseTokenCounter,
+    api_keys_required,
+    get_current_agent_session_id,
+    update_langfuse_trace,
+)
+
+if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
+    try:
+        from langfuse.decorators import observe
+    except ImportError:
+
+        def observe(*args, **kwargs):
+            def decorator(func):
+                return func
+
+            return decorator
+else:
+
+    def observe(*args, **kwargs):
+        def decorator(func):
+            return func
+
+        return decorator
+
 
 logger = get_logger(__name__)
 
@@ -176,6 +200,7 @@ class DeepSeekModel(OpenAICompatibleModel):
             )
         return response
 
+    @observe()
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -193,6 +218,19 @@ class DeepSeekModel(OpenAICompatibleModel):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
+
+        # Update Langfuse trace with current agent session and metadata
+        agent_session_id = get_current_agent_session_id()
+        if agent_session_id:
+            update_langfuse_trace(
+                session_id=agent_session_id,
+                metadata={
+                    "agent_id": agent_session_id,
+                    "model_type": str(self.model_type),
+                },
+                tags=["camel", "openai", str(self.model_type)],
+            )
+
         request_config = self._prepare_request(
             messages, response_format, tools
         )
@@ -205,6 +243,7 @@ class DeepSeekModel(OpenAICompatibleModel):
 
         return self._post_handle_response(response)
 
+    @observe()
     async def _arun(
         self,
         messages: List[OpenAIMessage],
@@ -222,6 +261,19 @@ class DeepSeekModel(OpenAICompatibleModel):
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
+
+        # Update Langfuse trace with current agent session and metadata
+        agent_session_id = get_current_agent_session_id()
+        if agent_session_id:
+            update_langfuse_trace(
+                session_id=agent_session_id,
+                metadata={
+                    "agent_id": agent_session_id,
+                    "model_type": str(self.model_type),
+                },
+                tags=["camel", "openai", str(self.model_type)],
+            )
+
         request_config = self._prepare_request(
             messages, response_format, tools
         )

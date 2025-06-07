@@ -203,6 +203,7 @@ class RekaModel(BaseModelBackend):
         Returns:
             ChatCompletion.
         """
+
         reka_messages = self._convert_openai_to_reka_messages(messages)
 
         response = await self._async_client.chat.create(
@@ -244,6 +245,7 @@ class RekaModel(BaseModelBackend):
         Returns:
             ChatCompletion.
         """
+
         reka_messages = self._convert_openai_to_reka_messages(messages)
 
         response = self._client.chat.create(
