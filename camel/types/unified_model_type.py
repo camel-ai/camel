@@ -164,6 +164,11 @@ class UnifiedModelType(str):
         return True
 
     @property
+    def is_crynux(self) -> bool:
+        r"""Returns whether the model is a Crynux served model."""
+        return True
+
+    @property
     def support_native_structured_output(self) -> bool:
         r"""Returns whether the model supports native structured output."""
         return False
