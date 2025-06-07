@@ -23,6 +23,10 @@ from camel.messages import BaseMessage
 from camel.toolkits import FunctionTool
 from camel.types import ModelType, RoleType
 
+from camel.models import (
+    ModelFactory
+)
+
 
 class InitRequest(BaseModel):
     r"""Request schema for initializing a ChatAgent via the OpenAPI server.
@@ -31,7 +35,7 @@ class InitRequest(BaseModel):
     system message, tool names, and generation parameters.
 
     Args:
-        model (Optional[str]): The model type to use. Should match a key
+        model_type (Optional[str]): The model type to use. Should match a key
             supported by the model manager, e.g., "gpt-4o-mini".
             (default: :obj:`"gpt-4o-mini"`)
         tools_names (Optional[List[str]]): A list of tool names to load from
@@ -54,7 +58,9 @@ class InitRequest(BaseModel):
             interaction behavior. (default: :obj:`False`)
     """
 
-    model: Optional[str] = "gpt-4o-mini"
+    model_type: Optional[str] = "gpt-4o-mini"
+    model_platform: Optional[str] = "openai"
+
     tools_names: Optional[List[str]] = None
     external_tools: Optional[List[Dict[str, Any]]] = None
 
@@ -161,7 +167,13 @@ class ChatAgentOpenAPIServer:
                     "message": "Agent already exists.",
                 }
 
-            model = request.model
+            model_type = request.model_type
+            model_platform = request.model_platform
+
+            model = ModelFactory.create(
+                model_platform=model_platform,
+                model_type=model_type,
+            )
 
             # tools lookup
             tools = []
@@ -178,7 +190,7 @@ class ChatAgentOpenAPIServer:
             # system message
             system_message = request.system_message
 
-            model = ModelType(model)
+
             agent = ChatAgent(
                 model=model,
                 tools=tools,  # type: ignore[arg-type]
