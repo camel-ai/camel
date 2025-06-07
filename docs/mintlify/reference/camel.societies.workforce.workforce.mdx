@@ -259,3 +259,32 @@ Creates a new instance of Workforce with the same configuration.
 **Returns:**
 
   Workforce: A new instance of Workforce with the same configuration.
+
+<a id="camel.societies.workforce.workforce.Workforce.to_mcp"></a>
+
+### to_mcp
+
+```python
+def to_mcp(
+    self,
+    name: str = 'CAMEL-Workforce',
+    description: str = 'A workforce system using the CAMEL AI framework for multi-agent collaboration.',
+    dependencies: Optional[List[str]] = None,
+    host: str = 'localhost',
+    port: int = 8001
+):
+```
+
+Expose this Workforce as an MCP server.
+
+**Parameters:**
+
+- **name** (str): Name of the MCP server. (default: :obj:`CAMEL-Workforce`)
+- **description** (str): Description of the workforce. If None, a generic description is used. (default: :obj:`A workforce system using the CAMEL AI framework for multi-agent collaboration.`)
+- **dependencies** (Optional[List[str]]): Additional dependencies for the MCP server. (default: :obj:`None`)
+- **host** (str): Host to bind to for HTTP transport. (default: :obj:`localhost`)
+- **port** (int): Port to bind to for HTTP transport. (default: :obj:`8001`)
+
+**Returns:**
+
+  FastMCP: An MCP server instance that can be run.
