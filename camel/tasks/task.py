@@ -77,6 +77,7 @@ class Task(BaseModel):
         parent: The parent task, None for root task.
         subtasks: The childrent sub-tasks for the task.
         result: The answer for the task.
+        assignee_id: The id of the node to assign the task to.
     """
 
     content: str
@@ -96,6 +97,8 @@ class Task(BaseModel):
     failure_count: int = 0
 
     additional_info: Optional[str] = None
+
+    assignee_id: Optional[str] = None
 
     @classmethod
     def from_message(cls, message: BaseMessage) -> "Task":
