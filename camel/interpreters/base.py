@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple, Union
 
 
 class BaseInterpreter(ABC):
@@ -46,4 +46,17 @@ class BaseInterpreter(ABC):
     @abstractmethod
     def update_action_space(self, action_space: Dict[str, Any]) -> None:
         r"""Updates action space for *python* interpreter"""
+        pass
+
+    @abstractmethod
+    def execute_command(self, command: str) -> Union[str, Tuple[str, str]]:
+        r"""Executes a command in the interpreter.
+
+        Args:
+            command (str): The command to execute.
+
+        Returns:
+            Tuple[str, str]: A tuple containing the stdout and stderr of the
+                command execution.
+        """
         pass

@@ -144,6 +144,24 @@ class JupyterKernelInterpreter(BaseInterpreter):
 
         return result
 
+    def execute_command(self, command: str) -> str:
+        r"""Executes a shell command in the Jupyter kernel.
+
+        Args:
+            command (str): The shell command to execute.
+
+        Returns:
+            str: A string containing the captured result of the
+                executed command.
+
+        """
+        try:
+            self._initialize_if_needed()
+            system_command = f"!{command}"
+            return self._execute(system_command, TIMEOUT)
+        except Exception as e:
+            raise InterpreterError(f"Error executing command: {e}")
+
     def supported_code_types(self) -> List[str]:
         r"""Provides supported code types by the interpreter.
 
@@ -164,5 +182,5 @@ class JupyterKernelInterpreter(BaseInterpreter):
                 does not support updating the action space.
         """
         raise RuntimeError(
-            "SubprocessInterpreter doesn't support " "`action_space`."
+            "JupyterKernelInterpreter doesn't support " "`action_space`."
         )

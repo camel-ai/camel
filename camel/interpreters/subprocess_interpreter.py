@@ -425,3 +425,35 @@ class SubprocessInterpreter(BaseInterpreter):
                 return True
             except subprocess.CalledProcessError:
                 return False
+
+    def execute_command(self, command: str) -> tuple[str, str]:
+        r"""Executes a shell command in a subprocess and captures its output.
+
+        Args:
+            command (str): The shell command to execute.
+
+        Returns:
+            tuple: A tuple containing the captured stdout and stderr of the
+                executed command.
+
+        Raises:
+            InterpreterError: If the command execution fails.
+        """
+        try:
+            # Get current Python executable's environment
+            env = os.environ.copy()
+
+            proc = subprocess.Popen(
+                command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                env=env,
+                shell=True,  # Use shell=True for command execution
+            )
+            # Add timeout to prevent hanging processes
+            stdout, stderr = proc.communicate(timeout=self.execution_timeout)
+
+            return stdout, stderr
+        except Exception as e:
+            raise InterpreterError(f"Error executing command: {e}")
